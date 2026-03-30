@@ -124,6 +124,7 @@ const PerfilPage = () => {
           reference_point: referencePoint.trim(),
           neighborhood,
           phone: phone.trim(),
+          whatsapp_number: isValidWhatsApp(whatsappNumber) ? formatWhatsAppNumber(whatsappNumber) : null,
         } as any, { onConflict: "user_id" });
       if (error) throw error;
       toast.success("Endereço salvo!");
