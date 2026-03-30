@@ -4,8 +4,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/BottomNav";
-import { User, LogOut, Store, Shield, UserPlus, MapPin, Save, Bike, Wallet, Copy, AlertTriangle } from "lucide-react";
+import { User, LogOut, Store, Shield, UserPlus, MapPin, Save, Bike, Wallet, Copy, AlertTriangle, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
+import { maskWhatsApp, formatWhatsAppNumber, isValidWhatsApp } from "@/lib/whatsapp";
 
 const PerfilPage = () => {
   const { user, signOut } = useAuth();
