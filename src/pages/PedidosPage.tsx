@@ -9,7 +9,10 @@ import { ClipboardList, Clock, ChefHat, Truck, CheckCircle2 } from "lucide-react
 const statusConfig: Record<string, { label: string; icon: React.ElementType; color: string }> = {
   pendente: { label: "Pendente", icon: Clock, color: "text-yellow-500" },
   preparando: { label: "Preparando", icon: ChefHat, color: "text-orange-500" },
+  pronto_para_entrega: { label: "Pronto p/ entrega", icon: CheckCircle2, color: "text-purple-500" },
   saiu_entrega: { label: "Saiu p/ entrega", icon: Truck, color: "text-blue-500" },
+  em_transito: { label: "Em trânsito", icon: Truck, color: "text-cyan-500" },
+  entregue: { label: "Entregue", icon: CheckCircle2, color: "text-green-500" },
   finalizado: { label: "Finalizado", icon: CheckCircle2, color: "text-green-500" },
 };
 
