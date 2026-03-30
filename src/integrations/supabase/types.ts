@@ -383,6 +383,8 @@ export type Database = {
         | "sobremesas"
         | "cafeteria"
         | "churrasco"
+        | "farmacias"
+        | "docerias"
       store_status: "analise" | "ativo" | "bloqueado"
     }
     CompositeTypes: {
@@ -531,6 +533,8 @@ export const Constants = {
         "sobremesas",
         "cafeteria",
         "churrasco",
+        "farmacias",
+        "docerias",
       ],
       store_status: ["analise", "ativo", "bloqueado"],
     },
