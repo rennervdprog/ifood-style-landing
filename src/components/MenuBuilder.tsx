@@ -424,6 +424,13 @@ const MenuBuilder = ({ storeId }: MenuBuilderProps) => {
               key={product.id}
               product={product}
               addonGroups={getAddonGroups(product.id)}
+              linkedGroups={getLinkedGroups(product.id)}
+              storeAddonGroups={storeAddonGroups || []}
+              linkedGroupIds={getLinkedGroupIds(product.id)}
+              onLinkGroup={(gId: string) => linkAddonGroup(product.id, gId)}
+              onUnlinkGroup={(gId: string) => unlinkAddonGroup(product.id, gId)}
+              showLinkAddon={showLinkAddon}
+              setShowLinkAddon={setShowLinkAddon}
               onToggle={() => toggleProductAvailable(product.id, product.is_available)}
               onDelete={() => deleteProduct(product.id)}
               onEdit={() => {
