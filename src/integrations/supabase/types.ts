@@ -32,6 +32,95 @@ export type Database = {
         }
         Relationships: []
       }
+      order_items: {
+        Row: {
+          id: string
+          order_id: string
+          product_id: string
+          quantity: number
+          unit_price: number
+        }
+        Insert: {
+          id?: string
+          order_id: string
+          product_id: string
+          quantity: number
+          unit_price: number
+        }
+        Update: {
+          id?: string
+          order_id?: string
+          product_id?: string
+          quantity?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          address_details: string
+          client_id: string
+          created_at: string
+          delivery_fee: number
+          id: string
+          neighborhood: string
+          payment_method: string
+          status: Database["public"]["Enums"]["order_status"]
+          store_id: string
+          subtotal: number
+          total_price: number
+        }
+        Insert: {
+          address_details: string
+          client_id: string
+          created_at?: string
+          delivery_fee?: number
+          id?: string
+          neighborhood: string
+          payment_method: string
+          status?: Database["public"]["Enums"]["order_status"]
+          store_id: string
+          subtotal: number
+          total_price: number
+        }
+        Update: {
+          address_details?: string
+          client_id?: string
+          created_at?: string
+          delivery_fee?: number
+          id?: string
+          neighborhood?: string
+          payment_method?: string
+          status?: Database["public"]["Enums"]["order_status"]
+          store_id?: string
+          subtotal?: number
+          total_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           created_at: string
@@ -111,6 +200,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      order_status: "pendente" | "preparando" | "saiu_entrega" | "finalizado"
       store_category:
         | "lanches"
         | "pizzas"
@@ -247,6 +337,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      order_status: ["pendente", "preparando", "saiu_entrega", "finalizado"],
       store_category: [
         "lanches",
         "pizzas",
