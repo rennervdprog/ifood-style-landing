@@ -2,6 +2,7 @@ import { Shield, Clock, Store, Bike, CheckCircle2, XCircle } from "lucide-react"
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import WhatsAppButton from "@/components/WhatsAppButton";
 
 const AdminApprovals = () => {
   const queryClient = useQueryClient();

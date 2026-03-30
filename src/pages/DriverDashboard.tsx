@@ -61,7 +61,7 @@ const DriverDashboard = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*, stores(name), order_items(*, products(name))")
+        .select("*, stores(name, owner_id), order_items(*, products(name))")
         .eq("driver_id", user!.id)
         .eq("status", "em_transito" as any)
         .maybeSingle();
@@ -71,6 +71,28 @@ const DriverDashboard = () => {
     enabled: !!user,
     refetchInterval: 15000,
   });
+
+  // Fetch profiles for WhatsApp (client + store owner)
+  const deliveryClientId = myDelivery?.client_id;
+  const deliveryStoreOwnerId = (myDelivery as any)?.stores?.owner_id;
+  const profileIds = [deliveryClientId, deliveryStoreOwnerId].filter(Boolean) as string[];
+  
+  const { data: contactProfiles } = useQuery({
+    queryKey: ["driver-contacts", profileIds],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("user_id, whatsapp_number, phone, full_name")
+        .in("user_id", profileIds);
+      return data || [];
+    },
+    enabled: profileIds.length > 0,
+  });
+
+  const getContactWhatsApp = (userId: string) => {
+    const p = contactProfiles?.find((c: any) => c.user_id === userId);
+    return (p as any)?.whatsapp_number || (p as any)?.phone || "";
+  };
 
   // Pending return (cash orders delivered but not confirmed return)
   const { data: pendingReturn } = useQuery({
