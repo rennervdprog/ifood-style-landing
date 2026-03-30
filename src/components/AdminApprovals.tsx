@@ -78,16 +78,24 @@ const AdminApprovals = () => {
                 <p className="text-xs text-gray-400 mb-2">🏍️ {p.vehicle}</p>
               )}
               <div className="flex gap-2">
+                {(p as any).whatsapp_number && (
+                  <WhatsAppButton
+                    number={(p as any).whatsapp_number}
+                    message={`Olá ${p.full_name || ""}! Aqui é o admin do app de Itatinga. Sobre seu cadastro como ${p.role === "lojista" ? "lojista" : "entregador"}...`}
+                    label="WhatsApp"
+                    size="sm"
+                  />
+                )}
                 <button
                   onClick={() => handleApprove(p.user_id, true)}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-green-500 hover:bg-green-600 text-white text-sm font-bold active:scale-95 transition-transform"
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-green-500 hover:bg-green-600 text-white text-sm font-bold active:scale-95 transition-transform min-h-[44px]"
                 >
                   <CheckCircle2 className="h-4 w-4" />
                   APROVAR
                 </button>
                 <button
                   onClick={() => handleApprove(p.user_id, false)}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-bold active:scale-95 transition-transform"
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-bold active:scale-95 transition-transform min-h-[44px]"
                 >
                   <XCircle className="h-4 w-4" />
                   RECUSAR
