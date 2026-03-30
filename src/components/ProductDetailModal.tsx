@@ -1,0 +1,248 @@
+import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
+import { Minus, Plus, ShoppingCart } from "lucide-react";
+import type { CartAddon } from "@/contexts/CartContext";
+
+interface Product {
+  id: string;
+  store_id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  image_url: string | null;
+}
+
+interface AddonGroup {
+  id: string;
+  name: string;
+  min_select: number;
+  max_select: number;
+  sort_order: number;
+}
+
+interface AddonItem {
+  id: string;
+  group_id: string;
+  name: string;
+  price: number;
+  sort_order: number;
+}
+
+interface Props {
+  product: Product | null;
+  storeName: string;
+  open: boolean;
+  onClose: () => void;
+  onAdd: (product: Product, addons: CartAddon[], observations: string, quantity: number, totalUnitPrice: number) => void;
+}
+
+const ProductDetailModal = ({ product, storeName, open, onClose, onAdd }: Props) => {
+  const [selectedAddons, setSelectedAddons] = useState<Record<string, string[]>>({});
+  const [observations, setObservations] = useState("");
+  const [quantity, setQuantity] = useState(1);
+
+  // Reset state when product changes
+  const resetState = () => {
+    setSelectedAddons({});
+    setObservations("");
+    setQuantity(1);
+  };
+
+  const { data: addonGroups } = useQuery({
+    queryKey: ["addon-groups", product?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("addon_groups")
+        .select("*")
+        .eq("product_id", product!.id)
+        .order("sort_order");
+      if (error) throw error;
+      return (data || []) as AddonGroup[];
+    },
+    enabled: !!product?.id && open,
+  });
+
+  const { data: addonItems } = useQuery({
+    queryKey: ["addon-items", addonGroups?.map(g => g.id)],
+    queryFn: async () => {
+      const groupIds = addonGroups!.map(g => g.id);
+      if (groupIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from("addon_items")
+        .select("*")
+        .in("group_id", groupIds)
+        .order("sort_order");
+      if (error) throw error;
+      return (data || []) as AddonItem[];
+    },
+    enabled: !!addonGroups && addonGroups.length > 0,
+  });
+
+  const toggleAddon = (groupId: string, itemId: string, maxSelect: number) => {
+    setSelectedAddons(prev => {
+      const current = prev[groupId] || [];
+      if (current.includes(itemId)) {
+        return { ...prev, [groupId]: current.filter(id => id !== itemId) };
+      }
+      if (current.length >= maxSelect) {
+        // Replace last if max reached
+        if (maxSelect === 1) return { ...prev, [groupId]: [itemId] };
+        return prev;
+      }
+      return { ...prev, [groupId]: [...current, itemId] };
+    });
+  };
+
+  const allRequiredMet = useMemo(() => {
+    if (!addonGroups) return true;
+    return addonGroups.every(g => {
+      if (g.min_select === 0) return true;
+      return (selectedAddons[g.id]?.length || 0) >= g.min_select;
+    });
+  }, [addonGroups, selectedAddons]);
+
+  const selectedAddonsList: CartAddon[] = useMemo(() => {
+    if (!addonItems) return [];
+    const allSelected = Object.values(selectedAddons).flat();
+    return addonItems
+      .filter(ai => allSelected.includes(ai.id))
+      .map(ai => ({ name: ai.name, price: ai.price }));
+  }, [addonItems, selectedAddons]);
+
+  const addonsTotal = selectedAddonsList.reduce((s, a) => s + a.price, 0);
+  const unitPrice = (product?.price || 0) + addonsTotal;
+  const lineTotal = unitPrice * quantity;
+
+  if (!product) return null;
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => { if (!o) { onClose(); resetState(); } }}>
+      <DialogContent className="max-w-lg p-0 gap-0 max-h-[90vh] overflow-y-auto rounded-2xl">
+        {/* Product image */}
+        {product.image_url ? (
+          <img src={product.image_url} alt={product.name} className="w-full h-56 object-cover rounded-t-2xl" />
+        ) : (
+          <div className="w-full h-56 bg-muted flex items-center justify-center rounded-t-2xl">
+            <span className="text-6xl">🍴</span>
+          </div>
+        )}
+
+        <div className="p-5 space-y-5">
+          <DialogHeader className="text-left">
+            <DialogTitle className="text-xl font-black text-foreground">{product.name}</DialogTitle>
+            {product.description && (
+              <p className="text-sm text-muted-foreground mt-1">{product.description}</p>
+            )}
+            <p className="text-lg font-black text-primary mt-2">R$ {product.price.toFixed(2)}</p>
+          </DialogHeader>
+
+          {/* Addon groups */}
+          {addonGroups && addonGroups.length > 0 && (
+            <div className="space-y-4">
+              {addonGroups.map(group => {
+                const items = addonItems?.filter(ai => ai.group_id === group.id) || [];
+                const isRequired = group.min_select > 0;
+                const currentSelected = selectedAddons[group.id]?.length || 0;
+
+                return (
+                  <div key={group.id} className="bg-muted/50 rounded-xl p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <h4 className="font-bold text-sm text-foreground">{group.name}</h4>
+                        <p className="text-xs text-muted-foreground">
+                          {isRequired ? `Escolha ${group.min_select}` : "Opcional"}
+                          {group.max_select > 1 ? ` (máx. ${group.max_select})` : ""}
+                        </p>
+                      </div>
+                      {isRequired && (
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                          currentSelected >= group.min_select
+                            ? "bg-green-100 text-green-700"
+                            : "bg-destructive/10 text-destructive"
+                        }`}>
+                          {currentSelected >= group.min_select ? "✓" : "Obrigatório"}
+                        </span>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      {items.map(item => {
+                        const isChecked = selectedAddons[group.id]?.includes(item.id) || false;
+                        return (
+                          <label
+                            key={item.id}
+                            className="flex items-center gap-3 cursor-pointer py-1.5"
+                            onClick={() => toggleAddon(group.id, item.id, group.max_select)}
+                          >
+                            <Checkbox checked={isChecked} className="pointer-events-none" />
+                            <span className="flex-1 text-sm text-foreground">{item.name}</span>
+                            {item.price > 0 && (
+                              <span className="text-sm font-bold text-primary">+ R$ {item.price.toFixed(2)}</span>
+                            )}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Observations */}
+          <div>
+            <label className="text-sm font-bold text-foreground mb-1.5 block">Observações</label>
+            <Textarea
+              placeholder="Ex: Sem cebola, bem passado..."
+              value={observations}
+              onChange={(e) => setObservations(e.target.value)}
+              className="resize-none h-20 rounded-xl"
+              maxLength={200}
+            />
+          </div>
+
+          {/* Quantity + Add button */}
+          <div className="flex items-center gap-4 pt-2">
+            <div className="flex items-center gap-3 bg-muted rounded-xl px-3 py-2">
+              <button
+                onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                className="w-8 h-8 rounded-full bg-background flex items-center justify-center active:scale-90 transition-transform"
+              >
+                <Minus className="h-4 w-4" />
+              </button>
+              <span className="font-black text-lg w-6 text-center">{quantity}</span>
+              <button
+                onClick={() => setQuantity(q => q + 1)}
+                className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center active:scale-90 transition-transform"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            </div>
+
+            <button
+              disabled={!allRequiredMet}
+              onClick={() => {
+                onAdd(product, selectedAddonsList, observations, quantity, unitPrice);
+                onClose();
+                resetState();
+              }}
+              className={`flex-1 py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95 ${
+                allRequiredMet
+                  ? "bg-primary text-primary-foreground shadow-lg"
+                  : "bg-muted text-muted-foreground cursor-not-allowed"
+              }`}
+            >
+              <ShoppingCart className="h-4 w-4" />
+              Adicionar • R$ {lineTotal.toFixed(2)}
+            </button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default ProductDetailModal;
