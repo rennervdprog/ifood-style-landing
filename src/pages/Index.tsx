@@ -18,11 +18,11 @@ const Index = () => {
       const { data, error } = await supabase
         .from("stores")
         .select("*")
-        .eq("status" as any, "ativo")
         .order("is_open", { ascending: false })
         .order("rating", { ascending: false });
       if (error) throw error;
-      return data;
+      // Filter to only show active stores
+      return (data || []).filter((s: any) => !s.status || s.status === "ativo");
     },
   });
 
