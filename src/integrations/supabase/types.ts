@@ -170,6 +170,7 @@ export type Database = {
           image_url: string | null
           is_open: boolean
           name: string
+          owner_id: string | null
           rating: number | null
         }
         Insert: {
@@ -179,6 +180,7 @@ export type Database = {
           image_url?: string | null
           is_open?: boolean
           name: string
+          owner_id?: string | null
           rating?: number | null
         }
         Update: {
@@ -188,6 +190,7 @@ export type Database = {
           image_url?: string | null
           is_open?: boolean
           name?: string
+          owner_id?: string | null
           rating?: number | null
         }
         Relationships: []
