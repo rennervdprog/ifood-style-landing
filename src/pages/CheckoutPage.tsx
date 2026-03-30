@@ -118,6 +118,8 @@ const CheckoutPage = () => {
           product_id: item.id,
           quantity: item.quantity,
           unit_price: item.price,
+          addons: item.addons && item.addons.length > 0 ? JSON.stringify(item.addons) : null,
+          observations: item.observations || null,
         }));
 
         const { error: itemsError } = await supabase
