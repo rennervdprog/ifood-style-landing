@@ -235,6 +235,13 @@ const CheckoutPage = () => {
           )}
         </button>
       </div>
+      {/* Address modal */}
+      {showAddressModal && (
+        <AddressModal
+          onClose={() => setShowAddressModal(false)}
+          onSaved={() => { setShowAddressModal(false); refetchProfile(); }}
+        />
+      )}
     </div>
   );
 };
