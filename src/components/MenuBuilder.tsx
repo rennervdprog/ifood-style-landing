@@ -54,7 +54,7 @@ const MenuBuilder = ({ storeId }: MenuBuilderProps) => {
     },
   });
 
-  // Fetch addon groups for all products
+  // Fetch addon groups for all products (direct product-level groups)
   const productIds = products?.map(p => p.id) || [];
   const { data: addonGroups } = useQuery({
     queryKey: ["addon-groups", productIds],
@@ -70,10 +70,74 @@ const MenuBuilder = ({ storeId }: MenuBuilderProps) => {
     enabled: productIds.length > 0,
   });
 
+  // Fetch store-level addon groups (for linking)
+  const { data: storeAddonGroups } = useQuery({
+    queryKey: ["store-addon-groups", storeId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("addon_groups")
+        .select("*, addon_items(*)")
+        .eq("store_id", storeId)
+        .is("product_id", null)
+        .order("sort_order");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Fetch product-addon links
+  const { data: productAddonLinks } = useQuery({
+    queryKey: ["product-addon-links", productIds],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("product_addon_groups")
+        .select("*")
+        .in("product_id", productIds);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: productIds.length > 0,
+  });
+
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: ["menu-sections", storeId] });
     queryClient.invalidateQueries({ queryKey: ["store-products", storeId] });
     queryClient.invalidateQueries({ queryKey: ["addon-groups"] });
+    queryClient.invalidateQueries({ queryKey: ["store-addon-groups", storeId] });
+    queryClient.invalidateQueries({ queryKey: ["product-addon-links"] });
+  };
+
+  const linkAddonGroup = async (productId: string, addonGroupId: string) => {
+    const { error } = await supabase.from("product_addon_groups").insert({
+      product_id: productId,
+      addon_group_id: addonGroupId,
+    } as any);
+    if (error) {
+      if (error.code === "23505") { toast.info("Grupo já vinculado a este produto"); return; }
+      toast.error("Erro ao vincular grupo");
+      return;
+    }
+    toast.success("Grupo vinculado ao produto!");
+    invalidateAll();
+  };
+
+  const unlinkAddonGroup = async (productId: string, addonGroupId: string) => {
+    const { error } = await supabase
+      .from("product_addon_groups")
+      .delete()
+      .eq("product_id", productId)
+      .eq("addon_group_id", addonGroupId);
+    if (error) { toast.error("Erro ao desvincular"); return; }
+    toast.success("Grupo desvinculado!");
+    invalidateAll();
+  };
+
+  const getLinkedGroupIds = (productId: string) =>
+    (productAddonLinks as any[])?.filter((l: any) => l.product_id === productId).map((l: any) => l.addon_group_id) || [];
+
+  const getLinkedGroups = (productId: string) => {
+    const ids = getLinkedGroupIds(productId);
+    return (storeAddonGroups as any[])?.filter((g: any) => ids.includes(g.id)) || [];
   };
 
   // Section CRUD
