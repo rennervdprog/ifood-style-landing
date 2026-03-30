@@ -324,6 +324,25 @@ const DriverDashboard = () => {
             </div>
           )}
 
+          {/* Pending return to store card */}
+          {!myDelivery && pendingReturn && (
+            <div className="bg-yellow-500/10 border-2 border-yellow-500 rounded-2xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <DollarSign className="h-5 w-5 text-yellow-400" />
+                <h2 className="font-bold text-yellow-400 text-sm">AGUARDANDO RETORNO À LOJA</h2>
+              </div>
+              <p className="text-xs text-gray-400 mb-3">
+                Entregue o valor de <span className="font-bold text-yellow-400">R$ {Number(pendingReturn.total_price).toFixed(2)}</span> na loja <span className="font-bold text-gray-200">{(pendingReturn as any).stores?.name}</span>.
+              </p>
+              <button
+                onClick={() => confirmStoreReturn(pendingReturn.id)}
+                className="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 rounded-2xl text-sm active:scale-95 transition-transform"
+              >
+                ✅ Confirmei acerto com a loja
+              </button>
+            </div>
+          )}
+
           {!myDelivery && (
             <>
               <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider">
