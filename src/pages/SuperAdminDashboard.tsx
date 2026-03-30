@@ -14,11 +14,13 @@ import {
 } from "recharts";
 
 type DateFilter = "today" | "yesterday" | "week";
+type AdminTab = "dashboard" | "approvals";
 
 const SuperAdminDashboard = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [dateFilter, setDateFilter] = useState<DateFilter>("today");
+  const [activeTab, setActiveTab] = useState<AdminTab>("dashboard");
 
   const getDateRange = (filter: DateFilter) => {
     const now = new Date();
