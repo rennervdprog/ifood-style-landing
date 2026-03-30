@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/BottomNav";
-import { User, LogOut, Store } from "lucide-react";
+import { User, LogOut, Store, Shield } from "lucide-react";
 import { toast } from "sonner";
 
 const PerfilPage = () => {
