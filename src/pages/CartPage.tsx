@@ -43,9 +43,17 @@ const CartPage = () => {
 
       <div className="px-4 py-4 space-y-3">
         {items.map((item) => (
-          <div key={item.id} className="flex items-center gap-3 bg-card rounded-2xl p-3 border border-border">
+          <div key={item.cartKey} className="flex items-center gap-3 bg-card rounded-2xl p-3 border border-border">
             <div className="flex-1 min-w-0">
               <h3 className="font-bold text-sm text-foreground truncate">{item.name}</h3>
+              {item.addons && item.addons.length > 0 && (
+                <p className="text-xs text-muted-foreground truncate">
+                  + {item.addons.map(a => a.name).join(", ")}
+                </p>
+              )}
+              {item.observations && (
+                <p className="text-xs text-muted-foreground/70 italic truncate">"{item.observations}"</p>
+              )}
               <span className="text-xs text-muted-foreground">{item.store_name}</span>
               <span className="text-sm font-black text-primary block mt-1">
                 R$ {(item.price * item.quantity).toFixed(2)}
@@ -53,7 +61,7 @@ const CartPage = () => {
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                onClick={() => updateQuantity(item.cartKey, item.quantity - 1)}
                 className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"
               >
                 {item.quantity === 1 ? (
@@ -64,7 +72,7 @@ const CartPage = () => {
               </button>
               <span className="text-sm font-bold w-5 text-center">{item.quantity}</span>
               <button
-                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                onClick={() => updateQuantity(item.cartKey, item.quantity + 1)}
                 className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center"
               >
                 <Plus className="h-3.5 w-3.5" />
