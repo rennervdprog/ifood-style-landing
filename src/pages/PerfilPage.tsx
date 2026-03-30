@@ -261,13 +261,27 @@ const PerfilPage = () => {
             />
             <input
               type="tel"
-              placeholder="Telefone / WhatsApp"
+              placeholder="Telefone"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               inputMode="tel"
               className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               autoComplete="tel"
             />
+            <div>
+              <label className="text-xs font-bold text-foreground mb-1 flex items-center gap-1.5">
+                <MessageCircle className="h-3.5 w-3.5 text-green-500" />
+                WhatsApp (com DDD)
+              </label>
+              <input
+                type="tel"
+                placeholder="(15) 99999-9999"
+                value={whatsappNumber}
+                onChange={(e) => setWhatsappNumber(maskWhatsApp(e.target.value))}
+                inputMode="tel"
+                className="w-full px-3 py-2.5 rounded-xl border border-green-500/30 bg-background text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
+            </div>
             <button
               onClick={handleSaveAddress}
               disabled={savingAddress}
