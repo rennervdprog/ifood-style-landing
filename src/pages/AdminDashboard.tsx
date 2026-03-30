@@ -348,7 +348,19 @@ const AdminDashboard = () => {
                   </div>
                 )}
 
-                {/* Total + Action */}
+                {/* WhatsApp + Total + Action */}
+                {getClientWhatsApp(order.client_id) && (
+                  <div className="mb-3">
+                    <WhatsAppButton
+                      number={getClientWhatsApp(order.client_id)}
+                      message={`Olá ${getClientName(order.client_id)}! Aqui é do ${store?.name || "estabelecimento"}. Sobre seu pedido #${order.id.slice(0, 8).toUpperCase()}...`}
+                      label="Chamar Cliente no WhatsApp"
+                      size="md"
+                      className="w-full"
+                    />
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between pt-3 border-t border-gray-700">
                   <div>
                     <span className="text-xs text-gray-400">Total</span>
