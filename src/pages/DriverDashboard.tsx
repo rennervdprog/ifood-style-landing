@@ -20,6 +20,15 @@ const DriverDashboard = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const prevCountRef = useRef(0);
 
+  // Check approval (must be before conditional returns)
+  const { data: driverProfile } = useQuery({
+    queryKey: ["my-profile-approval", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("is_approved, role").eq("user_id", user!.id).maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
   // Sound alert
   const playAlert = useCallback(() => {
     if (!audioRef.current) {
