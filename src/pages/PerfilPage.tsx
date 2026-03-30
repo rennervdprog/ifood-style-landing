@@ -274,6 +274,62 @@ const PerfilPage = () => {
           </div>
         </div>
 
+        {/* PIX Section - only for lojista/motoboy */}
+        {(profileRole === "lojista" || profileRole === "motoboy") && (
+          <div className="bg-card rounded-2xl p-4 border border-border">
+            <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+              <Wallet className="h-4 w-4 text-primary" />
+              Dados de Recebimento (PIX)
+            </h3>
+            {!pixKey && !pixType && (
+              <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-3 mb-3 flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0" />
+                <p className="text-xs text-destructive font-bold">
+                  Cadastre sua chave PIX para receber seus pagamentos!
+                </p>
+              </div>
+            )}
+            <div className="space-y-3">
+              <select
+                value={pixType}
+                onChange={(e) => setPixType(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary appearance-none"
+              >
+                <option value="">Tipo da Chave</option>
+                <option value="cpf">CPF</option>
+                <option value="cnpj">CNPJ</option>
+                <option value="email">E-mail</option>
+                <option value="phone">Telefone</option>
+                <option value="random">Chave Aleatória</option>
+              </select>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Sua chave PIX"
+                  value={pixKey}
+                  onChange={(e) => setPixKey(e.target.value)}
+                  className="flex-1 px-3 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                {pixKey && (
+                  <button
+                    onClick={copyPixKey}
+                    className="px-3 py-2.5 rounded-xl border border-border bg-background text-muted-foreground hover:text-foreground"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+              <button
+                onClick={handleSavePix}
+                disabled={savingPix}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary text-primary-foreground font-bold text-sm disabled:opacity-50"
+              >
+                <Save className="h-4 w-4" />
+                {savingPix ? "Salvando..." : "Salvar Chave PIX"}
+              </button>
+            </div>
+          </div>
+        )}
         {/* Partner buttons */}
         {myStore && (
           <button
