@@ -257,7 +257,7 @@ const CheckoutPage = () => {
         <div className="border-t border-border pt-4 space-y-2">
           <h2 className="text-sm font-bold text-foreground mb-2">Resumo</h2>
           {items.map((item) => (
-            <div key={item.id} className="flex justify-between text-sm">
+            <div key={item.cartKey || item.id} className="flex justify-between text-sm">
               <span className="text-muted-foreground">
                 {item.quantity}x {item.name}
               </span>
