@@ -13,7 +13,7 @@ import MenuBuilder from "@/components/MenuBuilder";
 import StoreHoursManager from "@/components/StoreHoursManager";
 
 type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_entrega" | "em_transito" | "entregue" | "finalizado";
-type DashboardTab = "orders" | "menu";
+type DashboardTab = "orders" | "menu" | "hours";
 
 const statusColumns: { status: OrderStatus; label: string; icon: React.ElementType; color: string }[] = [
   { status: "pendente", label: "Novos", icon: Clock, color: "text-yellow-400" },
