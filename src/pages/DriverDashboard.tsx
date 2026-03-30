@@ -71,6 +71,24 @@ const DriverDashboard = () => {
     refetchInterval: 15000,
   });
 
+  // Pending return (cash orders delivered but not confirmed return)
+  const { data: pendingReturn } = useQuery({
+    queryKey: ["driver-pending-return", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*, stores(name)")
+        .eq("driver_id", user!.id)
+        .eq("status", "entregue" as any)
+        .eq("payment_method", "dinheiro")
+        .eq("return_to_store_confirmed", false)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+    refetchInterval: 15000,
+  });
   useEffect(() => {
     if (!user || !isOnline) return;
     const channel = supabase
