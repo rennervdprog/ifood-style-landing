@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
   Wifi, WifiOff, Pause, Play, Clock, ChefHat, Truck, CheckCircle2,
-  MapPin, CreditCard, Package, ArrowLeft
+  MapPin, CreditCard, Package, ArrowLeft, Shield
 } from "lucide-react";
 
 type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_entrega" | "em_transito" | "entregue" | "finalizado";
@@ -35,6 +35,16 @@ const AdminDashboard = () => {
   const [isOnline, setIsOnline] = useState(true);
   const [activeTab, setActiveTab] = useState<OrderStatus>("pendente");
   const prevPendingCountRef = useRef(0);
+
+  // Check approval (must be before conditional returns)
+  const { data: profile } = useQuery({
+    queryKey: ["my-profile-approval", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("is_approved, role").eq("user_id", user!.id).maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
 
   // Fetch store for this owner
   const { data: store } = useQuery({
@@ -133,10 +143,27 @@ const AdminDashboard = () => {
     }
   };
 
+
   if (authLoading) return null;
   if (!user) {
     navigate("/auth", { replace: true });
     return null;
+  }
+
+  if (profile && !(profile as any).is_approved) {
+    return (
+      <div className="min-h-screen bg-[#111827] flex flex-col items-center justify-center text-center px-6">
+        <Shield className="h-16 w-16 text-yellow-400 mb-4" />
+        <h1 className="text-xl font-bold text-white mb-2">Cadastro em Análise! 🛡️</h1>
+        <p className="text-sm text-gray-400 max-w-xs mb-2">
+          Olá! Recebemos seus dados. Em até 24h o administrador de Itatinga liberará seu acesso.
+        </p>
+        <p className="text-xs text-gray-500">Entraremos em contato via WhatsApp.</p>
+        <button onClick={() => navigate("/")} className="mt-6 bg-white text-gray-900 font-bold px-6 py-3 rounded-xl">
+          Voltar à Home
+        </button>
+      </div>
+    );
   }
 
   const filteredOrders = orders?.filter(o => o.status === activeTab) || [];

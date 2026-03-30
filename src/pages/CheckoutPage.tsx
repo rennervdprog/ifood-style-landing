@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode } from "lucide-react";
 import confetti from "canvas-confetti";
+import AddressModal from "@/components/AddressModal";
 
 const paymentMethods = [
   { id: "pix", label: "PIX (App)", icon: QrCode },
@@ -20,6 +22,19 @@ const CheckoutPage = () => {
   const [addressDetails, setAddressDetails] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showAddressModal, setShowAddressModal] = useState(false);
+
+  // Check if user has address
+  const { data: userProfile, refetch: refetchProfile } = useQuery({
+    queryKey: ["my-profile-address", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("street, number, neighborhood, reference_point").eq("user_id", user!.id).maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const hasAddress = !!(userProfile as any)?.street && !!(userProfile as any)?.number;
 
   // Redirect to login if not authenticated
   if (!user) {
@@ -39,6 +54,10 @@ const CheckoutPage = () => {
   }
 
   const handleConfirm = async () => {
+    if (!hasAddress) {
+      setShowAddressModal(true);
+      return;
+    }
     if (!addressDetails.trim()) {
       toast.error("Informe seu endereço e ponto de referência.");
       return;
@@ -220,6 +239,13 @@ const CheckoutPage = () => {
           )}
         </button>
       </div>
+      {/* Address modal */}
+      {showAddressModal && (
+        <AddressModal
+          onClose={() => setShowAddressModal(false)}
+          onSaved={() => { setShowAddressModal(false); refetchProfile(); }}
+        />
+      )}
     </div>
   );
 };

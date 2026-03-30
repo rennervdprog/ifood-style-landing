@@ -21,7 +21,8 @@ const Index = () => {
         .order("is_open", { ascending: false })
         .order("rating", { ascending: false });
       if (error) throw error;
-      return data;
+      // Filter to only show active stores
+      return (data || []).filter((s: any) => !s.status || s.status === "ativo");
     },
   });
 

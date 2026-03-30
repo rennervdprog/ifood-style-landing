@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import AdminApprovals from "@/components/AdminApprovals";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -13,11 +14,13 @@ import {
 } from "recharts";
 
 type DateFilter = "today" | "yesterday" | "week";
+type AdminTab = "dashboard" | "approvals";
 
 const SuperAdminDashboard = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [dateFilter, setDateFilter] = useState<DateFilter>("today");
+  const [activeTab, setActiveTab] = useState<AdminTab>("dashboard");
 
   const getDateRange = (filter: DateFilter) => {
     const now = new Date();
@@ -184,6 +187,28 @@ const SuperAdminDashboard = () => {
         </div>
       </header>
 
+      {/* Main tabs */}
+      <div className="flex gap-2 px-4 py-3 border-b border-gray-800">
+        <button
+          onClick={() => setActiveTab("dashboard")}
+          className={`px-4 py-2 rounded-xl text-sm font-bold ${activeTab === "dashboard" ? "bg-yellow-500 text-gray-900" : "bg-[#1E293B] text-gray-400"}`}
+        >
+          📊 Dashboard
+        </button>
+        <button
+          onClick={() => setActiveTab("approvals")}
+          className={`px-4 py-2 rounded-xl text-sm font-bold ${activeTab === "approvals" ? "bg-yellow-500 text-gray-900" : "bg-[#1E293B] text-gray-400"}`}
+        >
+          🛡️ Aprovações
+        </button>
+      </div>
+
+      {activeTab === "approvals" ? (
+        <div className="px-4 py-4">
+          <AdminApprovals />
+        </div>
+      ) : (
+      <>
       {/* Date filter */}
       <div className="flex gap-2 px-4 py-3">
         {(["today", "yesterday", "week"] as DateFilter[]).map(f => (
@@ -347,6 +372,8 @@ const SuperAdminDashboard = () => {
             </div>
           </div>
         </div>
+      )}
+      </>
       )}
     </div>
   );

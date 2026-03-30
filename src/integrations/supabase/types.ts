@@ -195,31 +195,52 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          complement: string | null
           created_at: string
           document: string | null
           full_name: string
           id: string
+          is_approved: boolean
+          neighborhood: string | null
+          number: string | null
+          phone: string | null
+          reference_point: string | null
           role: Database["public"]["Enums"]["partner_role"]
+          street: string | null
           user_id: string
           vehicle: string | null
         }
         Insert: {
           avatar_url?: string | null
+          complement?: string | null
           created_at?: string
           document?: string | null
           full_name?: string
           id?: string
+          is_approved?: boolean
+          neighborhood?: string | null
+          number?: string | null
+          phone?: string | null
+          reference_point?: string | null
           role?: Database["public"]["Enums"]["partner_role"]
+          street?: string | null
           user_id: string
           vehicle?: string | null
         }
         Update: {
           avatar_url?: string | null
+          complement?: string | null
           created_at?: string
           document?: string | null
           full_name?: string
           id?: string
+          is_approved?: boolean
+          neighborhood?: string | null
+          number?: string | null
+          phone?: string | null
+          reference_point?: string | null
           role?: Database["public"]["Enums"]["partner_role"]
+          street?: string | null
           user_id?: string
           vehicle?: string | null
         }
@@ -235,6 +256,7 @@ export type Database = {
           name: string
           owner_id: string | null
           rating: number | null
+          status: Database["public"]["Enums"]["store_status"]
         }
         Insert: {
           category: Database["public"]["Enums"]["store_category"]
@@ -245,6 +267,7 @@ export type Database = {
           name: string
           owner_id?: string | null
           rating?: number | null
+          status?: Database["public"]["Enums"]["store_status"]
         }
         Update: {
           category?: Database["public"]["Enums"]["store_category"]
@@ -255,6 +278,7 @@ export type Database = {
           name?: string
           owner_id?: string | null
           rating?: number | null
+          status?: Database["public"]["Enums"]["store_status"]
         }
         Relationships: []
       }
@@ -263,6 +287,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_approve_partner: {
+        Args: { _approved: boolean; _profile_user_id: string }
+        Returns: undefined
+      }
       driver_accept_order: { Args: { _order_id: string }; Returns: undefined }
       driver_finish_delivery: {
         Args: { _order_id: string }
@@ -309,6 +337,7 @@ export type Database = {
         | "sobremesas"
         | "cafeteria"
         | "churrasco"
+      store_status: "analise" | "ativo" | "bloqueado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -456,6 +485,7 @@ export const Constants = {
         "cafeteria",
         "churrasco",
       ],
+      store_status: ["analise", "ativo", "bloqueado"],
     },
   },
 } as const
