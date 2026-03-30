@@ -77,6 +77,7 @@ export type Database = {
           client_id: string
           created_at: string
           delivery_fee: number
+          driver_id: string | null
           id: string
           neighborhood: string
           payment_method: string
@@ -90,6 +91,7 @@ export type Database = {
           client_id: string
           created_at?: string
           delivery_fee?: number
+          driver_id?: string | null
           id?: string
           neighborhood: string
           payment_method: string
@@ -103,6 +105,7 @@ export type Database = {
           client_id?: string
           created_at?: string
           delivery_fee?: number
+          driver_id?: string | null
           id?: string
           neighborhood?: string
           payment_method?: string
