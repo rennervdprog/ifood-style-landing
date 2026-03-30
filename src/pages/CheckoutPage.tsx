@@ -59,6 +59,7 @@ const CheckoutPage = () => {
 
       for (const [storeId, storeItems] of Object.entries(storeGroups)) {
         const storeSubtotal = storeItems.reduce((s, i) => s + i.price * i.quantity, 0);
+        const appFee = Math.round(storeSubtotal * 0.12 * 100) / 100;
         const storeTotalPrice = storeSubtotal + neighborhoodFee;
 
         // Insert order
@@ -70,10 +71,11 @@ const CheckoutPage = () => {
             subtotal: storeSubtotal,
             delivery_fee: neighborhoodFee,
             total_price: storeTotalPrice,
+            app_fee: appFee,
             payment_method: paymentMethod,
             neighborhood: neighborhood,
             address_details: addressDetails.trim(),
-          })
+          } as any)
           .select("id")
           .single();
 
