@@ -64,3 +64,19 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@keyframes pulse-border {
+  0%, 100% { border-color: rgba(250, 204, 21, 0.5); }
+  50% { border-color: rgba(250, 204, 21, 1); }
+}
+.animate-pulse-border {
+  animation: pulse-border 2s ease-in-out infinite;
+}

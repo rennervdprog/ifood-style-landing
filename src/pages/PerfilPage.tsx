@@ -1,12 +1,27 @@
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/BottomNav";
-import { User, LogOut } from "lucide-react";
+import { User, LogOut, Store } from "lucide-react";
 import { toast } from "sonner";
 
 const PerfilPage = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+
+  const { data: myStore } = useQuery({
+    queryKey: ["my-store", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("stores")
+        .select("id, name")
+        .eq("owner_id", user!.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
 
   const handleSignOut = async () => {
     await signOut();
@@ -51,6 +66,16 @@ const PerfilPage = () => {
             <p className="text-xs text-muted-foreground">Cliente em Itatinga</p>
           </div>
         </div>
+
+        {myStore && (
+          <button
+            onClick={() => navigate("/admin")}
+            className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-border bg-secondary text-secondary-foreground font-bold"
+          >
+            <Store className="h-4 w-4" />
+            Painel da Loja ({myStore.name})
+          </button>
+        )}
 
         <button
           onClick={handleSignOut}

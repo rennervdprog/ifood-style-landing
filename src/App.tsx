@@ -11,6 +11,7 @@ import CheckoutPage from "./pages/CheckoutPage";
 import PedidosPage from "./pages/PedidosPage";
 import PerfilPage from "./pages/PerfilPage";
 import AuthPage from "./pages/AuthPage";
+import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
               <Route path="/pedidos" element={<PedidosPage />} />
               <Route path="/perfil" element={<PerfilPage />} />
               <Route path="/auth" element={<AuthPage />} />
+              <Route path="/admin" element={<AdminDashboard />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
