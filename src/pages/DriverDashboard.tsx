@@ -135,23 +135,13 @@ const DriverDashboard = () => {
     }
   };
 
-  // Check approval
-  const { data: profile } = useQuery({
-    queryKey: ["my-profile-approval", user?.id],
-    queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("is_approved, role").eq("user_id", user!.id).maybeSingle();
-      return data;
-    },
-    enabled: !!user,
-  });
-
   if (authLoading) return null;
   if (!user) {
     navigate("/auth", { replace: true });
     return null;
   }
 
-  if (profile && !(profile as any).is_approved) {
+  if (driverProfile && !(driverProfile as any).is_approved) {
     return (
       <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center text-center px-6">
         <div className="text-5xl mb-4">🛡️</div>
