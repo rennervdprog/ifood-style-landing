@@ -131,6 +131,37 @@ const PerfilPage = () => {
     }
   };
 
+  const handleSavePix = async () => {
+    if (!pixKey.trim() || !pixType) {
+      toast.error("Preencha o tipo e a chave PIX.");
+      return;
+    }
+    setSavingPix(true);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .upsert({
+          user_id: user!.id,
+          pix_key: pixKey.trim(),
+          pix_type: pixType,
+        } as any, { onConflict: "user_id" });
+      if (error) throw error;
+      toast.success("Chave PIX salva!");
+      queryClient.invalidateQueries({ queryKey: ["my-profile", user?.id] });
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao salvar.");
+    } finally {
+      setSavingPix(false);
+    }
+  };
+
+  const copyPixKey = () => {
+    if (pixKey) {
+      navigator.clipboard.writeText(pixKey);
+      toast.success("Chave PIX copiada!");
+    }
+  };
+
   if (!user) {
     return (
       <div className="min-h-screen bg-background pb-20">
