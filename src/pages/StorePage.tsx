@@ -2,17 +2,18 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/contexts/CartContext";
-import { ArrowLeft, Star, Plus } from "lucide-react";
+import { ArrowLeft, Star, Plus, Clock } from "lucide-react";
 import { toast } from "sonner";
 import CartFAB from "@/components/CartFAB";
 import BottomNav from "@/components/BottomNav";
+import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 
 const StorePage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { addItem } = useCart();
 
-  const { data: store } = useQuery({
+  const { data: store, isLoading: storeLoading } = useQuery({
     queryKey: ["store", id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -27,8 +28,29 @@ const StorePage = () => {
     enabled: !!id,
   });
 
+  const { data: storeHours } = useQuery({
+    queryKey: ["store-hours", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("opening_hours")
+        .select("*")
+        .eq("store_id", id!);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!id,
+  });
+
+  const storeStatus = store
+    ? getStoreOpenStatus(
+        (storeHours as any as OpeningHour[]) || [],
+        (store as any).force_closed || false,
+        store.is_open
+      )
+    : { isOpen: false, reason: "" };
+
   // Redirect if store not found or not active
-  if (!store && id) {
+  if (!storeLoading && !store && id) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center text-center px-6">
         <span className="text-5xl mb-4">🔒</span>
@@ -57,6 +79,10 @@ const StorePage = () => {
   });
 
   const handleAdd = (product: NonNullable<typeof products>[0]) => {
+    if (!storeStatus.isOpen) {
+      toast.error(`Esta loja está fechada. ${storeStatus.reason}`);
+      return;
+    }
     addItem({
       id: product.id,
       store_id: product.store_id,
@@ -73,9 +99,9 @@ const StorePage = () => {
       {/* Store header */}
       <div className="relative h-48 bg-muted">
         {store?.image_url ? (
-          <img src={store.image_url} alt={store.name} className="w-full h-full object-cover" />
+          <img src={store.image_url} alt={store?.name} className={`w-full h-full object-cover ${!storeStatus.isOpen ? "grayscale" : ""}`} />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center">
+          <div className={`w-full h-full bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center ${!storeStatus.isOpen ? "grayscale" : ""}`}>
             <span className="text-5xl">🍽️</span>
           </div>
         )}
@@ -101,6 +127,17 @@ const StorePage = () => {
         </div>
       </div>
 
+      {/* Closed banner */}
+      {!storeStatus.isOpen && (
+        <div className="mx-4 mt-4 bg-destructive/10 border border-destructive/30 rounded-xl p-3 flex items-center gap-3">
+          <Clock className="h-5 w-5 text-destructive flex-shrink-0" />
+          <div>
+            <p className="text-sm font-bold text-destructive">Loja fechada</p>
+            <p className="text-xs text-muted-foreground">{storeStatus.reason}</p>
+          </div>
+        </div>
+      )}
+
       {/* Products */}
       <div className="px-4 py-4">
         <h2 className="text-lg font-bold text-foreground mb-4">Cardápio</h2>
@@ -123,7 +160,7 @@ const StorePage = () => {
             {products?.map((product) => (
               <div
                 key={product.id}
-                className="flex gap-3 bg-card rounded-2xl p-3 border border-border"
+                className={`flex gap-3 bg-card rounded-2xl p-3 border border-border ${!storeStatus.isOpen ? "opacity-60" : ""}`}
               >
                 <div className="flex-1 min-w-0">
                   <h3 className="font-bold text-sm text-foreground">{product.name}</h3>
@@ -151,7 +188,12 @@ const StorePage = () => {
                   )}
                   <button
                     onClick={() => handleAdd(product)}
-                    className="absolute -bottom-2 -right-2 w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center shadow-md active:scale-90 transition-transform"
+                    disabled={!storeStatus.isOpen}
+                    className={`absolute -bottom-2 -right-2 w-10 h-10 rounded-full flex items-center justify-center shadow-md transition-transform ${
+                      storeStatus.isOpen
+                        ? "bg-primary text-primary-foreground active:scale-90"
+                        : "bg-muted text-muted-foreground cursor-not-allowed"
+                    }`}
                   >
                     <Plus className="h-5 w-5" strokeWidth={3} />
                   </button>

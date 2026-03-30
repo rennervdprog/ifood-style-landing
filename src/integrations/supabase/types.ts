@@ -161,6 +161,41 @@ export type Database = {
         }
         Relationships: []
       }
+      opening_hours: {
+        Row: {
+          close_time: string
+          day_of_week: number
+          id: string
+          is_closed_all_day: boolean
+          open_time: string
+          store_id: string
+        }
+        Insert: {
+          close_time?: string
+          day_of_week: number
+          id?: string
+          is_closed_all_day?: boolean
+          open_time?: string
+          store_id: string
+        }
+        Update: {
+          close_time?: string
+          day_of_week?: number
+          id?: string
+          is_closed_all_day?: boolean
+          open_time?: string
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opening_hours_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           addons: Json | null
@@ -416,6 +451,7 @@ export type Database = {
         Row: {
           category: Database["public"]["Enums"]["store_category"]
           created_at: string
+          force_closed: boolean
           id: string
           image_url: string | null
           is_open: boolean
@@ -427,6 +463,7 @@ export type Database = {
         Insert: {
           category: Database["public"]["Enums"]["store_category"]
           created_at?: string
+          force_closed?: boolean
           id?: string
           image_url?: string | null
           is_open?: boolean
@@ -438,6 +475,7 @@ export type Database = {
         Update: {
           category?: Database["public"]["Enums"]["store_category"]
           created_at?: string
+          force_closed?: boolean
           id?: string
           image_url?: string | null
           is_open?: boolean
