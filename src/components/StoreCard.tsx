@@ -34,15 +34,22 @@ const StoreCard = ({ id, name, category, image_url, is_open, rating }: StoreCard
             <span className="text-3xl">🍽️</span>
           </div>
         )}
-        <div
-          className={`absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-bold ${
-            is_open
-              ? "bg-accent text-accent-foreground"
-              : "bg-muted text-muted-foreground"
-          }`}
-        >
-          {is_open ? "Aberto" : "Fechado"}
-        </div>
+        {(() => {
+          const isPharmacy = category === "farmacias";
+          return (
+            <div
+              className={`absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                is_open
+                  ? isPharmacy
+                    ? "bg-teal-500 text-white"
+                    : "bg-accent text-accent-foreground"
+                  : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {is_open ? "Aberto" : "Fechado"}
+            </div>
+          );
+        })()}
       </div>
       <div className="p-3">
         <h3 className={`font-bold text-sm ${!is_open ? "text-muted-foreground" : "text-foreground"}`}>
