@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/BottomNav";
-import { User, LogOut, Store, Shield } from "lucide-react";
+import { User, LogOut, Store, Shield, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 const PerfilPage = () => {
@@ -84,6 +84,16 @@ const PerfilPage = () => {
           >
             <Shield className="h-4 w-4" />
             Painel Administrativo
+          </button>
+        )}
+
+        {!myStore && (
+          <button
+            onClick={() => navigate("/parceiro")}
+            className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-primary/30 bg-primary/5 text-primary font-bold"
+          >
+            <UserPlus className="h-4 w-4" />
+            Seja um Parceiro
           </button>
         )}
 

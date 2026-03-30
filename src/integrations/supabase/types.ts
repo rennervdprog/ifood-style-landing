@@ -192,6 +192,39 @@ export type Database = {
           },
         ]
       }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          document: string | null
+          full_name: string
+          id: string
+          role: Database["public"]["Enums"]["partner_role"]
+          user_id: string
+          vehicle: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          document?: string | null
+          full_name?: string
+          id?: string
+          role?: Database["public"]["Enums"]["partner_role"]
+          user_id: string
+          vehicle?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          document?: string | null
+          full_name?: string
+          id?: string
+          role?: Database["public"]["Enums"]["partner_role"]
+          user_id?: string
+          vehicle?: string | null
+        }
+        Relationships: []
+      }
       stores: {
         Row: {
           category: Database["public"]["Enums"]["store_category"]
@@ -237,6 +270,25 @@ export type Database = {
       }
       is_driver: { Args: { _user_id: string }; Returns: boolean }
       is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
+      register_as_lojista: {
+        Args: {
+          _avatar_url?: string
+          _document: string
+          _full_name: string
+          _store_category: Database["public"]["Enums"]["store_category"]
+          _store_name: string
+        }
+        Returns: string
+      }
+      register_as_motoboy: {
+        Args: {
+          _avatar_url?: string
+          _document: string
+          _full_name: string
+          _vehicle: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       order_status:
@@ -247,6 +299,7 @@ export type Database = {
         | "entregue"
         | "saiu_entrega"
         | "finalizado"
+      partner_role: "cliente" | "lojista" | "motoboy"
       store_category:
         | "lanches"
         | "pizzas"
@@ -392,6 +445,7 @@ export const Constants = {
         "saiu_entrega",
         "finalizado",
       ],
+      partner_role: ["cliente", "lojista", "motoboy"],
       store_category: [
         "lanches",
         "pizzas",
