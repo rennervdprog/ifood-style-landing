@@ -23,6 +23,8 @@ const CheckoutPage = () => {
   const [paymentMethod, setPaymentMethod] = useState("");
   const [loading, setLoading] = useState(false);
   const [showAddressModal, setShowAddressModal] = useState(false);
+  const [needsChange, setNeedsChange] = useState(false);
+  const [changeFor, setChangeFor] = useState("");
 
   // Check if user has address
   const { data: userProfile, refetch: refetchProfile } = useQuery({
@@ -66,6 +68,13 @@ const CheckoutPage = () => {
       toast.error("Selecione a forma de pagamento.");
       return;
     }
+    if (paymentMethod === "dinheiro" && needsChange) {
+      const changeValue = parseFloat(changeFor);
+      if (!changeValue || changeValue < total) {
+        toast.error("O valor do troco deve ser maior que o total do pedido.");
+        return;
+      }
+    }
 
     setLoading(true);
     try {
@@ -82,6 +91,7 @@ const CheckoutPage = () => {
         const storeTotalPrice = storeSubtotal + neighborhoodFee;
 
         // Insert order
+        const changeValue = paymentMethod === "dinheiro" && needsChange ? parseFloat(changeFor) : 0;
         const { data: order, error: orderError } = await supabase
           .from("orders")
           .insert({
@@ -94,6 +104,8 @@ const CheckoutPage = () => {
             payment_method: paymentMethod,
             neighborhood: neighborhood,
             address_details: addressDetails.trim(),
+            needs_change: paymentMethod === "dinheiro" && needsChange,
+            change_for: changeValue,
           } as any)
           .select("id")
           .single();
@@ -170,7 +182,13 @@ const CheckoutPage = () => {
             {paymentMethods.map((pm) => (
               <button
                 key={pm.id}
-                onClick={() => setPaymentMethod(pm.id)}
+                onClick={() => {
+                  setPaymentMethod(pm.id);
+                  if (pm.id !== "dinheiro") {
+                    setNeedsChange(false);
+                    setChangeFor("");
+                  }
+                }}
                 className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all ${
                   paymentMethod === pm.id
                     ? "border-primary bg-primary/5 ring-1 ring-primary"
@@ -192,6 +210,42 @@ const CheckoutPage = () => {
               </button>
             ))}
           </div>
+
+          {/* Cash change section */}
+          {paymentMethod === "dinheiro" && (
+            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3 mt-3 space-y-3">
+              <p className="text-xs text-yellow-600 font-bold">
+                💰 Prepare o valor exato ou informe o troco para agilizar.
+              </p>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={needsChange}
+                  onChange={(e) => setNeedsChange(e.target.checked)}
+                  className="rounded border-border"
+                />
+                <span className="text-sm text-foreground">Preciso de troco</span>
+              </label>
+              {needsChange && (
+                <div>
+                  <label className="text-xs text-muted-foreground">Troco para quanto?</label>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="Ex: 50, 100"
+                    value={changeFor}
+                    onChange={(e) => setChangeFor(e.target.value.replace(/[^0-9.,]/g, ""))}
+                    className="w-full mt-1 px-3 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                  {changeFor && parseFloat(changeFor) >= total && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Troco: <span className="font-bold text-foreground">R$ {(parseFloat(changeFor) - total).toFixed(2)}</span>
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Order summary */}

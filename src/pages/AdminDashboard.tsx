@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
   Wifi, WifiOff, Pause, Play, Clock, ChefHat, Truck, CheckCircle2,
-  MapPin, CreditCard, Package, ArrowLeft, Shield
+  MapPin, CreditCard, Package, ArrowLeft, Shield, DollarSign, Banknote
 } from "lucide-react";
 
 type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_entrega" | "em_transito" | "entregue" | "finalizado";
@@ -307,6 +307,21 @@ const AdminDashboard = () => {
                   <MapPin className="h-3.5 w-3.5" />
                   <span>{order.neighborhood} — {order.address_details}</span>
                 </div>
+
+                {/* Cash payment alert for lojista */}
+                {order.payment_method === "dinheiro" && (
+                  <div className="bg-yellow-500/20 border border-yellow-500/40 rounded-xl p-2.5 mb-3 flex items-start gap-2">
+                    <Banknote className="h-4 w-4 text-yellow-400 mt-0.5 flex-shrink-0" />
+                    <div className="text-xs">
+                      <p className="font-bold text-yellow-400">Pagamento em Dinheiro</p>
+                      {(order as any).needs_change && Number((order as any).change_for) > 0 && (
+                        <p className="text-gray-300 mt-0.5">
+                          Preparar troco: <span className="font-bold text-yellow-400">R$ {(Number((order as any).change_for) - Number(order.total_price)).toFixed(2)}</span>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Total + Action */}
                 <div className="flex items-center justify-between pt-3 border-t border-gray-700">

@@ -71,6 +71,24 @@ const DriverDashboard = () => {
     refetchInterval: 15000,
   });
 
+  // Pending return (cash orders delivered but not confirmed return)
+  const { data: pendingReturn } = useQuery({
+    queryKey: ["driver-pending-return", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*, stores(name)")
+        .eq("driver_id", user!.id)
+        .eq("status", "entregue" as any)
+        .eq("payment_method", "dinheiro")
+        .eq("return_to_store_confirmed", false)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+    refetchInterval: 15000,
+  });
   useEffect(() => {
     if (!user || !isOnline) return;
     const channel = supabase
@@ -142,6 +160,16 @@ const DriverDashboard = () => {
       setVerifying(false);
       queryClient.invalidateQueries({ queryKey: ["driver-my-delivery", user!.id] });
       queryClient.invalidateQueries({ queryKey: ["driver-available-orders"] });
+    }
+  };
+
+  const confirmStoreReturn = async (orderId: string) => {
+    const { error } = await supabase.rpc("driver_confirm_store_return", { _order_id: orderId } as any);
+    if (error) {
+      toast.error(error.message || "Erro ao confirmar retorno.");
+    } else {
+      toast.success("Acerto com a loja confirmado! ✅");
+      queryClient.invalidateQueries({ queryKey: ["driver-pending-return", user!.id] });
     }
   };
 
@@ -234,6 +262,19 @@ const DriverDashboard = () => {
                 </div>
               </div>
 
+              {/* Cash payment alert */}
+              {myDelivery.payment_method === "dinheiro" && (
+                <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-xl p-3 mb-3">
+                  <p className="text-sm font-bold text-yellow-400 mb-2">💰 PAGAMENTO EM DINHEIRO</p>
+                  <div className="text-xs text-gray-300 space-y-1">
+                    {(myDelivery as any).needs_change && Number((myDelivery as any).change_for) > 0 && (
+                      <p>1️⃣ Pegar <span className="font-bold text-yellow-400">R$ {(Number((myDelivery as any).change_for) - Number(myDelivery.total_price)).toFixed(2)}</span> de troco com o lojista.</p>
+                    )}
+                    <p>{(myDelivery as any).needs_change ? "2️⃣" : "1️⃣"} Receber <span className="font-bold text-green-400">R$ {Number(myDelivery.total_price).toFixed(2)}</span> do cliente.</p>
+                    <p>{(myDelivery as any).needs_change ? "3️⃣" : "2️⃣"} Retornar à loja para entregar o valor total.</p>
+                  </div>
+                </div>
+              )}
               <div className="bg-gray-900/50 rounded-xl p-3 mb-3">
                 <p className="text-xs text-gray-500 mb-1">Itens do pedido:</p>
                 {(myDelivery as any).order_items?.map((item: any) => (
@@ -279,6 +320,25 @@ const DriverDashboard = () => {
               >
                 <CheckCircle2 className="h-5 w-5" />
                 {verifying ? "Verificando..." : "CONFIRMAR ENTREGA"}
+              </button>
+            </div>
+          )}
+
+          {/* Pending return to store card */}
+          {!myDelivery && pendingReturn && (
+            <div className="bg-yellow-500/10 border-2 border-yellow-500 rounded-2xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <DollarSign className="h-5 w-5 text-yellow-400" />
+                <h2 className="font-bold text-yellow-400 text-sm">AGUARDANDO RETORNO À LOJA</h2>
+              </div>
+              <p className="text-xs text-gray-400 mb-3">
+                Entregue o valor de <span className="font-bold text-yellow-400">R$ {Number(pendingReturn.total_price).toFixed(2)}</span> na loja <span className="font-bold text-gray-200">{(pendingReturn as any).stores?.name}</span>.
+              </p>
+              <button
+                onClick={() => confirmStoreReturn(pendingReturn.id)}
+                className="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 rounded-2xl text-sm active:scale-95 transition-transform"
+              >
+                ✅ Confirmei acerto com a loja
               </button>
             </div>
           )}
