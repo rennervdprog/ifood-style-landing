@@ -12,6 +12,7 @@ import PedidosPage from "./pages/PedidosPage";
 import PerfilPage from "./pages/PerfilPage";
 import AuthPage from "./pages/AuthPage";
 import AdminDashboard from "./pages/AdminDashboard";
+import DriverDashboard from "./pages/DriverDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
               <Route path="/perfil" element={<PerfilPage />} />
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/entregador" element={<DriverDashboard />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

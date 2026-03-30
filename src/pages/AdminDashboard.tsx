@@ -9,13 +9,16 @@ import {
   MapPin, CreditCard, Package, ArrowLeft
 } from "lucide-react";
 
-type OrderStatus = "pendente" | "preparando" | "saiu_entrega" | "finalizado";
+type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_entrega" | "em_transito" | "entregue" | "finalizado";
 
 const statusColumns: { status: OrderStatus; label: string; icon: React.ElementType; color: string; borderColor: string }[] = [
   { status: "pendente", label: "Novos", icon: Clock, color: "text-yellow-400", borderColor: "border-yellow-400" },
   { status: "preparando", label: "Preparando", icon: ChefHat, color: "text-orange-400", borderColor: "border-orange-400" },
+  { status: "pronto_para_entrega", label: "Pronto", icon: Package, color: "text-purple-400", borderColor: "border-purple-400" },
   { status: "saiu_entrega", label: "Saiu p/ Entrega", icon: Truck, color: "text-blue-400", borderColor: "border-blue-400" },
-  { status: "finalizado", label: "Finalizados", icon: CheckCircle2, color: "text-green-400", borderColor: "border-green-400" },
+  { status: "em_transito", label: "Em Trânsito", icon: Truck, color: "text-cyan-400", borderColor: "border-cyan-400" },
+  { status: "entregue", label: "Entregue", icon: CheckCircle2, color: "text-green-400", borderColor: "border-green-400" },
+  { status: "finalizado", label: "Finalizados", icon: CheckCircle2, color: "text-emerald-400", borderColor: "border-emerald-400" },
 ];
 
 const paymentLabels: Record<string, string> = {
@@ -141,7 +144,8 @@ const AdminDashboard = () => {
   const getNextAction = (status: OrderStatus): { label: string; next: OrderStatus; color: string } | null => {
     switch (status) {
       case "pendente": return { label: "Aceitar", next: "preparando", color: "bg-green-500 hover:bg-green-600" };
-      case "preparando": return { label: "Saiu p/ Entrega", next: "saiu_entrega", color: "bg-blue-500 hover:bg-blue-600" };
+      case "preparando": return { label: "Pronto p/ Entrega", next: "pronto_para_entrega" as OrderStatus, color: "bg-purple-500 hover:bg-purple-600" };
+      case "pronto_para_entrega": return { label: "Saiu p/ Entrega", next: "saiu_entrega", color: "bg-blue-500 hover:bg-blue-600" };
       case "saiu_entrega": return { label: "Finalizar", next: "finalizado", color: "bg-emerald-500 hover:bg-emerald-600" };
       default: return null;
     }

@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      drivers: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       neighborhood_fees: {
         Row: {
           fee: number
@@ -77,6 +101,7 @@ export type Database = {
           client_id: string
           created_at: string
           delivery_fee: number
+          driver_id: string | null
           id: string
           neighborhood: string
           payment_method: string
@@ -90,6 +115,7 @@ export type Database = {
           client_id: string
           created_at?: string
           delivery_fee?: number
+          driver_id?: string | null
           id?: string
           neighborhood: string
           payment_method: string
@@ -103,6 +129,7 @@ export type Database = {
           client_id?: string
           created_at?: string
           delivery_fee?: number
+          driver_id?: string | null
           id?: string
           neighborhood?: string
           payment_method?: string
@@ -200,10 +227,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_driver: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      order_status: "pendente" | "preparando" | "saiu_entrega" | "finalizado"
+      order_status:
+        | "pendente"
+        | "preparando"
+        | "pronto_para_entrega"
+        | "em_transito"
+        | "entregue"
+        | "saiu_entrega"
+        | "finalizado"
       store_category:
         | "lanches"
         | "pizzas"
@@ -340,7 +374,15 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      order_status: ["pendente", "preparando", "saiu_entrega", "finalizado"],
+      order_status: [
+        "pendente",
+        "preparando",
+        "pronto_para_entrega",
+        "em_transito",
+        "entregue",
+        "saiu_entrega",
+        "finalizado",
+      ],
       store_category: [
         "lanches",
         "pizzas",
