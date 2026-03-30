@@ -192,6 +192,39 @@ export type Database = {
           },
         ]
       }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          document: string | null
+          full_name: string
+          id: string
+          role: Database["public"]["Enums"]["partner_role"]
+          user_id: string
+          vehicle: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          document?: string | null
+          full_name?: string
+          id?: string
+          role?: Database["public"]["Enums"]["partner_role"]
+          user_id: string
+          vehicle?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          document?: string | null
+          full_name?: string
+          id?: string
+          role?: Database["public"]["Enums"]["partner_role"]
+          user_id?: string
+          vehicle?: string | null
+        }
+        Relationships: []
+      }
       stores: {
         Row: {
           category: Database["public"]["Enums"]["store_category"]
@@ -247,6 +280,7 @@ export type Database = {
         | "entregue"
         | "saiu_entrega"
         | "finalizado"
+      partner_role: "cliente" | "lojista" | "motoboy"
       store_category:
         | "lanches"
         | "pizzas"
@@ -392,6 +426,7 @@ export const Constants = {
         "saiu_entrega",
         "finalizado",
       ],
+      partner_role: ["cliente", "lojista", "motoboy"],
       store_category: [
         "lanches",
         "pizzas",
