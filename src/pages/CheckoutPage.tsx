@@ -54,6 +54,10 @@ const CheckoutPage = () => {
   }
 
   const handleConfirm = async () => {
+    if (!hasAddress) {
+      setShowAddressModal(true);
+      return;
+    }
     if (!addressDetails.trim()) {
       toast.error("Informe seu endereço e ponto de referência.");
       return;
