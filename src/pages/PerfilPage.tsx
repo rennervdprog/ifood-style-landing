@@ -10,6 +10,19 @@ const PerfilPage = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
 
+  const { data: myStore } = useQuery({
+    queryKey: ["my-store", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("stores")
+        .select("id, name")
+        .eq("owner_id", user!.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
+
   const handleSignOut = async () => {
     await signOut();
     toast.success("Você saiu da conta.");
