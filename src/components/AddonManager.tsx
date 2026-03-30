@@ -1,0 +1,413 @@
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { Plus, Trash2, Edit2, Save, X, ChevronDown, ChevronUp, Package } from "lucide-react";
+
+interface AddonManagerProps {
+  storeId: string;
+}
+
+const AddonManager = ({ storeId }: AddonManagerProps) => {
+  const queryClient = useQueryClient();
+  const [showGroupForm, setShowGroupForm] = useState(false);
+  const [groupForm, setGroupForm] = useState({ name: "", min_select: "0", max_select: "1" });
+  const [editingGroup, setEditingGroup] = useState<string | null>(null);
+  const [editGroupForm, setEditGroupForm] = useState({ name: "", min_select: "0", max_select: "1" });
+  const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
+  const [itemForm, setItemForm] = useState({ name: "", price: "0" });
+  const [showItemForm, setShowItemForm] = useState<string | null>(null);
+  const [editingItem, setEditingItem] = useState<string | null>(null);
+  const [editItemForm, setEditItemForm] = useState({ name: "", price: "0" });
+
+  // Fetch store-level addon groups (product_id IS NULL)
+  const { data: groups, isLoading } = useQuery({
+    queryKey: ["store-addon-groups", storeId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("addon_groups")
+        .select("*, addon_items(*)")
+        .eq("store_id", storeId)
+        .is("product_id", null)
+        .order("sort_order");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Count linked products per group
+  const groupIds = groups?.map(g => g.id) || [];
+  const { data: links } = useQuery({
+    queryKey: ["addon-group-links", groupIds],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("product_addon_groups")
+        .select("addon_group_id, product_id, products(name)")
+        .in("addon_group_id", groupIds);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: groupIds.length > 0,
+  });
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["store-addon-groups", storeId] });
+    queryClient.invalidateQueries({ queryKey: ["addon-group-links"] });
+  };
+
+  const addGroup = async () => {
+    if (!groupForm.name.trim()) return;
+    const { error } = await supabase.from("addon_groups").insert({
+      store_id: storeId,
+      product_id: null,
+      name: groupForm.name.trim(),
+      min_select: parseInt(groupForm.min_select) || 0,
+      max_select: parseInt(groupForm.max_select) || 1,
+      sort_order: (groups?.length || 0) + 1,
+    } as any);
+    if (error) { toast.error("Erro ao criar grupo"); return; }
+    toast.success("Grupo de adicionais criado!");
+    setGroupForm({ name: "", min_select: "0", max_select: "1" });
+    setShowGroupForm(false);
+    invalidate();
+  };
+
+  const updateGroup = async (id: string) => {
+    const { error } = await supabase.from("addon_groups").update({
+      name: editGroupForm.name.trim(),
+      min_select: parseInt(editGroupForm.min_select) || 0,
+      max_select: parseInt(editGroupForm.max_select) || 1,
+    }).eq("id", id);
+    if (error) { toast.error("Erro ao atualizar grupo"); return; }
+    toast.success("Grupo atualizado! Alterações refletem em todos os produtos vinculados.");
+    setEditingGroup(null);
+    invalidate();
+  };
+
+  const deleteGroup = async (id: string) => {
+    const { error } = await supabase.from("addon_groups").delete().eq("id", id);
+    if (error) { toast.error("Erro ao excluir grupo"); return; }
+    toast.success("Grupo excluído!");
+    invalidate();
+  };
+
+  const addItem = async (groupId: string) => {
+    if (!itemForm.name.trim()) return;
+    const { error } = await supabase.from("addon_items").insert({
+      group_id: groupId,
+      name: itemForm.name.trim(),
+      price: parseFloat(itemForm.price) || 0,
+    } as any);
+    if (error) { toast.error("Erro ao adicionar item"); return; }
+    toast.success("Adicional criado!");
+    setItemForm({ name: "", price: "0" });
+    setShowItemForm(null);
+    invalidate();
+  };
+
+  const updateItem = async (id: string) => {
+    const { error } = await supabase.from("addon_items").update({
+      name: editItemForm.name.trim(),
+      price: parseFloat(editItemForm.price) || 0,
+    }).eq("id", id);
+    if (error) { toast.error("Erro ao atualizar"); return; }
+    toast.success("Adicional atualizado!");
+    setEditingItem(null);
+    invalidate();
+  };
+
+  const deleteItem = async (id: string) => {
+    const { error } = await supabase.from("addon_items").delete().eq("id", id);
+    if (error) { toast.error("Erro ao excluir"); return; }
+    toast.success("Adicional excluído!");
+    invalidate();
+  };
+
+  const getLinkedProducts = (groupId: string) =>
+    (links as any[])?.filter((l: any) => l.addon_group_id === groupId) || [];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-sm font-bold text-gray-300 uppercase tracking-wider">Gestor de Adicionais</h2>
+          <p className="text-xs text-gray-500 mt-1">Crie grupos aqui e vincule aos produtos no Cardápio</p>
+        </div>
+        <button
+          onClick={() => setShowGroupForm(true)}
+          className="flex items-center gap-1.5 bg-primary/20 text-primary px-3 py-2 rounded-xl text-xs font-bold"
+        >
+          <Plus className="h-3.5 w-3.5" /> Novo Grupo
+        </button>
+      </div>
+
+      {/* Add Group Form */}
+      {showGroupForm && (
+        <div className="bg-[#1F2937] rounded-xl p-4 space-y-3">
+          <input
+            type="text"
+            placeholder="Nome do grupo (ex: Extras de Hambúrguer)"
+            value={groupForm.name}
+            onChange={(e) => setGroupForm({ ...groupForm, name: e.target.value })}
+            className="w-full bg-gray-800 text-white px-3 py-2.5 rounded-lg text-sm border border-gray-600 focus:border-primary focus:outline-none"
+            autoFocus
+          />
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <label className="text-xs text-gray-500 mb-1 block">Mínimo de seleções</label>
+              <input
+                type="number"
+                value={groupForm.min_select}
+                onChange={(e) => setGroupForm({ ...groupForm, min_select: e.target.value })}
+                className="w-full bg-gray-800 text-white px-3 py-2 rounded-lg text-sm border border-gray-600 focus:outline-none"
+                min="0"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="text-xs text-gray-500 mb-1 block">Máximo de seleções</label>
+              <input
+                type="number"
+                value={groupForm.max_select}
+                onChange={(e) => setGroupForm({ ...groupForm, max_select: e.target.value })}
+                className="w-full bg-gray-800 text-white px-3 py-2 rounded-lg text-sm border border-gray-600 focus:outline-none"
+                min="1"
+              />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={addGroup} className="flex-1 bg-green-500 text-white py-2.5 rounded-xl text-sm font-bold">
+              Criar Grupo
+            </button>
+            <button onClick={() => { setShowGroupForm(false); setGroupForm({ name: "", min_select: "0", max_select: "1" }); }} className="px-4 text-gray-400 text-sm">
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Groups List */}
+      {isLoading ? (
+        <div className="space-y-3">
+          {[1, 2].map(i => (
+            <div key={i} className="bg-[#1F2937] rounded-2xl p-4 animate-pulse space-y-2">
+              <div className="h-4 bg-gray-700 rounded w-1/2" />
+              <div className="h-3 bg-gray-700 rounded w-1/4" />
+            </div>
+          ))}
+        </div>
+      ) : groups && groups.length > 0 ? (
+        groups.map((group: any) => {
+          const linkedProducts = getLinkedProducts(group.id);
+          const isExpanded = expandedGroup === group.id;
+
+          return (
+            <div key={group.id} className="bg-[#1F2937] rounded-2xl overflow-hidden">
+              {/* Group Header */}
+              <div
+                className="flex items-center justify-between p-4 cursor-pointer"
+                onClick={() => setExpandedGroup(isExpanded ? null : group.id)}
+              >
+                <div className="flex-1">
+                  {editingGroup === group.id ? (
+                    <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="text"
+                        value={editGroupForm.name}
+                        onChange={(e) => setEditGroupForm({ ...editGroupForm, name: e.target.value })}
+                        className="w-full bg-gray-800 text-white px-3 py-2 rounded-lg text-sm border border-primary focus:outline-none"
+                        autoFocus
+                      />
+                      <div className="flex gap-2">
+                        <div className="flex-1">
+                          <label className="text-[10px] text-gray-500">Mín</label>
+                          <input
+                            type="number"
+                            value={editGroupForm.min_select}
+                            onChange={(e) => setEditGroupForm({ ...editGroupForm, min_select: e.target.value })}
+                            className="w-full bg-gray-800 text-white px-2 py-1 rounded text-xs border border-gray-600"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <label className="text-[10px] text-gray-500">Máx</label>
+                          <input
+                            type="number"
+                            value={editGroupForm.max_select}
+                            onChange={(e) => setEditGroupForm({ ...editGroupForm, max_select: e.target.value })}
+                            className="w-full bg-gray-800 text-white px-2 py-1 rounded text-xs border border-gray-600"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-1">
+                        <button onClick={() => updateGroup(group.id)} className="bg-green-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold">
+                          <Save className="h-3 w-3" />
+                        </button>
+                        <button onClick={() => setEditingGroup(null)} className="text-gray-400 px-2 text-xs">Cancelar</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <h3 className="font-bold text-sm text-white">{group.name}</h3>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs text-gray-500">
+                          {group.min_select > 0 ? `Obrigatório (mín ${group.min_select})` : "Opcional"} • máx {group.max_select}
+                        </span>
+                        <span className="text-xs text-primary font-bold">
+                          {(group.addon_items as any[])?.length || 0} itens
+                        </span>
+                        {linkedProducts.length > 0 && (
+                          <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full font-bold">
+                            🔗 {linkedProducts.length} produto{linkedProducts.length > 1 ? "s" : ""}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {editingGroup !== group.id && (
+                  <div className="flex items-center gap-2 ml-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingGroup(group.id);
+                        setEditGroupForm({
+                          name: group.name,
+                          min_select: String(group.min_select),
+                          max_select: String(group.max_select),
+                        });
+                      }}
+                      className="text-gray-400 hover:text-white p-1.5"
+                    >
+                      <Edit2 className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); deleteGroup(group.id); }}
+                      className="text-red-400 hover:text-red-300 p-1.5"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                    {isExpanded ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+                  </div>
+                )}
+              </div>
+
+              {/* Expanded Content */}
+              {isExpanded && (
+                <div className="px-4 pb-4 space-y-2">
+                  {/* Items */}
+                  {(group.addon_items as any[])?.sort((a: any, b: any) => a.sort_order - b.sort_order).map((item: any) => (
+                    <div key={item.id} className="flex items-center justify-between bg-gray-800/50 rounded-lg px-3 py-2.5">
+                      {editingItem === item.id ? (
+                        <div className="flex gap-2 flex-1" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="text"
+                            value={editItemForm.name}
+                            onChange={(e) => setEditItemForm({ ...editItemForm, name: e.target.value })}
+                            className="flex-1 bg-gray-700 text-white px-2 py-1 rounded text-sm border border-gray-600 focus:outline-none"
+                            autoFocus
+                          />
+                          <input
+                            type="number"
+                            value={editItemForm.price}
+                            onChange={(e) => setEditItemForm({ ...editItemForm, price: e.target.value })}
+                            className="w-20 bg-gray-700 text-white px-2 py-1 rounded text-sm border border-gray-600 focus:outline-none"
+                            step="0.50"
+                          />
+                          <button onClick={() => updateItem(item.id)} className="bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">
+                            <Save className="h-3 w-3" />
+                          </button>
+                          <button onClick={() => setEditingItem(null)} className="text-gray-400 px-1">
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <span className="text-sm text-gray-200">{item.name}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-green-400 font-bold">
+                              {item.price > 0 ? `+R$ ${Number(item.price).toFixed(2)}` : "Grátis"}
+                            </span>
+                            <button
+                              onClick={() => {
+                                setEditingItem(item.id);
+                                setEditItemForm({ name: item.name, price: String(item.price) });
+                              }}
+                              className="text-gray-400 hover:text-white p-1"
+                            >
+                              <Edit2 className="h-3 w-3" />
+                            </button>
+                            <button onClick={() => deleteItem(item.id)} className="text-red-400 hover:text-red-300 p-1">
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))}
+
+                  {/* Add Item */}
+                  {showItemForm === group.id ? (
+                    <div className="flex gap-2 bg-gray-800/50 rounded-lg p-2">
+                      <input
+                        type="text"
+                        placeholder="Nome do adicional"
+                        value={itemForm.name}
+                        onChange={(e) => setItemForm({ ...itemForm, name: e.target.value })}
+                        className="flex-1 bg-gray-700 text-white px-3 py-2 rounded-lg text-sm border border-gray-600 focus:outline-none"
+                        autoFocus
+                      />
+                      <input
+                        type="number"
+                        placeholder="R$"
+                        value={itemForm.price}
+                        onChange={(e) => setItemForm({ ...itemForm, price: e.target.value })}
+                        className="w-20 bg-gray-700 text-white px-3 py-2 rounded-lg text-sm border border-gray-600 focus:outline-none"
+                        step="0.50"
+                      />
+                      <button onClick={() => addItem(group.id)} className="bg-green-500 text-white px-3 py-2 rounded-lg text-sm font-bold">
+                        <Plus className="h-4 w-4" />
+                      </button>
+                      <button onClick={() => { setShowItemForm(null); setItemForm({ name: "", price: "0" }); }} className="text-gray-400 px-2">
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setShowItemForm(group.id)}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 border-2 border-dashed border-gray-600 rounded-xl text-gray-400 hover:text-white hover:border-gray-400 transition-colors text-xs"
+                    >
+                      <Plus className="h-3.5 w-3.5" /> Adicionar Item
+                    </button>
+                  )}
+
+                  {/* Linked Products */}
+                  {linkedProducts.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-gray-700">
+                      <p className="text-xs text-gray-500 font-bold mb-1.5">🔗 Vinculado a:</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {linkedProducts.map((link: any) => (
+                          <span key={link.product_id} className="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded-lg">
+                            {(link.products as any)?.name || "Produto"}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })
+      ) : (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <Package className="h-14 w-14 text-gray-600 mb-4" />
+          <h3 className="text-sm font-bold text-gray-400 mb-1">Nenhum grupo de adicionais</h3>
+          <p className="text-xs text-gray-500 max-w-xs">
+            Crie grupos como "Extras de Hambúrguer" aqui e depois vincule aos produtos no Cardápio.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default AddonManager;

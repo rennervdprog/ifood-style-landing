@@ -21,8 +21,9 @@ export type Database = {
           max_select: number
           min_select: number
           name: string
-          product_id: string
+          product_id: string | null
           sort_order: number
+          store_id: string
         }
         Insert: {
           created_at?: string
@@ -30,8 +31,9 @@ export type Database = {
           max_select?: number
           min_select?: number
           name: string
-          product_id: string
+          product_id?: string | null
           sort_order?: number
+          store_id: string
         }
         Update: {
           created_at?: string
@@ -39,8 +41,9 @@ export type Database = {
           max_select?: number
           min_select?: number
           name?: string
-          product_id?: string
+          product_id?: string | null
           sort_order?: number
+          store_id?: string
         }
         Relationships: [
           {
@@ -308,6 +311,42 @@ export type Database = {
             columns: ["store_id"]
             isOneToOne: false
             referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_addon_groups: {
+        Row: {
+          addon_group_id: string
+          created_at: string | null
+          id: string
+          product_id: string
+        }
+        Insert: {
+          addon_group_id: string
+          created_at?: string | null
+          id?: string
+          product_id: string
+        }
+        Update: {
+          addon_group_id?: string
+          created_at?: string | null
+          id?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_addon_groups_addon_group_id_fkey"
+            columns: ["addon_group_id"]
+            isOneToOne: false
+            referencedRelation: "addon_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_addon_groups_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]

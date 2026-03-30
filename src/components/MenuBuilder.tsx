@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   Plus, Trash2, Edit2, ChevronDown, ChevronUp, GripVertical,
-  Image as ImageIcon, Pause, Play, Package, Save, X
+  Image as ImageIcon, Pause, Play, Package, Save, X, Link2
 } from "lucide-react";
 
 interface MenuBuilderProps {
@@ -24,6 +24,7 @@ const MenuBuilder = ({ storeId }: MenuBuilderProps) => {
   const [addonGroupForm, setAddonGroupForm] = useState({ name: "", min_select: "0", max_select: "1" });
   const [addonItemForm, setAddonItemForm] = useState({ name: "", price: "0" });
   const [showAddonItemForm, setShowAddonItemForm] = useState<string | null>(null);
+  const [showLinkAddon, setShowLinkAddon] = useState<string | null>(null);
 
   // Fetch menu sections
   const { data: sections } = useQuery({
@@ -53,7 +54,7 @@ const MenuBuilder = ({ storeId }: MenuBuilderProps) => {
     },
   });
 
-  // Fetch addon groups for all products
+  // Fetch addon groups for all products (direct product-level groups)
   const productIds = products?.map(p => p.id) || [];
   const { data: addonGroups } = useQuery({
     queryKey: ["addon-groups", productIds],
@@ -69,10 +70,74 @@ const MenuBuilder = ({ storeId }: MenuBuilderProps) => {
     enabled: productIds.length > 0,
   });
 
+  // Fetch store-level addon groups (for linking)
+  const { data: storeAddonGroups } = useQuery({
+    queryKey: ["store-addon-groups", storeId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("addon_groups")
+        .select("*, addon_items(*)")
+        .eq("store_id", storeId)
+        .is("product_id", null)
+        .order("sort_order");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Fetch product-addon links
+  const { data: productAddonLinks } = useQuery({
+    queryKey: ["product-addon-links", productIds],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("product_addon_groups")
+        .select("*")
+        .in("product_id", productIds);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: productIds.length > 0,
+  });
+
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: ["menu-sections", storeId] });
     queryClient.invalidateQueries({ queryKey: ["store-products", storeId] });
     queryClient.invalidateQueries({ queryKey: ["addon-groups"] });
+    queryClient.invalidateQueries({ queryKey: ["store-addon-groups", storeId] });
+    queryClient.invalidateQueries({ queryKey: ["product-addon-links"] });
+  };
+
+  const linkAddonGroup = async (productId: string, addonGroupId: string) => {
+    const { error } = await supabase.from("product_addon_groups").insert({
+      product_id: productId,
+      addon_group_id: addonGroupId,
+    } as any);
+    if (error) {
+      if (error.code === "23505") { toast.info("Grupo já vinculado a este produto"); return; }
+      toast.error("Erro ao vincular grupo");
+      return;
+    }
+    toast.success("Grupo vinculado ao produto!");
+    invalidateAll();
+  };
+
+  const unlinkAddonGroup = async (productId: string, addonGroupId: string) => {
+    const { error } = await supabase
+      .from("product_addon_groups")
+      .delete()
+      .eq("product_id", productId)
+      .eq("addon_group_id", addonGroupId);
+    if (error) { toast.error("Erro ao desvincular"); return; }
+    toast.success("Grupo desvinculado!");
+    invalidateAll();
+  };
+
+  const getLinkedGroupIds = (productId: string) =>
+    (productAddonLinks as any[])?.filter((l: any) => l.product_id === productId).map((l: any) => l.addon_group_id) || [];
+
+  const getLinkedGroups = (productId: string) => {
+    const ids = getLinkedGroupIds(productId);
+    return (storeAddonGroups as any[])?.filter((g: any) => ids.includes(g.id)) || [];
   };
 
   // Section CRUD
@@ -291,6 +356,13 @@ const MenuBuilder = ({ storeId }: MenuBuilderProps) => {
                   key={product.id}
                   product={product}
                   addonGroups={getAddonGroups(product.id)}
+                  linkedGroups={getLinkedGroups(product.id)}
+                  storeAddonGroups={storeAddonGroups || []}
+                  linkedGroupIds={getLinkedGroupIds(product.id)}
+                  onLinkGroup={(gId: string) => linkAddonGroup(product.id, gId)}
+                  onUnlinkGroup={(gId: string) => unlinkAddonGroup(product.id, gId)}
+                  showLinkAddon={showLinkAddon}
+                  setShowLinkAddon={setShowLinkAddon}
                   onToggle={() => toggleProductAvailable(product.id, product.is_available)}
                   onDelete={() => deleteProduct(product.id)}
                   onEdit={() => {
@@ -352,6 +424,13 @@ const MenuBuilder = ({ storeId }: MenuBuilderProps) => {
               key={product.id}
               product={product}
               addonGroups={getAddonGroups(product.id)}
+              linkedGroups={getLinkedGroups(product.id)}
+              storeAddonGroups={storeAddonGroups || []}
+              linkedGroupIds={getLinkedGroupIds(product.id)}
+              onLinkGroup={(gId: string) => linkAddonGroup(product.id, gId)}
+              onUnlinkGroup={(gId: string) => unlinkAddonGroup(product.id, gId)}
+              showLinkAddon={showLinkAddon}
+              setShowLinkAddon={setShowLinkAddon}
               onToggle={() => toggleProductAvailable(product.id, product.is_available)}
               onDelete={() => deleteProduct(product.id)}
               onEdit={() => {
@@ -466,6 +545,13 @@ const ProductFormInline = ({
 const ProductCard = ({
   product,
   addonGroups,
+  linkedGroups,
+  storeAddonGroups,
+  linkedGroupIds,
+  onLinkGroup,
+  onUnlinkGroup,
+  showLinkAddon,
+  setShowLinkAddon,
   onToggle,
   onDelete,
   onEdit,
@@ -536,7 +622,35 @@ const ProductCard = ({
         </div>
       </div>
 
-      {/* Addon Groups */}
+      {/* Linked Store-Level Addon Groups */}
+      {linkedGroups && linkedGroups.length > 0 && (
+        <div className="mt-2 pl-2 border-l-2 border-primary/40 space-y-1">
+          <span className="text-[10px] text-primary font-bold uppercase">🔗 Grupos Vinculados</span>
+          {linkedGroups.map((group: any) => (
+            <div key={group.id} className="text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-300 font-bold">{group.name}</span>
+                <div className="flex items-center gap-1">
+                  <span className="text-gray-500">
+                    {group.min_select > 0 ? `mín ${group.min_select}` : "opcional"}, máx {group.max_select}
+                  </span>
+                  <button onClick={() => onUnlinkGroup(group.id)} className="text-yellow-400 p-0.5" title="Desvincular">
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              </div>
+              {group.addon_items?.map((item: any) => (
+                <div key={item.id} className="flex items-center justify-between pl-2 py-0.5">
+                  <span className="text-gray-400">{item.name}</span>
+                  <span className="text-gray-500">+R$ {Number(item.price).toFixed(2)}</span>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Direct Addon Groups */}
       {addonGroups.length > 0 && (
         <div className="mt-2 pl-2 border-l-2 border-gray-700 space-y-1">
           {addonGroups.map((group: any) => (
@@ -563,85 +677,82 @@ const ProductCard = ({
                   </div>
                 </div>
               ))}
-              {/* Add addon item */}
               {showAddonItemForm === group.id ? (
                 <div className="flex gap-1 mt-1">
-                  <input
-                    type="text"
-                    placeholder="Nome"
-                    value={addonItemForm.name}
+                  <input type="text" placeholder="Nome" value={addonItemForm.name}
                     onChange={(e: any) => setAddonItemForm({ ...addonItemForm, name: e.target.value })}
-                    className="flex-1 bg-gray-700 text-white px-2 py-1 rounded text-xs border border-gray-600 focus:outline-none"
-                    autoFocus
-                  />
-                  <input
-                    type="number"
-                    placeholder="R$"
-                    value={addonItemForm.price}
+                    className="flex-1 bg-gray-700 text-white px-2 py-1 rounded text-xs border border-gray-600 focus:outline-none" autoFocus />
+                  <input type="number" placeholder="R$" value={addonItemForm.price}
                     onChange={(e: any) => setAddonItemForm({ ...addonItemForm, price: e.target.value })}
-                    className="w-16 bg-gray-700 text-white px-2 py-1 rounded text-xs border border-gray-600 focus:outline-none"
-                    step="0.50"
-                  />
+                    className="w-16 bg-gray-700 text-white px-2 py-1 rounded text-xs border border-gray-600 focus:outline-none" step="0.50" />
                   <button onClick={() => onAddAddonItem(group.id)} className="bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">+</button>
                   <button onClick={() => setShowAddonItemForm(null)} className="text-gray-400 px-1 text-xs">✕</button>
                 </div>
               ) : (
-                <button
-                  onClick={() => setShowAddonItemForm(group.id)}
-                  className="text-primary text-xs mt-0.5 hover:underline"
-                >
-                  + adicional
-                </button>
+                <button onClick={() => setShowAddonItemForm(group.id)} className="text-primary text-xs mt-0.5 hover:underline">+ adicional</button>
               )}
             </div>
           ))}
         </div>
       )}
 
-      {/* Add Addon Group */}
-      {showAddonForm === product.id ? (
-        <div className="mt-2 bg-gray-700/50 rounded-lg p-2 space-y-1">
-          <input
-            type="text"
-            placeholder="Nome do grupo (ex: Molhos)"
-            value={addonGroupForm.name}
-            onChange={(e) => setAddonGroupForm({ ...addonGroupForm, name: e.target.value })}
-            className="w-full bg-gray-700 text-white px-2 py-1.5 rounded text-xs border border-gray-600 focus:outline-none"
-            autoFocus
-          />
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <label className="text-[10px] text-gray-500">Mín</label>
-              <input
-                type="number"
-                value={addonGroupForm.min_select}
-                onChange={(e) => setAddonGroupForm({ ...addonGroupForm, min_select: e.target.value })}
-                className="w-full bg-gray-700 text-white px-2 py-1 rounded text-xs border border-gray-600"
-              />
-            </div>
-            <div className="flex-1">
-              <label className="text-[10px] text-gray-500">Máx</label>
-              <input
-                type="number"
-                value={addonGroupForm.max_select}
-                onChange={(e) => setAddonGroupForm({ ...addonGroupForm, max_select: e.target.value })}
-                className="w-full bg-gray-700 text-white px-2 py-1 rounded text-xs border border-gray-600"
-              />
-            </div>
-          </div>
-          <div className="flex gap-1">
-            <button onClick={onAddAddonGroup} className="flex-1 bg-green-500 text-white py-1.5 rounded text-xs font-bold">Criar</button>
-            <button onClick={() => setShowAddonForm(null)} className="px-3 text-gray-400 text-xs">Cancelar</button>
-          </div>
+      {/* Link Store Addon Group */}
+      {showLinkAddon === product.id ? (
+        <div className="mt-2 bg-primary/10 border border-primary/30 rounded-lg p-2 space-y-1">
+          <p className="text-xs text-primary font-bold">🔗 Vincular Grupo de Adicionais</p>
+          {storeAddonGroups.filter((g: any) => !linkedGroupIds.includes(g.id)).length > 0 ? (
+            storeAddonGroups.filter((g: any) => !linkedGroupIds.includes(g.id)).map((g: any) => (
+              <button
+                key={g.id}
+                onClick={() => { onLinkGroup(g.id); setShowLinkAddon(null); }}
+                className="w-full text-left bg-gray-800 hover:bg-gray-700 text-white px-3 py-2 rounded-lg text-xs transition-colors"
+              >
+                <span className="font-bold">{g.name}</span>
+                <span className="text-gray-400 ml-2">({(g.addon_items as any[])?.length || 0} itens)</span>
+              </button>
+            ))
+          ) : (
+            <p className="text-xs text-gray-400 py-2">
+              Nenhum grupo disponível. Crie grupos na aba "Adicionais".
+            </p>
+          )}
+          <button onClick={() => setShowLinkAddon(null)} className="text-gray-400 text-xs">Cancelar</button>
         </div>
-      ) : (
-        <button
-          onClick={() => setShowAddonForm(product.id)}
-          className="mt-2 text-xs text-primary hover:underline"
-        >
-          + Grupo de Adicionais
+      ) : null}
+
+      {/* Action buttons */}
+      <div className="mt-2 flex gap-2">
+        <button onClick={() => setShowLinkAddon(product.id)} className="text-xs text-primary hover:underline flex items-center gap-1">
+          <Link2 className="h-3 w-3" /> Vincular Grupo
         </button>
-      )}
+        {showAddonForm === product.id ? (
+          <div className="flex-1 bg-gray-700/50 rounded-lg p-2 space-y-1">
+            <input type="text" placeholder="Nome do grupo (ex: Molhos)" value={addonGroupForm.name}
+              onChange={(e) => setAddonGroupForm({ ...addonGroupForm, name: e.target.value })}
+              className="w-full bg-gray-700 text-white px-2 py-1.5 rounded text-xs border border-gray-600 focus:outline-none" autoFocus />
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <label className="text-[10px] text-gray-500">Mín</label>
+                <input type="number" value={addonGroupForm.min_select}
+                  onChange={(e) => setAddonGroupForm({ ...addonGroupForm, min_select: e.target.value })}
+                  className="w-full bg-gray-700 text-white px-2 py-1 rounded text-xs border border-gray-600" />
+              </div>
+              <div className="flex-1">
+                <label className="text-[10px] text-gray-500">Máx</label>
+                <input type="number" value={addonGroupForm.max_select}
+                  onChange={(e) => setAddonGroupForm({ ...addonGroupForm, max_select: e.target.value })}
+                  className="w-full bg-gray-700 text-white px-2 py-1 rounded text-xs border border-gray-600" />
+              </div>
+            </div>
+            <div className="flex gap-1">
+              <button onClick={onAddAddonGroup} className="flex-1 bg-green-500 text-white py-1.5 rounded text-xs font-bold">Criar</button>
+              <button onClick={() => setShowAddonForm(null)} className="px-3 text-gray-400 text-xs">Cancelar</button>
+            </div>
+          </div>
+        ) : (
+          <button onClick={() => setShowAddonForm(product.id)} className="text-xs text-gray-400 hover:underline">+ Grupo Direto</button>
+        )}
+      </div>
     </div>
   );
 };

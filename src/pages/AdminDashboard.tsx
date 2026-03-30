@@ -6,14 +6,15 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
   Wifi, WifiOff, Pause, Play, Clock, ChefHat, Truck, CheckCircle2,
-  MapPin, CreditCard, Package, ArrowLeft, DollarSign, Banknote, UtensilsCrossed, ListOrdered
+  MapPin, CreditCard, Package, ArrowLeft, DollarSign, Banknote, UtensilsCrossed, ListOrdered, Plus
 } from "lucide-react";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import MenuBuilder from "@/components/MenuBuilder";
 import StoreHoursManager from "@/components/StoreHoursManager";
+import AddonManager from "@/components/AddonManager";
 
 type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_entrega" | "em_transito" | "entregue" | "finalizado";
-type DashboardTab = "orders" | "menu" | "hours";
+type DashboardTab = "orders" | "menu" | "addons" | "hours";
 
 const statusColumns: { status: OrderStatus; label: string; icon: React.ElementType; color: string }[] = [
   { status: "pendente", label: "Novos", icon: Clock, color: "text-yellow-400" },
@@ -233,6 +234,14 @@ const AdminDashboard = () => {
           <UtensilsCrossed className="h-4 w-4" /> Cardápio
         </button>
         <button
+          onClick={() => setDashboardTab("addons")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold ${
+            dashboardTab === "addons" ? "bg-primary text-primary-foreground" : "bg-[#1F2937] text-gray-400"
+          }`}
+        >
+          <Plus className="h-4 w-4" /> Adicionais
+        </button>
+        <button
           onClick={() => setDashboardTab("hours")}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold ${
             dashboardTab === "hours" ? "bg-primary text-primary-foreground" : "bg-[#1F2937] text-gray-400"
@@ -245,6 +254,10 @@ const AdminDashboard = () => {
       {dashboardTab === "menu" && store ? (
         <div className="px-4 py-4">
           <MenuBuilder storeId={store.id} />
+        </div>
+      ) : dashboardTab === "addons" && store ? (
+        <div className="px-4 py-4">
+          <AddonManager storeId={store.id} />
         </div>
       ) : dashboardTab === "hours" && store ? (
         <div className="px-4 py-4">
