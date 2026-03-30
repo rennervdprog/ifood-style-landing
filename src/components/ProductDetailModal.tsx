@@ -51,7 +51,8 @@ const ProductDetailModal = ({ product, storeName, open, onClose, onAdd }: Props)
     setQuantity(1);
   };
 
-  const { data: addonGroups } = useQuery({
+  // Fetch direct addon groups (product_id = product.id)
+  const { data: directAddonGroups } = useQuery({
     queryKey: ["addon-groups", product?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -65,20 +66,60 @@ const ProductDetailModal = ({ product, storeName, open, onClose, onAdd }: Props)
     enabled: !!product?.id && open,
   });
 
-  const { data: addonItems } = useQuery({
-    queryKey: ["addon-items", addonGroups?.map(g => g.id)],
+  // Fetch linked addon group IDs via junction table
+  const { data: linkedGroupLinks } = useQuery({
+    queryKey: ["product-addon-links", product?.id],
     queryFn: async () => {
-      const groupIds = addonGroups!.map(g => g.id);
-      if (groupIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from("product_addon_groups")
+        .select("addon_group_id")
+        .eq("product_id", product!.id);
+      if (error) throw error;
+      return (data || []).map((l: any) => l.addon_group_id as string);
+    },
+    enabled: !!product?.id && open,
+  });
+
+  // Fetch linked addon groups details
+  const { data: linkedAddonGroups } = useQuery({
+    queryKey: ["linked-addon-groups", linkedGroupLinks],
+    queryFn: async () => {
+      if (!linkedGroupLinks || linkedGroupLinks.length === 0) return [];
+      const { data, error } = await supabase
+        .from("addon_groups")
+        .select("*")
+        .in("id", linkedGroupLinks)
+        .order("sort_order");
+      if (error) throw error;
+      return (data || []) as AddonGroup[];
+    },
+    enabled: !!linkedGroupLinks && linkedGroupLinks.length > 0,
+  });
+
+  // Combine direct + linked groups
+  const addonGroups = useMemo(() => {
+    const direct = directAddonGroups || [];
+    const linked = linkedAddonGroups || [];
+    // Deduplicate by id
+    const seen = new Set(direct.map(g => g.id));
+    return [...direct, ...linked.filter(g => !seen.has(g.id))];
+  }, [directAddonGroups, linkedAddonGroups]);
+
+  // Fetch all addon items for combined groups
+  const allGroupIds = addonGroups.map(g => g.id);
+  const { data: addonItems } = useQuery({
+    queryKey: ["addon-items", allGroupIds],
+    queryFn: async () => {
+      if (allGroupIds.length === 0) return [];
       const { data, error } = await supabase
         .from("addon_items")
         .select("*")
-        .in("group_id", groupIds)
+        .in("group_id", allGroupIds)
         .order("sort_order");
       if (error) throw error;
       return (data || []) as AddonItem[];
     },
-    enabled: !!addonGroups && addonGroups.length > 0,
+    enabled: allGroupIds.length > 0,
   });
 
   const toggleAddon = (groupId: string, itemId: string, maxSelect: number) => {
