@@ -270,6 +270,25 @@ export type Database = {
       }
       is_driver: { Args: { _user_id: string }; Returns: boolean }
       is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
+      register_as_lojista: {
+        Args: {
+          _avatar_url?: string
+          _document: string
+          _full_name: string
+          _store_category: Database["public"]["Enums"]["store_category"]
+          _store_name: string
+        }
+        Returns: string
+      }
+      register_as_motoboy: {
+        Args: {
+          _avatar_url?: string
+          _document: string
+          _full_name: string
+          _vehicle: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       order_status:
