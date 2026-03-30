@@ -230,6 +230,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      driver_accept_order: { Args: { _order_id: string }; Returns: undefined }
+      driver_finish_delivery: {
+        Args: { _order_id: string }
+        Returns: undefined
+      }
       is_driver: { Args: { _user_id: string }; Returns: boolean }
       is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
     }
