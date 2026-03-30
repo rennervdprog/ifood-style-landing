@@ -298,6 +298,29 @@ const DriverDashboard = () => {
                   </div>
                 </div>
               )}
+
+              {/* WhatsApp contact buttons */}
+              <div className="flex gap-2 mb-3">
+                {deliveryStoreOwnerId && getContactWhatsApp(deliveryStoreOwnerId) && (
+                  <WhatsAppButton
+                    number={getContactWhatsApp(deliveryStoreOwnerId)}
+                    message={`Olá! Sou o entregador do app de Itatinga. Estou com o pedido #${myDelivery.id.slice(0, 8).toUpperCase()} da loja ${(myDelivery as any).stores?.name || ""}.`}
+                    label="Falar com a Loja"
+                    size="md"
+                    className="flex-1"
+                  />
+                )}
+                {deliveryClientId && getContactWhatsApp(deliveryClientId) && (
+                  <WhatsAppButton
+                    number={getContactWhatsApp(deliveryClientId)}
+                    message="Olá, sou o entregador do app de Itatinga e estou com seu pedido!"
+                    label="Falar com Cliente"
+                    size="md"
+                    className="flex-1"
+                  />
+                )}
+              </div>
+
               <div className="bg-gray-900/50 rounded-xl p-3 mb-3">
                 <p className="text-xs text-gray-500 mb-1">Itens do pedido:</p>
                 {(myDelivery as any).order_items?.map((item: any) => (
