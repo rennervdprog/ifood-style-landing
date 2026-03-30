@@ -88,6 +88,14 @@ const PerfilPage = () => {
     }
   }, [profile, addressLoaded]);
 
+  useEffect(() => {
+    if (profile && !pixLoaded) {
+      setPixKey((profile as any).pix_key || "");
+      setPixType((profile as any).pix_type || "");
+      setPixLoaded(true);
+    }
+  }, [profile, pixLoaded]);
+
   const handleSignOut = async () => {
     await signOut();
     toast.success("Você saiu da conta.");
