@@ -14,7 +14,95 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      neighborhood_fees: {
+        Row: {
+          fee: number
+          id: string
+          name: string
+        }
+        Insert: {
+          fee?: number
+          id?: string
+          name: string
+        }
+        Update: {
+          fee?: number
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          is_available: boolean
+          name: string
+          price: number
+          store_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_available?: boolean
+          name: string
+          price: number
+          store_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_available?: boolean
+          name?: string
+          price?: number
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stores: {
+        Row: {
+          category: Database["public"]["Enums"]["store_category"]
+          created_at: string
+          id: string
+          image_url: string | null
+          is_open: boolean
+          name: string
+          rating: number | null
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["store_category"]
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_open?: boolean
+          name: string
+          rating?: number | null
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["store_category"]
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_open?: boolean
+          name?: string
+          rating?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +111,15 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      store_category:
+        | "lanches"
+        | "pizzas"
+        | "adegas"
+        | "japonesa"
+        | "saudavel"
+        | "sobremesas"
+        | "cafeteria"
+        | "churrasco"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +246,17 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      store_category: [
+        "lanches",
+        "pizzas",
+        "adegas",
+        "japonesa",
+        "saudavel",
+        "sobremesas",
+        "cafeteria",
+        "churrasco",
+      ],
+    },
   },
 } as const
