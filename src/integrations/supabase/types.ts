@@ -100,8 +100,10 @@ export type Database = {
           address_details: string
           app_fee: number
           client_id: string
+          confirmed_at: string | null
           created_at: string
           delivery_fee: number
+          delivery_pin: string | null
           driver_id: string | null
           id: string
           neighborhood: string
@@ -115,8 +117,10 @@ export type Database = {
           address_details: string
           app_fee?: number
           client_id: string
+          confirmed_at?: string | null
           created_at?: string
           delivery_fee?: number
+          delivery_pin?: string | null
           driver_id?: string | null
           id?: string
           neighborhood: string
@@ -130,8 +134,10 @@ export type Database = {
           address_details?: string
           app_fee?: number
           client_id?: string
+          confirmed_at?: string | null
           created_at?: string
           delivery_fee?: number
+          delivery_pin?: string | null
           driver_id?: string | null
           id?: string
           neighborhood?: string
@@ -204,6 +210,8 @@ export type Database = {
           neighborhood: string | null
           number: string | null
           phone: string | null
+          pix_key: string | null
+          pix_type: Database["public"]["Enums"]["pix_type"] | null
           reference_point: string | null
           role: Database["public"]["Enums"]["partner_role"]
           street: string | null
@@ -221,6 +229,8 @@ export type Database = {
           neighborhood?: string | null
           number?: string | null
           phone?: string | null
+          pix_key?: string | null
+          pix_type?: Database["public"]["Enums"]["pix_type"] | null
           reference_point?: string | null
           role?: Database["public"]["Enums"]["partner_role"]
           street?: string | null
@@ -238,6 +248,8 @@ export type Database = {
           neighborhood?: string | null
           number?: string | null
           phone?: string | null
+          pix_key?: string | null
+          pix_type?: Database["public"]["Enums"]["pix_type"] | null
           reference_point?: string | null
           role?: Database["public"]["Enums"]["partner_role"]
           street?: string | null
@@ -292,10 +304,9 @@ export type Database = {
         Returns: undefined
       }
       driver_accept_order: { Args: { _order_id: string }; Returns: undefined }
-      driver_finish_delivery: {
-        Args: { _order_id: string }
-        Returns: undefined
-      }
+      driver_finish_delivery:
+        | { Args: { _order_id: string }; Returns: undefined }
+        | { Args: { _order_id: string; _pin?: string }; Returns: undefined }
       is_driver: { Args: { _user_id: string }; Returns: boolean }
       is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
       register_as_lojista: {
@@ -328,6 +339,7 @@ export type Database = {
         | "saiu_entrega"
         | "finalizado"
       partner_role: "cliente" | "lojista" | "motoboy"
+      pix_type: "cpf" | "cnpj" | "email" | "phone" | "random"
       store_category:
         | "lanches"
         | "pizzas"
@@ -475,6 +487,7 @@ export const Constants = {
         "finalizado",
       ],
       partner_role: ["cliente", "lojista", "motoboy"],
+      pix_type: ["cpf", "cnpj", "email", "phone", "random"],
       store_category: [
         "lanches",
         "pizzas",

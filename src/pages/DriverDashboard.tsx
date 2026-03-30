@@ -6,8 +6,9 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
   Bike, MapPin, Store, DollarSign, Package, CheckCircle2,
-  ArrowLeft, Navigation
+  ArrowLeft, Navigation, KeyRound
 } from "lucide-react";
+import confetti from "canvas-confetti";
 
 const DriverDashboard = () => {
   const { user, loading: authLoading } = useAuth();
@@ -17,10 +18,11 @@ const DriverDashboard = () => {
     return localStorage.getItem("driver_online") === "true";
   });
   const [realtimeConnected, setRealtimeConnected] = useState(false);
+  const [pinInput, setPinInput] = useState("");
+  const [verifying, setVerifying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const prevCountRef = useRef(0);
 
-  // Check approval (must be before conditional returns)
   const { data: driverProfile } = useQuery({
     queryKey: ["my-profile-approval", user?.id],
     queryFn: async () => {
@@ -29,7 +31,7 @@ const DriverDashboard = () => {
     },
     enabled: !!user,
   });
-  // Sound alert
+
   const playAlert = useCallback(() => {
     if (!audioRef.current) {
       audioRef.current = new Audio("data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2JkYyEd2lbUExKTVJeaoOSm5uTiHpqXE9FQEFHTVhojJylp6CUhXRjVEdAP0RNW26Hm6ewsKifkH5sXU5EQENLWGmBl6iwsqyhlYN0ZFVJQkRMWWmAlaOssK2km5GBcmRXTEVFTFlpgJSkrrKupZqPf3BjV01HR1Bcb4OXpq+0sKadkYBwY1hNSElSYHGFmKewtLOroJSEd2lbUExKTVJeaoOSm5uTiHpqXE9FQEFHTVhojJylp6CUhXRjVEdAP0RNW26Hm6ewsKifkH5sXU5EQENLWGmBl6iwsqyhlYN0ZFVJQkRMWWmAlaOssK2km5GBcmRXTEVFTFlpgJSkrrKupZqPf3BjV01HR1Bcb4OXpq+0sKadkYBwY1hNSElSYHGFmKewtLOroJSEd2lbUExKTVJeaoOSm5uTiHpqXE9FQEFHTVhojJylp6CUhXRjVEdAP0RNW26Hm6ewsKifkH5sXU5EQENLWGmBl6iwsqyhlYN0ZFVJQkRMWWmAlaOssK2km5GBcmRXTEVFTFlpgJSkrrKupZqPf3BjV01HR1Bcb4OXpq+0sKadkYBwY1hNSElSYHGFmKewtLOroJSEd2lbUExKTVJeaoOSm5uTiHpqXE9FQEFHTQ==");
@@ -37,7 +39,6 @@ const DriverDashboard = () => {
     audioRef.current.play().catch(() => {});
   }, []);
 
-  // Available deliveries (pronto_para_entrega)
   const { data: availableOrders, isLoading: loadingAvailable } = useQuery({
     queryKey: ["driver-available-orders"],
     queryFn: async () => {
@@ -54,7 +55,6 @@ const DriverDashboard = () => {
     refetchInterval: isOnline ? 10000 : false,
   });
 
-  // My active delivery (em_transito)
   const { data: myDelivery } = useQuery({
     queryKey: ["driver-my-delivery", user?.id],
     queryFn: async () => {
@@ -71,7 +71,6 @@ const DriverDashboard = () => {
     refetchInterval: 15000,
   });
 
-  // Realtime for new available orders
   useEffect(() => {
     if (!user || !isOnline) return;
     const channel = supabase
@@ -95,7 +94,6 @@ const DriverDashboard = () => {
     return () => { supabase.removeChannel(channel); };
   }, [user, isOnline, queryClient, playAlert]);
 
-  // Alert for new orders
   useEffect(() => {
     const count = availableOrders?.length || 0;
     if (count > prevCountRef.current && prevCountRef.current >= 0) {
@@ -113,23 +111,35 @@ const DriverDashboard = () => {
 
   const acceptOrder = async (orderId: string) => {
     const { error } = await supabase.rpc("driver_accept_order", { _order_id: orderId } as any);
-
     if (error) {
       toast.error("Ops! Outro entregador já aceitou esta corrida.");
     } else {
       toast.success("Corrida aceita! Vá buscar o pedido.");
+      setPinInput("");
       queryClient.invalidateQueries({ queryKey: ["driver-available-orders"] });
       queryClient.invalidateQueries({ queryKey: ["driver-my-delivery", user!.id] });
     }
   };
 
   const finishDelivery = async (orderId: string) => {
-    const { error } = await supabase.rpc("driver_finish_delivery", { _order_id: orderId } as any);
+    if (pinInput.length !== 4) {
+      toast.error("Digite o código de 4 dígitos do cliente.");
+      return;
+    }
+    setVerifying(true);
+    const { error } = await supabase.rpc("driver_finish_delivery", {
+      _order_id: orderId,
+      _pin: pinInput,
+    } as any);
 
     if (error) {
-      toast.error("Erro ao finalizar entrega.");
+      toast.error(error.message || "Código inválido. Verifique com o cliente.");
+      setVerifying(false);
     } else {
-      toast.success("Entrega finalizada! 🎉");
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+      toast.success("Entrega finalizada! 💰 Saldo liberado!");
+      setPinInput("");
+      setVerifying(false);
       queryClient.invalidateQueries({ queryKey: ["driver-my-delivery", user!.id] });
       queryClient.invalidateQueries({ queryKey: ["driver-available-orders"] });
     }
@@ -159,7 +169,6 @@ const DriverDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
-      {/* Header */}
       <header className="sticky top-0 z-50 bg-gray-900 border-b border-gray-800 px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -179,8 +188,6 @@ const DriverDashboard = () => {
               </div>
             </div>
           </div>
-
-          {/* Online/Offline toggle */}
           <button
             onClick={toggleOnline}
             className={`relative w-14 h-7 rounded-full transition-colors ${
@@ -206,7 +213,6 @@ const DriverDashboard = () => {
         </div>
       ) : (
         <div className="px-4 py-4 space-y-4">
-          {/* Active delivery card */}
           {myDelivery && (
             <div className="bg-blue-500/10 border-2 border-blue-500 rounded-2xl p-4">
               <div className="flex items-center gap-2 mb-3">
@@ -228,7 +234,6 @@ const DriverDashboard = () => {
                 </div>
               </div>
 
-              {/* Items */}
               <div className="bg-gray-900/50 rounded-xl p-3 mb-3">
                 <p className="text-xs text-gray-500 mb-1">Itens do pedido:</p>
                 {(myDelivery as any).order_items?.map((item: any) => (
@@ -246,17 +251,38 @@ const DriverDashboard = () => {
                 </span>
               </div>
 
+              {/* PIN Input Section */}
+              <div className="bg-gray-900 rounded-xl p-4 mb-3 border border-gray-700">
+                <div className="flex items-center gap-2 mb-2">
+                  <KeyRound className="h-4 w-4 text-yellow-400" />
+                  <span className="text-sm font-bold text-yellow-400">Código do Cliente</span>
+                </div>
+                <p className="text-xs text-gray-500 mb-3">
+                  Peça o código de 4 dígitos ao cliente para finalizar.
+                </p>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={4}
+                  placeholder="0000"
+                  value={pinInput}
+                  onChange={(e) => setPinInput(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                  className="w-full text-center text-3xl font-black tracking-[0.5em] py-3 bg-gray-800 border border-gray-600 rounded-xl text-white placeholder:text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                  autoFocus
+                />
+              </div>
+
               <button
                 onClick={() => finishDelivery(myDelivery.id)}
-                className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-2xl text-base active:scale-95 transition-transform flex items-center justify-center gap-2"
+                disabled={pinInput.length !== 4 || verifying}
+                className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-2xl text-base active:scale-95 transition-transform flex items-center justify-center gap-2 disabled:opacity-50 disabled:active:scale-100"
               >
                 <CheckCircle2 className="h-5 w-5" />
-                FINALIZAR ENTREGA
+                {verifying ? "Verificando..." : "CONFIRMAR ENTREGA"}
               </button>
             </div>
           )}
 
-          {/* Available deliveries */}
           {!myDelivery && (
             <>
               <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider">
@@ -277,15 +303,12 @@ const DriverDashboard = () => {
                 <div className="space-y-3">
                   {availableOrders.map((order: any) => (
                     <div key={order.id} className="bg-gray-900 border border-gray-800 rounded-2xl p-4">
-                      {/* Origin */}
                       <div className="flex items-center gap-2 text-sm mb-2">
                         <Store className="h-4 w-4 text-orange-400" />
                         <span className="text-gray-200 font-medium">
                           {order.stores?.name || "Loja"}
                         </span>
                       </div>
-
-                      {/* Destination */}
                       <div className="flex items-start gap-2 text-sm mb-3">
                         <MapPin className="h-4 w-4 text-red-400 mt-0.5" />
                         <div>
@@ -293,8 +316,6 @@ const DriverDashboard = () => {
                           <p className="text-xs text-gray-500 mt-0.5">{order.address_details}</p>
                         </div>
                       </div>
-
-                      {/* Items preview */}
                       <div className="text-xs text-gray-500 mb-3">
                         {order.order_items?.map((item: any) => (
                           <span key={item.id} className="mr-2">
@@ -302,8 +323,6 @@ const DriverDashboard = () => {
                           </span>
                         ))}
                       </div>
-
-                      {/* Fee + Accept */}
                       <div className="flex items-center justify-between">
                         <div>
                           <span className="text-xs text-gray-500">Ganho</span>
