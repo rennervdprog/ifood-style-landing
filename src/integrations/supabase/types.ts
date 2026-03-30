@@ -14,6 +14,79 @@ export type Database = {
   }
   public: {
     Tables: {
+      addon_groups: {
+        Row: {
+          created_at: string
+          id: string
+          max_select: number
+          min_select: number
+          name: string
+          product_id: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          max_select?: number
+          min_select?: number
+          name: string
+          product_id: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          max_select?: number
+          min_select?: number
+          name?: string
+          product_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "addon_groups_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      addon_items: {
+        Row: {
+          created_at: string
+          group_id: string
+          id: string
+          name: string
+          price: number
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          id?: string
+          name: string
+          price?: number
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          id?: string
+          name?: string
+          price?: number
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "addon_items_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "addon_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       drivers: {
         Row: {
           created_at: string
@@ -38,6 +111,38 @@ export type Database = {
         }
         Relationships: []
       }
+      menu_sections: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+          store_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+          store_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_sections_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       neighborhood_fees: {
         Row: {
           fee: number
@@ -58,21 +163,27 @@ export type Database = {
       }
       order_items: {
         Row: {
+          addons: Json | null
           id: string
+          observations: string | null
           order_id: string
           product_id: string
           quantity: number
           unit_price: number
         }
         Insert: {
+          addons?: Json | null
           id?: string
+          observations?: string | null
           order_id: string
           product_id: string
           quantity: number
           unit_price: number
         }
         Update: {
+          addons?: Json | null
           id?: string
+          observations?: string | null
           order_id?: string
           product_id?: string
           quantity?: number
@@ -175,6 +286,7 @@ export type Database = {
           is_available: boolean
           name: string
           price: number
+          section_id: string | null
           store_id: string
         }
         Insert: {
@@ -185,6 +297,7 @@ export type Database = {
           is_available?: boolean
           name: string
           price: number
+          section_id?: string | null
           store_id: string
         }
         Update: {
@@ -195,9 +308,17 @@ export type Database = {
           is_available?: boolean
           name?: string
           price?: number
+          section_id?: string | null
           store_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "products_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "menu_sections"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "products_store_id_fkey"
             columns: ["store_id"]

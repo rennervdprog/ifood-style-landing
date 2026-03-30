@@ -202,22 +202,6 @@ const DriverDashboard = () => {
     return null;
   }
 
-  if (driverProfile && !(driverProfile as any).is_approved) {
-    return (
-      <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center text-center px-6">
-        <div className="text-5xl mb-4">🛡️</div>
-        <h1 className="text-xl font-bold text-white mb-2">Cadastro em Análise!</h1>
-        <p className="text-sm text-gray-400 max-w-xs mb-2">
-          Olá! Recebemos seus dados. Em até 24h o administrador de Itatinga liberará seu acesso.
-        </p>
-        <p className="text-xs text-gray-500">Entraremos em contato via WhatsApp.</p>
-        <button onClick={() => navigate("/")} className="mt-6 bg-white text-gray-900 font-bold px-6 py-3 rounded-xl">
-          Voltar à Home
-        </button>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       <header className="sticky top-0 z-50 bg-gray-900 border-b border-gray-800 px-4 py-3">

@@ -19,12 +19,27 @@ const StorePage = () => {
         .from("stores")
         .select("*")
         .eq("id", id!)
+        .eq("status", "ativo")
         .single();
       if (error) throw error;
       return data;
     },
     enabled: !!id,
   });
+
+  // Redirect if store not found or not active
+  if (!store && id) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center text-center px-6">
+        <span className="text-5xl mb-4">🔒</span>
+        <h1 className="text-xl font-bold text-foreground mb-2">Loja indisponível</h1>
+        <p className="text-sm text-muted-foreground mb-6">Esta loja não está ativa no momento.</p>
+        <button onClick={() => navigate("/")} className="bg-primary text-primary-foreground font-bold px-6 py-3 rounded-xl">
+          Voltar à Home
+        </button>
+      </div>
+    );
+  }
 
   const { data: products, isLoading } = useQuery({
     queryKey: ["products", id],
