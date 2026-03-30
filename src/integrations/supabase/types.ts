@@ -98,6 +98,7 @@ export type Database = {
       orders: {
         Row: {
           address_details: string
+          app_fee: number
           client_id: string
           created_at: string
           delivery_fee: number
@@ -112,6 +113,7 @@ export type Database = {
         }
         Insert: {
           address_details: string
+          app_fee?: number
           client_id: string
           created_at?: string
           delivery_fee?: number
@@ -126,6 +128,7 @@ export type Database = {
         }
         Update: {
           address_details?: string
+          app_fee?: number
           client_id?: string
           created_at?: string
           delivery_fee?: number
@@ -227,7 +230,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      driver_accept_order: { Args: { _order_id: string }; Returns: undefined }
+      driver_finish_delivery: {
+        Args: { _order_id: string }
+        Returns: undefined
+      }
       is_driver: { Args: { _user_id: string }; Returns: boolean }
+      is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       order_status:

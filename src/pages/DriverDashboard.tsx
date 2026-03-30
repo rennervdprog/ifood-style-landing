@@ -103,11 +103,7 @@ const DriverDashboard = () => {
   };
 
   const acceptOrder = async (orderId: string) => {
-    const { error } = await supabase
-      .from("orders")
-      .update({ driver_id: user!.id, status: "em_transito" as any })
-      .eq("id", orderId)
-      .is("driver_id", null);
+    const { error } = await supabase.rpc("driver_accept_order", { _order_id: orderId } as any);
 
     if (error) {
       toast.error("Ops! Outro entregador já aceitou esta corrida.");
@@ -119,10 +115,7 @@ const DriverDashboard = () => {
   };
 
   const finishDelivery = async (orderId: string) => {
-    const { error } = await supabase
-      .from("orders")
-      .update({ status: "entregue" as any })
-      .eq("id", orderId);
+    const { error } = await supabase.rpc("driver_finish_delivery", { _order_id: orderId } as any);
 
     if (error) {
       toast.error("Erro ao finalizar entrega.");

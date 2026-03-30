@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/BottomNav";
-import { User, LogOut, Store } from "lucide-react";
+import { User, LogOut, Store, Shield } from "lucide-react";
 import { toast } from "sonner";
 
 const PerfilPage = () => {
@@ -74,6 +74,16 @@ const PerfilPage = () => {
           >
             <Store className="h-4 w-4" />
             Painel da Loja ({myStore.name})
+          </button>
+        )}
+
+        {user.email === "vinivias13@gmail.com" && (
+          <button
+            onClick={() => navigate("/super-admin")}
+            className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-600 font-bold"
+          >
+            <Shield className="h-4 w-4" />
+            Painel Administrativo
           </button>
         )}
 
