@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   Plus, Trash2, Edit2, ChevronDown, ChevronUp, GripVertical,
-  Image as ImageIcon, Pause, Play, Package, Save, X
+  Image as ImageIcon, Pause, Play, Package, Save, X, Link2
 } from "lucide-react";
 
 interface MenuBuilderProps {
@@ -24,6 +24,7 @@ const MenuBuilder = ({ storeId }: MenuBuilderProps) => {
   const [addonGroupForm, setAddonGroupForm] = useState({ name: "", min_select: "0", max_select: "1" });
   const [addonItemForm, setAddonItemForm] = useState({ name: "", price: "0" });
   const [showAddonItemForm, setShowAddonItemForm] = useState<string | null>(null);
+  const [showLinkAddon, setShowLinkAddon] = useState<string | null>(null);
 
   // Fetch menu sections
   const { data: sections } = useQuery({
