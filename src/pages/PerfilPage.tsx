@@ -70,6 +70,12 @@ const PerfilPage = () => {
   const [savingAddress, setSavingAddress] = useState(false);
   const [addressLoaded, setAddressLoaded] = useState(false);
 
+  // PIX form state
+  const [pixKey, setPixKey] = useState("");
+  const [pixType, setPixType] = useState("");
+  const [savingPix, setSavingPix] = useState(false);
+  const [pixLoaded, setPixLoaded] = useState(false);
+
   useEffect(() => {
     if (profile && !addressLoaded) {
       setStreet((profile as any).street || "");
