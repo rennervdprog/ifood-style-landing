@@ -9,7 +9,7 @@ import {
   MapPin, CreditCard, Package, ArrowLeft
 } from "lucide-react";
 
-type OrderStatus = "pendente" | "preparando" | "saiu_entrega" | "finalizado";
+type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_entrega" | "em_transito" | "entregue" | "finalizado";
 
 const statusColumns: { status: OrderStatus; label: string; icon: React.ElementType; color: string; borderColor: string }[] = [
   { status: "pendente", label: "Novos", icon: Clock, color: "text-yellow-400", borderColor: "border-yellow-400" },
