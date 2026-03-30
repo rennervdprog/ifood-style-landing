@@ -9,6 +9,7 @@ import {
   ArrowLeft, Navigation, KeyRound
 } from "lucide-react";
 import confetti from "canvas-confetti";
+import WhatsAppButton from "@/components/WhatsAppButton";
 
 const DriverDashboard = () => {
   const { user, loading: authLoading } = useAuth();
