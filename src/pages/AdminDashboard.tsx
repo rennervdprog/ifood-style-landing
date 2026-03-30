@@ -36,6 +36,16 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState<OrderStatus>("pendente");
   const prevPendingCountRef = useRef(0);
 
+  // Check approval (must be before conditional returns)
+  const { data: profile } = useQuery({
+    queryKey: ["my-profile-approval", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("is_approved, role").eq("user_id", user!.id).maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
+
   // Fetch store for this owner
   const { data: store } = useQuery({
     queryKey: ["my-store", user?.id],
