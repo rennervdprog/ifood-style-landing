@@ -23,6 +23,8 @@ const CheckoutPage = () => {
   const [paymentMethod, setPaymentMethod] = useState("");
   const [loading, setLoading] = useState(false);
   const [showAddressModal, setShowAddressModal] = useState(false);
+  const [needsChange, setNeedsChange] = useState(false);
+  const [changeFor, setChangeFor] = useState("");
 
   // Check if user has address
   const { data: userProfile, refetch: refetchProfile } = useQuery({
