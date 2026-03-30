@@ -99,6 +99,7 @@ export type Database = {
         Row: {
           address_details: string
           app_fee: number
+          change_for: number | null
           client_id: string
           confirmed_at: string | null
           created_at: string
@@ -106,8 +107,10 @@ export type Database = {
           delivery_pin: string | null
           driver_id: string | null
           id: string
+          needs_change: boolean
           neighborhood: string
           payment_method: string
+          return_to_store_confirmed: boolean
           status: Database["public"]["Enums"]["order_status"]
           store_id: string
           subtotal: number
@@ -116,6 +119,7 @@ export type Database = {
         Insert: {
           address_details: string
           app_fee?: number
+          change_for?: number | null
           client_id: string
           confirmed_at?: string | null
           created_at?: string
@@ -123,8 +127,10 @@ export type Database = {
           delivery_pin?: string | null
           driver_id?: string | null
           id?: string
+          needs_change?: boolean
           neighborhood: string
           payment_method: string
+          return_to_store_confirmed?: boolean
           status?: Database["public"]["Enums"]["order_status"]
           store_id: string
           subtotal: number
@@ -133,6 +139,7 @@ export type Database = {
         Update: {
           address_details?: string
           app_fee?: number
+          change_for?: number | null
           client_id?: string
           confirmed_at?: string | null
           created_at?: string
@@ -140,8 +147,10 @@ export type Database = {
           delivery_pin?: string | null
           driver_id?: string | null
           id?: string
+          needs_change?: boolean
           neighborhood?: string
           payment_method?: string
+          return_to_store_confirmed?: boolean
           status?: Database["public"]["Enums"]["order_status"]
           store_id?: string
           subtotal?: number
@@ -258,6 +267,27 @@ export type Database = {
         }
         Relationships: []
       }
+      store_balances: {
+        Row: {
+          id: string
+          pending_commission: number
+          store_id: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          pending_commission?: number
+          store_id: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          pending_commission?: number
+          store_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       stores: {
         Row: {
           category: Database["public"]["Enums"]["store_category"]
@@ -304,6 +334,10 @@ export type Database = {
         Returns: undefined
       }
       driver_accept_order: { Args: { _order_id: string }; Returns: undefined }
+      driver_confirm_store_return: {
+        Args: { _order_id: string }
+        Returns: undefined
+      }
       driver_finish_delivery:
         | { Args: { _order_id: string }; Returns: undefined }
         | { Args: { _order_id: string; _pin?: string }; Returns: undefined }
