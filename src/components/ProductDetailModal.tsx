@@ -168,21 +168,38 @@ const ProductDetailModal = ({ product, storeName, open, onClose, onAdd }: Props)
                         </span>
                       )}
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-1">
                       {items.map(item => {
                         const isChecked = selectedAddons[group.id]?.includes(item.id) || false;
                         return (
-                          <label
+                          <div
                             key={item.id}
-                            className="flex items-center gap-3 cursor-pointer py-1.5"
+                            role="button"
+                            tabIndex={0}
                             onClick={() => toggleAddon(group.id, item.id, group.max_select)}
+                            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleAddon(group.id, item.id, group.max_select); } }}
+                            className={`flex items-center gap-3 cursor-pointer py-2.5 px-3 rounded-lg transition-all min-h-[48px] ${
+                              isChecked
+                                ? "bg-primary/10 border border-primary/30 ring-1 ring-primary/20"
+                                : "bg-background border border-transparent hover:bg-muted"
+                            }`}
                           >
-                            <Checkbox checked={isChecked} className="pointer-events-none" />
-                            <span className="flex-1 text-sm text-foreground">{item.name}</span>
+                            <div className={`w-5 h-5 rounded flex-shrink-0 flex items-center justify-center border-2 transition-all ${
+                              isChecked
+                                ? "bg-primary border-primary"
+                                : "border-muted-foreground/40 bg-background"
+                            }`}>
+                              {isChecked && (
+                                <svg className="w-3 h-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                            </div>
+                            <span className={`flex-1 text-sm ${isChecked ? "font-bold text-foreground" : "text-foreground"}`}>{item.name}</span>
                             {item.price > 0 && (
-                              <span className="text-sm font-bold text-primary">+ R$ {item.price.toFixed(2)}</span>
+                              <span className={`text-sm font-bold ${isChecked ? "text-primary" : "text-muted-foreground"}`}>+ R$ {item.price.toFixed(2)}</span>
                             )}
-                          </label>
+                          </div>
                         );
                       })}
                     </div>
