@@ -67,6 +67,16 @@ const PerfilPage = () => {
           </div>
         </div>
 
+        {myStore && (
+          <button
+            onClick={() => navigate("/admin")}
+            className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-border bg-secondary text-secondary-foreground font-bold"
+          >
+            <Store className="h-4 w-4" />
+            Painel da Loja ({myStore.name})
+          </button>
+        )}
+
         <button
           onClick={handleSignOut}
           className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-border bg-card text-destructive font-bold"
