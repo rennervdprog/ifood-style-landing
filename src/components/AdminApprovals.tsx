@@ -12,10 +12,10 @@ const AdminApprovals = () => {
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
-        .in("role" as any, ["lojista", "motoboy"])
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data;
+      // Filter by role client-side since the column type isn't in the generated types yet
+      return (data || []).filter((p: any) => p.role === "lojista" || p.role === "motoboy");
     },
   });
 
