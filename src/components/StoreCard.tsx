@@ -1,4 +1,4 @@
-import { Star, Pill } from "lucide-react";
+import { Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface StoreCardProps {
@@ -8,9 +8,10 @@ interface StoreCardProps {
   image_url: string | null;
   is_open: boolean;
   rating: number | null;
+  statusReason?: string;
 }
 
-const StoreCard = ({ id, name, category, image_url, is_open, rating }: StoreCardProps) => {
+const StoreCard = ({ id, name, category, image_url, is_open, rating, statusReason }: StoreCardProps) => {
   const navigate = useNavigate();
 
   return (
@@ -64,6 +65,9 @@ const StoreCard = ({ id, name, category, image_url, is_open, rating }: StoreCard
             </div>
           )}
         </div>
+        {!is_open && statusReason && (
+          <p className="text-[10px] text-muted-foreground mt-1">{statusReason}</p>
+        )}
       </div>
     </button>
   );
