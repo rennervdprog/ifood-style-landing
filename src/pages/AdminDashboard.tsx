@@ -143,15 +143,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // Check approval
-  const { data: profile } = useQuery({
-    queryKey: ["my-profile-approval", user?.id],
-    queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("is_approved, role").eq("user_id", user!.id).maybeSingle();
-      return data;
-    },
-    enabled: !!user,
-  });
 
   if (authLoading) return null;
   if (!user) {
