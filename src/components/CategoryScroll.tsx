@@ -1,4 +1,4 @@
-import { Pizza, Beef, Beer, Utensils, Fish, IceCream, Coffee, Flame } from "lucide-react";
+import { Pizza, Beef, Beer, Utensils, Fish, IceCream, Coffee, Flame, Pill, Cake } from "lucide-react";
 
 const categories = [
   { icon: Utensils, label: "Todos", value: "all" },
@@ -9,6 +9,8 @@ const categories = [
   { icon: IceCream, label: "Doces", value: "sobremesas" },
   { icon: Coffee, label: "Café", value: "cafeteria" },
   { icon: Flame, label: "Churrasco", value: "churrasco" },
+  { icon: Pill, label: "Farmácias", value: "farmacias" },
+  { icon: Cake, label: "Docerias", value: "docerias" },
 ];
 
 interface Props {

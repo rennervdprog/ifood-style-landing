@@ -37,6 +37,8 @@ const categoryLabels: Record<string, string> = {
   sobremesas: "🍰 Sobremesas",
   cafeteria: "☕ Cafeteria",
   churrasco: "🥩 Churrasco",
+  farmacias: "💊 Farmácia / Drogaria",
+  docerias: "🍰 Doceria / Confeitaria / Açaí",
 };
 
 const PartnerOnboarding = () => {
