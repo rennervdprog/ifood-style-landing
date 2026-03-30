@@ -33,6 +33,7 @@ const App = () => (
               <Route path="/perfil" element={<PerfilPage />} />
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/entregador" element={<DriverDashboard />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
