@@ -234,6 +234,14 @@ const AdminDashboard = () => {
           <UtensilsCrossed className="h-4 w-4" /> Cardápio
         </button>
         <button
+          onClick={() => setDashboardTab("addons")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold ${
+            dashboardTab === "addons" ? "bg-primary text-primary-foreground" : "bg-[#1F2937] text-gray-400"
+          }`}
+        >
+          <Plus className="h-4 w-4" /> Adicionais
+        </button>
+        <button
           onClick={() => setDashboardTab("hours")}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold ${
             dashboardTab === "hours" ? "bg-primary text-primary-foreground" : "bg-[#1F2937] text-gray-400"
