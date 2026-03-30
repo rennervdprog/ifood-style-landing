@@ -545,6 +545,13 @@ const ProductFormInline = ({
 const ProductCard = ({
   product,
   addonGroups,
+  linkedGroups,
+  storeAddonGroups,
+  linkedGroupIds,
+  onLinkGroup,
+  onUnlinkGroup,
+  showLinkAddon,
+  setShowLinkAddon,
   onToggle,
   onDelete,
   onEdit,
