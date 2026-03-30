@@ -91,6 +91,7 @@ const CheckoutPage = () => {
         const storeTotalPrice = storeSubtotal + neighborhoodFee;
 
         // Insert order
+        const changeValue = paymentMethod === "dinheiro" && needsChange ? parseFloat(changeFor) : 0;
         const { data: order, error: orderError } = await supabase
           .from("orders")
           .insert({
@@ -103,6 +104,8 @@ const CheckoutPage = () => {
             payment_method: paymentMethod,
             neighborhood: neighborhood,
             address_details: addressDetails.trim(),
+            needs_change: paymentMethod === "dinheiro" && needsChange,
+            change_for: changeValue,
           } as any)
           .select("id")
           .single();
