@@ -1,4 +1,4 @@
-import { Star } from "lucide-react";
+import { Star, Pill } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface StoreCardProps {
