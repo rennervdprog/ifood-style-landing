@@ -14,8 +14,11 @@ type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_ent
 const statusColumns: { status: OrderStatus; label: string; icon: React.ElementType; color: string; borderColor: string }[] = [
   { status: "pendente", label: "Novos", icon: Clock, color: "text-yellow-400", borderColor: "border-yellow-400" },
   { status: "preparando", label: "Preparando", icon: ChefHat, color: "text-orange-400", borderColor: "border-orange-400" },
+  { status: "pronto_para_entrega", label: "Pronto", icon: Package, color: "text-purple-400", borderColor: "border-purple-400" },
   { status: "saiu_entrega", label: "Saiu p/ Entrega", icon: Truck, color: "text-blue-400", borderColor: "border-blue-400" },
-  { status: "finalizado", label: "Finalizados", icon: CheckCircle2, color: "text-green-400", borderColor: "border-green-400" },
+  { status: "em_transito", label: "Em Trânsito", icon: Truck, color: "text-cyan-400", borderColor: "border-cyan-400" },
+  { status: "entregue", label: "Entregue", icon: CheckCircle2, color: "text-green-400", borderColor: "border-green-400" },
+  { status: "finalizado", label: "Finalizados", icon: CheckCircle2, color: "text-emerald-400", borderColor: "border-emerald-400" },
 ];
 
 const paymentLabels: Record<string, string> = {
