@@ -86,6 +86,8 @@ const PerfilPage = () => {
       setReferencePoint((profile as any).reference_point || "");
       setNeighborhood((profile as any).neighborhood || "");
       setPhone((profile as any).phone || "");
+      const wn = (profile as any).whatsapp_number || "";
+      setWhatsappNumber(wn ? maskWhatsApp(wn) : "");
       setAddressLoaded(true);
     }
   }, [profile, addressLoaded]);
