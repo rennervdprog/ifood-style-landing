@@ -62,7 +62,7 @@ const AdminDashboard = () => {
     enabled: !!user,
   });
 
-  // Fetch orders for this store
+  // Fetch orders for this store (with client profiles for WhatsApp)
   const { data: orders, isLoading } = useQuery({
     queryKey: ["store-orders", store?.id],
     queryFn: async () => {
@@ -76,6 +76,30 @@ const AdminDashboard = () => {
     },
     enabled: !!store,
   });
+
+  // Fetch client profiles for WhatsApp numbers
+  const clientIds = [...new Set(orders?.map(o => o.client_id) || [])];
+  const { data: clientProfiles } = useQuery({
+    queryKey: ["client-profiles", clientIds],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("user_id, whatsapp_number, phone, full_name")
+        .in("user_id", clientIds);
+      return data || [];
+    },
+    enabled: clientIds.length > 0,
+  });
+
+  const getClientWhatsApp = (clientId: string) => {
+    const p = clientProfiles?.find((c: any) => c.user_id === clientId);
+    return (p as any)?.whatsapp_number || (p as any)?.phone || "";
+  };
+
+  const getClientName = (clientId: string) => {
+    const p = clientProfiles?.find((c: any) => c.user_id === clientId);
+    return (p as any)?.full_name || "Cliente";
+  };
 
   // Alert sound for new orders
   const playAlert = useCallback(() => {
