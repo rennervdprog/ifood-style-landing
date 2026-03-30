@@ -226,6 +226,7 @@ export type Database = {
           street: string | null
           user_id: string
           vehicle: string | null
+          whatsapp_number: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -245,6 +246,7 @@ export type Database = {
           street?: string | null
           user_id: string
           vehicle?: string | null
+          whatsapp_number?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -264,6 +266,7 @@ export type Database = {
           street?: string | null
           user_id?: string
           vehicle?: string | null
+          whatsapp_number?: string | null
         }
         Relationships: []
       }
@@ -343,25 +346,48 @@ export type Database = {
         | { Args: { _order_id: string; _pin?: string }; Returns: undefined }
       is_driver: { Args: { _user_id: string }; Returns: boolean }
       is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
-      register_as_lojista: {
-        Args: {
-          _avatar_url?: string
-          _document: string
-          _full_name: string
-          _store_category: Database["public"]["Enums"]["store_category"]
-          _store_name: string
-        }
-        Returns: string
-      }
-      register_as_motoboy: {
-        Args: {
-          _avatar_url?: string
-          _document: string
-          _full_name: string
-          _vehicle: string
-        }
-        Returns: undefined
-      }
+      register_as_lojista:
+        | {
+            Args: {
+              _avatar_url?: string
+              _document: string
+              _full_name: string
+              _store_category: Database["public"]["Enums"]["store_category"]
+              _store_name: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              _avatar_url?: string
+              _document: string
+              _full_name: string
+              _store_category: Database["public"]["Enums"]["store_category"]
+              _store_name: string
+              _whatsapp?: string
+            }
+            Returns: string
+          }
+      register_as_motoboy:
+        | {
+            Args: {
+              _avatar_url?: string
+              _document: string
+              _full_name: string
+              _vehicle: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              _avatar_url?: string
+              _document: string
+              _full_name: string
+              _vehicle: string
+              _whatsapp?: string
+            }
+            Returns: undefined
+          }
     }
     Enums: {
       order_status:
