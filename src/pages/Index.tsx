@@ -8,6 +8,7 @@ import CartFAB from "@/components/CartFAB";
 import CategoryScroll from "@/components/CategoryScroll";
 import StoreCard from "@/components/StoreCard";
 import StoreCardSkeleton from "@/components/StoreCardSkeleton";
+import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 
 const Index = () => {
   const [category, setCategory] = useState("all");
@@ -18,15 +19,46 @@ const Index = () => {
       const { data, error } = await supabase
         .from("stores")
         .select("*")
-        .order("is_open", { ascending: false })
         .order("rating", { ascending: false });
       if (error) throw error;
-      // Filter to only show active stores
       return (data || []).filter((s: any) => !s.status || s.status === "ativo");
     },
   });
 
-  const filtered = stores?.filter(
+  // Fetch all opening hours for displayed stores
+  const storeIds = stores?.map(s => s.id) || [];
+  const { data: allHours } = useQuery({
+    queryKey: ["all-opening-hours", storeIds],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("opening_hours")
+        .select("*")
+        .in("store_id", storeIds);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: storeIds.length > 0,
+  });
+
+  // Compute open status for each store
+  const storesWithStatus = stores?.map(store => {
+    const hours = (allHours as any[])?.filter((h: any) => h.store_id === store.id) || [];
+    const status = getStoreOpenStatus(
+      hours as OpeningHour[],
+      (store as any).force_closed || false,
+      store.is_open
+    );
+    return { ...store, computedOpen: status.isOpen, statusReason: status.reason };
+  });
+
+  // Sort: open stores first
+  const sorted = storesWithStatus?.sort((a, b) => {
+    if (a.computedOpen && !b.computedOpen) return -1;
+    if (!a.computedOpen && b.computedOpen) return 1;
+    return 0;
+  });
+
+  const filtered = sorted?.filter(
     (s) => category === "all" || s.category === category
   );
 
@@ -52,7 +84,12 @@ const Index = () => {
         ) : filtered && filtered.length > 0 ? (
           <div className="grid grid-cols-2 gap-3">
             {filtered.map((store) => (
-              <StoreCard key={store.id} {...store} />
+              <StoreCard
+                key={store.id}
+                {...store}
+                is_open={store.computedOpen}
+                statusReason={store.statusReason}
+              />
             ))}
           </div>
         ) : (
