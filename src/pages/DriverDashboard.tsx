@@ -262,6 +262,19 @@ const DriverDashboard = () => {
                 </div>
               </div>
 
+              {/* Cash payment alert */}
+              {myDelivery.payment_method === "dinheiro" && (
+                <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-xl p-3 mb-3">
+                  <p className="text-sm font-bold text-yellow-400 mb-2">💰 PAGAMENTO EM DINHEIRO</p>
+                  <div className="text-xs text-gray-300 space-y-1">
+                    {(myDelivery as any).needs_change && Number((myDelivery as any).change_for) > 0 && (
+                      <p>1️⃣ Pegar <span className="font-bold text-yellow-400">R$ {(Number((myDelivery as any).change_for) - Number(myDelivery.total_price)).toFixed(2)}</span> de troco com o lojista.</p>
+                    )}
+                    <p>{(myDelivery as any).needs_change ? "2️⃣" : "1️⃣"} Receber <span className="font-bold text-green-400">R$ {Number(myDelivery.total_price).toFixed(2)}</span> do cliente.</p>
+                    <p>{(myDelivery as any).needs_change ? "3️⃣" : "2️⃣"} Retornar à loja para entregar o valor total.</p>
+                  </div>
+                </div>
+              )}
               <div className="bg-gray-900/50 rounded-xl p-3 mb-3">
                 <p className="text-xs text-gray-500 mb-1">Itens do pedido:</p>
                 {(myDelivery as any).order_items?.map((item: any) => (
