@@ -255,6 +255,10 @@ const AdminDashboard = () => {
         <div className="px-4 py-4">
           <MenuBuilder storeId={store.id} />
         </div>
+      ) : dashboardTab === "addons" && store ? (
+        <div className="px-4 py-4">
+          <AddonManager storeId={store.id} />
+        </div>
       ) : dashboardTab === "hours" && store ? (
         <div className="px-4 py-4">
           <StoreHoursManager storeId={store.id} forceClosed={(store as any).force_closed || false} />
