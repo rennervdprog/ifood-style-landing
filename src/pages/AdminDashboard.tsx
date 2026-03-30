@@ -232,11 +232,23 @@ const AdminDashboard = () => {
         >
           <UtensilsCrossed className="h-4 w-4" /> Cardápio
         </button>
+        <button
+          onClick={() => setDashboardTab("hours")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold ${
+            dashboardTab === "hours" ? "bg-primary text-primary-foreground" : "bg-[#1F2937] text-gray-400"
+          }`}
+        >
+          <Clock className="h-4 w-4" /> Horários
+        </button>
       </div>
 
       {dashboardTab === "menu" && store ? (
         <div className="px-4 py-4">
           <MenuBuilder storeId={store.id} />
+        </div>
+      ) : dashboardTab === "hours" && store ? (
+        <div className="px-4 py-4">
+          <StoreHoursManager storeId={store.id} forceClosed={(store as any).force_closed || false} />
         </div>
       ) : (
         <>
