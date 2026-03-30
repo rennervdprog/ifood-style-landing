@@ -68,6 +68,13 @@ const CheckoutPage = () => {
       toast.error("Selecione a forma de pagamento.");
       return;
     }
+    if (paymentMethod === "dinheiro" && needsChange) {
+      const changeValue = parseFloat(changeFor);
+      if (!changeValue || changeValue < total) {
+        toast.error("O valor do troco deve ser maior que o total do pedido.");
+        return;
+      }
+    }
 
     setLoading(true);
     try {
