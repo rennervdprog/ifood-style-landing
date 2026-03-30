@@ -331,8 +331,8 @@ const DriverDashboard = () => {
                 ))}
               </div>
 
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs text-gray-400">Ganho</span>
+              <div className="flex items-center justify-between mb-3 bg-green-500/10 border border-green-500/30 rounded-xl p-3">
+                <span className="text-sm font-bold text-green-400">🏍️ Ganho da Entrega</span>
                 <span className="text-xl font-black text-green-400">
                   R$ {Number(myDelivery.delivery_fee).toFixed(2)}
                 </span>
@@ -431,7 +431,7 @@ const DriverDashboard = () => {
                       </div>
                       <div className="flex items-center justify-between">
                         <div>
-                          <span className="text-xs text-gray-500">Ganho</span>
+                          <span className="text-xs text-gray-500">🏍️ Ganho da Entrega</span>
                           <p className="text-xl font-black text-green-400">
                             R$ {Number(order.delivery_fee).toFixed(2)}
                           </p>
