@@ -8,6 +8,7 @@ import {
   Wifi, WifiOff, Pause, Play, Clock, ChefHat, Truck, CheckCircle2,
   MapPin, CreditCard, Package, ArrowLeft, Shield, DollarSign, Banknote
 } from "lucide-react";
+import WhatsAppButton from "@/components/WhatsAppButton";
 
 type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_entrega" | "em_transito" | "entregue" | "finalizado";
 
