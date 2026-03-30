@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/contexts/CartContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import RoleGuard from "@/components/RoleGuard";
 import Index from "./pages/Index";
 import StorePage from "./pages/StorePage";
 import CartPage from "./pages/CartPage";
@@ -34,9 +35,30 @@ const App = () => (
               <Route path="/pedidos" element={<PedidosPage />} />
               <Route path="/perfil" element={<PerfilPage />} />
               <Route path="/auth" element={<AuthPage />} />
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/entregador" element={<DriverDashboard />} />
-              <Route path="/super-admin" element={<SuperAdminDashboard />} />
+              <Route
+                path="/admin"
+                element={
+                  <RoleGuard allowedRoles={["lojista", "admin"]} redirectTo="/" requireApproval>
+                    <AdminDashboard />
+                  </RoleGuard>
+                }
+              />
+              <Route
+                path="/entregador"
+                element={
+                  <RoleGuard allowedRoles={["motoboy", "admin"]} redirectTo="/" requireApproval>
+                    <DriverDashboard />
+                  </RoleGuard>
+                }
+              />
+              <Route
+                path="/super-admin"
+                element={
+                  <RoleGuard allowedRoles={["admin"]} redirectTo="/">
+                    <SuperAdminDashboard />
+                  </RoleGuard>
+                }
+              />
               <Route path="/parceiro" element={<PartnerOnboarding />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
