@@ -431,7 +431,7 @@ const DriverDashboard = () => {
                       </div>
                       <div className="flex items-center justify-between">
                         <div>
-                          <span className="text-xs text-gray-500">Ganho</span>
+                          <span className="text-xs text-gray-500">🏍️ Ganho da Entrega</span>
                           <p className="text-xl font-black text-green-400">
                             R$ {Number(order.delivery_fee).toFixed(2)}
                           </p>

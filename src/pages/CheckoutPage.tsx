@@ -162,6 +162,9 @@ const CheckoutPage = () => {
           <div className="bg-card rounded-xl border border-border p-3 mb-2">
             <span className="text-sm text-muted-foreground">Bairro: </span>
             <span className="text-sm font-bold text-foreground">{neighborhood}</span>
+            <span className="text-xs text-muted-foreground ml-2">
+              (Taxa: R$ {neighborhoodFee.toFixed(2)})
+            </span>
           </div>
           <textarea
             placeholder="Rua, número e ponto de referência..."

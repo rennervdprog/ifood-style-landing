@@ -20,6 +20,9 @@ const AppHeader = () => {
     });
   }, []);
 
+  const urban = neighborhoods.filter((n) => n.fee <= 4);
+  const rural = neighborhoods.filter((n) => n.fee > 4);
+
   return (
     <header className="sticky top-0 z-50 bg-card border-b border-border">
       <div className="flex items-center justify-between px-4 h-14">
@@ -43,22 +46,51 @@ const AppHeader = () => {
           </button>
 
           {open && (
-            <div className="absolute right-0 top-full mt-2 w-56 bg-card rounded-xl shadow-lg border border-border py-1 max-h-64 overflow-y-auto z-50">
-              {neighborhoods.map((n) => (
-                <button
-                  key={n.id}
-                  onClick={() => {
-                    setNeighborhood(n.name, n.fee);
-                    setOpen(false);
-                  }}
-                  className={`w-full text-left px-4 py-2.5 text-sm hover:bg-muted transition-colors flex justify-between ${
-                    neighborhood === n.name ? "text-primary font-bold" : "text-foreground"
-                  }`}
-                >
-                  <span>{n.name}</span>
-                  <span className="text-muted-foreground">R$ {n.fee.toFixed(2)}</span>
-                </button>
-              ))}
+            <div className="absolute right-0 top-full mt-2 w-64 bg-card rounded-xl shadow-lg border border-border py-1 max-h-80 overflow-y-auto z-50">
+              {urban.length > 0 && (
+                <>
+                  <div className="px-4 py-2 text-xs font-bold text-primary uppercase tracking-wider bg-primary/5">
+                    Zona Urbana — R$ 4,00
+                  </div>
+                  {urban.map((n) => (
+                    <button
+                      key={n.id}
+                      onClick={() => {
+                        setNeighborhood(n.name, n.fee);
+                        setOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-2.5 text-sm hover:bg-muted transition-colors flex justify-between ${
+                        neighborhood === n.name ? "text-primary font-bold" : "text-foreground"
+                      }`}
+                    >
+                      <span>{n.name}</span>
+                      <span className="text-muted-foreground">R$ {n.fee.toFixed(2)}</span>
+                    </button>
+                  ))}
+                </>
+              )}
+              {rural.length > 0 && (
+                <>
+                  <div className="px-4 py-2 text-xs font-bold text-destructive uppercase tracking-wider bg-destructive/5 mt-1">
+                    Zona Rural / Afastados — R$ 12,00
+                  </div>
+                  {rural.map((n) => (
+                    <button
+                      key={n.id}
+                      onClick={() => {
+                        setNeighborhood(n.name, n.fee);
+                        setOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-2.5 text-sm hover:bg-muted transition-colors flex justify-between ${
+                        neighborhood === n.name ? "text-primary font-bold" : "text-foreground"
+                      }`}
+                    >
+                      <span>{n.name}</span>
+                      <span className="text-muted-foreground">R$ {n.fee.toFixed(2)}</span>
+                    </button>
+                  ))}
+                </>
+              )}
             </div>
           )}
         </div>
