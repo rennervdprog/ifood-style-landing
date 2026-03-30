@@ -133,10 +133,36 @@ const AdminDashboard = () => {
     }
   };
 
+  // Check approval
+  const { data: profile } = useQuery({
+    queryKey: ["my-profile-approval", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("is_approved, role").eq("user_id", user!.id).maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
+
   if (authLoading) return null;
   if (!user) {
     navigate("/auth", { replace: true });
     return null;
+  }
+
+  if (profile && !(profile as any).is_approved) {
+    return (
+      <div className="min-h-screen bg-[#111827] flex flex-col items-center justify-center text-center px-6">
+        <Shield className="h-16 w-16 text-yellow-400 mb-4" />
+        <h1 className="text-xl font-bold text-white mb-2">Cadastro em Análise! 🛡️</h1>
+        <p className="text-sm text-gray-400 max-w-xs mb-2">
+          Olá! Recebemos seus dados. Em até 24h o administrador de Itatinga liberará seu acesso.
+        </p>
+        <p className="text-xs text-gray-500">Entraremos em contato via WhatsApp.</p>
+        <button onClick={() => navigate("/")} className="mt-6 bg-white text-gray-900 font-bold px-6 py-3 rounded-xl">
+          Voltar à Home
+        </button>
+      </div>
+    );
   }
 
   const filteredOrders = orders?.filter(o => o.status === activeTab) || [];
