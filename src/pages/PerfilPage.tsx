@@ -4,8 +4,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/BottomNav";
-import { User, LogOut, Store, Shield, UserPlus, MapPin, Save, Bike, Wallet, Copy, AlertTriangle } from "lucide-react";
+import { User, LogOut, Store, Shield, UserPlus, MapPin, Save, Bike, Wallet, Copy, AlertTriangle, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
+import { maskWhatsApp, formatWhatsAppNumber, isValidWhatsApp } from "@/lib/whatsapp";
 
 const PerfilPage = () => {
   const { user, signOut } = useAuth();
@@ -67,6 +68,7 @@ const PerfilPage = () => {
   const [referencePoint, setReferencePoint] = useState("");
   const [neighborhood, setNeighborhood] = useState("");
   const [phone, setPhone] = useState("");
+  const [whatsappNumber, setWhatsappNumber] = useState("");
   const [savingAddress, setSavingAddress] = useState(false);
   const [addressLoaded, setAddressLoaded] = useState(false);
 
@@ -84,6 +86,8 @@ const PerfilPage = () => {
       setReferencePoint((profile as any).reference_point || "");
       setNeighborhood((profile as any).neighborhood || "");
       setPhone((profile as any).phone || "");
+      const wn = (profile as any).whatsapp_number || "";
+      setWhatsappNumber(wn ? maskWhatsApp(wn) : "");
       setAddressLoaded(true);
     }
   }, [profile, addressLoaded]);
@@ -120,6 +124,7 @@ const PerfilPage = () => {
           reference_point: referencePoint.trim(),
           neighborhood,
           phone: phone.trim(),
+          whatsapp_number: isValidWhatsApp(whatsappNumber) ? formatWhatsAppNumber(whatsappNumber) : null,
         } as any, { onConflict: "user_id" });
       if (error) throw error;
       toast.success("Endereço salvo!");
@@ -256,13 +261,27 @@ const PerfilPage = () => {
             />
             <input
               type="tel"
-              placeholder="Telefone / WhatsApp"
+              placeholder="Telefone"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               inputMode="tel"
               className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               autoComplete="tel"
             />
+            <div>
+              <label className="text-xs font-bold text-foreground mb-1 flex items-center gap-1.5">
+                <MessageCircle className="h-3.5 w-3.5 text-green-500" />
+                WhatsApp (com DDD)
+              </label>
+              <input
+                type="tel"
+                placeholder="(15) 99999-9999"
+                value={whatsappNumber}
+                onChange={(e) => setWhatsappNumber(maskWhatsApp(e.target.value))}
+                inputMode="tel"
+                className="w-full px-3 py-2.5 rounded-xl border border-green-500/30 bg-background text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
+            </div>
             <button
               onClick={handleSaveAddress}
               disabled={savingAddress}

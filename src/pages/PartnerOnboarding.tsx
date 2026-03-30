@@ -7,9 +7,10 @@ import { toast } from "sonner";
 import { z } from "zod";
 import {
   Store, Bike, ArrowLeft, ArrowRight, Camera, Upload,
-  User, FileText, Truck, ChefHat
+  User, FileText, Truck, ChefHat, MessageCircle
 } from "lucide-react";
 import { Constants } from "@/integrations/supabase/types";
+import { maskWhatsApp, isValidWhatsApp, formatWhatsAppNumber } from "@/lib/whatsapp";
 
 type PartnerType = "lojista" | "motoboy" | null;
 
@@ -20,12 +21,14 @@ const lojistSchema = z.object({
   document: z.string().trim().min(11, "CPF/CNPJ inválido").max(18),
   storeName: z.string().trim().min(3, "Nome da loja deve ter pelo menos 3 caracteres").max(100),
   storeCategory: z.enum(storeCategories as unknown as [string, ...string[]], { errorMap: () => ({ message: "Selecione uma categoria" }) }),
+  whatsapp: z.string().refine(isValidWhatsApp, "WhatsApp inválido. Digite com DDD (ex: 15 99999-9999)"),
 });
 
 const motoboySchema = z.object({
   fullName: z.string().trim().min(3, "Nome deve ter pelo menos 3 caracteres").max(100),
   document: z.string().trim().min(11, "CPF inválido").max(14),
   vehicle: z.string().trim().min(3, "Informe o modelo do veículo").max(100),
+  whatsapp: z.string().refine(isValidWhatsApp, "WhatsApp inválido. Digite com DDD (ex: 15 99999-9999)"),
 });
 
 const categoryLabels: Record<string, string> = {
@@ -59,6 +62,7 @@ const PartnerOnboarding = () => {
   const [storeName, setStoreName] = useState("");
   const [storeCategory, setStoreCategory] = useState("");
   const [vehicle, setVehicle] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
 
   // Check if user already has a profile with a role
   const { data: profile, isLoading: profileLoading } = useQuery({
@@ -127,7 +131,7 @@ const PartnerOnboarding = () => {
     setErrors({});
 
     if (partnerType === "lojista") {
-      const result = lojistSchema.safeParse({ fullName, document, storeName, storeCategory });
+      const result = lojistSchema.safeParse({ fullName, document, storeName, storeCategory, whatsapp });
       if (!result.success) {
         const fieldErrors: Record<string, string> = {};
         result.error.errors.forEach(e => { fieldErrors[e.path[0] as string] = e.message; });
@@ -135,7 +139,7 @@ const PartnerOnboarding = () => {
         return;
       }
     } else {
-      const result = motoboySchema.safeParse({ fullName, document, vehicle });
+      const result = motoboySchema.safeParse({ fullName, document, vehicle, whatsapp });
       if (!result.success) {
         const fieldErrors: Record<string, string> = {};
         result.error.errors.forEach(e => { fieldErrors[e.path[0] as string] = e.message; });
@@ -147,6 +151,7 @@ const PartnerOnboarding = () => {
     setLoading(true);
     try {
       const avatarUrl = await uploadImage();
+      const formattedWhatsapp = formatWhatsAppNumber(whatsapp);
 
       if (partnerType === "lojista") {
         const { error } = await supabase.rpc("register_as_lojista", {
@@ -155,6 +160,7 @@ const PartnerOnboarding = () => {
           _store_name: storeName.trim(),
           _store_category: storeCategory,
           _avatar_url: avatarUrl,
+          _whatsapp: formattedWhatsapp,
         } as any);
         if (error) throw error;
         toast.success("Cadastro realizado com sucesso! Bem-vindo à rede de Itatinga. 🎉");
@@ -165,6 +171,7 @@ const PartnerOnboarding = () => {
           _document: document.trim(),
           _vehicle: vehicle.trim(),
           _avatar_url: avatarUrl,
+          _whatsapp: formattedWhatsapp,
         } as any);
         if (error) throw error;
         toast.success("Cadastro realizado com sucesso! Bem-vindo à rede de Itatinga. 🎉");
@@ -317,6 +324,24 @@ const PartnerOnboarding = () => {
                 error={errors.document}
                 inputMode="numeric"
               />
+
+              {/* WhatsApp field */}
+              <div>
+                <label className="text-sm font-bold text-foreground mb-1.5 flex items-center gap-2">
+                  <MessageCircle className="h-4 w-4 text-green-500" />
+                  {partnerType === "lojista" ? "WhatsApp do Estabelecimento" : "Seu WhatsApp para Contato"}
+                </label>
+                <p className="text-xs text-muted-foreground mb-2">Digite o número com DDD (ex: 15 99999-9999)</p>
+                <input
+                  type="tel"
+                  inputMode="tel"
+                  placeholder="(15) 99999-9999"
+                  value={whatsapp}
+                  onChange={(e) => setWhatsapp(maskWhatsApp(e.target.value))}
+                  className="w-full px-4 py-3 rounded-xl border border-green-500/30 bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                />
+                {errors.whatsapp && <p className="text-xs text-destructive mt-1">{errors.whatsapp}</p>}
+              </div>
 
               {/* Lojista-specific */}
               {partnerType === "lojista" && (

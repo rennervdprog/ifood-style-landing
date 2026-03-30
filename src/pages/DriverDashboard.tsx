@@ -9,6 +9,7 @@ import {
   ArrowLeft, Navigation, KeyRound
 } from "lucide-react";
 import confetti from "canvas-confetti";
+import WhatsAppButton from "@/components/WhatsAppButton";
 
 const DriverDashboard = () => {
   const { user, loading: authLoading } = useAuth();
@@ -60,7 +61,7 @@ const DriverDashboard = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*, stores(name), order_items(*, products(name))")
+        .select("*, stores(name, owner_id), order_items(*, products(name))")
         .eq("driver_id", user!.id)
         .eq("status", "em_transito" as any)
         .maybeSingle();
@@ -70,6 +71,28 @@ const DriverDashboard = () => {
     enabled: !!user,
     refetchInterval: 15000,
   });
+
+  // Fetch profiles for WhatsApp (client + store owner)
+  const deliveryClientId = myDelivery?.client_id;
+  const deliveryStoreOwnerId = (myDelivery as any)?.stores?.owner_id;
+  const profileIds = [deliveryClientId, deliveryStoreOwnerId].filter(Boolean) as string[];
+  
+  const { data: contactProfiles } = useQuery({
+    queryKey: ["driver-contacts", profileIds],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("user_id, whatsapp_number, phone, full_name")
+        .in("user_id", profileIds);
+      return data || [];
+    },
+    enabled: profileIds.length > 0,
+  });
+
+  const getContactWhatsApp = (userId: string) => {
+    const p = contactProfiles?.find((c: any) => c.user_id === userId);
+    return (p as any)?.whatsapp_number || (p as any)?.phone || "";
+  };
 
   // Pending return (cash orders delivered but not confirmed return)
   const { data: pendingReturn } = useQuery({
@@ -275,6 +298,29 @@ const DriverDashboard = () => {
                   </div>
                 </div>
               )}
+
+              {/* WhatsApp contact buttons */}
+              <div className="flex gap-2 mb-3">
+                {deliveryStoreOwnerId && getContactWhatsApp(deliveryStoreOwnerId) && (
+                  <WhatsAppButton
+                    number={getContactWhatsApp(deliveryStoreOwnerId)}
+                    message={`Olá! Sou o entregador do app de Itatinga. Estou com o pedido #${myDelivery.id.slice(0, 8).toUpperCase()} da loja ${(myDelivery as any).stores?.name || ""}.`}
+                    label="Falar com a Loja"
+                    size="md"
+                    className="flex-1"
+                  />
+                )}
+                {deliveryClientId && getContactWhatsApp(deliveryClientId) && (
+                  <WhatsAppButton
+                    number={getContactWhatsApp(deliveryClientId)}
+                    message="Olá, sou o entregador do app de Itatinga e estou com seu pedido!"
+                    label="Falar com Cliente"
+                    size="md"
+                    className="flex-1"
+                  />
+                )}
+              </div>
+
               <div className="bg-gray-900/50 rounded-xl p-3 mb-3">
                 <p className="text-xs text-gray-500 mb-1">Itens do pedido:</p>
                 {(myDelivery as any).order_items?.map((item: any) => (

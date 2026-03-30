@@ -8,6 +8,7 @@ import {
   Wifi, WifiOff, Pause, Play, Clock, ChefHat, Truck, CheckCircle2,
   MapPin, CreditCard, Package, ArrowLeft, Shield, DollarSign, Banknote
 } from "lucide-react";
+import WhatsAppButton from "@/components/WhatsAppButton";
 
 type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_entrega" | "em_transito" | "entregue" | "finalizado";
 
@@ -61,7 +62,7 @@ const AdminDashboard = () => {
     enabled: !!user,
   });
 
-  // Fetch orders for this store
+  // Fetch orders for this store (with client profiles for WhatsApp)
   const { data: orders, isLoading } = useQuery({
     queryKey: ["store-orders", store?.id],
     queryFn: async () => {
@@ -75,6 +76,30 @@ const AdminDashboard = () => {
     },
     enabled: !!store,
   });
+
+  // Fetch client profiles for WhatsApp numbers
+  const clientIds = [...new Set(orders?.map(o => o.client_id) || [])];
+  const { data: clientProfiles } = useQuery({
+    queryKey: ["client-profiles", clientIds],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("user_id, whatsapp_number, phone, full_name")
+        .in("user_id", clientIds);
+      return data || [];
+    },
+    enabled: clientIds.length > 0,
+  });
+
+  const getClientWhatsApp = (clientId: string) => {
+    const p = clientProfiles?.find((c: any) => c.user_id === clientId);
+    return (p as any)?.whatsapp_number || (p as any)?.phone || "";
+  };
+
+  const getClientName = (clientId: string) => {
+    const p = clientProfiles?.find((c: any) => c.user_id === clientId);
+    return (p as any)?.full_name || "Cliente";
+  };
 
   // Alert sound for new orders
   const playAlert = useCallback(() => {
@@ -323,7 +348,19 @@ const AdminDashboard = () => {
                   </div>
                 )}
 
-                {/* Total + Action */}
+                {/* WhatsApp + Total + Action */}
+                {getClientWhatsApp(order.client_id) && (
+                  <div className="mb-3">
+                    <WhatsAppButton
+                      number={getClientWhatsApp(order.client_id)}
+                      message={`Olá ${getClientName(order.client_id)}! Aqui é do ${store?.name || "estabelecimento"}. Sobre seu pedido #${order.id.slice(0, 8).toUpperCase()}...`}
+                      label="Chamar Cliente no WhatsApp"
+                      size="md"
+                      className="w-full"
+                    />
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between pt-3 border-t border-gray-700">
                   <div>
                     <span className="text-xs text-gray-400">Total</span>
