@@ -87,6 +87,16 @@ const PerfilPage = () => {
           </button>
         )}
 
+        {!myStore && (
+          <button
+            onClick={() => navigate("/parceiro")}
+            className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-primary/30 bg-primary/5 text-primary font-bold"
+          >
+            <UserPlus className="h-4 w-4" />
+            Seja um Parceiro
+          </button>
+        )}
+
         <button
           onClick={handleSignOut}
           className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-border bg-card text-destructive font-bold"
