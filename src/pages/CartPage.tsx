@@ -96,7 +96,10 @@ const CartPage = () => {
       </div>
 
       <div className="px-4 pt-2">
-        <button className="w-full bg-primary text-primary-foreground font-bold py-3.5 rounded-2xl active:scale-[0.98] transition-transform">
+        <button
+          onClick={() => navigate("/checkout")}
+          className="w-full bg-primary text-primary-foreground font-bold py-3.5 rounded-2xl active:scale-[0.98] transition-transform"
+        >
           Finalizar pedido
         </button>
       </div>
