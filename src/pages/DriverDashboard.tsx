@@ -163,6 +163,16 @@ const DriverDashboard = () => {
     }
   };
 
+  const confirmStoreReturn = async (orderId: string) => {
+    const { error } = await supabase.rpc("driver_confirm_store_return", { _order_id: orderId } as any);
+    if (error) {
+      toast.error(error.message || "Erro ao confirmar retorno.");
+    } else {
+      toast.success("Acerto com a loja confirmado! ✅");
+      queryClient.invalidateQueries({ queryKey: ["driver-pending-return", user!.id] });
+    }
+  };
+
   if (authLoading) return null;
   if (!user) {
     navigate("/auth", { replace: true });
