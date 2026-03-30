@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
-import { ClipboardList, Clock, ChefHat, Truck, CheckCircle2 } from "lucide-react";
+import { ClipboardList, Clock, ChefHat, Truck, CheckCircle2, Lock, Copy } from "lucide-react";
+import { toast } from "sonner";
 
 const statusConfig: Record<string, { label: string; icon: React.ElementType; color: string }> = {
   pendente: { label: "Pendente", icon: Clock, color: "text-yellow-500" },
@@ -59,6 +60,11 @@ const PedidosPage = () => {
     };
   }, [user, queryClient]);
 
+  const copyPin = (pin: string) => {
+    navigator.clipboard.writeText(pin);
+    toast.success("Código copiado!");
+  };
+
   if (!authLoading && !user) {
     return (
       <div className="min-h-screen bg-background pb-20">
@@ -102,6 +108,7 @@ const PedidosPage = () => {
           orders.map((order: any) => {
             const config = statusConfig[order.status] || statusConfig.pendente;
             const StatusIcon = config.icon;
+            const showPin = order.delivery_pin && !["entregue", "finalizado"].includes(order.status);
             return (
               <div key={order.id} className="bg-card rounded-2xl p-4 border border-border">
                 <div className="flex items-center justify-between mb-2">
@@ -113,6 +120,32 @@ const PedidosPage = () => {
                     {config.label}
                   </div>
                 </div>
+
+                {/* Delivery PIN Card */}
+                {showPin && (
+                  <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 mb-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Lock className="h-4 w-4 text-primary" />
+                      <span className="text-xs font-bold text-primary">Código de Entrega</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-2xl font-black text-foreground tracking-[0.3em]">
+                        {order.delivery_pin}
+                      </span>
+                      <button
+                        onClick={() => copyPin(order.delivery_pin)}
+                        className="flex items-center gap-1 text-xs text-primary font-bold px-2 py-1 rounded-lg bg-primary/10"
+                      >
+                        <Copy className="h-3 w-3" />
+                        Copiar
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      Informe ao motoboy apenas quando receber seu pedido.
+                    </p>
+                  </div>
+                )}
+
                 <div className="text-xs text-muted-foreground space-y-0.5">
                   {order.order_items?.map((item: any) => (
                     <p key={item.id}>
