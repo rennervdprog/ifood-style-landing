@@ -199,31 +199,36 @@ const DriverDashboard = () => {
     return filteredHistory.reduce((sum: number, o: any) => sum + Number(o.delivery_fee), 0);
   }, [filteredHistory]);
 
-  // Sync online status with DB on mount/change
+  // Sync online status on mount and set offline on unload
   useEffect(() => {
     if (!user) return;
+    // Sync current state immediately on mount
     supabase
       .from("drivers")
       .update({ is_online: isOnline } as any)
       .eq("user_id", user.id)
       .then(() => {});
-    // Set offline on page unload
+    // Set offline on page close
     const handleUnload = () => {
-      navigator.sendBeacon?.("", "");
-      supabase
-        .from("drivers")
-        .update({ is_online: false } as any)
-        .eq("user_id", user.id);
+      // Use fetch with keepalive for reliable unload
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/drivers?user_id=eq.${user.id}`;
+      fetch(url, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          "Prefer": "return=minimal",
+        },
+        body: JSON.stringify({ is_online: false }),
+        keepalive: true,
+      }).catch(() => {});
     };
     window.addEventListener("beforeunload", handleUnload);
     return () => {
       window.removeEventListener("beforeunload", handleUnload);
-      supabase
-        .from("drivers")
-        .update({ is_online: false } as any)
-        .eq("user_id", user.id);
     };
-  }, [user, isOnline]);
+  }, [user]);
 
   useEffect(() => {
     if (!user || !isOnline) return;
