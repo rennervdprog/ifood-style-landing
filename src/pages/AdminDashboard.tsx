@@ -38,7 +38,7 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const receiptRef = useRef<HTMLDivElement | null>(null);
+  
   const [isOnline, setIsOnline] = useState(true);
   const [activeTab, setActiveTab] = useState<OrderStatus>("pendente");
   const [dashboardTab, setDashboardTab] = useState<DashboardTab>("orders");
