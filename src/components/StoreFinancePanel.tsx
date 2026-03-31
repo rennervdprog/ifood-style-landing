@@ -201,13 +201,32 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
         </button>
       </div>
 
+      {/* Active PIX orders (in progress) */}
+      {activeOrders.filter(o => o.payment_method === "pix").length > 0 && (
+        <div className="bg-blue-900/20 border border-blue-700 rounded-2xl p-4 space-y-2">
+          <h3 className="text-sm font-bold text-blue-300">⏳ Pedidos PIX em Andamento</h3>
+          <p className="text-xs text-gray-400">Estes pedidos já foram pagos via PIX e serão contabilizados ao finalizar.</p>
+          {activeOrders.filter(o => o.payment_method === "pix").map(order => (
+            <div key={order.id} className="flex justify-between text-xs bg-blue-900/30 rounded-xl p-2">
+              <span className="text-blue-300 font-bold">#{order.id.substring(0, 6).toUpperCase()}</span>
+              <span className="text-white">R$ {Number(order.subtotal).toFixed(2)}</span>
+              <span className="text-blue-400 capitalize">{order.status.replace(/_/g, " ")}</span>
+            </div>
+          ))}
+          <div className="flex justify-between text-xs pt-1 border-t border-blue-800">
+            <span className="text-blue-400">Total PIX em andamento</span>
+            <span className="text-blue-300 font-bold">R$ {activePixSales.toFixed(2)}</span>
+          </div>
+        </div>
+      )}
+
       {/* Order table */}
       {isLoading ? (
         <p className="text-gray-400 text-center py-8 text-sm">Carregando...</p>
-      ) : orders && orders.length > 0 ? (
+      ) : completedOrders.length > 0 ? (
         <div className="space-y-2">
-          <h3 className="text-sm font-bold text-gray-300">Extrato por Pedido</h3>
-          {orders.map(order => {
+          <h3 className="text-sm font-bold text-gray-300">Extrato por Pedido (Finalizados)</h3>
+          {completedOrders.map(order => {
             const sub = Number(order.subtotal);
             const commission = Math.round(sub * 0.15 * 100) / 100;
             const net = Math.round(sub * 0.85 * 100) / 100;
