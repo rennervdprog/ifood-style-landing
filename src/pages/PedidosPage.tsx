@@ -363,10 +363,16 @@ const PedidosPage = () => {
             );
           })
         ) : (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <ClipboardList className="h-16 w-16 text-muted-foreground mb-4" />
-            <h2 className="text-lg font-bold text-foreground mb-1">Nenhum pedido ainda</h2>
-            <p className="text-sm text-muted-foreground">Seus pedidos aparecerão aqui.</p>
+          <div className="flex flex-col items-center justify-center py-20 text-center px-6">
+            <div className="text-6xl mb-4">🍔</div>
+            <h2 className="text-lg font-bold text-foreground mb-1">Tudo limpo por aqui!</h2>
+            <p className="text-sm text-muted-foreground mb-6">Que tal pedir algo gostoso agora?</p>
+            <button
+              onClick={() => navigate("/")}
+              className="bg-primary text-primary-foreground font-bold px-8 py-3 rounded-2xl text-sm"
+            >
+              Ver Restaurantes
+            </button>
           </div>
         )}
       </div>
