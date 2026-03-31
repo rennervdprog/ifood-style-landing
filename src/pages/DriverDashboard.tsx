@@ -7,7 +7,8 @@ import { toast } from "sonner";
 import {
   Bike, MapPin, Store, DollarSign, Package, CheckCircle2,
   ArrowLeft, Navigation, KeyRound, Smartphone, ShieldCheck,
-  Wallet, TrendingUp, Calendar, Download, Clock, ChevronDown
+  Wallet, TrendingUp, Calendar, Download, Clock, ChevronDown,
+  CreditCard, Banknote, Settings, Save
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import WhatsAppButton from "@/components/WhatsAppButton";
@@ -17,7 +18,7 @@ import { format, startOfDay, startOfWeek, subDays, isWithinInterval, parseISO } 
 import { ptBR } from "date-fns/locale";
 import { requestNotificationPermission, notifyDeliveryAvailable } from "@/lib/notifications";
 
-type TabType = "entregas" | "historico";
+type TabType = "entregas" | "historico" | "config";
 type DateFilter = "hoje" | "semana" | "mes" | "custom";
 
 const URBAN_FEE = 4;
@@ -26,6 +27,14 @@ const RURAL_NEIGHBORHOODS = [
   "Distrito do Lobo", "Recanto dos Cambarás", "Engenheiro Serra",
   "Vila dos Lavradores", "Entorno do CDP", "Fazendas/Sítios (Geral)"
 ];
+
+const PIX_TYPE_LABELS: Record<string, string> = {
+  cpf: "CPF",
+  cnpj: "CNPJ",
+  email: "E-mail",
+  phone: "Telefone",
+  random: "Chave Aleatória",
+};
 
 const DriverDashboard = () => {
   const isMobile = useIsMobile();
@@ -45,18 +54,31 @@ const DriverDashboard = () => {
   const [activeTab, setActiveTab] = useState<TabType>("entregas");
   const [dateFilter, setDateFilter] = useState<DateFilter>("hoje");
 
+  // Pix config state
+  const [pixKey, setPixKey] = useState("");
+  const [pixType, setPixType] = useState<string>("cpf");
+  const [savingPix, setSavingPix] = useState(false);
+
   const { data: driverProfile } = useQuery({
     queryKey: ["my-profile-approval", user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("is_approved, role").eq("user_id", user!.id).maybeSingle();
+      const { data } = await supabase.from("profiles").select("is_approved, role, pix_key, pix_type").eq("user_id", user!.id).maybeSingle();
       return data;
     },
     enabled: !!user,
   });
 
+  // Populate pix fields from profile
+  useEffect(() => {
+    if (driverProfile) {
+      setPixKey((driverProfile as any).pix_key || "");
+      setPixType((driverProfile as any).pix_type || "cpf");
+    }
+  }, [driverProfile]);
+
   const playAlert = useCallback(() => {
     if (!audioRef.current) {
-      audioRef.current = new Audio("data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2JkYyEd2lbUExKTVJeaoOSm5uTiHpqXE9FQEFHTVhojJylp6CUhXRjVEdAP0RNW26Hm6ewsKifkH5sXU5EQENLWGmBl6iwsqyhlYN0ZFVJQkRMWWmAlaOssK2km5GBcmRXTEVFTFlpgJSkrrKupZqPf3BjV01HR1Bcb4OXpq+0sKadkYBwY1hNSElSYHGFmKewtLOroJSEd2lbUExKTVJeaoOSm5uTiHpqXE9FQEFHTVhojJylp6CUhXRjVEdAP0RNW26Hm6ewsKifkH5sXU5EQENLWGmBl6iwsqyhlYN0ZFVJQkRMWWmAlaOssK2km5GBcmRXTEVFTFlpgJSkrrKupZqPf3BjV01HR1Bcb4OXpq+0sKadkYBwY1hNSElSYHGFmKewtLOroJSEd2lbUExKTVJeaoOSm5uTiHpqXE9FQEFHTVhojJylp6CUhXRjVEdAP0RNW26Hm6ewsKifkH5sXU5EQENLWGmBl6iwsqyhlYN0ZFVJQkRMWWmAlaOssK2km5GBcmRXTEVFTFlpgJSkrrKupZqPf3BjV01HR1Bcb4OXpq+0sKadkYBwY1hNSElSYHGFmKewtLOroJSEd2lbUExKTVJeaoOSm5uTiHpqXE9FQEFHTQ==");
+      audioRef.current = new Audio("data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2JkYyEd2lbUExKTVJeaoOSm5uTiHpqXE9FQEFHTVhojJylp6CUhXRjVEdAP0RNW26Hm6ewsKifkH5sXU5EQENLWGmBl6iwsqyhlYN0ZFVJQkRMWWmAlaOssK2km5GBcmRXTEVFTFlpgJSkrrKupZqPf3BjV01HR1Bcb4OXpq+0sKadkYBwY1hNSElSYHGFmKewtLOroJSEd2lbUExKTVJeaoOSm5uTiHpqXE9FQEFHTVhojJylp6CUhXRjVEdAP0RNW26Hm6ewsKifkH5sXU5EQENLWGmBl6iwsqyhlYN0ZFVJQkRMWWmAlaOssK2km5GBcmRXTEVFTFlpgJSkrrKupZqPf3BjV01HR1Bcb4OXpq+0sKadkYBwY1hNSElSYHGFmKewtLOroJSEd2lbUExKTVJeaoOSm5uTiHpqXE9FQEFHTQ==");
     }
     audioRef.current.play().catch(() => {});
   }, []);
@@ -93,13 +115,13 @@ const DriverDashboard = () => {
     refetchInterval: 15000,
   });
 
-  // Fetch ALL finalized deliveries for history/earnings
+  // Fetch ALL finalized deliveries for history/earnings (include payment_method)
   const { data: deliveryHistory, isLoading: loadingHistory } = useQuery({
     queryKey: ["driver-history", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("id, delivery_fee, neighborhood, confirmed_at, created_at, stores(name)")
+        .select("id, delivery_fee, neighborhood, confirmed_at, created_at, payment_method, stores(name)")
         .eq("driver_id", user!.id)
         .eq("status", "finalizado" as any)
         .order("confirmed_at", { ascending: false });
@@ -177,10 +199,7 @@ const DriverDashboard = () => {
     if (!deliveryHistory) return 0;
     const todayStart = startOfDay(new Date());
     return deliveryHistory
-      .filter((o: any) => {
-        const d = parseISO(o.confirmed_at || o.created_at);
-        return d >= todayStart;
-      })
+      .filter((o: any) => parseISO(o.confirmed_at || o.created_at) >= todayStart)
       .reduce((sum: number, o: any) => sum + Number(o.delivery_fee), 0);
   }, [deliveryHistory]);
 
@@ -188,10 +207,7 @@ const DriverDashboard = () => {
     if (!deliveryHistory) return 0;
     const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
     return deliveryHistory
-      .filter((o: any) => {
-        const d = parseISO(o.confirmed_at || o.created_at);
-        return d >= weekStart;
-      })
+      .filter((o: any) => parseISO(o.confirmed_at || o.created_at) >= weekStart)
       .reduce((sum: number, o: any) => sum + Number(o.delivery_fee), 0);
   }, [deliveryHistory]);
 
@@ -201,18 +217,28 @@ const DriverDashboard = () => {
     return filteredHistory.reduce((sum: number, o: any) => sum + Number(o.delivery_fee), 0);
   }, [filteredHistory]);
 
+  // Pix vs Cash breakdown for filtered period
+  const earningsBreakdown = useMemo(() => {
+    const pixEarnings = filteredHistory
+      .filter((o: any) => o.payment_method !== "dinheiro")
+      .reduce((sum: number, o: any) => sum + Number(o.delivery_fee), 0);
+    const cashEarnings = filteredHistory
+      .filter((o: any) => o.payment_method === "dinheiro")
+      .reduce((sum: number, o: any) => sum + Number(o.delivery_fee), 0);
+    const pixCount = filteredHistory.filter((o: any) => o.payment_method !== "dinheiro").length;
+    const cashCount = filteredHistory.filter((o: any) => o.payment_method === "dinheiro").length;
+    return { pixEarnings, cashEarnings, pixCount, cashCount };
+  }, [filteredHistory]);
+
   // Sync online status on mount and set offline on unload
   useEffect(() => {
     if (!user) return;
-    // Sync current state immediately on mount
     supabase
       .from("drivers")
       .update({ is_online: isOnline } as any)
       .eq("user_id", user.id)
       .then(() => {});
-    // Set offline on page close
     const handleUnload = () => {
-      // Use fetch with keepalive for reliable unload
       const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/drivers?user_id=eq.${user.id}`;
       fetch(url, {
         method: "PATCH",
@@ -227,9 +253,7 @@ const DriverDashboard = () => {
       }).catch(() => {});
     };
     window.addEventListener("beforeunload", handleUnload);
-    return () => {
-      window.removeEventListener("beforeunload", handleUnload);
-    };
+    return () => { window.removeEventListener("beforeunload", handleUnload); };
   }, [user]);
 
   useEffect(() => {
@@ -310,16 +334,13 @@ const DriverDashboard = () => {
       setVerifyingCollection(false);
       setCollectionCodeInput("");
       queryClient.invalidateQueries({ queryKey: ["driver-my-delivery", user!.id] });
-      // Auto WhatsApp to client on collection
       if (myDelivery) {
         const clientPhone = getContactWhatsApp(myDelivery.client_id);
         if (clientPhone) {
           const clientName = contactProfiles?.find((c: any) => c.user_id === myDelivery.client_id);
           const name = (clientName as any)?.full_name || "Cliente";
           const msg = `🏍️ *ItaFood* informa: Seu lanche saiu para entrega! O motoboy já coletou o pedido e está a caminho de: ${myDelivery.address_details} 💨\n\n--------------------------\n💰 Total: R$ ${Number(myDelivery.total_price).toFixed(2)}\n💳 Pagamento: ${myDelivery.payment_method === "pix" ? "PIX" : myDelivery.payment_method === "cartao" ? "Cartão" : myDelivery.payment_method === "dinheiro" ? "Dinheiro" : myDelivery.payment_method}\nPedido: #${myDelivery.id.slice(0, 8).toUpperCase()}\n--------------------------`;
-          setTimeout(() => {
-            openWhatsApp(clientPhone, msg);
-          }, 600);
+          setTimeout(() => openWhatsApp(clientPhone, msg), 600);
         }
       }
     }
@@ -360,6 +381,25 @@ const DriverDashboard = () => {
     }
   };
 
+  const savePixKey = async () => {
+    if (!pixKey.trim()) {
+      toast.error("Informe sua chave Pix.");
+      return;
+    }
+    setSavingPix(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ pix_key: pixKey.trim(), pix_type: pixType as any })
+      .eq("user_id", user!.id);
+    if (error) {
+      toast.error("Erro ao salvar chave Pix.");
+    } else {
+      toast.success("✅ Chave Pix salva com sucesso!");
+      queryClient.invalidateQueries({ queryKey: ["my-profile-approval", user!.id] });
+    }
+    setSavingPix(false);
+  };
+
   const exportSummary = () => {
     const filterLabel = dateFilter === "hoje" ? "Hoje" : dateFilter === "semana" ? "Semana" : dateFilter === "mes" ? "Últimos 30 dias" : "Todos";
     const lines = [
@@ -368,20 +408,21 @@ const DriverDashboard = () => {
       `Data: ${format(new Date(), "dd/MM/yyyy HH:mm", { locale: ptBR })}`,
       ``,
       `💰 Total de Ganhos: R$ ${filteredEarnings.toFixed(2)}`,
+      `📱 Via Pix App: R$ ${earningsBreakdown.pixEarnings.toFixed(2)} (${earningsBreakdown.pixCount} entregas)`,
+      `💵 Em Dinheiro: R$ ${earningsBreakdown.cashEarnings.toFixed(2)} (${earningsBreakdown.cashCount} entregas)`,
       `📦 Entregas Realizadas: ${filteredHistory.length}`,
       ``,
       `--- DETALHAMENTO ---`,
       ...filteredHistory.map((o: any) => {
         const date = format(parseISO(o.confirmed_at || o.created_at), "dd/MM HH:mm", { locale: ptBR });
-        const isRural = RURAL_NEIGHBORHOODS.some(n => o.neighborhood?.toLowerCase().includes(n.toLowerCase()));
-        return `${date} | ${(o as any).stores?.name || "Loja"} | ${o.neighborhood} | ${isRural ? "Rural" : "Urbano"} | R$ ${Number(o.delivery_fee).toFixed(2)}`;
+        const payIcon = o.payment_method === "dinheiro" ? "💵" : "📱";
+        return `${date} | ${(o as any).stores?.name || "Loja"} | ${o.neighborhood} | ${payIcon} R$ ${Number(o.delivery_fee).toFixed(2)}`;
       }),
     ];
     const text = lines.join("\n");
     navigator.clipboard.writeText(text).then(() => {
-      toast.success("📋 Relatório copiado! Cole no WhatsApp para enviar ao Admin.");
+      toast.success("📋 Relatório copiado! Cole no WhatsApp.");
     }).catch(() => {
-      // Fallback
       const blob = new Blob([text], { type: "text/plain" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -399,7 +440,6 @@ const DriverDashboard = () => {
     return null;
   }
 
-  // Desktop restriction
   if (!isMobile) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center text-white p-8">
@@ -409,8 +449,7 @@ const DriverDashboard = () => {
           </div>
           <h1 className="text-2xl font-black">Acesso Restrito</h1>
           <p className="text-gray-400">
-            O painel do entregador está disponível apenas para <span className="text-primary font-bold">dispositivos móveis</span> (Celular).
-            Por favor, acesse pelo seu smartphone.
+            O painel do entregador está disponível apenas para <span className="text-primary font-bold">dispositivos móveis</span>.
           </p>
           <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 space-y-3">
             <p className="text-sm text-gray-400">Escaneie o QR Code ou acesse pelo celular:</p>
@@ -421,12 +460,8 @@ const DriverDashboard = () => {
                 className="w-44 h-44"
               />
             </div>
-            <p className="text-xs text-gray-500 break-all">{window.location.href}</p>
           </div>
-          <button
-            onClick={() => navigate("/")}
-            className="text-primary hover:underline text-sm font-bold"
-          >
+          <button onClick={() => navigate("/")} className="text-primary hover:underline text-sm font-bold">
             ← Voltar para a Home
           </button>
         </div>
@@ -457,15 +492,9 @@ const DriverDashboard = () => {
           </div>
           <button
             onClick={toggleOnline}
-            className={`relative w-14 h-7 rounded-full transition-colors ${
-              isOnline ? "bg-green-500" : "bg-gray-700"
-            }`}
+            className={`relative w-14 h-7 rounded-full transition-colors ${isOnline ? "bg-green-500" : "bg-gray-700"}`}
           >
-            <span
-              className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-transform ${
-                isOnline ? "left-7" : "left-0.5"
-              }`}
-            />
+            <span className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-transform ${isOnline ? "left-7" : "left-0.5"}`} />
           </button>
         </div>
       </header>
@@ -474,23 +503,21 @@ const DriverDashboard = () => {
       <div className="flex border-b border-gray-800">
         <button
           onClick={() => setActiveTab("entregas")}
-          className={`flex-1 py-3 text-sm font-bold text-center transition-colors ${
-            activeTab === "entregas"
-              ? "text-green-400 border-b-2 border-green-400"
-              : "text-gray-500"
-          }`}
+          className={`flex-1 py-3 text-sm font-bold text-center transition-colors ${activeTab === "entregas" ? "text-green-400 border-b-2 border-green-400" : "text-gray-500"}`}
         >
           🏍️ Entregas
         </button>
         <button
           onClick={() => setActiveTab("historico")}
-          className={`flex-1 py-3 text-sm font-bold text-center transition-colors ${
-            activeTab === "historico"
-              ? "text-green-400 border-b-2 border-green-400"
-              : "text-gray-500"
-          }`}
+          className={`flex-1 py-3 text-sm font-bold text-center transition-colors ${activeTab === "historico" ? "text-green-400 border-b-2 border-green-400" : "text-gray-500"}`}
         >
-          💰 Financeiro
+          💰 Ganhos
+        </button>
+        <button
+          onClick={() => setActiveTab("config")}
+          className={`flex-1 py-3 text-sm font-bold text-center transition-colors ${activeTab === "config" ? "text-green-400 border-b-2 border-green-400" : "text-gray-500"}`}
+        >
+          ⚙️ Pix
         </button>
       </div>
 
@@ -501,12 +528,24 @@ const DriverDashboard = () => {
             <div className="flex flex-col items-center justify-center py-32 text-center px-6">
               <Bike className="h-20 w-20 text-gray-700 mb-6" />
               <h2 className="text-xl font-bold text-gray-400 mb-2">Você está offline</h2>
-              <p className="text-sm text-gray-500 max-w-xs">
-                Ative o modo online para receber entregas no ItaFood.
-              </p>
+              <p className="text-sm text-gray-500 max-w-xs">Ative o modo online para receber entregas no ItaFood.</p>
             </div>
           ) : (
             <div className="px-4 py-4 space-y-4">
+              {/* Pix key warning */}
+              {!(driverProfile as any)?.pix_key && (
+                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-3 flex items-center gap-3">
+                  <CreditCard className="h-5 w-5 text-yellow-400 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-xs font-bold text-yellow-400">Cadastre sua chave Pix!</p>
+                    <p className="text-[10px] text-gray-400">Para receber pagamentos automáticos das entregas via app.</p>
+                  </div>
+                  <button onClick={() => setActiveTab("config")} className="bg-yellow-500 text-gray-900 text-xs font-bold px-3 py-1.5 rounded-xl">
+                    Cadastrar
+                  </button>
+                </div>
+              )}
+
               {myDelivery && (
                 <div className="bg-blue-500/10 border-2 border-blue-500 rounded-2xl p-4">
                   <div className="flex items-center gap-2 mb-3">
@@ -520,24 +559,20 @@ const DriverDashboard = () => {
                     </h2>
                   </div>
 
-                  {/* Store info always visible */}
                   <div className="flex items-center gap-2 text-sm mb-3">
                     <Store className="h-4 w-4 text-gray-400" />
                     <span className="text-gray-200">{(myDelivery as any).stores?.name || "Loja"}</span>
                   </div>
 
                   {!(myDelivery as any).collection_validated && (myDelivery as any).status === 'pronto_para_entrega' ? (
-                    /* STEP 1: Collection code validation */
                     <div>
                       <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-4 mb-3">
                         <div className="flex items-center gap-2 mb-2">
                           <ShieldCheck className="h-5 w-5 text-purple-400" />
                           <span className="text-sm font-bold text-purple-400">Validar Coleta na Loja</span>
                         </div>
-                        <p className="text-xs text-gray-400 mb-3">
-                          Peça o código de coleta de 4 dígitos ao lojista para retirar o pedido.
-                        </p>
-                         <div className="relative">
+                        <p className="text-xs text-gray-400 mb-3">Peça o código de coleta de 4 dígitos ao lojista.</p>
+                        <div className="relative">
                           <input
                             type="text"
                             inputMode="numeric"
@@ -546,9 +581,7 @@ const DriverDashboard = () => {
                             value={collectionCodeInput}
                             onChange={(e) => setCollectionCodeInput(e.target.value.replace(/\D/g, "").slice(0, 4))}
                             className={`w-full text-center text-3xl font-black tracking-[0.5em] py-3 bg-gray-800 border-2 rounded-xl text-white placeholder:text-gray-700 focus:outline-none focus:ring-2 transition-all ${
-                              collectionCodeInput.length === 4
-                                ? "border-green-400 focus:ring-green-400"
-                                : "border-gray-600 focus:ring-purple-400"
+                              collectionCodeInput.length === 4 ? "border-green-400 focus:ring-green-400" : "border-gray-600 focus:ring-purple-400"
                             }`}
                             autoFocus
                           />
@@ -560,30 +593,25 @@ const DriverDashboard = () => {
                         </div>
                       </div>
 
-                      {/* Items preview */}
                       <div className="bg-gray-900/50 rounded-xl p-3 mb-3">
                         <p className="text-xs text-gray-500 mb-1">Itens do pedido:</p>
                         {(myDelivery as any).order_items?.map((item: any) => (
                           <p key={item.id} className="text-sm text-gray-300">
-                            <span className="text-blue-400 font-bold">{item.quantity}x</span>{" "}
-                            {item.products?.name || "Item"}
+                            <span className="text-blue-400 font-bold">{item.quantity}x</span> {item.products?.name || "Item"}
                           </p>
                         ))}
                       </div>
 
                       <div className="flex items-center justify-between mb-3 bg-green-500/10 border border-green-500/30 rounded-xl p-3">
                         <span className="text-sm font-bold text-green-400">🏍️ Ganho da Entrega</span>
-                        <span className="text-xl font-black text-green-400">
-                          R$ {Number(myDelivery.delivery_fee).toFixed(2)}
-                        </span>
+                        <span className="text-xl font-black text-green-400">R$ {Number(myDelivery.delivery_fee).toFixed(2)}</span>
                       </div>
 
-                      {/* WhatsApp loja */}
                       {deliveryStoreOwnerId && getContactWhatsApp(deliveryStoreOwnerId) && (
                         <div className="mb-3">
                           <WhatsAppButton
                             number={getContactWhatsApp(deliveryStoreOwnerId)}
-                            message={`Olá! Sou o entregador do app. Estou com o pedido #${myDelivery.id.slice(0, 8).toUpperCase()}.`}
+                            message={`Olá! Sou o entregador do app. Pedido #${myDelivery.id.slice(0, 8).toUpperCase()}.`}
                             label="Falar com a Loja"
                             size="md"
                             className="w-full"
@@ -594,10 +622,8 @@ const DriverDashboard = () => {
                       <button
                         onClick={() => validateCollection(myDelivery.id)}
                         disabled={collectionCodeInput.length !== 4 || verifyingCollection}
-                        className={`w-full text-white font-bold py-4 rounded-2xl text-base active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:active:scale-100 ${
-                          collectionCodeInput.length === 4
-                            ? "bg-green-500 hover:bg-green-600 shadow-[0_0_20px_rgba(34,197,94,0.5)] animate-pulse"
-                            : "bg-purple-500 hover:bg-purple-600"
+                        className={`w-full text-white font-bold py-4 rounded-2xl text-base active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 ${
+                          collectionCodeInput.length === 4 ? "bg-green-500 hover:bg-green-600 shadow-[0_0_20px_rgba(34,197,94,0.5)] animate-pulse" : "bg-purple-500 hover:bg-purple-600"
                         }`}
                       >
                         <ShieldCheck className="h-5 w-5" />
@@ -605,7 +631,6 @@ const DriverDashboard = () => {
                       </button>
                     </div>
                   ) : (
-                    /* STEP 2: Delivery to client (after collection validated) */
                     <div>
                       <div className="flex items-start gap-2 text-sm mb-3">
                         <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
@@ -615,7 +640,6 @@ const DriverDashboard = () => {
                         </div>
                       </div>
 
-                      {/* Cash payment alert */}
                       {myDelivery.payment_method === "dinheiro" && (
                         <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-xl p-3 mb-3">
                           <p className="text-sm font-bold text-yellow-400 mb-2">💰 PAGAMENTO EM DINHEIRO</p>
@@ -629,54 +653,35 @@ const DriverDashboard = () => {
                         </div>
                       )}
 
-                      {/* WhatsApp contact buttons */}
                       <div className="flex gap-2 mb-3">
                         {deliveryStoreOwnerId && getContactWhatsApp(deliveryStoreOwnerId) && (
-                          <WhatsAppButton
-                            number={getContactWhatsApp(deliveryStoreOwnerId)}
-                            message={`Olá! Sou o entregador. Pedido #${myDelivery.id.slice(0, 8).toUpperCase()}.`}
-                            label="Loja"
-                            size="md"
-                            className="flex-1"
-                          />
+                          <WhatsAppButton number={getContactWhatsApp(deliveryStoreOwnerId)} message={`Pedido #${myDelivery.id.slice(0, 8).toUpperCase()}.`} label="Loja" size="md" className="flex-1" />
                         )}
                         {deliveryClientId && getContactWhatsApp(deliveryClientId) && (
-                          <WhatsAppButton
-                            number={getContactWhatsApp(deliveryClientId)}
-                            message="Olá, sou o entregador do ItaFood e estou com seu pedido!"
-                            label="Cliente"
-                            size="md"
-                            className="flex-1"
-                          />
+                          <WhatsAppButton number={getContactWhatsApp(deliveryClientId)} message="Olá, sou o entregador do ItaFood!" label="Cliente" size="md" className="flex-1" />
                         )}
                       </div>
 
                       <div className="bg-gray-900/50 rounded-xl p-3 mb-3">
-                        <p className="text-xs text-gray-500 mb-1">Itens do pedido:</p>
+                        <p className="text-xs text-gray-500 mb-1">Itens:</p>
                         {(myDelivery as any).order_items?.map((item: any) => (
                           <p key={item.id} className="text-sm text-gray-300">
-                            <span className="text-blue-400 font-bold">{item.quantity}x</span>{" "}
-                            {item.products?.name || "Item"}
+                            <span className="text-blue-400 font-bold">{item.quantity}x</span> {item.products?.name || "Item"}
                           </p>
                         ))}
                       </div>
 
                       <div className="flex items-center justify-between mb-3 bg-green-500/10 border border-green-500/30 rounded-xl p-3">
-                        <span className="text-sm font-bold text-green-400">🏍️ Ganho da Entrega</span>
-                        <span className="text-xl font-black text-green-400">
-                          R$ {Number(myDelivery.delivery_fee).toFixed(2)}
-                        </span>
+                        <span className="text-sm font-bold text-green-400">🏍️ Ganho</span>
+                        <span className="text-xl font-black text-green-400">R$ {Number(myDelivery.delivery_fee).toFixed(2)}</span>
                       </div>
 
-                      {/* PIN Input Section */}
                       <div className="bg-gray-900 rounded-xl p-4 mb-3 border border-gray-700">
                         <div className="flex items-center gap-2 mb-2">
                           <KeyRound className="h-4 w-4 text-yellow-400" />
                           <span className="text-sm font-bold text-yellow-400">Código do Cliente</span>
                         </div>
-                        <p className="text-xs text-gray-500 mb-3">
-                          Peça o código de 4 dígitos ao cliente para finalizar.
-                        </p>
+                        <p className="text-xs text-gray-500 mb-3">Peça o código de 4 dígitos ao cliente para finalizar.</p>
                         <input
                           type="text"
                           inputMode="numeric"
@@ -692,7 +697,7 @@ const DriverDashboard = () => {
                       <button
                         onClick={() => finishDelivery(myDelivery.id)}
                         disabled={pinInput.length !== 4 || verifying}
-                        className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-2xl text-base active:scale-95 transition-transform flex items-center justify-center gap-2 disabled:opacity-50 disabled:active:scale-100"
+                        className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-2xl text-base active:scale-95 transition-transform flex items-center justify-center gap-2 disabled:opacity-50"
                       >
                         <CheckCircle2 className="h-5 w-5" />
                         {verifying ? "Verificando..." : "CONFIRMAR ENTREGA"}
@@ -702,7 +707,6 @@ const DriverDashboard = () => {
                 </div>
               )}
 
-              {/* Pending return to store card */}
               {!myDelivery && pendingReturn && (
                 <div className="bg-yellow-500/10 border-2 border-yellow-500 rounded-2xl p-4">
                   <div className="flex items-center gap-2 mb-2">
@@ -723,10 +727,7 @@ const DriverDashboard = () => {
 
               {!myDelivery && (
                 <>
-                  <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider">
-                    Entregas disponíveis
-                  </h2>
-
+                  <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Entregas disponíveis</h2>
                   {loadingAvailable ? (
                     <div className="space-y-3">
                       {Array.from({ length: 3 }).map((_, i) => (
@@ -743,9 +744,7 @@ const DriverDashboard = () => {
                         <div key={order.id} className="bg-gray-900 border border-gray-800 rounded-2xl p-4">
                           <div className="flex items-center gap-2 text-sm mb-2">
                             <Store className="h-4 w-4 text-orange-400" />
-                            <span className="text-gray-200 font-medium">
-                              {order.stores?.name || "Loja"}
-                            </span>
+                            <span className="text-gray-200 font-medium">{order.stores?.name || "Loja"}</span>
                           </div>
                           <div className="flex items-start gap-2 text-sm mb-3">
                             <MapPin className="h-4 w-4 text-red-400 mt-0.5" />
@@ -756,17 +755,13 @@ const DriverDashboard = () => {
                           </div>
                           <div className="text-xs text-gray-500 mb-3">
                             {order.order_items?.map((item: any) => (
-                              <span key={item.id} className="mr-2">
-                                {item.quantity}x {item.products?.name}
-                              </span>
+                              <span key={item.id} className="mr-2">{item.quantity}x {item.products?.name}</span>
                             ))}
                           </div>
                           <div className="flex items-center justify-between">
                             <div>
-                              <span className="text-xs text-gray-500">🏍️ Ganho da Entrega</span>
-                              <p className="text-xl font-black text-green-400">
-                                R$ {Number(order.delivery_fee).toFixed(2)}
-                              </p>
+                              <span className="text-xs text-gray-500">🏍️ Ganho</span>
+                              <p className="text-xl font-black text-green-400">R$ {Number(order.delivery_fee).toFixed(2)}</p>
                             </div>
                             <button
                               onClick={() => acceptOrder(order.id)}
@@ -781,12 +776,8 @@ const DriverDashboard = () => {
                   ) : (
                     <div className="flex flex-col items-center justify-center py-20 text-center">
                       <Package className="h-16 w-16 text-gray-700 mb-4" />
-                      <h2 className="text-lg font-bold text-gray-500 mb-1">
-                        Aguardando novos pedidos...
-                      </h2>
-                      <p className="text-sm text-gray-600">
-                        Aproveite para descansar! 😴
-                      </p>
+                      <h2 className="text-lg font-bold text-gray-500 mb-1">Aguardando novos pedidos...</h2>
+                      <p className="text-sm text-gray-600">Aproveite para descansar! 😴</p>
                     </div>
                   )}
                 </>
@@ -794,8 +785,80 @@ const DriverDashboard = () => {
             </div>
           )}
         </>
+      ) : activeTab === "config" ? (
+        /* ===== PIX CONFIG TAB ===== */
+        <div className="px-4 py-4 space-y-4">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-4">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center">
+                <CreditCard className="h-5 w-5 text-green-400" />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-white">Minha Chave Pix</h2>
+                <p className="text-[10px] text-gray-400">Para recebimentos instantâneos das entregas</p>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs text-gray-400 mb-1.5 block">Tipo da Chave</label>
+              <select
+                value={pixType}
+                onChange={e => setPixType(e.target.value)}
+                className="w-full bg-gray-800 text-white border border-gray-700 rounded-xl px-4 py-3 text-sm"
+              >
+                {Object.entries(PIX_TYPE_LABELS).map(([key, label]) => (
+                  <option key={key} value={key}>{label}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-xs text-gray-400 mb-1.5 block">Chave Pix</label>
+              <input
+                type="text"
+                value={pixKey}
+                onChange={e => setPixKey(e.target.value)}
+                placeholder={pixType === "cpf" ? "000.000.000-00" : pixType === "email" ? "seuemail@email.com" : pixType === "phone" ? "(14) 99999-9999" : "Cole sua chave aqui"}
+                className="w-full bg-gray-800 text-white border border-gray-700 rounded-xl px-4 py-3 text-sm placeholder:text-gray-600"
+              />
+            </div>
+
+            <button
+              onClick={savePixKey}
+              disabled={savingPix || !pixKey.trim()}
+              className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3.5 rounded-2xl text-sm active:scale-95 transition-transform flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              <Save className="h-4 w-4" />
+              {savingPix ? "Salvando..." : "Salvar Chave Pix"}
+            </button>
+          </div>
+
+          {(driverProfile as any)?.pix_key && (
+            <div className="bg-green-500/10 border border-green-500/30 rounded-2xl p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <CheckCircle2 className="h-4 w-4 text-green-400" />
+                <span className="text-sm font-bold text-green-400">Chave Pix Cadastrada</span>
+              </div>
+              <p className="text-xs text-gray-400">
+                Tipo: <span className="text-white font-medium">{PIX_TYPE_LABELS[(driverProfile as any).pix_type] || "CPF"}</span>
+              </p>
+              <p className="text-xs text-gray-400">
+                Chave: <span className="text-white font-medium">{(driverProfile as any).pix_key}</span>
+              </p>
+            </div>
+          )}
+
+          <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-4">
+            <h3 className="text-sm font-bold text-gray-300 mb-2">ℹ️ Como funciona?</h3>
+            <div className="space-y-2 text-xs text-gray-400">
+              <p>📱 <strong className="text-gray-300">Pedidos via Pix/App:</strong> A taxa de entrega é transferida automaticamente para sua chave Pix cadastrada.</p>
+              <p>💵 <strong className="text-gray-300">Pedidos em Dinheiro:</strong> Você já recebe a taxa em mãos. O sistema registra como "recebido em dinheiro".</p>
+              <p>📊 <strong className="text-gray-300">Histórico:</strong> Na aba "Ganhos" você vê o detalhamento de cada entrega.</p>
+            </div>
+          </div>
+        </div>
       ) : (
-        /* ===== FINANCEIRO TAB ===== */
+        /* ===== FINANCEIRO/GANHOS TAB ===== */
         <div className="px-4 py-4 space-y-4">
           {/* Earnings Summary Cards */}
           <div className="grid grid-cols-3 gap-2">
@@ -819,29 +882,39 @@ const DriverDashboard = () => {
           {/* Date filter */}
           <div className="flex gap-2">
             {([
-              { key: "hoje", label: "Hoje" },
-              { key: "semana", label: "7 dias" },
-              { key: "mes", label: "30 dias" },
-              { key: "custom", label: "Todos" },
-            ] as { key: DateFilter; label: string }[]).map((f) => (
+              { key: "hoje" as DateFilter, label: "Hoje" },
+              { key: "semana" as DateFilter, label: "7 dias" },
+              { key: "mes" as DateFilter, label: "30 dias" },
+              { key: "custom" as DateFilter, label: "Todos" },
+            ]).map((f) => (
               <button
                 key={f.key}
                 onClick={() => setDateFilter(f.key)}
-                className={`flex-1 py-2 rounded-xl text-xs font-bold transition-colors ${
-                  dateFilter === f.key
-                    ? "bg-green-500 text-white"
-                    : "bg-gray-800 text-gray-400"
-                }`}
+                className={`flex-1 py-2 rounded-xl text-xs font-bold transition-colors ${dateFilter === f.key ? "bg-green-500 text-white" : "bg-gray-800 text-gray-400"}`}
               >
                 {f.label}
               </button>
             ))}
           </div>
 
-          {/* Filtered Earnings Banner */}
+          {/* Earnings Breakdown */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bg-gray-900 border border-gray-700 rounded-2xl p-3">
+              <p className="text-[10px] text-gray-500 mb-0.5">📱 Pix App (a receber)</p>
+              <p className="text-lg font-black text-green-400">R$ {earningsBreakdown.pixEarnings.toFixed(2)}</p>
+              <p className="text-[10px] text-gray-500">{earningsBreakdown.pixCount} entregas</p>
+            </div>
+            <div className="bg-gray-900 border border-gray-700 rounded-2xl p-3">
+              <p className="text-[10px] text-gray-500 mb-0.5">💵 Dinheiro (em mãos)</p>
+              <p className="text-lg font-black text-yellow-400">R$ {earningsBreakdown.cashEarnings.toFixed(2)}</p>
+              <p className="text-[10px] text-gray-500">{earningsBreakdown.cashCount} entregas</p>
+            </div>
+          </div>
+
+          {/* Total Banner */}
           <div className="bg-gray-900 border border-gray-700 rounded-2xl p-4 flex items-center justify-between">
             <div>
-              <p className="text-xs text-gray-500">💵 Ganhos no período</p>
+              <p className="text-xs text-gray-500">💵 Total no período</p>
               <p className="text-2xl font-black text-green-400">R$ {filteredEarnings.toFixed(2)}</p>
               <p className="text-xs text-gray-500">{filteredHistory.length} entregas</p>
             </div>
@@ -873,29 +946,29 @@ const DriverDashboard = () => {
               {filteredHistory.map((order: any) => {
                 const isRural = RURAL_NEIGHBORHOODS.some(n => order.neighborhood?.toLowerCase().includes(n.toLowerCase()));
                 const orderDate = parseISO(order.confirmed_at || order.created_at);
+                const isCash = order.payment_method === "dinheiro";
                 return (
                   <div key={order.id} className="bg-gray-900 border border-gray-800 rounded-xl p-3 flex items-center justify-between">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
                         <Store className="h-3.5 w-3.5 text-orange-400 flex-shrink-0" />
-                        <span className="text-sm text-gray-200 font-medium truncate">
-                          {(order as any).stores?.name || "Loja"}
-                        </span>
+                        <span className="text-sm text-gray-200 font-medium truncate">{(order as any).stores?.name || "Loja"}</span>
                       </div>
                       <div className="flex items-center gap-2 text-xs text-gray-500">
                         <span>{format(orderDate, "dd/MM HH:mm", { locale: ptBR })}</span>
                         <span>•</span>
                         <span className="truncate">{order.neighborhood}</span>
                       </div>
-                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded mt-1 inline-block ${
-                        isRural ? "bg-amber-500/20 text-amber-400" : "bg-cyan-500/20 text-cyan-400"
-                      }`}>
-                        {isRural ? "Rural" : "Urbano"}
-                      </span>
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isRural ? "bg-amber-500/20 text-amber-400" : "bg-cyan-500/20 text-cyan-400"}`}>
+                          {isRural ? "Rural" : "Urbano"}
+                        </span>
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isCash ? "bg-yellow-500/20 text-yellow-400" : "bg-green-500/20 text-green-400"}`}>
+                          {isCash ? "💵 Dinheiro" : "📱 Pix App"}
+                        </span>
+                      </div>
                     </div>
-                    <p className="text-lg font-black text-green-400 ml-3">
-                      R$ {Number(order.delivery_fee).toFixed(2)}
-                    </p>
+                    <p className="text-lg font-black text-green-400 ml-3">R$ {Number(order.delivery_fee).toFixed(2)}</p>
                   </div>
                 );
               })}
@@ -903,12 +976,8 @@ const DriverDashboard = () => {
           ) : (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <Wallet className="h-14 w-14 text-gray-700 mb-4" />
-              <h2 className="text-base font-bold text-gray-500 mb-1">
-                Nenhuma entrega neste período
-              </h2>
-              <p className="text-sm text-gray-600">
-                Suas entregas finalizadas aparecerão aqui.
-              </p>
+              <h2 className="text-base font-bold text-gray-500 mb-1">Nenhuma entrega neste período</h2>
+              <p className="text-sm text-gray-600">Suas entregas finalizadas aparecerão aqui.</p>
             </div>
           )}
         </div>
