@@ -386,15 +386,21 @@ const SuperAdminDashboard = () => {
         {([
           { key: "dashboard" as AdminTab, label: "📊 Dashboard" },
           { key: "financeiro" as AdminTab, label: "💰 Financeiro" },
+          { key: "saques" as AdminTab, label: "🏧 Saques" },
           { key: "approvals" as AdminTab, label: "🛡️ Aprovações" },
           { key: "stores" as AdminTab, label: "🏪 Lojas" },
         ]).map(tab => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap ${activeTab === tab.key ? "bg-yellow-500 text-gray-900" : "bg-[#1E293B] text-gray-400"}`}
+            className={`relative px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap ${activeTab === tab.key ? "bg-yellow-500 text-gray-900" : "bg-[#1E293B] text-gray-400"}`}
           >
             {tab.label}
+            {tab.key === "saques" && pendingWithdrawals.length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full animate-pulse">
+                {pendingWithdrawals.length}
+              </span>
+            )}
           </button>
         ))}
       </div>
