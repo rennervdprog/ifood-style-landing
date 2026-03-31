@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import {
   Wifi, WifiOff, Pause, Play, Clock, ChefHat, Truck, CheckCircle2,
   MapPin, CreditCard, Package, ArrowLeft, DollarSign, Banknote, UtensilsCrossed, ListOrdered, Plus, Printer, Bike,
-  Volume2, VolumeX, Bell, Store, MessageCircle, Copy, Link
+  Volume2, VolumeX, Bell, Store, MessageCircle, Copy, Link, Coins
 } from "lucide-react";
 import { openWhatsApp } from "@/lib/whatsapp";
 import WhatsAppButton from "@/components/WhatsAppButton";
