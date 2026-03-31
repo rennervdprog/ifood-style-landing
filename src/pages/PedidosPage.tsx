@@ -64,7 +64,7 @@ const PedidosPage = () => {
       .on(
         "postgres_changes",
         {
-          event: "UPDATE",
+          event: "*",
           schema: "public",
           table: "orders",
           filter: `client_id=eq.${user.id}`,
@@ -72,6 +72,9 @@ const PedidosPage = () => {
         (payload) => {
           queryClient.invalidateQueries({ queryKey: ["orders", user.id] });
           const newStatus = (payload.new as any).status;
+          if (newStatus === "pendente" && (payload.old as any)?.status === "aguardando_pagamento") {
+            toast.success("✅ Pagamento confirmado! Seu pedido foi enviado à loja.");
+          }
           if (newStatus === "preparando") notifyOrderPreparing();
           if (newStatus === "em_transito" || newStatus === "saiu_entrega") notifyOrderOnTheWay();
           if (newStatus === "finalizado") notifyOrderDelivered();
