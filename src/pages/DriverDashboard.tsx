@@ -172,7 +172,35 @@ const DriverDashboard = () => {
     refetchInterval: 15000,
   });
 
-  // Calculate earnings based on date filter
+  // Driver balance from driver_balances table
+  const { data: driverBalance } = useQuery({
+    queryKey: ["driver-balance", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("driver_balances" as any)
+        .select("total_earned, pending_amount, paid_amount")
+        .eq("driver_user_id", user!.id)
+        .maybeSingle();
+      return data as any;
+    },
+    enabled: !!user,
+  });
+
+  // Driver individual earnings
+  const { data: driverEarnings } = useQuery({
+    queryKey: ["driver-earnings", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("driver_earnings" as any)
+        .select("id, order_id, amount, status, created_at")
+        .eq("driver_user_id", user!.id)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      return (data || []) as any[];
+    },
+    enabled: !!user,
+  });
+
   const filteredHistory = useMemo(() => {
     if (!deliveryHistory) return [];
     const now = new Date();
@@ -352,6 +380,11 @@ const DriverDashboard = () => {
       return;
     }
     setVerifying(true);
+
+    // Get delivery fee before finishing
+    const orderData = myDelivery || availableOrders?.find((o: any) => o.id === orderId);
+    const deliveryFee = Number(orderData?.delivery_fee || 0);
+
     const { error } = await supabase.rpc("driver_finish_delivery", {
       _order_id: orderId,
       _pin: pinInput,
@@ -361,13 +394,18 @@ const DriverDashboard = () => {
       toast.error(error.message || "Código inválido. Verifique com o cliente.");
       setVerifying(false);
     } else {
-      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-      toast.success("Entrega finalizada! 💰 Saldo liberado!");
+      confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
+      toast.success(
+        `🎉 Parabéns! R$ ${deliveryFee.toFixed(2)} foi adicionado ao seu saldo!`,
+        { duration: 8000, icon: "💰" }
+      );
       setPinInput("");
       setVerifying(false);
       queryClient.invalidateQueries({ queryKey: ["driver-my-delivery", user!.id] });
       queryClient.invalidateQueries({ queryKey: ["driver-available-orders"] });
       queryClient.invalidateQueries({ queryKey: ["driver-history", user!.id] });
+      queryClient.invalidateQueries({ queryKey: ["driver-balance", user!.id] });
+      queryClient.invalidateQueries({ queryKey: ["driver-earnings", user!.id] });
     }
   };
 
@@ -860,6 +898,30 @@ const DriverDashboard = () => {
       ) : (
         /* ===== FINANCEIRO/GANHOS TAB ===== */
         <div className="px-4 py-4 space-y-4">
+          {/* Driver Balance Card */}
+          {driverBalance && (
+            <div className="bg-gradient-to-br from-green-900/40 to-emerald-900/30 border border-green-500/40 rounded-2xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Wallet className="h-5 w-5 text-green-400" />
+                <span className="text-sm font-bold text-green-300">Minha Carteira</span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="text-center">
+                  <p className="text-[10px] text-gray-400">Total Ganho</p>
+                  <p className="text-lg font-black text-white">R$ {Number(driverBalance.total_earned || 0).toFixed(2)}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-[10px] text-yellow-400">Pendente</p>
+                  <p className="text-lg font-black text-yellow-400">R$ {Number(driverBalance.pending_amount || 0).toFixed(2)}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-[10px] text-green-400">Pago</p>
+                  <p className="text-lg font-black text-green-400">R$ {Number(driverBalance.paid_amount || 0).toFixed(2)}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Earnings Summary Cards */}
           <div className="grid grid-cols-3 gap-2">
             <div className="bg-gradient-to-br from-green-500/20 to-green-600/10 border border-green-500/30 rounded-2xl p-3 text-center">

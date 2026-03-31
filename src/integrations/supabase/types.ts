@@ -90,6 +90,60 @@ export type Database = {
           },
         ]
       }
+      driver_balances: {
+        Row: {
+          driver_user_id: string
+          id: string
+          paid_amount: number
+          pending_amount: number
+          total_earned: number
+          updated_at: string
+        }
+        Insert: {
+          driver_user_id: string
+          id?: string
+          paid_amount?: number
+          pending_amount?: number
+          total_earned?: number
+          updated_at?: string
+        }
+        Update: {
+          driver_user_id?: string
+          id?: string
+          paid_amount?: number
+          pending_amount?: number
+          total_earned?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      driver_earnings: {
+        Row: {
+          amount: number
+          created_at: string
+          driver_user_id: string
+          id: string
+          order_id: string
+          status: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          driver_user_id: string
+          id?: string
+          order_id: string
+          status?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          driver_user_id?: string
+          id?: string
+          order_id?: string
+          status?: string
+        }
+        Relationships: []
+      }
       drivers: {
         Row: {
           created_at: string
