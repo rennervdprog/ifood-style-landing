@@ -283,6 +283,26 @@ const AdminDashboard = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {/* Sound toggle */}
+            {soundEnabled && (
+              <button
+                onClick={() => {
+                  setSoundMuted(prev => {
+                    if (!prev) toast("🔇 Som silenciado. Cuidado: você pode perder pedidos!", { duration: 4000 });
+                    else toast.success("🔊 Som reativado!");
+                    return !prev;
+                  });
+                }}
+                title={soundMuted ? "Som silenciado" : "Som ativo"}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors ${
+                  soundMuted
+                    ? "bg-red-500/20 text-red-400"
+                    : "bg-green-500/20 text-green-400"
+                }`}
+              >
+                {soundMuted ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
+              </button>
+            )}
             <button
               onClick={toggleAutoPrint}
               title={autoPrint ? "Impressão automática ATIVA" : "Impressão automática INATIVA"}
