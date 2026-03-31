@@ -355,6 +355,17 @@ const AdminDashboard = () => {
                       <span>{order.neighborhood} — {order.address_details}</span>
                     </div>
 
+                    {/* Collection Code Display */}
+                    {(order.status === "pronto_para_entrega" || order.status === "saiu_entrega" || order.status === "em_transito") && (order as any).collection_code && (
+                      <div className="bg-purple-500/20 border border-purple-500/40 rounded-xl p-3 mb-3">
+                        <p className="text-xs font-bold text-purple-400 mb-1">🔐 Código de Coleta</p>
+                        <p className="text-3xl font-black text-purple-300 tracking-[0.3em] text-center">
+                          {(order as any).collection_code}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1 text-center">Informe ao motoboy para retirada</p>
+                      </div>
+                    )}
+
                     {order.payment_method === "dinheiro" && (
                       <div className="bg-yellow-500/20 border border-yellow-500/40 rounded-xl p-2.5 mb-3 flex items-start gap-2">
                         <Banknote className="h-4 w-4 text-yellow-400 mt-0.5 flex-shrink-0" />
