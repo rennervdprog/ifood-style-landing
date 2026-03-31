@@ -177,7 +177,7 @@ const AdminDashboard = () => {
   const pendingCount = orders?.filter(o => o.status === "pendente").length || 0;
 
   return (
-    <div className="min-h-screen bg-[#111827] text-white">
+    <div className="min-h-screen bg-[#111827] text-white overflow-y-auto">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-[#1F2937] border-b border-gray-700 px-4 py-3">
         <div className="flex items-center justify-between">
