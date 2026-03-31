@@ -184,8 +184,9 @@ const PedidosPage = () => {
         throw new Error("QR Code não retornado");
       }
     } catch (err: any) {
-      console.error("PIX generation error:", err);
-      toast.error(err?.message || "Erro ao gerar PIX. Verifique se seu e-mail e CPF estão corretos.");
+      console.error("PIX generation error:", JSON.stringify(err, null, 2), "status:", err?.status, "code:", err?.code);
+      const msg = err?.message || err?.error_description || "Erro ao gerar PIX. Verifique se seu e-mail e CPF estão corretos.";
+      toast.error(msg);
       setPixModal(null);
     } finally {
       setPayingOrderId(null);
