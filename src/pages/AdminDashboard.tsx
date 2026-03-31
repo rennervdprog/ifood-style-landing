@@ -637,15 +637,55 @@ const AdminDashboard = () => {
                       </div>
                     )}
 
+                    {/* WhatsApp Status Messages */}
                     {getClientWhatsApp(order.client_id) && (
-                      <div className="mb-3">
-                        <WhatsAppButton
-                          number={getClientWhatsApp(order.client_id)}
-                          message={`Olá ${getClientName(order.client_id)}! Aqui é do ${store?.name || "estabelecimento"}. Sobre seu pedido #${order.id.slice(0, 8).toUpperCase()}...`}
-                          label="Chamar Cliente no WhatsApp"
-                          size="md"
-                          className="w-full"
-                        />
+                      <div className="mb-3 space-y-2">
+                        <div className="flex flex-wrap gap-2">
+                          {order.status === "pendente" && (
+                            <button
+                              onClick={() => {
+                                const clientName = getClientName(order.client_id);
+                                const items = order.order_items?.map((i: any) => `${i.quantity}x ${i.products?.name}`).join("\n") || "";
+                                const msg = `Olá ${clientName}! O *ItaFood* informa: Seu pedido no *${store?.name}* foi aceito e já está em produção! 🍔\n\n--- RESUMO ITAFOOD ---\nPedido: #${order.id.slice(0,8).toUpperCase()}\n${items}\nTotal: R$ ${Number(order.total_price).toFixed(2)}\nPagamento: ${paymentLabels[order.payment_method] || order.payment_method}\n-----------------------`;
+                                openWhatsApp(getClientWhatsApp(order.client_id), msg);
+                              }}
+                              className="flex items-center gap-1.5 bg-green-500 hover:bg-green-600 text-white font-bold px-3 py-2 rounded-xl text-xs active:scale-95 transition-transform"
+                            >
+                              <MessageCircle className="h-3.5 w-3.5" />
+                              Avisar: Aceito
+                            </button>
+                          )}
+                          {order.status === "preparando" && (
+                            <button
+                              onClick={() => {
+                                const msg = `Olá ${getClientName(order.client_id)}! Seu lanche está quase pronto! Já acionamos um de nossos motoboys do *ItaFood* para retirar seu pedido. 🏍️\n\n--- RESUMO ITAFOOD ---\nPedido: #${order.id.slice(0,8).toUpperCase()}\nTotal: R$ ${Number(order.total_price).toFixed(2)}\n-----------------------`;
+                                openWhatsApp(getClientWhatsApp(order.client_id), msg);
+                              }}
+                              className="flex items-center gap-1.5 bg-green-500 hover:bg-green-600 text-white font-bold px-3 py-2 rounded-xl text-xs active:scale-95 transition-transform"
+                            >
+                              <MessageCircle className="h-3.5 w-3.5" />
+                              Avisar: Pronto
+                            </button>
+                          )}
+                          {(order.status === "em_transito" || order.status === "saiu_entrega") && (
+                            <button
+                              onClick={() => {
+                                const msg = `Olá ${getClientName(order.client_id)}! O motoboy do *ItaFood* saiu para entrega! 🚀\nEm breve seu pedido chegará em: ${order.address_details}\nPrepare o apetite! 😋\n\n--- RESUMO ITAFOOD ---\nPedido: #${order.id.slice(0,8).toUpperCase()}\nTotal: R$ ${Number(order.total_price).toFixed(2)}\nPagamento: ${paymentLabels[order.payment_method] || order.payment_method}\n-----------------------`;
+                                openWhatsApp(getClientWhatsApp(order.client_id), msg);
+                              }}
+                              className="flex items-center gap-1.5 bg-green-500 hover:bg-green-600 text-white font-bold px-3 py-2 rounded-xl text-xs active:scale-95 transition-transform"
+                            >
+                              <MessageCircle className="h-3.5 w-3.5" />
+                              Avisar: Saiu Entrega
+                            </button>
+                          )}
+                          <WhatsAppButton
+                            number={getClientWhatsApp(order.client_id)}
+                            message={`Olá ${getClientName(order.client_id)}! Aqui é do ${store?.name || "estabelecimento"}. Sobre seu pedido #${order.id.slice(0, 8).toUpperCase()}...`}
+                            label="Chat Livre"
+                            size="sm"
+                          />
+                        </div>
                       </div>
                     )}
 
