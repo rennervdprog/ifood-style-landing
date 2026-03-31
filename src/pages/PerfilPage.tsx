@@ -102,6 +102,61 @@ const PerfilPage = () => {
     }
   }, [profile, pixLoaded]);
 
+  // PWA Install state
+  interface BeforeInstallPromptEvent extends Event {
+    prompt(): Promise<void>;
+    userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+  }
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [showInstallButton, setShowInstallButton] = useState(false);
+  const [showIOSModal, setShowIOSModal] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(false);
+
+  const isIOS = useMemo(() => /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream, []);
+  const isStandalone = useMemo(() => window.matchMedia("(display-mode: standalone)").matches, []);
+
+  useEffect(() => {
+    if (isStandalone) { setIsInstalled(true); return; }
+
+    if (isIOS) {
+      setShowInstallButton(true);
+      return;
+    }
+
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
+      setShowInstallButton(true);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+
+    const installedHandler = () => {
+      setIsInstalled(true);
+      setShowInstallButton(false);
+    };
+    window.addEventListener("appinstalled", installedHandler);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handler);
+      window.removeEventListener("appinstalled", installedHandler);
+    };
+  }, [isIOS, isStandalone]);
+
+  const handleInstallClick = useCallback(async () => {
+    if (isIOS) {
+      setShowIOSModal(true);
+      return;
+    }
+    if (!deferredPrompt) return;
+    await deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === "accepted") {
+      setShowInstallButton(false);
+      setIsInstalled(true);
+    }
+    setDeferredPrompt(null);
+  }, [isIOS, deferredPrompt]);
+
   // Compute selected neighborhood fee
   const selectedFee = useMemo(() => {
     if (!neighborhood || !neighborhoods) return null;
