@@ -63,11 +63,12 @@ const DriverDashboard = () => {
   const { data: myDelivery } = useQuery({
     queryKey: ["driver-my-delivery", user?.id],
     queryFn: async () => {
+      // Check for active delivery: pronto_para_entrega (assigned) or saiu_entrega
       const { data, error } = await supabase
         .from("orders")
         .select("*, stores(name, owner_id), order_items(*, products(name))")
         .eq("driver_id", user!.id)
-        .eq("status", "em_transito" as any)
+        .in("status", ["pronto_para_entrega", "saiu_entrega", "em_transito"] as any)
         .maybeSingle();
       if (error) throw error;
       return data;
