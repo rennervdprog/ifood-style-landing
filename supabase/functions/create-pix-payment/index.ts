@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
     const userEmail = userData.user.email;
 
     const body = await req.json();
-    const { order_id, amount, description, payer_first_name, payer_last_name } = body;
+    const { order_id, amount, description, payer_first_name, payer_last_name, payer_cpf } = body;
 
     if (!order_id || !amount) {
       return new Response(JSON.stringify({ error: "Missing required fields: order_id, amount" }), {
@@ -84,6 +84,15 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Clean CPF - remove non-digits
+    const cleanCpf = String(payer_cpf || "").replace(/\D/g, "");
+    if (!cleanCpf || cleanCpf.length !== 11) {
+      return new Response(JSON.stringify({ error: "CPF inválido. Informe um CPF com 11 dígitos." }), {
+        status: 400,
+        headers: corsHeaders,
+      });
+    }
+
     const paymentBody = {
       transaction_amount: Number(amount),
       description: String(description || `Pedido ItaFood #${order_id.substring(0, 6).toUpperCase()}`).substring(0, 256),
@@ -92,6 +101,10 @@ Deno.serve(async (req) => {
         email: userEmail || "cliente@itafood.com",
         first_name: String(payer_first_name || "Cliente").substring(0, 100),
         last_name: String(payer_last_name || "ItaFood").substring(0, 100),
+        identification: {
+          type: "CPF",
+          number: cleanCpf,
+        },
       },
       external_reference: order_id,
     };
@@ -110,10 +123,15 @@ Deno.serve(async (req) => {
 
     if (!mpResponse.ok) {
       console.error("MP PIX Error:", JSON.stringify(mpData));
-      const userMessage = mpData?.message?.includes("access_token")
-        ? "Chave do Mercado Pago inválida. Contate o administrador."
-        : "Erro ao gerar PIX. Tente novamente.";
-      return new Response(JSON.stringify({ error: userMessage }), {
+      let userMessage = "Erro ao gerar PIX. Tente novamente.";
+      if (mpData?.message?.includes("access_token")) {
+        userMessage = "Chave do Mercado Pago inválida. Contate o administrador.";
+      } else if (mpData?.message?.includes("identification") || mpData?.message?.includes("payer")) {
+        userMessage = "Erro ao gerar Pix: verifique se seu e-mail e CPF estão corretos.";
+      } else if (mpData?.message?.includes("QR render")) {
+        userMessage = "Conta Mercado Pago sem Pix habilitado. O administrador precisa ativar a chave Pix na conta do Mercado Pago.";
+      }
+      return new Response(JSON.stringify({ error: userMessage, mp_error: mpData?.message }), {
         status: 500,
         headers: corsHeaders,
       });
