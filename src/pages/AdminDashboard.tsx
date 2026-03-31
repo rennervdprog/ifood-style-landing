@@ -220,17 +220,31 @@ const AdminDashboard = () => {
               </div>
             </div>
           </div>
-          <button
-            onClick={toggleStoreOpen}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-colors ${
-              store?.is_open
-                ? "bg-red-500/20 text-red-400 hover:bg-red-500/30"
-                : "bg-green-500/20 text-green-400 hover:bg-green-500/30"
-            }`}
-          >
-            {store?.is_open ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-            {store?.is_open ? "Pausar" : "Reabrir"}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggleAutoPrint}
+              title={autoPrint ? "Impressão automática ATIVA" : "Impressão automática INATIVA"}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors ${
+                autoPrint
+                  ? "bg-primary/20 text-primary"
+                  : "bg-gray-700 text-gray-400"
+              }`}
+            >
+              <Printer className="h-3.5 w-3.5" />
+              Auto
+            </button>
+            <button
+              onClick={toggleStoreOpen}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-colors ${
+                store?.is_open
+                  ? "bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                  : "bg-green-500/20 text-green-400 hover:bg-green-500/30"
+              }`}
+            >
+              {store?.is_open ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+              {store?.is_open ? "Pausar" : "Reabrir"}
+            </button>
+          </div>
         </div>
       </header>
 
