@@ -139,6 +139,21 @@ const AdminDashboard = () => {
     prevPendingCountRef.current = pendingCount;
   }, [orders, playAlert]);
 
+  const handlePrint = useCallback((order: any) => {
+    setPrintingOrder(order);
+    setTimeout(() => {
+      window.print();
+      setPrintingOrder(null);
+    }, 100);
+  }, []);
+
+  const toggleAutoPrint = () => {
+    const next = !autoPrint;
+    setAutoPrint(next);
+    localStorage.setItem("autoPrint", String(next));
+    toast.success(next ? "Impressão automática ativada" : "Impressão automática desativada");
+  };
+
   const updateOrderStatus = async (orderId: string, newStatus: OrderStatus) => {
     const { error } = await supabase
       .from("orders")
@@ -149,6 +164,11 @@ const AdminDashboard = () => {
     } else {
       toast.success(`Pedido movido para "${statusColumns.find(c => c.status === newStatus)?.label}"`);
       queryClient.invalidateQueries({ queryKey: ["store-orders", store?.id] });
+      // Auto-print on accept
+      if (newStatus === "preparando" && autoPrint) {
+        const order = orders?.find((o: any) => o.id === orderId);
+        if (order) handlePrint(order);
+      }
     }
   };
 
