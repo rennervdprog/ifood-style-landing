@@ -39,16 +39,17 @@ const OrderReceipt = forwardRef<HTMLDivElement, OrderReceiptProps>(
     return (
       <div
         ref={ref}
-        className="receipt-content hidden print:block"
+        className="receipt-content"
         style={{
           fontFamily: "'Courier New', Courier, monospace",
           fontSize: "12px",
-          width: "100%",
-          maxWidth: "80mm",
-          margin: "0 auto",
+          width: "300px",
           color: "#000",
           background: "#fff",
           padding: "4px",
+          position: "fixed",
+          left: "-9999px",
+          top: "0",
         }}
       >
         {/* Header */}

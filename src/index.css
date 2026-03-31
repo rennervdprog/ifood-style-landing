@@ -83,23 +83,29 @@
 
 /* Thermal receipt print styles */
 @media print {
-  body * {
-    visibility: hidden !important;
+  body > *:not(.receipt-print-wrapper) {
+    display: none !important;
   }
-  .receipt-content,
-  .receipt-content * {
-    visibility: visible !important;
+  .receipt-print-wrapper {
+    display: block !important;
   }
   .receipt-content {
     display: block !important;
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 80mm;
-    margin: 0;
-    padding: 2mm;
+    position: static !important;
+    left: auto !important;
+    width: 80mm !important;
+    max-width: 80mm !important;
+    margin: 0 !important;
+    padding: 2mm !important;
     background: #fff !important;
     color: #000 !important;
+    font-family: 'Courier New', Courier, monospace !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .receipt-content * {
+    color: #000 !important;
+    background: transparent !important;
   }
   @page {
     size: 80mm auto;
