@@ -69,7 +69,7 @@ export function printThermalReceipt(
 
   const container = getOrCreatePrintContainer();
   container.innerHTML = `
-<div class="tp-center"><div class="tp-title">GIRO DE ITATINGA</div><div class="tp-store">${storeName}</div><div class="tp-date">${date}</div></div>
+<div class="tp-center"><div class="tp-title">ITAFOOD</div><div class="tp-store">${storeName}</div><div class="tp-date">${date}</div></div>
 <div class="tp-divider"></div>
 <div class="tp-order-id">PEDIDO #${orderId}</div>
 <div class="tp-divider"></div>
