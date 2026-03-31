@@ -50,8 +50,12 @@ const PedidosPage = () => {
           table: "orders",
           filter: `client_id=eq.${user.id}`,
         },
-        () => {
+        (payload) => {
           queryClient.invalidateQueries({ queryKey: ["orders", user.id] });
+          const newStatus = (payload.new as any).status;
+          if (newStatus === "preparando") notifyOrderPreparing();
+          if (newStatus === "em_transito" || newStatus === "saiu_entrega") notifyOrderOnTheWay();
+          if (newStatus === "finalizado") notifyOrderDelivered();
         }
       )
       .subscribe();
