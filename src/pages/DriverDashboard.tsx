@@ -1095,8 +1095,8 @@ const DriverDashboard = () => {
           <div className="grid grid-cols-2 gap-2">
             <div className="bg-card border border-border rounded-2xl p-3">
               <p className="text-[10px] text-muted-foreground mb-0.5">📱 Pix App (a receber)</p>
-              <p className="text-lg font-black text-green-500">R$ {earningsBreakdown.pixEarnings.toFixed(2)}</p>
-              <p className="text-[10px] text-muted-foreground">{earningsBreakdown.pixCount} entregas</p>
+              <p className="text-lg font-black text-green-500">R$ {Number(driverBalance?.pending_amount || 0).toFixed(2)}</p>
+              <p className="text-[10px] text-muted-foreground">{earningsBreakdown.pixCount} entregas no período</p>
             </div>
             <div className="bg-card border border-border rounded-2xl p-3">
               <p className="text-[10px] text-muted-foreground mb-0.5">💵 Dinheiro (em mãos)</p>
