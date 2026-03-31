@@ -134,7 +134,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
             Vendas Totais ({periodLabel})
           </div>
           <p className="text-2xl font-black text-white">R$ {totalSales.toFixed(2)}</p>
-          <p className="text-xs text-gray-500 mt-1">{orders?.length || 0} pedidos finalizados</p>
+          <p className="text-xs text-gray-500 mt-1">{completedOrders.length} pedidos finalizados</p>
         </div>
 
         <div className="bg-gray-800 rounded-2xl p-4 border border-gray-700">
