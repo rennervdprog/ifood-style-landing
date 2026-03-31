@@ -26,17 +26,20 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("id, total_price, subtotal, delivery_fee, app_fee, payment_method, status, created_at")
+        .select("id, total_price, subtotal, delivery_fee, app_fee, payment_method, status, created_at, confirmed_at")
         .eq("store_id", storeId)
         .gte("created_at", dateRange.start.toISOString())
         .lte("created_at", dateRange.end.toISOString())
-        .in("status", ["entregue", "finalizado"])
+        .in("status", ["pendente", "preparando", "pronto_para_entrega", "em_transito", "saiu_entrega", "entregue", "finalizado"])
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data || [];
     },
     enabled: !!storeId,
   });
+
+  const completedOrders = orders?.filter(o => ["entregue", "finalizado"].includes(o.status)) || [];
+  const activeOrders = orders?.filter(o => !["entregue", "finalizado"].includes(o.status)) || [];
 
   // Calculations
   const totalSales = orders?.reduce((s, o) => s + Number(o.subtotal), 0) || 0;
