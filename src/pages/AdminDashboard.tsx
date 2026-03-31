@@ -725,7 +725,7 @@ const AdminDashboard = () => {
                       </div>
                     )}
                     {/* Settlement confirmed */}
-                    {order.payment_method === "dinheiro" && (order as any).return_to_store_confirmed && ["entregue", "finalizado"].includes(order.status) && (
+                    {["dinheiro", "cartao"].includes(order.payment_method) && (order as any).return_to_store_confirmed && ["entregue", "finalizado"].includes(order.status) && (
                       <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-2.5 mb-3 flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-green-400 flex-shrink-0" />
                         <p className="text-xs text-green-400 font-bold">✅ Acerto realizado com sucesso</p>
