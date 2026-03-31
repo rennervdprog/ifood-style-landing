@@ -15,6 +15,7 @@ import MenuBuilder from "@/components/MenuBuilder";
 import StoreHoursManager from "@/components/StoreHoursManager";
 import AddonManager from "@/components/AddonManager";
 import StoreSettings from "@/components/StoreSettings";
+import StoreFinancePanel from "@/components/StoreFinancePanel";
 import { printThermalReceipt } from "@/lib/thermalPrint";
 import { requestNotificationPermission, notifyNewOrder } from "@/lib/notifications";
 
