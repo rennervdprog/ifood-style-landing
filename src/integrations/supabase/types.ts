@@ -323,6 +323,7 @@ export type Database = {
           store_id: string
           subtotal: number
           total_price: number
+          visible_to_client: boolean
         }
         Insert: {
           address_details: string
@@ -345,6 +346,7 @@ export type Database = {
           store_id: string
           subtotal: number
           total_price: number
+          visible_to_client?: boolean
         }
         Update: {
           address_details?: string
@@ -367,6 +369,7 @@ export type Database = {
           store_id?: string
           subtotal?: number
           total_price?: number
+          visible_to_client?: boolean
         }
         Relationships: [
           {

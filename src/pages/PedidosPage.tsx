@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
-import { ClipboardList, Clock, ChefHat, Truck, CheckCircle2, Lock, Copy, QrCode, XCircle, X, Loader2 } from "lucide-react";
+import { ClipboardList, Clock, ChefHat, Truck, CheckCircle2, Lock, Copy, QrCode, XCircle, X, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { notifyOrderPreparing, notifyOrderOnTheWay, notifyOrderDelivered } from "@/lib/notifications";
 
@@ -49,12 +49,39 @@ const PedidosPage = () => {
         .from("orders")
         .select("*, stores(name), order_items(*, products(name))")
         .eq("client_id", user!.id)
+        .eq("visible_to_client", true)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
     enabled: !!user,
   });
+
+  const [clearingHistory, setClearingHistory] = useState(false);
+
+  const clearHistory = async () => {
+    if (!user) return;
+    if (!confirm("Deseja ocultar todos os pedidos finalizados e cancelados da sua visualização?")) return;
+    setClearingHistory(true);
+    try {
+      const { error } = await supabase
+        .from("orders")
+        .update({ visible_to_client: false } as any)
+        .eq("client_id", user.id)
+        .in("status", ["entregue", "finalizado", "cancelado"]);
+      if (error) throw error;
+      toast.success("Histórico limpo!");
+      queryClient.invalidateQueries({ queryKey: ["orders", user.id] });
+    } catch {
+      toast.error("Erro ao limpar histórico.");
+    } finally {
+      setClearingHistory(false);
+    }
+  };
+
+  const hasCompletedOrders = orders?.some((o: any) =>
+    ["entregue", "finalizado", "cancelado"].includes(o.status)
+  );
 
   // Realtime subscription
   useEffect(() => {
@@ -213,8 +240,18 @@ const PedidosPage = () => {
 
   return (
     <div className="min-h-screen bg-background pb-32 overflow-y-auto">
-      <header className="sticky top-0 z-50 bg-card border-b border-border flex items-center h-14 px-4">
+      <header className="sticky top-0 z-50 bg-card border-b border-border flex items-center justify-between h-14 px-4">
         <h1 className="font-bold text-foreground">Meus Pedidos</h1>
+        {hasCompletedOrders && (
+          <button
+            onClick={clearHistory}
+            disabled={clearingHistory}
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
+          >
+            <Trash2 className="h-4 w-4" />
+            Limpar
+          </button>
+        )}
       </header>
 
       <div className="px-4 py-4 space-y-3">
@@ -326,10 +363,16 @@ const PedidosPage = () => {
             );
           })
         ) : (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <ClipboardList className="h-16 w-16 text-muted-foreground mb-4" />
-            <h2 className="text-lg font-bold text-foreground mb-1">Nenhum pedido ainda</h2>
-            <p className="text-sm text-muted-foreground">Seus pedidos aparecerão aqui.</p>
+          <div className="flex flex-col items-center justify-center py-20 text-center px-6">
+            <div className="text-6xl mb-4">🍔</div>
+            <h2 className="text-lg font-bold text-foreground mb-1">Tudo limpo por aqui!</h2>
+            <p className="text-sm text-muted-foreground mb-6">Que tal pedir algo gostoso agora?</p>
+            <button
+              onClick={() => navigate("/")}
+              className="bg-primary text-primary-foreground font-bold px-8 py-3 rounded-2xl text-sm"
+            >
+              Ver Restaurantes
+            </button>
           </div>
         )}
       </div>
