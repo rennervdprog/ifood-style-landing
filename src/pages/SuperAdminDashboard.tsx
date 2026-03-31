@@ -816,7 +816,14 @@ const FinanceTab = ({
         /* Driver settlement cards */
         driverSettlement.length > 0 ? (
           <div className="space-y-3">
-            {driverSettlement.map((entry, i) => (
+            {driverSettlement.map((entry, i) => {
+              const driverPending = withdrawalRequests
+                .filter((w: any) => w.driver_user_id === entry.driverId && w.status === "solicitado")
+                .reduce((s: number, w: any) => s + Number(w.amount), 0);
+              const driverPaid = withdrawalRequests
+                .filter((w: any) => w.driver_user_id === entry.driverId && w.status === "pago")
+                .reduce((s: number, w: any) => s + Number(w.amount), 0);
+              return (
               <div key={i} className="bg-[#1E293B] rounded-2xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -828,22 +835,27 @@ const FinanceTab = ({
                   <span className="text-xs text-gray-400">{entry.deliveryCount} entregas</span>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 text-xs">
-                  <div className="bg-[#0F172A] rounded-xl p-2.5 text-center">
-                    <p className="text-gray-400">Total</p>
-                    <p className="text-sm font-bold text-white">R$ {entry.totalFees.toFixed(2)}</p>
-                  </div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
                   <div className="bg-[#0F172A] rounded-xl p-2.5 text-center">
                     <p className="text-gray-400">💵 Em mãos</p>
                     <p className="text-sm font-bold text-yellow-400">R$ {entry.cashFees.toFixed(2)}</p>
                   </div>
                   <div className="bg-[#0F172A] rounded-xl p-2.5 text-center">
-                    <p className="text-gray-400">📱 A receber</p>
-                    <p className="text-sm font-bold text-green-400">R$ {entry.appFees.toFixed(2)}</p>
+                    <p className="text-gray-400">📱 Total App</p>
+                    <p className="text-sm font-bold text-white">R$ {entry.appFees.toFixed(2)}</p>
+                  </div>
+                  <div className="bg-amber-500/10 rounded-xl p-2.5 text-center border border-amber-500/20">
+                    <p className="text-amber-400">⏳ Saque Pendente</p>
+                    <p className="text-sm font-bold text-amber-400">R$ {driverPending.toFixed(2)}</p>
+                  </div>
+                  <div className="bg-green-500/10 rounded-xl p-2.5 text-center border border-green-500/20">
+                    <p className="text-green-400">✅ Já Pago</p>
+                    <p className="text-sm font-bold text-green-400">R$ {driverPaid.toFixed(2)}</p>
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="bg-[#1E293B] rounded-2xl p-8 text-center">
