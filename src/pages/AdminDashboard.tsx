@@ -211,7 +211,7 @@ const AdminDashboard = () => {
     switch (status) {
       case "pendente": return { label: "Aceitar", next: "preparando", color: "bg-green-500 hover:bg-green-600" };
       case "preparando": return { label: "🔔 Chamar Motoboy", next: "pronto_para_entrega" as OrderStatus, color: "bg-purple-500 hover:bg-purple-600" };
-      case "pronto_para_entrega": return { label: "🚀 Saiu p/ Entrega", next: "saiu_entrega", color: "bg-blue-500 hover:bg-blue-600" };
+      // pronto_para_entrega: no manual action - driver validates collection code to move to saiu_entrega
       case "saiu_entrega": return { label: "Finalizar", next: "finalizado", color: "bg-emerald-500 hover:bg-emerald-600" };
       default: return null;
     }
