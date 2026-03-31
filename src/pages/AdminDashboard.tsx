@@ -519,6 +519,10 @@ const AdminDashboard = () => {
         <div className="px-4 py-4">
           <StoreHoursManager storeId={store.id} forceClosed={(store as any).force_closed || false} />
         </div>
+      ) : dashboardTab === "finance" && store ? (
+        <div className="px-4 py-4">
+          <StoreFinancePanel storeId={store.id} storeName={store.name} />
+        </div>
       ) : (
         <>
           {/* Status tabs */}
