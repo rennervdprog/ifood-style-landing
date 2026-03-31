@@ -12,7 +12,7 @@ import WhatsAppButton from "@/components/WhatsAppButton";
 import MenuBuilder from "@/components/MenuBuilder";
 import StoreHoursManager from "@/components/StoreHoursManager";
 import AddonManager from "@/components/AddonManager";
-import OrderReceipt from "@/components/OrderReceipt";
+import { printThermalReceipt } from "@/lib/thermalPrint";
 
 type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_entrega" | "em_transito" | "entregue" | "finalizado";
 type DashboardTab = "orders" | "menu" | "addons" | "hours";
@@ -38,12 +38,12 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const receiptRef = useRef<HTMLDivElement | null>(null);
+  
   const [isOnline, setIsOnline] = useState(true);
   const [activeTab, setActiveTab] = useState<OrderStatus>("pendente");
   const [dashboardTab, setDashboardTab] = useState<DashboardTab>("orders");
   const [autoPrint, setAutoPrint] = useState(() => localStorage.getItem("autoPrint") === "true");
-  const [printingOrder, setPrintingOrder] = useState<any>(null);
+  
   const prevPendingCountRef = useRef(0);
 
   // Fetch store for this owner
@@ -165,12 +165,8 @@ const AdminDashboard = () => {
   }, [orders, playAlert]);
 
   const handlePrint = useCallback((order: any) => {
-    setPrintingOrder(order);
-    setTimeout(() => {
-      window.print();
-      setTimeout(() => setPrintingOrder(null), 500);
-    }, 300);
-  }, []);
+    printThermalReceipt(order, store?.name || "Loja", getClientName(order.client_id));
+  }, [store?.name]);
 
   const toggleAutoPrint = () => {
     const next = !autoPrint;
@@ -523,17 +519,6 @@ const AdminDashboard = () => {
             </button>
           )}
         </>
-      )}
-      {/* Hidden receipt for printing */}
-      {printingOrder && (
-        <div className="receipt-print-wrapper" style={{ position: 'fixed', left: '-9999px', top: 0 }}>
-          <OrderReceipt
-            ref={receiptRef}
-            order={printingOrder}
-            storeName={store?.name || "Loja"}
-            clientName={getClientName(printingOrder.client_id)}
-          />
-        </div>
       )}
     </div>
   );
