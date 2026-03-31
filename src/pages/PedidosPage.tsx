@@ -107,16 +107,24 @@ const PedidosPage = () => {
     setPixModal({ orderId: order.id, qrCode: null, qrCodeBase64: null, loading: true });
 
     try {
-      // Get user profile for payer name
+      // Get user profile for payer name and CPF
       const { data: profile } = await supabase
         .from("profiles")
-        .select("full_name")
+        .select("full_name, document")
         .eq("user_id", user.id)
         .maybeSingle();
 
       const nameParts = (profile?.full_name || "Cliente ItaFood").split(" ");
       const firstName = nameParts[0] || "Cliente";
       const lastName = nameParts.slice(1).join(" ") || "ItaFood";
+      const cpf = profile?.document?.replace(/\D/g, "") || "";
+
+      if (!cpf || cpf.length !== 11) {
+        toast.error("Cadastre seu CPF no perfil antes de pagar com PIX.");
+        setPixModal(null);
+        setPayingOrderId(null);
+        return;
+      }
 
       const { data: pixData, error: pixError } = await supabase.functions.invoke(
         "create-pix-payment",
@@ -127,11 +135,16 @@ const PedidosPage = () => {
             description: `Pedido #${order.id.substring(0, 6).toUpperCase()} - ${order.stores?.name || "ItaFood"}`,
             payer_first_name: firstName,
             payer_last_name: lastName,
+            payer_cpf: cpf,
           },
         }
       );
 
       if (pixError) throw pixError;
+
+      if (pixData?.error) {
+        throw new Error(pixData.error);
+      }
 
       if (pixData?.qr_code || pixData?.qr_code_base64) {
         setPixModal({
@@ -145,10 +158,7 @@ const PedidosPage = () => {
       }
     } catch (err: any) {
       console.error("PIX generation error:", err);
-      const errorMsg = err?.message?.includes("Chave") 
-        ? err.message 
-        : "Erro ao gerar PIX. Tente novamente.";
-      toast.error(errorMsg);
+      toast.error(err?.message || "Erro ao gerar PIX. Verifique se seu e-mail e CPF estão corretos.");
       setPixModal(null);
     } finally {
       setPayingOrderId(null);
