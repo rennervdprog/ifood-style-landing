@@ -236,7 +236,7 @@ const PartnerOnboarding = () => {
                   <div>
                     <h3 className="text-lg font-bold text-foreground">🏠 Quero Vender</h3>
                     <p className="text-sm text-muted-foreground mt-0.5">
-                      Abra sua loja e venda para toda Itatinga
+                      Abra sua loja e venda pelo ItaFood
                     </p>
                   </div>
                 </div>
