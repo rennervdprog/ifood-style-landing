@@ -63,7 +63,7 @@ const Index = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background pb-24 overflow-y-auto">
+    <div className="min-h-screen bg-background pb-32 overflow-y-auto">
       <AppHeader />
 
       <div className="px-4 pt-4">
