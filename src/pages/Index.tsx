@@ -63,7 +63,7 @@ const Index = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background pb-32">
+    <div className="min-h-screen bg-background pb-24 overflow-y-auto">
       <AppHeader />
 
       <div className="px-4 pt-4">
@@ -76,13 +76,13 @@ const Index = () => {
 
       <div className="px-4">
         {isLoading ? (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
             {Array.from({ length: 6 }).map((_, i) => (
               <StoreCardSkeleton key={i} />
             ))}
           </div>
         ) : filtered && filtered.length > 0 ? (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
             {filtered.map((store) => (
               <StoreCard
                 key={store.id}
