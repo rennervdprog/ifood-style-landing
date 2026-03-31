@@ -141,6 +141,12 @@ const AdminDashboard = () => {
             playAlert();
             toast.info("🔔 Novo pedido recebido!", { duration: 8000 });
           }
+          // Success sound when order finalized
+          if (payload.eventType === "UPDATE" && (payload.new as any).status === "finalizado") {
+            const successAudio = new Audio("data:audio/wav;base64,UklGRl9vAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhO28AAIA/");
+            successAudio.play().catch(() => {});
+            toast.success("💰 Venda concluída! Pedido finalizado.", { duration: 5000 });
+          }
         }
       )
       .subscribe((status) => {
@@ -211,8 +217,7 @@ const AdminDashboard = () => {
     switch (status) {
       case "pendente": return { label: "Aceitar", next: "preparando", color: "bg-green-500 hover:bg-green-600" };
       case "preparando": return { label: "🔔 Chamar Motoboy", next: "pronto_para_entrega" as OrderStatus, color: "bg-purple-500 hover:bg-purple-600" };
-      // pronto_para_entrega: no manual action - driver validates collection code to move to saiu_entrega
-      case "saiu_entrega": return { label: "Finalizar", next: "finalizado", color: "bg-emerald-500 hover:bg-emerald-600" };
+      // No manual actions after despacho - all automated by driver actions
       default: return null;
     }
   };
@@ -419,6 +424,16 @@ const AdminDashboard = () => {
                         <Bike className="h-4 w-4 text-blue-400" />
                         <span className="text-sm text-blue-300 font-bold">
                           🏍️ {getDriverName(order.driver_id)} aceitou e está vindo buscar
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Driver in transit info */}
+                    {(order.status === "em_transito" || order.status === "saiu_entrega") && order.driver_id && (
+                      <div className="bg-cyan-500/20 border border-cyan-500/40 rounded-xl p-3 mb-3 flex items-center gap-2">
+                        <Truck className="h-4 w-4 text-cyan-400" />
+                        <span className="text-sm text-cyan-300 font-bold">
+                          🚀 {getDriverName(order.driver_id)} está levando o pedido
                         </span>
                       </div>
                     )}

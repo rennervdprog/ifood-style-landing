@@ -107,7 +107,7 @@ const DriverDashboard = () => {
         .from("orders")
         .select("*, stores(name)")
         .eq("driver_id", user!.id)
-        .eq("status", "entregue" as any)
+        .in("status", ["entregue", "finalizado"] as any)
         .eq("payment_method", "dinheiro")
         .eq("return_to_store_confirmed", false)
         .maybeSingle();
