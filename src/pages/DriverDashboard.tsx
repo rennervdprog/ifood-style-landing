@@ -1080,6 +1080,34 @@ const DriverDashboard = () => {
             </button>
           </div>
 
+          {/* Withdrawal History */}
+          {withdrawalHistory && withdrawalHistory.length > 0 && (
+            <>
+              <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                <Wallet className="h-4 w-4" />
+                Histórico de Saques
+              </h3>
+              <div className="space-y-2">
+                {withdrawalHistory.map((w: any) => (
+                  <div key={w.id} className="bg-card border border-border rounded-xl p-3 flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-bold text-foreground">{w.transaction_code || "#---"}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(w.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-black text-foreground">R$ {Number(w.amount).toFixed(2)}</p>
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${w.status === "solicitado" ? "bg-amber-500/20 text-amber-400" : "bg-green-500/20 text-green-400"}`}>
+                        {w.status === "solicitado" ? "⏳ Pendente" : "✅ Pago"}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
           {/* Delivery History List */}
           <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
             <Clock className="h-4 w-4" />
