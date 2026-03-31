@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
 import { ClipboardList, Clock, ChefHat, Truck, CheckCircle2, Lock, Copy } from "lucide-react";
 import { toast } from "sonner";
+import { notifyOrderPreparing, notifyOrderOnTheWay, notifyOrderDelivered } from "@/lib/notifications";
 
 const statusConfig: Record<string, { label: string; icon: React.ElementType; color: string }> = {
   pendente: { label: "Pendente", icon: Clock, color: "text-yellow-500" },
