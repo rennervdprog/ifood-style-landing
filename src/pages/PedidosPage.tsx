@@ -132,9 +132,11 @@ const PedidosPage = () => {
           orders.map((order: any) => {
             const config = statusConfig[order.status] || statusConfig.pendente;
             const StatusIcon = config.icon;
-            const showPin = order.delivery_pin && !["entregue", "finalizado"].includes(order.status);
+            const isWaitingPayment = order.status === "aguardando_pagamento";
+            const isCancelled = order.status === "cancelado";
+            const showPin = order.delivery_pin && !["entregue", "finalizado", "aguardando_pagamento", "cancelado"].includes(order.status);
             return (
-              <div key={order.id} className="bg-card rounded-2xl p-4 border border-border">
+              <div key={order.id} className={`bg-card rounded-2xl p-4 border ${isCancelled ? "border-red-500/30 opacity-60" : "border-border"}`}>
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-bold text-sm text-foreground">
                     {order.stores?.name || "Loja"}
@@ -144,6 +146,22 @@ const PedidosPage = () => {
                     {config.label}
                   </div>
                 </div>
+
+                {/* Waiting Payment Banner */}
+                {isWaitingPayment && (
+                  <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 mb-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Clock className="h-4 w-4 text-amber-500 animate-pulse" />
+                      <span className="text-xs font-bold text-amber-500">Aguardando Pagamento PIX</span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mb-2">
+                      Seu pedido será enviado à loja assim que o pagamento for confirmado.
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      O pagamento é processado automaticamente. Aguarde alguns instantes.
+                    </p>
+                  </div>
+                )}
 
                 {/* Delivery PIN Card */}
                 {showPin && (
