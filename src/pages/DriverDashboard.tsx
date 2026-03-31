@@ -162,7 +162,7 @@ const DriverDashboard = () => {
         .select("*, stores(name)")
         .eq("driver_id", user!.id)
         .in("status", ["entregue", "finalizado"] as any)
-        .eq("payment_method", "dinheiro")
+        .in("payment_method", ["dinheiro", "cartao"])
         .eq("return_to_store_confirmed", false)
         .maybeSingle();
       if (error) throw error;
@@ -280,13 +280,13 @@ const DriverDashboard = () => {
   // Pix vs Cash breakdown for filtered period
   const earningsBreakdown = useMemo(() => {
     const pixEarnings = filteredHistory
-      .filter((o: any) => o.payment_method !== "dinheiro")
+      .filter((o: any) => !["dinheiro", "cartao"].includes(o.payment_method))
       .reduce((sum: number, o: any) => sum + Number(o.delivery_fee), 0);
     const cashEarnings = filteredHistory
-      .filter((o: any) => o.payment_method === "dinheiro")
+      .filter((o: any) => ["dinheiro", "cartao"].includes(o.payment_method))
       .reduce((sum: number, o: any) => sum + Number(o.delivery_fee), 0);
-    const pixCount = filteredHistory.filter((o: any) => o.payment_method !== "dinheiro").length;
-    const cashCount = filteredHistory.filter((o: any) => o.payment_method === "dinheiro").length;
+    const pixCount = filteredHistory.filter((o: any) => !["dinheiro", "cartao"].includes(o.payment_method)).length;
+    const cashCount = filteredHistory.filter((o: any) => ["dinheiro", "cartao"].includes(o.payment_method)).length;
     return { pixEarnings, cashEarnings, pixCount, cashCount };
   }, [filteredHistory]);
 
@@ -489,9 +489,12 @@ const DriverDashboard = () => {
     if (error) {
       toast.error(error.message || "Código inválido. Verifique com o lojista.");
     } else {
-      toast.success("Acerto com a loja confirmado! ✅");
+      toast.success("Acerto com a loja confirmado! Taxa paga em mãos ✅");
       setSettlementCodeInput("");
       queryClient.invalidateQueries({ queryKey: ["driver-pending-return", user!.id] });
+      queryClient.invalidateQueries({ queryKey: ["driver-balance", user!.id] });
+      queryClient.invalidateQueries({ queryKey: ["driver-earnings", user!.id] });
+      queryClient.invalidateQueries({ queryKey: ["driver-history", user!.id] });
     }
     setConfirmingReturn(false);
   };
