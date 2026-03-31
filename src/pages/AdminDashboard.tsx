@@ -697,12 +697,38 @@ const AdminDashboard = () => {
 
                     {/* Settlement Code for cash orders */}
                     {order.payment_method === "dinheiro" && (order as any).settlement_code && ["entregue", "finalizado"].includes(order.status) && !(order as any).return_to_store_confirmed && (
-                      <div className="bg-yellow-500/20 border border-yellow-500/40 rounded-xl p-3 mb-3">
-                        <p className="text-xs font-bold text-yellow-400 mb-1">🔐 Código de Acerto</p>
-                        <p className="text-3xl font-black text-yellow-300 tracking-[0.3em] text-center">
+                      <div className="bg-amber-500/10 border-2 border-amber-500/50 rounded-xl p-4 mb-3 animate-pulse-subtle">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-xs font-bold text-amber-400">🔑 Código de Acerto para o Motoboy</p>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText((order as any).settlement_code);
+                              toast.success("Código copiado!");
+                            }}
+                            className="flex items-center gap-1 text-xs text-amber-400 bg-amber-500/20 px-2 py-1 rounded-lg"
+                          >
+                            <Copy className="h-3 w-3" />
+                            Copiar
+                          </button>
+                        </div>
+                        <p className="text-4xl font-black text-amber-300 tracking-[0.4em] text-center my-2">
                           {(order as any).settlement_code}
                         </p>
-                        <p className="text-xs text-gray-400 mt-1 text-center">Informe ao motoboy após receber o dinheiro e pagar a taxa</p>
+                        <div className="bg-amber-500/10 rounded-lg p-2 mt-2">
+                          <p className="text-xs text-amber-200 text-center font-semibold">
+                            ⚠️ Entregador retornando para acerto de R$ {Number(order.total_price).toFixed(2)}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground text-center mt-1">
+                            Informe o código <strong>somente após</strong> receber o dinheiro e pagar a taxa de entrega (R$ {Number(order.delivery_fee).toFixed(2)}) ao motoboy
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    {/* Settlement confirmed */}
+                    {order.payment_method === "dinheiro" && (order as any).return_to_store_confirmed && ["entregue", "finalizado"].includes(order.status) && (
+                      <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-2.5 mb-3 flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-green-400 flex-shrink-0" />
+                        <p className="text-xs text-green-400 font-bold">✅ Acerto realizado com sucesso</p>
                       </div>
                     )}
 
