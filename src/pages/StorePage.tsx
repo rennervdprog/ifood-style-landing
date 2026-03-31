@@ -170,7 +170,7 @@ const StorePage = () => {
   };
 
   // Not found
-  if (!storeLoading && !store && id) {
+  if (!storeLoading && !store && (id || slug)) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center text-center px-6">
         <span className="text-5xl mb-4">🔒</span>
