@@ -28,7 +28,7 @@ const CartPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24 overflow-y-auto">
+    <div className="min-h-screen bg-background pb-32 overflow-y-auto">
       <header className="sticky top-0 z-50 bg-card border-b border-border flex items-center justify-between h-14 px-4">
         <div className="flex items-center gap-3">
           <button onClick={() => navigate(-1)}>
