@@ -85,7 +85,7 @@ const AdminDashboard = () => {
     enabled: !!store,
   });
 
-  // Fetch online drivers count
+  // Fetch online drivers count (no polling - realtime only)
   const { data: onlineDrivers } = useQuery({
     queryKey: ["online-drivers-count"],
     queryFn: async () => {
@@ -97,8 +97,25 @@ const AdminDashboard = () => {
       if (error) throw error;
       return data || [];
     },
-    refetchInterval: 30000,
   });
+
+  // Dedicated realtime channel for drivers - instant updates
+  useEffect(() => {
+    const driversChannel = supabase
+      .channel("drivers-online-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "drivers" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["online-drivers-count"] });
+        }
+      )
+      .subscribe((status) => {
+        setRealtimeDriversConnected(status === "SUBSCRIBED");
+      });
+
+    return () => { supabase.removeChannel(driversChannel); };
+  }, [queryClient]);
 
   // Fetch driver names for assigned orders
   const driverIds = [...new Set(orders?.map(o => o.driver_id).filter(Boolean) || [])] as string[];
