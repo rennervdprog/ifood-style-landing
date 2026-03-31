@@ -540,6 +540,7 @@ export type Database = {
         Args: { _approved: boolean; _profile_user_id: string }
         Returns: undefined
       }
+      admin_delete_store: { Args: { _store_id: string }; Returns: undefined }
       driver_accept_order: { Args: { _order_id: string }; Returns: undefined }
       driver_confirm_store_return: {
         Args: { _order_id: string }
