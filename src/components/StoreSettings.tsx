@@ -55,27 +55,35 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Imagem muito grande. Máximo 5MB.");
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Formato inválido. Use JPG, PNG ou WebP.");
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Imagem muito grande. Máximo 2MB.");
       return;
     }
 
     setUploading(true);
     const ext = file.name.split(".").pop();
-    const filePath = `stores/${storeId}/logo_${Date.now()}.${ext}`;
+    // Path: userId/logo_timestamp.ext (matches RLS policy)
+    const filePath = `${user.id}/logo_${Date.now()}.${ext}`;
 
     const { error: uploadError } = await supabase.storage
-      .from("partner-images")
+      .from("store-assets")
       .upload(filePath, file, { upsert: true });
 
     if (uploadError) {
-      toast.error("Erro ao enviar imagem.");
+      console.error("Upload error:", uploadError);
+      toast.error("Erro ao subir imagem. Verifique sua conexão ou tente um arquivo menor (até 2MB).");
       setUploading(false);
       return;
     }
 
     const { data: urlData } = supabase.storage
-      .from("partner-images")
+      .from("store-assets")
       .getPublicUrl(filePath);
 
     setImageUrl(urlData.publicUrl);
