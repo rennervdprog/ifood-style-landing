@@ -29,7 +29,7 @@ interface MenuSection {
 }
 
 const StorePage = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id, slug } = useParams<{ id?: string; slug?: string }>();
   const navigate = useNavigate();
   const { addItem } = useCart();
   const [activeSection, setActiveSection] = useState<string | null>(null);
@@ -37,20 +37,21 @@ const StorePage = () => {
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const navRef = useRef<HTMLDivElement>(null);
 
-  // Store data
+  // Store data - supports both ID and slug lookup
   const { data: store, isLoading: storeLoading } = useQuery({
-    queryKey: ["store", id],
+    queryKey: ["store", id || slug],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("stores")
-        .select("*")
-        .eq("id", id!)
-        .eq("status", "ativo")
-        .single();
+      let query = supabase.from("stores").select("*").eq("status", "ativo");
+      if (id) {
+        query = query.eq("id", id);
+      } else if (slug) {
+        query = query.eq("slug", slug);
+      }
+      const { data, error } = await query.single();
       if (error) throw error;
       return data;
     },
-    enabled: !!id,
+    enabled: !!(id || slug),
   });
 
   // Store hours
