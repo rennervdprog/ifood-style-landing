@@ -10,7 +10,7 @@ const CartPage = () => {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-background pb-20">
+      <div className="min-h-screen bg-background pb-24 overflow-y-auto">
         <header className="sticky top-0 z-50 bg-card border-b border-border flex items-center h-14 px-4 gap-3">
           <button onClick={() => navigate(-1)}>
             <ArrowLeft className="h-5 w-5 text-foreground" />
