@@ -240,8 +240,18 @@ const PedidosPage = () => {
 
   return (
     <div className="min-h-screen bg-background pb-32 overflow-y-auto">
-      <header className="sticky top-0 z-50 bg-card border-b border-border flex items-center h-14 px-4">
+      <header className="sticky top-0 z-50 bg-card border-b border-border flex items-center justify-between h-14 px-4">
         <h1 className="font-bold text-foreground">Meus Pedidos</h1>
+        {hasCompletedOrders && (
+          <button
+            onClick={clearHistory}
+            disabled={clearingHistory}
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
+          >
+            <Trash2 className="h-4 w-4" />
+            Limpar
+          </button>
+        )}
       </header>
 
       <div className="px-4 py-4 space-y-3">
