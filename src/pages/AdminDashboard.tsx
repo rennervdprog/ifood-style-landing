@@ -376,6 +376,37 @@ const AdminDashboard = () => {
         </div>
       )}
 
+      {/* Online Drivers Widget */}
+      <div className={`mx-4 mt-3 rounded-2xl p-3 flex items-center gap-3 ${
+        (onlineDrivers?.length || 0) > 0
+          ? "bg-green-500/10 border border-green-500/30"
+          : "bg-yellow-500/10 border border-yellow-500/30"
+      }`}>
+        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+          (onlineDrivers?.length || 0) > 0 ? "bg-green-500/20" : "bg-yellow-500/20"
+        }`}>
+          <Bike className={`h-5 w-5 ${(onlineDrivers?.length || 0) > 0 ? "text-green-400" : "text-yellow-400"}`} />
+        </div>
+        <div className="flex-1">
+          {(onlineDrivers?.length || 0) > 0 ? (
+            <>
+              <p className="text-sm font-bold text-green-300">
+                🛵 {onlineDrivers!.length} entregador{onlineDrivers!.length > 1 ? "es" : ""} disponível{onlineDrivers!.length > 1 ? "is" : ""} agora
+              </p>
+              <p className="text-xs text-gray-400">em Itatinga</p>
+            </>
+          ) : (
+            <>
+              <p className="text-sm font-bold text-yellow-300">⚠️ Nenhum entregador online</p>
+              <p className="text-xs text-gray-400">Aguardando motoboys ficarem disponíveis</p>
+            </>
+          )}
+        </div>
+        <span className={`text-2xl font-black ${(onlineDrivers?.length || 0) > 0 ? "text-green-400" : "text-yellow-400"}`}>
+          {onlineDrivers?.length || 0}
+        </span>
+      </div>
+
       {/* Dashboard Tabs */}
       <div className="flex overflow-x-auto gap-2 px-4 py-3 border-b border-gray-800 no-scrollbar">
         <button
