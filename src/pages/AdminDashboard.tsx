@@ -38,9 +38,12 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const receiptRef = useRef<HTMLDivElement | null>(null);
   const [isOnline, setIsOnline] = useState(true);
   const [activeTab, setActiveTab] = useState<OrderStatus>("pendente");
   const [dashboardTab, setDashboardTab] = useState<DashboardTab>("orders");
+  const [autoPrint, setAutoPrint] = useState(() => localStorage.getItem("autoPrint") === "true");
+  const [printingOrder, setPrintingOrder] = useState<any>(null);
   const prevPendingCountRef = useRef(0);
 
   // Fetch store for this owner
