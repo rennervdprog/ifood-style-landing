@@ -382,7 +382,7 @@ const DriverDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white overflow-y-auto pb-20">
+    <div className="min-h-screen bg-gray-950 text-white overflow-y-auto pb-32">
       <header className="sticky top-0 z-50 bg-gray-900 border-b border-gray-800 px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">

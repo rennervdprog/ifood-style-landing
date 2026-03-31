@@ -22,7 +22,7 @@ const StoreCard = ({ id, name, category, image_url, is_open, rating, statusReaso
         is_open ? "active:scale-[0.98]" : "cursor-not-allowed"
       }`}
     >
-      <div className="relative h-32 bg-muted overflow-hidden">
+      <div className="relative h-36 bg-muted overflow-hidden">
         {image_url ? (
           <img
             src={image_url}
