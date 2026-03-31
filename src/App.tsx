@@ -62,6 +62,7 @@ const App = () => (
                 }
               />
               <Route path="/parceiro" element={<PartnerOnboarding />} />
+              <Route path="/:slug" element={<StorePage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

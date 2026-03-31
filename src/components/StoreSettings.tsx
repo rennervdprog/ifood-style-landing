@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Camera, Upload, Save, Store, Phone, Tag, MapPin } from "lucide-react";
+import { Camera, Upload, Save, Store, Phone, Tag, MapPin, Link, Copy } from "lucide-react";
 
 const CATEGORY_OPTIONS = [
   { value: "lanches", label: "Lanches" },
@@ -25,14 +25,16 @@ interface StoreSettingsProps {
   storeImageUrl: string | null;
   storeIsOpen: boolean;
   forceClosed: boolean;
+  storeSlug?: string | null;
 }
 
-const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, storeIsOpen, forceClosed }: StoreSettingsProps) => {
+const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, storeIsOpen, forceClosed, storeSlug }: StoreSettingsProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const [name, setName] = useState(storeName);
   const [category, setCategory] = useState(storeCategory);
+  const [slug, setSlug] = useState(storeSlug || "");
   const [whatsapp, setWhatsapp] = useState("");
   const [imageUrl, setImageUrl] = useState(storeImageUrl || "");
   const [saving, setSaving] = useState(false);
@@ -104,13 +106,15 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
     setSaving(true);
 
     // Update store
+    const cleanSlug = slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, "").replace(/--+/g, "-");
     const { error: storeError } = await supabase
       .from("stores")
       .update({
         name: name.trim(),
         category: category as any,
         image_url: imageUrl || null,
-      })
+        slug: cleanSlug || null,
+      } as any)
       .eq("id", storeId);
 
     if (storeError) {
@@ -217,6 +221,46 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
           className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500"
         />
         <p className="text-[10px] text-gray-500">Será exibido para clientes e entregadores.</p>
+      </div>
+
+      {/* Store Link (Slug) */}
+      <div className="space-y-2">
+        <label className="text-sm font-bold text-gray-300 flex items-center gap-2">
+          <Link className="h-4 w-4 text-primary" />
+          Link Exclusivo da Loja
+        </label>
+        <div className="flex gap-2">
+          <div className="flex-1 flex items-center bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
+            <span className="text-xs text-gray-500 pl-3 whitespace-nowrap">itafood.app/</span>
+            <input
+              type="text"
+              value={slug}
+              onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
+              placeholder="nome-da-loja"
+              maxLength={50}
+              className="flex-1 bg-transparent px-1 py-3 text-white text-sm focus:outline-none"
+            />
+          </div>
+        </div>
+        {slug && (
+          <div className="flex items-center gap-2 bg-primary/10 border border-primary/30 rounded-xl p-3">
+            <Link className="h-4 w-4 text-primary flex-shrink-0" />
+            <span className="text-xs text-primary font-bold truncate">
+              {window.location.origin}/{slug}
+            </span>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(`${window.location.origin}/${slug}`);
+                toast.success("Link copiado!");
+              }}
+              className="ml-auto flex items-center gap-1 bg-primary/20 text-primary font-bold px-2.5 py-1.5 rounded-lg text-xs active:scale-95 transition-transform"
+            >
+              <Copy className="h-3 w-3" />
+              Copiar
+            </button>
+          </div>
+        )}
+        <p className="text-[10px] text-gray-500">Compartilhe esse link para clientes acessarem direto seu cardápio.</p>
       </div>
 
       {/* Store Status Info */}

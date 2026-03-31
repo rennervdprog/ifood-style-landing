@@ -29,7 +29,7 @@ interface MenuSection {
 }
 
 const StorePage = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id, slug } = useParams<{ id?: string; slug?: string }>();
   const navigate = useNavigate();
   const { addItem } = useCart();
   const [activeSection, setActiveSection] = useState<string | null>(null);
@@ -37,31 +37,34 @@ const StorePage = () => {
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const navRef = useRef<HTMLDivElement>(null);
 
-  // Store data
+  // Store data - supports both ID and slug lookup
   const { data: store, isLoading: storeLoading } = useQuery({
-    queryKey: ["store", id],
+    queryKey: ["store", id || slug],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("stores")
-        .select("*")
-        .eq("id", id!)
-        .eq("status", "ativo")
-        .single();
+      let query = supabase.from("stores").select("*").eq("status", "ativo");
+      if (id) {
+        query = query.eq("id", id);
+      } else if (slug) {
+        query = query.eq("slug", slug);
+      }
+      const { data, error } = await query.single();
       if (error) throw error;
       return data;
     },
-    enabled: !!id,
+    enabled: !!(id || slug),
   });
+
+  const storeId = store?.id || id;
 
   // Store hours
   const { data: storeHours } = useQuery({
-    queryKey: ["store-hours", id],
+    queryKey: ["store-hours", storeId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("opening_hours").select("*").eq("store_id", id!);
+      const { data, error } = await supabase.from("opening_hours").select("*").eq("store_id", storeId!);
       if (error) throw error;
       return data || [];
     },
-    enabled: !!id,
+    enabled: !!storeId,
   });
 
   // Owner profile (for WhatsApp)
@@ -81,33 +84,33 @@ const StorePage = () => {
 
   // Menu sections
   const { data: sections } = useQuery({
-    queryKey: ["menu-sections", id],
+    queryKey: ["menu-sections", storeId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("menu_sections")
         .select("*")
-        .eq("store_id", id!)
+        .eq("store_id", storeId!)
         .order("sort_order");
       if (error) throw error;
       return (data || []) as MenuSection[];
     },
-    enabled: !!id,
+    enabled: !!storeId,
   });
 
   // Products
   const { data: products, isLoading } = useQuery({
-    queryKey: ["products", id],
+    queryKey: ["products", storeId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
         .select("*")
-        .eq("store_id", id!)
+        .eq("store_id", storeId!)
         .eq("is_available", true)
         .order("name");
       if (error) throw error;
       return (data || []) as Product[];
     },
-    enabled: !!id,
+    enabled: !!storeId,
   });
 
   const storeStatus = store
@@ -169,7 +172,7 @@ const StorePage = () => {
   };
 
   // Not found
-  if (!storeLoading && !store && id) {
+  if (!storeLoading && !store && (id || slug)) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center text-center px-6">
         <span className="text-5xl mb-4">🔒</span>
