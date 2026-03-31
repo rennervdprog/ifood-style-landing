@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
     const userId = claimsData.claims.sub;
 
     const body = await req.json();
-    const { order_id, items, total, payer_email, payer_name } = body;
+    const { order_id, items, total, payer_email, payer_name, store_name } = body;
 
     if (!order_id || !items || !total) {
       return new Response(JSON.stringify({ error: "Missing required fields: order_id, items, total" }), {
@@ -71,9 +71,13 @@ Deno.serve(async (req) => {
 
     const projectId = Deno.env.get("SUPABASE_URL")?.replace("https://", "").replace(".supabase.co", "") || "";
 
+    const orderLabel = store_name 
+      ? `Pedido #${order_id.substring(0, 6).toUpperCase()} - ${store_name}`
+      : `Pedido ItaFood #${order_id.substring(0, 6).toUpperCase()}`;
+
     const preferenceBody = {
       items: items.map((item: any) => ({
-        title: String(item.title || "Produto ItaFood").substring(0, 256),
+        title: String(item.title || orderLabel).substring(0, 256),
         quantity: Number(item.quantity) || 1,
         unit_price: Number(item.unit_price) || 0,
         currency_id: "BRL",
@@ -89,6 +93,7 @@ Deno.serve(async (req) => {
         pending: `https://${projectId}.supabase.co/functions/v1/mp-return?status=pending&order_id=${order_id}`,
       },
       auto_return: "approved",
+      default_payment_method_id: "pix",
       payment_methods: {
         excluded_payment_types: [{ id: "credit_card" }, { id: "debit_card" }],
         installments: 1,
