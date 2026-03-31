@@ -7,16 +7,17 @@ import { toast } from "sonner";
 import {
   Wifi, WifiOff, Pause, Play, Clock, ChefHat, Truck, CheckCircle2,
   MapPin, CreditCard, Package, ArrowLeft, DollarSign, Banknote, UtensilsCrossed, ListOrdered, Plus, Printer, Bike,
-  Volume2, VolumeX, Bell
+  Volume2, VolumeX, Bell, Store
 } from "lucide-react";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import MenuBuilder from "@/components/MenuBuilder";
 import StoreHoursManager from "@/components/StoreHoursManager";
 import AddonManager from "@/components/AddonManager";
+import StoreSettings from "@/components/StoreSettings";
 import { printThermalReceipt } from "@/lib/thermalPrint";
 
 type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_entrega" | "em_transito" | "entregue" | "finalizado";
-type DashboardTab = "orders" | "menu" | "addons" | "hours";
+type DashboardTab = "orders" | "menu" | "addons" | "hours" | "settings";
 
 const ALERT_SOUND_URL = "https://actions.google.com/sounds/v1/alarms/beep_short.ogg";
 
@@ -392,9 +393,28 @@ const AdminDashboard = () => {
         >
           <Clock className="h-4 w-4" /> Horários
         </button>
+        <button
+          onClick={() => setDashboardTab("settings")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold ${
+            dashboardTab === "settings" ? "bg-primary text-primary-foreground" : "bg-[#1F2937] text-gray-400"
+          }`}
+        >
+          <Store className="h-4 w-4" /> Minha Loja
+        </button>
       </div>
 
-      {dashboardTab === "menu" && store ? (
+      {dashboardTab === "settings" && store ? (
+        <div className="px-4 py-4">
+          <StoreSettings
+            storeId={store.id}
+            storeName={store.name}
+            storeCategory={store.category}
+            storeImageUrl={store.image_url}
+            storeIsOpen={store.is_open}
+            forceClosed={(store as any).force_closed || false}
+          />
+        </div>
+      ) : dashboardTab === "menu" && store ? (
         <div className="px-4 py-4">
           <MenuBuilder storeId={store.id} />
         </div>
