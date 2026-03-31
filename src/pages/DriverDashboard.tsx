@@ -201,6 +201,23 @@ const DriverDashboard = () => {
     enabled: !!user,
   });
 
+  // Check for pending withdrawal request
+  const { data: pendingWithdrawal } = useQuery({
+    queryKey: ["pending-withdrawal", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("withdrawal_requests" as any)
+        .select("id, amount, status, created_at")
+        .eq("driver_user_id", user!.id)
+        .eq("status", "solicitado")
+        .maybeSingle();
+      return data as any;
+    },
+    enabled: !!user,
+  });
+
+  const [requestingSaque, setRequestingSaque] = useState(false);
+
   const filteredHistory = useMemo(() => {
     if (!deliveryHistory) return [];
     const now = new Date();
