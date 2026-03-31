@@ -106,13 +106,15 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
     setSaving(true);
 
     // Update store
+    const cleanSlug = slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, "").replace(/--+/g, "-");
     const { error: storeError } = await supabase
       .from("stores")
       .update({
         name: name.trim(),
         category: category as any,
         image_url: imageUrl || null,
-      })
+        slug: cleanSlug || null,
+      } as any)
       .eq("id", storeId);
 
     if (storeError) {
