@@ -123,10 +123,15 @@ Deno.serve(async (req) => {
 
     if (!mpResponse.ok) {
       console.error("MP PIX Error:", JSON.stringify(mpData));
-      const userMessage = mpData?.message?.includes("access_token")
-        ? "Chave do Mercado Pago inválida. Contate o administrador."
-        : "Erro ao gerar PIX. Tente novamente.";
-      return new Response(JSON.stringify({ error: userMessage }), {
+      let userMessage = "Erro ao gerar PIX. Tente novamente.";
+      if (mpData?.message?.includes("access_token")) {
+        userMessage = "Chave do Mercado Pago inválida. Contate o administrador.";
+      } else if (mpData?.message?.includes("identification") || mpData?.message?.includes("payer")) {
+        userMessage = "Erro ao gerar Pix: verifique se seu e-mail e CPF estão corretos.";
+      } else if (mpData?.message?.includes("QR render")) {
+        userMessage = "Conta Mercado Pago sem Pix habilitado. O administrador precisa ativar a chave Pix na conta do Mercado Pago.";
+      }
+      return new Response(JSON.stringify({ error: userMessage, mp_error: mpData?.message }), {
         status: 500,
         headers: corsHeaders,
       });
