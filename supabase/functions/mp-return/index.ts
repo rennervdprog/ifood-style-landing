@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
 <head>
   <meta charset="utf-8">
   <meta http-equiv="refresh" content="0;url=${safeRedirectUrl}">
-  <title>${safeMessage} - ItaFood</title>
+  <title>${safeMessage} - FoodIta</title>
   <style>
     body { font-family: sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #f5f5f5; }
     .card { text-align: center; padding: 2rem; background: white; border-radius: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
 <body>
   <div class="card">
     <h2>${safeMessage}</h2>
-    <p>Redirecionando para o ItaFood...</p>
+    <p>Redirecionando para o FoodIta...</p>
     <p><a href="${safeRedirectUrl}">Clique aqui se não for redirecionado</a></p>
   </div>
   <script>window.location.href = ${JSON.stringify(redirectUrl)};</script>

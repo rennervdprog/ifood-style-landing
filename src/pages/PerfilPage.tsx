@@ -276,7 +276,7 @@ const PerfilPage = () => {
           <div>
             <h2 className="font-bold text-foreground">{(profile as any)?.full_name || user.email}</h2>
             <p className="text-xs text-muted-foreground">
-              {profileRole === "lojista" ? "Lojista" : profileRole === "motoboy" ? "Entregador" : "Cliente"} no ItaFood
+              {profileRole === "lojista" ? "Lojista" : profileRole === "motoboy" ? "Entregador" : "Cliente"} no FoodIta
             </p>
           </div>
         </div>
@@ -288,7 +288,7 @@ const PerfilPage = () => {
             className="w-full bg-destructive text-destructive-foreground font-bold py-3.5 rounded-2xl flex items-center justify-center gap-3 text-sm active:scale-[0.98] transition-transform"
           >
             <Download className="h-5 w-5" />
-            📲 Baixar Aplicativo ItaFood
+            📲 Baixar Aplicativo FoodIta
           </button>
         )}
 
@@ -297,7 +297,7 @@ const PerfilPage = () => {
           <div className="fixed inset-0 z-[100] bg-black/60 flex items-end justify-center" onClick={() => setShowIOSModal(false)}>
             <div className="bg-card w-full max-w-md rounded-t-3xl p-6 space-y-4 animate-in slide-in-from-bottom-4" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-black text-foreground">Instalar ItaFood no iPhone</h3>
+                <h3 className="text-lg font-black text-foreground">Instalar FoodIta no iPhone</h3>
                 <button onClick={() => setShowIOSModal(false)} className="text-muted-foreground">
                   <X className="h-5 w-5" />
                 </button>
@@ -329,7 +329,7 @@ const PerfilPage = () => {
                   </div>
                   <div>
                     <p className="text-sm font-bold text-foreground">Toque em "Adicionar"</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">O ItaFood aparecerá na sua tela inicial!</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">O FoodIta aparecerá na sua tela inicial!</p>
                   </div>
                 </div>
               </div>
