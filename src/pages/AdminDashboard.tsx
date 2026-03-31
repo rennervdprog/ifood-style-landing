@@ -765,9 +765,15 @@ const AdminDashboard = () => {
                         {action && (
                           <button
                             onClick={() => updateOrderStatus(order.id, action.next)}
-                            className={`${action.color} text-white font-bold px-5 py-2.5 rounded-xl text-sm active:scale-95 transition-transform`}
+                            className={`${
+                              order.payment_method === "pix" && order.status === "pendente"
+                                ? "bg-green-500 hover:bg-green-600 ring-2 ring-green-400 ring-offset-2 ring-offset-[#1F2937]"
+                                : action.color
+                            } text-white font-bold px-5 py-2.5 rounded-xl text-sm active:scale-95 transition-transform`}
                           >
-                            {action.label}
+                            {order.payment_method === "pix" && order.status === "pendente"
+                              ? "✅ Aceitar (PIX Pago)"
+                              : action.label}
                           </button>
                         )}
                       </div>
