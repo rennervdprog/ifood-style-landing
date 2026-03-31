@@ -204,8 +204,43 @@ const DriverDashboard = () => {
     return null;
   }
 
+  // Desktop restriction
+  if (!isMobile) {
+    return (
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center text-white p-8">
+        <div className="max-w-md text-center space-y-6">
+          <div className="w-24 h-24 bg-primary/20 rounded-full flex items-center justify-center mx-auto">
+            <Smartphone className="h-12 w-12 text-primary" />
+          </div>
+          <h1 className="text-2xl font-black">Acesso Restrito</h1>
+          <p className="text-gray-400">
+            O painel do entregador está disponível apenas para <span className="text-primary font-bold">dispositivos móveis</span> (Celular).
+            Por favor, acesse pelo seu smartphone.
+          </p>
+          <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 space-y-3">
+            <p className="text-sm text-gray-400">Escaneie o QR Code ou acesse pelo celular:</p>
+            <div className="bg-white rounded-xl p-4 inline-block">
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(window.location.href)}`}
+                alt="QR Code"
+                className="w-44 h-44"
+              />
+            </div>
+            <p className="text-xs text-gray-500 break-all">{window.location.href}</p>
+          </div>
+          <button
+            onClick={() => navigate("/")}
+            className="text-primary hover:underline text-sm font-bold"
+          >
+            ← Voltar para a Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className="min-h-screen bg-gray-950 text-white overflow-y-auto">
       <header className="sticky top-0 z-50 bg-gray-900 border-b border-gray-800 px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
