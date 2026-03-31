@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Camera, Upload, Save, Store, Phone, Tag, MapPin, Link, Copy } from "lucide-react";
+import { maskWhatsApp } from "@/lib/whatsapp";
 
 const CATEGORY_OPTIONS = [
   { value: "lanches", label: "Lanches" },
