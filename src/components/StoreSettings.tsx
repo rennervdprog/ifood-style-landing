@@ -28,12 +28,13 @@ interface StoreSettingsProps {
   storeSlug?: string | null;
 }
 
-const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, storeIsOpen, forceClosed }: StoreSettingsProps) => {
+const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, storeIsOpen, forceClosed, storeSlug }: StoreSettingsProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const [name, setName] = useState(storeName);
   const [category, setCategory] = useState(storeCategory);
+  const [slug, setSlug] = useState(storeSlug || "");
   const [whatsapp, setWhatsapp] = useState("");
   const [imageUrl, setImageUrl] = useState(storeImageUrl || "");
   const [saving, setSaving] = useState(false);
