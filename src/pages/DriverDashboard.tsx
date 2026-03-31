@@ -462,10 +462,18 @@ const DriverDashboard = () => {
       setVerifying(false);
     } else {
       confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
-      toast.success(
-        `🎉 Parabéns! R$ ${deliveryFee.toFixed(2)} foi adicionado ao seu saldo!`,
-        { duration: 8000, icon: "💰" }
-      );
+      const isPhysical = ["dinheiro", "cartao"].includes(orderData?.payment_method || "");
+      if (isPhysical) {
+        toast.success(
+          `✅ Entrega confirmada! Retorne à loja para acertar R$ ${deliveryFee.toFixed(2)} em mãos.`,
+          { duration: 8000, icon: "🏪" }
+        );
+      } else {
+        toast.success(
+          `🎉 Parabéns! R$ ${deliveryFee.toFixed(2)} foi adicionado ao seu saldo Pix!`,
+          { duration: 8000, icon: "💰" }
+        );
+      }
       setPinInput("");
       setVerifying(false);
       queryClient.invalidateQueries({ queryKey: ["driver-my-delivery", user!.id] });
