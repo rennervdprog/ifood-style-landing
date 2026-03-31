@@ -172,7 +172,35 @@ const DriverDashboard = () => {
     refetchInterval: 15000,
   });
 
-  // Calculate earnings based on date filter
+  // Driver balance from driver_balances table
+  const { data: driverBalance } = useQuery({
+    queryKey: ["driver-balance", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("driver_balances" as any)
+        .select("total_earned, pending_amount, paid_amount")
+        .eq("driver_user_id", user!.id)
+        .maybeSingle();
+      return data as any;
+    },
+    enabled: !!user,
+  });
+
+  // Driver individual earnings
+  const { data: driverEarnings } = useQuery({
+    queryKey: ["driver-earnings", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("driver_earnings" as any)
+        .select("id, order_id, amount, status, created_at")
+        .eq("driver_user_id", user!.id)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      return (data || []) as any[];
+    },
+    enabled: !!user,
+  });
+
   const filteredHistory = useMemo(() => {
     if (!deliveryHistory) return [];
     const now = new Date();
