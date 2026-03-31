@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import { openWhatsApp } from "@/lib/whatsapp";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { format, startOfDay, startOfWeek, subDays, isWithinInterval, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
