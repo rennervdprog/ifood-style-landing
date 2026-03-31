@@ -413,6 +413,16 @@ const AdminDashboard = () => {
                       <span>{order.neighborhood} — {order.address_details}</span>
                     </div>
 
+                    {/* Driver assigned info */}
+                    {order.status === "pronto_para_entrega" && order.driver_id && (
+                      <div className="bg-blue-500/20 border border-blue-500/40 rounded-xl p-3 mb-3 flex items-center gap-2">
+                        <Bike className="h-4 w-4 text-blue-400" />
+                        <span className="text-sm text-blue-300 font-bold">
+                          🏍️ {getDriverName(order.driver_id)} aceitou e está vindo buscar
+                        </span>
+                      </div>
+                    )}
+
                     {/* Collection Code Display */}
                     {(order.status === "pronto_para_entrega" || order.status === "saiu_entrega" || order.status === "em_transito") && (order as any).collection_code && (
                       <div className="bg-purple-500/20 border border-purple-500/40 rounded-xl p-3 mb-3">
