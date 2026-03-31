@@ -165,12 +165,8 @@ const AdminDashboard = () => {
   }, [orders, playAlert]);
 
   const handlePrint = useCallback((order: any) => {
-    setPrintingOrder(order);
-    setTimeout(() => {
-      window.print();
-      setTimeout(() => setPrintingOrder(null), 500);
-    }, 300);
-  }, []);
+    printThermalReceipt(order, store?.name || "Loja", getClientName(order.client_id));
+  }, [store?.name]);
 
   const toggleAutoPrint = () => {
     const next = !autoPrint;
