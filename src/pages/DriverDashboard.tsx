@@ -476,14 +476,24 @@ const DriverDashboard = () => {
     }
   };
 
+  const [settlementCodeInput, setSettlementCodeInput] = useState("");
+  const [confirmingReturn, setConfirmingReturn] = useState(false);
+
   const confirmStoreReturn = async (orderId: string) => {
-    const { error } = await supabase.rpc("driver_confirm_store_return", { _order_id: orderId } as any);
+    if (!settlementCodeInput || settlementCodeInput.length !== 4) {
+      toast.error("Digite o código de 4 dígitos fornecido pelo lojista.");
+      return;
+    }
+    setConfirmingReturn(true);
+    const { error } = await supabase.rpc("driver_confirm_store_return", { _order_id: orderId, _settlement_code: settlementCodeInput } as any);
     if (error) {
-      toast.error(error.message || "Erro ao confirmar retorno.");
+      toast.error(error.message || "Código inválido. Verifique com o lojista.");
     } else {
       toast.success("Acerto com a loja confirmado! ✅");
+      setSettlementCodeInput("");
       queryClient.invalidateQueries({ queryKey: ["driver-pending-return", user!.id] });
     }
+    setConfirmingReturn(false);
   };
 
   const savePixKey = async () => {
