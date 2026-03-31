@@ -189,18 +189,24 @@ const SuperAdminDashboard = () => {
       </header>
 
       {/* Main tabs */}
-      <div className="flex gap-2 px-4 py-3 border-b border-gray-800">
+      <div className="flex gap-2 px-4 py-3 border-b border-gray-800 overflow-x-auto hide-scrollbar">
         <button
           onClick={() => setActiveTab("dashboard")}
-          className={`px-4 py-2 rounded-xl text-sm font-bold ${activeTab === "dashboard" ? "bg-yellow-500 text-gray-900" : "bg-[#1E293B] text-gray-400"}`}
+          className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap ${activeTab === "dashboard" ? "bg-yellow-500 text-gray-900" : "bg-[#1E293B] text-gray-400"}`}
         >
           📊 Dashboard
         </button>
         <button
           onClick={() => setActiveTab("approvals")}
-          className={`px-4 py-2 rounded-xl text-sm font-bold ${activeTab === "approvals" ? "bg-yellow-500 text-gray-900" : "bg-[#1E293B] text-gray-400"}`}
+          className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap ${activeTab === "approvals" ? "bg-yellow-500 text-gray-900" : "bg-[#1E293B] text-gray-400"}`}
         >
           🛡️ Aprovações
+        </button>
+        <button
+          onClick={() => setActiveTab("stores")}
+          className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap ${activeTab === "stores" ? "bg-yellow-500 text-gray-900" : "bg-[#1E293B] text-gray-400"}`}
+        >
+          🏪 Lojas
         </button>
       </div>
 
