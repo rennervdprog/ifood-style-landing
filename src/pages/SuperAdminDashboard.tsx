@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
   ArrowLeft, DollarSign, ShoppingBag, TrendingUp, Clock,
-  Store, Copy, AlertTriangle, Users, Bike, Wallet, CheckCircle2, Banknote, XCircle, Bell
+  Store, Copy, AlertTriangle, Users, Bike, Wallet, CheckCircle2, Banknote, XCircle, Bell, Trash2
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
@@ -410,95 +410,13 @@ const SuperAdminDashboard = () => {
       ) : activeTab === "stores" ? (
         <div className="px-4 py-4"><AdminStoreManager /></div>
       ) : activeTab === "saques" ? (
-        <div className="px-4 py-4 space-y-4">
-          <h2 className="text-sm font-bold text-gray-300 uppercase tracking-wider flex items-center gap-2">
-            <Bell className="h-4 w-4" /> Solicitações de Saque
-          </h2>
-          {pendingWithdrawals.length === 0 && (!withdrawalRequests || withdrawalRequests.length === 0) ? (
-            <div className="bg-[#1E293B] rounded-2xl p-8 text-center">
-              <Wallet className="h-12 w-12 text-gray-600 mx-auto mb-3" />
-              <p className="text-sm text-gray-500">Nenhuma solicitação de saque.</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {/* Pending first, then paid */}
-              {(withdrawalRequests || [])
-                .sort((a: any, b: any) => {
-                  if (a.status === "solicitado" && b.status !== "solicitado") return -1;
-                  if (a.status !== "solicitado" && b.status === "solicitado") return 1;
-                  return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-                })
-                .map((req: any) => {
-                const isPending = req.status === "solicitado";
-                const driverName = drivers?.find(d => d.user_id === req.driver_user_id)?.name || "Entregador";
-                return (
-                  <div key={req.id} className={`bg-card rounded-2xl p-4 border ${isPending ? "border-amber-500/30" : "border-border"}`}>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isPending ? "bg-amber-500/20" : "bg-green-500/20"}`}>
-                          <DollarSign className={`h-4 w-4 ${isPending ? "text-amber-400" : "text-green-400"}`} />
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold text-foreground">{driverName}</p>
-                          <p className="text-xs text-muted-foreground font-bold">
-                            {req.transaction_code && <span className="text-primary mr-1">{req.transaction_code}</span>}
-                            R$ {Number(req.amount).toFixed(2)}
-                          </p>
-                          <p className="text-[10px] text-muted-foreground">
-                            {new Date(req.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
-                          </p>
-                        </div>
-                      </div>
-                      <span className={`text-xs font-bold px-2 py-1 rounded-lg ${isPending ? "bg-amber-500/20 text-amber-400" : "bg-green-500/20 text-green-400"}`}>
-                        {isPending ? "Pendente" : "✅ Pago"}
-                      </span>
-                    </div>
-
-                    <div className="bg-muted rounded-xl p-3 space-y-1 mb-3">
-                      <p className="text-xs text-muted-foreground">Entregador: <span className="text-foreground font-medium">{driverName}</span></p>
-                      <p className="text-xs text-muted-foreground">Valor: <span className="text-foreground font-bold">R$ {Number(req.amount).toFixed(2)}</span></p>
-                      <p className="text-xs text-muted-foreground">Chave PIX: <span className="text-foreground font-medium">{req.pix_key}</span></p>
-                      <p className="text-xs text-muted-foreground">Tipo: <span className="text-foreground font-medium">{req.pix_type?.toUpperCase()}</span></p>
-                    </div>
-
-                    {isPending && (
-                      <button
-                        onClick={async () => {
-                          const { error: updateError } = await supabase
-                            .from("withdrawal_requests" as any)
-                            .update({ status: "pago", processed_at: new Date().toISOString() } as any)
-                            .eq("id", req.id);
-                          if (updateError) { toast.error("Erro ao confirmar."); return; }
-
-                          // Zero out driver balance
-                          const { error: balanceError } = await supabase
-                            .from("driver_balances" as any)
-                            .update({ pending_amount: 0, paid_amount: Number(req.amount), updated_at: new Date().toISOString() } as any)
-                            .eq("driver_user_id", req.driver_user_id);
-                          if (balanceError) console.error("Balance update error:", balanceError);
-
-                          // Update driver earnings status
-                          await supabase
-                            .from("driver_earnings" as any)
-                            .update({ status: "pago" } as any)
-                            .eq("driver_user_id", req.driver_user_id)
-                            .eq("status", "pendente");
-
-                          toast.success(`✅ Transferência de R$ ${Number(req.amount).toFixed(2)} para ${driverName} confirmada!`);
-                          queryClient.invalidateQueries({ queryKey: ["withdrawal-requests"] });
-                        }}
-                        className="w-full flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-xl text-sm active:scale-95 transition-transform"
-                      >
-                        <CheckCircle2 className="h-4 w-4" />
-                        Confirmar Pagamento
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+        <SaquesTab
+          withdrawalRequests={withdrawalRequests}
+          pendingWithdrawals={pendingWithdrawals}
+          drivers={drivers}
+          queryClient={queryClient}
+        />
+      
       ) : activeTab === "financeiro" ? (
         <FinanceTab
           storeSettlement={storeSettlement}
@@ -930,5 +848,175 @@ const MetricCard = ({ icon: Icon, label, value, sublabel, highlight, alert }: {
     <p className="text-xs text-gray-500">{sublabel}</p>
   </div>
 );
+
+// Saques Tab Component
+const SaquesTab = ({ withdrawalRequests, pendingWithdrawals, drivers, queryClient }: {
+  withdrawalRequests: any[] | undefined;
+  pendingWithdrawals: any[];
+  drivers: any[] | undefined;
+  queryClient: any;
+}) => {
+  const [saquesSubTab, setSaquesSubTab] = useState<"pendentes" | "historico">("pendentes");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const pendingList = (withdrawalRequests || []).filter((w: any) => w.status === "solicitado")
+    .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+  const historyList = (withdrawalRequests || []).filter((w: any) => w.status !== "solicitado")
+    .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+  const handleDelete = async (req: any) => {
+    if (deletingId === req.id) {
+      // Confirmed - actually delete
+      const { error } = await supabase
+        .from("withdrawal_requests" as any)
+        .delete()
+        .eq("id", req.id);
+      if (error) { toast.error("Erro ao excluir solicitação."); }
+      else { toast.success(`🗑️ Solicitação ${req.transaction_code || ""} excluída.`); }
+      setDeletingId(null);
+      queryClient.invalidateQueries({ queryKey: ["withdrawal-requests"] });
+    } else {
+      setDeletingId(req.id);
+      setTimeout(() => setDeletingId(null), 4000); // auto-cancel confirmation after 4s
+    }
+  };
+
+  const handleConfirmPayment = async (req: any, driverName: string) => {
+    const { error: updateError } = await supabase
+      .from("withdrawal_requests" as any)
+      .update({ status: "pago", processed_at: new Date().toISOString() } as any)
+      .eq("id", req.id);
+    if (updateError) { toast.error("Erro ao confirmar."); return; }
+
+    const { error: balanceError } = await supabase
+      .from("driver_balances" as any)
+      .update({ pending_amount: 0, paid_amount: Number(req.amount), updated_at: new Date().toISOString() } as any)
+      .eq("driver_user_id", req.driver_user_id);
+    if (balanceError) console.error("Balance update error:", balanceError);
+
+    await supabase
+      .from("driver_earnings" as any)
+      .update({ status: "pago" } as any)
+      .eq("driver_user_id", req.driver_user_id)
+      .eq("status", "pendente");
+
+    toast.success(`✅ Transferência de R$ ${Number(req.amount).toFixed(2)} para ${driverName} confirmada!`);
+    queryClient.invalidateQueries({ queryKey: ["withdrawal-requests"] });
+  };
+
+  const renderCard = (req: any) => {
+    const isPending = req.status === "solicitado";
+    const isPaid = req.status === "pago";
+    const driverName = drivers?.find((d: any) => d.user_id === req.driver_user_id)?.name || "Entregador";
+
+    return (
+      <div key={req.id} className={`bg-card rounded-2xl p-4 border ${isPending ? "border-amber-500/30" : "border-border"}`}>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isPending ? "bg-amber-500/20" : isPaid ? "bg-green-500/20" : "bg-red-500/20"}`}>
+              <DollarSign className={`h-4 w-4 ${isPending ? "text-amber-400" : isPaid ? "text-green-400" : "text-red-400"}`} />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-foreground">{driverName}</p>
+              <p className="text-xs text-muted-foreground font-bold">
+                {req.transaction_code && <span className="text-primary mr-1">{req.transaction_code}</span>}
+                R$ {Number(req.amount).toFixed(2)}
+              </p>
+              <p className="text-[10px] text-muted-foreground">
+                {new Date(req.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={`text-xs font-bold px-2 py-1 rounded-lg ${isPending ? "bg-amber-500/20 text-amber-400" : isPaid ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>
+              {isPending ? "Pendente" : isPaid ? "✅ Pago" : "Cancelado"}
+            </span>
+            <button
+              onClick={() => handleDelete(req)}
+              className={`p-2 rounded-lg transition-colors ${deletingId === req.id ? "bg-red-500 text-white" : "bg-red-500/10 text-red-400 hover:bg-red-500/20"}`}
+              title={deletingId === req.id ? "Clique novamente para confirmar" : "Excluir solicitação"}
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+
+        {deletingId === req.id && (
+          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 mb-3 text-center">
+            <p className="text-xs text-red-400 font-medium">
+              Deseja excluir esta solicitação? Isso não estornará o saldo, apenas removerá o aviso do painel.
+            </p>
+            <p className="text-[10px] text-red-400/70 mt-1">Clique na 🗑️ novamente para confirmar</p>
+          </div>
+        )}
+
+        <div className="bg-muted rounded-xl p-3 space-y-1 mb-3">
+          <p className="text-xs text-muted-foreground">Entregador: <span className="text-foreground font-medium">{driverName}</span></p>
+          <p className="text-xs text-muted-foreground">Valor: <span className="text-foreground font-bold">R$ {Number(req.amount).toFixed(2)}</span></p>
+          <p className="text-xs text-muted-foreground">Chave PIX: <span className="text-foreground font-medium">{req.pix_key}</span></p>
+          <p className="text-xs text-muted-foreground">Tipo: <span className="text-foreground font-medium">{req.pix_type?.toUpperCase()}</span></p>
+          {req.processed_at && (
+            <p className="text-xs text-muted-foreground">Processado em: <span className="text-foreground font-medium">
+              {new Date(req.processed_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+            </span></p>
+          )}
+        </div>
+
+        {isPending && (
+          <button
+            onClick={() => handleConfirmPayment(req, driverName)}
+            className="w-full flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-xl text-sm active:scale-95 transition-transform"
+          >
+            <CheckCircle2 className="h-4 w-4" />
+            Confirmar Pagamento
+          </button>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="px-4 py-4 space-y-4">
+      {/* Sub-tabs */}
+      <div className="flex gap-2">
+        {[
+          { key: "pendentes" as const, label: `⏳ Pendentes (${pendingList.length})` },
+          { key: "historico" as const, label: `📋 Histórico (${historyList.length})` },
+        ].map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => setSaquesSubTab(tab.key)}
+            className={`flex-1 py-2 px-3 rounded-xl text-sm font-bold transition-colors ${
+              saquesSubTab === tab.key ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {saquesSubTab === "pendentes" ? (
+        pendingList.length === 0 ? (
+          <div className="bg-card rounded-2xl p-8 text-center border border-border">
+            <Wallet className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground">Nenhuma solicitação pendente.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">{pendingList.map(renderCard)}</div>
+        )
+      ) : (
+        historyList.length === 0 ? (
+          <div className="bg-card rounded-2xl p-8 text-center border border-border">
+            <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground">Nenhum saque no histórico.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">{historyList.map(renderCard)}</div>
+        )
+      )}
+    </div>
+  );
+};
 
 export default SuperAdminDashboard;
