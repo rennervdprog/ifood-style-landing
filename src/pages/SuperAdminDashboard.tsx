@@ -606,6 +606,7 @@ const FinanceTab = ({
   stores, loading,
   generateStoreWhatsApp,
   storeBalances, queryClient,
+  withdrawalRequests,
 }: {
   storeSettlement: any[];
   driverSettlement: any[];
@@ -621,6 +622,7 @@ const FinanceTab = ({
   generateStoreWhatsApp: (entry: any) => void;
   storeBalances: any[];
   queryClient: any;
+  withdrawalRequests: any[];
 }) => {
   const markAsPaid = async (storeId: string, storeName: string) => {
     const { error } = await supabase
