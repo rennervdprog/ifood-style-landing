@@ -273,7 +273,7 @@ const AdminDashboard = () => {
       </header>
 
       {/* Dashboard Tabs */}
-      <div className="flex gap-2 px-4 py-3 border-b border-gray-800">
+      <div className="flex overflow-x-auto gap-2 px-4 py-3 border-b border-gray-800 no-scrollbar">
         <button
           onClick={() => setDashboardTab("orders")}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold ${
