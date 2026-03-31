@@ -22,6 +22,8 @@ const DriverDashboard = () => {
   });
   const [realtimeConnected, setRealtimeConnected] = useState(false);
   const [pinInput, setPinInput] = useState("");
+  const [collectionCodeInput, setCollectionCodeInput] = useState("");
+  const [verifyingCollection, setVerifyingCollection] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const prevCountRef = useRef(0);
