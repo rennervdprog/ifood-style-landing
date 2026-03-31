@@ -94,50 +94,70 @@ const PedidosPage = () => {
 
   const [payingOrderId, setPayingOrderId] = useState<string | null>(null);
   const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
+  const [pixModal, setPixModal] = useState<{
+    orderId: string;
+    qrCode: string | null;
+    qrCodeBase64: string | null;
+    loading: boolean;
+  } | null>(null);
 
-  const retryPayment = async (order: any) => {
+  const generatePix = async (order: any) => {
     if (!user) return;
     setPayingOrderId(order.id);
+    setPixModal({ orderId: order.id, qrCode: null, qrCodeBase64: null, loading: true });
+
     try {
-      const mpItems = order.order_items?.map((item: any) => ({
-        title: `${item.products?.name || "Item"} - ${order.stores?.name || "ItaFood"}`,
-        quantity: item.quantity,
-        unit_price: Number(item.unit_price),
-      })) || [];
+      // Get user profile for payer name
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("user_id", user.id)
+        .maybeSingle();
 
-      if (Number(order.delivery_fee) > 0) {
-        mpItems.push({
-          title: `Taxa de Entrega - ${order.neighborhood}`,
-          quantity: 1,
-          unit_price: Number(order.delivery_fee),
-        });
-      }
+      const nameParts = (profile?.full_name || "Cliente ItaFood").split(" ");
+      const firstName = nameParts[0] || "Cliente";
+      const lastName = nameParts.slice(1).join(" ") || "ItaFood";
 
-      const { data: mpData, error: mpError } = await supabase.functions.invoke(
-        "create-mp-preference",
+      const { data: pixData, error: pixError } = await supabase.functions.invoke(
+        "create-pix-payment",
         {
           body: {
             order_id: order.id,
-            items: mpItems,
-            total: Number(order.total_price),
-            payer_email: user.email,
-            store_name: order.stores?.name || "ItaFood",
+            amount: Number(order.total_price),
+            description: `Pedido #${order.id.substring(0, 6).toUpperCase()} - ${order.stores?.name || "ItaFood"}`,
+            payer_first_name: firstName,
+            payer_last_name: lastName,
           },
         }
       );
 
-      if (mpError) throw mpError;
-      if (mpData?.init_point) {
-        window.location.href = mpData.init_point;
-        return;
+      if (pixError) throw pixError;
+
+      if (pixData?.qr_code || pixData?.qr_code_base64) {
+        setPixModal({
+          orderId: order.id,
+          qrCode: pixData.qr_code,
+          qrCodeBase64: pixData.qr_code_base64,
+          loading: false,
+        });
+      } else {
+        throw new Error("QR Code não retornado");
       }
-      toast.error("Não foi possível gerar o link de pagamento.");
-    } catch (err) {
-      console.error("Retry payment error:", err);
-      toast.error("Erro ao gerar pagamento. Tente novamente.");
+    } catch (err: any) {
+      console.error("PIX generation error:", err);
+      const errorMsg = err?.message?.includes("Chave") 
+        ? err.message 
+        : "Erro ao gerar PIX. Tente novamente.";
+      toast.error(errorMsg);
+      setPixModal(null);
     } finally {
       setPayingOrderId(null);
     }
+  };
+
+  const copyPixCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    toast.success("Código PIX copiado! Cole no app do seu banco.");
   };
 
   const cancelOrder = async (orderId: string) => {
