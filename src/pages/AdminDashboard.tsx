@@ -23,6 +23,7 @@ type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_ent
 type DashboardTab = "orders" | "menu" | "addons" | "hours" | "settings" | "finance";
 
 const ALERT_SOUND_URL = "https://actions.google.com/sounds/v1/alarms/beep_short.ogg";
+const CASH_REGISTER_SOUND_URL = "https://actions.google.com/sounds/v1/office/cash_register.ogg";
 
 const statusColumns: { status: OrderStatus; label: string; icon: React.ElementType; color: string }[] = [
   { status: "pendente", label: "Novos", icon: Clock, color: "text-yellow-400" },
@@ -232,6 +233,14 @@ const AdminDashboard = () => {
             playAlert();
             notifyNewOrder();
             toast.info("🔔 Novo pedido recebido!", { duration: 8000 });
+          }
+          // Cash register sound when PIX payment is confirmed (status changes to pendente from aguardando_pagamento)
+          if (payload.eventType === "UPDATE" && (payload.new as any).status === "pendente" && (payload.old as any)?.status === "aguardando_pagamento") {
+            const cashSound = new Audio(CASH_REGISTER_SOUND_URL);
+            cashSound.volume = 1.0;
+            cashSound.play().catch(() => {});
+            toast.success("💰 Pagamento PIX confirmado! Novo pedido liberado.", { duration: 8000 });
+            notifyNewOrder();
           }
           if (payload.eventType === "UPDATE" && (payload.new as any).status === "finalizado") {
             const successAudio = new Audio("data:audio/wav;base64,UklGRl9vAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhO28AAIA/");
@@ -591,9 +600,11 @@ const AdminDashboard = () => {
                   <div
                     key={order.id}
                     className={`bg-[#1F2937] rounded-2xl p-4 border ${
-                      order.status === "pendente"
-                        ? "border-yellow-400/50 animate-pulse-border"
-                        : "border-gray-700"
+                      order.payment_method === "pix"
+                        ? "border-green-400/60 bg-gradient-to-br from-[#1F2937] to-green-900/20"
+                        : order.status === "pendente"
+                          ? "border-yellow-400/50 animate-pulse-border"
+                          : "border-gray-700"
                     }`}
                   >
                     <div className="flex items-start justify-between mb-3">
@@ -605,11 +616,18 @@ const AdminDashboard = () => {
                           {new Date(order.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                         </p>
                       </div>
-                      <div className="flex items-center gap-1.5 text-xs">
-                        <CreditCard className="h-3.5 w-3.5 text-gray-400" />
-                        <span className="text-gray-300 font-medium">
-                          {paymentLabels[order.payment_method] || order.payment_method}
-                        </span>
+                      <div className="flex items-center gap-2">
+                        {order.payment_method === "pix" && (
+                          <span className="inline-flex items-center gap-1 bg-green-500 text-white text-xs font-black px-2.5 py-1 rounded-full animate-pulse">
+                            ✅ PIX PAGO
+                          </span>
+                        )}
+                        <div className="flex items-center gap-1.5 text-xs">
+                          <CreditCard className="h-3.5 w-3.5 text-gray-400" />
+                          <span className="text-gray-300 font-medium">
+                            {paymentLabels[order.payment_method] || order.payment_method}
+                          </span>
+                        </div>
                       </div>
                     </div>
 
@@ -747,9 +765,15 @@ const AdminDashboard = () => {
                         {action && (
                           <button
                             onClick={() => updateOrderStatus(order.id, action.next)}
-                            className={`${action.color} text-white font-bold px-5 py-2.5 rounded-xl text-sm active:scale-95 transition-transform`}
+                            className={`${
+                              order.payment_method === "pix" && order.status === "pendente"
+                                ? "bg-green-500 hover:bg-green-600 ring-2 ring-green-400 ring-offset-2 ring-offset-[#1F2937]"
+                                : action.color
+                            } text-white font-bold px-5 py-2.5 rounded-xl text-sm active:scale-95 transition-transform`}
                           >
-                            {action.label}
+                            {order.payment_method === "pix" && order.status === "pendente"
+                              ? "✅ Aceitar (PIX Pago)"
+                              : action.label}
                           </button>
                         )}
                       </div>
