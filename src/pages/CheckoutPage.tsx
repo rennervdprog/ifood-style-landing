@@ -10,7 +10,7 @@ import confetti from "canvas-confetti";
 import AddressModal from "@/components/AddressModal";
 
 const paymentMethods = [
-  { id: "pix", label: "PIX (App)", icon: QrCode },
+  { id: "pix", label: "PIX Online (Mercado Pago)", icon: QrCode },
   { id: "cartao", label: "Cartão (Entrega)", icon: CreditCard },
   { id: "dinheiro", label: "Dinheiro", icon: Banknote },
 ];
