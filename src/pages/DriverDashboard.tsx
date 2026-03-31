@@ -8,7 +8,7 @@ import {
   Bike, MapPin, Store, DollarSign, Package, CheckCircle2,
   ArrowLeft, Navigation, KeyRound, Smartphone, ShieldCheck,
   Wallet, TrendingUp, Calendar, Download, Clock, ChevronDown,
-  CreditCard, Banknote, Settings, Save
+  CreditCard, Banknote, Settings, Save, AlertTriangle
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import WhatsAppButton from "@/components/WhatsAppButton";
