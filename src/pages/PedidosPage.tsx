@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { notifyOrderPreparing, notifyOrderOnTheWay, notifyOrderDelivered } from "@/lib/notifications";
 
 const statusConfig: Record<string, { label: string; icon: React.ElementType; color: string }> = {
+  aguardando_pagamento: { label: "Aguardando Pagamento", icon: Clock, color: "text-amber-500" },
   pendente: { label: "Pendente", icon: Clock, color: "text-yellow-500" },
   preparando: { label: "Preparando", icon: ChefHat, color: "text-orange-500" },
   pronto_para_entrega: { label: "Pronto p/ entrega", icon: CheckCircle2, color: "text-purple-500" },
@@ -16,6 +17,7 @@ const statusConfig: Record<string, { label: string; icon: React.ElementType; col
   em_transito: { label: "Em trânsito", icon: Truck, color: "text-cyan-500" },
   entregue: { label: "Entregue", icon: CheckCircle2, color: "text-green-500" },
   finalizado: { label: "Finalizado", icon: CheckCircle2, color: "text-green-500" },
+  cancelado: { label: "Cancelado", icon: Clock, color: "text-red-500" },
 };
 
 const PedidosPage = () => {
