@@ -1,0 +1,114 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://esm.sh/zod@3.25.76";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+const BodySchema = z.object({
+  amount: z.number().positive().max(100000),
+  pix_key: z.string().min(1).max(255),
+  pix_type: z.string().min(1).max(50),
+});
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
+  try {
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: userData, error: userError } = await supabase.auth.getUser(token);
+    if (userError || !userData?.user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const parsed = BodySchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return new Response(JSON.stringify({ error: parsed.error.flatten().fieldErrors }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const userId = userData.user.id;
+    const { amount, pix_key, pix_type } = parsed.data;
+
+    const { data: existingPending, error: existingError } = await supabase
+      .from("withdrawal_requests")
+      .select("id, amount, transaction_code")
+      .eq("driver_user_id", userId)
+      .eq("status", "solicitado")
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (existingError) {
+      return new Response(JSON.stringify({ error: "Erro ao verificar solicitação ativa." }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (existingPending) {
+      return new Response(JSON.stringify({
+        error: "Você já tem uma solicitação ativa. Aguarde o pagamento do ID anterior.",
+        active_request: existingPending,
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { data: inserted, error: insertError } = await supabase
+      .from("withdrawal_requests")
+      .insert({
+        driver_user_id: userId,
+        amount,
+        pix_key,
+        pix_type,
+      })
+      .select("id, amount, status, created_at, transaction_code")
+      .single();
+
+    if (insertError) {
+      const message = insertError.message?.includes("ux_withdrawal_requests_one_active_per_driver")
+        ? "Você já tem uma solicitação ativa. Aguarde o pagamento do ID anterior."
+        : "Erro ao criar solicitação de saque.";
+
+      return new Response(JSON.stringify({ error: message }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    return new Response(JSON.stringify({ request: inserted }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (err) {
+    console.error("create-withdrawal-request error:", err);
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+});

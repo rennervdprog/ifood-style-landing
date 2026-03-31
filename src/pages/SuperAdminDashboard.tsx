@@ -978,23 +978,28 @@ const SaquesTab = ({ withdrawalRequests, pendingWithdrawals, drivers, queryClien
 
   return (
     <div className="px-4 py-4 space-y-4">
-      {/* Sub-tabs */}
-      <div className="flex gap-2">
-        {[
-          { key: "pendentes" as const, label: `⏳ Pendentes (${pendingList.length})` },
-          { key: "historico" as const, label: `📋 Histórico (${historyList.length})` },
-        ].map(tab => (
+      <div className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
+            <Bell className="h-4 w-4" /> Solicitações de Saque
+          </h2>
           <button
-            key={tab.key}
-            onClick={() => setSaquesSubTab(tab.key)}
-            className={`flex-1 py-2 px-3 rounded-xl text-sm font-bold transition-colors ${
-              saquesSubTab === tab.key ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-            }`}
+            onClick={async () => {
+              const { data, error } = await supabase.rpc("admin_cleanup_duplicate_withdrawals");
+              if (error) {
+                toast.error("Erro ao limpar duplicatas.");
+                return;
+              }
+              toast.success(`Limpeza concluída: ${Number(data || 0)} duplicata(s) removida(s).`);
+              queryClient.invalidateQueries({ queryKey: ["withdrawal-requests"] });
+            }}
+            className="px-3 py-2 rounded-xl bg-destructive text-destructive-foreground text-xs font-bold"
           >
-            {tab.label}
+            Limpar Duplicatas
           </button>
-        ))}
-      </div>
+        </div>
+
+        <div className="flex gap-2">
 
       {saquesSubTab === "pendentes" ? (
         pendingList.length === 0 ? (
