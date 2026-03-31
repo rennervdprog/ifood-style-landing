@@ -180,7 +180,8 @@ const AdminDashboard = () => {
       audioRef.current = audio;
       setSoundEnabled(true);
       setShowSoundPrompt(false);
-      toast.success("🔔 Alertas sonoros ativados!");
+      requestNotificationPermission();
+      toast.success("🔔 Alertas sonoros e notificações ativados!");
     }).catch(() => {
       toast.error("Não foi possível ativar o som. Tente novamente.");
     });

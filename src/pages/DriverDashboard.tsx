@@ -268,7 +268,7 @@ const DriverDashboard = () => {
     const next = !isOnline;
     setIsOnline(next);
     localStorage.setItem("driver_online", String(next));
-    // Sync with database
+    if (next) requestNotificationPermission();
     if (user) {
       await supabase
         .from("drivers")
