@@ -280,13 +280,13 @@ const DriverDashboard = () => {
   // Pix vs Cash breakdown for filtered period
   const earningsBreakdown = useMemo(() => {
     const pixEarnings = filteredHistory
-      .filter((o: any) => o.payment_method !== "dinheiro")
+      .filter((o: any) => !["dinheiro", "cartao"].includes(o.payment_method))
       .reduce((sum: number, o: any) => sum + Number(o.delivery_fee), 0);
     const cashEarnings = filteredHistory
-      .filter((o: any) => o.payment_method === "dinheiro")
+      .filter((o: any) => ["dinheiro", "cartao"].includes(o.payment_method))
       .reduce((sum: number, o: any) => sum + Number(o.delivery_fee), 0);
-    const pixCount = filteredHistory.filter((o: any) => o.payment_method !== "dinheiro").length;
-    const cashCount = filteredHistory.filter((o: any) => o.payment_method === "dinheiro").length;
+    const pixCount = filteredHistory.filter((o: any) => !["dinheiro", "cartao"].includes(o.payment_method)).length;
+    const cashCount = filteredHistory.filter((o: any) => ["dinheiro", "cartao"].includes(o.payment_method)).length;
     return { pixEarnings, cashEarnings, pixCount, cashCount };
   }, [filteredHistory]);
 
