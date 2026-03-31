@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
   Bike, MapPin, Store, DollarSign, Package, CheckCircle2,
-  ArrowLeft, Navigation, KeyRound, Smartphone
+  ArrowLeft, Navigation, KeyRound, Smartphone, ShieldCheck
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import WhatsAppButton from "@/components/WhatsAppButton";
