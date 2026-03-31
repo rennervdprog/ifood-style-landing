@@ -434,7 +434,7 @@ const DriverDashboard = () => {
         if (clientPhone) {
           const clientName = contactProfiles?.find((c: any) => c.user_id === myDelivery.client_id);
           const name = (clientName as any)?.full_name || "Cliente";
-          const msg = `🏍️ *ItaFood* informa: Seu lanche saiu para entrega! O motoboy já coletou o pedido e está a caminho de: ${myDelivery.address_details} 💨\n\n--------------------------\n💰 Total: R$ ${Number(myDelivery.total_price).toFixed(2)}\n💳 Pagamento: ${myDelivery.payment_method === "pix" ? "PIX" : myDelivery.payment_method === "cartao" ? "Cartão" : myDelivery.payment_method === "dinheiro" ? "Dinheiro" : myDelivery.payment_method}\nPedido: #${myDelivery.id.slice(0, 8).toUpperCase()}\n--------------------------`;
+          const msg = `🏍️ *FoodIta* informa: Seu lanche saiu para entrega! O motoboy já coletou o pedido e está a caminho de: ${myDelivery.address_details} 💨\n\n--------------------------\n💰 Total: R$ ${Number(myDelivery.total_price).toFixed(2)}\n💳 Pagamento: ${myDelivery.payment_method === "pix" ? "PIX" : myDelivery.payment_method === "cartao" ? "Cartão" : myDelivery.payment_method === "dinheiro" ? "Dinheiro" : myDelivery.payment_method}\nPedido: #${myDelivery.id.slice(0, 8).toUpperCase()}\n--------------------------`;
           setTimeout(() => openWhatsApp(clientPhone, msg), 600);
         }
       }
@@ -654,7 +654,7 @@ const DriverDashboard = () => {
             <div className="flex flex-col items-center justify-center py-32 text-center px-6">
               <Bike className="h-20 w-20 text-gray-700 mb-6" />
               <h2 className="text-xl font-bold text-gray-400 mb-2">Você está offline</h2>
-              <p className="text-sm text-gray-500 max-w-xs">Ative o modo online para receber entregas no ItaFood.</p>
+              <p className="text-sm text-gray-500 max-w-xs">Ative o modo online para receber entregas no FoodIta.</p>
             </div>
           ) : (
             <div className="px-4 py-4 space-y-4">
@@ -784,7 +784,7 @@ const DriverDashboard = () => {
                           <WhatsAppButton number={getContactWhatsApp(deliveryStoreOwnerId)} message={`Pedido #${myDelivery.id.slice(0, 8).toUpperCase()}.`} label="Loja" size="md" className="flex-1" />
                         )}
                         {deliveryClientId && getContactWhatsApp(deliveryClientId) && (
-                          <WhatsAppButton number={getContactWhatsApp(deliveryClientId)} message="Olá, sou o entregador do ItaFood!" label="Cliente" size="md" className="flex-1" />
+                          <WhatsAppButton number={getContactWhatsApp(deliveryClientId)} message="Olá, sou o entregador do FoodIta!" label="Cliente" size="md" className="flex-1" />
                         )}
                       </div>
 

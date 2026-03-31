@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
   ArrowLeft, DollarSign, ShoppingBag, TrendingUp, Clock,
-  Store, Copy, AlertTriangle, Users, Bike, Wallet, CheckCircle2, Banknote, XCircle, Bell, Trash2
+  Store, Copy, AlertTriangle, Users, Bike, Wallet, CheckCircle2, Banknote, XCircle, Bell, Trash2, QrCode, Loader2, ArrowUpRight, ArrowDownRight
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
@@ -312,7 +312,7 @@ const SuperAdminDashboard = () => {
 
   const generateReport = () => {
     const dateLabel = dateFilter === "today" ? "Hoje" : dateFilter === "yesterday" ? "Ontem" : "Últimos 7 dias";
-    let report = `📊 *Relatório ${dateLabel} - ItaFood*\n\n`;
+    let report = `📊 *Relatório ${dateLabel} - FoodIta*\n\n`;
     report += `💰 Vendas: R$ ${metrics.totalSales.toFixed(2)}\n`;
     report += `📦 Pedidos: ${metrics.totalOrders}\n`;
     report += `🏷️ Comissão Plataforma: R$ ${metrics.commission.toFixed(2)}\n\n`;
@@ -327,10 +327,10 @@ const SuperAdminDashboard = () => {
   const generateStoreWhatsApp = (entry: typeof storeSettlement[0]) => {
     const period = financeFilter === "week" ? "Semana" : "Mês";
     const balanceText = entry.finalBalance >= 0
-      ? `✅ O ItaFood deve transferir R$ ${entry.finalBalance.toFixed(2)} para você.`
-      : `⚠️ Valor a acertar com o ItaFood: R$ ${Math.abs(entry.finalBalance).toFixed(2)}.`;
+      ? `✅ O FoodIta deve transferir R$ ${entry.finalBalance.toFixed(2)} para você.`
+      : `⚠️ Valor a acertar com o FoodIta: R$ ${Math.abs(entry.finalBalance).toFixed(2)}.`;
 
-    const msg = `💰 *Fechamento ItaFood (${period})*\n\nOlá *${entry.name}*!\n\n` +
+    const msg = `💰 *Fechamento FoodIta (${period})*\n\nOlá *${entry.name}*!\n\n` +
       `📦 Total de Pedidos: ${entry.orderCount}\n` +
       `💵 Vendas Físicas (Dinheiro/Cartão): R$ ${entry.physicalSales.toFixed(2)}\n` +
       `📱 Vendas App (Pix): R$ ${entry.appSales.toFixed(2)}\n\n` +
@@ -370,7 +370,7 @@ const SuperAdminDashboard = () => {
             </button>
             <div>
               <h1 className="font-bold text-sm">Painel Administrativo</h1>
-              <p className="text-xs text-gray-400">ItaFood</p>
+              <p className="text-xs text-gray-400">FoodIta</p>
             </div>
           </div>
           <button
@@ -626,15 +626,102 @@ const FinanceTab = ({
   queryClient: any;
   withdrawalRequests: any[];
 }) => {
+  const [payingStore, setPayingStore] = useState<string | null>(null);
+  const [chargingStore, setChargingStore] = useState<string | null>(null);
+
   const markAsPaid = async (storeId: string, storeName: string) => {
     const { error } = await supabase
       .from("store_balances")
-      .upsert({ store_id: storeId, pending_commission: 0, updated_at: new Date().toISOString() }, { onConflict: "store_id" });
+      .upsert({ store_id: storeId, pending_commission: 0, comissao_pendente: 0, updated_at: new Date().toISOString() } as any, { onConflict: "store_id" });
     if (error) {
       toast.error("Erro ao marcar como pago.");
     } else {
       toast.success(`✅ Saldo de ${storeName} zerado!`);
       queryClient.invalidateQueries({ queryKey: ["store-balances"] });
+    }
+  };
+
+  const handleAdminPayout = async (entry: any) => {
+    if (entry.netTransfer <= 0) {
+      toast.info("Não há repasse pendente para esta loja.");
+      return;
+    }
+
+    // Get store owner's PIX key
+    const { data: ownerProfile } = await supabase
+      .from("profiles")
+      .select("pix_key, pix_type")
+      .eq("user_id", (await supabase.from("stores").select("owner_id").eq("id", entry.storeId).single()).data?.owner_id || "")
+      .single();
+
+    if (!ownerProfile?.pix_key) {
+      toast.error(`Lojista de ${entry.name} não configurou chave PIX no perfil.`);
+      return;
+    }
+
+    setPayingStore(entry.storeId);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-payout-store", {
+        body: {
+          store_id: entry.storeId,
+          amount: entry.netTransfer,
+          pix_key: ownerProfile.pix_key,
+          pix_type: ownerProfile.pix_type || "cpf",
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      if (data?.status === "manual_required") {
+        toast.info(`${data.reference_code}: Transferência manual necessária. PIX: ${data.pix_key} (${data.pix_type}) - R$ ${data.amount.toFixed(2)}`, { duration: 15000 });
+      } else {
+        toast.success(`${data.reference_code}: Repasse de R$ ${data.amount.toFixed(2)} enviado para ${entry.name}!`);
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["store-balances"] });
+      queryClient.invalidateQueries({ queryKey: ["finance-orders"] });
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao processar repasse.");
+    } finally {
+      setPayingStore(null);
+    }
+  };
+
+  const handleChargeCommission = async (entry: any) => {
+    const balance = storeBalances.find((b: any) => b.store_id === entry.storeId);
+    const chargeAmount = Number(balance?.comissao_pendente || balance?.pending_commission || entry.commissionDue);
+
+    if (chargeAmount <= 0) {
+      toast.info("Não há comissões pendentes para cobrar.");
+      return;
+    }
+
+    setChargingStore(entry.storeId);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-commission-charge", {
+        body: {
+          store_id: entry.storeId,
+          amount: chargeAmount,
+          description: `Comissão FoodIta - ${entry.name}`,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      if (data?.qr_code) {
+        navigator.clipboard.writeText(data.qr_code);
+        toast.success(`${data.reference_code}: Cobrança PIX gerada! Código copiado. R$ ${data.amount.toFixed(2)}`, { duration: 10000 });
+      } else {
+        toast.success(`${data.reference_code}: Cobrança registrada. R$ ${data.amount.toFixed(2)}`);
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["store-balances"] });
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao gerar cobrança.");
+    } finally {
+      setChargingStore(null);
     }
   };
 
@@ -740,6 +827,8 @@ const FinanceTab = ({
           <div className="space-y-3">
             {storeSettlement.map((entry, i) => {
               const balance = storeBalances.find((b: any) => b.store_id === entry.storeId);
+              const dbRepasse = Number((balance as any)?.repasse_pendente || 0);
+              const dbComissao = Number((balance as any)?.comissao_pendente || balance?.pending_commission || 0);
               return (
                 <div key={i} className="bg-[#1E293B] rounded-2xl p-4 space-y-3">
                   <div className="flex items-center justify-between">
@@ -756,38 +845,82 @@ const FinanceTab = ({
                       <p className="text-gray-400">📱 Vendas App</p>
                       <p className="text-sm font-bold text-white">R$ {entry.appSales.toFixed(2)}</p>
                     </div>
-                    <div className="bg-[#0F172A] rounded-xl p-2.5">
-                      <p className="text-gray-400">🏷️ Comissão 15%</p>
-                      <p className="text-sm font-bold text-red-400">-R$ {entry.commissionDue.toFixed(2)}</p>
+                  </div>
+
+                  {/* Separated balances */}
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    {/* A Pagar ao Lojista (Admin owes store) */}
+                    <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-3">
+                      <div className="flex items-center gap-1 mb-1">
+                        <ArrowUpRight className="h-3 w-3 text-green-400" />
+                        <p className="text-green-400 font-bold">A Pagar (85% App)</p>
+                      </div>
+                      <p className="text-lg font-black text-green-400">R$ {entry.netTransfer.toFixed(2)}</p>
                     </div>
-                    <div className="bg-[#0F172A] rounded-xl p-2.5">
-                      <p className="text-gray-400">💸 Repasse Líquido</p>
-                      <p className="text-sm font-bold text-green-400">R$ {entry.netTransfer.toFixed(2)}</p>
+
+                    {/* A Receber do Lojista (Store owes admin) */}
+                    <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3">
+                      <div className="flex items-center gap-1 mb-1">
+                        <ArrowDownRight className="h-3 w-3 text-red-400" />
+                        <p className="text-red-400 font-bold">A Receber (15%)</p>
+                      </div>
+                      <p className="text-lg font-black text-red-400">R$ {(dbComissao > 0 ? dbComissao : entry.commissionDue).toFixed(2)}</p>
                     </div>
                   </div>
 
-                  {/* Final balance */}
-                  <div className={`rounded-xl p-3 text-center ${entry.finalBalance >= 0 ? "bg-green-500/10 border border-green-500/30" : "bg-red-500/10 border border-red-500/30"}`}>
-                    <p className="text-xs text-gray-400 mb-1">SALDO FINAL</p>
-                    <p className={`text-xl font-black ${entry.finalBalance >= 0 ? "text-green-400" : "text-red-400"}`}>
-                      {entry.finalBalance >= 0 ? "+" : "-"}R$ {Math.abs(entry.finalBalance).toFixed(2)}
-                    </p>
-                    <p className="text-[10px] text-gray-500 mt-1">
-                      {entry.finalBalance >= 0 ? "Admin transfere para a loja" : "Loja paga ao Admin"}
-                    </p>
-                  </div>
-
-                  {/* Pending balance from DB */}
-                  {balance && Number(balance.pending_commission) > 0 && (
-                    <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-2.5 flex items-center justify-between">
+                  {/* Net balance */}
+                  <div className="bg-[#0F172A] rounded-xl p-3 text-center">
+                    <p className="text-xs text-gray-400 mb-1">SALDO LÍQUIDO</p>
+                    <div className="grid grid-cols-3 gap-1">
                       <div>
-                        <p className="text-xs text-yellow-400 font-bold">Comissão Pendente (Acumulada)</p>
-                        <p className="text-sm font-bold text-yellow-300">R$ {Number(balance.pending_commission).toFixed(2)}</p>
+                        <p className="text-[10px] text-green-400">Crédito (Comissões)</p>
+                        <p className="text-sm font-bold text-green-400">R$ {(dbComissao > 0 ? dbComissao : entry.commissionDue).toFixed(2)}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-red-400">Débito (Repasses)</p>
+                        <p className="text-sm font-bold text-red-400">R$ {entry.netTransfer.toFixed(2)}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-white">Total Líquido</p>
+                        <p className={`text-sm font-black ${entry.finalBalance >= 0 ? "text-green-400" : "text-red-400"}`}>
+                          {entry.finalBalance >= 0 ? "+" : "-"}R$ {Math.abs(entry.finalBalance).toFixed(2)}
+                        </p>
                       </div>
                     </div>
-                  )}
+                  </div>
 
-                  {/* Actions */}
+                  {/* ACTION BUTTONS */}
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* Pagar Lojista via Pix */}
+                    <button
+                      onClick={() => handleAdminPayout(entry)}
+                      disabled={payingStore === entry.storeId || entry.netTransfer <= 0}
+                      className="flex items-center justify-center gap-1.5 bg-green-500 hover:bg-green-600 disabled:bg-green-500/30 disabled:text-green-400/50 text-white py-3 rounded-xl text-xs font-bold active:scale-95 transition-all"
+                    >
+                      {payingStore === entry.storeId ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <ArrowUpRight className="h-3.5 w-3.5" />
+                      )}
+                      Pagar Lojista via Pix
+                    </button>
+
+                    {/* Gerar Cobrança Pix */}
+                    <button
+                      onClick={() => handleChargeCommission(entry)}
+                      disabled={chargingStore === entry.storeId || (entry.commissionDue <= 0 && dbComissao <= 0)}
+                      className="flex items-center justify-center gap-1.5 bg-red-500 hover:bg-red-600 disabled:bg-red-500/30 disabled:text-red-400/50 text-white py-3 rounded-xl text-xs font-bold active:scale-95 transition-all"
+                    >
+                      {chargingStore === entry.storeId ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <QrCode className="h-3.5 w-3.5" />
+                      )}
+                      Gerar Cobrança Pix
+                    </button>
+                  </div>
+
+                  {/* Secondary actions */}
                   <div className="flex gap-2">
                     <button
                       onClick={() => generateStoreWhatsApp(entry)}
