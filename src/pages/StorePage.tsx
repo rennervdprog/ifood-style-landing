@@ -54,15 +54,17 @@ const StorePage = () => {
     enabled: !!(id || slug),
   });
 
+  const storeId = store?.id || id;
+
   // Store hours
   const { data: storeHours } = useQuery({
-    queryKey: ["store-hours", id],
+    queryKey: ["store-hours", storeId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("opening_hours").select("*").eq("store_id", id!);
+      const { data, error } = await supabase.from("opening_hours").select("*").eq("store_id", storeId!);
       if (error) throw error;
       return data || [];
     },
-    enabled: !!id,
+    enabled: !!storeId,
   });
 
   // Owner profile (for WhatsApp)
