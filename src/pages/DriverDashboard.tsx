@@ -14,6 +14,7 @@ import WhatsAppButton from "@/components/WhatsAppButton";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { format, startOfDay, startOfWeek, subDays, isWithinInterval, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { requestNotificationPermission, notifyDeliveryAvailable } from "@/lib/notifications";
 
 type TabType = "entregas" | "historico";
 type DateFilter = "hoje" | "semana" | "mes" | "custom";
