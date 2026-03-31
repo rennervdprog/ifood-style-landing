@@ -416,6 +416,11 @@ const AdminDashboard = () => {
         <span className={`text-2xl font-black ${(onlineDrivers?.length || 0) > 0 ? "text-green-400" : "text-yellow-400"}`}>
           {onlineDrivers?.length || 0}
         </span>
+        {/* Realtime connection indicator */}
+        <span
+          className={`w-2.5 h-2.5 rounded-full ${realtimeDriversConnected ? "bg-green-400 animate-pulse" : "bg-gray-600"}`}
+          title={realtimeDriversConnected ? "Tempo real ativo" : "Conectando..."}
+        />
       </div>
 
       {/* Dashboard Tabs */}
