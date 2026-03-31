@@ -199,6 +199,32 @@ const DriverDashboard = () => {
     return filteredHistory.reduce((sum: number, o: any) => sum + Number(o.delivery_fee), 0);
   }, [filteredHistory]);
 
+  // Sync online status with DB on mount/change
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("drivers")
+      .update({ is_online: isOnline } as any)
+      .eq("user_id", user.id)
+      .then(() => {});
+    // Set offline on page unload
+    const handleUnload = () => {
+      navigator.sendBeacon?.("", "");
+      supabase
+        .from("drivers")
+        .update({ is_online: false } as any)
+        .eq("user_id", user.id);
+    };
+    window.addEventListener("beforeunload", handleUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleUnload);
+      supabase
+        .from("drivers")
+        .update({ is_online: false } as any)
+        .eq("user_id", user.id);
+    };
+  }, [user, isOnline]);
+
   useEffect(() => {
     if (!user || !isOnline) return;
     const channel = supabase
