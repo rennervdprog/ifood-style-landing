@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Camera, Upload, Save, Store, Phone, Tag, MapPin, Link, Copy } from "lucide-react";
+import { maskWhatsApp } from "@/lib/whatsapp";
 
 const CATEGORY_OPTIONS = [
   { value: "lanches", label: "Lanches" },
@@ -137,13 +138,6 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
     setSaving(false);
   };
 
-  const formatWhatsapp = (value: string) => {
-    const digits = value.replace(/\D/g, "").slice(0, 13);
-    if (digits.length <= 2) return digits;
-    if (digits.length <= 4) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
-    if (digits.length <= 9) return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
-    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
-  };
 
   return (
     <div className="space-y-6 pb-32">
@@ -215,8 +209,9 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
         </label>
         <input
           type="tel"
-          value={formatWhatsapp(whatsapp)}
-          onChange={(e) => setWhatsapp(e.target.value.replace(/\D/g, ""))}
+          inputMode="numeric"
+          value={maskWhatsApp(whatsapp)}
+          onChange={(e) => setWhatsapp(e.target.value.replace(/\D/g, "").slice(0, 11))}
           placeholder="(14) 99999-9999"
           className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500"
         />
