@@ -678,17 +678,13 @@ const FinanceTab = ({
       return;
     }
 
-    // Get store owner's PIX key
-    const { data: ownerProfile } = await supabase
-      .from("profiles")
-      .select("pix_key, pix_type")
-      .eq("user_id", (await supabase.from("stores").select("owner_id").eq("id", entry.storeId).single()).data?.owner_id || "")
-      .single();
-
-    if (!ownerProfile?.pix_key) {
-      toast.error(`Lojista de ${entry.name} não configurou chave PIX no perfil.`);
+    const pixInfo = getStorePixInfo(entry.storeId);
+    if (!pixInfo?.pixKey) {
+      toast.error(`❌ Erro: O lojista de "${entry.name}" ainda não cadastrou uma chave Pix para recebimento. Peça para ele configurar em Configurações → Dados para Recebimento (Pix).`);
       return;
     }
+
+    const ownerProfile = { pix_key: pixInfo.pixKey, pix_type: pixInfo.pixType };
 
     setPayingStore(entry.storeId);
     try {
