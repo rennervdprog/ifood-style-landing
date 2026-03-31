@@ -938,34 +938,64 @@ const DriverDashboard = () => {
               </div>
 
               {/* Withdrawal Button */}
-              {Number(driverBalance.pending_amount || 0) > 0 && (driverProfile as any)?.pix_key && (
+              {pendingWithdrawal ? (
+                <div className="mt-4 space-y-2">
+                  <button
+                    disabled
+                    className="w-full bg-muted text-muted-foreground font-bold py-3.5 rounded-2xl text-sm flex items-center justify-center gap-2 cursor-not-allowed opacity-70"
+                  >
+                    <Clock className="h-4 w-4" />
+                    SAQUE SOLICITADO — R$ {Number(pendingWithdrawal.amount).toFixed(2)}
+                  </button>
+                  <p className="text-xs text-amber-500 text-center">
+                    ⏳ O Admin já foi notificado. Aguarde o processamento do seu Pix.
+                  </p>
+                </div>
+              ) : Number(driverBalance.pending_amount || 0) > 0 && (driverProfile as any)?.pix_key ? (
                 <button
+                  disabled={requestingSaque}
                   onClick={async () => {
+                    setRequestingSaque(true);
                     try {
+                      // Double-check no pending request exists
+                      const { data: existing } = await supabase
+                        .from("withdrawal_requests" as any)
+                        .select("id")
+                        .eq("driver_user_id", user!.id)
+                        .eq("status", "solicitado")
+                        .maybeSingle();
+                      if (existing) {
+                        toast.warning("Você já possui uma solicitação de saque pendente. Aguarde o processamento.");
+                        queryClient.invalidateQueries({ queryKey: ["pending-withdrawal"] });
+                        return;
+                      }
+                      const amount = Number(driverBalance.pending_amount);
                       const { error } = await supabase.from("withdrawal_requests" as any).insert({
                         driver_user_id: user!.id,
-                        amount: Number(driverBalance.pending_amount),
+                        amount,
                         pix_key: (driverProfile as any).pix_key,
                         pix_type: (driverProfile as any).pix_type || "cpf",
                       } as any);
                       if (error) throw error;
-                      toast.success("Solicitação de saque enviada! O admin será notificado.");
+                      toast.success(`✅ Solicitação enviada! Valor: R$ ${amount.toFixed(2)}. O Admin foi notificado.`);
                       queryClient.invalidateQueries({ queryKey: ["driver-balance"] });
+                      queryClient.invalidateQueries({ queryKey: ["pending-withdrawal"] });
                     } catch (err: any) {
                       toast.error(err?.message || "Erro ao solicitar saque.");
+                    } finally {
+                      setRequestingSaque(false);
                     }
                   }}
-                  className="w-full mt-4 bg-green-500 hover:bg-green-600 text-white font-bold py-3.5 rounded-2xl text-sm active:scale-95 transition-transform flex items-center justify-center gap-2"
+                  className="w-full mt-4 bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white font-bold py-3.5 rounded-2xl text-sm active:scale-95 transition-transform flex items-center justify-center gap-2"
                 >
                   <DollarSign className="h-4 w-4" />
-                  SOLICITAR PAGAMENTO (PIX)
+                  {requestingSaque ? "PROCESSANDO..." : "SOLICITAR PAGAMENTO (PIX)"}
                 </button>
-              )}
-              {Number(driverBalance.pending_amount || 0) > 0 && !(driverProfile as any)?.pix_key && (
+              ) : Number(driverBalance.pending_amount || 0) > 0 && !(driverProfile as any)?.pix_key ? (
                 <p className="text-xs text-amber-500 mt-3 text-center">
-                  Cadastre sua chave PIX na aba Configurações para solicitar saque.
+                  ⚠️ Cadastre sua chave PIX na aba Configurações para solicitar saque.
                 </p>
-              )}
+              ) : null}
             </div>
           )}
 
