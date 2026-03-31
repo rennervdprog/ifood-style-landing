@@ -76,6 +76,25 @@ const AdminDashboard = () => {
     enabled: !!store,
   });
 
+  // Fetch driver names for assigned orders
+  const driverIds = [...new Set(orders?.map(o => o.driver_id).filter(Boolean) || [])] as string[];
+  const { data: driverProfiles } = useQuery({
+    queryKey: ["driver-profiles", driverIds],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("drivers")
+        .select("user_id, name")
+        .in("user_id", driverIds);
+      return data || [];
+    },
+    enabled: driverIds.length > 0,
+  });
+
+  const getDriverName = (driverId: string) => {
+    const d = driverProfiles?.find((dr: any) => dr.user_id === driverId);
+    return d?.name || "Entregador";
+  };
+
   // Fetch client profiles for WhatsApp
   const clientIds = [...new Set(orders?.map(o => o.client_id) || [])];
   const { data: clientProfiles } = useQuery({
