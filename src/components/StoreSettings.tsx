@@ -136,12 +136,16 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
       return;
     }
 
-    // Update whatsapp on profile
+    // Update whatsapp + pix on profile
     if (user) {
       const cleanWhatsapp = whatsapp.replace(/\D/g, "");
       await supabase
         .from("profiles")
-        .update({ whatsapp_number: cleanWhatsapp || null })
+        .update({
+          whatsapp_number: cleanWhatsapp || null,
+          pix_key: pixKey.trim() || null,
+          pix_type: (pixType as any) || null,
+        })
         .eq("user_id", user.id);
     }
 
