@@ -55,7 +55,7 @@ const OrderReceipt = forwardRef<HTMLDivElement, OrderReceiptProps>(
         {/* Header */}
         <div style={{ textAlign: "center", marginBottom: "8px" }}>
           <p style={{ fontSize: "14px", fontWeight: "bold", margin: 0 }}>
-            Giro de Itatinga
+            ItaFood
           </p>
           <p style={{ fontSize: "13px", fontWeight: "bold", margin: "2px 0" }}>
             {storeName}
