@@ -159,9 +159,31 @@ const DriverDashboard = () => {
     if (error) {
       toast.error("Ops! Outro entregador já aceitou esta corrida.");
     } else {
-      toast.success("Corrida aceita! Vá buscar o pedido.");
+      toast.success("Corrida aceita! Vá buscar o pedido na loja.");
       setPinInput("");
+      setCollectionCodeInput("");
       queryClient.invalidateQueries({ queryKey: ["driver-available-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["driver-my-delivery", user!.id] });
+    }
+  };
+
+  const validateCollection = async (orderId: string) => {
+    if (collectionCodeInput.length !== 4) {
+      toast.error("Digite o código de 4 dígitos do lojista.");
+      return;
+    }
+    setVerifyingCollection(true);
+    const { error } = await supabase.rpc("driver_validate_collection" as any, {
+      _order_id: orderId,
+      _code: collectionCodeInput,
+    });
+    if (error) {
+      toast.error(error.message || "Código inválido. Verifique com o lojista.");
+      setVerifyingCollection(false);
+    } else {
+      toast.success("✅ Coleta validada! Agora entregue ao cliente.");
+      setVerifyingCollection(false);
+      setCollectionCodeInput("");
       queryClient.invalidateQueries({ queryKey: ["driver-my-delivery", user!.id] });
     }
   };
