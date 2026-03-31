@@ -606,6 +606,7 @@ export type Database = {
     }
     Enums: {
       order_status:
+        | "aguardando_pagamento"
         | "pendente"
         | "preparando"
         | "pronto_para_entrega"
@@ -613,6 +614,7 @@ export type Database = {
         | "entregue"
         | "saiu_entrega"
         | "finalizado"
+        | "cancelado"
       partner_role: "cliente" | "lojista" | "motoboy"
       pix_type: "cpf" | "cnpj" | "email" | "phone" | "random"
       store_category:
@@ -755,6 +757,7 @@ export const Constants = {
   public: {
     Enums: {
       order_status: [
+        "aguardando_pagamento",
         "pendente",
         "preparando",
         "pronto_para_entrega",
@@ -762,6 +765,7 @@ export const Constants = {
         "entregue",
         "saiu_entrega",
         "finalizado",
+        "cancelado",
       ],
       partner_role: ["cliente", "lojista", "motoboy"],
       pix_type: ["cpf", "cnpj", "email", "phone", "random"],
