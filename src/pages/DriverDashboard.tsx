@@ -487,7 +487,7 @@ const DriverDashboard = () => {
               <Bike className="h-20 w-20 text-gray-700 mb-6" />
               <h2 className="text-xl font-bold text-gray-400 mb-2">Você está offline</h2>
               <p className="text-sm text-gray-500 max-w-xs">
-                Ative o modo online para receber entregas em Itatinga.
+                Ative o modo online para receber entregas no ItaFood.
               </p>
             </div>
           ) : (
@@ -613,7 +613,7 @@ const DriverDashboard = () => {
                         {deliveryClientId && getContactWhatsApp(deliveryClientId) && (
                           <WhatsAppButton
                             number={getContactWhatsApp(deliveryClientId)}
-                            message="Olá, sou o entregador do app de Itatinga e estou com seu pedido!"
+                            message="Olá, sou o entregador do ItaFood e estou com seu pedido!"
                             label="Cliente"
                             size="md"
                             className="flex-1"

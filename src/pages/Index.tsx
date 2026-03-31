@@ -106,9 +106,9 @@ const Index = () => {
             </h2>
             <p className="text-sm text-muted-foreground max-w-xs">
               {stores && stores.length === 0
-                ? "Novas lojas em Itatinga em breve. Fique ligado!"
+                ? "Novas lojas no ItaFood em breve. Fique ligado!"
                 : category === "farmacias" || category === "docerias"
-                ? "Ainda não temos parceiros nesta categoria em Itatinga. Em breve!"
+                ? "Ainda não temos parceiros nesta categoria no ItaFood. Em breve!"
                 : "Nenhum estabelecimento aberto no momento. Volte mais tarde!"}
             </p>
           </div>

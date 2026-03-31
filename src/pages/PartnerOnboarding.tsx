@@ -163,7 +163,7 @@ const PartnerOnboarding = () => {
           _whatsapp: formattedWhatsapp,
         } as any);
         if (error) throw error;
-        toast.success("Cadastro realizado com sucesso! Bem-vindo à rede de Itatinga. 🎉");
+        toast.success("Cadastro realizado com sucesso! Bem-vindo ao ItaFood. 🎉");
         navigate("/admin", { replace: true });
       } else {
         const { error } = await supabase.rpc("register_as_motoboy", {
@@ -174,7 +174,7 @@ const PartnerOnboarding = () => {
           _whatsapp: formattedWhatsapp,
         } as any);
         if (error) throw error;
-        toast.success("Cadastro realizado com sucesso! Bem-vindo à rede de Itatinga. 🎉");
+        toast.success("Cadastro realizado com sucesso! Bem-vindo ao ItaFood. 🎉");
         navigate("/entregador", { replace: true });
       }
     } catch (err: any) {
@@ -216,7 +216,7 @@ const PartnerOnboarding = () => {
             <div className="text-center">
               <h2 className="text-xl font-black text-foreground">Como quer participar?</h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Escolha como você quer fazer parte da rede em Itatinga
+                Escolha como você quer fazer parte do ItaFood
               </p>
             </div>
 
@@ -236,7 +236,7 @@ const PartnerOnboarding = () => {
                   <div>
                     <h3 className="text-lg font-bold text-foreground">🏠 Quero Vender</h3>
                     <p className="text-sm text-muted-foreground mt-0.5">
-                      Abra sua loja e venda para toda Itatinga
+                      Abra sua loja e venda pelo ItaFood
                     </p>
                   </div>
                 </div>
@@ -257,7 +257,7 @@ const PartnerOnboarding = () => {
                   <div>
                     <h3 className="text-lg font-bold text-foreground">🏍️ Quero Entregar</h3>
                     <p className="text-sm text-muted-foreground mt-0.5">
-                      Faça entregas e ganhe dinheiro em Itatinga
+                      Faça entregas e ganhe dinheiro no ItaFood
                     </p>
                   </div>
                 </div>
@@ -349,7 +349,7 @@ const PartnerOnboarding = () => {
                   <InputField
                     icon={Store}
                     label="Nome da Loja"
-                    placeholder="Ex: Pizzaria Itatinga"
+                    placeholder="Ex: Pizzaria do João"
                     value={storeName}
                     onChange={setStoreName}
                     error={errors.storeName}

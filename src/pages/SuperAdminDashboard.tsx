@@ -135,7 +135,7 @@ const SuperAdminDashboard = () => {
   // Generate daily report
   const generateReport = () => {
     const dateLabel = dateFilter === "today" ? "Hoje" : dateFilter === "yesterday" ? "Ontem" : "Últimos 7 dias";
-    let report = `📊 *Relatório ${dateLabel} - Itatinga Delivery*\n\n`;
+    let report = `📊 *Relatório ${dateLabel} - ItaFood*\n\n`;
     report += `💰 Vendas: R$ ${metrics.totalSales.toFixed(2)}\n`;
     report += `📦 Pedidos: ${metrics.totalOrders}\n`;
     report += `🏷️ Comissão Plataforma: R$ ${metrics.commission.toFixed(2)}\n\n`;
@@ -175,7 +175,7 @@ const SuperAdminDashboard = () => {
             </button>
             <div>
               <h1 className="font-bold text-sm">Painel Administrativo</h1>
-              <p className="text-xs text-gray-400">Itatinga Delivery</p>
+              <p className="text-xs text-gray-400">ItaFood</p>
             </div>
           </div>
           <button

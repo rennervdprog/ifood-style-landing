@@ -404,7 +404,7 @@ const AdminDashboard = () => {
               <p className="text-sm font-bold text-green-300">
                 🛵 {onlineDrivers!.length} entregador{onlineDrivers!.length > 1 ? "es" : ""} disponível{onlineDrivers!.length > 1 ? "is" : ""} agora
               </p>
-              <p className="text-xs text-gray-400">em Itatinga</p>
+              <p className="text-xs text-gray-400">no ItaFood</p>
             </>
           ) : (
             <>

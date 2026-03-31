@@ -220,7 +220,7 @@ const CheckoutPage = () => {
                 📍 Endereço não cadastrado
               </p>
               <p className="text-xs text-muted-foreground mb-3">
-                Precisamos do seu endereço para entregar em Itatinga.
+                Precisamos do seu endereço para entregar pelo ItaFood.
               </p>
               <button
                 onClick={() => setShowAddressModal(true)}
