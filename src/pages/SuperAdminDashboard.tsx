@@ -629,6 +629,37 @@ const FinanceTab = ({
   const [payingStore, setPayingStore] = useState<string | null>(null);
   const [chargingStore, setChargingStore] = useState<string | null>(null);
 
+  // Fetch store owner PIX keys
+  const { data: ownerProfiles } = useQuery({
+    queryKey: ["store-owner-pix-keys"],
+    queryFn: async () => {
+      const storeIds = stores.map((s: any) => s.id);
+      if (storeIds.length === 0) return [];
+      const { data: storesData } = await supabase
+        .from("stores")
+        .select("id, owner_id")
+        .in("id", storeIds);
+      if (!storesData) return [];
+      const ownerIds = storesData.map(s => s.owner_id).filter(Boolean);
+      if (ownerIds.length === 0) return [];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, pix_key, pix_type")
+        .in("user_id", ownerIds as string[]);
+      return (storesData || []).map(s => ({
+        storeId: s.id,
+        ownerId: s.owner_id,
+        pixKey: profiles?.find(p => p.user_id === s.owner_id)?.pix_key || null,
+        pixType: profiles?.find(p => p.user_id === s.owner_id)?.pix_type || null,
+      }));
+    },
+    enabled: stores.length > 0,
+  });
+
+  const getStorePixInfo = (storeId: string) => {
+    return ownerProfiles?.find((p: any) => p.storeId === storeId) || null;
+  };
+
   const markAsPaid = async (storeId: string, storeName: string) => {
     const { error } = await supabase
       .from("store_balances")
@@ -647,17 +678,13 @@ const FinanceTab = ({
       return;
     }
 
-    // Get store owner's PIX key
-    const { data: ownerProfile } = await supabase
-      .from("profiles")
-      .select("pix_key, pix_type")
-      .eq("user_id", (await supabase.from("stores").select("owner_id").eq("id", entry.storeId).single()).data?.owner_id || "")
-      .single();
-
-    if (!ownerProfile?.pix_key) {
-      toast.error(`Lojista de ${entry.name} não configurou chave PIX no perfil.`);
+    const pixInfo = getStorePixInfo(entry.storeId);
+    if (!pixInfo?.pixKey) {
+      toast.error(`❌ Erro: O lojista de "${entry.name}" ainda não cadastrou uma chave Pix para recebimento. Peça para ele configurar em Configurações → Dados para Recebimento (Pix).`);
       return;
     }
+
+    const ownerProfile = { pix_key: pixInfo.pixKey, pix_type: pixInfo.pixType };
 
     setPayingStore(entry.storeId);
     try {
@@ -919,6 +946,26 @@ const FinanceTab = ({
                       Gerar Cobrança Pix
                     </button>
                   </div>
+
+                  {/* PIX Key display */}
+                  {(() => {
+                    const pixInfo = getStorePixInfo(entry.storeId);
+                    return pixInfo?.pixKey ? (
+                      <div className="bg-[#0F172A] rounded-xl p-2.5 flex items-center gap-2">
+                        <Wallet className="h-3.5 w-3.5 text-green-400 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[10px] text-gray-500">Chave PIX do Lojista</p>
+                          <p className="text-xs text-gray-300 truncate">{pixInfo.pixKey}</p>
+                        </div>
+                        <span className="text-[10px] text-gray-500 uppercase">{pixInfo.pixType}</span>
+                      </div>
+                    ) : (
+                      <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5 flex items-center gap-2">
+                        <AlertTriangle className="h-3.5 w-3.5 text-amber-400 flex-shrink-0" />
+                        <p className="text-[10px] text-amber-400 font-bold">Lojista não cadastrou chave PIX</p>
+                      </div>
+                    );
+                  })()}
 
                   {/* Secondary actions */}
                   <div className="flex gap-2">

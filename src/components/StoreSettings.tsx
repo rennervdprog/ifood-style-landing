@@ -3,8 +3,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Camera, Upload, Save, Store, Phone, Tag, MapPin, Link, Copy } from "lucide-react";
+import { Camera, Upload, Save, Store, Phone, Tag, MapPin, Link, Copy, Wallet } from "lucide-react";
 import { maskWhatsApp } from "@/lib/whatsapp";
+
+const PIX_TYPE_OPTIONS = [
+  { value: "cpf", label: "CPF" },
+  { value: "cnpj", label: "CNPJ" },
+  { value: "email", label: "E-mail" },
+  { value: "phone", label: "Telefone" },
+  { value: "random", label: "Chave Aleatória" },
+];
 
 const CATEGORY_OPTIONS = [
   { value: "lanches", label: "Lanches" },
@@ -38,19 +46,23 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
   const [slug, setSlug] = useState(storeSlug || "");
   const [whatsapp, setWhatsapp] = useState("");
   const [imageUrl, setImageUrl] = useState(storeImageUrl || "");
+  const [pixKey, setPixKey] = useState("");
+  const [pixType, setPixType] = useState("cpf");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  // Load whatsapp from profile
+  // Load whatsapp + pix from profile
   useEffect(() => {
     if (!user) return;
     supabase
       .from("profiles")
-      .select("whatsapp_number")
+      .select("whatsapp_number, pix_key, pix_type")
       .eq("user_id", user.id)
       .single()
       .then(({ data }) => {
         if (data?.whatsapp_number) setWhatsapp(data.whatsapp_number);
+        if (data?.pix_key) setPixKey(data.pix_key);
+        if (data?.pix_type) setPixType(data.pix_type);
       });
   }, [user]);
 
@@ -124,12 +136,16 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
       return;
     }
 
-    // Update whatsapp on profile
+    // Update whatsapp + pix on profile
     if (user) {
       const cleanWhatsapp = whatsapp.replace(/\D/g, "");
       await supabase
         .from("profiles")
-        .update({ whatsapp_number: cleanWhatsapp || null })
+        .update({
+          whatsapp_number: cleanWhatsapp || null,
+          pix_key: pixKey.trim() || null,
+          pix_type: (pixType as any) || null,
+        })
         .eq("user_id", user.id);
     }
 
@@ -256,6 +272,44 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
           </div>
         )}
         <p className="text-[10px] text-gray-500">Compartilhe esse link para clientes acessarem direto seu cardápio.</p>
+      </div>
+
+      {/* PIX Key for Receiving Payouts */}
+      <div className="space-y-3">
+        <label className="text-sm font-bold text-gray-300 flex items-center gap-2">
+          <Wallet className="h-4 w-4 text-green-400" />
+          Dados para Recebimento (Pix)
+        </label>
+        <p className="text-[10px] text-gray-500 -mt-1">
+          Cadastre sua chave Pix para receber os repasses das vendas via App.
+        </p>
+        <select
+          value={pixType}
+          onChange={(e) => setPixType(e.target.value)}
+          className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 appearance-none"
+        >
+          {PIX_TYPE_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+        <input
+          type="text"
+          value={pixKey}
+          onChange={(e) => setPixKey(e.target.value)}
+          placeholder={pixType === "cpf" ? "000.000.000-00" : pixType === "cnpj" ? "00.000.000/0000-00" : pixType === "email" ? "email@exemplo.com" : pixType === "phone" ? "(14) 99999-9999" : "Chave aleatória"}
+          maxLength={256}
+          className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500"
+        />
+        {pixKey && (
+          <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-3 flex items-center gap-2">
+            <Wallet className="h-4 w-4 text-green-400 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-green-400 font-bold">Chave Pix cadastrada</p>
+              <p className="text-xs text-gray-300 truncate">{pixKey}</p>
+              <p className="text-[10px] text-gray-500">Tipo: {PIX_TYPE_OPTIONS.find(o => o.value === pixType)?.label}</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Store Status Info */}
