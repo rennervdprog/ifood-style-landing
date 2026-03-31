@@ -312,7 +312,7 @@ const SuperAdminDashboard = () => {
 
   const generateReport = () => {
     const dateLabel = dateFilter === "today" ? "Hoje" : dateFilter === "yesterday" ? "Ontem" : "Últimos 7 dias";
-    let report = `📊 *Relatório ${dateLabel} - ItaFood*\n\n`;
+    let report = `📊 *Relatório ${dateLabel} - FoodIta*\n\n`;
     report += `💰 Vendas: R$ ${metrics.totalSales.toFixed(2)}\n`;
     report += `📦 Pedidos: ${metrics.totalOrders}\n`;
     report += `🏷️ Comissão Plataforma: R$ ${metrics.commission.toFixed(2)}\n\n`;
@@ -327,10 +327,10 @@ const SuperAdminDashboard = () => {
   const generateStoreWhatsApp = (entry: typeof storeSettlement[0]) => {
     const period = financeFilter === "week" ? "Semana" : "Mês";
     const balanceText = entry.finalBalance >= 0
-      ? `✅ O ItaFood deve transferir R$ ${entry.finalBalance.toFixed(2)} para você.`
-      : `⚠️ Valor a acertar com o ItaFood: R$ ${Math.abs(entry.finalBalance).toFixed(2)}.`;
+      ? `✅ O FoodIta deve transferir R$ ${entry.finalBalance.toFixed(2)} para você.`
+      : `⚠️ Valor a acertar com o FoodIta: R$ ${Math.abs(entry.finalBalance).toFixed(2)}.`;
 
-    const msg = `💰 *Fechamento ItaFood (${period})*\n\nOlá *${entry.name}*!\n\n` +
+    const msg = `💰 *Fechamento FoodIta (${period})*\n\nOlá *${entry.name}*!\n\n` +
       `📦 Total de Pedidos: ${entry.orderCount}\n` +
       `💵 Vendas Físicas (Dinheiro/Cartão): R$ ${entry.physicalSales.toFixed(2)}\n` +
       `📱 Vendas App (Pix): R$ ${entry.appSales.toFixed(2)}\n\n` +
