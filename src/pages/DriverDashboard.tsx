@@ -329,7 +329,7 @@ const DriverDashboard = () => {
                 <span className="text-gray-200">{(myDelivery as any).stores?.name || "Loja"}</span>
               </div>
 
-              {!(myDelivery as any).collection_validated ? (
+              {!(myDelivery as any).collection_validated && (myDelivery as any).status === 'pronto_para_entrega' ? (
                 /* STEP 1: Collection code validation */
                 <div>
                   <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-4 mb-3">
