@@ -319,6 +319,7 @@ export type Database = {
           neighborhood: string
           payment_method: string
           return_to_store_confirmed: boolean
+          settlement_code: string | null
           status: Database["public"]["Enums"]["order_status"]
           store_id: string
           subtotal: number
@@ -342,6 +343,7 @@ export type Database = {
           neighborhood: string
           payment_method: string
           return_to_store_confirmed?: boolean
+          settlement_code?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           store_id: string
           subtotal: number
@@ -365,6 +367,7 @@ export type Database = {
           neighborhood?: string
           payment_method?: string
           return_to_store_confirmed?: boolean
+          settlement_code?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           store_id?: string
           subtotal?: number
@@ -646,10 +649,12 @@ export type Database = {
       admin_cleanup_duplicate_withdrawals: { Args: never; Returns: number }
       admin_delete_store: { Args: { _store_id: string }; Returns: undefined }
       driver_accept_order: { Args: { _order_id: string }; Returns: undefined }
-      driver_confirm_store_return: {
-        Args: { _order_id: string }
-        Returns: undefined
-      }
+      driver_confirm_store_return:
+        | { Args: { _order_id: string }; Returns: undefined }
+        | {
+            Args: { _order_id: string; _settlement_code?: string }
+            Returns: undefined
+          }
       driver_finish_delivery:
         | { Args: { _order_id: string }; Returns: undefined }
         | { Args: { _order_id: string; _pin?: string }; Returns: undefined }
