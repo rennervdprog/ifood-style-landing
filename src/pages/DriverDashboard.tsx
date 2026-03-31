@@ -241,6 +241,7 @@ const DriverDashboard = () => {
         (payload) => {
           if (payload.eventType === "UPDATE" && (payload.new as any).status === "pronto_para_entrega") {
             playAlert();
+            notifyDeliveryAvailable();
             toast.info("🏍️ Nova entrega disponível!");
           }
           queryClient.invalidateQueries({ queryKey: ["driver-available-orders"] });

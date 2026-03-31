@@ -225,6 +225,7 @@ const AdminDashboard = () => {
           queryClient.invalidateQueries({ queryKey: ["store-orders", store.id] });
           if (payload.eventType === "INSERT" && (payload.new as any).status === "pendente") {
             playAlert();
+            notifyNewOrder();
             toast.info("🔔 Novo pedido recebido!", { duration: 8000 });
           }
           if (payload.eventType === "UPDATE" && (payload.new as any).status === "finalizado") {
