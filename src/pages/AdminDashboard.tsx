@@ -126,13 +126,57 @@ const AdminDashboard = () => {
     return (p as any)?.full_name || "Cliente";
   };
 
-  // Alert sound
+  // Sound alert system
   const playAlert = useCallback(() => {
+    if (!soundEnabled || soundMuted) return;
     if (!audioRef.current) {
-      audioRef.current = new Audio("data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2JkYyEd2lbUExKTVJeaoOSm5uTiHpqXE9FQEFHTVhojJylp6CUhXRjVEdAP0RNW26Hm6ewsKifkH5sXU5EQENLWGmBl6iwsqyhlYN0ZFVJQkRMWWmAlaOssK2km5GBcmRXTEVFTFlpgJSkrrKupZqPf3BjV01HR1Bcb4OXpq+0sKadkYBwY1hNSElSYHGFmKewtLOroJSEd2lbUExKTVJeaoOSm5uTiHpqXE9FQEFHTVhojJylp6CUhXRjVEdAP0RNW26Hm6ewsKifkH5sXU5EQENLWGmBl6iwsqyhlYN0ZFVJQkRMWWmAlaOssK2km5GBcmRXTEVFTFlpgJSkrrKupZqPf3BjV01HR1Bcb4OXpq+0sKadkYBwY1hNSElSYHGFmKewtLOroJSEd2lbUExKTVJeaoOSm5uTiHpqXE9FQEFHTVhojJylp6CUhXRjVEdAP0RNW26Hm6ewsKifkH5sXU5EQENLWGmBl6iwsqyhlYN0ZFVJQkRMWWmAlaOssK2km5GBcmRXTEVFTFlpgJSkrrKupZqPf3BjV01HR1Bcb4OXpq+0sKadkYBwY1hNSElSYHGFmKewtLOroJSEd2lbUExKTVJeaoOSm5uTiHpqXE9FQEFHTQ==");
+      audioRef.current = new Audio(ALERT_SOUND_URL);
+      audioRef.current.volume = 1.0;
     }
+    audioRef.current.currentTime = 0;
     audioRef.current.play().catch(() => {});
+  }, [soundEnabled, soundMuted]);
+
+  const activateSound = useCallback(() => {
+    // Create and play a silent sound to unlock audio context
+    const audio = new Audio(ALERT_SOUND_URL);
+    audio.volume = 0.3;
+    audio.play().then(() => {
+      audioRef.current = audio;
+      setSoundEnabled(true);
+      setShowSoundPrompt(false);
+      toast.success("🔔 Alertas sonoros ativados!");
+    }).catch(() => {
+      toast.error("Não foi possível ativar o som. Tente novamente.");
+    });
   }, []);
+
+  // Looping sound for pending orders
+  useEffect(() => {
+    const pendingCount = orders?.filter(o => o.status === "pendente").length || 0;
+
+    if (pendingCount > 0 && soundEnabled && !soundMuted) {
+      // Play immediately
+      playAlert();
+      // Loop every 12 seconds
+      if (loopIntervalRef.current) clearInterval(loopIntervalRef.current);
+      loopIntervalRef.current = setInterval(() => {
+        playAlert();
+      }, 12000);
+    } else {
+      if (loopIntervalRef.current) {
+        clearInterval(loopIntervalRef.current);
+        loopIntervalRef.current = null;
+      }
+    }
+
+    return () => {
+      if (loopIntervalRef.current) {
+        clearInterval(loopIntervalRef.current);
+        loopIntervalRef.current = null;
+      }
+    };
+  }, [orders, soundEnabled, soundMuted, playAlert]);
 
   // Realtime subscription
   useEffect(() => {
@@ -148,7 +192,6 @@ const AdminDashboard = () => {
             playAlert();
             toast.info("🔔 Novo pedido recebido!", { duration: 8000 });
           }
-          // Success sound when order finalized
           if (payload.eventType === "UPDATE" && (payload.new as any).status === "finalizado") {
             const successAudio = new Audio("data:audio/wav;base64,UklGRl9vAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhO28AAIA/");
             successAudio.play().catch(() => {});
@@ -162,14 +205,6 @@ const AdminDashboard = () => {
 
     return () => { supabase.removeChannel(channel); };
   }, [store, queryClient, playAlert]);
-
-  useEffect(() => {
-    const pendingCount = orders?.filter(o => o.status === "pendente").length || 0;
-    if (pendingCount > 0 && pendingCount > prevPendingCountRef.current) {
-      playAlert();
-    }
-    prevPendingCountRef.current = pendingCount;
-  }, [orders, playAlert]);
 
   const handlePrint = useCallback((order: any) => {
     printThermalReceipt(order, store?.name || "Loja", getClientName(order.client_id));
