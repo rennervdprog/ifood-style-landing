@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import {
   Wifi, WifiOff, Pause, Play, Clock, ChefHat, Truck, CheckCircle2,
   MapPin, CreditCard, Package, ArrowLeft, DollarSign, Banknote, UtensilsCrossed, ListOrdered, Plus, Printer, Bike,
-  Volume2, VolumeX, Bell, Store, MessageCircle, Copy, Link
+  Volume2, VolumeX, Bell, Store, MessageCircle, Copy, Link, Coins
 } from "lucide-react";
 import { openWhatsApp } from "@/lib/whatsapp";
 import WhatsAppButton from "@/components/WhatsAppButton";
@@ -15,11 +15,12 @@ import MenuBuilder from "@/components/MenuBuilder";
 import StoreHoursManager from "@/components/StoreHoursManager";
 import AddonManager from "@/components/AddonManager";
 import StoreSettings from "@/components/StoreSettings";
+import StoreFinancePanel from "@/components/StoreFinancePanel";
 import { printThermalReceipt } from "@/lib/thermalPrint";
 import { requestNotificationPermission, notifyNewOrder } from "@/lib/notifications";
 
 type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_entrega" | "em_transito" | "entregue" | "finalizado";
-type DashboardTab = "orders" | "menu" | "addons" | "hours" | "settings";
+type DashboardTab = "orders" | "menu" | "addons" | "hours" | "settings" | "finance";
 
 const ALERT_SOUND_URL = "https://actions.google.com/sounds/v1/alarms/beep_short.ogg";
 
@@ -484,6 +485,14 @@ const AdminDashboard = () => {
         >
           <Store className="h-4 w-4" /> Minha Loja
         </button>
+        <button
+          onClick={() => setDashboardTab("finance")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold ${
+            dashboardTab === "finance" ? "bg-primary text-primary-foreground" : "bg-[#1F2937] text-gray-400"
+          }`}
+        >
+          <Coins className="h-4 w-4" /> Finanças
+        </button>
       </div>
 
       {dashboardTab === "settings" && store ? (
@@ -510,8 +519,26 @@ const AdminDashboard = () => {
         <div className="px-4 py-4">
           <StoreHoursManager storeId={store.id} forceClosed={(store as any).force_closed || false} />
         </div>
+      ) : dashboardTab === "finance" && store ? (
+        <div className="px-4 py-4">
+          <StoreFinancePanel storeId={store.id} storeName={store.name} />
+        </div>
       ) : (
         <>
+          {/* Weekly balance card */}
+          <div 
+            onClick={() => setDashboardTab("finance")}
+            className="mx-4 mt-3 p-3 bg-gradient-to-r from-green-900/40 to-emerald-900/40 border border-green-700/50 rounded-2xl cursor-pointer hover:border-green-500/50 transition-all"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Coins className="h-5 w-5 text-green-400" />
+                <span className="text-sm font-bold text-green-300">Saldo da Semana</span>
+              </div>
+              <span className="text-xs text-green-400">Ver Finanças →</span>
+            </div>
+          </div>
+
           {/* Status tabs */}
           <div className="flex overflow-x-auto gap-1 px-4 py-3 bg-[#1F2937]/50 no-scrollbar">
             {statusColumns.map((col) => {
