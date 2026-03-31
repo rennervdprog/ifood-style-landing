@@ -419,7 +419,7 @@ const PerfilPage = () => {
               </label>
               <input
                 type="tel"
-                placeholder="(15) 99999-9999"
+                placeholder="(14) 99999-9999"
                 value={whatsappNumber}
                 onChange={(e) => setWhatsappNumber(maskWhatsApp(e.target.value))}
                 inputMode="tel"

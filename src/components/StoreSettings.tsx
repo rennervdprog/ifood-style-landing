@@ -209,8 +209,9 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
         </label>
         <input
           type="tel"
-          value={formatWhatsapp(whatsapp)}
-          onChange={(e) => setWhatsapp(e.target.value.replace(/\D/g, ""))}
+          inputMode="numeric"
+          value={maskWhatsApp(whatsapp)}
+          onChange={(e) => setWhatsapp(e.target.value.replace(/\D/g, "").slice(0, 11))}
           placeholder="(14) 99999-9999"
           className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500"
         />
