@@ -41,18 +41,21 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
   const completedOrders = orders?.filter(o => ["entregue", "finalizado"].includes(o.status)) || [];
   const activeOrders = orders?.filter(o => !["entregue", "finalizado"].includes(o.status)) || [];
 
-  // Calculations
-  const totalSales = orders?.reduce((s, o) => s + Number(o.subtotal), 0) || 0;
+  // Calculations based on completed orders
+  const totalSales = completedOrders.reduce((s, o) => s + Number(o.subtotal), 0);
   const totalCommission = Math.round(totalSales * 0.15 * 100) / 100;
   const storePart = Math.round(totalSales * 0.85 * 100) / 100;
 
   // Physical payments (money is with the store) → store owes 15% commission
-  const physicalSales = orders?.filter(o => o.payment_method !== "pix").reduce((s, o) => s + Number(o.subtotal), 0) || 0;
+  const physicalSales = completedOrders.filter(o => o.payment_method !== "pix").reduce((s, o) => s + Number(o.subtotal), 0);
   const commissionDue = Math.round(physicalSales * 0.15 * 100) / 100;
 
-  // App payments (money is with admin) → admin owes 85% to store
-  const appSales = orders?.filter(o => o.payment_method === "pix").reduce((s, o) => s + Number(o.subtotal), 0) || 0;
+  // PIX App payments (confirmed via Mercado Pago) → admin owes 85% to store
+  const appSales = completedOrders.filter(o => o.payment_method === "pix").reduce((s, o) => s + Number(o.subtotal), 0);
   const creditFromApp = Math.round(appSales * 0.85 * 100) / 100;
+
+  // Active PIX orders (in progress, already paid)
+  const activePixSales = activeOrders.filter(o => o.payment_method === "pix").reduce((s, o) => s + Number(o.subtotal), 0);
 
   // Positive = admin owes store, Negative = store owes admin
   const finalBalance = Math.round((creditFromApp - commissionDue) * 100) / 100;
