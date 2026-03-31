@@ -175,8 +175,18 @@ const CheckoutPage = () => {
 
         if (lastOrderId) {
           try {
+            // Get store name for the payment title
+            const firstStoreId = Object.keys(storeGroups)[0];
+            const { data: storeData } = await supabase
+              .from("stores")
+              .select("name")
+              .eq("id", firstStoreId)
+              .single();
+
+            const storeName = storeData?.name || "ItaFood";
+
             const mpItems = items.map((item) => ({
-              title: item.name,
+              title: `${item.name} - ${storeName}`,
               quantity: item.quantity,
               unit_price: Number((item.price).toFixed(2)),
             }));
@@ -198,6 +208,7 @@ const CheckoutPage = () => {
                   items: mpItems,
                   total: lastOrderId.total_price,
                   payer_email: user.email,
+                  store_name: storeName,
                 },
               }
             );
