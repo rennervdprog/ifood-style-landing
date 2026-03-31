@@ -393,9 +393,28 @@ const AdminDashboard = () => {
         >
           <Clock className="h-4 w-4" /> Horários
         </button>
+        <button
+          onClick={() => setDashboardTab("settings")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold ${
+            dashboardTab === "settings" ? "bg-primary text-primary-foreground" : "bg-[#1F2937] text-gray-400"
+          }`}
+        >
+          <Store className="h-4 w-4" /> Minha Loja
+        </button>
       </div>
 
-      {dashboardTab === "menu" && store ? (
+      {dashboardTab === "settings" && store ? (
+        <div className="px-4 py-4">
+          <StoreSettings
+            storeId={store.id}
+            storeName={store.name}
+            storeCategory={store.category}
+            storeImageUrl={store.image_url}
+            storeIsOpen={store.is_open}
+            forceClosed={(store as any).force_closed || false}
+          />
+        </div>
+      ) : dashboardTab === "menu" && store ? (
         <div className="px-4 py-4">
           <MenuBuilder storeId={store.id} />
         </div>
