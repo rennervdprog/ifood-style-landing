@@ -6,7 +6,8 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
   Wifi, WifiOff, Pause, Play, Clock, ChefHat, Truck, CheckCircle2,
-  MapPin, CreditCard, Package, ArrowLeft, DollarSign, Banknote, UtensilsCrossed, ListOrdered, Plus, Printer, Bike
+  MapPin, CreditCard, Package, ArrowLeft, DollarSign, Banknote, UtensilsCrossed, ListOrdered, Plus, Printer, Bike,
+  Volume2, VolumeX, Bell
 } from "lucide-react";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import MenuBuilder from "@/components/MenuBuilder";
@@ -16,6 +17,8 @@ import { printThermalReceipt } from "@/lib/thermalPrint";
 
 type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_entrega" | "em_transito" | "entregue" | "finalizado";
 type DashboardTab = "orders" | "menu" | "addons" | "hours";
+
+const ALERT_SOUND_URL = "https://actions.google.com/sounds/v1/alarms/beep_short.ogg";
 
 const statusColumns: { status: OrderStatus; label: string; icon: React.ElementType; color: string }[] = [
   { status: "pendente", label: "Novos", icon: Clock, color: "text-yellow-400" },
@@ -38,11 +41,15 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const loopIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   
   const [isOnline, setIsOnline] = useState(true);
   const [activeTab, setActiveTab] = useState<OrderStatus>("pendente");
   const [dashboardTab, setDashboardTab] = useState<DashboardTab>("orders");
   const [autoPrint, setAutoPrint] = useState(() => localStorage.getItem("autoPrint") === "true");
+  const [soundEnabled, setSoundEnabled] = useState(false);
+  const [soundMuted, setSoundMuted] = useState(false);
+  const [showSoundPrompt, setShowSoundPrompt] = useState(true);
   
   const prevPendingCountRef = useRef(0);
 
@@ -119,13 +126,57 @@ const AdminDashboard = () => {
     return (p as any)?.full_name || "Cliente";
   };
 
-  // Alert sound
+  // Sound alert system
   const playAlert = useCallback(() => {
+    if (!soundEnabled || soundMuted) return;
     if (!audioRef.current) {
-      audioRef.current = new Audio("data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2JkYyEd2lbUExKTVJeaoOSm5uTiHpqXE9FQEFHTVhojJylp6CUhXRjVEdAP0RNW26Hm6ewsKifkH5sXU5EQENLWGmBl6iwsqyhlYN0ZFVJQkRMWWmAlaOssK2km5GBcmRXTEVFTFlpgJSkrrKupZqPf3BjV01HR1Bcb4OXpq+0sKadkYBwY1hNSElSYHGFmKewtLOroJSEd2lbUExKTVJeaoOSm5uTiHpqXE9FQEFHTVhojJylp6CUhXRjVEdAP0RNW26Hm6ewsKifkH5sXU5EQENLWGmBl6iwsqyhlYN0ZFVJQkRMWWmAlaOssK2km5GBcmRXTEVFTFlpgJSkrrKupZqPf3BjV01HR1Bcb4OXpq+0sKadkYBwY1hNSElSYHGFmKewtLOroJSEd2lbUExKTVJeaoOSm5uTiHpqXE9FQEFHTVhojJylp6CUhXRjVEdAP0RNW26Hm6ewsKifkH5sXU5EQENLWGmBl6iwsqyhlYN0ZFVJQkRMWWmAlaOssK2km5GBcmRXTEVFTFlpgJSkrrKupZqPf3BjV01HR1Bcb4OXpq+0sKadkYBwY1hNSElSYHGFmKewtLOroJSEd2lbUExKTVJeaoOSm5uTiHpqXE9FQEFHTQ==");
+      audioRef.current = new Audio(ALERT_SOUND_URL);
+      audioRef.current.volume = 1.0;
     }
+    audioRef.current.currentTime = 0;
     audioRef.current.play().catch(() => {});
+  }, [soundEnabled, soundMuted]);
+
+  const activateSound = useCallback(() => {
+    // Create and play a silent sound to unlock audio context
+    const audio = new Audio(ALERT_SOUND_URL);
+    audio.volume = 0.3;
+    audio.play().then(() => {
+      audioRef.current = audio;
+      setSoundEnabled(true);
+      setShowSoundPrompt(false);
+      toast.success("🔔 Alertas sonoros ativados!");
+    }).catch(() => {
+      toast.error("Não foi possível ativar o som. Tente novamente.");
+    });
   }, []);
+
+  // Looping sound for pending orders
+  useEffect(() => {
+    const pendingCount = orders?.filter(o => o.status === "pendente").length || 0;
+
+    if (pendingCount > 0 && soundEnabled && !soundMuted) {
+      // Play immediately
+      playAlert();
+      // Loop every 12 seconds
+      if (loopIntervalRef.current) clearInterval(loopIntervalRef.current);
+      loopIntervalRef.current = setInterval(() => {
+        playAlert();
+      }, 12000);
+    } else {
+      if (loopIntervalRef.current) {
+        clearInterval(loopIntervalRef.current);
+        loopIntervalRef.current = null;
+      }
+    }
+
+    return () => {
+      if (loopIntervalRef.current) {
+        clearInterval(loopIntervalRef.current);
+        loopIntervalRef.current = null;
+      }
+    };
+  }, [orders, soundEnabled, soundMuted, playAlert]);
 
   // Realtime subscription
   useEffect(() => {
@@ -141,7 +192,6 @@ const AdminDashboard = () => {
             playAlert();
             toast.info("🔔 Novo pedido recebido!", { duration: 8000 });
           }
-          // Success sound when order finalized
           if (payload.eventType === "UPDATE" && (payload.new as any).status === "finalizado") {
             const successAudio = new Audio("data:audio/wav;base64,UklGRl9vAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhO28AAIA/");
             successAudio.play().catch(() => {});
@@ -155,14 +205,6 @@ const AdminDashboard = () => {
 
     return () => { supabase.removeChannel(channel); };
   }, [store, queryClient, playAlert]);
-
-  useEffect(() => {
-    const pendingCount = orders?.filter(o => o.status === "pendente").length || 0;
-    if (pendingCount > 0 && pendingCount > prevPendingCountRef.current) {
-      playAlert();
-    }
-    prevPendingCountRef.current = pendingCount;
-  }, [orders, playAlert]);
 
   const handlePrint = useCallback((order: any) => {
     printThermalReceipt(order, store?.name || "Loja", getClientName(order.client_id));
@@ -241,6 +283,26 @@ const AdminDashboard = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {/* Sound toggle */}
+            {soundEnabled && (
+              <button
+                onClick={() => {
+                  setSoundMuted(prev => {
+                    if (!prev) toast("🔇 Som silenciado. Cuidado: você pode perder pedidos!", { duration: 4000 });
+                    else toast.success("🔊 Som reativado!");
+                    return !prev;
+                  });
+                }}
+                title={soundMuted ? "Som silenciado" : "Som ativo"}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors ${
+                  soundMuted
+                    ? "bg-red-500/20 text-red-400"
+                    : "bg-green-500/20 text-green-400"
+                }`}
+              >
+                {soundMuted ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
+              </button>
+            )}
             <button
               onClick={toggleAutoPrint}
               title={autoPrint ? "Impressão automática ATIVA" : "Impressão automática INATIVA"}
@@ -267,6 +329,29 @@ const AdminDashboard = () => {
           </div>
         </div>
       </header>
+
+      {/* Sound Activation Prompt */}
+      {showSoundPrompt && !soundEnabled && (
+        <div className="mx-4 mt-3 bg-yellow-500/20 border border-yellow-500/40 rounded-2xl p-4 flex items-center gap-3">
+          <Bell className="h-6 w-6 text-yellow-400 flex-shrink-0 animate-bounce" />
+          <div className="flex-1">
+            <p className="text-sm font-bold text-yellow-300">Ativar alertas sonoros?</p>
+            <p className="text-xs text-gray-400 mt-0.5">Receba um som a cada novo pedido para não perder nenhuma venda.</p>
+          </div>
+          <button
+            onClick={activateSound}
+            className="bg-yellow-400 text-gray-900 font-bold px-4 py-2 rounded-xl text-sm active:scale-95 transition-transform whitespace-nowrap"
+          >
+            🔔 Ativar
+          </button>
+          <button
+            onClick={() => setShowSoundPrompt(false)}
+            className="text-gray-500 hover:text-gray-300 text-xs"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Dashboard Tabs */}
       <div className="flex overflow-x-auto gap-2 px-4 py-3 border-b border-gray-800 no-scrollbar">
