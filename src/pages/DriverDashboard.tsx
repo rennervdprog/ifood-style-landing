@@ -309,6 +309,18 @@ const DriverDashboard = () => {
       setVerifyingCollection(false);
       setCollectionCodeInput("");
       queryClient.invalidateQueries({ queryKey: ["driver-my-delivery", user!.id] });
+      // Auto WhatsApp to client on collection
+      if (myDelivery) {
+        const clientPhone = getContactWhatsApp(myDelivery.client_id);
+        if (clientPhone) {
+          const clientName = contactProfiles?.find((c: any) => c.user_id === myDelivery.client_id);
+          const name = (clientName as any)?.full_name || "Cliente";
+          const msg = `🏍️ *ItaFood* informa: Seu lanche saiu para entrega! O motoboy já coletou o pedido e está a caminho de: ${myDelivery.address_details} 💨\n\n--------------------------\n💰 Total: R$ ${Number(myDelivery.total_price).toFixed(2)}\n💳 Pagamento: ${myDelivery.payment_method === "pix" ? "PIX" : myDelivery.payment_method === "cartao" ? "Cartão" : myDelivery.payment_method === "dinheiro" ? "Dinheiro" : myDelivery.payment_method}\nPedido: #${myDelivery.id.slice(0, 8).toUpperCase()}\n--------------------------`;
+          setTimeout(() => {
+            openWhatsApp(clientPhone, msg);
+          }, 600);
+        }
+      }
     }
   };
 
