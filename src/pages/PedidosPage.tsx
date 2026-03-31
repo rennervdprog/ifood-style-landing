@@ -92,6 +92,73 @@ const PedidosPage = () => {
     toast.success("Código copiado!");
   };
 
+  const [payingOrderId, setPayingOrderId] = useState<string | null>(null);
+  const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
+
+  const retryPayment = async (order: any) => {
+    if (!user) return;
+    setPayingOrderId(order.id);
+    try {
+      const mpItems = order.order_items?.map((item: any) => ({
+        title: `${item.products?.name || "Item"} - ${order.stores?.name || "ItaFood"}`,
+        quantity: item.quantity,
+        unit_price: Number(item.unit_price),
+      })) || [];
+
+      if (Number(order.delivery_fee) > 0) {
+        mpItems.push({
+          title: `Taxa de Entrega - ${order.neighborhood}`,
+          quantity: 1,
+          unit_price: Number(order.delivery_fee),
+        });
+      }
+
+      const { data: mpData, error: mpError } = await supabase.functions.invoke(
+        "create-mp-preference",
+        {
+          body: {
+            order_id: order.id,
+            items: mpItems,
+            total: Number(order.total_price),
+            payer_email: user.email,
+            store_name: order.stores?.name || "ItaFood",
+          },
+        }
+      );
+
+      if (mpError) throw mpError;
+      if (mpData?.init_point) {
+        window.location.href = mpData.init_point;
+        return;
+      }
+      toast.error("Não foi possível gerar o link de pagamento.");
+    } catch (err) {
+      console.error("Retry payment error:", err);
+      toast.error("Erro ao gerar pagamento. Tente novamente.");
+    } finally {
+      setPayingOrderId(null);
+    }
+  };
+
+  const cancelOrder = async (orderId: string) => {
+    if (!confirm("Tem certeza que deseja cancelar este pedido?")) return;
+    setCancellingOrderId(orderId);
+    try {
+      const { error } = await supabase
+        .from("orders")
+        .update({ status: "cancelado" as any })
+        .eq("id", orderId)
+        .eq("client_id", user!.id);
+      if (error) throw error;
+      toast.success("Pedido cancelado.");
+      queryClient.invalidateQueries({ queryKey: ["orders", user!.id] });
+    } catch (err) {
+      toast.error("Erro ao cancelar pedido.");
+    } finally {
+      setCancellingOrderId(null);
+    }
+  };
+
   if (!authLoading && !user) {
     return (
        <div className="min-h-screen bg-background pb-32 overflow-y-auto">
