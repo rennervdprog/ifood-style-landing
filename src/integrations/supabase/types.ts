@@ -506,6 +506,7 @@ export type Database = {
           name: string
           owner_id: string | null
           rating: number | null
+          slug: string | null
           status: Database["public"]["Enums"]["store_status"]
         }
         Insert: {
@@ -518,6 +519,7 @@ export type Database = {
           name: string
           owner_id?: string | null
           rating?: number | null
+          slug?: string | null
           status?: Database["public"]["Enums"]["store_status"]
         }
         Update: {
@@ -530,6 +532,7 @@ export type Database = {
           name?: string
           owner_id?: string | null
           rating?: number | null
+          slug?: string | null
           status?: Database["public"]["Enums"]["store_status"]
         }
         Relationships: []
