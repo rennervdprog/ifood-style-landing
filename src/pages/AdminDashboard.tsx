@@ -485,6 +485,14 @@ const AdminDashboard = () => {
         >
           <Store className="h-4 w-4" /> Minha Loja
         </button>
+        <button
+          onClick={() => setDashboardTab("finance")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold ${
+            dashboardTab === "finance" ? "bg-primary text-primary-foreground" : "bg-[#1F2937] text-gray-400"
+          }`}
+        >
+          <Coins className="h-4 w-4" /> Finanças
+        </button>
       </div>
 
       {dashboardTab === "settings" && store ? (
