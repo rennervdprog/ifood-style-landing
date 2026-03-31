@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
     const userEmail = userData.user.email;
 
     const body = await req.json();
-    const { order_id, amount, description, payer_first_name, payer_last_name } = body;
+    const { order_id, amount, description, payer_first_name, payer_last_name, payer_cpf } = body;
 
     if (!order_id || !amount) {
       return new Response(JSON.stringify({ error: "Missing required fields: order_id, amount" }), {
@@ -84,6 +84,15 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Clean CPF - remove non-digits
+    const cleanCpf = String(payer_cpf || "").replace(/\D/g, "");
+    if (!cleanCpf || cleanCpf.length !== 11) {
+      return new Response(JSON.stringify({ error: "CPF inválido. Informe um CPF com 11 dígitos." }), {
+        status: 400,
+        headers: corsHeaders,
+      });
+    }
+
     const paymentBody = {
       transaction_amount: Number(amount),
       description: String(description || `Pedido ItaFood #${order_id.substring(0, 6).toUpperCase()}`).substring(0, 256),
@@ -92,6 +101,10 @@ Deno.serve(async (req) => {
         email: userEmail || "cliente@itafood.com",
         first_name: String(payer_first_name || "Cliente").substring(0, 100),
         last_name: String(payer_last_name || "ItaFood").substring(0, 100),
+        identification: {
+          type: "CPF",
+          number: cleanCpf,
+        },
       },
       external_reference: order_id,
     };
