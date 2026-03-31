@@ -6,10 +6,11 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
   Bike, MapPin, Store, DollarSign, Package, CheckCircle2,
-  ArrowLeft, Navigation, KeyRound
+  ArrowLeft, Navigation, KeyRound, Smartphone
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const DriverDashboard = () => {
   const { user, loading: authLoading } = useAuth();
