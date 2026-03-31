@@ -762,20 +762,51 @@ const AdminDashboard = () => {
                         >
                           <Printer className="h-4 w-4" />
                         </button>
-                        {action && (
+                        {action && order.status === "pendente" && order.payment_method === "pix" ? (
+                          <div className="flex items-center gap-2">
+                            <span className="bg-green-500/20 text-green-400 text-xs font-bold px-2 py-1 rounded-full border border-green-500/40">
+                              💰 Pagamento Garantido
+                            </span>
+                            <button
+                              onClick={() => updateOrderStatus(order.id, "preparando")}
+                              className="bg-green-500 hover:bg-green-600 ring-2 ring-green-400 ring-offset-2 ring-offset-[#1F2937] text-white font-bold px-5 py-2.5 rounded-xl text-sm active:scale-95 transition-transform"
+                            >
+                              🍳 PRODUZIR AGORA
+                            </button>
+                          </div>
+                        ) : action && order.status === "pendente" ? (
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={async () => {
+                                const { error } = await supabase
+                                  .from("orders")
+                                  .update({ status: "cancelado" as any })
+                                  .eq("id", order.id);
+                                if (error) toast.error("Erro ao recusar pedido.");
+                                else {
+                                  toast.success("Pedido recusado.");
+                                  queryClient.invalidateQueries({ queryKey: ["store-orders", store?.id] });
+                                }
+                              }}
+                              className="bg-red-500 hover:bg-red-600 text-white font-bold px-4 py-2.5 rounded-xl text-sm active:scale-95 transition-transform"
+                            >
+                              ✕ Recusar
+                            </button>
+                            <button
+                              onClick={() => updateOrderStatus(order.id, "preparando")}
+                              className="bg-green-500 hover:bg-green-600 text-white font-bold px-5 py-2.5 rounded-xl text-sm active:scale-95 transition-transform"
+                            >
+                              ✓ Aceitar
+                            </button>
+                          </div>
+                        ) : action ? (
                           <button
                             onClick={() => updateOrderStatus(order.id, action.next)}
-                            className={`${
-                              order.payment_method === "pix" && order.status === "pendente"
-                                ? "bg-green-500 hover:bg-green-600 ring-2 ring-green-400 ring-offset-2 ring-offset-[#1F2937]"
-                                : action.color
-                            } text-white font-bold px-5 py-2.5 rounded-xl text-sm active:scale-95 transition-transform`}
+                            className={`${action.color} text-white font-bold px-5 py-2.5 rounded-xl text-sm active:scale-95 transition-transform`}
                           >
-                            {order.payment_method === "pix" && order.status === "pendente"
-                              ? "✅ Aceitar (PIX Pago)"
-                              : action.label}
+                            {action.label}
                           </button>
-                        )}
+                        ) : null}
                       </div>
                     </div>
                   </div>
