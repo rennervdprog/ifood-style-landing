@@ -234,7 +234,8 @@ const PedidosPage = () => {
             const StatusIcon = config.icon;
             const isWaitingPayment = order.status === "aguardando_pagamento";
             const isCancelled = order.status === "cancelado";
-            const showPin = order.delivery_pin && !["entregue", "finalizado", "aguardando_pagamento", "cancelado"].includes(order.status);
+                const isPaid = !["aguardando_pagamento", "cancelado"].includes(order.status);
+                const showPin = order.delivery_pin && isPaid && !["entregue", "finalizado"].includes(order.status);
             return (
               <div key={order.id} className={`bg-card rounded-2xl p-4 border ${isCancelled ? "border-red-500/30 opacity-60" : "border-border"}`}>
                 <div className="flex items-center justify-between mb-2">
@@ -264,7 +265,7 @@ const PedidosPage = () => {
                         className="flex-1 flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold py-2.5 rounded-xl text-xs disabled:opacity-50"
                       >
                         <QrCode className="h-4 w-4" />
-                        {payingOrderId === order.id ? "Gerando PIX..." : "Pagar com PIX agora"}
+                        {payingOrderId === order.id ? "Gerando..." : "Tentar Pagar Novamente"}
                       </button>
                       <button
                         onClick={() => cancelOrder(order.id)}

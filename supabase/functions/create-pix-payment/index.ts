@@ -128,8 +128,8 @@ Deno.serve(async (req) => {
         userMessage = "Chave do Mercado Pago inválida. Contate o administrador.";
       } else if (mpData?.message?.includes("identification") || mpData?.message?.includes("payer")) {
         userMessage = "Erro ao gerar Pix: verifique se seu e-mail e CPF estão corretos.";
-      } else if (mpData?.message?.includes("QR render")) {
-        userMessage = "Conta Mercado Pago sem Pix habilitado. O administrador precisa ativar a chave Pix na conta do Mercado Pago.";
+      } else if (mpData?.message?.includes("QR render") || mpData?.message?.includes("without key enabled")) {
+        userMessage = "Erro: Chave Pix não configurada na conta recebedora. Verifique o painel do administrador.";
       }
       return new Response(JSON.stringify({ error: userMessage, mp_error: mpData?.message }), {
         status: 500,
