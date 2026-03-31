@@ -45,6 +45,7 @@ const AdminDashboard = () => {
   const loopIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   
   const [isOnline, setIsOnline] = useState(true);
+  const [realtimeDriversConnected, setRealtimeDriversConnected] = useState(false);
   const [activeTab, setActiveTab] = useState<OrderStatus>("pendente");
   const [dashboardTab, setDashboardTab] = useState<DashboardTab>("orders");
   const [autoPrint, setAutoPrint] = useState(() => localStorage.getItem("autoPrint") === "true");
