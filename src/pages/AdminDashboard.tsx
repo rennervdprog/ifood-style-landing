@@ -168,6 +168,7 @@ const AdminDashboard = () => {
     switch (status) {
       case "pendente": return { label: "Aceitar", next: "preparando", color: "bg-green-500 hover:bg-green-600" };
       case "preparando": return { label: "🔔 Chamar Motoboy", next: "pronto_para_entrega" as OrderStatus, color: "bg-purple-500 hover:bg-purple-600" };
+      case "pronto_para_entrega": return { label: "🚀 Saiu p/ Entrega", next: "saiu_entrega", color: "bg-blue-500 hover:bg-blue-600" };
       case "saiu_entrega": return { label: "Finalizar", next: "finalizado", color: "bg-emerald-500 hover:bg-emerald-600" };
       default: return null;
     }
@@ -176,7 +177,7 @@ const AdminDashboard = () => {
   const pendingCount = orders?.filter(o => o.status === "pendente").length || 0;
 
   return (
-    <div className="min-h-screen bg-[#111827] text-white">
+    <div className="min-h-screen bg-[#111827] text-white overflow-y-auto">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-[#1F2937] border-b border-gray-700 px-4 py-3">
         <div className="flex items-center justify-between">
@@ -296,7 +297,7 @@ const AdminDashboard = () => {
           </div>
 
           {/* Orders list */}
-          <div className="px-4 py-4 space-y-3">
+          <div className="px-4 py-4 pb-28 space-y-3 overflow-y-auto">
             {isLoading ? (
               <div className="space-y-3">
                 {Array.from({ length: 3 }).map((_, i) => (
