@@ -591,6 +591,42 @@ export type Database = {
         }
         Relationships: []
       }
+      withdrawal_requests: {
+        Row: {
+          admin_notes: string | null
+          amount: number
+          created_at: string
+          driver_user_id: string
+          id: string
+          pix_key: string
+          pix_type: string
+          processed_at: string | null
+          status: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          amount: number
+          created_at?: string
+          driver_user_id: string
+          id?: string
+          pix_key: string
+          pix_type?: string
+          processed_at?: string | null
+          status?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          amount?: number
+          created_at?: string
+          driver_user_id?: string
+          id?: string
+          pix_key?: string
+          pix_type?: string
+          processed_at?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

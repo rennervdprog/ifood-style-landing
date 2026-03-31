@@ -900,44 +900,74 @@ const DriverDashboard = () => {
         <div className="px-4 py-4 space-y-4">
           {/* Driver Balance Card */}
           {driverBalance && (
-            <div className="bg-gradient-to-br from-green-900/40 to-emerald-900/30 border border-green-500/40 rounded-2xl p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Wallet className="h-5 w-5 text-green-400" />
-                <span className="text-sm font-bold text-green-300">Minha Carteira</span>
+            <div className="bg-card border border-border rounded-2xl p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <Wallet className="h-5 w-5 text-green-500" />
+                <span className="text-sm font-bold text-foreground">Minha Carteira</span>
               </div>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-3">
                 <div className="text-center">
-                  <p className="text-[10px] text-gray-400">Total Ganho</p>
-                  <p className="text-lg font-black text-white">R$ {Number(driverBalance.total_earned || 0).toFixed(2)}</p>
+                  <p className="text-[10px] text-muted-foreground">Total Ganho</p>
+                  <p className="text-lg font-black text-foreground">R$ {Number(driverBalance.total_earned || 0).toFixed(2)}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-[10px] text-yellow-400">Pendente</p>
-                  <p className="text-lg font-black text-yellow-400">R$ {Number(driverBalance.pending_amount || 0).toFixed(2)}</p>
+                  <p className="text-[10px] text-amber-500">Pendente</p>
+                  <p className="text-lg font-black text-amber-500">R$ {Number(driverBalance.pending_amount || 0).toFixed(2)}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-[10px] text-green-400">Pago</p>
-                  <p className="text-lg font-black text-green-400">R$ {Number(driverBalance.paid_amount || 0).toFixed(2)}</p>
+                  <p className="text-[10px] text-green-500">Pago</p>
+                  <p className="text-lg font-black text-green-500">R$ {Number(driverBalance.paid_amount || 0).toFixed(2)}</p>
                 </div>
               </div>
+
+              {/* Withdrawal Button */}
+              {Number(driverBalance.pending_amount || 0) > 0 && (driverProfile as any)?.pix_key && (
+                <button
+                  onClick={async () => {
+                    try {
+                      const { error } = await supabase.from("withdrawal_requests" as any).insert({
+                        driver_user_id: user!.id,
+                        amount: Number(driverBalance.pending_amount),
+                        pix_key: (driverProfile as any).pix_key,
+                        pix_type: (driverProfile as any).pix_type || "cpf",
+                      } as any);
+                      if (error) throw error;
+                      toast.success("Solicitação de saque enviada! O admin será notificado.");
+                      queryClient.invalidateQueries({ queryKey: ["driver-balance"] });
+                    } catch (err: any) {
+                      toast.error(err?.message || "Erro ao solicitar saque.");
+                    }
+                  }}
+                  className="w-full mt-4 bg-green-500 hover:bg-green-600 text-white font-bold py-3.5 rounded-2xl text-sm active:scale-95 transition-transform flex items-center justify-center gap-2"
+                >
+                  <DollarSign className="h-4 w-4" />
+                  SOLICITAR PAGAMENTO (PIX)
+                </button>
+              )}
+              {Number(driverBalance.pending_amount || 0) > 0 && !(driverProfile as any)?.pix_key && (
+                <p className="text-xs text-amber-500 mt-3 text-center">
+                  Cadastre sua chave PIX na aba Configurações para solicitar saque.
+                </p>
+              )}
             </div>
           )}
 
           {/* Earnings Summary Cards */}
           <div className="grid grid-cols-3 gap-2">
-            <div className="bg-gradient-to-br from-green-500/20 to-green-600/10 border border-green-500/30 rounded-2xl p-3 text-center">
-              <DollarSign className="h-5 w-5 text-green-400 mx-auto mb-1" />
-              <p className="text-[10px] text-gray-400 uppercase font-bold">Hoje</p>
-              <p className="text-lg font-black text-green-400">R$ {todayEarnings.toFixed(2)}</p>
+            <div className="bg-card border border-border rounded-2xl p-3 text-center">
+              <DollarSign className="h-5 w-5 text-green-500 mx-auto mb-1" />
+              <p className="text-[10px] text-muted-foreground uppercase font-bold">Hoje</p>
+              <p className="text-lg font-black text-green-500">R$ {todayEarnings.toFixed(2)}</p>
             </div>
-            <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-500/30 rounded-2xl p-3 text-center">
-              <TrendingUp className="h-5 w-5 text-blue-400 mx-auto mb-1" />
-              <p className="text-[10px] text-gray-400 uppercase font-bold">Semana</p>
-              <p className="text-lg font-black text-blue-400">R$ {weekEarnings.toFixed(2)}</p>
+            <div className="bg-card border border-border rounded-2xl p-3 text-center">
+              <TrendingUp className="h-5 w-5 text-blue-500 mx-auto mb-1" />
+              <p className="text-[10px] text-muted-foreground uppercase font-bold">Semana</p>
+              <p className="text-lg font-black text-blue-500">R$ {weekEarnings.toFixed(2)}</p>
             </div>
-            <div className="bg-gradient-to-br from-purple-500/20 to-purple-600/10 border border-purple-500/30 rounded-2xl p-3 text-center">
-              <Package className="h-5 w-5 text-purple-400 mx-auto mb-1" />
-              <p className="text-[10px] text-gray-400 uppercase font-bold">Total</p>
-              <p className="text-lg font-black text-purple-400">{totalDeliveries}</p>
+            <div className="bg-card border border-border rounded-2xl p-3 text-center">
+              <Package className="h-5 w-5 text-purple-500 mx-auto mb-1" />
+              <p className="text-[10px] text-muted-foreground uppercase font-bold">Total</p>
+              <p className="text-lg font-black text-purple-500">{totalDeliveries}</p>
             </div>
           </div>
 
@@ -952,7 +982,7 @@ const DriverDashboard = () => {
               <button
                 key={f.key}
                 onClick={() => setDateFilter(f.key)}
-                className={`flex-1 py-2 rounded-xl text-xs font-bold transition-colors ${dateFilter === f.key ? "bg-green-500 text-white" : "bg-gray-800 text-gray-400"}`}
+                className={`flex-1 py-2 rounded-xl text-xs font-bold transition-colors ${dateFilter === f.key ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
               >
                 {f.label}
               </button>
@@ -961,15 +991,15 @@ const DriverDashboard = () => {
 
           {/* Earnings Breakdown */}
           <div className="grid grid-cols-2 gap-2">
-            <div className="bg-gray-900 border border-gray-700 rounded-2xl p-3">
-              <p className="text-[10px] text-gray-500 mb-0.5">📱 Pix App (a receber)</p>
-              <p className="text-lg font-black text-green-400">R$ {earningsBreakdown.pixEarnings.toFixed(2)}</p>
-              <p className="text-[10px] text-gray-500">{earningsBreakdown.pixCount} entregas</p>
+            <div className="bg-card border border-border rounded-2xl p-3">
+              <p className="text-[10px] text-muted-foreground mb-0.5">📱 Pix App (a receber)</p>
+              <p className="text-lg font-black text-green-500">R$ {earningsBreakdown.pixEarnings.toFixed(2)}</p>
+              <p className="text-[10px] text-muted-foreground">{earningsBreakdown.pixCount} entregas</p>
             </div>
-            <div className="bg-gray-900 border border-gray-700 rounded-2xl p-3">
-              <p className="text-[10px] text-gray-500 mb-0.5">💵 Dinheiro (em mãos)</p>
-              <p className="text-lg font-black text-yellow-400">R$ {earningsBreakdown.cashEarnings.toFixed(2)}</p>
-              <p className="text-[10px] text-gray-500">{earningsBreakdown.cashCount} entregas</p>
+            <div className="bg-card border border-border rounded-2xl p-3">
+              <p className="text-[10px] text-muted-foreground mb-0.5">💵 Dinheiro (em mãos)</p>
+              <p className="text-lg font-black text-amber-500">R$ {earningsBreakdown.cashEarnings.toFixed(2)}</p>
+              <p className="text-[10px] text-muted-foreground">{earningsBreakdown.cashCount} entregas</p>
             </div>
           </div>
 

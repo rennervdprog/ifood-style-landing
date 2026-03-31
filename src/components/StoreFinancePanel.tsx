@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { DollarSign, TrendingUp, Wallet, Copy, Download, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { Copy, Download, ArrowUpRight, ArrowDownRight, Smartphone, Banknote } from "lucide-react";
 import { toast } from "sonner";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -41,23 +41,18 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
   const completedOrders = orders?.filter(o => ["entregue", "finalizado"].includes(o.status)) || [];
   const activeOrders = orders?.filter(o => !["entregue", "finalizado"].includes(o.status)) || [];
 
-  // Calculations based on completed orders
   const totalSales = completedOrders.reduce((s, o) => s + Number(o.subtotal), 0);
   const totalCommission = Math.round(totalSales * 0.15 * 100) / 100;
   const storePart = Math.round(totalSales * 0.85 * 100) / 100;
 
-  // Physical payments (money is with the store) → store owes 15% commission
   const physicalSales = completedOrders.filter(o => o.payment_method !== "pix").reduce((s, o) => s + Number(o.subtotal), 0);
   const commissionDue = Math.round(physicalSales * 0.15 * 100) / 100;
 
-  // PIX App payments (confirmed via Mercado Pago) → admin owes 85% to store
   const appSales = completedOrders.filter(o => o.payment_method === "pix").reduce((s, o) => s + Number(o.subtotal), 0);
   const creditFromApp = Math.round(appSales * 0.85 * 100) / 100;
 
-  // Active PIX orders (in progress, already paid)
   const activePixSales = activeOrders.filter(o => o.payment_method === "pix").reduce((s, o) => s + Number(o.subtotal), 0);
 
-  // Positive = admin owes store, Negative = store owes admin
   const finalBalance = Math.round((creditFromApp - commissionDue) * 100) / 100;
 
   const periodLabel = period === "week" ? "Semana" : "Mês";
@@ -105,158 +100,168 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* Period selector */}
       <div className="flex gap-2">
-        <button
-          onClick={() => setPeriod("week")}
-          className={`px-4 py-2 rounded-xl text-sm font-bold ${period === "week" ? "bg-primary text-primary-foreground" : "bg-gray-700 text-gray-400"}`}
-        >
-          Semana
-        </button>
-        <button
-          onClick={() => setPeriod("month")}
-          className={`px-4 py-2 rounded-xl text-sm font-bold ${period === "month" ? "bg-primary text-primary-foreground" : "bg-gray-700 text-gray-400"}`}
-        >
-          Mês
-        </button>
+        {(["week", "month"] as Period[]).map((p) => (
+          <button
+            key={p}
+            onClick={() => setPeriod(p)}
+            className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+              period === p
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "bg-muted text-muted-foreground hover:bg-muted/80"
+            }`}
+          >
+            {p === "week" ? "Semana" : "Mês"}
+          </button>
+        ))}
+        <span className="flex items-center text-xs text-muted-foreground ml-auto">
+          {format(dateRange.start, "dd/MM", { locale: ptBR })} — {format(dateRange.end, "dd/MM", { locale: ptBR })}
+        </span>
       </div>
 
-      <p className="text-xs text-gray-400">
-        {format(dateRange.start, "dd/MM", { locale: ptBR })} a {format(dateRange.end, "dd/MM/yyyy", { locale: ptBR })}
-      </p>
+      {/* Main summary card */}
+      <div className="bg-card rounded-2xl p-5 border border-border">
+        <p className="text-xs text-muted-foreground mb-1">Vendas Totais ({periodLabel})</p>
+        <p className="text-3xl font-black text-foreground tracking-tight">R$ {totalSales.toFixed(2)}</p>
+        <p className="text-xs text-muted-foreground mt-1">{completedOrders.length} pedidos finalizados</p>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 gap-3">
-        <div className="bg-gray-800 rounded-2xl p-4 border border-gray-700">
-          <div className="flex items-center gap-2 text-gray-400 text-xs mb-1">
-            <DollarSign className="h-4 w-4" />
-            Vendas Totais ({periodLabel})
+        <div className="grid grid-cols-2 gap-4 mt-5 pt-4 border-t border-border">
+          <div>
+            <p className="text-xs text-muted-foreground">Minha Parte (85%)</p>
+            <p className="text-xl font-bold text-green-500">R$ {storePart.toFixed(2)}</p>
           </div>
-          <p className="text-2xl font-black text-white">R$ {totalSales.toFixed(2)}</p>
-          <p className="text-xs text-gray-500 mt-1">{completedOrders.length} pedidos finalizados</p>
+          <div>
+            <p className="text-xs text-muted-foreground">Comissão ItaFood (15%)</p>
+            <p className="text-xl font-bold text-muted-foreground">R$ {totalCommission.toFixed(2)}</p>
+          </div>
         </div>
+      </div>
 
-        <div className="bg-gray-800 rounded-2xl p-4 border border-gray-700">
-          <div className="flex items-center gap-2 text-gray-400 text-xs mb-1">
-            <TrendingUp className="h-4 w-4" />
-            Minha Parte (85%)
-          </div>
-          <p className="text-2xl font-black text-green-400">R$ {storePart.toFixed(2)}</p>
-          <p className="text-xs text-gray-500 mt-1">Comissão ItaFood: R$ {totalCommission.toFixed(2)}</p>
-        </div>
-
-        <div className={`rounded-2xl p-4 border ${finalBalance >= 0 ? "bg-green-900/30 border-green-700" : "bg-red-900/30 border-red-700"}`}>
-          <div className="flex items-center gap-2 text-gray-400 text-xs mb-1">
-            <Wallet className="h-4 w-4" />
-            Saldo de Acerto
-          </div>
-          <div className="flex items-center gap-2">
-            {finalBalance >= 0 ? (
-              <ArrowUpRight className="h-5 w-5 text-green-400" />
-            ) : (
-              <ArrowDownRight className="h-5 w-5 text-red-400" />
-            )}
-            <p className={`text-2xl font-black ${finalBalance >= 0 ? "text-green-400" : "text-red-400"}`}>
-              R$ {Math.abs(finalBalance).toFixed(2)}
-            </p>
-          </div>
-          <p className="text-xs mt-2">
+      {/* Balance card */}
+      <div className="bg-card rounded-2xl p-5 border border-border">
+        <p className="text-xs text-muted-foreground mb-2">Saldo de Acerto</p>
+        <div className="flex items-center gap-3">
+          <div className={`w-9 h-9 rounded-full flex items-center justify-center ${finalBalance >= 0 ? "bg-green-500/10" : "bg-red-500/10"}`}>
             {finalBalance >= 0
-              ? "💰 Você tem a receber do ItaFood no próximo fechamento."
-              : "⚠️ Você possui comissões pendentes para o fechamento de segunda-feira."}
+              ? <ArrowUpRight className="h-5 w-5 text-green-500" />
+              : <ArrowDownRight className="h-5 w-5 text-red-500" />
+            }
+          </div>
+          <p className={`text-2xl font-black ${finalBalance >= 0 ? "text-green-500" : "text-red-500"}`}>
+            R$ {Math.abs(finalBalance).toFixed(2)}
           </p>
         </div>
+        <p className="text-xs text-muted-foreground mt-3">
+          {finalBalance >= 0
+            ? "Você tem a receber do ItaFood no próximo fechamento."
+            : "Você possui comissões pendentes para o fechamento de segunda-feira."}
+        </p>
       </div>
 
-      {/* Breakdown */}
-      <div className="bg-gray-800 rounded-2xl p-4 border border-gray-700 space-y-2">
-        <h3 className="text-sm font-bold text-gray-300">Detalhamento</h3>
-        <div className="flex justify-between text-xs">
-          <span className="text-yellow-400">💵 Vendas Presenciais (Dinheiro/Cartão)</span>
-          <span className="text-white font-bold">R$ {physicalSales.toFixed(2)}</span>
+      {/* Transaction breakdown */}
+      <div className="bg-card rounded-2xl border border-border divide-y divide-border">
+        <div className="p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center">
+              <Banknote className="h-4 w-4 text-amber-500" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">Vendas Presenciais</p>
+              <p className="text-xs text-muted-foreground">Dinheiro / Cartão</p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-sm font-bold text-foreground">R$ {physicalSales.toFixed(2)}</p>
+            <p className="text-xs text-red-500">- R$ {commissionDue.toFixed(2)} comissão</p>
+          </div>
         </div>
-        <div className="flex justify-between text-xs">
-          <span className="text-gray-400">→ Comissão devida (15%)</span>
-          <span className="text-red-400 font-bold">- R$ {commissionDue.toFixed(2)}</span>
-        </div>
-        <div className="border-t border-gray-700 my-2" />
-        <div className="flex justify-between text-xs">
-          <span className="text-green-400">📱 Vendas PIX App</span>
-          <span className="text-white font-bold">R$ {appSales.toFixed(2)}</span>
-        </div>
-        <div className="flex justify-between text-xs">
-          <span className="text-gray-400">→ Seu crédito (85%)</span>
-          <span className="text-green-400 font-bold">+ R$ {creditFromApp.toFixed(2)}</span>
+
+        <div className="p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center">
+              <Smartphone className="h-4 w-4 text-green-500" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">Vendas PIX App</p>
+              <p className="text-xs text-muted-foreground">Pago online</p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-sm font-bold text-foreground">R$ {appSales.toFixed(2)}</p>
+            <p className="text-xs text-green-500">+ R$ {creditFromApp.toFixed(2)} crédito</p>
+          </div>
         </div>
       </div>
 
       {/* Export buttons */}
       <div className="flex gap-2">
-        <button onClick={copyToClipboard} className="flex-1 flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-600 text-white rounded-xl py-3 text-sm font-bold">
-          <Copy className="h-4 w-4" /> Copiar Resumo
+        <button onClick={copyToClipboard} className="flex-1 flex items-center justify-center gap-2 bg-muted hover:bg-muted/80 text-foreground rounded-xl py-3 text-sm font-medium transition-colors">
+          <Copy className="h-4 w-4" /> Copiar
         </button>
-        <button onClick={downloadTxt} className="flex-1 flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-600 text-white rounded-xl py-3 text-sm font-bold">
+        <button onClick={downloadTxt} className="flex-1 flex items-center justify-center gap-2 bg-muted hover:bg-muted/80 text-foreground rounded-xl py-3 text-sm font-medium transition-colors">
           <Download className="h-4 w-4" /> Baixar Extrato
         </button>
       </div>
 
-      {/* Active PIX orders (in progress) */}
+      {/* Active PIX orders */}
       {activeOrders.filter(o => o.payment_method === "pix").length > 0 && (
-        <div className="bg-blue-900/20 border border-blue-700 rounded-2xl p-4 space-y-2">
-          <h3 className="text-sm font-bold text-blue-300">⏳ Pedidos PIX em Andamento</h3>
-          <p className="text-xs text-gray-400">Estes pedidos já foram pagos via PIX e serão contabilizados ao finalizar.</p>
+        <div className="bg-card rounded-2xl p-4 border border-blue-500/20 space-y-2">
+          <p className="text-sm font-semibold text-blue-500">Pedidos PIX em Andamento</p>
+          <p className="text-xs text-muted-foreground">Já pagos via PIX — serão contabilizados ao finalizar.</p>
           {activeOrders.filter(o => o.payment_method === "pix").map(order => (
-            <div key={order.id} className="flex justify-between text-xs bg-blue-900/30 rounded-xl p-2">
-              <span className="text-blue-300 font-bold">#{order.id.substring(0, 6).toUpperCase()}</span>
-              <span className="text-white">R$ {Number(order.subtotal).toFixed(2)}</span>
-              <span className="text-blue-400 capitalize">{order.status.replace(/_/g, " ")}</span>
+            <div key={order.id} className="flex justify-between text-xs bg-blue-500/5 rounded-lg p-2.5">
+              <span className="text-blue-500 font-semibold">#{order.id.substring(0, 6).toUpperCase()}</span>
+              <span className="text-foreground font-medium">R$ {Number(order.subtotal).toFixed(2)}</span>
+              <span className="text-muted-foreground capitalize">{order.status.replace(/_/g, " ")}</span>
             </div>
           ))}
-          <div className="flex justify-between text-xs pt-1 border-t border-blue-800">
-            <span className="text-blue-400">Total PIX em andamento</span>
-            <span className="text-blue-300 font-bold">R$ {activePixSales.toFixed(2)}</span>
+          <div className="flex justify-between text-xs pt-2 border-t border-border">
+            <span className="text-muted-foreground">Total em andamento</span>
+            <span className="text-blue-500 font-bold">R$ {activePixSales.toFixed(2)}</span>
           </div>
         </div>
       )}
 
-      {/* Order table */}
+      {/* Order list */}
       {isLoading ? (
-        <p className="text-gray-400 text-center py-8 text-sm">Carregando...</p>
+        <p className="text-muted-foreground text-center py-8 text-sm">Carregando...</p>
       ) : completedOrders.length > 0 ? (
-        <div className="space-y-2">
-          <h3 className="text-sm font-bold text-gray-300">Extrato por Pedido (Finalizados)</h3>
+        <div className="space-y-1.5">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Extrato de Pedidos</p>
           {completedOrders.map(order => {
             const sub = Number(order.subtotal);
             const commission = Math.round(sub * 0.15 * 100) / 100;
             const net = Math.round(sub * 0.85 * 100) / 100;
             const isPix = order.payment_method === "pix";
             return (
-              <div key={order.id} className={`rounded-xl p-3 border text-xs ${isPix ? "bg-green-900/20 border-green-800" : "bg-yellow-900/20 border-yellow-800"}`}>
-                <div className="flex justify-between mb-1">
-                  <span className="font-bold text-white">#{order.id.substring(0, 6).toUpperCase()}</span>
-                  <span className="text-gray-400">{format(new Date(order.created_at), "dd/MM HH:mm")}</span>
+              <div key={order.id} className="bg-card rounded-xl p-3 border border-border flex items-center gap-3">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${isPix ? "bg-green-500/10" : "bg-amber-500/10"}`}>
+                  {isPix ? <Smartphone className="h-4 w-4 text-green-500" /> : <Banknote className="h-4 w-4 text-amber-500" />}
                 </div>
-                <div className="flex justify-between">
-                  <span className={isPix ? "text-green-400" : "text-yellow-400"}>
-                    {isPix ? "📱 PIX App" : order.payment_method === "cartao" ? "💳 Cartão" : "💵 Dinheiro"}
-                  </span>
-                  <span className="text-white">R$ {sub.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between mt-1">
-                  <span className="text-gray-500">Comissão 15%</span>
-                  <span className="text-red-400">- R$ {commission.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Líquido</span>
-                  <span className="text-green-400 font-bold">R$ {net.toFixed(2)}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-foreground">#{order.id.substring(0, 6).toUpperCase()}</span>
+                    <span className="text-xs text-muted-foreground">{format(new Date(order.created_at), "dd/MM HH:mm")}</span>
+                  </div>
+                  <div className="flex items-center justify-between mt-0.5">
+                    <span className="text-xs text-muted-foreground">
+                      {isPix ? "PIX App" : order.payment_method === "cartao" ? "Cartão" : "Dinheiro"}
+                    </span>
+                    <span className="text-sm font-bold text-foreground">R$ {sub.toFixed(2)}</span>
+                  </div>
+                  <div className="flex items-center justify-between mt-0.5">
+                    <span className="text-[10px] text-muted-foreground">Comissão: R$ {commission.toFixed(2)}</span>
+                    <span className="text-xs font-semibold text-green-500">Líquido: R$ {net.toFixed(2)}</span>
+                  </div>
                 </div>
               </div>
             );
           })}
         </div>
       ) : (
-        <p className="text-gray-400 text-center py-8 text-sm">Nenhum pedido finalizado neste período.</p>
+        <p className="text-muted-foreground text-center py-8 text-sm">Nenhum pedido finalizado neste período.</p>
       )}
     </div>
   );

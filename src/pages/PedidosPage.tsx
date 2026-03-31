@@ -250,32 +250,30 @@ const PedidosPage = () => {
 
                 {/* Waiting Payment Banner */}
                 {isWaitingPayment && (
-                  <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 mb-3">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Clock className="h-4 w-4 text-amber-500 animate-pulse" />
-                      <span className="text-xs font-bold text-amber-500">Aguardando Pagamento PIX</span>
-                    </div>
-                    <p className="text-[10px] text-muted-foreground mb-3">
-                      Seu pedido será enviado à loja assim que o pagamento for confirmado.
-                    </p>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => generatePix(order)}
-                        disabled={payingOrderId === order.id}
-                        className="flex-1 flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold py-2.5 rounded-xl text-xs disabled:opacity-50"
-                      >
-                        <QrCode className="h-4 w-4" />
-                        {payingOrderId === order.id ? "Gerando..." : "Tentar Pagar Novamente"}
-                      </button>
+                  <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-3 mb-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <div className="relative">
+                          <Loader2 className="h-4 w-4 text-amber-500 animate-spin" />
+                        </div>
+                        <span className="text-xs font-semibold text-amber-500">Aguardando Pagamento</span>
+                      </div>
                       <button
                         onClick={() => cancelOrder(order.id)}
                         disabled={cancellingOrderId === order.id}
-                        className="flex items-center justify-center gap-1 bg-red-500/10 text-red-400 font-bold px-3 py-2.5 rounded-xl text-xs border border-red-500/30 disabled:opacity-50"
+                        className="text-muted-foreground hover:text-red-500 transition-colors"
                       >
-                        <XCircle className="h-3.5 w-3.5" />
-                        {cancellingOrderId === order.id ? "..." : "Cancelar"}
+                        <XCircle className="h-4 w-4" />
                       </button>
                     </div>
+                    <button
+                      onClick={() => generatePix(order)}
+                      disabled={payingOrderId === order.id}
+                      className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold py-2.5 rounded-xl text-xs disabled:opacity-50"
+                    >
+                      <QrCode className="h-3.5 w-3.5" />
+                      {payingOrderId === order.id ? "Gerando..." : "Pagar com PIX"}
+                    </button>
                   </div>
                 )}
 
