@@ -640,6 +640,7 @@ export type Database = {
         Returns: undefined
       }
       admin_cancel_order: { Args: { _order_id: string }; Returns: undefined }
+      admin_cleanup_duplicate_withdrawals: { Args: never; Returns: number }
       admin_delete_store: { Args: { _store_id: string }; Returns: undefined }
       driver_accept_order: { Args: { _order_id: string }; Returns: undefined }
       driver_confirm_store_return: {
