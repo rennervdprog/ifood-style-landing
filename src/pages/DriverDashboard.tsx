@@ -829,13 +829,26 @@ const DriverDashboard = () => {
                     <h2 className="font-bold text-yellow-400 text-sm">AGUARDANDO RETORNO À LOJA</h2>
                   </div>
                   <p className="text-xs text-gray-400 mb-3">
-                    Entregue o valor de <span className="font-bold text-yellow-400">R$ {Number(pendingReturn.total_price).toFixed(2)}</span> na loja <span className="font-bold text-gray-200">{(pendingReturn as any).stores?.name}</span>.
+                    Entregue o valor de <span className="font-bold text-yellow-400">R$ {Number(pendingReturn.total_price).toFixed(2)}</span> na loja <span className="font-bold text-gray-200">{(pendingReturn as any).stores?.name}</span> e receba sua taxa.
                   </p>
+                  <div className="mb-3">
+                    <label className="text-xs font-bold text-yellow-400 mb-1 block">🔐 Código de Acerto (peça ao lojista)</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={4}
+                      value={settlementCodeInput}
+                      onChange={(e) => setSettlementCodeInput(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                      placeholder="_ _ _ _"
+                      className="w-full text-center text-2xl font-black tracking-[0.4em] bg-gray-900 border-2 border-yellow-500/50 rounded-xl py-3 text-yellow-400 placeholder:text-gray-600 focus:outline-none focus:border-yellow-400"
+                    />
+                  </div>
                   <button
                     onClick={() => confirmStoreReturn(pendingReturn.id)}
-                    className="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 rounded-2xl text-sm active:scale-95 transition-transform"
+                    disabled={settlementCodeInput.length !== 4 || confirmingReturn}
+                    className="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 rounded-2xl text-sm active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    ✅ Confirmei acerto com a loja
+                    {confirmingReturn ? "Validando..." : "✅ Confirmar Acerto"}
                   </button>
                 </div>
               )}
