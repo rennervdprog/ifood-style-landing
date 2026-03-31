@@ -101,10 +101,10 @@ const InstallPrompt = () => {
       </button>
       <div className="flex items-center gap-3">
         <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-          <img src="/icon-192x192.png" alt="FoodIta" className="w-8 h-8 rounded-lg" />
+          <img src="/icon-192x192.png" alt="ItaFood" className="w-8 h-8 rounded-lg" />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-bold text-sm text-foreground">Instale o FoodIta!</h3>
+          <h3 className="font-bold text-sm text-foreground">Instale o ItaFood!</h3>
           <p className="text-xs text-muted-foreground mt-0.5">Peça mais rápido direto da tela inicial.</p>
         </div>
         <button

@@ -288,7 +288,7 @@ const AdminDashboard = () => {
         if (clientPhone) {
           const clientName = getClientName(order.client_id);
           const items = order.order_items?.map((i: any) => `${i.quantity}x ${i.products?.name}`).join("\n") || "";
-          const msg = `✅ *FoodIta* informa: Seu pedido no *${store?.name}* foi aceito e já está em produção! 🍔\n\n${items}\n\n--------------------------\n💰 Total: R$ ${Number(order.total_price).toFixed(2)}\n💳 Pagamento: ${paymentLabels[order.payment_method] || order.payment_method}\nPedido: #${order.id.slice(0, 8).toUpperCase()}\n--------------------------`;
+          const msg = `✅ *ItaFood* informa: Seu pedido no *${store?.name}* foi aceito e já está em produção! 🍔\n\n${items}\n\n--------------------------\n💰 Total: R$ ${Number(order.total_price).toFixed(2)}\n💳 Pagamento: ${paymentLabels[order.payment_method] || order.payment_method}\nPedido: #${order.id.slice(0, 8).toUpperCase()}\n--------------------------`;
           setTimeout(() => openWhatsApp(clientPhone, msg), 600);
         }
       }
@@ -430,7 +430,7 @@ const AdminDashboard = () => {
               <p className="text-sm font-bold text-green-300">
                 🛵 {onlineDrivers!.length} entregador{onlineDrivers!.length > 1 ? "es" : ""} disponível{onlineDrivers!.length > 1 ? "is" : ""} agora
               </p>
-              <p className="text-xs text-gray-400">no FoodIta</p>
+              <p className="text-xs text-gray-400">no ItaFood</p>
             </>
           ) : (
             <>
@@ -741,7 +741,7 @@ const AdminDashboard = () => {
                               onClick={() => {
                                 const clientName = getClientName(order.client_id);
                                 const items = order.order_items?.map((i: any) => `${i.quantity}x ${i.products?.name}`).join("\n") || "";
-                                const msg = `Olá ${clientName}! O *FoodIta* informa: Seu pedido no *${store?.name}* foi aceito e já está em produção! 🍔\n\n--- RESUMO FOODITA ---\nPedido: #${order.id.slice(0,8).toUpperCase()}\n${items}\nTotal: R$ ${Number(order.total_price).toFixed(2)}\nPagamento: ${paymentLabels[order.payment_method] || order.payment_method}\n-----------------------`;
+                                const msg = `Olá ${clientName}! O *ItaFood* informa: Seu pedido no *${store?.name}* foi aceito e já está em produção! 🍔\n\n--- RESUMO ITAFOOD ---\nPedido: #${order.id.slice(0,8).toUpperCase()}\n${items}\nTotal: R$ ${Number(order.total_price).toFixed(2)}\nPagamento: ${paymentLabels[order.payment_method] || order.payment_method}\n-----------------------`;
                                 openWhatsApp(getClientWhatsApp(order.client_id), msg);
                               }}
                               className="flex items-center gap-1.5 bg-green-500 hover:bg-green-600 text-white font-bold px-3 py-2 rounded-xl text-xs active:scale-95 transition-transform"
@@ -753,7 +753,7 @@ const AdminDashboard = () => {
                           {order.status === "preparando" && (
                             <button
                               onClick={() => {
-                                const msg = `Olá ${getClientName(order.client_id)}! Seu lanche está quase pronto! Já acionamos um de nossos motoboys do *FoodIta* para retirar seu pedido. 🏍️\n\n--- RESUMO FOODITA ---\nPedido: #${order.id.slice(0,8).toUpperCase()}\nTotal: R$ ${Number(order.total_price).toFixed(2)}\n-----------------------`;
+                                const msg = `Olá ${getClientName(order.client_id)}! Seu lanche está quase pronto! Já acionamos um de nossos motoboys do *ItaFood* para retirar seu pedido. 🏍️\n\n--- RESUMO ITAFOOD ---\nPedido: #${order.id.slice(0,8).toUpperCase()}\nTotal: R$ ${Number(order.total_price).toFixed(2)}\n-----------------------`;
                                 openWhatsApp(getClientWhatsApp(order.client_id), msg);
                               }}
                               className="flex items-center gap-1.5 bg-green-500 hover:bg-green-600 text-white font-bold px-3 py-2 rounded-xl text-xs active:scale-95 transition-transform"
@@ -765,7 +765,7 @@ const AdminDashboard = () => {
                           {(order.status === "em_transito" || order.status === "saiu_entrega") && (
                             <button
                               onClick={() => {
-                                const msg = `Olá ${getClientName(order.client_id)}! O motoboy do *FoodIta* saiu para entrega! 🚀\nEm breve seu pedido chegará em: ${order.address_details}\nPrepare o apetite! 😋\n\n--- RESUMO FOODITA ---\nPedido: #${order.id.slice(0,8).toUpperCase()}\nTotal: R$ ${Number(order.total_price).toFixed(2)}\nPagamento: ${paymentLabels[order.payment_method] || order.payment_method}\n-----------------------`;
+                                const msg = `Olá ${getClientName(order.client_id)}! O motoboy do *ItaFood* saiu para entrega! 🚀\nEm breve seu pedido chegará em: ${order.address_details}\nPrepare o apetite! 😋\n\n--- RESUMO ITAFOOD ---\nPedido: #${order.id.slice(0,8).toUpperCase()}\nTotal: R$ ${Number(order.total_price).toFixed(2)}\nPagamento: ${paymentLabels[order.payment_method] || order.payment_method}\n-----------------------`;
                                 openWhatsApp(getClientWhatsApp(order.client_id), msg);
                               }}
                               className="flex items-center gap-1.5 bg-green-500 hover:bg-green-600 text-white font-bold px-3 py-2 rounded-xl text-xs active:scale-95 transition-transform"
