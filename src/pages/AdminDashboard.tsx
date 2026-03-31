@@ -511,12 +511,14 @@ const AdminDashboard = () => {
       )}
       {/* Hidden receipt for printing */}
       {printingOrder && (
-        <OrderReceipt
-          ref={receiptRef}
-          order={printingOrder}
-          storeName={store?.name || "Loja"}
-          clientName={getClientName(printingOrder.client_id)}
-        />
+        <div className="receipt-print-wrapper" style={{ position: 'fixed', left: '-9999px', top: 0 }}>
+          <OrderReceipt
+            ref={receiptRef}
+            order={printingOrder}
+            storeName={store?.name || "Loja"}
+            clientName={getClientName(printingOrder.client_id)}
+          />
+        </div>
       )}
     </div>
   );
