@@ -264,7 +264,7 @@ const PedidosPage = () => {
                         className="flex-1 flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold py-2.5 rounded-xl text-xs disabled:opacity-50"
                       >
                         <QrCode className="h-4 w-4" />
-                        {payingOrderId === order.id ? "Gerando PIX..." : "Pagar com PIX agora"}
+                        {payingOrderId === order.id ? "Gerando..." : "Tentar Pagar Novamente"}
                       </button>
                       <button
                         onClick={() => cancelOrder(order.id)}
