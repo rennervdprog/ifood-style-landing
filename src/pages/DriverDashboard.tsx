@@ -613,7 +613,7 @@ const DriverDashboard = () => {
                         {deliveryClientId && getContactWhatsApp(deliveryClientId) && (
                           <WhatsAppButton
                             number={getContactWhatsApp(deliveryClientId)}
-                            message="Olá, sou o entregador do app de Itatinga e estou com seu pedido!"
+                            message="Olá, sou o entregador do ItaFood e estou com seu pedido!"
                             label="Cliente"
                             size="md"
                             className="flex-1"

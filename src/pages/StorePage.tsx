@@ -211,7 +211,7 @@ const StorePage = () => {
           <div className="absolute top-4 right-4 z-10">
             <WhatsAppButton
               number={ownerProfile.whatsapp_number}
-              message={`Olá! Estou vendo o cardápio da ${store?.name} no Giro Itatinga.`}
+              message={`Olá! Estou vendo o cardápio da ${store?.name} no ItaFood.`}
               label="Falar"
               size="sm"
             />

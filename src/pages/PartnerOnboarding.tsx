@@ -257,7 +257,7 @@ const PartnerOnboarding = () => {
                   <div>
                     <h3 className="text-lg font-bold text-foreground">🏍️ Quero Entregar</h3>
                     <p className="text-sm text-muted-foreground mt-0.5">
-                      Faça entregas e ganhe dinheiro em Itatinga
+                      Faça entregas e ganhe dinheiro no ItaFood
                     </p>
                   </div>
                 </div>
