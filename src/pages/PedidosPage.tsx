@@ -224,12 +224,27 @@ const PedidosPage = () => {
                       <Clock className="h-4 w-4 text-amber-500 animate-pulse" />
                       <span className="text-xs font-bold text-amber-500">Aguardando Pagamento PIX</span>
                     </div>
-                    <p className="text-[10px] text-muted-foreground mb-2">
+                    <p className="text-[10px] text-muted-foreground mb-3">
                       Seu pedido será enviado à loja assim que o pagamento for confirmado.
                     </p>
-                    <p className="text-[10px] text-muted-foreground">
-                      O pagamento é processado automaticamente. Aguarde alguns instantes.
-                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => retryPayment(order)}
+                        disabled={payingOrderId === order.id}
+                        className="flex-1 flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold py-2.5 rounded-xl text-xs disabled:opacity-50"
+                      >
+                        <QrCode className="h-4 w-4" />
+                        {payingOrderId === order.id ? "Abrindo..." : "Finalizar Pagamento PIX"}
+                      </button>
+                      <button
+                        onClick={() => cancelOrder(order.id)}
+                        disabled={cancellingOrderId === order.id}
+                        className="flex items-center justify-center gap-1 bg-red-500/10 text-red-400 font-bold px-3 py-2.5 rounded-xl text-xs border border-red-500/30 disabled:opacity-50"
+                      >
+                        <XCircle className="h-3.5 w-3.5" />
+                        {cancellingOrderId === order.id ? "..." : "Cancelar"}
+                      </button>
+                    </div>
                   </div>
                 )}
 
