@@ -85,7 +85,7 @@ ${changeHtml}
 <div class="tp-info"><b>Bairro:</b> ${order.neighborhood}</div>
 <div class="tp-info"><b>Endereço:</b> ${order.address_details}</div>
 <div class="tp-divider"></div>
-<div class="tp-footer"><p>Obrigado pela preferência!</p><p>Giro de Itatinga</p></div>
+<div class="tp-footer"><p>Obrigado pela preferência!</p><p>ItaFood</p></div>
 `;
 
   // Give DOM time to render, then print

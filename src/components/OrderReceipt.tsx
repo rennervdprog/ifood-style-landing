@@ -169,7 +169,7 @@ const OrderReceipt = forwardRef<HTMLDivElement, OrderReceiptProps>(
         {/* Footer */}
         <div style={{ textAlign: "center", fontSize: "10px" }}>
           <p style={{ margin: "2px 0" }}>Obrigado pela preferência!</p>
-          <p style={{ margin: "2px 0" }}>Giro de Itatinga</p>
+          <p style={{ margin: "2px 0" }}>ItaFood</p>
         </div>
 
         <div style={{ height: "16px" }} />

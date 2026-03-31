@@ -221,7 +221,7 @@ const PerfilPage = () => {
           <div>
             <h2 className="font-bold text-foreground">{(profile as any)?.full_name || user.email}</h2>
             <p className="text-xs text-muted-foreground">
-              {profileRole === "lojista" ? "Lojista" : profileRole === "motoboy" ? "Entregador" : "Cliente"} em Itatinga
+              {profileRole === "lojista" ? "Lojista" : profileRole === "motoboy" ? "Entregador" : "Cliente"} no ItaFood
             </p>
           </div>
         </div>

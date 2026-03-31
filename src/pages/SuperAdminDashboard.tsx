@@ -175,7 +175,7 @@ const SuperAdminDashboard = () => {
             </button>
             <div>
               <h1 className="font-bold text-sm">Painel Administrativo</h1>
-              <p className="text-xs text-gray-400">Itatinga Delivery</p>
+              <p className="text-xs text-gray-400">ItaFood</p>
             </div>
           </div>
           <button
