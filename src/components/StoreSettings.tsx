@@ -226,7 +226,7 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
         </label>
         <div className="flex gap-2">
           <div className="flex-1 flex items-center bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
-            <span className="text-xs text-gray-500 pl-3 whitespace-nowrap">itafood.app/</span>
+            <span className="text-xs text-gray-500 pl-3 whitespace-nowrap">foodita.app/</span>
             <input
               type="text"
               value={slug}

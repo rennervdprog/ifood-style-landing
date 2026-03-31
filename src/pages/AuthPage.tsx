@@ -66,8 +66,8 @@ const AuthPage = () => {
             </h2>
             <p className="text-sm text-muted-foreground mt-1">
               {isLogin
-                ? "Entre para finalizar seu pedido no ItaFood"
-                : "Cadastre-se para pedir no ItaFood"}
+                ? "Entre para finalizar seu pedido no FoodIta"
+                : "Cadastre-se para pedir no FoodIta"}
             </p>
           </div>
 
