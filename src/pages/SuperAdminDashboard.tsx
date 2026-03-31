@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
   ArrowLeft, DollarSign, ShoppingBag, TrendingUp, Clock,
-  Store, Copy, AlertTriangle, Users, Bike, Wallet, CheckCircle2, Banknote
+  Store, Copy, AlertTriangle, Users, Bike, Wallet, CheckCircle2, Banknote, XCircle
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
@@ -521,7 +521,21 @@ const SuperAdminDashboard = () => {
                       <p className="text-sm font-bold text-white">{o.stores?.name}</p>
                       <p className="text-xs text-gray-400">#{o.id.slice(0, 8)} — {o.status}</p>
                     </div>
-                    <span className="text-sm font-bold text-red-400 animate-pulse">{mins} min</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-red-400 animate-pulse">{mins} min</span>
+                      <button
+                        onClick={async () => {
+                          if (!confirm("Cancelar este pedido?")) return;
+                          const { error } = await supabase.rpc("admin_cancel_order", { _order_id: o.id });
+                          if (error) { toast.error("Erro ao cancelar."); return; }
+                          toast.success("Pedido cancelado!");
+                          queryClient.invalidateQueries({ queryKey: ["admin-all-orders"] });
+                        }}
+                        className="bg-red-500/20 text-red-400 px-2 py-1 rounded-lg text-xs font-bold hover:bg-red-500/40"
+                      >
+                        <XCircle className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
                 );
               })}

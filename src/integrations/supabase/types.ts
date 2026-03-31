@@ -546,6 +546,7 @@ export type Database = {
         Args: { _approved: boolean; _profile_user_id: string }
         Returns: undefined
       }
+      admin_cancel_order: { Args: { _order_id: string }; Returns: undefined }
       admin_delete_store: { Args: { _store_id: string }; Returns: undefined }
       driver_accept_order: { Args: { _order_id: string }; Returns: undefined }
       driver_confirm_store_return: {
@@ -606,6 +607,7 @@ export type Database = {
     }
     Enums: {
       order_status:
+        | "aguardando_pagamento"
         | "pendente"
         | "preparando"
         | "pronto_para_entrega"
@@ -613,6 +615,7 @@ export type Database = {
         | "entregue"
         | "saiu_entrega"
         | "finalizado"
+        | "cancelado"
       partner_role: "cliente" | "lojista" | "motoboy"
       pix_type: "cpf" | "cnpj" | "email" | "phone" | "random"
       store_category:
@@ -755,6 +758,7 @@ export const Constants = {
   public: {
     Enums: {
       order_status: [
+        "aguardando_pagamento",
         "pendente",
         "preparando",
         "pronto_para_entrega",
@@ -762,6 +766,7 @@ export const Constants = {
         "entregue",
         "saiu_entrega",
         "finalizado",
+        "cancelado",
       ],
       partner_role: ["cliente", "lojista", "motoboy"],
       pix_type: ["cpf", "cnpj", "email", "phone", "random"],
