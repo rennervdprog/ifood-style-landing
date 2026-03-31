@@ -21,7 +21,24 @@ const statusConfig: Record<string, { label: string; icon: React.ElementType; col
 const PedidosPage = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
+
+  // Handle Mercado Pago payment return
+  useEffect(() => {
+    const paymentStatus = searchParams.get("payment");
+    if (paymentStatus) {
+      if (paymentStatus === "success") {
+        toast.success("✅ Pagamento confirmado com sucesso!");
+      } else if (paymentStatus === "failure") {
+        toast.error("❌ Pagamento não aprovado. Tente novamente.");
+      } else if (paymentStatus === "pending") {
+        toast("⏳ Pagamento pendente. Aguardando confirmação...");
+      }
+      // Clean up URL params
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const { data: orders, isLoading } = useQuery({
     queryKey: ["orders", user?.id],
