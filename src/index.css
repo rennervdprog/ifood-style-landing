@@ -81,34 +81,53 @@
   animation: pulse-border 2s ease-in-out infinite;
 }
 
-/* Thermal receipt print styles */
+/* Thermal print zone — hidden on screen, visible only when printing */
+.thermal-print-zone {
+  display: none;
+}
+
 @media print {
-  body > *:not(.receipt-print-wrapper) {
+  /* Hide everything except the thermal print zone */
+  body > *:not(.thermal-print-zone) {
     display: none !important;
   }
-  .receipt-print-wrapper {
+  .thermal-print-zone {
     display: block !important;
-  }
-  .receipt-content {
-    display: block !important;
+    visibility: visible !important;
     position: static !important;
-    left: auto !important;
     width: 80mm !important;
     max-width: 80mm !important;
     margin: 0 !important;
-    padding: 2mm !important;
+    padding: 3mm !important;
     background: #fff !important;
     color: #000 !important;
     font-family: 'Courier New', Courier, monospace !important;
+    font-size: 12px !important;
     -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+    color-adjust: exact;
   }
-  .receipt-content * {
+  .thermal-print-zone * {
     color: #000 !important;
     background: transparent !important;
   }
   @page {
-    size: 80mm auto;
-    margin: 0;
+    size: auto;
+    margin: 0mm;
   }
+
+  /* Thermal ticket element styles */
+  .tp-center { text-align: center; }
+  .tp-title { font-size: 14px; font-weight: 900; }
+  .tp-store { font-size: 13px; font-weight: 700; margin: 2px 0; }
+  .tp-date { font-size: 10px; }
+  .tp-divider { border-top: 1px dashed #000; margin: 5px 0; }
+  .tp-order-id { font-size: 20px; font-weight: 900; text-align: center; margin: 4px 0; letter-spacing: 2px; }
+  .tp-item-row { display: flex; justify-content: space-between; margin: 3px 0; font-size: 12px; }
+  .tp-addon { padding-left: 14px; font-size: 11px; margin: 1px 0; }
+  .tp-obs { padding-left: 14px; font-size: 11px; font-style: italic; font-weight: 700; margin: 2px 0; }
+  .tp-total-row { display: flex; justify-content: space-between; font-size: 12px; margin: 2px 0; }
+  .tp-total-big { display: flex; justify-content: space-between; font-size: 15px; font-weight: 900; margin-top: 4px; }
+  .tp-info { font-size: 11px; margin: 2px 0; }
+  .tp-change { font-size: 12px; margin: 3px 0; }
+  .tp-footer { text-align: center; font-size: 10px; margin-top: 6px; }
 }
