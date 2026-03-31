@@ -341,6 +341,41 @@ const DriverDashboard = () => {
     return () => { supabase.removeChannel(channel); };
   }, [user, isOnline, queryClient, playAlert]);
 
+  // Realtime for balance & withdrawal updates (auto-refresh when admin pays)
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel("driver-balance-realtime")
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "driver_balances" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["driver-balance", user.id] });
+          queryClient.invalidateQueries({ queryKey: ["driver-earnings", user.id] });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "withdrawal_requests" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["pending-withdrawal", user.id] });
+          queryClient.invalidateQueries({ queryKey: ["withdrawal-history", user.id] });
+          queryClient.invalidateQueries({ queryKey: ["driver-balance", user.id] });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "driver_earnings" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["driver-earnings", user.id] });
+          queryClient.invalidateQueries({ queryKey: ["driver-balance", user.id] });
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user, queryClient]);
+
   useEffect(() => {
     const count = availableOrders?.length || 0;
     if (count > prevCountRef.current && prevCountRef.current >= 0) {
