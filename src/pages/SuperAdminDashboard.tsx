@@ -629,6 +629,37 @@ const FinanceTab = ({
   const [payingStore, setPayingStore] = useState<string | null>(null);
   const [chargingStore, setChargingStore] = useState<string | null>(null);
 
+  // Fetch store owner PIX keys
+  const { data: ownerProfiles } = useQuery({
+    queryKey: ["store-owner-pix-keys"],
+    queryFn: async () => {
+      const storeIds = stores.map((s: any) => s.id);
+      if (storeIds.length === 0) return [];
+      const { data: storesData } = await supabase
+        .from("stores")
+        .select("id, owner_id")
+        .in("id", storeIds);
+      if (!storesData) return [];
+      const ownerIds = storesData.map(s => s.owner_id).filter(Boolean);
+      if (ownerIds.length === 0) return [];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, pix_key, pix_type")
+        .in("user_id", ownerIds as string[]);
+      return (storesData || []).map(s => ({
+        storeId: s.id,
+        ownerId: s.owner_id,
+        pixKey: profiles?.find(p => p.user_id === s.owner_id)?.pix_key || null,
+        pixType: profiles?.find(p => p.user_id === s.owner_id)?.pix_type || null,
+      }));
+    },
+    enabled: stores.length > 0,
+  });
+
+  const getStorePixInfo = (storeId: string) => {
+    return ownerProfiles?.find((p: any) => p.storeId === storeId) || null;
+  };
+
   const markAsPaid = async (storeId: string, storeName: string) => {
     const { error } = await supabase
       .from("store_balances")
