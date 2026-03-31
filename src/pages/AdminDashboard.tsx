@@ -141,6 +141,12 @@ const AdminDashboard = () => {
             playAlert();
             toast.info("🔔 Novo pedido recebido!", { duration: 8000 });
           }
+          // Success sound when order finalized
+          if (payload.eventType === "UPDATE" && (payload.new as any).status === "finalizado") {
+            const successAudio = new Audio("data:audio/wav;base64,UklGRl9vAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhO28AAIA/");
+            successAudio.play().catch(() => {});
+            toast.success("💰 Venda concluída! Pedido finalizado.", { duration: 5000 });
+          }
         }
       )
       .subscribe((status) => {
