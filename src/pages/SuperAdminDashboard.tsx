@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import AdminApprovals from "@/components/AdminApprovals";
 import AdminStoreManager from "@/components/AdminStoreManager";
@@ -8,14 +8,14 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
   ArrowLeft, DollarSign, ShoppingBag, TrendingUp, Clock,
-  Store, Copy, AlertTriangle, Users, Bike, Wallet, CheckCircle2, Banknote, XCircle
+  Store, Copy, AlertTriangle, Users, Bike, Wallet, CheckCircle2, Banknote, XCircle, Bell
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
 } from "recharts";
 
 type DateFilter = "today" | "yesterday" | "week";
-type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro";
+type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "saques";
 
 const SuperAdminDashboard = () => {
   const { user, loading: authLoading } = useAuth();
@@ -121,6 +121,39 @@ const SuperAdminDashboard = () => {
     },
     enabled: isAdmin && activeTab === "financeiro",
   });
+
+  // Fetch withdrawal requests
+  const { data: withdrawalRequests } = useQuery({
+    queryKey: ["withdrawal-requests"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("withdrawal_requests" as any)
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: isAdmin,
+  });
+
+  const pendingWithdrawals = withdrawalRequests?.filter((w: any) => w.status === "solicitado") || [];
+
+  // Realtime for new withdrawal requests
+  useEffect(() => {
+    if (!isAdmin) return;
+    const channel = supabase
+      .channel("admin-withdrawals-realtime")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "withdrawal_requests" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["withdrawal-requests"] });
+          toast.info("🔔 Nova solicitação de saque recebida!", { duration: 8000 });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [isAdmin, queryClient]);
 
   // Dashboard metrics
   const metrics = useMemo(() => {
@@ -353,15 +386,21 @@ const SuperAdminDashboard = () => {
         {([
           { key: "dashboard" as AdminTab, label: "📊 Dashboard" },
           { key: "financeiro" as AdminTab, label: "💰 Financeiro" },
+          { key: "saques" as AdminTab, label: "🏧 Saques" },
           { key: "approvals" as AdminTab, label: "🛡️ Aprovações" },
           { key: "stores" as AdminTab, label: "🏪 Lojas" },
         ]).map(tab => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap ${activeTab === tab.key ? "bg-yellow-500 text-gray-900" : "bg-[#1E293B] text-gray-400"}`}
+            className={`relative px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap ${activeTab === tab.key ? "bg-yellow-500 text-gray-900" : "bg-[#1E293B] text-gray-400"}`}
           >
             {tab.label}
+            {tab.key === "saques" && pendingWithdrawals.length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full animate-pulse">
+                {pendingWithdrawals.length}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -370,6 +409,85 @@ const SuperAdminDashboard = () => {
         <div className="px-4 py-4"><AdminApprovals /></div>
       ) : activeTab === "stores" ? (
         <div className="px-4 py-4"><AdminStoreManager /></div>
+      ) : activeTab === "saques" ? (
+        <div className="px-4 py-4 space-y-4">
+          <h2 className="text-sm font-bold text-gray-300 uppercase tracking-wider flex items-center gap-2">
+            <Bell className="h-4 w-4" /> Solicitações de Saque
+          </h2>
+          {pendingWithdrawals.length === 0 && (!withdrawalRequests || withdrawalRequests.length === 0) ? (
+            <div className="bg-[#1E293B] rounded-2xl p-8 text-center">
+              <Wallet className="h-12 w-12 text-gray-600 mx-auto mb-3" />
+              <p className="text-sm text-gray-500">Nenhuma solicitação de saque.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {(withdrawalRequests || []).map((req: any) => {
+                const isPending = req.status === "solicitado";
+                return (
+                  <div key={req.id} className={`bg-[#1E293B] rounded-2xl p-4 border ${isPending ? "border-amber-500/30" : "border-gray-700"}`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isPending ? "bg-amber-500/20" : "bg-green-500/20"}`}>
+                          <DollarSign className={`h-4 w-4 ${isPending ? "text-amber-400" : "text-green-400"}`} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-white">
+                            {drivers?.find(d => d.user_id === req.driver_user_id)?.name || "Entregador"}
+                          </p>
+                          <p className="text-xs text-gray-300 font-bold">R$ {Number(req.amount).toFixed(2)}</p>
+                          <p className="text-[10px] text-gray-400">
+                            {new Date(req.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                          </p>
+                        </div>
+                      </div>
+                      <span className={`text-xs font-bold px-2 py-1 rounded-lg ${isPending ? "bg-amber-500/20 text-amber-400" : "bg-green-500/20 text-green-400"}`}>
+                        {isPending ? "Pendente" : "Pago"}
+                      </span>
+                    </div>
+
+                    <div className="bg-[#0F172A] rounded-xl p-3 space-y-1 mb-3">
+                      <p className="text-xs text-gray-400">Chave PIX: <span className="text-white font-medium">{req.pix_key}</span></p>
+                      <p className="text-xs text-gray-400">Tipo: <span className="text-white font-medium">{req.pix_type?.toUpperCase()}</span></p>
+                    </div>
+
+                    {isPending && (
+                      <button
+                        onClick={async () => {
+                          const { error: updateError } = await supabase
+                            .from("withdrawal_requests" as any)
+                            .update({ status: "pago", processed_at: new Date().toISOString() } as any)
+                            .eq("id", req.id);
+                          if (updateError) { toast.error("Erro ao confirmar."); return; }
+
+                          // Zero out driver balance
+                          const { error: balanceError } = await supabase
+                            .from("driver_balances" as any)
+                            .update({ pending_amount: 0, paid_amount: Number(req.amount), updated_at: new Date().toISOString() } as any)
+                            .eq("driver_user_id", req.driver_user_id);
+                          if (balanceError) console.error("Balance update error:", balanceError);
+
+                          // Update driver earnings status
+                          await supabase
+                            .from("driver_earnings" as any)
+                            .update({ status: "pago" } as any)
+                            .eq("driver_user_id", req.driver_user_id)
+                            .eq("status", "pendente");
+
+                          toast.success("✅ Transferência confirmada! Saldo do motoboy zerado.");
+                          queryClient.invalidateQueries({ queryKey: ["withdrawal-requests"] });
+                        }}
+                        className="w-full flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-xl text-sm active:scale-95 transition-transform"
+                      >
+                        <CheckCircle2 className="h-4 w-4" />
+                        Confirmar Transferência PIX
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       ) : activeTab === "financeiro" ? (
         <FinanceTab
           storeSettlement={storeSettlement}
