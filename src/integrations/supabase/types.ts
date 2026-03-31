@@ -171,6 +171,71 @@ export type Database = {
         }
         Relationships: []
       }
+      financial_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          mercado_pago_payment_id: string | null
+          mercado_pago_transfer_id: string | null
+          metadata: Json
+          pix_copy_paste: string | null
+          pix_qr_code: string | null
+          pix_qr_code_base64: string | null
+          provider: string
+          reference_code: string
+          settled_at: string | null
+          status: Database["public"]["Enums"]["financial_transaction_status"]
+          store_id: string
+          transaction_kind: Database["public"]["Enums"]["financial_transaction_type"]
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          mercado_pago_payment_id?: string | null
+          mercado_pago_transfer_id?: string | null
+          metadata?: Json
+          pix_copy_paste?: string | null
+          pix_qr_code?: string | null
+          pix_qr_code_base64?: string | null
+          provider?: string
+          reference_code: string
+          settled_at?: string | null
+          status?: Database["public"]["Enums"]["financial_transaction_status"]
+          store_id: string
+          transaction_kind: Database["public"]["Enums"]["financial_transaction_type"]
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          mercado_pago_payment_id?: string | null
+          mercado_pago_transfer_id?: string | null
+          metadata?: Json
+          pix_copy_paste?: string | null
+          pix_qr_code?: string | null
+          pix_qr_code_base64?: string | null
+          provider?: string
+          reference_code?: string
+          settled_at?: string | null
+          status?: Database["public"]["Enums"]["financial_transaction_status"]
+          store_id?: string
+          transaction_kind?: Database["public"]["Enums"]["financial_transaction_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_transactions_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       menu_sections: {
         Row: {
           created_at: string
@@ -536,20 +601,26 @@ export type Database = {
       }
       store_balances: {
         Row: {
+          comissao_pendente: number
           id: string
           pending_commission: number
+          repasse_pendente: number
           store_id: string
           updated_at: string
         }
         Insert: {
+          comissao_pendente?: number
           id?: string
           pending_commission?: number
+          repasse_pendente?: number
           store_id: string
           updated_at?: string
         }
         Update: {
+          comissao_pendente?: number
           id?: string
           pending_commission?: number
+          repasse_pendente?: number
           store_id?: string
           updated_at?: string
         }
@@ -662,6 +733,10 @@ export type Database = {
         Args: { _code: string; _order_id: string }
         Returns: undefined
       }
+      generate_financial_reference: {
+        Args: { _prefix: string }
+        Returns: string
+      }
       is_driver: { Args: { _user_id: string }; Returns: boolean }
       is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
       register_as_lojista:
@@ -708,6 +783,13 @@ export type Database = {
           }
     }
     Enums: {
+      financial_transaction_status:
+        | "pending"
+        | "approved"
+        | "paid"
+        | "failed"
+        | "cancelled"
+      financial_transaction_type: "commission_charge" | "store_payout"
       order_status:
         | "aguardando_pagamento"
         | "pendente"
@@ -859,6 +941,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      financial_transaction_status: [
+        "pending",
+        "approved",
+        "paid",
+        "failed",
+        "cancelled",
+      ],
+      financial_transaction_type: ["commission_charge", "store_payout"],
       order_status: [
         "aguardando_pagamento",
         "pendente",
