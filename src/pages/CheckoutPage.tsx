@@ -68,12 +68,14 @@ const CheckoutPage = () => {
   const addressString = buildAddressString();
 
   // Sync neighborhood fee from profile if cart doesn't have one yet
-  if (profileNeighborhood && !neighborhood && neighborhoodFees) {
-    const found = neighborhoodFees.find((n: any) => n.name === profileNeighborhood);
-    if (found) {
-      setNeighborhood(found.name, found.fee);
+  useEffect(() => {
+    if (profileNeighborhood && !neighborhood && neighborhoodFees) {
+      const found = neighborhoodFees.find((n: any) => n.name === profileNeighborhood);
+      if (found) {
+        setNeighborhood(found.name, found.fee);
+      }
     }
-  }
+  }, [profileNeighborhood, neighborhood, neighborhoodFees, setNeighborhood]);
 
   // Redirect to login if not authenticated
   if (!user) {
