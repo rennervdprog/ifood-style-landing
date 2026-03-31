@@ -696,7 +696,7 @@ const AdminDashboard = () => {
                     )}
 
                     {/* Settlement Code for cash orders */}
-                    {order.payment_method === "dinheiro" && (order as any).settlement_code && ["entregue", "finalizado"].includes(order.status) && !(order as any).return_to_store_confirmed && (
+                    {["dinheiro", "cartao"].includes(order.payment_method) && (order as any).settlement_code && ["entregue", "finalizado"].includes(order.status) && !(order as any).return_to_store_confirmed && (
                       <div className="bg-amber-500/10 border-2 border-amber-500/50 rounded-xl p-4 mb-3 animate-pulse-subtle">
                         <div className="flex items-center justify-between mb-2">
                           <p className="text-xs font-bold text-amber-400">🔑 Código de Acerto para o Motoboy</p>
