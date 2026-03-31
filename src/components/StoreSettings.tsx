@@ -3,8 +3,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Camera, Upload, Save, Store, Phone, Tag, MapPin, Link, Copy } from "lucide-react";
+import { Camera, Upload, Save, Store, Phone, Tag, MapPin, Link, Copy, Wallet } from "lucide-react";
 import { maskWhatsApp } from "@/lib/whatsapp";
+
+const PIX_TYPE_OPTIONS = [
+  { value: "cpf", label: "CPF" },
+  { value: "cnpj", label: "CNPJ" },
+  { value: "email", label: "E-mail" },
+  { value: "phone", label: "Telefone" },
+  { value: "random", label: "Chave Aleatória" },
+];
 
 const CATEGORY_OPTIONS = [
   { value: "lanches", label: "Lanches" },
