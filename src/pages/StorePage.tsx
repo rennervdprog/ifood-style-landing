@@ -183,7 +183,7 @@ const StorePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-32">
+    <div className="min-h-screen bg-background pb-24 overflow-y-auto">
       {/* ===== HERO BANNER ===== */}
       <div className="relative h-52">
         {store?.image_url ? (
