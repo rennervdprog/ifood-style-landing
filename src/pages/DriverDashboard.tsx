@@ -960,10 +960,10 @@ const DriverDashboard = () => {
                     className="w-full bg-muted text-muted-foreground font-bold py-3.5 rounded-2xl text-sm flex items-center justify-center gap-2 cursor-not-allowed opacity-70"
                   >
                     <Clock className="h-4 w-4" />
-                    SAQUE SOLICITADO — R$ {Number(pendingWithdrawal.amount).toFixed(2)}
+                    SAQUE SOLICITADO — {pendingWithdrawal.transaction_code || "Processando..."}
                   </button>
                   <p className="text-xs text-amber-500 text-center">
-                    ⏳ O Admin já foi notificado. Aguarde o processamento do seu Pix.
+                    ⏳ Solicitação <span className="font-bold">{pendingWithdrawal.transaction_code}</span> no valor de R$ {Number(pendingWithdrawal.amount).toFixed(2)}. O Admin já foi notificado.
                   </p>
                 </div>
               ) : Number(driverBalance.pending_amount || 0) > 0 && (driverProfile as any)?.pix_key ? (
