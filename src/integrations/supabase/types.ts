@@ -602,6 +602,7 @@ export type Database = {
           pix_type: string
           processed_at: string | null
           status: string
+          transaction_code: string | null
         }
         Insert: {
           admin_notes?: string | null
@@ -613,6 +614,7 @@ export type Database = {
           pix_type?: string
           processed_at?: string | null
           status?: string
+          transaction_code?: string | null
         }
         Update: {
           admin_notes?: string | null
@@ -624,6 +626,7 @@ export type Database = {
           pix_type?: string
           processed_at?: string | null
           status?: string
+          transaction_code?: string | null
         }
         Relationships: []
       }

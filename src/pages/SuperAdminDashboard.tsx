@@ -440,7 +440,10 @@ const SuperAdminDashboard = () => {
                         </div>
                         <div>
                           <p className="text-sm font-bold text-foreground">{driverName}</p>
-                          <p className="text-xs text-muted-foreground font-bold">R$ {Number(req.amount).toFixed(2)}</p>
+                          <p className="text-xs text-muted-foreground font-bold">
+                            {req.transaction_code && <span className="text-primary mr-1">{req.transaction_code}</span>}
+                            R$ {Number(req.amount).toFixed(2)}
+                          </p>
                           <p className="text-[10px] text-muted-foreground">
                             {new Date(req.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
                           </p>

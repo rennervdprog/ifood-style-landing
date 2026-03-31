@@ -207,11 +207,26 @@ const DriverDashboard = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("withdrawal_requests" as any)
-        .select("id, amount, status, created_at")
+        .select("id, amount, status, created_at, transaction_code")
         .eq("driver_user_id", user!.id)
         .eq("status", "solicitado")
         .maybeSingle();
       return data as any;
+    },
+    enabled: !!user,
+  });
+
+  // Withdrawal history
+  const { data: withdrawalHistory } = useQuery({
+    queryKey: ["withdrawal-history", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("withdrawal_requests" as any)
+        .select("id, amount, status, created_at, transaction_code, processed_at")
+        .eq("driver_user_id", user!.id)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      return (data || []) as any[];
     },
     enabled: !!user,
   });
@@ -945,10 +960,10 @@ const DriverDashboard = () => {
                     className="w-full bg-muted text-muted-foreground font-bold py-3.5 rounded-2xl text-sm flex items-center justify-center gap-2 cursor-not-allowed opacity-70"
                   >
                     <Clock className="h-4 w-4" />
-                    SAQUE SOLICITADO — R$ {Number(pendingWithdrawal.amount).toFixed(2)}
+                    SAQUE SOLICITADO — {pendingWithdrawal.transaction_code || "Processando..."}
                   </button>
                   <p className="text-xs text-amber-500 text-center">
-                    ⏳ O Admin já foi notificado. Aguarde o processamento do seu Pix.
+                    ⏳ Solicitação <span className="font-bold">{pendingWithdrawal.transaction_code}</span> no valor de R$ {Number(pendingWithdrawal.amount).toFixed(2)}. O Admin já foi notificado.
                   </p>
                 </div>
               ) : Number(driverBalance.pending_amount || 0) > 0 && (driverProfile as any)?.pix_key ? (
@@ -980,6 +995,7 @@ const DriverDashboard = () => {
                       toast.success(`✅ Solicitação enviada! Valor: R$ ${amount.toFixed(2)}. O Admin foi notificado.`);
                       queryClient.invalidateQueries({ queryKey: ["driver-balance"] });
                       queryClient.invalidateQueries({ queryKey: ["pending-withdrawal"] });
+                      queryClient.invalidateQueries({ queryKey: ["withdrawal-history"] });
                     } catch (err: any) {
                       toast.error(err?.message || "Erro ao solicitar saque.");
                     } finally {
@@ -1064,6 +1080,34 @@ const DriverDashboard = () => {
               <Download className="h-5 w-5" />
             </button>
           </div>
+
+          {/* Withdrawal History */}
+          {withdrawalHistory && withdrawalHistory.length > 0 && (
+            <>
+              <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                <Wallet className="h-4 w-4" />
+                Histórico de Saques
+              </h3>
+              <div className="space-y-2">
+                {withdrawalHistory.map((w: any) => (
+                  <div key={w.id} className="bg-card border border-border rounded-xl p-3 flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-bold text-foreground">{w.transaction_code || "#---"}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(w.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-black text-foreground">R$ {Number(w.amount).toFixed(2)}</p>
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${w.status === "solicitado" ? "bg-amber-500/20 text-amber-400" : "bg-green-500/20 text-green-400"}`}>
+                        {w.status === "solicitado" ? "⏳ Pendente" : "✅ Pago"}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
 
           {/* Delivery History List */}
           <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
