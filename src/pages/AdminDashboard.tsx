@@ -422,6 +422,16 @@ const AdminDashboard = () => {
                       </div>
                     )}
 
+                    {/* Driver in transit info */}
+                    {(order.status === "em_transito" || order.status === "saiu_entrega") && order.driver_id && (
+                      <div className="bg-cyan-500/20 border border-cyan-500/40 rounded-xl p-3 mb-3 flex items-center gap-2">
+                        <Truck className="h-4 w-4 text-cyan-400" />
+                        <span className="text-sm text-cyan-300 font-bold">
+                          🚀 {getDriverName(order.driver_id)} está levando o pedido
+                        </span>
+                      </div>
+                    )}
+
                     {/* Collection Code Display */}
                     {(order.status === "pronto_para_entrega" || order.status === "saiu_entrega" || order.status === "em_transito") && (order as any).collection_code && (
                       <div className="bg-purple-500/20 border border-purple-500/40 rounded-xl p-3 mb-3">
