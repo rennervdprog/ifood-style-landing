@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
-import { ClipboardList, Clock, ChefHat, Truck, CheckCircle2, Lock, Copy } from "lucide-react";
+import { ClipboardList, Clock, ChefHat, Truck, CheckCircle2, Lock, Copy, QrCode, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { notifyOrderPreparing, notifyOrderOnTheWay, notifyOrderDelivered } from "@/lib/notifications";
 
@@ -64,7 +64,7 @@ const PedidosPage = () => {
       .on(
         "postgres_changes",
         {
-          event: "UPDATE",
+          event: "*",
           schema: "public",
           table: "orders",
           filter: `client_id=eq.${user.id}`,
@@ -72,6 +72,9 @@ const PedidosPage = () => {
         (payload) => {
           queryClient.invalidateQueries({ queryKey: ["orders", user.id] });
           const newStatus = (payload.new as any).status;
+          if (newStatus === "pendente" && (payload.old as any)?.status === "aguardando_pagamento") {
+            toast.success("✅ Pagamento confirmado! Seu pedido foi enviado à loja.");
+          }
           if (newStatus === "preparando") notifyOrderPreparing();
           if (newStatus === "em_transito" || newStatus === "saiu_entrega") notifyOrderOnTheWay();
           if (newStatus === "finalizado") notifyOrderDelivered();
@@ -87,6 +90,73 @@ const PedidosPage = () => {
   const copyPin = (pin: string) => {
     navigator.clipboard.writeText(pin);
     toast.success("Código copiado!");
+  };
+
+  const [payingOrderId, setPayingOrderId] = useState<string | null>(null);
+  const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
+
+  const retryPayment = async (order: any) => {
+    if (!user) return;
+    setPayingOrderId(order.id);
+    try {
+      const mpItems = order.order_items?.map((item: any) => ({
+        title: `${item.products?.name || "Item"} - ${order.stores?.name || "ItaFood"}`,
+        quantity: item.quantity,
+        unit_price: Number(item.unit_price),
+      })) || [];
+
+      if (Number(order.delivery_fee) > 0) {
+        mpItems.push({
+          title: `Taxa de Entrega - ${order.neighborhood}`,
+          quantity: 1,
+          unit_price: Number(order.delivery_fee),
+        });
+      }
+
+      const { data: mpData, error: mpError } = await supabase.functions.invoke(
+        "create-mp-preference",
+        {
+          body: {
+            order_id: order.id,
+            items: mpItems,
+            total: Number(order.total_price),
+            payer_email: user.email,
+            store_name: order.stores?.name || "ItaFood",
+          },
+        }
+      );
+
+      if (mpError) throw mpError;
+      if (mpData?.init_point) {
+        window.location.href = mpData.init_point;
+        return;
+      }
+      toast.error("Não foi possível gerar o link de pagamento.");
+    } catch (err) {
+      console.error("Retry payment error:", err);
+      toast.error("Erro ao gerar pagamento. Tente novamente.");
+    } finally {
+      setPayingOrderId(null);
+    }
+  };
+
+  const cancelOrder = async (orderId: string) => {
+    if (!confirm("Tem certeza que deseja cancelar este pedido?")) return;
+    setCancellingOrderId(orderId);
+    try {
+      const { error } = await supabase
+        .from("orders")
+        .update({ status: "cancelado" as any })
+        .eq("id", orderId)
+        .eq("client_id", user!.id);
+      if (error) throw error;
+      toast.success("Pedido cancelado.");
+      queryClient.invalidateQueries({ queryKey: ["orders", user!.id] });
+    } catch (err) {
+      toast.error("Erro ao cancelar pedido.");
+    } finally {
+      setCancellingOrderId(null);
+    }
   };
 
   if (!authLoading && !user) {
@@ -154,12 +224,27 @@ const PedidosPage = () => {
                       <Clock className="h-4 w-4 text-amber-500 animate-pulse" />
                       <span className="text-xs font-bold text-amber-500">Aguardando Pagamento PIX</span>
                     </div>
-                    <p className="text-[10px] text-muted-foreground mb-2">
+                    <p className="text-[10px] text-muted-foreground mb-3">
                       Seu pedido será enviado à loja assim que o pagamento for confirmado.
                     </p>
-                    <p className="text-[10px] text-muted-foreground">
-                      O pagamento é processado automaticamente. Aguarde alguns instantes.
-                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => retryPayment(order)}
+                        disabled={payingOrderId === order.id}
+                        className="flex-1 flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold py-2.5 rounded-xl text-xs disabled:opacity-50"
+                      >
+                        <QrCode className="h-4 w-4" />
+                        {payingOrderId === order.id ? "Abrindo..." : "Finalizar Pagamento PIX"}
+                      </button>
+                      <button
+                        onClick={() => cancelOrder(order.id)}
+                        disabled={cancellingOrderId === order.id}
+                        className="flex items-center justify-center gap-1 bg-red-500/10 text-red-400 font-bold px-3 py-2.5 rounded-xl text-xs border border-red-500/30 disabled:opacity-50"
+                      >
+                        <XCircle className="h-3.5 w-3.5" />
+                        {cancellingOrderId === order.id ? "..." : "Cancelar"}
+                      </button>
+                    </div>
                   </div>
                 )}
 
