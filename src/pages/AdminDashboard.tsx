@@ -265,10 +265,20 @@ const AdminDashboard = () => {
     } else {
       toast.success(`Pedido movido para "${statusColumns.find(c => c.status === newStatus)?.label}"`);
       queryClient.invalidateQueries({ queryKey: ["store-orders", store?.id] });
+      const order = orders?.find((o: any) => o.id === orderId);
       // Auto-print on accept
-      if (newStatus === "preparando" && autoPrint) {
-        const order = orders?.find((o: any) => o.id === orderId);
-        if (order) handlePrint(order);
+      if (newStatus === "preparando" && autoPrint && order) {
+        handlePrint(order);
+      }
+      // Auto WhatsApp on accept
+      if (newStatus === "preparando" && order) {
+        const clientPhone = getClientWhatsApp(order.client_id);
+        if (clientPhone) {
+          const clientName = getClientName(order.client_id);
+          const items = order.order_items?.map((i: any) => `${i.quantity}x ${i.products?.name}`).join("\n") || "";
+          const msg = `✅ *ItaFood* informa: Seu pedido no *${store?.name}* foi aceito e já está em produção! 🍔\n\n${items}\n\n--------------------------\n💰 Total: R$ ${Number(order.total_price).toFixed(2)}\n💳 Pagamento: ${paymentLabels[order.payment_method] || order.payment_method}\nPedido: #${order.id.slice(0, 8).toUpperCase()}\n--------------------------`;
+          setTimeout(() => openWhatsApp(clientPhone, msg), 600);
+        }
       }
     }
   };

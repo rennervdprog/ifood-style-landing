@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import { openWhatsApp } from "@/lib/whatsapp";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { format, startOfDay, startOfWeek, subDays, isWithinInterval, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -309,6 +310,18 @@ const DriverDashboard = () => {
       setVerifyingCollection(false);
       setCollectionCodeInput("");
       queryClient.invalidateQueries({ queryKey: ["driver-my-delivery", user!.id] });
+      // Auto WhatsApp to client on collection
+      if (myDelivery) {
+        const clientPhone = getContactWhatsApp(myDelivery.client_id);
+        if (clientPhone) {
+          const clientName = contactProfiles?.find((c: any) => c.user_id === myDelivery.client_id);
+          const name = (clientName as any)?.full_name || "Cliente";
+          const msg = `🏍️ *ItaFood* informa: Seu lanche saiu para entrega! O motoboy já coletou o pedido e está a caminho de: ${myDelivery.address_details} 💨\n\n--------------------------\n💰 Total: R$ ${Number(myDelivery.total_price).toFixed(2)}\n💳 Pagamento: ${myDelivery.payment_method === "pix" ? "PIX" : myDelivery.payment_method === "cartao" ? "Cartão" : myDelivery.payment_method === "dinheiro" ? "Dinheiro" : myDelivery.payment_method}\nPedido: #${myDelivery.id.slice(0, 8).toUpperCase()}\n--------------------------`;
+          setTimeout(() => {
+            openWhatsApp(clientPhone, msg);
+          }, 600);
+        }
+      }
     }
   };
 
@@ -524,16 +537,27 @@ const DriverDashboard = () => {
                         <p className="text-xs text-gray-400 mb-3">
                           Peça o código de coleta de 4 dígitos ao lojista para retirar o pedido.
                         </p>
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          maxLength={4}
-                          placeholder="0000"
-                          value={collectionCodeInput}
-                          onChange={(e) => setCollectionCodeInput(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                          className="w-full text-center text-3xl font-black tracking-[0.5em] py-3 bg-gray-800 border border-gray-600 rounded-xl text-white placeholder:text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-400"
-                          autoFocus
-                        />
+                         <div className="relative">
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            maxLength={4}
+                            placeholder="0000"
+                            value={collectionCodeInput}
+                            onChange={(e) => setCollectionCodeInput(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                            className={`w-full text-center text-3xl font-black tracking-[0.5em] py-3 bg-gray-800 border-2 rounded-xl text-white placeholder:text-gray-700 focus:outline-none focus:ring-2 transition-all ${
+                              collectionCodeInput.length === 4
+                                ? "border-green-400 focus:ring-green-400"
+                                : "border-gray-600 focus:ring-purple-400"
+                            }`}
+                            autoFocus
+                          />
+                          {collectionCodeInput.length === 4 && (
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-green-400 animate-bounce">
+                              <CheckCircle2 className="h-6 w-6" />
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       {/* Items preview */}
@@ -570,7 +594,11 @@ const DriverDashboard = () => {
                       <button
                         onClick={() => validateCollection(myDelivery.id)}
                         disabled={collectionCodeInput.length !== 4 || verifyingCollection}
-                        className="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-4 rounded-2xl text-base active:scale-95 transition-transform flex items-center justify-center gap-2 disabled:opacity-50 disabled:active:scale-100"
+                        className={`w-full text-white font-bold py-4 rounded-2xl text-base active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:active:scale-100 ${
+                          collectionCodeInput.length === 4
+                            ? "bg-green-500 hover:bg-green-600 shadow-[0_0_20px_rgba(34,197,94,0.5)] animate-pulse"
+                            : "bg-purple-500 hover:bg-purple-600"
+                        }`}
                       >
                         <ShieldCheck className="h-5 w-5" />
                         {verifyingCollection ? "Verificando..." : "VALIDAR COLETA"}
