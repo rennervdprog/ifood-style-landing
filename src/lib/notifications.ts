@@ -1,4 +1,4 @@
-// Browser Notification API helper for FoodIta
+// Browser Notification API helper for ItaFood
 
 export const requestNotificationPermission = async (): Promise<boolean> => {
   if (!("Notification" in window)) return false;
@@ -29,7 +29,7 @@ export const sendNotification = (title: string, options?: NotificationOptions) =
 
 // Predefined notifications
 export const notifyNewOrder = () => {
-  sendNotification("🍕 Novo Pedido no FoodIta!", {
+  sendNotification("🍕 Novo Pedido no ItaFood!", {
     body: "Abra para aceitar o pedido.",
     tag: "new-order",
   });

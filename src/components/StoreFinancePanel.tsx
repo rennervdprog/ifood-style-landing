@@ -58,11 +58,11 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
   const periodLabel = period === "week" ? "Semana" : "Mês";
 
   const copyToClipboard = () => {
-    const text = `📊 Resumo Financeiro FoodIta - ${storeName}\n` +
+    const text = `📊 Resumo Financeiro ItaFood - ${storeName}\n` +
       `Período: ${format(dateRange.start, "dd/MM", { locale: ptBR })} a ${format(dateRange.end, "dd/MM/yyyy", { locale: ptBR })}\n\n` +
       `💰 Vendas Totais: R$ ${totalSales.toFixed(2)}\n` +
       `🏪 Minha Parte (85%): R$ ${storePart.toFixed(2)}\n` +
-      `📱 Comissão FoodIta (15%): R$ ${totalCommission.toFixed(2)}\n\n` +
+      `📱 Comissão ItaFood (15%): R$ ${totalCommission.toFixed(2)}\n\n` +
       `--- Detalhes ---\n` +
       `Vendas Presenciais: R$ ${physicalSales.toFixed(2)}\n` +
       `Vendas PIX App: R$ ${appSales.toFixed(2)}\n` +
@@ -73,12 +73,12 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
 
   const downloadTxt = () => {
     const lines = [
-      `EXTRATO FINANCEIRO FOODITA - ${storeName.toUpperCase()}`,
+      `EXTRATO FINANCEIRO ITAFOOD - ${storeName.toUpperCase()}`,
       `Período: ${format(dateRange.start, "dd/MM/yyyy")} a ${format(dateRange.end, "dd/MM/yyyy")}`,
       ``,
       `VENDAS TOTAIS: R$ ${totalSales.toFixed(2)}`,
       `MINHA PARTE (85%): R$ ${storePart.toFixed(2)}`,
-      `COMISSÃO FOODITA (15%): R$ ${totalCommission.toFixed(2)}`,
+      `COMISSÃO ITAFOOD (15%): R$ ${totalCommission.toFixed(2)}`,
       ``,
       `VENDAS PRESENCIAIS (Dinheiro/Cartão): R$ ${physicalSales.toFixed(2)}`,
       `VENDAS PIX APP: R$ ${appSales.toFixed(2)}`,
@@ -133,7 +133,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
             <p className="text-xl font-bold text-green-500">R$ {storePart.toFixed(2)}</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Comissão FoodIta (15%)</p>
+            <p className="text-xs text-muted-foreground">Comissão ItaFood (15%)</p>
             <p className="text-xl font-bold text-muted-foreground">R$ {totalCommission.toFixed(2)}</p>
           </div>
         </div>
@@ -155,7 +155,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
         </div>
         <p className="text-xs text-muted-foreground mt-3">
           {finalBalance >= 0
-            ? "Você tem a receber do FoodIta no próximo fechamento."
+            ? "Você tem a receber do ItaFood no próximo fechamento."
             : "Você possui comissões pendentes para o fechamento de segunda-feira."}
         </p>
       </div>
