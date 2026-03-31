@@ -438,14 +438,23 @@ const AdminDashboard = () => {
                           R$ {Number(order.total_price).toFixed(2)}
                         </p>
                       </div>
-                      {action && (
+                      <div className="flex items-center gap-2">
                         <button
-                          onClick={() => updateOrderStatus(order.id, action.next)}
-                          className={`${action.color} text-white font-bold px-5 py-2.5 rounded-xl text-sm active:scale-95 transition-transform`}
+                          onClick={() => handlePrint(order)}
+                          className="bg-gray-600 hover:bg-gray-500 text-white font-bold px-3 py-2.5 rounded-xl text-sm active:scale-95 transition-transform flex items-center gap-1.5"
+                          title="Imprimir Comanda"
                         >
-                          {action.label}
+                          <Printer className="h-4 w-4" />
                         </button>
-                      )}
+                        {action && (
+                          <button
+                            onClick={() => updateOrderStatus(order.id, action.next)}
+                            className={`${action.color} text-white font-bold px-5 py-2.5 rounded-xl text-sm active:scale-95 transition-transform`}
+                          >
+                            {action.label}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
