@@ -49,12 +49,39 @@ const PedidosPage = () => {
         .from("orders")
         .select("*, stores(name), order_items(*, products(name))")
         .eq("client_id", user!.id)
+        .eq("visible_to_client", true)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
     enabled: !!user,
   });
+
+  const [clearingHistory, setClearingHistory] = useState(false);
+
+  const clearHistory = async () => {
+    if (!user) return;
+    if (!confirm("Deseja ocultar todos os pedidos finalizados e cancelados da sua visualização?")) return;
+    setClearingHistory(true);
+    try {
+      const { error } = await supabase
+        .from("orders")
+        .update({ visible_to_client: false } as any)
+        .eq("client_id", user.id)
+        .in("status", ["entregue", "finalizado", "cancelado"]);
+      if (error) throw error;
+      toast.success("Histórico limpo!");
+      queryClient.invalidateQueries({ queryKey: ["orders", user.id] });
+    } catch {
+      toast.error("Erro ao limpar histórico.");
+    } finally {
+      setClearingHistory(false);
+    }
+  };
+
+  const hasCompletedOrders = orders?.some((o: any) =>
+    ["entregue", "finalizado", "cancelado"].includes(o.status)
+  );
 
   // Realtime subscription
   useEffect(() => {
