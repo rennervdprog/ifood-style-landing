@@ -43,7 +43,7 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState<OrderStatus>("pendente");
   const [dashboardTab, setDashboardTab] = useState<DashboardTab>("orders");
   const [autoPrint, setAutoPrint] = useState(() => localStorage.getItem("autoPrint") === "true");
-  const [printingOrder, setPrintingOrder] = useState<any>(null);
+  
   const prevPendingCountRef = useRef(0);
 
   // Fetch store for this owner
