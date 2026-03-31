@@ -695,6 +695,17 @@ const AdminDashboard = () => {
                       </div>
                     )}
 
+                    {/* Settlement Code for cash orders */}
+                    {order.payment_method === "dinheiro" && (order as any).settlement_code && ["entregue", "finalizado"].includes(order.status) && !(order as any).return_to_store_confirmed && (
+                      <div className="bg-yellow-500/20 border border-yellow-500/40 rounded-xl p-3 mb-3">
+                        <p className="text-xs font-bold text-yellow-400 mb-1">🔐 Código de Acerto</p>
+                        <p className="text-3xl font-black text-yellow-300 tracking-[0.3em] text-center">
+                          {(order as any).settlement_code}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1 text-center">Informe ao motoboy após receber o dinheiro e pagar a taxa</p>
+                      </div>
+                    )}
+
                     {/* WhatsApp Status Messages */}
                     {getClientWhatsApp(order.client_id) && (
                       <div className="mb-3 space-y-2">
