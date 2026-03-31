@@ -843,12 +843,12 @@ const FinanceTab = ({
                     <p className="text-sm font-bold text-yellow-400">R$ {entry.cashFees.toFixed(2)}</p>
                   </div>
                   <div className="bg-[#0F172A] rounded-xl p-2.5 text-center">
-                    <p className="text-gray-400">📱 Total App</p>
+                    <p className="text-gray-400">📱 Total Ganho App</p>
                     <p className="text-sm font-bold text-white">R$ {entry.appFees.toFixed(2)}</p>
                   </div>
                   <div className="bg-amber-500/10 rounded-xl p-2.5 text-center border border-amber-500/20">
-                    <p className="text-amber-400">⏳ Saque Pendente</p>
-                    <p className="text-sm font-bold text-amber-400">R$ {driverPending.toFixed(2)}</p>
+                    <p className="text-amber-400">⏳ A Receber</p>
+                    <p className="text-sm font-bold text-amber-400">R$ {Math.max(0, entry.appFees - driverPaid).toFixed(2)}</p>
                   </div>
                   <div className="bg-green-500/10 rounded-xl p-2.5 text-center border border-green-500/20">
                     <p className="text-green-400">✅ Já Pago</p>
