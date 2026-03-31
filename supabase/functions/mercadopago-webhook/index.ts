@@ -1,9 +1,83 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://esm.sh/zod@3.25.76";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+
+// Validate x-signature header from Mercado Pago
+async function validateWebhookSignature(
+  req: Request,
+  body: string
+): Promise<boolean> {
+  const ACCESS_TOKEN = Deno.env.get("MERCADO_PAGO_ACCESS_TOKEN");
+  if (!ACCESS_TOKEN) return false;
+
+  const xSignature = req.headers.get("x-signature");
+  const xRequestId = req.headers.get("x-request-id");
+
+  if (!xSignature || !xRequestId) {
+    console.warn("Missing x-signature or x-request-id headers");
+    return false;
+  }
+
+  // Parse x-signature: "ts=...,v1=..."
+  const parts: Record<string, string> = {};
+  for (const part of xSignature.split(",")) {
+    const [key, value] = part.split("=", 2);
+    if (key && value) parts[key.trim()] = value.trim();
+  }
+
+  const ts = parts["ts"];
+  const v1 = parts["v1"];
+  if (!ts || !v1) {
+    console.warn("Invalid x-signature format");
+    return false;
+  }
+
+  // Parse body to get data.id for the manifest
+  let dataId: string | undefined;
+  try {
+    const parsed = JSON.parse(body);
+    dataId = parsed?.data?.id?.toString();
+  } catch {
+    return false;
+  }
+
+  // Build the manifest string per MP docs
+  // template: "id:[data.id];request-id:[x-request-id];ts:[ts];"
+  const manifest = `id:${dataId || ""};request-id:${xRequestId};ts:${ts};`;
+
+  // HMAC-SHA256 with the access token as secret
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(ACCESS_TOKEN),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(manifest));
+  const computed = Array.from(new Uint8Array(signature))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+
+  if (computed !== v1) {
+    console.warn("HMAC signature mismatch — possible forged webhook");
+    return false;
+  }
+
+  return true;
+}
+
+const WebhookBodySchema = z.object({
+  type: z.string().optional(),
+  action: z.string().optional(),
+  data: z.object({
+    id: z.union([z.string(), z.number()]).optional(),
+  }).optional(),
+}).passthrough();
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -11,8 +85,28 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const body = await req.json();
-    console.log("Webhook received:", JSON.stringify(body));
+    const rawBody = await req.text();
+
+    // Validate HMAC signature
+    const isValid = await validateWebhookSignature(req, rawBody);
+    if (!isValid) {
+      console.error("Webhook signature validation failed — rejecting request");
+      return new Response(JSON.stringify({ error: "Invalid signature" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const parsed = WebhookBodySchema.safeParse(JSON.parse(rawBody));
+    if (!parsed.success) {
+      return new Response(JSON.stringify({ error: "Invalid payload" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const body = parsed.data;
+    console.log("Webhook received (verified):", JSON.stringify({ type: body.type, action: body.action, data_id: body.data?.id }));
 
     // Mercado Pago sends different notification types
     if (body.type !== "payment" && body.action !== "payment.updated") {
@@ -129,7 +223,6 @@ Deno.serve(async (req) => {
           );
 
         if (balanceError) {
-          // If upsert fails, try increment via RPC or manual update
           console.error("Error upserting balance, trying increment:", balanceError);
           const { data: existing } = await supabase
             .from("store_balances")
@@ -155,8 +248,6 @@ Deno.serve(async (req) => {
               });
           }
         } else {
-          // The upsert above sets the value, but we need to ADD to existing
-          // Re-do as increment
           const { data: currentBalance } = await supabase
             .from("store_balances")
             .select("pending_commission")
@@ -164,7 +255,6 @@ Deno.serve(async (req) => {
             .single();
 
           if (currentBalance && Number(currentBalance.pending_commission) === commission) {
-            // First payment for this store - upsert was correct
             console.log(`Store ${order.store_id} commission set: R$${commission}`);
           }
         }
