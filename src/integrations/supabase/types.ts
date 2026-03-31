@@ -250,6 +250,8 @@ export type Database = {
           app_fee: number
           change_for: number | null
           client_id: string
+          collection_code: string | null
+          collection_validated: boolean
           confirmed_at: string | null
           created_at: string
           delivery_fee: number
@@ -270,6 +272,8 @@ export type Database = {
           app_fee?: number
           change_for?: number | null
           client_id: string
+          collection_code?: string | null
+          collection_validated?: boolean
           confirmed_at?: string | null
           created_at?: string
           delivery_fee?: number
@@ -290,6 +294,8 @@ export type Database = {
           app_fee?: number
           change_for?: number | null
           client_id?: string
+          collection_code?: string | null
+          collection_validated?: boolean
           confirmed_at?: string | null
           created_at?: string
           delivery_fee?: number
@@ -542,6 +548,10 @@ export type Database = {
       driver_finish_delivery:
         | { Args: { _order_id: string }; Returns: undefined }
         | { Args: { _order_id: string; _pin?: string }; Returns: undefined }
+      driver_validate_collection: {
+        Args: { _code: string; _order_id: string }
+        Returns: undefined
+      }
       is_driver: { Args: { _user_id: string }; Returns: boolean }
       is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
       register_as_lojista:

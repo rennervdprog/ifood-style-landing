@@ -167,8 +167,7 @@ const AdminDashboard = () => {
   const getNextAction = (status: OrderStatus): { label: string; next: OrderStatus; color: string } | null => {
     switch (status) {
       case "pendente": return { label: "Aceitar", next: "preparando", color: "bg-green-500 hover:bg-green-600" };
-      case "preparando": return { label: "Pronto p/ Entrega", next: "pronto_para_entrega" as OrderStatus, color: "bg-purple-500 hover:bg-purple-600" };
-      case "pronto_para_entrega": return { label: "Saiu p/ Entrega", next: "saiu_entrega", color: "bg-blue-500 hover:bg-blue-600" };
+      case "preparando": return { label: "🔔 Chamar Motoboy", next: "pronto_para_entrega" as OrderStatus, color: "bg-purple-500 hover:bg-purple-600" };
       case "saiu_entrega": return { label: "Finalizar", next: "finalizado", color: "bg-emerald-500 hover:bg-emerald-600" };
       default: return null;
     }
@@ -355,6 +354,17 @@ const AdminDashboard = () => {
                       <MapPin className="h-3.5 w-3.5" />
                       <span>{order.neighborhood} — {order.address_details}</span>
                     </div>
+
+                    {/* Collection Code Display */}
+                    {(order.status === "pronto_para_entrega" || order.status === "saiu_entrega" || order.status === "em_transito") && (order as any).collection_code && (
+                      <div className="bg-purple-500/20 border border-purple-500/40 rounded-xl p-3 mb-3">
+                        <p className="text-xs font-bold text-purple-400 mb-1">🔐 Código de Coleta</p>
+                        <p className="text-3xl font-black text-purple-300 tracking-[0.3em] text-center">
+                          {(order as any).collection_code}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1 text-center">Informe ao motoboy para retirada</p>
+                      </div>
+                    )}
 
                     {order.payment_method === "dinheiro" && (
                       <div className="bg-yellow-500/20 border border-yellow-500/40 rounded-xl p-2.5 mb-3 flex items-start gap-2">
