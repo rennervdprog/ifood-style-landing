@@ -81,6 +81,8 @@ const AdminDashboard = () => {
         .from("orders")
         .select("*, order_items(*, products(name))")
         .eq("store_id", store!.id)
+        .neq("status", "aguardando_pagamento" as any)
+        .neq("status", "cancelado" as any)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
