@@ -234,6 +234,14 @@ const AdminDashboard = () => {
             notifyNewOrder();
             toast.info("🔔 Novo pedido recebido!", { duration: 8000 });
           }
+          // Cash register sound when PIX payment is confirmed (status changes to pendente from aguardando_pagamento)
+          if (payload.eventType === "UPDATE" && (payload.new as any).status === "pendente" && (payload.old as any)?.status === "aguardando_pagamento") {
+            const cashSound = new Audio(CASH_REGISTER_SOUND_URL);
+            cashSound.volume = 1.0;
+            cashSound.play().catch(() => {});
+            toast.success("💰 Pagamento PIX confirmado! Novo pedido liberado.", { duration: 8000 });
+            notifyNewOrder();
+          }
           if (payload.eventType === "UPDATE" && (payload.new as any).status === "finalizado") {
             const successAudio = new Audio("data:audio/wav;base64,UklGRl9vAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhO28AAIA/");
             successAudio.play().catch(() => {});
