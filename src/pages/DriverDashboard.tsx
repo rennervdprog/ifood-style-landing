@@ -489,9 +489,12 @@ const DriverDashboard = () => {
     if (error) {
       toast.error(error.message || "Código inválido. Verifique com o lojista.");
     } else {
-      toast.success("Acerto com a loja confirmado! ✅");
+      toast.success("Acerto com a loja confirmado! Taxa paga em mãos ✅");
       setSettlementCodeInput("");
       queryClient.invalidateQueries({ queryKey: ["driver-pending-return", user!.id] });
+      queryClient.invalidateQueries({ queryKey: ["driver-balance", user!.id] });
+      queryClient.invalidateQueries({ queryKey: ["driver-earnings", user!.id] });
+      queryClient.invalidateQueries({ queryKey: ["driver-history", user!.id] });
     }
     setConfirmingReturn(false);
   };
