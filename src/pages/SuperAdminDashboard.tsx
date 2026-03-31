@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import AdminApprovals from "@/components/AdminApprovals";
 import AdminStoreManager from "@/components/AdminStoreManager";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,20 +8,24 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
   ArrowLeft, DollarSign, ShoppingBag, TrendingUp, Clock,
-  Store, Copy, AlertTriangle, Users, Bike
+  Store, Copy, AlertTriangle, Users, Bike, Wallet, CheckCircle2, Banknote
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
 } from "recharts";
 
 type DateFilter = "today" | "yesterday" | "week";
-type AdminTab = "dashboard" | "approvals" | "stores";
+type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro";
 
 const SuperAdminDashboard = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [dateFilter, setDateFilter] = useState<DateFilter>("today");
   const [activeTab, setActiveTab] = useState<AdminTab>("dashboard");
+  const [financeFilter, setFinanceFilter] = useState<"week" | "month">("week");
+  const [financeSubTab, setFinanceSubTab] = useState<"stores" | "drivers">("stores");
+  const [selectedStore, setSelectedStore] = useState<string>("all");
 
   const getDateRange = (filter: DateFilter) => {
     const now = new Date();
@@ -41,10 +45,16 @@ const SuperAdminDashboard = () => {
     return { start: start!.toISOString(), end: filter === "yesterday" ? new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString() : new Date().toISOString() };
   };
 
-  // Auth check
+  const getFinanceDateRange = () => {
+    const now = new Date();
+    const days = financeFilter === "week" ? 7 : 30;
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - days);
+    return { start: start.toISOString(), end: now.toISOString() };
+  };
+
   const isAdmin = user?.email === "vinivias13@gmail.com";
 
-  // Fetch all orders for the period
+  // Fetch all orders for dashboard period
   const { data: orders, isLoading } = useQuery({
     queryKey: ["admin-all-orders", dateFilter],
     queryFn: async () => {
@@ -59,6 +69,24 @@ const SuperAdminDashboard = () => {
       return data;
     },
     enabled: isAdmin,
+  });
+
+  // Fetch orders for finance period (finalized only)
+  const { data: financeOrders, isLoading: financeLoading } = useQuery({
+    queryKey: ["finance-orders", financeFilter],
+    queryFn: async () => {
+      const { start, end } = getFinanceDateRange();
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*, stores(name, id), order_items(quantity, unit_price)")
+        .gte("created_at", start)
+        .lte("created_at", end)
+        .in("status", ["finalizado", "entregue"])
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: isAdmin && activeTab === "financeiro",
   });
 
   // Fetch all stores
@@ -83,7 +111,18 @@ const SuperAdminDashboard = () => {
     enabled: isAdmin,
   });
 
-  // Calculated metrics
+  // Fetch store balances
+  const { data: storeBalances } = useQuery({
+    queryKey: ["store-balances"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("store_balances").select("*");
+      if (error) throw error;
+      return data;
+    },
+    enabled: isAdmin && activeTab === "financeiro",
+  });
+
+  // Dashboard metrics
   const metrics = useMemo(() => {
     if (!orders) return { totalSales: 0, commission: 0, activeOrders: 0, totalOrders: 0 };
     const totalSales = orders.reduce((s, o) => s + Number(o.total_price), 0);
@@ -93,7 +132,111 @@ const SuperAdminDashboard = () => {
     return { totalSales, commission, activeOrders, totalOrders: orders.length };
   }, [orders]);
 
-  // Store conciliation
+  // Finance: Store settlement data
+  const storeSettlement = useMemo(() => {
+    if (!financeOrders || !stores) return [];
+    const map = new Map<string, {
+      name: string;
+      storeId: string;
+      physicalSales: number; // dinheiro + cartao
+      appSales: number; // pix
+      totalSales: number;
+      commissionDue: number; // 15% of physical
+      netTransfer: number; // appSales - 15% commission on app
+      finalBalance: number;
+      orderCount: number;
+      deliveryFees: number;
+    }>();
+
+    stores.forEach(s => map.set(s.id, {
+      name: s.name,
+      storeId: s.id,
+      physicalSales: 0,
+      appSales: 0,
+      totalSales: 0,
+      commissionDue: 0,
+      netTransfer: 0,
+      finalBalance: 0,
+      orderCount: 0,
+      deliveryFees: 0,
+    }));
+
+    const filtered = selectedStore === "all" ? financeOrders : financeOrders.filter(o => o.store_id === selectedStore);
+
+    filtered.forEach(o => {
+      const entry = map.get(o.store_id);
+      if (!entry) return;
+      const subtotal = Number(o.subtotal);
+      const deliveryFee = Number(o.delivery_fee);
+      const isPhysical = o.payment_method === "dinheiro" || o.payment_method === "cartao";
+
+      if (isPhysical) {
+        entry.physicalSales += subtotal;
+      } else {
+        entry.appSales += subtotal;
+      }
+      entry.totalSales += subtotal;
+      entry.deliveryFees += deliveryFee;
+      entry.orderCount += 1;
+    });
+
+    // Calculate balances
+    map.forEach(entry => {
+      entry.commissionDue = entry.physicalSales * 0.15; // Store owes admin 15% on physical
+      entry.netTransfer = entry.appSales - (entry.appSales * 0.15); // Admin owes store (app sales minus 15%)
+      entry.finalBalance = entry.netTransfer - entry.commissionDue; // Positive = admin pays store, Negative = store pays admin
+    });
+
+    return Array.from(map.values()).filter(e => e.orderCount > 0).sort((a, b) => b.totalSales - a.totalSales);
+  }, [financeOrders, stores, selectedStore]);
+
+  // Finance: Driver settlement data
+  const driverSettlement = useMemo(() => {
+    if (!financeOrders || !drivers) return [];
+    const map = new Map<string, {
+      name: string;
+      driverId: string;
+      totalFees: number;
+      cashFees: number; // received in hand (dinheiro orders)
+      appFees: number; // to receive from admin (pix orders)
+      deliveryCount: number;
+    }>();
+
+    drivers.forEach(d => map.set(d.user_id, {
+      name: d.name || "Entregador",
+      driverId: d.user_id,
+      totalFees: 0,
+      cashFees: 0,
+      appFees: 0,
+      deliveryCount: 0,
+    }));
+
+    financeOrders.forEach(o => {
+      if (!o.driver_id) return;
+      const entry = map.get(o.driver_id);
+      if (!entry) return;
+      const fee = Number(o.delivery_fee);
+      entry.totalFees += fee;
+      entry.deliveryCount += 1;
+      if (o.payment_method === "dinheiro") {
+        entry.cashFees += fee; // driver already got this cash
+      } else {
+        entry.appFees += fee; // admin needs to pay driver
+      }
+    });
+
+    return Array.from(map.values()).filter(e => e.deliveryCount > 0).sort((a, b) => b.totalFees - a.totalFees);
+  }, [financeOrders, drivers]);
+
+  // Finance totals
+  const financeTotals = useMemo(() => {
+    const totalVolume = storeSettlement.reduce((s, e) => s + e.totalSales, 0);
+    const grossProfit = storeSettlement.reduce((s, e) => s + (e.totalSales * 0.15), 0);
+    const totalDriverFees = driverSettlement.reduce((s, e) => s + e.appFees, 0);
+    return { totalVolume, grossProfit, totalDriverFees };
+  }, [storeSettlement, driverSettlement]);
+
+  // Store conciliation (dashboard)
   const storeConciliation = useMemo(() => {
     if (!orders || !stores) return [];
     const map = new Map<string, { name: string; totalSold: number; commission: number; orders: number }>();
@@ -109,7 +252,7 @@ const SuperAdminDashboard = () => {
     return Array.from(map.values()).filter(e => e.orders > 0).sort((a, b) => b.totalSold - a.totalSold);
   }, [orders, stores]);
 
-  // Hourly chart data
+  // Hourly chart
   const hourlyData = useMemo(() => {
     if (!orders) return [];
     const hours = Array.from({ length: 24 }, (_, i) => ({ hour: `${i}h`, count: 0, revenue: 0 }));
@@ -121,7 +264,7 @@ const SuperAdminDashboard = () => {
     return hours.filter(h => h.count > 0 || (h.hour >= "8h" && h.hour <= "23h"));
   }, [orders]);
 
-  // Delayed orders (> 60 min active)
+  // Delayed orders
   const delayedOrders = useMemo(() => {
     if (!orders) return [];
     const now = Date.now();
@@ -132,7 +275,6 @@ const SuperAdminDashboard = () => {
     });
   }, [orders]);
 
-  // Generate daily report
   const generateReport = () => {
     const dateLabel = dateFilter === "today" ? "Hoje" : dateFilter === "yesterday" ? "Ontem" : "Últimos 7 dias";
     let report = `📊 *Relatório ${dateLabel} - ItaFood*\n\n`;
@@ -145,6 +287,24 @@ const SuperAdminDashboard = () => {
     });
     navigator.clipboard.writeText(report);
     toast.success("Relatório copiado! Cole no WhatsApp.");
+  };
+
+  const generateStoreWhatsApp = (entry: typeof storeSettlement[0]) => {
+    const period = financeFilter === "week" ? "Semana" : "Mês";
+    const balanceText = entry.finalBalance >= 0
+      ? `✅ O ItaFood deve transferir R$ ${entry.finalBalance.toFixed(2)} para você.`
+      : `⚠️ Valor a acertar com o ItaFood: R$ ${Math.abs(entry.finalBalance).toFixed(2)}.`;
+
+    const msg = `💰 *Fechamento ItaFood (${period})*\n\nOlá *${entry.name}*!\n\n` +
+      `📦 Total de Pedidos: ${entry.orderCount}\n` +
+      `💵 Vendas Físicas (Dinheiro/Cartão): R$ ${entry.physicalSales.toFixed(2)}\n` +
+      `📱 Vendas App (Pix): R$ ${entry.appSales.toFixed(2)}\n\n` +
+      `🏷️ Comissão 15% sobre Físicas: R$ ${entry.commissionDue.toFixed(2)}\n` +
+      `💸 Repasse Líquido (App - 15%): R$ ${entry.netTransfer.toFixed(2)}\n\n` +
+      `---\n${balanceText}\n---`;
+
+    navigator.clipboard.writeText(msg);
+    toast.success(`Extrato de ${entry.name} copiado!`);
   };
 
   if (authLoading) return null;
@@ -190,34 +350,43 @@ const SuperAdminDashboard = () => {
 
       {/* Main tabs */}
       <div className="flex gap-2 px-4 py-3 border-b border-gray-800 overflow-x-auto hide-scrollbar">
-        <button
-          onClick={() => setActiveTab("dashboard")}
-          className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap ${activeTab === "dashboard" ? "bg-yellow-500 text-gray-900" : "bg-[#1E293B] text-gray-400"}`}
-        >
-          📊 Dashboard
-        </button>
-        <button
-          onClick={() => setActiveTab("approvals")}
-          className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap ${activeTab === "approvals" ? "bg-yellow-500 text-gray-900" : "bg-[#1E293B] text-gray-400"}`}
-        >
-          🛡️ Aprovações
-        </button>
-        <button
-          onClick={() => setActiveTab("stores")}
-          className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap ${activeTab === "stores" ? "bg-yellow-500 text-gray-900" : "bg-[#1E293B] text-gray-400"}`}
-        >
-          🏪 Lojas
-        </button>
+        {([
+          { key: "dashboard" as AdminTab, label: "📊 Dashboard" },
+          { key: "financeiro" as AdminTab, label: "💰 Financeiro" },
+          { key: "approvals" as AdminTab, label: "🛡️ Aprovações" },
+          { key: "stores" as AdminTab, label: "🏪 Lojas" },
+        ]).map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap ${activeTab === tab.key ? "bg-yellow-500 text-gray-900" : "bg-[#1E293B] text-gray-400"}`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {activeTab === "approvals" ? (
-        <div className="px-4 py-4">
-          <AdminApprovals />
-        </div>
+        <div className="px-4 py-4"><AdminApprovals /></div>
       ) : activeTab === "stores" ? (
-        <div className="px-4 py-4">
-          <AdminStoreManager />
-        </div>
+        <div className="px-4 py-4"><AdminStoreManager /></div>
+      ) : activeTab === "financeiro" ? (
+        <FinanceTab
+          storeSettlement={storeSettlement}
+          driverSettlement={driverSettlement}
+          financeTotals={financeTotals}
+          financeFilter={financeFilter}
+          setFinanceFilter={setFinanceFilter}
+          financeSubTab={financeSubTab}
+          setFinanceSubTab={setFinanceSubTab}
+          selectedStore={selectedStore}
+          setSelectedStore={setSelectedStore}
+          stores={stores || []}
+          loading={financeLoading}
+          generateStoreWhatsApp={generateStoreWhatsApp}
+          storeBalances={storeBalances || []}
+          queryClient={queryClient}
+        />
       ) : (
       <>
       {/* Date filter */}
@@ -243,32 +412,10 @@ const SuperAdminDashboard = () => {
           ))
         ) : (
           <>
-            <MetricCard
-              icon={ShoppingBag}
-              label="Vendas"
-              value={`R$ ${metrics.totalSales.toFixed(2)}`}
-              sublabel={`${metrics.totalOrders} pedidos`}
-            />
-            <MetricCard
-              icon={TrendingUp}
-              label="Sua Comissão"
-              value={`R$ ${metrics.commission.toFixed(2)}`}
-              sublabel="12% + taxas"
-              highlight
-            />
-            <MetricCard
-              icon={Clock}
-              label="Pedidos Ativos"
-              value={String(metrics.activeOrders)}
-              sublabel="em andamento"
-            />
-            <MetricCard
-              icon={AlertTriangle}
-              label="Em Atraso"
-              value={String(delayedOrders.length)}
-              sublabel="> 60 min"
-              alert={delayedOrders.length > 0}
-            />
+            <MetricCard icon={ShoppingBag} label="Vendas" value={`R$ ${metrics.totalSales.toFixed(2)}`} sublabel={`${metrics.totalOrders} pedidos`} />
+            <MetricCard icon={TrendingUp} label="Sua Comissão" value={`R$ ${metrics.commission.toFixed(2)}`} sublabel="12% + taxas" highlight />
+            <MetricCard icon={Clock} label="Pedidos Ativos" value={String(metrics.activeOrders)} sublabel="em andamento" />
+            <MetricCard icon={AlertTriangle} label="Em Atraso" value={String(delayedOrders.length)} sublabel="> 60 min" alert={delayedOrders.length > 0} />
           </>
         )}
       </div>
@@ -346,9 +493,7 @@ const SuperAdminDashboard = () => {
                   </div>
                   <div className="text-right ml-3">
                     <p className="text-sm font-bold text-white">R$ {s.totalSold.toFixed(2)}</p>
-                    <p className="text-xs text-yellow-400 font-bold">
-                      Comissão: R$ {s.commission.toFixed(2)}
-                    </p>
+                    <p className="text-xs text-yellow-400 font-bold">Comissão: R$ {s.commission.toFixed(2)}</p>
                   </div>
                 </div>
               ))}
@@ -390,23 +535,255 @@ const SuperAdminDashboard = () => {
   );
 };
 
-// Metric card component
+// Finance Tab Component
+const FinanceTab = ({
+  storeSettlement, driverSettlement, financeTotals,
+  financeFilter, setFinanceFilter,
+  financeSubTab, setFinanceSubTab,
+  selectedStore, setSelectedStore,
+  stores, loading,
+  generateStoreWhatsApp,
+  storeBalances, queryClient,
+}: {
+  storeSettlement: any[];
+  driverSettlement: any[];
+  financeTotals: { totalVolume: number; grossProfit: number; totalDriverFees: number };
+  financeFilter: "week" | "month";
+  setFinanceFilter: (f: "week" | "month") => void;
+  financeSubTab: "stores" | "drivers";
+  setFinanceSubTab: (t: "stores" | "drivers") => void;
+  selectedStore: string;
+  setSelectedStore: (s: string) => void;
+  stores: any[];
+  loading: boolean;
+  generateStoreWhatsApp: (entry: any) => void;
+  storeBalances: any[];
+  queryClient: any;
+}) => {
+  const markAsPaid = async (storeId: string, storeName: string) => {
+    const { error } = await supabase
+      .from("store_balances")
+      .upsert({ store_id: storeId, pending_commission: 0, updated_at: new Date().toISOString() }, { onConflict: "store_id" });
+    if (error) {
+      toast.error("Erro ao marcar como pago.");
+    } else {
+      toast.success(`✅ Saldo de ${storeName} zerado!`);
+      queryClient.invalidateQueries({ queryKey: ["store-balances"] });
+    }
+  };
+
+  return (
+    <div className="px-4 py-4 space-y-4">
+      {/* Period filter */}
+      <div className="flex gap-2">
+        {(["week", "month"] as const).map(f => (
+          <button
+            key={f}
+            onClick={() => setFinanceFilter(f)}
+            className={`px-4 py-2 rounded-xl text-sm font-bold ${financeFilter === f ? "bg-yellow-500 text-gray-900" : "bg-[#1E293B] text-gray-400"}`}
+          >
+            {f === "week" ? "📅 Semana" : "📅 Mês"}
+          </button>
+        ))}
+      </div>
+
+      {/* Summary cards */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="bg-[#1E293B] rounded-2xl p-4">
+          <div className="flex items-center gap-2 mb-1">
+            <ShoppingBag className="h-4 w-4 text-blue-400" />
+            <span className="text-xs text-gray-400">Volume Total</span>
+          </div>
+          <p className="text-lg font-black text-white">R$ {financeTotals.totalVolume.toFixed(2)}</p>
+        </div>
+        <div className="bg-[#1E293B] rounded-2xl p-4">
+          <div className="flex items-center gap-2 mb-1">
+            <TrendingUp className="h-4 w-4 text-yellow-400" />
+            <span className="text-xs text-gray-400">Lucro Bruto</span>
+          </div>
+          <p className="text-lg font-black text-yellow-400">R$ {financeTotals.grossProfit.toFixed(2)}</p>
+          <p className="text-[10px] text-gray-500">15% comissões</p>
+        </div>
+        <div className="bg-[#1E293B] rounded-2xl p-4">
+          <div className="flex items-center gap-2 mb-1">
+            <Bike className="h-4 w-4 text-green-400" />
+            <span className="text-xs text-gray-400">Motoboys</span>
+          </div>
+          <p className="text-lg font-black text-green-400">R$ {financeTotals.totalDriverFees.toFixed(2)}</p>
+          <p className="text-[10px] text-gray-500">a pagar</p>
+        </div>
+      </div>
+
+      {/* Sub-tabs: Stores vs Drivers */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => setFinanceSubTab("stores")}
+          className={`flex-1 py-2.5 rounded-xl text-sm font-bold ${financeSubTab === "stores" ? "bg-yellow-500 text-gray-900" : "bg-[#1E293B] text-gray-400"}`}
+        >
+          🏪 Lojas
+        </button>
+        <button
+          onClick={() => setFinanceSubTab("drivers")}
+          className={`flex-1 py-2.5 rounded-xl text-sm font-bold ${financeSubTab === "drivers" ? "bg-yellow-500 text-gray-900" : "bg-[#1E293B] text-gray-400"}`}
+        >
+          🛵 Entregadores
+        </button>
+      </div>
+
+      {/* Store filter */}
+      {financeSubTab === "stores" && (
+        <select
+          value={selectedStore}
+          onChange={e => setSelectedStore(e.target.value)}
+          className="w-full bg-[#1E293B] text-white border border-gray-700 rounded-xl px-4 py-2.5 text-sm"
+        >
+          <option value="all">Todas as lojas</option>
+          {stores.map(s => (
+            <option key={s.id} value={s.id}>{s.name}</option>
+          ))}
+        </select>
+      )}
+
+      {loading ? (
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-32 bg-[#1E293B] rounded-2xl animate-pulse" />
+          ))}
+        </div>
+      ) : financeSubTab === "stores" ? (
+        /* Store settlement cards */
+        storeSettlement.length > 0 ? (
+          <div className="space-y-3">
+            {storeSettlement.map((entry, i) => {
+              const balance = storeBalances.find((b: any) => b.store_id === entry.storeId);
+              return (
+                <div key={i} className="bg-[#1E293B] rounded-2xl p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-bold text-white">{entry.name}</h3>
+                    <span className="text-xs text-gray-400">{entry.orderCount} pedidos</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="bg-[#0F172A] rounded-xl p-2.5">
+                      <p className="text-gray-400">💵 Vendas Físicas</p>
+                      <p className="text-sm font-bold text-white">R$ {entry.physicalSales.toFixed(2)}</p>
+                    </div>
+                    <div className="bg-[#0F172A] rounded-xl p-2.5">
+                      <p className="text-gray-400">📱 Vendas App</p>
+                      <p className="text-sm font-bold text-white">R$ {entry.appSales.toFixed(2)}</p>
+                    </div>
+                    <div className="bg-[#0F172A] rounded-xl p-2.5">
+                      <p className="text-gray-400">🏷️ Comissão 15%</p>
+                      <p className="text-sm font-bold text-red-400">-R$ {entry.commissionDue.toFixed(2)}</p>
+                    </div>
+                    <div className="bg-[#0F172A] rounded-xl p-2.5">
+                      <p className="text-gray-400">💸 Repasse Líquido</p>
+                      <p className="text-sm font-bold text-green-400">R$ {entry.netTransfer.toFixed(2)}</p>
+                    </div>
+                  </div>
+
+                  {/* Final balance */}
+                  <div className={`rounded-xl p-3 text-center ${entry.finalBalance >= 0 ? "bg-green-500/10 border border-green-500/30" : "bg-red-500/10 border border-red-500/30"}`}>
+                    <p className="text-xs text-gray-400 mb-1">SALDO FINAL</p>
+                    <p className={`text-xl font-black ${entry.finalBalance >= 0 ? "text-green-400" : "text-red-400"}`}>
+                      {entry.finalBalance >= 0 ? "+" : "-"}R$ {Math.abs(entry.finalBalance).toFixed(2)}
+                    </p>
+                    <p className="text-[10px] text-gray-500 mt-1">
+                      {entry.finalBalance >= 0 ? "Admin transfere para a loja" : "Loja paga ao Admin"}
+                    </p>
+                  </div>
+
+                  {/* Pending balance from DB */}
+                  {balance && Number(balance.pending_commission) > 0 && (
+                    <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-2.5 flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-yellow-400 font-bold">Comissão Pendente (Acumulada)</p>
+                        <p className="text-sm font-bold text-yellow-300">R$ {Number(balance.pending_commission).toFixed(2)}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => generateStoreWhatsApp(entry)}
+                      className="flex-1 flex items-center justify-center gap-2 bg-green-500/20 text-green-400 py-2.5 rounded-xl text-xs font-bold active:scale-95 transition-transform"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                      Extrato WhatsApp
+                    </button>
+                    <button
+                      onClick={() => markAsPaid(entry.storeId, entry.name)}
+                      className="flex-1 flex items-center justify-center gap-2 bg-blue-500/20 text-blue-400 py-2.5 rounded-xl text-xs font-bold active:scale-95 transition-transform"
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      Marcar Pago
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="bg-[#1E293B] rounded-2xl p-8 text-center">
+            <Wallet className="h-12 w-12 text-gray-600 mx-auto mb-3" />
+            <p className="text-sm text-gray-500">Sem vendas finalizadas no período</p>
+          </div>
+        )
+      ) : (
+        /* Driver settlement cards */
+        driverSettlement.length > 0 ? (
+          <div className="space-y-3">
+            {driverSettlement.map((entry, i) => (
+              <div key={i} className="bg-[#1E293B] rounded-2xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
+                      <Bike className="h-4 w-4 text-green-400" />
+                    </div>
+                    <h3 className="text-sm font-bold text-white">{entry.name}</h3>
+                  </div>
+                  <span className="text-xs text-gray-400">{entry.deliveryCount} entregas</span>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div className="bg-[#0F172A] rounded-xl p-2.5 text-center">
+                    <p className="text-gray-400">Total</p>
+                    <p className="text-sm font-bold text-white">R$ {entry.totalFees.toFixed(2)}</p>
+                  </div>
+                  <div className="bg-[#0F172A] rounded-xl p-2.5 text-center">
+                    <p className="text-gray-400">💵 Em mãos</p>
+                    <p className="text-sm font-bold text-yellow-400">R$ {entry.cashFees.toFixed(2)}</p>
+                  </div>
+                  <div className="bg-[#0F172A] rounded-xl p-2.5 text-center">
+                    <p className="text-gray-400">📱 A receber</p>
+                    <p className="text-sm font-bold text-green-400">R$ {entry.appFees.toFixed(2)}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-[#1E293B] rounded-2xl p-8 text-center">
+            <Bike className="h-12 w-12 text-gray-600 mx-auto mb-3" />
+            <p className="text-sm text-gray-500">Sem entregas finalizadas no período</p>
+          </div>
+        )
+      )}
+    </div>
+  );
+};
+
+// Metric card
 const MetricCard = ({ icon: Icon, label, value, sublabel, highlight, alert }: {
-  icon: React.ElementType;
-  label: string;
-  value: string;
-  sublabel: string;
-  highlight?: boolean;
-  alert?: boolean;
+  icon: React.ElementType; label: string; value: string; sublabel: string; highlight?: boolean; alert?: boolean;
 }) => (
-  <div className={`bg-[#1E293B] rounded-2xl p-4 ${alert ? "border border-red-500/50 animate-pulse-border" : ""}`}>
+  <div className={`bg-[#1E293B] rounded-2xl p-4 ${alert ? "border border-red-500/50" : ""}`}>
     <div className="flex items-center gap-2 mb-2">
       <Icon className={`h-4 w-4 ${highlight ? "text-yellow-400" : alert ? "text-red-400" : "text-gray-400"}`} />
       <span className="text-xs text-gray-400">{label}</span>
     </div>
-    <p className={`text-xl font-black ${highlight ? "text-yellow-400" : alert ? "text-red-400" : "text-white"}`}>
-      {value}
-    </p>
+    <p className={`text-xl font-black ${highlight ? "text-yellow-400" : alert ? "text-red-400" : "text-white"}`}>{value}</p>
     <p className="text-xs text-gray-500">{sublabel}</p>
   </div>
 );
