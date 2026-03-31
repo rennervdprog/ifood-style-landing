@@ -13,6 +13,7 @@ import WhatsAppButton from "@/components/WhatsAppButton";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const DriverDashboard = () => {
+  const isMobile = useIsMobile();
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
