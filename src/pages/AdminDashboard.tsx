@@ -480,6 +480,15 @@ const AdminDashboard = () => {
           )}
         </>
       )}
+      {/* Hidden receipt for printing */}
+      {printingOrder && (
+        <OrderReceipt
+          ref={receiptRef}
+          order={printingOrder}
+          storeName={store?.name || "Loja"}
+          clientName={getClientName(printingOrder.client_id)}
+        />
+      )}
     </div>
   );
 };
