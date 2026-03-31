@@ -95,7 +95,12 @@ Deno.serve(async (req) => {
       auto_return: "approved",
       default_payment_method_id: "pix",
       payment_methods: {
-        excluded_payment_types: [{ id: "credit_card" }, { id: "debit_card" }],
+        excluded_payment_types: [
+          { id: "credit_card" },
+          { id: "debit_card" },
+          { id: "ticket" },
+          { id: "atm" },
+        ],
         installments: 1,
       },
       statement_descriptor: "ITAFOOD",
