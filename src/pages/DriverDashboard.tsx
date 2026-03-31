@@ -352,6 +352,11 @@ const DriverDashboard = () => {
       return;
     }
     setVerifying(true);
+
+    // Get delivery fee before finishing
+    const orderData = myDelivery || availableOrders?.find((o: any) => o.id === orderId);
+    const deliveryFee = Number(orderData?.delivery_fee || 0);
+
     const { error } = await supabase.rpc("driver_finish_delivery", {
       _order_id: orderId,
       _pin: pinInput,
@@ -361,13 +366,18 @@ const DriverDashboard = () => {
       toast.error(error.message || "Código inválido. Verifique com o cliente.");
       setVerifying(false);
     } else {
-      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-      toast.success("Entrega finalizada! 💰 Saldo liberado!");
+      confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
+      toast.success(
+        `🎉 Parabéns! R$ ${deliveryFee.toFixed(2)} foi adicionado ao seu saldo!`,
+        { duration: 8000, icon: "💰" }
+      );
       setPinInput("");
       setVerifying(false);
       queryClient.invalidateQueries({ queryKey: ["driver-my-delivery", user!.id] });
       queryClient.invalidateQueries({ queryKey: ["driver-available-orders"] });
       queryClient.invalidateQueries({ queryKey: ["driver-history", user!.id] });
+      queryClient.invalidateQueries({ queryKey: ["driver-balance", user!.id] });
+      queryClient.invalidateQueries({ queryKey: ["driver-earnings", user!.id] });
     }
   };
 
