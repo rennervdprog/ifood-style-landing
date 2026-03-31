@@ -162,8 +162,8 @@ const AdminDashboard = () => {
     setPrintingOrder(order);
     setTimeout(() => {
       window.print();
-      setPrintingOrder(null);
-    }, 100);
+      setTimeout(() => setPrintingOrder(null), 500);
+    }, 300);
   }, []);
 
   const toggleAutoPrint = () => {
