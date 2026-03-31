@@ -10,7 +10,7 @@ import confetti from "canvas-confetti";
 import AddressModal from "@/components/AddressModal";
 
 const paymentMethods = [
-  { id: "pix", label: "PIX (App)", icon: QrCode },
+  { id: "pix", label: "PIX Online (Mercado Pago)", icon: QrCode },
   { id: "cartao", label: "Cartão (Entrega)", icon: CreditCard },
   { id: "dinheiro", label: "Dinheiro", icon: Banknote },
 ];
@@ -158,6 +158,62 @@ const CheckoutPage = () => {
           .insert(orderItems);
 
         if (itemsError) throw itemsError;
+      }
+
+      // If PIX, redirect to Mercado Pago Checkout Pro
+      if (paymentMethod === "pix") {
+        // Get the last created order ID for this user
+        const lastOrderId = Object.keys(storeGroups).length > 0
+          ? (await supabase
+              .from("orders")
+              .select("id, total_price")
+              .eq("client_id", user.id)
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .single()).data
+          : null;
+
+        if (lastOrderId) {
+          try {
+            const mpItems = items.map((item) => ({
+              title: item.name,
+              quantity: item.quantity,
+              unit_price: Number((item.price).toFixed(2)),
+            }));
+
+            // Add delivery fee as an item
+            if (neighborhoodFee > 0) {
+              mpItems.push({
+                title: `Taxa de Entrega - ${profileNeighborhood || neighborhood}`,
+                quantity: 1,
+                unit_price: Number(neighborhoodFee.toFixed(2)),
+              });
+            }
+
+            const { data: mpData, error: mpError } = await supabase.functions.invoke(
+              "create-mp-preference",
+              {
+                body: {
+                  order_id: lastOrderId.id,
+                  items: mpItems,
+                  total: lastOrderId.total_price,
+                  payer_email: user.email,
+                },
+              }
+            );
+
+            if (mpError) throw mpError;
+            if (mpData?.init_point) {
+              clearCart();
+              toast.success("Redirecionando para o Mercado Pago...");
+              window.location.href = mpData.init_point;
+              return;
+            }
+          } catch (mpErr: any) {
+            console.error("MP Error:", mpErr);
+            toast.error("Erro ao gerar pagamento PIX. Seu pedido foi criado, pague presencialmente.");
+          }
+        }
       }
 
       clearCart();

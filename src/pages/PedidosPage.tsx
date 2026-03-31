@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
 import { ClipboardList, Clock, ChefHat, Truck, CheckCircle2, Lock, Copy } from "lucide-react";
 import { toast } from "sonner";
@@ -21,7 +21,24 @@ const statusConfig: Record<string, { label: string; icon: React.ElementType; col
 const PedidosPage = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
+
+  // Handle Mercado Pago payment return
+  useEffect(() => {
+    const paymentStatus = searchParams.get("payment");
+    if (paymentStatus) {
+      if (paymentStatus === "success") {
+        toast.success("✅ Pagamento confirmado com sucesso!");
+      } else if (paymentStatus === "failure") {
+        toast.error("❌ Pagamento não aprovado. Tente novamente.");
+      } else if (paymentStatus === "pending") {
+        toast("⏳ Pagamento pendente. Aguardando confirmação...");
+      }
+      // Clean up URL params
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const { data: orders, isLoading } = useQuery({
     queryKey: ["orders", user?.id],
