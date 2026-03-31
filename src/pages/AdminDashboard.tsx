@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
   Wifi, WifiOff, Pause, Play, Clock, ChefHat, Truck, CheckCircle2,
-  MapPin, CreditCard, Package, ArrowLeft, DollarSign, Banknote, UtensilsCrossed, ListOrdered, Plus, Printer
+  MapPin, CreditCard, Package, ArrowLeft, DollarSign, Banknote, UtensilsCrossed, ListOrdered, Plus, Printer, Bike
 } from "lucide-react";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import MenuBuilder from "@/components/MenuBuilder";
@@ -75,6 +75,25 @@ const AdminDashboard = () => {
     },
     enabled: !!store,
   });
+
+  // Fetch driver names for assigned orders
+  const driverIds = [...new Set(orders?.map(o => o.driver_id).filter(Boolean) || [])] as string[];
+  const { data: driverProfiles } = useQuery({
+    queryKey: ["driver-profiles", driverIds],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("drivers")
+        .select("user_id, name")
+        .in("user_id", driverIds);
+      return data || [];
+    },
+    enabled: driverIds.length > 0,
+  });
+
+  const getDriverName = (driverId: string) => {
+    const d = driverProfiles?.find((dr: any) => dr.user_id === driverId);
+    return d?.name || "Entregador";
+  };
 
   // Fetch client profiles for WhatsApp
   const clientIds = [...new Set(orders?.map(o => o.client_id) || [])];
@@ -192,7 +211,7 @@ const AdminDashboard = () => {
     switch (status) {
       case "pendente": return { label: "Aceitar", next: "preparando", color: "bg-green-500 hover:bg-green-600" };
       case "preparando": return { label: "🔔 Chamar Motoboy", next: "pronto_para_entrega" as OrderStatus, color: "bg-purple-500 hover:bg-purple-600" };
-      case "pronto_para_entrega": return { label: "🚀 Saiu p/ Entrega", next: "saiu_entrega", color: "bg-blue-500 hover:bg-blue-600" };
+      // pronto_para_entrega: no manual action - driver validates collection code to move to saiu_entrega
       case "saiu_entrega": return { label: "Finalizar", next: "finalizado", color: "bg-emerald-500 hover:bg-emerald-600" };
       default: return null;
     }
@@ -393,6 +412,16 @@ const AdminDashboard = () => {
                       <MapPin className="h-3.5 w-3.5" />
                       <span>{order.neighborhood} — {order.address_details}</span>
                     </div>
+
+                    {/* Driver assigned info */}
+                    {order.status === "pronto_para_entrega" && order.driver_id && (
+                      <div className="bg-blue-500/20 border border-blue-500/40 rounded-xl p-3 mb-3 flex items-center gap-2">
+                        <Bike className="h-4 w-4 text-blue-400" />
+                        <span className="text-sm text-blue-300 font-bold">
+                          🏍️ {getDriverName(order.driver_id)} aceitou e está vindo buscar
+                        </span>
+                      </div>
+                    )}
 
                     {/* Collection Code Display */}
                     {(order.status === "pronto_para_entrega" || order.status === "saiu_entrega" || order.status === "em_transito") && (order as any).collection_code && (

@@ -63,11 +63,12 @@ const DriverDashboard = () => {
   const { data: myDelivery } = useQuery({
     queryKey: ["driver-my-delivery", user?.id],
     queryFn: async () => {
+      // Check for active delivery: pronto_para_entrega (assigned) or saiu_entrega
       const { data, error } = await supabase
         .from("orders")
         .select("*, stores(name, owner_id), order_items(*, products(name))")
         .eq("driver_id", user!.id)
-        .eq("status", "em_transito" as any)
+        .in("status", ["pronto_para_entrega", "saiu_entrega", "em_transito"] as any)
         .maybeSingle();
       if (error) throw error;
       return data;
@@ -314,7 +315,11 @@ const DriverDashboard = () => {
               <div className="flex items-center gap-2 mb-3">
                 <Navigation className="h-5 w-5 text-blue-400" />
                 <h2 className="font-bold text-blue-400 text-sm">
-                  {(myDelivery as any).collection_validated ? "ENTREGA EM ANDAMENTO" : "COLETA NA LOJA"}
+                  {(myDelivery as any).status === 'pronto_para_entrega' && !(myDelivery as any).collection_validated
+                    ? "A CAMINHO DA LOJA"
+                    : (myDelivery as any).collection_validated || (myDelivery as any).status === 'saiu_entrega'
+                    ? "ENTREGA EM ANDAMENTO"
+                    : "COLETA NA LOJA"}
                 </h2>
               </div>
 
@@ -324,7 +329,7 @@ const DriverDashboard = () => {
                 <span className="text-gray-200">{(myDelivery as any).stores?.name || "Loja"}</span>
               </div>
 
-              {!(myDelivery as any).collection_validated ? (
+              {!(myDelivery as any).collection_validated && (myDelivery as any).status === 'pronto_para_entrega' ? (
                 /* STEP 1: Collection code validation */
                 <div>
                   <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-4 mb-3">
