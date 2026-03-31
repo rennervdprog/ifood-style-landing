@@ -30,7 +30,8 @@ export const openWhatsApp = (number: string, message?: string): void => {
  */
 export const isValidWhatsApp = (phone: string): boolean => {
   const digits = phone.replace(/\D/g, "");
-  return digits.length >= 10 && digits.length <= 13;
+  // Brazilian mobile: 11 digits (2 DDD + 9 number), landline: 10 digits (2 DDD + 8 number)
+  return digits.length >= 10 && digits.length <= 11;
 };
 
 /**
