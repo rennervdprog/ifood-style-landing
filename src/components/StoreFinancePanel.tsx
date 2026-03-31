@@ -26,11 +26,11 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("id, total_price, subtotal, delivery_fee, app_fee, payment_method, status, created_at")
+        .select("id, total_price, subtotal, delivery_fee, app_fee, payment_method, status, created_at, confirmed_at")
         .eq("store_id", storeId)
         .gte("created_at", dateRange.start.toISOString())
         .lte("created_at", dateRange.end.toISOString())
-        .in("status", ["entregue", "finalizado"])
+        .in("status", ["pendente", "preparando", "pronto_para_entrega", "em_transito", "saiu_entrega", "entregue", "finalizado"])
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data || [];
@@ -38,18 +38,24 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
     enabled: !!storeId,
   });
 
-  // Calculations
-  const totalSales = orders?.reduce((s, o) => s + Number(o.subtotal), 0) || 0;
+  const completedOrders = orders?.filter(o => ["entregue", "finalizado"].includes(o.status)) || [];
+  const activeOrders = orders?.filter(o => !["entregue", "finalizado"].includes(o.status)) || [];
+
+  // Calculations based on completed orders
+  const totalSales = completedOrders.reduce((s, o) => s + Number(o.subtotal), 0);
   const totalCommission = Math.round(totalSales * 0.15 * 100) / 100;
   const storePart = Math.round(totalSales * 0.85 * 100) / 100;
 
   // Physical payments (money is with the store) → store owes 15% commission
-  const physicalSales = orders?.filter(o => o.payment_method !== "pix").reduce((s, o) => s + Number(o.subtotal), 0) || 0;
+  const physicalSales = completedOrders.filter(o => o.payment_method !== "pix").reduce((s, o) => s + Number(o.subtotal), 0);
   const commissionDue = Math.round(physicalSales * 0.15 * 100) / 100;
 
-  // App payments (money is with admin) → admin owes 85% to store
-  const appSales = orders?.filter(o => o.payment_method === "pix").reduce((s, o) => s + Number(o.subtotal), 0) || 0;
+  // PIX App payments (confirmed via Mercado Pago) → admin owes 85% to store
+  const appSales = completedOrders.filter(o => o.payment_method === "pix").reduce((s, o) => s + Number(o.subtotal), 0);
   const creditFromApp = Math.round(appSales * 0.85 * 100) / 100;
+
+  // Active PIX orders (in progress, already paid)
+  const activePixSales = activeOrders.filter(o => o.payment_method === "pix").reduce((s, o) => s + Number(o.subtotal), 0);
 
   // Positive = admin owes store, Negative = store owes admin
   const finalBalance = Math.round((creditFromApp - commissionDue) * 100) / 100;
@@ -128,7 +134,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
             Vendas Totais ({periodLabel})
           </div>
           <p className="text-2xl font-black text-white">R$ {totalSales.toFixed(2)}</p>
-          <p className="text-xs text-gray-500 mt-1">{orders?.length || 0} pedidos finalizados</p>
+          <p className="text-xs text-gray-500 mt-1">{completedOrders.length} pedidos finalizados</p>
         </div>
 
         <div className="bg-gray-800 rounded-2xl p-4 border border-gray-700">
@@ -195,13 +201,32 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
         </button>
       </div>
 
+      {/* Active PIX orders (in progress) */}
+      {activeOrders.filter(o => o.payment_method === "pix").length > 0 && (
+        <div className="bg-blue-900/20 border border-blue-700 rounded-2xl p-4 space-y-2">
+          <h3 className="text-sm font-bold text-blue-300">⏳ Pedidos PIX em Andamento</h3>
+          <p className="text-xs text-gray-400">Estes pedidos já foram pagos via PIX e serão contabilizados ao finalizar.</p>
+          {activeOrders.filter(o => o.payment_method === "pix").map(order => (
+            <div key={order.id} className="flex justify-between text-xs bg-blue-900/30 rounded-xl p-2">
+              <span className="text-blue-300 font-bold">#{order.id.substring(0, 6).toUpperCase()}</span>
+              <span className="text-white">R$ {Number(order.subtotal).toFixed(2)}</span>
+              <span className="text-blue-400 capitalize">{order.status.replace(/_/g, " ")}</span>
+            </div>
+          ))}
+          <div className="flex justify-between text-xs pt-1 border-t border-blue-800">
+            <span className="text-blue-400">Total PIX em andamento</span>
+            <span className="text-blue-300 font-bold">R$ {activePixSales.toFixed(2)}</span>
+          </div>
+        </div>
+      )}
+
       {/* Order table */}
       {isLoading ? (
         <p className="text-gray-400 text-center py-8 text-sm">Carregando...</p>
-      ) : orders && orders.length > 0 ? (
+      ) : completedOrders.length > 0 ? (
         <div className="space-y-2">
-          <h3 className="text-sm font-bold text-gray-300">Extrato por Pedido</h3>
-          {orders.map(order => {
+          <h3 className="text-sm font-bold text-gray-300">Extrato por Pedido (Finalizados)</h3>
+          {completedOrders.map(order => {
             const sub = Number(order.subtotal);
             const commission = Math.round(sub * 0.15 * 100) / 100;
             const net = Math.round(sub * 0.85 * 100) / 100;
