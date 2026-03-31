@@ -594,7 +594,11 @@ const DriverDashboard = () => {
                       <button
                         onClick={() => validateCollection(myDelivery.id)}
                         disabled={collectionCodeInput.length !== 4 || verifyingCollection}
-                        className="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-4 rounded-2xl text-base active:scale-95 transition-transform flex items-center justify-center gap-2 disabled:opacity-50 disabled:active:scale-100"
+                        className={`w-full text-white font-bold py-4 rounded-2xl text-base active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:active:scale-100 ${
+                          collectionCodeInput.length === 4
+                            ? "bg-green-500 hover:bg-green-600 shadow-[0_0_20px_rgba(34,197,94,0.5)] animate-pulse"
+                            : "bg-purple-500 hover:bg-purple-600"
+                        }`}
                       >
                         <ShieldCheck className="h-5 w-5" />
                         {verifyingCollection ? "Verificando..." : "VALIDAR COLETA"}
