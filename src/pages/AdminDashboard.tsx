@@ -15,6 +15,7 @@ import StoreHoursManager from "@/components/StoreHoursManager";
 import AddonManager from "@/components/AddonManager";
 import StoreSettings from "@/components/StoreSettings";
 import { printThermalReceipt } from "@/lib/thermalPrint";
+import { requestNotificationPermission, notifyNewOrder } from "@/lib/notifications";
 
 type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_entrega" | "em_transito" | "entregue" | "finalizado";
 type DashboardTab = "orders" | "menu" | "addons" | "hours" | "settings";
