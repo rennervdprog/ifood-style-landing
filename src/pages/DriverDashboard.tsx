@@ -537,16 +537,27 @@ const DriverDashboard = () => {
                         <p className="text-xs text-gray-400 mb-3">
                           Peça o código de coleta de 4 dígitos ao lojista para retirar o pedido.
                         </p>
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          maxLength={4}
-                          placeholder="0000"
-                          value={collectionCodeInput}
-                          onChange={(e) => setCollectionCodeInput(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                          className="w-full text-center text-3xl font-black tracking-[0.5em] py-3 bg-gray-800 border border-gray-600 rounded-xl text-white placeholder:text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-400"
-                          autoFocus
-                        />
+                         <div className="relative">
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            maxLength={4}
+                            placeholder="0000"
+                            value={collectionCodeInput}
+                            onChange={(e) => setCollectionCodeInput(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                            className={`w-full text-center text-3xl font-black tracking-[0.5em] py-3 bg-gray-800 border-2 rounded-xl text-white placeholder:text-gray-700 focus:outline-none focus:ring-2 transition-all ${
+                              collectionCodeInput.length === 4
+                                ? "border-green-400 focus:ring-green-400"
+                                : "border-gray-600 focus:ring-purple-400"
+                            }`}
+                            autoFocus
+                          />
+                          {collectionCodeInput.length === 4 && (
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-green-400 animate-bounce">
+                              <CheckCircle2 className="h-6 w-6" />
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       {/* Items preview */}
