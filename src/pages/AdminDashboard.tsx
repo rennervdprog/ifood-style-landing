@@ -485,6 +485,7 @@ const AdminDashboard = () => {
             storeImageUrl={store.image_url}
             storeIsOpen={store.is_open}
             forceClosed={(store as any).force_closed || false}
+            storeSlug={(store as any).slug || null}
           />
         </div>
       ) : dashboardTab === "menu" && store ? (
