@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
-import { ClipboardList, Clock, ChefHat, Truck, CheckCircle2, Lock, Copy, QrCode, XCircle } from "lucide-react";
+import { ClipboardList, Clock, ChefHat, Truck, CheckCircle2, Lock, Copy, QrCode, XCircle, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { notifyOrderPreparing, notifyOrderOnTheWay, notifyOrderDelivered } from "@/lib/notifications";
 
@@ -94,50 +94,70 @@ const PedidosPage = () => {
 
   const [payingOrderId, setPayingOrderId] = useState<string | null>(null);
   const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
+  const [pixModal, setPixModal] = useState<{
+    orderId: string;
+    qrCode: string | null;
+    qrCodeBase64: string | null;
+    loading: boolean;
+  } | null>(null);
 
-  const retryPayment = async (order: any) => {
+  const generatePix = async (order: any) => {
     if (!user) return;
     setPayingOrderId(order.id);
+    setPixModal({ orderId: order.id, qrCode: null, qrCodeBase64: null, loading: true });
+
     try {
-      const mpItems = order.order_items?.map((item: any) => ({
-        title: `${item.products?.name || "Item"} - ${order.stores?.name || "ItaFood"}`,
-        quantity: item.quantity,
-        unit_price: Number(item.unit_price),
-      })) || [];
+      // Get user profile for payer name
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("user_id", user.id)
+        .maybeSingle();
 
-      if (Number(order.delivery_fee) > 0) {
-        mpItems.push({
-          title: `Taxa de Entrega - ${order.neighborhood}`,
-          quantity: 1,
-          unit_price: Number(order.delivery_fee),
-        });
-      }
+      const nameParts = (profile?.full_name || "Cliente ItaFood").split(" ");
+      const firstName = nameParts[0] || "Cliente";
+      const lastName = nameParts.slice(1).join(" ") || "ItaFood";
 
-      const { data: mpData, error: mpError } = await supabase.functions.invoke(
-        "create-mp-preference",
+      const { data: pixData, error: pixError } = await supabase.functions.invoke(
+        "create-pix-payment",
         {
           body: {
             order_id: order.id,
-            items: mpItems,
-            total: Number(order.total_price),
-            payer_email: user.email,
-            store_name: order.stores?.name || "ItaFood",
+            amount: Number(order.total_price),
+            description: `Pedido #${order.id.substring(0, 6).toUpperCase()} - ${order.stores?.name || "ItaFood"}`,
+            payer_first_name: firstName,
+            payer_last_name: lastName,
           },
         }
       );
 
-      if (mpError) throw mpError;
-      if (mpData?.init_point) {
-        window.location.href = mpData.init_point;
-        return;
+      if (pixError) throw pixError;
+
+      if (pixData?.qr_code || pixData?.qr_code_base64) {
+        setPixModal({
+          orderId: order.id,
+          qrCode: pixData.qr_code,
+          qrCodeBase64: pixData.qr_code_base64,
+          loading: false,
+        });
+      } else {
+        throw new Error("QR Code não retornado");
       }
-      toast.error("Não foi possível gerar o link de pagamento.");
-    } catch (err) {
-      console.error("Retry payment error:", err);
-      toast.error("Erro ao gerar pagamento. Tente novamente.");
+    } catch (err: any) {
+      console.error("PIX generation error:", err);
+      const errorMsg = err?.message?.includes("Chave") 
+        ? err.message 
+        : "Erro ao gerar PIX. Tente novamente.";
+      toast.error(errorMsg);
+      setPixModal(null);
     } finally {
       setPayingOrderId(null);
     }
+  };
+
+  const copyPixCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    toast.success("Código PIX copiado! Cole no app do seu banco.");
   };
 
   const cancelOrder = async (orderId: string) => {
@@ -229,12 +249,12 @@ const PedidosPage = () => {
                     </p>
                     <div className="flex gap-2">
                       <button
-                        onClick={() => retryPayment(order)}
+                        onClick={() => generatePix(order)}
                         disabled={payingOrderId === order.id}
                         className="flex-1 flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold py-2.5 rounded-xl text-xs disabled:opacity-50"
                       >
                         <QrCode className="h-4 w-4" />
-                        {payingOrderId === order.id ? "Abrindo..." : "Pagar com PIX agora"}
+                        {payingOrderId === order.id ? "Gerando PIX..." : "Pagar com PIX agora"}
                       </button>
                       <button
                         onClick={() => cancelOrder(order.id)}
@@ -304,6 +324,60 @@ const PedidosPage = () => {
           </div>
         )}
       </div>
+
+      {/* PIX QR Code Modal */}
+      {pixModal && (
+        <div className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-4" onClick={() => setPixModal(null)}>
+          <div className="bg-card rounded-2xl p-6 w-full max-w-sm border border-border" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-foreground text-lg">Pagamento PIX</h3>
+              <button onClick={() => setPixModal(null)} className="text-muted-foreground hover:text-foreground">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {pixModal.loading ? (
+              <div className="flex flex-col items-center py-8">
+                <Loader2 className="h-10 w-10 text-primary animate-spin mb-3" />
+                <p className="text-sm text-muted-foreground">Gerando QR Code PIX...</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* QR Code Image */}
+                {pixModal.qrCodeBase64 && (
+                  <div className="flex justify-center">
+                    <img
+                      src={`data:image/png;base64,${pixModal.qrCodeBase64}`}
+                      alt="QR Code PIX"
+                      className="w-56 h-56 rounded-xl border border-border"
+                    />
+                  </div>
+                )}
+
+                {/* Copy Pix Code */}
+                {pixModal.qrCode && (
+                  <button
+                    onClick={() => copyPixCode(pixModal.qrCode!)}
+                    className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold py-3 rounded-xl text-sm"
+                  >
+                    <Copy className="h-4 w-4" />
+                    Copiar Código PIX
+                  </button>
+                )}
+
+                <div className="bg-muted/50 rounded-xl p-3 text-center">
+                  <p className="text-xs text-muted-foreground">
+                    📱 Abra o app do seu banco, escolha <strong>Pagar com PIX</strong> e escaneie o QR Code ou cole o código copiado.
+                  </p>
+                  <p className="text-xs text-primary font-bold mt-2">
+                    ✅ Após pagar, seu pedido será liberado automaticamente!
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <BottomNav />
     </div>

@@ -162,71 +162,13 @@ const CheckoutPage = () => {
         if (itemsError) throw itemsError;
       }
 
-      // If PIX, redirect to Mercado Pago Checkout Pro
+      // If PIX, the order was created with status "aguardando_pagamento"
+      // The client will see it in "Meus Pedidos" and can generate PIX from there
       if (paymentMethod === "pix") {
-        // Get the last created order ID for this user
-        const lastOrderId = Object.keys(storeGroups).length > 0
-          ? (await supabase
-              .from("orders")
-              .select("id, total_price")
-              .eq("client_id", user.id)
-              .order("created_at", { ascending: false })
-              .limit(1)
-              .single()).data
-          : null;
-
-        if (lastOrderId) {
-          try {
-            // Get store name for the payment title
-            const firstStoreId = Object.keys(storeGroups)[0];
-            const { data: storeData } = await supabase
-              .from("stores")
-              .select("name")
-              .eq("id", firstStoreId)
-              .single();
-
-            const storeName = storeData?.name || "ItaFood";
-
-            const mpItems = items.map((item) => ({
-              title: `${item.name} - ${storeName}`,
-              quantity: item.quantity,
-              unit_price: Number((item.price).toFixed(2)),
-            }));
-
-            // Add delivery fee as an item
-            if (neighborhoodFee > 0) {
-              mpItems.push({
-                title: `Taxa de Entrega - ${profileNeighborhood || neighborhood}`,
-                quantity: 1,
-                unit_price: Number(neighborhoodFee.toFixed(2)),
-              });
-            }
-
-            const { data: mpData, error: mpError } = await supabase.functions.invoke(
-              "create-mp-preference",
-              {
-                body: {
-                  order_id: lastOrderId.id,
-                  items: mpItems,
-                  total: lastOrderId.total_price,
-                  payer_email: user.email,
-                  store_name: storeName,
-                },
-              }
-            );
-
-            if (mpError) throw mpError;
-            if (mpData?.init_point) {
-              clearCart();
-              toast.success("Redirecionando para o Mercado Pago...");
-              window.location.href = mpData.init_point;
-              return;
-            }
-          } catch (mpErr: any) {
-            console.error("MP Error:", mpErr);
-            toast.error("Erro ao gerar pagamento PIX. Seu pedido foi criado, pague presencialmente.");
-          }
-        }
+        clearCart();
+        toast.success("Pedido criado! Acesse 'Meus Pedidos' para pagar com PIX.", { duration: 5000 });
+        navigate("/pedidos");
+        return;
       }
 
       clearCart();
