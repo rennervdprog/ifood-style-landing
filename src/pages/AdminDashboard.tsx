@@ -23,6 +23,7 @@ type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_ent
 type DashboardTab = "orders" | "menu" | "addons" | "hours" | "settings" | "finance";
 
 const ALERT_SOUND_URL = "https://actions.google.com/sounds/v1/alarms/beep_short.ogg";
+const CASH_REGISTER_SOUND_URL = "https://actions.google.com/sounds/v1/office/cash_register.ogg";
 
 const statusColumns: { status: OrderStatus; label: string; icon: React.ElementType; color: string }[] = [
   { status: "pendente", label: "Novos", icon: Clock, color: "text-yellow-400" },
