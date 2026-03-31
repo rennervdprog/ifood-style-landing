@@ -6,12 +6,13 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
   Wifi, WifiOff, Pause, Play, Clock, ChefHat, Truck, CheckCircle2,
-  MapPin, CreditCard, Package, ArrowLeft, DollarSign, Banknote, UtensilsCrossed, ListOrdered, Plus
+  MapPin, CreditCard, Package, ArrowLeft, DollarSign, Banknote, UtensilsCrossed, ListOrdered, Plus, Printer
 } from "lucide-react";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import MenuBuilder from "@/components/MenuBuilder";
 import StoreHoursManager from "@/components/StoreHoursManager";
 import AddonManager from "@/components/AddonManager";
+import OrderReceipt from "@/components/OrderReceipt";
 
 type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_entrega" | "em_transito" | "entregue" | "finalizado";
 type DashboardTab = "orders" | "menu" | "addons" | "hours";
@@ -37,9 +38,12 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const receiptRef = useRef<HTMLDivElement | null>(null);
   const [isOnline, setIsOnline] = useState(true);
   const [activeTab, setActiveTab] = useState<OrderStatus>("pendente");
   const [dashboardTab, setDashboardTab] = useState<DashboardTab>("orders");
+  const [autoPrint, setAutoPrint] = useState(() => localStorage.getItem("autoPrint") === "true");
+  const [printingOrder, setPrintingOrder] = useState<any>(null);
   const prevPendingCountRef = useRef(0);
 
   // Fetch store for this owner
@@ -135,6 +139,21 @@ const AdminDashboard = () => {
     prevPendingCountRef.current = pendingCount;
   }, [orders, playAlert]);
 
+  const handlePrint = useCallback((order: any) => {
+    setPrintingOrder(order);
+    setTimeout(() => {
+      window.print();
+      setPrintingOrder(null);
+    }, 100);
+  }, []);
+
+  const toggleAutoPrint = () => {
+    const next = !autoPrint;
+    setAutoPrint(next);
+    localStorage.setItem("autoPrint", String(next));
+    toast.success(next ? "Impressão automática ativada" : "Impressão automática desativada");
+  };
+
   const updateOrderStatus = async (orderId: string, newStatus: OrderStatus) => {
     const { error } = await supabase
       .from("orders")
@@ -145,6 +164,11 @@ const AdminDashboard = () => {
     } else {
       toast.success(`Pedido movido para "${statusColumns.find(c => c.status === newStatus)?.label}"`);
       queryClient.invalidateQueries({ queryKey: ["store-orders", store?.id] });
+      // Auto-print on accept
+      if (newStatus === "preparando" && autoPrint) {
+        const order = orders?.find((o: any) => o.id === orderId);
+        if (order) handlePrint(order);
+      }
     }
   };
 
@@ -196,17 +220,31 @@ const AdminDashboard = () => {
               </div>
             </div>
           </div>
-          <button
-            onClick={toggleStoreOpen}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-colors ${
-              store?.is_open
-                ? "bg-red-500/20 text-red-400 hover:bg-red-500/30"
-                : "bg-green-500/20 text-green-400 hover:bg-green-500/30"
-            }`}
-          >
-            {store?.is_open ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-            {store?.is_open ? "Pausar" : "Reabrir"}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggleAutoPrint}
+              title={autoPrint ? "Impressão automática ATIVA" : "Impressão automática INATIVA"}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors ${
+                autoPrint
+                  ? "bg-primary/20 text-primary"
+                  : "bg-gray-700 text-gray-400"
+              }`}
+            >
+              <Printer className="h-3.5 w-3.5" />
+              Auto
+            </button>
+            <button
+              onClick={toggleStoreOpen}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-colors ${
+                store?.is_open
+                  ? "bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                  : "bg-green-500/20 text-green-400 hover:bg-green-500/30"
+              }`}
+            >
+              {store?.is_open ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+              {store?.is_open ? "Pausar" : "Reabrir"}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -400,14 +438,23 @@ const AdminDashboard = () => {
                           R$ {Number(order.total_price).toFixed(2)}
                         </p>
                       </div>
-                      {action && (
+                      <div className="flex items-center gap-2">
                         <button
-                          onClick={() => updateOrderStatus(order.id, action.next)}
-                          className={`${action.color} text-white font-bold px-5 py-2.5 rounded-xl text-sm active:scale-95 transition-transform`}
+                          onClick={() => handlePrint(order)}
+                          className="bg-gray-600 hover:bg-gray-500 text-white font-bold px-3 py-2.5 rounded-xl text-sm active:scale-95 transition-transform flex items-center gap-1.5"
+                          title="Imprimir Comanda"
                         >
-                          {action.label}
+                          <Printer className="h-4 w-4" />
                         </button>
-                      )}
+                        {action && (
+                          <button
+                            onClick={() => updateOrderStatus(order.id, action.next)}
+                            className={`${action.color} text-white font-bold px-5 py-2.5 rounded-xl text-sm active:scale-95 transition-transform`}
+                          >
+                            {action.label}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
@@ -432,6 +479,15 @@ const AdminDashboard = () => {
             </button>
           )}
         </>
+      )}
+      {/* Hidden receipt for printing */}
+      {printingOrder && (
+        <OrderReceipt
+          ref={receiptRef}
+          order={printingOrder}
+          storeName={store?.name || "Loja"}
+          clientName={getClientName(printingOrder.client_id)}
+        />
       )}
     </div>
   );

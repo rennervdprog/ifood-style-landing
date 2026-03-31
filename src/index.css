@@ -80,3 +80,29 @@
 .animate-pulse-border {
   animation: pulse-border 2s ease-in-out infinite;
 }
+
+/* Thermal receipt print styles */
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  .receipt-content,
+  .receipt-content * {
+    visibility: visible !important;
+  }
+  .receipt-content {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm;
+    margin: 0;
+    padding: 2mm;
+    background: #fff !important;
+    color: #000 !important;
+  }
+  @page {
+    size: 80mm auto;
+    margin: 0;
+  }
+}
