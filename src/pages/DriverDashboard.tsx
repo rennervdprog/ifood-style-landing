@@ -199,6 +199,32 @@ const DriverDashboard = () => {
     return filteredHistory.reduce((sum: number, o: any) => sum + Number(o.delivery_fee), 0);
   }, [filteredHistory]);
 
+  // Sync online status with DB on mount/change
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("drivers")
+      .update({ is_online: isOnline } as any)
+      .eq("user_id", user.id)
+      .then(() => {});
+    // Set offline on page unload
+    const handleUnload = () => {
+      navigator.sendBeacon?.("", "");
+      supabase
+        .from("drivers")
+        .update({ is_online: false } as any)
+        .eq("user_id", user.id);
+    };
+    window.addEventListener("beforeunload", handleUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleUnload);
+      supabase
+        .from("drivers")
+        .update({ is_online: false } as any)
+        .eq("user_id", user.id);
+    };
+  }, [user, isOnline]);
+
   useEffect(() => {
     if (!user || !isOnline) return;
     const channel = supabase
@@ -231,10 +257,17 @@ const DriverDashboard = () => {
     prevCountRef.current = count;
   }, [availableOrders, playAlert]);
 
-  const toggleOnline = () => {
+  const toggleOnline = async () => {
     const next = !isOnline;
     setIsOnline(next);
     localStorage.setItem("driver_online", String(next));
+    // Sync with database
+    if (user) {
+      await supabase
+        .from("drivers")
+        .update({ is_online: next } as any)
+        .eq("user_id", user.id);
+    }
     toast.success(next ? "Você está online! Aguardando entregas..." : "Você está offline.");
   };
 
