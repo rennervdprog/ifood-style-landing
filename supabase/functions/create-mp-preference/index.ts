@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
 
     const orderLabel = store_name 
       ? `Pedido #${order_id.substring(0, 6).toUpperCase()} - ${store_name}`
-      : `Pedido ItaFood #${order_id.substring(0, 6).toUpperCase()}`;
+      : `Pedido FoodIta #${order_id.substring(0, 6).toUpperCase()}`;
 
     const preferenceBody = {
       items: items.map((item: any) => ({
@@ -103,7 +103,7 @@ Deno.serve(async (req) => {
         ],
         installments: 1,
       },
-      statement_descriptor: "ITAFOOD",
+      statement_descriptor: "FOODITA",
     };
 
     const mpResponse = await fetch("https://api.mercadopago.com/checkout/preferences", {

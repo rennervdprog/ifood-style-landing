@@ -1,6 +1,6 @@
 {
-  "name": "ItaFood - O delivery oficial de Itatinga",
-  "short_name": "ItaFood",
+  "name": "FoodIta - O delivery oficial de Itatinga",
+  "short_name": "FoodIta",
   "description": "Peça comida dos melhores restaurantes de Itatinga/SP",
   "start_url": "/",
   "display": "standalone",

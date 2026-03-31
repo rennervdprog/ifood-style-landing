@@ -141,9 +141,9 @@ const PedidosPage = () => {
         .eq("user_id", user.id)
         .maybeSingle();
 
-      const nameParts = (profile?.full_name || "Cliente ItaFood").split(" ");
+      const nameParts = (profile?.full_name || "Cliente FoodIta").split(" ");
       const firstName = nameParts[0] || "Cliente";
-      const lastName = nameParts.slice(1).join(" ") || "ItaFood";
+      const lastName = nameParts.slice(1).join(" ") || "FoodIta";
       const cpf = profile?.document?.replace(/\D/g, "") || "";
 
       if (!cpf || cpf.length !== 11) {
@@ -159,7 +159,7 @@ const PedidosPage = () => {
           body: {
             order_id: order.id,
             amount: Number(order.total_price),
-            description: `Pedido #${order.id.substring(0, 6).toUpperCase()} - ${order.stores?.name || "ItaFood"}`,
+            description: `Pedido #${order.id.substring(0, 6).toUpperCase()} - ${order.stores?.name || "FoodIta"}`,
             payer_first_name: firstName,
             payer_last_name: lastName,
             payer_cpf: cpf,
