@@ -325,6 +325,60 @@ const PedidosPage = () => {
         )}
       </div>
 
+      {/* PIX QR Code Modal */}
+      {pixModal && (
+        <div className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-4" onClick={() => setPixModal(null)}>
+          <div className="bg-card rounded-2xl p-6 w-full max-w-sm border border-border" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-foreground text-lg">Pagamento PIX</h3>
+              <button onClick={() => setPixModal(null)} className="text-muted-foreground hover:text-foreground">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {pixModal.loading ? (
+              <div className="flex flex-col items-center py-8">
+                <Loader2 className="h-10 w-10 text-primary animate-spin mb-3" />
+                <p className="text-sm text-muted-foreground">Gerando QR Code PIX...</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* QR Code Image */}
+                {pixModal.qrCodeBase64 && (
+                  <div className="flex justify-center">
+                    <img
+                      src={`data:image/png;base64,${pixModal.qrCodeBase64}`}
+                      alt="QR Code PIX"
+                      className="w-56 h-56 rounded-xl border border-border"
+                    />
+                  </div>
+                )}
+
+                {/* Copy Pix Code */}
+                {pixModal.qrCode && (
+                  <button
+                    onClick={() => copyPixCode(pixModal.qrCode!)}
+                    className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold py-3 rounded-xl text-sm"
+                  >
+                    <Copy className="h-4 w-4" />
+                    Copiar Código PIX
+                  </button>
+                )}
+
+                <div className="bg-muted/50 rounded-xl p-3 text-center">
+                  <p className="text-xs text-muted-foreground">
+                    📱 Abra o app do seu banco, escolha <strong>Pagar com PIX</strong> e escaneie o QR Code ou cole o código copiado.
+                  </p>
+                  <p className="text-xs text-primary font-bold mt-2">
+                    ✅ Após pagar, seu pedido será liberado automaticamente!
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       <BottomNav />
     </div>
   );
