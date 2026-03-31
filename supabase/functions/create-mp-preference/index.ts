@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
     const userId = claimsData.claims.sub;
 
     const body = await req.json();
-    const { order_id, items, total, payer_email, payer_name } = body;
+    const { order_id, items, total, payer_email, payer_name, store_name } = body;
 
     if (!order_id || !items || !total) {
       return new Response(JSON.stringify({ error: "Missing required fields: order_id, items, total" }), {
