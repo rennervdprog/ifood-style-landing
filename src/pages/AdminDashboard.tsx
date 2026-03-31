@@ -15,6 +15,7 @@ import StoreHoursManager from "@/components/StoreHoursManager";
 import AddonManager from "@/components/AddonManager";
 import StoreSettings from "@/components/StoreSettings";
 import { printThermalReceipt } from "@/lib/thermalPrint";
+import { requestNotificationPermission, notifyNewOrder } from "@/lib/notifications";
 
 type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_entrega" | "em_transito" | "entregue" | "finalizado";
 type DashboardTab = "orders" | "menu" | "addons" | "hours" | "settings";
@@ -179,7 +180,8 @@ const AdminDashboard = () => {
       audioRef.current = audio;
       setSoundEnabled(true);
       setShowSoundPrompt(false);
-      toast.success("🔔 Alertas sonoros ativados!");
+      requestNotificationPermission();
+      toast.success("🔔 Alertas sonoros e notificações ativados!");
     }).catch(() => {
       toast.error("Não foi possível ativar o som. Tente novamente.");
     });
@@ -224,6 +226,7 @@ const AdminDashboard = () => {
           queryClient.invalidateQueries({ queryKey: ["store-orders", store.id] });
           if (payload.eventType === "INSERT" && (payload.new as any).status === "pendente") {
             playAlert();
+            notifyNewOrder();
             toast.info("🔔 Novo pedido recebido!", { duration: 8000 });
           }
           if (payload.eventType === "UPDATE" && (payload.new as any).status === "finalizado") {

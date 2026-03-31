@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
 import { ClipboardList, Clock, ChefHat, Truck, CheckCircle2, Lock, Copy } from "lucide-react";
 import { toast } from "sonner";
+import { notifyOrderPreparing, notifyOrderOnTheWay, notifyOrderDelivered } from "@/lib/notifications";
 
 const statusConfig: Record<string, { label: string; icon: React.ElementType; color: string }> = {
   pendente: { label: "Pendente", icon: Clock, color: "text-yellow-500" },
@@ -49,8 +50,12 @@ const PedidosPage = () => {
           table: "orders",
           filter: `client_id=eq.${user.id}`,
         },
-        () => {
+        (payload) => {
           queryClient.invalidateQueries({ queryKey: ["orders", user.id] });
+          const newStatus = (payload.new as any).status;
+          if (newStatus === "preparando") notifyOrderPreparing();
+          if (newStatus === "em_transito" || newStatus === "saiu_entrega") notifyOrderOnTheWay();
+          if (newStatus === "finalizado") notifyOrderDelivered();
         }
       )
       .subscribe();

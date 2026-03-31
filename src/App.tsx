@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/contexts/CartContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import RoleGuard from "@/components/RoleGuard";
+import InstallPrompt from "@/components/InstallPrompt";
 import Index from "./pages/Index";
 import StorePage from "./pages/StorePage";
 import CartPage from "./pages/CartPage";
@@ -26,6 +27,7 @@ const App = () => (
       <AuthProvider>
         <CartProvider>
           <Toaster />
+          <InstallPrompt />
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
