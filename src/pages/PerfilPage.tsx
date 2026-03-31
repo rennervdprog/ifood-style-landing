@@ -1,11 +1,11 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/BottomNav";
-import { User, LogOut, Store, Shield, UserPlus, MapPin, Save, Bike, Wallet, Copy, AlertTriangle, MessageCircle, Truck } from "lucide-react";
+import { User, LogOut, Store, Shield, UserPlus, MapPin, Save, Bike, Wallet, Copy, AlertTriangle, MessageCircle, Truck, Download, Smartphone, X, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { maskWhatsApp, formatWhatsAppNumber, isValidWhatsApp } from "@/lib/whatsapp";
 
@@ -101,6 +101,61 @@ const PerfilPage = () => {
       setPixLoaded(true);
     }
   }, [profile, pixLoaded]);
+
+  // PWA Install state
+  interface BeforeInstallPromptEvent extends Event {
+    prompt(): Promise<void>;
+    userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+  }
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [showInstallButton, setShowInstallButton] = useState(false);
+  const [showIOSModal, setShowIOSModal] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(false);
+
+  const isIOS = useMemo(() => /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream, []);
+  const isStandalone = useMemo(() => window.matchMedia("(display-mode: standalone)").matches, []);
+
+  useEffect(() => {
+    if (isStandalone) { setIsInstalled(true); return; }
+
+    if (isIOS) {
+      setShowInstallButton(true);
+      return;
+    }
+
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
+      setShowInstallButton(true);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+
+    const installedHandler = () => {
+      setIsInstalled(true);
+      setShowInstallButton(false);
+    };
+    window.addEventListener("appinstalled", installedHandler);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handler);
+      window.removeEventListener("appinstalled", installedHandler);
+    };
+  }, [isIOS, isStandalone]);
+
+  const handleInstallClick = useCallback(async () => {
+    if (isIOS) {
+      setShowIOSModal(true);
+      return;
+    }
+    if (!deferredPrompt) return;
+    await deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === "accepted") {
+      setShowInstallButton(false);
+      setIsInstalled(true);
+    }
+    setDeferredPrompt(null);
+  }, [isIOS, deferredPrompt]);
 
   // Compute selected neighborhood fee
   const selectedFee = useMemo(() => {
@@ -225,6 +280,68 @@ const PerfilPage = () => {
             </p>
           </div>
         </div>
+
+        {/* PWA Install Button */}
+        {showInstallButton && !isInstalled && (
+          <button
+            onClick={handleInstallClick}
+            className="w-full bg-destructive text-destructive-foreground font-bold py-3.5 rounded-2xl flex items-center justify-center gap-3 text-sm active:scale-[0.98] transition-transform"
+          >
+            <Download className="h-5 w-5" />
+            📲 Baixar Aplicativo ItaFood
+          </button>
+        )}
+
+        {/* iOS Install Modal */}
+        {showIOSModal && (
+          <div className="fixed inset-0 z-[100] bg-black/60 flex items-end justify-center" onClick={() => setShowIOSModal(false)}>
+            <div className="bg-card w-full max-w-md rounded-t-3xl p-6 space-y-4 animate-in slide-in-from-bottom-4" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-black text-foreground">Instalar ItaFood no iPhone</h3>
+                <button onClick={() => setShowIOSModal(false)} className="text-muted-foreground">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3 bg-muted/50 rounded-xl p-3">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-lg">1</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-foreground">Toque no botão Compartilhar</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                      Ícone <Share2 className="h-3.5 w-3.5 inline" /> na barra do Safari (embaixo)
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 bg-muted/50 rounded-xl p-3">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-lg">2</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-foreground">Role para baixo e toque em:</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">"<strong>Adicionar à Tela de Início</strong>"</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 bg-muted/50 rounded-xl p-3">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-lg">3</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-foreground">Toque em "Adicionar"</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">O ItaFood aparecerá na sua tela inicial!</p>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowIOSModal(false)}
+                className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-xl text-sm"
+              >
+                Entendi!
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Address section */}
         <div className="bg-card rounded-2xl p-4 border border-border">
