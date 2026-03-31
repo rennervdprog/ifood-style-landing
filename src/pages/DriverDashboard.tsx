@@ -313,105 +313,175 @@ const DriverDashboard = () => {
             <div className="bg-blue-500/10 border-2 border-blue-500 rounded-2xl p-4">
               <div className="flex items-center gap-2 mb-3">
                 <Navigation className="h-5 w-5 text-blue-400" />
-                <h2 className="font-bold text-blue-400 text-sm">ENTREGA EM ANDAMENTO</h2>
+                <h2 className="font-bold text-blue-400 text-sm">
+                  {(myDelivery as any).collection_validated ? "ENTREGA EM ANDAMENTO" : "COLETA NA LOJA"}
+                </h2>
               </div>
 
-              <div className="space-y-2 mb-3">
-                <div className="flex items-center gap-2 text-sm">
-                  <Store className="h-4 w-4 text-gray-400" />
-                  <span className="text-gray-200">{(myDelivery as any).stores?.name || "Loja"}</span>
-                </div>
-                <div className="flex items-start gap-2 text-sm">
-                  <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
-                  <div>
-                    <span className="text-gray-200 font-medium">{myDelivery.neighborhood}</span>
-                    <p className="text-gray-400 text-xs mt-0.5">{myDelivery.address_details}</p>
+              {/* Store info always visible */}
+              <div className="flex items-center gap-2 text-sm mb-3">
+                <Store className="h-4 w-4 text-gray-400" />
+                <span className="text-gray-200">{(myDelivery as any).stores?.name || "Loja"}</span>
+              </div>
+
+              {!(myDelivery as any).collection_validated ? (
+                /* STEP 1: Collection code validation */
+                <div>
+                  <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-4 mb-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <ShieldCheck className="h-5 w-5 text-purple-400" />
+                      <span className="text-sm font-bold text-purple-400">Validar Coleta na Loja</span>
+                    </div>
+                    <p className="text-xs text-gray-400 mb-3">
+                      Peça o código de coleta de 4 dígitos ao lojista para retirar o pedido.
+                    </p>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={4}
+                      placeholder="0000"
+                      value={collectionCodeInput}
+                      onChange={(e) => setCollectionCodeInput(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                      className="w-full text-center text-3xl font-black tracking-[0.5em] py-3 bg-gray-800 border border-gray-600 rounded-xl text-white placeholder:text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-400"
+                      autoFocus
+                    />
                   </div>
-                </div>
-              </div>
 
-              {/* Cash payment alert */}
-              {myDelivery.payment_method === "dinheiro" && (
-                <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-xl p-3 mb-3">
-                  <p className="text-sm font-bold text-yellow-400 mb-2">💰 PAGAMENTO EM DINHEIRO</p>
-                  <div className="text-xs text-gray-300 space-y-1">
-                    {(myDelivery as any).needs_change && Number((myDelivery as any).change_for) > 0 && (
-                      <p>1️⃣ Pegar <span className="font-bold text-yellow-400">R$ {(Number((myDelivery as any).change_for) - Number(myDelivery.total_price)).toFixed(2)}</span> de troco com o lojista.</p>
+                  {/* Items preview */}
+                  <div className="bg-gray-900/50 rounded-xl p-3 mb-3">
+                    <p className="text-xs text-gray-500 mb-1">Itens do pedido:</p>
+                    {(myDelivery as any).order_items?.map((item: any) => (
+                      <p key={item.id} className="text-sm text-gray-300">
+                        <span className="text-blue-400 font-bold">{item.quantity}x</span>{" "}
+                        {item.products?.name || "Item"}
+                      </p>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center justify-between mb-3 bg-green-500/10 border border-green-500/30 rounded-xl p-3">
+                    <span className="text-sm font-bold text-green-400">🏍️ Ganho da Entrega</span>
+                    <span className="text-xl font-black text-green-400">
+                      R$ {Number(myDelivery.delivery_fee).toFixed(2)}
+                    </span>
+                  </div>
+
+                  {/* WhatsApp loja */}
+                  {deliveryStoreOwnerId && getContactWhatsApp(deliveryStoreOwnerId) && (
+                    <div className="mb-3">
+                      <WhatsAppButton
+                        number={getContactWhatsApp(deliveryStoreOwnerId)}
+                        message={`Olá! Sou o entregador do app. Estou com o pedido #${myDelivery.id.slice(0, 8).toUpperCase()}.`}
+                        label="Falar com a Loja"
+                        size="md"
+                        className="w-full"
+                      />
+                    </div>
+                  )}
+
+                  <button
+                    onClick={() => validateCollection(myDelivery.id)}
+                    disabled={collectionCodeInput.length !== 4 || verifyingCollection}
+                    className="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-4 rounded-2xl text-base active:scale-95 transition-transform flex items-center justify-center gap-2 disabled:opacity-50 disabled:active:scale-100"
+                  >
+                    <ShieldCheck className="h-5 w-5" />
+                    {verifyingCollection ? "Verificando..." : "VALIDAR COLETA"}
+                  </button>
+                </div>
+              ) : (
+                /* STEP 2: Delivery to client (after collection validated) */
+                <div>
+                  <div className="flex items-start gap-2 text-sm mb-3">
+                    <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
+                    <div>
+                      <span className="text-gray-200 font-medium">{myDelivery.neighborhood}</span>
+                      <p className="text-gray-400 text-xs mt-0.5">{myDelivery.address_details}</p>
+                    </div>
+                  </div>
+
+                  {/* Cash payment alert */}
+                  {myDelivery.payment_method === "dinheiro" && (
+                    <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-xl p-3 mb-3">
+                      <p className="text-sm font-bold text-yellow-400 mb-2">💰 PAGAMENTO EM DINHEIRO</p>
+                      <div className="text-xs text-gray-300 space-y-1">
+                        {(myDelivery as any).needs_change && Number((myDelivery as any).change_for) > 0 && (
+                          <p>1️⃣ Pegar <span className="font-bold text-yellow-400">R$ {(Number((myDelivery as any).change_for) - Number(myDelivery.total_price)).toFixed(2)}</span> de troco com o lojista.</p>
+                        )}
+                        <p>{(myDelivery as any).needs_change ? "2️⃣" : "1️⃣"} Receber <span className="font-bold text-green-400">R$ {Number(myDelivery.total_price).toFixed(2)}</span> do cliente.</p>
+                        <p>{(myDelivery as any).needs_change ? "3️⃣" : "2️⃣"} Retornar à loja para entregar o valor total.</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* WhatsApp contact buttons */}
+                  <div className="flex gap-2 mb-3">
+                    {deliveryStoreOwnerId && getContactWhatsApp(deliveryStoreOwnerId) && (
+                      <WhatsAppButton
+                        number={getContactWhatsApp(deliveryStoreOwnerId)}
+                        message={`Olá! Sou o entregador. Pedido #${myDelivery.id.slice(0, 8).toUpperCase()}.`}
+                        label="Loja"
+                        size="md"
+                        className="flex-1"
+                      />
                     )}
-                    <p>{(myDelivery as any).needs_change ? "2️⃣" : "1️⃣"} Receber <span className="font-bold text-green-400">R$ {Number(myDelivery.total_price).toFixed(2)}</span> do cliente.</p>
-                    <p>{(myDelivery as any).needs_change ? "3️⃣" : "2️⃣"} Retornar à loja para entregar o valor total.</p>
+                    {deliveryClientId && getContactWhatsApp(deliveryClientId) && (
+                      <WhatsAppButton
+                        number={getContactWhatsApp(deliveryClientId)}
+                        message="Olá, sou o entregador do app de Itatinga e estou com seu pedido!"
+                        label="Cliente"
+                        size="md"
+                        className="flex-1"
+                      />
+                    )}
                   </div>
+
+                  <div className="bg-gray-900/50 rounded-xl p-3 mb-3">
+                    <p className="text-xs text-gray-500 mb-1">Itens do pedido:</p>
+                    {(myDelivery as any).order_items?.map((item: any) => (
+                      <p key={item.id} className="text-sm text-gray-300">
+                        <span className="text-blue-400 font-bold">{item.quantity}x</span>{" "}
+                        {item.products?.name || "Item"}
+                      </p>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center justify-between mb-3 bg-green-500/10 border border-green-500/30 rounded-xl p-3">
+                    <span className="text-sm font-bold text-green-400">🏍️ Ganho da Entrega</span>
+                    <span className="text-xl font-black text-green-400">
+                      R$ {Number(myDelivery.delivery_fee).toFixed(2)}
+                    </span>
+                  </div>
+
+                  {/* PIN Input Section */}
+                  <div className="bg-gray-900 rounded-xl p-4 mb-3 border border-gray-700">
+                    <div className="flex items-center gap-2 mb-2">
+                      <KeyRound className="h-4 w-4 text-yellow-400" />
+                      <span className="text-sm font-bold text-yellow-400">Código do Cliente</span>
+                    </div>
+                    <p className="text-xs text-gray-500 mb-3">
+                      Peça o código de 4 dígitos ao cliente para finalizar.
+                    </p>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={4}
+                      placeholder="0000"
+                      value={pinInput}
+                      onChange={(e) => setPinInput(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                      className="w-full text-center text-3xl font-black tracking-[0.5em] py-3 bg-gray-800 border border-gray-600 rounded-xl text-white placeholder:text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                      autoFocus
+                    />
+                  </div>
+
+                  <button
+                    onClick={() => finishDelivery(myDelivery.id)}
+                    disabled={pinInput.length !== 4 || verifying}
+                    className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-2xl text-base active:scale-95 transition-transform flex items-center justify-center gap-2 disabled:opacity-50 disabled:active:scale-100"
+                  >
+                    <CheckCircle2 className="h-5 w-5" />
+                    {verifying ? "Verificando..." : "CONFIRMAR ENTREGA"}
+                  </button>
                 </div>
               )}
-
-              {/* WhatsApp contact buttons */}
-              <div className="flex gap-2 mb-3">
-                {deliveryStoreOwnerId && getContactWhatsApp(deliveryStoreOwnerId) && (
-                  <WhatsAppButton
-                    number={getContactWhatsApp(deliveryStoreOwnerId)}
-                    message={`Olá! Sou o entregador do app de Itatinga. Estou com o pedido #${myDelivery.id.slice(0, 8).toUpperCase()} da loja ${(myDelivery as any).stores?.name || ""}.`}
-                    label="Falar com a Loja"
-                    size="md"
-                    className="flex-1"
-                  />
-                )}
-                {deliveryClientId && getContactWhatsApp(deliveryClientId) && (
-                  <WhatsAppButton
-                    number={getContactWhatsApp(deliveryClientId)}
-                    message="Olá, sou o entregador do app de Itatinga e estou com seu pedido!"
-                    label="Falar com Cliente"
-                    size="md"
-                    className="flex-1"
-                  />
-                )}
-              </div>
-
-              <div className="bg-gray-900/50 rounded-xl p-3 mb-3">
-                <p className="text-xs text-gray-500 mb-1">Itens do pedido:</p>
-                {(myDelivery as any).order_items?.map((item: any) => (
-                  <p key={item.id} className="text-sm text-gray-300">
-                    <span className="text-blue-400 font-bold">{item.quantity}x</span>{" "}
-                    {item.products?.name || "Item"}
-                  </p>
-                ))}
-              </div>
-
-              <div className="flex items-center justify-between mb-3 bg-green-500/10 border border-green-500/30 rounded-xl p-3">
-                <span className="text-sm font-bold text-green-400">🏍️ Ganho da Entrega</span>
-                <span className="text-xl font-black text-green-400">
-                  R$ {Number(myDelivery.delivery_fee).toFixed(2)}
-                </span>
-              </div>
-
-              {/* PIN Input Section */}
-              <div className="bg-gray-900 rounded-xl p-4 mb-3 border border-gray-700">
-                <div className="flex items-center gap-2 mb-2">
-                  <KeyRound className="h-4 w-4 text-yellow-400" />
-                  <span className="text-sm font-bold text-yellow-400">Código do Cliente</span>
-                </div>
-                <p className="text-xs text-gray-500 mb-3">
-                  Peça o código de 4 dígitos ao cliente para finalizar.
-                </p>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={4}
-                  placeholder="0000"
-                  value={pinInput}
-                  onChange={(e) => setPinInput(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                  className="w-full text-center text-3xl font-black tracking-[0.5em] py-3 bg-gray-800 border border-gray-600 rounded-xl text-white placeholder:text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                  autoFocus
-                />
-              </div>
-
-              <button
-                onClick={() => finishDelivery(myDelivery.id)}
-                disabled={pinInput.length !== 4 || verifying}
-                className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-2xl text-base active:scale-95 transition-transform flex items-center justify-center gap-2 disabled:opacity-50 disabled:active:scale-100"
-              >
-                <CheckCircle2 className="h-5 w-5" />
-                {verifying ? "Verificando..." : "CONFIRMAR ENTREGA"}
-              </button>
             </div>
           )}
 
