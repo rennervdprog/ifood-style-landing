@@ -525,6 +525,20 @@ const AdminDashboard = () => {
         </div>
       ) : (
         <>
+          {/* Weekly balance card */}
+          <div 
+            onClick={() => setDashboardTab("finance")}
+            className="mx-4 mt-3 p-3 bg-gradient-to-r from-green-900/40 to-emerald-900/40 border border-green-700/50 rounded-2xl cursor-pointer hover:border-green-500/50 transition-all"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Coins className="h-5 w-5 text-green-400" />
+                <span className="text-sm font-bold text-green-300">Saldo da Semana</span>
+              </div>
+              <span className="text-xs text-green-400">Ver Finanças →</span>
+            </div>
+          </div>
+
           {/* Status tabs */}
           <div className="flex overflow-x-auto gap-1 px-4 py-3 bg-[#1F2937]/50 no-scrollbar">
             {statusColumns.map((col) => {
