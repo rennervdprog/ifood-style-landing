@@ -1000,6 +1000,22 @@ const SaquesTab = ({ withdrawalRequests, pendingWithdrawals, drivers, queryClien
         </div>
 
         <div className="flex gap-2">
+          {[
+            { key: "pendentes" as const, label: `⏳ Pendentes (${pendingList.length})` },
+            { key: "historico" as const, label: `📋 Histórico (${historyList.length})` },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setSaquesSubTab(tab.key)}
+              className={`flex-1 py-2 px-3 rounded-xl text-sm font-bold transition-colors ${
+                saquesSubTab === tab.key ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {saquesSubTab === "pendentes" ? (
         pendingList.length === 0 ? (
@@ -1010,15 +1026,13 @@ const SaquesTab = ({ withdrawalRequests, pendingWithdrawals, drivers, queryClien
         ) : (
           <div className="space-y-3">{pendingList.map(renderCard)}</div>
         )
+      ) : historyList.length === 0 ? (
+        <div className="bg-card rounded-2xl p-8 text-center border border-border">
+          <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+          <p className="text-sm text-muted-foreground">Nenhum saque no histórico.</p>
+        </div>
       ) : (
-        historyList.length === 0 ? (
-          <div className="bg-card rounded-2xl p-8 text-center border border-border">
-            <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground">Nenhum saque no histórico.</p>
-          </div>
-        ) : (
-          <div className="space-y-3">{historyList.map(renderCard)}</div>
-        )
+        <div className="space-y-3">{historyList.map(renderCard)}</div>
       )}
     </div>
   );

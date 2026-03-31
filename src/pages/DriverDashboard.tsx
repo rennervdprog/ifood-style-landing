@@ -954,17 +954,23 @@ const DriverDashboard = () => {
 
               {/* Withdrawal Button */}
               {pendingWithdrawal ? (
-                <div className="mt-4 space-y-2">
+                <div className="mt-4 space-y-3">
                   <button
                     disabled
+                    onClick={() => {
+                      toast.warning(`Você já tem uma solicitação de R$ ${Number(pendingWithdrawal.amount).toFixed(2)} em andamento. Aguarde o Admin realizar o Pix.`);
+                    }}
                     className="w-full bg-muted text-muted-foreground font-bold py-3.5 rounded-2xl text-sm flex items-center justify-center gap-2 cursor-not-allowed opacity-70"
                   >
                     <Clock className="h-4 w-4" />
-                    SAQUE SOLICITADO — {pendingWithdrawal.transaction_code || "Processando..."}
+                    SAQUE EM ANÁLISE
                   </button>
-                  <p className="text-xs text-amber-500 text-center">
-                    ⏳ Solicitação <span className="font-bold">{pendingWithdrawal.transaction_code}</span> no valor de R$ {Number(pendingWithdrawal.amount).toFixed(2)}. O Admin já foi notificado.
-                  </p>
+                  <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3 flex items-start gap-3">
+                    <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                    <p className="text-xs text-amber-500 leading-relaxed">
+                      Solicitação <span className="font-bold">#{pendingWithdrawal.transaction_code}</span> recebida. O administrador realizará o pagamento em breve.
+                    </p>
+                  </div>
                 </div>
               ) : Number(driverBalance.pending_amount || 0) > 0 && (driverProfile as any)?.pix_key ? (
                 <button
@@ -972,32 +978,30 @@ const DriverDashboard = () => {
                   onClick={async () => {
                     setRequestingSaque(true);
                     try {
-                      // Double-check no pending request exists
-                      const { data: existing } = await supabase
-                        .from("withdrawal_requests" as any)
-                        .select("id")
-                        .eq("driver_user_id", user!.id)
-                        .eq("status", "solicitado")
-                        .maybeSingle();
-                      if (existing) {
-                        toast.warning("Você já possui uma solicitação de saque pendente. Aguarde o processamento.");
-                        queryClient.invalidateQueries({ queryKey: ["pending-withdrawal"] });
-                        return;
-                      }
                       const amount = Number(driverBalance.pending_amount);
-                      const { error } = await supabase.from("withdrawal_requests" as any).insert({
-                        driver_user_id: user!.id,
-                        amount,
-                        pix_key: (driverProfile as any).pix_key,
-                        pix_type: (driverProfile as any).pix_type || "cpf",
-                      } as any);
+                      const { data, error } = await supabase.functions.invoke("create-withdrawal-request", {
+                        body: {
+                          amount,
+                          pix_key: (driverProfile as any).pix_key,
+                          pix_type: (driverProfile as any).pix_type || "cpf",
+                        },
+                      });
+
                       if (error) throw error;
-                      toast.success(`✅ Solicitação enviada! Valor: R$ ${amount.toFixed(2)}. O Admin foi notificado.`);
+                      if (data?.error) {
+                        if (data?.active_request) {
+                          toast.warning(`Você já tem uma solicitação de R$ ${Number(data.active_request.amount).toFixed(2)} em andamento. Aguarde o Admin realizar o Pix.`);
+                        }
+                        throw new Error(data.error);
+                      }
+
+                      toast.success(`✅ Solicitação enviada! ID #${data?.request?.transaction_code} | Valor: R$ ${amount.toFixed(2)}.`);
                       queryClient.invalidateQueries({ queryKey: ["driver-balance"] });
                       queryClient.invalidateQueries({ queryKey: ["pending-withdrawal"] });
                       queryClient.invalidateQueries({ queryKey: ["withdrawal-history"] });
                     } catch (err: any) {
                       toast.error(err?.message || "Erro ao solicitar saque.");
+                      queryClient.invalidateQueries({ queryKey: ["pending-withdrawal"] });
                     } finally {
                       setRequestingSaque(false);
                     }
