@@ -122,6 +122,39 @@ const SuperAdminDashboard = () => {
     enabled: isAdmin && activeTab === "financeiro",
   });
 
+  // Fetch withdrawal requests
+  const { data: withdrawalRequests } = useQuery({
+    queryKey: ["withdrawal-requests"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("withdrawal_requests" as any)
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: isAdmin,
+  });
+
+  const pendingWithdrawals = withdrawalRequests?.filter((w: any) => w.status === "solicitado") || [];
+
+  // Realtime for new withdrawal requests
+  useEffect(() => {
+    if (!isAdmin) return;
+    const channel = supabase
+      .channel("admin-withdrawals-realtime")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "withdrawal_requests" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["withdrawal-requests"] });
+          toast.info("🔔 Nova solicitação de saque recebida!", { duration: 8000 });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [isAdmin, queryClient]);
+
   // Dashboard metrics
   const metrics = useMemo(() => {
     if (!orders) return { totalSales: 0, commission: 0, activeOrders: 0, totalOrders: 0 };
