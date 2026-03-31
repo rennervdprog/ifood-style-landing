@@ -145,10 +145,12 @@ const SuperAdminDashboard = () => {
       .channel("admin-withdrawals-realtime")
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "withdrawal_requests" },
-        () => {
+        { event: "*", schema: "public", table: "withdrawal_requests" },
+        (payload) => {
           queryClient.invalidateQueries({ queryKey: ["withdrawal-requests"] });
-          toast.info("🔔 Nova solicitação de saque recebida!", { duration: 8000 });
+          if (payload.eventType === "INSERT") {
+            toast.info("🔔 Nova solicitação de saque recebida!", { duration: 8000 });
+          }
         }
       )
       .subscribe();
@@ -433,6 +435,7 @@ const SuperAdminDashboard = () => {
           generateStoreWhatsApp={generateStoreWhatsApp}
           storeBalances={storeBalances || []}
           queryClient={queryClient}
+          withdrawalRequests={withdrawalRequests || []}
         />
       ) : (
       <>
@@ -605,6 +608,7 @@ const FinanceTab = ({
   stores, loading,
   generateStoreWhatsApp,
   storeBalances, queryClient,
+  withdrawalRequests,
 }: {
   storeSettlement: any[];
   driverSettlement: any[];
@@ -620,6 +624,7 @@ const FinanceTab = ({
   generateStoreWhatsApp: (entry: any) => void;
   storeBalances: any[];
   queryClient: any;
+  withdrawalRequests: any[];
 }) => {
   const markAsPaid = async (storeId: string, storeName: string) => {
     const { error } = await supabase
@@ -649,7 +654,15 @@ const FinanceTab = ({
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-3 gap-3">
+      {(() => {
+        const pendingDriverAmount = withdrawalRequests
+          .filter((w: any) => w.status === "solicitado")
+          .reduce((s: number, w: any) => s + Number(w.amount), 0);
+        const paidDriverAmount = withdrawalRequests
+          .filter((w: any) => w.status === "pago")
+          .reduce((s: number, w: any) => s + Number(w.amount), 0);
+        return (
+      <div className="grid grid-cols-2 gap-3">
         <div className="bg-[#1E293B] rounded-2xl p-4">
           <div className="flex items-center gap-2 mb-1">
             <ShoppingBag className="h-4 w-4 text-blue-400" />
@@ -667,13 +680,23 @@ const FinanceTab = ({
         </div>
         <div className="bg-[#1E293B] rounded-2xl p-4">
           <div className="flex items-center gap-2 mb-1">
-            <Bike className="h-4 w-4 text-green-400" />
-            <span className="text-xs text-gray-400">Motoboys</span>
+            <Bike className="h-4 w-4 text-amber-400" />
+            <span className="text-xs text-gray-400">Motoboys (Pendente)</span>
           </div>
-          <p className="text-lg font-black text-green-400">R$ {financeTotals.totalDriverFees.toFixed(2)}</p>
-          <p className="text-[10px] text-gray-500">a pagar</p>
+          <p className="text-lg font-black text-amber-400">R$ {pendingDriverAmount.toFixed(2)}</p>
+          <p className="text-[10px] text-gray-500">solicitações ativas</p>
+        </div>
+        <div className="bg-[#1E293B] rounded-2xl p-4">
+          <div className="flex items-center gap-2 mb-1">
+            <CheckCircle2 className="h-4 w-4 text-green-400" />
+            <span className="text-xs text-gray-400">Motoboys (Pago)</span>
+          </div>
+          <p className="text-lg font-black text-green-400">R$ {paidDriverAmount.toFixed(2)}</p>
+          <p className="text-[10px] text-gray-500">já transferido</p>
         </div>
       </div>
+        );
+      })()}
 
       {/* Sub-tabs: Stores vs Drivers */}
       <div className="flex gap-2">
@@ -795,7 +818,14 @@ const FinanceTab = ({
         /* Driver settlement cards */
         driverSettlement.length > 0 ? (
           <div className="space-y-3">
-            {driverSettlement.map((entry, i) => (
+            {driverSettlement.map((entry, i) => {
+              const driverPending = withdrawalRequests
+                .filter((w: any) => w.driver_user_id === entry.driverId && w.status === "solicitado")
+                .reduce((s: number, w: any) => s + Number(w.amount), 0);
+              const driverPaid = withdrawalRequests
+                .filter((w: any) => w.driver_user_id === entry.driverId && w.status === "pago")
+                .reduce((s: number, w: any) => s + Number(w.amount), 0);
+              return (
               <div key={i} className="bg-[#1E293B] rounded-2xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -807,22 +837,27 @@ const FinanceTab = ({
                   <span className="text-xs text-gray-400">{entry.deliveryCount} entregas</span>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 text-xs">
-                  <div className="bg-[#0F172A] rounded-xl p-2.5 text-center">
-                    <p className="text-gray-400">Total</p>
-                    <p className="text-sm font-bold text-white">R$ {entry.totalFees.toFixed(2)}</p>
-                  </div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
                   <div className="bg-[#0F172A] rounded-xl p-2.5 text-center">
                     <p className="text-gray-400">💵 Em mãos</p>
                     <p className="text-sm font-bold text-yellow-400">R$ {entry.cashFees.toFixed(2)}</p>
                   </div>
                   <div className="bg-[#0F172A] rounded-xl p-2.5 text-center">
-                    <p className="text-gray-400">📱 A receber</p>
-                    <p className="text-sm font-bold text-green-400">R$ {entry.appFees.toFixed(2)}</p>
+                    <p className="text-gray-400">📱 Total App</p>
+                    <p className="text-sm font-bold text-white">R$ {entry.appFees.toFixed(2)}</p>
+                  </div>
+                  <div className="bg-amber-500/10 rounded-xl p-2.5 text-center border border-amber-500/20">
+                    <p className="text-amber-400">⏳ Saque Pendente</p>
+                    <p className="text-sm font-bold text-amber-400">R$ {driverPending.toFixed(2)}</p>
+                  </div>
+                  <div className="bg-green-500/10 rounded-xl p-2.5 text-center border border-green-500/20">
+                    <p className="text-green-400">✅ Já Pago</p>
+                    <p className="text-sm font-bold text-green-400">R$ {driverPaid.toFixed(2)}</p>
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="bg-[#1E293B] rounded-2xl p-8 text-center">
