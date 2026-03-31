@@ -145,10 +145,12 @@ const SuperAdminDashboard = () => {
       .channel("admin-withdrawals-realtime")
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "withdrawal_requests" },
-        () => {
+        { event: "*", schema: "public", table: "withdrawal_requests" },
+        (payload) => {
           queryClient.invalidateQueries({ queryKey: ["withdrawal-requests"] });
-          toast.info("🔔 Nova solicitação de saque recebida!", { duration: 8000 });
+          if (payload.eventType === "INSERT") {
+            toast.info("🔔 Nova solicitação de saque recebida!", { duration: 8000 });
+          }
         }
       )
       .subscribe();
