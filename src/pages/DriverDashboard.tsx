@@ -995,6 +995,7 @@ const DriverDashboard = () => {
                       toast.success(`✅ Solicitação enviada! Valor: R$ ${amount.toFixed(2)}. O Admin foi notificado.`);
                       queryClient.invalidateQueries({ queryKey: ["driver-balance"] });
                       queryClient.invalidateQueries({ queryKey: ["pending-withdrawal"] });
+                      queryClient.invalidateQueries({ queryKey: ["withdrawal-history"] });
                     } catch (err: any) {
                       toast.error(err?.message || "Erro ao solicitar saque.");
                     } finally {
