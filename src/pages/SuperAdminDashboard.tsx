@@ -431,7 +431,10 @@ const SuperAdminDashboard = () => {
                           <DollarSign className={`h-4 w-4 ${isPending ? "text-amber-400" : "text-green-400"}`} />
                         </div>
                         <div>
-                          <p className="text-sm font-bold text-white">R$ {Number(req.amount).toFixed(2)}</p>
+                          <p className="text-sm font-bold text-white">
+                            {drivers?.find(d => d.user_id === req.driver_user_id)?.name || "Entregador"}
+                          </p>
+                          <p className="text-xs text-gray-300 font-bold">R$ {Number(req.amount).toFixed(2)}</p>
                           <p className="text-[10px] text-gray-400">
                             {new Date(req.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
                           </p>
