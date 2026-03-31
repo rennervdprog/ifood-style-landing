@@ -419,21 +419,22 @@ const SuperAdminDashboard = () => {
       
       ) : activeTab === "financeiro" ? (
         <FinanceTab
-          storeSettlement={storeSettlement}
-          driverSettlement={driverSettlement}
-          financeTotals={financeTotals}
-          financeFilter={financeFilter}
-          setFinanceFilter={setFinanceFilter}
-          financeSubTab={financeSubTab}
-          setFinanceSubTab={setFinanceSubTab}
-          selectedStore={selectedStore}
-          setSelectedStore={setSelectedStore}
-          stores={stores || []}
-          loading={financeLoading}
-          generateStoreWhatsApp={generateStoreWhatsApp}
-          storeBalances={storeBalances || []}
-          queryClient={queryClient}
-        />
+422:           storeSettlement={storeSettlement}
+423:           driverSettlement={driverSettlement}
+424:           financeTotals={financeTotals}
+425:           financeFilter={financeFilter}
+426:           setFinanceFilter={setFinanceFilter}
+427:           financeSubTab={financeSubTab}
+428:           setFinanceSubTab={setFinanceSubTab}
+429:           selectedStore={selectedStore}
+430:           setSelectedStore={setSelectedStore}
+431:           stores={stores || []}
+432:           loading={financeLoading}
+433:           generateStoreWhatsApp={generateStoreWhatsApp}
+434:           storeBalances={storeBalances || []}
+435:           queryClient={queryClient}
+436:           withdrawalRequests={withdrawalRequests || []}
+437:         />
       ) : (
       <>
       {/* Date filter */}
