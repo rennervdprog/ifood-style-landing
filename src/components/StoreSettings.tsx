@@ -46,19 +46,23 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
   const [slug, setSlug] = useState(storeSlug || "");
   const [whatsapp, setWhatsapp] = useState("");
   const [imageUrl, setImageUrl] = useState(storeImageUrl || "");
+  const [pixKey, setPixKey] = useState("");
+  const [pixType, setPixType] = useState("cpf");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  // Load whatsapp from profile
+  // Load whatsapp + pix from profile
   useEffect(() => {
     if (!user) return;
     supabase
       .from("profiles")
-      .select("whatsapp_number")
+      .select("whatsapp_number, pix_key, pix_type")
       .eq("user_id", user.id)
       .single()
       .then(({ data }) => {
         if (data?.whatsapp_number) setWhatsapp(data.whatsapp_number);
+        if (data?.pix_key) setPixKey(data.pix_key);
+        if (data?.pix_type) setPixType(data.pix_type);
       });
   }, [user]);
 
