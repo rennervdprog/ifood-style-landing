@@ -96,14 +96,18 @@ const Index = () => {
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <PackageOpen className="h-16 w-16 text-muted-foreground mb-4" />
             <h2 className="text-lg font-bold text-foreground mb-1">
-              {category === "farmacias"
+              {stores && stores.length === 0
+                ? "Estamos chegando!"
+                : category === "farmacias"
                 ? "Ainda não temos farmácias parceiras"
                 : category === "docerias"
                 ? "Ainda não temos docerias parceiras"
-                : "Nenhum estabelecimento aberto"}
+                : "Nenhum estabelecimento nesta categoria"}
             </h2>
             <p className="text-sm text-muted-foreground max-w-xs">
-              {category === "farmacias" || category === "docerias"
+              {stores && stores.length === 0
+                ? "Novas lojas em Itatinga em breve. Fique ligado!"
+                : category === "farmacias" || category === "docerias"
                 ? "Ainda não temos parceiros nesta categoria em Itatinga. Em breve!"
                 : "Nenhum estabelecimento aberto no momento. Volte mais tarde!"}
             </p>
