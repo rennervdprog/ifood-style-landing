@@ -359,7 +359,7 @@ const AdminDashboard = () => {
           </div>
 
           {/* Orders list */}
-          <div className="px-4 py-4 pb-28 space-y-3 overflow-y-auto">
+          <div className="px-4 py-4 pb-32 space-y-3 overflow-y-auto">
             {isLoading ? (
               <div className="space-y-3">
                 {Array.from({ length: 3 }).map((_, i) => (
