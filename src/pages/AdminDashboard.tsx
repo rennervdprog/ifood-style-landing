@@ -215,6 +215,13 @@ const AdminDashboard = () => {
           }
         }
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "drivers" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["online-drivers-count"] });
+        }
+      )
       .subscribe((status) => {
         setIsOnline(status === "SUBSCRIBED");
       });
