@@ -216,7 +216,7 @@ const PartnerOnboarding = () => {
             <div className="text-center">
               <h2 className="text-xl font-black text-foreground">Como quer participar?</h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Escolha como você quer fazer parte da rede em Itatinga
+                Escolha como você quer fazer parte do ItaFood
               </p>
             </div>
 
