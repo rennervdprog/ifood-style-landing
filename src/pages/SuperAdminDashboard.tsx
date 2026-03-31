@@ -947,6 +947,26 @@ const FinanceTab = ({
                     </button>
                   </div>
 
+                  {/* PIX Key display */}
+                  {(() => {
+                    const pixInfo = getStorePixInfo(entry.storeId);
+                    return pixInfo?.pixKey ? (
+                      <div className="bg-[#0F172A] rounded-xl p-2.5 flex items-center gap-2">
+                        <Wallet className="h-3.5 w-3.5 text-green-400 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[10px] text-gray-500">Chave PIX do Lojista</p>
+                          <p className="text-xs text-gray-300 truncate">{pixInfo.pixKey}</p>
+                        </div>
+                        <span className="text-[10px] text-gray-500 uppercase">{pixInfo.pixType}</span>
+                      </div>
+                    ) : (
+                      <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5 flex items-center gap-2">
+                        <AlertTriangle className="h-3.5 w-3.5 text-amber-400 flex-shrink-0" />
+                        <p className="text-[10px] text-amber-400 font-bold">Lojista não cadastrou chave PIX</p>
+                      </div>
+                    );
+                  })()}
+
                   {/* Secondary actions */}
                   <div className="flex gap-2">
                     <button
