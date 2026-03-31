@@ -45,6 +45,7 @@ const AdminDashboard = () => {
   const loopIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   
   const [isOnline, setIsOnline] = useState(true);
+  const [realtimeDriversConnected, setRealtimeDriversConnected] = useState(false);
   const [activeTab, setActiveTab] = useState<OrderStatus>("pendente");
   const [dashboardTab, setDashboardTab] = useState<DashboardTab>("orders");
   const [autoPrint, setAutoPrint] = useState(() => localStorage.getItem("autoPrint") === "true");
@@ -84,7 +85,7 @@ const AdminDashboard = () => {
     enabled: !!store,
   });
 
-  // Fetch online drivers count
+  // Fetch online drivers count (no polling - realtime only)
   const { data: onlineDrivers } = useQuery({
     queryKey: ["online-drivers-count"],
     queryFn: async () => {
@@ -96,8 +97,25 @@ const AdminDashboard = () => {
       if (error) throw error;
       return data || [];
     },
-    refetchInterval: 30000,
   });
+
+  // Dedicated realtime channel for drivers - instant updates
+  useEffect(() => {
+    const driversChannel = supabase
+      .channel("drivers-online-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "drivers" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["online-drivers-count"] });
+        }
+      )
+      .subscribe((status) => {
+        setRealtimeDriversConnected(status === "SUBSCRIBED");
+      });
+
+    return () => { supabase.removeChannel(driversChannel); };
+  }, [queryClient]);
 
   // Fetch driver names for assigned orders
   const driverIds = [...new Set(orders?.map(o => o.driver_id).filter(Boolean) || [])] as string[];
@@ -213,13 +231,6 @@ const AdminDashboard = () => {
             successAudio.play().catch(() => {});
             toast.success("💰 Venda concluída! Pedido finalizado.", { duration: 5000 });
           }
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "drivers" },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["online-drivers-count"] });
         }
       )
       .subscribe((status) => {
@@ -405,6 +416,11 @@ const AdminDashboard = () => {
         <span className={`text-2xl font-black ${(onlineDrivers?.length || 0) > 0 ? "text-green-400" : "text-yellow-400"}`}>
           {onlineDrivers?.length || 0}
         </span>
+        {/* Realtime connection indicator */}
+        <span
+          className={`w-2.5 h-2.5 rounded-full ${realtimeDriversConnected ? "bg-green-400 animate-pulse" : "bg-gray-600"}`}
+          title={realtimeDriversConnected ? "Tempo real ativo" : "Conectando..."}
+        />
       </div>
 
       {/* Dashboard Tabs */}
