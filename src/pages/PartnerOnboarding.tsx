@@ -163,7 +163,7 @@ const PartnerOnboarding = () => {
           _whatsapp: formattedWhatsapp,
         } as any);
         if (error) throw error;
-        toast.success("Cadastro realizado com sucesso! Bem-vindo à rede de Itatinga. 🎉");
+        toast.success("Cadastro realizado com sucesso! Bem-vindo ao ItaFood. 🎉");
         navigate("/admin", { replace: true });
       } else {
         const { error } = await supabase.rpc("register_as_motoboy", {
