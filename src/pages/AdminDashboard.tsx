@@ -330,6 +330,29 @@ const AdminDashboard = () => {
         </div>
       </header>
 
+      {/* Sound Activation Prompt */}
+      {showSoundPrompt && !soundEnabled && (
+        <div className="mx-4 mt-3 bg-yellow-500/20 border border-yellow-500/40 rounded-2xl p-4 flex items-center gap-3">
+          <Bell className="h-6 w-6 text-yellow-400 flex-shrink-0 animate-bounce" />
+          <div className="flex-1">
+            <p className="text-sm font-bold text-yellow-300">Ativar alertas sonoros?</p>
+            <p className="text-xs text-gray-400 mt-0.5">Receba um som a cada novo pedido para não perder nenhuma venda.</p>
+          </div>
+          <button
+            onClick={activateSound}
+            className="bg-yellow-400 text-gray-900 font-bold px-4 py-2 rounded-xl text-sm active:scale-95 transition-transform whitespace-nowrap"
+          >
+            🔔 Ativar
+          </button>
+          <button
+            onClick={() => setShowSoundPrompt(false)}
+            className="text-gray-500 hover:text-gray-300 text-xs"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Dashboard Tabs */}
       <div className="flex overflow-x-auto gap-2 px-4 py-3 border-b border-gray-800 no-scrollbar">
         <button
