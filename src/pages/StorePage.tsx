@@ -82,33 +82,33 @@ const StorePage = () => {
 
   // Menu sections
   const { data: sections } = useQuery({
-    queryKey: ["menu-sections", id],
+    queryKey: ["menu-sections", storeId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("menu_sections")
         .select("*")
-        .eq("store_id", id!)
+        .eq("store_id", storeId!)
         .order("sort_order");
       if (error) throw error;
       return (data || []) as MenuSection[];
     },
-    enabled: !!id,
+    enabled: !!storeId,
   });
 
   // Products
   const { data: products, isLoading } = useQuery({
-    queryKey: ["products", id],
+    queryKey: ["products", storeId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
         .select("*")
-        .eq("store_id", id!)
+        .eq("store_id", storeId!)
         .eq("is_available", true)
         .order("name");
       if (error) throw error;
       return (data || []) as Product[];
     },
-    enabled: !!id,
+    enabled: !!storeId,
   });
 
   const storeStatus = store
