@@ -84,6 +84,21 @@ const AdminDashboard = () => {
     enabled: !!store,
   });
 
+  // Fetch online drivers count
+  const { data: onlineDrivers } = useQuery({
+    queryKey: ["online-drivers-count"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("drivers")
+        .select("id, name")
+        .eq("is_online", true)
+        .eq("is_active", true);
+      if (error) throw error;
+      return data || [];
+    },
+    refetchInterval: 30000,
+  });
+
   // Fetch driver names for assigned orders
   const driverIds = [...new Set(orders?.map(o => o.driver_id).filter(Boolean) || [])] as string[];
   const { data: driverProfiles } = useQuery({
