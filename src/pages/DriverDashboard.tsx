@@ -898,6 +898,30 @@ const DriverDashboard = () => {
       ) : (
         /* ===== FINANCEIRO/GANHOS TAB ===== */
         <div className="px-4 py-4 space-y-4">
+          {/* Driver Balance Card */}
+          {driverBalance && (
+            <div className="bg-gradient-to-br from-green-900/40 to-emerald-900/30 border border-green-500/40 rounded-2xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Wallet className="h-5 w-5 text-green-400" />
+                <span className="text-sm font-bold text-green-300">Minha Carteira</span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="text-center">
+                  <p className="text-[10px] text-gray-400">Total Ganho</p>
+                  <p className="text-lg font-black text-white">R$ {Number(driverBalance.total_earned || 0).toFixed(2)}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-[10px] text-yellow-400">Pendente</p>
+                  <p className="text-lg font-black text-yellow-400">R$ {Number(driverBalance.pending_amount || 0).toFixed(2)}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-[10px] text-green-400">Pago</p>
+                  <p className="text-lg font-black text-green-400">R$ {Number(driverBalance.paid_amount || 0).toFixed(2)}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Earnings Summary Cards */}
           <div className="grid grid-cols-3 gap-2">
             <div className="bg-gradient-to-br from-green-500/20 to-green-600/10 border border-green-500/30 rounded-2xl p-3 text-center">
