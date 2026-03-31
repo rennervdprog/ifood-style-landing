@@ -214,6 +214,10 @@ const SuperAdminDashboard = () => {
         <div className="px-4 py-4">
           <AdminApprovals />
         </div>
+      ) : activeTab === "stores" ? (
+        <div className="px-4 py-4">
+          <AdminStoreManager />
+        </div>
       ) : (
       <>
       {/* Date filter */}
