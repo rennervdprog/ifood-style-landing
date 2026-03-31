@@ -315,7 +315,11 @@ const DriverDashboard = () => {
               <div className="flex items-center gap-2 mb-3">
                 <Navigation className="h-5 w-5 text-blue-400" />
                 <h2 className="font-bold text-blue-400 text-sm">
-                  {(myDelivery as any).collection_validated ? "ENTREGA EM ANDAMENTO" : "COLETA NA LOJA"}
+                  {(myDelivery as any).status === 'pronto_para_entrega' && !(myDelivery as any).collection_validated
+                    ? "A CAMINHO DA LOJA"
+                    : (myDelivery as any).collection_validated || (myDelivery as any).status === 'saiu_entrega'
+                    ? "ENTREGA EM ANDAMENTO"
+                    : "COLETA NA LOJA"}
                 </h2>
               </div>
 
