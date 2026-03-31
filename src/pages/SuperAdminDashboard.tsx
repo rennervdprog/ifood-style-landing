@@ -652,7 +652,15 @@ const FinanceTab = ({
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-3 gap-3">
+      {(() => {
+        const pendingDriverAmount = withdrawalRequests
+          .filter((w: any) => w.status === "solicitado")
+          .reduce((s: number, w: any) => s + Number(w.amount), 0);
+        const paidDriverAmount = withdrawalRequests
+          .filter((w: any) => w.status === "pago")
+          .reduce((s: number, w: any) => s + Number(w.amount), 0);
+        return (
+      <div className="grid grid-cols-2 gap-3">
         <div className="bg-[#1E293B] rounded-2xl p-4">
           <div className="flex items-center gap-2 mb-1">
             <ShoppingBag className="h-4 w-4 text-blue-400" />
@@ -670,13 +678,23 @@ const FinanceTab = ({
         </div>
         <div className="bg-[#1E293B] rounded-2xl p-4">
           <div className="flex items-center gap-2 mb-1">
-            <Bike className="h-4 w-4 text-green-400" />
-            <span className="text-xs text-gray-400">Motoboys</span>
+            <Bike className="h-4 w-4 text-amber-400" />
+            <span className="text-xs text-gray-400">Motoboys (Pendente)</span>
           </div>
-          <p className="text-lg font-black text-green-400">R$ {financeTotals.totalDriverFees.toFixed(2)}</p>
-          <p className="text-[10px] text-gray-500">a pagar</p>
+          <p className="text-lg font-black text-amber-400">R$ {pendingDriverAmount.toFixed(2)}</p>
+          <p className="text-[10px] text-gray-500">solicitações ativas</p>
+        </div>
+        <div className="bg-[#1E293B] rounded-2xl p-4">
+          <div className="flex items-center gap-2 mb-1">
+            <CheckCircle2 className="h-4 w-4 text-green-400" />
+            <span className="text-xs text-gray-400">Motoboys (Pago)</span>
+          </div>
+          <p className="text-lg font-black text-green-400">R$ {paidDriverAmount.toFixed(2)}</p>
+          <p className="text-[10px] text-gray-500">já transferido</p>
         </div>
       </div>
+        );
+      })()}
 
       {/* Sub-tabs: Stores vs Drivers */}
       <div className="flex gap-2">
