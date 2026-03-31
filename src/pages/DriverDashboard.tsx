@@ -207,11 +207,26 @@ const DriverDashboard = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("withdrawal_requests" as any)
-        .select("id, amount, status, created_at")
+        .select("id, amount, status, created_at, transaction_code")
         .eq("driver_user_id", user!.id)
         .eq("status", "solicitado")
         .maybeSingle();
       return data as any;
+    },
+    enabled: !!user,
+  });
+
+  // Withdrawal history
+  const { data: withdrawalHistory } = useQuery({
+    queryKey: ["withdrawal-history", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("withdrawal_requests" as any)
+        .select("id, amount, status, created_at, transaction_code, processed_at")
+        .eq("driver_user_id", user!.id)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      return (data || []) as any[];
     },
     enabled: !!user,
   });
