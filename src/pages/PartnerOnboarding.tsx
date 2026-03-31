@@ -349,7 +349,7 @@ const PartnerOnboarding = () => {
                   <InputField
                     icon={Store}
                     label="Nome da Loja"
-                    placeholder="Ex: Pizzaria Itatinga"
+                    placeholder="Ex: Pizzaria do João"
                     value={storeName}
                     onChange={setStoreName}
                     error={errors.storeName}
