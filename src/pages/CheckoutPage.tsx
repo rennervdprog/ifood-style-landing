@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode } from "lucide-react";
+import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Edit3 } from "lucide-react";
 import confetti from "canvas-confetti";
 import AddressModal from "@/components/AddressModal";
 
@@ -16,27 +16,66 @@ const paymentMethods = [
 ];
 
 const CheckoutPage = () => {
-  const { items, neighborhood, neighborhoodFee, subtotal, total, clearCart } = useCart();
+  const { items, neighborhood, neighborhoodFee, subtotal, total, clearCart, setNeighborhood } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [addressDetails, setAddressDetails] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
   const [loading, setLoading] = useState(false);
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [needsChange, setNeedsChange] = useState(false);
   const [changeFor, setChangeFor] = useState("");
 
-  // Check if user has address
+  // Load user profile with address
   const { data: userProfile, refetch: refetchProfile } = useQuery({
-    queryKey: ["my-profile-address", user?.id],
+    queryKey: ["my-profile-checkout", user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("street, number, neighborhood, reference_point").eq("user_id", user!.id).maybeSingle();
+      const { data } = await supabase
+        .from("profiles")
+        .select("street, number, complement, neighborhood, reference_point, phone, whatsapp_number")
+        .eq("user_id", user!.id)
+        .maybeSingle();
       return data;
     },
     enabled: !!user,
   });
 
-  const hasAddress = !!(userProfile as any)?.street && !!(userProfile as any)?.number;
+  // Load neighborhood fees for syncing
+  const { data: neighborhoodFees } = useQuery({
+    queryKey: ["neighborhoods-checkout"],
+    queryFn: async () => {
+      const { data } = await supabase.from("neighborhood_fees").select("*").order("name");
+      return data || [];
+    },
+  });
+
+  // Sync profile neighborhood with cart if not set
+  const profileNeighborhood = (userProfile as any)?.neighborhood;
+  const profileStreet = (userProfile as any)?.street;
+  const profileNumber = (userProfile as any)?.number;
+  const profileComplement = (userProfile as any)?.complement;
+  const profileReference = (userProfile as any)?.reference_point;
+  const hasAddress = !!profileStreet && !!profileNumber && !!profileNeighborhood;
+
+  // Build address string from profile
+  const buildAddressString = () => {
+    if (!hasAddress) return "";
+    const parts = [profileStreet, profileNumber];
+    if (profileComplement) parts.push(profileComplement);
+    if (profileReference) parts.push(`Ref: ${profileReference}`);
+    return parts.join(", ");
+  };
+
+  const addressString = buildAddressString();
+
+  // Sync neighborhood fee from profile if cart doesn't have one yet
+  useEffect(() => {
+    if (profileNeighborhood && !neighborhood && neighborhoodFees) {
+      const found = neighborhoodFees.find((n: any) => n.name === profileNeighborhood);
+      if (found) {
+        setNeighborhood(found.name, found.fee);
+      }
+    }
+  }, [profileNeighborhood, neighborhood, neighborhoodFees, setNeighborhood]);
 
   // Redirect to login if not authenticated
   if (!user) {
@@ -49,19 +88,13 @@ const CheckoutPage = () => {
     return null;
   }
 
-  if (!neighborhood) {
-    toast.error("Selecione um bairro antes de finalizar.");
-    navigate("/carrinho", { replace: true });
-    return null;
-  }
-
   const handleConfirm = async () => {
     if (!hasAddress) {
       setShowAddressModal(true);
       return;
     }
-    if (!addressDetails.trim()) {
-      toast.error("Informe seu endereço e ponto de referência.");
+    if (!neighborhood) {
+      toast.error("Selecione um bairro no seu perfil antes de finalizar.");
       return;
     }
     if (!paymentMethod) {
@@ -90,7 +123,6 @@ const CheckoutPage = () => {
         const appFee = Math.round(storeSubtotal * 0.12 * 100) / 100;
         const storeTotalPrice = storeSubtotal + neighborhoodFee;
 
-        // Insert order
         const changeValue = paymentMethod === "dinheiro" && needsChange ? parseFloat(changeFor) : 0;
         const { data: order, error: orderError } = await supabase
           .from("orders")
@@ -102,8 +134,8 @@ const CheckoutPage = () => {
             total_price: storeTotalPrice,
             app_fee: appFee,
             payment_method: paymentMethod,
-            neighborhood: neighborhood,
-            address_details: addressDetails.trim(),
+            neighborhood: profileNeighborhood || neighborhood,
+            address_details: addressString,
             needs_change: paymentMethod === "dinheiro" && needsChange,
             change_for: changeValue,
           } as any)
@@ -112,7 +144,6 @@ const CheckoutPage = () => {
 
         if (orderError) throw orderError;
 
-        // Insert order items
         const orderItems = storeItems.map((item) => ({
           order_id: order.id,
           product_id: item.id,
@@ -129,13 +160,8 @@ const CheckoutPage = () => {
         if (itemsError) throw itemsError;
       }
 
-      // Success!
       clearCart();
-      confetti({
-        particleCount: 120,
-        spread: 80,
-        origin: { y: 0.7 },
-      });
+      confetti({ particleCount: 120, spread: 80, origin: { y: 0.7 } });
       toast.success("Pedido enviado com sucesso! Acompanhe o status agora.");
       navigate("/pedidos", { replace: true });
     } catch (err: any) {
@@ -155,26 +181,55 @@ const CheckoutPage = () => {
       </header>
 
       <div className="px-4 py-4 space-y-6">
-        {/* Delivery info */}
+        {/* Delivery address - auto-loaded from profile */}
         <div>
           <h2 className="text-sm font-bold text-foreground mb-2 flex items-center gap-1.5">
             <MapPin className="h-4 w-4 text-primary" />
             Endereço de entrega
           </h2>
-          <div className="bg-card rounded-xl border border-border p-3 mb-2">
-            <span className="text-sm text-muted-foreground">Bairro: </span>
-            <span className="text-sm font-bold text-foreground">{neighborhood}</span>
-            <span className="text-xs text-muted-foreground ml-2">
-              (Taxa: R$ {neighborhoodFee.toFixed(2)})
-            </span>
-          </div>
-          <textarea
-            placeholder="Rua, número e ponto de referência..."
-            value={addressDetails}
-            onChange={(e) => setAddressDetails(e.target.value)}
-            className="w-full h-24 px-4 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none text-sm"
-            inputMode="text"
-          />
+          {hasAddress ? (
+            <div className="bg-card rounded-xl border border-border p-3 space-y-1">
+              <p className="text-sm font-bold text-foreground">
+                {profileStreet}, {profileNumber}
+                {profileComplement ? ` - ${profileComplement}` : ""}
+              </p>
+              <p className="text-sm text-foreground">
+                {profileNeighborhood}
+              </p>
+              {profileReference && (
+                <p className="text-xs text-muted-foreground">
+                  📍 Ref: {profileReference}
+                </p>
+              )}
+              <div className="flex items-center justify-between pt-1">
+                <span className="text-xs font-bold text-primary">
+                  Taxa de entrega: R$ {neighborhoodFee.toFixed(2)}
+                </span>
+                <button
+                  onClick={() => navigate("/perfil")}
+                  className="text-xs text-primary flex items-center gap-1 hover:underline"
+                >
+                  <Edit3 className="h-3 w-3" />
+                  Alterar
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 text-center">
+              <p className="text-sm font-bold text-yellow-600 mb-2">
+                📍 Endereço não cadastrado
+              </p>
+              <p className="text-xs text-muted-foreground mb-3">
+                Precisamos do seu endereço para entregar em Itatinga.
+              </p>
+              <button
+                onClick={() => setShowAddressModal(true)}
+                className="bg-primary text-primary-foreground font-bold px-6 py-2 rounded-xl text-sm"
+              >
+                Cadastrar Endereço
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Payment method */}
@@ -271,7 +326,7 @@ const CheckoutPage = () => {
             <span className="font-bold text-foreground">R$ {subtotal.toFixed(2)}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Entrega ({neighborhood})</span>
+            <span className="text-muted-foreground">Entrega ({profileNeighborhood || neighborhood})</span>
             <span className="font-bold text-foreground">R$ {neighborhoodFee.toFixed(2)}</span>
           </div>
           <div className="flex justify-between text-lg pt-2 border-t border-border">
@@ -302,7 +357,10 @@ const CheckoutPage = () => {
       {showAddressModal && (
         <AddressModal
           onClose={() => setShowAddressModal(false)}
-          onSaved={() => { setShowAddressModal(false); refetchProfile(); }}
+          onSaved={() => {
+            setShowAddressModal(false);
+            refetchProfile();
+          }}
         />
       )}
     </div>

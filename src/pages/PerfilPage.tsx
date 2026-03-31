@@ -1,15 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/BottomNav";
-import { User, LogOut, Store, Shield, UserPlus, MapPin, Save, Bike, Wallet, Copy, AlertTriangle, MessageCircle } from "lucide-react";
+import { User, LogOut, Store, Shield, UserPlus, MapPin, Save, Bike, Wallet, Copy, AlertTriangle, MessageCircle, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { maskWhatsApp, formatWhatsAppNumber, isValidWhatsApp } from "@/lib/whatsapp";
 
 const PerfilPage = () => {
   const { user, signOut } = useAuth();
+  const { setNeighborhood } = useCart();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -66,7 +68,7 @@ const PerfilPage = () => {
   const [number, setNumber] = useState("");
   const [complement, setComplement] = useState("");
   const [referencePoint, setReferencePoint] = useState("");
-  const [neighborhood, setNeighborhood] = useState("");
+  const [neighborhood, setNeighborhoodLocal] = useState("");
   const [phone, setPhone] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [savingAddress, setSavingAddress] = useState(false);
@@ -84,7 +86,7 @@ const PerfilPage = () => {
       setNumber((profile as any).number || "");
       setComplement((profile as any).complement || "");
       setReferencePoint((profile as any).reference_point || "");
-      setNeighborhood((profile as any).neighborhood || "");
+      setNeighborhoodLocal((profile as any).neighborhood || "");
       setPhone((profile as any).phone || "");
       const wn = (profile as any).whatsapp_number || "";
       setWhatsappNumber(wn ? maskWhatsApp(wn) : "");
@@ -100,6 +102,13 @@ const PerfilPage = () => {
     }
   }, [profile, pixLoaded]);
 
+  // Compute selected neighborhood fee
+  const selectedFee = useMemo(() => {
+    if (!neighborhood || !neighborhoods) return null;
+    const found = neighborhoods.find((n) => n.name === neighborhood);
+    return found ? found.fee : null;
+  }, [neighborhood, neighborhoods]);
+
   const handleSignOut = async () => {
     await signOut();
     toast.success("Você saiu da conta.");
@@ -113,7 +122,6 @@ const PerfilPage = () => {
     }
     setSavingAddress(true);
     try {
-      // Upsert profile with address
       const { error } = await supabase
         .from("profiles")
         .upsert({
@@ -127,8 +135,18 @@ const PerfilPage = () => {
           whatsapp_number: isValidWhatsApp(whatsappNumber) ? formatWhatsAppNumber(whatsappNumber) : null,
         } as any, { onConflict: "user_id" });
       if (error) throw error;
+
+      // Sync cart neighborhood
+      if (neighborhood && neighborhoods) {
+        const found = neighborhoods.find((n) => n.name === neighborhood);
+        if (found) {
+          setNeighborhood(found.name, found.fee);
+        }
+      }
+
       toast.success("Endereço salvo!");
       queryClient.invalidateQueries({ queryKey: ["my-profile", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["my-profile-checkout", user?.id] });
     } catch (err: any) {
       toast.error(err.message || "Erro ao salvar.");
     } finally {
@@ -244,7 +262,7 @@ const PerfilPage = () => {
             />
             <select
               value={neighborhood}
-              onChange={(e) => setNeighborhood(e.target.value)}
+              onChange={(e) => setNeighborhoodLocal(e.target.value)}
               className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary appearance-none"
             >
               <option value="">Selecione o Bairro</option>
@@ -252,6 +270,15 @@ const PerfilPage = () => {
                 <option key={n.id} value={n.name}>{n.name}</option>
               ))}
             </select>
+            {/* Delivery fee indicator */}
+            {selectedFee !== null && (
+              <div className="flex items-center gap-2 bg-primary/5 border border-primary/20 rounded-xl px-3 py-2">
+                <Truck className="h-4 w-4 text-primary" />
+                <span className="text-sm font-bold text-primary">
+                  Taxa de entrega para este local: R$ {selectedFee.toFixed(2)}
+                </span>
+              </div>
+            )}
             <input
               type="text"
               placeholder="Ponto de referência (Ex: Próximo à Igreja)"

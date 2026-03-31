@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { MapPin, ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface NeighborhoodFee {
   id: string;
@@ -11,14 +12,40 @@ interface NeighborhoodFee {
 
 const AppHeader = () => {
   const { neighborhood, setNeighborhood } = useCart();
+  const { user } = useAuth();
   const [neighborhoods, setNeighborhoods] = useState<NeighborhoodFee[]>([]);
   const [open, setOpen] = useState(false);
+  const [profileLoaded, setProfileLoaded] = useState(false);
 
   useEffect(() => {
     supabase.from("neighborhood_fees").select("*").order("name").then(({ data }) => {
       if (data) setNeighborhoods(data);
     });
   }, []);
+
+  // Auto-load user's saved neighborhood from profile
+  useEffect(() => {
+    if (!user || profileLoaded || neighborhoods.length === 0) return;
+    if (neighborhood) {
+      setProfileLoaded(true);
+      return;
+    }
+
+    supabase
+      .from("profiles")
+      .select("neighborhood")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.neighborhood) {
+          const found = neighborhoods.find((n) => n.name === data.neighborhood);
+          if (found) {
+            setNeighborhood(found.name, found.fee);
+          }
+        }
+        setProfileLoaded(true);
+      });
+  }, [user, neighborhoods, neighborhood, profileLoaded, setNeighborhood]);
 
   const urban = neighborhoods.filter((n) => n.fee <= 4);
   const rural = neighborhoods.filter((n) => n.fee > 4);
