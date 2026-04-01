@@ -331,13 +331,14 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
       }
 
       if (data?.error) throw new Error(data.error);
-      if (!data?.qr_code && !data?.qr_code_base64) throw new Error("QR Code não retornado");
+      // Standardized response: pix_code, qr_code_url
+      if (!data?.pix_code && !data?.qr_code_url && !data?.qr_code && !data?.qr_code_base64) throw new Error("QR Code não retornado");
 
       const createdAt = data?.created_at || new Date().toISOString();
       setNowMs(Date.now());
       setChargeResult({
-        qr_code: data.qr_code ?? null,
-        qr_code_base64: data.qr_code_base64 ?? null,
+        qr_code: data.pix_code ?? data.qr_code ?? null,
+        qr_code_base64: data.qr_code_url ?? data.qr_code_base64 ?? null,
         reference_code: data.reference_code,
         amount: Number(data.amount || chargeAmount),
         created_at: createdAt,

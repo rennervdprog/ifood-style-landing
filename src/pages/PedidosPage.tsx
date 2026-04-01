@@ -242,11 +242,14 @@ const PedidosPage = () => {
         throw new Error(pixData.error);
       }
 
-      if (pixData?.qr_code || pixData?.qr_code_base64) {
+      // Standardized response: pix_code, qr_code_url (with fallback to legacy fields)
+      const qrCode = pixData?.pix_code || pixData?.qr_code || null;
+      const qrCodeBase64 = pixData?.qr_code_url || pixData?.qr_code_base64 || null;
+      if (qrCode || qrCodeBase64) {
         setPixModal({
           orderId: order.id,
-          qrCode: pixData.qr_code,
-          qrCodeBase64: pixData.qr_code_base64,
+          qrCode,
+          qrCodeBase64,
           loading: false,
         });
         resetPixAttempts("order_pix");
