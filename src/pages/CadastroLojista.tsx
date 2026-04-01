@@ -51,25 +51,21 @@ const CadastroLojista = () => {
 
     setLoading(true);
     try {
-      // 1. Create auth account
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      const { error: signUpError } = await supabase.auth.signUp({
         email: email.trim(),
         password,
-        options: { emailRedirectTo: window.location.origin },
+        options: {
+          emailRedirectTo: window.location.origin,
+          data: {
+            full_name: storeName.trim(),
+            role: "lojista",
+            document: document.trim(),
+            store_name: storeName.trim(),
+            store_category: storeCategory,
+          },
+        },
       });
       if (signUpError) throw signUpError;
-
-      const userId = signUpData.user?.id;
-      if (!userId) throw new Error("Erro ao criar conta.");
-
-      // 2. Register as lojista via RPC
-      const { error: rpcError } = await supabase.rpc("register_as_lojista", {
-        _full_name: storeName.trim(),
-        _document: document.trim(),
-        _store_name: storeName.trim(),
-        _store_category: storeCategory,
-      } as any);
-      if (rpcError) throw rpcError;
 
       setSuccess(true);
     } catch (err: any) {

@@ -1,11 +1,13 @@
-import { Shield, Clock, Store, Bike, CheckCircle2, XCircle } from "lucide-react";
+import { Shield, Clock, Store, Bike, CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useState } from "react";
 import WhatsAppButton from "@/components/WhatsAppButton";
 
 const AdminApprovals = () => {
   const queryClient = useQueryClient();
+  const [syncingId, setSyncingId] = useState<string | null>(null);
 
   const { data: pendingProfiles, isLoading } = useQuery({
     queryKey: ["admin-pending-profiles"],
@@ -15,22 +17,57 @@ const AdminApprovals = () => {
         .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      // Filter by role client-side since the column type isn't in the generated types yet
       return (data || []).filter((p: any) => p.role === "lojista" || p.role === "motoboy");
     },
   });
 
-  const handleApprove = async (userId: string, approved: boolean) => {
-    const { error } = await supabase.rpc("admin_approve_partner", {
-      _profile_user_id: userId,
-      _approved: approved,
-    } as any);
+  const handleApprove = async (profile: any, approved: boolean) => {
+    setSyncingId(profile.user_id);
+    try {
+      // 1. Approve locally
+      const { error } = await supabase.rpc("admin_approve_partner", {
+        _profile_user_id: profile.user_id,
+        _approved: approved,
+      } as any);
 
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success(approved ? "Parceiro aprovado!" : "Parceiro recusado.");
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+
+      // 2. If approving, sync to external Supabase
+      if (approved) {
+        try {
+          // Get the user's email from auth (via profile query won't have it)
+          const { data: freshProfile } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("user_id", profile.user_id)
+            .single();
+
+          await supabase.functions.invoke("sync-to-external", {
+            body: {
+              action: "sync_profile",
+              data: {
+                profile: {
+                  ...(freshProfile || profile),
+                  status: "approved",
+                },
+              },
+            },
+          });
+          toast.success("Parceiro aprovado e sincronizado!");
+        } catch {
+          // Sync failed but approval succeeded locally
+          toast.success("Parceiro aprovado! (sincronização externa pendente)");
+        }
+      } else {
+        toast.success("Parceiro recusado.");
+      }
+
       queryClient.invalidateQueries({ queryKey: ["admin-pending-profiles"] });
+    } finally {
+      setSyncingId(null);
     }
   };
 
@@ -87,15 +124,21 @@ const AdminApprovals = () => {
                   />
                 )}
                 <button
-                  onClick={() => handleApprove(p.user_id, true)}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-green-500 hover:bg-green-600 text-white text-sm font-bold active:scale-95 transition-transform min-h-[44px]"
+                  onClick={() => handleApprove(p, true)}
+                  disabled={syncingId === p.user_id}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-green-500 hover:bg-green-600 text-white text-sm font-bold active:scale-95 transition-transform min-h-[44px] disabled:opacity-50"
                 >
-                  <CheckCircle2 className="h-4 w-4" />
+                  {syncingId === p.user_id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <CheckCircle2 className="h-4 w-4" />
+                  )}
                   APROVAR
                 </button>
                 <button
-                  onClick={() => handleApprove(p.user_id, false)}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-bold active:scale-95 transition-transform min-h-[44px]"
+                  onClick={() => handleApprove(p, false)}
+                  disabled={syncingId === p.user_id}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-bold active:scale-95 transition-transform min-h-[44px] disabled:opacity-50"
                 >
                   <XCircle className="h-4 w-4" />
                   RECUSAR
