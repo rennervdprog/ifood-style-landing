@@ -18,6 +18,8 @@ import {
   getSafetyModeRemainingMs,
   formatCooldownTime,
 } from "@/lib/pixSafeGuard";
+import { SIMULATION_MODE, createSimulatedPixCharge, simulatePaymentDelay } from "@/lib/pixSimulation";
+import SimulationBanner from "@/components/SimulationBanner";
 
 const statusConfig: Record<string, { label: string; icon: React.ElementType; color: string }> = {
   aguardando_pagamento: { label: "Aguardando Pagamento", icon: Clock, color: "text-amber-500" },

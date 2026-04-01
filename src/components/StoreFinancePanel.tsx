@@ -640,6 +640,24 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
                   Copiar Código Pix Copia e Cola
                 </Button>
               )}
+
+              {/* Simulation: Simulate Payment Button */}
+              {SIMULATION_MODE && (
+                <Button
+                  onClick={handleSimulatePayment}
+                  disabled={simulatingPayment}
+                  className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold"
+                >
+                  {simulatingPayment ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Processando...
+                    </>
+                  ) : (
+                    "🧪 Simular Pagamento (Ambiente de Teste)"
+                  )}
+                </Button>
+              )}
             </>
           )}
 
