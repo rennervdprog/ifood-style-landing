@@ -363,13 +363,41 @@ const PedidosPage = () => {
                         <XCircle className="h-4 w-4" />
                       </button>
                     </div>
+
+                    {/* Safety mode / cooldown banners */}
+                    {safetyModeMs > 0 && (
+                      <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-2 mb-2 flex items-start gap-2">
+                        <ShieldAlert className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                        <p className="text-[10px] text-amber-600">
+                          Manutenção temporária no sistema de pagamentos. Voltará em {formatCooldownTime(safetyModeMs)}.
+                        </p>
+                      </div>
+                    )}
+                    {!safetyModeMs && pixCooldownMs > 0 && (
+                      <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-2 mb-2 flex items-start gap-2">
+                        <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                        <p className="text-[10px] text-amber-600">
+                          Muitas tentativas. Aguarde {formatCooldownTime(pixCooldownMs)}.
+                        </p>
+                      </div>
+                    )}
+
                     <button
                       onClick={() => generatePix(order)}
-                      disabled={payingOrderId === order.id}
+                      disabled={payingOrderId === order.id || isPixBlocked}
                       className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold py-2.5 rounded-xl text-xs disabled:opacity-50"
                     >
-                      <QrCode className="h-3.5 w-3.5" />
-                      {payingOrderId === order.id ? "Gerando..." : "Pagar com PIX"}
+                      {isPixBlocked ? (
+                        <>
+                          <ShieldAlert className="h-3.5 w-3.5" />
+                          Aguarde...
+                        </>
+                      ) : (
+                        <>
+                          <QrCode className="h-3.5 w-3.5" />
+                          {payingOrderId === order.id ? "Gerando..." : "Pagar com PIX"}
+                        </>
+                      )}
                     </button>
                   </div>
                 )}
