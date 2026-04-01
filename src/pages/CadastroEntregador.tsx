@@ -61,11 +61,28 @@ const CadastroEntregador = () => {
       } as any);
       if (rpcError) throw rpcError;
 
-      // 3. Sync to external Supabase
+      // 3. Sync profile to external Supabase (non-blocking)
       try {
-        await supabase.functions.invoke("sync-to-external", {
-          body: { action: "sync_stores" },
-        });
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("user_id", userId)
+          .single();
+
+        if (profileData) {
+          await supabase.functions.invoke("sync-to-external", {
+            body: {
+              action: "sync_profile",
+              data: {
+                profile: {
+                  ...profileData,
+                  email: email.trim(),
+                  status: "pending",
+                },
+              },
+            },
+          });
+        }
       } catch {
         // Non-blocking - sync can happen later
       }
