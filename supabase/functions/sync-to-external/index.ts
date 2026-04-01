@@ -26,7 +26,7 @@ serve(async (req) => {
 
     const externalClient = createClient(externalUrl, externalKey);
 
-    // Verify admin auth
+    // Verify auth - accept service_role key (from DB triggers) or admin JWT
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(
@@ -36,23 +36,28 @@ serve(async (req) => {
     }
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: authError } = await createClient(
-      internalUrl,
-      Deno.env.get("SUPABASE_ANON_KEY")!
-    ).auth.getUser(token);
+    const isServiceRole = token === internalServiceKey;
 
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    if (!isServiceRole) {
+      // Validate as user JWT - must be admin
+      const { data: { user }, error: authError } = await createClient(
+        internalUrl,
+        Deno.env.get("SUPABASE_ANON_KEY")!
+      ).auth.getUser(token);
 
-    if (user.email !== "vinivias13@gmail.com") {
-      return new Response(
-        JSON.stringify({ error: "Admin only" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      if (authError || !user) {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      if (user.email !== "vinivias13@gmail.com") {
+        return new Response(
+          JSON.stringify({ error: "Admin only" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     const body = await req.json();
