@@ -542,9 +542,29 @@ const PedidosPage = () => {
                   </button>
                 )}
 
+                {/* Simulation: Simulate Payment Button */}
+                {SIMULATION_MODE && (
+                  <button
+                    onClick={handleSimulateOrderPayment}
+                    disabled={simulatingPayment}
+                    className="w-full flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-xl text-sm disabled:opacity-50"
+                  >
+                    {simulatingPayment ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Processando...
+                      </>
+                    ) : (
+                      "🧪 Simular Pagamento (Ambiente de Teste)"
+                    )}
+                  </button>
+                )}
+
                 <div className="bg-muted/50 rounded-xl p-3 text-center">
                   <p className="text-xs text-muted-foreground">
-                    📱 Abra o app do seu banco, escolha <strong>Pagar com PIX</strong> e escaneie o QR Code ou cole o código copiado.
+                    {SIMULATION_MODE
+                      ? "⚠️ Modo de simulação ativo. Use o botão acima para simular o pagamento."
+                      : "📱 Abra o app do seu banco, escolha Pagar com PIX e escaneie o QR Code ou cole o código copiado."}
                   </p>
                   <p className="text-xs text-primary font-bold mt-2">
                     ✅ Após pagar, seu pedido será liberado automaticamente!
