@@ -17,6 +17,8 @@ import AdminDashboard from "./pages/AdminDashboard";
 import DriverDashboard from "./pages/DriverDashboard";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import PartnerOnboarding from "./pages/PartnerOnboarding";
+import CadastroEntregador from "./pages/CadastroEntregador";
+import CadastroLojista from "./pages/CadastroLojista";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -62,6 +64,8 @@ const App = () => (
                 }
               />
               <Route path="/parceiro" element={<PartnerOnboarding />} />
+              <Route path="/cadastro-entregador" element={<CadastroEntregador />} />
+              <Route path="/cadastro-lojista" element={<CadastroLojista />} />
               <Route path="/:slug" element={<StorePage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
