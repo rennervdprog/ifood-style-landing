@@ -161,28 +161,43 @@ const PedidosPage = () => {
   const generatePix = async (order: any) => {
     if (!user) return;
 
-    if (isSafetyModeActive()) {
+    if (!SIMULATION_MODE && isSafetyModeActive()) {
       toast.error("Sistema de pagamentos em manutenção temporária. Aguarde alguns minutos.");
       return;
     }
-    if (isPixCooldownActive("order_pix")) {
+    if (!SIMULATION_MODE && isPixCooldownActive("order_pix")) {
       toast.error("Muitas tentativas sem pagamento. Por segurança, aguarde alguns minutos.");
       return;
     }
 
-    // Record attempt
-    recordPixAttempt("order_pix");
-    if (isPixCooldownActive("order_pix")) {
-      activatePixCooldown("order_pix");
-      toast.error("Muitas tentativas sem pagamento. Por segurança, aguarde alguns minutos.");
-      return;
+    if (!SIMULATION_MODE) {
+      recordPixAttempt("order_pix");
+      if (isPixCooldownActive("order_pix")) {
+        activatePixCooldown("order_pix");
+        toast.error("Muitas tentativas sem pagamento. Por segurança, aguarde alguns minutos.");
+        return;
+      }
     }
 
     setPayingOrderId(order.id);
     setPixModal({ orderId: order.id, qrCode: null, qrCodeBase64: null, loading: true });
 
     try {
-      // Get user profile for payer name and CPF
+      if (SIMULATION_MODE) {
+        // --- SIMULATION MODE: bypass Mercado Pago ---
+        const sim = createSimulatedPixCharge(Number(order.total_price), "PIX");
+        setPixModal({
+          orderId: order.id,
+          qrCode: sim.qr_code,
+          qrCodeBase64: sim.qr_code_base64,
+          loading: false,
+        });
+        toast.success(`[SIMULAÇÃO] PIX ${sim.reference_code} gerado!`);
+        setPayingOrderId(null);
+        return;
+      }
+
+      // TODO: Reativar integração real após liberação do Mercado Pago.
       const { data: profile } = await supabase
         .from("profiles")
         .select("full_name, document")
@@ -217,7 +232,6 @@ const PedidosPage = () => {
 
       if (pixError) throw pixError;
 
-      // Handle rate limiting
       if (pixData?.rate_limited) {
         activateSafetyMode();
         throw new Error("Sistema de pagamentos temporariamente indisponível. Tente novamente em alguns minutos.");
@@ -234,7 +248,6 @@ const PedidosPage = () => {
           qrCodeBase64: pixData.qr_code_base64,
           loading: false,
         });
-        // Reset attempts on success
         resetPixAttempts("order_pix");
       } else {
         throw new Error("QR Code não retornado");
@@ -242,7 +255,6 @@ const PedidosPage = () => {
     } catch (err: any) {
       console.error("PIX generation error:", JSON.stringify(err, null, 2), "status:", err?.status, "code:", err?.code);
 
-      // Check for 429 in error context
       if (err?.context?.status === 429 || err?.status === 429) {
         activateSafetyMode();
       }
@@ -252,6 +264,28 @@ const PedidosPage = () => {
       setPixModal(null);
     } finally {
       setPayingOrderId(null);
+    }
+  };
+
+  const handleSimulateOrderPayment = async () => {
+    if (!pixModal || !user) return;
+    setSimulatingPayment(true);
+    try {
+      await simulatePaymentDelay();
+      // Update order status from aguardando_pagamento to pendente
+      const { error } = await supabase
+        .from("orders")
+        .update({ status: "pendente" as any })
+        .eq("id", pixModal.orderId)
+        .eq("client_id", user.id);
+      if (error) throw error;
+      toast.success("[SIMULAÇÃO] Pagamento confirmado! Pedido enviado à loja.");
+      setPixModal(null);
+      queryClient.invalidateQueries({ queryKey: ["orders", user.id] });
+    } catch (err: any) {
+      toast.error(err?.message || "Erro ao simular pagamento.");
+    } finally {
+      setSimulatingPayment(false);
     }
   };
 
