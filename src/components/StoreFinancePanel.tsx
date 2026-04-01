@@ -471,11 +471,37 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
             R$ {(dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue).toFixed(2)}
           </p>
 
+          {/* Safety Mode Banner */}
+          {safetyModeMs > 0 && (
+            <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 flex items-start gap-2">
+              <ShieldAlert className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-bold text-amber-600">Manutenção temporária no sistema de pagamentos</p>
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  O sistema voltará ao normal em {formatCooldownTime(safetyModeMs)}.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Cooldown Banner */}
+          {!safetyModeMs && pixCooldownMs > 0 && (
+            <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 flex items-start gap-2">
+              <AlertCircle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-bold text-amber-600">Muitas tentativas sem pagamento</p>
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  Por segurança, aguarde {formatCooldownTime(pixCooldownMs)} para gerar uma nova cobrança.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* ACTION BUTTON: Pagar Comissão via PIX */}
           {(dbComissaoPendente > 0 || commissionDue > 0) && (
             <Button
               onClick={handleGenerateCommissionCharge}
-              disabled={generatingCharge}
+              disabled={generatingCharge || isPixBlocked}
               className="w-full mt-3 bg-red-500 hover:bg-red-600 text-white font-bold"
               size="lg"
             >
@@ -483,6 +509,11 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Gerando PIX...
+                </>
+              ) : isPixBlocked ? (
+                <>
+                  <ShieldAlert className="h-4 w-4" />
+                  Aguarde...
                 </>
               ) : (
                 <>
