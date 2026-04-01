@@ -17,6 +17,7 @@ import {
   getSafetyModeRemainingMs,
   formatCooldownTime,
 } from "@/lib/pixSafeGuard";
+import { SIMULATION_MODE, createSimulatedPixCharge, simulatePaymentDelay } from "@/lib/pixSimulation";
 
 interface StoreFinancePanelProps {
   storeId: string;
