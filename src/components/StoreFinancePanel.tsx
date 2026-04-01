@@ -432,12 +432,30 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
         </div>
       </div>
 
+      {chargeError && !chargeResult && (
+        <div className="bg-card rounded-2xl p-5 border border-destructive/20 space-y-3">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-full bg-destructive/10 flex items-center justify-center shrink-0">
+              <AlertCircle className="h-4 w-4 text-destructive" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-bold text-foreground">Não foi possível gerar o PIX</p>
+              <p className="text-xs text-muted-foreground">{chargeError}</p>
+            </div>
+          </div>
+          <Button onClick={handleGenerateCommissionCharge} disabled={generatingCharge} className="w-full" variant="outline">
+            <RotateCcw className="h-4 w-4" />
+            Tentar Novamente
+          </Button>
+        </div>
+      )}
+
       {/* QR Code Modal/Card */}
       {chargeResult && (
         <div className="bg-card rounded-2xl p-5 border-2 border-primary space-y-3 animate-in slide-in-from-bottom-4">
           <div className="flex items-center justify-between">
             <p className="text-sm font-bold text-primary">Pague via PIX</p>
-            <button onClick={() => setChargeResult(null)} className="text-muted-foreground">
+            <button onClick={handleDismissChargeCard} className="text-muted-foreground">
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -449,29 +467,64 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
             R$ {chargeResult.amount.toFixed(2)}
           </p>
 
-          {chargeResult.qr_code_base64 && (
-            <div className="flex justify-center">
-              <img
-                src={`data:image/png;base64,${chargeResult.qr_code_base64}`}
-                alt="QR Code PIX"
-                className="w-48 h-48 rounded-xl"
-              />
+          {!isChargeExpired && !isChargeSettled && (
+            <div className="rounded-xl border border-border bg-muted/30 p-3 text-center space-y-2">
+              <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-bold ${isChargeUrgent ? "bg-destructive/10 text-destructive animate-pulse" : "bg-primary/10 text-primary"}`}>
+                <TimerReset className="h-4 w-4" />
+                {formatCountdown(currentChargeRemainingMs)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                O QR Code é válido por 5 minutos. Se você não concluir o pagamento, precisará gerar um novo.
+              </p>
             </div>
           )}
 
-          {chargeResult.qr_code && (
-            <Button
-              onClick={() => copyPixCode(chargeResult.qr_code!)}
-              variant="outline"
-              className="w-full"
-            >
-              <Copy className="h-4 w-4" />
-              Copiar Código Pix Copia e Cola
-            </Button>
+          {isChargeSettled ? (
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-center space-y-2">
+              <CheckCircle2 className="h-8 w-8 text-primary mx-auto" />
+              <p className="text-sm font-bold text-foreground">Pagamento confirmado</p>
+              <p className="text-xs text-muted-foreground">O webhook já confirmou esta cobrança.</p>
+            </div>
+          ) : isChargeExpired ? (
+            <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-center space-y-3">
+              <AlertCircle className="h-8 w-8 text-destructive mx-auto" />
+              <p className="text-sm font-bold text-foreground">Tempo esgotado! Este QR Code expirou para sua segurança.</p>
+              <Button onClick={handleGenerateCommissionCharge} disabled={generatingCharge} className="w-full">
+                {generatingCharge ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+                Gerar Nova Cobrança
+              </Button>
+            </div>
+          ) : (
+            <>
+              {chargeResult.qr_code_base64 && (
+                <div className="flex justify-center">
+                  <img
+                    src={`data:image/png;base64,${chargeResult.qr_code_base64}`}
+                    alt="QR Code PIX"
+                    className="w-48 h-48 rounded-xl"
+                  />
+                </div>
+              )}
+
+              {chargeResult.qr_code && (
+                <Button
+                  onClick={() => copyPixCode(chargeResult.qr_code!)}
+                  variant="outline"
+                  className="w-full"
+                >
+                  <Copy className="h-4 w-4" />
+                  Copiar Código Pix Copia e Cola
+                </Button>
+              )}
+            </>
           )}
 
           <p className="text-[10px] text-muted-foreground text-center">
-            Após o pagamento, o saldo será zerado automaticamente via webhook.
+            {isChargeSettled
+              ? "Cobrança conciliada com sucesso."
+              : isChargeExpired
+                ? "A cobrança anterior ficou indisponível e pode ser gerada novamente."
+                : "Após o pagamento, o saldo será zerado automaticamente via webhook."}
           </p>
         </div>
       )}
