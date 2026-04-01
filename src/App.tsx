@@ -64,6 +64,8 @@ const App = () => (
                 }
               />
               <Route path="/parceiro" element={<PartnerOnboarding />} />
+              <Route path="/cadastro-entregador" element={<CadastroEntregador />} />
+              <Route path="/cadastro-lojista" element={<CadastroLojista />} />
               <Route path="/:slug" element={<StorePage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
