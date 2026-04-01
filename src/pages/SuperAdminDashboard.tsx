@@ -410,6 +410,8 @@ const SuperAdminDashboard = () => {
 
       {activeTab === "approvals" ? (
         <div className="px-4 py-4"><AdminApprovals /></div>
+      ) : activeTab === "sync" ? (
+        <SyncExternalTab />
       ) : activeTab === "stores" ? (
         <div className="px-4 py-4"><AdminStoreManager /></div>
       ) : activeTab === "saques" ? (
