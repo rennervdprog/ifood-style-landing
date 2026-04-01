@@ -310,9 +310,10 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
         return;
       }
 
-      // TODO: Reativar integração real após liberação do Mercado Pago.
-      const { data, error } = await supabase.functions.invoke("generate-commission-charge", {
+      // Roteador universal de pagamentos com failover automático
+      const { data, error } = await supabase.functions.invoke("payment-router", {
         body: {
+          action: "commission_charge",
           store_id: storeId,
           amount: chargeAmount,
           description: `Comissão FoodIta - ${storeName}`,
