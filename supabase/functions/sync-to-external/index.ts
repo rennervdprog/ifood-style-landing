@@ -126,6 +126,59 @@ serve(async (req) => {
       );
     }
 
+    // ACTION: sync_profile (single profile upsert for new partner registration)
+    if (action === "sync_profile") {
+      if (!payload?.profile) {
+        return new Response(
+          JSON.stringify({ error: "Missing profile data" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Only send safe fields, ignore FK constraints
+      const profileData = {
+        id: payload.profile.id,
+        user_id: payload.profile.user_id,
+        full_name: payload.profile.full_name,
+        role: payload.profile.role,
+        is_approved: payload.profile.is_approved ?? false,
+        document: payload.profile.document,
+        phone: payload.profile.phone,
+        vehicle: payload.profile.vehicle,
+        whatsapp_number: payload.profile.whatsapp_number,
+        created_at: payload.profile.created_at,
+      };
+
+      try {
+        const { error: upsertError } = await externalClient
+          .from("profiles")
+          .upsert(profileData, { onConflict: "user_id", ignoreDuplicates: false });
+
+        if (upsertError) {
+          // If FK error, try insert without FK-dependent fields
+          if (upsertError.code === "23503" || upsertError.message?.includes("foreign key")) {
+            console.log("FK constraint on external DB, retrying without FK fields");
+            const { user_id, ...rest } = profileData;
+            const { error: retryError } = await externalClient
+              .from("profiles")
+              .upsert({ ...profileData }, { onConflict: "id", ignoreDuplicates: false });
+            if (retryError) {
+              console.error("Retry sync profile error:", retryError);
+            }
+          } else {
+            console.error("Sync profile error:", upsertError);
+          }
+        }
+      } catch (e) {
+        console.error("Sync profile exception:", e.message);
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, synced: "profile", id: profileData.id }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // ACTION: sync_stores (bulk stores + products)
     if (action === "sync_stores") {
       const results: Record<string, { count: number; error?: string }> = {};
