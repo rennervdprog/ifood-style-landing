@@ -71,32 +71,6 @@ const CadastroLojista = () => {
       } as any);
       if (rpcError) throw rpcError;
 
-      // 3. Sync profile to external Supabase (non-blocking)
-      try {
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("user_id", userId)
-          .single();
-
-        if (profileData) {
-          await supabase.functions.invoke("sync-to-external", {
-            body: {
-              action: "sync_profile",
-              data: {
-                profile: {
-                  ...profileData,
-                  email: email.trim(),
-                  status: "pending",
-                },
-              },
-            },
-          });
-        }
-      } catch {
-        // Non-blocking
-      }
-
       setSuccess(true);
     } catch (err: any) {
       toast.error(err.message || "Erro ao cadastrar.");
