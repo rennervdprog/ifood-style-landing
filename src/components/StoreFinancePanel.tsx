@@ -108,6 +108,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
   const [generatingCharge, setGeneratingCharge] = useState(false);
   const [chargeResult, setChargeResult] = useState<ChargeResult | null>(null);
   const [chargeError, setChargeError] = useState<string | null>(null);
+  const [simulatingPayment, setSimulatingPayment] = useState(false);
   const [dismissedChargeReference, setDismissedChargeReference] = useState<string | null>(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
   const queryClient = useQueryClient();
