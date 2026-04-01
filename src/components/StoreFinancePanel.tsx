@@ -604,41 +604,48 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
       {transactions && transactions.length > 0 && (
         <div className="space-y-1.5">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Transações Financeiras</p>
-          {transactions.map((tx: any) => (
-            <div key={tx.id} className="bg-card rounded-xl p-3 border border-border flex items-center gap-3">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                tx.transaction_kind === "commission_charge" ? "bg-red-500/10" : "bg-green-500/10"
-              }`}>
-                {tx.transaction_kind === "commission_charge"
-                  ? <ArrowDownRight className="h-4 w-4 text-red-500" />
-                  : <ArrowUpRight className="h-4 w-4 text-green-500" />
-                }
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-foreground">{tx.reference_code}</span>
-                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                    tx.status === "paid" || tx.status === "approved"
-                      ? "bg-green-500/20 text-green-500"
-                      : tx.status === "failed"
-                        ? "bg-red-500/20 text-red-500"
-                        : "bg-amber-500/20 text-amber-500"
-                  }`}>
-                    {tx.status === "paid" ? "Pago" : tx.status === "approved" ? "Aprovado" : tx.status === "pending" ? "Pendente" : tx.status === "failed" ? "Falhou" : tx.status}
-                  </span>
+          {transactions.map((tx) => {
+            const statusMeta = getTransactionStatusMeta(tx.status, tx.created_at, nowMs);
+            const canRetryExpiredCharge = tx.transaction_kind === "commission_charge" && statusMeta.isExpired;
+
+            return (
+              <div key={tx.id} className="bg-card rounded-xl p-3 border border-border flex items-center gap-3">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  tx.transaction_kind === "commission_charge" ? "bg-destructive/10" : "bg-primary/10"
+                }`}>
+                  {tx.transaction_kind === "commission_charge"
+                    ? <ArrowDownRight className="h-4 w-4 text-destructive" />
+                    : <ArrowUpRight className="h-4 w-4 text-primary" />
+                  }
                 </div>
-                <div className="flex items-center justify-between mt-0.5">
-                  <span className="text-xs text-muted-foreground">
-                    {tx.transaction_kind === "commission_charge" ? "Cobrança Comissão" : "Repasse"}
-                  </span>
-                  <span className="text-sm font-bold text-foreground">R$ {Number(tx.amount).toFixed(2)}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-semibold text-foreground">{tx.reference_code}</span>
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${statusMeta.className}`}>
+                      {statusMeta.label}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between mt-0.5 gap-2">
+                    <span className="text-xs text-muted-foreground">
+                      {tx.transaction_kind === "commission_charge" ? "Cobrança Comissão" : "Repasse"}
+                    </span>
+                    <span className="text-sm font-bold text-foreground">R$ {Number(tx.amount).toFixed(2)}</span>
+                  </div>
+                  <div className="flex items-center justify-between mt-1 gap-2">
+                    <p className="text-[10px] text-muted-foreground">
+                      {format(new Date(tx.created_at), "dd/MM/yyyy HH:mm")}
+                    </p>
+                    {canRetryExpiredCharge && (
+                      <Button onClick={handleGenerateCommissionCharge} size="sm" variant="outline" className="h-7 px-2 text-[10px]">
+                        <RotateCcw className="h-3 w-3" />
+                        Gerar nova cobrança
+                      </Button>
+                    )}
+                  </div>
                 </div>
-                <p className="text-[10px] text-muted-foreground mt-0.5">
-                  {format(new Date(tx.created_at), "dd/MM/yyyy HH:mm")}
-                </p>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

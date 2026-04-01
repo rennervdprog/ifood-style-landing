@@ -173,10 +173,11 @@ Deno.serve(async (req) => {
       JSON.stringify({
         reference_code: referenceCode,
         payment_id: mpData.id,
-        status: mpData.status,
+        status: "pending",
         qr_code: pixInfo?.qr_code || null,
         qr_code_base64: pixInfo?.qr_code_base64 || null,
         amount: Number(amount.toFixed(2)),
+        created_at: createdAt,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
