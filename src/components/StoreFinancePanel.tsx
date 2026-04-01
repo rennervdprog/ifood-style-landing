@@ -265,11 +265,11 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
   const isPixBlocked = pixCooldownMs > 0 || safetyModeMs > 0;
 
   const handleGenerateCommissionCharge = async () => {
-    if (isSafetyModeActive()) {
+    if (!SIMULATION_MODE && isSafetyModeActive()) {
       toast.error("Sistema de pagamentos em manutenção temporária. Aguarde alguns minutos.");
       return;
     }
-    if (isPixCooldownActive(pixContextKey)) {
+    if (!SIMULATION_MODE && isPixCooldownActive(pixContextKey)) {
       toast.error("Muitas tentativas sem pagamento. Por segurança, aguarde alguns minutos para gerar uma nova cobrança.");
       return;
     }
@@ -280,12 +280,13 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
 
     const chargeAmount = dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue;
 
-    // Record attempt
-    recordPixAttempt(pixContextKey);
-    if (isPixCooldownActive(pixContextKey)) {
-      activatePixCooldown(pixContextKey);
-      toast.error("Muitas tentativas sem pagamento. Por segurança, aguarde alguns minutos para gerar uma nova cobrança.");
-      return;
+    if (!SIMULATION_MODE) {
+      recordPixAttempt(pixContextKey);
+      if (isPixCooldownActive(pixContextKey)) {
+        activatePixCooldown(pixContextKey);
+        toast.error("Muitas tentativas sem pagamento. Por segurança, aguarde alguns minutos para gerar uma nova cobrança.");
+        return;
+      }
     }
 
     setGeneratingCharge(true);
@@ -293,6 +294,23 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
     setDismissedChargeReference(null);
 
     try {
+      if (SIMULATION_MODE) {
+        // --- SIMULATION MODE: bypass Mercado Pago ---
+        const simResult = createSimulatedPixCharge(chargeAmount, "FAT");
+        setNowMs(Date.now());
+        setChargeResult({
+          qr_code: simResult.qr_code,
+          qr_code_base64: simResult.qr_code_base64,
+          reference_code: simResult.reference_code,
+          amount: simResult.amount,
+          created_at: simResult.created_at,
+          status: "pending",
+        });
+        toast.success(`[SIMULAÇÃO] Cobrança ${simResult.reference_code} gerada!`);
+        return;
+      }
+
+      // TODO: Reativar integração real após liberação do Mercado Pago.
       const { data, error } = await supabase.functions.invoke("generate-commission-charge", {
         body: {
           store_id: storeId,
@@ -325,21 +343,18 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
         status: data.status || "pending",
       });
 
-      // If reused, don't count as new attempt
       if (data?.reused) {
         toast.info(`Cobrança existente ${data.reference_code} reaberta.`);
       } else {
         toast.success(`Cobrança ${data.reference_code} gerada!`);
       }
 
-      // Reset attempts on successful charge display
       resetPixAttempts(pixContextKey);
       queryClient.invalidateQueries({ queryKey: ["store-financial-transactions", storeId] });
       queryClient.invalidateQueries({ queryKey: ["store-balance", storeId] });
     } catch (err: any) {
       console.error("Commission PIX generation error:", err, "status:", err?.context?.status ?? err?.status, "code:", err?.code);
 
-      // Check for 429 in error context
       if (err?.context?.status === 429 || err?.status === 429) {
         activateSafetyMode();
       }
@@ -353,6 +368,19 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
       toast.error(message);
     } finally {
       setGeneratingCharge(false);
+    }
+  };
+
+  const handleSimulatePayment = async () => {
+    if (!chargeResult) return;
+    setSimulatingPayment(true);
+    try {
+      await simulatePaymentDelay();
+      setChargeResult((prev) => prev ? { ...prev, status: "paid" } : null);
+      toast.success(`[SIMULAÇÃO] Pagamento ${chargeResult.reference_code} confirmado!`);
+      queryClient.invalidateQueries({ queryKey: ["store-balance", storeId] });
+    } finally {
+      setSimulatingPayment(false);
     }
   };
 
