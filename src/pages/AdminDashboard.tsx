@@ -326,6 +326,7 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-[#111827] text-white overflow-y-auto">
+      <SimulationBanner />
       {/* Header */}
       <header className="sticky top-0 z-50 bg-[#1F2937] border-b border-gray-700 px-4 py-3">
         <div className="flex items-center justify-between">
