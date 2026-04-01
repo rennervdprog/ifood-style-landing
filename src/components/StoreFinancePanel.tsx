@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Copy, Download, ArrowUpRight, ArrowDownRight, Smartphone, Banknote, QrCode, Loader2, X, CheckCircle2 } from "lucide-react";
+import { Copy, Download, ArrowUpRight, ArrowDownRight, Smartphone, Banknote, QrCode, Loader2, X, CheckCircle2, RotateCcw, AlertCircle, TimerReset } from "lucide-react";
 import { toast } from "sonner";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -13,6 +13,83 @@ interface StoreFinancePanelProps {
 }
 
 type Period = "week" | "month";
+
+type ChargeResult = {
+  qr_code: string | null;
+  qr_code_base64: string | null;
+  reference_code: string;
+  amount: number;
+  created_at: string;
+  status: string;
+};
+
+type FinancialTransaction = {
+  id: string;
+  amount: number;
+  created_at: string;
+  pix_copy_paste: string | null;
+  pix_qr_code: string | null;
+  pix_qr_code_base64: string | null;
+  reference_code: string;
+  status: string;
+  transaction_kind: string;
+};
+
+const PIX_CHARGE_TTL_MS = 5 * 60 * 1000;
+
+const getPendingChargeRemainingMs = (createdAt: string, nowMs = Date.now()) =>
+  Math.max(0, new Date(createdAt).getTime() + PIX_CHARGE_TTL_MS - nowMs);
+
+const isPendingChargeExpired = (status: string, createdAt: string, nowMs = Date.now()) =>
+  status === "pending" && getPendingChargeRemainingMs(createdAt, nowMs) === 0;
+
+const formatCountdown = (remainingMs: number) => {
+  const totalSeconds = Math.ceil(remainingMs / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+};
+
+const mapTransactionToChargeResult = (transaction: FinancialTransaction): ChargeResult => ({
+  qr_code: transaction.pix_copy_paste || transaction.pix_qr_code,
+  qr_code_base64: transaction.pix_qr_code_base64,
+  reference_code: transaction.reference_code,
+  amount: Number(transaction.amount || 0),
+  created_at: transaction.created_at,
+  status: transaction.status,
+});
+
+const getTransactionStatusMeta = (status: string, createdAt: string, nowMs = Date.now()) => {
+  if (isPendingChargeExpired(status, createdAt, nowMs)) {
+    return {
+      label: "Expirada",
+      className: "bg-destructive/10 text-destructive",
+      isExpired: true,
+    };
+  }
+
+  if (status === "paid" || status === "approved") {
+    return {
+      label: "Pago",
+      className: "bg-primary/10 text-primary",
+      isExpired: false,
+    };
+  }
+
+  if (status === "failed" || status === "cancelled") {
+    return {
+      label: status === "cancelled" ? "Cancelada" : "Falhou",
+      className: "bg-destructive/10 text-destructive",
+      isExpired: status === "cancelled",
+    };
+  }
+
+  return {
+    label: "Pendente",
+    className: "bg-primary/10 text-primary",
+    isExpired: false,
+  };
+};
 
 const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
   const [period, setPeriod] = useState<Period>("week");
