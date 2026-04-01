@@ -4,9 +4,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
-import { ClipboardList, Clock, ChefHat, Truck, CheckCircle2, Lock, Copy, QrCode, XCircle, X, Loader2, Trash2 } from "lucide-react";
+import { ClipboardList, Clock, ChefHat, Truck, CheckCircle2, Lock, Copy, QrCode, XCircle, X, Loader2, Trash2, ShieldAlert, AlertCircle, TimerReset } from "lucide-react";
 import { toast } from "sonner";
 import { notifyOrderPreparing, notifyOrderOnTheWay, notifyOrderDelivered } from "@/lib/notifications";
+import {
+  recordPixAttempt,
+  resetPixAttempts,
+  isPixCooldownActive,
+  getPixCooldownRemainingMs,
+  activatePixCooldown,
+  activateSafetyMode,
+  isSafetyModeActive,
+  getSafetyModeRemainingMs,
+  formatCooldownTime,
+} from "@/lib/pixSafeGuard";
 
 const statusConfig: Record<string, { label: string; icon: React.ElementType; color: string }> = {
   aguardando_pagamento: { label: "Aguardando Pagamento", icon: Clock, color: "text-amber-500" },
