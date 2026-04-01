@@ -337,6 +337,7 @@ const PedidosPage = () => {
 
   return (
     <div className="min-h-screen bg-background pb-32 overflow-y-auto">
+      <SimulationBanner />
       <header className="sticky top-0 z-50 bg-card border-b border-border flex items-center justify-between h-14 px-4">
         <h1 className="font-bold text-foreground">Meus Pedidos</h1>
         {hasCompletedOrders && (
