@@ -139,8 +139,42 @@ const PedidosPage = () => {
     loading: boolean;
   } | null>(null);
 
+  const [pixCooldownMs, setPixCooldownMs] = useState(0);
+  const [safetyModeMs, setSafetyModeMs] = useState(0);
+
+  // Poll cooldown / safety mode
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setPixCooldownMs(getPixCooldownRemainingMs("order_pix"));
+      setSafetyModeMs(getSafetyModeRemainingMs());
+    }, 1000);
+    setPixCooldownMs(getPixCooldownRemainingMs("order_pix"));
+    setSafetyModeMs(getSafetyModeRemainingMs());
+    return () => window.clearInterval(interval);
+  }, []);
+
+  const isPixBlocked = pixCooldownMs > 0 || safetyModeMs > 0;
+
   const generatePix = async (order: any) => {
     if (!user) return;
+
+    if (isSafetyModeActive()) {
+      toast.error("Sistema de pagamentos em manutenção temporária. Aguarde alguns minutos.");
+      return;
+    }
+    if (isPixCooldownActive("order_pix")) {
+      toast.error("Muitas tentativas sem pagamento. Por segurança, aguarde alguns minutos.");
+      return;
+    }
+
+    // Record attempt
+    recordPixAttempt("order_pix");
+    if (isPixCooldownActive("order_pix")) {
+      activatePixCooldown("order_pix");
+      toast.error("Muitas tentativas sem pagamento. Por segurança, aguarde alguns minutos.");
+      return;
+    }
+
     setPayingOrderId(order.id);
     setPixModal({ orderId: order.id, qrCode: null, qrCodeBase64: null, loading: true });
 
@@ -180,6 +214,12 @@ const PedidosPage = () => {
 
       if (pixError) throw pixError;
 
+      // Handle rate limiting
+      if (pixData?.rate_limited) {
+        activateSafetyMode();
+        throw new Error("Sistema de pagamentos temporariamente indisponível. Tente novamente em alguns minutos.");
+      }
+
       if (pixData?.error) {
         throw new Error(pixData.error);
       }
@@ -191,11 +231,19 @@ const PedidosPage = () => {
           qrCodeBase64: pixData.qr_code_base64,
           loading: false,
         });
+        // Reset attempts on success
+        resetPixAttempts("order_pix");
       } else {
         throw new Error("QR Code não retornado");
       }
     } catch (err: any) {
       console.error("PIX generation error:", JSON.stringify(err, null, 2), "status:", err?.status, "code:", err?.code);
+
+      // Check for 429 in error context
+      if (err?.context?.status === 429 || err?.status === 429) {
+        activateSafetyMode();
+      }
+
       const msg = err?.message || err?.error_description || "Erro ao gerar PIX. Verifique se seu e-mail e CPF estão corretos.";
       toast.error(msg);
       setPixModal(null);
