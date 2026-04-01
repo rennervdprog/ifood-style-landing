@@ -94,12 +94,10 @@ const getTransactionStatusMeta = (status: string, createdAt: string, nowMs = Dat
 const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
   const [period, setPeriod] = useState<Period>("week");
   const [generatingCharge, setGeneratingCharge] = useState(false);
-  const [chargeResult, setChargeResult] = useState<{
-    qr_code: string | null;
-    qr_code_base64: string | null;
-    reference_code: string;
-    amount: number;
-  } | null>(null);
+  const [chargeResult, setChargeResult] = useState<ChargeResult | null>(null);
+  const [chargeError, setChargeError] = useState<string | null>(null);
+  const [dismissedChargeReference, setDismissedChargeReference] = useState<string | null>(null);
+  const [nowMs, setNowMs] = useState(() => Date.now());
   const queryClient = useQueryClient();
 
   const now = new Date();
