@@ -197,7 +197,7 @@ const PedidosPage = () => {
         return;
       }
 
-      // TODO: Reativar integração real após liberação do Mercado Pago.
+      // Roteador universal de pagamentos com failover automático
       const { data: profile } = await supabase
         .from("profiles")
         .select("full_name, document")
@@ -217,9 +217,10 @@ const PedidosPage = () => {
       }
 
       const { data: pixData, error: pixError } = await supabase.functions.invoke(
-        "create-pix-payment",
+        "payment-router",
         {
           body: {
+            action: "order_pix",
             order_id: order.id,
             amount: Number(order.total_price),
             description: `Pedido #${order.id.substring(0, 6).toUpperCase()} - ${order.stores?.name || "FoodIta"}`,
