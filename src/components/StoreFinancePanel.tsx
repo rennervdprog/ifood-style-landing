@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Copy, Download, ArrowUpRight, ArrowDownRight, Smartphone, Banknote, QrCode, Loader2, X, CheckCircle2 } from "lucide-react";
+import { Copy, Download, ArrowUpRight, ArrowDownRight, Smartphone, Banknote, QrCode, Loader2, X, CheckCircle2, RotateCcw, AlertCircle, TimerReset } from "lucide-react";
 import { toast } from "sonner";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -14,15 +14,90 @@ interface StoreFinancePanelProps {
 
 type Period = "week" | "month";
 
+type ChargeResult = {
+  qr_code: string | null;
+  qr_code_base64: string | null;
+  reference_code: string;
+  amount: number;
+  created_at: string;
+  status: string;
+};
+
+type FinancialTransaction = {
+  id: string;
+  amount: number;
+  created_at: string;
+  pix_copy_paste: string | null;
+  pix_qr_code: string | null;
+  pix_qr_code_base64: string | null;
+  reference_code: string;
+  status: string;
+  transaction_kind: string;
+};
+
+const PIX_CHARGE_TTL_MS = 5 * 60 * 1000;
+
+const getPendingChargeRemainingMs = (createdAt: string, nowMs = Date.now()) =>
+  Math.max(0, new Date(createdAt).getTime() + PIX_CHARGE_TTL_MS - nowMs);
+
+const isPendingChargeExpired = (status: string, createdAt: string, nowMs = Date.now()) =>
+  status === "pending" && getPendingChargeRemainingMs(createdAt, nowMs) === 0;
+
+const formatCountdown = (remainingMs: number) => {
+  const totalSeconds = Math.ceil(remainingMs / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+};
+
+const mapTransactionToChargeResult = (transaction: FinancialTransaction): ChargeResult => ({
+  qr_code: transaction.pix_copy_paste || transaction.pix_qr_code,
+  qr_code_base64: transaction.pix_qr_code_base64,
+  reference_code: transaction.reference_code,
+  amount: Number(transaction.amount || 0),
+  created_at: transaction.created_at,
+  status: transaction.status,
+});
+
+const getTransactionStatusMeta = (status: string, createdAt: string, nowMs = Date.now()) => {
+  if (isPendingChargeExpired(status, createdAt, nowMs)) {
+    return {
+      label: "Expirada",
+      className: "bg-destructive/10 text-destructive",
+      isExpired: true,
+    };
+  }
+
+  if (status === "paid" || status === "approved") {
+    return {
+      label: "Pago",
+      className: "bg-primary/10 text-primary",
+      isExpired: false,
+    };
+  }
+
+  if (status === "failed" || status === "cancelled") {
+    return {
+      label: status === "cancelled" ? "Cancelada" : "Falhou",
+      className: "bg-destructive/10 text-destructive",
+      isExpired: status === "cancelled",
+    };
+  }
+
+  return {
+    label: "Pendente",
+    className: "bg-primary/10 text-primary",
+    isExpired: false,
+  };
+};
+
 const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
   const [period, setPeriod] = useState<Period>("week");
   const [generatingCharge, setGeneratingCharge] = useState(false);
-  const [chargeResult, setChargeResult] = useState<{
-    qr_code: string | null;
-    qr_code_base64: string | null;
-    reference_code: string;
-    amount: number;
-  } | null>(null);
+  const [chargeResult, setChargeResult] = useState<ChargeResult | null>(null);
+  const [chargeError, setChargeError] = useState<string | null>(null);
+  const [dismissedChargeReference, setDismissedChargeReference] = useState<string | null>(null);
+  const [nowMs, setNowMs] = useState(() => Date.now());
   const queryClient = useQueryClient();
 
   const now = new Date();
@@ -58,9 +133,10 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
         .order("created_at", { ascending: false })
         .limit(20);
       if (error) throw error;
-      return (data || []) as any[];
+      return ((data || []) as unknown as FinancialTransaction[]);
     },
     enabled: !!storeId,
+    refetchInterval: 15000,
   });
 
   // Fetch store balance
@@ -100,6 +176,64 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
   // DB balance
   const dbComissaoPendente = Number(storeBalance?.comissao_pendente || storeBalance?.pending_commission || 0);
 
+  const commissionTransactions = useMemo(
+    () => (transactions || []).filter((tx) => tx.transaction_kind === "commission_charge"),
+    [transactions]
+  );
+
+  const latestCommissionCharge = commissionTransactions.find(
+    (tx) => tx.status !== "cancelled" && tx.status !== "failed"
+  ) || null;
+
+  const hasPendingCommissionCharge = commissionTransactions.some((tx) => tx.status === "pending");
+  const currentChargeRemainingMs = chargeResult ? getPendingChargeRemainingMs(chargeResult.created_at, nowMs) : 0;
+  const isChargeExpired = chargeResult ? isPendingChargeExpired(chargeResult.status, chargeResult.created_at, nowMs) : false;
+  const isChargeSettled = chargeResult ? ["paid", "approved"].includes(chargeResult.status) : false;
+  const isChargeUrgent = !!chargeResult && !isChargeExpired && !isChargeSettled && currentChargeRemainingMs <= 60_000;
+
+  useEffect(() => {
+    if (!chargeResult && !hasPendingCommissionCharge) return;
+
+    const interval = window.setInterval(() => {
+      setNowMs(Date.now());
+    }, 1000);
+
+    return () => window.clearInterval(interval);
+  }, [chargeResult, hasPendingCommissionCharge]);
+
+  useEffect(() => {
+    if (!latestCommissionCharge) return;
+    if (dismissedChargeReference === latestCommissionCharge.reference_code) return;
+
+    const nextCharge = mapTransactionToChargeResult(latestCommissionCharge);
+
+    setChargeResult((current) => {
+      if (!current) return nextCharge;
+
+      if (current.reference_code === nextCharge.reference_code) {
+        const isSameCharge =
+          current.status === nextCharge.status &&
+          current.created_at === nextCharge.created_at &&
+          current.qr_code === nextCharge.qr_code &&
+          current.qr_code_base64 === nextCharge.qr_code_base64 &&
+          current.amount === nextCharge.amount;
+
+        return isSameCharge ? current : nextCharge;
+      }
+
+      const currentStillValid = current.status === "pending" && !isPendingChargeExpired(current.status, current.created_at, nowMs);
+      return currentStillValid ? current : nextCharge;
+    });
+  }, [latestCommissionCharge, dismissedChargeReference, nowMs]);
+
+  const handleDismissChargeCard = () => {
+    if (chargeResult) {
+      setDismissedChargeReference(chargeResult.reference_code);
+    }
+    setChargeResult(null);
+    setChargeError(null);
+  };
+
   const handleGenerateCommissionCharge = async () => {
     if (dbComissaoPendente <= 0 && commissionDue <= 0) {
       toast.info("Não há comissões pendentes para pagar.");
@@ -109,6 +243,9 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
     const chargeAmount = dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue;
 
     setGeneratingCharge(true);
+    setChargeError(null);
+    setDismissedChargeReference(null);
+
     try {
       const { data, error } = await supabase.functions.invoke("generate-commission-charge", {
         body: {
@@ -118,20 +255,37 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
         },
       });
 
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      if (error) {
+        console.error("Commission charge request failed:", error);
+        throw error;
+      }
 
+      if (data?.error) throw new Error(data.error);
+      if (!data?.qr_code && !data?.qr_code_base64) throw new Error("QR Code não retornado");
+
+      const createdAt = data?.created_at || new Date().toISOString();
+      setNowMs(Date.now());
       setChargeResult({
-        qr_code: data.qr_code,
-        qr_code_base64: data.qr_code_base64,
+        qr_code: data.qr_code ?? null,
+        qr_code_base64: data.qr_code_base64 ?? null,
         reference_code: data.reference_code,
-        amount: data.amount,
+        amount: Number(data.amount || chargeAmount),
+        created_at: createdAt,
+        status: data.status || "pending",
       });
 
       toast.success(`Cobrança ${data.reference_code} gerada!`);
       queryClient.invalidateQueries({ queryKey: ["store-financial-transactions", storeId] });
+      queryClient.invalidateQueries({ queryKey: ["store-balance", storeId] });
     } catch (err: any) {
-      toast.error(err.message || "Erro ao gerar cobrança PIX.");
+      console.error("Commission PIX generation error:", err, "status:", err?.context?.status ?? err?.status, "code:", err?.code);
+      const message = /Failed to send request|Failed to fetch/i.test(err?.message || "")
+        ? "Falha na conexão ao gerar o PIX. Tente novamente."
+        : err?.message || "Erro ao gerar cobrança PIX.";
+
+      setChargeResult(null);
+      setChargeError(message);
+      toast.error(message);
     } finally {
       setGeneratingCharge(false);
     }
@@ -278,12 +432,30 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
         </div>
       </div>
 
+      {chargeError && !chargeResult && (
+        <div className="bg-card rounded-2xl p-5 border border-destructive/20 space-y-3">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-full bg-destructive/10 flex items-center justify-center shrink-0">
+              <AlertCircle className="h-4 w-4 text-destructive" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-bold text-foreground">Não foi possível gerar o PIX</p>
+              <p className="text-xs text-muted-foreground">{chargeError}</p>
+            </div>
+          </div>
+          <Button onClick={handleGenerateCommissionCharge} disabled={generatingCharge} className="w-full" variant="outline">
+            <RotateCcw className="h-4 w-4" />
+            Tentar Novamente
+          </Button>
+        </div>
+      )}
+
       {/* QR Code Modal/Card */}
       {chargeResult && (
         <div className="bg-card rounded-2xl p-5 border-2 border-primary space-y-3 animate-in slide-in-from-bottom-4">
           <div className="flex items-center justify-between">
             <p className="text-sm font-bold text-primary">Pague via PIX</p>
-            <button onClick={() => setChargeResult(null)} className="text-muted-foreground">
+            <button onClick={handleDismissChargeCard} className="text-muted-foreground">
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -295,29 +467,64 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
             R$ {chargeResult.amount.toFixed(2)}
           </p>
 
-          {chargeResult.qr_code_base64 && (
-            <div className="flex justify-center">
-              <img
-                src={`data:image/png;base64,${chargeResult.qr_code_base64}`}
-                alt="QR Code PIX"
-                className="w-48 h-48 rounded-xl"
-              />
+          {!isChargeExpired && !isChargeSettled && (
+            <div className="rounded-xl border border-border bg-muted/30 p-3 text-center space-y-2">
+              <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-bold ${isChargeUrgent ? "bg-destructive/10 text-destructive animate-pulse" : "bg-primary/10 text-primary"}`}>
+                <TimerReset className="h-4 w-4" />
+                {formatCountdown(currentChargeRemainingMs)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                O QR Code é válido por 5 minutos. Se você não concluir o pagamento, precisará gerar um novo.
+              </p>
             </div>
           )}
 
-          {chargeResult.qr_code && (
-            <Button
-              onClick={() => copyPixCode(chargeResult.qr_code!)}
-              variant="outline"
-              className="w-full"
-            >
-              <Copy className="h-4 w-4" />
-              Copiar Código Pix Copia e Cola
-            </Button>
+          {isChargeSettled ? (
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-center space-y-2">
+              <CheckCircle2 className="h-8 w-8 text-primary mx-auto" />
+              <p className="text-sm font-bold text-foreground">Pagamento confirmado</p>
+              <p className="text-xs text-muted-foreground">O webhook já confirmou esta cobrança.</p>
+            </div>
+          ) : isChargeExpired ? (
+            <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-center space-y-3">
+              <AlertCircle className="h-8 w-8 text-destructive mx-auto" />
+              <p className="text-sm font-bold text-foreground">Tempo esgotado! Este QR Code expirou para sua segurança.</p>
+              <Button onClick={handleGenerateCommissionCharge} disabled={generatingCharge} className="w-full">
+                {generatingCharge ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+                Gerar Nova Cobrança
+              </Button>
+            </div>
+          ) : (
+            <>
+              {chargeResult.qr_code_base64 && (
+                <div className="flex justify-center">
+                  <img
+                    src={`data:image/png;base64,${chargeResult.qr_code_base64}`}
+                    alt="QR Code PIX"
+                    className="w-48 h-48 rounded-xl"
+                  />
+                </div>
+              )}
+
+              {chargeResult.qr_code && (
+                <Button
+                  onClick={() => copyPixCode(chargeResult.qr_code!)}
+                  variant="outline"
+                  className="w-full"
+                >
+                  <Copy className="h-4 w-4" />
+                  Copiar Código Pix Copia e Cola
+                </Button>
+              )}
+            </>
           )}
 
           <p className="text-[10px] text-muted-foreground text-center">
-            Após o pagamento, o saldo será zerado automaticamente via webhook.
+            {isChargeSettled
+              ? "Cobrança conciliada com sucesso."
+              : isChargeExpired
+                ? "A cobrança anterior ficou indisponível e pode ser gerada novamente."
+                : "Após o pagamento, o saldo será zerado automaticamente via webhook."}
           </p>
         </div>
       )}
@@ -397,41 +604,48 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
       {transactions && transactions.length > 0 && (
         <div className="space-y-1.5">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Transações Financeiras</p>
-          {transactions.map((tx: any) => (
-            <div key={tx.id} className="bg-card rounded-xl p-3 border border-border flex items-center gap-3">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                tx.transaction_kind === "commission_charge" ? "bg-red-500/10" : "bg-green-500/10"
-              }`}>
-                {tx.transaction_kind === "commission_charge"
-                  ? <ArrowDownRight className="h-4 w-4 text-red-500" />
-                  : <ArrowUpRight className="h-4 w-4 text-green-500" />
-                }
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-foreground">{tx.reference_code}</span>
-                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                    tx.status === "paid" || tx.status === "approved"
-                      ? "bg-green-500/20 text-green-500"
-                      : tx.status === "failed"
-                        ? "bg-red-500/20 text-red-500"
-                        : "bg-amber-500/20 text-amber-500"
-                  }`}>
-                    {tx.status === "paid" ? "Pago" : tx.status === "approved" ? "Aprovado" : tx.status === "pending" ? "Pendente" : tx.status === "failed" ? "Falhou" : tx.status}
-                  </span>
+          {transactions.map((tx) => {
+            const statusMeta = getTransactionStatusMeta(tx.status, tx.created_at, nowMs);
+            const canRetryExpiredCharge = tx.transaction_kind === "commission_charge" && statusMeta.isExpired;
+
+            return (
+              <div key={tx.id} className="bg-card rounded-xl p-3 border border-border flex items-center gap-3">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  tx.transaction_kind === "commission_charge" ? "bg-destructive/10" : "bg-primary/10"
+                }`}>
+                  {tx.transaction_kind === "commission_charge"
+                    ? <ArrowDownRight className="h-4 w-4 text-destructive" />
+                    : <ArrowUpRight className="h-4 w-4 text-primary" />
+                  }
                 </div>
-                <div className="flex items-center justify-between mt-0.5">
-                  <span className="text-xs text-muted-foreground">
-                    {tx.transaction_kind === "commission_charge" ? "Cobrança Comissão" : "Repasse"}
-                  </span>
-                  <span className="text-sm font-bold text-foreground">R$ {Number(tx.amount).toFixed(2)}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-semibold text-foreground">{tx.reference_code}</span>
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${statusMeta.className}`}>
+                      {statusMeta.label}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between mt-0.5 gap-2">
+                    <span className="text-xs text-muted-foreground">
+                      {tx.transaction_kind === "commission_charge" ? "Cobrança Comissão" : "Repasse"}
+                    </span>
+                    <span className="text-sm font-bold text-foreground">R$ {Number(tx.amount).toFixed(2)}</span>
+                  </div>
+                  <div className="flex items-center justify-between mt-1 gap-2">
+                    <p className="text-[10px] text-muted-foreground">
+                      {format(new Date(tx.created_at), "dd/MM/yyyy HH:mm")}
+                    </p>
+                    {canRetryExpiredCharge && (
+                      <Button onClick={handleGenerateCommissionCharge} size="sm" variant="outline" className="h-7 px-2 text-[10px]">
+                        <RotateCcw className="h-3 w-3" />
+                        Gerar nova cobrança
+                      </Button>
+                    )}
+                  </div>
                 </div>
-                <p className="text-[10px] text-muted-foreground mt-0.5">
-                  {format(new Date(tx.created_at), "dd/MM/yyyy HH:mm")}
-                </p>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
