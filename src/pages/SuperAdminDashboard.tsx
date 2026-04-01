@@ -15,7 +15,7 @@ import {
 } from "recharts";
 
 type DateFilter = "today" | "yesterday" | "week";
-type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "saques";
+type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "saques" | "sync";
 
 const SuperAdminDashboard = () => {
   const { user, loading: authLoading } = useAuth();
