@@ -85,12 +85,42 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Generate reference code
     const serviceClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    // IDEMPOTENCY: Check for existing pending charge for this store (created within last 5 min)
+    const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    const { data: existingCharge } = await serviceClient
+      .from("financial_transactions")
+      .select("*")
+      .eq("store_id", store_id)
+      .eq("transaction_kind", "commission_charge")
+      .eq("status", "pending")
+      .gte("created_at", fiveMinAgo)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (existingCharge && existingCharge.pix_qr_code) {
+      // Return existing charge instead of creating a new one
+      return new Response(
+        JSON.stringify({
+          reference_code: existingCharge.reference_code,
+          payment_id: existingCharge.mercado_pago_payment_id,
+          status: "pending",
+          qr_code: existingCharge.pix_qr_code || existingCharge.pix_copy_paste || null,
+          qr_code_base64: existingCharge.pix_qr_code_base64 || null,
+          amount: Number(existingCharge.amount),
+          created_at: existingCharge.created_at,
+          reused: true,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Generate reference code
     const { data: refData } = await serviceClient.rpc("generate_financial_reference", {
       _prefix: "FAT",
     });
@@ -98,6 +128,7 @@ Deno.serve(async (req) => {
     const createdAt = new Date().toISOString();
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
 
+    // Cancel old pending charges
     await serviceClient
       .from("financial_transactions")
       .update({
@@ -107,9 +138,10 @@ Deno.serve(async (req) => {
       })
       .eq("store_id", store_id)
       .eq("transaction_kind", "commission_charge")
-      .eq("status", "pending");
+      .eq("status", "pending")
+      .lt("created_at", fiveMinAgo);
 
-    // Create Mercado Pago PIX charge
+    // Create Mercado Pago PIX charge with expiration
     const desc = String(
       description || `Comissão FoodIta - ${store.name} - ${referenceCode}`
     ).substring(0, 256);
@@ -118,6 +150,7 @@ Deno.serve(async (req) => {
       transaction_amount: Number(amount.toFixed(2)),
       description: desc,
       payment_method_id: "pix",
+      date_of_expiration: expiresAt,
       payer: {
         email: userData.user.email || "lojista@foodita.com",
         first_name: store.name.substring(0, 100),
@@ -132,7 +165,7 @@ Deno.serve(async (req) => {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${ACCESS_TOKEN}`,
-        "X-Idempotency-Key": `commission-${store_id}-${Date.now()}`,
+        "X-Idempotency-Key": `commission-${store_id}-${referenceCode}`,
       },
       body: JSON.stringify(paymentBody),
     });
@@ -141,6 +174,18 @@ Deno.serve(async (req) => {
 
     if (!mpResponse.ok) {
       console.error("MP Commission Charge Error:", JSON.stringify(mpData));
+
+      // Handle rate limiting (429)
+      if (mpResponse.status === 429) {
+        return new Response(
+          JSON.stringify({
+            error: "Sistema de pagamentos temporariamente indisponível. Tente novamente em alguns minutos.",
+            rate_limited: true,
+          }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       return new Response(
         JSON.stringify({
           error: "Erro ao gerar cobrança PIX. Tente novamente.",
@@ -185,7 +230,7 @@ Deno.serve(async (req) => {
     console.error("Error:", err);
     return new Response(JSON.stringify({ error: "Erro interno" }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: corsHeaders,
     });
   }
 });
