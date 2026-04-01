@@ -1,11 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Copy, Download, ArrowUpRight, ArrowDownRight, Smartphone, Banknote, QrCode, Loader2, X, CheckCircle2, RotateCcw, AlertCircle, TimerReset } from "lucide-react";
+import { Copy, Download, ArrowUpRight, ArrowDownRight, Smartphone, Banknote, QrCode, Loader2, X, CheckCircle2, RotateCcw, AlertCircle, TimerReset, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
+import {
+  recordPixAttempt,
+  resetPixAttempts,
+  isPixCooldownActive,
+  getPixCooldownRemainingMs,
+  activatePixCooldown,
+  activateSafetyMode,
+  isSafetyModeActive,
+  getSafetyModeRemainingMs,
+  formatCooldownTime,
+} from "@/lib/pixSafeGuard";
 
 interface StoreFinancePanelProps {
   storeId: string;
