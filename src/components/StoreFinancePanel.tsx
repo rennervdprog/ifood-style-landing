@@ -310,9 +310,10 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
         return;
       }
 
-      // TODO: Reativar integração real após liberação do Mercado Pago.
-      const { data, error } = await supabase.functions.invoke("generate-commission-charge", {
+      // Roteador universal de pagamentos com failover automático
+      const { data, error } = await supabase.functions.invoke("payment-router", {
         body: {
+          action: "commission_charge",
           store_id: storeId,
           amount: chargeAmount,
           description: `Comissão FoodIta - ${storeName}`,
@@ -330,13 +331,14 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
       }
 
       if (data?.error) throw new Error(data.error);
-      if (!data?.qr_code && !data?.qr_code_base64) throw new Error("QR Code não retornado");
+      // Standardized response: pix_code, qr_code_url
+      if (!data?.pix_code && !data?.qr_code_url && !data?.qr_code && !data?.qr_code_base64) throw new Error("QR Code não retornado");
 
       const createdAt = data?.created_at || new Date().toISOString();
       setNowMs(Date.now());
       setChargeResult({
-        qr_code: data.qr_code ?? null,
-        qr_code_base64: data.qr_code_base64 ?? null,
+        qr_code: data.pix_code ?? data.qr_code ?? null,
+        qr_code_base64: data.qr_code_url ?? data.qr_code_base64 ?? null,
         reference_code: data.reference_code,
         amount: Number(data.amount || chargeAmount),
         created_at: createdAt,

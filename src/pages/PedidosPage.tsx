@@ -197,7 +197,7 @@ const PedidosPage = () => {
         return;
       }
 
-      // TODO: Reativar integração real após liberação do Mercado Pago.
+      // Roteador universal de pagamentos com failover automático
       const { data: profile } = await supabase
         .from("profiles")
         .select("full_name, document")
@@ -217,9 +217,10 @@ const PedidosPage = () => {
       }
 
       const { data: pixData, error: pixError } = await supabase.functions.invoke(
-        "create-pix-payment",
+        "payment-router",
         {
           body: {
+            action: "order_pix",
             order_id: order.id,
             amount: Number(order.total_price),
             description: `Pedido #${order.id.substring(0, 6).toUpperCase()} - ${order.stores?.name || "FoodIta"}`,
@@ -241,11 +242,14 @@ const PedidosPage = () => {
         throw new Error(pixData.error);
       }
 
-      if (pixData?.qr_code || pixData?.qr_code_base64) {
+      // Standardized response: pix_code, qr_code_url (with fallback to legacy fields)
+      const qrCode = pixData?.pix_code || pixData?.qr_code || null;
+      const qrCodeBase64 = pixData?.qr_code_url || pixData?.qr_code_base64 || null;
+      if (qrCode || qrCodeBase64) {
         setPixModal({
           orderId: order.id,
-          qrCode: pixData.qr_code,
-          qrCodeBase64: pixData.qr_code_base64,
+          qrCode,
+          qrCodeBase64,
           loading: false,
         });
         resetPixAttempts("order_pix");
