@@ -41,25 +41,22 @@ const CadastroEntregador = () => {
 
     setLoading(true);
     try {
-      // 1. Create auth account
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      const { error: signUpError } = await supabase.auth.signUp({
         email: email.trim(),
         password,
-        options: { emailRedirectTo: window.location.origin },
+        options: {
+          emailRedirectTo: window.location.origin,
+          data: {
+            full_name: fullName.trim(),
+            role: "motoboy",
+            document: phone.trim(),
+            vehicle: vehicle.trim(),
+            whatsapp: phone.trim(),
+            phone: phone.trim(),
+          },
+        },
       });
       if (signUpError) throw signUpError;
-
-      const userId = signUpData.user?.id;
-      if (!userId) throw new Error("Erro ao criar conta.");
-
-      // 2. Register as motoboy via RPC
-      const { error: rpcError } = await supabase.rpc("register_as_motoboy", {
-        _full_name: fullName.trim(),
-        _document: phone.trim(),
-        _vehicle: vehicle.trim(),
-        _whatsapp: phone.trim(),
-      } as any);
-      if (rpcError) throw rpcError;
 
       setSuccess(true);
     } catch (err: any) {
