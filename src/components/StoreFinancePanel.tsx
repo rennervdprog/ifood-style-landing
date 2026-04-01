@@ -133,7 +133,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
         .order("created_at", { ascending: false })
         .limit(20);
       if (error) throw error;
-      return (data || []) as FinancialTransaction[];
+      return ((data || []) as unknown as FinancialTransaction[]);
     },
     enabled: !!storeId,
     refetchInterval: 15000,
