@@ -93,10 +93,14 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Set expiration to 5 minutes from now
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+
     const paymentBody = {
       transaction_amount: Number(amount),
       description: String(description || `Pedido FoodIta #${order_id.substring(0, 6).toUpperCase()}`).substring(0, 256),
       payment_method_id: "pix",
+      date_of_expiration: expiresAt,
       payer: {
         email: userEmail || "cliente@foodita.com",
         first_name: String(payer_first_name || "Cliente").substring(0, 100),
@@ -123,6 +127,18 @@ Deno.serve(async (req) => {
 
     if (!mpResponse.ok) {
       console.error("MP PIX Error:", JSON.stringify(mpData));
+
+      // Handle rate limiting (429)
+      if (mpResponse.status === 429) {
+        return new Response(JSON.stringify({
+          error: "Sistema de pagamentos temporariamente indisponível. Tente novamente em alguns minutos.",
+          rate_limited: true,
+        }), {
+          status: 429,
+          headers: corsHeaders,
+        });
+      }
+
       let userMessage = "Erro ao gerar PIX. Tente novamente.";
       if (mpData?.message?.includes("access_token")) {
         userMessage = "Chave do Mercado Pago inválida. Contate o administrador.";
@@ -146,6 +162,7 @@ Deno.serve(async (req) => {
         qr_code: pixInfo?.qr_code || null,
         qr_code_base64: pixInfo?.qr_code_base64 || null,
         ticket_url: pixInfo?.ticket_url || null,
+        expires_at: expiresAt,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

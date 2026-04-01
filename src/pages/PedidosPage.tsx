@@ -4,9 +4,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
-import { ClipboardList, Clock, ChefHat, Truck, CheckCircle2, Lock, Copy, QrCode, XCircle, X, Loader2, Trash2 } from "lucide-react";
+import { ClipboardList, Clock, ChefHat, Truck, CheckCircle2, Lock, Copy, QrCode, XCircle, X, Loader2, Trash2, ShieldAlert, AlertCircle, TimerReset } from "lucide-react";
 import { toast } from "sonner";
 import { notifyOrderPreparing, notifyOrderOnTheWay, notifyOrderDelivered } from "@/lib/notifications";
+import {
+  recordPixAttempt,
+  resetPixAttempts,
+  isPixCooldownActive,
+  getPixCooldownRemainingMs,
+  activatePixCooldown,
+  activateSafetyMode,
+  isSafetyModeActive,
+  getSafetyModeRemainingMs,
+  formatCooldownTime,
+} from "@/lib/pixSafeGuard";
 
 const statusConfig: Record<string, { label: string; icon: React.ElementType; color: string }> = {
   aguardando_pagamento: { label: "Aguardando Pagamento", icon: Clock, color: "text-amber-500" },
@@ -128,8 +139,42 @@ const PedidosPage = () => {
     loading: boolean;
   } | null>(null);
 
+  const [pixCooldownMs, setPixCooldownMs] = useState(0);
+  const [safetyModeMs, setSafetyModeMs] = useState(0);
+
+  // Poll cooldown / safety mode
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setPixCooldownMs(getPixCooldownRemainingMs("order_pix"));
+      setSafetyModeMs(getSafetyModeRemainingMs());
+    }, 1000);
+    setPixCooldownMs(getPixCooldownRemainingMs("order_pix"));
+    setSafetyModeMs(getSafetyModeRemainingMs());
+    return () => window.clearInterval(interval);
+  }, []);
+
+  const isPixBlocked = pixCooldownMs > 0 || safetyModeMs > 0;
+
   const generatePix = async (order: any) => {
     if (!user) return;
+
+    if (isSafetyModeActive()) {
+      toast.error("Sistema de pagamentos em manutenção temporária. Aguarde alguns minutos.");
+      return;
+    }
+    if (isPixCooldownActive("order_pix")) {
+      toast.error("Muitas tentativas sem pagamento. Por segurança, aguarde alguns minutos.");
+      return;
+    }
+
+    // Record attempt
+    recordPixAttempt("order_pix");
+    if (isPixCooldownActive("order_pix")) {
+      activatePixCooldown("order_pix");
+      toast.error("Muitas tentativas sem pagamento. Por segurança, aguarde alguns minutos.");
+      return;
+    }
+
     setPayingOrderId(order.id);
     setPixModal({ orderId: order.id, qrCode: null, qrCodeBase64: null, loading: true });
 
@@ -169,6 +214,12 @@ const PedidosPage = () => {
 
       if (pixError) throw pixError;
 
+      // Handle rate limiting
+      if (pixData?.rate_limited) {
+        activateSafetyMode();
+        throw new Error("Sistema de pagamentos temporariamente indisponível. Tente novamente em alguns minutos.");
+      }
+
       if (pixData?.error) {
         throw new Error(pixData.error);
       }
@@ -180,11 +231,19 @@ const PedidosPage = () => {
           qrCodeBase64: pixData.qr_code_base64,
           loading: false,
         });
+        // Reset attempts on success
+        resetPixAttempts("order_pix");
       } else {
         throw new Error("QR Code não retornado");
       }
     } catch (err: any) {
       console.error("PIX generation error:", JSON.stringify(err, null, 2), "status:", err?.status, "code:", err?.code);
+
+      // Check for 429 in error context
+      if (err?.context?.status === 429 || err?.status === 429) {
+        activateSafetyMode();
+      }
+
       const msg = err?.message || err?.error_description || "Erro ao gerar PIX. Verifique se seu e-mail e CPF estão corretos.";
       toast.error(msg);
       setPixModal(null);
@@ -304,13 +363,41 @@ const PedidosPage = () => {
                         <XCircle className="h-4 w-4" />
                       </button>
                     </div>
+
+                    {/* Safety mode / cooldown banners */}
+                    {safetyModeMs > 0 && (
+                      <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-2 mb-2 flex items-start gap-2">
+                        <ShieldAlert className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                        <p className="text-[10px] text-amber-600">
+                          Manutenção temporária no sistema de pagamentos. Voltará em {formatCooldownTime(safetyModeMs)}.
+                        </p>
+                      </div>
+                    )}
+                    {!safetyModeMs && pixCooldownMs > 0 && (
+                      <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-2 mb-2 flex items-start gap-2">
+                        <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                        <p className="text-[10px] text-amber-600">
+                          Muitas tentativas. Aguarde {formatCooldownTime(pixCooldownMs)}.
+                        </p>
+                      </div>
+                    )}
+
                     <button
                       onClick={() => generatePix(order)}
-                      disabled={payingOrderId === order.id}
+                      disabled={payingOrderId === order.id || isPixBlocked}
                       className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold py-2.5 rounded-xl text-xs disabled:opacity-50"
                     >
-                      <QrCode className="h-3.5 w-3.5" />
-                      {payingOrderId === order.id ? "Gerando..." : "Pagar com PIX"}
+                      {isPixBlocked ? (
+                        <>
+                          <ShieldAlert className="h-3.5 w-3.5" />
+                          Aguarde...
+                        </>
+                      ) : (
+                        <>
+                          <QrCode className="h-3.5 w-3.5" />
+                          {payingOrderId === order.id ? "Gerando..." : "Pagar com PIX"}
+                        </>
+                      )}
                     </button>
                   </div>
                 )}

@@ -1,11 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Copy, Download, ArrowUpRight, ArrowDownRight, Smartphone, Banknote, QrCode, Loader2, X, CheckCircle2, RotateCcw, AlertCircle, TimerReset } from "lucide-react";
+import { Copy, Download, ArrowUpRight, ArrowDownRight, Smartphone, Banknote, QrCode, Loader2, X, CheckCircle2, RotateCcw, AlertCircle, TimerReset, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
+import {
+  recordPixAttempt,
+  resetPixAttempts,
+  isPixCooldownActive,
+  getPixCooldownRemainingMs,
+  activatePixCooldown,
+  activateSafetyMode,
+  isSafetyModeActive,
+  getSafetyModeRemainingMs,
+  formatCooldownTime,
+} from "@/lib/pixSafeGuard";
 
 interface StoreFinancePanelProps {
   storeId: string;
@@ -234,13 +245,46 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
     setChargeError(null);
   };
 
+  const pixContextKey = `commission_${storeId}`;
+  const [pixCooldownMs, setPixCooldownMs] = useState(0);
+  const [safetyModeMs, setSafetyModeMs] = useState(0);
+
+  // Poll cooldown / safety mode timers
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setPixCooldownMs(getPixCooldownRemainingMs(pixContextKey));
+      setSafetyModeMs(getSafetyModeRemainingMs());
+    }, 1000);
+    setPixCooldownMs(getPixCooldownRemainingMs(pixContextKey));
+    setSafetyModeMs(getSafetyModeRemainingMs());
+    return () => window.clearInterval(interval);
+  }, [pixContextKey]);
+
+  const isPixBlocked = pixCooldownMs > 0 || safetyModeMs > 0;
+
   const handleGenerateCommissionCharge = async () => {
+    if (isSafetyModeActive()) {
+      toast.error("Sistema de pagamentos em manutenção temporária. Aguarde alguns minutos.");
+      return;
+    }
+    if (isPixCooldownActive(pixContextKey)) {
+      toast.error("Muitas tentativas sem pagamento. Por segurança, aguarde alguns minutos para gerar uma nova cobrança.");
+      return;
+    }
     if (dbComissaoPendente <= 0 && commissionDue <= 0) {
       toast.info("Não há comissões pendentes para pagar.");
       return;
     }
 
     const chargeAmount = dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue;
+
+    // Record attempt
+    recordPixAttempt(pixContextKey);
+    if (isPixCooldownActive(pixContextKey)) {
+      activatePixCooldown(pixContextKey);
+      toast.error("Muitas tentativas sem pagamento. Por segurança, aguarde alguns minutos para gerar uma nova cobrança.");
+      return;
+    }
 
     setGeneratingCharge(true);
     setChargeError(null);
@@ -260,6 +304,11 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
         throw error;
       }
 
+      if (data?.rate_limited) {
+        activateSafetyMode();
+        throw new Error("Sistema de pagamentos temporariamente indisponível. Tente novamente em alguns minutos.");
+      }
+
       if (data?.error) throw new Error(data.error);
       if (!data?.qr_code && !data?.qr_code_base64) throw new Error("QR Code não retornado");
 
@@ -274,11 +323,25 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
         status: data.status || "pending",
       });
 
-      toast.success(`Cobrança ${data.reference_code} gerada!`);
+      // If reused, don't count as new attempt
+      if (data?.reused) {
+        toast.info(`Cobrança existente ${data.reference_code} reaberta.`);
+      } else {
+        toast.success(`Cobrança ${data.reference_code} gerada!`);
+      }
+
+      // Reset attempts on successful charge display
+      resetPixAttempts(pixContextKey);
       queryClient.invalidateQueries({ queryKey: ["store-financial-transactions", storeId] });
       queryClient.invalidateQueries({ queryKey: ["store-balance", storeId] });
     } catch (err: any) {
       console.error("Commission PIX generation error:", err, "status:", err?.context?.status ?? err?.status, "code:", err?.code);
+
+      // Check for 429 in error context
+      if (err?.context?.status === 429 || err?.status === 429) {
+        activateSafetyMode();
+      }
+
       const message = /Failed to send request|Failed to fetch/i.test(err?.message || "")
         ? "Falha na conexão ao gerar o PIX. Tente novamente."
         : err?.message || "Erro ao gerar cobrança PIX.";
@@ -408,11 +471,37 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
             R$ {(dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue).toFixed(2)}
           </p>
 
+          {/* Safety Mode Banner */}
+          {safetyModeMs > 0 && (
+            <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 flex items-start gap-2">
+              <ShieldAlert className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-bold text-amber-600">Manutenção temporária no sistema de pagamentos</p>
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  O sistema voltará ao normal em {formatCooldownTime(safetyModeMs)}.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Cooldown Banner */}
+          {!safetyModeMs && pixCooldownMs > 0 && (
+            <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 flex items-start gap-2">
+              <AlertCircle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-bold text-amber-600">Muitas tentativas sem pagamento</p>
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  Por segurança, aguarde {formatCooldownTime(pixCooldownMs)} para gerar uma nova cobrança.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* ACTION BUTTON: Pagar Comissão via PIX */}
           {(dbComissaoPendente > 0 || commissionDue > 0) && (
             <Button
               onClick={handleGenerateCommissionCharge}
-              disabled={generatingCharge}
+              disabled={generatingCharge || isPixBlocked}
               className="w-full mt-3 bg-red-500 hover:bg-red-600 text-white font-bold"
               size="lg"
             >
@@ -420,6 +509,11 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Gerando PIX...
+                </>
+              ) : isPixBlocked ? (
+                <>
+                  <ShieldAlert className="h-4 w-4" />
+                  Aguarde...
                 </>
               ) : (
                 <>
