@@ -95,6 +95,19 @@ Deno.serve(async (req) => {
       _prefix: "FAT",
     });
     const referenceCode = refData || `#FAT-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+    const createdAt = new Date().toISOString();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+
+    await serviceClient
+      .from("financial_transactions")
+      .update({
+        status: "cancelled",
+        settled_at: createdAt,
+        updated_at: createdAt,
+      })
+      .eq("store_id", store_id)
+      .eq("transaction_kind", "commission_charge")
+      .eq("status", "pending");
 
     // Create Mercado Pago PIX charge
     const desc = String(
@@ -151,7 +164,9 @@ Deno.serve(async (req) => {
       pix_qr_code: pixInfo?.qr_code || null,
       pix_qr_code_base64: pixInfo?.qr_code_base64 || null,
       pix_copy_paste: pixInfo?.qr_code || null,
-      metadata: { store_name: store.name, description: desc },
+      created_at: createdAt,
+      updated_at: createdAt,
+      metadata: { store_name: store.name, description: desc, expires_at: expiresAt },
     });
 
     return new Response(

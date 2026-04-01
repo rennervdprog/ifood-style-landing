@@ -176,6 +176,64 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
   // DB balance
   const dbComissaoPendente = Number(storeBalance?.comissao_pendente || storeBalance?.pending_commission || 0);
 
+  const commissionTransactions = useMemo(
+    () => (transactions || []).filter((tx) => tx.transaction_kind === "commission_charge"),
+    [transactions]
+  );
+
+  const latestCommissionCharge = commissionTransactions.find(
+    (tx) => tx.status !== "cancelled" && tx.status !== "failed"
+  ) || null;
+
+  const hasPendingCommissionCharge = commissionTransactions.some((tx) => tx.status === "pending");
+  const currentChargeRemainingMs = chargeResult ? getPendingChargeRemainingMs(chargeResult.created_at, nowMs) : 0;
+  const isChargeExpired = chargeResult ? isPendingChargeExpired(chargeResult.status, chargeResult.created_at, nowMs) : false;
+  const isChargeSettled = chargeResult ? ["paid", "approved"].includes(chargeResult.status) : false;
+  const isChargeUrgent = !!chargeResult && !isChargeExpired && !isChargeSettled && currentChargeRemainingMs <= 60_000;
+
+  useEffect(() => {
+    if (!chargeResult && !hasPendingCommissionCharge) return;
+
+    const interval = window.setInterval(() => {
+      setNowMs(Date.now());
+    }, 1000);
+
+    return () => window.clearInterval(interval);
+  }, [chargeResult, hasPendingCommissionCharge]);
+
+  useEffect(() => {
+    if (!latestCommissionCharge) return;
+    if (dismissedChargeReference === latestCommissionCharge.reference_code) return;
+
+    const nextCharge = mapTransactionToChargeResult(latestCommissionCharge);
+
+    setChargeResult((current) => {
+      if (!current) return nextCharge;
+
+      if (current.reference_code === nextCharge.reference_code) {
+        const isSameCharge =
+          current.status === nextCharge.status &&
+          current.created_at === nextCharge.created_at &&
+          current.qr_code === nextCharge.qr_code &&
+          current.qr_code_base64 === nextCharge.qr_code_base64 &&
+          current.amount === nextCharge.amount;
+
+        return isSameCharge ? current : nextCharge;
+      }
+
+      const currentStillValid = current.status === "pending" && !isPendingChargeExpired(current.status, current.created_at, nowMs);
+      return currentStillValid ? current : nextCharge;
+    });
+  }, [latestCommissionCharge, dismissedChargeReference, nowMs]);
+
+  const handleDismissChargeCard = () => {
+    if (chargeResult) {
+      setDismissedChargeReference(chargeResult.reference_code);
+    }
+    setChargeResult(null);
+    setChargeError(null);
+  };
+
   const handleGenerateCommissionCharge = async () => {
     if (dbComissaoPendente <= 0 && commissionDue <= 0) {
       toast.info("Não há comissões pendentes para pagar.");
@@ -185,6 +243,9 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
     const chargeAmount = dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue;
 
     setGeneratingCharge(true);
+    setChargeError(null);
+    setDismissedChargeReference(null);
+
     try {
       const { data, error } = await supabase.functions.invoke("generate-commission-charge", {
         body: {
@@ -194,20 +255,37 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
         },
       });
 
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      if (error) {
+        console.error("Commission charge request failed:", error);
+        throw error;
+      }
 
+      if (data?.error) throw new Error(data.error);
+      if (!data?.qr_code && !data?.qr_code_base64) throw new Error("QR Code não retornado");
+
+      const createdAt = data?.created_at || new Date().toISOString();
+      setNowMs(Date.now());
       setChargeResult({
-        qr_code: data.qr_code,
-        qr_code_base64: data.qr_code_base64,
+        qr_code: data.qr_code ?? null,
+        qr_code_base64: data.qr_code_base64 ?? null,
         reference_code: data.reference_code,
-        amount: data.amount,
+        amount: Number(data.amount || chargeAmount),
+        created_at: createdAt,
+        status: data.status || "pending",
       });
 
       toast.success(`Cobrança ${data.reference_code} gerada!`);
       queryClient.invalidateQueries({ queryKey: ["store-financial-transactions", storeId] });
+      queryClient.invalidateQueries({ queryKey: ["store-balance", storeId] });
     } catch (err: any) {
-      toast.error(err.message || "Erro ao gerar cobrança PIX.");
+      console.error("Commission PIX generation error:", err, "status:", err?.context?.status ?? err?.status, "code:", err?.code);
+      const message = /Failed to send request|Failed to fetch/i.test(err?.message || "")
+        ? "Falha na conexão ao gerar o PIX. Tente novamente."
+        : err?.message || "Erro ao gerar cobrança PIX.";
+
+      setChargeResult(null);
+      setChargeError(message);
+      toast.error(message);
     } finally {
       setGeneratingCharge(false);
     }
