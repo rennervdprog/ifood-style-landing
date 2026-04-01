@@ -245,13 +245,46 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
     setChargeError(null);
   };
 
+  const pixContextKey = `commission_${storeId}`;
+  const [pixCooldownMs, setPixCooldownMs] = useState(0);
+  const [safetyModeMs, setSafetyModeMs] = useState(0);
+
+  // Poll cooldown / safety mode timers
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setPixCooldownMs(getPixCooldownRemainingMs(pixContextKey));
+      setSafetyModeMs(getSafetyModeRemainingMs());
+    }, 1000);
+    setPixCooldownMs(getPixCooldownRemainingMs(pixContextKey));
+    setSafetyModeMs(getSafetyModeRemainingMs());
+    return () => window.clearInterval(interval);
+  }, [pixContextKey]);
+
+  const isPixBlocked = pixCooldownMs > 0 || safetyModeMs > 0;
+
   const handleGenerateCommissionCharge = async () => {
+    if (isSafetyModeActive()) {
+      toast.error("Sistema de pagamentos em manutenção temporária. Aguarde alguns minutos.");
+      return;
+    }
+    if (isPixCooldownActive(pixContextKey)) {
+      toast.error("Muitas tentativas sem pagamento. Por segurança, aguarde alguns minutos para gerar uma nova cobrança.");
+      return;
+    }
     if (dbComissaoPendente <= 0 && commissionDue <= 0) {
       toast.info("Não há comissões pendentes para pagar.");
       return;
     }
 
     const chargeAmount = dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue;
+
+    // Record attempt
+    recordPixAttempt(pixContextKey);
+    if (isPixCooldownActive(pixContextKey)) {
+      activatePixCooldown(pixContextKey);
+      toast.error("Muitas tentativas sem pagamento. Por segurança, aguarde alguns minutos para gerar uma nova cobrança.");
+      return;
+    }
 
     setGeneratingCharge(true);
     setChargeError(null);
@@ -271,6 +304,11 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
         throw error;
       }
 
+      if (data?.rate_limited) {
+        activateSafetyMode();
+        throw new Error("Sistema de pagamentos temporariamente indisponível. Tente novamente em alguns minutos.");
+      }
+
       if (data?.error) throw new Error(data.error);
       if (!data?.qr_code && !data?.qr_code_base64) throw new Error("QR Code não retornado");
 
@@ -285,11 +323,25 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
         status: data.status || "pending",
       });
 
-      toast.success(`Cobrança ${data.reference_code} gerada!`);
+      // If reused, don't count as new attempt
+      if (data?.reused) {
+        toast.info(`Cobrança existente ${data.reference_code} reaberta.`);
+      } else {
+        toast.success(`Cobrança ${data.reference_code} gerada!`);
+      }
+
+      // Reset attempts on successful charge display
+      resetPixAttempts(pixContextKey);
       queryClient.invalidateQueries({ queryKey: ["store-financial-transactions", storeId] });
       queryClient.invalidateQueries({ queryKey: ["store-balance", storeId] });
     } catch (err: any) {
       console.error("Commission PIX generation error:", err, "status:", err?.context?.status ?? err?.status, "code:", err?.code);
+
+      // Check for 429 in error context
+      if (err?.context?.status === 429 || err?.status === 429) {
+        activateSafetyMode();
+      }
+
       const message = /Failed to send request|Failed to fetch/i.test(err?.message || "")
         ? "Falha na conexão ao gerar o PIX. Tente novamente."
         : err?.message || "Erro ao gerar cobrança PIX.";
