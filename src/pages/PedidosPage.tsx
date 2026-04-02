@@ -4,11 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
-import { ClipboardList, Clock, ChefHat, Truck, CheckCircle2, Lock, Copy, QrCode, XCircle, X, Loader2, Trash2, ShieldAlert, AlertCircle, TimerReset } from "lucide-react";
+import { ClipboardList, Clock, ChefHat, Truck, CheckCircle2, Lock, Copy, QrCode, XCircle, X, Loader2, Trash2, ShieldAlert, AlertCircle, TimerReset, RefreshCw, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { notifyOrderPreparing, notifyOrderOnTheWay, notifyOrderDelivered } from "@/lib/notifications";
 import OrderRating from "@/components/OrderRating";
 import DeliveryTimeEstimate from "@/components/DeliveryTimeEstimate";
+import OrderChat from "@/components/OrderChat";
 import {
   recordPixAttempt,
   resetPixAttempts,
@@ -507,6 +508,25 @@ const PedidosPage = () => {
                   <span className="text-sm font-black text-primary">
                     R$ {Number(order.total_price).toFixed(2)}
                   </span>
+                </div>
+
+                {/* Chat + Repeat buttons */}
+                <div className="flex gap-2 mt-3">
+                  {!["cancelado", "finalizado"].includes(order.status) && (
+                    <OrderChat orderId={order.id} storeName={order.stores?.name || "Loja"} />
+                  )}
+                  {["entregue", "finalizado"].includes(order.status) && (
+                    <button
+                      onClick={() => {
+                        navigate(`/loja/${order.store_id}`);
+                        toast.info("Adicione os mesmos itens ao carrinho!");
+                      }}
+                      className="flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-lg hover:bg-primary/20 transition-colors"
+                    >
+                      <RefreshCw className="h-3.5 w-3.5" />
+                      Pedir novamente
+                    </button>
+                  )}
                 </div>
 
                 {/* Rating section for delivered/finalized orders */}

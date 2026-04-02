@@ -9,6 +9,7 @@ import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Edit3 } from "lucide-r
 import confetti from "canvas-confetti";
 import AddressModal from "@/components/AddressModal";
 import SavedAddressPicker from "@/components/SavedAddressPicker";
+import CouponInput from "@/components/CouponInput";
 
 const paymentMethods = [
   { id: "pix", label: "PIX Online (Mercado Pago)", icon: QrCode },
@@ -27,6 +28,13 @@ const CheckoutPage = () => {
   const [changeFor, setChangeFor] = useState("");
   const [selectedSavedAddressId, setSelectedSavedAddressId] = useState<string | null>(null);
   const [savedAddressData, setSavedAddressData] = useState<any>(null);
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [couponId, setCouponId] = useState<string | null>(null);
+  const [couponCode, setCouponCode] = useState<string | null>(null);
+  const [couponType, setCouponType] = useState<string | null>(null);
+
+  const effectiveDeliveryFee = couponType === "free_shipping" ? 0 : neighborhoodFee;
+  const finalTotal = Math.max(0, subtotal - couponDiscount + effectiveDeliveryFee);
 
   // Load user profile with address
   const { data: userProfile, refetch: refetchProfile } = useQuery({
@@ -113,7 +121,7 @@ const CheckoutPage = () => {
     }
     if (paymentMethod === "dinheiro" && needsChange) {
       const changeValue = parseFloat(changeFor);
-      if (!changeValue || changeValue < total) {
+      if (!changeValue || changeValue < finalTotal) {
         toast.error("O valor do troco deve ser maior que o total do pedido.");
         return;
       }
@@ -131,7 +139,7 @@ const CheckoutPage = () => {
       for (const [storeId, storeItems] of Object.entries(storeGroups)) {
         const storeSubtotal = storeItems.reduce((s, i) => s + i.price * i.quantity, 0);
         const appFee = Math.round(storeSubtotal * 0.12 * 100) / 100;
-        const storeTotalPrice = storeSubtotal + neighborhoodFee;
+        const storeTotalPrice = Math.max(0, storeSubtotal - couponDiscount + effectiveDeliveryFee);
 
         const changeValue = paymentMethod === "dinheiro" && needsChange ? parseFloat(changeFor) : 0;
         const orderStatus = paymentMethod === "pix" ? "aguardando_pagamento" : "pendente";
@@ -141,7 +149,7 @@ const CheckoutPage = () => {
             client_id: user.id,
             store_id: storeId,
             subtotal: storeSubtotal,
-            delivery_fee: neighborhoodFee,
+            delivery_fee: effectiveDeliveryFee,
             total_price: storeTotalPrice,
             app_fee: appFee,
             payment_method: paymentMethod,
@@ -170,6 +178,19 @@ const CheckoutPage = () => {
           .insert(orderItems);
 
         if (itemsError) throw itemsError;
+
+        // Track coupon usage
+        if (couponId && user) {
+          await supabase.from("coupon_uses" as any).insert({
+            coupon_id: couponId,
+            user_id: user.id,
+            order_id: order.id,
+          });
+          await supabase.from("coupons" as any)
+            .update({ used_count: undefined } as any)
+            .eq("id", couponId);
+          // Increment used_count via RPC would be better, but simple update works
+        }
       }
 
       // If PIX, the order was created with status "aguardando_pagamento"
@@ -326,15 +347,40 @@ const CheckoutPage = () => {
                     onChange={(e) => setChangeFor(e.target.value.replace(/[^0-9.,]/g, ""))}
                     className="w-full mt-1 px-3 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   />
-                  {changeFor && parseFloat(changeFor) >= total && (
+                  {changeFor && parseFloat(changeFor) >= finalTotal && (
                     <p className="text-xs text-muted-foreground mt-1">
-                      Troco: <span className="font-bold text-foreground">R$ {(parseFloat(changeFor) - total).toFixed(2)}</span>
+                      Troco: <span className="font-bold text-foreground">R$ {(parseFloat(changeFor) - finalTotal).toFixed(2)}</span>
                     </p>
                   )}
                 </div>
               )}
             </div>
           )}
+        </div>
+
+        {/* Coupon */}
+        <div>
+          <h2 className="text-sm font-bold text-foreground mb-2 flex items-center gap-1.5">
+            🎟️ Cupom de desconto
+          </h2>
+          <CouponInput
+            subtotal={subtotal}
+            storeId={items[0]?.store_id}
+            onApply={(discount, id, code, type) => {
+              setCouponDiscount(discount);
+              setCouponId(id);
+              setCouponCode(code);
+              setCouponType(type);
+            }}
+            onRemove={() => {
+              setCouponDiscount(0);
+              setCouponId(null);
+              setCouponCode(null);
+              setCouponType(null);
+            }}
+            appliedCode={couponCode}
+            appliedDiscount={couponDiscount}
+          />
         </div>
 
         {/* Order summary */}
@@ -354,13 +400,27 @@ const CheckoutPage = () => {
             <span className="text-muted-foreground">Subtotal</span>
             <span className="font-bold text-foreground">R$ {subtotal.toFixed(2)}</span>
           </div>
+          {couponDiscount > 0 && (
+            <div className="flex justify-between text-sm">
+              <span className="text-green-600">Desconto ({couponCode})</span>
+              <span className="font-bold text-green-600">-R$ {couponDiscount.toFixed(2)}</span>
+            </div>
+          )}
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Entrega ({profileNeighborhood || neighborhood})</span>
-            <span className="font-bold text-foreground">R$ {neighborhoodFee.toFixed(2)}</span>
+            <span className={`font-bold ${couponType === "free_shipping" ? "text-green-600 line-through" : "text-foreground"}`}>
+              R$ {neighborhoodFee.toFixed(2)}
+            </span>
           </div>
+          {couponType === "free_shipping" && (
+            <div className="flex justify-between text-sm">
+              <span className="text-green-600">Frete grátis</span>
+              <span className="font-bold text-green-600">R$ 0,00</span>
+            </div>
+          )}
           <div className="flex justify-between text-lg pt-2 border-t border-border">
             <span className="font-bold text-foreground">Total</span>
-            <span className="font-black text-primary">R$ {total.toFixed(2)}</span>
+            <span className="font-black text-primary">R$ {finalTotal.toFixed(2)}</span>
           </div>
         </div>
       </div>

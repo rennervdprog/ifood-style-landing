@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import AdminApprovals from "@/components/AdminApprovals";
+import CouponManager from "@/components/CouponManager";
 import AdminStoreManager from "@/components/AdminStoreManager";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,7 +16,7 @@ import {
 } from "recharts";
 
 type DateFilter = "today" | "yesterday" | "week";
-type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "saques" | "sync";
+type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "saques" | "sync" | "coupons";
 
 const SuperAdminDashboard = () => {
   const { user, loading: authLoading } = useAuth();
@@ -392,6 +393,7 @@ const SuperAdminDashboard = () => {
           { key: "approvals" as AdminTab, label: "🛡️ Aprovações" },
           { key: "stores" as AdminTab, label: "🏪 Lojas" },
           { key: "sync" as AdminTab, label: "🔄 Sincronizar" },
+          { key: "coupons" as AdminTab, label: "🎟️ Cupons" },
         ]).map(tab => (
           <button
             key={tab.key}
@@ -412,6 +414,8 @@ const SuperAdminDashboard = () => {
         <div className="px-4 py-4"><AdminApprovals /></div>
       ) : activeTab === "sync" ? (
         <SyncExternalTab />
+      ) : activeTab === "coupons" ? (
+        <div className="px-4 py-4"><CouponManager isAdmin /></div>
       ) : activeTab === "stores" ? (
         <div className="px-4 py-4"><AdminStoreManager /></div>
       ) : activeTab === "saques" ? (
