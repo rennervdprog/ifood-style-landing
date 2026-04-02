@@ -9,7 +9,7 @@
  * Set SIMULATION_MODE = false to restore real payments.
  */
 
-export const SIMULATION_MODE = true;
+export const SIMULATION_MODE = false;
 
 // Static fake QR code (a simple base64 placeholder)
 const FAKE_QR_BASE64 = 
