@@ -983,8 +983,10 @@ const FinanceTab = ({
 
     setChargingStore(entry.storeId);
     try {
-      const { data, error } = await supabase.functions.invoke("generate-commission-charge", {
+      // Use unified payment-router with Efí/MP failover
+      const { data, error } = await supabase.functions.invoke("payment-router", {
         body: {
+          action: "commission_charge",
           store_id: entry.storeId,
           amount: chargeAmount,
           description: `Comissão FoodIta - ${entry.name}`,
@@ -994,11 +996,13 @@ const FinanceTab = ({
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      if (data?.qr_code) {
-        navigator.clipboard.writeText(data.qr_code);
-        toast.success(`${data.reference_code}: Cobrança PIX gerada! Código copiado. R$ ${data.amount.toFixed(2)}`, { duration: 10000 });
+      const pixCode = data?.pix_code || data?.qr_code;
+      if (pixCode) {
+        navigator.clipboard.writeText(pixCode);
+        const providerLabel = data?.provider === "efi_bank" ? "Efí Bank" : data?.provider === "simulated" ? "Simulação" : "Mercado Pago";
+        toast.success(`${data.reference_code}: Cobrança PIX gerada via ${providerLabel}! Código copiado. R$ ${Number(data.amount || chargeAmount).toFixed(2)}`, { duration: 10000 });
       } else {
-        toast.success(`${data.reference_code}: Cobrança registrada. R$ ${data.amount.toFixed(2)}`);
+        toast.success(`${data.reference_code}: Cobrança registrada. R$ ${Number(data.amount || chargeAmount).toFixed(2)}`);
       }
 
       queryClient.invalidateQueries({ queryKey: ["store-balances"] });
