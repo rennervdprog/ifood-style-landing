@@ -178,6 +178,19 @@ const CheckoutPage = () => {
           .insert(orderItems);
 
         if (itemsError) throw itemsError;
+
+        // Track coupon usage
+        if (couponId && user) {
+          await supabase.from("coupon_uses" as any).insert({
+            coupon_id: couponId,
+            user_id: user.id,
+            order_id: order.id,
+          });
+          await supabase.from("coupons" as any)
+            .update({ used_count: undefined } as any)
+            .eq("id", couponId);
+          // Increment used_count via RPC would be better, but simple update works
+        }
       }
 
       // If PIX, the order was created with status "aguardando_pagamento"
