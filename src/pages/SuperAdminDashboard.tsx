@@ -671,7 +671,7 @@ const FinanceTab = ({
     if (error) {
       toast.error("Erro ao salvar gateway.");
     } else {
-      const labels: Record<string, string> = { MERCADO_PAGO: "Mercado Pago", EFI_BANK: "Efí Bank", SIMULATED: "Simulação" };
+      const labels: Record<string, string> = { MERCADO_PAGO: "Mercado Pago", EFI_BANK: "Efí Bank", ASAAS: "Asaas", SIMULATED: "Simulação" };
       toast.success(`✅ Gateway ativo: ${labels[provider] || provider}`);
       queryClient.invalidateQueries({ queryKey: ["payment-gateway"] });
     }
@@ -959,7 +959,7 @@ const FinanceTab = ({
       if (data?.status === "manual_required") {
         toast.info(`${data.reference_code}: Transferência manual necessária. PIX: ${data.pix_key} (${data.pix_type}) - R$ ${data.amount.toFixed(2)}`, { duration: 15000 });
       } else {
-        const providerLabel = data?.provider === "efi_bank" ? "Efí Bank" : data?.provider === "simulated" ? "Simulação" : "Mercado Pago";
+        const providerLabel = data?.provider === "efi_bank" ? "Efí Bank" : data?.provider === "asaas" ? "Asaas" : data?.provider === "simulated" ? "Simulação" : "Mercado Pago";
         toast.success(`${data.reference_code}: Repasse de R$ ${data.amount.toFixed(2)} enviado para ${entry.name} via ${providerLabel}!`);
       }
 
@@ -999,7 +999,7 @@ const FinanceTab = ({
       const pixCode = data?.pix_code || data?.qr_code;
       if (pixCode) {
         navigator.clipboard.writeText(pixCode);
-        const providerLabel = data?.provider === "efi_bank" ? "Efí Bank" : data?.provider === "simulated" ? "Simulação" : "Mercado Pago";
+        const providerLabel = data?.provider === "efi_bank" ? "Efí Bank" : data?.provider === "asaas" ? "Asaas" : data?.provider === "simulated" ? "Simulação" : "Mercado Pago";
         toast.success(`${data.reference_code}: Cobrança PIX gerada via ${providerLabel}! Código copiado. R$ ${Number(data.amount || chargeAmount).toFixed(2)}`, { duration: 10000 });
       } else {
         toast.success(`${data.reference_code}: Cobrança registrada. R$ ${Number(data.amount || chargeAmount).toFixed(2)}`);
@@ -1184,9 +1184,10 @@ const FinanceTab = ({
                 <p className="text-[10px] text-gray-500">Escolha qual provedor processar os PIX</p>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               {[
                 { key: "MERCADO_PAGO", label: "Mercado Pago", emoji: "💜", color: "blue" },
+                { key: "ASAAS", label: "Asaas", emoji: "🔵", color: "blue" },
                 { key: "EFI_BANK", label: "Efí Bank", emoji: "🟢", color: "green" },
                 { key: "SIMULATED", label: "Simulação", emoji: "🧪", color: "yellow" },
               ].map((gw) => (
@@ -1208,11 +1209,13 @@ const FinanceTab = ({
               ))}
             </div>
             <p className="text-[10px] text-purple-400">
-              {gatewayProvider === "EFI_BANK" 
-                ? "✅ Efí Bank ativo — menos risco de bloqueio para repasses recorrentes"
+              {gatewayProvider === "ASAAS"
+                ? "🔵 Asaas ativo — API REST simples, sem mTLS. Failover automático para Mercado Pago"
+                : gatewayProvider === "EFI_BANK" 
+                ? "✅ Efí Bank ativo — requer mTLS (limitação conhecida no Edge Runtime)"
                 : gatewayProvider === "SIMULATED"
                 ? "🧪 Modo simulação — sem cobranças reais"
-                : "💜 Mercado Pago ativo — se bloqueado, o sistema fará failover automático para Efí"
+                : "💜 Mercado Pago ativo — se bloqueado, failover automático para Asaas/Efí"
               }
             </p>
           </div>
