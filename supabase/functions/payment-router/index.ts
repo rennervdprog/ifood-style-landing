@@ -372,7 +372,7 @@ async function getActiveProviderFromDB(): Promise<Provider> {
 }
 
 function hasEfiCredentials(): boolean {
-  return !!(Deno.env.get("EFI_CLIENT_ID") && Deno.env.get("EFI_CLIENT_SECRET"));
+  return !!(Deno.env.get("EFI_CLIENT_ID") && Deno.env.get("EFI_CLIENT_SECRET") && Deno.env.get("EFI_CERTIFICATE_PEM_BASE64"));
 }
 
 function hasMpCredentials(): boolean {
