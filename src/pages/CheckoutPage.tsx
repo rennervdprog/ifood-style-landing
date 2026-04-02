@@ -149,7 +149,7 @@ const CheckoutPage = () => {
             client_id: user.id,
             store_id: storeId,
             subtotal: storeSubtotal,
-            delivery_fee: neighborhoodFee,
+            delivery_fee: effectiveDeliveryFee,
             total_price: storeTotalPrice,
             app_fee: appFee,
             payment_method: paymentMethod,
