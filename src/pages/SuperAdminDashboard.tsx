@@ -639,6 +639,75 @@ const FinanceTab = ({
   const [showPayoutSettings, setShowPayoutSettings] = useState(false);
   const [showPendingPayouts, setShowPendingPayouts] = useState(false);
   const [markingPaid, setMarkingPaid] = useState<string | null>(null);
+  const [savingLimits, setSavingLimits] = useState(false);
+
+  // Withdrawal limits from DB
+  const { data: dbWithdrawalLimits } = useQuery({
+    queryKey: ["withdrawal-limits"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("admin_settings" as any)
+        .select("value")
+        .eq("key", "withdrawal_limits")
+        .single();
+      if (error || !data) return { max_per_week: 1, min_amount: 5 };
+      return (data as any).value as { max_per_week: number; min_amount: number };
+    },
+  });
+
+  const [withdrawalLimits, setWithdrawalLimits] = useState({ max_per_week: 1, min_amount: 5 });
+
+  useEffect(() => {
+    if (dbWithdrawalLimits) setWithdrawalLimits(dbWithdrawalLimits as any);
+  }, [dbWithdrawalLimits]);
+
+  // Auto-payout schedule from DB
+  const { data: dbPayoutSchedule } = useQuery({
+    queryKey: ["payout-schedule"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("admin_settings" as any)
+        .select("value")
+        .eq("key", "payout_schedule")
+        .single();
+      if (error || !data) return { day_of_week: 3, enabled: false }; // 3 = Wednesday
+      return (data as any).value as { day_of_week: number; enabled: boolean };
+    },
+  });
+
+  const [payoutSchedule, setPayoutSchedule] = useState({ day_of_week: 3, enabled: false });
+
+  useEffect(() => {
+    if (dbPayoutSchedule) setPayoutSchedule(dbPayoutSchedule as any);
+  }, [dbPayoutSchedule]);
+
+  const saveWithdrawalLimits = async () => {
+    setSavingLimits(true);
+    const { error } = await supabase
+      .from("admin_settings" as any)
+      .upsert({ key: "withdrawal_limits", value: withdrawalLimits, updated_at: new Date().toISOString() } as any, { onConflict: "key" });
+    if (error) {
+      toast.error("Erro ao salvar limites.");
+    } else {
+      toast.success("✅ Limites de saque atualizados!");
+      queryClient.invalidateQueries({ queryKey: ["withdrawal-limits"] });
+    }
+    setSavingLimits(false);
+  };
+
+  const savePayoutSchedule = async (newSchedule: typeof payoutSchedule) => {
+    setPayoutSchedule(newSchedule);
+    const { error } = await supabase
+      .from("admin_settings" as any)
+      .upsert({ key: "payout_schedule", value: newSchedule, updated_at: new Date().toISOString() } as any, { onConflict: "key" });
+    if (error) {
+      toast.error("Erro ao salvar agenda.");
+    } else {
+      const days = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+      toast.success(`📅 Repasse automático: ${newSchedule.enabled ? days[newSchedule.day_of_week] : "Desativado"}`);
+      queryClient.invalidateQueries({ queryKey: ["payout-schedule"] });
+    }
+  };
   
   // Payout mode preferences from DB
   const { data: dbPayoutModes } = useQuery({
