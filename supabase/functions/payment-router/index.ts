@@ -118,35 +118,48 @@ async function createMercadoPagoPix(params: {
 // ── Provider: Efí Bank (Full mTLS Implementation) ────────────────────
 
 function getEfiHttpClient(): Deno.HttpClient | null {
-  const pemBase64 = Deno.env.get("EFI_CERTIFICATE_PEM_BASE64");
-  if (!pemBase64) {
-    console.error("EFI_CERTIFICATE_PEM_BASE64 not configured");
+  // Try separate clean secrets first, then fallback to combined PEM
+  let certPem = "";
+  let keyPem = "";
+
+  const certB64 = Deno.env.get("EFI_CERT_PEM");
+  const keyB64 = Deno.env.get("EFI_KEY_PEM");
+
+  if (certB64 && keyB64) {
+    try {
+      certPem = atob(certB64);
+      keyPem = atob(keyB64);
+    } catch (e) {
+      console.error("Error decoding EFI_CERT_PEM/EFI_KEY_PEM:", e);
+    }
+  }
+
+  // Fallback to combined PEM
+  if (!certPem || !keyPem) {
+    const pemBase64 = Deno.env.get("EFI_CERTIFICATE_PEM_BASE64");
+    if (!pemBase64) {
+      console.error("No Efí certificate configured");
+      return null;
+    }
+    try {
+      const pemContent = atob(pemBase64);
+      const certMatches = pemContent.match(/-----BEGIN CERTIFICATE-----[\s\S]*?-----END CERTIFICATE-----/g);
+      certPem = certMatches ? certMatches.join("\n") : "";
+      const keyMatch = pemContent.match(/-----BEGIN PRIVATE KEY-----[\s\S]*?-----END PRIVATE KEY-----/);
+      keyPem = keyMatch ? keyMatch[0] : "";
+    } catch (e) {
+      console.error("Error decoding EFI_CERTIFICATE_PEM_BASE64:", e);
+      return null;
+    }
+  }
+
+  if (!certPem || !keyPem) {
+    console.error("Could not extract cert or key. Cert found:", !!certPem, "Key found:", !!keyPem);
     return null;
   }
 
   try {
-    const pemContent = atob(pemBase64);
-
-    // Extract certificate chain (all -----BEGIN CERTIFICATE----- blocks)
-    const certMatches = pemContent.match(
-      /-----BEGIN CERTIFICATE-----[\s\S]*?-----END CERTIFICATE-----/g
-    );
-    const certPem = certMatches ? certMatches.join("\n") : "";
-
-    // Extract private key
-    const keyMatch = pemContent.match(
-      /-----BEGIN PRIVATE KEY-----[\s\S]*?-----END PRIVATE KEY-----/
-    );
-    const keyPem = keyMatch ? keyMatch[0] : "";
-
-    if (!certPem || !keyPem) {
-      console.error("Could not extract cert or key from PEM. Cert found:", !!certPem, "Key found:", !!keyPem);
-      return null;
-    }
-
-    console.log("Creating Efí mTLS client with cert and key...");
-
-    // Supabase Edge Runtime uses `cert` and `key` (not certChain/privateKey)
+    console.log("Creating Efí mTLS client. Cert length:", certPem.length, "Key length:", keyPem.length);
     return Deno.createHttpClient({
       cert: certPem,
       key: keyPem,
