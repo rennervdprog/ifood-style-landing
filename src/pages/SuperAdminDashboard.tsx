@@ -925,7 +925,136 @@ const FinanceTab = ({
         </button>
       </div>
 
-      {/* Payout Mode Settings Panel */}
+      {/* Pending Payouts Section */}
+      <div className="space-y-3">
+        <button
+          onClick={() => setShowPendingPayouts(!showPendingPayouts)}
+          className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-colors ${showPendingPayouts ? "bg-amber-500 text-gray-900" : "bg-[#1E293B] text-amber-400 hover:bg-[#1E293B]/80"}`}
+        >
+          <span className="flex items-center gap-2">
+            <Banknote className="h-4 w-4" />
+            Repasses Pendentes ({pendingStorePayouts.length + pendingDriverPayouts.length})
+          </span>
+          <span className="text-xs">{showPendingPayouts ? "▲" : "▼"}</span>
+        </button>
+
+        {showPendingPayouts && (
+          <div className="space-y-3">
+            {/* Pending store payouts */}
+            {pendingStorePayouts.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs text-gray-400 font-bold uppercase tracking-wider px-1">🏪 Lojistas</p>
+                {pendingStorePayouts.map((entry) => {
+                  const balance = storeBalances.find((b: any) => b.store_id === entry.storeId);
+                  const dbComissao = Number((balance as any)?.comissao_pendente || 0);
+                  return (
+                    <div key={entry.storeId} className="bg-[#1E293B] rounded-xl p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Store className="h-4 w-4 text-yellow-400" />
+                          <span className="text-sm font-bold text-white">{entry.name}</span>
+                        </div>
+                        <span className="text-xs text-gray-400">{entry.orderCount} pedidos</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="bg-green-500/10 rounded-lg p-2 text-center">
+                          <p className="text-green-400 text-[10px]">A Pagar (85%)</p>
+                          <p className="text-sm font-bold text-green-400">R$ {entry.netTransfer.toFixed(2)}</p>
+                        </div>
+                        <div className="bg-red-500/10 rounded-lg p-2 text-center">
+                          <p className="text-red-400 text-[10px]">A Receber (15%)</p>
+                          <p className="text-sm font-bold text-red-400">R$ {(dbComissao > 0 ? dbComissao : entry.commissionDue).toFixed(2)}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleMarkStorePaidManually(entry)}
+                        disabled={markingPaid === entry.storeId}
+                        className="w-full flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-500/30 text-white py-2.5 rounded-xl text-xs font-bold active:scale-95 transition-all"
+                      >
+                        {markingPaid === entry.storeId ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                        )}
+                        Marcar como Pago Manualmente
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Pending driver payouts */}
+            {pendingDriverPayouts.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs text-gray-400 font-bold uppercase tracking-wider px-1">🛵 Motoboys</p>
+                {pendingDriverPayouts.map((entry) => (
+                  <div key={entry.driverId} className="bg-[#1E293B] rounded-xl p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Bike className="h-4 w-4 text-amber-400" />
+                        <span className="text-sm font-bold text-white">{entry.name}</span>
+                      </div>
+                      <span className="text-xs text-gray-400">{entry.deliveryCount} entregas</span>
+                    </div>
+                    <div className="bg-amber-500/10 rounded-lg p-2 text-center">
+                      <p className="text-amber-400 text-[10px]">A Pagar (Taxa de Entrega App)</p>
+                      <p className="text-sm font-bold text-amber-400">R$ {entry.appFees.toFixed(2)}</p>
+                    </div>
+                    <button
+                      onClick={() => handleMarkDriverPaidManually(entry)}
+                      disabled={markingPaid === entry.driverId}
+                      className="w-full flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-500/30 text-white py-2.5 rounded-xl text-xs font-bold active:scale-95 transition-all"
+                    >
+                      {markingPaid === entry.driverId ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                      )}
+                      Marcar como Pago Manualmente
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {pendingStorePayouts.length === 0 && pendingDriverPayouts.length === 0 && (
+              <div className="bg-[#1E293B] rounded-xl p-6 text-center">
+                <CheckCircle2 className="h-8 w-8 text-green-400 mx-auto mb-2" />
+                <p className="text-sm text-gray-400">Nenhum repasse pendente!</p>
+              </div>
+            )}
+
+            {/* Payout History */}
+            {payoutHistory && payoutHistory.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs text-gray-400 font-bold uppercase tracking-wider px-1">📋 Histórico de Pagamentos</p>
+                {payoutHistory.slice(0, 10).map((h: any) => (
+                  <div key={h.id} className="bg-[#0F172A] rounded-xl p-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      {h.entity_type === "store" ? (
+                        <Store className="h-3.5 w-3.5 text-yellow-400 flex-shrink-0" />
+                      ) : (
+                        <Bike className="h-3.5 w-3.5 text-amber-400 flex-shrink-0" />
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-white truncate">{h.entity_name}</p>
+                        <p className="text-[10px] text-gray-500">{new Date(h.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</p>
+                      </div>
+                    </div>
+                    <div className="text-right ml-2">
+                      <p className="text-xs font-bold text-green-400">R$ {Number(h.amount).toFixed(2)}</p>
+                      <p className="text-[10px] text-gray-500 uppercase">{h.payout_type}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+
       {showPayoutSettings && (
         <div className="bg-[#1E293B] rounded-2xl p-4 border border-yellow-500/30 space-y-4">
           <div className="flex items-center gap-2 mb-2">
