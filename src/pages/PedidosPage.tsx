@@ -72,6 +72,20 @@ const PedidosPage = () => {
     enabled: !!user,
   });
 
+  // Fetch existing ratings to know which orders are already rated
+  const { data: existingRatings, refetch: refetchRatings } = useQuery({
+    queryKey: ["my-ratings", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("order_ratings" as any)
+        .select("order_id")
+        .eq("user_id", user!.id);
+      if (error) throw error;
+      return new Set((data || []).map((r: any) => r.order_id));
+    },
+    enabled: !!user,
+  });
+
   const [clearingHistory, setClearingHistory] = useState(false);
 
   const clearHistory = async () => {
