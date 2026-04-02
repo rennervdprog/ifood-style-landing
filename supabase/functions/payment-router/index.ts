@@ -115,9 +115,46 @@ async function createMercadoPagoPix(params: {
   return { ok: res.ok, data, status: res.status, suspended };
 }
 
-// ── Provider: Efí Bank (Full Implementation) ─────────────────────────
+// ── Provider: Efí Bank (Full mTLS Implementation) ────────────────────
 
-async function getEfiAccessToken(): Promise<string | null> {
+function getEfiHttpClient(): Deno.HttpClient | null {
+  const pemBase64 = Deno.env.get("EFI_CERTIFICATE_PEM_BASE64");
+  if (!pemBase64) {
+    console.error("EFI_CERTIFICATE_PEM_BASE64 not configured");
+    return null;
+  }
+
+  try {
+    const pemContent = atob(pemBase64);
+
+    // Extract certificate chain (all -----BEGIN CERTIFICATE----- blocks)
+    const certMatches = pemContent.match(
+      /-----BEGIN CERTIFICATE-----[\s\S]*?-----END CERTIFICATE-----/g
+    );
+    const certChain = certMatches ? certMatches.join("\n") : "";
+
+    // Extract private key
+    const keyMatch = pemContent.match(
+      /-----BEGIN PRIVATE KEY-----[\s\S]*?-----END PRIVATE KEY-----/
+    );
+    const privateKey = keyMatch ? keyMatch[0] : "";
+
+    if (!certChain || !privateKey) {
+      console.error("Could not extract cert or key from PEM");
+      return null;
+    }
+
+    return Deno.createHttpClient({
+      certChain,
+      privateKey,
+    });
+  } catch (err) {
+    console.error("Error creating Efí mTLS client:", err);
+    return null;
+  }
+}
+
+async function getEfiAccessToken(httpClient: Deno.HttpClient): Promise<string | null> {
   const clientId = Deno.env.get("EFI_CLIENT_ID");
   const clientSecret = Deno.env.get("EFI_CLIENT_SECRET");
 
@@ -133,6 +170,8 @@ async function getEfiAccessToken(): Promise<string | null> {
         Authorization: `Basic ${credentials}`,
       },
       body: JSON.stringify({ grant_type: "client_credentials" }),
+      // @ts-ignore Deno-specific mTLS client
+      client: httpClient,
     });
 
     if (!res.ok) {
@@ -141,6 +180,7 @@ async function getEfiAccessToken(): Promise<string | null> {
     }
 
     const data = await res.json();
+    console.log("Efí OAuth success, token obtained");
     return data.access_token || null;
   } catch (err) {
     console.error("Efí OAuth exception:", err);
@@ -154,9 +194,19 @@ async function createEfiBankPix(params: {
   externalReference: string;
   expiresAt?: string;
 }): Promise<{ ok: boolean; data: any; status: number }> {
-  const accessToken = await getEfiAccessToken();
+  const httpClient = getEfiHttpClient();
+  if (!httpClient) {
+    return {
+      ok: false,
+      data: { message: "Certificado mTLS da Efí não configurado. Configure EFI_CERTIFICATE_PEM_BASE64." },
+      status: 500,
+    };
+  }
+
+  const accessToken = await getEfiAccessToken(httpClient);
 
   if (!accessToken) {
+    httpClient.close();
     return {
       ok: false,
       data: { message: "Credenciais da Efí Bank inválidas ou não configuradas." },
@@ -177,13 +227,14 @@ async function createEfiBankPix(params: {
       valor: {
         original: params.amount.toFixed(2),
       },
-      chave: Deno.env.get("EFI_PIX_KEY") || "", // PIX key registered in Efí
+      chave: Deno.env.get("EFI_PIX_KEY") || "",
       infoAdicionais: [
         { nome: "Pedido", valor: params.externalReference.substring(0, 200) },
         { nome: "Descricao", valor: params.description.substring(0, 200) },
       ],
     };
 
+    console.log("Efí creating cob with mTLS...");
     const cobRes = await fetch("https://pix.api.efipay.com.br/v2/cob", {
       method: "POST",
       headers: {
@@ -191,14 +242,17 @@ async function createEfiBankPix(params: {
         Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify(cobBody),
+      // @ts-ignore Deno-specific mTLS client
+      client: httpClient,
     });
 
     if (!cobRes.ok) {
       const errorData = await cobRes.text();
       console.error("Efí cob error:", cobRes.status, errorData);
+      httpClient.close();
       return {
         ok: false,
-        data: { message: `Erro ao criar cobrança Efí: ${cobRes.status}` },
+        data: { message: `Erro ao criar cobrança Efí: ${cobRes.status}`, details: errorData },
         status: cobRes.status,
       };
     }
@@ -206,6 +260,7 @@ async function createEfiBankPix(params: {
     const cobData = await cobRes.json();
     const txid = cobData.txid;
     const loc = cobData.loc;
+    console.log("Efí cob created:", txid, "status:", cobData.status);
 
     // Step 2: Get QR Code from loc
     let qrCode = null;
@@ -217,12 +272,15 @@ async function createEfiBankPix(params: {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
+        // @ts-ignore Deno-specific mTLS client
+        client: httpClient,
       });
 
       if (qrRes.ok) {
         const qrData = await qrRes.json();
-        qrCode = qrData.qrcode || null; // PIX copia e cola
-        qrCodeBase64 = qrData.imagemQrcode || null; // Base64 image
+        qrCode = qrData.qrcode || null;
+        qrCodeBase64 = qrData.imagemQrcode || null;
+        console.log("Efí QR code obtained");
       } else {
         console.warn("Efí QR code fetch failed:", qrRes.status);
       }
@@ -233,6 +291,7 @@ async function createEfiBankPix(params: {
       qrCode = cobData.pixCopiaECola;
     }
 
+    httpClient.close();
     return {
       ok: true,
       data: {
@@ -247,6 +306,7 @@ async function createEfiBankPix(params: {
     };
   } catch (err) {
     console.error("Efí Bank exception:", err);
+    httpClient.close();
     return {
       ok: false,
       data: { message: "Erro interno ao processar pagamento Efí." },
