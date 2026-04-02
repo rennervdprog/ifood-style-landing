@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Edit3 } from "lucide-react";
 import confetti from "canvas-confetti";
 import AddressModal from "@/components/AddressModal";
+import SavedAddressPicker from "@/components/SavedAddressPicker";
 
 const paymentMethods = [
   { id: "pix", label: "PIX Online (Mercado Pago)", icon: QrCode },
