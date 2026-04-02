@@ -636,6 +636,28 @@ const FinanceTab = ({
 }) => {
   const [payingStore, setPayingStore] = useState<string | null>(null);
   const [chargingStore, setChargingStore] = useState<string | null>(null);
+  const [showPayoutSettings, setShowPayoutSettings] = useState(false);
+  
+  // Payout mode preferences (stored locally, preparation for future automation)
+  const [payoutModes, setPayoutModes] = useState(() => {
+    try {
+      const saved = localStorage.getItem("foodita_payout_modes");
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return { store_payout: "manual", driver_payout: "manual", admin_commission: "manual" };
+  });
+
+  const togglePayoutMode = (key: "store_payout" | "driver_payout" | "admin_commission") => {
+    const newModes = { ...payoutModes, [key]: payoutModes[key] === "manual" ? "auto" : "manual" };
+    setPayoutModes(newModes);
+    localStorage.setItem("foodita_payout_modes", JSON.stringify(newModes));
+    const label = key === "store_payout" ? "Repasse Lojista" : key === "driver_payout" ? "Repasse Motoboy" : "Comissão Admin";
+    const mode = newModes[key] === "auto" ? "Automático" : "Manual";
+    toast.success(`${label}: modo ${mode} ativado`);
+    if (newModes[key] === "auto") {
+      toast.info("⚠️ O modo automático será ativado quando houver integração com provedor de pagamento ativo.", { duration: 5000 });
+    }
+  };
 
   // Fetch store owner PIX keys
   const { data: ownerProfiles } = useQuery({
