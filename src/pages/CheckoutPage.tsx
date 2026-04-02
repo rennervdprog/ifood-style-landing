@@ -347,7 +347,7 @@ const CheckoutPage = () => {
                     onChange={(e) => setChangeFor(e.target.value.replace(/[^0-9.,]/g, ""))}
                     className="w-full mt-1 px-3 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   />
-                  {changeFor && parseFloat(changeFor) >= total && (
+                  {changeFor && parseFloat(changeFor) >= finalTotal && (
                     <p className="text-xs text-muted-foreground mt-1">
                       Troco: <span className="font-bold text-foreground">R$ {(parseFloat(changeFor) - total).toFixed(2)}</span>
                     </p>
