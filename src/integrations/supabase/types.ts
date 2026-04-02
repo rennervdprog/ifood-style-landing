@@ -955,30 +955,7 @@ export type Database = {
       }
     }
     Views: {
-      delivery_contacts: {
-        Row: {
-          full_name: string | null
-          neighborhood: string | null
-          phone: string | null
-          user_id: string | null
-          whatsapp_number: string | null
-        }
-        Insert: {
-          full_name?: string | null
-          neighborhood?: string | null
-          phone?: string | null
-          user_id?: string | null
-          whatsapp_number?: string | null
-        }
-        Update: {
-          full_name?: string | null
-          neighborhood?: string | null
-          phone?: string | null
-          user_id?: string | null
-          whatsapp_number?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       admin_approve_partner: {
@@ -1006,6 +983,16 @@ export type Database = {
       generate_financial_reference: {
         Args: { _prefix: string }
         Returns: string
+      }
+      get_delivery_contacts: {
+        Args: { _order_ids?: string[] }
+        Returns: {
+          full_name: string
+          neighborhood: string
+          phone: string
+          user_id: string
+          whatsapp_number: string
+        }[]
       }
       is_driver: { Args: { _user_id: string }; Returns: boolean }
       is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
