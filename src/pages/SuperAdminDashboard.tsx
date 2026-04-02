@@ -640,6 +640,43 @@ const FinanceTab = ({
   const [showPendingPayouts, setShowPendingPayouts] = useState(false);
   const [markingPaid, setMarkingPaid] = useState<string | null>(null);
   const [savingLimits, setSavingLimits] = useState(false);
+  const [savingGateway, setSavingGateway] = useState(false);
+
+  // Payment gateway setting from DB
+  const { data: dbGateway } = useQuery({
+    queryKey: ["payment-gateway"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("admin_settings" as any)
+        .select("value")
+        .eq("key", "payment_gateway")
+        .single();
+      if (error || !data) return { provider: "MERCADO_PAGO" };
+      return (data as any).value as { provider: string };
+    },
+  });
+
+  const [gatewayProvider, setGatewayProvider] = useState("MERCADO_PAGO");
+
+  useEffect(() => {
+    if (dbGateway) setGatewayProvider((dbGateway as any).provider || "MERCADO_PAGO");
+  }, [dbGateway]);
+
+  const saveGateway = async (provider: string) => {
+    setSavingGateway(true);
+    setGatewayProvider(provider);
+    const { error } = await supabase
+      .from("admin_settings" as any)
+      .upsert({ key: "payment_gateway", value: { provider }, updated_at: new Date().toISOString() } as any, { onConflict: "key" });
+    if (error) {
+      toast.error("Erro ao salvar gateway.");
+    } else {
+      const labels: Record<string, string> = { MERCADO_PAGO: "Mercado Pago", EFI_BANK: "Efí Bank", SIMULATED: "Simulação" };
+      toast.success(`✅ Gateway ativo: ${labels[provider] || provider}`);
+      queryClient.invalidateQueries({ queryKey: ["payment-gateway"] });
+    }
+    setSavingGateway(false);
+  };
 
   // Withdrawal limits from DB
   const { data: dbWithdrawalLimits } = useQuery({
@@ -1129,6 +1166,50 @@ const FinanceTab = ({
           <div className="flex items-center gap-2 mb-2">
             <Settings className="h-4 w-4 text-yellow-400" />
             <h3 className="text-sm font-bold text-white">Configurações de Repasse</h3>
+          </div>
+
+          {/* Payment Gateway Selector */}
+          <div className="bg-[#0F172A] rounded-xl p-4 space-y-3 border border-purple-500/20">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center">
+                <QrCode className="h-4 w-4 text-purple-400" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-white">🏦 Gateway de Pagamento Ativo</p>
+                <p className="text-[10px] text-gray-500">Escolha qual provedor processar os PIX</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { key: "MERCADO_PAGO", label: "Mercado Pago", emoji: "💜", color: "blue" },
+                { key: "EFI_BANK", label: "Efí Bank", emoji: "🟢", color: "green" },
+                { key: "SIMULATED", label: "Simulação", emoji: "🧪", color: "yellow" },
+              ].map((gw) => (
+                <button
+                  key={gw.key}
+                  onClick={() => saveGateway(gw.key)}
+                  disabled={savingGateway}
+                  className={`py-3 px-2 rounded-xl text-xs font-bold transition-all active:scale-95 ${
+                    gatewayProvider === gw.key
+                      ? gw.color === "blue" ? "bg-blue-500 text-white ring-2 ring-blue-400"
+                        : gw.color === "green" ? "bg-green-500 text-white ring-2 ring-green-400"
+                        : "bg-yellow-500 text-gray-900 ring-2 ring-yellow-400"
+                      : "bg-[#1E293B] text-gray-400 hover:text-white"
+                  }`}
+                >
+                  <span className="text-base block mb-1">{gw.emoji}</span>
+                  {gw.label}
+                </button>
+              ))}
+            </div>
+            <p className="text-[10px] text-purple-400">
+              {gatewayProvider === "EFI_BANK" 
+                ? "✅ Efí Bank ativo — menos risco de bloqueio para repasses recorrentes"
+                : gatewayProvider === "SIMULATED"
+                ? "🧪 Modo simulação — sem cobranças reais"
+                : "💜 Mercado Pago ativo — se bloqueado, o sistema fará failover automático para Efí"
+              }
+            </p>
           </div>
 
           {/* Weekly Auto-Payout Schedule */}

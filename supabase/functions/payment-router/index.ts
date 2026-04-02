@@ -109,14 +109,44 @@ async function createMercadoPagoPix(params: {
 
   const data = await res.json();
 
-  // Detect suspended account or auth failure → failover signal
   const suspended =
     !res.ok && (res.status === 401 || res.status === 403 || data?.message?.includes("suspended"));
 
   return { ok: res.ok, data, status: res.status, suspended };
 }
 
-// ── Provider: Efí Bank (stub — ready for credentials) ────────────────
+// ── Provider: Efí Bank (Full Implementation) ─────────────────────────
+
+async function getEfiAccessToken(): Promise<string | null> {
+  const clientId = Deno.env.get("EFI_CLIENT_ID");
+  const clientSecret = Deno.env.get("EFI_CLIENT_SECRET");
+
+  if (!clientId || !clientSecret) return null;
+
+  const credentials = btoa(`${clientId}:${clientSecret}`);
+
+  try {
+    const res = await fetch("https://pix.api.efipay.com.br/oauth/token", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Basic ${credentials}`,
+      },
+      body: JSON.stringify({ grant_type: "client_credentials" }),
+    });
+
+    if (!res.ok) {
+      console.error("Efí OAuth error:", res.status, await res.text());
+      return null;
+    }
+
+    const data = await res.json();
+    return data.access_token || null;
+  } catch (err) {
+    console.error("Efí OAuth exception:", err);
+    return null;
+  }
+}
 
 async function createEfiBankPix(params: {
   amount: number;
@@ -124,26 +154,105 @@ async function createEfiBankPix(params: {
   externalReference: string;
   expiresAt?: string;
 }): Promise<{ ok: boolean; data: any; status: number }> {
-  const clientId = Deno.env.get("EFI_CLIENT_ID");
-  const clientSecret = Deno.env.get("EFI_CLIENT_SECRET");
+  const accessToken = await getEfiAccessToken();
 
-  if (!clientId || !clientSecret) {
+  if (!accessToken) {
     return {
       ok: false,
-      data: { message: "Credenciais da Efí Bank não configuradas." },
+      data: { message: "Credenciais da Efí Bank inválidas ou não configuradas." },
       status: 500,
     };
   }
 
-  // TODO: Implement Efí Bank Pix API integration
-  // 1. Authenticate with OAuth2 using client_id + client_secret + certificate
-  // 2. Create immediate charge (POST /v2/cob)
-  // 3. Return QR code and pix copy-paste
-  return {
-    ok: false,
-    data: { message: "Integração Efí Bank em desenvolvimento." },
-    status: 501,
-  };
+  try {
+    // Step 1: Create immediate charge (cob)
+    const expirationSeconds = params.expiresAt
+      ? Math.max(60, Math.floor((new Date(params.expiresAt).getTime() - Date.now()) / 1000))
+      : 300; // 5 minutes default
+
+    const cobBody = {
+      calendario: {
+        expiracao: expirationSeconds,
+      },
+      valor: {
+        original: params.amount.toFixed(2),
+      },
+      chave: Deno.env.get("EFI_PIX_KEY") || "", // PIX key registered in Efí
+      infoAdicionais: [
+        { nome: "Pedido", valor: params.externalReference.substring(0, 200) },
+        { nome: "Descricao", valor: params.description.substring(0, 200) },
+      ],
+    };
+
+    const cobRes = await fetch("https://pix.api.efipay.com.br/v2/cob", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(cobBody),
+    });
+
+    if (!cobRes.ok) {
+      const errorData = await cobRes.text();
+      console.error("Efí cob error:", cobRes.status, errorData);
+      return {
+        ok: false,
+        data: { message: `Erro ao criar cobrança Efí: ${cobRes.status}` },
+        status: cobRes.status,
+      };
+    }
+
+    const cobData = await cobRes.json();
+    const txid = cobData.txid;
+    const loc = cobData.loc;
+
+    // Step 2: Get QR Code from loc
+    let qrCode = null;
+    let qrCodeBase64 = null;
+
+    if (loc?.id) {
+      const qrRes = await fetch(`https://pix.api.efipay.com.br/v2/loc/${loc.id}/qrcode`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (qrRes.ok) {
+        const qrData = await qrRes.json();
+        qrCode = qrData.qrcode || null; // PIX copia e cola
+        qrCodeBase64 = qrData.imagemQrcode || null; // Base64 image
+      } else {
+        console.warn("Efí QR code fetch failed:", qrRes.status);
+      }
+    }
+
+    // If no QR from loc, try pixCopiaECola from cob response
+    if (!qrCode && cobData.pixCopiaECola) {
+      qrCode = cobData.pixCopiaECola;
+    }
+
+    return {
+      ok: true,
+      data: {
+        pix_code: qrCode,
+        qr_code_url: qrCodeBase64,
+        payment_id: txid || cobData.txid,
+        txid,
+        loc_id: loc?.id,
+        status: cobData.status || "ATIVA",
+      },
+      status: 200,
+    };
+  } catch (err) {
+    console.error("Efí Bank exception:", err);
+    return {
+      ok: false,
+      data: { message: "Erro interno ao processar pagamento Efí." },
+      status: 500,
+    };
+  }
 }
 
 // ── Provider: Simulation ─────────────────────────────────────────────
@@ -173,7 +282,29 @@ function createSimulatedPix(params: {
 
 type Provider = "MERCADO_PAGO" | "EFI_BANK" | "SIMULATED";
 
-function getActiveProvider(): Provider {
+async function getActiveProviderFromDB(): Promise<Provider> {
+  // First check DB setting, then env var
+  try {
+    const serviceClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+    const { data } = await serviceClient
+      .from("admin_settings")
+      .select("value")
+      .eq("key", "payment_gateway")
+      .single();
+
+    if (data?.value) {
+      const val = ((data.value as any)?.provider || "").toUpperCase().trim();
+      if (val === "EFI_BANK") return "EFI_BANK";
+      if (val === "SIMULATED") return "SIMULATED";
+      if (val === "MERCADO_PAGO") return "MERCADO_PAGO";
+    }
+  } catch {
+    // Fall through to env var
+  }
+
   const env = (Deno.env.get("ACTIVE_PAYMENT_PROVIDER") || "").toUpperCase().trim();
   if (env === "EFI_BANK") return "EFI_BANK";
   if (env === "SIMULATED") return "SIMULATED";
@@ -182,6 +313,10 @@ function getActiveProvider(): Provider {
 
 function hasEfiCredentials(): boolean {
   return !!(Deno.env.get("EFI_CLIENT_ID") && Deno.env.get("EFI_CLIENT_SECRET"));
+}
+
+function hasMpCredentials(): boolean {
+  return !!Deno.env.get("MERCADO_PAGO_ACCESS_TOKEN");
 }
 
 // ── Route: order PIX ─────────────────────────────────────────────────
@@ -194,7 +329,6 @@ async function handleOrderPix(
 ): Promise<Response> {
   const { order_id, amount, description, payer_first_name, payer_last_name, payer_cpf } = body;
 
-  // Validate order ownership & status
   const { data: order, error: orderError } = await supabase
     .from("orders")
     .select("id, client_id, total_price, status")
@@ -237,7 +371,6 @@ async function handleCommissionCharge(
 ): Promise<Response> {
   const { store_id, amount, description } = body;
 
-  // Verify store ownership or admin
   const { data: store, error: storeError } = await supabase
     .from("stores")
     .select("id, name, owner_id")
@@ -254,7 +387,6 @@ async function handleCommissionCharge(
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
-  // Idempotency: check for recent pending charge
   const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
   const { data: existingCharge } = await serviceClient
     .from("financial_transactions")
@@ -282,13 +414,11 @@ async function handleCommissionCharge(
     } satisfies StandardPixResponse);
   }
 
-  // Generate reference code
   const { data: refData } = await serviceClient.rpc("generate_financial_reference", { _prefix: "FAT" });
   const referenceCode = refData || `#FAT-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
   const createdAt = new Date().toISOString();
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
 
-  // Cancel old pending charges
   await serviceClient
     .from("financial_transactions")
     .update({ status: "cancelled", settled_at: createdAt, updated_at: createdAt })
@@ -312,7 +442,6 @@ async function handleCommissionCharge(
     expiresAt,
   });
 
-  // Parse the result to save to DB
   const resultBody = await result.clone().json();
 
   if (result.ok) {
@@ -344,7 +473,6 @@ async function handleStorePayout(
   userEmail: string,
   supabase: any,
 ): Promise<Response> {
-  // Only admin
   const isAdmin = userEmail === "vinivias13@gmail.com";
   if (!isAdmin) return json({ error: "Apenas o administrador pode realizar repasses." }, 403);
 
@@ -381,7 +509,6 @@ async function handleStorePayout(
 
   const resultBody = await result.clone().json();
 
-  // Save transaction
   const txRecord: Record<string, unknown> = {
     store_id,
     transaction_kind: "store_payout",
@@ -410,7 +537,6 @@ async function handleStorePayout(
     });
   }
 
-  // Deduct from repasse_pendente
   await serviceClient
     .from("store_balances")
     .update({ repasse_pendente: 0 })
@@ -432,7 +558,7 @@ async function routePixCreation(params: {
   idempotencyKey: string;
   expiresAt?: string;
 }): Promise<Response> {
-  const provider = getActiveProvider();
+  const provider = await getActiveProviderFromDB();
 
   // ── Simulation ──
   if (provider === "SIMULATED") {
@@ -442,68 +568,6 @@ async function routePixCreation(params: {
       externalReference: params.externalReference,
     });
     return json(sim);
-  }
-
-  // ── Mercado Pago (primary) ──
-  if (provider === "MERCADO_PAGO") {
-    const mpResult = await createMercadoPagoPix(params);
-
-    if (mpResult.ok) {
-      const pix = mpResult.data.point_of_interaction?.transaction_data;
-      const resp: StandardPixResponse = {
-        status: mpResult.data.status || "pending",
-        pix_code: pix?.qr_code || null,
-        qr_code_url: pix?.qr_code_base64 || null,
-        provider: "mercado_pago",
-        reference_code: params.externalReference,
-        payment_id: String(mpResult.data.id),
-        amount: params.amount,
-        created_at: new Date().toISOString(),
-        expires_at: params.expiresAt || null,
-      };
-      return json(resp);
-    }
-
-    // Rate limited
-    if (mpResult.status === 429) {
-      return json({ error: "Sistema de pagamentos temporariamente indisponível.", rate_limited: true }, 429);
-    }
-
-    // Suspended / auth failure → failover to Efí
-    if (mpResult.suspended && hasEfiCredentials()) {
-      console.warn("Mercado Pago suspended/auth failure, falling back to Efí Bank");
-      const efiResult = await createEfiBankPix({
-        amount: params.amount,
-        description: params.description,
-        externalReference: params.externalReference,
-        expiresAt: params.expiresAt,
-      });
-
-      if (efiResult.ok) {
-        // Map Efí response to standard format (will be implemented when Efí is ready)
-        const resp: StandardPixResponse = {
-          status: "pending",
-          pix_code: efiResult.data?.pix_code || null,
-          qr_code_url: efiResult.data?.qr_code_url || null,
-          provider: "efi_bank",
-          reference_code: params.externalReference,
-          payment_id: efiResult.data?.payment_id || null,
-          amount: params.amount,
-          created_at: new Date().toISOString(),
-          expires_at: params.expiresAt || null,
-        };
-        return json(resp);
-      }
-    }
-
-    // All failed
-    let userMessage = "Erro ao gerar PIX. Tente novamente.";
-    if (mpResult.data?.message?.includes("access_token")) {
-      userMessage = "Chave do Mercado Pago inválida. Contate o administrador.";
-    } else if (mpResult.suspended) {
-      userMessage = "Conta de pagamentos suspensa. O administrador precisa trocar o provedor de pagamentos.";
-    }
-    return json({ error: userMessage, provider: "mercado_pago" }, 500);
   }
 
   // ── Efí Bank (primary) ──
@@ -531,7 +595,7 @@ async function routePixCreation(params: {
     }
 
     // Efí failed → fallback to Mercado Pago
-    if (Deno.env.get("MERCADO_PAGO_ACCESS_TOKEN")) {
+    if (hasMpCredentials()) {
       console.warn("Efí Bank failed, falling back to Mercado Pago");
       const mpResult = await createMercadoPagoPix(params);
       if (mpResult.ok) {
@@ -552,6 +616,65 @@ async function routePixCreation(params: {
     }
 
     return json({ error: "Erro ao gerar PIX via Efí Bank.", provider: "efi_bank" }, 500);
+  }
+
+  // ── Mercado Pago (primary) ──
+  if (provider === "MERCADO_PAGO") {
+    const mpResult = await createMercadoPagoPix(params);
+
+    if (mpResult.ok) {
+      const pix = mpResult.data.point_of_interaction?.transaction_data;
+      const resp: StandardPixResponse = {
+        status: mpResult.data.status || "pending",
+        pix_code: pix?.qr_code || null,
+        qr_code_url: pix?.qr_code_base64 || null,
+        provider: "mercado_pago",
+        reference_code: params.externalReference,
+        payment_id: String(mpResult.data.id),
+        amount: params.amount,
+        created_at: new Date().toISOString(),
+        expires_at: params.expiresAt || null,
+      };
+      return json(resp);
+    }
+
+    if (mpResult.status === 429) {
+      return json({ error: "Sistema de pagamentos temporariamente indisponível.", rate_limited: true }, 429);
+    }
+
+    // Suspended / auth failure → failover to Efí
+    if (mpResult.suspended && hasEfiCredentials()) {
+      console.warn("Mercado Pago suspended/auth failure, falling back to Efí Bank");
+      const efiResult = await createEfiBankPix({
+        amount: params.amount,
+        description: params.description,
+        externalReference: params.externalReference,
+        expiresAt: params.expiresAt,
+      });
+
+      if (efiResult.ok) {
+        const resp: StandardPixResponse = {
+          status: "pending",
+          pix_code: efiResult.data?.pix_code || null,
+          qr_code_url: efiResult.data?.qr_code_url || null,
+          provider: "efi_bank",
+          reference_code: params.externalReference,
+          payment_id: efiResult.data?.payment_id || null,
+          amount: params.amount,
+          created_at: new Date().toISOString(),
+          expires_at: params.expiresAt || null,
+        };
+        return json(resp);
+      }
+    }
+
+    let userMessage = "Erro ao gerar PIX. Tente novamente.";
+    if (mpResult.data?.message?.includes("access_token")) {
+      userMessage = "Chave do Mercado Pago inválida. Contate o administrador.";
+    } else if (mpResult.suspended) {
+      userMessage = "Conta de pagamentos suspensa. O administrador precisa trocar o provedor de pagamentos.";
+    }
+    return json({ error: userMessage, provider: "mercado_pago" }, 500);
   }
 
   return json({ error: "Provedor de pagamentos não configurado." }, 500);

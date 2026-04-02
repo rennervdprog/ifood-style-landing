@@ -12,7 +12,7 @@ import SavedAddressPicker from "@/components/SavedAddressPicker";
 import CouponInput from "@/components/CouponInput";
 
 const paymentMethods = [
-  { id: "pix", label: "PIX Online (Mercado Pago)", icon: QrCode },
+  { id: "pix", label: "PIX Online", icon: QrCode },
   { id: "cartao", label: "Cartão (Entrega)", icon: CreditCard },
   { id: "dinheiro", label: "Dinheiro", icon: Banknote },
 ];
