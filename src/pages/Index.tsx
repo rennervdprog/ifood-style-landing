@@ -8,10 +8,12 @@ import CartFAB from "@/components/CartFAB";
 import CategoryScroll from "@/components/CategoryScroll";
 import StoreCard from "@/components/StoreCard";
 import StoreCardSkeleton from "@/components/StoreCardSkeleton";
+import SearchBar from "@/components/SearchBar";
 import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 
 const Index = () => {
   const [category, setCategory] = useState("all");
+  const [search, setSearch] = useState("");
 
   const { data: stores, isLoading } = useQuery({
     queryKey: ["stores"],
@@ -23,6 +25,20 @@ const Index = () => {
       if (error) throw error;
       return (data || []).filter((s: any) => !s.status || s.status === "ativo");
     },
+  });
+
+  // Fetch products for search
+  const { data: products } = useQuery({
+    queryKey: ["all-products-search"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, name, store_id")
+        .eq("is_available", true);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: search.length >= 2,
   });
 
   // Fetch all opening hours for displayed stores
@@ -58,18 +74,44 @@ const Index = () => {
     return 0;
   });
 
-  const filtered = sorted?.filter(
+  // Filter by category
+  let filtered = sorted?.filter(
     (s) => category === "all" || s.category === category
   );
+
+  // Filter by search (store name or product name)
+  if (search.length >= 2 && filtered) {
+    const searchLower = search.toLowerCase();
+    const matchingStoreIds = new Set<string>();
+
+    // Match store names
+    filtered.forEach(s => {
+      if (s.name.toLowerCase().includes(searchLower)) {
+        matchingStoreIds.add(s.id);
+      }
+    });
+
+    // Match product names → get their store_ids
+    if (products) {
+      products.forEach((p: any) => {
+        if (p.name.toLowerCase().includes(searchLower)) {
+          matchingStoreIds.add(p.store_id);
+        }
+      });
+    }
+
+    filtered = filtered.filter(s => matchingStoreIds.has(s.id));
+  }
 
   return (
     <div className="min-h-screen bg-background pb-32 overflow-y-auto">
       <AppHeader />
 
-      <div className="px-4 pt-4">
+      <div className="px-4 pt-4 space-y-3">
         <h1 className="text-xl font-black text-foreground">
           O que você quer <span className="text-primary">pedir</span> hoje?
         </h1>
+        <SearchBar value={search} onChange={setSearch} />
       </div>
 
       <CategoryScroll selected={category} onSelect={setCategory} />
@@ -96,7 +138,9 @@ const Index = () => {
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <PackageOpen className="h-16 w-16 text-muted-foreground mb-4" />
             <h2 className="text-lg font-bold text-foreground mb-1">
-              {stores && stores.length === 0
+              {search.length >= 2
+                ? "Nenhum resultado encontrado"
+                : stores && stores.length === 0
                 ? "Estamos chegando!"
                 : category === "farmacias"
                 ? "Ainda não temos farmácias parceiras"
@@ -105,10 +149,10 @@ const Index = () => {
                 : "Nenhum estabelecimento nesta categoria"}
             </h2>
             <p className="text-sm text-muted-foreground max-w-xs">
-              {stores && stores.length === 0
+              {search.length >= 2
+                ? `Nenhuma loja ou produto encontrado para "${search}".`
+                : stores && stores.length === 0
                 ? "Novas lojas no FoodIta em breve. Fique ligado!"
-                : category === "farmacias" || category === "docerias"
-                ? "Ainda não temos parceiros nesta categoria no FoodIta. Em breve!"
                 : "Nenhum estabelecimento aberto no momento. Volte mais tarde!"}
             </p>
           </div>

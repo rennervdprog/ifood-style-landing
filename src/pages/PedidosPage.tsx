@@ -7,6 +7,8 @@ import BottomNav from "@/components/BottomNav";
 import { ClipboardList, Clock, ChefHat, Truck, CheckCircle2, Lock, Copy, QrCode, XCircle, X, Loader2, Trash2, ShieldAlert, AlertCircle, TimerReset } from "lucide-react";
 import { toast } from "sonner";
 import { notifyOrderPreparing, notifyOrderOnTheWay, notifyOrderDelivered } from "@/lib/notifications";
+import OrderRating from "@/components/OrderRating";
+import DeliveryTimeEstimate from "@/components/DeliveryTimeEstimate";
 import {
   recordPixAttempt,
   resetPixAttempts,
@@ -66,6 +68,20 @@ const PedidosPage = () => {
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
+    },
+    enabled: !!user,
+  });
+
+  // Fetch existing ratings to know which orders are already rated
+  const { data: existingRatings, refetch: refetchRatings } = useQuery({
+    queryKey: ["my-ratings", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("order_ratings" as any)
+        .select("order_id")
+        .eq("user_id", user!.id);
+      if (error) throw error;
+      return new Set((data || []).map((r: any) => r.order_id));
     },
     enabled: !!user,
   });
@@ -381,9 +397,12 @@ const PedidosPage = () => {
                   <h3 className="font-bold text-sm text-foreground">
                     {order.stores?.name || "Loja"}
                   </h3>
-                  <div className={`flex items-center gap-1 text-xs font-bold ${config.color}`}>
-                    <StatusIcon className="h-3.5 w-3.5" />
-                    {config.label}
+                  <div className="flex items-center gap-2">
+                    <DeliveryTimeEstimate status={order.status} createdAt={order.created_at} confirmedAt={order.confirmed_at} />
+                    <div className={`flex items-center gap-1 text-xs font-bold ${config.color}`}>
+                      <StatusIcon className="h-3.5 w-3.5" />
+                      {config.label}
+                    </div>
                   </div>
                 </div>
 
@@ -489,6 +508,19 @@ const PedidosPage = () => {
                     R$ {Number(order.total_price).toFixed(2)}
                   </span>
                 </div>
+
+                {/* Rating section for delivered/finalized orders */}
+                {["entregue", "finalizado"].includes(order.status) && user && !existingRatings?.has(order.id) && (
+                  <div className="mt-3">
+                    <OrderRating
+                      orderId={order.id}
+                      storeId={order.store_id}
+                      storeName={order.stores?.name || "Loja"}
+                      userId={user.id}
+                      onRated={() => refetchRatings()}
+                    />
+                  </div>
+                )}
               </div>
             );
           })
