@@ -1,0 +1,1 @@
+UPDATE admin_settings SET value = '{"provider": "SIMULATED"}'::jsonb, updated_at = now() WHERE key = 'payment_gateway';
