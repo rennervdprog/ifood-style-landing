@@ -405,6 +405,11 @@ const PedidosPage = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* Waiting Payment Banner */}
+                {isWaitingPayment && (
+                  <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-3 mb-3">
+                    <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <div className="relative">
                           <Loader2 className="h-4 w-4 text-amber-500 animate-spin" />
