@@ -52,6 +52,7 @@ Deno.serve(async (req) => {
     const userId = userData.user.id;
     const { amount, pix_key, pix_type } = parsed.data;
 
+    // Check for existing pending request
     const { data: existingPending, error: existingError } = await supabase
       .from("withdrawal_requests")
       .select("id, amount, transaction_code")
@@ -74,6 +75,70 @@ Deno.serve(async (req) => {
         active_request: existingPending,
       }), {
         status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // WEEKLY LIMIT: Check if driver already had a paid withdrawal this week
+    // Get withdrawal limit settings from admin_settings via service client
+    const serviceClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    const { data: limitSettings } = await serviceClient
+      .from("admin_settings")
+      .select("value")
+      .eq("key", "withdrawal_limits")
+      .single();
+
+    // Default: 1 withdrawal per week, minimum R$5
+    const limits = (limitSettings?.value as any) || {
+      max_per_week: 1,
+      min_amount: 5,
+    };
+
+    const maxPerWeek = Number(limits.max_per_week) || 1;
+    const minAmount = Number(limits.min_amount) || 5;
+
+    // Check minimum amount
+    if (amount < minAmount) {
+      return new Response(JSON.stringify({
+        error: `Valor mínimo para saque é R$ ${minAmount.toFixed(2)}.`,
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Count withdrawals (paid or pending) in the current week (Monday to Sunday)
+    const now = new Date();
+    const dayOfWeek = now.getDay(); // 0=Sun, 1=Mon...
+    const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - mondayOffset);
+    weekStart.setHours(0, 0, 0, 0);
+
+    const { count: weeklyCount, error: countError } = await serviceClient
+      .from("withdrawal_requests")
+      .select("id", { count: "exact", head: true })
+      .eq("driver_user_id", userId)
+      .in("status", ["solicitado", "pago"])
+      .gte("created_at", weekStart.toISOString());
+
+    if (countError) {
+      console.error("Count error:", countError);
+    }
+
+    if ((weeklyCount || 0) >= maxPerWeek) {
+      const nextMonday = new Date(weekStart);
+      nextMonday.setDate(nextMonday.getDate() + 7);
+      const nextDate = nextMonday.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+      return new Response(JSON.stringify({
+        error: `Limite de ${maxPerWeek} saque(s) por semana atingido. Próxima solicitação disponível em ${nextDate}.`,
+        limit_reached: true,
+        next_available: nextMonday.toISOString(),
+      }), {
+        status: 429,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

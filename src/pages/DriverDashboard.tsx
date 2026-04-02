@@ -1060,8 +1060,12 @@ const DriverDashboard = () => {
                       if (data?.error) {
                         if (data?.active_request) {
                           toast.warning(`Você já tem uma solicitação de R$ ${Number(data.active_request.amount).toFixed(2)} em andamento. Aguarde o Admin realizar o Pix.`);
+                        } else if (data?.limit_reached) {
+                          toast.warning(data.error, { duration: 8000 });
+                        } else {
+                          throw new Error(data.error);
                         }
-                        throw new Error(data.error);
+                        return;
                       }
 
                       toast.success(`✅ Solicitação enviada! ID #${data?.request?.transaction_code} | Valor: R$ ${amount.toFixed(2)}.`);
