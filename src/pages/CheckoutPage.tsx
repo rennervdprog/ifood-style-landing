@@ -25,6 +25,8 @@ const CheckoutPage = () => {
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [needsChange, setNeedsChange] = useState(false);
   const [changeFor, setChangeFor] = useState("");
+  const [selectedSavedAddressId, setSelectedSavedAddressId] = useState<string | null>(null);
+  const [savedAddressData, setSavedAddressData] = useState<any>(null);
 
   // Load user profile with address
   const { data: userProfile, refetch: refetchProfile } = useQuery({
