@@ -121,7 +121,7 @@ const CheckoutPage = () => {
     }
     if (paymentMethod === "dinheiro" && needsChange) {
       const changeValue = parseFloat(changeFor);
-      if (!changeValue || changeValue < total) {
+      if (!changeValue || changeValue < finalTotal) {
         toast.error("O valor do troco deve ser maior que o total do pedido.");
         return;
       }
