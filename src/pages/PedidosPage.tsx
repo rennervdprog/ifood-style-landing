@@ -10,7 +10,6 @@ import { notifyOrderPreparing, notifyOrderOnTheWay, notifyOrderDelivered } from 
 import OrderRating from "@/components/OrderRating";
 import DeliveryTimeEstimate from "@/components/DeliveryTimeEstimate";
 import OrderChat from "@/components/OrderChat";
-import { useCart } from "@/contexts/CartContext";
 import {
   recordPixAttempt,
   resetPixAttempts,
