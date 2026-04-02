@@ -131,23 +131,26 @@ function getEfiHttpClient(): Deno.HttpClient | null {
     const certMatches = pemContent.match(
       /-----BEGIN CERTIFICATE-----[\s\S]*?-----END CERTIFICATE-----/g
     );
-    const certChain = certMatches ? certMatches.join("\n") : "";
+    const certPem = certMatches ? certMatches.join("\n") : "";
 
     // Extract private key
     const keyMatch = pemContent.match(
       /-----BEGIN PRIVATE KEY-----[\s\S]*?-----END PRIVATE KEY-----/
     );
-    const privateKey = keyMatch ? keyMatch[0] : "";
+    const keyPem = keyMatch ? keyMatch[0] : "";
 
-    if (!certChain || !privateKey) {
-      console.error("Could not extract cert or key from PEM");
+    if (!certPem || !keyPem) {
+      console.error("Could not extract cert or key from PEM. Cert found:", !!certPem, "Key found:", !!keyPem);
       return null;
     }
 
+    console.log("Creating Efí mTLS client with cert and key...");
+
+    // Supabase Edge Runtime uses `cert` and `key` (not certChain/privateKey)
     return Deno.createHttpClient({
-      certChain,
-      privateKey,
-    });
+      cert: certPem,
+      key: keyPem,
+    } as any);
   } catch (err) {
     console.error("Error creating Efí mTLS client:", err);
     return null;
