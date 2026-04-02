@@ -511,6 +511,27 @@ const PedidosPage = () => {
                   </span>
                 </div>
 
+                {/* Chat + Repeat buttons */}
+                <div className="flex gap-2 mt-3">
+                  {!["cancelado", "finalizado"].includes(order.status) && (
+                    <OrderChat orderId={order.id} storeName={order.stores?.name || "Loja"} />
+                  )}
+                  {["entregue", "finalizado"].includes(order.status) && (
+                    <button
+                      onClick={() => {
+                        const { addItem } = useCart();
+                        // We need to navigate to store instead since we can't call hooks here
+                        navigate(`/loja/${order.store_id}`);
+                        toast.info("Adicione os mesmos itens ao carrinho!");
+                      }}
+                      className="flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-lg hover:bg-primary/20 transition-colors"
+                    >
+                      <RefreshCw className="h-3.5 w-3.5" />
+                      Pedir novamente
+                    </button>
+                  )}
+                </div>
+
                 {/* Rating section for delivered/finalized orders */}
                 {["entregue", "finalizado"].includes(order.status) && user && !existingRatings?.has(order.id) && (
                   <div className="mt-3">
