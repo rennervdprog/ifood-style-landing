@@ -784,8 +784,8 @@ const FinanceTab = ({
 
   return (
     <div className="px-4 py-4 space-y-4">
-      {/* Period filter */}
-      <div className="flex gap-2">
+      {/* Period filter + Settings */}
+      <div className="flex gap-2 items-center">
         {(["week", "month"] as const).map(f => (
           <button
             key={f}
@@ -795,7 +795,110 @@ const FinanceTab = ({
             {f === "week" ? "📅 Semana" : "📅 Mês"}
           </button>
         ))}
+        <div className="flex-1" />
+        <button
+          onClick={() => setShowPayoutSettings(!showPayoutSettings)}
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors ${showPayoutSettings ? "bg-yellow-500 text-gray-900" : "bg-[#1E293B] text-gray-400 hover:text-white"}`}
+        >
+          <Settings className="h-3.5 w-3.5" />
+          Modo Repasse
+        </button>
       </div>
+
+      {/* Payout Mode Settings Panel */}
+      {showPayoutSettings && (
+        <div className="bg-[#1E293B] rounded-2xl p-4 border border-yellow-500/30 space-y-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Settings className="h-4 w-4 text-yellow-400" />
+            <h3 className="text-sm font-bold text-white">Configurações de Repasse</h3>
+          </div>
+          <p className="text-xs text-gray-400">
+            Alterne entre repasse manual e automático. O modo automático será ativado quando houver um provedor de pagamento integrado.
+          </p>
+          <p className="text-[10px] text-amber-400 font-bold">
+            ⚠️ Aplica-se apenas a pagamentos via PIX. Dinheiro e cartão continuam no fluxo atual.
+          </p>
+
+          {/* Store Payout */}
+          <div className="flex items-center justify-between bg-[#0F172A] rounded-xl p-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
+                <Store className="h-4 w-4 text-green-400" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-white">Repasse ao Lojista</p>
+                <p className="text-[10px] text-gray-500">85% das vendas app → PIX lojista</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className={`text-[10px] font-bold ${payoutModes.store_payout === "auto" ? "text-green-400" : "text-gray-500"}`}>
+                {payoutModes.store_payout === "auto" ? "AUTO" : "MANUAL"}
+              </span>
+              <Switch
+                checked={payoutModes.store_payout === "auto"}
+                onCheckedChange={() => togglePayoutMode("store_payout")}
+              />
+            </div>
+          </div>
+
+          {/* Driver Payout */}
+          <div className="flex items-center justify-between bg-[#0F172A] rounded-xl p-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center">
+                <Bike className="h-4 w-4 text-amber-400" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-white">Repasse ao Motoboy</p>
+                <p className="text-[10px] text-gray-500">Taxa de entrega → PIX motoboy</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className={`text-[10px] font-bold ${payoutModes.driver_payout === "auto" ? "text-green-400" : "text-gray-500"}`}>
+                {payoutModes.driver_payout === "auto" ? "AUTO" : "MANUAL"}
+              </span>
+              <Switch
+                checked={payoutModes.driver_payout === "auto"}
+                onCheckedChange={() => togglePayoutMode("driver_payout")}
+              />
+            </div>
+          </div>
+
+          {/* Admin Commission */}
+          <div className="flex items-center justify-between bg-[#0F172A] rounded-xl p-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                <DollarSign className="h-4 w-4 text-yellow-400" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-white">Cobrança de Comissão</p>
+                <p className="text-[10px] text-gray-500">15% comissão → cobrar lojista via PIX</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className={`text-[10px] font-bold ${payoutModes.admin_commission === "auto" ? "text-green-400" : "text-gray-500"}`}>
+                {payoutModes.admin_commission === "auto" ? "AUTO" : "MANUAL"}
+              </span>
+              <Switch
+                checked={payoutModes.admin_commission === "auto"}
+                onCheckedChange={() => togglePayoutMode("admin_commission")}
+              />
+            </div>
+          </div>
+
+          {/* Status summary */}
+          <div className="bg-[#0F172A] rounded-xl p-3 text-center">
+            <p className="text-[10px] text-gray-500 mb-1">STATUS DO SISTEMA</p>
+            <p className="text-xs font-bold text-amber-400">
+              {Object.values(payoutModes).every(m => m === "manual") 
+                ? "🔧 Todos os repasses em modo MANUAL"
+                : Object.values(payoutModes).every(m => m === "auto")
+                ? "⚡ Todos os repasses em modo AUTOMÁTICO (aguardando integração)"
+                : "🔄 Configuração mista — alguns manuais, alguns automáticos"
+              }
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Summary cards */}
       {(() => {
