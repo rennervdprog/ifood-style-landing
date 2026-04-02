@@ -9,8 +9,9 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
   ArrowLeft, DollarSign, ShoppingBag, TrendingUp, Clock,
-  Store, Copy, AlertTriangle, Users, Bike, Wallet, CheckCircle2, Banknote, XCircle, Bell, Trash2, QrCode, Loader2, ArrowUpRight, ArrowDownRight
+  Store, Copy, AlertTriangle, Users, Bike, Wallet, CheckCircle2, Banknote, XCircle, Bell, Trash2, QrCode, Loader2, ArrowUpRight, ArrowDownRight, Settings
 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
 } from "recharts";
@@ -635,6 +636,28 @@ const FinanceTab = ({
 }) => {
   const [payingStore, setPayingStore] = useState<string | null>(null);
   const [chargingStore, setChargingStore] = useState<string | null>(null);
+  const [showPayoutSettings, setShowPayoutSettings] = useState(false);
+  
+  // Payout mode preferences (stored locally, preparation for future automation)
+  const [payoutModes, setPayoutModes] = useState(() => {
+    try {
+      const saved = localStorage.getItem("foodita_payout_modes");
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return { store_payout: "manual", driver_payout: "manual", admin_commission: "manual" };
+  });
+
+  const togglePayoutMode = (key: "store_payout" | "driver_payout" | "admin_commission") => {
+    const newModes = { ...payoutModes, [key]: payoutModes[key] === "manual" ? "auto" : "manual" };
+    setPayoutModes(newModes);
+    localStorage.setItem("foodita_payout_modes", JSON.stringify(newModes));
+    const label = key === "store_payout" ? "Repasse Lojista" : key === "driver_payout" ? "Repasse Motoboy" : "Comissão Admin";
+    const mode = newModes[key] === "auto" ? "Automático" : "Manual";
+    toast.success(`${label}: modo ${mode} ativado`);
+    if (newModes[key] === "auto") {
+      toast.info("⚠️ O modo automático será ativado quando houver integração com provedor de pagamento ativo.", { duration: 5000 });
+    }
+  };
 
   // Fetch store owner PIX keys
   const { data: ownerProfiles } = useQuery({
@@ -761,8 +784,8 @@ const FinanceTab = ({
 
   return (
     <div className="px-4 py-4 space-y-4">
-      {/* Period filter */}
-      <div className="flex gap-2">
+      {/* Period filter + Settings */}
+      <div className="flex gap-2 items-center">
         {(["week", "month"] as const).map(f => (
           <button
             key={f}
@@ -772,7 +795,110 @@ const FinanceTab = ({
             {f === "week" ? "📅 Semana" : "📅 Mês"}
           </button>
         ))}
+        <div className="flex-1" />
+        <button
+          onClick={() => setShowPayoutSettings(!showPayoutSettings)}
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors ${showPayoutSettings ? "bg-yellow-500 text-gray-900" : "bg-[#1E293B] text-gray-400 hover:text-white"}`}
+        >
+          <Settings className="h-3.5 w-3.5" />
+          Modo Repasse
+        </button>
       </div>
+
+      {/* Payout Mode Settings Panel */}
+      {showPayoutSettings && (
+        <div className="bg-[#1E293B] rounded-2xl p-4 border border-yellow-500/30 space-y-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Settings className="h-4 w-4 text-yellow-400" />
+            <h3 className="text-sm font-bold text-white">Configurações de Repasse</h3>
+          </div>
+          <p className="text-xs text-gray-400">
+            Alterne entre repasse manual e automático. O modo automático será ativado quando houver um provedor de pagamento integrado.
+          </p>
+          <p className="text-[10px] text-amber-400 font-bold">
+            ⚠️ Aplica-se apenas a pagamentos via PIX. Dinheiro e cartão continuam no fluxo atual.
+          </p>
+
+          {/* Store Payout */}
+          <div className="flex items-center justify-between bg-[#0F172A] rounded-xl p-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
+                <Store className="h-4 w-4 text-green-400" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-white">Repasse ao Lojista</p>
+                <p className="text-[10px] text-gray-500">85% das vendas app → PIX lojista</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className={`text-[10px] font-bold ${payoutModes.store_payout === "auto" ? "text-green-400" : "text-gray-500"}`}>
+                {payoutModes.store_payout === "auto" ? "AUTO" : "MANUAL"}
+              </span>
+              <Switch
+                checked={payoutModes.store_payout === "auto"}
+                onCheckedChange={() => togglePayoutMode("store_payout")}
+              />
+            </div>
+          </div>
+
+          {/* Driver Payout */}
+          <div className="flex items-center justify-between bg-[#0F172A] rounded-xl p-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center">
+                <Bike className="h-4 w-4 text-amber-400" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-white">Repasse ao Motoboy</p>
+                <p className="text-[10px] text-gray-500">Taxa de entrega → PIX motoboy</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className={`text-[10px] font-bold ${payoutModes.driver_payout === "auto" ? "text-green-400" : "text-gray-500"}`}>
+                {payoutModes.driver_payout === "auto" ? "AUTO" : "MANUAL"}
+              </span>
+              <Switch
+                checked={payoutModes.driver_payout === "auto"}
+                onCheckedChange={() => togglePayoutMode("driver_payout")}
+              />
+            </div>
+          </div>
+
+          {/* Admin Commission */}
+          <div className="flex items-center justify-between bg-[#0F172A] rounded-xl p-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                <DollarSign className="h-4 w-4 text-yellow-400" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-white">Cobrança de Comissão</p>
+                <p className="text-[10px] text-gray-500">15% comissão → cobrar lojista via PIX</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className={`text-[10px] font-bold ${payoutModes.admin_commission === "auto" ? "text-green-400" : "text-gray-500"}`}>
+                {payoutModes.admin_commission === "auto" ? "AUTO" : "MANUAL"}
+              </span>
+              <Switch
+                checked={payoutModes.admin_commission === "auto"}
+                onCheckedChange={() => togglePayoutMode("admin_commission")}
+              />
+            </div>
+          </div>
+
+          {/* Status summary */}
+          <div className="bg-[#0F172A] rounded-xl p-3 text-center">
+            <p className="text-[10px] text-gray-500 mb-1">STATUS DO SISTEMA</p>
+            <p className="text-xs font-bold text-amber-400">
+              {Object.values(payoutModes).every(m => m === "manual") 
+                ? "🔧 Todos os repasses em modo MANUAL"
+                : Object.values(payoutModes).every(m => m === "auto")
+                ? "⚡ Todos os repasses em modo AUTOMÁTICO (aguardando integração)"
+                : "🔄 Configuração mista — alguns manuais, alguns automáticos"
+              }
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Summary cards */}
       {(() => {
