@@ -139,7 +139,7 @@ const CheckoutPage = () => {
       for (const [storeId, storeItems] of Object.entries(storeGroups)) {
         const storeSubtotal = storeItems.reduce((s, i) => s + i.price * i.quantity, 0);
         const appFee = Math.round(storeSubtotal * 0.12 * 100) / 100;
-        const storeTotalPrice = storeSubtotal + neighborhoodFee;
+        const storeTotalPrice = Math.max(0, storeSubtotal - couponDiscount + effectiveDeliveryFee);
 
         const changeValue = paymentMethod === "dinheiro" && needsChange ? parseFloat(changeFor) : 0;
         const orderStatus = paymentMethod === "pix" ? "aguardando_pagamento" : "pendente";
