@@ -90,6 +90,27 @@ export type Database = {
           },
         ]
       }
+      admin_settings: {
+        Row: {
+          id: string
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          id?: string
+          key: string
+          updated_at?: string
+          value?: Json
+        }
+        Update: {
+          id?: string
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
       coupon_uses: {
         Row: {
           coupon_id: string
@@ -598,6 +619,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      payout_history: {
+        Row: {
+          admin_user_id: string
+          amount: number
+          created_at: string
+          entity_id: string
+          entity_name: string
+          entity_type: string
+          id: string
+          notes: string | null
+          payout_type: string
+        }
+        Insert: {
+          admin_user_id: string
+          amount?: number
+          created_at?: string
+          entity_id: string
+          entity_name: string
+          entity_type: string
+          id?: string
+          notes?: string | null
+          payout_type?: string
+        }
+        Update: {
+          admin_user_id?: string
+          amount?: number
+          created_at?: string
+          entity_id?: string
+          entity_name?: string
+          entity_type?: string
+          id?: string
+          notes?: string | null
+          payout_type?: string
+        }
+        Relationships: []
       }
       product_addon_groups: {
         Row: {
