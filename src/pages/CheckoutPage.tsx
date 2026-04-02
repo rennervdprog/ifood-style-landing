@@ -92,12 +92,19 @@ const CheckoutPage = () => {
   }
 
   const handleConfirm = async () => {
-    if (!hasAddress) {
+    const useSavedAddr = selectedSavedAddressId && savedAddressData;
+    const finalHasAddress = useSavedAddr || hasAddress;
+    const finalNeighborhood = useSavedAddr ? savedAddressData.neighborhood : (profileNeighborhood || neighborhood);
+    const finalAddress = useSavedAddr
+      ? [savedAddressData.street, savedAddressData.number, savedAddressData.complement, savedAddressData.reference_point ? `Ref: ${savedAddressData.reference_point}` : ""].filter(Boolean).join(", ")
+      : addressString;
+
+    if (!finalHasAddress) {
       setShowAddressModal(true);
       return;
     }
-    if (!neighborhood) {
-      toast.error("Selecione um bairro no seu perfil antes de finalizar.");
+    if (!finalNeighborhood) {
+      toast.error("Selecione um bairro antes de finalizar.");
       return;
     }
     if (!paymentMethod) {
