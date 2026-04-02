@@ -508,6 +508,19 @@ const PedidosPage = () => {
                     R$ {Number(order.total_price).toFixed(2)}
                   </span>
                 </div>
+
+                {/* Rating section for delivered/finalized orders */}
+                {["entregue", "finalizado"].includes(order.status) && user && !existingRatings?.has(order.id) && (
+                  <div className="mt-3">
+                    <OrderRating
+                      orderId={order.id}
+                      storeId={order.store_id}
+                      storeName={order.stores?.name || "Loja"}
+                      userId={user.id}
+                      onRated={() => refetchRatings()}
+                    />
+                  </div>
+                )}
               </div>
             );
           })
