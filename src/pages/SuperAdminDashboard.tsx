@@ -637,20 +637,52 @@ const FinanceTab = ({
   const [payingStore, setPayingStore] = useState<string | null>(null);
   const [chargingStore, setChargingStore] = useState<string | null>(null);
   const [showPayoutSettings, setShowPayoutSettings] = useState(false);
+  const [showPendingPayouts, setShowPendingPayouts] = useState(false);
+  const [markingPaid, setMarkingPaid] = useState<string | null>(null);
   
-  // Payout mode preferences (stored locally, preparation for future automation)
-  const [payoutModes, setPayoutModes] = useState(() => {
-    try {
-      const saved = localStorage.getItem("foodita_payout_modes");
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return { store_payout: "manual", driver_payout: "manual", admin_commission: "manual" };
+  // Payout mode preferences from DB
+  const { data: dbPayoutModes } = useQuery({
+    queryKey: ["admin-payout-modes"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("admin_settings" as any)
+        .select("value")
+        .eq("key", "payout_modes")
+        .single();
+      if (error || !data) return { store_payout: "manual", driver_payout: "manual", admin_commission: "manual" };
+      return (data as any).value as Record<string, string>;
+    },
   });
 
-  const togglePayoutMode = (key: "store_payout" | "driver_payout" | "admin_commission") => {
+  const [payoutModes, setPayoutModes] = useState({ store_payout: "manual", driver_payout: "manual", admin_commission: "manual" });
+
+  useEffect(() => {
+    if (dbPayoutModes) setPayoutModes(dbPayoutModes as any);
+  }, [dbPayoutModes]);
+
+  // Payout history
+  const { data: payoutHistory } = useQuery({
+    queryKey: ["payout-history"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("payout_history" as any)
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) return [];
+      return data as any[];
+    },
+  });
+
+  const togglePayoutMode = async (key: "store_payout" | "driver_payout" | "admin_commission") => {
     const newModes = { ...payoutModes, [key]: payoutModes[key] === "manual" ? "auto" : "manual" };
     setPayoutModes(newModes);
-    localStorage.setItem("foodita_payout_modes", JSON.stringify(newModes));
+    // Persist to DB
+    await supabase
+      .from("admin_settings" as any)
+      .update({ value: newModes, updated_at: new Date().toISOString() } as any)
+      .eq("key", "payout_modes");
+    queryClient.invalidateQueries({ queryKey: ["admin-payout-modes"] });
     const label = key === "store_payout" ? "Repasse Lojista" : key === "driver_payout" ? "Repasse Motoboy" : "Comissão Admin";
     const mode = newModes[key] === "auto" ? "Automático" : "Manual";
     toast.success(`${label}: modo ${mode} ativado`);
@@ -658,6 +690,94 @@ const FinanceTab = ({
       toast.info("⚠️ O modo automático será ativado quando houver integração com provedor de pagamento ativo.", { duration: 5000 });
     }
   };
+
+  // Fetch driver balances for pending payouts
+  const { data: driverBalances } = useQuery({
+    queryKey: ["driver-balances-finance"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("driver_balances").select("*");
+      if (error) return [];
+      return data;
+    },
+  });
+
+  // Mark store as manually paid with history logging
+  const handleMarkStorePaidManually = async (entry: any) => {
+    setMarkingPaid(entry.storeId);
+    try {
+      // Zero the balance
+      const { error } = await supabase
+        .from("store_balances")
+        .upsert({ store_id: entry.storeId, pending_commission: 0, comissao_pendente: 0, repasse_pendente: 0, updated_at: new Date().toISOString() } as any, { onConflict: "store_id" });
+      if (error) throw error;
+
+      // Log to payout_history
+      const { data: userData } = await supabase.auth.getUser();
+      await supabase.from("payout_history" as any).insert({
+        entity_type: "store",
+        entity_id: entry.storeId,
+        entity_name: entry.name,
+        amount: entry.netTransfer > 0 ? entry.netTransfer : entry.commissionDue,
+        payout_type: "manual",
+        notes: `Repasse manual: App R$${entry.netTransfer.toFixed(2)} | Comissão R$${entry.commissionDue.toFixed(2)}`,
+        admin_user_id: userData?.user?.id || "",
+      } as any);
+
+      toast.success(`✅ ${entry.name} marcado como pago! Registrado no histórico.`);
+      queryClient.invalidateQueries({ queryKey: ["store-balances"] });
+      queryClient.invalidateQueries({ queryKey: ["payout-history"] });
+    } catch (err: any) {
+      toast.error("Erro ao marcar como pago.");
+    } finally {
+      setMarkingPaid(null);
+    }
+  };
+
+  // Mark driver as manually paid
+  const handleMarkDriverPaidManually = async (driverEntry: any) => {
+    setMarkingPaid(driverEntry.driverId);
+    try {
+      const { error } = await supabase
+        .from("driver_balances" as any)
+        .update({ pending_amount: 0, paid_amount: driverEntry.appFees, updated_at: new Date().toISOString() } as any)
+        .eq("driver_user_id", driverEntry.driverId);
+      if (error) throw error;
+
+      // Update earnings status
+      await supabase
+        .from("driver_earnings" as any)
+        .update({ status: "pago" } as any)
+        .eq("driver_user_id", driverEntry.driverId)
+        .eq("status", "pendente");
+
+      // Log to payout_history
+      const { data: userData } = await supabase.auth.getUser();
+      await supabase.from("payout_history" as any).insert({
+        entity_type: "driver",
+        entity_id: driverEntry.driverId,
+        entity_name: driverEntry.name,
+        amount: driverEntry.appFees,
+        payout_type: "manual",
+        notes: `Repasse manual motoboy: R$${driverEntry.appFees.toFixed(2)} (${driverEntry.deliveryCount} entregas)`,
+        admin_user_id: userData?.user?.id || "",
+      } as any);
+
+      toast.success(`✅ ${driverEntry.name} marcado como pago!`);
+      queryClient.invalidateQueries({ queryKey: ["driver-balances-finance"] });
+      queryClient.invalidateQueries({ queryKey: ["payout-history"] });
+    } catch (err: any) {
+      toast.error("Erro ao marcar como pago.");
+    } finally {
+      setMarkingPaid(null);
+    }
+  };
+
+  // Pending payouts: stores with balance > 0 + drivers with pending > 0
+  const pendingStorePayouts = storeSettlement.filter(e => e.netTransfer > 0 || e.commissionDue > 0);
+  const pendingDriverPayouts = driverSettlement.filter(e => {
+    const bal = driverBalances?.find((b: any) => b.driver_user_id === e.driverId);
+    return (bal && Number(bal.pending_amount) > 0) || e.appFees > 0;
+  });
 
   // Fetch store owner PIX keys
   const { data: ownerProfiles } = useQuery({
