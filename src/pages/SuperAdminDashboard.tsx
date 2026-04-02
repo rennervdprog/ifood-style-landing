@@ -637,20 +637,52 @@ const FinanceTab = ({
   const [payingStore, setPayingStore] = useState<string | null>(null);
   const [chargingStore, setChargingStore] = useState<string | null>(null);
   const [showPayoutSettings, setShowPayoutSettings] = useState(false);
+  const [showPendingPayouts, setShowPendingPayouts] = useState(false);
+  const [markingPaid, setMarkingPaid] = useState<string | null>(null);
   
-  // Payout mode preferences (stored locally, preparation for future automation)
-  const [payoutModes, setPayoutModes] = useState(() => {
-    try {
-      const saved = localStorage.getItem("foodita_payout_modes");
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return { store_payout: "manual", driver_payout: "manual", admin_commission: "manual" };
+  // Payout mode preferences from DB
+  const { data: dbPayoutModes } = useQuery({
+    queryKey: ["admin-payout-modes"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("admin_settings" as any)
+        .select("value")
+        .eq("key", "payout_modes")
+        .single();
+      if (error || !data) return { store_payout: "manual", driver_payout: "manual", admin_commission: "manual" };
+      return (data as any).value as Record<string, string>;
+    },
   });
 
-  const togglePayoutMode = (key: "store_payout" | "driver_payout" | "admin_commission") => {
+  const [payoutModes, setPayoutModes] = useState({ store_payout: "manual", driver_payout: "manual", admin_commission: "manual" });
+
+  useEffect(() => {
+    if (dbPayoutModes) setPayoutModes(dbPayoutModes as any);
+  }, [dbPayoutModes]);
+
+  // Payout history
+  const { data: payoutHistory } = useQuery({
+    queryKey: ["payout-history"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("payout_history" as any)
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) return [];
+      return data as any[];
+    },
+  });
+
+  const togglePayoutMode = async (key: "store_payout" | "driver_payout" | "admin_commission") => {
     const newModes = { ...payoutModes, [key]: payoutModes[key] === "manual" ? "auto" : "manual" };
     setPayoutModes(newModes);
-    localStorage.setItem("foodita_payout_modes", JSON.stringify(newModes));
+    // Persist to DB
+    await supabase
+      .from("admin_settings" as any)
+      .update({ value: newModes, updated_at: new Date().toISOString() } as any)
+      .eq("key", "payout_modes");
+    queryClient.invalidateQueries({ queryKey: ["admin-payout-modes"] });
     const label = key === "store_payout" ? "Repasse Lojista" : key === "driver_payout" ? "Repasse Motoboy" : "Comissão Admin";
     const mode = newModes[key] === "auto" ? "Automático" : "Manual";
     toast.success(`${label}: modo ${mode} ativado`);
@@ -658,6 +690,94 @@ const FinanceTab = ({
       toast.info("⚠️ O modo automático será ativado quando houver integração com provedor de pagamento ativo.", { duration: 5000 });
     }
   };
+
+  // Fetch driver balances for pending payouts
+  const { data: driverBalances } = useQuery({
+    queryKey: ["driver-balances-finance"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("driver_balances").select("*");
+      if (error) return [];
+      return data;
+    },
+  });
+
+  // Mark store as manually paid with history logging
+  const handleMarkStorePaidManually = async (entry: any) => {
+    setMarkingPaid(entry.storeId);
+    try {
+      // Zero the balance
+      const { error } = await supabase
+        .from("store_balances")
+        .upsert({ store_id: entry.storeId, pending_commission: 0, comissao_pendente: 0, repasse_pendente: 0, updated_at: new Date().toISOString() } as any, { onConflict: "store_id" });
+      if (error) throw error;
+
+      // Log to payout_history
+      const { data: userData } = await supabase.auth.getUser();
+      await supabase.from("payout_history" as any).insert({
+        entity_type: "store",
+        entity_id: entry.storeId,
+        entity_name: entry.name,
+        amount: entry.netTransfer > 0 ? entry.netTransfer : entry.commissionDue,
+        payout_type: "manual",
+        notes: `Repasse manual: App R$${entry.netTransfer.toFixed(2)} | Comissão R$${entry.commissionDue.toFixed(2)}`,
+        admin_user_id: userData?.user?.id || "",
+      } as any);
+
+      toast.success(`✅ ${entry.name} marcado como pago! Registrado no histórico.`);
+      queryClient.invalidateQueries({ queryKey: ["store-balances"] });
+      queryClient.invalidateQueries({ queryKey: ["payout-history"] });
+    } catch (err: any) {
+      toast.error("Erro ao marcar como pago.");
+    } finally {
+      setMarkingPaid(null);
+    }
+  };
+
+  // Mark driver as manually paid
+  const handleMarkDriverPaidManually = async (driverEntry: any) => {
+    setMarkingPaid(driverEntry.driverId);
+    try {
+      const { error } = await supabase
+        .from("driver_balances" as any)
+        .update({ pending_amount: 0, paid_amount: driverEntry.appFees, updated_at: new Date().toISOString() } as any)
+        .eq("driver_user_id", driverEntry.driverId);
+      if (error) throw error;
+
+      // Update earnings status
+      await supabase
+        .from("driver_earnings" as any)
+        .update({ status: "pago" } as any)
+        .eq("driver_user_id", driverEntry.driverId)
+        .eq("status", "pendente");
+
+      // Log to payout_history
+      const { data: userData } = await supabase.auth.getUser();
+      await supabase.from("payout_history" as any).insert({
+        entity_type: "driver",
+        entity_id: driverEntry.driverId,
+        entity_name: driverEntry.name,
+        amount: driverEntry.appFees,
+        payout_type: "manual",
+        notes: `Repasse manual motoboy: R$${driverEntry.appFees.toFixed(2)} (${driverEntry.deliveryCount} entregas)`,
+        admin_user_id: userData?.user?.id || "",
+      } as any);
+
+      toast.success(`✅ ${driverEntry.name} marcado como pago!`);
+      queryClient.invalidateQueries({ queryKey: ["driver-balances-finance"] });
+      queryClient.invalidateQueries({ queryKey: ["payout-history"] });
+    } catch (err: any) {
+      toast.error("Erro ao marcar como pago.");
+    } finally {
+      setMarkingPaid(null);
+    }
+  };
+
+  // Pending payouts: stores with balance > 0 + drivers with pending > 0
+  const pendingStorePayouts = storeSettlement.filter(e => e.netTransfer > 0 || e.commissionDue > 0);
+  const pendingDriverPayouts = driverSettlement.filter(e => {
+    const bal = driverBalances?.find((b: any) => b.driver_user_id === e.driverId);
+    return (bal && Number(bal.pending_amount) > 0) || e.appFees > 0;
+  });
 
   // Fetch store owner PIX keys
   const { data: ownerProfiles } = useQuery({
@@ -805,7 +925,136 @@ const FinanceTab = ({
         </button>
       </div>
 
-      {/* Payout Mode Settings Panel */}
+      {/* Pending Payouts Section */}
+      <div className="space-y-3">
+        <button
+          onClick={() => setShowPendingPayouts(!showPendingPayouts)}
+          className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-colors ${showPendingPayouts ? "bg-amber-500 text-gray-900" : "bg-[#1E293B] text-amber-400 hover:bg-[#1E293B]/80"}`}
+        >
+          <span className="flex items-center gap-2">
+            <Banknote className="h-4 w-4" />
+            Repasses Pendentes ({pendingStorePayouts.length + pendingDriverPayouts.length})
+          </span>
+          <span className="text-xs">{showPendingPayouts ? "▲" : "▼"}</span>
+        </button>
+
+        {showPendingPayouts && (
+          <div className="space-y-3">
+            {/* Pending store payouts */}
+            {pendingStorePayouts.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs text-gray-400 font-bold uppercase tracking-wider px-1">🏪 Lojistas</p>
+                {pendingStorePayouts.map((entry) => {
+                  const balance = storeBalances.find((b: any) => b.store_id === entry.storeId);
+                  const dbComissao = Number((balance as any)?.comissao_pendente || 0);
+                  return (
+                    <div key={entry.storeId} className="bg-[#1E293B] rounded-xl p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Store className="h-4 w-4 text-yellow-400" />
+                          <span className="text-sm font-bold text-white">{entry.name}</span>
+                        </div>
+                        <span className="text-xs text-gray-400">{entry.orderCount} pedidos</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="bg-green-500/10 rounded-lg p-2 text-center">
+                          <p className="text-green-400 text-[10px]">A Pagar (85%)</p>
+                          <p className="text-sm font-bold text-green-400">R$ {entry.netTransfer.toFixed(2)}</p>
+                        </div>
+                        <div className="bg-red-500/10 rounded-lg p-2 text-center">
+                          <p className="text-red-400 text-[10px]">A Receber (15%)</p>
+                          <p className="text-sm font-bold text-red-400">R$ {(dbComissao > 0 ? dbComissao : entry.commissionDue).toFixed(2)}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleMarkStorePaidManually(entry)}
+                        disabled={markingPaid === entry.storeId}
+                        className="w-full flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-500/30 text-white py-2.5 rounded-xl text-xs font-bold active:scale-95 transition-all"
+                      >
+                        {markingPaid === entry.storeId ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                        )}
+                        Marcar como Pago Manualmente
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Pending driver payouts */}
+            {pendingDriverPayouts.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs text-gray-400 font-bold uppercase tracking-wider px-1">🛵 Motoboys</p>
+                {pendingDriverPayouts.map((entry) => (
+                  <div key={entry.driverId} className="bg-[#1E293B] rounded-xl p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Bike className="h-4 w-4 text-amber-400" />
+                        <span className="text-sm font-bold text-white">{entry.name}</span>
+                      </div>
+                      <span className="text-xs text-gray-400">{entry.deliveryCount} entregas</span>
+                    </div>
+                    <div className="bg-amber-500/10 rounded-lg p-2 text-center">
+                      <p className="text-amber-400 text-[10px]">A Pagar (Taxa de Entrega App)</p>
+                      <p className="text-sm font-bold text-amber-400">R$ {entry.appFees.toFixed(2)}</p>
+                    </div>
+                    <button
+                      onClick={() => handleMarkDriverPaidManually(entry)}
+                      disabled={markingPaid === entry.driverId}
+                      className="w-full flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-500/30 text-white py-2.5 rounded-xl text-xs font-bold active:scale-95 transition-all"
+                    >
+                      {markingPaid === entry.driverId ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                      )}
+                      Marcar como Pago Manualmente
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {pendingStorePayouts.length === 0 && pendingDriverPayouts.length === 0 && (
+              <div className="bg-[#1E293B] rounded-xl p-6 text-center">
+                <CheckCircle2 className="h-8 w-8 text-green-400 mx-auto mb-2" />
+                <p className="text-sm text-gray-400">Nenhum repasse pendente!</p>
+              </div>
+            )}
+
+            {/* Payout History */}
+            {payoutHistory && payoutHistory.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs text-gray-400 font-bold uppercase tracking-wider px-1">📋 Histórico de Pagamentos</p>
+                {payoutHistory.slice(0, 10).map((h: any) => (
+                  <div key={h.id} className="bg-[#0F172A] rounded-xl p-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      {h.entity_type === "store" ? (
+                        <Store className="h-3.5 w-3.5 text-yellow-400 flex-shrink-0" />
+                      ) : (
+                        <Bike className="h-3.5 w-3.5 text-amber-400 flex-shrink-0" />
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-white truncate">{h.entity_name}</p>
+                        <p className="text-[10px] text-gray-500">{new Date(h.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</p>
+                      </div>
+                    </div>
+                    <div className="text-right ml-2">
+                      <p className="text-xs font-bold text-green-400">R$ {Number(h.amount).toFixed(2)}</p>
+                      <p className="text-[10px] text-gray-500 uppercase">{h.payout_type}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+
       {showPayoutSettings && (
         <div className="bg-[#1E293B] rounded-2xl p-4 border border-yellow-500/30 space-y-4">
           <div className="flex items-center gap-2 mb-2">
