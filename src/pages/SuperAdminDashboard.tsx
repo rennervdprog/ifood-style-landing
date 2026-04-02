@@ -392,6 +392,7 @@ const SuperAdminDashboard = () => {
           { key: "approvals" as AdminTab, label: "🛡️ Aprovações" },
           { key: "stores" as AdminTab, label: "🏪 Lojas" },
           { key: "sync" as AdminTab, label: "🔄 Sincronizar" },
+          { key: "coupons" as AdminTab, label: "🎟️ Cupons" },
         ]).map(tab => (
           <button
             key={tab.key}
