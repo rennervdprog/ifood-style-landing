@@ -999,7 +999,7 @@ const FinanceTab = ({
       const pixCode = data?.pix_code || data?.qr_code;
       if (pixCode) {
         navigator.clipboard.writeText(pixCode);
-        const providerLabel = data?.provider === "efi_bank" ? "Efí Bank" : data?.provider === "simulated" ? "Simulação" : "Mercado Pago";
+        const providerLabel = data?.provider === "efi_bank" ? "Efí Bank" : data?.provider === "asaas" ? "Asaas" : data?.provider === "simulated" ? "Simulação" : "Mercado Pago";
         toast.success(`${data.reference_code}: Cobrança PIX gerada via ${providerLabel}! Código copiado. R$ ${Number(data.amount || chargeAmount).toFixed(2)}`, { duration: 10000 });
       } else {
         toast.success(`${data.reference_code}: Cobrança registrada. R$ ${Number(data.amount || chargeAmount).toFixed(2)}`);
