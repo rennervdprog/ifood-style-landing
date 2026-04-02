@@ -671,7 +671,7 @@ const FinanceTab = ({
     if (error) {
       toast.error("Erro ao salvar gateway.");
     } else {
-      const labels: Record<string, string> = { MERCADO_PAGO: "Mercado Pago", EFI_BANK: "Efí Bank", SIMULATED: "Simulação" };
+      const labels: Record<string, string> = { MERCADO_PAGO: "Mercado Pago", EFI_BANK: "Efí Bank", ASAAS: "Asaas", SIMULATED: "Simulação" };
       toast.success(`✅ Gateway ativo: ${labels[provider] || provider}`);
       queryClient.invalidateQueries({ queryKey: ["payment-gateway"] });
     }
