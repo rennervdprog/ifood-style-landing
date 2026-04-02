@@ -9,6 +9,7 @@ import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Edit3 } from "lucide-r
 import confetti from "canvas-confetti";
 import AddressModal from "@/components/AddressModal";
 import SavedAddressPicker from "@/components/SavedAddressPicker";
+import CouponInput from "@/components/CouponInput";
 
 const paymentMethods = [
   { id: "pix", label: "PIX Online (Mercado Pago)", icon: QrCode },
