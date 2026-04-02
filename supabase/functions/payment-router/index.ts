@@ -115,10 +115,135 @@ async function createMercadoPagoPix(params: {
   return { ok: res.ok, data, status: res.status, suspended };
 }
 
+// ── Provider: Asaas ──────────────────────────────────────────────────
+
+async function createAsaasPix(params: {
+  amount: number;
+  description: string;
+  payerCpf: string;
+  payerName: string;
+  externalReference: string;
+  expiresAt?: string;
+}): Promise<{ ok: boolean; data: any; status: number }> {
+  const apiKey = Deno.env.get("ASAAS_API_KEY");
+  if (!apiKey) {
+    return { ok: false, data: { message: "ASAAS_API_KEY não configurado." }, status: 500 };
+  }
+
+  // Asaas uses sandbox or production URL based on key prefix
+  const baseUrl = apiKey.startsWith("$aact_")
+    ? "https://api.asaas.com/v3"
+    : "https://sandbox.asaas.com/api/v3";
+
+  try {
+    // Step 1: Find or create customer by CPF
+    const cleanCpf = params.payerCpf.replace(/\D/g, "");
+    let customerId: string | null = null;
+
+    const searchRes = await fetch(`${baseUrl}/customers?cpfCnpj=${cleanCpf}`, {
+      headers: { "access_token": apiKey },
+    });
+
+    if (searchRes.ok) {
+      const searchData = await searchRes.json();
+      if (searchData.data && searchData.data.length > 0) {
+        customerId = searchData.data[0].id;
+      }
+    }
+
+    if (!customerId) {
+      const createCustomerRes = await fetch(`${baseUrl}/customers`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "access_token": apiKey,
+        },
+        body: JSON.stringify({
+          name: params.payerName || "Cliente FoodIta",
+          cpfCnpj: cleanCpf,
+        }),
+      });
+
+      if (!createCustomerRes.ok) {
+        const errData = await createCustomerRes.text();
+        console.error("Asaas create customer error:", createCustomerRes.status, errData);
+        return { ok: false, data: { message: "Erro ao criar cliente no Asaas." }, status: createCustomerRes.status };
+      }
+
+      const customerData = await createCustomerRes.json();
+      customerId = customerData.id;
+    }
+
+    // Step 2: Create payment
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 1); // Due tomorrow (Asaas requires future date)
+    const dueDateStr = dueDate.toISOString().split("T")[0];
+
+    const paymentBody = {
+      customer: customerId,
+      billingType: "PIX",
+      value: params.amount,
+      dueDate: dueDateStr,
+      description: params.description.substring(0, 500),
+      externalReference: params.externalReference,
+    };
+
+    console.log("Asaas creating PIX payment...");
+    const paymentRes = await fetch(`${baseUrl}/payments`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "access_token": apiKey,
+      },
+      body: JSON.stringify(paymentBody),
+    });
+
+    if (!paymentRes.ok) {
+      const errData = await paymentRes.text();
+      console.error("Asaas payment error:", paymentRes.status, errData);
+      return { ok: false, data: { message: `Erro ao criar pagamento Asaas: ${paymentRes.status}` }, status: paymentRes.status };
+    }
+
+    const paymentData = await paymentRes.json();
+    const paymentId = paymentData.id;
+    console.log("Asaas payment created:", paymentId, "status:", paymentData.status);
+
+    // Step 3: Get PIX QR Code
+    const pixRes = await fetch(`${baseUrl}/payments/${paymentId}/pixQrCode`, {
+      headers: { "access_token": apiKey },
+    });
+
+    let pixCode: string | null = null;
+    let qrCodeBase64: string | null = null;
+
+    if (pixRes.ok) {
+      const pixData = await pixRes.json();
+      pixCode = pixData.payload || null;
+      qrCodeBase64 = pixData.encodedImage ? `data:image/png;base64,${pixData.encodedImage}` : null;
+      console.log("Asaas QR code obtained");
+    } else {
+      console.warn("Asaas QR code fetch failed:", pixRes.status);
+    }
+
+    return {
+      ok: true,
+      data: {
+        pix_code: pixCode,
+        qr_code_url: qrCodeBase64,
+        payment_id: paymentId,
+        status: paymentData.status || "PENDING",
+      },
+      status: 200,
+    };
+  } catch (err) {
+    console.error("Asaas exception:", err);
+    return { ok: false, data: { message: "Erro interno ao processar pagamento Asaas." }, status: 500 };
+  }
+}
+
 // ── Provider: Efí Bank (Full mTLS Implementation) ────────────────────
 
 function getEfiHttpClient(): Deno.HttpClient | null {
-  // Try separate clean secrets first, then fallback to combined PEM
   let certPem = "";
   let keyPem = "";
 
@@ -134,7 +259,6 @@ function getEfiHttpClient(): Deno.HttpClient | null {
     }
   }
 
-  // Fallback to combined PEM
   if (!certPem || !keyPem) {
     const pemBase64 = Deno.env.get("EFI_CERTIFICATE_PEM_BASE64");
     if (!pemBase64) {
@@ -214,7 +338,7 @@ async function createEfiBankPix(params: {
   if (!httpClient) {
     return {
       ok: false,
-      data: { message: "Certificado mTLS da Efí não configurado. Configure EFI_CERTIFICATE_PEM_BASE64." },
+      data: { message: "Certificado mTLS da Efí não configurado." },
       status: 500,
     };
   }
@@ -231,18 +355,13 @@ async function createEfiBankPix(params: {
   }
 
   try {
-    // Step 1: Create immediate charge (cob)
     const expirationSeconds = params.expiresAt
       ? Math.max(60, Math.floor((new Date(params.expiresAt).getTime() - Date.now()) / 1000))
-      : 300; // 5 minutes default
+      : 300;
 
     const cobBody = {
-      calendario: {
-        expiracao: expirationSeconds,
-      },
-      valor: {
-        original: params.amount.toFixed(2),
-      },
+      calendario: { expiracao: expirationSeconds },
+      valor: { original: params.amount.toFixed(2) },
       chave: Deno.env.get("EFI_PIX_KEY") || "",
       infoAdicionais: [
         { nome: "Pedido", valor: params.externalReference.substring(0, 200) },
@@ -278,16 +397,13 @@ async function createEfiBankPix(params: {
     const loc = cobData.loc;
     console.log("Efí cob created:", txid, "status:", cobData.status);
 
-    // Step 2: Get QR Code from loc
     let qrCode = null;
     let qrCodeBase64 = null;
 
     if (loc?.id) {
       const qrRes = await fetch(`https://pix.api.efipay.com.br/v2/loc/${loc.id}/qrcode`, {
         method: "GET",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: { Authorization: `Bearer ${accessToken}` },
         // @ts-ignore Deno-specific mTLS client
         client: httpClient,
       });
@@ -302,7 +418,6 @@ async function createEfiBankPix(params: {
       }
     }
 
-    // If no QR from loc, try pixCopiaECola from cob response
     if (!qrCode && cobData.pixCopiaECola) {
       qrCode = cobData.pixCopiaECola;
     }
@@ -356,10 +471,9 @@ function createSimulatedPix(params: {
 
 // ── Helper: resolve active provider ──────────────────────────────────
 
-type Provider = "MERCADO_PAGO" | "EFI_BANK" | "SIMULATED";
+type Provider = "MERCADO_PAGO" | "EFI_BANK" | "ASAAS" | "SIMULATED";
 
 async function getActiveProviderFromDB(): Promise<Provider> {
-  // First check DB setting, then env var
   try {
     const serviceClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -374,6 +488,7 @@ async function getActiveProviderFromDB(): Promise<Provider> {
     if (data?.value) {
       const val = ((data.value as any)?.provider || "").toUpperCase().trim();
       if (val === "EFI_BANK") return "EFI_BANK";
+      if (val === "ASAAS") return "ASAAS";
       if (val === "SIMULATED") return "SIMULATED";
       if (val === "MERCADO_PAGO") return "MERCADO_PAGO";
     }
@@ -383,6 +498,7 @@ async function getActiveProviderFromDB(): Promise<Provider> {
 
   const env = (Deno.env.get("ACTIVE_PAYMENT_PROVIDER") || "").toUpperCase().trim();
   if (env === "EFI_BANK") return "EFI_BANK";
+  if (env === "ASAAS") return "ASAAS";
   if (env === "SIMULATED") return "SIMULATED";
   return "MERCADO_PAGO";
 }
@@ -393,6 +509,10 @@ function hasEfiCredentials(): boolean {
 
 function hasMpCredentials(): boolean {
   return !!Deno.env.get("MERCADO_PAGO_ACCESS_TOKEN");
+}
+
+function hasAsaasCredentials(): boolean {
+  return !!Deno.env.get("ASAAS_API_KEY");
 }
 
 // ── Route: order PIX ─────────────────────────────────────────────────
@@ -455,13 +575,14 @@ async function handleCommissionCharge(
 
   if (storeError || !store) return json({ error: "Loja não encontrada" }, 404);
 
-  const isAdmin = userEmail === "vinivias13@gmail.com";
-  if (store.owner_id !== userId && !isAdmin) return json({ error: "Sem permissão" }, 403);
-
   const serviceClient = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
+
+  // Check admin via DB function
+  const { data: isAdmin } = await serviceClient.rpc("is_platform_admin", { _user_id: userId });
+  if (store.owner_id !== userId && !isAdmin) return json({ error: "Sem permissão" }, 403);
 
   const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
   const { data: existingCharge } = await serviceClient
@@ -546,10 +667,16 @@ async function handleCommissionCharge(
 async function handleStorePayout(
   body: z.infer<typeof StorePayoutSchema>,
   userId: string,
-  userEmail: string,
+  _userEmail: string,
   supabase: any,
 ): Promise<Response> {
-  const isAdmin = userEmail === "vinivias13@gmail.com";
+  const serviceClient = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  );
+
+  // Check admin via DB function instead of hardcoded email
+  const { data: isAdmin } = await serviceClient.rpc("is_platform_admin", { _user_id: userId });
   if (!isAdmin) return json({ error: "Apenas o administrador pode realizar repasses." }, 403);
 
   const { store_id, amount, pix_key, pix_type } = body;
@@ -562,11 +689,6 @@ async function handleStorePayout(
 
   if (storeError || !store) return json({ error: "Loja não encontrada" }, 404);
 
-  const serviceClient = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-  );
-
   const { data: refData } = await serviceClient.rpc("generate_financial_reference", { _prefix: "REP" });
   const referenceCode = refData || `#REP-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
   const desc = `Repasse FoodIta - ${store.name} - ${referenceCode}`;
@@ -575,7 +697,7 @@ async function handleStorePayout(
   const result = await routePixCreation({
     amount: Number(amount.toFixed(2)),
     description: desc.substring(0, 256),
-    payerEmail: userEmail || "admin@foodita.com",
+    payerEmail: _userEmail || "admin@foodita.com",
     payerFirstName: "FoodIta",
     payerLastName: "Admin",
     payerCpf: "00000000000",
@@ -646,6 +768,56 @@ async function routePixCreation(params: {
     return json(sim);
   }
 
+  // ── Asaas (primary) ──
+  if (provider === "ASAAS") {
+    const asaasResult = await createAsaasPix({
+      amount: params.amount,
+      description: params.description,
+      payerCpf: params.payerCpf,
+      payerName: `${params.payerFirstName} ${params.payerLastName}`.trim(),
+      externalReference: params.externalReference,
+      expiresAt: params.expiresAt,
+    });
+
+    if (asaasResult.ok) {
+      const resp: StandardPixResponse = {
+        status: "pending",
+        pix_code: asaasResult.data?.pix_code || null,
+        qr_code_url: asaasResult.data?.qr_code_url || null,
+        provider: "asaas",
+        reference_code: params.externalReference,
+        payment_id: asaasResult.data?.payment_id || null,
+        amount: params.amount,
+        created_at: new Date().toISOString(),
+        expires_at: params.expiresAt || null,
+      };
+      return json(resp);
+    }
+
+    // Asaas failed → fallback to Mercado Pago
+    if (hasMpCredentials()) {
+      console.warn("Asaas failed, falling back to Mercado Pago");
+      const mpResult = await createMercadoPagoPix(params);
+      if (mpResult.ok) {
+        const pix = mpResult.data.point_of_interaction?.transaction_data;
+        const resp: StandardPixResponse = {
+          status: mpResult.data.status || "pending",
+          pix_code: pix?.qr_code || null,
+          qr_code_url: pix?.qr_code_base64 || null,
+          provider: "mercado_pago",
+          reference_code: params.externalReference,
+          payment_id: String(mpResult.data.id),
+          amount: params.amount,
+          created_at: new Date().toISOString(),
+          expires_at: params.expiresAt || null,
+        };
+        return json(resp);
+      }
+    }
+
+    return json({ error: "Erro ao gerar PIX via Asaas.", provider: "asaas" }, 500);
+  }
+
   // ── Efí Bank (primary) ──
   if (provider === "EFI_BANK") {
     const efiResult = await createEfiBankPix({
@@ -670,7 +842,33 @@ async function routePixCreation(params: {
       return json(resp);
     }
 
-    // Efí failed → fallback to Mercado Pago
+    // Efí failed → fallback to Asaas then Mercado Pago
+    if (hasAsaasCredentials()) {
+      console.warn("Efí Bank failed, falling back to Asaas");
+      const asaasResult = await createAsaasPix({
+        amount: params.amount,
+        description: params.description,
+        payerCpf: params.payerCpf,
+        payerName: `${params.payerFirstName} ${params.payerLastName}`.trim(),
+        externalReference: params.externalReference,
+        expiresAt: params.expiresAt,
+      });
+      if (asaasResult.ok) {
+        const resp: StandardPixResponse = {
+          status: "pending",
+          pix_code: asaasResult.data?.pix_code || null,
+          qr_code_url: asaasResult.data?.qr_code_url || null,
+          provider: "asaas",
+          reference_code: params.externalReference,
+          payment_id: asaasResult.data?.payment_id || null,
+          amount: params.amount,
+          created_at: new Date().toISOString(),
+          expires_at: params.expiresAt || null,
+        };
+        return json(resp);
+      }
+    }
+
     if (hasMpCredentials()) {
       console.warn("Efí Bank failed, falling back to Mercado Pago");
       const mpResult = await createMercadoPagoPix(params);
@@ -718,29 +916,56 @@ async function routePixCreation(params: {
       return json({ error: "Sistema de pagamentos temporariamente indisponível.", rate_limited: true }, 429);
     }
 
-    // Suspended / auth failure → failover to Efí
-    if (mpResult.suspended && hasEfiCredentials()) {
-      console.warn("Mercado Pago suspended/auth failure, falling back to Efí Bank");
-      const efiResult = await createEfiBankPix({
-        amount: params.amount,
-        description: params.description,
-        externalReference: params.externalReference,
-        expiresAt: params.expiresAt,
-      });
-
-      if (efiResult.ok) {
-        const resp: StandardPixResponse = {
-          status: "pending",
-          pix_code: efiResult.data?.pix_code || null,
-          qr_code_url: efiResult.data?.qr_code_url || null,
-          provider: "efi_bank",
-          reference_code: params.externalReference,
-          payment_id: efiResult.data?.payment_id || null,
+    // Suspended → failover to Asaas then Efí
+    if (mpResult.suspended) {
+      if (hasAsaasCredentials()) {
+        console.warn("Mercado Pago suspended, falling back to Asaas");
+        const asaasResult = await createAsaasPix({
           amount: params.amount,
-          created_at: new Date().toISOString(),
-          expires_at: params.expiresAt || null,
-        };
-        return json(resp);
+          description: params.description,
+          payerCpf: params.payerCpf,
+          payerName: `${params.payerFirstName} ${params.payerLastName}`.trim(),
+          externalReference: params.externalReference,
+          expiresAt: params.expiresAt,
+        });
+        if (asaasResult.ok) {
+          const resp: StandardPixResponse = {
+            status: "pending",
+            pix_code: asaasResult.data?.pix_code || null,
+            qr_code_url: asaasResult.data?.qr_code_url || null,
+            provider: "asaas",
+            reference_code: params.externalReference,
+            payment_id: asaasResult.data?.payment_id || null,
+            amount: params.amount,
+            created_at: new Date().toISOString(),
+            expires_at: params.expiresAt || null,
+          };
+          return json(resp);
+        }
+      }
+
+      if (hasEfiCredentials()) {
+        console.warn("Mercado Pago suspended, falling back to Efí Bank");
+        const efiResult = await createEfiBankPix({
+          amount: params.amount,
+          description: params.description,
+          externalReference: params.externalReference,
+          expiresAt: params.expiresAt,
+        });
+        if (efiResult.ok) {
+          const resp: StandardPixResponse = {
+            status: "pending",
+            pix_code: efiResult.data?.pix_code || null,
+            qr_code_url: efiResult.data?.qr_code_url || null,
+            provider: "efi_bank",
+            reference_code: params.externalReference,
+            payment_id: efiResult.data?.payment_id || null,
+            amount: params.amount,
+            created_at: new Date().toISOString(),
+            expires_at: params.expiresAt || null,
+          };
+          return json(resp);
+        }
       }
     }
 
