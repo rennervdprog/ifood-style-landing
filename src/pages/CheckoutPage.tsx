@@ -195,44 +195,52 @@ const CheckoutPage = () => {
       </header>
 
       <div className="px-4 py-4 space-y-6">
-        {/* Delivery address - auto-loaded from profile */}
+        {/* Delivery address */}
         <div>
           <h2 className="text-sm font-bold text-foreground mb-2 flex items-center gap-1.5">
             <MapPin className="h-4 w-4 text-primary" />
             Endereço de entrega
           </h2>
-          {hasAddress ? (
+
+          {/* Saved addresses picker */}
+          <div className="mb-3">
+            <SavedAddressPicker
+              selectedId={selectedSavedAddressId || undefined}
+              onSelect={(addr) => {
+                setSelectedSavedAddressId(addr.id);
+                setSavedAddressData(addr);
+                // Sync neighborhood fee
+                if (neighborhoodFees) {
+                  const found = neighborhoodFees.find((n: any) => n.name === addr.neighborhood);
+                  if (found) setNeighborhood(found.name, found.fee);
+                }
+              }}
+            />
+          </div>
+
+          {/* Fallback to profile address */}
+          {!selectedSavedAddressId && hasAddress ? (
             <div className="bg-card rounded-xl border border-border p-3 space-y-1">
               <p className="text-sm font-bold text-foreground">
                 {profileStreet}, {profileNumber}
                 {profileComplement ? ` - ${profileComplement}` : ""}
               </p>
-              <p className="text-sm text-foreground">
-                {profileNeighborhood}
-              </p>
+              <p className="text-sm text-foreground">{profileNeighborhood}</p>
               {profileReference && (
-                <p className="text-xs text-muted-foreground">
-                  📍 Ref: {profileReference}
-                </p>
+                <p className="text-xs text-muted-foreground">📍 Ref: {profileReference}</p>
               )}
               <div className="flex items-center justify-between pt-1">
                 <span className="text-xs font-bold text-primary">
                   Taxa de entrega: R$ {neighborhoodFee.toFixed(2)}
                 </span>
-                <button
-                  onClick={() => navigate("/perfil")}
-                  className="text-xs text-primary flex items-center gap-1 hover:underline"
-                >
-                  <Edit3 className="h-3 w-3" />
-                  Alterar
+                <button onClick={() => navigate("/perfil")} className="text-xs text-primary flex items-center gap-1 hover:underline">
+                  <Edit3 className="h-3 w-3" /> Alterar
                 </button>
               </div>
             </div>
-          ) : (
+          ) : !selectedSavedAddressId && !hasAddress ? (
             <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 text-center">
-              <p className="text-sm font-bold text-yellow-600 mb-2">
-                📍 Endereço não cadastrado
-              </p>
+              <p className="text-sm font-bold text-yellow-600 mb-2">📍 Endereço não cadastrado</p>
               <p className="text-xs text-muted-foreground mb-3">
                 Precisamos do seu endereço para entregar pelo FoodIta.
               </p>
@@ -243,7 +251,7 @@ const CheckoutPage = () => {
                 Cadastrar Endereço
               </button>
             </div>
-          )}
+          ) : null}
         </div>
 
         {/* Payment method */}
