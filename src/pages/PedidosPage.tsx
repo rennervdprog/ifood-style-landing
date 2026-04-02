@@ -7,6 +7,8 @@ import BottomNav from "@/components/BottomNav";
 import { ClipboardList, Clock, ChefHat, Truck, CheckCircle2, Lock, Copy, QrCode, XCircle, X, Loader2, Trash2, ShieldAlert, AlertCircle, TimerReset } from "lucide-react";
 import { toast } from "sonner";
 import { notifyOrderPreparing, notifyOrderOnTheWay, notifyOrderDelivered } from "@/lib/notifications";
+import OrderRating from "@/components/OrderRating";
+import DeliveryTimeEstimate from "@/components/DeliveryTimeEstimate";
 import {
   recordPixAttempt,
   resetPixAttempts,
