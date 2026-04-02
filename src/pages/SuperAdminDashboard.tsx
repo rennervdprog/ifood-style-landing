@@ -1130,9 +1130,92 @@ const FinanceTab = ({
             <Settings className="h-4 w-4 text-yellow-400" />
             <h3 className="text-sm font-bold text-white">Configurações de Repasse</h3>
           </div>
-          <p className="text-xs text-gray-400">
-            Alterne entre repasse manual e automático. O modo automático será ativado quando houver um provedor de pagamento integrado.
-          </p>
+
+          {/* Weekly Auto-Payout Schedule */}
+          <div className="bg-[#0F172A] rounded-xl p-4 space-y-3 border border-blue-500/20">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center">
+                  <Clock className="h-4 w-4 text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-white">📅 Repasse Automático Semanal</p>
+                  <p className="text-[10px] text-gray-500">Calcula e envia todos os repasses pendentes automaticamente</p>
+                </div>
+              </div>
+              <Switch
+                checked={payoutSchedule.enabled}
+                onCheckedChange={(checked) => savePayoutSchedule({ ...payoutSchedule, enabled: checked })}
+              />
+            </div>
+            {payoutSchedule.enabled && (
+              <div className="space-y-2">
+                <label className="text-xs text-gray-400">Dia da semana para repasse:</label>
+                <select
+                  value={payoutSchedule.day_of_week}
+                  onChange={(e) => savePayoutSchedule({ ...payoutSchedule, day_of_week: Number(e.target.value) })}
+                  className="w-full bg-[#1E293B] text-white border border-gray-700 rounded-xl px-4 py-2.5 text-sm"
+                >
+                  <option value={0}>Domingo</option>
+                  <option value={1}>Segunda-feira</option>
+                  <option value={2}>Terça-feira</option>
+                  <option value={3}>Quarta-feira</option>
+                  <option value={4}>Quinta-feira</option>
+                  <option value={5}>Sexta-feira</option>
+                  <option value={6}>Sábado</option>
+                </select>
+                <p className="text-[10px] text-blue-400">
+                  ⚡ Toda {["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"][payoutSchedule.day_of_week]}, o sistema calculará os saldos e processará os repasses PIX automaticamente para lojistas e motoboys.
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Withdrawal Limits */}
+          <div className="bg-[#0F172A] rounded-xl p-4 space-y-3 border border-amber-500/20">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center">
+                <AlertTriangle className="h-4 w-4 text-amber-400" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-white">🔒 Limites de Solicitação de Saque</p>
+                <p className="text-[10px] text-gray-500">Controle quantas vezes motoboys podem solicitar saque por semana</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] text-gray-400 mb-1 block">Máx. saques/semana</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={7}
+                  value={withdrawalLimits.max_per_week}
+                  onChange={(e) => setWithdrawalLimits(prev => ({ ...prev, max_per_week: Math.max(1, Math.min(7, Number(e.target.value))) }))}
+                  className="w-full bg-[#1E293B] text-white border border-gray-700 rounded-xl px-3 py-2 text-sm text-center"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] text-gray-400 mb-1 block">Valor mínimo (R$)</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={500}
+                  step={1}
+                  value={withdrawalLimits.min_amount}
+                  onChange={(e) => setWithdrawalLimits(prev => ({ ...prev, min_amount: Math.max(1, Number(e.target.value)) }))}
+                  className="w-full bg-[#1E293B] text-white border border-gray-700 rounded-xl px-3 py-2 text-sm text-center"
+                />
+              </div>
+            </div>
+            <button
+              onClick={saveWithdrawalLimits}
+              disabled={savingLimits}
+              className="w-full bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-gray-900 font-bold py-2.5 rounded-xl text-xs active:scale-95 transition-all"
+            >
+              {savingLimits ? "Salvando..." : "💾 Salvar Limites"}
+            </button>
+          </div>
+
           <p className="text-[10px] text-amber-400 font-bold">
             ⚠️ Aplica-se apenas a pagamentos via PIX. Dinheiro e cartão continuam no fluxo atual.
           </p>
@@ -1207,11 +1290,9 @@ const FinanceTab = ({
           <div className="bg-[#0F172A] rounded-xl p-3 text-center">
             <p className="text-[10px] text-gray-500 mb-1">STATUS DO SISTEMA</p>
             <p className="text-xs font-bold text-amber-400">
-              {Object.values(payoutModes).every(m => m === "manual") 
-                ? "🔧 Todos os repasses em modo MANUAL"
-                : Object.values(payoutModes).every(m => m === "auto")
-                ? "⚡ Todos os repasses em modo AUTOMÁTICO (aguardando integração)"
-                : "🔄 Configuração mista — alguns manuais, alguns automáticos"
+              {payoutSchedule.enabled
+                ? `📅 Repasse automático toda ${["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"][payoutSchedule.day_of_week]} | Limite: ${withdrawalLimits.max_per_week}x/semana, mín R$${withdrawalLimits.min_amount}`
+                : `🔧 Repasses em modo manual | Limite: ${withdrawalLimits.max_per_week}x/semana, mín R$${withdrawalLimits.min_amount}`
               }
             </p>
           </div>
