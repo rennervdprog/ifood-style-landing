@@ -640,6 +640,43 @@ const FinanceTab = ({
   const [showPendingPayouts, setShowPendingPayouts] = useState(false);
   const [markingPaid, setMarkingPaid] = useState<string | null>(null);
   const [savingLimits, setSavingLimits] = useState(false);
+  const [savingGateway, setSavingGateway] = useState(false);
+
+  // Payment gateway setting from DB
+  const { data: dbGateway } = useQuery({
+    queryKey: ["payment-gateway"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("admin_settings" as any)
+        .select("value")
+        .eq("key", "payment_gateway")
+        .single();
+      if (error || !data) return { provider: "MERCADO_PAGO" };
+      return (data as any).value as { provider: string };
+    },
+  });
+
+  const [gatewayProvider, setGatewayProvider] = useState("MERCADO_PAGO");
+
+  useEffect(() => {
+    if (dbGateway) setGatewayProvider((dbGateway as any).provider || "MERCADO_PAGO");
+  }, [dbGateway]);
+
+  const saveGateway = async (provider: string) => {
+    setSavingGateway(true);
+    setGatewayProvider(provider);
+    const { error } = await supabase
+      .from("admin_settings" as any)
+      .upsert({ key: "payment_gateway", value: { provider }, updated_at: new Date().toISOString() } as any, { onConflict: "key" });
+    if (error) {
+      toast.error("Erro ao salvar gateway.");
+    } else {
+      const labels: Record<string, string> = { MERCADO_PAGO: "Mercado Pago", EFI_BANK: "Efí Bank", SIMULATED: "Simulação" };
+      toast.success(`✅ Gateway ativo: ${labels[provider] || provider}`);
+      queryClient.invalidateQueries({ queryKey: ["payment-gateway"] });
+    }
+    setSavingGateway(false);
+  };
 
   // Withdrawal limits from DB
   const { data: dbWithdrawalLimits } = useQuery({
