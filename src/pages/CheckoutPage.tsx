@@ -349,7 +349,7 @@ const CheckoutPage = () => {
                   />
                   {changeFor && parseFloat(changeFor) >= finalTotal && (
                     <p className="text-xs text-muted-foreground mt-1">
-                      Troco: <span className="font-bold text-foreground">R$ {(parseFloat(changeFor) - total).toFixed(2)}</span>
+                      Troco: <span className="font-bold text-foreground">R$ {(parseFloat(changeFor) - finalTotal).toFixed(2)}</span>
                     </p>
                   )}
                 </div>
