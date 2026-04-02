@@ -366,6 +366,36 @@ export type Database = {
           },
         ]
       }
+      order_ratings: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          order_id: string
+          rating: number
+          store_id: string
+          user_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          order_id: string
+          rating: number
+          store_id: string
+          user_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          order_id?: string
+          rating?: number
+          store_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           address_details: string
@@ -599,6 +629,45 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_addresses: {
+        Row: {
+          complement: string | null
+          created_at: string
+          id: string
+          is_default: boolean
+          label: string
+          neighborhood: string
+          number: string
+          reference_point: string | null
+          street: string
+          user_id: string
+        }
+        Insert: {
+          complement?: string | null
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          label?: string
+          neighborhood: string
+          number: string
+          reference_point?: string | null
+          street: string
+          user_id: string
+        }
+        Update: {
+          complement?: string | null
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          label?: string
+          neighborhood?: string
+          number?: string
+          reference_point?: string | null
+          street?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       store_balances: {
         Row: {
           comissao_pendente: number
@@ -709,7 +778,30 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      delivery_contacts: {
+        Row: {
+          full_name: string | null
+          neighborhood: string | null
+          phone: string | null
+          user_id: string | null
+          whatsapp_number: string | null
+        }
+        Insert: {
+          full_name?: string | null
+          neighborhood?: string | null
+          phone?: string | null
+          user_id?: string | null
+          whatsapp_number?: string | null
+        }
+        Update: {
+          full_name?: string | null
+          neighborhood?: string | null
+          phone?: string | null
+          user_id?: string | null
+          whatsapp_number?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       admin_approve_partner: {
