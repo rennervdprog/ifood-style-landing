@@ -27,6 +27,13 @@ const CheckoutPage = () => {
   const [changeFor, setChangeFor] = useState("");
   const [selectedSavedAddressId, setSelectedSavedAddressId] = useState<string | null>(null);
   const [savedAddressData, setSavedAddressData] = useState<any>(null);
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [couponId, setCouponId] = useState<string | null>(null);
+  const [couponCode, setCouponCode] = useState<string | null>(null);
+  const [couponType, setCouponType] = useState<string | null>(null);
+
+  const effectiveDeliveryFee = couponType === "free_shipping" ? 0 : neighborhoodFee;
+  const finalTotal = Math.max(0, subtotal - couponDiscount + effectiveDeliveryFee);
 
   // Load user profile with address
   const { data: userProfile, refetch: refetchProfile } = useQuery({
