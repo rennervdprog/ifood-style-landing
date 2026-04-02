@@ -293,12 +293,9 @@ const PedidosPage = () => {
     setSimulatingPayment(true);
     try {
       await simulatePaymentDelay();
-      // Update order status from aguardando_pagamento to pendente
+      // Update order status from aguardando_pagamento to pendente via secure RPC
       const { error } = await supabase
-        .from("orders")
-        .update({ status: "pendente" as any })
-        .eq("id", pixModal.orderId)
-        .eq("client_id", user.id);
+        .rpc("confirm_order_payment", { _order_id: pixModal.orderId });
       if (error) throw error;
       toast.success("[SIMULAÇÃO] Pagamento confirmado! Pedido enviado à loja.");
       setPixModal(null);
