@@ -519,8 +519,6 @@ const PedidosPage = () => {
                   {["entregue", "finalizado"].includes(order.status) && (
                     <button
                       onClick={() => {
-                        const { addItem } = useCart();
-                        // We need to navigate to store instead since we can't call hooks here
                         navigate(`/loja/${order.store_id}`);
                         toast.info("Adicione os mesmos itens ao carrinho!");
                       }}
