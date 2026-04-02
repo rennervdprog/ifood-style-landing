@@ -358,6 +358,31 @@ const CheckoutPage = () => {
           )}
         </div>
 
+        {/* Coupon */}
+        <div>
+          <h2 className="text-sm font-bold text-foreground mb-2 flex items-center gap-1.5">
+            🎟️ Cupom de desconto
+          </h2>
+          <CouponInput
+            subtotal={subtotal}
+            storeId={items[0]?.store_id}
+            onApply={(discount, id, code, type) => {
+              setCouponDiscount(discount);
+              setCouponId(id);
+              setCouponCode(code);
+              setCouponType(type);
+            }}
+            onRemove={() => {
+              setCouponDiscount(0);
+              setCouponId(null);
+              setCouponCode(null);
+              setCouponType(null);
+            }}
+            appliedCode={couponCode}
+            appliedDiscount={couponDiscount}
+          />
+        </div>
+
         {/* Order summary */}
         <div className="border-t border-border pt-4 space-y-2">
           <h2 className="text-sm font-bold text-foreground mb-2">Resumo</h2>
@@ -375,13 +400,27 @@ const CheckoutPage = () => {
             <span className="text-muted-foreground">Subtotal</span>
             <span className="font-bold text-foreground">R$ {subtotal.toFixed(2)}</span>
           </div>
+          {couponDiscount > 0 && (
+            <div className="flex justify-between text-sm">
+              <span className="text-green-600">Desconto ({couponCode})</span>
+              <span className="font-bold text-green-600">-R$ {couponDiscount.toFixed(2)}</span>
+            </div>
+          )}
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Entrega ({profileNeighborhood || neighborhood})</span>
-            <span className="font-bold text-foreground">R$ {neighborhoodFee.toFixed(2)}</span>
+            <span className={`font-bold ${couponType === "free_shipping" ? "text-green-600 line-through" : "text-foreground"}`}>
+              R$ {neighborhoodFee.toFixed(2)}
+            </span>
           </div>
+          {couponType === "free_shipping" && (
+            <div className="flex justify-between text-sm">
+              <span className="text-green-600">Frete grátis</span>
+              <span className="font-bold text-green-600">R$ 0,00</span>
+            </div>
+          )}
           <div className="flex justify-between text-lg pt-2 border-t border-border">
             <span className="font-bold text-foreground">Total</span>
-            <span className="font-black text-primary">R$ {total.toFixed(2)}</span>
+            <span className="font-black text-primary">R$ {finalTotal.toFixed(2)}</span>
           </div>
         </div>
       </div>
