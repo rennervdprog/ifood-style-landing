@@ -959,7 +959,7 @@ const FinanceTab = ({
       if (data?.status === "manual_required") {
         toast.info(`${data.reference_code}: Transferência manual necessária. PIX: ${data.pix_key} (${data.pix_type}) - R$ ${data.amount.toFixed(2)}`, { duration: 15000 });
       } else {
-        const providerLabel = data?.provider === "efi_bank" ? "Efí Bank" : data?.provider === "simulated" ? "Simulação" : "Mercado Pago";
+        const providerLabel = data?.provider === "efi_bank" ? "Efí Bank" : data?.provider === "asaas" ? "Asaas" : data?.provider === "simulated" ? "Simulação" : "Mercado Pago";
         toast.success(`${data.reference_code}: Repasse de R$ ${data.amount.toFixed(2)} enviado para ${entry.name} via ${providerLabel}!`);
       }
 
