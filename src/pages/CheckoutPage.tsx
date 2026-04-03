@@ -10,8 +10,6 @@ import confetti from "canvas-confetti";
 import AddressModal from "@/components/AddressModal";
 import SavedAddressPicker from "@/components/SavedAddressPicker";
 import CouponInput from "@/components/CouponInput";
-import ScheduleOrderPicker from "@/components/ScheduleOrderPicker";
-import LoyaltyCard from "@/components/LoyaltyCard";
 import { calculateDeliveryFee, DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig } from "@/lib/deliveryFee";
 import { formatCep, fetchCep } from "@/lib/cepLookup";
 
@@ -39,7 +37,7 @@ const CheckoutPage = () => {
   const [calculatedDeliveryFee, setCalculatedDeliveryFee] = useState<number | null>(null);
   const [calculatingFee, setCalculatingFee] = useState(false);
   const [feeBreakdown, setFeeBreakdown] = useState<string | null>(null);
-  const [scheduledFor, setScheduledFor] = useState<string | null>(null);
+  
 
   // activeDeliveryFee, effectiveDeliveryFee, finalTotal computed after queries below
 
@@ -207,7 +205,7 @@ const CheckoutPage = () => {
             needs_change: paymentMethod === "dinheiro" && needsChange,
             change_for: changeValue,
             status: orderStatus,
-            scheduled_for: scheduledFor || null,
+            
           } as any)
           .select("id")
           .single();
@@ -458,18 +456,6 @@ const CheckoutPage = () => {
           )}
         </div>
 
-        {/* Schedule */}
-        <div>
-          <h2 className="text-sm font-bold text-foreground mb-2 flex items-center gap-1.5">
-            🕐 Agendamento
-          </h2>
-          <ScheduleOrderPicker onSchedule={setScheduledFor} scheduled={scheduledFor} />
-        </div>
-
-        {/* Loyalty Card */}
-        {items[0]?.store_id && (
-          <LoyaltyCard storeId={items[0].store_id} storeName={items[0]?.store_name || "Loja"} />
-        )}
 
         {/* Coupon */}
         <div>
