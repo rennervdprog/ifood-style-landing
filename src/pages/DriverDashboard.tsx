@@ -119,7 +119,7 @@ const DriverDashboard = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*, stores(name, owner_id), order_items(*, products(name))")
+        .select("*, stores(name, owner_id, address_street, address_number, address_neighborhood, address_city, address_state, address_cep), order_items(*, products(name))")
         .eq("driver_id", user!.id)
         .in("status", ["pronto_para_entrega", "saiu_entrega", "em_transito"] as any)
         .maybeSingle();
@@ -641,12 +641,37 @@ const DriverDashboard = () => {
                   </div>
 
                   <div className="p-4 space-y-3">
-                    {/* Store name */}
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+                    {/* Store name & address */}
+                    <div className="flex items-start gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 mt-0.5">
                         <Store className="h-4 w-4 text-muted-foreground" />
                       </div>
-                      <span className="text-sm font-semibold text-foreground">{(myDelivery as any).stores?.name || "Loja"}</span>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-semibold text-foreground">{(myDelivery as any).stores?.name || "Loja"}</span>
+                        {(() => {
+                          const s = (myDelivery as any).stores;
+                          const storeAddr = s?.address_street
+                            ? `${s.address_street}${s.address_number ? `, ${s.address_number}` : ""} - ${s.address_neighborhood || ""}, ${s.address_city || "Itatinga"}`
+                            : null;
+                          if (!storeAddr) return null;
+                          const encodedAddr = encodeURIComponent(storeAddr);
+                          return (
+                            <div className="mt-1 space-y-1.5">
+                              <p className="text-xs text-muted-foreground">{storeAddr}</p>
+                              <div className="flex gap-1.5">
+                                <a href={`https://www.google.com/maps/search/?api=1&query=${encodedAddr}`} target="_blank" rel="noopener noreferrer"
+                                  className="flex items-center gap-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-bold px-2 py-1 rounded-lg">
+                                  <Navigation className="h-3 w-3" /> Google Maps
+                                </a>
+                                <a href={`https://waze.com/ul?q=${encodedAddr}&navigate=yes`} target="_blank" rel="noopener noreferrer"
+                                  className="flex items-center gap-1 bg-purple-500/10 text-purple-600 dark:text-purple-400 text-[10px] font-bold px-2 py-1 rounded-lg">
+                                  <Navigation className="h-3 w-3" /> Waze
+                                </a>
+                              </div>
+                            </div>
+                          );
+                        })()}
+                      </div>
                     </div>
 
                     {!(myDelivery as any).collection_validated && (myDelivery as any).status === 'pronto_para_entrega' ? (
@@ -716,14 +741,24 @@ const DriverDashboard = () => {
                       </>
                     ) : (
                       <>
-                        {/* Delivery address */}
+                        {/* Delivery address with Maps/Waze */}
                         <div className="flex items-start gap-2">
                           <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center mt-0.5 flex-shrink-0">
                             <MapPin className="h-4 w-4 text-destructive" />
                           </div>
-                          <div>
+                          <div className="flex-1 min-w-0">
                             <span className="text-sm font-medium text-foreground">{myDelivery.neighborhood}</span>
                             <p className="text-xs text-muted-foreground mt-0.5">{myDelivery.address_details}</p>
+                            <div className="flex gap-1.5 mt-1.5">
+                              <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(myDelivery.address_details + ", " + myDelivery.neighborhood + ", Itatinga SP")}`} target="_blank" rel="noopener noreferrer"
+                                className="flex items-center gap-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-bold px-2 py-1 rounded-lg">
+                                <Navigation className="h-3 w-3" /> Google Maps
+                              </a>
+                              <a href={`https://waze.com/ul?q=${encodeURIComponent(myDelivery.address_details + ", " + myDelivery.neighborhood + ", Itatinga SP")}&navigate=yes`} target="_blank" rel="noopener noreferrer"
+                                className="flex items-center gap-1 bg-purple-500/10 text-purple-600 dark:text-purple-400 text-[10px] font-bold px-2 py-1 rounded-lg">
+                                <Navigation className="h-3 w-3" /> Waze
+                              </a>
+                            </div>
                           </div>
                         </div>
 
