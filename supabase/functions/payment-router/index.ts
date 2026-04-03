@@ -40,10 +40,16 @@ const StorePayoutSchema = z.object({
   pix_type: z.enum(["cpf", "cnpj", "email", "phone", "random"]),
 });
 
+const CancelPaymentSchema = z.object({
+  action: z.literal("cancel_payment"),
+  order_id: z.string().uuid(),
+});
+
 const BodySchema = z.discriminatedUnion("action", [
   OrderPixSchema,
   CommissionChargeSchema,
   StorePayoutSchema,
+  CancelPaymentSchema,
 ]);
 
 // ── Standardized response ────────────────────────────────────────────
