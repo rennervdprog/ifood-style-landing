@@ -352,6 +352,13 @@ const AdminDashboard = () => {
               storeId={store.id} storeName={store.name} storeCategory={store.category}
               storeImageUrl={store.image_url} storeIsOpen={store.is_open}
               forceClosed={(store as any).force_closed || false} storeSlug={(store as any).slug || null}
+              storeAddressStreet={(store as any).address_street || null}
+              storeAddressNumber={(store as any).address_number || null}
+              storeAddressComplement={(store as any).address_complement || null}
+              storeAddressNeighborhood={(store as any).address_neighborhood || null}
+              storeAddressReference={(store as any).address_reference || null}
+              storeAddressCity={(store as any).address_city || null}
+              storeAddressState={(store as any).address_state || null}
             />
           )}
           {dashboardTab === "finance" && <StoreFinancePanel storeId={store.id} storeName={store.name} />}
