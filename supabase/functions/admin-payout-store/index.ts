@@ -94,10 +94,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const serviceClient = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    // serviceClient already created above for admin check
 
     const { data: refData } = await serviceClient.rpc("generate_financial_reference", {
       _prefix: "REP",
