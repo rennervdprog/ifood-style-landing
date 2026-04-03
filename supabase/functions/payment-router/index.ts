@@ -201,6 +201,12 @@ async function createAsaasPix(params: {
     if (!paymentRes.ok) {
       const errData = await paymentRes.text();
       console.error("Asaas payment error:", paymentRes.status, errData);
+      
+      // Check for minimum amount error
+      if (errData.includes("não pode ser menor que R$") || errData.includes("menor que R$ 5")) {
+        return { ok: false, data: { message: "O valor mínimo para pagamento PIX é R$ 5,00.", min_amount: true }, status: 400 };
+      }
+      
       return { ok: false, data: { message: `Erro ao criar pagamento Asaas: ${paymentRes.status}` }, status: paymentRes.status };
     }
 
