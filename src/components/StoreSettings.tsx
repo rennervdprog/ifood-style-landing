@@ -141,6 +141,13 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
         category: category as any,
         image_url: imageUrl || null,
         slug: cleanSlug || null,
+        address_street: addressStreet.trim() || null,
+        address_number: addressNumber.trim() || null,
+        address_complement: addressComplement.trim() || null,
+        address_neighborhood: addressNeighborhood.trim() || null,
+        address_reference: addressReference.trim() || null,
+        address_city: addressCity.trim() || "Itatinga",
+        address_state: addressState.trim() || "SP",
       } as any)
       .eq("id", storeId);
 
