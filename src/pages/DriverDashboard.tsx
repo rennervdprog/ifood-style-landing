@@ -741,14 +741,24 @@ const DriverDashboard = () => {
                       </>
                     ) : (
                       <>
-                        {/* Delivery address */}
+                        {/* Delivery address with Maps/Waze */}
                         <div className="flex items-start gap-2">
                           <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center mt-0.5 flex-shrink-0">
                             <MapPin className="h-4 w-4 text-destructive" />
                           </div>
-                          <div>
+                          <div className="flex-1 min-w-0">
                             <span className="text-sm font-medium text-foreground">{myDelivery.neighborhood}</span>
                             <p className="text-xs text-muted-foreground mt-0.5">{myDelivery.address_details}</p>
+                            <div className="flex gap-1.5 mt-1.5">
+                              <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(myDelivery.address_details + ", " + myDelivery.neighborhood + ", Itatinga SP")}`} target="_blank" rel="noopener noreferrer"
+                                className="flex items-center gap-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-bold px-2 py-1 rounded-lg">
+                                <Navigation className="h-3 w-3" /> Google Maps
+                              </a>
+                              <a href={`https://waze.com/ul?q=${encodeURIComponent(myDelivery.address_details + ", " + myDelivery.neighborhood + ", Itatinga SP")}&navigate=yes`} target="_blank" rel="noopener noreferrer"
+                                className="flex items-center gap-1 bg-purple-500/10 text-purple-600 dark:text-purple-400 text-[10px] font-bold px-2 py-1 rounded-lg">
+                                <Navigation className="h-3 w-3" /> Waze
+                              </a>
+                            </div>
                           </div>
                         </div>
 
