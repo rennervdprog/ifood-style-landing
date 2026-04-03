@@ -35,15 +35,17 @@ Deno.serve(async (req) => {
 
     // Validate the webhook token from Asaas
     const asaasToken = req.headers.get("asaas-access-token");
-    const expectedToken = Deno.env.get("ASAAS_API_KEY");
+    const webhookToken = Deno.env.get("ASAAS_WEBHOOK_TOKEN");
+    const apiKey = Deno.env.get("ASAAS_API_KEY");
+
+    // Validate using dedicated webhook token or API key
+    const expectedToken = webhookToken || apiKey;
 
     if (!expectedToken) {
-      console.error("ASAAS_API_KEY not configured");
+      console.error("ASAAS_WEBHOOK_TOKEN/ASAAS_API_KEY not configured");
       return json({ error: "Not configured" }, 500);
     }
 
-    // Asaas sends the access token in the header for webhook validation
-    // If configured, validate it matches
     if (asaasToken && asaasToken !== expectedToken) {
       console.warn("Invalid Asaas webhook token");
       return json({ error: "Unauthorized" }, 401);
