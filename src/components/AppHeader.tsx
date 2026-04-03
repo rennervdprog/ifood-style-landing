@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const AppHeader = () => {
   const { neighborhood } = useCart();
@@ -35,15 +36,18 @@ const AppHeader = () => {
           <span className="text-lg font-black text-primary">Delivery</span>
         </div>
 
-        <button
-          onClick={() => navigate(user ? "/perfil" : "/auth")}
-          className="flex items-center gap-1.5 text-sm bg-muted px-3 py-1.5 rounded-full"
-        >
-          <MapPin className="h-3.5 w-3.5 text-primary" />
-          <span className="font-semibold text-foreground max-w-[140px] truncate">
-            {displayNeighborhood || "Cadastre seu endereço"}
-          </span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigate(user ? "/perfil" : "/auth")}
+            className="flex items-center gap-1.5 text-sm bg-muted px-3 py-1.5 rounded-full"
+          >
+            <MapPin className="h-3.5 w-3.5 text-primary" />
+            <span className="font-semibold text-foreground max-w-[140px] truncate">
+              {displayNeighborhood || "Cadastre seu endereço"}
+            </span>
+          </button>
+          <ThemeToggle />
+        </div>
       </div>
     </header>
   );
