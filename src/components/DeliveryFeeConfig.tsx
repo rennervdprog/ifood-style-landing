@@ -22,7 +22,7 @@ const DeliveryFeeConfigPanel = () => {
         .select("value")
         .eq("key", "delivery_fee_config")
         .maybeSingle();
-      return data?.value as FeeConfig | null;
+      return data?.value as unknown as FeeConfig | null;
     },
   });
 
