@@ -9,6 +9,7 @@ import { User, LogOut, Store, Shield, UserPlus, MapPin, Save, Bike, Wallet, Copy
 import { toast } from "sonner";
 import { maskWhatsApp, formatWhatsAppNumber, isValidWhatsApp } from "@/lib/whatsapp";
 import { formatCep, fetchCep } from "@/lib/cepLookup";
+import { calculateDeliveryFee, DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig } from "@/lib/deliveryFee";
 
 const PerfilPage = () => {
   const { user, signOut } = useAuth();
@@ -69,14 +70,20 @@ const PerfilPage = () => {
     enabled: !!user,
   });
 
-  const { data: neighborhoods } = useQuery({
-    queryKey: ["neighborhoods"],
+  const { data: deliveryFeeConfig } = useQuery({
+    queryKey: ["delivery-fee-config"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("neighborhood_fees").select("*").order("name");
-      if (error) throw error;
-      return data;
+      const { data } = await supabase
+        .from("admin_settings")
+        .select("value")
+        .eq("key", "delivery_fee_config")
+        .maybeSingle();
+      return data?.value ? (data.value as unknown as DeliveryFeeConfig) : DEFAULT_DELIVERY_FEE_CONFIG;
     },
   });
+
+  const [calculatedFee, setCalculatedFee] = useState<number | null>(null);
+  const [feeBreakdown, setFeeBreakdown] = useState<string>("");
 
   // Address form state
   const [cep, setCep] = useState("");
@@ -210,12 +217,25 @@ const PerfilPage = () => {
     }
   };
 
-  // Compute selected neighborhood fee
-  const selectedFee = useMemo(() => {
-    if (!neighborhood || !neighborhoods) return null;
-    const found = neighborhoods.find((n) => n.name === neighborhood);
-    return found ? found.fee : null;
-  }, [neighborhood, neighborhoods]);
+  // Calculate delivery fee based on CEP using admin config
+  useEffect(() => {
+    const cepDigits = cep.replace(/\D/g, "");
+    if (cepDigits.length !== 8 || !deliveryFeeConfig) {
+      setCalculatedFee(null);
+      setFeeBreakdown("");
+      return;
+    }
+    let cancelled = false;
+    calculateDeliveryFee(cepDigits, "", deliveryFeeConfig).then((result) => {
+      if (!cancelled) {
+        setCalculatedFee(result.fee);
+        setFeeBreakdown(result.breakdown);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [cep, deliveryFeeConfig]);
+
+  const selectedFee = calculatedFee;
 
   const handleSignOut = async () => {
     await signOut();
@@ -245,12 +265,9 @@ const PerfilPage = () => {
         } as any, { onConflict: "user_id" });
       if (error) throw error;
 
-      // Sync cart neighborhood
-      if (neighborhood && neighborhoods) {
-        const found = neighborhoods.find((n) => n.name === neighborhood);
-        if (found) {
-          setNeighborhood(found.name, found.fee);
-        }
+      // Sync cart neighborhood with calculated fee
+      if (neighborhood && calculatedFee !== null) {
+        setNeighborhood(neighborhood, calculatedFee);
       }
 
       toast.success("Endereço salvo!");
@@ -462,11 +479,16 @@ const PerfilPage = () => {
             </div>
             {/* Delivery fee indicator */}
             {selectedFee !== null && (
-              <div className="flex items-center gap-2 bg-primary/5 border border-primary/20 rounded-xl px-3 py-2">
-                <Truck className="h-4 w-4 text-primary" />
-                <span className="text-sm font-bold text-primary">
-                  Taxa de entrega para este local: R$ {selectedFee.toFixed(2)}
-                </span>
+              <div className="flex flex-col gap-1 bg-primary/5 border border-primary/20 rounded-xl px-3 py-2">
+                <div className="flex items-center gap-2">
+                  <Truck className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-bold text-primary">
+                    Taxa de entrega: R$ {selectedFee.toFixed(2)}
+                  </span>
+                </div>
+                {feeBreakdown && (
+                  <span className="text-xs text-muted-foreground ml-6">{feeBreakdown}</span>
+                )}
               </div>
             )}
             <input
