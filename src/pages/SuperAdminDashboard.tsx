@@ -403,6 +403,7 @@ const SuperAdminDashboard = () => {
           { key: "dashboard" as AdminTab, label: "📊 Dashboard" },
           { key: "financeiro" as AdminTab, label: "💰 Financeiro" },
           { key: "saques" as AdminTab, label: "🏧 Saques" },
+          { key: "entrega" as AdminTab, label: "🚚 Entrega" },
           { key: "approvals" as AdminTab, label: "🛡️ Aprovações" },
           { key: "stores" as AdminTab, label: "🏪 Lojas" },
           { key: "sync" as AdminTab, label: "🔄 Sincronizar" },
