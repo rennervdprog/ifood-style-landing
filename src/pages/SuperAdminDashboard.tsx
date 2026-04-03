@@ -936,10 +936,11 @@ const FinanceTab = ({
   };
 
   // Fetch driver PIX keys
+  const allDrivers = drivers;
   const { data: driverProfiles } = useQuery({
-    queryKey: ["driver-pix-keys"],
+    queryKey: ["driver-pix-keys", allDrivers?.map(d => d.user_id)],
     queryFn: async () => {
-      const driverIds = drivers?.map((d: any) => d.user_id) || [];
+      const driverIds = (allDrivers || []).map((d: any) => d.user_id);
       if (driverIds.length === 0) return [];
       const { data: profiles } = await supabase
         .from("profiles")
@@ -947,7 +948,7 @@ const FinanceTab = ({
         .in("user_id", driverIds);
       return profiles || [];
     },
-    enabled: (drivers?.length || 0) > 0,
+    enabled: (allDrivers?.length || 0) > 0,
   });
 
   const getDriverPixInfo = (driverUserId: string) => {
