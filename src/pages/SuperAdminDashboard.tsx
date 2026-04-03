@@ -890,6 +890,70 @@ const FinanceTab = ({
     }
   };
 
+  // Auto payout driver via Asaas Transfer
+  const [payingDriver, setPayingDriver] = useState<string | null>(null);
+
+  const handleAutoPayDriver = async (driverId: string, driverName: string, amount: number, pixKey: string, pixType: string, withdrawalRequestId?: string) => {
+    if (amount <= 0) {
+      toast.info("Não há valor pendente para pagar.");
+      return;
+    }
+    if (!pixKey) {
+      toast.error(`❌ ${driverName} não possui chave PIX cadastrada. Peça para ele configurar no perfil.`);
+      return;
+    }
+
+    setPayingDriver(driverId);
+    try {
+      const { data, error } = await supabase.functions.invoke("payment-router", {
+        body: {
+          action: "driver_payout",
+          driver_user_id: driverId,
+          amount,
+          pix_key: pixKey,
+          pix_type: pixType || "cpf",
+          withdrawal_request_id: withdrawalRequestId,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      if (data?.success) {
+        toast.success(`✅ R$ ${amount.toFixed(2)} transferido para ${driverName} via Asaas! Ref: ${data.reference_code}`, { duration: 8000 });
+      } else {
+        toast.warning(`⚠️ ${data?.message || "Transferência falhou. Realize manualmente."}`, { duration: 10000 });
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["driver-balances-finance"] });
+      queryClient.invalidateQueries({ queryKey: ["withdrawal-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["payout-history"] });
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao processar repasse do motoboy.");
+    } finally {
+      setPayingDriver(null);
+    }
+  };
+
+  // Fetch driver PIX keys
+  const { data: driverProfiles } = useQuery({
+    queryKey: ["driver-pix-keys"],
+    queryFn: async () => {
+      const driverIds = drivers?.map((d: any) => d.user_id) || [];
+      if (driverIds.length === 0) return [];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, pix_key, pix_type")
+        .in("user_id", driverIds);
+      return profiles || [];
+    },
+    enabled: (drivers?.length || 0) > 0,
+  });
+
+  const getDriverPixInfo = (driverUserId: string) => {
+    return driverProfiles?.find((p: any) => p.user_id === driverUserId) || null;
+  };
+
   // Pending payouts: stores with balance > 0 + drivers with pending > 0
   const pendingStorePayouts = storeSettlement.filter(e => e.netTransfer > 0 || e.commissionDue > 0);
   const pendingDriverPayouts = driverSettlement.filter(e => {
