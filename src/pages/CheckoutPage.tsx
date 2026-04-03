@@ -12,7 +12,6 @@ import SavedAddressPicker from "@/components/SavedAddressPicker";
 import CouponInput from "@/components/CouponInput";
 import ScheduleOrderPicker from "@/components/ScheduleOrderPicker";
 import LoyaltyCard from "@/components/LoyaltyCard";
-import CouponInput from "@/components/CouponInput";
 import { calculateDeliveryFee, DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig } from "@/lib/deliveryFee";
 import { formatCep, fetchCep } from "@/lib/cepLookup";
 
