@@ -427,6 +427,7 @@ const PerfilPage = () => {
               {loadingCep ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
             </button>
           </div>
+            <div className="grid grid-cols-3 gap-2">
               <div className="col-span-2">
                 <input
                   type="text"
