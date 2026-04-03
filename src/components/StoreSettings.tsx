@@ -64,6 +64,8 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
   const [addressReference, setAddressReference] = useState(storeAddressReference || "");
   const [addressCity, setAddressCity] = useState(storeAddressCity || "Itatinga");
   const [addressState, setAddressState] = useState(storeAddressState || "SP");
+  const [addressCep, setAddressCep] = useState(storeAddressCep || "");
+  const [loadingCep, setLoadingCep] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
 
