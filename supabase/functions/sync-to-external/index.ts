@@ -50,19 +50,21 @@ serve(async (req) => {
     if (!authHeader) return jsonRes({ error: "Missing authorization" }, 401);
 
     const token = authHeader.replace("Bearer ", "");
-    const isServiceRole = token === internalServiceKey;
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+    const isServiceRole = token === internalServiceKey || token === serviceRoleKey;
 
     if (!isServiceRole) {
-      const { data: { user }, error: authError } = await createClient(
-        internalUrl,
-        Deno.env.get("SUPABASE_ANON_KEY")!
-      ).auth.getUser(token);
+      try {
+        const authClient = createClient(internalUrl, serviceRoleKey || internalServiceKey);
+        const { data: { user }, error: authError } = await authClient.auth.getUser(token);
 
-      if (authError || !user) return jsonRes({ error: "Unauthorized" }, 401);
+        if (authError || !user) return jsonRes({ error: "Unauthorized" }, 401);
 
-      // Check admin via RPC
-      const { data: isAdmin } = await internalClient.rpc("is_platform_admin", { _user_id: user.id });
-      if (!isAdmin) return jsonRes({ error: "Admin only" }, 403);
+        const { data: isAdmin } = await internalClient.rpc("is_platform_admin", { _user_id: user.id });
+        if (!isAdmin) return jsonRes({ error: "Admin only" }, 403);
+      } catch {
+        return jsonRes({ error: "Unauthorized" }, 401);
+      }
     }
 
     const body = await req.json();
