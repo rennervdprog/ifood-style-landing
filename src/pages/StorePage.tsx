@@ -450,6 +450,77 @@ const StorePage = () => {
         </div>
       )}
 
+      {/* ===== PEÇA DE NOVO ===== */}
+      {reorderProductsList.length > 0 && !filteredProducts && (
+        <div className="px-4 mt-4">
+          <div className="flex items-center gap-2 mb-3">
+            <RotateCcw className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-black text-foreground">Peça de novo</h2>
+          </div>
+          <div className="flex overflow-x-auto gap-3 no-scrollbar pb-1">
+            {reorderProductsList.map(product => (
+              <button
+                key={`reorder-${product.id}`}
+                onClick={() => {
+                  if (!storeStatus.isOpen) { toast.error(`Loja fechada. ${storeStatus.reason}`); return; }
+                  setSelectedProduct(product);
+                }}
+                className={`flex-shrink-0 w-36 bg-card rounded-xl border border-border overflow-hidden text-left transition-all ${
+                  !storeStatus.isOpen ? "opacity-50" : "hover:shadow-lg hover:border-primary/20 active:scale-[0.97]"
+                }`}
+              >
+                {product.image_url ? (
+                  <img src={product.image_url} alt={product.name} className="w-full h-24 object-cover" loading="lazy" />
+                ) : (
+                  <div className="w-full h-24 bg-muted flex items-center justify-center"><span className="text-2xl">🍴</span></div>
+                )}
+                <div className="p-2">
+                  <p className="text-xs font-bold text-foreground line-clamp-1">{product.name}</p>
+                  <p className="text-xs font-black text-primary mt-0.5">R$ {product.price.toFixed(2)}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ===== MAIS PEDIDOS ===== */}
+      {popularProductsList.length > 0 && !filteredProducts && (
+        <div className="px-4 mt-4">
+          <div className="flex items-center gap-2 mb-3">
+            <TrendingUp className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-black text-foreground">Mais pedidos</h2>
+          </div>
+          <div className="flex overflow-x-auto gap-3 no-scrollbar pb-1">
+            {popularProductsList.map(product => (
+              <button
+                key={`popular-${product.id}`}
+                onClick={() => {
+                  if (!storeStatus.isOpen) { toast.error(`Loja fechada. ${storeStatus.reason}`); return; }
+                  setSelectedProduct(product);
+                }}
+                className={`flex-shrink-0 w-36 bg-card rounded-xl border border-border overflow-hidden text-left transition-all relative ${
+                  !storeStatus.isOpen ? "opacity-50" : "hover:shadow-lg hover:border-primary/20 active:scale-[0.97]"
+                }`}
+              >
+                <span className="absolute top-1.5 right-1.5 bg-primary/90 text-primary-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-full z-10">
+                  🔥 {product.orderCount}x
+                </span>
+                {product.image_url ? (
+                  <img src={product.image_url} alt={product.name} className="w-full h-24 object-cover" loading="lazy" />
+                ) : (
+                  <div className="w-full h-24 bg-muted flex items-center justify-center"><span className="text-2xl">🍴</span></div>
+                )}
+                <div className="p-2">
+                  <p className="text-xs font-bold text-foreground line-clamp-1">{product.name}</p>
+                  <p className="text-xs font-black text-primary mt-0.5">R$ {product.price.toFixed(2)}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ===== CATEGORY NAV ===== */}
       {sections && sections.length > 0 && !filteredProducts && (
         <div
