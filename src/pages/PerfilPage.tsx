@@ -42,7 +42,7 @@ const PerfilPage = () => {
     enabled: !!user,
   });
 
-
+  const { data: profile } = useQuery({
     queryKey: ["my-profile", user?.id],
     queryFn: async () => {
       const { data } = await supabase
