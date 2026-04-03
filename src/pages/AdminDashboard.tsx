@@ -847,7 +847,7 @@ const AdminDashboard = () => {
           {dashboardTab === "orders" && store && (
             <>
               {/* Order status tabs */}
-              <div className="sticky top-[57px] z-20 bg-background border-b border-border">
+              <div className="sticky top-0 z-20 bg-background border-b border-border">
                 <div className="flex overflow-x-auto gap-1 px-4 py-2 no-scrollbar">
                   {orderTabs.map((tab) => {
                     const count = orders?.filter(o => o.status === tab.status).length || 0;
