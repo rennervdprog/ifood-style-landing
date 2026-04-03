@@ -550,7 +550,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
               ) : (
                 <>
                   <QrCode className="h-4 w-4" />
-                  Pagar Comissão via PIX (Mercado Pago)
+                  Pagar Comissão via PIX
                 </>
               )}
             </Button>
