@@ -69,7 +69,17 @@ Deno.serve(async (req) => {
 
     // Allow store owner or admin
     const userId = userData.user.id;
-    const isAdmin = userData.user.email === "vinivias13@gmail.com";
+    const serviceAdminClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+    const { data: adminRole } = await serviceAdminClient
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "admin")
+      .maybeSingle();
+    const isAdmin = !!adminRole;
     if (store.owner_id !== userId && !isAdmin) {
       return new Response(JSON.stringify({ error: "Sem permissão" }), {
         status: 403,

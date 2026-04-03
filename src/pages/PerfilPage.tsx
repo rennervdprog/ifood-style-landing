@@ -28,6 +28,20 @@ const PerfilPage = () => {
     enabled: !!user,
   });
 
+  const { data: isAdminUser } = useQuery({
+    queryKey: ["is-admin", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user!.id)
+        .eq("role", "admin")
+        .maybeSingle();
+      return !!data;
+    },
+    enabled: !!user,
+  });
+
   const { data: profile } = useQuery({
     queryKey: ["my-profile", user?.id],
     queryFn: async () => {
@@ -514,7 +528,7 @@ const PerfilPage = () => {
           </button>
         )}
 
-        {user.email === "vinivias13@gmail.com" && (
+        {isAdminUser && (
           <button
             onClick={() => navigate("/super-admin")}
             className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-600 font-bold"
