@@ -305,9 +305,20 @@ const CheckoutPage = () => {
                 <p className="text-xs text-muted-foreground">📍 Ref: {profileReference}</p>
               )}
               <div className="flex items-center justify-between pt-1">
-                <span className="text-xs font-bold text-primary">
-                  Taxa de entrega: R$ {neighborhoodFee.toFixed(2)}
-                </span>
+                {calculatingFee ? (
+                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Calculando taxa...
+                  </span>
+                ) : (
+                  <div>
+                    <span className="text-xs font-bold text-primary">
+                      Taxa de entrega: R$ {activeDeliveryFee.toFixed(2)}
+                    </span>
+                    {feeBreakdown && (
+                      <p className="text-[10px] text-muted-foreground">{feeBreakdown}</p>
+                    )}
+                  </div>
+                )}
                 <button onClick={() => navigate("/perfil")} className="text-xs text-primary flex items-center gap-1 hover:underline">
                   <Edit3 className="h-3 w-3" /> Alterar
                 </button>
