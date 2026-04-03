@@ -1265,7 +1265,7 @@ const AdminDashboard = () => {
                       <>
                         <div className="grid grid-cols-3 gap-3">
                           <div className="bg-card border border-border rounded-2xl p-4 text-center">
-                            <p className="text-2xl font-black text-emerald-500">R$ {totalRevenue.toFixed(0)}</p>
+                            <p className="text-2xl font-black text-emerald-500">R$ {totalRevenue.toFixed(2)}</p>
                             <p className="text-[10px] text-muted-foreground">Últimos 7 dias</p>
                           </div>
                           <div className="bg-card border border-border rounded-2xl p-4 text-center">
@@ -1273,7 +1273,7 @@ const AdminDashboard = () => {
                             <p className="text-[10px] text-muted-foreground">Pedidos</p>
                           </div>
                           <div className="bg-card border border-border rounded-2xl p-4 text-center">
-                            <p className="text-2xl font-black text-primary">R$ {avgTicket.toFixed(0)}</p>
+                            <p className="text-2xl font-black text-primary">R$ {avgTicket.toFixed(2)}</p>
                             <p className="text-[10px] text-muted-foreground">Ticket Médio</p>
                           </div>
                         </div>
@@ -1286,7 +1286,7 @@ const AdminDashboard = () => {
                               const height = (d.vendas / max) * 100;
                               return (
                                 <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                                  <span className="text-[9px] text-muted-foreground font-bold">R${d.vendas.toFixed(0)}</span>
+                                  <span className="text-[9px] text-muted-foreground font-bold">R${d.vendas.toFixed(2)}</span>
                                   <div className="w-full rounded-t-lg bg-primary/80 transition-all" style={{ height: `${Math.max(height, 4)}%` }} />
                                   <span className="text-[9px] text-muted-foreground">{d.day}</span>
                                 </div>
