@@ -957,7 +957,7 @@ const DriverDashboard = () => {
                 type="text"
                 value={pixKey}
                 onChange={e => setPixKey(e.target.value)}
-                placeholder={pixType === "cpf" ? "000.000.000-00" : pixType === "email" ? "seuemail@email.com" : pixType === "phone" ? "(14) 99999-9999" : "Cole sua chave aqui"}
+                placeholder={pixType === "cpf" ? "000.000.000-00" : pixType === "email" ? "seuemail@email.com" : pixType === "phone" ? "+55 14 99999-9999" : "Cole sua chave aqui"}
                 className="w-full bg-gray-800 text-white border border-gray-700 rounded-xl px-4 py-3 text-sm placeholder:text-gray-600"
               />
             </div>

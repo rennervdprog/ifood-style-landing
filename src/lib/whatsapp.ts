@@ -1,6 +1,6 @@
 /**
  * Formats a Brazilian phone number to international format for WhatsApp.
- * Input: "15 99999-9999" or "1599999999" etc.
+ * Input: "15 99999-9999" or "1599999999" or "+55 15 99999-9999" etc.
  * Output: "5515999999999"
  */
 export const formatWhatsAppNumber = (phone: string): string => {
@@ -30,16 +30,40 @@ export const openWhatsApp = (number: string, message?: string): void => {
  */
 export const isValidWhatsApp = (phone: string): boolean => {
   const digits = phone.replace(/\D/g, "");
-  // Brazilian mobile: 11 digits (2 DDD + 9 number), landline: 10 digits (2 DDD + 8 number)
+  // With country code: 12-13 digits (55 + 2 DDD + 8-9 number)
+  // Without country code: 10-11 digits (2 DDD + 8-9 number)
+  if (digits.startsWith("55")) {
+    return digits.length >= 12 && digits.length <= 13;
+  }
   return digits.length >= 10 && digits.length <= 11;
 };
 
 /**
- * Formats phone display with mask: (15) 99999-9999
+ * Formats phone display with mask: +55 15 99999-9999
+ * Accepts input with or without country code.
  */
 export const maskWhatsApp = (value: string): string => {
-  const digits = value.replace(/\D/g, "").slice(0, 11);
-  if (digits.length <= 2) return digits;
-  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
-  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  let digits = value.replace(/\D/g, "");
+  
+  // If starts with 55 and has more than 11 digits, strip the country code for local formatting
+  if (digits.startsWith("55") && digits.length > 11) {
+    digits = digits.slice(2);
+  }
+  
+  // Limit to 11 local digits
+  digits = digits.slice(0, 11);
+  
+  if (digits.length === 0) return "";
+  if (digits.length <= 2) return `+55 ${digits}`;
+  if (digits.length <= 7) return `+55 ${digits.slice(0, 2)} ${digits.slice(2)}`;
+  return `+55 ${digits.slice(0, 2)} ${digits.slice(2, 7)}-${digits.slice(7)}`;
+};
+
+/**
+ * Formats a phone number for display: +55 15 99999-9999
+ * Works with stored numbers (just digits like "5515999999999" or "15999999999")
+ */
+export const formatPhoneDisplay = (phone: string): string => {
+  if (!phone) return "";
+  return maskWhatsApp(phone);
 };
