@@ -877,6 +877,13 @@ export type Database = {
       }
       stores: {
         Row: {
+          address_city: string | null
+          address_complement: string | null
+          address_neighborhood: string | null
+          address_number: string | null
+          address_reference: string | null
+          address_state: string | null
+          address_street: string | null
           category: Database["public"]["Enums"]["store_category"]
           created_at: string
           force_closed: boolean
@@ -890,6 +897,13 @@ export type Database = {
           status: Database["public"]["Enums"]["store_status"]
         }
         Insert: {
+          address_city?: string | null
+          address_complement?: string | null
+          address_neighborhood?: string | null
+          address_number?: string | null
+          address_reference?: string | null
+          address_state?: string | null
+          address_street?: string | null
           category: Database["public"]["Enums"]["store_category"]
           created_at?: string
           force_closed?: boolean
@@ -903,6 +917,13 @@ export type Database = {
           status?: Database["public"]["Enums"]["store_status"]
         }
         Update: {
+          address_city?: string | null
+          address_complement?: string | null
+          address_neighborhood?: string | null
+          address_number?: string | null
+          address_reference?: string | null
+          address_state?: string | null
+          address_street?: string | null
           category?: Database["public"]["Enums"]["store_category"]
           created_at?: string
           force_closed?: boolean
