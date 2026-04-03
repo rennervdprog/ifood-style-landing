@@ -201,6 +201,12 @@ async function createAsaasPix(params: {
     if (!paymentRes.ok) {
       const errData = await paymentRes.text();
       console.error("Asaas payment error:", paymentRes.status, errData);
+      
+      // Check for minimum amount error
+      if (errData.includes("não pode ser menor que R$") || errData.includes("menor que R$ 5")) {
+        return { ok: false, data: { message: "O valor mínimo para pagamento PIX é R$ 5,00.", min_amount: true }, status: 400 };
+      }
+      
       return { ok: false, data: { message: `Erro ao criar pagamento Asaas: ${paymentRes.status}` }, status: paymentRes.status };
     }
 
@@ -794,6 +800,11 @@ async function routePixCreation(params: {
       return json(resp);
     }
 
+    // Asaas failed → check if it's a minimum amount error (don't fallback for validation errors)
+    if (asaasResult.data?.min_amount) {
+      return json({ error: asaasResult.data.message, provider: "asaas" }, 400);
+    }
+
     // Asaas failed → fallback to Mercado Pago
     if (hasMpCredentials()) {
       console.warn("Asaas failed, falling back to Mercado Pago");
@@ -815,7 +826,7 @@ async function routePixCreation(params: {
       }
     }
 
-    return json({ error: "Erro ao gerar PIX via Asaas.", provider: "asaas" }, 500);
+    return json({ error: "Erro ao gerar PIX. Tente novamente.", provider: "asaas" }, 500);
   }
 
   // ── Efí Bank (primary) ──
