@@ -55,6 +55,13 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
   const [imageUrl, setImageUrl] = useState(storeImageUrl || "");
   const [pixKey, setPixKey] = useState("");
   const [pixType, setPixType] = useState("cpf");
+  const [addressStreet, setAddressStreet] = useState(storeAddressStreet || "");
+  const [addressNumber, setAddressNumber] = useState(storeAddressNumber || "");
+  const [addressComplement, setAddressComplement] = useState(storeAddressComplement || "");
+  const [addressNeighborhood, setAddressNeighborhood] = useState(storeAddressNeighborhood || "");
+  const [addressReference, setAddressReference] = useState(storeAddressReference || "");
+  const [addressCity, setAddressCity] = useState(storeAddressCity || "Itatinga");
+  const [addressState, setAddressState] = useState(storeAddressState || "SP");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
 
