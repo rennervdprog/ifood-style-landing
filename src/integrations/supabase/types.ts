@@ -1022,15 +1022,14 @@ export type Database = {
       admin_delete_store: { Args: { _store_id: string }; Returns: undefined }
       confirm_order_payment: { Args: { _order_id: string }; Returns: undefined }
       driver_accept_order: { Args: { _order_id: string }; Returns: undefined }
-      driver_confirm_store_return:
-        | { Args: { _order_id: string }; Returns: undefined }
-        | {
-            Args: { _order_id: string; _settlement_code?: string }
-            Returns: undefined
-          }
-      driver_finish_delivery:
-        | { Args: { _order_id: string }; Returns: undefined }
-        | { Args: { _order_id: string; _pin?: string }; Returns: undefined }
+      driver_confirm_store_return: {
+        Args: { _order_id: string; _settlement_code?: string }
+        Returns: undefined
+      }
+      driver_finish_delivery: {
+        Args: { _order_id: string; _pin?: string }
+        Returns: undefined
+      }
       driver_validate_collection: {
         Args: { _code: string; _order_id: string }
         Returns: undefined
