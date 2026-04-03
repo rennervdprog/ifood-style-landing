@@ -746,6 +746,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          cep: string | null
           complement: string | null
           created_at: string
           document: string | null
@@ -767,6 +768,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          cep?: string | null
           complement?: string | null
           created_at?: string
           document?: string | null
@@ -788,6 +790,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          cep?: string | null
           complement?: string | null
           created_at?: string
           document?: string | null
@@ -811,6 +814,7 @@ export type Database = {
       }
       saved_addresses: {
         Row: {
+          cep: string | null
           complement: string | null
           created_at: string
           id: string
@@ -823,6 +827,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          cep?: string | null
           complement?: string | null
           created_at?: string
           id?: string
@@ -835,6 +840,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          cep?: string | null
           complement?: string | null
           created_at?: string
           id?: string
