@@ -53,6 +53,17 @@ async function geocodeCep(cep: string): Promise<{ lat: number; lng: number } | n
   }
 }
 
+/**
+ * Check if the neighborhood indicates a district (distrito) outside the urban center.
+ * In Brazil, ViaCEP returns "Centro (Lobo)" for district locations — the part in parentheses
+ * is the district name, meaning it's geographically separate from the main city.
+ */
+function isDistrictNeighborhood(bairro: string | undefined): boolean {
+  if (!bairro) return false;
+  // Pattern: "Something (DistrictName)" indicates a district
+  return /\(.+\)/.test(bairro);
+}
+
 export interface DeliveryFeeResult {
   fee: number;
   isRural: boolean;
@@ -61,7 +72,9 @@ export interface DeliveryFeeResult {
 }
 
 /**
- * Calculate delivery fee based on customer CEP vs store CEP
+ * Calculate delivery fee based on customer CEP vs store CEP.
+ * - Same city (Itatinga urban center) = fixed city fee
+ * - Districts like "Centro (Lobo)" or different cities = base fee + per-km rate
  */
 export async function calculateDeliveryFee(
   customerCep: string,
@@ -69,7 +82,10 @@ export async function calculateDeliveryFee(
   config: DeliveryFeeConfig
 ): Promise<DeliveryFeeResult> {
   // First check if customer is in the same city
-  const customerAddr = await fetchCep(customerCep);
+  const [customerAddr, storeAddr] = await Promise.all([
+    fetchCep(customerCep),
+    fetchCep(storeCep),
+  ]);
   
   if (!customerAddr) {
     // CEP not found, use city fee as fallback
@@ -81,9 +97,13 @@ export async function calculateDeliveryFee(
     };
   }
 
-  const isInCity = customerAddr.localidade?.toLowerCase() === config.city_name.toLowerCase();
+  const customerCity = customerAddr.localidade?.toLowerCase() || "";
+  const configCity = config.city_name.toLowerCase();
+  const isInCity = customerCity === configCity;
+  const isDistrict = isDistrictNeighborhood(customerAddr.bairro);
 
-  if (isInCity) {
+  // Only charge city fee if same city AND not a district (districts are far away)
+  if (isInCity && !isDistrict) {
     return {
       fee: config.city_fee,
       isRural: false,
@@ -92,7 +112,7 @@ export async function calculateDeliveryFee(
     };
   }
 
-  // Out of city - calculate distance
+  // Out of city or district - calculate distance via coordinates
   const [storeCoords, customerCoords] = await Promise.all([
     geocodeCep(storeCep),
     geocodeCep(customerCep),
@@ -100,11 +120,13 @@ export async function calculateDeliveryFee(
 
   if (!storeCoords || !customerCoords) {
     // Can't calculate distance, use base rural fee + estimate
+    const estimatedKm = isDistrict ? 15 : 10;
+    const estimatedFee = config.rural_base_fee + config.rural_per_km * estimatedKm;
     return {
-      fee: config.rural_base_fee + config.rural_per_km * 10, // fallback 10km estimate
+      fee: Math.round(estimatedFee * 100) / 100,
       isRural: true,
       distanceKm: null,
-      breakdown: `Taxa rural: R$ ${config.rural_base_fee.toFixed(2)} + distância estimada`,
+      breakdown: `Taxa rural: R$ ${config.rural_base_fee.toFixed(2)} + ~${estimatedKm}km estimado`,
     };
   }
 
@@ -113,14 +135,18 @@ export async function calculateDeliveryFee(
     customerCoords.lat, customerCoords.lng
   );
 
-  const roundedDistance = Math.ceil(distanceKm); // Round up
+  const roundedDistance = Math.max(1, Math.ceil(distanceKm)); // At least 1km
   const fee = config.rural_base_fee + config.rural_per_km * roundedDistance;
   const roundedFee = Math.round(fee * 100) / 100;
+
+  const districtLabel = isDistrict
+    ? `Distrito ${customerAddr.bairro}`
+    : customerAddr.localidade || "zona rural";
 
   return {
     fee: roundedFee,
     isRural: true,
     distanceKm: roundedDistance,
-    breakdown: `R$ ${config.rural_base_fee.toFixed(2)} + ${roundedDistance}km × R$ ${config.rural_per_km.toFixed(2)} = R$ ${roundedFee.toFixed(2)}`,
+    breakdown: `${districtLabel}: R$ ${config.rural_base_fee.toFixed(2)} + ${roundedDistance}km × R$ ${config.rural_per_km.toFixed(2)} = R$ ${roundedFee.toFixed(2)}`,
   };
 }
