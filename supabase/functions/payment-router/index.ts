@@ -767,7 +767,7 @@ async function handleStorePayout(
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
-  // Check admin via DB function instead of hardcoded email
+  // Check admin via DB function
   const { data: isAdmin } = await serviceClient.rpc("is_platform_admin", { _user_id: userId });
   if (!isAdmin) return json({ error: "Apenas o administrador pode realizar repasses." }, 403);
 
@@ -784,8 +784,74 @@ async function handleStorePayout(
   const { data: refData } = await serviceClient.rpc("generate_financial_reference", { _prefix: "REP" });
   const referenceCode = refData || `#REP-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
   const desc = `Repasse FoodIta - ${store.name} - ${referenceCode}`;
-  const idempotencyKey = `payout-${store_id}-${Date.now()}`;
 
+  // Try Asaas Transfer (real money transfer) first
+  const provider = await getActiveProviderFromDB();
+  let transferSuccess = false;
+  let transferData: any = null;
+
+  if (provider === "ASAAS" || hasAsaasCredentials()) {
+    const transferResult = await createAsaasTransfer({
+      amount: Number(amount.toFixed(2)),
+      pixKey: pix_key,
+      pixType: pix_type,
+      description: desc,
+    });
+
+    if (transferResult.ok) {
+      transferSuccess = true;
+      transferData = transferResult.data;
+    } else {
+      console.warn("Asaas transfer failed, falling back to QR code generation:", transferResult.data?.message);
+    }
+  }
+
+  if (transferSuccess) {
+    // Transfer was sent directly via Asaas
+    const txRecord: Record<string, unknown> = {
+      store_id,
+      transaction_kind: "store_payout",
+      reference_code: referenceCode,
+      amount: Number(amount.toFixed(2)),
+      status: "approved",
+      provider: "asaas",
+      mercado_pago_payment_id: String(transferData?.transfer_id || ""),
+      settled_at: new Date().toISOString(),
+      metadata: { store_name: store.name, pix_key, pix_type, description: desc, transfer_type: "asaas_transfer" },
+    };
+    await serviceClient.from("financial_transactions").insert(txRecord);
+
+    // Log to payout_history
+    await serviceClient.from("payout_history").insert({
+      entity_type: "store",
+      entity_id: store_id,
+      entity_name: store.name,
+      amount: Number(amount.toFixed(2)),
+      payout_type: "auto_asaas",
+      notes: `Transferência automática Asaas: ${referenceCode} | PIX: ${pix_key} (${pix_type})`,
+      admin_user_id: userId,
+    });
+
+    // Zero balances
+    await serviceClient
+      .from("store_balances")
+      .update({ repasse_pendente: 0, comissao_pendente: 0, pending_commission: 0 })
+      .eq("store_id", store_id);
+
+    return json({
+      success: true,
+      reference_code: referenceCode,
+      transfer_id: transferData?.transfer_id,
+      status: "approved",
+      amount: Number(amount.toFixed(2)),
+      provider: "asaas",
+      transfer_type: "direct",
+      message: `Transferência de R$ ${amount.toFixed(2)} enviada para ${store.name} via Asaas!`,
+    });
+  }
+
+  // Fallback: generate PIX QR code (old behavior)
+  const idempotencyKey = `payout-${store_id}-${Date.now()}`;
   const result = await routePixCreation({
     amount: Number(amount.toFixed(2)),
     description: desc.substring(0, 256),
@@ -812,7 +878,6 @@ async function handleStorePayout(
     pix_copy_paste: resultBody.pix_code || null,
     metadata: { store_name: store.name, pix_key, pix_type, description: desc },
   };
-
   await serviceClient.from("financial_transactions").insert(txRecord);
 
   if (!result.ok) {
