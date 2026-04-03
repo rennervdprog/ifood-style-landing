@@ -34,17 +34,21 @@ const CheckoutPage = () => {
   const [couponId, setCouponId] = useState<string | null>(null);
   const [couponCode, setCouponCode] = useState<string | null>(null);
   const [couponType, setCouponType] = useState<string | null>(null);
+  const [calculatedDeliveryFee, setCalculatedDeliveryFee] = useState<number | null>(null);
+  const [calculatingFee, setCalculatingFee] = useState(false);
+  const [feeBreakdown, setFeeBreakdown] = useState<string | null>(null);
 
-  const effectiveDeliveryFee = couponType === "free_shipping" ? 0 : neighborhoodFee;
+  const activeDeliveryFee = calculatedDeliveryFee !== null ? calculatedDeliveryFee : neighborhoodFee;
+  const effectiveDeliveryFee = couponType === "free_shipping" ? 0 : activeDeliveryFee;
   const finalTotal = Math.max(0, subtotal - couponDiscount + effectiveDeliveryFee);
 
-  // Load user profile with address
+  // Load user profile with address + CEP
   const { data: userProfile, refetch: refetchProfile } = useQuery({
     queryKey: ["my-profile-checkout", user?.id],
     queryFn: async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("street, number, complement, neighborhood, reference_point, phone, whatsapp_number")
+        .select("street, number, complement, neighborhood, reference_point, phone, whatsapp_number, cep")
         .eq("user_id", user!.id)
         .maybeSingle();
       return data;
@@ -52,23 +56,72 @@ const CheckoutPage = () => {
     enabled: !!user,
   });
 
-  // Load neighborhood fees for syncing
-  const { data: neighborhoodFees } = useQuery({
-    queryKey: ["neighborhoods-checkout"],
+  // Load delivery fee config from admin
+  const { data: deliveryFeeConfig } = useQuery({
+    queryKey: ["delivery-fee-config-checkout"],
     queryFn: async () => {
-      const { data } = await supabase.from("neighborhood_fees").select("*").order("name");
-      return data || [];
+      const { data } = await supabase
+        .from("admin_settings")
+        .select("value")
+        .eq("key", "delivery_fee_config")
+        .maybeSingle();
+      return data?.value as unknown as DeliveryFeeConfig | null;
     },
   });
 
-  // Sync profile neighborhood with cart if not set
+  // Load store CEP for the first item's store
+  const storeId = items[0]?.store_id;
+  const { data: storeData } = useQuery({
+    queryKey: ["store-cep", storeId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("stores")
+        .select("address_cep")
+        .eq("id", storeId!)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!storeId,
+  });
+
   const profileNeighborhood = (userProfile as any)?.neighborhood;
   const profileStreet = (userProfile as any)?.street;
   const profileNumber = (userProfile as any)?.number;
   const profileComplement = (userProfile as any)?.complement;
   const profileReference = (userProfile as any)?.reference_point;
+  const profileCep = (userProfile as any)?.cep;
   const hasAddress = !!profileStreet && !!profileNumber && !!profileNeighborhood;
+  const storeCep = (storeData as any)?.address_cep;
+  const config = deliveryFeeConfig || DEFAULT_DELIVERY_FEE_CONFIG;
 
+  // Calculate delivery fee based on CEP
+  useEffect(() => {
+    const customerCep = selectedSavedAddressId && savedAddressData?.cep ? savedAddressData.cep : profileCep;
+    
+    if (!customerCep || !storeCep) {
+      setCalculatedDeliveryFee(null);
+      setFeeBreakdown(null);
+      return;
+    }
+
+    let cancelled = false;
+    setCalculatingFee(true);
+
+    calculateDeliveryFee(customerCep, storeCep, config).then((result) => {
+      if (cancelled) return;
+      setCalculatedDeliveryFee(result.fee);
+      setFeeBreakdown(result.breakdown);
+      setNeighborhood(profileNeighborhood || neighborhood || "", result.fee);
+      setCalculatingFee(false);
+    }).catch(() => {
+      if (cancelled) return;
+      setCalculatingFee(false);
+    });
+
+    return () => { cancelled = true; };
+  }, [profileCep, storeCep, config, savedAddressData, selectedSavedAddressId]);
+
+  // Redirect to login if not authenticated
   // Build address string from profile
   const buildAddressString = () => {
     if (!hasAddress) return "";
@@ -80,20 +133,6 @@ const CheckoutPage = () => {
 
   const addressString = buildAddressString();
 
-  // Sync neighborhood fee from profile
-  useEffect(() => {
-    if (profileNeighborhood && neighborhoodFees) {
-      const found = neighborhoodFees.find((n: any) => n.name.toLowerCase() === profileNeighborhood.toLowerCase());
-      if (found) {
-        setNeighborhood(found.name, found.fee);
-      } else {
-        // Neighborhood not in fees table - use city default from delivery config
-        setNeighborhood(profileNeighborhood, neighborhoodFee || 0);
-      }
-    }
-  }, [profileNeighborhood, neighborhoodFees, setNeighborhood]);
-
-  // Redirect to login if not authenticated
   if (!user) {
     navigate("/auth", { state: { from: "/checkout" }, replace: true });
     return null;
@@ -249,11 +288,7 @@ const CheckoutPage = () => {
               onSelect={(addr) => {
                 setSelectedSavedAddressId(addr.id);
                 setSavedAddressData(addr);
-                // Sync neighborhood fee
-                if (neighborhoodFees) {
-                  const found = neighborhoodFees.find((n: any) => n.name === addr.neighborhood);
-                  if (found) setNeighborhood(found.name, found.fee);
-                }
+                // CEP-based fee will auto-calculate via useEffect
               }}
             />
           </div>
@@ -270,9 +305,20 @@ const CheckoutPage = () => {
                 <p className="text-xs text-muted-foreground">📍 Ref: {profileReference}</p>
               )}
               <div className="flex items-center justify-between pt-1">
-                <span className="text-xs font-bold text-primary">
-                  Taxa de entrega: R$ {neighborhoodFee.toFixed(2)}
-                </span>
+                {calculatingFee ? (
+                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Calculando taxa...
+                  </span>
+                ) : (
+                  <div>
+                    <span className="text-xs font-bold text-primary">
+                      Taxa de entrega: R$ {activeDeliveryFee.toFixed(2)}
+                    </span>
+                    {feeBreakdown && (
+                      <p className="text-[10px] text-muted-foreground">{feeBreakdown}</p>
+                    )}
+                  </div>
+                )}
                 <button onClick={() => navigate("/perfil")} className="text-xs text-primary flex items-center gap-1 hover:underline">
                   <Edit3 className="h-3 w-3" /> Alterar
                 </button>
@@ -421,7 +467,7 @@ const CheckoutPage = () => {
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Entrega ({profileNeighborhood || neighborhood})</span>
             <span className={`font-bold ${couponType === "free_shipping" ? "text-green-600 line-through" : "text-foreground"}`}>
-              R$ {neighborhoodFee.toFixed(2)}
+              {calculatingFee ? "Calculando..." : `R$ ${activeDeliveryFee.toFixed(2)}`}
             </span>
           </div>
           {couponType === "free_shipping" && (

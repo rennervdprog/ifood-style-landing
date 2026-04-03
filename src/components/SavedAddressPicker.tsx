@@ -15,6 +15,7 @@ interface SavedAddress {
   neighborhood: string;
   reference_point: string | null;
   is_default: boolean;
+  cep: string | null;
 }
 
 interface SavedAddressPickerProps {
@@ -109,6 +110,7 @@ const SavedAddressPicker = ({ onSelect, selectedId }: SavedAddressPickerProps) =
       const { error } = await supabase.from("saved_addresses" as any).insert({
         user_id: user!.id,
         label,
+        cep: cep.replace(/\D/g, "") || null,
         street: street.trim(),
         number: number.trim(),
         complement: complement.trim() || null,

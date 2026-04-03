@@ -79,6 +79,7 @@ const AddressModal = ({ onClose, onSaved }: AddressModalProps) => {
         .from("profiles")
         .upsert({
           user_id: user!.id,
+          cep: cep.replace(/\D/g, "") || null,
           street: street.trim(),
           number: number.trim(),
           complement: complement.trim(),

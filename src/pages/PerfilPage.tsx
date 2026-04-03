@@ -99,6 +99,7 @@ const PerfilPage = () => {
 
   useEffect(() => {
     if (profile && !addressLoaded) {
+      setCep((profile as any).cep ? formatCep((profile as any).cep) : "");
       setStreet((profile as any).street || "");
       setNumber((profile as any).number || "");
       setComplement((profile as any).complement || "");
@@ -233,6 +234,7 @@ const PerfilPage = () => {
         .from("profiles")
         .upsert({
           user_id: user!.id,
+          cep: cep.replace(/\D/g, "") || null,
           street: street.trim(),
           number: number.trim(),
           complement: complement.trim(),
