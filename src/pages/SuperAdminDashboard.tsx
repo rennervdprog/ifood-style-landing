@@ -456,6 +456,7 @@ const SuperAdminDashboard = () => {
           storeBalances={storeBalances || []}
           queryClient={queryClient}
           withdrawalRequests={withdrawalRequests || []}
+          drivers={drivers || []}
         />
       ) : (
       <>
