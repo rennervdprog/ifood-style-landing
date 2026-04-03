@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   Plus, Trash2, Edit2, ChevronDown, ChevronUp, GripVertical,
-  Image as ImageIcon, Pause, Play, Package, Save, X, Link2
+  Image as ImageIcon, Pause, Play, Package, Save, X, Link2, Upload, Loader2
 } from "lucide-react";
 
 interface MenuBuilderProps {
