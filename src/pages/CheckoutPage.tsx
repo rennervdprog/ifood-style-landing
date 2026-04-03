@@ -288,11 +288,7 @@ const CheckoutPage = () => {
               onSelect={(addr) => {
                 setSelectedSavedAddressId(addr.id);
                 setSavedAddressData(addr);
-                // Sync neighborhood fee
-                if (neighborhoodFees) {
-                  const found = neighborhoodFees.find((n: any) => n.name === addr.neighborhood);
-                  if (found) setNeighborhood(found.name, found.fee);
-                }
+                // CEP-based fee will auto-calculate via useEffect
               }}
             />
           </div>
