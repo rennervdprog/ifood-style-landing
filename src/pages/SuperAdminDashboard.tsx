@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import AdminApprovals from "@/components/AdminApprovals";
 import CouponManager from "@/components/CouponManager";
 import AdminStoreManager from "@/components/AdminStoreManager";
+import DeliveryFeeConfigPanel from "@/components/DeliveryFeeConfig";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -17,7 +18,7 @@ import {
 } from "recharts";
 
 type DateFilter = "today" | "yesterday" | "week";
-type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "saques" | "sync" | "coupons";
+type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "saques" | "sync" | "coupons" | "entrega";
 
 const SuperAdminDashboard = () => {
   const { user, loading: authLoading } = useAuth();
@@ -403,6 +404,7 @@ const SuperAdminDashboard = () => {
           { key: "dashboard" as AdminTab, label: "📊 Dashboard" },
           { key: "financeiro" as AdminTab, label: "💰 Financeiro" },
           { key: "saques" as AdminTab, label: "🏧 Saques" },
+          { key: "entrega" as AdminTab, label: "🚚 Entrega" },
           { key: "approvals" as AdminTab, label: "🛡️ Aprovações" },
           { key: "stores" as AdminTab, label: "🏪 Lojas" },
           { key: "sync" as AdminTab, label: "🔄 Sincronizar" },
@@ -425,6 +427,8 @@ const SuperAdminDashboard = () => {
 
       {activeTab === "approvals" ? (
         <div className="px-4 py-4"><AdminApprovals /></div>
+      ) : activeTab === "entrega" ? (
+        <div className="px-4 py-4"><DeliveryFeeConfigPanel /></div>
       ) : activeTab === "sync" ? (
         <SyncExternalTab />
       ) : activeTab === "coupons" ? (

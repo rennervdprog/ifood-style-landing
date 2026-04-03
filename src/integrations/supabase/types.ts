@@ -877,6 +877,7 @@ export type Database = {
       }
       stores: {
         Row: {
+          address_cep: string | null
           address_city: string | null
           address_complement: string | null
           address_neighborhood: string | null
@@ -897,6 +898,7 @@ export type Database = {
           status: Database["public"]["Enums"]["store_status"]
         }
         Insert: {
+          address_cep?: string | null
           address_city?: string | null
           address_complement?: string | null
           address_neighborhood?: string | null
@@ -917,6 +919,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["store_status"]
         }
         Update: {
+          address_cep?: string | null
           address_city?: string | null
           address_complement?: string | null
           address_neighborhood?: string | null

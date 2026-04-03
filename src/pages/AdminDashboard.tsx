@@ -376,6 +376,7 @@ const AdminDashboard = () => {
               storeAddressReference={(store as any).address_reference || null}
               storeAddressCity={(store as any).address_city || null}
               storeAddressState={(store as any).address_state || null}
+              storeAddressCep={(store as any).address_cep || null}
             />
           )}
           {dashboardTab === "finance" && <StoreFinancePanel storeId={store.id} storeName={store.name} />}
