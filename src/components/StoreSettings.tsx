@@ -307,8 +307,61 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
           Endereço da Loja
         </label>
         <p className="text-[10px] text-muted-foreground -mt-1">
-          Endereço físico para entregadores navegarem até sua loja.
+          Endereço físico para entregadores navegarem até sua loja. O CEP é usado para calcular a taxa de entrega.
         </p>
+        {/* CEP field */}
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={formatCep(addressCep)}
+            onChange={(e) => {
+              const formatted = formatCep(e.target.value);
+              setAddressCep(formatted);
+              const digits = e.target.value.replace(/\D/g, "");
+              if (digits.length === 8) {
+                setLoadingCep(true);
+                fetchCep(digits).then((result) => {
+                  if (result) {
+                    setAddressStreet(result.logradouro || "");
+                    setAddressNeighborhood(result.bairro || "");
+                    setAddressCity(result.localidade || "Itatinga");
+                    setAddressState(result.uf || "SP");
+                    if (result.complemento) setAddressComplement(result.complemento);
+                    toast.success("Endereço preenchido pelo CEP!");
+                  } else {
+                    toast.error("CEP não encontrado.");
+                  }
+                  setLoadingCep(false);
+                }).catch(() => setLoadingCep(false));
+              }
+            }}
+            inputMode="numeric"
+            maxLength={9}
+            placeholder="CEP (ex: 18690-000)"
+            className="flex-1 bg-card border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary placeholder:text-muted-foreground"
+          />
+          <button
+            onClick={() => {
+              const digits = addressCep.replace(/\D/g, "");
+              if (digits.length !== 8) { toast.error("CEP inválido."); return; }
+              setLoadingCep(true);
+              fetchCep(digits).then((result) => {
+                if (result) {
+                  setAddressStreet(result.logradouro || "");
+                  setAddressNeighborhood(result.bairro || "");
+                  setAddressCity(result.localidade || "Itatinga");
+                  setAddressState(result.uf || "SP");
+                  toast.success("Endereço preenchido!");
+                } else { toast.error("CEP não encontrado."); }
+                setLoadingCep(false);
+              }).catch(() => setLoadingCep(false));
+            }}
+            disabled={loadingCep}
+            className="px-3 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50"
+          >
+            {loadingCep ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+          </button>
+        </div>
         <div className="grid grid-cols-3 gap-2">
           <div className="col-span-2">
             <input
