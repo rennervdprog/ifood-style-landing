@@ -1122,6 +1122,144 @@ async function cancelMercadoPagoPayment(paymentId: string): Promise<boolean> {
   }
 }
 
+// ── Route: driver payout (Asaas Transfer) ────────────────────────────
+
+async function handleDriverPayout(
+  body: z.infer<typeof DriverPayoutSchema>,
+  userId: string,
+  _userEmail: string,
+  supabase: any,
+): Promise<Response> {
+  const serviceClient = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  );
+
+  // Only admin can do driver payouts
+  const { data: isAdmin } = await serviceClient.rpc("is_platform_admin", { _user_id: userId });
+  if (!isAdmin) return json({ error: "Apenas o administrador pode realizar repasses a motoboys." }, 403);
+
+  const { driver_user_id, amount, pix_key, pix_type, withdrawal_request_id } = body;
+
+  // Get driver name
+  const { data: driver } = await serviceClient
+    .from("drivers")
+    .select("name")
+    .eq("user_id", driver_user_id)
+    .single();
+
+  const driverName = driver?.name || "Entregador";
+
+  // Generate reference
+  const { data: refData } = await serviceClient.rpc("generate_financial_reference", { _prefix: "MOT" });
+  const referenceCode = refData || `#MOT-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+  const desc = `Repasse Motoboy - ${driverName} - ${referenceCode}`;
+
+  // Try Asaas Transfer first
+  const provider = await getActiveProviderFromDB();
+  let transferResult: { ok: boolean; data: any } = { ok: false, data: { message: "Nenhum provedor configurado" } };
+
+  if (provider === "ASAAS" || hasAsaasCredentials()) {
+    transferResult = await createAsaasTransfer({
+      amount: Number(amount.toFixed(2)),
+      pixKey: pix_key,
+      pixType: pix_type,
+      description: desc,
+    });
+  }
+
+  // Save to financial_transactions (need a store_id - use a system placeholder or first store)
+  // For driver payouts we need to handle the store_id requirement
+  // We'll record it but mark it as driver_payout
+  const txRecord: Record<string, unknown> = {
+    store_id: "00000000-0000-0000-0000-000000000000", // placeholder for driver payouts
+    transaction_kind: "driver_payout",
+    reference_code: referenceCode,
+    amount: Number(amount.toFixed(2)),
+    status: transferResult.ok ? "approved" : "failed",
+    provider: provider === "ASAAS" ? "asaas" : "manual",
+    mercado_pago_payment_id: transferResult.ok ? String(transferResult.data?.transfer_id || "") : null,
+    metadata: {
+      driver_user_id,
+      driver_name: driverName,
+      pix_key,
+      pix_type,
+      description: desc,
+      withdrawal_request_id: withdrawal_request_id || null,
+    },
+  };
+
+  if (transferResult.ok) {
+    txRecord.settled_at = new Date().toISOString();
+  }
+
+  // We need a valid store_id. Let's skip financial_transactions for driver payouts
+  // and just log to payout_history instead
+  await serviceClient.from("payout_history").insert({
+    entity_type: "driver",
+    entity_id: driver_user_id,
+    entity_name: driverName,
+    amount: Number(amount.toFixed(2)),
+    payout_type: transferResult.ok ? "auto_asaas" : "manual",
+    notes: transferResult.ok
+      ? `Transferência automática Asaas: ${referenceCode} | PIX: ${pix_key} (${pix_type})`
+      : `Falha na transferência automática: ${transferResult.data?.message || "erro desconhecido"}`,
+    admin_user_id: userId,
+  });
+
+  if (transferResult.ok) {
+    // Update driver balance
+    await serviceClient
+      .from("driver_balances")
+      .update({
+        pending_amount: 0,
+        paid_amount: Number(amount.toFixed(2)),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("driver_user_id", driver_user_id);
+
+    // Update driver earnings
+    await serviceClient
+      .from("driver_earnings")
+      .update({ status: "pago" })
+      .eq("driver_user_id", driver_user_id)
+      .in("status", ["pendente", "waiting_store_settlement"]);
+
+    // If withdrawal request, mark as paid
+    if (withdrawal_request_id) {
+      await serviceClient
+        .from("withdrawal_requests")
+        .update({
+          status: "pago",
+          processed_at: new Date().toISOString(),
+          admin_notes: `Pago automaticamente via Asaas. Ref: ${referenceCode}`,
+        })
+        .eq("id", withdrawal_request_id);
+    }
+
+    return json({
+      success: true,
+      reference_code: referenceCode,
+      transfer_id: transferResult.data?.transfer_id,
+      status: "approved",
+      amount: Number(amount.toFixed(2)),
+      driver_name: driverName,
+      provider: "asaas",
+    });
+  }
+
+  return json({
+    success: false,
+    reference_code: referenceCode,
+    status: "manual_required",
+    message: `Transferência automática falhou: ${transferResult.data?.message}. Realize manualmente PIX de R$ ${amount.toFixed(2)} para ${pix_key} (${pix_type})`,
+    pix_key,
+    pix_type,
+    amount: Number(amount.toFixed(2)),
+    driver_name: driverName,
+  });
+}
+
 async function handleCancelPayment(
   body: z.infer<typeof CancelPaymentSchema>,
   userId: string,
