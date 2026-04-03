@@ -2,7 +2,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart, type CartAddon } from "@/contexts/CartContext";
-import { ArrowLeft, Star, Clock, ChevronRight, MapPin, Search, X, Navigation, CreditCard, Banknote, Smartphone, QrCode } from "lucide-react";
+import { ArrowLeft, Star, Clock, ChevronRight, MapPin, Search, X, Navigation, CreditCard, Banknote, Smartphone, QrCode, RotateCcw, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import { useRef, useState, useEffect } from "react";
 import CartFAB from "@/components/CartFAB";
@@ -10,6 +10,7 @@ import BottomNav from "@/components/BottomNav";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import ProductDetailModal from "@/components/ProductDetailModal";
 import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Product {
   id: string;
