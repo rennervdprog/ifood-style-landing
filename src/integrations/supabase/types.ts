@@ -1096,7 +1096,10 @@ export type Database = {
         | "paid"
         | "failed"
         | "cancelled"
-      financial_transaction_type: "commission_charge" | "store_payout"
+      financial_transaction_type:
+        | "commission_charge"
+        | "store_payout"
+        | "driver_payout"
       order_status:
         | "aguardando_pagamento"
         | "pendente"
@@ -1256,7 +1259,11 @@ export const Constants = {
         "failed",
         "cancelled",
       ],
-      financial_transaction_type: ["commission_charge", "store_payout"],
+      financial_transaction_type: [
+        "commission_charge",
+        "store_payout",
+        "driver_payout",
+      ],
       order_status: [
         "aguardando_pagamento",
         "pendente",
