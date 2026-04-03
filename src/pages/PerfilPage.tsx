@@ -5,11 +5,44 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/BottomNav";
-import { User, LogOut, Store, Shield, UserPlus, MapPin, Save, Bike, Wallet, Copy, AlertTriangle, MessageCircle, Truck, Download, Smartphone, X, Share2, Search, Loader2 } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  User, LogOut, Store, Shield, UserPlus, MapPin, Save, Bike, Wallet, Copy,
+  AlertTriangle, MessageCircle, Truck, Download, Smartphone, X, Share2,
+  Search, Loader2, ChevronRight, Phone, Mail, CreditCard, Package, Settings
+} from "lucide-react";
 import { toast } from "sonner";
 import { maskWhatsApp, formatWhatsAppNumber, isValidWhatsApp } from "@/lib/whatsapp";
 import { formatCep, fetchCep } from "@/lib/cepLookup";
 import { calculateDeliveryFee, DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig } from "@/lib/deliveryFee";
+
+const SectionCard = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
+  <div className={`bg-card rounded-2xl border border-border overflow-hidden ${className}`}>
+    {children}
+  </div>
+);
+
+const SectionHeader = ({ icon: Icon, title, subtitle }: { icon: React.ElementType; title: string; subtitle?: string }) => (
+  <div className="flex items-center gap-3 px-5 pt-5 pb-3">
+    <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+      <Icon className="h-4.5 w-4.5 text-primary" />
+    </div>
+    <div>
+      <h3 className="text-sm font-bold text-foreground">{title}</h3>
+      {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
+    </div>
+  </div>
+);
+
+const InputField = ({ label, ...props }: { label?: string } & React.InputHTMLAttributes<HTMLInputElement>) => (
+  <div>
+    {label && <label className="text-xs font-medium text-muted-foreground mb-1.5 block">{label}</label>}
+    <input
+      {...props}
+      className={`w-full px-3.5 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all ${props.className || ""}`}
+    />
+  </div>
+);
 
 const PerfilPage = () => {
   const { user, signOut } = useAuth();
@@ -20,11 +53,7 @@ const PerfilPage = () => {
   const { data: myStore } = useQuery({
     queryKey: ["my-store", user?.id],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("stores")
-        .select("id, name")
-        .eq("owner_id", user!.id)
-        .maybeSingle();
+      const { data } = await supabase.from("stores").select("id, name").eq("owner_id", user!.id).maybeSingle();
       return data;
     },
     enabled: !!user,
@@ -33,12 +62,7 @@ const PerfilPage = () => {
   const { data: isAdminUser } = useQuery({
     queryKey: ["is-admin", user?.id],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user!.id)
-        .eq("role", "admin")
-        .maybeSingle();
+      const { data } = await supabase.from("user_roles").select("role").eq("user_id", user!.id).eq("role", "admin").maybeSingle();
       return !!data;
     },
     enabled: !!user,
@@ -47,11 +71,7 @@ const PerfilPage = () => {
   const { data: profile } = useQuery({
     queryKey: ["my-profile", user?.id],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("user_id", user!.id)
-        .maybeSingle();
+      const { data } = await supabase.from("profiles").select("*").eq("user_id", user!.id).maybeSingle();
       return data;
     },
     enabled: !!user,
@@ -60,11 +80,7 @@ const PerfilPage = () => {
   const { data: myDriver } = useQuery({
     queryKey: ["my-driver", user?.id],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("drivers")
-        .select("*")
-        .eq("user_id", user!.id)
-        .maybeSingle();
+      const { data } = await supabase.from("drivers").select("*").eq("user_id", user!.id).maybeSingle();
       return data;
     },
     enabled: !!user,
@@ -73,19 +89,22 @@ const PerfilPage = () => {
   const { data: deliveryFeeConfig } = useQuery({
     queryKey: ["delivery-fee-config"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("admin_settings")
-        .select("value")
-        .eq("key", "delivery_fee_config")
-        .maybeSingle();
+      const { data } = await supabase.from("admin_settings").select("value").eq("key", "delivery_fee_config").maybeSingle();
       return data?.value ? (data.value as unknown as DeliveryFeeConfig) : DEFAULT_DELIVERY_FEE_CONFIG;
     },
   });
 
+  const { data: orderCount } = useQuery({
+    queryKey: ["my-order-count", user?.id],
+    queryFn: async () => {
+      const { count } = await supabase.from("orders").select("id", { count: "exact", head: true }).eq("client_id", user!.id);
+      return count || 0;
+    },
+    enabled: !!user,
+  });
+
   const [calculatedFee, setCalculatedFee] = useState<number | null>(null);
   const [feeBreakdown, setFeeBreakdown] = useState<string>("");
-
-  // Address form state
   const [cep, setCep] = useState("");
   const [street, setStreet] = useState("");
   const [number, setNumber] = useState("");
@@ -97,12 +116,11 @@ const PerfilPage = () => {
   const [savingAddress, setSavingAddress] = useState(false);
   const [addressLoaded, setAddressLoaded] = useState(false);
   const [loadingCep, setLoadingCep] = useState(false);
-
-  // PIX form state
   const [pixKey, setPixKey] = useState("");
   const [pixType, setPixType] = useState("");
   const [savingPix, setSavingPix] = useState(false);
   const [pixLoaded, setPixLoaded] = useState(false);
+  const [activeSection, setActiveSection] = useState<"address" | "pix" | null>(null);
 
   useEffect(() => {
     if (profile && !addressLoaded) {
@@ -142,43 +160,20 @@ const PerfilPage = () => {
 
   useEffect(() => {
     if (isStandalone) { setIsInstalled(true); return; }
-
-    if (isIOS) {
-      setShowInstallButton(true);
-      return;
-    }
-
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-      setShowInstallButton(true);
-    };
+    if (isIOS) { setShowInstallButton(true); return; }
+    const handler = (e: Event) => { e.preventDefault(); setDeferredPrompt(e as BeforeInstallPromptEvent); setShowInstallButton(true); };
     window.addEventListener("beforeinstallprompt", handler);
-
-    const installedHandler = () => {
-      setIsInstalled(true);
-      setShowInstallButton(false);
-    };
+    const installedHandler = () => { setIsInstalled(true); setShowInstallButton(false); };
     window.addEventListener("appinstalled", installedHandler);
-
-    return () => {
-      window.removeEventListener("beforeinstallprompt", handler);
-      window.removeEventListener("appinstalled", installedHandler);
-    };
+    return () => { window.removeEventListener("beforeinstallprompt", handler); window.removeEventListener("appinstalled", installedHandler); };
   }, [isIOS, isStandalone]);
 
   const handleInstallClick = useCallback(async () => {
-    if (isIOS) {
-      setShowIOSModal(true);
-      return;
-    }
+    if (isIOS) { setShowIOSModal(true); return; }
     if (!deferredPrompt) return;
     await deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === "accepted") {
-      setShowInstallButton(false);
-      setIsInstalled(true);
-    }
+    if (outcome === "accepted") { setShowInstallButton(false); setIsInstalled(true); }
     setDeferredPrompt(null);
   }, [isIOS, deferredPrompt]);
 
@@ -186,143 +181,79 @@ const PerfilPage = () => {
     const formatted = formatCep(value);
     setCep(formatted);
     const digits = value.replace(/\D/g, "");
-    if (digits.length === 8) {
-      handleCepLookup(digits);
-    }
+    if (digits.length === 8) handleCepLookup(digits);
   };
 
   const handleCepLookup = async (digits?: string) => {
     const cepDigits = digits || cep.replace(/\D/g, "");
-    if (cepDigits.length !== 8) {
-      toast.error("Digite um CEP válido com 8 dígitos.");
-      return;
-    }
+    if (cepDigits.length !== 8) { toast.error("Digite um CEP válido com 8 dígitos."); return; }
     setLoadingCep(true);
     try {
       const result = await fetchCep(cepDigits);
-      if (!result) {
-        toast.error("CEP não encontrado.");
-        return;
-      }
+      if (!result) { toast.error("CEP não encontrado."); return; }
       setStreet(result.logradouro || "");
       if (result.complemento) setComplement(result.complemento);
-      if (result.bairro) {
-        setNeighborhoodLocal(result.bairro);
-      }
+      if (result.bairro) setNeighborhoodLocal(result.bairro);
       toast.success("Endereço preenchido pelo CEP!");
-    } catch {
-      toast.error("Erro ao buscar CEP.");
-    } finally {
-      setLoadingCep(false);
-    }
+    } catch { toast.error("Erro ao buscar CEP."); } finally { setLoadingCep(false); }
   };
 
-  // Calculate delivery fee based on CEP using admin config
   useEffect(() => {
     const cepDigits = cep.replace(/\D/g, "");
-    if (cepDigits.length !== 8 || !deliveryFeeConfig) {
-      setCalculatedFee(null);
-      setFeeBreakdown("");
-      return;
-    }
+    if (cepDigits.length !== 8 || !deliveryFeeConfig) { setCalculatedFee(null); setFeeBreakdown(""); return; }
     let cancelled = false;
     calculateDeliveryFee(cepDigits, "", deliveryFeeConfig).then((result) => {
-      if (!cancelled) {
-        setCalculatedFee(result.fee);
-        setFeeBreakdown(result.breakdown);
-      }
+      if (!cancelled) { setCalculatedFee(result.fee); setFeeBreakdown(result.breakdown); }
     });
     return () => { cancelled = true; };
   }, [cep, deliveryFeeConfig]);
 
-  const selectedFee = calculatedFee;
-
-  const handleSignOut = async () => {
-    await signOut();
-    toast.success("Você saiu da conta.");
-    navigate("/");
-  };
+  const handleSignOut = async () => { await signOut(); toast.success("Você saiu da conta."); navigate("/"); };
 
   const handleSaveAddress = async () => {
-    if (!street.trim() || !number.trim() || !neighborhood) {
-      toast.error("Preencha rua, número e bairro.");
-      return;
-    }
+    if (!street.trim() || !number.trim() || !neighborhood) { toast.error("Preencha rua, número e bairro."); return; }
     setSavingAddress(true);
     try {
-      const { error } = await supabase
-        .from("profiles")
-        .upsert({
-          user_id: user!.id,
-          cep: cep.replace(/\D/g, "") || null,
-          street: street.trim(),
-          number: number.trim(),
-          complement: complement.trim(),
-          reference_point: referencePoint.trim(),
-          neighborhood,
-          phone: phone.trim(),
-          whatsapp_number: isValidWhatsApp(whatsappNumber) ? formatWhatsAppNumber(whatsappNumber) : null,
-        } as any, { onConflict: "user_id" });
+      const { error } = await supabase.from("profiles").upsert({
+        user_id: user!.id, cep: cep.replace(/\D/g, "") || null, street: street.trim(),
+        number: number.trim(), complement: complement.trim(), reference_point: referencePoint.trim(),
+        neighborhood, phone: phone.trim(),
+        whatsapp_number: isValidWhatsApp(whatsappNumber) ? formatWhatsAppNumber(whatsappNumber) : null,
+      } as any, { onConflict: "user_id" });
       if (error) throw error;
-
-      // Sync cart neighborhood with calculated fee
-      if (neighborhood && calculatedFee !== null) {
-        setNeighborhood(neighborhood, calculatedFee);
-      }
-
+      if (neighborhood && calculatedFee !== null) setNeighborhood(neighborhood, calculatedFee);
       toast.success("Endereço salvo!");
       queryClient.invalidateQueries({ queryKey: ["my-profile", user?.id] });
       queryClient.invalidateQueries({ queryKey: ["my-profile-checkout", user?.id] });
-    } catch (err: any) {
-      toast.error(err.message || "Erro ao salvar.");
-    } finally {
-      setSavingAddress(false);
-    }
+    } catch (err: any) { toast.error(err.message || "Erro ao salvar."); } finally { setSavingAddress(false); }
   };
 
   const handleSavePix = async () => {
-    if (!pixKey.trim() || !pixType) {
-      toast.error("Preencha o tipo e a chave PIX.");
-      return;
-    }
+    if (!pixKey.trim() || !pixType) { toast.error("Preencha o tipo e a chave PIX."); return; }
     setSavingPix(true);
     try {
-      const { error } = await supabase
-        .from("profiles")
-        .upsert({
-          user_id: user!.id,
-          pix_key: pixKey.trim(),
-          pix_type: pixType,
-        } as any, { onConflict: "user_id" });
+      const { error } = await supabase.from("profiles").upsert({
+        user_id: user!.id, pix_key: pixKey.trim(), pix_type: pixType,
+      } as any, { onConflict: "user_id" });
       if (error) throw error;
       toast.success("Chave PIX salva!");
       queryClient.invalidateQueries({ queryKey: ["my-profile", user?.id] });
-    } catch (err: any) {
-      toast.error(err.message || "Erro ao salvar.");
-    } finally {
-      setSavingPix(false);
-    }
+    } catch (err: any) { toast.error(err.message || "Erro ao salvar."); } finally { setSavingPix(false); }
   };
 
-  const copyPixKey = () => {
-    if (pixKey) {
-      navigator.clipboard.writeText(pixKey);
-      toast.success("Chave PIX copiada!");
-    }
-  };
+  const copyPixKey = () => { if (pixKey) { navigator.clipboard.writeText(pixKey); toast.success("Chave PIX copiada!"); } };
 
   if (!user) {
     return (
-       <div className="min-h-screen bg-background pb-32 overflow-y-auto">
-        <header className="sticky top-0 z-50 bg-card border-b border-border flex items-center h-14 px-4">
-          <h1 className="font-bold text-foreground">Meu Perfil</h1>
-        </header>
-        <div className="flex flex-col items-center justify-center py-24 text-center px-4">
-          <User className="h-16 w-16 text-muted-foreground mb-4" />
-          <h2 className="text-lg font-bold text-foreground mb-1">Faça login</h2>
-          <p className="text-sm text-muted-foreground">Entre para acompanhar seus pedidos.</p>
-          <button onClick={() => navigate("/auth")} className="mt-6 bg-primary text-primary-foreground font-bold px-8 py-3 rounded-2xl">
-            Entrar
+      <div className="min-h-screen bg-background pb-32 overflow-y-auto">
+        <div className="flex flex-col items-center justify-center py-24 text-center px-6">
+          <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
+            <User className="h-10 w-10 text-primary" />
+          </div>
+          <h2 className="text-xl font-bold text-foreground mb-2">Entre na sua conta</h2>
+          <p className="text-sm text-muted-foreground max-w-[260px]">Faça login para acompanhar seus pedidos e gerenciar seu perfil.</p>
+          <button onClick={() => navigate("/auth")} className="mt-8 bg-primary text-primary-foreground font-bold px-10 py-3.5 rounded-2xl text-sm">
+            Entrar / Cadastrar
           </button>
         </div>
         <BottomNav />
@@ -332,34 +263,47 @@ const PerfilPage = () => {
 
   const profileRole = (profile as any)?.role;
   const isApproved = (profile as any)?.is_approved;
+  const userName = (profile as any)?.full_name || user.email?.split("@")[0] || "Usuário";
+  const userInitials = userName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
+  const roleLabel = profileRole === "lojista" ? "Lojista" : profileRole === "motoboy" ? "Entregador" : "Cliente";
+  const hasAddress = !!(street && number && neighborhood);
+  const hasPix = !!(pixKey && pixType);
 
   return (
     <div className="min-h-screen bg-background pb-32 overflow-y-auto">
-      <header className="sticky top-0 z-50 bg-card border-b border-border flex items-center h-14 px-4">
-        <h1 className="font-bold text-foreground">Meu Perfil</h1>
-      </header>
-      <div className="px-4 py-6 space-y-4">
-        {/* User info */}
-        <div className="bg-card rounded-2xl p-4 border border-border flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-            <User className="h-6 w-6 text-primary" />
-          </div>
-          <div>
-            <h2 className="font-bold text-foreground">{(profile as any)?.full_name || user.email}</h2>
-            <p className="text-xs text-muted-foreground">
-              {profileRole === "lojista" ? "Lojista" : profileRole === "motoboy" ? "Entregador" : "Cliente"} no FoodIta
-            </p>
+      {/* Hero header */}
+      <div className="bg-gradient-to-b from-primary/10 to-background px-5 pt-8 pb-6">
+        <div className="flex items-center gap-4">
+          <Avatar className="h-16 w-16 border-2 border-primary/20">
+            <AvatarFallback className="bg-primary/10 text-primary font-bold text-lg">
+              {userInitials}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-lg font-bold text-foreground truncate">{userName}</h1>
+            <p className="text-xs text-muted-foreground">{user.email}</p>
+            <div className="mt-1.5 flex items-center gap-2">
+              <span className="text-[10px] font-semibold uppercase tracking-wider bg-primary/10 text-primary px-2.5 py-0.5 rounded-full">
+                {roleLabel}
+              </span>
+              {orderCount !== undefined && orderCount > 0 && (
+                <span className="text-[10px] font-medium text-muted-foreground flex items-center gap-1">
+                  <Package className="h-3 w-3" /> {orderCount} pedido{orderCount !== 1 ? "s" : ""}
+                </span>
+              )}
+            </div>
           </div>
         </div>
+      </div>
 
-        {/* PWA Install Button */}
+      <div className="px-4 space-y-3 -mt-1">
+
+        {/* PWA Install */}
         {showInstallButton && !isInstalled && (
-          <button
-            onClick={handleInstallClick}
-            className="w-full bg-destructive text-destructive-foreground font-bold py-3.5 rounded-2xl flex items-center justify-center gap-3 text-sm active:scale-[0.98] transition-transform"
-          >
+          <button onClick={handleInstallClick}
+            className="w-full bg-primary text-primary-foreground font-bold py-3.5 rounded-2xl flex items-center justify-center gap-3 text-sm active:scale-[0.98] transition-transform shadow-sm">
             <Download className="h-5 w-5" />
-            📲 Baixar Aplicativo FoodIta
+            📲 Instalar Aplicativo
           </button>
         )}
 
@@ -368,284 +312,229 @@ const PerfilPage = () => {
           <div className="fixed inset-0 z-[100] bg-black/60 flex items-end justify-center" onClick={() => setShowIOSModal(false)}>
             <div className="bg-card w-full max-w-md rounded-t-3xl p-6 space-y-4 animate-in slide-in-from-bottom-4" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-black text-foreground">Instalar FoodIta no iPhone</h3>
-                <button onClick={() => setShowIOSModal(false)} className="text-muted-foreground">
-                  <X className="h-5 w-5" />
-                </button>
+                <h3 className="text-lg font-black text-foreground">Instalar no iPhone</h3>
+                <button onClick={() => setShowIOSModal(false)} className="text-muted-foreground"><X className="h-5 w-5" /></button>
               </div>
-              <div className="space-y-4">
-                <div className="flex items-start gap-3 bg-muted/50 rounded-xl p-3">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-lg">1</span>
+              <div className="space-y-3">
+                {[
+                  { step: "1", title: "Toque no botão Compartilhar", desc: <span className="flex items-center gap-1">Ícone <Share2 className="h-3.5 w-3.5 inline" /> na barra do Safari</span> },
+                  { step: "2", title: 'Role e toque em:', desc: <>"<strong>Adicionar à Tela de Início</strong>"</> },
+                  { step: "3", title: 'Toque em "Adicionar"', desc: "Pronto! O app aparecerá na sua tela inicial" },
+                ].map((item) => (
+                  <div key={item.step} className="flex items-start gap-3 bg-muted/50 rounded-xl p-3">
+                    <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 text-sm font-bold text-primary">{item.step}</div>
+                    <div>
+                      <p className="text-sm font-bold text-foreground">{item.title}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-bold text-foreground">Toque no botão Compartilhar</p>
-                    <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
-                      Ícone <Share2 className="h-3.5 w-3.5 inline" /> na barra do Safari (embaixo)
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 bg-muted/50 rounded-xl p-3">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-lg">2</span>
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-foreground">Role para baixo e toque em:</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">"<strong>Adicionar à Tela de Início</strong>"</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 bg-muted/50 rounded-xl p-3">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-lg">3</span>
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-foreground">Toque em "Adicionar"</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">O FoodIta aparecerá na sua tela inicial!</p>
-                  </div>
-                </div>
+                ))}
               </div>
-              <button
-                onClick={() => setShowIOSModal(false)}
-                className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-xl text-sm"
-              >
-                Entendi!
-              </button>
+              <button onClick={() => setShowIOSModal(false)} className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-xl text-sm">Entendi!</button>
             </div>
           </div>
         )}
 
-        {/* Address section */}
-        <div className="bg-card rounded-2xl p-4 border border-border">
-          <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-            <MapPin className="h-4 w-4 text-primary" />
-            Endereço de Entrega
-          </h3>
-          <div className="space-y-3">
-          {/* CEP field */}
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="CEP (ex: 18690-000)"
-              value={cep}
-              onChange={(e) => handleCepChange(e.target.value)}
-              inputMode="numeric"
-              maxLength={9}
-              className="flex-1 px-3 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-            <button
-              onClick={() => handleCepLookup()}
-              disabled={loadingCep}
-              className="px-3 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50 flex items-center gap-1"
-            >
-              {loadingCep ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-            </button>
-          </div>
-            <div className="grid grid-cols-3 gap-2">
-              <div className="col-span-2">
-                <input
-                  type="text"
-                  placeholder="Rua"
-                  value={street}
-                  onChange={(e) => setStreet(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                  autoComplete="street-address"
-                />
-              </div>
-              <input
-                type="text"
-                placeholder="Nº"
-                value={number}
-                onChange={(e) => setNumber(e.target.value)}
-                inputMode="numeric"
-                className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
-            <input
-              type="text"
-              placeholder="Complemento (apto, bloco...)"
-              value={complement}
-              onChange={(e) => setComplement(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-            />
+        {/* Pending approval */}
+        {(profileRole === "lojista" || profileRole === "motoboy") && !isApproved && (
+          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-4 flex items-center gap-3">
+            <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0" />
             <div>
-              <label className="text-xs font-bold text-muted-foreground mb-1 block">Bairro (preenchido pelo CEP)</label>
-              <input
-                type="text"
-                placeholder="Digite o CEP acima para preencher"
-                value={neighborhood}
-                onChange={(e) => setNeighborhoodLocal(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              />
+              <p className="text-sm font-bold text-yellow-600">Cadastro em Análise</p>
+              <p className="text-xs text-muted-foreground">Aguarde a aprovação do administrador.</p>
             </div>
-            {/* Delivery fee indicator */}
-            {selectedFee !== null && (
-              <div className="flex flex-col gap-1 bg-primary/5 border border-primary/20 rounded-xl px-3 py-2">
-                <div className="flex items-center gap-2">
-                  <Truck className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-bold text-primary">
-                    Taxa de entrega: R$ {selectedFee.toFixed(2)}
-                  </span>
-                </div>
-                {feeBreakdown && (
-                  <span className="text-xs text-muted-foreground ml-6">{feeBreakdown}</span>
-                )}
-              </div>
-            )}
-            <input
-              type="text"
-              placeholder="Ponto de referência (Ex: Próximo à Igreja)"
-              value={referencePoint}
-              onChange={(e) => setReferencePoint(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-            <input
-              type="tel"
-              placeholder="Telefone"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              inputMode="tel"
-              className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              autoComplete="tel"
-            />
-            <div>
-              <label className="text-xs font-bold text-foreground mb-1 flex items-center gap-1.5">
-                <MessageCircle className="h-3.5 w-3.5 text-green-500" />
-                WhatsApp (com DDD)
-              </label>
-              <input
-                type="tel"
-                placeholder="+55 14 99999-9999"
-                value={whatsappNumber}
-                onChange={(e) => setWhatsappNumber(maskWhatsApp(e.target.value))}
-                inputMode="tel"
-                className="w-full px-3 py-2.5 rounded-xl border border-green-500/30 bg-background text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
-            </div>
-            <button
-              onClick={handleSaveAddress}
-              disabled={savingAddress}
-              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary text-primary-foreground font-bold text-sm disabled:opacity-50"
-            >
-              <Save className="h-4 w-4" />
-              {savingAddress ? "Salvando..." : "Salvar Endereço"}
-            </button>
           </div>
-        </div>
+        )}
 
-        {/* PIX Section - only for lojista/motoboy */}
-        {(profileRole === "lojista" || profileRole === "motoboy") && (
-          <div className="bg-card rounded-2xl p-4 border border-border">
-            <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-              <Wallet className="h-4 w-4 text-primary" />
-              Dados de Recebimento (PIX)
-            </h3>
-            {!pixKey && !pixType && (
-              <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-3 mb-3 flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0" />
-                <p className="text-xs text-destructive font-bold">
-                  Cadastre sua chave PIX para receber seus pagamentos!
+        {/* Quick actions */}
+        <SectionCard>
+          <div className="divide-y divide-border">
+            {myStore && (
+              <button onClick={() => navigate("/admin")} className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-muted/50 transition-colors">
+                <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center"><Store className="h-4 w-4 text-primary" /></div>
+                <div className="flex-1 text-left">
+                  <p className="text-sm font-semibold text-foreground">Painel da Loja</p>
+                  <p className="text-xs text-muted-foreground">{myStore.name}</p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </button>
+            )}
+            {myDriver && (
+              <button onClick={() => navigate("/entregador")} className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-muted/50 transition-colors">
+                <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center"><Bike className="h-4 w-4 text-primary" /></div>
+                <div className="flex-1 text-left">
+                  <p className="text-sm font-semibold text-foreground">Painel do Entregador</p>
+                  <p className="text-xs text-muted-foreground">Gerenciar entregas</p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </button>
+            )}
+            {isAdminUser && (
+              <button onClick={() => navigate("/super-admin")} className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-muted/50 transition-colors">
+                <div className="w-9 h-9 rounded-xl bg-yellow-500/10 flex items-center justify-center"><Shield className="h-4 w-4 text-yellow-600" /></div>
+                <div className="flex-1 text-left">
+                  <p className="text-sm font-semibold text-foreground">Painel Administrativo</p>
+                  <p className="text-xs text-muted-foreground">Gerenciar plataforma</p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </button>
+            )}
+            <button onClick={() => navigate("/pedidos")} className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-muted/50 transition-colors">
+              <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center"><Package className="h-4 w-4 text-primary" /></div>
+              <div className="flex-1 text-left">
+                <p className="text-sm font-semibold text-foreground">Meus Pedidos</p>
+                <p className="text-xs text-muted-foreground">Acompanhe seus pedidos</p>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </button>
+          </div>
+        </SectionCard>
+
+        {/* Address section - collapsible */}
+        <SectionCard>
+          <button onClick={() => setActiveSection(activeSection === "address" ? null : "address")}
+            className="w-full flex items-center justify-between px-5 py-4 hover:bg-muted/50 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                <MapPin className="h-4 w-4 text-primary" />
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-semibold text-foreground">Endereço de Entrega</p>
+                <p className="text-xs text-muted-foreground">
+                  {hasAddress ? `${street}, ${number} – ${neighborhood}` : "Nenhum endereço cadastrado"}
                 </p>
               </div>
-            )}
-            <div className="space-y-3">
-              <select
-                value={pixType}
-                onChange={(e) => setPixType(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary appearance-none"
-              >
-                <option value="">Tipo da Chave</option>
-                <option value="cpf">CPF</option>
-                <option value="cnpj">CNPJ</option>
-                <option value="email">E-mail</option>
-                <option value="phone">Telefone</option>
-                <option value="random">Chave Aleatória</option>
-              </select>
+            </div>
+            <ChevronRight className={`h-4 w-4 text-muted-foreground transition-transform ${activeSection === "address" ? "rotate-90" : ""}`} />
+          </button>
+
+          {activeSection === "address" && (
+            <div className="px-5 pb-5 space-y-3 border-t border-border pt-4">
               <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Sua chave PIX"
-                  value={pixKey}
-                  onChange={(e) => setPixKey(e.target.value)}
-                  className="flex-1 px-3 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-                {pixKey && (
-                  <button
-                    onClick={copyPixKey}
-                    className="px-3 py-2.5 rounded-xl border border-border bg-background text-muted-foreground hover:text-foreground"
-                  >
-                    <Copy className="h-4 w-4" />
-                  </button>
-                )}
+                <InputField placeholder="CEP (ex: 18690-000)" value={cep} onChange={(e) => handleCepChange(e.target.value)} inputMode="numeric" maxLength={9} />
+                <button onClick={() => handleCepLookup()} disabled={loadingCep}
+                  className="px-3.5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50 flex items-center gap-1 flex-shrink-0">
+                  {loadingCep ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                </button>
               </div>
-              <button
-                onClick={handleSavePix}
-                disabled={savingPix}
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary text-primary-foreground font-bold text-sm disabled:opacity-50"
-              >
+              <div className="grid grid-cols-3 gap-2">
+                <div className="col-span-2"><InputField placeholder="Rua" value={street} onChange={(e) => setStreet(e.target.value)} autoComplete="street-address" /></div>
+                <InputField placeholder="Nº" value={number} onChange={(e) => setNumber(e.target.value)} inputMode="numeric" />
+              </div>
+              <InputField placeholder="Complemento (apto, bloco...)" value={complement} onChange={(e) => setComplement(e.target.value)} />
+              <InputField label="Bairro (preenchido pelo CEP)" placeholder="Digite o CEP acima" value={neighborhood} onChange={(e) => setNeighborhoodLocal(e.target.value)} />
+
+              {calculatedFee !== null && (
+                <div className="flex flex-col gap-1 bg-primary/5 border border-primary/20 rounded-xl px-3.5 py-2.5">
+                  <div className="flex items-center gap-2">
+                    <Truck className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-bold text-primary">Taxa: R$ {calculatedFee.toFixed(2)}</span>
+                  </div>
+                  {feeBreakdown && <span className="text-xs text-muted-foreground ml-6">{feeBreakdown}</span>}
+                </div>
+              )}
+
+              <InputField placeholder="Ponto de referência" value={referencePoint} onChange={(e) => setReferencePoint(e.target.value)} />
+              <InputField placeholder="Telefone" value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" type="tel" autoComplete="tel" />
+
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1.5">
+                  <MessageCircle className="h-3.5 w-3.5 text-green-500" /> WhatsApp (com DDD)
+                </label>
+                <input type="tel" placeholder="+55 14 99999-9999" value={whatsappNumber}
+                  onChange={(e) => setWhatsappNumber(maskWhatsApp(e.target.value))} inputMode="tel"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-green-500/30 bg-background text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all" />
+              </div>
+
+              <button onClick={handleSaveAddress} disabled={savingAddress}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-primary-foreground font-bold text-sm disabled:opacity-50 transition-all active:scale-[0.98]">
                 <Save className="h-4 w-4" />
-                {savingPix ? "Salvando..." : "Salvar Chave PIX"}
+                {savingAddress ? "Salvando..." : "Salvar Endereço"}
               </button>
             </div>
-          </div>
-        )}
-        {/* Partner buttons */}
-        {myStore && (
-          <button
-            onClick={() => navigate("/admin")}
-            className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-border bg-secondary text-secondary-foreground font-bold"
-          >
-            <Store className="h-4 w-4" />
-            Painel da Loja ({myStore.name})
-          </button>
+          )}
+        </SectionCard>
+
+        {/* PIX Section */}
+        {(profileRole === "lojista" || profileRole === "motoboy") && (
+          <SectionCard>
+            <button onClick={() => setActiveSection(activeSection === "pix" ? null : "pix")}
+              className="w-full flex items-center justify-between px-5 py-4 hover:bg-muted/50 transition-colors">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Wallet className="h-4 w-4 text-primary" />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-semibold text-foreground">Dados PIX</p>
+                  <p className="text-xs text-muted-foreground">
+                    {hasPix ? `${pixType.toUpperCase()} • ${pixKey.slice(0, 12)}...` : "Nenhuma chave cadastrada"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {!hasPix && <span className="w-2 h-2 rounded-full bg-destructive animate-pulse" />}
+                <ChevronRight className={`h-4 w-4 text-muted-foreground transition-transform ${activeSection === "pix" ? "rotate-90" : ""}`} />
+              </div>
+            </button>
+
+            {activeSection === "pix" && (
+              <div className="px-5 pb-5 space-y-3 border-t border-border pt-4">
+                {!hasPix && (
+                  <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-3 flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0" />
+                    <p className="text-xs text-destructive font-bold">Cadastre sua chave PIX para receber pagamentos!</p>
+                  </div>
+                )}
+                <select value={pixType} onChange={(e) => setPixType(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 appearance-none transition-all">
+                  <option value="">Tipo da Chave</option>
+                  <option value="cpf">CPF</option>
+                  <option value="cnpj">CNPJ</option>
+                  <option value="email">E-mail</option>
+                  <option value="phone">Telefone</option>
+                  <option value="random">Chave Aleatória</option>
+                </select>
+                <div className="flex gap-2">
+                  <InputField placeholder="Sua chave PIX" value={pixKey} onChange={(e) => setPixKey(e.target.value)} />
+                  {pixKey && (
+                    <button onClick={copyPixKey} className="px-3 py-2.5 rounded-xl border border-border bg-background text-muted-foreground hover:text-foreground flex-shrink-0">
+                      <Copy className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+                <button onClick={handleSavePix} disabled={savingPix}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-primary-foreground font-bold text-sm disabled:opacity-50 transition-all active:scale-[0.98]">
+                  <Save className="h-4 w-4" />
+                  {savingPix ? "Salvando..." : "Salvar Chave PIX"}
+                </button>
+              </div>
+            )}
+          </SectionCard>
         )}
 
-        {myDriver && (
-          <button
-            onClick={() => navigate("/entregador")}
-            className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-border bg-secondary text-secondary-foreground font-bold"
-          >
-            <Bike className="h-4 w-4" />
-            Painel do Entregador
-          </button>
-        )}
-
-        {isAdminUser && (
-          <button
-            onClick={() => navigate("/super-admin")}
-            className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-600 font-bold"
-          >
-            <Shield className="h-4 w-4" />
-            Painel Administrativo
-          </button>
-        )}
-
+        {/* Become partner */}
         {!myStore && !myDriver && profileRole !== "lojista" && profileRole !== "motoboy" && (
-          <button
-            onClick={() => navigate("/parceiro")}
-            className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-primary/30 bg-primary/5 text-primary font-bold"
-          >
-            <UserPlus className="h-4 w-4" />
-            Seja um Parceiro
+          <button onClick={() => navigate("/parceiro")}
+            className="w-full flex items-center gap-3 px-5 py-4 rounded-2xl border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors">
+            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+              <UserPlus className="h-4 w-4 text-primary" />
+            </div>
+            <div className="flex-1 text-left">
+              <p className="text-sm font-semibold text-primary">Seja um Parceiro</p>
+              <p className="text-xs text-muted-foreground">Cadastre sua loja ou seja entregador</p>
+            </div>
+            <ChevronRight className="h-4 w-4 text-primary" />
           </button>
         )}
 
-        {/* Pending approval notice */}
-        {(profileRole === "lojista" || profileRole === "motoboy") && !isApproved && (
-          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-4 text-center">
-            <p className="text-sm font-bold text-yellow-600">🛡️ Cadastro em Análise</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Aguarde a aprovação do administrador.
-            </p>
-          </div>
-        )}
-
-        <button
-          onClick={handleSignOut}
-          className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-border bg-card text-destructive font-bold"
-        >
+        {/* Sign out */}
+        <button onClick={handleSignOut}
+          className="w-full flex items-center justify-center gap-2 p-3.5 rounded-2xl border border-destructive/20 bg-destructive/5 text-destructive font-semibold text-sm hover:bg-destructive/10 transition-colors">
           <LogOut className="h-4 w-4" />
           Sair da conta
         </button>
+
+        <p className="text-center text-[10px] text-muted-foreground pb-4">FoodIta v1.0</p>
       </div>
       <BottomNav />
     </div>
