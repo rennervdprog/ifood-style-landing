@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback, useMemo } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo, memo } from "react";
 import SimulationBanner from "@/components/SimulationBanner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -853,7 +853,6 @@ const AdminDashboard = () => {
                     const count = orders?.filter(o => o.status === tab.status).length || 0;
                     const Icon = tab.icon;
                     const isActive = activeTab === tab.status;
-                    const sc = statusColors[tab.status];
                     return (
                       <button key={tab.status} onClick={() => setActiveTab(tab.status)}
                         className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${isActive ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-accent hover:text-foreground"}`}>
@@ -891,38 +890,93 @@ const AdminDashboard = () => {
               <div className="p-4 pb-24 space-y-3 max-w-3xl mx-auto">
                 {isLoading ? (
                   <div className="space-y-3">
-                    {Array.from({ length: 3 }).map((_, i) => (
-                      <div key={i} className="bg-card rounded-2xl p-4 animate-pulse space-y-3 border border-border">
-                        <div className="h-5 bg-muted rounded w-1/3" />
-                        <div className="h-3 bg-muted rounded w-2/3" />
-                        <div className="h-10 bg-muted rounded w-1/2" />
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <div key={i} className="bg-card rounded-2xl overflow-hidden border border-border animate-pulse">
+                        <div className="h-8 bg-muted/60" />
+                        <div className="p-4 space-y-3">
+                          <div className="flex justify-between items-start">
+                            <div className="space-y-2">
+                              <div className="h-5 bg-muted rounded-lg w-32" />
+                              <div className="h-3 bg-muted rounded w-24" />
+                            </div>
+                            <div className="space-y-2 items-end flex flex-col">
+                              <div className="h-6 bg-muted rounded-lg w-20" />
+                              <div className="h-3 bg-muted rounded w-12" />
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <div className="h-8 bg-muted rounded-lg w-20" />
+                            <div className="h-8 bg-muted rounded-lg w-16" />
+                            <div className="h-8 bg-muted rounded-lg w-24" />
+                          </div>
+                          <div className="bg-muted/50 rounded-xl p-3 space-y-2">
+                            <div className="h-3 bg-muted rounded w-3/4" />
+                            <div className="h-3 bg-muted rounded w-1/2" />
+                          </div>
+                          <div className="flex gap-2">
+                            <div className="h-10 bg-muted rounded-xl w-10" />
+                            <div className="h-10 bg-muted rounded-xl flex-1" />
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
                 ) : filteredOrders.length > 0 ? (
-                  filteredOrders.map((order: any) => {
+                  filteredOrders.map((order: any, index: number) => {
                     const action = getMainAction(order.status);
                     const isAddressExpanded = expandedAddresses.has(order.id);
                     const sc = statusColors[order.status] || statusColors.pendente;
+                    
+                    // Wait time calculation
+                    const elapsedMs = Date.now() - new Date(order.created_at).getTime();
+                    const elapsedMin = Math.floor(elapsedMs / 60000);
+                    const isDelayed = elapsedMin > 20 && ["pendente", "preparando"].includes(order.status);
 
                     return (
                       <div key={order.id}
-                        className={`bg-card rounded-2xl overflow-hidden border transition-shadow hover:shadow-md ${
+                        style={{ animationDelay: `${index * 50}ms` }}
+                        className={`bg-card rounded-2xl overflow-hidden border transition-all duration-300 animate-fade-in ${
+                          isDelayed ? "border-destructive/50 shadow-[0_0_12px_-4px] shadow-destructive/20" :
                           order.status === "pendente" ? "border-amber-400/40 shadow-amber-400/5 animate-pulse-border" : "border-border"
-                        }`}>
-                        {/* Status bar */}
+                        } hover:shadow-md`}>
+                        {/* Status bar with wait timer */}
                         <div className={`px-4 py-1.5 ${sc.bg} flex items-center justify-between`}>
-                          <span className={`text-[10px] font-bold uppercase ${sc.text}`}>{sc.label}</span>
-                          <span className="text-[10px] text-muted-foreground">
-                            {new Date(order.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-[10px] font-bold uppercase ${sc.text}`}>{sc.label}</span>
+                            {isDelayed && (
+                              <span className="flex items-center gap-1 text-[10px] font-bold text-destructive bg-destructive/10 px-1.5 py-0.5 rounded-full">
+                                <AlertTriangle className="h-2.5 w-2.5" /> Atrasado
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {["pendente", "preparando", "pronto_para_entrega"].includes(order.status) && (
+                              <span className={`flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                                isDelayed ? "bg-destructive/10 text-destructive" : 
+                                elapsedMin > 10 ? "bg-amber-500/10 text-amber-600 dark:text-amber-400" : 
+                                "bg-muted text-muted-foreground"
+                              }`}>
+                                <Timer className="h-2.5 w-2.5" />
+                                {elapsedMin}min
+                              </span>
+                            )}
+                            <span className="text-[10px] text-muted-foreground">
+                              {new Date(order.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                          </div>
                         </div>
 
-                        {/* Card header */}
+                        {/* Critical info bar: Total + Neighborhood + Payment */}
                         <div className="px-4 pt-3 pb-2 flex items-start justify-between">
                           <div>
                             <p className="text-lg font-black text-foreground tracking-wide">#{order.id.slice(0, 8).toUpperCase()}</p>
-                            <p className="text-[11px] text-muted-foreground mt-0.5">{getClientName(order.client_id)}</p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-[11px] text-muted-foreground">{getClientName(order.client_id)}</span>
+                              <span className="text-muted-foreground/40">•</span>
+                              <span className="flex items-center gap-0.5 text-[11px] text-muted-foreground">
+                                <MapPin className="h-3 w-3" />{order.neighborhood}
+                              </span>
+                            </div>
                           </div>
                           <div className="text-right flex items-center gap-2">
                             <span className="text-2xl" title={paymentLabels[order.payment_method]}>{paymentIcons[order.payment_method] || "💳"}</span>
@@ -975,7 +1029,7 @@ const AdminDashboard = () => {
                             {isAddressExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                           </button>
                           {isAddressExpanded && (
-                            <div className="mt-1.5 bg-muted/30 rounded-lg p-2.5 text-xs text-muted-foreground space-y-0.5">
+                            <div className="mt-1.5 bg-muted/30 rounded-lg p-2.5 text-xs text-muted-foreground space-y-0.5 animate-fade-in">
                               <p>{order.address_details}</p>
                               <p className="text-muted-foreground/70">Taxa entrega: R$ {Number(order.delivery_fee).toFixed(2)}</p>
                             </div>
@@ -1071,10 +1125,11 @@ const AdminDashboard = () => {
                           </div>
                         )}
 
-                        {/* Main action */}
+                        {/* Main action - One-click buttons directly visible */}
                         <div className="px-4 pb-4 pt-1 flex items-center gap-2">
                           <button onClick={() => handlePrint(order)}
-                            className="p-2.5 bg-muted rounded-xl text-muted-foreground hover:text-foreground transition-colors">
+                            title="Imprimir"
+                            className="p-2.5 bg-muted rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
                             <Printer className="h-4 w-4" />
                           </button>
                           <div className="flex-1">
@@ -1109,12 +1164,29 @@ const AdminDashboard = () => {
                     );
                   })
                 ) : (
-                  <div className="flex flex-col items-center justify-center py-20 text-center">
-                    <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
-                      <Package className="h-8 w-8 text-muted-foreground" />
+                  /* ── Empty State with friendly illustration ── */
+                  <div className="flex flex-col items-center justify-center py-20 text-center animate-fade-in">
+                    <div className="w-20 h-20 rounded-3xl bg-muted/80 flex items-center justify-center mb-5">
+                      {activeTab === "pendente" && <Clock className="h-10 w-10 text-muted-foreground/60" />}
+                      {activeTab === "preparando" && <ChefHat className="h-10 w-10 text-muted-foreground/60" />}
+                      {activeTab === "pronto_para_entrega" && <Package className="h-10 w-10 text-muted-foreground/60" />}
+                      {(activeTab === "saiu_entrega" || activeTab === "em_transito") && <Truck className="h-10 w-10 text-muted-foreground/60" />}
+                      {(activeTab === "entregue" || activeTab === "finalizado") && <CheckCircle2 className="h-10 w-10 text-muted-foreground/60" />}
                     </div>
-                    <p className="text-sm font-bold text-muted-foreground">Nenhum pedido {orderTabs.find(t => t.status === activeTab)?.label.toLowerCase()}</p>
-                    <p className="text-xs text-muted-foreground/70 mt-1">Os pedidos aparecerão aqui em tempo real</p>
+                    <p className="text-base font-bold text-foreground mb-1">
+                      {activeTab === "pendente" && "Tudo em ordem por aqui! 🎉"}
+                      {activeTab === "preparando" && "Nenhum pedido em preparo"}
+                      {activeTab === "pronto_para_entrega" && "Nenhum pedido pronto"}
+                      {(activeTab === "saiu_entrega" || activeTab === "em_transito") && "Nenhuma entrega em andamento"}
+                      {(activeTab === "entregue" || activeTab === "finalizado") && "Nenhum pedido finalizado"}
+                    </p>
+                    <p className="text-sm text-muted-foreground max-w-xs">
+                      {activeTab === "pendente" && "Nenhum pedido pendente. Novos pedidos aparecerão automaticamente."}
+                      {activeTab === "preparando" && "Aceite pedidos pendentes para vê-los aqui."}
+                      {activeTab === "pronto_para_entrega" && "Marque pedidos como prontos para aparecer aqui."}
+                      {(activeTab === "saiu_entrega" || activeTab === "em_transito") && "Entregas em andamento aparecerão aqui."}
+                      {(activeTab === "entregue" || activeTab === "finalizado") && "Pedidos concluídos do dia aparecerão aqui."}
+                    </p>
                   </div>
                 )}
               </div>
