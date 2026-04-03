@@ -40,6 +40,15 @@ const StorePayoutSchema = z.object({
   pix_type: z.enum(["cpf", "cnpj", "email", "phone", "random"]),
 });
 
+const DriverPayoutSchema = z.object({
+  action: z.literal("driver_payout"),
+  driver_user_id: z.string().uuid(),
+  amount: z.number().positive().max(100000),
+  pix_key: z.string().min(1).max(256),
+  pix_type: z.enum(["cpf", "cnpj", "email", "phone", "random"]),
+  withdrawal_request_id: z.string().uuid().optional(),
+});
+
 const CancelPaymentSchema = z.object({
   action: z.literal("cancel_payment"),
   order_id: z.string().uuid(),
@@ -49,6 +58,7 @@ const BodySchema = z.discriminatedUnion("action", [
   OrderPixSchema,
   CommissionChargeSchema,
   StorePayoutSchema,
+  DriverPayoutSchema,
   CancelPaymentSchema,
 ]);
 
