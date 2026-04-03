@@ -171,7 +171,7 @@ const DriverDashboard = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*, stores(name)")
+        .select("*, stores(name, address_street, address_number, address_neighborhood, address_city, address_state, address_cep)")
         .eq("driver_id", user!.id)
         .in("status", ["entregue", "finalizado"] as any)
         .in("payment_method", ["dinheiro", "cartao"])
@@ -641,38 +641,40 @@ const DriverDashboard = () => {
                   </div>
 
                   <div className="p-4 space-y-3">
-                    {/* Store name & address */}
-                    <div className="flex items-start gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <Store className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <span className="text-sm font-semibold text-foreground">{(myDelivery as any).stores?.name || "Loja"}</span>
-                        {(() => {
-                          const s = (myDelivery as any).stores;
-                          const storeAddr = s?.address_street
-                            ? `${s.address_street}${s.address_number ? `, ${s.address_number}` : ""} - ${s.address_neighborhood || ""}, ${s.address_city || "Itatinga"}`
-                            : null;
-                          if (!storeAddr) return null;
-                          const encodedAddr = encodeURIComponent(storeAddr);
-                          return (
-                            <div className="mt-1 space-y-1.5">
-                              <p className="text-xs text-muted-foreground">{storeAddr}</p>
-                              <div className="flex gap-1.5">
-                                <a href={`https://www.google.com/maps/search/?api=1&query=${encodedAddr}`} target="_blank" rel="noopener noreferrer"
-                                  className="flex items-center gap-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-bold px-2 py-1 rounded-lg">
-                                  <Navigation className="h-3 w-3" /> Google Maps
-                                </a>
-                                <a href={`https://waze.com/ul?q=${encodedAddr}&navigate=yes`} target="_blank" rel="noopener noreferrer"
-                                  className="flex items-center gap-1 bg-purple-500/10 text-purple-600 dark:text-purple-400 text-[10px] font-bold px-2 py-1 rounded-lg">
-                                  <Navigation className="h-3 w-3" /> Waze
-                                </a>
+                    {/* Store name & address - only show before collection validated */}
+                    {!(myDelivery as any).collection_validated && (myDelivery as any).status === 'pronto_para_entrega' && (
+                      <div className="flex items-start gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Store className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold text-foreground">{(myDelivery as any).stores?.name || "Loja"}</span>
+                          {(() => {
+                            const s = (myDelivery as any).stores;
+                            const storeAddr = s?.address_street
+                              ? `${s.address_street}${s.address_number ? `, ${s.address_number}` : ""} - ${s.address_neighborhood || ""}, ${s.address_city || "Itatinga"}`
+                              : null;
+                            if (!storeAddr) return null;
+                            const encodedAddr = encodeURIComponent(storeAddr);
+                            return (
+                              <div className="mt-1 space-y-1.5">
+                                <p className="text-xs text-muted-foreground">{storeAddr}</p>
+                                <div className="flex gap-1.5">
+                                  <a href={`https://www.google.com/maps/search/?api=1&query=${encodedAddr}`} target="_blank" rel="noopener noreferrer"
+                                    className="flex items-center gap-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-bold px-2 py-1 rounded-lg">
+                                    <Navigation className="h-3 w-3" /> Google Maps
+                                  </a>
+                                  <a href={`https://waze.com/ul?q=${encodedAddr}&navigate=yes`} target="_blank" rel="noopener noreferrer"
+                                    className="flex items-center gap-1 bg-purple-500/10 text-purple-600 dark:text-purple-400 text-[10px] font-bold px-2 py-1 rounded-lg">
+                                    <Navigation className="h-3 w-3" /> Waze
+                                  </a>
+                                </div>
                               </div>
-                            </div>
-                          );
-                        })()}
+                            );
+                          })()}
+                        </div>
                       </div>
-                    </div>
+                    )}
 
                     {!(myDelivery as any).collection_validated && (myDelivery as any).status === 'pronto_para_entrega' ? (
                       <>
@@ -845,6 +847,35 @@ const DriverDashboard = () => {
                     <p className="text-sm text-muted-foreground">
                       Entregue <span className="font-bold text-amber-500">R$ {Number(pendingReturn.total_price).toFixed(2)}</span> na loja <span className="font-bold text-foreground">{(pendingReturn as any).stores?.name}</span> e receba sua taxa.
                     </p>
+                    {/* Store address for return */}
+                    {(() => {
+                      const s = (pendingReturn as any).stores;
+                      const storeAddr = s?.address_street
+                        ? `${s.address_street}${s.address_number ? `, ${s.address_number}` : ""} - ${s.address_neighborhood || ""}, ${s.address_city || "Itatinga"}`
+                        : null;
+                      if (!storeAddr) return null;
+                      const encodedAddr = encodeURIComponent(storeAddr);
+                      return (
+                        <div className="flex items-start gap-2">
+                          <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <Store className="h-4 w-4 text-amber-500" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs text-muted-foreground">{storeAddr}</p>
+                            <div className="flex gap-1.5 mt-1.5">
+                              <a href={`https://www.google.com/maps/search/?api=1&query=${encodedAddr}`} target="_blank" rel="noopener noreferrer"
+                                className="flex items-center gap-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-bold px-2 py-1 rounded-lg">
+                                <Navigation className="h-3 w-3" /> Google Maps
+                              </a>
+                              <a href={`https://waze.com/ul?q=${encodedAddr}&navigate=yes`} target="_blank" rel="noopener noreferrer"
+                                className="flex items-center gap-1 bg-purple-500/10 text-purple-600 dark:text-purple-400 text-[10px] font-bold px-2 py-1 rounded-lg">
+                                <Navigation className="h-3 w-3" /> Waze
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
                     <div>
                       <label className="text-xs font-bold text-amber-500 mb-2 block">🔐 Código de Acerto</label>
                       <input
