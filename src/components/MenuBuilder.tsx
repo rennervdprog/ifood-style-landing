@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   Plus, Trash2, Edit2, ChevronDown, ChevronUp, GripVertical,
-  Image as ImageIcon, Pause, Play, Package, Save, X, Link2
+  Image as ImageIcon, Pause, Play, Package, Save, X, Link2, Upload, Loader2
 } from "lucide-react";
 
 interface MenuBuilderProps {
@@ -484,6 +484,24 @@ const MenuBuilder = ({ storeId }: MenuBuilderProps) => {
   );
 };
 
+// Helper: upload image to store-assets bucket
+const uploadProductImage = async (file: File): Promise<string | null> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) { toast.error("Faça login primeiro"); return null; }
+
+  const ext = file.name.split(".").pop()?.toLowerCase() || "png";
+  const allowed = ["png", "jpg", "jpeg", "webp"];
+  if (!allowed.includes(ext)) { toast.error("Formato inválido. Use PNG, JPG ou WEBP."); return null; }
+  if (file.size > 5 * 1024 * 1024) { toast.error("Imagem muito grande (máx 5MB)"); return null; }
+
+  const filePath = `${user.id}/products/${Date.now()}.${ext}`;
+  const { error } = await supabase.storage.from("store-assets").upload(filePath, file, { upsert: true });
+  if (error) { toast.error("Erro ao enviar imagem"); console.error(error); return null; }
+
+  const { data: urlData } = supabase.storage.from("store-assets").getPublicUrl(filePath);
+  return urlData.publicUrl;
+};
+
 // Product Form Inline
 const ProductFormInline = ({
   form,
@@ -495,51 +513,96 @@ const ProductFormInline = ({
   setForm: (f: any) => void;
   onSave: () => void;
   onCancel: () => void;
-}) => (
-  <div className="bg-gray-800 rounded-xl p-3 space-y-2">
-    <input
-      type="text"
-      placeholder="Nome do produto *"
-      value={form.name}
-      onChange={(e) => setForm({ ...form, name: e.target.value })}
-      className="w-full bg-gray-700 text-white px-3 py-2 rounded-lg text-sm border border-gray-600 focus:border-primary focus:outline-none"
-      autoFocus
-    />
-    <div className="flex gap-2">
-      <input
-        type="number"
-        placeholder="Preço *"
-        value={form.price}
-        onChange={(e) => setForm({ ...form, price: e.target.value })}
-        className="w-1/3 bg-gray-700 text-white px-3 py-2 rounded-lg text-sm border border-gray-600 focus:border-primary focus:outline-none"
-        inputMode="decimal"
-        step="0.01"
-      />
+}) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const url = await uploadProductImage(file);
+    if (url) setForm({ ...form, image_url: url });
+    setUploading(false);
+  };
+
+  return (
+    <div className="bg-gray-800 rounded-xl p-3 space-y-2">
       <input
         type="text"
-        placeholder="URL da imagem (opcional)"
-        value={form.image_url}
-        onChange={(e) => setForm({ ...form, image_url: e.target.value })}
-        className="flex-1 bg-gray-700 text-white px-3 py-2 rounded-lg text-sm border border-gray-600 focus:border-primary focus:outline-none"
+        placeholder="Nome do produto *"
+        value={form.name}
+        onChange={(e) => setForm({ ...form, name: e.target.value })}
+        className="w-full bg-gray-700 text-white px-3 py-2 rounded-lg text-sm border border-gray-600 focus:border-primary focus:outline-none"
+        autoFocus
       />
+      <div className="flex gap-2">
+        <input
+          type="number"
+          placeholder="Preço *"
+          value={form.price}
+          onChange={(e) => setForm({ ...form, price: e.target.value })}
+          className="w-1/3 bg-gray-700 text-white px-3 py-2 rounded-lg text-sm border border-gray-600 focus:border-primary focus:outline-none"
+          inputMode="decimal"
+          step="0.01"
+        />
+        <div className="flex-1">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            onChange={handleFileSelect}
+            className="hidden"
+          />
+          {form.image_url ? (
+            <div className="flex items-center gap-2">
+              <img src={form.image_url} alt="Preview" className="w-10 h-10 rounded-lg object-cover border border-gray-600" />
+              <button
+                onClick={() => setForm({ ...form, image_url: "" })}
+                className="text-red-400 text-xs hover:underline"
+              >
+                Remover
+              </button>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="text-primary text-xs hover:underline"
+              >
+                Trocar
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="w-full flex items-center justify-center gap-2 bg-gray-700 text-gray-300 px-3 py-2 rounded-lg text-sm border border-dashed border-gray-500 hover:border-primary hover:text-primary transition-colors"
+            >
+              {uploading ? (
+                <><Loader2 className="h-4 w-4 animate-spin" /> Enviando...</>
+              ) : (
+                <><Upload className="h-4 w-4" /> Foto do produto</>
+              )}
+            </button>
+          )}
+        </div>
+      </div>
+      <input
+        type="text"
+        placeholder="Descrição (opcional)"
+        value={form.description}
+        onChange={(e) => setForm({ ...form, description: e.target.value })}
+        className="w-full bg-gray-700 text-white px-3 py-2 rounded-lg text-sm border border-gray-600 focus:border-primary focus:outline-none"
+      />
+      <div className="flex gap-2">
+        <button onClick={onSave} className="flex-1 bg-green-500 text-white py-2 rounded-lg text-sm font-bold">
+          Salvar
+        </button>
+        <button onClick={onCancel} className="px-4 py-2 text-gray-400 text-sm">
+          Cancelar
+        </button>
+      </div>
     </div>
-    <input
-      type="text"
-      placeholder="Descrição (opcional)"
-      value={form.description}
-      onChange={(e) => setForm({ ...form, description: e.target.value })}
-      className="w-full bg-gray-700 text-white px-3 py-2 rounded-lg text-sm border border-gray-600 focus:border-primary focus:outline-none"
-    />
-    <div className="flex gap-2">
-      <button onClick={onSave} className="flex-1 bg-green-500 text-white py-2 rounded-lg text-sm font-bold">
-        Salvar
-      </button>
-      <button onClick={onCancel} className="px-4 py-2 text-gray-400 text-sm">
-        Cancelar
-      </button>
-    </div>
-  </div>
-);
+  );
+};
 
 // Product Card
 const ProductCard = ({
