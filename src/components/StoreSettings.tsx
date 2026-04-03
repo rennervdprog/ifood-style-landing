@@ -220,7 +220,7 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
           onChange={(e) => setName(e.target.value)}
           placeholder="Ex: Nata Lanches"
           maxLength={100}
-          className="w-full bg-secondary border border-gray-700 rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+          className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
         />
       </div>
 
@@ -233,7 +233,7 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
         <select
           value={category}
           onChange={(e) => setCategory(e.target.value)}
-          className="w-full bg-secondary border border-gray-700 rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary appearance-none"
+          className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary appearance-none"
         >
           {CATEGORY_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>
@@ -255,7 +255,7 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
           value={maskWhatsApp(whatsapp)}
           onChange={(e) => setWhatsapp(e.target.value.replace(/\D/g, "").slice(0, 11))}
           placeholder="+55 14 99999-9999"
-          className="w-full bg-secondary border border-gray-700 rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500"
+          className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
         />
         <p className="text-[10px] text-muted-foreground/70">Será exibido para clientes e entregadores.</p>
       </div>
@@ -267,7 +267,7 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
           Link Exclusivo da Loja
         </label>
         <div className="flex gap-2">
-          <div className="flex-1 flex items-center bg-secondary border border-gray-700 rounded-xl overflow-hidden">
+          <div className="flex-1 flex items-center bg-secondary border border-border rounded-xl overflow-hidden">
             <span className="text-xs text-muted-foreground/70 pl-3 whitespace-nowrap">foodita.app/</span>
             <input
               type="text"
@@ -450,7 +450,7 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
         <select
           value={pixType}
           onChange={(e) => setPixType(e.target.value)}
-          className="w-full bg-secondary border border-gray-700 rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 appearance-none"
+          className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary appearance-none"
         >
           {PIX_TYPE_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -462,7 +462,7 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
           onChange={(e) => setPixKey(e.target.value)}
           placeholder={pixType === "cpf" ? "000.000.000-00" : pixType === "cnpj" ? "00.000.000/0000-00" : pixType === "email" ? "email@exemplo.com" : pixType === "phone" ? "+55 14 99999-9999" : "Chave aleatória"}
           maxLength={256}
-          className="w-full bg-secondary border border-gray-700 rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500"
+          className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
         />
         {pixKey && (
           <div className="bg-primary/10 border border-green-500/20 rounded-xl p-3 flex items-center gap-2">
@@ -477,7 +477,7 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
       </div>
 
       {/* Store Status Info */}
-      <div className="bg-muted/50 border border-gray-700 rounded-2xl p-4 space-y-2">
+      <div className="bg-muted/50 border border-border rounded-2xl p-4 space-y-2">
         <p className="text-sm font-bold text-foreground/80">Status Atual</p>
         <div className="flex items-center gap-3">
           <div className={`w-3 h-3 rounded-full ${storeIsOpen && !forceClosed ? "bg-primary animate-pulse" : "bg-red-400"}`} />

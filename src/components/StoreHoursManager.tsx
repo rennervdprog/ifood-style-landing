@@ -130,7 +130,7 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
         className={`rounded-2xl p-4 border-2 ${
           localForceClosed
             ? "bg-red-500/10 border-red-500"
-            : "bg-muted/50 border-gray-700"
+            : "bg-muted/50 border-border"
         }`}
       >
         <div className="flex items-center justify-between">
@@ -185,7 +185,7 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
               <button
                 onClick={() => updateHour(h.day_of_week, "is_closed_all_day", !h.is_closed_all_day)}
                 className={`relative w-12 h-6 rounded-full transition-colors flex-shrink-0 ${
-                  h.is_closed_all_day ? "bg-gray-600" : "bg-primary"
+                  h.is_closed_all_day ? "bg-muted" : "bg-primary"
                 }`}
               >
                 <span

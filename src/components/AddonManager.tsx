@@ -321,7 +321,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                         </div>
                       ) : (
                         <>
-                          <span className="text-sm text-gray-200">{item.name}</span>
+                          <span className="text-sm text-foreground">{item.name}</span>
                           <div className="flex items-center gap-2">
                             <span className="text-sm text-primary font-bold">
                               {item.price > 0 ? `+R$ ${Number(item.price).toFixed(2)}` : "Grátis"}
@@ -381,7 +381,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
 
                   {/* Linked Products */}
                   {linkedProducts.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-gray-700">
+                    <div className="mt-3 pt-3 border-t border-border">
                       <p className="text-xs text-muted-foreground/70 font-bold mb-1.5">🔗 Vinculado a:</p>
                       <div className="flex flex-wrap gap-1.5">
                         {linkedProducts.map((link: any) => (

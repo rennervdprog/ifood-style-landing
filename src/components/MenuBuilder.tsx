@@ -715,7 +715,7 @@ const ProductCard = ({
 
       {/* Direct Addon Groups */}
       {addonGroups.length > 0 && (
-        <div className="mt-2 pl-2 border-l-2 border-gray-700 space-y-1">
+        <div className="mt-2 pl-2 border-l-2 border-border space-y-1">
           {addonGroups.map((group: any) => (
             <div key={group.id} className="text-xs">
               <div className="flex items-center justify-between">
