@@ -10,7 +10,7 @@ import {
   MapPin, Package, Settings, Banknote, CreditCard,
   UtensilsCrossed, ListOrdered, Plus, Printer, Bike,
   Volume2, VolumeX, Bell, Store, MessageCircle, Copy, Coins,
-  ChevronDown, ChevronUp, DollarSign, XCircle, Loader2
+  ChevronDown, ChevronUp, DollarSign, XCircle, Loader2, Search
 } from "lucide-react";
 import { openWhatsApp } from "@/lib/whatsapp";
 import WhatsAppButton from "@/components/WhatsAppButton";
