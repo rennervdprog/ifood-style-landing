@@ -800,6 +800,11 @@ async function routePixCreation(params: {
       return json(resp);
     }
 
+    // Asaas failed → check if it's a minimum amount error (don't fallback for validation errors)
+    if (asaasResult.data?.min_amount) {
+      return json({ error: asaasResult.data.message, provider: "asaas" }, 400);
+    }
+
     // Asaas failed → fallback to Mercado Pago
     if (hasMpCredentials()) {
       console.warn("Asaas failed, falling back to Mercado Pago");
@@ -821,7 +826,7 @@ async function routePixCreation(params: {
       }
     }
 
-    return json({ error: "Erro ao gerar PIX via Asaas.", provider: "asaas" }, 500);
+    return json({ error: "Erro ao gerar PIX. Tente novamente.", provider: "asaas" }, 500);
   }
 
   // ── Efí Bank (primary) ──
