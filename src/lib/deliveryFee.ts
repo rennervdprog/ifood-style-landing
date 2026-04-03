@@ -18,7 +18,10 @@ export const DEFAULT_DELIVERY_FEE_CONFIG: DeliveryFeeConfig = {
 const ITATINGA_CENTER = { lat: -23.1389, lng: -48.6158 };
 
 // Raio em km do centro urbano de Itatinga - dentro = taxa fixa, fora = cálculo por km
-const URBAN_RADIUS_KM = 3;
+const URBAN_RADIUS_KM = 5;
+
+// CEP ranges known to be urban Itatinga (186900xx)
+const ITATINGA_CEP_PREFIX = "18690";
 
 // Haversine formula to calculate distance between two lat/lng points in km
 function haversineDistance(
@@ -89,6 +92,15 @@ function isDistrictNeighborhood(bairro: string | undefined): boolean {
   return /\(.+\)/.test(bairro);
 }
 
+/**
+ * Check if a CEP is in the urban area of Itatinga by CEP prefix.
+ * Itatinga urban CEPs start with 18690.
+ */
+function isUrbanItatingaCep(cep: string): boolean {
+  const digits = cep.replace(/\D/g, "");
+  return digits.startsWith(ITATINGA_CEP_PREFIX);
+}
+
 export interface DeliveryFeeResult {
   fee: number;
   isRural: boolean;
@@ -98,18 +110,17 @@ export interface DeliveryFeeResult {
 
 /**
  * Calculate delivery fee based on distance from Itatinga center.
- * - Within URBAN_RADIUS_KM of center AND same city AND not a district = fixed city fee
- * - Outside radius, district, or different city = base fee + per-km from store
+ * Logic:
+ * 1. If CEP is from Itatinga city (prefix 18690) AND same city name AND not a district = fixed city fee
+ * 2. If within URBAN_RADIUS_KM from center AND same city AND not a district = fixed city fee
+ * 3. Otherwise = rural base fee + per-km distance
  */
 export async function calculateDeliveryFee(
   customerCep: string,
   storeCep: string,
   config: DeliveryFeeConfig
 ): Promise<DeliveryFeeResult> {
-  const [customerAddr, _storeAddr] = await Promise.all([
-    fetchCep(customerCep),
-    fetchCep(storeCep),
-  ]);
+  const customerAddr = await fetchCep(customerCep);
 
   if (!customerAddr) {
     return {
@@ -120,15 +131,32 @@ export async function calculateDeliveryFee(
     };
   }
 
-  const customerCity = customerAddr.localidade?.toLowerCase() || "";
-  const configCity = config.city_name.toLowerCase();
+  const customerCity = customerAddr.localidade?.toLowerCase().trim() || "";
+  const configCity = config.city_name.toLowerCase().trim();
   const isInCity = customerCity === configCity;
   const isDistrict = isDistrictNeighborhood(customerAddr.bairro);
+  const isUrbanCep = isUrbanItatingaCep(customerCep);
 
-  // Try to get customer coordinates
+  // PRIORITY 1: If CEP prefix matches Itatinga urban area AND city matches AND not a district
+  // → This is definitely urban Itatinga, apply fixed fee regardless of geocoding
+  if (isInCity && !isDistrict && isUrbanCep) {
+    // Still try to get distance for display purposes
+    const customerCoords = await geocodeCep(customerCep);
+    const distFromCenter = customerCoords
+      ? haversineDistance(ITATINGA_CENTER.lat, ITATINGA_CENTER.lng, customerCoords.lat, customerCoords.lng)
+      : null;
+
+    return {
+      fee: config.city_fee,
+      isRural: false,
+      distanceKm: distFromCenter ? Math.round(distFromCenter * 10) / 10 : null,
+      breakdown: `Centro ${config.city_name}: R$ ${config.city_fee.toFixed(2)}`,
+    };
+  }
+
+  // PRIORITY 2: Use geocoding to check radius
   const customerCoords = await geocodeCep(customerCep);
 
-  // If we have coordinates, use radius from Itatinga center
   if (customerCoords) {
     const distFromCenter = haversineDistance(
       ITATINGA_CENTER.lat, ITATINGA_CENTER.lng,
@@ -141,13 +169,12 @@ export async function calculateDeliveryFee(
         fee: config.city_fee,
         isRural: false,
         distanceKm: Math.round(distFromCenter * 10) / 10,
-        breakdown: `Centro ${config.city_name} (${distFromCenter.toFixed(1)}km do centro): R$ ${config.city_fee.toFixed(2)}`,
+        breakdown: `Centro ${config.city_name} (${distFromCenter.toFixed(1)}km): R$ ${config.city_fee.toFixed(2)}`,
       };
     }
 
-    // Outside urban radius or district or different city = distance-based fee
-    // Use distance from store (or center as fallback) to customer
-    let storeCoords = await geocodeCep(storeCep);
+    // Outside urban area = distance-based fee from store/center to customer
+    let storeCoords = storeCep ? await geocodeCep(storeCep) : null;
     const referencePoint = storeCoords || ITATINGA_CENTER;
     const referenceLabel = storeCoords ? "loja" : "centro";
 
@@ -172,7 +199,7 @@ export async function calculateDeliveryFee(
     };
   }
 
-  // No coordinates available - fallback logic
+  // No coordinates available - fallback by city name
   if (isInCity && !isDistrict) {
     return {
       fee: config.city_fee,
