@@ -1182,6 +1182,8 @@ Deno.serve(async (req) => {
         return await handleCommissionCharge(body, userId, userEmail, supabase);
       case "store_payout":
         return await handleStorePayout(body, userId, userEmail, supabase);
+      case "cancel_payment":
+        return await handleCancelPayment(body, userId, supabase);
       default:
         return json({ error: "Ação desconhecida" }, 400);
     }
