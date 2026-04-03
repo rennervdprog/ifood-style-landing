@@ -62,6 +62,31 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
+    // Check payout schedule (day of week)
+    const { data: scheduleData } = await supabase
+      .from("admin_settings")
+      .select("value")
+      .eq("key", "payout_schedule")
+      .single();
+
+    const schedule = scheduleData?.value as { day_of_week: number; enabled: boolean } | null;
+
+    if (!schedule || !schedule.enabled) {
+      return json({ message: "Agendamento de repasse automático desativado. Nada a processar." });
+    }
+
+    // Check if today is the configured payout day (0=Sunday ... 6=Saturday)
+    // Use Brasilia timezone (UTC-3)
+    const now = new Date();
+    const brasiliaOffset = -3 * 60; // minutes
+    const utcMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
+    const brasiliaDate = new Date(now.getTime() + brasiliaOffset * 60 * 1000);
+    const todayDow = brasiliaDate.getUTCDay(); // 0-6
+
+    if (todayDow !== schedule.day_of_week) {
+      return json({ message: `Hoje não é o dia de repasse. Configurado: ${schedule.day_of_week}, Hoje: ${todayDow}` });
+    }
+
     // Check payout modes from admin_settings
     const { data: settingsData } = await supabase
       .from("admin_settings")
