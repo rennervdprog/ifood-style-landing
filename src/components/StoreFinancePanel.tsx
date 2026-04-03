@@ -295,7 +295,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
 
     try {
       if (SIMULATION_MODE) {
-        // --- SIMULATION MODE: bypass Mercado Pago ---
+        // --- SIMULATION MODE: bypass real payment ---
         const simResult = createSimulatedPixCharge(chargeAmount, "FAT");
         setNowMs(Date.now());
         setChargeResult({
