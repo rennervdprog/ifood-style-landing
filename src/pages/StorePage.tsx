@@ -2,7 +2,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart, type CartAddon } from "@/contexts/CartContext";
-import { ArrowLeft, Star, Clock, ChevronRight, MapPin, Search, X, Navigation, CreditCard, Banknote, Smartphone, QrCode } from "lucide-react";
+import { ArrowLeft, Star, Clock, ChevronRight, MapPin, Search, X, Navigation, CreditCard, Banknote, Smartphone, QrCode, RotateCcw, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import { useRef, useState, useEffect } from "react";
 import CartFAB from "@/components/CartFAB";
@@ -10,6 +10,7 @@ import BottomNav from "@/components/BottomNav";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import ProductDetailModal from "@/components/ProductDetailModal";
 import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Product {
   id: string;
@@ -32,6 +33,7 @@ const StorePage = () => {
   const { id, slug } = useParams<{ id?: string; slug?: string }>();
   const navigate = useNavigate();
   const { addItem } = useCart();
+  const { user } = useAuth();
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -107,6 +109,51 @@ const StorePage = () => {
     enabled: !!storeId,
   });
 
+  // "Peça de novo" - products user has ordered before from this store
+  const { data: reorderProducts } = useQuery({
+    queryKey: ["reorder-products", storeId, user?.id],
+    queryFn: async () => {
+      const { data: orderItems, error } = await supabase
+        .from("order_items")
+        .select("product_id, quantity, orders!inner(store_id, client_id)")
+        .eq("orders.store_id", storeId!)
+        .eq("orders.client_id", user!.id);
+      if (error) throw error;
+      // Count how many times each product was ordered
+      const countMap: Record<string, number> = {};
+      (orderItems || []).forEach((item: any) => {
+        countMap[item.product_id] = (countMap[item.product_id] || 0) + item.quantity;
+      });
+      // Sort by frequency, return top 10 product IDs
+      return Object.entries(countMap)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .map(([pid]) => pid);
+    },
+    enabled: !!storeId && !!user?.id,
+  });
+
+  // "Mais pedidos" - most popular products in this store (all users)
+  const { data: popularProducts } = useQuery({
+    queryKey: ["popular-products", storeId],
+    queryFn: async () => {
+      const { data: orderItems, error } = await supabase
+        .from("order_items")
+        .select("product_id, quantity, orders!inner(store_id)")
+        .eq("orders.store_id", storeId!);
+      if (error) throw error;
+      const countMap: Record<string, number> = {};
+      (orderItems || []).forEach((item: any) => {
+        countMap[item.product_id] = (countMap[item.product_id] || 0) + item.quantity;
+      });
+      return Object.entries(countMap)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 6)
+        .map(([pid, count]) => ({ productId: pid, count }));
+    },
+    enabled: !!storeId,
+  });
+
   const storeStatus = store
     ? getStoreOpenStatus(
         (storeHours as any as OpeningHour[]) || [],
@@ -114,6 +161,14 @@ const StorePage = () => {
         store.is_open
       )
     : { isOpen: false, reason: "" };
+
+  const reorderProductsList = products?.filter(p => reorderProducts?.includes(p.id)) || [];
+  const popularProductsList = popularProducts
+    ?.map(pp => {
+      const product = products?.find(p => p.id === pp.productId);
+      return product ? { ...product, orderCount: pp.count } : null;
+    })
+    .filter(Boolean) as (Product & { orderCount: number })[] || [];
 
   useEffect(() => {
     if (sections && sections.length > 0 && !activeSection) {
@@ -391,6 +446,77 @@ const StorePage = () => {
                 <X className="h-4 w-4 text-muted-foreground" />
               </button>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ===== PEÇA DE NOVO ===== */}
+      {reorderProductsList.length > 0 && !filteredProducts && (
+        <div className="px-4 mt-4">
+          <div className="flex items-center gap-2 mb-3">
+            <RotateCcw className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-black text-foreground">Peça de novo</h2>
+          </div>
+          <div className="flex overflow-x-auto gap-3 no-scrollbar pb-1">
+            {reorderProductsList.map(product => (
+              <button
+                key={`reorder-${product.id}`}
+                onClick={() => {
+                  if (!storeStatus.isOpen) { toast.error(`Loja fechada. ${storeStatus.reason}`); return; }
+                  setSelectedProduct(product);
+                }}
+                className={`flex-shrink-0 w-36 bg-card rounded-xl border border-border overflow-hidden text-left transition-all ${
+                  !storeStatus.isOpen ? "opacity-50" : "hover:shadow-lg hover:border-primary/20 active:scale-[0.97]"
+                }`}
+              >
+                {product.image_url ? (
+                  <img src={product.image_url} alt={product.name} className="w-full h-24 object-cover" loading="lazy" />
+                ) : (
+                  <div className="w-full h-24 bg-muted flex items-center justify-center"><span className="text-2xl">🍴</span></div>
+                )}
+                <div className="p-2">
+                  <p className="text-xs font-bold text-foreground line-clamp-1">{product.name}</p>
+                  <p className="text-xs font-black text-primary mt-0.5">R$ {product.price.toFixed(2)}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ===== MAIS PEDIDOS ===== */}
+      {popularProductsList.length > 0 && !filteredProducts && (
+        <div className="px-4 mt-4">
+          <div className="flex items-center gap-2 mb-3">
+            <TrendingUp className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-black text-foreground">Mais pedidos</h2>
+          </div>
+          <div className="flex overflow-x-auto gap-3 no-scrollbar pb-1">
+            {popularProductsList.map(product => (
+              <button
+                key={`popular-${product.id}`}
+                onClick={() => {
+                  if (!storeStatus.isOpen) { toast.error(`Loja fechada. ${storeStatus.reason}`); return; }
+                  setSelectedProduct(product);
+                }}
+                className={`flex-shrink-0 w-36 bg-card rounded-xl border border-border overflow-hidden text-left transition-all relative ${
+                  !storeStatus.isOpen ? "opacity-50" : "hover:shadow-lg hover:border-primary/20 active:scale-[0.97]"
+                }`}
+              >
+                <span className="absolute top-1.5 right-1.5 bg-primary/90 text-primary-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-full z-10">
+                  🔥 {product.orderCount}x
+                </span>
+                {product.image_url ? (
+                  <img src={product.image_url} alt={product.name} className="w-full h-24 object-cover" loading="lazy" />
+                ) : (
+                  <div className="w-full h-24 bg-muted flex items-center justify-center"><span className="text-2xl">🍴</span></div>
+                )}
+                <div className="p-2">
+                  <p className="text-xs font-bold text-foreground line-clamp-1">{product.name}</p>
+                  <p className="text-xs font-black text-primary mt-0.5">R$ {product.price.toFixed(2)}</p>
+                </div>
+              </button>
+            ))}
           </div>
         </div>
       )}
