@@ -27,7 +27,6 @@ const RoleGuard = ({ allowedRoles, redirectTo, children, requireApproval = false
     }
 
     const checkRole = async () => {
-      // Check if admin via user_roles table
       const { data: adminRole } = await supabase
         .from("user_roles")
         .select("role")
@@ -48,7 +47,6 @@ const RoleGuard = ({ allowedRoles, redirectTo, children, requireApproval = false
         .maybeSingle();
 
       if (!profile) {
-        // No profile = cliente, allow if cliente is in allowedRoles
         if (allowedRoles.includes("cliente")) {
           setAuthorized(true);
         } else {
@@ -63,7 +61,6 @@ const RoleGuard = ({ allowedRoles, redirectTo, children, requireApproval = false
       
       if (!allowedRoles.includes(role)) {
         toast.error("Acesso negado. Redirecionando...");
-        // Redirect based on their actual role
         if (role === "lojista") {
           navigate("/admin", { replace: true });
         } else if (role === "motoboy") {
@@ -98,14 +95,14 @@ const RoleGuard = ({ allowedRoles, redirectTo, children, requireApproval = false
 
   if (!authorized) {
     return (
-      <div className="min-h-screen bg-[#111827] flex flex-col items-center justify-center text-center px-6">
-        <Shield className="h-16 w-16 text-yellow-400 mb-4" />
-        <h1 className="text-xl font-bold text-white mb-2">Cadastro em Análise! 🛡️</h1>
-        <p className="text-sm text-gray-400 max-w-xs mb-2">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center text-center px-6">
+        <Shield className="h-16 w-16 text-yellow-500 mb-4" />
+        <h1 className="text-xl font-bold text-foreground mb-2">Cadastro em Análise! 🛡️</h1>
+        <p className="text-sm text-muted-foreground max-w-xs mb-2">
           Recebemos seus dados. Em até 24h o administrador do FoodIta liberará seu acesso.
         </p>
-        <p className="text-xs text-gray-500">Entraremos em contato via WhatsApp.</p>
-        <button onClick={() => navigate("/")} className="mt-6 bg-white text-gray-900 font-bold px-6 py-3 rounded-xl">
+        <p className="text-xs text-muted-foreground">Entraremos em contato via WhatsApp.</p>
+        <button onClick={() => navigate("/")} className="mt-6 bg-primary text-primary-foreground font-bold px-6 py-3 rounded-xl">
           Voltar à Home
         </button>
       </div>
