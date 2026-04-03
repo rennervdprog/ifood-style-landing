@@ -174,6 +174,47 @@ const PerfilPage = () => {
     setDeferredPrompt(null);
   }, [isIOS, deferredPrompt]);
 
+  const handleCepChange = (value: string) => {
+    const formatted = formatCep(value);
+    setCep(formatted);
+    const digits = value.replace(/\D/g, "");
+    if (digits.length === 8) {
+      handleCepLookup(digits);
+    }
+  };
+
+  const handleCepLookup = async (digits?: string) => {
+    const cepDigits = digits || cep.replace(/\D/g, "");
+    if (cepDigits.length !== 8) {
+      toast.error("Digite um CEP válido com 8 dígitos.");
+      return;
+    }
+    setLoadingCep(true);
+    try {
+      const result = await fetchCep(cepDigits);
+      if (!result) {
+        toast.error("CEP não encontrado.");
+        return;
+      }
+      setStreet(result.logradouro || "");
+      if (result.complemento) setComplement(result.complemento);
+      if (result.bairro && neighborhoods) {
+        const match = neighborhoods.find((n) => n.name.toLowerCase() === result.bairro.toLowerCase());
+        if (match) {
+          setNeighborhoodLocal(match.name);
+        } else {
+          setNeighborhoodLocal("");
+          toast.info(`Bairro "${result.bairro}" não está na área de entrega. Selecione manualmente.`);
+        }
+      }
+      toast.success("Endereço preenchido pelo CEP!");
+    } catch {
+      toast.error("Erro ao buscar CEP.");
+    } finally {
+      setLoadingCep(false);
+    }
+  };
+
   // Compute selected neighborhood fee
   const selectedFee = useMemo(() => {
     if (!neighborhood || !neighborhoods) return null;
