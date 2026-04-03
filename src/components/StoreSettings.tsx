@@ -35,6 +35,13 @@ interface StoreSettingsProps {
   storeIsOpen: boolean;
   forceClosed: boolean;
   storeSlug?: string | null;
+  storeAddressStreet?: string | null;
+  storeAddressNumber?: string | null;
+  storeAddressComplement?: string | null;
+  storeAddressNeighborhood?: string | null;
+  storeAddressReference?: string | null;
+  storeAddressCity?: string | null;
+  storeAddressState?: string | null;
 }
 
 const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, storeIsOpen, forceClosed, storeSlug }: StoreSettingsProps) => {
