@@ -104,8 +104,6 @@ const Index = () => {
       {/* Reorder section */}
       <ReorderSection />
 
-      {/* Popular products */}
-      <PopularProducts />
 
       <div className="px-4 mt-4">
         <h2 className="text-sm font-bold text-foreground mb-3">Estabelecimentos</h2>
