@@ -11,7 +11,7 @@ import StoreCardSkeleton from "@/components/StoreCardSkeleton";
 import SearchBar from "@/components/SearchBar";
 import PromoBanners from "@/components/PromoBanners";
 import ReorderSection from "@/components/ReorderSection";
-import PopularProducts from "@/components/PopularProducts";
+
 import FirstOrderBanner from "@/components/FirstOrderBanner";
 import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 
