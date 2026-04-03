@@ -2,7 +2,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart, type CartAddon } from "@/contexts/CartContext";
-import { ArrowLeft, Star, Clock, ChevronRight, MapPin, Search, X } from "lucide-react";
+import { ArrowLeft, Star, Clock, ChevronRight, MapPin, Search, X, Navigation, CreditCard, Banknote, Smartphone, QrCode } from "lucide-react";
 import { toast } from "sonner";
 import { useRef, useState, useEffect } from "react";
 import CartFAB from "@/components/CartFAB";
