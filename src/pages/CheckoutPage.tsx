@@ -94,9 +94,10 @@ const CheckoutPage = () => {
   const storeCep = (storeData as any)?.address_cep;
   const config = deliveryFeeConfig || DEFAULT_DELIVERY_FEE_CONFIG;
 
-  // Calculate delivery fee based on CEP
+  // Calculate delivery fee based on CEP - uses saved address CEP when selected, otherwise profile CEP
   useEffect(() => {
     const customerCep = selectedSavedAddressId && savedAddressData?.cep ? savedAddressData.cep : profileCep;
+    const activeNeighborhood = selectedSavedAddressId && savedAddressData?.neighborhood ? savedAddressData.neighborhood : profileNeighborhood;
     
     if (!customerCep || !storeCep) {
       setCalculatedDeliveryFee(null);
@@ -111,7 +112,7 @@ const CheckoutPage = () => {
       if (cancelled) return;
       setCalculatedDeliveryFee(result.fee);
       setFeeBreakdown(result.breakdown);
-      setNeighborhood(profileNeighborhood || neighborhood || "", result.fee);
+      setNeighborhood(activeNeighborhood || neighborhood || "", result.fee);
       setCalculatingFee(false);
     }).catch(() => {
       if (cancelled) return;
@@ -119,7 +120,7 @@ const CheckoutPage = () => {
     });
 
     return () => { cancelled = true; };
-  }, [profileCep, storeCep, config, savedAddressData, selectedSavedAddressId]);
+  }, [profileCep, storeCep, config, savedAddressData, selectedSavedAddressId, profileNeighborhood]);
 
   // Redirect to login if not authenticated
   // Build address string from profile
