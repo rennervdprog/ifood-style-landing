@@ -159,6 +159,31 @@ const PedidosPage = () => {
     loading: boolean;
   } | null>(null);
 
+  // Persist PIX data per order in localStorage so it survives app restarts
+  const [savedPixData, setSavedPixData] = useState<Record<string, { qrCode: string | null; qrCodeBase64: string | null }>>(() => {
+    try {
+      const stored = localStorage.getItem("pix_order_data");
+      return stored ? JSON.parse(stored) : {};
+    } catch { return {}; }
+  });
+
+  const savePixForOrder = (orderId: string, qrCode: string | null, qrCodeBase64: string | null) => {
+    setSavedPixData(prev => {
+      const next = { ...prev, [orderId]: { qrCode, qrCodeBase64 } };
+      localStorage.setItem("pix_order_data", JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const clearPixForOrder = (orderId: string) => {
+    setSavedPixData(prev => {
+      const next = { ...prev };
+      delete next[orderId];
+      localStorage.setItem("pix_order_data", JSON.stringify(next));
+      return next;
+    });
+  };
+
   const [pixCooldownMs, setPixCooldownMs] = useState(0);
   const [safetyModeMs, setSafetyModeMs] = useState(0);
 
