@@ -288,6 +288,8 @@ const PedidosPage = () => {
       const qrCode = pixData?.pix_code || pixData?.qr_code || null;
       const qrCodeBase64 = pixData?.qr_code_url || pixData?.qr_code_base64 || null;
       if (qrCode || qrCodeBase64) {
+        // Save to localStorage so it persists across app restarts
+        savePixForOrder(order.id, qrCode, qrCodeBase64);
         setPixModal({
           orderId: order.id,
           qrCode,
