@@ -548,12 +548,9 @@ const PedidosPage = () => {
                           )}
                         </button>
                       </>
-                    )}
-                        </>
-                      )}
-                    </button>
                   </div>
-                )}
+                  );
+                })()}
 
                 {/* Delivery PIN Card */}
                 {showPin && (
