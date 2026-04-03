@@ -111,6 +111,53 @@ export type Database = {
         }
         Relationships: []
       }
+      banners: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string | null
+          is_active: boolean
+          link_type: string
+          link_value: string | null
+          sort_order: number
+          store_id: string | null
+          subtitle: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          link_type?: string
+          link_value?: string | null
+          sort_order?: number
+          store_id?: string | null
+          subtitle?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          link_type?: string
+          link_value?: string | null
+          sort_order?: number
+          store_id?: string | null
+          subtitle?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "banners_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coupon_uses: {
         Row: {
           coupon_id: string
@@ -345,6 +392,44 @@ export type Database = {
           },
         ]
       }
+      loyalty_points: {
+        Row: {
+          id: string
+          last_order_at: string | null
+          points: number
+          store_id: string
+          total_orders: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          last_order_at?: string | null
+          points?: number
+          store_id: string
+          total_orders?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          last_order_at?: string | null
+          points?: number
+          store_id?: string
+          total_orders?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_points_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       menu_sections: {
         Row: {
           created_at: string
@@ -555,6 +640,7 @@ export type Database = {
           neighborhood: string
           payment_method: string
           return_to_store_confirmed: boolean
+          scheduled_for: string | null
           settlement_code: string | null
           status: Database["public"]["Enums"]["order_status"]
           store_id: string
@@ -579,6 +665,7 @@ export type Database = {
           neighborhood: string
           payment_method: string
           return_to_store_confirmed?: boolean
+          scheduled_for?: string | null
           settlement_code?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           store_id: string
@@ -603,6 +690,7 @@ export type Database = {
           neighborhood?: string
           payment_method?: string
           return_to_store_confirmed?: boolean
+          scheduled_for?: string | null
           settlement_code?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           store_id?: string
