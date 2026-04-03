@@ -15,6 +15,7 @@ interface SavedAddress {
   neighborhood: string;
   reference_point: string | null;
   is_default: boolean;
+  cep: string | null;
 }
 
 interface SavedAddressPickerProps {
