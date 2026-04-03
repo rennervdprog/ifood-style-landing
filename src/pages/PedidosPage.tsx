@@ -548,6 +548,7 @@ const PedidosPage = () => {
                           )}
                         </button>
                       </>
+                    )}
                   </div>
                   );
                 })()}
