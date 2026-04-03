@@ -130,8 +130,8 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-sm font-bold text-gray-300 uppercase tracking-wider">Gestor de Adicionais</h2>
-          <p className="text-xs text-gray-500 mt-1">Crie grupos aqui e vincule aos produtos no Cardápio</p>
+          <h2 className="text-sm font-bold text-foreground/80 uppercase tracking-wider">Gestor de Adicionais</h2>
+          <p className="text-xs text-muted-foreground/70 mt-1">Crie grupos aqui e vincule aos produtos no Cardápio</p>
         </div>
         <button
           onClick={() => setShowGroupForm(true)}
@@ -143,42 +143,42 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
 
       {/* Add Group Form */}
       {showGroupForm && (
-        <div className="bg-[#1F2937] rounded-xl p-4 space-y-3">
+        <div className="bg-card rounded-xl p-4 space-y-3">
           <input
             type="text"
             placeholder="Nome do grupo (ex: Extras de Hambúrguer)"
             value={groupForm.name}
             onChange={(e) => setGroupForm({ ...groupForm, name: e.target.value })}
-            className="w-full bg-gray-800 text-white px-3 py-2.5 rounded-lg text-sm border border-gray-600 focus:border-primary focus:outline-none"
+            className="w-full bg-secondary text-foreground px-3 py-2.5 rounded-lg text-sm border border-border focus:border-primary focus:outline-none"
             autoFocus
           />
           <div className="flex gap-3">
             <div className="flex-1">
-              <label className="text-xs text-gray-500 mb-1 block">Mínimo de seleções</label>
+              <label className="text-xs text-muted-foreground/70 mb-1 block">Mínimo de seleções</label>
               <input
                 type="number"
                 value={groupForm.min_select}
                 onChange={(e) => setGroupForm({ ...groupForm, min_select: e.target.value })}
-                className="w-full bg-gray-800 text-white px-3 py-2 rounded-lg text-sm border border-gray-600 focus:outline-none"
+                className="w-full bg-secondary text-foreground px-3 py-2 rounded-lg text-sm border border-border focus:outline-none"
                 min="0"
               />
             </div>
             <div className="flex-1">
-              <label className="text-xs text-gray-500 mb-1 block">Máximo de seleções</label>
+              <label className="text-xs text-muted-foreground/70 mb-1 block">Máximo de seleções</label>
               <input
                 type="number"
                 value={groupForm.max_select}
                 onChange={(e) => setGroupForm({ ...groupForm, max_select: e.target.value })}
-                className="w-full bg-gray-800 text-white px-3 py-2 rounded-lg text-sm border border-gray-600 focus:outline-none"
+                className="w-full bg-secondary text-foreground px-3 py-2 rounded-lg text-sm border border-border focus:outline-none"
                 min="1"
               />
             </div>
           </div>
           <div className="flex gap-2">
-            <button onClick={addGroup} className="flex-1 bg-green-500 text-white py-2.5 rounded-xl text-sm font-bold">
+            <button onClick={addGroup} className="flex-1 bg-primary text-primary-foreground py-2.5 rounded-xl text-sm font-bold">
               Criar Grupo
             </button>
-            <button onClick={() => { setShowGroupForm(false); setGroupForm({ name: "", min_select: "0", max_select: "1" }); }} className="px-4 text-gray-400 text-sm">
+            <button onClick={() => { setShowGroupForm(false); setGroupForm({ name: "", min_select: "0", max_select: "1" }); }} className="px-4 text-muted-foreground text-sm">
               Cancelar
             </button>
           </div>
@@ -189,9 +189,9 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
       {isLoading ? (
         <div className="space-y-3">
           {[1, 2].map(i => (
-            <div key={i} className="bg-[#1F2937] rounded-2xl p-4 animate-pulse space-y-2">
-              <div className="h-4 bg-gray-700 rounded w-1/2" />
-              <div className="h-3 bg-gray-700 rounded w-1/4" />
+            <div key={i} className="bg-card rounded-2xl p-4 animate-pulse space-y-2">
+              <div className="h-4 bg-muted rounded w-1/2" />
+              <div className="h-3 bg-muted rounded w-1/4" />
             </div>
           ))}
         </div>
@@ -201,7 +201,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
           const isExpanded = expandedGroup === group.id;
 
           return (
-            <div key={group.id} className="bg-[#1F2937] rounded-2xl overflow-hidden">
+            <div key={group.id} className="bg-card rounded-2xl overflow-hidden">
               {/* Group Header */}
               <div
                 className="flex items-center justify-between p-4 cursor-pointer"
@@ -214,48 +214,48 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                         type="text"
                         value={editGroupForm.name}
                         onChange={(e) => setEditGroupForm({ ...editGroupForm, name: e.target.value })}
-                        className="w-full bg-gray-800 text-white px-3 py-2 rounded-lg text-sm border border-primary focus:outline-none"
+                        className="w-full bg-secondary text-foreground px-3 py-2 rounded-lg text-sm border border-primary focus:outline-none"
                         autoFocus
                       />
                       <div className="flex gap-2">
                         <div className="flex-1">
-                          <label className="text-[10px] text-gray-500">Mín</label>
+                          <label className="text-[10px] text-muted-foreground/70">Mín</label>
                           <input
                             type="number"
                             value={editGroupForm.min_select}
                             onChange={(e) => setEditGroupForm({ ...editGroupForm, min_select: e.target.value })}
-                            className="w-full bg-gray-800 text-white px-2 py-1 rounded text-xs border border-gray-600"
+                            className="w-full bg-secondary text-foreground px-2 py-1 rounded text-xs border border-border"
                           />
                         </div>
                         <div className="flex-1">
-                          <label className="text-[10px] text-gray-500">Máx</label>
+                          <label className="text-[10px] text-muted-foreground/70">Máx</label>
                           <input
                             type="number"
                             value={editGroupForm.max_select}
                             onChange={(e) => setEditGroupForm({ ...editGroupForm, max_select: e.target.value })}
-                            className="w-full bg-gray-800 text-white px-2 py-1 rounded text-xs border border-gray-600"
+                            className="w-full bg-secondary text-foreground px-2 py-1 rounded text-xs border border-border"
                           />
                         </div>
                       </div>
                       <div className="flex gap-1">
-                        <button onClick={() => updateGroup(group.id)} className="bg-green-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold">
+                        <button onClick={() => updateGroup(group.id)} className="bg-primary text-primary-foreground px-3 py-1.5 rounded-lg text-xs font-bold">
                           <Save className="h-3 w-3" />
                         </button>
-                        <button onClick={() => setEditingGroup(null)} className="text-gray-400 px-2 text-xs">Cancelar</button>
+                        <button onClick={() => setEditingGroup(null)} className="text-muted-foreground px-2 text-xs">Cancelar</button>
                       </div>
                     </div>
                   ) : (
                     <div>
-                      <h3 className="font-bold text-sm text-white">{group.name}</h3>
+                      <h3 className="font-bold text-sm text-foreground">{group.name}</h3>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-muted-foreground/70">
                           {group.min_select > 0 ? `Obrigatório (mín ${group.min_select})` : "Opcional"} • máx {group.max_select}
                         </span>
                         <span className="text-xs text-primary font-bold">
                           {(group.addon_items as any[])?.length || 0} itens
                         </span>
                         {linkedProducts.length > 0 && (
-                          <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full font-bold">
+                          <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full font-bold">
                             🔗 {linkedProducts.length} produto{linkedProducts.length > 1 ? "s" : ""}
                           </span>
                         )}
@@ -275,7 +275,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                           max_select: String(group.max_select),
                         });
                       }}
-                      className="text-gray-400 hover:text-white p-1.5"
+                      className="text-muted-foreground hover:text-foreground p-1.5"
                     >
                       <Edit2 className="h-3.5 w-3.5" />
                     </button>
@@ -285,7 +285,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
-                    {isExpanded ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+                    {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
                   </div>
                 )}
               </div>
@@ -295,35 +295,35 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                 <div className="px-4 pb-4 space-y-2">
                   {/* Items */}
                   {(group.addon_items as any[])?.sort((a: any, b: any) => a.sort_order - b.sort_order).map((item: any) => (
-                    <div key={item.id} className="flex items-center justify-between bg-gray-800/50 rounded-lg px-3 py-2.5">
+                    <div key={item.id} className="flex items-center justify-between bg-muted/50 rounded-lg px-3 py-2.5">
                       {editingItem === item.id ? (
                         <div className="flex gap-2 flex-1" onClick={(e) => e.stopPropagation()}>
                           <input
                             type="text"
                             value={editItemForm.name}
                             onChange={(e) => setEditItemForm({ ...editItemForm, name: e.target.value })}
-                            className="flex-1 bg-gray-700 text-white px-2 py-1 rounded text-sm border border-gray-600 focus:outline-none"
+                            className="flex-1 bg-muted text-foreground px-2 py-1 rounded text-sm border border-border focus:outline-none"
                             autoFocus
                           />
                           <input
                             type="number"
                             value={editItemForm.price}
                             onChange={(e) => setEditItemForm({ ...editItemForm, price: e.target.value })}
-                            className="w-20 bg-gray-700 text-white px-2 py-1 rounded text-sm border border-gray-600 focus:outline-none"
+                            className="w-20 bg-muted text-foreground px-2 py-1 rounded text-sm border border-border focus:outline-none"
                             step="0.50"
                           />
-                          <button onClick={() => updateItem(item.id)} className="bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">
+                          <button onClick={() => updateItem(item.id)} className="bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-bold">
                             <Save className="h-3 w-3" />
                           </button>
-                          <button onClick={() => setEditingItem(null)} className="text-gray-400 px-1">
+                          <button onClick={() => setEditingItem(null)} className="text-muted-foreground px-1">
                             <X className="h-3 w-3" />
                           </button>
                         </div>
                       ) : (
                         <>
-                          <span className="text-sm text-gray-200">{item.name}</span>
+                          <span className="text-sm text-foreground">{item.name}</span>
                           <div className="flex items-center gap-2">
-                            <span className="text-sm text-green-400 font-bold">
+                            <span className="text-sm text-primary font-bold">
                               {item.price > 0 ? `+R$ ${Number(item.price).toFixed(2)}` : "Grátis"}
                             </span>
                             <button
@@ -331,7 +331,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                                 setEditingItem(item.id);
                                 setEditItemForm({ name: item.name, price: String(item.price) });
                               }}
-                              className="text-gray-400 hover:text-white p-1"
+                              className="text-muted-foreground hover:text-foreground p-1"
                             >
                               <Edit2 className="h-3 w-3" />
                             </button>
@@ -346,13 +346,13 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
 
                   {/* Add Item */}
                   {showItemForm === group.id ? (
-                    <div className="flex gap-2 bg-gray-800/50 rounded-lg p-2">
+                    <div className="flex gap-2 bg-muted/50 rounded-lg p-2">
                       <input
                         type="text"
                         placeholder="Nome do adicional"
                         value={itemForm.name}
                         onChange={(e) => setItemForm({ ...itemForm, name: e.target.value })}
-                        className="flex-1 bg-gray-700 text-white px-3 py-2 rounded-lg text-sm border border-gray-600 focus:outline-none"
+                        className="flex-1 bg-muted text-foreground px-3 py-2 rounded-lg text-sm border border-border focus:outline-none"
                         autoFocus
                       />
                       <input
@@ -360,20 +360,20 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                         placeholder="R$"
                         value={itemForm.price}
                         onChange={(e) => setItemForm({ ...itemForm, price: e.target.value })}
-                        className="w-20 bg-gray-700 text-white px-3 py-2 rounded-lg text-sm border border-gray-600 focus:outline-none"
+                        className="w-20 bg-muted text-foreground px-3 py-2 rounded-lg text-sm border border-border focus:outline-none"
                         step="0.50"
                       />
-                      <button onClick={() => addItem(group.id)} className="bg-green-500 text-white px-3 py-2 rounded-lg text-sm font-bold">
+                      <button onClick={() => addItem(group.id)} className="bg-primary text-primary-foreground px-3 py-2 rounded-lg text-sm font-bold">
                         <Plus className="h-4 w-4" />
                       </button>
-                      <button onClick={() => { setShowItemForm(null); setItemForm({ name: "", price: "0" }); }} className="text-gray-400 px-2">
+                      <button onClick={() => { setShowItemForm(null); setItemForm({ name: "", price: "0" }); }} className="text-muted-foreground px-2">
                         <X className="h-4 w-4" />
                       </button>
                     </div>
                   ) : (
                     <button
                       onClick={() => setShowItemForm(group.id)}
-                      className="w-full flex items-center justify-center gap-2 py-2.5 border-2 border-dashed border-gray-600 rounded-xl text-gray-400 hover:text-white hover:border-gray-400 transition-colors text-xs"
+                      className="w-full flex items-center justify-center gap-2 py-2.5 border-2 border-dashed border-border rounded-xl text-muted-foreground hover:text-foreground hover:border-border transition-colors text-xs"
                     >
                       <Plus className="h-3.5 w-3.5" /> Adicionar Item
                     </button>
@@ -381,11 +381,11 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
 
                   {/* Linked Products */}
                   {linkedProducts.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-gray-700">
-                      <p className="text-xs text-gray-500 font-bold mb-1.5">🔗 Vinculado a:</p>
+                    <div className="mt-3 pt-3 border-t border-border">
+                      <p className="text-xs text-muted-foreground/70 font-bold mb-1.5">🔗 Vinculado a:</p>
                       <div className="flex flex-wrap gap-1.5">
                         {linkedProducts.map((link: any) => (
-                          <span key={link.product_id} className="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded-lg">
+                          <span key={link.product_id} className="text-xs bg-muted text-foreground/80 px-2 py-1 rounded-lg">
                             {(link.products as any)?.name || "Produto"}
                           </span>
                         ))}
@@ -399,9 +399,9 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
         })
       ) : (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <Package className="h-14 w-14 text-gray-600 mb-4" />
-          <h3 className="text-sm font-bold text-gray-400 mb-1">Nenhum grupo de adicionais</h3>
-          <p className="text-xs text-gray-500 max-w-xs">
+          <Package className="h-14 w-14 text-muted-foreground mb-4" />
+          <h3 className="text-sm font-bold text-muted-foreground mb-1">Nenhum grupo de adicionais</h3>
+          <p className="text-xs text-muted-foreground/70 max-w-xs">
             Crie grupos como "Extras de Hambúrguer" aqui e depois vincule aos produtos no Cardápio.
           </p>
         </div>

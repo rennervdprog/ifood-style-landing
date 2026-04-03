@@ -130,15 +130,15 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
         className={`rounded-2xl p-4 border-2 ${
           localForceClosed
             ? "bg-red-500/10 border-red-500"
-            : "bg-gray-800/50 border-gray-700"
+            : "bg-muted/50 border-border"
         }`}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <AlertTriangle className={`h-5 w-5 ${localForceClosed ? "text-red-400" : "text-gray-400"}`} />
+            <AlertTriangle className={`h-5 w-5 ${localForceClosed ? "text-red-400" : "text-muted-foreground"}`} />
             <div>
-              <p className="text-sm font-bold text-white">Fechamento Manual</p>
-              <p className="text-xs text-gray-400">
+              <p className="text-sm font-bold text-foreground">Fechamento Manual</p>
+              <p className="text-xs text-muted-foreground">
                 {localForceClosed
                   ? "Loja fechada manualmente. Horário automático ignorado."
                   : "Desative para fechar a loja imediatamente."}
@@ -149,8 +149,8 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
             onClick={toggleForceClosed}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all min-h-[44px] ${
               localForceClosed
-                ? "bg-green-500 text-white"
-                : "bg-red-500 text-white"
+                ? "bg-primary text-primary-foreground"
+                : "bg-red-500 text-foreground"
             }`}
           >
             <Power className="h-4 w-4" />
@@ -160,10 +160,10 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
       </div>
 
       {/* Schedule */}
-      <div className="bg-[#1F2937] rounded-2xl p-4">
+      <div className="bg-card rounded-2xl p-4">
         <div className="flex items-center gap-2 mb-4">
           <Clock className="h-4 w-4 text-primary" />
-          <h3 className="text-sm font-bold text-white">Horários de Funcionamento</h3>
+          <h3 className="text-sm font-bold text-foreground">Horários de Funcionamento</h3>
         </div>
 
         <div className="space-y-2">
@@ -171,12 +171,12 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
             <div
               key={h.day_of_week}
               className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${
-                h.is_closed_all_day ? "bg-gray-800/50 opacity-60" : "bg-gray-800"
+                h.is_closed_all_day ? "bg-muted/50 opacity-60" : "bg-secondary"
               }`}
             >
               {/* Day label */}
               <div className="w-20 flex-shrink-0">
-                <span className="text-xs font-bold text-gray-300">
+                <span className="text-xs font-bold text-foreground/80">
                   {dayLabels[h.day_of_week].slice(0, 3)}
                 </span>
               </div>
@@ -185,7 +185,7 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
               <button
                 onClick={() => updateHour(h.day_of_week, "is_closed_all_day", !h.is_closed_all_day)}
                 className={`relative w-12 h-6 rounded-full transition-colors flex-shrink-0 ${
-                  h.is_closed_all_day ? "bg-gray-600" : "bg-green-500"
+                  h.is_closed_all_day ? "bg-muted" : "bg-primary"
                 }`}
               >
                 <span
@@ -202,18 +202,18 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
                     type="time"
                     value={h.open_time}
                     onChange={(e) => updateHour(h.day_of_week, "open_time", e.target.value)}
-                    className="bg-gray-700 text-white px-2 py-1.5 rounded-lg text-xs border border-gray-600 focus:border-primary focus:outline-none w-[90px]"
+                    className="bg-muted text-foreground px-2 py-1.5 rounded-lg text-xs border border-border focus:border-primary focus:outline-none w-[90px]"
                   />
-                  <span className="text-gray-500 text-xs">às</span>
+                  <span className="text-muted-foreground/70 text-xs">às</span>
                   <input
                     type="time"
                     value={h.close_time}
                     onChange={(e) => updateHour(h.day_of_week, "close_time", e.target.value)}
-                    className="bg-gray-700 text-white px-2 py-1.5 rounded-lg text-xs border border-gray-600 focus:border-primary focus:outline-none w-[90px]"
+                    className="bg-muted text-foreground px-2 py-1.5 rounded-lg text-xs border border-border focus:border-primary focus:outline-none w-[90px]"
                   />
                 </div>
               ) : (
-                <span className="text-xs text-gray-500 italic">Fechado</span>
+                <span className="text-xs text-muted-foreground/70 italic">Fechado</span>
               )}
             </div>
           ))}

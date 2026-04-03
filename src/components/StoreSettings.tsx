@@ -186,11 +186,11 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
       {/* Logo Upload */}
       <div className="flex flex-col items-center gap-4">
         <div className="relative">
-          <div className="w-28 h-28 rounded-full bg-gray-700 border-4 border-gray-600 overflow-hidden flex items-center justify-center">
+          <div className="w-28 h-28 rounded-full bg-muted border-4 border-border overflow-hidden flex items-center justify-center">
             {imageUrl ? (
               <img src={imageUrl} alt="Logo" className="w-full h-full object-cover" />
             ) : (
-              <Store className="h-10 w-10 text-gray-500" />
+              <Store className="h-10 w-10 text-muted-foreground/70" />
             )}
           </div>
           <label className="absolute bottom-0 right-0 bg-primary text-primary-foreground w-9 h-9 rounded-full flex items-center justify-center cursor-pointer shadow-lg active:scale-95 transition-transform">
@@ -203,14 +203,14 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
             />
           </label>
         </div>
-        <p className="text-xs text-gray-400">
+        <p className="text-xs text-muted-foreground">
           {uploading ? "Enviando..." : "Toque no ícone para alterar a logo"}
         </p>
       </div>
 
       {/* Store Name */}
       <div className="space-y-2">
-        <label className="text-sm font-bold text-gray-300 flex items-center gap-2">
+        <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
           <Store className="h-4 w-4 text-primary" />
           Nome do Estabelecimento
         </label>
@@ -220,20 +220,20 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
           onChange={(e) => setName(e.target.value)}
           placeholder="Ex: Nata Lanches"
           maxLength={100}
-          className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+          className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
         />
       </div>
 
       {/* Category */}
       <div className="space-y-2">
-        <label className="text-sm font-bold text-gray-300 flex items-center gap-2">
+        <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
           <Tag className="h-4 w-4 text-primary" />
           Categoria
         </label>
         <select
           value={category}
           onChange={(e) => setCategory(e.target.value)}
-          className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary appearance-none"
+          className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary appearance-none"
         >
           {CATEGORY_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>
@@ -245,8 +245,8 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
 
       {/* WhatsApp */}
       <div className="space-y-2">
-        <label className="text-sm font-bold text-gray-300 flex items-center gap-2">
-          <Phone className="h-4 w-4 text-green-400" />
+        <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
+          <Phone className="h-4 w-4 text-primary" />
           WhatsApp de Atendimento
         </label>
         <input
@@ -255,27 +255,27 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
           value={maskWhatsApp(whatsapp)}
           onChange={(e) => setWhatsapp(e.target.value.replace(/\D/g, "").slice(0, 11))}
           placeholder="+55 14 99999-9999"
-          className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500"
+          className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
         />
-        <p className="text-[10px] text-gray-500">Será exibido para clientes e entregadores.</p>
+        <p className="text-[10px] text-muted-foreground/70">Será exibido para clientes e entregadores.</p>
       </div>
 
       {/* Store Link (Slug) */}
       <div className="space-y-2">
-        <label className="text-sm font-bold text-gray-300 flex items-center gap-2">
+        <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
           <Link className="h-4 w-4 text-primary" />
           Link Exclusivo da Loja
         </label>
         <div className="flex gap-2">
-          <div className="flex-1 flex items-center bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
-            <span className="text-xs text-gray-500 pl-3 whitespace-nowrap">foodita.app/</span>
+          <div className="flex-1 flex items-center bg-secondary border border-border rounded-xl overflow-hidden">
+            <span className="text-xs text-muted-foreground/70 pl-3 whitespace-nowrap">foodita.app/</span>
             <input
               type="text"
               value={slug}
               onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
               placeholder="nome-da-loja"
               maxLength={50}
-              className="flex-1 bg-transparent px-1 py-3 text-white text-sm focus:outline-none"
+              className="flex-1 bg-transparent px-1 py-3 text-foreground text-sm focus:outline-none"
             />
           </div>
         </div>
@@ -297,7 +297,7 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
             </button>
           </div>
         )}
-        <p className="text-[10px] text-gray-500">Compartilhe esse link para clientes acessarem direto seu cardápio.</p>
+        <p className="text-[10px] text-muted-foreground/70">Compartilhe esse link para clientes acessarem direto seu cardápio.</p>
       </div>
 
       {/* Store Address */}
@@ -440,17 +440,17 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
 
 
       <div className="space-y-3">
-        <label className="text-sm font-bold text-gray-300 flex items-center gap-2">
-          <Wallet className="h-4 w-4 text-green-400" />
+        <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
+          <Wallet className="h-4 w-4 text-primary" />
           Dados para Recebimento (Pix)
         </label>
-        <p className="text-[10px] text-gray-500 -mt-1">
+        <p className="text-[10px] text-muted-foreground/70 -mt-1">
           Cadastre sua chave Pix para receber os repasses das vendas via App.
         </p>
         <select
           value={pixType}
           onChange={(e) => setPixType(e.target.value)}
-          className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 appearance-none"
+          className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary appearance-none"
         >
           {PIX_TYPE_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -462,30 +462,30 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
           onChange={(e) => setPixKey(e.target.value)}
           placeholder={pixType === "cpf" ? "000.000.000-00" : pixType === "cnpj" ? "00.000.000/0000-00" : pixType === "email" ? "email@exemplo.com" : pixType === "phone" ? "+55 14 99999-9999" : "Chave aleatória"}
           maxLength={256}
-          className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500"
+          className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
         />
         {pixKey && (
-          <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-3 flex items-center gap-2">
-            <Wallet className="h-4 w-4 text-green-400 flex-shrink-0" />
+          <div className="bg-primary/10 border border-green-500/20 rounded-xl p-3 flex items-center gap-2">
+            <Wallet className="h-4 w-4 text-primary flex-shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-green-400 font-bold">Chave Pix cadastrada</p>
-              <p className="text-xs text-gray-300 truncate">{pixKey}</p>
-              <p className="text-[10px] text-gray-500">Tipo: {PIX_TYPE_OPTIONS.find(o => o.value === pixType)?.label}</p>
+              <p className="text-xs text-primary font-bold">Chave Pix cadastrada</p>
+              <p className="text-xs text-foreground/80 truncate">{pixKey}</p>
+              <p className="text-[10px] text-muted-foreground/70">Tipo: {PIX_TYPE_OPTIONS.find(o => o.value === pixType)?.label}</p>
             </div>
           </div>
         )}
       </div>
 
       {/* Store Status Info */}
-      <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-4 space-y-2">
-        <p className="text-sm font-bold text-gray-300">Status Atual</p>
+      <div className="bg-muted/50 border border-border rounded-2xl p-4 space-y-2">
+        <p className="text-sm font-bold text-foreground/80">Status Atual</p>
         <div className="flex items-center gap-3">
-          <div className={`w-3 h-3 rounded-full ${storeIsOpen && !forceClosed ? "bg-green-400 animate-pulse" : "bg-red-400"}`} />
-          <span className={`text-sm font-bold ${storeIsOpen && !forceClosed ? "text-green-400" : "text-red-400"}`}>
+          <div className={`w-3 h-3 rounded-full ${storeIsOpen && !forceClosed ? "bg-primary animate-pulse" : "bg-red-400"}`} />
+          <span className={`text-sm font-bold ${storeIsOpen && !forceClosed ? "text-primary" : "text-red-400"}`}>
             {storeIsOpen && !forceClosed ? "Loja Aberta" : "Loja Fechada"}
           </span>
         </div>
-        <p className="text-[10px] text-gray-500">
+        <p className="text-[10px] text-muted-foreground/70">
           Use o botão "Pausar/Reabrir" no topo do painel para abrir ou fechar a loja manualmente.
         </p>
       </div>
