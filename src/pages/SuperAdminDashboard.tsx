@@ -805,7 +805,7 @@ const FinanceTab = ({
     const mode = newModes[key] === "auto" ? "Automático" : "Manual";
     toast.success(`${label}: modo ${mode} ativado`);
     if (newModes[key] === "auto") {
-      toast.info("⚠️ O modo automático será ativado quando houver integração com provedor de pagamento ativo.", { duration: 5000 });
+      toast.info("✅ Repasse automático via Asaas ativado. Será processado no dia configurado na agenda.", { duration: 5000 });
     }
   };
 
