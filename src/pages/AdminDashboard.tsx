@@ -569,7 +569,7 @@ const AdminDashboard = () => {
                 <GlanceCard
                   icon={DollarSign}
                   label="Faturamento Hoje"
-                  value={`R$ ${todayTotal.toFixed(0)}`}
+                  value={`R$ ${todayTotal.toFixed(2)}`}
                   subValue={`${todayCount} pedidos`}
                   color="text-emerald-500"
                   trend={todayTotal > 0 ? "up" : null}
