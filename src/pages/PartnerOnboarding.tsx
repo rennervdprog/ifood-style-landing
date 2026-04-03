@@ -335,7 +335,7 @@ const PartnerOnboarding = () => {
                 <input
                   type="tel"
                   inputMode="tel"
-                  placeholder="(14) 99999-9999"
+                  placeholder="+55 14 99999-9999"
                   value={whatsapp}
                   onChange={(e) => setWhatsapp(maskWhatsApp(e.target.value))}
                   className="w-full px-4 py-3 rounded-xl border border-green-500/30 bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
