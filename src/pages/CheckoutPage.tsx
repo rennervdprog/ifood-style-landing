@@ -80,15 +80,18 @@ const CheckoutPage = () => {
 
   const addressString = buildAddressString();
 
-  // Sync neighborhood fee from profile if cart doesn't have one yet
+  // Sync neighborhood fee from profile
   useEffect(() => {
-    if (profileNeighborhood && !neighborhood && neighborhoodFees) {
-      const found = neighborhoodFees.find((n: any) => n.name === profileNeighborhood);
+    if (profileNeighborhood && neighborhoodFees) {
+      const found = neighborhoodFees.find((n: any) => n.name.toLowerCase() === profileNeighborhood.toLowerCase());
       if (found) {
         setNeighborhood(found.name, found.fee);
+      } else {
+        // Neighborhood not in fees table - use city default from delivery config
+        setNeighborhood(profileNeighborhood, neighborhoodFee || 0);
       }
     }
-  }, [profileNeighborhood, neighborhood, neighborhoodFees, setNeighborhood]);
+  }, [profileNeighborhood, neighborhoodFees, setNeighborhood]);
 
   // Redirect to login if not authenticated
   if (!user) {
