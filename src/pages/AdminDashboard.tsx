@@ -64,6 +64,7 @@ const sidebarItems: { key: DashboardTab; label: string; icon: React.ElementType 
   { key: "addons", label: "Adicionais", icon: Plus },
   { key: "hours", label: "Horários", icon: Clock },
   { key: "finance", label: "Finanças", icon: Coins },
+  { key: "reports", label: "Relatórios", icon: BarChart3 },
   { key: "settings", label: "Configurações", icon: Settings },
 ];
 
