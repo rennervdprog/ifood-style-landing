@@ -99,6 +99,7 @@ const PerfilPage = () => {
 
   useEffect(() => {
     if (profile && !addressLoaded) {
+      setCep((profile as any).cep ? formatCep((profile as any).cep) : "");
       setStreet((profile as any).street || "");
       setNumber((profile as any).number || "");
       setComplement((profile as any).complement || "");
