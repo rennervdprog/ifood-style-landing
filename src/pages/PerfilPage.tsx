@@ -198,14 +198,8 @@ const PerfilPage = () => {
       }
       setStreet(result.logradouro || "");
       if (result.complemento) setComplement(result.complemento);
-      if (result.bairro && neighborhoods) {
-        const match = neighborhoods.find((n) => n.name.toLowerCase() === result.bairro.toLowerCase());
-        if (match) {
-          setNeighborhoodLocal(match.name);
-        } else {
-          setNeighborhoodLocal("");
-          toast.info(`Bairro "${result.bairro}" não está na área de entrega. Selecione manualmente.`);
-        }
+      if (result.bairro) {
+        setNeighborhoodLocal(result.bairro);
       }
       toast.success("Endereço preenchido pelo CEP!");
     } catch {
@@ -454,16 +448,16 @@ const PerfilPage = () => {
               onChange={(e) => setComplement(e.target.value)}
               className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             />
-            <select
-              value={neighborhood}
-              onChange={(e) => setNeighborhoodLocal(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary appearance-none"
-            >
-              <option value="">Selecione o Bairro</option>
-              {neighborhoods?.map((n) => (
-                <option key={n.id} value={n.name}>{n.name}</option>
-              ))}
-            </select>
+            <div>
+              <label className="text-xs font-bold text-muted-foreground mb-1 block">Bairro (preenchido pelo CEP)</label>
+              <input
+                type="text"
+                placeholder="Digite o CEP acima para preencher"
+                value={neighborhood}
+                onChange={(e) => setNeighborhoodLocal(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
             {/* Delivery fee indicator */}
             {selectedFee !== null && (
               <div className="flex items-center gap-2 bg-primary/5 border border-primary/20 rounded-xl px-3 py-2">

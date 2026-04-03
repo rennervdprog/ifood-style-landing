@@ -87,16 +87,8 @@ const SavedAddressPicker = ({ onSelect, selectedId }: SavedAddressPickerProps) =
       }
       setStreet(result.logradouro || "");
       if (result.complemento) setComplement(result.complemento);
-      if (result.bairro && neighborhoods) {
-        const match = neighborhoods.find(
-          (n: any) => n.name.toLowerCase() === result.bairro.toLowerCase()
-        );
-        if (match) {
-          setNeighborhood(match.name);
-        } else {
-          setNeighborhood("");
-          toast.info(`Bairro "${result.bairro}" não está na área de entrega.`);
-        }
+      if (result.bairro) {
+        setNeighborhood(result.bairro);
       }
       toast.success("Endereço preenchido!");
     } catch {
@@ -240,11 +232,11 @@ const SavedAddressPicker = ({ onSelect, selectedId }: SavedAddressPickerProps) =
           </div>
           <input type="text" placeholder="Complemento" value={complement} onChange={(e) => setComplement(e.target.value)}
             className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-xs placeholder:text-muted-foreground" />
-          <select value={neighborhood} onChange={(e) => setNeighborhood(e.target.value)}
-            className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-xs">
-            <option value="">Bairro</option>
-            {neighborhoods?.map((n: any) => <option key={n.id} value={n.name}>{n.name}</option>)}
-          </select>
+          <div>
+            <label className="text-[10px] font-bold text-muted-foreground mb-0.5 block">Bairro (via CEP)</label>
+            <input type="text" placeholder="Preencha o CEP acima" value={neighborhood} onChange={(e) => setNeighborhood(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-xs placeholder:text-muted-foreground" />
+          </div>
           <input type="text" placeholder="Ponto de referência" value={referencePoint} onChange={(e) => setReferencePoint(e.target.value)}
             className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-xs placeholder:text-muted-foreground" />
           <div className="flex gap-2">
