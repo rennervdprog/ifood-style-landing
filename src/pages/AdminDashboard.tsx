@@ -292,7 +292,14 @@ const AdminDashboard = () => {
     }
   };
 
-  const filteredOrders = orders?.filter(o => o.status === activeTab) || [];
+  const filteredOrders = (orders?.filter(o => o.status === activeTab) || []).filter(o => {
+    if (activeTab !== "entregue" || !settlementSearch.trim()) return true;
+    const search = settlementSearch.toLowerCase().trim();
+    const orderId = o.id.slice(0, 8).toLowerCase();
+    const driverName = o.driver_id ? getDriverName(o.driver_id).toLowerCase() : "";
+    const clientName = getClientName(o.client_id).toLowerCase();
+    return orderId.includes(search) || driverName.includes(search) || clientName.includes(search);
+  });
   const pendingCount = orders?.filter(o => o.status === "pendente").length || 0;
 
   const getMainAction = (status: OrderStatus): { label: string; next: OrderStatus; emoji: string } | null => {
