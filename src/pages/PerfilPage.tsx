@@ -408,7 +408,25 @@ const PerfilPage = () => {
             Endereço de Entrega
           </h3>
           <div className="space-y-3">
-            <div className="grid grid-cols-3 gap-2">
+          {/* CEP field */}
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="CEP (ex: 18690-000)"
+              value={cep}
+              onChange={(e) => handleCepChange(e.target.value)}
+              inputMode="numeric"
+              maxLength={9}
+              className="flex-1 px-3 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+            <button
+              onClick={() => handleCepLookup()}
+              disabled={loadingCep}
+              className="px-3 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50 flex items-center gap-1"
+            >
+              {loadingCep ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+            </button>
+          </div>
               <div className="col-span-2">
                 <input
                   type="text"
