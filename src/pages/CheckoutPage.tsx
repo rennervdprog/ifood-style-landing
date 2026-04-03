@@ -456,18 +456,6 @@ const CheckoutPage = () => {
           )}
         </div>
 
-        {/* Schedule */}
-        <div>
-          <h2 className="text-sm font-bold text-foreground mb-2 flex items-center gap-1.5">
-            🕐 Agendamento
-          </h2>
-          <ScheduleOrderPicker onSchedule={setScheduledFor} scheduled={scheduledFor} />
-        </div>
-
-        {/* Loyalty Card */}
-        {items[0]?.store_id && (
-          <LoyaltyCard storeId={items[0].store_id} storeName={items[0]?.store_name || "Loja"} />
-        )}
 
         {/* Coupon */}
         <div>
