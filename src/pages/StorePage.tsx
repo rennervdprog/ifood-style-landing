@@ -33,6 +33,7 @@ const StorePage = () => {
   const { id, slug } = useParams<{ id?: string; slug?: string }>();
   const navigate = useNavigate();
   const { addItem } = useCart();
+  const { user } = useAuth();
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
