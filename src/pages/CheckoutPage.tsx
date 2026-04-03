@@ -38,7 +38,7 @@ const CheckoutPage = () => {
   const [calculatingFee, setCalculatingFee] = useState(false);
   const [feeBreakdown, setFeeBreakdown] = useState<string | null>(null);
 
-  const activeDeliveryFee = calculatedDeliveryFee !== null ? calculatedDeliveryFee : neighborhoodFee;
+  const activeDeliveryFee = calculatedDeliveryFee !== null ? calculatedDeliveryFee : config.city_fee;
   const effectiveDeliveryFee = couponType === "free_shipping" ? 0 : activeDeliveryFee;
   const finalTotal = Math.max(0, subtotal - couponDiscount + effectiveDeliveryFee);
 
