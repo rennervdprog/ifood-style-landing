@@ -749,6 +749,7 @@ export type Database = {
           complement: string | null
           created_at: string
           document: string | null
+          email: string | null
           full_name: string
           id: string
           is_approved: boolean
@@ -769,6 +770,7 @@ export type Database = {
           complement?: string | null
           created_at?: string
           document?: string | null
+          email?: string | null
           full_name?: string
           id?: string
           is_approved?: boolean
@@ -789,6 +791,7 @@ export type Database = {
           complement?: string | null
           created_at?: string
           document?: string | null
+          email?: string | null
           full_name?: string
           id?: string
           is_approved?: boolean

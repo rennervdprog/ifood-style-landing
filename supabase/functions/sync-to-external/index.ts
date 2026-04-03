@@ -87,6 +87,15 @@ serve(async (req) => {
     if (action === "sync_record") {
       const { table, record, conflict_column } = payload || {};
       if (!table || !record) return jsonRes({ error: "Missing table or record" }, 400);
+
+      // Enrich profiles with email from auth.users
+      if (table === "profiles" && record.user_id && !record.email) {
+        try {
+          const { data: authData } = await internalClient.auth.admin.getUserById(record.user_id);
+          if (authData?.user?.email) record.email = authData.user.email;
+        } catch (_) { /* skip */ }
+      }
+
       const { error } = await externalClient
         .from(table)
         .upsert(record, { onConflict: conflict_column || "id" });
@@ -124,6 +133,13 @@ serve(async (req) => {
     if (action === "sync_profile") {
       if (!payload?.profile) return jsonRes({ error: "Missing profile data" }, 400);
 
+      // If email not in profile data, fetch from auth.users
+      let email = payload.profile.email;
+      if (!email && payload.profile.user_id) {
+        const { data: authData } = await internalClient.auth.admin.getUserById(payload.profile.user_id);
+        email = authData?.user?.email || null;
+      }
+
       const profileData = {
         id: payload.profile.id,
         user_id: payload.profile.user_id,
@@ -135,6 +151,7 @@ serve(async (req) => {
         vehicle: payload.profile.vehicle,
         whatsapp_number: payload.profile.whatsapp_number,
         created_at: payload.profile.created_at,
+        email: email,
       };
 
       try {
@@ -164,8 +181,30 @@ serve(async (req) => {
       results.products = await syncTable(internalClient, externalClient, "products");
       results.menu_sections = await syncTable(internalClient, externalClient, "menu_sections");
       results.neighborhood_fees = await syncTable(internalClient, externalClient, "neighborhood_fees");
-      results.profiles = await syncTable(internalClient, externalClient, "profiles", "id",
-        (q: any) => q.in("role", ["lojista", "motoboy"]));
+      // Profiles: enrich with email from auth.users
+      {
+        let query = internalClient.from("profiles").select("*").in("role", ["lojista", "motoboy"]);
+        const { data: profilesData, error: profilesErr } = await query;
+        if (profilesErr) {
+          results.profiles = { count: 0, error: profilesErr.message };
+        } else if (!profilesData?.length) {
+          results.profiles = { count: 0 };
+        } else {
+          // Enrich with emails from auth
+          for (const p of profilesData) {
+            if (!p.email && p.user_id) {
+              try {
+                const { data: authData } = await internalClient.auth.admin.getUserById(p.user_id);
+                if (authData?.user?.email) p.email = authData.user.email;
+              } catch (_) { /* skip */ }
+            }
+          }
+          const { error: upsertErr } = await externalClient
+            .from("profiles")
+            .upsert(profilesData, { onConflict: "id" });
+          results.profiles = { count: profilesData.length, error: upsertErr?.message };
+        }
+      }
       results.addon_groups = await syncTable(internalClient, externalClient, "addon_groups");
       results.addon_items = await syncTable(internalClient, externalClient, "addon_items");
       results.product_addon_groups = await syncTable(internalClient, externalClient, "product_addon_groups");
