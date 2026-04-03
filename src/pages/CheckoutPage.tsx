@@ -37,7 +37,7 @@ const CheckoutPage = () => {
   const [calculatedDeliveryFee, setCalculatedDeliveryFee] = useState<number | null>(null);
   const [calculatingFee, setCalculatingFee] = useState(false);
   const [feeBreakdown, setFeeBreakdown] = useState<string | null>(null);
-  const [scheduledFor, setScheduledFor] = useState<string | null>(null);
+  
 
   // activeDeliveryFee, effectiveDeliveryFee, finalTotal computed after queries below
 
