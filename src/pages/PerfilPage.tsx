@@ -9,6 +9,7 @@ import { User, LogOut, Store, Shield, UserPlus, MapPin, Save, Bike, Wallet, Copy
 import { toast } from "sonner";
 import { maskWhatsApp, formatWhatsAppNumber, isValidWhatsApp } from "@/lib/whatsapp";
 import { formatCep, fetchCep } from "@/lib/cepLookup";
+import { calculateDeliveryFee, DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig } from "@/lib/deliveryFee";
 
 const PerfilPage = () => {
   const { user, signOut } = useAuth();
