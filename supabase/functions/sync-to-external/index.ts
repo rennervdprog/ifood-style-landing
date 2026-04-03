@@ -2,103 +2,104 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2/cors";
 
+const JSON_HEADERS = { ...corsHeaders, "Content-Type": "application/json" };
+
+function jsonRes(data: unknown, status = 200) {
+  return new Response(JSON.stringify(data), { status, headers: JSON_HEADERS });
+}
+
+async function syncTable(
+  internalClient: ReturnType<typeof createClient>,
+  externalClient: ReturnType<typeof createClient>,
+  table: string,
+  conflict: string = "id",
+  filter?: (q: any) => any
+) {
+  let query = internalClient.from(table).select("*");
+  if (filter) query = filter(query);
+  const { data, error: fetchErr } = await query;
+  if (fetchErr) return { count: 0, error: fetchErr.message };
+  if (!data?.length) return { count: 0 };
+  const { error: upsertErr } = await externalClient
+    .from(table)
+    .upsert(data, { onConflict: conflict });
+  return { count: data.length, error: upsertErr?.message };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    // Internal Supabase client (for auth)
     const internalUrl = Deno.env.get("SUPABASE_URL")!;
     const internalServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const internalClient = createClient(internalUrl, internalServiceKey);
 
-    // External Supabase client
     const externalUrl = Deno.env.get("EXTERNAL_SUPABASE_URL");
     const externalKey = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY");
 
     if (!externalUrl || !externalKey) {
-      return new Response(
-        JSON.stringify({ error: "External Supabase credentials not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return jsonRes({ error: "External Supabase credentials not configured" }, 500);
     }
 
     const externalClient = createClient(externalUrl, externalKey);
 
-    // Verify auth - accept service_role key (from DB triggers) or admin JWT
+    // Auth: accept service_role key (DB triggers) or admin JWT
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: "Missing authorization" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    if (!authHeader) return jsonRes({ error: "Missing authorization" }, 401);
 
     const token = authHeader.replace("Bearer ", "");
     const isServiceRole = token === internalServiceKey;
 
     if (!isServiceRole) {
-      // Validate as user JWT - must be admin
       const { data: { user }, error: authError } = await createClient(
         internalUrl,
         Deno.env.get("SUPABASE_ANON_KEY")!
       ).auth.getUser(token);
 
-      if (authError || !user) {
-        return new Response(
-          JSON.stringify({ error: "Unauthorized" }),
-          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
+      if (authError || !user) return jsonRes({ error: "Unauthorized" }, 401);
 
-      if (user.email !== "vinivias13@gmail.com") {
-        return new Response(
-          JSON.stringify({ error: "Admin only" }),
-          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
+      // Check admin via RPC
+      const { data: isAdmin } = await internalClient.rpc("is_platform_admin", { _user_id: user.id });
+      if (!isAdmin) return jsonRes({ error: "Admin only" }, 403);
     }
 
     const body = await req.json();
     const { action, data: payload } = body;
 
-    // ACTION: test_connection
+    // ── test_connection ──
     if (action === "test_connection") {
       try {
-        // Try a simple query on the external DB
-        const { error: testError } = await externalClient
-          .from("_sync_test")
-          .select("*")
-          .limit(1);
-        
-        // Even if table doesn't exist, connection works if we get a specific error
-        const connected = !testError || testError.code === "42P01" || testError.message?.includes("does not exist");
-        
-        return new Response(
-          JSON.stringify({ 
-            success: connected, 
-            message: connected ? "Conexão com banco externo ativa!" : `Erro: ${testError?.message}`,
-            external_url: externalUrl.replace(/\/\/(.{4}).*@/, '//$1***@') // mask credentials
-          }),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        const { error: testError } = await externalClient.from("stores").select("id").limit(1);
+        const connected = !testError || testError.code === "42P01";
+        return jsonRes({
+          success: connected,
+          message: connected ? "Conexão com banco externo ativa!" : `Erro: ${testError?.message}`,
+          external_url: externalUrl.replace(/\/\/(.{4}).*@/, "//$1***@"),
+        });
       } catch (e) {
-        return new Response(
-          JSON.stringify({ success: false, message: `Falha na conexão: ${e.message}` }),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return jsonRes({ success: false, message: `Falha na conexão: ${e.message}` });
       }
     }
 
-    // ACTION: sync_order (single order upsert)
-    if (action === "sync_order") {
-      if (!payload?.order) {
-        return new Response(
-          JSON.stringify({ error: "Missing order data" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+    // ── sync_record (generic single-record upsert from triggers) ──
+    if (action === "sync_record") {
+      const { table, record, conflict_column } = payload || {};
+      if (!table || !record) return jsonRes({ error: "Missing table or record" }, 400);
+      const { error } = await externalClient
+        .from(table)
+        .upsert(record, { onConflict: conflict_column || "id" });
+      if (error) {
+        console.error(`Sync ${table} error:`, error);
+        return jsonRes({ error: `Sync ${table} failed: ${error.message}` }, 500);
       }
+      return jsonRes({ success: true, synced: table, id: record.id });
+    }
+
+    // ── sync_order (single order + items) ──
+    if (action === "sync_order") {
+      if (!payload?.order) return jsonRes({ error: "Missing order data" }, 400);
 
       const { error: upsertError } = await externalClient
         .from("orders")
@@ -106,13 +107,9 @@ serve(async (req) => {
 
       if (upsertError) {
         console.error("Sync order error:", upsertError);
-        return new Response(
-          JSON.stringify({ error: `Sync failed: ${upsertError.message}` }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return jsonRes({ error: `Sync failed: ${upsertError.message}` }, 500);
       }
 
-      // Also sync order items if provided
       if (payload.order_items?.length) {
         const { error: itemsError } = await externalClient
           .from("order_items")
@@ -120,22 +117,13 @@ serve(async (req) => {
         if (itemsError) console.error("Sync order_items error:", itemsError);
       }
 
-      return new Response(
-        JSON.stringify({ success: true, synced: "order", id: payload.order.id }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return jsonRes({ success: true, synced: "order", id: payload.order.id });
     }
 
-    // ACTION: sync_profile (single profile upsert for new partner registration)
+    // ── sync_profile ──
     if (action === "sync_profile") {
-      if (!payload?.profile) {
-        return new Response(
-          JSON.stringify({ error: "Missing profile data" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
+      if (!payload?.profile) return jsonRes({ error: "Missing profile data" }, 400);
 
-      // Only send safe fields, ignore FK constraints
       const profileData = {
         id: payload.profile.id,
         user_id: payload.profile.user_id,
@@ -153,18 +141,9 @@ serve(async (req) => {
         const { error: upsertError } = await externalClient
           .from("profiles")
           .upsert(profileData, { onConflict: "user_id", ignoreDuplicates: false });
-
         if (upsertError) {
-          // If FK error, try insert without FK-dependent fields
-          if (upsertError.code === "23503" || upsertError.message?.includes("foreign key")) {
-            console.log("FK constraint on external DB, retrying without FK fields");
-            const { user_id, ...rest } = profileData;
-            const { error: retryError } = await externalClient
-              .from("profiles")
-              .upsert({ ...profileData }, { onConflict: "id", ignoreDuplicates: false });
-            if (retryError) {
-              console.error("Retry sync profile error:", retryError);
-            }
+          if (upsertError.code === "23503") {
+            await externalClient.from("profiles").upsert(profileData, { onConflict: "id", ignoreDuplicates: false });
           } else {
             console.error("Sync profile error:", upsertError);
           }
@@ -173,91 +152,44 @@ serve(async (req) => {
         console.error("Sync profile exception:", e.message);
       }
 
-      return new Response(
-        JSON.stringify({ success: true, synced: "profile", id: profileData.id }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return jsonRes({ success: true, synced: "profile", id: profileData.id });
     }
 
-    // ACTION: sync_stores (bulk stores + products)
-    if (action === "sync_stores") {
+    // ── sync_all (bulk sync of ALL operational tables) ──
+    if (action === "sync_stores" || action === "sync_all") {
       const results: Record<string, { count: number; error?: string }> = {};
 
-      // Fetch stores from internal DB
-      const { data: storesData, error: storesErr } = await internalClient
-        .from("stores")
-        .select("*");
+      // Core tables
+      results.stores = await syncTable(internalClient, externalClient, "stores");
+      results.products = await syncTable(internalClient, externalClient, "products");
+      results.menu_sections = await syncTable(internalClient, externalClient, "menu_sections");
+      results.neighborhood_fees = await syncTable(internalClient, externalClient, "neighborhood_fees");
+      results.profiles = await syncTable(internalClient, externalClient, "profiles", "id",
+        (q: any) => q.in("role", ["lojista", "motoboy"]));
+      results.addon_groups = await syncTable(internalClient, externalClient, "addon_groups");
+      results.addon_items = await syncTable(internalClient, externalClient, "addon_items");
+      results.product_addon_groups = await syncTable(internalClient, externalClient, "product_addon_groups");
+      results.opening_hours = await syncTable(internalClient, externalClient, "opening_hours");
 
-      if (storesErr) {
-        results.stores = { count: 0, error: storesErr.message };
-      } else if (storesData?.length) {
-        const { error: upsertErr } = await externalClient
-          .from("stores")
-          .upsert(storesData, { onConflict: "id" });
-        results.stores = { count: storesData.length, error: upsertErr?.message };
-      } else {
-        results.stores = { count: 0 };
-      }
+      // Operational tables
+      results.orders = await syncTable(internalClient, externalClient, "orders");
+      results.order_items = await syncTable(internalClient, externalClient, "order_items");
+      results.order_messages = await syncTable(internalClient, externalClient, "order_messages");
+      results.drivers = await syncTable(internalClient, externalClient, "drivers");
+      results.driver_balances = await syncTable(internalClient, externalClient, "driver_balances");
+      results.driver_earnings = await syncTable(internalClient, externalClient, "driver_earnings");
+      results.financial_transactions = await syncTable(internalClient, externalClient, "financial_transactions");
+      results.store_balances = await syncTable(internalClient, externalClient, "store_balances");
+      results.coupons = await syncTable(internalClient, externalClient, "coupons");
 
-      // Fetch products
-      const { data: productsData, error: productsErr } = await internalClient
-        .from("products")
-        .select("*");
+      const hasErrors = Object.values(results).some((r) => r.error);
 
-      if (productsErr) {
-        results.products = { count: 0, error: productsErr.message };
-      } else if (productsData?.length) {
-        const { error: upsertErr } = await externalClient
-          .from("products")
-          .upsert(productsData, { onConflict: "id" });
-        results.products = { count: productsData.length, error: upsertErr?.message };
-      } else {
-        results.products = { count: 0 };
-      }
-
-      // Fetch profiles (lojistas)
-      const { data: profilesData, error: profilesErr } = await internalClient
-        .from("profiles")
-        .select("*")
-        .in("role", ["lojista", "motoboy"]);
-
-      if (profilesErr) {
-        results.profiles = { count: 0, error: profilesErr.message };
-      } else if (profilesData?.length) {
-        const { error: upsertErr } = await externalClient
-          .from("profiles")
-          .upsert(profilesData, { onConflict: "id" });
-        results.profiles = { count: profilesData.length, error: upsertErr?.message };
-      } else {
-        results.profiles = { count: 0 };
-      }
-
-      // Menu sections
-      const { data: sectionsData } = await internalClient.from("menu_sections").select("*");
-      if (sectionsData?.length) {
-        const { error: upsertErr } = await externalClient
-          .from("menu_sections")
-          .upsert(sectionsData, { onConflict: "id" });
-        results.menu_sections = { count: sectionsData.length, error: upsertErr?.message };
-      }
-
-      const hasErrors = Object.values(results).some(r => r.error);
-
-      return new Response(
-        JSON.stringify({ success: !hasErrors, results }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return jsonRes({ success: !hasErrors, results });
     }
 
-    return new Response(
-      JSON.stringify({ error: "Unknown action. Use: test_connection, sync_order, sync_stores" }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return jsonRes({ error: "Unknown action. Use: test_connection, sync_record, sync_order, sync_profile, sync_all" }, 400);
   } catch (err) {
     console.error("sync-to-external error:", err);
-    return new Response(
-      JSON.stringify({ error: err.message || "Internal error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return jsonRes({ error: err.message || "Internal error" }, 500);
   }
 });
