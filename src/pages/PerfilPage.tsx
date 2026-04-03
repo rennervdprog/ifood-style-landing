@@ -5,9 +5,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/BottomNav";
-import { User, LogOut, Store, Shield, UserPlus, MapPin, Save, Bike, Wallet, Copy, AlertTriangle, MessageCircle, Truck, Download, Smartphone, X, Share2 } from "lucide-react";
+import { User, LogOut, Store, Shield, UserPlus, MapPin, Save, Bike, Wallet, Copy, AlertTriangle, MessageCircle, Truck, Download, Smartphone, X, Share2, Search, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { maskWhatsApp, formatWhatsAppNumber, isValidWhatsApp } from "@/lib/whatsapp";
+import { formatCep, fetchCep } from "@/lib/cepLookup";
 
 const PerfilPage = () => {
   const { user, signOut } = useAuth();
@@ -78,6 +79,7 @@ const PerfilPage = () => {
   });
 
   // Address form state
+  const [cep, setCep] = useState("");
   const [street, setStreet] = useState("");
   const [number, setNumber] = useState("");
   const [complement, setComplement] = useState("");
@@ -87,6 +89,7 @@ const PerfilPage = () => {
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [savingAddress, setSavingAddress] = useState(false);
   const [addressLoaded, setAddressLoaded] = useState(false);
+  const [loadingCep, setLoadingCep] = useState(false);
 
   // PIX form state
   const [pixKey, setPixKey] = useState("");
@@ -170,6 +173,47 @@ const PerfilPage = () => {
     }
     setDeferredPrompt(null);
   }, [isIOS, deferredPrompt]);
+
+  const handleCepChange = (value: string) => {
+    const formatted = formatCep(value);
+    setCep(formatted);
+    const digits = value.replace(/\D/g, "");
+    if (digits.length === 8) {
+      handleCepLookup(digits);
+    }
+  };
+
+  const handleCepLookup = async (digits?: string) => {
+    const cepDigits = digits || cep.replace(/\D/g, "");
+    if (cepDigits.length !== 8) {
+      toast.error("Digite um CEP válido com 8 dígitos.");
+      return;
+    }
+    setLoadingCep(true);
+    try {
+      const result = await fetchCep(cepDigits);
+      if (!result) {
+        toast.error("CEP não encontrado.");
+        return;
+      }
+      setStreet(result.logradouro || "");
+      if (result.complemento) setComplement(result.complemento);
+      if (result.bairro && neighborhoods) {
+        const match = neighborhoods.find((n) => n.name.toLowerCase() === result.bairro.toLowerCase());
+        if (match) {
+          setNeighborhoodLocal(match.name);
+        } else {
+          setNeighborhoodLocal("");
+          toast.info(`Bairro "${result.bairro}" não está na área de entrega. Selecione manualmente.`);
+        }
+      }
+      toast.success("Endereço preenchido pelo CEP!");
+    } catch {
+      toast.error("Erro ao buscar CEP.");
+    } finally {
+      setLoadingCep(false);
+    }
+  };
 
   // Compute selected neighborhood fee
   const selectedFee = useMemo(() => {
@@ -364,6 +408,25 @@ const PerfilPage = () => {
             Endereço de Entrega
           </h3>
           <div className="space-y-3">
+          {/* CEP field */}
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="CEP (ex: 18690-000)"
+              value={cep}
+              onChange={(e) => handleCepChange(e.target.value)}
+              inputMode="numeric"
+              maxLength={9}
+              className="flex-1 px-3 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+            <button
+              onClick={() => handleCepLookup()}
+              disabled={loadingCep}
+              className="px-3 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50 flex items-center gap-1"
+            >
+              {loadingCep ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+            </button>
+          </div>
             <div className="grid grid-cols-3 gap-2">
               <div className="col-span-2">
                 <input
