@@ -87,16 +87,8 @@ const SavedAddressPicker = ({ onSelect, selectedId }: SavedAddressPickerProps) =
       }
       setStreet(result.logradouro || "");
       if (result.complemento) setComplement(result.complemento);
-      if (result.bairro && neighborhoods) {
-        const match = neighborhoods.find(
-          (n: any) => n.name.toLowerCase() === result.bairro.toLowerCase()
-        );
-        if (match) {
-          setNeighborhood(match.name);
-        } else {
-          setNeighborhood("");
-          toast.info(`Bairro "${result.bairro}" não está na área de entrega.`);
-        }
+      if (result.bairro) {
+        setNeighborhood(result.bairro);
       }
       toast.success("Endereço preenchido!");
     } catch {
