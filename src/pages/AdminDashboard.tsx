@@ -66,6 +66,7 @@ const AdminDashboard = () => {
   const [soundMuted, setSoundMuted] = useState(false);
   const [showSoundPrompt, setShowSoundPrompt] = useState(true);
   const [expandedAddresses, setExpandedAddresses] = useState<Set<string>>(new Set());
+  const [settlementSearch, setSettlementSearch] = useState("");
 
   const prevPendingCountRef = useRef(0);
 
