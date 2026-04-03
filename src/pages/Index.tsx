@@ -9,6 +9,10 @@ import CategoryScroll from "@/components/CategoryScroll";
 import StoreCard from "@/components/StoreCard";
 import StoreCardSkeleton from "@/components/StoreCardSkeleton";
 import SearchBar from "@/components/SearchBar";
+import PromoBanners from "@/components/PromoBanners";
+import ReorderSection from "@/components/ReorderSection";
+import PopularProducts from "@/components/PopularProducts";
+import FirstOrderBanner from "@/components/FirstOrderBanner";
 import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 
 const Index = () => {
@@ -27,7 +31,6 @@ const Index = () => {
     },
   });
 
-  // Fetch products for search
   const { data: products } = useQuery({
     queryKey: ["all-products-search"],
     queryFn: async () => {
@@ -41,7 +44,6 @@ const Index = () => {
     enabled: search.length >= 2,
   });
 
-  // Fetch all opening hours for displayed stores
   const storeIds = stores?.map(s => s.id) || [];
   const { data: allHours } = useQuery({
     queryKey: ["all-opening-hours", storeIds],
@@ -56,50 +58,27 @@ const Index = () => {
     enabled: storeIds.length > 0,
   });
 
-  // Compute open status for each store
   const storesWithStatus = stores?.map(store => {
     const hours = (allHours as any[])?.filter((h: any) => h.store_id === store.id) || [];
-    const status = getStoreOpenStatus(
-      hours as OpeningHour[],
-      (store as any).force_closed || false,
-      store.is_open
-    );
+    const status = getStoreOpenStatus(hours as OpeningHour[], (store as any).force_closed || false, store.is_open);
     return { ...store, computedOpen: status.isOpen, statusReason: status.reason };
   });
 
-  // Sort: open stores first
   const sorted = storesWithStatus?.sort((a, b) => {
     if (a.computedOpen && !b.computedOpen) return -1;
     if (!a.computedOpen && b.computedOpen) return 1;
     return 0;
   });
 
-  // Filter by category
-  let filtered = sorted?.filter(
-    (s) => category === "all" || s.category === category
-  );
+  let filtered = sorted?.filter((s) => category === "all" || s.category === category);
 
-  // Filter by search (store name or product name)
   if (search.length >= 2 && filtered) {
     const searchLower = search.toLowerCase();
     const matchingStoreIds = new Set<string>();
-
-    // Match store names
-    filtered.forEach(s => {
-      if (s.name.toLowerCase().includes(searchLower)) {
-        matchingStoreIds.add(s.id);
-      }
-    });
-
-    // Match product names → get their store_ids
+    filtered.forEach(s => { if (s.name.toLowerCase().includes(searchLower)) matchingStoreIds.add(s.id); });
     if (products) {
-      products.forEach((p: any) => {
-        if (p.name.toLowerCase().includes(searchLower)) {
-          matchingStoreIds.add(p.store_id);
-        }
-      });
+      products.forEach((p: any) => { if (p.name.toLowerCase().includes(searchLower)) matchingStoreIds.add(p.store_id); });
     }
-
     filtered = filtered.filter(s => matchingStoreIds.has(s.id));
   }
 
@@ -114,9 +93,22 @@ const Index = () => {
         <SearchBar value={search} onChange={setSearch} />
       </div>
 
+      {/* Promotional banners */}
+      <PromoBanners />
+
+      {/* First order coupon banner */}
+      <FirstOrderBanner />
+
       <CategoryScroll selected={category} onSelect={setCategory} />
 
-      <div className="px-4">
+      {/* Reorder section */}
+      <ReorderSection />
+
+      {/* Popular products */}
+      <PopularProducts />
+
+      <div className="px-4 mt-4">
+        <h2 className="text-sm font-bold text-foreground mb-3">Estabelecimentos</h2>
         {isLoading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -126,34 +118,17 @@ const Index = () => {
         ) : filtered && filtered.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
             {filtered.map((store) => (
-              <StoreCard
-                key={store.id}
-                {...store}
-                is_open={store.computedOpen}
-                statusReason={store.statusReason}
-              />
+              <StoreCard key={store.id} {...store} is_open={store.computedOpen} statusReason={store.statusReason} />
             ))}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <PackageOpen className="h-16 w-16 text-muted-foreground mb-4" />
             <h2 className="text-lg font-bold text-foreground mb-1">
-              {search.length >= 2
-                ? "Nenhum resultado encontrado"
-                : stores && stores.length === 0
-                ? "Estamos chegando!"
-                : category === "farmacias"
-                ? "Ainda não temos farmácias parceiras"
-                : category === "docerias"
-                ? "Ainda não temos docerias parceiras"
-                : "Nenhum estabelecimento nesta categoria"}
+              {search.length >= 2 ? "Nenhum resultado encontrado" : stores && stores.length === 0 ? "Estamos chegando!" : category === "farmacias" ? "Ainda não temos farmácias parceiras" : category === "docerias" ? "Ainda não temos docerias parceiras" : "Nenhum estabelecimento nesta categoria"}
             </h2>
             <p className="text-sm text-muted-foreground max-w-xs">
-              {search.length >= 2
-                ? `Nenhuma loja ou produto encontrado para "${search}".`
-                : stores && stores.length === 0
-                ? "Novas lojas no FoodIta em breve. Fique ligado!"
-                : "Nenhum estabelecimento aberto no momento. Volte mais tarde!"}
+              {search.length >= 2 ? `Nenhuma loja ou produto encontrado para "${search}".` : stores && stores.length === 0 ? "Novas lojas no FoodIta em breve. Fique ligado!" : "Nenhum estabelecimento aberto no momento. Volte mais tarde!"}
             </p>
           </div>
         )}
