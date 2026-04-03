@@ -70,14 +70,20 @@ const PerfilPage = () => {
     enabled: !!user,
   });
 
-  const { data: neighborhoods } = useQuery({
-    queryKey: ["neighborhoods"],
+  const { data: deliveryFeeConfig } = useQuery({
+    queryKey: ["delivery-fee-config"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("neighborhood_fees").select("*").order("name");
-      if (error) throw error;
-      return data;
+      const { data } = await supabase
+        .from("admin_settings")
+        .select("value")
+        .eq("key", "delivery_fee_config")
+        .maybeSingle();
+      return data?.value ? (data.value as unknown as DeliveryFeeConfig) : DEFAULT_DELIVERY_FEE_CONFIG;
     },
   });
+
+  const [calculatedFee, setCalculatedFee] = useState<number | null>(null);
+  const [feeBreakdown, setFeeBreakdown] = useState<string>("");
 
   // Address form state
   const [cep, setCep] = useState("");
