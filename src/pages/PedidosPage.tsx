@@ -42,7 +42,7 @@ const PedidosPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
 
-  // Handle Mercado Pago payment return
+  // Handle payment return redirect
   useEffect(() => {
     const paymentStatus = searchParams.get("payment");
     if (paymentStatus) {
@@ -226,7 +226,7 @@ const PedidosPage = () => {
 
     try {
       if (SIMULATION_MODE) {
-        // --- SIMULATION MODE: bypass Mercado Pago ---
+        // --- SIMULATION MODE: bypass real payment ---
         const sim = createSimulatedPixCharge(Number(order.total_price), "PIX");
         setPixModal({
           orderId: order.id,
