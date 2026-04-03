@@ -5,11 +5,13 @@ import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Edit3 } from "lucide-react";
+import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Edit3, Loader2, Truck } from "lucide-react";
 import confetti from "canvas-confetti";
 import AddressModal from "@/components/AddressModal";
 import SavedAddressPicker from "@/components/SavedAddressPicker";
 import CouponInput from "@/components/CouponInput";
+import { calculateDeliveryFee, DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig } from "@/lib/deliveryFee";
+import { formatCep, fetchCep } from "@/lib/cepLookup";
 
 const paymentMethods = [
   { id: "pix", label: "PIX Online", icon: QrCode },
