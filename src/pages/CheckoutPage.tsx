@@ -467,7 +467,7 @@ const CheckoutPage = () => {
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Entrega ({profileNeighborhood || neighborhood})</span>
             <span className={`font-bold ${couponType === "free_shipping" ? "text-green-600 line-through" : "text-foreground"}`}>
-              R$ {neighborhoodFee.toFixed(2)}
+              {calculatingFee ? "Calculando..." : `R$ ${activeDeliveryFee.toFixed(2)}`}
             </span>
           </div>
           {couponType === "free_shipping" && (
