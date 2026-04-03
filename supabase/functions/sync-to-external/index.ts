@@ -124,6 +124,13 @@ serve(async (req) => {
     if (action === "sync_profile") {
       if (!payload?.profile) return jsonRes({ error: "Missing profile data" }, 400);
 
+      // If email not in profile data, fetch from auth.users
+      let email = payload.profile.email;
+      if (!email && payload.profile.user_id) {
+        const { data: authData } = await internalClient.auth.admin.getUserById(payload.profile.user_id);
+        email = authData?.user?.email || null;
+      }
+
       const profileData = {
         id: payload.profile.id,
         user_id: payload.profile.user_id,
@@ -135,6 +142,7 @@ serve(async (req) => {
         vehicle: payload.profile.vehicle,
         whatsapp_number: payload.profile.whatsapp_number,
         created_at: payload.profile.created_at,
+        email: email,
       };
 
       try {
