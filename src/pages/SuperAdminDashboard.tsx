@@ -426,6 +426,8 @@ const SuperAdminDashboard = () => {
 
       {activeTab === "approvals" ? (
         <div className="px-4 py-4"><AdminApprovals /></div>
+      ) : activeTab === "entrega" ? (
+        <div className="px-4 py-4"><DeliveryFeeConfigPanel /></div>
       ) : activeTab === "sync" ? (
         <SyncExternalTab />
       ) : activeTab === "coupons" ? (
