@@ -509,6 +509,27 @@ const AdminDashboard = () => {
         </div>
       </nav>
 
+      {/* ── SETTLEMENT SEARCH BAR ── */}
+      {activeTab === "entregue" && (orders?.filter(o => o.status === "entregue").length || 0) > 1 && (
+        <div className="px-3 pt-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+            <input
+              type="text"
+              value={settlementSearch}
+              onChange={e => setSettlementSearch(e.target.value)}
+              placeholder="Buscar por ID do pedido, entregador ou cliente..."
+              className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-gray-700 bg-[#1F2937] text-white placeholder:text-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+            />
+            {settlementSearch && (
+              <button onClick={() => setSettlementSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white">
+                <XCircle className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* ── ORDER CARDS ── */}
       <div className="flex-1 px-3 py-3 pb-24 space-y-3 overflow-y-auto">
         {isLoading ? (
