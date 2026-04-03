@@ -1400,6 +1400,8 @@ Deno.serve(async (req) => {
         return await handleCommissionCharge(body, userId, userEmail, supabase);
       case "store_payout":
         return await handleStorePayout(body, userId, userEmail, supabase);
+      case "driver_payout":
+        return await handleDriverPayout(body, userId, userEmail, supabase);
       case "cancel_payment":
         return await handleCancelPayment(body, userId, supabase);
       default:
