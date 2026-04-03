@@ -456,6 +456,7 @@ const SuperAdminDashboard = () => {
           storeBalances={storeBalances || []}
           queryClient={queryClient}
           withdrawalRequests={withdrawalRequests || []}
+          drivers={drivers || []}
         />
       ) : (
       <>
@@ -890,6 +891,70 @@ const FinanceTab = ({
     }
   };
 
+  // Auto payout driver via Asaas Transfer
+  const [payingDriver, setPayingDriver] = useState<string | null>(null);
+
+  const handleAutoPayDriver = async (driverId: string, driverName: string, amount: number, pixKey: string, pixType: string, withdrawalRequestId?: string) => {
+    if (amount <= 0) {
+      toast.info("Não há valor pendente para pagar.");
+      return;
+    }
+    if (!pixKey) {
+      toast.error(`❌ ${driverName} não possui chave PIX cadastrada. Peça para ele configurar no perfil.`);
+      return;
+    }
+
+    setPayingDriver(driverId);
+    try {
+      const { data, error } = await supabase.functions.invoke("payment-router", {
+        body: {
+          action: "driver_payout",
+          driver_user_id: driverId,
+          amount,
+          pix_key: pixKey,
+          pix_type: pixType || "cpf",
+          withdrawal_request_id: withdrawalRequestId,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      if (data?.success) {
+        toast.success(`✅ R$ ${amount.toFixed(2)} transferido para ${driverName} via Asaas! Ref: ${data.reference_code}`, { duration: 8000 });
+      } else {
+        toast.warning(`⚠️ ${data?.message || "Transferência falhou. Realize manualmente."}`, { duration: 10000 });
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["driver-balances-finance"] });
+      queryClient.invalidateQueries({ queryKey: ["withdrawal-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["payout-history"] });
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao processar repasse do motoboy.");
+    } finally {
+      setPayingDriver(null);
+    }
+  };
+
+  // Fetch driver PIX keys using driverSettlement data
+  const { data: driverProfiles } = useQuery({
+    queryKey: ["driver-pix-keys", driverSettlement.map(d => d.driverId)],
+    queryFn: async () => {
+      const driverIds = driverSettlement.map((d: any) => d.driverId);
+      if (driverIds.length === 0) return [];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, pix_key, pix_type")
+        .in("user_id", driverIds);
+      return profiles || [];
+    },
+    enabled: driverSettlement.length > 0,
+  });
+
+  const getDriverPixInfo = (driverUserId: string) => {
+    return driverProfiles?.find((p: any) => p.user_id === driverUserId) || null;
+  };
+
   // Pending payouts: stores with balance > 0 + drivers with pending > 0
   const pendingStorePayouts = storeSettlement.filter(e => e.netTransfer > 0 || e.commissionDue > 0);
   const pendingDriverPayouts = driverSettlement.filter(e => {
@@ -1111,7 +1176,9 @@ const FinanceTab = ({
             {pendingDriverPayouts.length > 0 && (
               <div className="space-y-2">
                 <p className="text-xs text-gray-400 font-bold uppercase tracking-wider px-1">🛵 Motoboys</p>
-                {pendingDriverPayouts.map((entry) => (
+                {pendingDriverPayouts.map((entry) => {
+                  const driverPix = getDriverPixInfo(entry.driverId);
+                  return (
                   <div key={entry.driverId} className="bg-[#1E293B] rounded-xl p-3 space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -1124,20 +1191,41 @@ const FinanceTab = ({
                       <p className="text-amber-400 text-[10px]">A Pagar (Taxa de Entrega App)</p>
                       <p className="text-sm font-bold text-amber-400">R$ {entry.appFees.toFixed(2)}</p>
                     </div>
-                    <button
-                      onClick={() => handleMarkDriverPaidManually(entry)}
-                      disabled={markingPaid === entry.driverId}
-                      className="w-full flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-500/30 text-white py-2.5 rounded-xl text-xs font-bold active:scale-95 transition-all"
-                    >
-                      {markingPaid === entry.driverId ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                      )}
-                      Marcar como Pago Manualmente
-                    </button>
+                    {driverPix?.pix_key && (
+                      <div className="bg-[#0F172A] rounded-lg p-2 flex items-center gap-2">
+                        <Wallet className="h-3 w-3 text-green-400 flex-shrink-0" />
+                        <p className="text-[10px] text-gray-400 truncate">PIX: {driverPix.pix_key} ({driverPix.pix_type})</p>
+                      </div>
+                    )}
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => handleAutoPayDriver(entry.driverId, entry.name, entry.appFees, driverPix?.pix_key || "", driverPix?.pix_type || "cpf")}
+                        disabled={payingDriver === entry.driverId || !driverPix?.pix_key}
+                        className="flex items-center justify-center gap-1.5 bg-green-500 hover:bg-green-600 disabled:bg-green-500/30 text-white py-2.5 rounded-xl text-xs font-bold active:scale-95 transition-all"
+                      >
+                        {payingDriver === entry.driverId ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <ArrowUpRight className="h-3.5 w-3.5" />
+                        )}
+                        Pagar via Asaas
+                      </button>
+                      <button
+                        onClick={() => handleMarkDriverPaidManually(entry)}
+                        disabled={markingPaid === entry.driverId}
+                        className="flex items-center justify-center gap-1.5 bg-blue-500 hover:bg-blue-600 disabled:bg-blue-500/30 text-white py-2.5 rounded-xl text-xs font-bold active:scale-95 transition-all"
+                      >
+                        {markingPaid === entry.driverId ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                        )}
+                        Manual
+                      </button>
+                    </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 

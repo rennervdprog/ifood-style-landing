@@ -1,0 +1,1 @@
+ALTER TYPE public.financial_transaction_type ADD VALUE IF NOT EXISTS 'driver_payout';
