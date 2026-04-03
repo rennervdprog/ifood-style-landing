@@ -355,6 +355,7 @@ const PedidosPage = () => {
           console.error("Error cancelling payment on provider:", cancelPaymentError);
           // Still cancel the order even if provider cancel fails
         }
+        clearPixForOrder(orderId);
         toast.success("Pedido e pagamento PIX cancelados.");
       } else {
         // Regular cancel (non-PIX or already paid)
