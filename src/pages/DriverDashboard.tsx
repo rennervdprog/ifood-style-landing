@@ -8,7 +8,8 @@ import {
   Bike, MapPin, Store, DollarSign, Package, CheckCircle2,
   ArrowLeft, Navigation, KeyRound, Smartphone, ShieldCheck,
   Wallet, TrendingUp, Calendar, Download, Clock, ChevronDown,
-  CreditCard, Banknote, Settings, Save, AlertTriangle
+  CreditCard, Banknote, Settings, Save, AlertTriangle, User,
+  Zap, ArrowRight, BarChart3, Eye
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import WhatsAppButton from "@/components/WhatsAppButton";
@@ -36,6 +37,22 @@ const PIX_TYPE_LABELS: Record<string, string> = {
   random: "Chave Aleatória",
 };
 
+/* ─── Reusable UI Primitives ─── */
+const StatCard = ({ icon: Icon, label, value, color = "text-primary" }: { icon: any; label: string; value: string; color?: string }) => (
+  <div className="bg-card border border-border rounded-2xl p-4 flex flex-col items-center gap-1">
+    <Icon className={`h-5 w-5 ${color}`} />
+    <p className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wide">{label}</p>
+    <p className={`text-lg font-black ${color}`}>{value}</p>
+  </div>
+);
+
+const SectionTitle = ({ icon: Icon, children }: { icon: any; children: React.ReactNode }) => (
+  <div className="flex items-center gap-2 px-1">
+    <Icon className="h-4 w-4 text-muted-foreground" />
+    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{children}</h3>
+  </div>
+);
+
 const DriverDashboard = () => {
   const isMobile = useIsMobile();
   const { user, loading: authLoading } = useAuth();
@@ -54,7 +71,6 @@ const DriverDashboard = () => {
   const [activeTab, setActiveTab] = useState<TabType>("entregas");
   const [dateFilter, setDateFilter] = useState<DateFilter>("hoje");
 
-  // Pix config state
   const [pixKey, setPixKey] = useState("");
   const [pixType, setPixType] = useState<string>("cpf");
   const [savingPix, setSavingPix] = useState(false);
@@ -68,7 +84,6 @@ const DriverDashboard = () => {
     enabled: !!user,
   });
 
-  // Populate pix fields from profile
   useEffect(() => {
     if (driverProfile) {
       setPixKey((driverProfile as any).pix_key || "");
@@ -115,7 +130,6 @@ const DriverDashboard = () => {
     refetchInterval: 15000,
   });
 
-  // Fetch ALL finalized deliveries for history/earnings (include payment_method)
   const { data: deliveryHistory, isLoading: loadingHistory } = useQuery({
     queryKey: ["driver-history", user?.id],
     queryFn: async () => {
@@ -131,11 +145,10 @@ const DriverDashboard = () => {
     enabled: !!user,
   });
 
-  // Fetch profiles for WhatsApp (client + store owner)
   const deliveryClientId = myDelivery?.client_id;
   const deliveryStoreOwnerId = (myDelivery as any)?.stores?.owner_id;
   const profileIds = [deliveryClientId, deliveryStoreOwnerId].filter(Boolean) as string[];
-  
+
   const { data: contactProfiles } = useQuery({
     queryKey: ["driver-contacts", profileIds],
     queryFn: async () => {
@@ -153,7 +166,6 @@ const DriverDashboard = () => {
     return (p as any)?.whatsapp_number || (p as any)?.phone || "";
   };
 
-  // Pending return (cash orders delivered but not confirmed return)
   const { data: pendingReturn } = useQuery({
     queryKey: ["driver-pending-return", user?.id],
     queryFn: async () => {
@@ -172,7 +184,6 @@ const DriverDashboard = () => {
     refetchInterval: 15000,
   });
 
-  // Driver balance from driver_balances table
   const { data: driverBalance } = useQuery({
     queryKey: ["driver-balance", user?.id],
     queryFn: async () => {
@@ -186,7 +197,6 @@ const DriverDashboard = () => {
     enabled: !!user,
   });
 
-  // Driver individual earnings
   const { data: driverEarnings } = useQuery({
     queryKey: ["driver-earnings", user?.id],
     queryFn: async () => {
@@ -201,7 +211,6 @@ const DriverDashboard = () => {
     enabled: !!user,
   });
 
-  // Check for pending withdrawal request
   const { data: pendingWithdrawal } = useQuery({
     queryKey: ["pending-withdrawal", user?.id],
     queryFn: async () => {
@@ -216,7 +225,6 @@ const DriverDashboard = () => {
     enabled: !!user,
   });
 
-  // Withdrawal history
   const { data: withdrawalHistory } = useQuery({
     queryKey: ["withdrawal-history", user?.id],
     queryFn: async () => {
@@ -239,18 +247,13 @@ const DriverDashboard = () => {
     const todayStart = startOfDay(now);
     const weekStart = startOfWeek(now, { weekStartsOn: 1 });
     const monthStart = subDays(now, 30);
-
     return deliveryHistory.filter((order: any) => {
       const orderDate = parseISO(order.confirmed_at || order.created_at);
       switch (dateFilter) {
-        case "hoje":
-          return isWithinInterval(orderDate, { start: todayStart, end: now });
-        case "semana":
-          return isWithinInterval(orderDate, { start: weekStart, end: now });
-        case "mes":
-          return isWithinInterval(orderDate, { start: monthStart, end: now });
-        default:
-          return true;
+        case "hoje": return isWithinInterval(orderDate, { start: todayStart, end: now });
+        case "semana": return isWithinInterval(orderDate, { start: weekStart, end: now });
+        case "mes": return isWithinInterval(orderDate, { start: monthStart, end: now });
+        default: return true;
       }
     });
   }, [deliveryHistory, dateFilter]);
@@ -277,7 +280,6 @@ const DriverDashboard = () => {
     return filteredHistory.reduce((sum: number, o: any) => sum + Number(o.delivery_fee), 0);
   }, [filteredHistory]);
 
-  // Pix vs Cash breakdown for filtered period
   const earningsBreakdown = useMemo(() => {
     const pixEarnings = filteredHistory
       .filter((o: any) => !["dinheiro", "cartao"].includes(o.payment_method))
@@ -290,14 +292,10 @@ const DriverDashboard = () => {
     return { pixEarnings, cashEarnings, pixCount, cashCount };
   }, [filteredHistory]);
 
-  // Sync online status on mount and set offline on unload
+  // ─── Side effects (same logic, untouched) ───
   useEffect(() => {
     if (!user) return;
-    supabase
-      .from("drivers")
-      .update({ is_online: isOnline } as any)
-      .eq("user_id", user.id)
-      .then(() => {});
+    supabase.from("drivers").update({ is_online: isOnline } as any).eq("user_id", user.id).then(() => {});
     const handleUnload = () => {
       const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/drivers?user_id=eq.${user.id}`;
       fetch(url, {
@@ -320,81 +318,54 @@ const DriverDashboard = () => {
     if (!user || !isOnline) return;
     const channel = supabase
       .channel("driver-orders-realtime")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "orders" },
-        (payload) => {
-          if (payload.eventType === "UPDATE" && (payload.new as any).status === "pronto_para_entrega") {
-            playAlert();
-            notifyDeliveryAvailable();
-            toast.info("🏍️ Nova entrega disponível!");
-          }
-          queryClient.invalidateQueries({ queryKey: ["driver-available-orders"] });
-          queryClient.invalidateQueries({ queryKey: ["driver-my-delivery", user.id] });
-          queryClient.invalidateQueries({ queryKey: ["driver-history", user.id] });
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, (payload) => {
+        if (payload.eventType === "UPDATE" && (payload.new as any).status === "pronto_para_entrega") {
+          playAlert();
+          notifyDeliveryAvailable();
+          toast.info("🏍️ Nova entrega disponível!");
         }
-      )
-      .subscribe((status) => {
-        setRealtimeConnected(status === "SUBSCRIBED");
-      });
-
+        queryClient.invalidateQueries({ queryKey: ["driver-available-orders"] });
+        queryClient.invalidateQueries({ queryKey: ["driver-my-delivery", user.id] });
+        queryClient.invalidateQueries({ queryKey: ["driver-history", user.id] });
+      })
+      .subscribe((status) => { setRealtimeConnected(status === "SUBSCRIBED"); });
     return () => { supabase.removeChannel(channel); };
   }, [user, isOnline, queryClient, playAlert]);
 
-  // Realtime for balance & withdrawal updates (auto-refresh when admin pays)
   useEffect(() => {
     if (!user) return;
     const channel = supabase
       .channel("driver-balance-realtime")
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "driver_balances" },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["driver-balance", user.id] });
-          queryClient.invalidateQueries({ queryKey: ["driver-earnings", user.id] });
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "withdrawal_requests" },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["pending-withdrawal", user.id] });
-          queryClient.invalidateQueries({ queryKey: ["withdrawal-history", user.id] });
-          queryClient.invalidateQueries({ queryKey: ["driver-balance", user.id] });
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "driver_earnings" },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["driver-earnings", user.id] });
-          queryClient.invalidateQueries({ queryKey: ["driver-balance", user.id] });
-        }
-      )
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "driver_balances" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["driver-balance", user.id] });
+        queryClient.invalidateQueries({ queryKey: ["driver-earnings", user.id] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "withdrawal_requests" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["pending-withdrawal", user.id] });
+        queryClient.invalidateQueries({ queryKey: ["withdrawal-history", user.id] });
+        queryClient.invalidateQueries({ queryKey: ["driver-balance", user.id] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "driver_earnings" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["driver-earnings", user.id] });
+        queryClient.invalidateQueries({ queryKey: ["driver-balance", user.id] });
+      })
       .subscribe();
-
     return () => { supabase.removeChannel(channel); };
   }, [user, queryClient]);
 
   useEffect(() => {
     const count = availableOrders?.length || 0;
-    if (count > prevCountRef.current && prevCountRef.current >= 0) {
-      playAlert();
-    }
+    if (count > prevCountRef.current && prevCountRef.current >= 0) playAlert();
     prevCountRef.current = count;
   }, [availableOrders, playAlert]);
 
+  // ─── Handlers (same logic) ───
   const toggleOnline = async () => {
     const next = !isOnline;
     setIsOnline(next);
     localStorage.setItem("driver_online", String(next));
     if (next) requestNotificationPermission();
-    if (user) {
-      await supabase
-        .from("drivers")
-        .update({ is_online: next } as any)
-        .eq("user_id", user.id);
-    }
+    if (user) await supabase.from("drivers").update({ is_online: next } as any).eq("user_id", user.id);
     toast.success(next ? "Você está online! Aguardando entregas..." : "Você está offline.");
   };
 
@@ -412,15 +383,9 @@ const DriverDashboard = () => {
   };
 
   const validateCollection = async (orderId: string) => {
-    if (collectionCodeInput.length !== 4) {
-      toast.error("Digite o código de 4 dígitos do lojista.");
-      return;
-    }
+    if (collectionCodeInput.length !== 4) { toast.error("Digite o código de 4 dígitos do lojista."); return; }
     setVerifyingCollection(true);
-    const { error } = await supabase.rpc("driver_validate_collection" as any, {
-      _order_id: orderId,
-      _code: collectionCodeInput,
-    });
+    const { error } = await supabase.rpc("driver_validate_collection" as any, { _order_id: orderId, _code: collectionCodeInput });
     if (error) {
       toast.error(error.message || "Código inválido. Verifique com o lojista.");
       setVerifyingCollection(false);
@@ -442,21 +407,11 @@ const DriverDashboard = () => {
   };
 
   const finishDelivery = async (orderId: string) => {
-    if (pinInput.length !== 4) {
-      toast.error("Digite o código de 4 dígitos do cliente.");
-      return;
-    }
+    if (pinInput.length !== 4) { toast.error("Digite o código de 4 dígitos do cliente."); return; }
     setVerifying(true);
-
-    // Get delivery fee before finishing
     const orderData = myDelivery || availableOrders?.find((o: any) => o.id === orderId);
     const deliveryFee = Number(orderData?.delivery_fee || 0);
-
-    const { error } = await supabase.rpc("driver_finish_delivery", {
-      _order_id: orderId,
-      _pin: pinInput,
-    } as any);
-
+    const { error } = await supabase.rpc("driver_finish_delivery", { _order_id: orderId, _pin: pinInput } as any);
     if (error) {
       toast.error(error.message || "Código inválido. Verifique com o cliente.");
       setVerifying(false);
@@ -464,15 +419,9 @@ const DriverDashboard = () => {
       confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
       const isPhysical = ["dinheiro", "cartao"].includes(orderData?.payment_method || "");
       if (isPhysical) {
-        toast.success(
-          `✅ Entrega confirmada! Retorne à loja para acertar R$ ${deliveryFee.toFixed(2)} em mãos.`,
-          { duration: 8000, icon: "🏪" }
-        );
+        toast.success(`✅ Entrega confirmada! Retorne à loja para acertar R$ ${deliveryFee.toFixed(2)} em mãos.`, { duration: 8000, icon: "🏪" });
       } else {
-        toast.success(
-          `🎉 Parabéns! R$ ${deliveryFee.toFixed(2)} foi adicionado ao seu saldo Pix!`,
-          { duration: 8000, icon: "💰" }
-        );
+        toast.success(`🎉 Parabéns! R$ ${deliveryFee.toFixed(2)} foi adicionado ao seu saldo Pix!`, { duration: 8000, icon: "💰" });
       }
       setPinInput("");
       setVerifying(false);
@@ -488,10 +437,7 @@ const DriverDashboard = () => {
   const [confirmingReturn, setConfirmingReturn] = useState(false);
 
   const confirmStoreReturn = async (orderId: string) => {
-    if (!settlementCodeInput || settlementCodeInput.length !== 4) {
-      toast.error("Digite o código de 4 dígitos fornecido pelo lojista.");
-      return;
-    }
+    if (!settlementCodeInput || settlementCodeInput.length !== 4) { toast.error("Digite o código de 4 dígitos fornecido pelo lojista."); return; }
     setConfirmingReturn(true);
     const { error } = await supabase.rpc("driver_confirm_store_return", { _order_id: orderId, _settlement_code: settlementCodeInput } as any);
     if (error) {
@@ -508,18 +454,10 @@ const DriverDashboard = () => {
   };
 
   const savePixKey = async () => {
-    if (!pixKey.trim()) {
-      toast.error("Informe sua chave Pix.");
-      return;
-    }
+    if (!pixKey.trim()) { toast.error("Informe sua chave Pix."); return; }
     setSavingPix(true);
-    const { error } = await supabase
-      .from("profiles")
-      .update({ pix_key: pixKey.trim(), pix_type: pixType as any })
-      .eq("user_id", user!.id);
-    if (error) {
-      toast.error("Erro ao salvar chave Pix.");
-    } else {
+    const { error } = await supabase.from("profiles").update({ pix_key: pixKey.trim(), pix_type: pixType as any }).eq("user_id", user!.id);
+    if (error) { toast.error("Erro ao salvar chave Pix."); } else {
       toast.success("✅ Chave Pix salva com sucesso!");
       queryClient.invalidateQueries({ queryKey: ["my-profile-approval", user!.id] });
     }
@@ -561,24 +499,21 @@ const DriverDashboard = () => {
   };
 
   if (authLoading) return null;
-  if (!user) {
-    navigate("/auth", { replace: true });
-    return null;
-  }
+  if (!user) { navigate("/auth", { replace: true }); return null; }
 
   if (!isMobile) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center text-white p-8">
+      <div className="min-h-screen bg-background flex items-center justify-center p-8">
         <div className="max-w-md text-center space-y-6">
-          <div className="w-24 h-24 bg-primary/20 rounded-full flex items-center justify-center mx-auto">
-            <Smartphone className="h-12 w-12 text-primary" />
+          <div className="w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto">
+            <Smartphone className="h-10 w-10 text-primary" />
           </div>
-          <h1 className="text-2xl font-black">Acesso Restrito</h1>
-          <p className="text-gray-400">
+          <h1 className="text-2xl font-black text-foreground">Acesso Mobile</h1>
+          <p className="text-muted-foreground">
             O painel do entregador está disponível apenas para <span className="text-primary font-bold">dispositivos móveis</span>.
           </p>
-          <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 space-y-3">
-            <p className="text-sm text-gray-400">Escaneie o QR Code ou acesse pelo celular:</p>
+          <div className="bg-card border border-border rounded-2xl p-6 space-y-3">
+            <p className="text-sm text-muted-foreground">Escaneie o QR Code ou acesse pelo celular:</p>
             <div className="bg-white rounded-xl p-4 inline-block">
               <img
                 src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(window.location.href)}`}
@@ -595,146 +530,172 @@ const DriverDashboard = () => {
     );
   }
 
+  const tabs = [
+    { key: "entregas" as TabType, label: "Entregas", icon: Bike },
+    { key: "historico" as TabType, label: "Ganhos", icon: BarChart3 },
+    { key: "config" as TabType, label: "Pix", icon: CreditCard },
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-950 text-white overflow-y-auto pb-32">
-      <header className="sticky top-0 z-50 bg-gray-900 border-b border-gray-800 px-4 py-3">
+    <div className="min-h-screen bg-background text-foreground overflow-y-auto pb-24">
+      {/* ─── Professional Header ─── */}
+      <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button onClick={() => navigate("/")} className="text-gray-400 hover:text-white">
+            <button onClick={() => navigate("/")} className="text-muted-foreground hover:text-foreground transition-colors">
               <ArrowLeft className="h-5 w-5" />
             </button>
             <div>
-              <h1 className="font-bold text-sm flex items-center gap-2">
-                <Bike className="h-4 w-4 text-green-400" />
+              <h1 className="font-bold text-sm text-foreground flex items-center gap-2">
+                <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Bike className="h-3.5 w-3.5 text-primary" />
+                </div>
                 Painel Entregador
               </h1>
-              <div className="flex items-center gap-1.5">
-                <span className={`w-2 h-2 rounded-full ${realtimeConnected && isOnline ? "bg-green-400" : "bg-gray-600"}`} />
-                <span className="text-xs text-gray-400">
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className={`w-1.5 h-1.5 rounded-full ${realtimeConnected && isOnline ? "bg-green-500" : "bg-muted-foreground/30"}`} />
+                <span className="text-[10px] text-muted-foreground">
                   {isOnline ? (realtimeConnected ? "Conectado" : "Conectando...") : "Offline"}
                 </span>
               </div>
             </div>
           </div>
+
+          {/* Toggle Switch */}
           <button
             onClick={toggleOnline}
-            className={`relative w-14 h-7 rounded-full transition-colors ${isOnline ? "bg-green-500" : "bg-gray-700"}`}
+            className={`relative w-14 h-7 rounded-full transition-all duration-300 ${isOnline ? "bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.4)]" : "bg-muted"}`}
           >
-            <span className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-transform ${isOnline ? "left-7" : "left-0.5"}`} />
+            <span className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-transform duration-300 ${isOnline ? "left-7" : "left-0.5"}`} />
           </button>
         </div>
       </header>
 
-      {/* Tab Navigation */}
-      <div className="flex border-b border-gray-800">
-        <button
-          onClick={() => setActiveTab("entregas")}
-          className={`flex-1 py-3 text-sm font-bold text-center transition-colors ${activeTab === "entregas" ? "text-green-400 border-b-2 border-green-400" : "text-gray-500"}`}
-        >
-          🏍️ Entregas
-        </button>
-        <button
-          onClick={() => setActiveTab("historico")}
-          className={`flex-1 py-3 text-sm font-bold text-center transition-colors ${activeTab === "historico" ? "text-green-400 border-b-2 border-green-400" : "text-gray-500"}`}
-        >
-          💰 Ganhos
-        </button>
-        <button
-          onClick={() => setActiveTab("config")}
-          className={`flex-1 py-3 text-sm font-bold text-center transition-colors ${activeTab === "config" ? "text-green-400 border-b-2 border-green-400" : "text-gray-500"}`}
-        >
-          ⚙️ Pix
-        </button>
+      {/* ─── Tab Navigation ─── */}
+      <div className="flex bg-card border-b border-border">
+        {tabs.map((tab) => {
+          const isActive = activeTab === tab.key;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`flex-1 py-3 flex flex-col items-center gap-1 transition-all relative ${isActive ? "text-primary" : "text-muted-foreground"}`}
+            >
+              <tab.icon className="h-4 w-4" />
+              <span className="text-[10px] font-bold uppercase tracking-wider">{tab.label}</span>
+              {isActive && <div className="absolute bottom-0 left-4 right-4 h-0.5 bg-primary rounded-full" />}
+            </button>
+          );
+        })}
       </div>
 
-      {activeTab === "entregas" ? (
-        /* ===== ENTREGAS TAB ===== */
+      {/* ═════════════ ENTREGAS TAB ═════════════ */}
+      {activeTab === "entregas" && (
         <>
           {!isOnline ? (
             <div className="flex flex-col items-center justify-center py-32 text-center px-6">
-              <Bike className="h-20 w-20 text-gray-700 mb-6" />
-              <h2 className="text-xl font-bold text-gray-400 mb-2">Você está offline</h2>
-              <p className="text-sm text-gray-500 max-w-xs">Ative o modo online para receber entregas no FoodIta.</p>
+              <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-6">
+                <Bike className="h-10 w-10 text-muted-foreground" />
+              </div>
+              <h2 className="text-lg font-bold text-foreground mb-2">Você está offline</h2>
+              <p className="text-sm text-muted-foreground max-w-xs">Ative o modo online para receber entregas.</p>
             </div>
           ) : (
             <div className="px-4 py-4 space-y-4">
+              {/* Quick Stats */}
+              <div className="grid grid-cols-3 gap-2">
+                <StatCard icon={DollarSign} label="Hoje" value={`R$ ${todayEarnings.toFixed(2)}`} color="text-green-500" />
+                <StatCard icon={TrendingUp} label="Semana" value={`R$ ${weekEarnings.toFixed(2)}`} color="text-blue-500" />
+                <StatCard icon={Package} label="Entregas" value={String(totalDeliveries)} color="text-primary" />
+              </div>
+
               {/* Pix key warning */}
               {!(driverProfile as any)?.pix_key && (
-                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-2xl p-3 flex items-center gap-3">
-                  <CreditCard className="h-5 w-5 text-yellow-400 flex-shrink-0" />
-                  <div className="flex-1">
-                    <p className="text-xs font-bold text-yellow-400">Cadastre sua chave Pix!</p>
-                    <p className="text-[10px] text-gray-400">Para receber pagamentos automáticos das entregas via app.</p>
+                <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                    <CreditCard className="h-5 w-5 text-amber-500" />
                   </div>
-                  <button onClick={() => setActiveTab("config")} className="bg-yellow-500 text-gray-900 text-xs font-bold px-3 py-1.5 rounded-xl">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-foreground">Cadastre sua chave Pix</p>
+                    <p className="text-xs text-muted-foreground">Receba pagamentos automáticos</p>
+                  </div>
+                  <button onClick={() => setActiveTab("config")} className="bg-primary text-primary-foreground text-xs font-bold px-4 py-2 rounded-xl whitespace-nowrap">
                     Cadastrar
                   </button>
                 </div>
               )}
 
+              {/* ─── Active Delivery ─── */}
               {myDelivery && (
-                <div className="bg-blue-500/10 border-2 border-blue-500 rounded-2xl p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Navigation className="h-5 w-5 text-blue-400" />
-                    <h2 className="font-bold text-blue-400 text-sm">
+                <div className="bg-card border-2 border-primary/30 rounded-2xl overflow-hidden">
+                  {/* Delivery status banner */}
+                  <div className="bg-primary/10 px-4 py-3 flex items-center gap-2">
+                    <Navigation className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-bold text-primary">
                       {(myDelivery as any).status === 'pronto_para_entrega' && !(myDelivery as any).collection_validated
                         ? "A CAMINHO DA LOJA"
                         : (myDelivery as any).collection_validated || (myDelivery as any).status === 'saiu_entrega'
                         ? "ENTREGA EM ANDAMENTO"
                         : "COLETA NA LOJA"}
-                    </h2>
+                    </span>
                   </div>
 
-                  <div className="flex items-center gap-2 text-sm mb-3">
-                    <Store className="h-4 w-4 text-gray-400" />
-                    <span className="text-gray-200">{(myDelivery as any).stores?.name || "Loja"}</span>
-                  </div>
+                  <div className="p-4 space-y-3">
+                    {/* Store name */}
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+                        <Store className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <span className="text-sm font-semibold text-foreground">{(myDelivery as any).stores?.name || "Loja"}</span>
+                    </div>
 
-                  {!(myDelivery as any).collection_validated && (myDelivery as any).status === 'pronto_para_entrega' ? (
-                    <div>
-                      <div className="bg-purple-500/10 border border-purple-500/30 rounded-xl p-4 mb-3">
-                        <div className="flex items-center gap-2 mb-2">
-                          <ShieldCheck className="h-5 w-5 text-purple-400" />
-                          <span className="text-sm font-bold text-purple-400">Validar Coleta na Loja</span>
+                    {!(myDelivery as any).collection_validated && (myDelivery as any).status === 'pronto_para_entrega' ? (
+                      <>
+                        {/* Collection code section */}
+                        <div className="bg-muted/50 rounded-xl p-4 space-y-3">
+                          <div className="flex items-center gap-2">
+                            <ShieldCheck className="h-4 w-4 text-primary" />
+                            <span className="text-sm font-bold text-foreground">Validar Coleta</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">Peça o código de 4 dígitos ao lojista.</p>
+                          <div className="relative">
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              maxLength={4}
+                              placeholder="0000"
+                              value={collectionCodeInput}
+                              onChange={(e) => setCollectionCodeInput(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                              className={`w-full text-center text-3xl font-black tracking-[0.5em] py-3 bg-card border-2 rounded-xl text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:ring-2 transition-all ${
+                                collectionCodeInput.length === 4 ? "border-green-500 focus:ring-green-500" : "border-border focus:ring-primary"
+                              }`}
+                            />
+                            {collectionCodeInput.length === 4 && (
+                              <div className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500 animate-bounce">
+                                <CheckCircle2 className="h-6 w-6" />
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <p className="text-xs text-gray-400 mb-3">Peça o código de coleta de 4 dígitos ao lojista.</p>
-                        <div className="relative">
-                          <input
-                            type="text"
-                            inputMode="numeric"
-                            maxLength={4}
-                            placeholder="0000"
-                            value={collectionCodeInput}
-                            onChange={(e) => setCollectionCodeInput(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                            className={`w-full text-center text-3xl font-black tracking-[0.5em] py-3 bg-gray-800 border-2 rounded-xl text-white placeholder:text-gray-700 focus:outline-none focus:ring-2 transition-all ${
-                              collectionCodeInput.length === 4 ? "border-green-400 focus:ring-green-400" : "border-gray-600 focus:ring-purple-400"
-                            }`}
-                            autoFocus
-                          />
-                          {collectionCodeInput.length === 4 && (
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-green-400 animate-bounce">
-                              <CheckCircle2 className="h-6 w-6" />
-                            </div>
-                          )}
+
+                        {/* Order items */}
+                        <div className="bg-muted/30 rounded-xl p-3">
+                          <p className="text-[10px] text-muted-foreground uppercase font-semibold mb-2">Itens do pedido</p>
+                          {(myDelivery as any).order_items?.map((item: any) => (
+                            <p key={item.id} className="text-sm text-foreground">
+                              <span className="text-primary font-bold">{item.quantity}x</span> {item.products?.name || "Item"}
+                            </p>
+                          ))}
                         </div>
-                      </div>
 
-                      <div className="bg-gray-900/50 rounded-xl p-3 mb-3">
-                        <p className="text-xs text-gray-500 mb-1">Itens do pedido:</p>
-                        {(myDelivery as any).order_items?.map((item: any) => (
-                          <p key={item.id} className="text-sm text-gray-300">
-                            <span className="text-blue-400 font-bold">{item.quantity}x</span> {item.products?.name || "Item"}
-                          </p>
-                        ))}
-                      </div>
+                        {/* Earning display */}
+                        <div className="flex items-center justify-between bg-green-500/10 border border-green-500/20 rounded-xl p-3">
+                          <span className="text-sm font-semibold text-foreground">Ganho da entrega</span>
+                          <span className="text-xl font-black text-green-500">R$ {Number(myDelivery.delivery_fee).toFixed(2)}</span>
+                        </div>
 
-                      <div className="flex items-center justify-between mb-3 bg-green-500/10 border border-green-500/30 rounded-xl p-3">
-                        <span className="text-sm font-bold text-green-400">🏍️ Ganho da Entrega</span>
-                        <span className="text-xl font-black text-green-400">R$ {Number(myDelivery.delivery_fee).toFixed(2)}</span>
-                      </div>
-
-                      {deliveryStoreOwnerId && getContactWhatsApp(deliveryStoreOwnerId) && (
-                        <div className="mb-3">
+                        {/* WhatsApp store */}
+                        {deliveryStoreOwnerId && getContactWhatsApp(deliveryStoreOwnerId) && (
                           <WhatsAppButton
                             number={getContactWhatsApp(deliveryStoreOwnerId)}
                             message={`Olá! Sou o entregador do app. Pedido #${myDelivery.id.slice(0, 8).toUpperCase()}.`}
@@ -742,181 +703,199 @@ const DriverDashboard = () => {
                             size="md"
                             className="w-full"
                           />
-                        </div>
-                      )}
+                        )}
 
-                      <button
-                        onClick={() => validateCollection(myDelivery.id)}
-                        disabled={collectionCodeInput.length !== 4 || verifyingCollection}
-                        className={`w-full text-white font-bold py-4 rounded-2xl text-base active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 ${
-                          collectionCodeInput.length === 4 ? "bg-green-500 hover:bg-green-600 shadow-[0_0_20px_rgba(34,197,94,0.5)] animate-pulse" : "bg-purple-500 hover:bg-purple-600"
-                        }`}
-                      >
-                        <ShieldCheck className="h-5 w-5" />
-                        {verifyingCollection ? "Verificando..." : "VALIDAR COLETA"}
-                      </button>
-                    </div>
-                  ) : (
-                    <div>
-                      <div className="flex items-start gap-2 text-sm mb-3">
-                        <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
-                        <div>
-                          <span className="text-gray-200 font-medium">{myDelivery.neighborhood}</span>
-                          <p className="text-gray-400 text-xs mt-0.5">{myDelivery.address_details}</p>
-                        </div>
-                      </div>
-
-                      {myDelivery.payment_method === "dinheiro" && (
-                        <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-xl p-3 mb-3">
-                          <p className="text-sm font-bold text-yellow-400 mb-2">💰 PAGAMENTO EM DINHEIRO</p>
-                          <div className="text-xs text-gray-300 space-y-1">
-                            {(myDelivery as any).needs_change && Number((myDelivery as any).change_for) > 0 && (
-                              <p>1️⃣ Pegar <span className="font-bold text-yellow-400">R$ {(Number((myDelivery as any).change_for) - Number(myDelivery.total_price)).toFixed(2)}</span> de troco com o lojista.</p>
-                            )}
-                            <p>{(myDelivery as any).needs_change ? "2️⃣" : "1️⃣"} Receber <span className="font-bold text-green-400">R$ {Number(myDelivery.total_price).toFixed(2)}</span> do cliente.</p>
-                            <p>{(myDelivery as any).needs_change ? "3️⃣" : "2️⃣"} Retornar à loja para entregar o valor total.</p>
+                        <button
+                          onClick={() => validateCollection(myDelivery.id)}
+                          disabled={collectionCodeInput.length !== 4 || verifyingCollection}
+                          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-4 rounded-2xl text-base active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                        >
+                          <ShieldCheck className="h-5 w-5" />
+                          {verifyingCollection ? "Verificando..." : "VALIDAR COLETA"}
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        {/* Delivery address */}
+                        <div className="flex items-start gap-2">
+                          <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center mt-0.5 flex-shrink-0">
+                            <MapPin className="h-4 w-4 text-destructive" />
+                          </div>
+                          <div>
+                            <span className="text-sm font-medium text-foreground">{myDelivery.neighborhood}</span>
+                            <p className="text-xs text-muted-foreground mt-0.5">{myDelivery.address_details}</p>
                           </div>
                         </div>
-                      )}
 
-                      <div className="flex gap-2 mb-3">
-                        {deliveryStoreOwnerId && getContactWhatsApp(deliveryStoreOwnerId) && (
-                          <WhatsAppButton number={getContactWhatsApp(deliveryStoreOwnerId)} message={`Pedido #${myDelivery.id.slice(0, 8).toUpperCase()}.`} label="Loja" size="md" className="flex-1" />
+                        {/* Cash payment warning */}
+                        {myDelivery.payment_method === "dinheiro" && (
+                          <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
+                            <p className="text-sm font-bold text-amber-500 mb-2">💰 Pagamento em Dinheiro</p>
+                            <div className="text-xs text-muted-foreground space-y-1">
+                              {(myDelivery as any).needs_change && Number((myDelivery as any).change_for) > 0 && (
+                                <p>1️⃣ Pegar <span className="font-bold text-amber-500">R$ {(Number((myDelivery as any).change_for) - Number(myDelivery.total_price)).toFixed(2)}</span> de troco.</p>
+                              )}
+                              <p>{(myDelivery as any).needs_change ? "2️⃣" : "1️⃣"} Receber <span className="font-bold text-green-500">R$ {Number(myDelivery.total_price).toFixed(2)}</span> do cliente.</p>
+                              <p>{(myDelivery as any).needs_change ? "3️⃣" : "2️⃣"} Retornar à loja para entregar o valor.</p>
+                            </div>
+                          </div>
                         )}
-                        {deliveryClientId && getContactWhatsApp(deliveryClientId) && (
-                          <WhatsAppButton number={getContactWhatsApp(deliveryClientId)} message="Olá, sou o entregador do FoodIta!" label="Cliente" size="md" className="flex-1" />
-                        )}
-                      </div>
 
-                      <div className="bg-gray-900/50 rounded-xl p-3 mb-3">
-                        <p className="text-xs text-gray-500 mb-1">Itens:</p>
-                        {(myDelivery as any).order_items?.map((item: any) => (
-                          <p key={item.id} className="text-sm text-gray-300">
-                            <span className="text-blue-400 font-bold">{item.quantity}x</span> {item.products?.name || "Item"}
-                          </p>
-                        ))}
-                      </div>
-
-                      <div className="flex items-center justify-between mb-3 bg-green-500/10 border border-green-500/30 rounded-xl p-3">
-                        <span className="text-sm font-bold text-green-400">🏍️ Ganho</span>
-                        <span className="text-xl font-black text-green-400">R$ {Number(myDelivery.delivery_fee).toFixed(2)}</span>
-                      </div>
-
-                      <div className="bg-gray-900 rounded-xl p-4 mb-3 border border-gray-700">
-                        <div className="flex items-center gap-2 mb-2">
-                          <KeyRound className="h-4 w-4 text-yellow-400" />
-                          <span className="text-sm font-bold text-yellow-400">Código do Cliente</span>
+                        {/* WhatsApp contacts */}
+                        <div className="flex gap-2">
+                          {deliveryStoreOwnerId && getContactWhatsApp(deliveryStoreOwnerId) && (
+                            <WhatsAppButton number={getContactWhatsApp(deliveryStoreOwnerId)} message={`Pedido #${myDelivery.id.slice(0, 8).toUpperCase()}.`} label="Loja" size="md" className="flex-1" />
+                          )}
+                          {deliveryClientId && getContactWhatsApp(deliveryClientId) && (
+                            <WhatsAppButton number={getContactWhatsApp(deliveryClientId)} message="Olá, sou o entregador do FoodIta!" label="Cliente" size="md" className="flex-1" />
+                          )}
                         </div>
-                        <p className="text-xs text-gray-500 mb-3">Peça o código de 4 dígitos ao cliente para finalizar.</p>
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          maxLength={4}
-                          placeholder="0000"
-                          value={pinInput}
-                          onChange={(e) => setPinInput(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                          className="w-full text-center text-3xl font-black tracking-[0.5em] py-3 bg-gray-800 border border-gray-600 rounded-xl text-white placeholder:text-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                          autoFocus
-                        />
-                      </div>
 
-                      <button
-                        onClick={() => finishDelivery(myDelivery.id)}
-                        disabled={pinInput.length !== 4 || verifying}
-                        className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-2xl text-base active:scale-95 transition-transform flex items-center justify-center gap-2 disabled:opacity-50"
-                      >
-                        <CheckCircle2 className="h-5 w-5" />
-                        {verifying ? "Verificando..." : "CONFIRMAR ENTREGA"}
-                      </button>
-                    </div>
-                  )}
+                        {/* Items */}
+                        <div className="bg-muted/30 rounded-xl p-3">
+                          <p className="text-[10px] text-muted-foreground uppercase font-semibold mb-2">Itens</p>
+                          {(myDelivery as any).order_items?.map((item: any) => (
+                            <p key={item.id} className="text-sm text-foreground">
+                              <span className="text-primary font-bold">{item.quantity}x</span> {item.products?.name || "Item"}
+                            </p>
+                          ))}
+                        </div>
+
+                        {/* Earning */}
+                        <div className="flex items-center justify-between bg-green-500/10 border border-green-500/20 rounded-xl p-3">
+                          <span className="text-sm font-semibold text-foreground">Ganho</span>
+                          <span className="text-xl font-black text-green-500">R$ {Number(myDelivery.delivery_fee).toFixed(2)}</span>
+                        </div>
+
+                        {/* PIN Input */}
+                        <div className="bg-muted/50 rounded-xl p-4 space-y-3">
+                          <div className="flex items-center gap-2">
+                            <KeyRound className="h-4 w-4 text-amber-500" />
+                            <span className="text-sm font-bold text-foreground">Código do Cliente</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">Peça o código de 4 dígitos ao cliente para finalizar.</p>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            maxLength={4}
+                            placeholder="0000"
+                            value={pinInput}
+                            onChange={(e) => setPinInput(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                            className="w-full text-center text-3xl font-black tracking-[0.5em] py-3 bg-card border-2 border-border rounded-xl text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                          />
+                        </div>
+
+                        <button
+                          onClick={() => finishDelivery(myDelivery.id)}
+                          disabled={pinInput.length !== 4 || verifying}
+                          className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-2xl text-base active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                        >
+                          <CheckCircle2 className="h-5 w-5" />
+                          {verifying ? "Verificando..." : "CONFIRMAR ENTREGA"}
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
               )}
 
+              {/* ─── Pending Return ─── */}
               {!myDelivery && pendingReturn && (
-                <div className="bg-yellow-500/10 border-2 border-yellow-500 rounded-2xl p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <DollarSign className="h-5 w-5 text-yellow-400" />
-                    <h2 className="font-bold text-yellow-400 text-sm">AGUARDANDO RETORNO À LOJA</h2>
+                <div className="bg-card border-2 border-amber-500/30 rounded-2xl overflow-hidden">
+                  <div className="bg-amber-500/10 px-4 py-3 flex items-center gap-2">
+                    <DollarSign className="h-4 w-4 text-amber-500" />
+                    <span className="text-sm font-bold text-amber-500">AGUARDANDO RETORNO À LOJA</span>
                   </div>
-                  <p className="text-xs text-gray-400 mb-3">
-                    Entregue o valor de <span className="font-bold text-yellow-400">R$ {Number(pendingReturn.total_price).toFixed(2)}</span> na loja <span className="font-bold text-gray-200">{(pendingReturn as any).stores?.name}</span> e receba sua taxa.
-                  </p>
-                  <div className="mb-3">
-                    <label className="text-xs font-bold text-yellow-400 mb-1 block">🔐 Código de Acerto (peça ao lojista)</label>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={4}
-                      value={settlementCodeInput}
-                      onChange={(e) => setSettlementCodeInput(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                      placeholder="_ _ _ _"
-                      className="w-full text-center text-2xl font-black tracking-[0.4em] bg-gray-900 border-2 border-yellow-500/50 rounded-xl py-3 text-yellow-400 placeholder:text-gray-600 focus:outline-none focus:border-yellow-400"
-                    />
+                  <div className="p-4 space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      Entregue <span className="font-bold text-amber-500">R$ {Number(pendingReturn.total_price).toFixed(2)}</span> na loja <span className="font-bold text-foreground">{(pendingReturn as any).stores?.name}</span> e receba sua taxa.
+                    </p>
+                    <div>
+                      <label className="text-xs font-bold text-amber-500 mb-2 block">🔐 Código de Acerto</label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={4}
+                        value={settlementCodeInput}
+                        onChange={(e) => setSettlementCodeInput(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                        placeholder="0000"
+                        className="w-full text-center text-2xl font-black tracking-[0.4em] bg-card border-2 border-amber-500/30 rounded-xl py-3 text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
+                    <button
+                      onClick={() => confirmStoreReturn(pendingReturn.id)}
+                      disabled={settlementCodeInput.length !== 4 || confirmingReturn}
+                      className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-2xl text-sm active:scale-[0.98] transition-all disabled:opacity-50"
+                    >
+                      {confirmingReturn ? "Validando..." : "✅ Confirmar Acerto"}
+                    </button>
                   </div>
-                  <button
-                    onClick={() => confirmStoreReturn(pendingReturn.id)}
-                    disabled={settlementCodeInput.length !== 4 || confirmingReturn}
-                    className="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 rounded-2xl text-sm active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {confirmingReturn ? "Validando..." : "✅ Confirmar Acerto"}
-                  </button>
                 </div>
               )}
 
+              {/* ─── Available Orders ─── */}
               {!myDelivery && !pendingReturn && (
                 <>
-                  <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Entregas disponíveis</h2>
+                  <SectionTitle icon={Package}>Entregas disponíveis</SectionTitle>
                   {loadingAvailable ? (
                     <div className="space-y-3">
                       {Array.from({ length: 3 }).map((_, i) => (
-                        <div key={i} className="bg-gray-900 rounded-2xl p-4 animate-pulse space-y-3">
-                          <div className="h-4 bg-gray-800 rounded w-1/2" />
-                          <div className="h-3 bg-gray-800 rounded w-3/4" />
-                          <div className="h-12 bg-gray-800 rounded" />
+                        <div key={i} className="bg-card border border-border rounded-2xl p-4 animate-pulse space-y-3">
+                          <div className="h-4 bg-muted rounded w-1/2" />
+                          <div className="h-3 bg-muted rounded w-3/4" />
+                          <div className="h-12 bg-muted rounded" />
                         </div>
                       ))}
                     </div>
                   ) : availableOrders && availableOrders.length > 0 ? (
                     <div className="space-y-3">
                       {availableOrders.map((order: any) => (
-                        <div key={order.id} className="bg-gray-900 border border-gray-800 rounded-2xl p-4">
-                          <div className="flex items-center gap-2 text-sm mb-2">
-                            <Store className="h-4 w-4 text-orange-400" />
-                            <span className="text-gray-200 font-medium">{order.stores?.name || "Loja"}</span>
-                          </div>
-                          <div className="flex items-start gap-2 text-sm mb-3">
-                            <MapPin className="h-4 w-4 text-red-400 mt-0.5" />
-                            <div>
-                              <span className="text-gray-200">{order.neighborhood}</span>
-                              <p className="text-xs text-gray-500 mt-0.5">{order.address_details}</p>
+                        <div key={order.id} className="bg-card border border-border rounded-2xl overflow-hidden">
+                          <div className="p-4 space-y-3">
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                                <Store className="h-4 w-4 text-primary" />
+                              </div>
+                              <span className="text-sm font-semibold text-foreground">{order.stores?.name || "Loja"}</span>
                             </div>
-                          </div>
-                          <div className="text-xs text-gray-500 mb-3">
-                            {order.order_items?.map((item: any) => (
-                              <span key={item.id} className="mr-2">{item.quantity}x {item.products?.name}</span>
-                            ))}
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <span className="text-xs text-gray-500">🏍️ Ganho</span>
-                              <p className="text-xl font-black text-green-400">R$ {Number(order.delivery_fee).toFixed(2)}</p>
+
+                            <div className="flex items-start gap-2">
+                              <MapPin className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                              <div>
+                                <span className="text-sm text-foreground">{order.neighborhood}</span>
+                                <p className="text-xs text-muted-foreground mt-0.5">{order.address_details}</p>
+                              </div>
                             </div>
-                            <button
-                              onClick={() => acceptOrder(order.id)}
-                              className="bg-gray-100 text-gray-900 font-bold px-6 py-3.5 rounded-2xl text-sm active:scale-95 transition-transform"
-                            >
-                              ACEITAR CORRIDA
-                            </button>
+
+                            <div className="text-xs text-muted-foreground">
+                              {order.order_items?.map((item: any) => (
+                                <span key={item.id} className="mr-2">{item.quantity}x {item.products?.name}</span>
+                              ))}
+                            </div>
+
+                            <div className="flex items-center justify-between pt-2 border-t border-border">
+                              <div>
+                                <span className="text-[10px] text-muted-foreground uppercase font-semibold">Ganho</span>
+                                <p className="text-xl font-black text-green-500">R$ {Number(order.delivery_fee).toFixed(2)}</p>
+                              </div>
+                              <button
+                                onClick={() => acceptOrder(order.id)}
+                                className="bg-primary text-primary-foreground font-bold px-6 py-3 rounded-xl text-sm active:scale-[0.98] transition-all flex items-center gap-2"
+                              >
+                                ACEITAR <ArrowRight className="h-4 w-4" />
+                              </button>
+                            </div>
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center py-20 text-center">
-                      <Package className="h-16 w-16 text-gray-700 mb-4" />
-                      <h2 className="text-lg font-bold text-gray-500 mb-1">Aguardando novos pedidos...</h2>
-                      <p className="text-sm text-gray-600">Aproveite para descansar! 😴</p>
+                      <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                        <Package className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                      <h2 className="text-base font-bold text-foreground mb-1">Aguardando pedidos...</h2>
+                      <p className="text-sm text-muted-foreground">Aproveite para descansar! 😴</p>
                     </div>
                   )}
                 </>
@@ -924,191 +903,184 @@ const DriverDashboard = () => {
             </div>
           )}
         </>
-      ) : activeTab === "config" ? (
-        /* ===== PIX CONFIG TAB ===== */
+      )}
+
+      {/* ═════════════ PIX CONFIG TAB ═════════════ */}
+      {activeTab === "config" && (
         <div className="px-4 py-4 space-y-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-4">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center">
-                <CreditCard className="h-5 w-5 text-green-400" />
+          <div className="bg-card border border-border rounded-2xl overflow-hidden">
+            <div className="bg-primary/5 px-4 py-3 flex items-center gap-3 border-b border-border">
+              <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center">
+                <CreditCard className="h-4 w-4 text-green-500" />
               </div>
               <div>
-                <h2 className="text-sm font-bold text-white">Minha Chave Pix</h2>
-                <p className="text-[10px] text-gray-400">Para recebimentos instantâneos das entregas</p>
+                <h2 className="text-sm font-bold text-foreground">Minha Chave Pix</h2>
+                <p className="text-[10px] text-muted-foreground">Recebimentos instantâneos</p>
               </div>
             </div>
 
-            <div>
-              <label className="text-xs text-gray-400 mb-1.5 block">Tipo da Chave</label>
-              <select
-                value={pixType}
-                onChange={e => setPixType(e.target.value)}
-                className="w-full bg-gray-800 text-white border border-gray-700 rounded-xl px-4 py-3 text-sm"
+            <div className="p-4 space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground mb-2 block">Tipo da Chave</label>
+                <select
+                  value={pixType}
+                  onChange={e => setPixType(e.target.value)}
+                  className="w-full bg-muted text-foreground border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  {Object.entries(PIX_TYPE_LABELS).map(([key, label]) => (
+                    <option key={key} value={key}>{label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground mb-2 block">Chave Pix</label>
+                <input
+                  type="text"
+                  value={pixKey}
+                  onChange={e => setPixKey(e.target.value)}
+                  placeholder={pixType === "cpf" ? "000.000.000-00" : pixType === "email" ? "seuemail@email.com" : pixType === "phone" ? "+55 14 99999-9999" : "Cole sua chave aqui"}
+                  className="w-full bg-muted text-foreground border border-border rounded-xl px-4 py-3 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+
+              <button
+                onClick={savePixKey}
+                disabled={savingPix || !pixKey.trim()}
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3.5 rounded-2xl text-sm active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                {Object.entries(PIX_TYPE_LABELS).map(([key, label]) => (
-                  <option key={key} value={key}>{label}</option>
-                ))}
-              </select>
+                <Save className="h-4 w-4" />
+                {savingPix ? "Salvando..." : "Salvar Chave Pix"}
+              </button>
             </div>
-
-            <div>
-              <label className="text-xs text-gray-400 mb-1.5 block">Chave Pix</label>
-              <input
-                type="text"
-                value={pixKey}
-                onChange={e => setPixKey(e.target.value)}
-                placeholder={pixType === "cpf" ? "000.000.000-00" : pixType === "email" ? "seuemail@email.com" : pixType === "phone" ? "+55 14 99999-9999" : "Cole sua chave aqui"}
-                className="w-full bg-gray-800 text-white border border-gray-700 rounded-xl px-4 py-3 text-sm placeholder:text-gray-600"
-              />
-            </div>
-
-            <button
-              onClick={savePixKey}
-              disabled={savingPix || !pixKey.trim()}
-              className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3.5 rounded-2xl text-sm active:scale-95 transition-transform flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              <Save className="h-4 w-4" />
-              {savingPix ? "Salvando..." : "Salvar Chave Pix"}
-            </button>
           </div>
 
           {(driverProfile as any)?.pix_key && (
-            <div className="bg-green-500/10 border border-green-500/30 rounded-2xl p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <CheckCircle2 className="h-4 w-4 text-green-400" />
-                <span className="text-sm font-bold text-green-400">Chave Pix Cadastrada</span>
+            <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                <span className="text-sm font-bold text-green-500">Chave Pix Cadastrada</span>
               </div>
-              <p className="text-xs text-gray-400">
-                Tipo: <span className="text-white font-medium">{PIX_TYPE_LABELS[(driverProfile as any).pix_type] || "CPF"}</span>
+              <p className="text-xs text-muted-foreground">
+                Tipo: <span className="text-foreground font-medium">{PIX_TYPE_LABELS[(driverProfile as any).pix_type] || "CPF"}</span>
               </p>
-              <p className="text-xs text-gray-400">
-                Chave: <span className="text-white font-medium">{(driverProfile as any).pix_key}</span>
+              <p className="text-xs text-muted-foreground">
+                Chave: <span className="text-foreground font-medium">{(driverProfile as any).pix_key}</span>
               </p>
             </div>
           )}
 
-          <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-4">
-            <h3 className="text-sm font-bold text-gray-300 mb-2">ℹ️ Como funciona?</h3>
-            <div className="space-y-2 text-xs text-gray-400">
-              <p>📱 <strong className="text-gray-300">Pedidos via Pix/App:</strong> A taxa de entrega é transferida automaticamente para sua chave Pix cadastrada.</p>
-              <p>💵 <strong className="text-gray-300">Pedidos em Dinheiro:</strong> Você já recebe a taxa em mãos. O sistema registra como "recebido em dinheiro".</p>
-              <p>📊 <strong className="text-gray-300">Histórico:</strong> Na aba "Ganhos" você vê o detalhamento de cada entrega.</p>
+          <div className="bg-card border border-border rounded-2xl p-4">
+            <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+              <Zap className="h-4 w-4 text-primary" />
+              Como funciona?
+            </h3>
+            <div className="space-y-3 text-xs text-muted-foreground">
+              <div className="flex items-start gap-3">
+                <div className="w-6 h-6 rounded-md bg-green-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <CreditCard className="h-3 w-3 text-green-500" />
+                </div>
+                <p><strong className="text-foreground">Pedidos via Pix/App:</strong> A taxa é transferida automaticamente para sua chave Pix.</p>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-6 h-6 rounded-md bg-amber-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Banknote className="h-3 w-3 text-amber-500" />
+                </div>
+                <p><strong className="text-foreground">Dinheiro:</strong> Você recebe a taxa em mãos. O sistema registra como "recebido".</p>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <BarChart3 className="h-3 w-3 text-primary" />
+                </div>
+                <p><strong className="text-foreground">Histórico:</strong> Na aba "Ganhos" veja o detalhamento.</p>
+              </div>
             </div>
           </div>
         </div>
-      ) : (
-        /* ===== FINANCEIRO/GANHOS TAB ===== */
+      )}
+
+      {/* ═════════════ GANHOS / FINANCEIRO TAB ═════════════ */}
+      {activeTab === "historico" && (
         <div className="px-4 py-4 space-y-4">
-          {/* Driver Balance Card */}
+          {/* Wallet Card */}
           {driverBalance && (
-            <div className="bg-card border border-border rounded-2xl p-5">
-              <div className="flex items-center gap-2 mb-4">
-                <Wallet className="h-5 w-5 text-green-500" />
+            <div className="bg-card border border-border rounded-2xl overflow-hidden">
+              <div className="bg-primary/5 px-4 py-3 flex items-center gap-2 border-b border-border">
+                <Wallet className="h-4 w-4 text-primary" />
                 <span className="text-sm font-bold text-foreground">Minha Carteira</span>
               </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="text-center">
-                  <p className="text-[10px] text-muted-foreground">Total Ganho</p>
-                  <p className="text-lg font-black text-foreground">R$ {Number(driverBalance.total_earned || 0).toFixed(2)}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-[10px] text-amber-500">Pendente</p>
-                  <p className="text-lg font-black text-amber-500">R$ {Number(driverBalance.pending_amount || 0).toFixed(2)}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-[10px] text-green-500">Pago</p>
-                  <p className="text-lg font-black text-green-500">R$ {Number(driverBalance.paid_amount || 0).toFixed(2)}</p>
-                </div>
-              </div>
-
-              {/* Withdrawal Button */}
-              {pendingWithdrawal ? (
-                <div className="mt-4 space-y-3">
-                  <button
-                    disabled
-                    onClick={() => {
-                      toast.warning(`Você já tem uma solicitação de R$ ${Number(pendingWithdrawal.amount).toFixed(2)} em andamento. Aguarde o Admin realizar o Pix.`);
-                    }}
-                    className="w-full bg-muted text-muted-foreground font-bold py-3.5 rounded-2xl text-sm flex items-center justify-center gap-2 cursor-not-allowed opacity-70"
-                  >
-                    <Clock className="h-4 w-4" />
-                    SAQUE EM ANÁLISE
-                  </button>
-                  <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3 flex items-start gap-3">
-                    <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
-                    <p className="text-xs text-amber-500 leading-relaxed">
-                      Solicitação <span className="font-bold">#{pendingWithdrawal.transaction_code}</span> recebida. O administrador realizará o pagamento em breve.
-                    </p>
+              <div className="p-4">
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  <div className="text-center">
+                    <p className="text-[10px] text-muted-foreground font-semibold">Total Ganho</p>
+                    <p className="text-lg font-black text-foreground">R$ {Number(driverBalance.total_earned || 0).toFixed(2)}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-[10px] text-amber-500 font-semibold">Pendente</p>
+                    <p className="text-lg font-black text-amber-500">R$ {Number(driverBalance.pending_amount || 0).toFixed(2)}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-[10px] text-green-500 font-semibold">Pago</p>
+                    <p className="text-lg font-black text-green-500">R$ {Number(driverBalance.paid_amount || 0).toFixed(2)}</p>
                   </div>
                 </div>
-              ) : Number(driverBalance.pending_amount || 0) > 0 && (driverProfile as any)?.pix_key ? (
-                <button
-                  disabled={requestingSaque}
-                  onClick={async () => {
-                    setRequestingSaque(true);
-                    try {
-                      const amount = Number(driverBalance.pending_amount);
-                      const { data, error } = await supabase.functions.invoke("create-withdrawal-request", {
-                        body: {
-                          amount,
-                          pix_key: (driverProfile as any).pix_key,
-                          pix_type: (driverProfile as any).pix_type || "cpf",
-                        },
-                      });
 
-                      if (error) throw error;
-                      if (data?.error) {
-                        if (data?.active_request) {
-                          toast.warning(`Você já tem uma solicitação de R$ ${Number(data.active_request.amount).toFixed(2)} em andamento. Aguarde o Admin realizar o Pix.`);
-                        } else if (data?.limit_reached) {
-                          toast.warning(data.error, { duration: 8000 });
-                        } else {
-                          throw new Error(data.error);
+                {/* Withdrawal */}
+                {pendingWithdrawal ? (
+                  <div className="space-y-3">
+                    <button disabled className="w-full bg-muted text-muted-foreground font-bold py-3.5 rounded-2xl text-sm flex items-center justify-center gap-2 cursor-not-allowed opacity-70">
+                      <Clock className="h-4 w-4" /> SAQUE EM ANÁLISE
+                    </button>
+                    <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-start gap-3">
+                      <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                      <p className="text-xs text-amber-500">
+                        Solicitação <span className="font-bold">#{pendingWithdrawal.transaction_code}</span> recebida. Pagamento em breve.
+                      </p>
+                    </div>
+                  </div>
+                ) : Number(driverBalance.pending_amount || 0) > 0 && (driverProfile as any)?.pix_key ? (
+                  <button
+                    disabled={requestingSaque}
+                    onClick={async () => {
+                      setRequestingSaque(true);
+                      try {
+                        const amount = Number(driverBalance.pending_amount);
+                        const { data, error } = await supabase.functions.invoke("create-withdrawal-request", {
+                          body: { amount, pix_key: (driverProfile as any).pix_key, pix_type: (driverProfile as any).pix_type || "cpf" },
+                        });
+                        if (error) throw error;
+                        if (data?.error) {
+                          if (data?.active_request) toast.warning(`Solicitação de R$ ${Number(data.active_request.amount).toFixed(2)} em andamento.`);
+                          else if (data?.limit_reached) toast.warning(data.error, { duration: 8000 });
+                          else throw new Error(data.error);
+                          return;
                         }
-                        return;
-                      }
-
-                      toast.success(`✅ Solicitação enviada! ID #${data?.request?.transaction_code} | Valor: R$ ${amount.toFixed(2)}.`);
-                      queryClient.invalidateQueries({ queryKey: ["driver-balance"] });
-                      queryClient.invalidateQueries({ queryKey: ["pending-withdrawal"] });
-                      queryClient.invalidateQueries({ queryKey: ["withdrawal-history"] });
-                    } catch (err: any) {
-                      toast.error(err?.message || "Erro ao solicitar saque.");
-                      queryClient.invalidateQueries({ queryKey: ["pending-withdrawal"] });
-                    } finally {
-                      setRequestingSaque(false);
-                    }
-                  }}
-                  className="w-full mt-4 bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white font-bold py-3.5 rounded-2xl text-sm active:scale-95 transition-transform flex items-center justify-center gap-2"
-                >
-                  <DollarSign className="h-4 w-4" />
-                  {requestingSaque ? "PROCESSANDO..." : "SOLICITAR PAGAMENTO (PIX)"}
-                </button>
-              ) : Number(driverBalance.pending_amount || 0) > 0 && !(driverProfile as any)?.pix_key ? (
-                <p className="text-xs text-amber-500 mt-3 text-center">
-                  ⚠️ Cadastre sua chave PIX na aba Configurações para solicitar saque.
-                </p>
-              ) : null}
+                        toast.success(`✅ Solicitação enviada! ID #${data?.request?.transaction_code} | R$ ${amount.toFixed(2)}.`);
+                        queryClient.invalidateQueries({ queryKey: ["driver-balance"] });
+                        queryClient.invalidateQueries({ queryKey: ["pending-withdrawal"] });
+                        queryClient.invalidateQueries({ queryKey: ["withdrawal-history"] });
+                      } catch (err: any) {
+                        toast.error(err?.message || "Erro ao solicitar saque.");
+                        queryClient.invalidateQueries({ queryKey: ["pending-withdrawal"] });
+                      } finally { setRequestingSaque(false); }
+                    }}
+                    className="w-full bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white font-bold py-3.5 rounded-2xl text-sm active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                  >
+                    <DollarSign className="h-4 w-4" />
+                    {requestingSaque ? "PROCESSANDO..." : "SOLICITAR PAGAMENTO (PIX)"}
+                  </button>
+                ) : Number(driverBalance.pending_amount || 0) > 0 && !(driverProfile as any)?.pix_key ? (
+                  <p className="text-xs text-amber-500 text-center">⚠️ Cadastre sua chave PIX na aba Pix para solicitar saque.</p>
+                ) : null}
+              </div>
             </div>
           )}
 
-          {/* Earnings Summary Cards */}
+          {/* Quick Stats */}
           <div className="grid grid-cols-3 gap-2">
-            <div className="bg-card border border-border rounded-2xl p-3 text-center">
-              <DollarSign className="h-5 w-5 text-green-500 mx-auto mb-1" />
-              <p className="text-[10px] text-muted-foreground uppercase font-bold">Hoje</p>
-              <p className="text-lg font-black text-green-500">R$ {todayEarnings.toFixed(2)}</p>
-            </div>
-            <div className="bg-card border border-border rounded-2xl p-3 text-center">
-              <TrendingUp className="h-5 w-5 text-blue-500 mx-auto mb-1" />
-              <p className="text-[10px] text-muted-foreground uppercase font-bold">Semana</p>
-              <p className="text-lg font-black text-blue-500">R$ {weekEarnings.toFixed(2)}</p>
-            </div>
-            <div className="bg-card border border-border rounded-2xl p-3 text-center">
-              <Package className="h-5 w-5 text-purple-500 mx-auto mb-1" />
-              <p className="text-[10px] text-muted-foreground uppercase font-bold">Total</p>
-              <p className="text-lg font-black text-purple-500">{totalDeliveries}</p>
-            </div>
+            <StatCard icon={DollarSign} label="Hoje" value={`R$ ${todayEarnings.toFixed(2)}`} color="text-green-500" />
+            <StatCard icon={TrendingUp} label="Semana" value={`R$ ${weekEarnings.toFixed(2)}`} color="text-blue-500" />
+            <StatCard icon={Package} label="Total" value={String(totalDeliveries)} color="text-primary" />
           </div>
 
           {/* Date filter */}
@@ -1122,7 +1094,7 @@ const DriverDashboard = () => {
               <button
                 key={f.key}
                 onClick={() => setDateFilter(f.key)}
-                className={`flex-1 py-2 rounded-xl text-xs font-bold transition-colors ${dateFilter === f.key ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+                className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all ${dateFilter === f.key ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground"}`}
               >
                 {f.label}
               </button>
@@ -1132,27 +1104,33 @@ const DriverDashboard = () => {
           {/* Earnings Breakdown */}
           <div className="grid grid-cols-2 gap-2">
             <div className="bg-card border border-border rounded-2xl p-3">
-              <p className="text-[10px] text-muted-foreground mb-0.5">📱 Pix App (a receber)</p>
+              <div className="flex items-center gap-2 mb-1">
+                <CreditCard className="h-3.5 w-3.5 text-green-500" />
+                <p className="text-[10px] text-muted-foreground">Pix App</p>
+              </div>
               <p className="text-lg font-black text-green-500">R$ {Number(driverBalance?.pending_amount || 0).toFixed(2)}</p>
-              <p className="text-[10px] text-muted-foreground">{earningsBreakdown.pixCount} entregas no período</p>
+              <p className="text-[10px] text-muted-foreground">{earningsBreakdown.pixCount} entregas</p>
             </div>
             <div className="bg-card border border-border rounded-2xl p-3">
-              <p className="text-[10px] text-muted-foreground mb-0.5">💵 Dinheiro (em mãos)</p>
+              <div className="flex items-center gap-2 mb-1">
+                <Banknote className="h-3.5 w-3.5 text-amber-500" />
+                <p className="text-[10px] text-muted-foreground">Dinheiro</p>
+              </div>
               <p className="text-lg font-black text-amber-500">R$ {earningsBreakdown.cashEarnings.toFixed(2)}</p>
               <p className="text-[10px] text-muted-foreground">{earningsBreakdown.cashCount} entregas</p>
             </div>
           </div>
 
-          {/* Total Banner */}
-          <div className="bg-gray-900 border border-gray-700 rounded-2xl p-4 flex items-center justify-between">
+          {/* Total banner */}
+          <div className="bg-card border border-border rounded-2xl p-4 flex items-center justify-between">
             <div>
-              <p className="text-xs text-gray-500">💵 Total no período</p>
-              <p className="text-2xl font-black text-green-400">R$ {filteredEarnings.toFixed(2)}</p>
-              <p className="text-xs text-gray-500">{filteredHistory.length} entregas</p>
+              <p className="text-[10px] text-muted-foreground uppercase font-semibold">Total no período</p>
+              <p className="text-2xl font-black text-green-500">R$ {filteredEarnings.toFixed(2)}</p>
+              <p className="text-xs text-muted-foreground">{filteredHistory.length} entregas</p>
             </div>
             <button
               onClick={exportSummary}
-              className="bg-gray-800 hover:bg-gray-700 text-white p-3 rounded-xl active:scale-95 transition-transform"
+              className="bg-muted hover:bg-muted/80 text-foreground p-3 rounded-xl active:scale-95 transition-all"
             >
               <Download className="h-5 w-5" />
             </button>
@@ -1161,10 +1139,7 @@ const DriverDashboard = () => {
           {/* Withdrawal History */}
           {withdrawalHistory && withdrawalHistory.length > 0 && (
             <>
-              <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                <Wallet className="h-4 w-4" />
-                Histórico de Saques
-              </h3>
+              <SectionTitle icon={Wallet}>Histórico de Saques</SectionTitle>
               <div className="space-y-2">
                 {withdrawalHistory.map((w: any) => (
                   <div key={w.id} className="bg-card border border-border rounded-xl p-3 flex items-center justify-between">
@@ -1176,7 +1151,7 @@ const DriverDashboard = () => {
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-black text-foreground">R$ {Number(w.amount).toFixed(2)}</p>
-                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${w.status === "solicitado" ? "bg-amber-500/20 text-amber-400" : "bg-green-500/20 text-green-400"}`}>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${w.status === "solicitado" ? "bg-amber-500/10 text-amber-500" : "bg-green-500/10 text-green-500"}`}>
                         {w.status === "solicitado" ? "⏳ Pendente" : "✅ Pago"}
                       </span>
                     </div>
@@ -1186,18 +1161,15 @@ const DriverDashboard = () => {
             </>
           )}
 
-          {/* Delivery History List */}
-          <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
-            <Clock className="h-4 w-4" />
-            Histórico de Corridas
-          </h3>
+          {/* Delivery History */}
+          <SectionTitle icon={Clock}>Histórico de Corridas</SectionTitle>
 
           {loadingHistory ? (
             <div className="space-y-3">
               {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="bg-gray-900 rounded-xl p-4 animate-pulse space-y-2">
-                  <div className="h-4 bg-gray-800 rounded w-1/3" />
-                  <div className="h-3 bg-gray-800 rounded w-2/3" />
+                <div key={i} className="bg-card border border-border rounded-xl p-4 animate-pulse space-y-2">
+                  <div className="h-4 bg-muted rounded w-1/3" />
+                  <div className="h-3 bg-muted rounded w-2/3" />
                 </div>
               ))}
             </div>
@@ -1208,36 +1180,38 @@ const DriverDashboard = () => {
                 const orderDate = parseISO(order.confirmed_at || order.created_at);
                 const isCash = order.payment_method === "dinheiro";
                 return (
-                  <div key={order.id} className="bg-gray-900 border border-gray-800 rounded-xl p-3 flex items-center justify-between">
+                  <div key={order.id} className="bg-card border border-border rounded-xl p-3 flex items-center justify-between">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <Store className="h-3.5 w-3.5 text-orange-400 flex-shrink-0" />
-                        <span className="text-sm text-gray-200 font-medium truncate">{(order as any).stores?.name || "Loja"}</span>
+                        <Store className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+                        <span className="text-sm text-foreground font-medium truncate">{(order as any).stores?.name || "Loja"}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <span>{format(orderDate, "dd/MM HH:mm", { locale: ptBR })}</span>
                         <span>•</span>
                         <span className="truncate">{order.neighborhood}</span>
                       </div>
-                      <div className="flex items-center gap-1.5 mt-1">
-                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isRural ? "bg-amber-500/20 text-amber-400" : "bg-cyan-500/20 text-cyan-400"}`}>
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${isRural ? "bg-amber-500/10 text-amber-500" : "bg-blue-500/10 text-blue-500"}`}>
                           {isRural ? "Rural" : "Urbano"}
                         </span>
-                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isCash ? "bg-yellow-500/20 text-yellow-400" : "bg-green-500/20 text-green-400"}`}>
-                          {isCash ? "💵 Dinheiro" : "📱 Pix App"}
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${isCash ? "bg-amber-500/10 text-amber-500" : "bg-green-500/10 text-green-500"}`}>
+                          {isCash ? "💵 Dinheiro" : "📱 Pix"}
                         </span>
                       </div>
                     </div>
-                    <p className="text-lg font-black text-green-400 ml-3">R$ {Number(order.delivery_fee).toFixed(2)}</p>
+                    <p className="text-lg font-black text-green-500 ml-3">R$ {Number(order.delivery_fee).toFixed(2)}</p>
                   </div>
                 );
               })}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <Wallet className="h-14 w-14 text-gray-700 mb-4" />
-              <h2 className="text-base font-bold text-gray-500 mb-1">Nenhuma entrega neste período</h2>
-              <p className="text-sm text-gray-600">Suas entregas finalizadas aparecerão aqui.</p>
+              <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mb-4">
+                <Wallet className="h-7 w-7 text-muted-foreground" />
+              </div>
+              <h2 className="text-base font-bold text-foreground mb-1">Nenhuma entrega neste período</h2>
+              <p className="text-sm text-muted-foreground">Suas entregas finalizadas aparecerão aqui.</p>
             </div>
           )}
         </div>
