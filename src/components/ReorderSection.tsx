@@ -42,7 +42,9 @@ const ReorderSection = () => {
           id: item.products.id,
           name: item.products.name,
           price: item.products.price,
+          basePrice: item.products.price,
           store_id: item.products.store_id,
+          store_name: order.stores?.name || "",
           image_url: item.products.image_url,
         }, item.quantity);
       }
