@@ -479,11 +479,16 @@ const PerfilPage = () => {
             </div>
             {/* Delivery fee indicator */}
             {selectedFee !== null && (
-              <div className="flex items-center gap-2 bg-primary/5 border border-primary/20 rounded-xl px-3 py-2">
-                <Truck className="h-4 w-4 text-primary" />
-                <span className="text-sm font-bold text-primary">
-                  Taxa de entrega para este local: R$ {selectedFee.toFixed(2)}
-                </span>
+              <div className="flex flex-col gap-1 bg-primary/5 border border-primary/20 rounded-xl px-3 py-2">
+                <div className="flex items-center gap-2">
+                  <Truck className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-bold text-primary">
+                    Taxa de entrega: R$ {selectedFee.toFixed(2)}
+                  </span>
+                </div>
+                {feeBreakdown && (
+                  <span className="text-xs text-muted-foreground ml-6">{feeBreakdown}</span>
+                )}
               </div>
             )}
             <input
