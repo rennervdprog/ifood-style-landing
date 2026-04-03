@@ -109,6 +109,51 @@ const StorePage = () => {
     enabled: !!storeId,
   });
 
+  // "Peça de novo" - products user has ordered before from this store
+  const { data: reorderProducts } = useQuery({
+    queryKey: ["reorder-products", storeId, user?.id],
+    queryFn: async () => {
+      const { data: orderItems, error } = await supabase
+        .from("order_items")
+        .select("product_id, quantity, orders!inner(store_id, client_id)")
+        .eq("orders.store_id", storeId!)
+        .eq("orders.client_id", user!.id);
+      if (error) throw error;
+      // Count how many times each product was ordered
+      const countMap: Record<string, number> = {};
+      (orderItems || []).forEach((item: any) => {
+        countMap[item.product_id] = (countMap[item.product_id] || 0) + item.quantity;
+      });
+      // Sort by frequency, return top 10 product IDs
+      return Object.entries(countMap)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .map(([pid]) => pid);
+    },
+    enabled: !!storeId && !!user?.id,
+  });
+
+  // "Mais pedidos" - most popular products in this store (all users)
+  const { data: popularProducts } = useQuery({
+    queryKey: ["popular-products", storeId],
+    queryFn: async () => {
+      const { data: orderItems, error } = await supabase
+        .from("order_items")
+        .select("product_id, quantity, orders!inner(store_id)")
+        .eq("orders.store_id", storeId!);
+      if (error) throw error;
+      const countMap: Record<string, number> = {};
+      (orderItems || []).forEach((item: any) => {
+        countMap[item.product_id] = (countMap[item.product_id] || 0) + item.quantity;
+      });
+      return Object.entries(countMap)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 6)
+        .map(([pid, count]) => ({ productId: pid, count }));
+    },
+    enabled: !!storeId,
+  });
+
   const storeStatus = store
     ? getStoreOpenStatus(
         (storeHours as any as OpeningHour[]) || [],
@@ -116,6 +161,14 @@ const StorePage = () => {
         store.is_open
       )
     : { isOpen: false, reason: "" };
+
+  const reorderProductsList = products?.filter(p => reorderProducts?.includes(p.id)) || [];
+  const popularProductsList = popularProducts
+    ?.map(pp => {
+      const product = products?.find(p => p.id === pp.productId);
+      return product ? { ...product, orderCount: pp.count } : null;
+    })
+    .filter(Boolean) as (Product & { orderCount: number })[] || [];
 
   useEffect(() => {
     if (sections && sections.length > 0 && !activeSection) {
