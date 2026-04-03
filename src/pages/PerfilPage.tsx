@@ -265,12 +265,9 @@ const PerfilPage = () => {
         } as any, { onConflict: "user_id" });
       if (error) throw error;
 
-      // Sync cart neighborhood
-      if (neighborhood && neighborhoods) {
-        const found = neighborhoods.find((n) => n.name === neighborhood);
-        if (found) {
-          setNeighborhood(found.name, found.fee);
-        }
+      // Sync cart neighborhood with calculated fee
+      if (neighborhood && calculatedFee !== null) {
+        setNeighborhood(neighborhood, calculatedFee);
       }
 
       toast.success("Endereço salvo!");
