@@ -171,7 +171,7 @@ const DriverDashboard = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*, stores(name)")
+        .select("*, stores(name, address_street, address_number, address_neighborhood, address_city, address_state, address_cep)")
         .eq("driver_id", user!.id)
         .in("status", ["entregue", "finalizado"] as any)
         .in("payment_method", ["dinheiro", "cartao"])
