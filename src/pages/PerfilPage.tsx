@@ -514,7 +514,7 @@ const PerfilPage = () => {
           </button>
         )}
 
-        {user.email === "vinivias13@gmail.com" && (
+        {isAdminUser && (
           <button
             onClick={() => navigate("/super-admin")}
             className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-600 font-bold"

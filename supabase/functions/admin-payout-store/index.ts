@@ -43,8 +43,18 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Only admin can do payouts
-    const isAdmin = userData.user.email === "vinivias13@gmail.com";
+    // Only admin can do payouts - check user_roles table
+    const serviceClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+    const { data: adminRole } = await serviceClient
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userData.user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+    const isAdmin = !!adminRole;
     if (!isAdmin) {
       return new Response(JSON.stringify({ error: "Apenas o administrador pode realizar repasses." }), {
         status: 403,
