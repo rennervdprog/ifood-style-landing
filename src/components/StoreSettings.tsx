@@ -44,7 +44,7 @@ interface StoreSettingsProps {
   storeAddressState?: string | null;
 }
 
-const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, storeIsOpen, forceClosed, storeSlug }: StoreSettingsProps) => {
+const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, storeIsOpen, forceClosed, storeSlug, storeAddressStreet, storeAddressNumber, storeAddressComplement, storeAddressNeighborhood, storeAddressReference, storeAddressCity, storeAddressState }: StoreSettingsProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
