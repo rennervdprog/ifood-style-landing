@@ -1,13 +1,25 @@
-import { Shield, Clock, Store, Bike, CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { Shield, Clock, Store, Bike, CheckCircle2, XCircle, Loader2, Trash2 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useState } from "react";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const AdminApprovals = () => {
   const queryClient = useQueryClient();
   const [syncingId, setSyncingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const { data: pendingProfiles, isLoading } = useQuery({
     queryKey: ["admin-pending-profiles"],
@@ -24,7 +36,6 @@ const AdminApprovals = () => {
   const handleApprove = async (profile: any, approved: boolean) => {
     setSyncingId(profile.user_id);
     try {
-      // 1. Approve locally
       const { error } = await supabase.rpc("admin_approve_partner", {
         _profile_user_id: profile.user_id,
         _approved: approved,
@@ -35,10 +46,8 @@ const AdminApprovals = () => {
         return;
       }
 
-      // 2. If approving, sync to external Supabase
       if (approved) {
         try {
-          // Get the user's email from auth (via profile query won't have it)
           const { data: freshProfile } = await supabase
             .from("profiles")
             .select("*")
@@ -58,7 +67,6 @@ const AdminApprovals = () => {
           });
           toast.success("Parceiro aprovado e sincronizado!");
         } catch {
-          // Sync failed but approval succeeded locally
           toast.success("Parceiro aprovado! (sincronização externa pendente)");
         }
       } else {
@@ -71,8 +79,69 @@ const AdminApprovals = () => {
     }
   };
 
+  const handleDelete = async (profile: any) => {
+    setDeletingId(profile.user_id);
+    try {
+      const { error } = await supabase.rpc("admin_delete_partner", {
+        _profile_user_id: profile.user_id,
+      } as any);
+
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+
+      toast.success(`${profile.role === "lojista" ? "Lojista" : "Entregador"} excluído com sucesso!`);
+      queryClient.invalidateQueries({ queryKey: ["admin-pending-profiles"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-stores"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-all-orders"] });
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   const pending = pendingProfiles?.filter((p: any) => !p.is_approved) || [];
   const approved = pendingProfiles?.filter((p: any) => p.is_approved) || [];
+
+  const renderDeleteButton = (p: any) => (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <button
+          disabled={deletingId === p.user_id}
+          className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-red-700 hover:bg-red-800 text-white text-sm font-bold active:scale-95 transition-transform min-h-[44px] disabled:opacity-50"
+        >
+          {deletingId === p.user_id ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Trash2 className="h-4 w-4" />
+          )}
+        </button>
+      </AlertDialogTrigger>
+      <AlertDialogContent className="bg-[#1E293B] border-gray-700">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="text-white">
+            Excluir {p.role === "lojista" ? "Lojista" : "Entregador"}?
+          </AlertDialogTitle>
+          <AlertDialogDescription className="text-gray-400">
+            Isso vai excluir <strong className="text-white">{p.full_name || "este parceiro"}</strong> e{" "}
+            <strong className="text-red-400">TODOS os dados associados</strong> (pedidos finalizados, produtos, 
+            ganhos, saques, lojas). Esta ação é irreversível.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600">
+            Cancelar
+          </AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => handleDelete(p)}
+            className="bg-red-600 hover:bg-red-700 text-white"
+          >
+            Excluir Tudo
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
 
   return (
     <div className="space-y-4">
@@ -143,6 +212,7 @@ const AdminApprovals = () => {
                   <XCircle className="h-4 w-4" />
                   RECUSAR
                 </button>
+                {renderDeleteButton(p)}
               </div>
             </div>
           ))}
@@ -172,9 +242,12 @@ const AdminApprovals = () => {
                     <p className="text-xs text-gray-500">{p.role === "lojista" ? "Lojista" : "Entregador"}</p>
                   </div>
                 </div>
-                <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-xs font-bold rounded-full">
-                  Ativo
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-xs font-bold rounded-full">
+                    Ativo
+                  </span>
+                  {renderDeleteButton(p)}
+                </div>
               </div>
             ))}
           </div>
