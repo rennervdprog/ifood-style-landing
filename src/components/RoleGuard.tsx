@@ -27,9 +27,15 @@ const RoleGuard = ({ allowedRoles, redirectTo, children, requireApproval = false
     }
 
     const checkRole = async () => {
-      // Check if super admin (always allowed)
-      const isAdmin = user.email === "vinivias13@gmail.com";
-      if (allowedRoles.includes("admin") && isAdmin) {
+      // Check if admin via user_roles table
+      const { data: adminRole } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+
+      if (allowedRoles.includes("admin") && adminRole) {
         setAuthorized(true);
         setChecking(false);
         return;
