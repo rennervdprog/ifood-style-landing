@@ -2,8 +2,9 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { MapPin, Plus, Trash2, Check, Home, Briefcase, MapPinned } from "lucide-react";
+import { MapPin, Plus, Trash2, Check, Home, Briefcase, MapPinned, Search, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { formatCep, fetchCep } from "@/lib/cepLookup";
 
 interface SavedAddress {
   id: string;
@@ -31,12 +32,14 @@ const SavedAddressPicker = ({ onSelect, selectedId }: SavedAddressPickerProps) =
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [label, setLabel] = useState("Casa");
+  const [cep, setCep] = useState("");
   const [street, setStreet] = useState("");
   const [number, setNumber] = useState("");
   const [complement, setComplement] = useState("");
   const [neighborhood, setNeighborhood] = useState("");
   const [referencePoint, setReferencePoint] = useState("");
   const [saving, setSaving] = useState(false);
+  const [loadingCep, setLoadingCep] = useState(false);
 
   const { data: addresses, isLoading } = useQuery({
     queryKey: ["saved-addresses", user?.id],
@@ -60,6 +63,49 @@ const SavedAddressPicker = ({ onSelect, selectedId }: SavedAddressPickerProps) =
     },
   });
 
+  const handleCepChange = (value: string) => {
+    const formatted = formatCep(value);
+    setCep(formatted);
+    const digits = value.replace(/\D/g, "");
+    if (digits.length === 8) {
+      handleCepLookup(digits);
+    }
+  };
+
+  const handleCepLookup = async (digits?: string) => {
+    const cepDigits = digits || cep.replace(/\D/g, "");
+    if (cepDigits.length !== 8) {
+      toast.error("CEP inválido.");
+      return;
+    }
+    setLoadingCep(true);
+    try {
+      const result = await fetchCep(cepDigits);
+      if (!result) {
+        toast.error("CEP não encontrado.");
+        return;
+      }
+      setStreet(result.logradouro || "");
+      if (result.complemento) setComplement(result.complemento);
+      if (result.bairro && neighborhoods) {
+        const match = neighborhoods.find(
+          (n: any) => n.name.toLowerCase() === result.bairro.toLowerCase()
+        );
+        if (match) {
+          setNeighborhood(match.name);
+        } else {
+          setNeighborhood("");
+          toast.info(`Bairro "${result.bairro}" não está na área de entrega.`);
+        }
+      }
+      toast.success("Endereço preenchido!");
+    } catch {
+      toast.error("Erro ao buscar CEP.");
+    } finally {
+      setLoadingCep(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!street.trim() || !number.trim() || !neighborhood) {
       toast.error("Preencha rua, número e bairro.");
@@ -81,10 +127,12 @@ const SavedAddressPicker = ({ onSelect, selectedId }: SavedAddressPickerProps) =
       if (error) throw error;
       toast.success("Endereço salvo!");
       setShowForm(false);
+      setCep("");
       setStreet("");
       setNumber("");
       setComplement("");
       setReferencePoint("");
+      setNeighborhood("");
       queryClient.invalidateQueries({ queryKey: ["saved-addresses", user?.id] });
     } catch (err: any) {
       toast.error(err.message || "Erro ao salvar.");
@@ -163,6 +211,27 @@ const SavedAddressPicker = ({ onSelect, selectedId }: SavedAddressPickerProps) =
               </button>
             ))}
           </div>
+
+          {/* CEP field */}
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="CEP"
+              value={cep}
+              onChange={(e) => handleCepChange(e.target.value)}
+              inputMode="numeric"
+              maxLength={9}
+              className="flex-1 px-3 py-2 rounded-lg border border-border bg-background text-foreground text-xs placeholder:text-muted-foreground"
+            />
+            <button
+              onClick={() => handleCepLookup()}
+              disabled={loadingCep}
+              className="px-2 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-bold disabled:opacity-50"
+            >
+              {loadingCep ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
+            </button>
+          </div>
+
           <div className="grid grid-cols-3 gap-2">
             <input type="text" placeholder="Rua" value={street} onChange={(e) => setStreet(e.target.value)}
               className="col-span-2 px-3 py-2 rounded-lg border border-border bg-background text-foreground text-xs placeholder:text-muted-foreground" />
@@ -179,7 +248,7 @@ const SavedAddressPicker = ({ onSelect, selectedId }: SavedAddressPickerProps) =
           <input type="text" placeholder="Ponto de referência" value={referencePoint} onChange={(e) => setReferencePoint(e.target.value)}
             className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-xs placeholder:text-muted-foreground" />
           <div className="flex gap-2">
-            <button onClick={() => setShowForm(false)} className="flex-1 py-2 rounded-lg border border-border text-xs font-bold text-muted-foreground">
+            <button onClick={() => { setShowForm(false); setCep(""); }} className="flex-1 py-2 rounded-lg border border-border text-xs font-bold text-muted-foreground">
               Cancelar
             </button>
             <button onClick={handleSave} disabled={saving} className="flex-1 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-bold disabled:opacity-50">
