@@ -42,7 +42,7 @@ const PedidosPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
 
-  // Handle Mercado Pago payment return
+  // Handle payment return redirect
   useEffect(() => {
     const paymentStatus = searchParams.get("payment");
     if (paymentStatus) {
