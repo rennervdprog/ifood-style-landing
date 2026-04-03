@@ -18,6 +18,11 @@ const CouponInput = ({ subtotal, storeId, onApply, onRemove, appliedCode, applie
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setCode(val.toUpperCase());
+  };
+
   const validateCoupon = async () => {
     if (!code.trim() || !user) return;
     setLoading(true);
@@ -90,15 +95,25 @@ const CouponInput = ({ subtotal, storeId, onApply, onRemove, appliedCode, applie
 
       // Calculate discount
       let discount = 0;
+      let discountLabel = "";
       if (c.discount_type === "percentage") {
-        discount = Math.round(subtotal * (c.discount_value / 100) * 100) / 100;
+        discount = Math.round(subtotal * (Number(c.discount_value) / 100) * 100) / 100;
+        discountLabel = `${Number(c.discount_value)}%`;
       } else if (c.discount_type === "fixed") {
-        discount = Math.min(c.discount_value, subtotal);
+        discount = Math.min(Number(c.discount_value), subtotal);
+        discountLabel = `R$ ${Number(c.discount_value).toFixed(2)}`;
+      } else if (c.discount_type === "free_shipping") {
+        discount = 0;
+        discountLabel = "Frete grátis";
       }
-      // free_shipping is handled by checkout
 
       onApply(discount, c.id, c.code, c.discount_type);
-      toast.success(`Cupom "${c.code}" aplicado! Desconto: R$ ${discount.toFixed(2)}`);
+      
+      if (c.discount_type === "free_shipping") {
+        toast.success(`Cupom "${c.code}" aplicado! Frete grátis!`);
+      } else {
+        toast.success(`Cupom "${c.code}" aplicado! Desconto de ${discountLabel} = -R$ ${discount.toFixed(2)}`);
+      }
     } catch (err: any) {
       toast.error("Erro ao validar cupom.");
     } finally {
@@ -129,8 +144,13 @@ const CouponInput = ({ subtotal, storeId, onApply, onRemove, appliedCode, applie
         <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
         <input
           type="text"
+          inputMode="text"
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="characters"
+          spellCheck={false}
           value={code}
-          onChange={(e) => setCode(e.target.value.toUpperCase())}
+          onChange={handleCodeChange}
           placeholder="Código do cupom"
           className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-border bg-card text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
         />

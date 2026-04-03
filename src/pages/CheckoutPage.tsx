@@ -186,10 +186,17 @@ const CheckoutPage = () => {
             user_id: user.id,
             order_id: order.id,
           });
-          await supabase.from("coupons" as any)
-            .update({ used_count: undefined } as any)
-            .eq("id", couponId);
-          // Increment used_count via RPC would be better, but simple update works
+          // Increment used_count by fetching current value first
+          const { data: currentCoupon } = await supabase
+            .from("coupons" as any)
+            .select("used_count")
+            .eq("id", couponId)
+            .single();
+          if (currentCoupon) {
+            await supabase.from("coupons" as any)
+              .update({ used_count: ((currentCoupon as any).used_count || 0) + 1 } as any)
+              .eq("id", couponId);
+          }
         }
       }
 
