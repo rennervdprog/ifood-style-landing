@@ -159,6 +159,31 @@ const PedidosPage = () => {
     loading: boolean;
   } | null>(null);
 
+  // Persist PIX data per order in localStorage so it survives app restarts
+  const [savedPixData, setSavedPixData] = useState<Record<string, { qrCode: string | null; qrCodeBase64: string | null }>>(() => {
+    try {
+      const stored = localStorage.getItem("pix_order_data");
+      return stored ? JSON.parse(stored) : {};
+    } catch { return {}; }
+  });
+
+  const savePixForOrder = (orderId: string, qrCode: string | null, qrCodeBase64: string | null) => {
+    setSavedPixData(prev => {
+      const next = { ...prev, [orderId]: { qrCode, qrCodeBase64 } };
+      localStorage.setItem("pix_order_data", JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const clearPixForOrder = (orderId: string) => {
+    setSavedPixData(prev => {
+      const next = { ...prev };
+      delete next[orderId];
+      localStorage.setItem("pix_order_data", JSON.stringify(next));
+      return next;
+    });
+  };
+
   const [pixCooldownMs, setPixCooldownMs] = useState(0);
   const [safetyModeMs, setSafetyModeMs] = useState(0);
 
@@ -263,6 +288,8 @@ const PedidosPage = () => {
       const qrCode = pixData?.pix_code || pixData?.qr_code || null;
       const qrCodeBase64 = pixData?.qr_code_url || pixData?.qr_code_base64 || null;
       if (qrCode || qrCodeBase64) {
+        // Save to localStorage so it persists across app restarts
+        savePixForOrder(order.id, qrCode, qrCodeBase64);
         setPixModal({
           orderId: order.id,
           qrCode,
@@ -328,6 +355,7 @@ const PedidosPage = () => {
           console.error("Error cancelling payment on provider:", cancelPaymentError);
           // Still cancel the order even if provider cancel fails
         }
+        clearPixForOrder(orderId);
         toast.success("Pedido e pagamento PIX cancelados.");
       } else {
         // Regular cancel (non-PIX or already paid)
@@ -421,7 +449,9 @@ const PedidosPage = () => {
                 </div>
 
                 {/* Waiting Payment Banner */}
-                {isWaitingPayment && (
+                {isWaitingPayment && (() => {
+                  const hasSavedPix = savedPixData[order.id];
+                  return (
                   <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-3 mb-3">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
@@ -439,43 +469,90 @@ const PedidosPage = () => {
                       </button>
                     </div>
 
-                    {/* Safety mode / cooldown banners */}
-                    {safetyModeMs > 0 && (
-                      <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-2 mb-2 flex items-start gap-2">
-                        <ShieldAlert className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
-                        <p className="text-[10px] text-amber-600">
-                          Manutenção temporária no sistema de pagamentos. Voltará em {formatCooldownTime(safetyModeMs)}.
-                        </p>
-                      </div>
-                    )}
-                    {!safetyModeMs && pixCooldownMs > 0 && (
-                      <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-2 mb-2 flex items-start gap-2">
-                        <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
-                        <p className="text-[10px] text-amber-600">
-                          Muitas tentativas. Aguarde {formatCooldownTime(pixCooldownMs)}.
-                        </p>
+                    {/* Show saved QR code inline */}
+                    {hasSavedPix && (hasSavedPix.qrCode || hasSavedPix.qrCodeBase64) && (
+                      <div className="space-y-3 mb-3">
+                        {hasSavedPix.qrCodeBase64 && (
+                          <div className="flex justify-center">
+                            <img
+                              src={hasSavedPix.qrCodeBase64.startsWith("data:") ? hasSavedPix.qrCodeBase64 : `data:image/png;base64,${hasSavedPix.qrCodeBase64}`}
+                              alt="QR Code PIX"
+                              className="w-48 h-48 rounded-xl border border-border"
+                            />
+                          </div>
+                        )}
+                        {hasSavedPix.qrCode && (
+                          <button
+                            onClick={() => copyPixCode(hasSavedPix.qrCode!)}
+                            className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold py-2.5 rounded-xl text-xs"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                            Copiar Código PIX
+                          </button>
+                        )}
+                        <div className="bg-muted/50 rounded-lg p-2 text-center">
+                          <p className="text-[10px] text-muted-foreground">
+                            📱 Escaneie o QR Code ou cole o código no app do seu banco.
+                          </p>
+                          <p className="text-[10px] text-primary font-bold mt-1">
+                            ✅ Após pagar, seu pedido será liberado automaticamente!
+                          </p>
+                        </div>
+                        {/* Button to regenerate if needed */}
+                        <button
+                          onClick={() => generatePix(order)}
+                          disabled={payingOrderId === order.id || isPixBlocked}
+                          className="w-full flex items-center justify-center gap-2 text-muted-foreground font-medium py-1.5 text-[10px] hover:text-foreground transition-colors"
+                        >
+                          <RefreshCw className="h-3 w-3" />
+                          Gerar novo QR Code
+                        </button>
                       </div>
                     )}
 
-                    <button
-                      onClick={() => generatePix(order)}
-                      disabled={payingOrderId === order.id || isPixBlocked}
-                      className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold py-2.5 rounded-xl text-xs disabled:opacity-50"
-                    >
-                      {isPixBlocked ? (
-                        <>
-                          <ShieldAlert className="h-3.5 w-3.5" />
-                          Aguarde...
-                        </>
-                      ) : (
-                        <>
-                          <QrCode className="h-3.5 w-3.5" />
-                          {payingOrderId === order.id ? "Gerando..." : "Pagar com PIX"}
-                        </>
-                      )}
-                    </button>
+                    {/* Show generate button only if no saved PIX */}
+                    {!hasSavedPix && (
+                      <>
+                        {/* Safety mode / cooldown banners */}
+                        {safetyModeMs > 0 && (
+                          <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-2 mb-2 flex items-start gap-2">
+                            <ShieldAlert className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                            <p className="text-[10px] text-amber-600">
+                              Manutenção temporária no sistema de pagamentos. Voltará em {formatCooldownTime(safetyModeMs)}.
+                            </p>
+                          </div>
+                        )}
+                        {!safetyModeMs && pixCooldownMs > 0 && (
+                          <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-2 mb-2 flex items-start gap-2">
+                            <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                            <p className="text-[10px] text-amber-600">
+                              Muitas tentativas. Aguarde {formatCooldownTime(pixCooldownMs)}.
+                            </p>
+                          </div>
+                        )}
+
+                        <button
+                          onClick={() => generatePix(order)}
+                          disabled={payingOrderId === order.id || isPixBlocked}
+                          className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold py-2.5 rounded-xl text-xs disabled:opacity-50"
+                        >
+                          {isPixBlocked ? (
+                            <>
+                              <ShieldAlert className="h-3.5 w-3.5" />
+                              Aguarde...
+                            </>
+                          ) : (
+                            <>
+                              <QrCode className="h-3.5 w-3.5" />
+                              {payingOrderId === order.id ? "Gerando..." : "Pagar com PIX"}
+                            </>
+                          )}
+                        </button>
+                      </>
+                    )}
                   </div>
-                )}
+                  );
+                })()}
 
                 {/* Delivery PIN Card */}
                 {showPin && (
