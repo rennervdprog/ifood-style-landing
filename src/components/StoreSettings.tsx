@@ -152,6 +152,7 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
         address_reference: addressReference.trim() || null,
         address_city: addressCity.trim() || "Itatinga",
         address_state: addressState.trim() || "SP",
+        address_cep: addressCep.replace(/\D/g, "") || null,
       } as any)
       .eq("id", storeId);
 
