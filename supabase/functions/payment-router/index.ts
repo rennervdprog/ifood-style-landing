@@ -40,10 +40,16 @@ const StorePayoutSchema = z.object({
   pix_type: z.enum(["cpf", "cnpj", "email", "phone", "random"]),
 });
 
+const CancelPaymentSchema = z.object({
+  action: z.literal("cancel_payment"),
+  order_id: z.string().uuid(),
+});
+
 const BodySchema = z.discriminatedUnion("action", [
   OrderPixSchema,
   CommissionChargeSchema,
   StorePayoutSchema,
+  CancelPaymentSchema,
 ]);
 
 // ── Standardized response ────────────────────────────────────────────
@@ -992,6 +998,147 @@ async function routePixCreation(params: {
   return json({ error: "Provedor de pagamentos não configurado." }, 500);
 }
 
+// ── Route: cancel payment ────────────────────────────────────────────
+
+async function cancelAsaasPayment(paymentId: string): Promise<boolean> {
+  const apiKey = Deno.env.get("ASAAS_API_KEY");
+  if (!apiKey) return false;
+
+  const baseUrl = apiKey.startsWith("$aact_")
+    ? "https://api.asaas.com/v3"
+    : "https://sandbox.asaas.com/api/v3";
+
+  try {
+    const res = await fetch(`${baseUrl}/payments/${paymentId}`, {
+      method: "DELETE",
+      headers: { "access_token": apiKey },
+    });
+    console.log("Asaas cancel payment response:", res.status);
+    return res.ok;
+  } catch (err) {
+    console.error("Asaas cancel error:", err);
+    return false;
+  }
+}
+
+async function cancelMercadoPagoPayment(paymentId: string): Promise<boolean> {
+  const token = Deno.env.get("MERCADO_PAGO_ACCESS_TOKEN");
+  if (!token) return false;
+
+  try {
+    const res = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ status: "cancelled" }),
+    });
+    console.log("MP cancel payment response:", res.status);
+    return res.ok;
+  } catch (err) {
+    console.error("MP cancel error:", err);
+    return false;
+  }
+}
+
+async function handleCancelPayment(
+  body: z.infer<typeof CancelPaymentSchema>,
+  userId: string,
+  supabase: any,
+): Promise<Response> {
+  const { order_id } = body;
+
+  // Verify order belongs to user and is still awaiting payment
+  const { data: order, error: orderError } = await supabase
+    .from("orders")
+    .select("id, client_id, status")
+    .eq("id", order_id)
+    .eq("client_id", userId)
+    .single();
+
+  if (orderError || !order) return json({ error: "Pedido não encontrado" }, 404);
+  if (order.status !== "aguardando_pagamento") {
+    return json({ error: "Pedido não está aguardando pagamento" }, 400);
+  }
+
+  // Look for pending financial transactions with this order_id as reference
+  const serviceClient = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  );
+
+  // Try to find any payment record linked to this order
+  const { data: txns } = await serviceClient
+    .from("financial_transactions")
+    .select("mercado_pago_payment_id, provider")
+    .eq("reference_code", order_id)
+    .eq("status", "pending");
+
+  let cancelledOnProvider = false;
+
+  // Cancel on provider if we have a payment ID
+  if (txns && txns.length > 0) {
+    for (const tx of txns) {
+      if (tx.mercado_pago_payment_id) {
+        if (tx.provider === "asaas") {
+          cancelledOnProvider = await cancelAsaasPayment(tx.mercado_pago_payment_id);
+        } else if (tx.provider === "mercado_pago") {
+          cancelledOnProvider = await cancelMercadoPagoPayment(tx.mercado_pago_payment_id);
+        }
+      }
+    }
+    // Mark transactions as cancelled
+    await serviceClient
+      .from("financial_transactions")
+      .update({ status: "cancelled", updated_at: new Date().toISOString() })
+      .eq("reference_code", order_id)
+      .eq("status", "pending");
+  }
+
+  // Also try direct Asaas search by externalReference (order PIX payments aren't in financial_transactions)
+  if (!cancelledOnProvider) {
+    const apiKey = Deno.env.get("ASAAS_API_KEY");
+    if (apiKey) {
+      const baseUrl = apiKey.startsWith("$aact_")
+        ? "https://api.asaas.com/v3"
+        : "https://sandbox.asaas.com/api/v3";
+      try {
+        const searchRes = await fetch(`${baseUrl}/payments?externalReference=${order_id}`, {
+          headers: { "access_token": apiKey },
+        });
+        if (searchRes.ok) {
+          const searchData = await searchRes.json();
+          if (searchData.data) {
+            for (const payment of searchData.data) {
+              if (payment.status === "PENDING" || payment.status === "OVERDUE") {
+                await cancelAsaasPayment(payment.id);
+                cancelledOnProvider = true;
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Asaas search for cancel error:", err);
+      }
+    }
+  }
+
+  // Cancel the order
+  const { error: updateError } = await supabase
+    .from("orders")
+    .update({ status: "cancelado" as any })
+    .eq("id", order_id)
+    .eq("client_id", userId);
+
+  if (updateError) {
+    return json({ error: "Erro ao cancelar pedido" }, 500);
+  }
+
+  console.log(`Order ${order_id} cancelled. Provider cancelled: ${cancelledOnProvider}`);
+  return json({ success: true, provider_cancelled: cancelledOnProvider });
+}
+
 // ── Main handler ─────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
@@ -1035,6 +1182,8 @@ Deno.serve(async (req) => {
         return await handleCommissionCharge(body, userId, userEmail, supabase);
       case "store_payout":
         return await handleStorePayout(body, userId, userEmail, supabase);
+      case "cancel_payment":
+        return await handleCancelPayment(body, userId, supabase);
       default:
         return json({ error: "Ação desconhecida" }, 400);
     }
