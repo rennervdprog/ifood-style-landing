@@ -114,13 +114,22 @@ const AdminDashboard = () => {
   const { data: onlineDrivers } = useQuery({
     queryKey: ["online-drivers-count"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: allOnline, error } = await supabase
         .from("drivers")
-        .select("id, name")
+        .select("id, name, user_id")
         .eq("is_online", true)
         .eq("is_active", true);
       if (error) throw error;
-      return data || [];
+
+      // Filter out drivers currently on an active delivery
+      const { data: busyDriverIds } = await supabase
+        .from("orders")
+        .select("driver_id")
+        .in("status", ["pronto_para_entrega", "em_transito", "saiu_entrega", "entregue"] as any[])
+        .not("driver_id", "is", null);
+
+      const busySet = new Set((busyDriverIds || []).map((o: any) => o.driver_id));
+      return (allOnline || []).filter((d: any) => !busySet.has(d.user_id));
     },
   });
 
