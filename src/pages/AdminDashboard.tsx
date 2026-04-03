@@ -376,7 +376,7 @@ const AdminDashboard = () => {
   const pendingCount = orders?.filter(o => o.status === "pendente").length || 0;
   const preparingCount = orders?.filter(o => o.status === "preparando").length || 0;
   const readyCount = orders?.filter(o => o.status === "pronto_para_entrega").length || 0;
-  const todayOrders = orders?.filter(o => new Date(o.created_at).toDateString() === new Date().toDateString()) || [];
+  const todayOrders = orders?.filter(o => new Date(o.created_at).toDateString() === new Date().toDateString() && !["cancelado", "aguardando_pagamento"].includes(o.status)) || [];
   const todayTotal = todayOrders.reduce((sum, o) => sum + Number(o.total_price), 0);
   const todayCount = todayOrders.length;
 
@@ -569,7 +569,7 @@ const AdminDashboard = () => {
                 <GlanceCard
                   icon={DollarSign}
                   label="Faturamento Hoje"
-                  value={`R$ ${todayTotal.toFixed(0)}`}
+                  value={`R$ ${todayTotal.toFixed(2)}`}
                   subValue={`${todayCount} pedidos`}
                   color="text-emerald-500"
                   trend={todayTotal > 0 ? "up" : null}
