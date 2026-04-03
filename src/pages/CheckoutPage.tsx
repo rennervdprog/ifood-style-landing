@@ -38,9 +38,7 @@ const CheckoutPage = () => {
   const [calculatingFee, setCalculatingFee] = useState(false);
   const [feeBreakdown, setFeeBreakdown] = useState<string | null>(null);
 
-  const activeDeliveryFee = calculatedDeliveryFee !== null ? calculatedDeliveryFee : neighborhoodFee;
-  const effectiveDeliveryFee = couponType === "free_shipping" ? 0 : activeDeliveryFee;
-  const finalTotal = Math.max(0, subtotal - couponDiscount + effectiveDeliveryFee);
+  // activeDeliveryFee, effectiveDeliveryFee, finalTotal computed after queries below
 
   // Load user profile with address + CEP
   const { data: userProfile, refetch: refetchProfile } = useQuery({
@@ -93,6 +91,9 @@ const CheckoutPage = () => {
   const hasAddress = !!profileStreet && !!profileNumber && !!profileNeighborhood;
   const storeCep = (storeData as any)?.address_cep;
   const config = deliveryFeeConfig || DEFAULT_DELIVERY_FEE_CONFIG;
+  const activeDeliveryFee = calculatedDeliveryFee !== null ? calculatedDeliveryFee : config.city_fee;
+  const effectiveDeliveryFee = couponType === "free_shipping" ? 0 : activeDeliveryFee;
+  const finalTotal = Math.max(0, subtotal - couponDiscount + effectiveDeliveryFee);
 
   // Calculate delivery fee based on CEP - uses saved address CEP when selected, otherwise profile CEP
   useEffect(() => {
