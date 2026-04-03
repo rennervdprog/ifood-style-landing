@@ -38,9 +38,7 @@ const CheckoutPage = () => {
   const [calculatingFee, setCalculatingFee] = useState(false);
   const [feeBreakdown, setFeeBreakdown] = useState<string | null>(null);
 
-  // activeDeliveryFee computed after queries below
-  const effectiveDeliveryFee = couponType === "free_shipping" ? 0 : activeDeliveryFee;
-  const finalTotal = Math.max(0, subtotal - couponDiscount + effectiveDeliveryFee);
+  // activeDeliveryFee, effectiveDeliveryFee, finalTotal computed after queries below
 
   // Load user profile with address + CEP
   const { data: userProfile, refetch: refetchProfile } = useQuery({
