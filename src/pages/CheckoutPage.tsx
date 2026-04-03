@@ -122,6 +122,17 @@ const CheckoutPage = () => {
   }, [profileCep, storeCep, config, savedAddressData, selectedSavedAddressId]);
 
   // Redirect to login if not authenticated
+  // Build address string from profile
+  const buildAddressString = () => {
+    if (!hasAddress) return "";
+    const parts = [profileStreet, profileNumber];
+    if (profileComplement) parts.push(profileComplement);
+    if (profileReference) parts.push(`Ref: ${profileReference}`);
+    return parts.join(", ");
+  };
+
+  const addressString = buildAddressString();
+
   if (!user) {
     navigate("/auth", { state: { from: "/checkout" }, replace: true });
     return null;
