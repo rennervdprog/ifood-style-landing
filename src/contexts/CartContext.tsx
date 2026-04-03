@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-
+import { supabase } from "@/integrations/supabase/client";
 export interface CartAddon {
   name: string;
   price: number;
@@ -57,6 +57,21 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     localStorage.setItem("cart_items", JSON.stringify(items));
   }, [items]);
+
+  // Clear cart on sign-out
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") {
+        setItems([]);
+        setNeighborhoodState(null);
+        setNeighborhoodFee(0);
+        localStorage.removeItem("cart_items");
+        localStorage.removeItem("selected_neighborhood");
+        localStorage.removeItem("neighborhood_fee");
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   const setNeighborhood = useCallback((name: string, fee: number) => {
     setNeighborhoodState(name);
