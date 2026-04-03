@@ -1,54 +1,29 @@
 import { useEffect, useState } from "react";
-import { MapPin, ChevronDown } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
-
-interface NeighborhoodFee {
-  id: string;
-  name: string;
-  fee: number;
-}
+import { useNavigate } from "react-router-dom";
 
 const AppHeader = () => {
-  const { neighborhood, setNeighborhood } = useCart();
+  const { neighborhood } = useCart();
   const { user } = useAuth();
-  const [neighborhoods, setNeighborhoods] = useState<NeighborhoodFee[]>([]);
-  const [open, setOpen] = useState(false);
-  const [profileLoaded, setProfileLoaded] = useState(false);
+  const navigate = useNavigate();
+  const [profileNeighborhood, setProfileNeighborhood] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.from("neighborhood_fees").select("*").order("name").then(({ data }) => {
-      if (data) setNeighborhoods(data);
-    });
-  }, []);
-
-  // Auto-load user's saved neighborhood from profile
-  useEffect(() => {
-    if (!user || profileLoaded || neighborhoods.length === 0) return;
-    if (neighborhood) {
-      setProfileLoaded(true);
-      return;
-    }
-
+    if (!user) return;
     supabase
       .from("profiles")
       .select("neighborhood")
       .eq("user_id", user.id)
       .maybeSingle()
       .then(({ data }) => {
-        if (data?.neighborhood) {
-          const found = neighborhoods.find((n) => n.name === data.neighborhood);
-          if (found) {
-            setNeighborhood(found.name, found.fee);
-          }
-        }
-        setProfileLoaded(true);
+        if (data?.neighborhood) setProfileNeighborhood(data.neighborhood);
       });
-  }, [user, neighborhoods, neighborhood, profileLoaded, setNeighborhood]);
+  }, [user]);
 
-  const urban = neighborhoods.filter((n) => n.fee <= 4);
-  const rural = neighborhoods.filter((n) => n.fee > 4);
+  const displayNeighborhood = neighborhood || profileNeighborhood;
 
   return (
     <header className="sticky top-0 z-50 bg-card border-b border-border">
@@ -60,67 +35,15 @@ const AppHeader = () => {
           <span className="text-lg font-black text-primary">Delivery</span>
         </div>
 
-        <div className="relative">
-          <button
-            onClick={() => setOpen(!open)}
-            className="flex items-center gap-1.5 text-sm bg-muted px-3 py-1.5 rounded-full"
-          >
-            <MapPin className="h-3.5 w-3.5 text-primary" />
-            <span className="font-semibold text-foreground max-w-[120px] truncate">
-              {neighborhood || "Selecionar bairro"}
-            </span>
-            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-          </button>
-
-          {open && (
-            <div className="absolute right-0 top-full mt-2 w-64 bg-card rounded-xl shadow-lg border border-border py-1 max-h-80 overflow-y-auto z-50">
-              {urban.length > 0 && (
-                <>
-                  <div className="px-4 py-2 text-xs font-bold text-primary uppercase tracking-wider bg-primary/5">
-                    Zona Urbana — R$ 4,00
-                  </div>
-                  {urban.map((n) => (
-                    <button
-                      key={n.id}
-                      onClick={() => {
-                        setNeighborhood(n.name, n.fee);
-                        setOpen(false);
-                      }}
-                      className={`w-full text-left px-4 py-2.5 text-sm hover:bg-muted transition-colors flex justify-between ${
-                        neighborhood === n.name ? "text-primary font-bold" : "text-foreground"
-                      }`}
-                    >
-                      <span>{n.name}</span>
-                      <span className="text-muted-foreground">R$ {n.fee.toFixed(2)}</span>
-                    </button>
-                  ))}
-                </>
-              )}
-              {rural.length > 0 && (
-                <>
-                  <div className="px-4 py-2 text-xs font-bold text-destructive uppercase tracking-wider bg-destructive/5 mt-1">
-                    Zona Rural / Afastados — R$ 12,00
-                  </div>
-                  {rural.map((n) => (
-                    <button
-                      key={n.id}
-                      onClick={() => {
-                        setNeighborhood(n.name, n.fee);
-                        setOpen(false);
-                      }}
-                      className={`w-full text-left px-4 py-2.5 text-sm hover:bg-muted transition-colors flex justify-between ${
-                        neighborhood === n.name ? "text-primary font-bold" : "text-foreground"
-                      }`}
-                    >
-                      <span>{n.name}</span>
-                      <span className="text-muted-foreground">R$ {n.fee.toFixed(2)}</span>
-                    </button>
-                  ))}
-                </>
-              )}
-            </div>
-          )}
-        </div>
+        <button
+          onClick={() => navigate(user ? "/perfil" : "/auth")}
+          className="flex items-center gap-1.5 text-sm bg-muted px-3 py-1.5 rounded-full"
+        >
+          <MapPin className="h-3.5 w-3.5 text-primary" />
+          <span className="font-semibold text-foreground max-w-[140px] truncate">
+            {displayNeighborhood || "Cadastre seu endereço"}
+          </span>
+        </button>
       </div>
     </header>
   );

@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 import { MapPin, Save, ArrowLeft, Search, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatCep, fetchCep } from "@/lib/cepLookup";
@@ -13,29 +14,28 @@ interface AddressModalProps {
 
 const AddressModal = ({ onClose, onSaved }: AddressModalProps) => {
   const { user } = useAuth();
+  const { setNeighborhood } = useCart();
   const [cep, setCep] = useState("");
   const [street, setStreet] = useState("");
   const [number, setNumber] = useState("");
   const [complement, setComplement] = useState("");
   const [referencePoint, setReferencePoint] = useState("");
-  const [neighborhood, setNeighborhood] = useState("");
+  const [neighborhood, setNeighborhoodLocal] = useState("");
   const [phone, setPhone] = useState("");
   const [saving, setSaving] = useState(false);
   const [loadingCep, setLoadingCep] = useState(false);
 
-  const { data: neighborhoods } = useQuery({
+  const { data: neighborhoodFees } = useQuery({
     queryKey: ["neighborhoods"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("neighborhood_fees").select("*").order("name");
-      if (error) throw error;
-      return data;
+      const { data } = await supabase.from("neighborhood_fees").select("*").order("name");
+      return data || [];
     },
   });
 
   const handleCepChange = (value: string) => {
     const formatted = formatCep(value);
     setCep(formatted);
-
     const digits = value.replace(/\D/g, "");
     if (digits.length === 8) {
       handleCepLookup(digits);
@@ -57,18 +57,8 @@ const AddressModal = ({ onClose, onSaved }: AddressModalProps) => {
       }
       setStreet(result.logradouro || "");
       if (result.complemento) setComplement(result.complemento);
-
-      // Try to match neighborhood from registered list
-      if (result.bairro && neighborhoods) {
-        const match = neighborhoods.find(
-          (n) => n.name.toLowerCase() === result.bairro.toLowerCase()
-        );
-        if (match) {
-          setNeighborhood(match.name);
-        } else {
-          setNeighborhood("");
-          toast.info(`Bairro "${result.bairro}" não está na área de entrega. Selecione manualmente.`);
-        }
+      if (result.bairro) {
+        setNeighborhoodLocal(result.bairro);
       }
       toast.success("Endereço preenchido pelo CEP!");
     } catch {
@@ -79,8 +69,8 @@ const AddressModal = ({ onClose, onSaved }: AddressModalProps) => {
   };
 
   const handleSave = async () => {
-    if (!street.trim() || !number.trim() || !neighborhood) {
-      toast.error("Preencha rua, número e bairro.");
+    if (!street.trim() || !number.trim() || !neighborhood.trim()) {
+      toast.error("Preencha rua, número e bairro (use o CEP).");
       return;
     }
     setSaving(true);
@@ -93,10 +83,19 @@ const AddressModal = ({ onClose, onSaved }: AddressModalProps) => {
           number: number.trim(),
           complement: complement.trim(),
           reference_point: referencePoint.trim(),
-          neighborhood,
+          neighborhood: neighborhood.trim(),
           phone: phone.trim(),
         } as any, { onConflict: "user_id" });
       if (error) throw error;
+
+      // Sync cart neighborhood fee
+      if (neighborhoodFees) {
+        const match = neighborhoodFees.find((n: any) => n.name.toLowerCase() === neighborhood.trim().toLowerCase());
+        if (match) {
+          setNeighborhood(match.name, match.fee);
+        }
+      }
+
       toast.success("Endereço salvo!");
       onSaved();
     } catch (err: any) {
@@ -119,7 +118,7 @@ const AddressModal = ({ onClose, onSaved }: AddressModalProps) => {
           </h2>
         </div>
         <p className="text-sm text-muted-foreground mb-4">
-          Digite seu CEP para preencher automaticamente ou preencha manualmente.
+          Digite seu CEP para preencher automaticamente o endereço e bairro.
         </p>
         <div className="space-y-3">
           {/* CEP field */}
@@ -153,13 +152,19 @@ const AddressModal = ({ onClose, onSaved }: AddressModalProps) => {
           </div>
           <input type="text" placeholder="Complemento" value={complement} onChange={(e) => setComplement(e.target.value)}
             className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
-          <select value={neighborhood} onChange={(e) => setNeighborhood(e.target.value)}
-            className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary appearance-none">
-            <option value="">Selecione o Bairro</option>
-            {neighborhoods?.map((n) => (
-              <option key={n.id} value={n.name}>{n.name}</option>
-            ))}
-          </select>
+          
+          {/* Bairro auto-preenchido pelo CEP */}
+          <div>
+            <label className="text-xs font-bold text-muted-foreground mb-1 block">Bairro (preenchido pelo CEP)</label>
+            <input
+              type="text"
+              placeholder="Digite o CEP acima para preencher"
+              value={neighborhood}
+              onChange={(e) => setNeighborhoodLocal(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
+
           <input type="text" placeholder="Ponto de referência" value={referencePoint} onChange={(e) => setReferencePoint(e.target.value)}
             className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
           <input type="tel" placeholder="Telefone / WhatsApp" value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel"
