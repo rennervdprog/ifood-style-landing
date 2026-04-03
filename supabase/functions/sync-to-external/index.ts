@@ -52,17 +52,28 @@ serve(async (req) => {
     const token = authHeader.replace("Bearer ", "");
     const isServiceRole = token === internalServiceKey;
 
-    if (!isServiceRole) {
-      const { data: { user }, error: authError } = await createClient(
-        internalUrl,
-        Deno.env.get("SUPABASE_ANON_KEY")!
-      ).auth.getUser(token);
+    // Also accept the SUPABASE_ANON_KEY secret stored in custom secrets
+    const storedServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const storedAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    const isKnownKey = isServiceRole || token === storedServiceKey;
 
-      if (authError || !user) return jsonRes({ error: "Unauthorized" }, 401);
+    if (!isKnownKey) {
+      // Try to validate as a user JWT (admin access)
+      try {
+        const anonKey = storedAnonKey || internalServiceKey;
+        const authClient = createClient(internalUrl, anonKey, {
+          global: { headers: { Authorization: `Bearer ${token}` } },
+        });
+        const { data: { user }, error: authError } = await authClient.auth.getUser();
 
-      // Check admin via RPC
-      const { data: isAdmin } = await internalClient.rpc("is_platform_admin", { _user_id: user.id });
-      if (!isAdmin) return jsonRes({ error: "Admin only" }, 403);
+        if (authError || !user) return jsonRes({ error: "Unauthorized" }, 401);
+
+        // Check admin via RPC
+        const { data: isAdmin } = await internalClient.rpc("is_platform_admin", { _user_id: user.id });
+        if (!isAdmin) return jsonRes({ error: "Admin only" }, 403);
+      } catch {
+        return jsonRes({ error: "Unauthorized" }, 401);
+      }
     }
 
     const body = await req.json();
