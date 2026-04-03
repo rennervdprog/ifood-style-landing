@@ -185,7 +185,7 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
               <button
                 onClick={() => updateHour(h.day_of_week, "is_closed_all_day", !h.is_closed_all_day)}
                 className={`relative w-12 h-6 rounded-full transition-colors flex-shrink-0 ${
-                  h.is_closed_all_day ? "bg-gray-600" : "bg-green-500"
+                  h.is_closed_all_day ? "bg-gray-600" : "bg-primary"
                 }`}
               >
                 <span

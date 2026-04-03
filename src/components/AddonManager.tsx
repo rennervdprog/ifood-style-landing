@@ -255,7 +255,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                           {(group.addon_items as any[])?.length || 0} itens
                         </span>
                         {linkedProducts.length > 0 && (
-                          <span className="text-xs bg-green-500/20 text-primary px-2 py-0.5 rounded-full font-bold">
+                          <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full font-bold">
                             🔗 {linkedProducts.length} produto{linkedProducts.length > 1 ? "s" : ""}
                           </span>
                         )}

@@ -465,7 +465,7 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
           className="w-full bg-secondary border border-gray-700 rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500"
         />
         {pixKey && (
-          <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-3 flex items-center gap-2">
+          <div className="bg-primary/10 border border-green-500/20 rounded-xl p-3 flex items-center gap-2">
             <Wallet className="h-4 w-4 text-primary flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="text-xs text-primary font-bold">Chave Pix cadastrada</p>
