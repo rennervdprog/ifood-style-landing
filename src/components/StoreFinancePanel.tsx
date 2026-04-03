@@ -534,7 +534,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
             <Button
               onClick={handleGenerateCommissionCharge}
               disabled={generatingCharge || isPixBlocked}
-              className="w-full mt-3 bg-red-500 hover:bg-red-600 text-white font-bold"
+              className="w-full mt-3 bg-red-500 hover:bg-red-600 text-foreground font-bold"
               size="lg"
             >
               {generatingCharge ? (
@@ -648,7 +648,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
                 <Button
                   onClick={handleSimulatePayment}
                   disabled={simulatingPayment}
-                  className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold"
+                  className="w-full bg-amber-500 hover:bg-amber-600 text-foreground font-bold"
                 >
                   {simulatingPayment ? (
                     <>
