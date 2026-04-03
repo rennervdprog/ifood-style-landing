@@ -2,7 +2,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart, type CartAddon } from "@/contexts/CartContext";
-import { ArrowLeft, Star, Clock, ChevronRight, MapPin, Search, X } from "lucide-react";
+import { ArrowLeft, Star, Clock, ChevronRight, MapPin, Search, X, Navigation, CreditCard, Banknote, Smartphone, QrCode } from "lucide-react";
 import { toast } from "sonner";
 import { useRef, useState, useEffect } from "react";
 import CartFAB from "@/components/CartFAB";
@@ -261,17 +261,82 @@ const StorePage = () => {
             </span>
           </div>
 
-          {/* Store meta info */}
+          {/* Address + Maps button */}
           {store?.address_neighborhood && (
             <div className="mt-3 pt-3 border-t border-border flex items-center gap-2 text-muted-foreground">
               <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
-              <span className="text-xs truncate">
+              <span className="text-xs truncate flex-1">
                 {[store.address_street, store.address_number, store.address_neighborhood, store.address_city]
                   .filter(Boolean)
                   .join(", ")}
               </span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const addr = encodeURIComponent(
+                    [store.address_street, store.address_number, store.address_neighborhood, store.address_city, store.address_state]
+                      .filter(Boolean)
+                      .join(", ")
+                  );
+                  window.open(`https://www.google.com/maps/search/?api=1&query=${addr}`, "_blank");
+                }}
+                className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-full text-[10px] font-bold hover:bg-primary/20 transition-colors flex-shrink-0"
+              >
+                <Navigation className="h-3 w-3" />
+                Maps
+              </button>
             </div>
           )}
+
+          {/* Opening Hours */}
+          {storeHours && storeHours.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-border">
+              <div className="flex items-center gap-1.5 mb-2">
+                <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-xs font-bold text-foreground">Horários de funcionamento</span>
+              </div>
+              <div className="grid grid-cols-1 gap-0.5">
+                {[0, 1, 2, 3, 4, 5, 6].map(day => {
+                  const dayNames = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+                  const h = storeHours.find((hr: any) => hr.day_of_week === day);
+                  const now = new Date();
+                  const isToday = now.getDay() === day;
+                  return (
+                    <div key={day} className={`flex items-center justify-between px-2 py-1 rounded-md text-xs ${isToday ? "bg-primary/5 font-bold" : ""}`}>
+                      <span className={`${isToday ? "text-primary" : "text-muted-foreground"} w-8`}>{dayNames[day]}</span>
+                      {h && !h.is_closed_all_day ? (
+                        <span className={isToday ? "text-foreground" : "text-muted-foreground"}>
+                          {String(h.open_time).slice(0, 5)} - {String(h.close_time).slice(0, 5)}
+                        </span>
+                      ) : (
+                        <span className="text-destructive/70">Fechado</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Payment Methods */}
+          <div className="mt-3 pt-3 border-t border-border">
+            <div className="flex items-center gap-1.5 mb-2">
+              <CreditCard className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-xs font-bold text-foreground">Formas de pagamento</span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { icon: QrCode, label: "Pix" },
+                { icon: Banknote, label: "Dinheiro" },
+                { icon: CreditCard, label: "Cartão na entrega" },
+              ].map(pm => (
+                <span key={pm.label} className="flex items-center gap-1 bg-muted px-2.5 py-1 rounded-full text-[10px] font-medium text-muted-foreground">
+                  <pm.icon className="h-3 w-3" />
+                  {pm.label}
+                </span>
+              ))}
+            </div>
+          </div>
 
           {/* Stats row */}
           <div className="mt-3 pt-3 border-t border-border flex items-center gap-4">
