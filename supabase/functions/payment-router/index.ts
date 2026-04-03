@@ -263,6 +263,76 @@ async function createAsaasPix(params: {
   }
 }
 
+// ── Provider: Asaas Transfer (Payout) ────────────────────────────────
+
+async function createAsaasTransfer(params: {
+  amount: number;
+  pixKey: string;
+  pixType: string;
+  description: string;
+}): Promise<{ ok: boolean; data: any; status: number }> {
+  const apiKey = Deno.env.get("ASAAS_API_KEY");
+  if (!apiKey) {
+    return { ok: false, data: { message: "ASAAS_API_KEY não configurado." }, status: 500 };
+  }
+
+  const baseUrl = apiKey.startsWith("$aact_")
+    ? "https://api.asaas.com/v3"
+    : "https://sandbox.asaas.com/api/v3";
+
+  // Map pix_type to Asaas pixAddressKeyType
+  const pixTypeMap: Record<string, string> = {
+    cpf: "CPF",
+    cnpj: "CNPJ",
+    email: "EMAIL",
+    phone: "PHONE",
+    random: "EVP",
+  };
+
+  const transferBody = {
+    value: params.amount,
+    operationType: "PIX",
+    pixAddressKey: params.pixKey,
+    pixAddressKeyType: pixTypeMap[params.pixType] || "CPF",
+    description: params.description.substring(0, 140),
+  };
+
+  try {
+    console.log("Asaas creating transfer...", JSON.stringify({ amount: params.amount, pixType: params.pixType }));
+    const res = await fetch(`${baseUrl}/transfers`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "access_token": apiKey,
+      },
+      body: JSON.stringify(transferBody),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.error("Asaas transfer error:", res.status, JSON.stringify(data));
+      const errorMsg = data?.errors?.[0]?.description || data?.message || `Erro Asaas: ${res.status}`;
+      return { ok: false, data: { message: errorMsg }, status: res.status };
+    }
+
+    console.log("Asaas transfer created:", data.id, "status:", data.status);
+    return {
+      ok: true,
+      data: {
+        transfer_id: data.id,
+        status: data.status,
+        value: data.value,
+        operationType: data.operationType,
+      },
+      status: 200,
+    };
+  } catch (err) {
+    console.error("Asaas transfer exception:", err);
+    return { ok: false, data: { message: "Erro interno ao processar transferência Asaas." }, status: 500 };
+  }
+}
+
 // ── Provider: Efí Bank (Full mTLS Implementation) ────────────────────
 
 function getEfiHttpClient(): Deno.HttpClient | null {
