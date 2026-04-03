@@ -92,6 +92,8 @@ const CheckoutPage = () => {
   const storeCep = (storeData as any)?.address_cep;
   const config = deliveryFeeConfig || DEFAULT_DELIVERY_FEE_CONFIG;
   const activeDeliveryFee = calculatedDeliveryFee !== null ? calculatedDeliveryFee : config.city_fee;
+  const effectiveDeliveryFee = couponType === "free_shipping" ? 0 : activeDeliveryFee;
+  const finalTotal = Math.max(0, subtotal - couponDiscount + effectiveDeliveryFee);
 
   // Calculate delivery fee based on CEP - uses saved address CEP when selected, otherwise profile CEP
   useEffect(() => {
