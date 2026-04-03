@@ -52,6 +52,32 @@ async function geocodeCep(cep: string): Promise<{ lat: number; lng: number } | n
         lng: data.location.coordinates.longitude,
       };
     }
+    // BrasilAPI didn't return coordinates, try geocoding by city name
+    if (data.city) {
+      return geocodeByCity(data.city, data.state || "SP");
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+// Fallback geocoding using Nominatim (OpenStreetMap) by city name
+async function geocodeByCity(city: string, state: string): Promise<{ lat: number; lng: number } | null> {
+  try {
+    const query = encodeURIComponent(`${city}, ${state}, Brazil`);
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`,
+      { headers: { "User-Agent": "LovableDeliveryApp/1.0" } }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.length > 0 && data[0].lat && data[0].lon) {
+      return {
+        lat: parseFloat(data[0].lat),
+        lng: parseFloat(data[0].lon),
+      };
+    }
     return null;
   } catch {
     return null;
