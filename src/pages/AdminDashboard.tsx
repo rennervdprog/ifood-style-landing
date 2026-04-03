@@ -663,7 +663,17 @@ const AdminDashboard = () => {
 
                 {/* ── Settlement Code ── */}
                 {["dinheiro", "cartao"].includes(order.payment_method) && (order as any).settlement_code && ["entregue", "finalizado"].includes(order.status) && !(order as any).return_to_store_confirmed && (
-                  <div className="mx-3 mb-2 bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
+                  <div className="mx-3 mb-2 bg-amber-500/10 border border-amber-500/30 rounded-xl p-3">
+                    {/* Driver identification for settlement */}
+                    {order.driver_id && (
+                      <div className="flex items-center gap-2 mb-2 pb-2 border-b border-amber-500/20">
+                        <Bike className="h-4 w-4 text-amber-400" />
+                        <span className="text-sm font-bold text-amber-300">🏍️ {getDriverName(order.driver_id)}</span>
+                        <span className="ml-auto text-[10px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full font-bold">
+                          #{order.id.slice(0, 8).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex items-center justify-between mb-1">
                       <p className="text-[10px] font-bold text-amber-400">🔑 Código de Acerto</p>
                       <button
