@@ -93,6 +93,7 @@ const CheckoutPage = () => {
   const hasAddress = !!profileStreet && !!profileNumber && !!profileNeighborhood;
   const storeCep = (storeData as any)?.address_cep;
   const config = deliveryFeeConfig || DEFAULT_DELIVERY_FEE_CONFIG;
+  const activeDeliveryFee = calculatedDeliveryFee !== null ? calculatedDeliveryFee : config.city_fee;
 
   // Calculate delivery fee based on CEP - uses saved address CEP when selected, otherwise profile CEP
   useEffect(() => {
