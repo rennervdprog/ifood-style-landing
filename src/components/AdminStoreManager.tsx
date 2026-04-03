@@ -65,19 +65,19 @@ const AdminStoreManager = () => {
     switch (status) {
       case "ativo":
         return (
-          <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-xs font-bold rounded-full flex items-center gap-1">
+          <span className="px-2 py-0.5 bg-green-500/20 text-green-600 text-xs font-bold rounded-full flex items-center gap-1">
             <CheckCircle2 className="h-3 w-3" /> Ativa
           </span>
         );
       case "analise":
         return (
-          <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-400 text-xs font-bold rounded-full flex items-center gap-1">
+          <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-600 text-xs font-bold rounded-full flex items-center gap-1">
             <Clock className="h-3 w-3" /> Pendente
           </span>
         );
       case "bloqueado":
         return (
-          <span className="px-2 py-0.5 bg-red-500/20 text-red-400 text-xs font-bold rounded-full flex items-center gap-1">
+          <span className="px-2 py-0.5 bg-red-500/20 text-red-600 text-xs font-bold rounded-full flex items-center gap-1">
             <XCircle className="h-3 w-3" /> Bloqueada
           </span>
         );
@@ -104,15 +104,15 @@ const AdminStoreManager = () => {
     <div className="space-y-4">
       {/* Filters */}
       <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar pb-1">
-        <Filter className="h-4 w-4 text-gray-400 shrink-0" />
+        <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
         {filters.map((f) => (
           <button
             key={f.key}
             onClick={() => setFilter(f.key)}
             className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${
               filter === f.key
-                ? "bg-yellow-500 text-gray-900"
-                : "bg-[#1E293B] text-gray-400"
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground"
             }`}
           >
             {f.label}
@@ -124,7 +124,7 @@ const AdminStoreManager = () => {
       {isLoading ? (
         <div className="space-y-2">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-20 bg-gray-800 rounded-xl animate-pulse" />
+            <div key={i} className="h-20 bg-muted rounded-xl animate-pulse" />
           ))}
         </div>
       ) : filtered && filtered.length > 0 ? (
@@ -132,7 +132,7 @@ const AdminStoreManager = () => {
           {filtered.map((store) => (
             <div
               key={store.id}
-              className="bg-[#0F172A] rounded-xl p-4 flex items-center justify-between border border-gray-800"
+              className="bg-card rounded-xl p-4 flex items-center justify-between border border-border"
             >
               <div className="flex items-center gap-3 min-w-0 flex-1">
                 {store.image_url ? (
@@ -142,20 +142,20 @@ const AdminStoreManager = () => {
                     className="w-10 h-10 rounded-lg object-cover shrink-0"
                   />
                 ) : (
-                  <div className="w-10 h-10 rounded-lg bg-gray-700 flex items-center justify-center shrink-0">
-                    <Store className="h-5 w-5 text-gray-400" />
+                  <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                    <Store className="h-5 w-5 text-muted-foreground" />
                   </div>
                 )}
                 <div className="min-w-0">
-                  <p className="text-sm font-bold text-white truncate">{store.name}</p>
-                  <p className="text-xs text-gray-400 capitalize">{store.category}</p>
+                  <p className="text-sm font-bold text-foreground truncate">{store.name}</p>
+                  <p className="text-xs text-muted-foreground capitalize">{store.category}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2 ml-2 shrink-0">
                 {statusBadge(store.status)}
                 <button
                   onClick={() => setDeleteTarget({ id: store.id, name: store.name })}
-                  className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 active:scale-95 transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
+                  className="p-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 active:scale-95 transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
                   title="Excluir loja"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -165,32 +165,32 @@ const AdminStoreManager = () => {
           ))}
         </div>
       ) : (
-        <p className="text-sm text-gray-500 text-center py-8">
+        <p className="text-sm text-muted-foreground text-center py-8">
           Nenhuma loja encontrada com este filtro.
         </p>
       )}
 
       {/* Delete confirmation dialog */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <AlertDialogContent className="bg-[#1E293B] border-gray-700 text-white max-w-sm mx-4">
+        <AlertDialogContent className="bg-card border-border max-w-sm mx-4">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-red-400 flex items-center gap-2">
+            <AlertDialogTitle className="text-destructive flex items-center gap-2">
               <Trash2 className="h-5 w-5" />
               Excluir Loja
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-gray-300">
-              Tem certeza que deseja excluir <strong className="text-white">{deleteTarget?.name}</strong>?
+            <AlertDialogDescription className="text-muted-foreground">
+              Tem certeza que deseja excluir <strong className="text-foreground">{deleteTarget?.name}</strong>?
               Esta ação é irreversível e removerá todos os produtos, cardápio e horários vinculados.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2">
-            <AlertDialogCancel className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600">
+            <AlertDialogCancel className="bg-muted text-foreground border-border hover:bg-muted/80">
               Cancelar
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={deleting}
-              className="bg-red-500 hover:bg-red-600 text-white font-bold"
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground font-bold"
             >
               {deleting ? "Excluindo..." : "Excluir Definitivamente"}
             </AlertDialogAction>
