@@ -35,9 +35,16 @@ interface StoreSettingsProps {
   storeIsOpen: boolean;
   forceClosed: boolean;
   storeSlug?: string | null;
+  storeAddressStreet?: string | null;
+  storeAddressNumber?: string | null;
+  storeAddressComplement?: string | null;
+  storeAddressNeighborhood?: string | null;
+  storeAddressReference?: string | null;
+  storeAddressCity?: string | null;
+  storeAddressState?: string | null;
 }
 
-const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, storeIsOpen, forceClosed, storeSlug }: StoreSettingsProps) => {
+const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, storeIsOpen, forceClosed, storeSlug, storeAddressStreet, storeAddressNumber, storeAddressComplement, storeAddressNeighborhood, storeAddressReference, storeAddressCity, storeAddressState }: StoreSettingsProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -48,6 +55,13 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
   const [imageUrl, setImageUrl] = useState(storeImageUrl || "");
   const [pixKey, setPixKey] = useState("");
   const [pixType, setPixType] = useState("cpf");
+  const [addressStreet, setAddressStreet] = useState(storeAddressStreet || "");
+  const [addressNumber, setAddressNumber] = useState(storeAddressNumber || "");
+  const [addressComplement, setAddressComplement] = useState(storeAddressComplement || "");
+  const [addressNeighborhood, setAddressNeighborhood] = useState(storeAddressNeighborhood || "");
+  const [addressReference, setAddressReference] = useState(storeAddressReference || "");
+  const [addressCity, setAddressCity] = useState(storeAddressCity || "Itatinga");
+  const [addressState, setAddressState] = useState(storeAddressState || "SP");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
 
@@ -127,6 +141,13 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
         category: category as any,
         image_url: imageUrl || null,
         slug: cleanSlug || null,
+        address_street: addressStreet.trim() || null,
+        address_number: addressNumber.trim() || null,
+        address_complement: addressComplement.trim() || null,
+        address_neighborhood: addressNeighborhood.trim() || null,
+        address_reference: addressReference.trim() || null,
+        address_city: addressCity.trim() || "Itatinga",
+        address_state: addressState.trim() || "SP",
       } as any)
       .eq("id", storeId);
 
@@ -274,7 +295,92 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
         <p className="text-[10px] text-gray-500">Compartilhe esse link para clientes acessarem direto seu cardápio.</p>
       </div>
 
-      {/* PIX Key for Receiving Payouts */}
+      {/* Store Address */}
+      <div className="space-y-3">
+        <label className="text-sm font-bold text-muted-foreground flex items-center gap-2">
+          <MapPin className="h-4 w-4 text-primary" />
+          Endereço da Loja
+        </label>
+        <p className="text-[10px] text-muted-foreground -mt-1">
+          Endereço físico para entregadores navegarem até sua loja.
+        </p>
+        <div className="grid grid-cols-3 gap-2">
+          <div className="col-span-2">
+            <input
+              type="text"
+              value={addressStreet}
+              onChange={(e) => setAddressStreet(e.target.value)}
+              placeholder="Rua / Avenida"
+              maxLength={200}
+              className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary placeholder:text-muted-foreground"
+            />
+          </div>
+          <input
+            type="text"
+            value={addressNumber}
+            onChange={(e) => setAddressNumber(e.target.value)}
+            placeholder="Nº"
+            inputMode="numeric"
+            maxLength={10}
+            className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary placeholder:text-muted-foreground"
+          />
+        </div>
+        <input
+          type="text"
+          value={addressComplement}
+          onChange={(e) => setAddressComplement(e.target.value)}
+          placeholder="Complemento (opcional)"
+          maxLength={100}
+          className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary placeholder:text-muted-foreground"
+        />
+        <input
+          type="text"
+          value={addressNeighborhood}
+          onChange={(e) => setAddressNeighborhood(e.target.value)}
+          placeholder="Bairro"
+          maxLength={100}
+          className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary placeholder:text-muted-foreground"
+        />
+        <input
+          type="text"
+          value={addressReference}
+          onChange={(e) => setAddressReference(e.target.value)}
+          placeholder="Ponto de referência (opcional)"
+          maxLength={200}
+          className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary placeholder:text-muted-foreground"
+        />
+        <div className="grid grid-cols-2 gap-2">
+          <input
+            type="text"
+            value={addressCity}
+            onChange={(e) => setAddressCity(e.target.value)}
+            placeholder="Cidade"
+            maxLength={100}
+            className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary placeholder:text-muted-foreground"
+          />
+          <input
+            type="text"
+            value={addressState}
+            onChange={(e) => setAddressState(e.target.value.toUpperCase().slice(0, 2))}
+            placeholder="UF"
+            maxLength={2}
+            className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary placeholder:text-muted-foreground"
+          />
+        </div>
+        {addressStreet && addressNumber && (
+          <div className="bg-primary/10 border border-primary/30 rounded-xl p-3 flex items-start gap-2">
+            <MapPin className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-primary font-bold">Endereço cadastrado</p>
+              <p className="text-xs text-muted-foreground">
+                {addressStreet}, {addressNumber}{addressComplement ? ` - ${addressComplement}` : ""} — {addressNeighborhood || "Sem bairro"}, {addressCity}/{addressState}
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
+
       <div className="space-y-3">
         <label className="text-sm font-bold text-gray-300 flex items-center gap-2">
           <Wallet className="h-4 w-4 text-green-400" />
