@@ -10,7 +10,7 @@ import {
   MapPin, Package, Settings, Banknote, CreditCard,
   UtensilsCrossed, ListOrdered, Plus, Printer, Bike,
   Volume2, VolumeX, Bell, Store, MessageCircle, Copy, Coins,
-  ChevronDown, ChevronUp, DollarSign, XCircle, Loader2
+  ChevronDown, ChevronUp, DollarSign, XCircle, Loader2, Search
 } from "lucide-react";
 import { openWhatsApp } from "@/lib/whatsapp";
 import WhatsAppButton from "@/components/WhatsAppButton";
@@ -66,6 +66,7 @@ const AdminDashboard = () => {
   const [soundMuted, setSoundMuted] = useState(false);
   const [showSoundPrompt, setShowSoundPrompt] = useState(true);
   const [expandedAddresses, setExpandedAddresses] = useState<Set<string>>(new Set());
+  const [settlementSearch, setSettlementSearch] = useState("");
 
   const prevPendingCountRef = useRef(0);
 
@@ -291,7 +292,14 @@ const AdminDashboard = () => {
     }
   };
 
-  const filteredOrders = orders?.filter(o => o.status === activeTab) || [];
+  const filteredOrders = (orders?.filter(o => o.status === activeTab) || []).filter(o => {
+    if (activeTab !== "entregue" || !settlementSearch.trim()) return true;
+    const search = settlementSearch.toLowerCase().trim();
+    const orderId = o.id.slice(0, 8).toLowerCase();
+    const driverName = o.driver_id ? getDriverName(o.driver_id).toLowerCase() : "";
+    const clientName = getClientName(o.client_id).toLowerCase();
+    return orderId.includes(search) || driverName.includes(search) || clientName.includes(search);
+  });
   const pendingCount = orders?.filter(o => o.status === "pendente").length || 0;
 
   const getMainAction = (status: OrderStatus): { label: string; next: OrderStatus; emoji: string } | null => {
@@ -501,6 +509,27 @@ const AdminDashboard = () => {
         </div>
       </nav>
 
+      {/* ── SETTLEMENT SEARCH BAR ── */}
+      {activeTab === "entregue" && (orders?.filter(o => o.status === "entregue").length || 0) > 1 && (
+        <div className="px-3 pt-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+            <input
+              type="text"
+              value={settlementSearch}
+              onChange={e => setSettlementSearch(e.target.value)}
+              placeholder="Buscar por ID do pedido, entregador ou cliente..."
+              className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-gray-700 bg-[#1F2937] text-white placeholder:text-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+            />
+            {settlementSearch && (
+              <button onClick={() => setSettlementSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white">
+                <XCircle className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* ── ORDER CARDS ── */}
       <div className="flex-1 px-3 py-3 pb-24 space-y-3 overflow-y-auto">
         {isLoading ? (
@@ -634,7 +663,17 @@ const AdminDashboard = () => {
 
                 {/* ── Settlement Code ── */}
                 {["dinheiro", "cartao"].includes(order.payment_method) && (order as any).settlement_code && ["entregue", "finalizado"].includes(order.status) && !(order as any).return_to_store_confirmed && (
-                  <div className="mx-3 mb-2 bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
+                  <div className="mx-3 mb-2 bg-amber-500/10 border border-amber-500/30 rounded-xl p-3">
+                    {/* Driver identification for settlement */}
+                    {order.driver_id && (
+                      <div className="flex items-center gap-2 mb-2 pb-2 border-b border-amber-500/20">
+                        <Bike className="h-4 w-4 text-amber-400" />
+                        <span className="text-sm font-bold text-amber-300">🏍️ {getDriverName(order.driver_id)}</span>
+                        <span className="ml-auto text-[10px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full font-bold">
+                          #{order.id.slice(0, 8).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex items-center justify-between mb-1">
                       <p className="text-[10px] font-bold text-amber-400">🔑 Código de Acerto</p>
                       <button
