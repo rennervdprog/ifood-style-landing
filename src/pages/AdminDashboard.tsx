@@ -26,7 +26,7 @@ import { printThermalReceipt } from "@/lib/thermalPrint";
 import { requestNotificationPermission, notifyNewOrder } from "@/lib/notifications";
 
 type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_entrega" | "em_transito" | "entregue" | "finalizado";
-type DashboardTab = "dashboard" | "orders" | "menu" | "addons" | "hours" | "settings" | "finance" | "clients";
+type DashboardTab = "dashboard" | "orders" | "menu" | "addons" | "hours" | "settings" | "finance" | "clients" | "reports";
 
 const ALERT_SOUND_URL = "https://actions.google.com/sounds/v1/alarms/beep_short.ogg";
 const CASH_REGISTER_SOUND_URL = "https://actions.google.com/sounds/v1/office/cash_register.ogg";
@@ -64,6 +64,7 @@ const sidebarItems: { key: DashboardTab; label: string; icon: React.ElementType 
   { key: "addons", label: "Adicionais", icon: Plus },
   { key: "hours", label: "Horários", icon: Clock },
   { key: "finance", label: "Finanças", icon: Coins },
+  { key: "reports", label: "Relatórios", icon: BarChart3 },
   { key: "settings", label: "Configurações", icon: Settings },
 ];
 
@@ -1148,6 +1149,112 @@ const AdminDashboard = () => {
                   storeAddressCep={(store as any).address_cep || null} />
               )}
               {dashboardTab === "finance" && <StoreFinancePanel storeId={store.id} storeName={store.name} />}
+              {dashboardTab === "reports" && (
+                <div className="space-y-6">
+                  <h3 className="text-lg font-bold text-foreground">Relatórios de Vendas</h3>
+                  {(() => {
+                    const last7Days = Array.from({ length: 7 }, (_, i) => {
+                      const d = new Date(); d.setDate(d.getDate() - (6 - i));
+                      return d.toISOString().split("T")[0];
+                    });
+                    const dailyData = last7Days.map(date => {
+                      const dayOrders = (allOrders || []).filter((o: any) => 
+                        new Date(o.created_at).toISOString().split("T")[0] === date && !["cancelado", "aguardando_pagamento"].includes(o.status)
+                      );
+                      return {
+                        day: new Date(date).toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit" }),
+                        vendas: dayOrders.reduce((s: number, o: any) => s + Number(o.total_price), 0),
+                        pedidos: dayOrders.length,
+                      };
+                    });
+                    const topProducts = new Map<string, number>();
+                    (allOrders || []).forEach((o: any) => {
+                      if (["cancelado", "aguardando_pagamento"].includes(o.status)) return;
+                      o.order_items?.forEach((item: any) => {
+                        const name = item.products?.name || "Item";
+                        topProducts.set(name, (topProducts.get(name) || 0) + item.quantity);
+                      });
+                    });
+                    const sortedProducts = Array.from(topProducts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 10);
+                    const totalRevenue = dailyData.reduce((s, d) => s + d.vendas, 0);
+                    const totalOrders = dailyData.reduce((s, d) => s + d.pedidos, 0);
+                    const avgTicket = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+                    const exportCSV = () => {
+                      const lines = ["Data,Vendas,Pedidos", ...dailyData.map(d => `${d.day},${d.vendas.toFixed(2)},${d.pedidos}`)];
+                      const blob = new Blob([lines.join("\n")], { type: "text/csv" });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement("a"); a.href = url; a.download = `relatorio-vendas-${store?.name || "loja"}.csv`; a.click();
+                      URL.revokeObjectURL(url);
+                      toast.success("CSV exportado!");
+                    };
+
+                    return (
+                      <>
+                        <div className="grid grid-cols-3 gap-3">
+                          <div className="bg-card border border-border rounded-2xl p-4 text-center">
+                            <p className="text-2xl font-black text-emerald-500">R$ {totalRevenue.toFixed(0)}</p>
+                            <p className="text-[10px] text-muted-foreground">Últimos 7 dias</p>
+                          </div>
+                          <div className="bg-card border border-border rounded-2xl p-4 text-center">
+                            <p className="text-2xl font-black text-foreground">{totalOrders}</p>
+                            <p className="text-[10px] text-muted-foreground">Pedidos</p>
+                          </div>
+                          <div className="bg-card border border-border rounded-2xl p-4 text-center">
+                            <p className="text-2xl font-black text-primary">R$ {avgTicket.toFixed(0)}</p>
+                            <p className="text-[10px] text-muted-foreground">Ticket Médio</p>
+                          </div>
+                        </div>
+
+                        <div className="bg-card border border-border rounded-2xl p-4">
+                          <h4 className="text-sm font-bold text-foreground mb-3">Vendas por Dia</h4>
+                          <div className="flex items-end gap-2 h-32">
+                            {dailyData.map((d, i) => {
+                              const max = Math.max(...dailyData.map(x => x.vendas), 1);
+                              const height = (d.vendas / max) * 100;
+                              return (
+                                <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                                  <span className="text-[9px] text-muted-foreground font-bold">R${d.vendas.toFixed(0)}</span>
+                                  <div className="w-full rounded-t-lg bg-primary/80 transition-all" style={{ height: `${Math.max(height, 4)}%` }} />
+                                  <span className="text-[9px] text-muted-foreground">{d.day}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        <div className="bg-card border border-border rounded-2xl p-4">
+                          <h4 className="text-sm font-bold text-foreground mb-3">Produtos Mais Vendidos</h4>
+                          <div className="space-y-2">
+                            {sortedProducts.map(([name, qty], i) => {
+                              const max = sortedProducts[0]?.[1] || 1;
+                              return (
+                                <div key={name} className="flex items-center gap-3">
+                                  <span className="text-xs font-bold text-muted-foreground w-5">{i + 1}.</span>
+                                  <div className="flex-1">
+                                    <div className="flex justify-between text-xs mb-0.5">
+                                      <span className="font-bold text-foreground">{name}</span>
+                                      <span className="text-muted-foreground">{qty}x</span>
+                                    </div>
+                                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                                      <div className="h-full bg-primary rounded-full" style={{ width: `${(qty / max) * 100}%` }} />
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                            {sortedProducts.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">Sem dados ainda</p>}
+                          </div>
+                        </div>
+
+                        <button onClick={exportCSV} className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-xl text-sm">
+                          📊 Exportar CSV
+                        </button>
+                      </>
+                    );
+                  })()}
+                </div>
+              )}
             </div>
           )}
         </div>

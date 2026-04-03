@@ -4,21 +4,51 @@ interface DeliveryTimeEstimateProps {
   status: string;
   createdAt: string;
   confirmedAt?: string | null;
+  pendingOrdersCount?: number;
+  distanceKm?: number;
 }
 
-const getEstimateMinutes = (status: string): { min: number; max: number } | null => {
+const getEstimateMinutes = (
+  status: string,
+  pendingCount: number = 0,
+  distanceKm: number = 0
+): { min: number; max: number } | null => {
+  // Base times per status
+  let base: { min: number; max: number } | null = null;
+  
   switch (status) {
-    case "pendente": return { min: 30, max: 50 };
-    case "preparando": return { min: 20, max: 40 };
-    case "pronto_para_entrega": return { min: 10, max: 25 };
+    case "pendente": base = { min: 30, max: 50 }; break;
+    case "preparando": base = { min: 20, max: 40 }; break;
+    case "pronto_para_entrega": base = { min: 10, max: 25 }; break;
     case "em_transito":
-    case "saiu_entrega": return { min: 5, max: 15 };
+    case "saiu_entrega": base = { min: 5, max: 15 }; break;
     default: return null;
   }
+
+  if (!base) return null;
+
+  // Dynamic adjustment: +5 min per pending order ahead
+  const queueDelay = Math.min(pendingCount * 5, 30);
+  
+  // Dynamic adjustment: +2 min per km for delivery status
+  const distanceDelay = (status === "em_transito" || status === "saiu_entrega")
+    ? Math.round(distanceKm * 2)
+    : 0;
+
+  return {
+    min: base.min + queueDelay + distanceDelay,
+    max: base.max + queueDelay + distanceDelay,
+  };
 };
 
-const DeliveryTimeEstimate = ({ status, createdAt, confirmedAt }: DeliveryTimeEstimateProps) => {
-  const estimate = getEstimateMinutes(status);
+const DeliveryTimeEstimate = ({
+  status,
+  createdAt,
+  confirmedAt,
+  pendingOrdersCount = 0,
+  distanceKm = 0,
+}: DeliveryTimeEstimateProps) => {
+  const estimate = getEstimateMinutes(status, pendingOrdersCount, distanceKm);
   if (!estimate) return null;
 
   const baseTime = confirmedAt || createdAt;
