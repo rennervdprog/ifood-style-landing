@@ -293,6 +293,42 @@ const CheckoutPage = () => {
             />
           </div>
 
+          {/* Selected saved address - show fee info */}
+          {selectedSavedAddressId && savedAddressData && (
+            <div className="bg-card rounded-xl border border-primary/30 p-3 space-y-1">
+              <p className="text-sm font-bold text-foreground">
+                {savedAddressData.street}, {savedAddressData.number}
+                {savedAddressData.complement ? ` - ${savedAddressData.complement}` : ""}
+              </p>
+              <p className="text-sm text-foreground">{savedAddressData.neighborhood}</p>
+              {savedAddressData.reference_point && (
+                <p className="text-xs text-muted-foreground">📍 Ref: {savedAddressData.reference_point}</p>
+              )}
+              <div className="flex items-center justify-between pt-1">
+                {calculatingFee ? (
+                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Calculando taxa...
+                  </span>
+                ) : (
+                  <div>
+                    <span className="text-xs font-bold text-primary">
+                      Taxa de entrega: R$ {activeDeliveryFee.toFixed(2)}
+                    </span>
+                    {feeBreakdown && (
+                      <p className="text-[10px] text-muted-foreground">{feeBreakdown}</p>
+                    )}
+                  </div>
+                )}
+                <button
+                  onClick={() => { setSelectedSavedAddressId(null); setSavedAddressData(null); }}
+                  className="text-xs text-primary flex items-center gap-1 hover:underline"
+                >
+                  Usar perfil
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Fallback to profile address */}
           {!selectedSavedAddressId && hasAddress ? (
             <div className="bg-card rounded-xl border border-border p-3 space-y-1">
