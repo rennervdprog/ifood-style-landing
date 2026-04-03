@@ -625,7 +625,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
               {chargeResult.qr_code_base64 && (
                 <div className="flex justify-center">
                   <img
-                    src={`data:image/png;base64,${chargeResult.qr_code_base64}`}
+                    src={chargeResult.qr_code_base64!.startsWith("data:") ? chargeResult.qr_code_base64! : `data:image/png;base64,${chargeResult.qr_code_base64}`}
                     alt="QR Code PIX"
                     className="w-48 h-48 rounded-xl"
                   />

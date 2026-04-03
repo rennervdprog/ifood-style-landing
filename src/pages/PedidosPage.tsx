@@ -578,7 +578,7 @@ const PedidosPage = () => {
                 {pixModal.qrCodeBase64 && (
                   <div className="flex justify-center">
                     <img
-                      src={`data:image/png;base64,${pixModal.qrCodeBase64}`}
+                      src={pixModal.qrCodeBase64.startsWith("data:") ? pixModal.qrCodeBase64 : `data:image/png;base64,${pixModal.qrCodeBase64}`}
                       alt="QR Code PIX"
                       className="w-56 h-56 rounded-xl border border-border"
                     />
