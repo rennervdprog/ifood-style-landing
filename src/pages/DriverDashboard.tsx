@@ -864,7 +864,7 @@ const DriverDashboard = () => {
                 </div>
               )}
 
-              {!myDelivery && (
+              {!myDelivery && !pendingReturn && (
                 <>
                   <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Entregas disponíveis</h2>
                   {loadingAvailable ? (
