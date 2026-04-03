@@ -217,12 +217,25 @@ const PerfilPage = () => {
     }
   };
 
-  // Compute selected neighborhood fee
-  const selectedFee = useMemo(() => {
-    if (!neighborhood || !neighborhoods) return null;
-    const found = neighborhoods.find((n) => n.name === neighborhood);
-    return found ? found.fee : null;
-  }, [neighborhood, neighborhoods]);
+  // Calculate delivery fee based on CEP using admin config
+  useEffect(() => {
+    const cepDigits = cep.replace(/\D/g, "");
+    if (cepDigits.length !== 8 || !deliveryFeeConfig) {
+      setCalculatedFee(null);
+      setFeeBreakdown("");
+      return;
+    }
+    let cancelled = false;
+    calculateDeliveryFee(cepDigits, "", deliveryFeeConfig).then((result) => {
+      if (!cancelled) {
+        setCalculatedFee(result.fee);
+        setFeeBreakdown(result.breakdown);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [cep, deliveryFeeConfig]);
+
+  const selectedFee = calculatedFee;
 
   const handleSignOut = async () => {
     await signOut();
