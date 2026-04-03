@@ -205,7 +205,7 @@ const CheckoutPage = () => {
             needs_change: paymentMethod === "dinheiro" && needsChange,
             change_for: changeValue,
             status: orderStatus,
-            scheduled_for: scheduledFor || null,
+            
           } as any)
           .select("id")
           .single();
