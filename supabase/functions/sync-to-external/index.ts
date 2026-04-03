@@ -87,6 +87,15 @@ serve(async (req) => {
     if (action === "sync_record") {
       const { table, record, conflict_column } = payload || {};
       if (!table || !record) return jsonRes({ error: "Missing table or record" }, 400);
+
+      // Enrich profiles with email from auth.users
+      if (table === "profiles" && record.user_id && !record.email) {
+        try {
+          const { data: authData } = await internalClient.auth.admin.getUserById(record.user_id);
+          if (authData?.user?.email) record.email = authData.user.email;
+        } catch (_) { /* skip */ }
+      }
+
       const { error } = await externalClient
         .from(table)
         .upsert(record, { onConflict: conflict_column || "id" });
