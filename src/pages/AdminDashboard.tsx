@@ -586,16 +586,32 @@ const AdminDashboard = () => {
                 </div>
 
                 {/* ── Driver status badges ── */}
+                {order.status === "pronto_para_entrega" && !order.driver_id && (
+                  <div className="mx-3 mb-2 bg-amber-500/10 border border-amber-500/20 rounded-lg px-2.5 py-2">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <Loader2 className="h-3.5 w-3.5 text-amber-400 animate-spin" />
+                      <span className="text-xs text-amber-300 font-semibold">Aguardando entregador aceitar a corrida</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`w-2 h-2 rounded-full ${(onlineDrivers?.length || 0) > 0 ? "bg-green-400 animate-pulse" : "bg-red-400"}`} />
+                      <span className="text-[10px] text-muted-foreground">
+                        {(onlineDrivers?.length || 0) > 0
+                          ? `${onlineDrivers?.length} entregador(es) online`
+                          : "Nenhum entregador online no momento"}
+                      </span>
+                    </div>
+                  </div>
+                )}
                 {order.driver_id && (order.status === "pronto_para_entrega") && (
-                  <div className="mx-3 mb-2 flex items-center gap-1.5 bg-blue-500/10 border border-blue-500/20 rounded-lg px-2.5 py-1.5">
-                    <Bike className="h-3.5 w-3.5 text-blue-400" />
-                    <span className="text-xs text-blue-300 font-semibold">{getDriverName(order.driver_id)} está vindo buscar</span>
+                  <div className="mx-3 mb-2 flex items-center gap-1.5 bg-green-500/10 border border-green-500/20 rounded-lg px-2.5 py-1.5">
+                    <Bike className="h-3.5 w-3.5 text-green-400" />
+                    <span className="text-xs text-green-300 font-semibold">🏍️ {getDriverName(order.driver_id)} aceitou! Está a caminho da loja</span>
                   </div>
                 )}
                 {order.driver_id && (order.status === "em_transito" || order.status === "saiu_entrega") && (
                   <div className="mx-3 mb-2 flex items-center gap-1.5 bg-cyan-500/10 border border-cyan-500/20 rounded-lg px-2.5 py-1.5">
                     <Truck className="h-3.5 w-3.5 text-cyan-400" />
-                    <span className="text-xs text-cyan-300 font-semibold">{getDriverName(order.driver_id)} levando o pedido</span>
+                    <span className="text-xs text-cyan-300 font-semibold">🛵 {getDriverName(order.driver_id)} levando o pedido ao cliente</span>
                   </div>
                 )}
 
