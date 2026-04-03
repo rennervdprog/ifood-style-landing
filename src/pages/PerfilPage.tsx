@@ -79,6 +79,7 @@ const PerfilPage = () => {
   });
 
   // Address form state
+  const [cep, setCep] = useState("");
   const [street, setStreet] = useState("");
   const [number, setNumber] = useState("");
   const [complement, setComplement] = useState("");
@@ -88,6 +89,7 @@ const PerfilPage = () => {
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [savingAddress, setSavingAddress] = useState(false);
   const [addressLoaded, setAddressLoaded] = useState(false);
+  const [loadingCep, setLoadingCep] = useState(false);
 
   // PIX form state
   const [pixKey, setPixKey] = useState("");
