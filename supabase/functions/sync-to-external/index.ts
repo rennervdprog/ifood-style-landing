@@ -47,40 +47,22 @@ serve(async (req) => {
 
     // Auth: accept service_role key (DB triggers) or admin JWT
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      console.log("sync-to-external: No Authorization header");
-      return jsonRes({ error: "Missing authorization" }, 401);
-    }
+    if (!authHeader) return jsonRes({ error: "Missing authorization" }, 401);
 
     const token = authHeader.replace("Bearer ", "");
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-    
-    // Compare first 20 chars for debug (safe partial log)
-    console.log("sync-to-external auth debug:", {
-      tokenPrefix: token.substring(0, 20),
-      serviceKeyPrefix: serviceRoleKey.substring(0, 20),
-      internalKeyPrefix: internalServiceKey.substring(0, 20),
-      match: token === serviceRoleKey || token === internalServiceKey,
-    });
-
     const isServiceRole = token === internalServiceKey || token === serviceRoleKey;
 
     if (!isServiceRole) {
-      // Try to validate as a user JWT (admin access)
       try {
         const authClient = createClient(internalUrl, serviceRoleKey || internalServiceKey);
         const { data: { user }, error: authError } = await authClient.auth.getUser(token);
 
-        if (authError || !user) {
-          console.log("sync-to-external: JWT validation failed", authError?.message);
-          return jsonRes({ error: "Unauthorized" }, 401);
-        }
+        if (authError || !user) return jsonRes({ error: "Unauthorized" }, 401);
 
-        // Check admin via RPC
         const { data: isAdmin } = await internalClient.rpc("is_platform_admin", { _user_id: user.id });
         if (!isAdmin) return jsonRes({ error: "Admin only" }, 403);
-      } catch (e) {
-        console.log("sync-to-external: Auth exception", e);
+      } catch {
         return jsonRes({ error: "Unauthorized" }, 401);
       }
     }
