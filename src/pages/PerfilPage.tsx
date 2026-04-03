@@ -198,14 +198,8 @@ const PerfilPage = () => {
       }
       setStreet(result.logradouro || "");
       if (result.complemento) setComplement(result.complemento);
-      if (result.bairro && neighborhoods) {
-        const match = neighborhoods.find((n) => n.name.toLowerCase() === result.bairro.toLowerCase());
-        if (match) {
-          setNeighborhoodLocal(match.name);
-        } else {
-          setNeighborhoodLocal("");
-          toast.info(`Bairro "${result.bairro}" não está na área de entrega. Selecione manualmente.`);
-        }
+      if (result.bairro) {
+        setNeighborhoodLocal(result.bairro);
       }
       toast.success("Endereço preenchido pelo CEP!");
     } catch {
