@@ -25,6 +25,8 @@ const MenuBuilder = ({ storeId }: MenuBuilderProps) => {
   const [addonItemForm, setAddonItemForm] = useState({ name: "", price: "0" });
   const [showAddonItemForm, setShowAddonItemForm] = useState<string | null>(null);
   const [showLinkAddon, setShowLinkAddon] = useState<string | null>(null);
+  const [draggedSectionId, setDraggedSectionId] = useState<string | null>(null);
+  const [dragOverSectionId, setDragOverSectionId] = useState<string | null>(null);
 
   // Fetch menu sections
   const { data: sections } = useQuery({
