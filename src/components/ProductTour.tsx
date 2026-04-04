@@ -42,12 +42,16 @@ const ProductTour = ({ steps, tourKey, onComplete }: ProductTourProps) => {
     checkOnboarding();
   }, [user]);
 
-  const positionTooltip = useCallback(() => {
+  const positionTooltip = useCallback(async () => {
     const step = steps[currentStep];
     if (!step) return;
     const el = document.querySelector(step.target);
     if (!el) {
-      // If element not found, just center it
+      // If element not found, skip to next step or center tooltip
+      if (currentStep < steps.length - 1) {
+        setCurrentStep(s => s + 1);
+        return;
+      }
       setTooltipStyle({
         position: "fixed",
         top: "50%",
@@ -57,6 +61,11 @@ const ProductTour = ({ steps, tourKey, onComplete }: ProductTourProps) => {
       });
       return;
     }
+
+    // Scroll element into view before positioning
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    // Wait for scroll to settle
+    await new Promise(r => setTimeout(r, 350));
 
     const rect = el.getBoundingClientRect();
     const pos = step.position || "bottom";
@@ -150,10 +159,9 @@ const ProductTour = ({ steps, tourKey, onComplete }: ProductTourProps) => {
 
   return (
     <>
-      {/* Overlay */}
+      {/* Overlay - don't close on click to prevent accidental dismissal */}
       <div
         className="fixed inset-0 bg-black/60 z-[10000] transition-opacity duration-300"
-        onClick={completeTour}
       />
 
       {/* Tooltip */}
@@ -262,9 +270,9 @@ export const clienteTourSteps: TourStep[] = [
     position: "bottom",
   },
   {
-    target: "[data-tour='cart-fab']",
-    title: "Seu Carrinho 🛒",
-    description: "Aqui você vê os itens adicionados. Toque para finalizar seu pedido!",
+    target: "[data-tour='nav-pedidos']",
+    title: "Acompanhe Pedidos 📦",
+    description: "Veja o status dos seus pedidos em tempo real e acompanhe a entrega.",
     position: "top",
   },
   {
