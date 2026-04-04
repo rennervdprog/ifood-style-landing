@@ -425,7 +425,8 @@ const DriverDashboard = () => {
       }
       setPinInput("");
       setVerifying(false);
-      queryClient.invalidateQueries({ queryKey: ["driver-my-delivery", user!.id] });
+      await queryClient.invalidateQueries({ queryKey: ["driver-my-delivery", user!.id] });
+      await queryClient.invalidateQueries({ queryKey: ["driver-pending-return", user!.id] });
       queryClient.invalidateQueries({ queryKey: ["driver-available-orders"] });
       queryClient.invalidateQueries({ queryKey: ["driver-history", user!.id] });
       queryClient.invalidateQueries({ queryKey: ["driver-balance", user!.id] });
