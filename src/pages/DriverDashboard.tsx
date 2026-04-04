@@ -591,6 +591,7 @@ const DriverDashboard = () => {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
+              data-tour={tab.key === "historico" ? "motoboy-ganhos" : tab.key === "entregas" ? "motoboy-nav" : undefined}
               className={`flex-1 py-3 flex flex-col items-center gap-1 transition-all relative ${isActive ? "text-primary" : "text-muted-foreground"}`}
             >
               <tab.icon className="h-4 w-4" />
