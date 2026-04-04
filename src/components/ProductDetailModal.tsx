@@ -258,6 +258,8 @@ const ProductDetailModal = ({ product, storeName, open, onClose, onAdd }: Props)
               onChange={(e) => setObservations(e.target.value)}
               className="resize-none h-20 rounded-xl"
               maxLength={200}
+              autoFocus={false}
+              tabIndex={-1}
             />
           </div>
 
