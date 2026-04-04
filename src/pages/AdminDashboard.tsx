@@ -473,6 +473,7 @@ const AdminDashboard = () => {
             const Icon = item.icon;
             return (
               <button key={item.key} onClick={() => handleTabChange(item.key)}
+                data-tour={item.key === "orders" ? "loja-orders" : item.key === "menu" ? "loja-menu" : item.key === "clients" ? "loja-clients" : undefined}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${isActive ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-accent hover:text-foreground"}`}>
                 <Icon className="h-4 w-4 flex-shrink-0" />
                 <span>{item.label}</span>
