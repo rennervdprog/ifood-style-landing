@@ -1296,6 +1296,8 @@ const DriverDashboard = () => {
         </div>
       )}
     </div>
+      <ProductTour steps={motoboyTourSteps} tourKey="motoboy" />
+    </>
   );
 };
 
