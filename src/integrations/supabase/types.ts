@@ -840,6 +840,7 @@ export type Database = {
           document: string | null
           email: string | null
           full_name: string
+          has_seen_onboarding: boolean
           id: string
           is_approved: boolean
           neighborhood: string | null
@@ -862,6 +863,7 @@ export type Database = {
           document?: string | null
           email?: string | null
           full_name?: string
+          has_seen_onboarding?: boolean
           id?: string
           is_approved?: boolean
           neighborhood?: string | null
@@ -884,6 +886,7 @@ export type Database = {
           document?: string | null
           email?: string | null
           full_name?: string
+          has_seen_onboarding?: boolean
           id?: string
           is_approved?: boolean
           neighborhood?: string | null
