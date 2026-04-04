@@ -120,8 +120,10 @@ const Index = () => {
           </div>
         ) : filtered && filtered.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-            {filtered.map((store) => (
-              <StoreCard key={store.id} {...store} is_open={store.computedOpen} statusReason={store.statusReason} />
+            {filtered.map((store, idx) => (
+              <div key={store.id} {...(idx === 0 ? { "data-tour": "store-card" } : {})}>
+                <StoreCard {...store} is_open={store.computedOpen} statusReason={store.statusReason} />
+              </div>
             ))}
           </div>
         ) : (
