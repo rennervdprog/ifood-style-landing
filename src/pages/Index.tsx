@@ -14,6 +14,7 @@ import ReorderSection from "@/components/ReorderSection";
 
 import FirstOrderBanner from "@/components/FirstOrderBanner";
 import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
+import ProductTour, { clienteTourSteps } from "@/components/ProductTour";
 
 const Index = () => {
   const [category, setCategory] = useState("all");
