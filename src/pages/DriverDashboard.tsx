@@ -584,7 +584,7 @@ const DriverDashboard = () => {
       </header>
 
       {/* ─── Tab Navigation ─── */}
-      <div className="flex bg-card border-b border-border">
+      <div className="flex bg-card border-b border-border" data-tour="motoboy-entregas">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.key;
           return (
