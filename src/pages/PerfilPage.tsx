@@ -527,6 +527,27 @@ const PerfilPage = () => {
           </button>
         )}
 
+        {/* Replay tutorial */}
+        <button
+          onClick={async () => {
+            if (user) {
+              await supabase.from("profiles").update({ has_seen_onboarding: false } as any).eq("user_id", user.id);
+              toast.success("Tutorial será exibido ao voltar à tela inicial!");
+              queryClient.invalidateQueries({ queryKey: ["my-profile", user.id] });
+            }
+          }}
+          className="w-full flex items-center gap-3 px-5 py-4 rounded-2xl border border-border bg-card hover:bg-accent transition-colors"
+        >
+          <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+            <HelpCircle className="h-4 w-4 text-primary" />
+          </div>
+          <div className="flex-1 text-left">
+            <p className="text-sm font-semibold text-foreground">Ver tutorial novamente</p>
+            <p className="text-xs text-muted-foreground">Reveja o guia de uso do app</p>
+          </div>
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        </button>
+
         {/* Sign out */}
         <button onClick={handleSignOut}
           className="w-full flex items-center justify-center gap-2 p-3.5 rounded-2xl border border-destructive/20 bg-destructive/5 text-destructive font-semibold text-sm hover:bg-destructive/10 transition-colors">
