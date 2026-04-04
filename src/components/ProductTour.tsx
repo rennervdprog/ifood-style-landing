@@ -261,9 +261,9 @@ export const clienteTourSteps: TourStep[] = [
     position: "bottom",
   },
   {
-    target: "[data-tour='cart-fab']",
-    title: "Seu Carrinho 🛒",
-    description: "Aqui você vê os itens adicionados. Toque para finalizar seu pedido!",
+    target: "[data-tour='nav-pedidos']",
+    title: "Acompanhe Pedidos 📦",
+    description: "Veja o status dos seus pedidos em tempo real e acompanhe a entrega.",
     position: "top",
   },
   {
