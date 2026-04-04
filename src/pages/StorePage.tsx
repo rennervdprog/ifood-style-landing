@@ -171,54 +171,39 @@ const StorePage = () => {
     })
     .filter(Boolean) as (Product & { orderCount: number })[] || [];
 
-  const navButtonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-  const isManualScroll = useRef(false);
-
   useEffect(() => {
     if (sections && sections.length > 0 && !activeSection) {
       setActiveSection(sections[0].id);
     }
   }, [sections, activeSection]);
 
-  // Scroll-spy: update active section as user scrolls
-  useEffect(() => {
-    if (!sections || sections.length === 0) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (isManualScroll.current) return;
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            const id = entry.target.getAttribute("data-section-id");
-            if (id) setActiveSection(id);
-          }
-        }
-      },
-      { rootMargin: "-80px 0px -60% 0px", threshold: 0.1 }
-    );
-    sections.forEach((s) => {
-      const el = sectionRefs.current[s.id];
-      if (el) observer.observe(el);
-    });
-    return () => observer.disconnect();
-  }, [sections, products]);
-
-  // Auto-scroll nav pill into view
-  useEffect(() => {
-    if (activeSection && navButtonRefs.current[activeSection]) {
-      navButtonRefs.current[activeSection]?.scrollIntoView({
-        behavior: "smooth",
-        block: "nearest",
-        inline: "center",
-      });
-    }
-  }, [activeSection]);
-
   const scrollToSection = (sectionId: string) => {
-    isManualScroll.current = true;
     setActiveSection(sectionId);
+
     const el = sectionRefs.current[sectionId];
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-    setTimeout(() => { isManualScroll.current = false; }, 1000);
+    if (!el) return;
+
+    const offset = 96;
+    const container = pageRef.current;
+
+    if (container && container.scrollHeight > container.clientHeight) {
+      const containerRect = container.getBoundingClientRect();
+      const elementRect = el.getBoundingClientRect();
+      const top = container.scrollTop + (elementRect.top - containerRect.top) - offset;
+
+      container.scrollTo({
+        top: Math.max(top, 0),
+        behavior: "smooth",
+      });
+
+      return;
+    }
+
+    const top = window.scrollY + el.getBoundingClientRect().top - offset;
+    window.scrollTo({
+      top: Math.max(top, 0),
+      behavior: "smooth",
+    });
   };
 
   const productsBySection = (sectionId: string | null) =>
