@@ -1335,6 +1335,7 @@ const AdminDashboard = () => {
           )}
         </div>
       </main>
+      <ProductTour steps={lojistaTourSteps} tourKey="lojista" />
     </div>
   );
 };
