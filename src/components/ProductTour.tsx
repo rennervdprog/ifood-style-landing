@@ -47,7 +47,11 @@ const ProductTour = ({ steps, tourKey, onComplete }: ProductTourProps) => {
     if (!step) return;
     const el = document.querySelector(step.target);
     if (!el) {
-      // If element not found, just center it
+      // If element not found, skip to next step or center tooltip
+      if (currentStep < steps.length - 1) {
+        setCurrentStep(s => s + 1);
+        return;
+      }
       setTooltipStyle({
         position: "fixed",
         top: "50%",
@@ -57,6 +61,11 @@ const ProductTour = ({ steps, tourKey, onComplete }: ProductTourProps) => {
       });
       return;
     }
+
+    // Scroll element into view before positioning
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    // Wait for scroll to settle
+    await new Promise(r => setTimeout(r, 350));
 
     const rect = el.getBoundingClientRect();
     const pos = step.position || "bottom";
