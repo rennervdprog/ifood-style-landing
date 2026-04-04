@@ -360,7 +360,7 @@ const MenuBuilder = ({ storeId }: MenuBuilderProps) => {
             onClick={() => setExpandedSection(expandedSection === section.id ? null : section.id)}
           >
             <div className="flex items-center gap-2">
-              <GripVertical className="h-4 w-4 text-muted-foreground" />
+              <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab active:cursor-grabbing" />
               {editingSection === section.id ? (
                 <input
                   type="text"
