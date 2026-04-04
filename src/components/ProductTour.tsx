@@ -150,10 +150,9 @@ const ProductTour = ({ steps, tourKey, onComplete }: ProductTourProps) => {
 
   return (
     <>
-      {/* Overlay */}
+      {/* Overlay - don't close on click to prevent accidental dismissal */}
       <div
         className="fixed inset-0 bg-black/60 z-[10000] transition-opacity duration-300"
-        onClick={completeTour}
       />
 
       {/* Tooltip */}
