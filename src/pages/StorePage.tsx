@@ -635,6 +635,7 @@ const StorePage = () => {
                 <div
                   key={section.id}
                   ref={el => { sectionRefs.current[section.id] = el; }}
+                  data-section-id={section.id}
                   className="scroll-mt-16"
                 >
                   <div className="flex items-center gap-2 mb-3">
