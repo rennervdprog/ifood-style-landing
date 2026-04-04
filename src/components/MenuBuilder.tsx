@@ -332,7 +332,28 @@ const MenuBuilder = ({ storeId }: MenuBuilderProps) => {
 
       {/* Sections */}
       {sections?.map((section: any) => (
-        <div key={section.id} className="bg-card rounded-2xl overflow-hidden">
+        <div
+          key={section.id}
+          className={`bg-card rounded-2xl overflow-hidden transition-all ${
+            dragOverSectionId === section.id ? "ring-2 ring-primary scale-[1.01]" : ""
+          } ${draggedSectionId === section.id ? "opacity-50" : ""}`}
+          draggable
+          onDragStart={(e) => {
+            setDraggedSectionId(section.id);
+            e.dataTransfer.effectAllowed = "move";
+          }}
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+            setDragOverSectionId(section.id);
+          }}
+          onDragLeave={() => setDragOverSectionId(null)}
+          onDrop={(e) => {
+            e.preventDefault();
+            handleSectionDrop(section.id);
+          }}
+          onDragEnd={() => { setDraggedSectionId(null); setDragOverSectionId(null); }}
+        >
           {/* Section Header */}
           <div
             className="flex items-center justify-between p-4 cursor-pointer"
