@@ -25,6 +25,8 @@ const ProductTour = ({ steps, tourKey, onComplete }: ProductTourProps) => {
   const [arrowStyle, setArrowStyle] = useState<React.CSSProperties>({});
   const [arrowDir, setArrowDir] = useState<"top" | "bottom" | "left" | "right">("top");
   const tooltipRef = useRef<HTMLDivElement>(null);
+  const clamp = (value: number, min: number, max: number) =>
+    Math.min(Math.max(value, min), Math.max(min, max));
 
   // Check if user already saw onboarding
   useEffect(() => {
@@ -45,6 +47,10 @@ const ProductTour = ({ steps, tourKey, onComplete }: ProductTourProps) => {
   const positionTooltip = useCallback(async () => {
     const step = steps[currentStep];
     if (!step) return;
+    const viewportPadding = 12;
+    const margin = 16;
+    const tooltipWidth = Math.min(340, window.innerWidth - viewportPadding * 2);
+    const tooltipHeight = Math.max(tooltipRef.current?.offsetHeight || 0, 220);
     const el = document.querySelector(step.target);
     if (!el) {
       // If element not found, skip to next step or center tooltip
@@ -58,6 +64,8 @@ const ProductTour = ({ steps, tourKey, onComplete }: ProductTourProps) => {
         left: "50%",
         transform: "translate(-50%, -50%)",
         zIndex: 10002,
+        width: tooltipWidth,
+        maxWidth: `calc(100vw - ${viewportPadding * 2}px)`,
       });
       return;
     }
@@ -68,10 +76,36 @@ const ProductTour = ({ steps, tourKey, onComplete }: ProductTourProps) => {
     await new Promise(r => setTimeout(r, 350));
 
     const rect = el.getBoundingClientRect();
-    const pos = step.position || "bottom";
-    const margin = 16;
-    let style: React.CSSProperties = { position: "fixed", zIndex: 10002, maxWidth: 340 };
+    const preferredPos = step.position || "bottom";
+    let pos = preferredPos;
+    let style: React.CSSProperties = {
+      position: "fixed",
+      zIndex: 10002,
+      width: tooltipWidth,
+      maxWidth: `calc(100vw - ${viewportPadding * 2}px)`,
+    };
     let aStyle: React.CSSProperties = { position: "absolute" };
+
+    const fitsBelow = rect.bottom + margin + tooltipHeight <= window.innerHeight - viewportPadding;
+    const fitsAbove = rect.top - margin - tooltipHeight >= viewportPadding;
+    const fitsRight = rect.right + margin + tooltipWidth <= window.innerWidth - viewportPadding;
+    const fitsLeft = rect.left - margin - tooltipWidth >= viewportPadding;
+
+    if (preferredPos === "bottom" && !fitsBelow && fitsAbove) pos = "top";
+    if (preferredPos === "top" && !fitsAbove && fitsBelow) pos = "bottom";
+    if (preferredPos === "right" && !fitsRight && fitsLeft) pos = "left";
+    if (preferredPos === "left" && !fitsLeft && fitsRight) pos = "right";
+
+    const centeredLeft = clamp(
+      rect.left + rect.width / 2 - tooltipWidth / 2,
+      viewportPadding,
+      window.innerWidth - tooltipWidth - viewportPadding,
+    );
+    const centeredTop = clamp(
+      rect.top + rect.height / 2 - tooltipHeight / 2,
+      viewportPadding,
+      window.innerHeight - tooltipHeight - viewportPadding,
+    );
 
     // Highlight element
     (el as HTMLElement).style.position = "relative";
@@ -80,23 +114,39 @@ const ProductTour = ({ steps, tourKey, onComplete }: ProductTourProps) => {
     (el as HTMLElement).style.borderRadius = "12px";
 
     if (pos === "bottom") {
-      style.top = rect.bottom + margin;
-      style.left = Math.max(12, Math.min(rect.left + rect.width / 2 - 170, window.innerWidth - 352));
+      style.top = clamp(
+        rect.bottom + margin,
+        viewportPadding,
+        window.innerHeight - tooltipHeight - viewportPadding,
+      );
+      style.left = centeredLeft;
       aStyle = { top: -8, left: "50%", transform: "translateX(-50%)" };
       setArrowDir("top");
     } else if (pos === "top") {
-      style.bottom = window.innerHeight - rect.top + margin;
-      style.left = Math.max(12, Math.min(rect.left + rect.width / 2 - 170, window.innerWidth - 352));
+      style.top = clamp(
+        rect.top - tooltipHeight - margin,
+        viewportPadding,
+        window.innerHeight - tooltipHeight - viewportPadding,
+      );
+      style.left = centeredLeft;
       aStyle = { bottom: -8, left: "50%", transform: "translateX(-50%)" };
       setArrowDir("bottom");
     } else if (pos === "right") {
-      style.top = rect.top + rect.height / 2 - 60;
-      style.left = rect.right + margin;
+      style.top = centeredTop;
+      style.left = clamp(
+        rect.right + margin,
+        viewportPadding,
+        window.innerWidth - tooltipWidth - viewportPadding,
+      );
       aStyle = { left: -8, top: "50%", transform: "translateY(-50%)" };
       setArrowDir("left");
     } else {
-      style.top = rect.top + rect.height / 2 - 60;
-      style.right = window.innerWidth - rect.left + margin;
+      style.top = centeredTop;
+      style.left = clamp(
+        rect.left - tooltipWidth - margin,
+        viewportPadding,
+        window.innerWidth - tooltipWidth - viewportPadding,
+      );
       aStyle = { right: -8, top: "50%", transform: "translateY(-50%)" };
       setArrowDir("right");
     }
@@ -174,7 +224,7 @@ const ProductTour = ({ steps, tourKey, onComplete }: ProductTourProps) => {
           exit={{ opacity: 0, scale: 0.9, y: -10 }}
           transition={{ duration: 0.25, ease: "easeOut" }}
           style={tooltipStyle}
-          className="bg-card border border-border rounded-2xl shadow-2xl p-5 w-[340px]"
+          className="bg-card border border-border rounded-2xl shadow-2xl p-5 w-[min(340px,calc(100vw-24px))]"
         >
           {/* Arrow */}
           <div style={{ ...arrowStyle, position: "absolute" }}>
