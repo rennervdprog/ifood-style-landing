@@ -1,31 +1,34 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Copy, Download, ArrowUpRight, ArrowDownRight, Smartphone, Banknote, QrCode, Loader2, X, CheckCircle2, RotateCcw, AlertCircle, TimerReset, ShieldAlert } from "lucide-react";
+import {
+  Copy, Download, ArrowUpRight, ArrowDownRight, Smartphone, Banknote,
+  QrCode, Loader2, X, CheckCircle2, RotateCcw, AlertCircle, TimerReset,
+  ShieldAlert, TrendingUp, TrendingDown, Receipt, Calendar,
+} from "lucide-react";
 import { toast } from "sonner";
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subWeeks, startOfDay, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
-  recordPixAttempt,
-  resetPixAttempts,
-  isPixCooldownActive,
-  getPixCooldownRemainingMs,
-  activatePixCooldown,
-  activateSafetyMode,
-  isSafetyModeActive,
-  getSafetyModeRemainingMs,
-  formatCooldownTime,
+  recordPixAttempt, resetPixAttempts, isPixCooldownActive,
+  getPixCooldownRemainingMs, activatePixCooldown, activateSafetyMode,
+  isSafetyModeActive, getSafetyModeRemainingMs, formatCooldownTime,
 } from "@/lib/pixSafeGuard";
 import { SIMULATION_MODE, createSimulatedPixCharge, simulatePaymentDelay } from "@/lib/pixSimulation";
-import { multiplyMoney, subtractMoney, sumMoney } from "@/lib/utils";
+import { multiplyMoney, subtractMoney, sumMoney, averageMoney } from "@/lib/utils";
+import {
+  AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip,
+  ResponsiveContainer, PieChart, Pie, Cell,
+} from "recharts";
 
 interface StoreFinancePanelProps {
   storeId: string;
   storeName: string;
 }
 
-type Period = "week" | "month";
+type DateFilter = "today" | "week" | "month" | "custom";
 
 type ChargeResult = {
   qr_code: string | null;
@@ -74,38 +77,35 @@ const mapTransactionToChargeResult = (transaction: FinancialTransaction): Charge
 
 const getTransactionStatusMeta = (status: string, createdAt: string, nowMs = Date.now()) => {
   if (isPendingChargeExpired(status, createdAt, nowMs)) {
-    return {
-      label: "Expirada",
-      className: "bg-destructive/10 text-destructive",
-      isExpired: true,
-    };
+    return { label: "Expirada", className: "bg-red-500/20 text-red-400 border-red-500/30", isExpired: true };
   }
-
   if (status === "paid" || status === "approved") {
-    return {
-      label: "Pago",
-      className: "bg-primary/10 text-primary",
-      isExpired: false,
-    };
+    return { label: "Pago", className: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30", isExpired: false };
   }
-
   if (status === "failed" || status === "cancelled") {
     return {
       label: status === "cancelled" ? "Cancelada" : "Falhou",
-      className: "bg-destructive/10 text-destructive",
+      className: "bg-red-500/20 text-red-400 border-red-500/30",
       isExpired: status === "cancelled",
     };
   }
-
-  return {
-    label: "Pendente",
-    className: "bg-primary/10 text-primary",
-    isExpired: false,
-  };
+  return { label: "Pendente", className: "bg-amber-500/20 text-amber-400 border-amber-500/30", isExpired: false };
 };
 
+// Neon color palette
+const NEON_COLORS = {
+  pink: "#ec4899",
+  blue: "#3b82f6",
+  green: "#10b981",
+  purple: "#a855f7",
+  amber: "#f59e0b",
+  cyan: "#06b6d4",
+};
+
+const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
+
 const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
-  const [period, setPeriod] = useState<Period>("week");
+  const [dateFilter, setDateFilter] = useState<DateFilter>("week");
   const [generatingCharge, setGeneratingCharge] = useState(false);
   const [chargeResult, setChargeResult] = useState<ChargeResult | null>(null);
   const [chargeError, setChargeError] = useState<string | null>(null);
@@ -115,12 +115,28 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
   const queryClient = useQueryClient();
 
   const now = new Date();
-  const dateRange = period === "week"
-    ? { start: startOfWeek(now, { weekStartsOn: 1 }), end: endOfWeek(now, { weekStartsOn: 1 }) }
-    : { start: startOfMonth(now), end: endOfMonth(now) };
+  const dateRange = useMemo(() => {
+    switch (dateFilter) {
+      case "today":
+        return { start: startOfDay(now), end: endOfDay(now) };
+      case "week":
+        return { start: startOfWeek(now, { weekStartsOn: 1 }), end: endOfWeek(now, { weekStartsOn: 1 }) };
+      case "month":
+        return { start: startOfMonth(now), end: endOfMonth(now) };
+      default:
+        return { start: startOfWeek(now, { weekStartsOn: 1 }), end: endOfWeek(now, { weekStartsOn: 1 }) };
+    }
+  }, [dateFilter]);
+
+  // Previous week for growth comparison
+  const prevWeekRange = useMemo(() => {
+    const prevStart = subWeeks(dateRange.start, 1);
+    const prevEnd = subWeeks(dateRange.end, 1);
+    return { start: prevStart, end: prevEnd };
+  }, [dateRange]);
 
   const { data: orders, isLoading } = useQuery({
-    queryKey: ["store-finance-orders", storeId, period],
+    queryKey: ["store-finance-orders", storeId, dateFilter],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
@@ -136,7 +152,23 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
     enabled: !!storeId,
   });
 
-  // Fetch financial transactions for this store
+  // Previous period orders for growth
+  const { data: prevOrders } = useQuery({
+    queryKey: ["store-finance-prev-orders", storeId, dateFilter],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("subtotal, status")
+        .eq("store_id", storeId)
+        .gte("created_at", prevWeekRange.start.toISOString())
+        .lte("created_at", prevWeekRange.end.toISOString())
+        .in("status", ["entregue", "finalizado"]);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!storeId,
+  });
+
   const { data: transactions } = useQuery({
     queryKey: ["store-financial-transactions", storeId],
     queryFn: async () => {
@@ -153,7 +185,6 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
     refetchInterval: 15000,
   });
 
-  // Fetch store balance
   const { data: storeBalance } = useQuery({
     queryKey: ["store-balance", storeId],
     queryFn: async () => {
@@ -182,14 +213,41 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
   const creditFromApp = subtractMoney(appSales, multiplyMoney(appSales, 0.15));
 
   const activePixSales = sumMoney(activeOrders.filter(o => o.payment_method === "pix").map((order) => order.subtotal));
-
   const finalBalance = subtractMoney(creditFromApp, commissionDue);
 
-  const periodLabel = period === "week" ? "Semana" : "Mês";
+  const ticketMedio = averageMoney(totalSales, completedOrders.length);
+
+  // Growth calculation
+  const prevTotalSales = sumMoney((prevOrders || []).map(o => o.subtotal));
+  const growthPercent = prevTotalSales > 0 ? ((totalSales - prevTotalSales) / prevTotalSales) * 100 : 0;
 
   // DB balance
   const dbComissaoPendente = Number(storeBalance?.comissao_pendente || storeBalance?.pending_commission || 0);
 
+  // Chart data: daily sales
+  const chartData = useMemo(() => {
+    if (!completedOrders.length) return [];
+    const dayMap: Record<string, number> = {};
+    completedOrders.forEach((order) => {
+      const day = format(new Date(order.created_at), "dd/MM");
+      dayMap[day] = (dayMap[day] || 0) + Number(order.subtotal);
+    });
+    return Object.entries(dayMap).map(([day, value]) => ({ day, value: Math.round(value * 100) / 100 }));
+  }, [completedOrders]);
+
+  // Donut data: payment method distribution
+  const donutData = useMemo(() => {
+    const pix = completedOrders.filter(o => o.payment_method === "pix").length;
+    const card = completedOrders.filter(o => o.payment_method === "cartao").length;
+    const cash = completedOrders.filter(o => o.payment_method !== "pix" && o.payment_method !== "cartao").length;
+    return [
+      { name: "PIX", value: pix },
+      { name: "Cartão", value: card },
+      { name: "Dinheiro", value: cash },
+    ].filter(d => d.value > 0);
+  }, [completedOrders]);
+
+  // Commission transactions
   const commissionTransactions = useMemo(
     () => (transactions || []).filter((tx) => tx.transaction_kind === "commission_charge"),
     [transactions]
@@ -207,23 +265,16 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
 
   useEffect(() => {
     if (!chargeResult && !hasPendingCommissionCharge) return;
-
-    const interval = window.setInterval(() => {
-      setNowMs(Date.now());
-    }, 1000);
-
+    const interval = window.setInterval(() => setNowMs(Date.now()), 1000);
     return () => window.clearInterval(interval);
   }, [chargeResult, hasPendingCommissionCharge]);
 
   useEffect(() => {
     if (!latestCommissionCharge) return;
     if (dismissedChargeReference === latestCommissionCharge.reference_code) return;
-
     const nextCharge = mapTransactionToChargeResult(latestCommissionCharge);
-
     setChargeResult((current) => {
       if (!current) return nextCharge;
-
       if (current.reference_code === nextCharge.reference_code) {
         const isSameCharge =
           current.status === nextCharge.status &&
@@ -231,19 +282,15 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
           current.qr_code === nextCharge.qr_code &&
           current.qr_code_base64 === nextCharge.qr_code_base64 &&
           current.amount === nextCharge.amount;
-
         return isSameCharge ? current : nextCharge;
       }
-
       const currentStillValid = current.status === "pending" && !isPendingChargeExpired(current.status, current.created_at, nowMs);
       return currentStillValid ? current : nextCharge;
     });
   }, [latestCommissionCharge, dismissedChargeReference, nowMs]);
 
   const handleDismissChargeCard = () => {
-    if (chargeResult) {
-      setDismissedChargeReference(chargeResult.reference_code);
-    }
+    if (chargeResult) setDismissedChargeReference(chargeResult.reference_code);
     setChargeResult(null);
     setChargeError(null);
   };
@@ -252,7 +299,6 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
   const [pixCooldownMs, setPixCooldownMs] = useState(0);
   const [safetyModeMs, setSafetyModeMs] = useState(0);
 
-  // Poll cooldown / safety mode timers
   useEffect(() => {
     const interval = window.setInterval(() => {
       setPixCooldownMs(getPixCooldownRemainingMs(pixContextKey));
@@ -267,36 +313,31 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
 
   const handleGenerateCommissionCharge = async () => {
     if (!SIMULATION_MODE && isSafetyModeActive()) {
-      toast.error("Sistema de pagamentos em manutenção temporária. Aguarde alguns minutos.");
+      toast.error("Sistema de pagamentos em manutenção temporária.");
       return;
     }
     if (!SIMULATION_MODE && isPixCooldownActive(pixContextKey)) {
-      toast.error("Muitas tentativas sem pagamento. Por segurança, aguarde alguns minutos para gerar uma nova cobrança.");
+      toast.error("Muitas tentativas. Aguarde alguns minutos.");
       return;
     }
     if (dbComissaoPendente <= 0 && commissionDue <= 0) {
-      toast.info("Não há comissões pendentes para pagar.");
+      toast.info("Não há comissões pendentes.");
       return;
     }
-
     const chargeAmount = dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue;
-
     if (!SIMULATION_MODE) {
       recordPixAttempt(pixContextKey);
       if (isPixCooldownActive(pixContextKey)) {
         activatePixCooldown(pixContextKey);
-        toast.error("Muitas tentativas sem pagamento. Por segurança, aguarde alguns minutos para gerar uma nova cobrança.");
+        toast.error("Muitas tentativas. Aguarde.");
         return;
       }
     }
-
     setGeneratingCharge(true);
     setChargeError(null);
     setDismissedChargeReference(null);
-
     try {
       if (SIMULATION_MODE) {
-        // --- SIMULATION MODE: bypass real payment ---
         const simResult = createSimulatedPixCharge(chargeAmount, "FAT");
         setNowMs(Date.now());
         setChargeResult({
@@ -310,8 +351,6 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
         toast.success(`[SIMULAÇÃO] Cobrança ${simResult.reference_code} gerada!`);
         return;
       }
-
-      // Roteador universal de pagamentos com failover automático
       const { data, error } = await supabase.functions.invoke("payment-router", {
         body: {
           action: "commission_charge",
@@ -320,21 +359,13 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
           description: `Comissão FoodIta - ${storeName}`,
         },
       });
-
-      if (error) {
-        console.error("Commission charge request failed:", error);
-        throw error;
-      }
-
+      if (error) throw error;
       if (data?.rate_limited) {
         activateSafetyMode();
-        throw new Error("Sistema de pagamentos temporariamente indisponível. Tente novamente em alguns minutos.");
+        throw new Error("Sistema temporariamente indisponível.");
       }
-
       if (data?.error) throw new Error(data.error);
-      // Standardized response: pix_code, qr_code_url
       if (!data?.pix_code && !data?.qr_code_url && !data?.qr_code && !data?.qr_code_base64) throw new Error("QR Code não retornado");
-
       const createdAt = data?.created_at || new Date().toISOString();
       setNowMs(Date.now());
       setChargeResult({
@@ -345,27 +376,16 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
         created_at: createdAt,
         status: data.status || "pending",
       });
-
-      if (data?.reused) {
-        toast.info(`Cobrança existente ${data.reference_code} reaberta.`);
-      } else {
-        toast.success(`Cobrança ${data.reference_code} gerada!`);
-      }
-
+      if (data?.reused) toast.info(`Cobrança existente ${data.reference_code} reaberta.`);
+      else toast.success(`Cobrança ${data.reference_code} gerada!`);
       resetPixAttempts(pixContextKey);
       queryClient.invalidateQueries({ queryKey: ["store-financial-transactions", storeId] });
       queryClient.invalidateQueries({ queryKey: ["store-balance", storeId] });
     } catch (err: any) {
-      console.error("Commission PIX generation error:", err, "status:", err?.context?.status ?? err?.status, "code:", err?.code);
-
-      if (err?.context?.status === 429 || err?.status === 429) {
-        activateSafetyMode();
-      }
-
+      if (err?.context?.status === 429 || err?.status === 429) activateSafetyMode();
       const message = /Failed to send request|Failed to fetch/i.test(err?.message || "")
-        ? "Falha na conexão ao gerar o PIX. Tente novamente."
+        ? "Falha na conexão."
         : err?.message || "Erro ao gerar cobrança PIX.";
-
       setChargeResult(null);
       setChargeError(message);
       toast.error(message);
@@ -415,7 +435,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
       `MINHA PARTE (85%): R$ ${storePart.toFixed(2)}`,
       `COMISSÃO FOODITA (15%): R$ ${totalCommission.toFixed(2)}`,
       ``,
-      `VENDAS PRESENCIAIS (Dinheiro/Cartão): R$ ${physicalSales.toFixed(2)}`,
+      `VENDAS PRESENCIAIS: R$ ${physicalSales.toFixed(2)}`,
       `VENDAS PIX APP: R$ ${appSales.toFixed(2)}`,
       `SALDO DE ACERTO: R$ ${Math.abs(finalBalance).toFixed(2)} ${finalBalance >= 0 ? "(Admin deve à Loja)" : "(Loja deve ao Admin)"}`,
       ``,
@@ -434,188 +454,290 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
     toast.success("Extrato baixado!");
   };
 
+  const filterLabels: Record<DateFilter, string> = {
+    today: "Hoje",
+    week: "7 dias",
+    month: "30 dias",
+    custom: "Personalizado",
+  };
+
   return (
-    <div className="space-y-5">
-      {/* Period selector */}
-      <div className="flex gap-2">
-        {(["week", "month"] as Period[]).map((p) => (
+    <div className="space-y-6">
+      {/* Date filter bar */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
+        {(["today", "week", "month"] as DateFilter[]).map((f) => (
           <button
-            key={p}
-            onClick={() => setPeriod(p)}
-            className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-              period === p
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "bg-muted text-muted-foreground hover:bg-muted/80"
+            key={f}
+            onClick={() => setDateFilter(f)}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+              dateFilter === f
+                ? "bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-lg shadow-pink-500/20"
+                : "bg-card/80 text-muted-foreground hover:text-foreground border border-border/50"
             }`}
           >
-            {p === "week" ? "Semana" : "Mês"}
+            {filterLabels[f]}
           </button>
         ))}
-        <span className="flex items-center text-xs text-muted-foreground ml-auto">
+        <span className="text-[10px] text-muted-foreground ml-auto whitespace-nowrap">
           {format(dateRange.start, "dd/MM", { locale: ptBR })} — {format(dateRange.end, "dd/MM", { locale: ptBR })}
         </span>
       </div>
 
-      {/* Main summary card */}
-      <div className="bg-card rounded-2xl p-5 border border-border">
-        <p className="text-xs text-muted-foreground mb-1">Vendas Totais ({periodLabel})</p>
-        <p className="text-3xl font-black text-foreground tracking-tight">R$ {totalSales.toFixed(2)}</p>
-        <p className="text-xs text-muted-foreground mt-1">{completedOrders.length} pedidos finalizados</p>
-
-        <div className="grid grid-cols-2 gap-4 mt-5 pt-4 border-t border-border">
-          <div>
-            <p className="text-xs text-muted-foreground">Minha Parte (85%)</p>
-            <p className="text-xl font-bold text-green-500">R$ {storePart.toFixed(2)}</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Comissão FoodIta (15%)</p>
-            <p className="text-xl font-bold text-muted-foreground">R$ {totalCommission.toFixed(2)}</p>
+      {/* KPI Cards Row */}
+      <div className="grid grid-cols-2 gap-3">
+        {/* Faturamento Total */}
+        <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-4 border border-border/30 relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-br from-pink-500/5 to-transparent" />
+          <div className="relative">
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Faturamento</p>
+            <p className="text-2xl font-black text-foreground mt-1 tracking-tight">
+              R$ {totalSales.toFixed(2)}
+            </p>
+            <p className="text-[10px] text-muted-foreground mt-1">{completedOrders.length} pedidos</p>
           </div>
         </div>
-      </div>
 
-      {/* Separated debt cards */}
-      <div className="grid grid-cols-1 gap-3">
-        {/* Valores a Receber do App (Admin deve à Loja) */}
-        <div className="bg-card rounded-2xl p-5 border border-green-500/20">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center">
-              <ArrowUpRight className="h-4 w-4 text-green-500" />
-            </div>
-            <p className="text-sm font-bold text-foreground">Valores a Receber do App</p>
+        {/* Lucro Líquido */}
+        <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-4 border border-border/30 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent" />
+          <div className="relative">
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Lucro Líquido</p>
+            <p className="text-2xl font-black text-emerald-400 mt-1 tracking-tight">
+              R$ {storePart.toFixed(2)}
+            </p>
+            <p className="text-[10px] text-emerald-400/60 mt-1">85% do faturamento</p>
           </div>
-          <p className="text-xs text-muted-foreground mb-1">85% das vendas via PIX App (Admin deve a você)</p>
-          <p className="text-2xl font-black text-green-500">R$ {creditFromApp.toFixed(2)}</p>
-          <p className="text-[10px] text-muted-foreground mt-1">
-            O admin transferirá esse valor via PIX no fechamento.
-          </p>
         </div>
 
-        {/* Comissões Pendentes (Loja deve ao Admin) */}
-        <div className="bg-card rounded-2xl p-5 border border-red-500/20">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-full bg-red-500/10 flex items-center justify-center">
-              <ArrowDownRight className="h-4 w-4 text-red-500" />
-            </div>
-            <p className="text-sm font-bold text-foreground">Comissões Pendentes</p>
+        {/* Ticket Médio */}
+        <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-4 border border-border/30 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent" />
+          <div className="relative">
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Ticket Médio</p>
+            <p className="text-2xl font-black text-blue-400 mt-1 tracking-tight">
+              R$ {ticketMedio.toFixed(2)}
+            </p>
+            <p className="text-[10px] text-muted-foreground mt-1">por pedido</p>
           </div>
-          <p className="text-xs text-muted-foreground mb-1">15% das vendas em Dinheiro/Cartão (Você deve ao Admin)</p>
-          <p className="text-2xl font-black text-red-500">
-            R$ {(dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue).toFixed(2)}
-          </p>
+        </div>
 
-          {/* Safety Mode Banner */}
-          {safetyModeMs > 0 && (
-            <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 flex items-start gap-2">
-              <ShieldAlert className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
-              <div>
-                <p className="text-xs font-bold text-amber-600">Manutenção temporária no sistema de pagamentos</p>
-                <p className="text-[10px] text-muted-foreground mt-1">
-                  O sistema voltará ao normal em {formatCooldownTime(safetyModeMs)}.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Cooldown Banner */}
-          {!safetyModeMs && pixCooldownMs > 0 && (
-            <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 flex items-start gap-2">
-              <AlertCircle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
-              <div>
-                <p className="text-xs font-bold text-amber-600">Muitas tentativas sem pagamento</p>
-                <p className="text-[10px] text-muted-foreground mt-1">
-                  Por segurança, aguarde {formatCooldownTime(pixCooldownMs)} para gerar uma nova cobrança.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* ACTION BUTTON: Pagar Comissão via PIX */}
-          {(dbComissaoPendente > 0 || commissionDue > 0) && (
-            <Button
-              onClick={handleGenerateCommissionCharge}
-              disabled={generatingCharge || isPixBlocked}
-              className="w-full mt-3 bg-red-500 hover:bg-red-600 text-foreground font-bold"
-              size="lg"
-            >
-              {generatingCharge ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Gerando PIX...
-                </>
-              ) : isPixBlocked ? (
-                <>
-                  <ShieldAlert className="h-4 w-4" />
-                  Aguarde...
-                </>
+        {/* Crescimento */}
+        <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-4 border border-border/30 relative overflow-hidden">
+          <div className={`absolute inset-0 bg-gradient-to-br ${growthPercent >= 0 ? "from-emerald-500/5" : "from-red-500/5"} to-transparent`} />
+          <div className="relative">
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Crescimento</p>
+            <div className="flex items-center gap-1.5 mt-1">
+              {growthPercent >= 0 ? (
+                <TrendingUp className="h-5 w-5 text-emerald-400" />
               ) : (
-                <>
-                  <QrCode className="h-4 w-4" />
-                  Pagar Comissão via PIX
-                </>
+                <TrendingDown className="h-5 w-5 text-red-400" />
               )}
-            </Button>
-          )}
+              <p className={`text-2xl font-black tracking-tight ${growthPercent >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                {growthPercent >= 0 ? "+" : ""}{growthPercent.toFixed(1)}%
+              </p>
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-1">vs período anterior</p>
+          </div>
         </div>
       </div>
 
-      {chargeError && !chargeResult && (
-        <div className="bg-card rounded-2xl p-5 border border-destructive/20 space-y-3">
-          <div className="flex items-start gap-3">
-            <div className="w-9 h-9 rounded-full bg-destructive/10 flex items-center justify-center shrink-0">
-              <AlertCircle className="h-4 w-4 text-destructive" />
+      {/* Area Chart: Daily Sales */}
+      {chartData.length > 1 && (
+        <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-5 border border-border/30">
+          <p className="text-xs font-bold text-foreground mb-4">Volume de Vendas</p>
+          <div className="h-40">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData}>
+                <defs>
+                  <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={NEON_COLORS.pink} stopOpacity={0.4} />
+                    <stop offset="100%" stopColor={NEON_COLORS.pink} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="day" tick={{ fontSize: 10, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+                <YAxis hide />
+                <RechartsTooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "12px",
+                    fontSize: "12px",
+                    color: "hsl(var(--foreground))",
+                  }}
+                  formatter={(value: number) => [`R$ ${value.toFixed(2)}`, "Vendas"]}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  stroke={NEON_COLORS.pink}
+                  strokeWidth={2.5}
+                  fill="url(#salesGradient)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* Donut Chart: Payment Distribution */}
+      {donutData.length > 0 && (
+        <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-5 border border-border/30">
+          <p className="text-xs font-bold text-foreground mb-4">Distribuição por Pagamento</p>
+          <div className="flex items-center gap-4">
+            <div className="w-28 h-28 shrink-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={donutData}
+                    innerRadius={30}
+                    outerRadius={50}
+                    paddingAngle={4}
+                    dataKey="value"
+                    strokeWidth={0}
+                  >
+                    {donutData.map((_, index) => (
+                      <Cell key={index} fill={DONUT_COLORS[index % DONUT_COLORS.length]} />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
             </div>
-            <div className="space-y-1">
-              <p className="text-sm font-bold text-foreground">Não foi possível gerar o PIX</p>
+            <div className="flex-1 space-y-2">
+              {donutData.map((entry, index) => (
+                <div key={entry.name} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: DONUT_COLORS[index % DONUT_COLORS.length] }} />
+                    <span className="text-xs text-muted-foreground">{entry.name}</span>
+                  </div>
+                  <span className="text-xs font-bold text-foreground">{entry.value} pedidos</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Commission & Balance Section */}
+      <div className="grid grid-cols-1 gap-3">
+        {/* A Receber */}
+        <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-5 border border-emerald-500/20 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent" />
+          <div className="relative">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                <ArrowUpRight className="h-4 w-4 text-emerald-400" />
+              </div>
+              <p className="text-sm font-bold text-foreground">A Receber do App</p>
+            </div>
+            <p className="text-xs text-muted-foreground mb-1">85% das vendas via PIX App</p>
+            <p className="text-2xl font-black text-emerald-400">R$ {creditFromApp.toFixed(2)}</p>
+          </div>
+        </div>
+
+        {/* Comissões Pendentes */}
+        <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-5 border border-red-500/20 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-transparent" />
+          <div className="relative">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-xl bg-red-500/10 flex items-center justify-center">
+                <ArrowDownRight className="h-4 w-4 text-red-400" />
+              </div>
+              <p className="text-sm font-bold text-foreground">Comissões Pendentes</p>
+            </div>
+            <p className="text-xs text-muted-foreground mb-1">15% das vendas em Dinheiro/Cartão</p>
+            <p className="text-2xl font-black text-red-400">
+              R$ {(dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue).toFixed(2)}
+            </p>
+
+            {safetyModeMs > 0 && (
+              <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 flex items-start gap-2">
+                <ShieldAlert className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs font-bold text-amber-400">Manutenção temporária</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">Volta em {formatCooldownTime(safetyModeMs)}</p>
+                </div>
+              </div>
+            )}
+            {!safetyModeMs && pixCooldownMs > 0 && (
+              <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 flex items-start gap-2">
+                <AlertCircle className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs font-bold text-amber-400">Muitas tentativas</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">Aguarde {formatCooldownTime(pixCooldownMs)}</p>
+                </div>
+              </div>
+            )}
+
+            {(dbComissaoPendente > 0 || commissionDue > 0) && (
+              <Button
+                onClick={handleGenerateCommissionCharge}
+                disabled={generatingCharge || isPixBlocked}
+                className="w-full mt-3 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-bold shadow-lg shadow-red-500/20"
+                size="lg"
+              >
+                {generatingCharge ? (
+                  <><Loader2 className="h-4 w-4 animate-spin" /> Gerando PIX...</>
+                ) : isPixBlocked ? (
+                  <><ShieldAlert className="h-4 w-4" /> Aguarde...</>
+                ) : (
+                  <><QrCode className="h-4 w-4" /> Pagar Comissão via PIX</>
+                )}
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Charge error */}
+      {chargeError && !chargeResult && (
+        <div className="bg-card/60 rounded-2xl p-5 border border-red-500/20 space-y-3">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-red-400 shrink-0" />
+            <div>
+              <p className="text-sm font-bold text-foreground">Erro ao gerar PIX</p>
               <p className="text-xs text-muted-foreground">{chargeError}</p>
             </div>
           </div>
           <Button onClick={handleGenerateCommissionCharge} disabled={generatingCharge} className="w-full" variant="outline">
-            <RotateCcw className="h-4 w-4" />
-            Tentar Novamente
+            <RotateCcw className="h-4 w-4" /> Tentar Novamente
           </Button>
         </div>
       )}
 
-      {/* QR Code Modal/Card */}
+      {/* QR Code Card */}
       {chargeResult && (
-        <div className="bg-card rounded-2xl p-5 border-2 border-primary space-y-3 animate-in slide-in-from-bottom-4">
+        <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-5 border-2 border-pink-500/50 space-y-3 animate-in slide-in-from-bottom-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-bold text-primary">Pague via PIX</p>
-            <button onClick={handleDismissChargeCard} className="text-muted-foreground">
+            <p className="text-sm font-bold text-pink-400">Pague via PIX</p>
+            <button onClick={handleDismissChargeCard} className="text-muted-foreground hover:text-foreground">
               <X className="h-4 w-4" />
             </button>
           </div>
-
           <p className="text-xs text-muted-foreground">
             Fatura: <span className="font-bold text-foreground">{chargeResult.reference_code}</span>
           </p>
-          <p className="text-2xl font-black text-center text-foreground">
-            R$ {chargeResult.amount.toFixed(2)}
-          </p>
+          <p className="text-2xl font-black text-center text-foreground">R$ {chargeResult.amount.toFixed(2)}</p>
 
           {!isChargeExpired && !isChargeSettled && (
-            <div className="rounded-xl border border-border bg-muted/30 p-3 text-center space-y-2">
-              <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-bold ${isChargeUrgent ? "bg-destructive/10 text-destructive animate-pulse" : "bg-primary/10 text-primary"}`}>
+            <div className="rounded-xl border border-border/50 bg-card/40 p-3 text-center space-y-2">
+              <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-bold ${isChargeUrgent ? "bg-red-500/20 text-red-400 animate-pulse" : "bg-pink-500/20 text-pink-400"}`}>
                 <TimerReset className="h-4 w-4" />
                 {formatCountdown(currentChargeRemainingMs)}
               </div>
-              <p className="text-xs text-muted-foreground">
-                O QR Code é válido por 5 minutos. Se você não concluir o pagamento, precisará gerar um novo.
-              </p>
+              <p className="text-[10px] text-muted-foreground">QR Code válido por 5 minutos.</p>
             </div>
           )}
 
           {isChargeSettled ? (
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-center space-y-2">
-              <CheckCircle2 className="h-8 w-8 text-primary mx-auto" />
+            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-center space-y-2">
+              <CheckCircle2 className="h-8 w-8 text-emerald-400 mx-auto" />
               <p className="text-sm font-bold text-foreground">Pagamento confirmado</p>
-              <p className="text-xs text-muted-foreground">O webhook já confirmou esta cobrança.</p>
             </div>
           ) : isChargeExpired ? (
-            <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-center space-y-3">
-              <AlertCircle className="h-8 w-8 text-destructive mx-auto" />
-              <p className="text-sm font-bold text-foreground">Tempo esgotado! Este QR Code expirou para sua segurança.</p>
+            <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4 text-center space-y-3">
+              <AlertCircle className="h-8 w-8 text-red-400 mx-auto" />
+              <p className="text-sm font-bold text-foreground">QR Code expirou</p>
               <Button onClick={handleGenerateCommissionCharge} disabled={generatingCharge} className="w-full">
                 {generatingCharge ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
                 Gerar Nova Cobrança
@@ -632,225 +754,215 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
                   />
                 </div>
               )}
-
               {chargeResult.qr_code && (
-                <Button
-                  onClick={() => copyPixCode(chargeResult.qr_code!)}
-                  variant="outline"
-                  className="w-full"
-                >
-                  <Copy className="h-4 w-4" />
-                  Copiar Código Pix Copia e Cola
+                <Button onClick={() => copyPixCode(chargeResult.qr_code!)} variant="outline" className="w-full">
+                  <Copy className="h-4 w-4" /> Copiar Código Pix
                 </Button>
               )}
-
-              {/* Simulation: Simulate Payment Button */}
               {SIMULATION_MODE && (
                 <Button
                   onClick={handleSimulatePayment}
                   disabled={simulatingPayment}
-                  className="w-full bg-amber-500 hover:bg-amber-600 text-foreground font-bold"
+                  className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold"
                 >
-                  {simulatingPayment ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Processando...
-                    </>
-                  ) : (
-                    "🧪 Simular Pagamento (Ambiente de Teste)"
-                  )}
+                  {simulatingPayment ? <><Loader2 className="h-4 w-4 animate-spin" /> Processando...</> : "🧪 Simular Pagamento"}
                 </Button>
               )}
             </>
           )}
-
-          <p className="text-[10px] text-muted-foreground text-center">
-            {isChargeSettled
-              ? "Cobrança conciliada com sucesso."
-              : isChargeExpired
-                ? "A cobrança anterior ficou indisponível e pode ser gerada novamente."
-                : "Após o pagamento, o saldo será zerado automaticamente via webhook."}
-          </p>
         </div>
       )}
 
-      {/* Balance card */}
-      <div className="bg-card rounded-2xl p-5 border border-border">
-        <p className="text-xs text-muted-foreground mb-2">Saldo Final</p>
-        <div className="grid grid-cols-3 gap-2 text-center">
+      {/* Balance Summary */}
+      <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-5 border border-border/30">
+        <p className="text-xs font-bold text-foreground mb-3">Saldo Final</p>
+        <div className="grid grid-cols-3 gap-3 text-center">
           <div>
-            <p className="text-[10px] text-green-500 font-bold">Seu Crédito</p>
-            <p className="text-sm font-black text-green-500">R$ {creditFromApp.toFixed(2)}</p>
+            <p className="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">Crédito</p>
+            <p className="text-sm font-black text-emerald-400 mt-1">R$ {creditFromApp.toFixed(2)}</p>
           </div>
           <div>
-            <p className="text-[10px] text-red-500 font-bold">Seu Débito</p>
-            <p className="text-sm font-black text-red-500">R$ {(dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue).toFixed(2)}</p>
+            <p className="text-[10px] text-red-400 font-semibold uppercase tracking-wider">Débito</p>
+            <p className="text-sm font-black text-red-400 mt-1">R$ {(dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue).toFixed(2)}</p>
           </div>
           <div>
-            <p className="text-[10px] text-foreground font-bold">Líquido</p>
-            <p className={`text-sm font-black ${finalBalance >= 0 ? "text-green-500" : "text-red-500"}`}>
+            <p className="text-[10px] text-foreground font-semibold uppercase tracking-wider">Líquido</p>
+            <p className={`text-sm font-black mt-1 ${finalBalance >= 0 ? "text-emerald-400" : "text-red-400"}`}>
               {finalBalance >= 0 ? "+" : "-"}R$ {Math.abs(finalBalance).toFixed(2)}
             </p>
           </div>
         </div>
-        <p className="text-xs text-muted-foreground mt-3 text-center">
+        <p className="text-[10px] text-muted-foreground mt-3 text-center">
           {finalBalance >= 0
             ? "Você tem a receber do FoodIta no próximo fechamento."
-            : "Você possui comissões pendentes para o fechamento de segunda-feira."}
+            : "Comissões pendentes para o fechamento."}
         </p>
       </div>
 
-      {/* Transaction breakdown */}
-      <div className="bg-card rounded-2xl border border-border divide-y divide-border">
+      {/* Payment breakdown */}
+      <div className="bg-card/60 backdrop-blur-sm rounded-2xl border border-border/30 divide-y divide-border/30">
         <div className="p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center">
-              <Banknote className="h-4 w-4 text-amber-500" />
+            <div className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center">
+              <Banknote className="h-4 w-4 text-amber-400" />
             </div>
             <div>
               <p className="text-sm font-medium text-foreground">Vendas Presenciais</p>
-              <p className="text-xs text-muted-foreground">Dinheiro / Cartão</p>
+              <p className="text-[10px] text-muted-foreground">Dinheiro / Cartão</p>
             </div>
           </div>
           <div className="text-right">
             <p className="text-sm font-bold text-foreground">R$ {physicalSales.toFixed(2)}</p>
-            <p className="text-xs text-red-500">- R$ {commissionDue.toFixed(2)} comissão</p>
+            <p className="text-[10px] text-red-400">- R$ {commissionDue.toFixed(2)} comissão</p>
           </div>
         </div>
-
         <div className="p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center">
-              <Smartphone className="h-4 w-4 text-green-500" />
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+              <Smartphone className="h-4 w-4 text-emerald-400" />
             </div>
             <div>
               <p className="text-sm font-medium text-foreground">Vendas PIX App</p>
-              <p className="text-xs text-muted-foreground">Pago online</p>
+              <p className="text-[10px] text-muted-foreground">Pago online</p>
             </div>
           </div>
           <div className="text-right">
             <p className="text-sm font-bold text-foreground">R$ {appSales.toFixed(2)}</p>
-            <p className="text-xs text-green-500">+ R$ {creditFromApp.toFixed(2)} crédito</p>
+            <p className="text-[10px] text-emerald-400">+ R$ {creditFromApp.toFixed(2)} crédito</p>
           </div>
         </div>
       </div>
 
       {/* Export buttons */}
       <div className="flex gap-2">
-        <button onClick={copyToClipboard} className="flex-1 flex items-center justify-center gap-2 bg-muted hover:bg-muted/80 text-foreground rounded-xl py-3 text-sm font-medium transition-colors">
+        <button onClick={copyToClipboard} className="flex-1 flex items-center justify-center gap-2 bg-card/60 hover:bg-card/80 text-foreground rounded-xl py-3 text-sm font-medium transition-colors border border-border/30">
           <Copy className="h-4 w-4" /> Copiar
         </button>
-        <button onClick={downloadTxt} className="flex-1 flex items-center justify-center gap-2 bg-muted hover:bg-muted/80 text-foreground rounded-xl py-3 text-sm font-medium transition-colors">
+        <button onClick={downloadTxt} className="flex-1 flex items-center justify-center gap-2 bg-card/60 hover:bg-card/80 text-foreground rounded-xl py-3 text-sm font-medium transition-colors border border-border/30">
           <Download className="h-4 w-4" /> Baixar Extrato
         </button>
       </div>
 
-      {/* Recent Financial Transactions */}
+      {/* Recent Transactions Table */}
       {transactions && transactions.length > 0 && (
-        <div className="space-y-1.5">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Transações Financeiras</p>
-          {transactions.map((tx) => {
-            const statusMeta = getTransactionStatusMeta(tx.status, tx.created_at, nowMs);
-            const canRetryExpiredCharge = tx.transaction_kind === "commission_charge" && statusMeta.isExpired;
-
-            return (
-              <div key={tx.id} className="bg-card rounded-xl p-3 border border-border flex items-center gap-3">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  tx.transaction_kind === "commission_charge" ? "bg-destructive/10" : "bg-primary/10"
-                }`}>
-                  {tx.transaction_kind === "commission_charge"
-                    ? <ArrowDownRight className="h-4 w-4 text-destructive" />
-                    : <ArrowUpRight className="h-4 w-4 text-primary" />
-                  }
+        <div className="bg-card/60 backdrop-blur-sm rounded-2xl border border-border/30 overflow-hidden">
+          <div className="p-4 border-b border-border/30">
+            <p className="text-xs font-bold text-foreground flex items-center gap-2">
+              <Receipt className="h-4 w-4 text-pink-400" />
+              Transações Recentes
+            </p>
+          </div>
+          <div className="divide-y divide-border/20">
+            {transactions.map((tx) => {
+              const statusMeta = getTransactionStatusMeta(tx.status, tx.created_at, nowMs);
+              const canRetryExpiredCharge = tx.transaction_kind === "commission_charge" && statusMeta.isExpired;
+              return (
+                <div key={tx.id} className="p-3 flex items-center gap-3 hover:bg-card/40 transition-colors">
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                    tx.transaction_kind === "commission_charge" ? "bg-red-500/10" : "bg-emerald-500/10"
+                  }`}>
+                    {tx.transaction_kind === "commission_charge"
+                      ? <ArrowDownRight className="h-4 w-4 text-red-400" />
+                      : <ArrowUpRight className="h-4 w-4 text-emerald-400" />
+                    }
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-semibold text-foreground">{tx.reference_code}</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${statusMeta.className}`}>
+                        {statusMeta.label}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between mt-0.5 gap-2">
+                      <span className="text-[10px] text-muted-foreground">
+                        {tx.transaction_kind === "commission_charge" ? "Cobrança" : "Repasse"}
+                      </span>
+                      <span className="text-sm font-bold text-foreground">R$ {Number(tx.amount).toFixed(2)}</span>
+                    </div>
+                    <div className="flex items-center justify-between mt-1">
+                      <p className="text-[10px] text-muted-foreground">
+                        {format(new Date(tx.created_at), "dd/MM/yyyy HH:mm")}
+                      </p>
+                      {canRetryExpiredCharge && (
+                        <Button onClick={handleGenerateCommissionCharge} size="sm" variant="outline" className="h-6 px-2 text-[10px]">
+                          <RotateCcw className="h-3 w-3" /> Nova cobrança
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-semibold text-foreground">{tx.reference_code}</span>
-                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${statusMeta.className}`}>
-                      {statusMeta.label}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between mt-0.5 gap-2">
-                    <span className="text-xs text-muted-foreground">
-                      {tx.transaction_kind === "commission_charge" ? "Cobrança Comissão" : "Repasse"}
-                    </span>
-                    <span className="text-sm font-bold text-foreground">R$ {Number(tx.amount).toFixed(2)}</span>
-                  </div>
-                  <div className="flex items-center justify-between mt-1 gap-2">
-                    <p className="text-[10px] text-muted-foreground">
-                      {format(new Date(tx.created_at), "dd/MM/yyyy HH:mm")}
-                    </p>
-                    {canRetryExpiredCharge && (
-                      <Button onClick={handleGenerateCommissionCharge} size="sm" variant="outline" className="h-7 px-2 text-[10px]">
-                        <RotateCcw className="h-3 w-3" />
-                        Gerar nova cobrança
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       )}
 
       {/* Active PIX orders */}
       {activeOrders.filter(o => o.payment_method === "pix").length > 0 && (
-        <div className="bg-card rounded-2xl p-4 border border-blue-500/20 space-y-2">
-          <p className="text-sm font-semibold text-blue-500">Pedidos PIX em Andamento</p>
-          <p className="text-xs text-muted-foreground">Já pagos via PIX — serão contabilizados ao finalizar.</p>
+        <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-4 border border-blue-500/20 space-y-2">
+          <p className="text-sm font-bold text-blue-400">Pedidos PIX em Andamento</p>
+          <p className="text-[10px] text-muted-foreground">Já pagos — contabilizados ao finalizar.</p>
           {activeOrders.filter(o => o.payment_method === "pix").map(order => (
-            <div key={order.id} className="flex justify-between text-xs bg-blue-500/5 rounded-lg p-2.5">
-              <span className="text-blue-500 font-semibold">#{order.id.substring(0, 6).toUpperCase()}</span>
+            <div key={order.id} className="flex justify-between text-xs bg-blue-500/5 rounded-xl p-2.5">
+              <span className="text-blue-400 font-semibold">#{order.id.substring(0, 6).toUpperCase()}</span>
               <span className="text-foreground font-medium">R$ {Number(order.subtotal).toFixed(2)}</span>
               <span className="text-muted-foreground capitalize">{order.status.replace(/_/g, " ")}</span>
             </div>
           ))}
-          <div className="flex justify-between text-xs pt-2 border-t border-border">
+          <div className="flex justify-between text-xs pt-2 border-t border-border/30">
             <span className="text-muted-foreground">Total em andamento</span>
-            <span className="text-blue-500 font-bold">R$ {activePixSales.toFixed(2)}</span>
+            <span className="text-blue-400 font-bold">R$ {activePixSales.toFixed(2)}</span>
           </div>
         </div>
       )}
 
       {/* Order list */}
       {isLoading ? (
-        <p className="text-muted-foreground text-center py-8 text-sm">Carregando...</p>
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-6 w-6 animate-spin text-pink-400" />
+        </div>
       ) : completedOrders.length > 0 ? (
-        <div className="space-y-1.5">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Extrato de Pedidos</p>
-          {completedOrders.map(order => {
-            const sub = Number(order.subtotal);
-            const commission = multiplyMoney(sub, 0.15);
-            const net = subtractMoney(sub, commission);
-            const isPix = order.payment_method === "pix";
-            return (
-              <div key={order.id} className="bg-card rounded-xl p-3 border border-border flex items-center gap-3">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${isPix ? "bg-green-500/10" : "bg-amber-500/10"}`}>
-                  {isPix ? <Smartphone className="h-4 w-4 text-green-500" /> : <Banknote className="h-4 w-4 text-amber-500" />}
+        <div className="bg-card/60 backdrop-blur-sm rounded-2xl border border-border/30 overflow-hidden">
+          <div className="p-4 border-b border-border/30">
+            <p className="text-xs font-bold text-foreground">Extrato de Pedidos</p>
+          </div>
+          <div className="divide-y divide-border/20">
+            {completedOrders.map(order => {
+              const sub = Number(order.subtotal);
+              const commission = multiplyMoney(sub, 0.15);
+              const net = subtractMoney(sub, commission);
+              const isPix = order.payment_method === "pix";
+              return (
+                <div key={order.id} className="p-3 flex items-center gap-3 hover:bg-card/40 transition-colors">
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${isPix ? "bg-emerald-500/10" : "bg-amber-500/10"}`}>
+                    {isPix ? <Smartphone className="h-4 w-4 text-emerald-400" /> : <Banknote className="h-4 w-4 text-amber-400" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-foreground">#{order.id.substring(0, 6).toUpperCase()}</span>
+                      <span className="text-[10px] text-muted-foreground">{format(new Date(order.created_at), "dd/MM HH:mm")}</span>
+                    </div>
+                    <div className="flex items-center justify-between mt-0.5">
+                      <span className="text-[10px] text-muted-foreground">
+                        {isPix ? "PIX App" : order.payment_method === "cartao" ? "Cartão" : "Dinheiro"}
+                      </span>
+                      <span className="text-sm font-bold text-foreground">R$ {sub.toFixed(2)}</span>
+                    </div>
+                    <div className="flex items-center justify-between mt-0.5">
+                      <span className="text-[10px] text-muted-foreground">Comissão: R$ {commission.toFixed(2)}</span>
+                      <span className="text-xs font-semibold text-emerald-400">Líquido: R$ {net.toFixed(2)}</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-foreground">#{order.id.substring(0, 6).toUpperCase()}</span>
-                    <span className="text-xs text-muted-foreground">{format(new Date(order.created_at), "dd/MM HH:mm")}</span>
-                  </div>
-                  <div className="flex items-center justify-between mt-0.5">
-                    <span className="text-xs text-muted-foreground">
-                      {isPix ? "PIX App" : order.payment_method === "cartao" ? "Cartão" : "Dinheiro"}
-                    </span>
-                    <span className="text-sm font-bold text-foreground">R$ {sub.toFixed(2)}</span>
-                  </div>
-                  <div className="flex items-center justify-between mt-0.5">
-                    <span className="text-[10px] text-muted-foreground">Comissão: R$ {commission.toFixed(2)}</span>
-                    <span className="text-xs font-semibold text-green-500">Líquido: R$ {net.toFixed(2)}</span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       ) : (
-        <p className="text-muted-foreground text-center py-8 text-sm">Nenhum pedido finalizado neste período.</p>
+        <div className="text-center py-12">
+          <Receipt className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+          <p className="text-muted-foreground text-sm">Nenhum pedido finalizado neste período.</p>
+        </div>
       )}
     </div>
   );
