@@ -1,30 +1,92 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Clock, Save, AlertTriangle, Power } from "lucide-react";
+import {
+  Clock, Save, Power, Plus, Trash2, Copy, CalendarOff,
+  CalendarPlus, ChevronDown, ChevronUp, Zap,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { getStoreOpenStatus } from "@/lib/storeStatus";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
-const dayLabels = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
+const dayLabels = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+const dayLabelsFull = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
 
-interface HourRow {
-  day_of_week: number;
+interface Shift {
   open_time: string;
   close_time: string;
-  is_closed_all_day: boolean;
 }
 
-const defaultHours: HourRow[] = Array.from({ length: 7 }, (_, i) => ({
-  day_of_week: i,
-  open_time: "08:00",
-  close_time: "22:00",
-  is_closed_all_day: i === 0, // Sunday closed by default
-}));
+interface DaySchedule {
+  day_of_week: number;
+  is_closed: boolean;
+  shifts: Shift[];
+}
+
+interface HolidayClosure {
+  date: string; // YYYY-MM-DD
+  label: string;
+}
+
+const defaultShift = (): Shift => ({ open_time: "08:00", close_time: "22:00" });
+
+const createDefaultSchedule = (): DaySchedule[] =>
+  Array.from({ length: 7 }, (_, i) => ({
+    day_of_week: i,
+    is_closed: i === 0,
+    shifts: [defaultShift()],
+  }));
+
+// Time options for dropdowns (every 15 min)
+const TIME_OPTIONS: string[] = [];
+for (let h = 0; h < 24; h++) {
+  for (let m = 0; m < 60; m += 15) {
+    TIME_OPTIONS.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
+  }
+}
+
+const TimeSelect = ({
+  value,
+  onChange,
+  label,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  label: string;
+}) => (
+  <select
+    value={value}
+    onChange={(e) => onChange(e.target.value)}
+    aria-label={label}
+    className="bg-card text-foreground px-2.5 py-2 rounded-xl text-xs font-semibold border border-border/50 focus:border-pink-500 focus:ring-1 focus:ring-pink-500/30 focus:outline-none appearance-none cursor-pointer min-h-[40px] w-[80px]"
+  >
+    {TIME_OPTIONS.map((t) => (
+      <option key={t} value={t}>
+        {t}
+      </option>
+    ))}
+  </select>
+);
 
 const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClosed: boolean }) => {
   const queryClient = useQueryClient();
-  const [hours, setHours] = useState<HourRow[]>(defaultHours);
+  const [schedule, setSchedule] = useState<DaySchedule[]>(createDefaultSchedule());
   const [saving, setSaving] = useState(false);
   const [localForceClosed, setLocalForceClosed] = useState(forceClosed);
+  const [holidays, setHolidays] = useState<HolidayClosure[]>([]);
+  const [showHolidays, setShowHolidays] = useState(false);
+  const [holidayDate, setHolidayDate] = useState<Date | undefined>();
+  const [holidayLabel, setHolidayLabel] = useState("");
 
   const { data: savedHours } = useQuery({
     queryKey: ["opening-hours", storeId],
@@ -39,20 +101,40 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
     },
   });
 
+  // Merge saved hours into schedule (support multiple shifts per day)
   useEffect(() => {
     if (savedHours && savedHours.length > 0) {
-      const merged = defaultHours.map(dh => {
-        const saved = savedHours.find((s: any) => s.day_of_week === dh.day_of_week);
-        return saved
-          ? {
-              day_of_week: saved.day_of_week,
-              open_time: (saved as any).open_time?.slice(0, 5) || "08:00",
-              close_time: (saved as any).close_time?.slice(0, 5) || "22:00",
-              is_closed_all_day: (saved as any).is_closed_all_day,
-            }
-          : dh;
+      const dayMap: Record<number, { closed: boolean; shifts: Shift[] }> = {};
+      for (let i = 0; i < 7; i++) {
+        dayMap[i] = { closed: false, shifts: [] };
+      }
+      savedHours.forEach((row: any) => {
+        const d = row.day_of_week;
+        if (row.is_closed_all_day) {
+          dayMap[d].closed = true;
+        } else {
+          dayMap[d].shifts.push({
+            open_time: (row.open_time || "08:00").slice(0, 5),
+            close_time: (row.close_time || "22:00").slice(0, 5),
+          });
+        }
       });
-      setHours(merged);
+      const merged: DaySchedule[] = Array.from({ length: 7 }, (_, i) => ({
+        day_of_week: i,
+        is_closed: dayMap[i].closed || dayMap[i].shifts.length === 0 && savedHours.some((r: any) => r.day_of_week === i),
+        shifts: dayMap[i].shifts.length > 0 ? dayMap[i].shifts : [defaultShift()],
+      }));
+      // Fix: if DB has rows but all are closed, ensure is_closed
+      merged.forEach((m) => {
+        const hasDbRows = savedHours.some((r: any) => r.day_of_week === m.day_of_week);
+        const allClosed = savedHours
+          .filter((r: any) => r.day_of_week === m.day_of_week)
+          .every((r: any) => r.is_closed_all_day);
+        if (hasDbRows && allClosed) {
+          m.is_closed = true;
+        }
+      });
+      setSchedule(merged);
     }
   }, [savedHours]);
 
@@ -60,22 +142,112 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
     setLocalForceClosed(forceClosed);
   }, [forceClosed]);
 
-  const updateHour = (day: number, field: keyof HourRow, value: any) => {
-    setHours(prev => prev.map(h => h.day_of_week === day ? { ...h, [field]: value } : h));
+  // Compute real-time status
+  const storeStatus = useMemo(() => {
+    const openingHours = schedule.flatMap((day) =>
+      day.is_closed
+        ? [{ day_of_week: day.day_of_week, open_time: "00:00", close_time: "00:00", is_closed_all_day: true }]
+        : day.shifts.map((s) => ({
+            day_of_week: day.day_of_week,
+            open_time: s.open_time,
+            close_time: s.close_time,
+            is_closed_all_day: false,
+          }))
+    );
+    return getStoreOpenStatus(openingHours, localForceClosed, true);
+  }, [schedule, localForceClosed]);
+
+  const updateDay = (dayIndex: number, update: Partial<DaySchedule>) => {
+    setSchedule((prev) =>
+      prev.map((d) => (d.day_of_week === dayIndex ? { ...d, ...update } : d))
+    );
+  };
+
+  const updateShift = (dayIndex: number, shiftIndex: number, field: keyof Shift, value: string) => {
+    setSchedule((prev) =>
+      prev.map((d) => {
+        if (d.day_of_week !== dayIndex) return d;
+        const newShifts = [...d.shifts];
+        newShifts[shiftIndex] = { ...newShifts[shiftIndex], [field]: value };
+        return { ...d, shifts: newShifts };
+      })
+    );
+  };
+
+  const addShift = (dayIndex: number) => {
+    setSchedule((prev) =>
+      prev.map((d) => {
+        if (d.day_of_week !== dayIndex) return d;
+        return { ...d, shifts: [...d.shifts, { open_time: "18:00", close_time: "23:00" }] };
+      })
+    );
+  };
+
+  const removeShift = (dayIndex: number, shiftIndex: number) => {
+    setSchedule((prev) =>
+      prev.map((d) => {
+        if (d.day_of_week !== dayIndex || d.shifts.length <= 1) return d;
+        return { ...d, shifts: d.shifts.filter((_, i) => i !== shiftIndex) };
+      })
+    );
+  };
+
+  const applyToAll = (sourceDay: number) => {
+    const source = schedule.find((d) => d.day_of_week === sourceDay);
+    if (!source) return;
+    setSchedule((prev) =>
+      prev.map((d) =>
+        d.day_of_week === sourceDay
+          ? d
+          : { ...d, is_closed: source.is_closed, shifts: source.shifts.map((s) => ({ ...s })) }
+      )
+    );
+    toast.success(`Horário de ${dayLabelsFull[sourceDay]} aplicado a todos os dias!`);
+  };
+
+  const addHoliday = () => {
+    if (!holidayDate) return;
+    const dateStr = format(holidayDate, "yyyy-MM-dd");
+    if (holidays.some((h) => h.date === dateStr)) {
+      toast.error("Data já adicionada.");
+      return;
+    }
+    setHolidays((prev) => [...prev, { date: dateStr, label: holidayLabel || "Feriado" }]);
+    setHolidayDate(undefined);
+    setHolidayLabel("");
+    toast.success("Feriado adicionado!");
+  };
+
+  const removeHoliday = (date: string) => {
+    setHolidays((prev) => prev.filter((h) => h.date !== date));
   };
 
   const saveSchedule = async () => {
     setSaving(true);
-    // Delete all existing then insert fresh
     await supabase.from("opening_hours").delete().eq("store_id", storeId);
-    
-    const rows = hours.map(h => ({
-      store_id: storeId,
-      day_of_week: h.day_of_week,
-      open_time: h.open_time + ":00",
-      close_time: h.close_time + ":00",
-      is_closed_all_day: h.is_closed_all_day,
-    }));
+
+    const rows: any[] = [];
+    schedule.forEach((day) => {
+      if (day.is_closed) {
+        rows.push({
+          store_id: storeId,
+          day_of_week: day.day_of_week,
+          open_time: "00:00:00",
+          close_time: "00:00:00",
+          is_closed_all_day: true,
+        });
+      } else {
+        day.shifts.forEach((shift) => {
+          rows.push({
+            store_id: storeId,
+            day_of_week: day.day_of_week,
+            open_time: shift.open_time + ":00",
+            close_time: shift.close_time + ":00",
+            is_closed_all_day: false,
+          });
+        });
+      }
+    });
 
     const { error } = await supabase.from("opening_hours").insert(rows as any);
     setSaving(false);
@@ -85,24 +257,7 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
       return;
     }
 
-    // Find next open day/time for feedback
-    const now = new Date();
-    const currentDay = now.getDay();
-    let feedbackMsg = "Configurações salvas!";
-    for (let offset = 0; offset < 7; offset++) {
-      const day = (currentDay + offset) % 7;
-      const h = hours.find(hr => hr.day_of_week === day);
-      if (h && !h.is_closed_all_day) {
-        if (offset === 0) {
-          feedbackMsg += ` Aberto hoje até ${h.close_time}.`;
-        } else {
-          feedbackMsg += ` Próxima abertura: ${dayLabels[day]} às ${h.open_time}.`;
-        }
-        break;
-      }
-    }
-
-    toast.success(feedbackMsg);
+    toast.success("Horários salvos com sucesso! ✅");
     queryClient.invalidateQueries({ queryKey: ["opening-hours", storeId] });
   };
 
@@ -117,116 +272,291 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
       toast.error("Erro ao atualizar.");
       return;
     }
-
     setLocalForceClosed(next);
-    toast.success(next ? "🚨 Loja fechada manualmente!" : "✅ Loja reaberta! Horário automático ativo.");
+    toast.success(next ? "🚨 Loja fechada manualmente!" : "✅ Loja reaberta!");
     queryClient.invalidateQueries({ queryKey: ["my-store"] });
   };
 
   return (
-    <div className="space-y-4">
-      {/* Emergency close button */}
-      <div
-        className={`rounded-2xl p-4 border-2 ${
-          localForceClosed
-            ? "bg-red-500/10 border-red-500"
-            : "bg-muted/50 border-border"
-        }`}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <AlertTriangle className={`h-5 w-5 ${localForceClosed ? "text-red-400" : "text-muted-foreground"}`} />
-            <div>
-              <p className="text-sm font-bold text-foreground">Fechamento Manual</p>
-              <p className="text-xs text-muted-foreground">
-                {localForceClosed
-                  ? "Loja fechada manualmente. Horário automático ignorado."
-                  : "Desative para fechar a loja imediatamente."}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={toggleForceClosed}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all min-h-[44px] ${
-              localForceClosed
-                ? "bg-primary text-primary-foreground"
-                : "bg-red-500 text-foreground"
+    <div className="space-y-5">
+      {/* Real-time status badge */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div
+            className={`w-3 h-3 rounded-full animate-pulse ${
+              storeStatus.isOpen ? "bg-emerald-400 shadow-lg shadow-emerald-400/50" : "bg-red-400 shadow-lg shadow-red-400/50"
             }`}
-          >
-            <Power className="h-4 w-4" />
-            {localForceClosed ? "Reabrir" : "🚨 Fechar Agora"}
-          </button>
-        </div>
-      </div>
-
-      {/* Schedule */}
-      <div className="bg-card rounded-2xl p-4">
-        <div className="flex items-center gap-2 mb-4">
-          <Clock className="h-4 w-4 text-primary" />
-          <h3 className="text-sm font-bold text-foreground">Horários de Funcionamento</h3>
-        </div>
-
-        <div className="space-y-2">
-          {hours.map((h) => (
-            <div
-              key={h.day_of_week}
-              className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${
-                h.is_closed_all_day ? "bg-muted/50 opacity-60" : "bg-secondary"
+          />
+          <div>
+            <span
+              className={`text-lg font-black tracking-tight ${
+                storeStatus.isOpen ? "text-emerald-400" : "text-red-400"
               }`}
             >
-              {/* Day label */}
-              <div className="w-20 flex-shrink-0">
-                <span className="text-xs font-bold text-foreground/80">
-                  {dayLabels[h.day_of_week].slice(0, 3)}
-                </span>
+              {storeStatus.isOpen ? "LOJA ABERTA" : "LOJA FECHADA"}
+            </span>
+            <p className="text-[10px] text-muted-foreground">{storeStatus.reason}</p>
+          </div>
+        </div>
+        <Button
+          onClick={toggleForceClosed}
+          variant="outline"
+          size="sm"
+          className={cn(
+            "rounded-xl font-bold text-xs gap-1.5 min-h-[40px]",
+            localForceClosed
+              ? "border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+              : "border-red-500/30 text-red-400 hover:bg-red-500/10"
+          )}
+        >
+          <Power className="h-3.5 w-3.5" />
+          {localForceClosed ? "Reabrir" : "Fechar Agora"}
+        </Button>
+      </div>
+
+      {/* Force closed warning */}
+      {localForceClosed && (
+        <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-4 flex items-start gap-3">
+          <div className="w-8 h-8 rounded-xl bg-red-500/10 flex items-center justify-center shrink-0">
+            <Power className="h-4 w-4 text-red-400" />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-foreground">Fechamento de Emergência Ativo</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              A loja está fechada manualmente. Horários automáticos estão ignorados.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Schedule Cards */}
+      <div className="bg-card/60 backdrop-blur-sm rounded-2xl border border-border/30 overflow-hidden">
+        <div className="p-4 border-b border-border/30 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-pink-400" />
+            <h3 className="text-sm font-bold text-foreground">Horários da Semana</h3>
+          </div>
+        </div>
+
+        <div className="divide-y divide-border/20">
+          {schedule.map((day) => (
+            <div key={day.day_of_week} className="p-3">
+              {/* Day header row */}
+              <div className="flex items-center gap-3 mb-2">
+                {/* Day label */}
+                <div className="w-10">
+                  <span
+                    className={`text-xs font-black ${
+                      day.is_closed ? "text-muted-foreground/50" : "text-foreground"
+                    }`}
+                  >
+                    {dayLabels[day.day_of_week]}
+                  </span>
+                </div>
+
+                {/* Toggle */}
+                <button
+                  onClick={() => updateDay(day.day_of_week, { is_closed: !day.is_closed })}
+                  className={`relative w-11 h-6 rounded-full transition-all duration-200 shrink-0 ${
+                    day.is_closed
+                      ? "bg-muted-foreground/20"
+                      : "bg-gradient-to-r from-emerald-400 to-emerald-500 shadow-sm shadow-emerald-500/30"
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-all duration-200 ${
+                      day.is_closed ? "left-0.5" : "left-[22px]"
+                    }`}
+                  />
+                </button>
+
+                {day.is_closed ? (
+                  <span className="text-[10px] text-muted-foreground/50 italic flex-1">Fechado</span>
+                ) : (
+                  <div className="flex-1" />
+                )}
+
+                {/* Apply to all button */}
+                {!day.is_closed && (
+                  <button
+                    onClick={() => applyToAll(day.day_of_week)}
+                    className="flex items-center gap-1 text-[10px] text-pink-400 hover:text-pink-300 transition-colors font-semibold shrink-0"
+                    title="Aplicar a todos os dias"
+                  >
+                    <Copy className="h-3 w-3" />
+                    <span className="hidden sm:inline">Aplicar a todos</span>
+                  </button>
+                )}
               </div>
 
-              {/* Toggle */}
-              <button
-                onClick={() => updateHour(h.day_of_week, "is_closed_all_day", !h.is_closed_all_day)}
-                className={`relative w-12 h-6 rounded-full transition-colors flex-shrink-0 ${
-                  h.is_closed_all_day ? "bg-muted" : "bg-primary"
-                }`}
-              >
-                <span
-                  className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
-                    h.is_closed_all_day ? "left-0.5" : "left-6"
-                  }`}
-                />
-              </button>
-
-              {/* Time inputs */}
-              {!h.is_closed_all_day ? (
-                <div className="flex items-center gap-2 flex-1">
-                  <input
-                    type="time"
-                    value={h.open_time}
-                    onChange={(e) => updateHour(h.day_of_week, "open_time", e.target.value)}
-                    className="bg-muted text-foreground px-2 py-1.5 rounded-lg text-xs border border-border focus:border-primary focus:outline-none w-[90px]"
-                  />
-                  <span className="text-muted-foreground/70 text-xs">às</span>
-                  <input
-                    type="time"
-                    value={h.close_time}
-                    onChange={(e) => updateHour(h.day_of_week, "close_time", e.target.value)}
-                    className="bg-muted text-foreground px-2 py-1.5 rounded-lg text-xs border border-border focus:border-primary focus:outline-none w-[90px]"
-                  />
+              {/* Shifts */}
+              {!day.is_closed && (
+                <div className="space-y-2 ml-[52px]">
+                  {day.shifts.map((shift, si) => (
+                    <div key={si} className="flex items-center gap-2">
+                      <TimeSelect
+                        value={shift.open_time}
+                        onChange={(v) => updateShift(day.day_of_week, si, "open_time", v)}
+                        label={`Abertura turno ${si + 1}`}
+                      />
+                      <span className="text-[10px] text-muted-foreground">às</span>
+                      <TimeSelect
+                        value={shift.close_time}
+                        onChange={(v) => updateShift(day.day_of_week, si, "close_time", v)}
+                        label={`Fechamento turno ${si + 1}`}
+                      />
+                      {day.shifts.length > 1 && (
+                        <button
+                          onClick={() => removeShift(day.day_of_week, si)}
+                          className="text-red-400/60 hover:text-red-400 transition-colors p-1"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  {/* Add shift button */}
+                  <button
+                    onClick={() => addShift(day.day_of_week)}
+                    className="flex items-center gap-1 text-[10px] text-blue-400 hover:text-blue-300 transition-colors font-semibold"
+                  >
+                    <Plus className="h-3 w-3" />
+                    Adicionar turno
+                  </button>
                 </div>
-              ) : (
-                <span className="text-xs text-muted-foreground/70 italic">Fechado</span>
               )}
             </div>
           ))}
         </div>
+      </div>
 
+      {/* Save button */}
+      <Button
+        onClick={saveSchedule}
+        disabled={saving}
+        className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white font-bold rounded-xl shadow-lg shadow-pink-500/20 min-h-[48px]"
+        size="lg"
+      >
+        <Save className="h-4 w-4" />
+        {saving ? "Salvando..." : "Salvar Cronograma"}
+      </Button>
+
+      {/* Holiday / Special dates section */}
+      <div className="bg-card/60 backdrop-blur-sm rounded-2xl border border-border/30 overflow-hidden">
         <button
-          onClick={saveSchedule}
-          disabled={saving}
-          className="w-full mt-4 bg-primary text-primary-foreground font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-50 min-h-[44px]"
+          onClick={() => setShowHolidays(!showHolidays)}
+          className="w-full p-4 flex items-center justify-between hover:bg-card/40 transition-colors"
         >
-          <Save className="h-4 w-4" />
-          {saving ? "Salvando..." : "Salvar Cronograma"}
+          <div className="flex items-center gap-2">
+            <CalendarOff className="h-4 w-4 text-amber-400" />
+            <span className="text-sm font-bold text-foreground">Feriados & Exceções</span>
+            {holidays.length > 0 && (
+              <Badge variant="secondary" className="text-[10px] bg-amber-500/10 text-amber-400 border-0">
+                {holidays.length}
+              </Badge>
+            )}
+          </div>
+          {showHolidays ? (
+            <ChevronUp className="h-4 w-4 text-muted-foreground" />
+          ) : (
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          )}
         </button>
+
+        {showHolidays && (
+          <div className="p-4 pt-0 space-y-3">
+            <p className="text-[10px] text-muted-foreground">
+              Programe fechamentos em datas específicas sem alterar a rotina semanal.
+            </p>
+
+            {/* Add holiday */}
+            <div className="flex items-end gap-2">
+              <div className="flex-1 space-y-1">
+                <label className="text-[10px] text-muted-foreground font-semibold">Data</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={cn(
+                        "w-full justify-start text-left text-xs font-normal rounded-xl min-h-[40px]",
+                        !holidayDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarPlus className="h-3.5 w-3.5 mr-1.5" />
+                      {holidayDate ? format(holidayDate, "dd/MM/yyyy") : "Selecionar data"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={holidayDate}
+                      onSelect={setHolidayDate}
+                      disabled={(date) => date < new Date()}
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="flex-1 space-y-1">
+                <label className="text-[10px] text-muted-foreground font-semibold">Motivo (opcional)</label>
+                <input
+                  type="text"
+                  value={holidayLabel}
+                  onChange={(e) => setHolidayLabel(e.target.value)}
+                  placeholder="Ex: Natal"
+                  className="w-full bg-card text-foreground px-3 py-2 rounded-xl text-xs border border-border/50 focus:border-pink-500 focus:outline-none min-h-[40px]"
+                />
+              </div>
+              <Button
+                onClick={addHoliday}
+                disabled={!holidayDate}
+                size="sm"
+                className="rounded-xl min-h-[40px] bg-amber-500 hover:bg-amber-600 text-white"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+
+            {/* Holiday list */}
+            {holidays.length > 0 ? (
+              <div className="space-y-1.5">
+                {holidays
+                  .sort((a, b) => a.date.localeCompare(b.date))
+                  .map((h) => (
+                    <div
+                      key={h.date}
+                      className="flex items-center justify-between bg-amber-500/5 rounded-xl p-2.5 border border-amber-500/10"
+                    >
+                      <div className="flex items-center gap-2">
+                        <CalendarOff className="h-3.5 w-3.5 text-amber-400" />
+                        <span className="text-xs font-semibold text-foreground">
+                          {format(new Date(h.date + "T12:00:00"), "dd/MM/yyyy (EEEE)", { locale: ptBR })}
+                        </span>
+                        {h.label && (
+                          <span className="text-[10px] text-amber-400">— {h.label}</span>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => removeHoliday(h.date)}
+                        className="text-muted-foreground hover:text-red-400 transition-colors p-1"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+              </div>
+            ) : (
+              <p className="text-[10px] text-muted-foreground/50 text-center py-2">
+                Nenhum feriado configurado.
+              </p>
+            )}
+
+            <p className="text-[10px] text-muted-foreground/50 italic">
+              💡 Os feriados são salvos localmente. Funcionalidade de persistência em breve.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
