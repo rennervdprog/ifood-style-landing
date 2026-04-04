@@ -24,6 +24,7 @@ import StoreSettings from "@/components/StoreSettings";
 import StoreFinancePanel from "@/components/StoreFinancePanel";
 import { printThermalReceipt } from "@/lib/thermalPrint";
 import { requestNotificationPermission, notifyNewOrder } from "@/lib/notifications";
+import { addMoney, averageMoney, formatCurrency, sumMoney } from "@/lib/utils";
 
 type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_entrega" | "em_transito" | "entregue" | "finalizado";
 type DashboardTab = "dashboard" | "orders" | "menu" | "addons" | "hours" | "settings" | "finance" | "clients" | "reports";
@@ -221,7 +222,7 @@ const AdminDashboard = () => {
       if (order.status === "aguardando_pagamento") return;
       const existing = map.get(order.client_id) || { orders: [], totalSpent: 0, lastOrder: "", neighborhood: "" };
       existing.orders.push(order);
-      if (order.status !== "cancelado") existing.totalSpent += Number(order.total_price);
+      if (order.status !== "cancelado") existing.totalSpent = addMoney(existing.totalSpent, order.total_price);
       if (!existing.lastOrder || order.created_at > existing.lastOrder) existing.lastOrder = order.created_at;
       const profile = clientProfiles.find((p: any) => p.user_id === order.client_id);
       if (profile) existing.neighborhood = (profile as any).neighborhood || order.neighborhood || "";
@@ -230,7 +231,7 @@ const AdminDashboard = () => {
 
     return Array.from(map.entries()).map(([clientId, data]) => {
       const completedOrders = data.orders.filter((o: any) => !["cancelado", "aguardando_pagamento"].includes(o.status));
-      const ticketMedio = completedOrders.length > 0 ? data.totalSpent / completedOrders.length : 0;
+      const ticketMedio = averageMoney(data.totalSpent, completedOrders.length);
 
       // Find favorite product
       const productCount = new Map<string, number>();
@@ -377,7 +378,7 @@ const AdminDashboard = () => {
   const preparingCount = orders?.filter(o => o.status === "preparando").length || 0;
   const readyCount = orders?.filter(o => o.status === "pronto_para_entrega").length || 0;
   const todayOrders = orders?.filter(o => new Date(o.created_at).toDateString() === new Date().toDateString() && !["cancelado", "aguardando_pagamento"].includes(o.status)) || [];
-  const todayTotal = todayOrders.reduce((sum, o) => sum + Number(o.total_price), 0);
+  const todayTotal = sumMoney(todayOrders.map((order) => order.total_price));
   const todayCount = todayOrders.length;
 
   // Average delivery time (from pendente to finalizado/entregue, today)
@@ -784,11 +785,11 @@ const AdminDashboard = () => {
                         {/* Stats */}
                         <div className="grid grid-cols-3 gap-2">
                           <div className="bg-muted/50 rounded-xl p-3 text-center">
-                            <p className="text-lg font-black text-foreground">R$ {client.totalSpent.toFixed(0)}</p>
+                            <p className="text-lg font-black text-foreground">{formatCurrency(client.totalSpent)}</p>
                             <p className="text-[10px] text-muted-foreground">Total Gasto</p>
                           </div>
                           <div className="bg-muted/50 rounded-xl p-3 text-center">
-                            <p className="text-lg font-black text-foreground">R$ {client.ticketMedio.toFixed(0)}</p>
+                            <p className="text-lg font-black text-foreground">{formatCurrency(client.ticketMedio)}</p>
                             <p className="text-[10px] text-muted-foreground">Ticket Médio</p>
                           </div>
                           <div className="bg-muted/50 rounded-xl p-3 text-center">
@@ -1235,7 +1236,7 @@ const AdminDashboard = () => {
                       );
                       return {
                         day: new Date(date).toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit" }),
-                        vendas: dayOrders.reduce((s: number, o: any) => s + Number(o.total_price), 0),
+                        vendas: sumMoney(dayOrders.map((order: any) => order.total_price)),
                         pedidos: dayOrders.length,
                       };
                     });
@@ -1248,9 +1249,9 @@ const AdminDashboard = () => {
                       });
                     });
                     const sortedProducts = Array.from(topProducts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 10);
-                    const totalRevenue = dailyData.reduce((s, d) => s + d.vendas, 0);
+                    const totalRevenue = sumMoney(dailyData.map((day) => day.vendas));
                     const totalOrders = dailyData.reduce((s, d) => s + d.pedidos, 0);
-                    const avgTicket = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+                    const avgTicket = averageMoney(totalRevenue, totalOrders);
 
                     const exportCSV = () => {
                       const lines = ["Data,Vendas,Pedidos", ...dailyData.map(d => `${d.day},${d.vendas.toFixed(2)},${d.pedidos}`)];

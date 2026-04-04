@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { addMoney, sumMoney } from "@/lib/utils";
 export interface CartAddon {
   name: string;
   price: number;
@@ -106,8 +107,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const clearCart = useCallback(() => setItems([]), []);
 
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
-  const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-  const total = subtotal + neighborhoodFee;
+  const subtotal = sumMoney(items.map((item) => item.price * item.quantity));
+  const total = addMoney(subtotal, neighborhoodFee);
 
   return (
     <CartContext.Provider value={{
