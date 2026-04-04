@@ -443,7 +443,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* Quick stats in sidebar */}
-        <div className="p-3 space-y-2 border-b border-border">
+        <div className="p-3 space-y-2 border-b border-border" data-tour="loja-stats">
           <div className="grid grid-cols-2 gap-2">
             <div className={`rounded-xl p-2.5 text-center border ${pendingCount > 0 ? "bg-amber-500/10 border-amber-500/20" : "bg-muted/50 border-border"}`}>
               <p className={`text-lg font-black ${pendingCount > 0 ? "text-amber-500" : "text-foreground"}`}>{pendingCount}</p>
