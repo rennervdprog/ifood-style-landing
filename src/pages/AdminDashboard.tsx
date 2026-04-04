@@ -25,6 +25,7 @@ import StoreFinancePanel from "@/components/StoreFinancePanel";
 import { printThermalReceipt } from "@/lib/thermalPrint";
 import { requestNotificationPermission, notifyNewOrder } from "@/lib/notifications";
 import { addMoney, averageMoney, formatCurrency, sumMoney } from "@/lib/utils";
+import ProductTour, { lojistaTourSteps } from "@/components/ProductTour";
 
 type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_entrega" | "em_transito" | "entregue" | "finalizado";
 type DashboardTab = "dashboard" | "orders" | "menu" | "addons" | "hours" | "settings" | "finance" | "clients" | "reports";
