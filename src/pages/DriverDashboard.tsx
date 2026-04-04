@@ -548,6 +548,7 @@ const DriverDashboard = () => {
   ];
 
   return (
+    <>
     <div className="min-h-screen bg-background text-foreground overflow-y-auto pb-24">
       {/* ─── Professional Header ─── */}
       <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border px-4 py-3">
