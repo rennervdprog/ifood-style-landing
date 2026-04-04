@@ -18,6 +18,7 @@ import {
   formatCooldownTime,
 } from "@/lib/pixSafeGuard";
 import { SIMULATION_MODE, createSimulatedPixCharge, simulatePaymentDelay } from "@/lib/pixSimulation";
+import { multiplyMoney, subtractMoney, sumMoney } from "@/lib/utils";
 
 interface StoreFinancePanelProps {
   storeId: string;
@@ -170,19 +171,19 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
   const completedOrders = orders?.filter(o => ["entregue", "finalizado"].includes(o.status)) || [];
   const activeOrders = orders?.filter(o => !["entregue", "finalizado"].includes(o.status)) || [];
 
-  const totalSales = completedOrders.reduce((s, o) => s + Number(o.subtotal), 0);
-  const totalCommission = Math.round(totalSales * 0.15 * 100) / 100;
-  const storePart = Math.round(totalSales * 0.85 * 100) / 100;
+  const totalSales = sumMoney(completedOrders.map((order) => order.subtotal));
+  const totalCommission = multiplyMoney(totalSales, 0.15);
+  const storePart = subtractMoney(totalSales, totalCommission);
 
-  const physicalSales = completedOrders.filter(o => o.payment_method !== "pix").reduce((s, o) => s + Number(o.subtotal), 0);
-  const commissionDue = Math.round(physicalSales * 0.15 * 100) / 100;
+  const physicalSales = sumMoney(completedOrders.filter(o => o.payment_method !== "pix").map((order) => order.subtotal));
+  const commissionDue = multiplyMoney(physicalSales, 0.15);
 
-  const appSales = completedOrders.filter(o => o.payment_method === "pix").reduce((s, o) => s + Number(o.subtotal), 0);
-  const creditFromApp = Math.round(appSales * 0.85 * 100) / 100;
+  const appSales = sumMoney(completedOrders.filter(o => o.payment_method === "pix").map((order) => order.subtotal));
+  const creditFromApp = subtractMoney(appSales, multiplyMoney(appSales, 0.15));
 
-  const activePixSales = activeOrders.filter(o => o.payment_method === "pix").reduce((s, o) => s + Number(o.subtotal), 0);
+  const activePixSales = sumMoney(activeOrders.filter(o => o.payment_method === "pix").map((order) => order.subtotal));
 
-  const finalBalance = Math.round((creditFromApp - commissionDue) * 100) / 100;
+  const finalBalance = subtractMoney(creditFromApp, commissionDue);
 
   const periodLabel = period === "week" ? "Semana" : "Mês";
 
@@ -820,8 +821,8 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-1">Extrato de Pedidos</p>
           {completedOrders.map(order => {
             const sub = Number(order.subtotal);
-            const commission = Math.round(sub * 0.15 * 100) / 100;
-            const net = Math.round(sub * 0.85 * 100) / 100;
+            const commission = multiplyMoney(sub, 0.15);
+            const net = subtractMoney(sub, commission);
             const isPix = order.payment_method === "pix";
             return (
               <div key={order.id} className="bg-card rounded-xl p-3 border border-border flex items-center gap-3">

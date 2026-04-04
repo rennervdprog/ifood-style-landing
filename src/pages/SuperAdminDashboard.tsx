@@ -17,6 +17,7 @@ import { Switch } from "@/components/ui/switch";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
 } from "recharts";
+import { addMoney, multiplyMoney, subtractMoney, sumMoney } from "@/lib/utils";
 
 type DateFilter = "today" | "yesterday" | "week";
 type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "saques" | "sync" | "coupons" | "entrega";
@@ -180,8 +181,8 @@ const SuperAdminDashboard = () => {
 
   const metrics = useMemo(() => {
     if (!orders) return { totalSales: 0, commission: 0, activeOrders: 0, totalOrders: 0 };
-    const totalSales = orders.reduce((s, o) => s + Number(o.total_price), 0);
-    const commission = orders.reduce((s, o) => s + (Number(o.subtotal) * 0.12) + Number((o as any).app_fee || 0), 0);
+    const totalSales = sumMoney(orders.map((order) => order.total_price));
+    const commission = sumMoney(orders.map((order) => addMoney(multiplyMoney(order.subtotal, 0.12), (order as any).app_fee || 0)));
     const activeStatuses = ["pendente", "preparando", "pronto_para_entrega", "em_transito", "saiu_entrega"];
     const activeOrders = orders.filter(o => activeStatuses.includes(o.status)).length;
     return { totalSales, commission, activeOrders, totalOrders: orders.length };
@@ -201,19 +202,19 @@ const SuperAdminDashboard = () => {
     filtered.forEach(o => {
       const entry = map.get(o.store_id);
       if (!entry) return;
-      const subtotal = Number(o.subtotal);
-      const deliveryFee = Number(o.delivery_fee);
+      const subtotal = o.subtotal;
+      const deliveryFee = o.delivery_fee;
       const isPhysical = o.payment_method === "dinheiro" || o.payment_method === "cartao";
-      if (isPhysical) entry.physicalSales += subtotal;
-      else entry.appSales += subtotal;
-      entry.totalSales += subtotal;
-      entry.deliveryFees += deliveryFee;
+      if (isPhysical) entry.physicalSales = addMoney(entry.physicalSales, subtotal);
+      else entry.appSales = addMoney(entry.appSales, subtotal);
+      entry.totalSales = addMoney(entry.totalSales, subtotal);
+      entry.deliveryFees = addMoney(entry.deliveryFees, deliveryFee);
       entry.orderCount += 1;
     });
     map.forEach(entry => {
-      entry.commissionDue = entry.physicalSales * 0.15;
-      entry.netTransfer = entry.appSales - (entry.appSales * 0.15);
-      entry.finalBalance = entry.netTransfer - entry.commissionDue;
+      entry.commissionDue = multiplyMoney(entry.physicalSales, 0.15);
+      entry.netTransfer = subtractMoney(entry.appSales, multiplyMoney(entry.appSales, 0.15));
+      entry.finalBalance = subtractMoney(entry.netTransfer, entry.commissionDue);
     });
     return Array.from(map.values()).filter(e => e.orderCount > 0).sort((a, b) => b.totalSales - a.totalSales);
   }, [financeOrders, stores, selectedStore]);
@@ -230,19 +231,19 @@ const SuperAdminDashboard = () => {
       if (!o.driver_id) return;
       const entry = map.get(o.driver_id);
       if (!entry) return;
-      const fee = Number(o.delivery_fee);
-      entry.totalFees += fee;
+      const fee = o.delivery_fee;
+      entry.totalFees = addMoney(entry.totalFees, fee);
       entry.deliveryCount += 1;
-      if (o.payment_method === "dinheiro") entry.cashFees += fee;
-      else entry.appFees += fee;
+      if (o.payment_method === "dinheiro") entry.cashFees = addMoney(entry.cashFees, fee);
+      else entry.appFees = addMoney(entry.appFees, fee);
     });
     return Array.from(map.values()).filter(e => e.deliveryCount > 0).sort((a, b) => b.totalFees - a.totalFees);
   }, [financeOrders, drivers]);
 
   const financeTotals = useMemo(() => {
-    const totalVolume = storeSettlement.reduce((s, e) => s + e.totalSales, 0);
-    const grossProfit = storeSettlement.reduce((s, e) => s + (e.totalSales * 0.15), 0);
-    const totalDriverFees = driverSettlement.reduce((s, e) => s + e.appFees, 0);
+    const totalVolume = sumMoney(storeSettlement.map((entry) => entry.totalSales));
+    const grossProfit = sumMoney(storeSettlement.map((entry) => multiplyMoney(entry.totalSales, 0.15)));
+    const totalDriverFees = sumMoney(driverSettlement.map((entry) => entry.appFees));
     return { totalVolume, grossProfit, totalDriverFees };
   }, [storeSettlement, driverSettlement]);
 
@@ -253,8 +254,8 @@ const SuperAdminDashboard = () => {
     orders.forEach(o => {
       const entry = map.get(o.store_id);
       if (entry) {
-        entry.totalSold += Number(o.total_price);
-        entry.commission += Number(o.subtotal) * 0.12;
+        entry.totalSold = addMoney(entry.totalSold, o.total_price);
+        entry.commission = addMoney(entry.commission, multiplyMoney(o.subtotal, 0.12));
         entry.orders += 1;
       }
     });
@@ -267,7 +268,7 @@ const SuperAdminDashboard = () => {
     orders.forEach(o => {
       const h = new Date(o.created_at).getHours();
       hours[h].count += 1;
-      hours[h].revenue += Number(o.total_price);
+      hours[h].revenue = addMoney(hours[h].revenue, o.total_price);
     });
     return hours.filter(h => h.count > 0 || (h.hour >= "8h" && h.hour <= "23h"));
   }, [orders]);
@@ -1203,12 +1204,12 @@ const FinanceTab = ({
 
       {/* Finance summary cards */}
       {(() => {
-        const pendingDriverAmount = (withdrawalRequests || [])
+        const pendingDriverAmount = sumMoney((withdrawalRequests || [])
           .filter((w: any) => w.status === "solicitado")
-          .reduce((s: number, w: any) => s + Number(w.amount), 0);
-        const paidDriverAmount = (withdrawalRequests || [])
+          .map((w: any) => w.amount));
+        const paidDriverAmount = sumMoney((withdrawalRequests || [])
           .filter((w: any) => w.status === "pago")
-          .reduce((s: number, w: any) => s + Number(w.amount), 0);
+          .map((w: any) => w.amount));
         return (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="bg-card rounded-2xl p-4 border border-border">
@@ -1384,10 +1385,12 @@ const FinanceTab = ({
             {driverSettlement.map((entry, i) => {
               const driverPending = withdrawalRequests
                 .filter((w: any) => w.driver_user_id === entry.driverId && w.status === "solicitado")
-                .reduce((s: number, w: any) => s + Number(w.amount), 0);
+                .map((w: any) => w.amount);
               const driverPaid = withdrawalRequests
                 .filter((w: any) => w.driver_user_id === entry.driverId && w.status === "pago")
-                .reduce((s: number, w: any) => s + Number(w.amount), 0);
+                .map((w: any) => w.amount);
+              const driverPendingAmount = sumMoney(driverPending);
+              const driverPaidAmount = sumMoney(driverPaid);
               return (
                 <div key={i} className="bg-card rounded-2xl p-4 space-y-3 border border-border">
                   <div className="flex items-center justify-between">
@@ -1410,11 +1413,11 @@ const FinanceTab = ({
                     </div>
                     <div className="bg-amber-500/10 rounded-xl p-2.5 text-center border border-amber-500/20">
                       <p className="text-amber-500">⏳ A Receber</p>
-                      <p className="text-sm font-bold text-amber-500">R$ {Math.max(0, entry.appFees - driverPaid).toFixed(2)}</p>
+                      <p className="text-sm font-bold text-amber-500">R$ {Math.max(0, subtractMoney(entry.appFees, driverPaidAmount)).toFixed(2)}</p>
                     </div>
                     <div className="bg-green-500/10 rounded-xl p-2.5 text-center border border-green-500/20">
                       <p className="text-green-500">✅ Já Pago</p>
-                      <p className="text-sm font-bold text-green-500">R$ {driverPaid.toFixed(2)}</p>
+                      <p className="text-sm font-bold text-green-500">R$ {driverPaidAmount.toFixed(2)}</p>
                     </div>
                   </div>
                 </div>
