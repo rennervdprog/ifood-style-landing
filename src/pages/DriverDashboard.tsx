@@ -181,7 +181,7 @@ const DriverDashboard = () => {
       return data;
     },
     enabled: !!user,
-    refetchInterval: 15000,
+    refetchInterval: 5000,
   });
 
   const { data: driverBalance } = useQuery({
