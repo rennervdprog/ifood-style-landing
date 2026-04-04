@@ -39,6 +39,7 @@ const StorePage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const pageRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLDivElement>(null);
 
   const { data: store, isLoading: storeLoading } = useQuery({
