@@ -509,7 +509,8 @@ const AdminDashboard = () => {
               <Printer className="h-4 w-4" />
             </button>
             <button onClick={toggleStoreOpen}
-              className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-colors ${store?.is_open ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/30" : "bg-destructive/10 text-destructive border-destructive/30"}`}>
+              className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-colors ${store?.is_open ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/30" : "bg-destructive/10 text-destructive border-destructive/30"}`}
+              data-tour="loja-status">
               {store?.is_open ? "✓ Aberto" : "✕ Pausado"}
             </button>
           </div>
