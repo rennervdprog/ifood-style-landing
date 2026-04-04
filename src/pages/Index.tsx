@@ -139,8 +139,11 @@ const Index = () => {
         )}
       </div>
 
-      <CartFAB />
+      <div data-tour="cart-fab">
+        <CartFAB />
+      </div>
       <BottomNav />
+      <ProductTour steps={clienteTourSteps} tourKey="cliente" />
     </div>
   );
 };
