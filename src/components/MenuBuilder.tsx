@@ -25,6 +25,8 @@ const MenuBuilder = ({ storeId }: MenuBuilderProps) => {
   const [addonItemForm, setAddonItemForm] = useState({ name: "", price: "0" });
   const [showAddonItemForm, setShowAddonItemForm] = useState<string | null>(null);
   const [showLinkAddon, setShowLinkAddon] = useState<string | null>(null);
+  const [draggedSectionId, setDraggedSectionId] = useState<string | null>(null);
+  const [dragOverSectionId, setDragOverSectionId] = useState<string | null>(null);
 
   // Fetch menu sections
   const { data: sections } = useQuery({
@@ -269,6 +271,32 @@ const MenuBuilder = ({ storeId }: MenuBuilderProps) => {
 
   const unsectionedProducts = getProductsBySection(null);
 
+  // Drag and drop reorder sections
+  const handleSectionDrop = async (targetId: string) => {
+    if (!draggedSectionId || draggedSectionId === targetId || !sections) return;
+    const items = [...sections];
+    const fromIdx = items.findIndex((s: any) => s.id === draggedSectionId);
+    const toIdx = items.findIndex((s: any) => s.id === targetId);
+    if (fromIdx === -1 || toIdx === -1) return;
+    const [moved] = items.splice(fromIdx, 1);
+    items.splice(toIdx, 0, moved);
+    // Optimistic update
+    queryClient.setQueryData(["menu-sections", storeId], items.map((s: any, i: number) => ({ ...s, sort_order: i })));
+    setDraggedSectionId(null);
+    setDragOverSectionId(null);
+    // Persist
+    const updates = items.map((s: any, i: number) =>
+      supabase.from("menu_sections").update({ sort_order: i } as any).eq("id", s.id)
+    );
+    const results = await Promise.all(updates);
+    if (results.some(r => r.error)) {
+      toast.error("Erro ao salvar ordem");
+      invalidateAll();
+    } else {
+      toast.success("Ordem das seções salva!");
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* Add Section Button */}
@@ -304,14 +332,35 @@ const MenuBuilder = ({ storeId }: MenuBuilderProps) => {
 
       {/* Sections */}
       {sections?.map((section: any) => (
-        <div key={section.id} className="bg-card rounded-2xl overflow-hidden">
+        <div
+          key={section.id}
+          className={`bg-card rounded-2xl overflow-hidden transition-all ${
+            dragOverSectionId === section.id ? "ring-2 ring-primary scale-[1.01]" : ""
+          } ${draggedSectionId === section.id ? "opacity-50" : ""}`}
+          draggable
+          onDragStart={(e) => {
+            setDraggedSectionId(section.id);
+            e.dataTransfer.effectAllowed = "move";
+          }}
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+            setDragOverSectionId(section.id);
+          }}
+          onDragLeave={() => setDragOverSectionId(null)}
+          onDrop={(e) => {
+            e.preventDefault();
+            handleSectionDrop(section.id);
+          }}
+          onDragEnd={() => { setDraggedSectionId(null); setDragOverSectionId(null); }}
+        >
           {/* Section Header */}
           <div
             className="flex items-center justify-between p-4 cursor-pointer"
             onClick={() => setExpandedSection(expandedSection === section.id ? null : section.id)}
           >
             <div className="flex items-center gap-2">
-              <GripVertical className="h-4 w-4 text-muted-foreground" />
+              <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab active:cursor-grabbing" />
               {editingSection === section.id ? (
                 <input
                   type="text"
