@@ -91,7 +91,9 @@ const Index = () => {
         <h1 className="text-xl font-black text-foreground">
           O que você quer <span className="text-primary">pedir</span> hoje?
         </h1>
-        <SearchBar value={search} onChange={setSearch} />
+        <div data-tour="search">
+          <SearchBar value={search} onChange={setSearch} />
+        </div>
       </div>
 
       {/* Promotional banners */}
@@ -100,7 +102,9 @@ const Index = () => {
       {/* First order coupon banner */}
       <FirstOrderBanner />
 
-      <CategoryScroll selected={category} onSelect={setCategory} />
+      <div data-tour="categories">
+        <CategoryScroll selected={category} onSelect={setCategory} />
+      </div>
 
       {/* Reorder section */}
       <ReorderSection />
