@@ -161,7 +161,7 @@ const ProductDetailModal = ({ product, storeName, open, onClose, onAdd }: Props)
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) { onClose(); resetState(); } }}>
-      <DialogContent className="max-w-lg p-0 gap-0 max-h-[90vh] overflow-y-auto rounded-2xl">
+      <DialogContent className="max-w-lg p-0 gap-0 max-h-[90vh] overflow-y-auto rounded-2xl" onOpenAutoFocus={(e) => e.preventDefault()}>
         {/* Product image */}
         {product.image_url ? (
           <img src={product.image_url} alt={product.name} className="w-full h-56 object-cover rounded-t-2xl" />
