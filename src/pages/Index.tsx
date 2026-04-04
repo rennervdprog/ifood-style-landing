@@ -14,6 +14,7 @@ import ReorderSection from "@/components/ReorderSection";
 
 import FirstOrderBanner from "@/components/FirstOrderBanner";
 import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
+import ProductTour, { clienteTourSteps } from "@/components/ProductTour";
 
 const Index = () => {
   const [category, setCategory] = useState("all");
@@ -90,7 +91,9 @@ const Index = () => {
         <h1 className="text-xl font-black text-foreground">
           O que você quer <span className="text-primary">pedir</span> hoje?
         </h1>
-        <SearchBar value={search} onChange={setSearch} />
+        <div data-tour="search">
+          <SearchBar value={search} onChange={setSearch} />
+        </div>
       </div>
 
       {/* Promotional banners */}
@@ -99,7 +102,9 @@ const Index = () => {
       {/* First order coupon banner */}
       <FirstOrderBanner />
 
-      <CategoryScroll selected={category} onSelect={setCategory} />
+      <div data-tour="categories">
+        <CategoryScroll selected={category} onSelect={setCategory} />
+      </div>
 
       {/* Reorder section */}
       <ReorderSection />
@@ -115,8 +120,10 @@ const Index = () => {
           </div>
         ) : filtered && filtered.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-            {filtered.map((store) => (
-              <StoreCard key={store.id} {...store} is_open={store.computedOpen} statusReason={store.statusReason} />
+            {filtered.map((store, idx) => (
+              <div key={store.id} {...(idx === 0 ? { "data-tour": "store-card" } : {})}>
+                <StoreCard {...store} is_open={store.computedOpen} statusReason={store.statusReason} />
+              </div>
             ))}
           </div>
         ) : (
@@ -132,8 +139,11 @@ const Index = () => {
         )}
       </div>
 
-      <CartFAB />
+      <div data-tour="cart-fab">
+        <CartFAB />
+      </div>
       <BottomNav />
+      <ProductTour steps={clienteTourSteps} tourKey="cliente" />
     </div>
   );
 };

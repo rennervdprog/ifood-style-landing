@@ -25,6 +25,7 @@ import StoreFinancePanel from "@/components/StoreFinancePanel";
 import { printThermalReceipt } from "@/lib/thermalPrint";
 import { requestNotificationPermission, notifyNewOrder } from "@/lib/notifications";
 import { addMoney, averageMoney, formatCurrency, sumMoney } from "@/lib/utils";
+import ProductTour, { lojistaTourSteps } from "@/components/ProductTour";
 
 type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_entrega" | "em_transito" | "entregue" | "finalizado";
 type DashboardTab = "dashboard" | "orders" | "menu" | "addons" | "hours" | "settings" | "finance" | "clients" | "reports";
@@ -442,7 +443,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* Quick stats in sidebar */}
-        <div className="p-3 space-y-2 border-b border-border">
+        <div className="p-3 space-y-2 border-b border-border" data-tour="loja-stats">
           <div className="grid grid-cols-2 gap-2">
             <div className={`rounded-xl p-2.5 text-center border ${pendingCount > 0 ? "bg-amber-500/10 border-amber-500/20" : "bg-muted/50 border-border"}`}>
               <p className={`text-lg font-black ${pendingCount > 0 ? "text-amber-500" : "text-foreground"}`}>{pendingCount}</p>
@@ -472,6 +473,7 @@ const AdminDashboard = () => {
             const Icon = item.icon;
             return (
               <button key={item.key} onClick={() => handleTabChange(item.key)}
+                data-tour={item.key === "orders" ? "loja-orders" : item.key === "menu" ? "loja-menu" : item.key === "clients" ? "loja-clients" : undefined}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${isActive ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-accent hover:text-foreground"}`}>
                 <Icon className="h-4 w-4 flex-shrink-0" />
                 <span>{item.label}</span>
@@ -508,7 +510,8 @@ const AdminDashboard = () => {
               <Printer className="h-4 w-4" />
             </button>
             <button onClick={toggleStoreOpen}
-              className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-colors ${store?.is_open ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/30" : "bg-destructive/10 text-destructive border-destructive/30"}`}>
+              className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-colors ${store?.is_open ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/30" : "bg-destructive/10 text-destructive border-destructive/30"}`}
+              data-tour="loja-status">
               {store?.is_open ? "✓ Aberto" : "✕ Pausado"}
             </button>
           </div>
@@ -1332,6 +1335,7 @@ const AdminDashboard = () => {
           )}
         </div>
       </main>
+      <ProductTour steps={lojistaTourSteps} tourKey="lojista" />
     </div>
   );
 };

@@ -20,6 +20,7 @@ const BottomNav = () => {
             <button
               key={tab.path}
               onClick={() => navigate(tab.path)}
+              data-tour={tab.label === "Pedidos" ? "nav-pedidos" : undefined}
               className={`flex flex-col items-center gap-0.5 px-4 py-2 transition-colors ${
                 active ? "text-primary" : "text-muted-foreground"
               }`}

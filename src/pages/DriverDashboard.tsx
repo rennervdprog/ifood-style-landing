@@ -19,6 +19,7 @@ import { format, startOfDay, startOfWeek, subDays, isWithinInterval, parseISO } 
 import { ptBR } from "date-fns/locale";
 import { requestNotificationPermission, notifyDeliveryAvailable } from "@/lib/notifications";
 import { sumMoney } from "@/lib/utils";
+import ProductTour, { motoboyTourSteps } from "@/components/ProductTour";
 
 type TabType = "entregas" | "historico" | "config";
 type DateFilter = "hoje" | "semana" | "mes" | "custom";
@@ -547,6 +548,7 @@ const DriverDashboard = () => {
   ];
 
   return (
+    <>
     <div className="min-h-screen bg-background text-foreground overflow-y-auto pb-24">
       {/* ─── Professional Header ─── */}
       <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border px-4 py-3">
@@ -574,6 +576,7 @@ const DriverDashboard = () => {
           {/* Toggle Switch */}
           <button
             onClick={toggleOnline}
+            data-tour="motoboy-status"
             className={`relative w-14 h-7 rounded-full transition-all duration-300 ${isOnline ? "bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.4)]" : "bg-muted"}`}
           >
             <span className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-transform duration-300 ${isOnline ? "left-7" : "left-0.5"}`} />
@@ -582,13 +585,14 @@ const DriverDashboard = () => {
       </header>
 
       {/* ─── Tab Navigation ─── */}
-      <div className="flex bg-card border-b border-border">
+      <div className="flex bg-card border-b border-border" data-tour="motoboy-entregas">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.key;
           return (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
+              data-tour={tab.key === "historico" ? "motoboy-ganhos" : tab.key === "entregas" ? "motoboy-nav" : undefined}
               className={`flex-1 py-3 flex flex-col items-center gap-1 transition-all relative ${isActive ? "text-primary" : "text-muted-foreground"}`}
             >
               <tab.icon className="h-4 w-4" />
@@ -1293,6 +1297,8 @@ const DriverDashboard = () => {
         </div>
       )}
     </div>
+      <ProductTour steps={motoboyTourSteps} tourKey="motoboy" />
+    </>
   );
 };
 
