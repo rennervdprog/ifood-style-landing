@@ -12,6 +12,7 @@ import SavedAddressPicker from "@/components/SavedAddressPicker";
 import CouponInput from "@/components/CouponInput";
 import { calculateDeliveryFee, DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig } from "@/lib/deliveryFee";
 import { formatCep, fetchCep } from "@/lib/cepLookup";
+import { addMoney, multiplyMoney, sumMoney } from "@/lib/utils";
 
 const paymentMethods = [
   { id: "pix", label: "PIX Online", icon: QrCode },
@@ -94,7 +95,7 @@ const CheckoutPage = () => {
   const config = deliveryFeeConfig || DEFAULT_DELIVERY_FEE_CONFIG;
   const activeDeliveryFee = calculatedDeliveryFee !== null ? calculatedDeliveryFee : config.city_fee;
   const effectiveDeliveryFee = couponType === "free_shipping" ? 0 : activeDeliveryFee;
-  const finalTotal = Math.max(0, subtotal - couponDiscount + effectiveDeliveryFee);
+  const finalTotal = Math.max(0, addMoney(subtotal, effectiveDeliveryFee, -couponDiscount));
 
   // Calculate delivery fee based on CEP - uses saved address CEP when selected, otherwise profile CEP
   useEffect(() => {
@@ -167,7 +168,7 @@ const CheckoutPage = () => {
       return;
     }
     if (paymentMethod === "dinheiro" && needsChange) {
-      const changeValue = parseFloat(changeFor);
+      const changeValue = addMoney(parseFloat(changeFor));
       if (!changeValue || changeValue < finalTotal) {
         toast.error("O valor do troco deve ser maior que o total do pedido.");
         return;
@@ -184,11 +185,11 @@ const CheckoutPage = () => {
       }, {} as Record<string, typeof items>);
 
       for (const [storeId, storeItems] of Object.entries(storeGroups)) {
-        const storeSubtotal = storeItems.reduce((s, i) => s + i.price * i.quantity, 0);
-        const appFee = Math.round(storeSubtotal * 0.12 * 100) / 100;
-        const storeTotalPrice = Math.max(0, storeSubtotal - couponDiscount + effectiveDeliveryFee);
+        const storeSubtotal = sumMoney(storeItems.map((item) => item.price * item.quantity));
+        const appFee = multiplyMoney(storeSubtotal, 0.12);
+        const storeTotalPrice = Math.max(0, addMoney(storeSubtotal, effectiveDeliveryFee, -couponDiscount));
 
-        const changeValue = paymentMethod === "dinheiro" && needsChange ? parseFloat(changeFor) : 0;
+        const changeValue = paymentMethod === "dinheiro" && needsChange ? addMoney(parseFloat(changeFor)) : 0;
         const orderStatus = paymentMethod === "pix" ? "aguardando_pagamento" : "pendente";
         const { data: order, error: orderError } = await supabase
           .from("orders")

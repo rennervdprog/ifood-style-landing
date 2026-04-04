@@ -18,6 +18,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { format, startOfDay, startOfWeek, subDays, isWithinInterval, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { requestNotificationPermission, notifyDeliveryAvailable } from "@/lib/notifications";
+import { sumMoney } from "@/lib/utils";
 
 type TabType = "entregas" | "historico" | "config";
 type DateFilter = "hoje" | "semana" | "mes" | "custom";
@@ -261,32 +262,40 @@ const DriverDashboard = () => {
   const todayEarnings = useMemo(() => {
     if (!deliveryHistory) return 0;
     const todayStart = startOfDay(new Date());
-    return deliveryHistory
-      .filter((o: any) => parseISO(o.confirmed_at || o.created_at) >= todayStart)
-      .reduce((sum: number, o: any) => sum + Number(o.delivery_fee), 0);
+    return sumMoney(
+      deliveryHistory
+        .filter((o: any) => parseISO(o.confirmed_at || o.created_at) >= todayStart)
+        .map((o: any) => o.delivery_fee)
+    );
   }, [deliveryHistory]);
 
   const weekEarnings = useMemo(() => {
     if (!deliveryHistory) return 0;
     const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
-    return deliveryHistory
-      .filter((o: any) => parseISO(o.confirmed_at || o.created_at) >= weekStart)
-      .reduce((sum: number, o: any) => sum + Number(o.delivery_fee), 0);
+    return sumMoney(
+      deliveryHistory
+        .filter((o: any) => parseISO(o.confirmed_at || o.created_at) >= weekStart)
+        .map((o: any) => o.delivery_fee)
+    );
   }, [deliveryHistory]);
 
   const totalDeliveries = deliveryHistory?.length || 0;
 
   const filteredEarnings = useMemo(() => {
-    return filteredHistory.reduce((sum: number, o: any) => sum + Number(o.delivery_fee), 0);
+    return sumMoney(filteredHistory.map((o: any) => o.delivery_fee));
   }, [filteredHistory]);
 
   const earningsBreakdown = useMemo(() => {
-    const pixEarnings = filteredHistory
-      .filter((o: any) => !["dinheiro", "cartao"].includes(o.payment_method))
-      .reduce((sum: number, o: any) => sum + Number(o.delivery_fee), 0);
-    const cashEarnings = filteredHistory
-      .filter((o: any) => ["dinheiro", "cartao"].includes(o.payment_method))
-      .reduce((sum: number, o: any) => sum + Number(o.delivery_fee), 0);
+    const pixEarnings = sumMoney(
+      filteredHistory
+        .filter((o: any) => !["dinheiro", "cartao"].includes(o.payment_method))
+        .map((o: any) => o.delivery_fee)
+    );
+    const cashEarnings = sumMoney(
+      filteredHistory
+        .filter((o: any) => ["dinheiro", "cartao"].includes(o.payment_method))
+        .map((o: any) => o.delivery_fee)
+    );
     const pixCount = filteredHistory.filter((o: any) => !["dinheiro", "cartao"].includes(o.payment_method)).length;
     const cashCount = filteredHistory.filter((o: any) => ["dinheiro", "cartao"].includes(o.payment_method)).length;
     return { pixEarnings, cashEarnings, pixCount, cashCount };
