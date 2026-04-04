@@ -271,6 +271,32 @@ const MenuBuilder = ({ storeId }: MenuBuilderProps) => {
 
   const unsectionedProducts = getProductsBySection(null);
 
+  // Drag and drop reorder sections
+  const handleSectionDrop = async (targetId: string) => {
+    if (!draggedSectionId || draggedSectionId === targetId || !sections) return;
+    const items = [...sections];
+    const fromIdx = items.findIndex((s: any) => s.id === draggedSectionId);
+    const toIdx = items.findIndex((s: any) => s.id === targetId);
+    if (fromIdx === -1 || toIdx === -1) return;
+    const [moved] = items.splice(fromIdx, 1);
+    items.splice(toIdx, 0, moved);
+    // Optimistic update
+    queryClient.setQueryData(["menu-sections", storeId], items.map((s: any, i: number) => ({ ...s, sort_order: i })));
+    setDraggedSectionId(null);
+    setDragOverSectionId(null);
+    // Persist
+    const updates = items.map((s: any, i: number) =>
+      supabase.from("menu_sections").update({ sort_order: i } as any).eq("id", s.id)
+    );
+    const results = await Promise.all(updates);
+    if (results.some(r => r.error)) {
+      toast.error("Erro ao salvar ordem");
+      invalidateAll();
+    } else {
+      toast.success("Ordem das seções salva!");
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* Add Section Button */}
