@@ -42,7 +42,7 @@ const ProductTour = ({ steps, tourKey, onComplete }: ProductTourProps) => {
     checkOnboarding();
   }, [user]);
 
-  const positionTooltip = useCallback(() => {
+  const positionTooltip = useCallback(async () => {
     const step = steps[currentStep];
     if (!step) return;
     const el = document.querySelector(step.target);
