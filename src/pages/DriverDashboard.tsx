@@ -1288,6 +1288,30 @@ const DriverDashboard = () => {
           )}
         </div>
       )}
+
+      </div>{/* End content wrapper */}
+
+      {/* ─── Native Bottom Tab Bar ─── */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border pb-safe" data-tour="motoboy-entregas">
+        <div className="flex items-center justify-around h-16">
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                data-tour={tab.key === "historico" ? "motoboy-ganhos" : tab.key === "entregas" ? "motoboy-nav" : undefined}
+                className={`flex flex-col items-center gap-0.5 px-5 py-2 transition-all rounded-xl ${isActive ? "text-primary" : "text-muted-foreground"}`}
+              >
+                <div className={`p-1.5 rounded-xl transition-colors ${isActive ? "bg-primary/10" : ""}`}>
+                  <tab.icon className="h-5 w-5" strokeWidth={isActive ? 2.5 : 1.5} />
+                </div>
+                <span className={`text-[10px] font-bold ${isActive ? "text-primary" : "text-muted-foreground"}`}>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
     </div>
       <ProductTour steps={motoboyTourSteps} tourKey="motoboy" />
     </>
