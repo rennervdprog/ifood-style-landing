@@ -13,7 +13,7 @@ import {
   ChevronDown, ChevronUp, DollarSign, XCircle, Loader2, Search,
   Menu, X, LayoutDashboard, CircleDot, TrendingUp, BarChart3,
   Users, Timer, Star, ShoppingBag, ArrowUpRight, ArrowDownRight,
-  Filter, UserCheck, UserX, MapPinned, Repeat, Heart, AlertTriangle
+  Filter, UserCheck, UserX, MapPinned, Repeat, Heart, AlertTriangle, LogOut
 } from "lucide-react";
 import { openWhatsApp } from "@/lib/whatsapp";
 import WhatsAppButton from "@/components/WhatsAppButton";
@@ -97,7 +97,7 @@ const GlanceCard = ({ icon: Icon, label, value, subValue, color = "text-primary"
 type ClientFilter = "all" | "loyal" | "inactive" | "location";
 
 const AdminDashboard = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -553,6 +553,13 @@ const AdminDashboard = () => {
                 <Clock className="h-3.5 w-3.5" /> {pendingCount} novo{pendingCount > 1 ? "s" : ""}
               </button>
             )}
+            <button
+              onClick={async () => { await signOut(); toast.success("Você saiu da conta."); navigate("/portal-parceiro"); }}
+              className="p-2 rounded-xl hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+              title="Sair da conta"
+            >
+              <LogOut className="h-4.5 w-4.5" />
+            </button>
           </div>
         </header>
 
