@@ -425,6 +425,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
                       price: String(product.price),
                       description: product.description || "",
                       image_url: product.image_url || "",
+                      metadata: (product as any).metadata || {},
                     });
                   }}
                   isEditing={editingProduct === product.id}
