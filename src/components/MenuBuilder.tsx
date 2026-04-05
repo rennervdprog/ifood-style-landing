@@ -566,11 +566,13 @@ const ProductFormInline = ({
   setForm,
   onSave,
   onCancel,
+  storeCategory,
 }: {
-  form: { name: string; price: string; description: string; image_url: string };
+  form: { name: string; price: string; description: string; image_url: string; metadata: Record<string, any> };
   setForm: (f: any) => void;
   onSave: () => void;
   onCancel: () => void;
+  storeCategory?: string;
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -650,6 +652,16 @@ const ProductFormInline = ({
         onChange={(e) => setForm({ ...form, description: e.target.value })}
         className="w-full bg-muted text-foreground px-3 py-2 rounded-lg text-sm border border-border focus:border-primary focus:outline-none"
       />
+
+      {/* Category-specific fields */}
+      {storeCategory && (
+        <CategoryProductFields
+          category={storeCategory}
+          metadata={form.metadata || {}}
+          onChange={(metadata) => setForm({ ...form, metadata })}
+        />
+      )}
+
       <div className="flex gap-2">
         <button onClick={onSave} className="flex-1 bg-primary text-primary-foreground py-2 rounded-lg text-sm font-bold">
           Salvar
