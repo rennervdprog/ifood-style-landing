@@ -787,6 +787,7 @@ export type Database = {
           id: string
           image_url: string | null
           is_available: boolean
+          metadata: Json
           name: string
           price: number
           section_id: string | null
@@ -798,6 +799,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_available?: boolean
+          metadata?: Json
           name: string
           price: number
           section_id?: string | null
@@ -809,6 +811,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_available?: boolean
+          metadata?: Json
           name?: string
           price?: number
           section_id?: string | null

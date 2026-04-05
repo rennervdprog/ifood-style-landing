@@ -7,18 +7,21 @@ import {
   Image as ImageIcon, Pause, Play, Package, Save, X, Link2, Upload, Loader2
 } from "lucide-react";
 
+import CategoryProductFields from "@/components/CategoryProductFields";
+
 interface MenuBuilderProps {
   storeId: string;
+  storeCategory?: string;
 }
 
-const MenuBuilder = ({ storeId }: MenuBuilderProps) => {
+const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
   const queryClient = useQueryClient();
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [newSectionName, setNewSectionName] = useState("");
   const [showAddSection, setShowAddSection] = useState(false);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [showProductForm, setShowProductForm] = useState<string | null>(null);
-  const [productForm, setProductForm] = useState({ name: "", price: "", description: "", image_url: "" });
+  const [productForm, setProductForm] = useState({ name: "", price: "", description: "", image_url: "", metadata: {} as Record<string, any> });
   const [editingProduct, setEditingProduct] = useState<string | null>(null);
   const [showAddonForm, setShowAddonForm] = useState<string | null>(null);
   const [addonGroupForm, setAddonGroupForm] = useState({ name: "", min_select: "0", max_select: "1" });
@@ -182,10 +185,11 @@ const MenuBuilder = ({ storeId }: MenuBuilderProps) => {
       price: parseFloat(productForm.price),
       description: productForm.description.trim() || null,
       image_url: productForm.image_url.trim() || null,
+      metadata: productForm.metadata || {},
     } as any);
     if (error) { toast.error("Erro ao adicionar produto"); return; }
     toast.success("Produto adicionado!");
-    setProductForm({ name: "", price: "", description: "", image_url: "" });
+    setProductForm({ name: "", price: "", description: "", image_url: "", metadata: {} });
     setShowProductForm(null);
     invalidateAll();
   };
@@ -196,11 +200,12 @@ const MenuBuilder = ({ storeId }: MenuBuilderProps) => {
       price: parseFloat(productForm.price),
       description: productForm.description.trim() || null,
       image_url: productForm.image_url.trim() || null,
-    }).eq("id", id);
+      metadata: productForm.metadata || {},
+    } as any).eq("id", id);
     if (error) { toast.error("Erro ao atualizar"); return; }
     toast.success("Produto atualizado!");
     setEditingProduct(null);
-    setProductForm({ name: "", price: "", description: "", image_url: "" });
+    setProductForm({ name: "", price: "", description: "", image_url: "", metadata: {} });
     invalidateAll();
   };
 
@@ -421,13 +426,14 @@ const MenuBuilder = ({ storeId }: MenuBuilderProps) => {
                       price: String(product.price),
                       description: product.description || "",
                       image_url: product.image_url || "",
+                      metadata: (product as any).metadata || {},
                     });
                   }}
                   isEditing={editingProduct === product.id}
                   productForm={productForm}
                   setProductForm={setProductForm}
                   onSaveEdit={() => updateProduct(product.id)}
-                  onCancelEdit={() => { setEditingProduct(null); setProductForm({ name: "", price: "", description: "", image_url: "" }); }}
+                  onCancelEdit={() => { setEditingProduct(null); setProductForm({ name: "", price: "", description: "", image_url: "", metadata: {} }); }}
                   showAddonForm={showAddonForm}
                   setShowAddonForm={setShowAddonForm}
                   addonGroupForm={addonGroupForm}
@@ -439,7 +445,7 @@ const MenuBuilder = ({ storeId }: MenuBuilderProps) => {
                   addonItemForm={addonItemForm}
                   setAddonItemForm={setAddonItemForm}
                   onAddAddonItem={addAddonItem}
-                  onDeleteAddonItem={deleteAddonItem}
+                  storeCategory={storeCategory}
                 />
               ))}
 
@@ -449,7 +455,8 @@ const MenuBuilder = ({ storeId }: MenuBuilderProps) => {
                   form={productForm}
                   setForm={setProductForm}
                   onSave={() => addProduct(section.id)}
-                  onCancel={() => { setShowProductForm(null); setProductForm({ name: "", price: "", description: "", image_url: "" }); }}
+                  onCancel={() => { setShowProductForm(null); setProductForm({ name: "", price: "", description: "", image_url: "", metadata: {} }); }}
+                  storeCategory={storeCategory}
                 />
               ) : (
                 <button
@@ -489,13 +496,14 @@ const MenuBuilder = ({ storeId }: MenuBuilderProps) => {
                   price: String(product.price),
                   description: product.description || "",
                   image_url: product.image_url || "",
+                  metadata: (product as any).metadata || {},
                 });
               }}
               isEditing={editingProduct === product.id}
               productForm={productForm}
               setProductForm={setProductForm}
               onSaveEdit={() => updateProduct(product.id)}
-              onCancelEdit={() => { setEditingProduct(null); setProductForm({ name: "", price: "", description: "", image_url: "" }); }}
+              onCancelEdit={() => { setEditingProduct(null); setProductForm({ name: "", price: "", description: "", image_url: "", metadata: {} }); }}
               showAddonForm={showAddonForm}
               setShowAddonForm={setShowAddonForm}
               addonGroupForm={addonGroupForm}
@@ -507,7 +515,7 @@ const MenuBuilder = ({ storeId }: MenuBuilderProps) => {
               addonItemForm={addonItemForm}
               setAddonItemForm={setAddonItemForm}
               onAddAddonItem={addAddonItem}
-              onDeleteAddonItem={deleteAddonItem}
+              storeCategory={storeCategory}
             />
           ))}
         </div>
@@ -519,7 +527,8 @@ const MenuBuilder = ({ storeId }: MenuBuilderProps) => {
           form={productForm}
           setForm={setProductForm}
           onSave={() => addProduct(null)}
-          onCancel={() => { setShowProductForm(null); setProductForm({ name: "", price: "", description: "", image_url: "" }); }}
+          onCancel={() => { setShowProductForm(null); setProductForm({ name: "", price: "", description: "", image_url: "", metadata: {} }); }}
+          storeCategory={storeCategory}
         />
       ) : (
         <button
@@ -557,11 +566,13 @@ const ProductFormInline = ({
   setForm,
   onSave,
   onCancel,
+  storeCategory,
 }: {
-  form: { name: string; price: string; description: string; image_url: string };
+  form: { name: string; price: string; description: string; image_url: string; metadata: Record<string, any> };
   setForm: (f: any) => void;
   onSave: () => void;
   onCancel: () => void;
+  storeCategory?: string;
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -641,6 +652,16 @@ const ProductFormInline = ({
         onChange={(e) => setForm({ ...form, description: e.target.value })}
         className="w-full bg-muted text-foreground px-3 py-2 rounded-lg text-sm border border-border focus:border-primary focus:outline-none"
       />
+
+      {/* Category-specific fields */}
+      {storeCategory && (
+        <CategoryProductFields
+          category={storeCategory}
+          metadata={form.metadata || {}}
+          onChange={(metadata) => setForm({ ...form, metadata })}
+        />
+      )}
+
       <div className="flex gap-2">
         <button onClick={onSave} className="flex-1 bg-primary text-primary-foreground py-2 rounded-lg text-sm font-bold">
           Salvar
@@ -684,6 +705,7 @@ const ProductCard = ({
   setAddonItemForm,
   onAddAddonItem,
   onDeleteAddonItem,
+  storeCategory,
 }: any) => {
   if (isEditing) {
     return (
@@ -692,6 +714,7 @@ const ProductCard = ({
         setForm={setProductForm}
         onSave={onSaveEdit}
         onCancel={onCancelEdit}
+        storeCategory={storeCategory}
       />
     );
   }
