@@ -57,7 +57,7 @@ const SectionTitle = ({ icon: Icon, children }: { icon: any; children: React.Rea
 
 const DriverDashboard = () => {
   const isMobile = useIsMobile();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isOnline, setIsOnline] = useState(() => {
