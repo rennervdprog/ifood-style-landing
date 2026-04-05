@@ -528,6 +528,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
           setForm={setProductForm}
           onSave={() => addProduct(null)}
           onCancel={() => { setShowProductForm(null); setProductForm({ name: "", price: "", description: "", image_url: "", metadata: {} }); }}
+          storeCategory={storeCategory}
         />
       ) : (
         <button
