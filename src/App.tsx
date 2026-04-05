@@ -6,6 +6,7 @@ import { CartProvider } from "@/contexts/CartContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import RoleGuard from "@/components/RoleGuard";
+import ClientGuard from "@/components/ClientGuard";
 import InstallPrompt from "@/components/InstallPrompt";
 import Index from "./pages/Index";
 import StorePage from "./pages/StorePage";
@@ -14,6 +15,7 @@ import CheckoutPage from "./pages/CheckoutPage";
 import PedidosPage from "./pages/PedidosPage";
 import PerfilPage from "./pages/PerfilPage";
 import AuthPage from "./pages/AuthPage";
+import PartnerLogin from "./pages/PartnerLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import DriverDashboard from "./pages/DriverDashboard";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
@@ -34,13 +36,14 @@ const App = () => (
           <InstallPrompt />
           <BrowserRouter>
             <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/loja/:id" element={<StorePage />} />
-              <Route path="/carrinho" element={<CartPage />} />
-              <Route path="/checkout" element={<CheckoutPage />} />
-              <Route path="/pedidos" element={<PedidosPage />} />
-              <Route path="/perfil" element={<PerfilPage />} />
+              <Route path="/" element={<ClientGuard><Index /></ClientGuard>} />
+              <Route path="/loja/:id" element={<ClientGuard><StorePage /></ClientGuard>} />
+              <Route path="/carrinho" element={<ClientGuard><CartPage /></ClientGuard>} />
+              <Route path="/checkout" element={<ClientGuard><CheckoutPage /></ClientGuard>} />
+              <Route path="/pedidos" element={<ClientGuard><PedidosPage /></ClientGuard>} />
+              <Route path="/perfil" element={<ClientGuard><PerfilPage /></ClientGuard>} />
               <Route path="/auth" element={<AuthPage />} />
+              <Route path="/portal-parceiro" element={<PartnerLogin />} />
               <Route
                 path="/admin"
                 element={
