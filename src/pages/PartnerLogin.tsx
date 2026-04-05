@@ -95,7 +95,10 @@ const PartnerLogin = () => {
         const { error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
-          options: { emailRedirectTo: `${window.location.origin}/portal-parceiro` },
+          options: {
+            emailRedirectTo: `${window.location.origin}/portal-parceiro`,
+            data: { role: partnerType },
+          },
         });
         if (error) throw error;
         toast.success("Conta criada! Verifique seu e-mail para confirmar.");
