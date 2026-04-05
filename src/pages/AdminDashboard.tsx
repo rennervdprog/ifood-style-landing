@@ -553,6 +553,13 @@ const AdminDashboard = () => {
                 <Clock className="h-3.5 w-3.5" /> {pendingCount} novo{pendingCount > 1 ? "s" : ""}
               </button>
             )}
+            <button
+              onClick={async () => { await signOut(); toast.success("Você saiu da conta."); navigate("/portal-parceiro"); }}
+              className="p-2 rounded-xl hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+              title="Sair da conta"
+            >
+              <LogOut className="h-4.5 w-4.5" />
+            </button>
           </div>
         </header>
 
