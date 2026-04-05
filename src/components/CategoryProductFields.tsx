@@ -161,14 +161,14 @@ const CategoryProductFields = ({ category, metadata, onChange }: CategoryProduct
     </div>
   );
 
-  // Wrap category fields + optional beverage toggle
+  // Wrap category fields + optional beverage toggle — hides category fields when beverage is on
   const withBeverageToggle = (categoryFields: React.ReactNode) => (
     <>
-      {categoryFields}
-      <div className="bg-muted/50 border border-border rounded-xl p-3 space-y-2 mt-2">
+      <div className="bg-muted/50 border border-border rounded-xl p-3 space-y-2">
         <ToggleField label="🥤 Este produto é uma bebida?" fieldKey="is_beverage" />
         {metadata.is_beverage && <BeverageFields />}
       </div>
+      {!metadata.is_beverage && categoryFields}
     </>
   );
 
