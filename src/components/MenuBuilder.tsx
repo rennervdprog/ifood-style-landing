@@ -14,14 +14,14 @@ interface MenuBuilderProps {
   storeCategory?: string;
 }
 
-const MenuBuilder = ({ storeId }: MenuBuilderProps) => {
+const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
   const queryClient = useQueryClient();
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [newSectionName, setNewSectionName] = useState("");
   const [showAddSection, setShowAddSection] = useState(false);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [showProductForm, setShowProductForm] = useState<string | null>(null);
-  const [productForm, setProductForm] = useState({ name: "", price: "", description: "", image_url: "" });
+  const [productForm, setProductForm] = useState({ name: "", price: "", description: "", image_url: "", metadata: {} as Record<string, any> });
   const [editingProduct, setEditingProduct] = useState<string | null>(null);
   const [showAddonForm, setShowAddonForm] = useState<string | null>(null);
   const [addonGroupForm, setAddonGroupForm] = useState({ name: "", min_select: "0", max_select: "1" });
