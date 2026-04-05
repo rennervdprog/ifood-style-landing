@@ -185,6 +185,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
       price: parseFloat(productForm.price),
       description: productForm.description.trim() || null,
       image_url: productForm.image_url.trim() || null,
+      metadata: productForm.metadata || {},
     } as any);
     if (error) { toast.error("Erro ao adicionar produto"); return; }
     toast.success("Produto adicionado!");
