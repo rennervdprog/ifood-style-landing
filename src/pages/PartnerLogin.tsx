@@ -9,6 +9,7 @@ const PartnerLogin = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [mode, setMode] = useState<"login" | "signup">("login");
+  const [partnerType, setPartnerType] = useState<"lojista" | "motoboy" | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -75,6 +76,10 @@ const PartnerLogin = () => {
       toast.error("A senha deve ter pelo menos 6 caracteres.");
       return;
     }
+    if (mode === "signup" && !partnerType) {
+      toast.error("Escolha se você quer vender ou entregar.");
+      return;
+    }
 
     setLoading(true);
     try {
@@ -90,7 +95,10 @@ const PartnerLogin = () => {
         const { error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
-          options: { emailRedirectTo: `${window.location.origin}/portal-parceiro` },
+          options: {
+            emailRedirectTo: `${window.location.origin}/portal-parceiro`,
+            data: { role: partnerType },
+          },
         });
         if (error) throw error;
         toast.success("Conta criada! Verifique seu e-mail para confirmar.");
@@ -145,6 +153,39 @@ const PartnerLogin = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Partner type selector - only on signup */}
+            {mode === "signup" && (
+              <div className="space-y-2">
+                <p className="text-xs font-bold text-muted-foreground text-center">Eu quero:</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPartnerType("lojista")}
+                    className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1.5 ${
+                      partnerType === "lojista"
+                        ? "border-primary bg-primary/5"
+                        : "border-border bg-card hover:border-primary/50"
+                    }`}
+                  >
+                    <Store className="h-5 w-5 text-primary" />
+                    <span className="text-xs font-bold text-foreground">Vender</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPartnerType("motoboy")}
+                    className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1.5 ${
+                      partnerType === "motoboy"
+                        ? "border-primary bg-primary/5"
+                        : "border-border bg-card hover:border-primary/50"
+                    }`}
+                  >
+                    <Bike className="h-5 w-5 text-primary" />
+                    <span className="text-xs font-bold text-foreground">Entregar</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
