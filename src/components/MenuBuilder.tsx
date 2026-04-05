@@ -445,7 +445,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
                   addonItemForm={addonItemForm}
                   setAddonItemForm={setAddonItemForm}
                   onAddAddonItem={addAddonItem}
-                  onDeleteAddonItem={deleteAddonItem}
+                  storeCategory={storeCategory}
                 />
               ))}
 
