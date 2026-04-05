@@ -27,6 +27,7 @@ const RoleGuard = ({ allowedRoles, redirectTo, children, requireApproval = false
     }
 
     const checkRole = async () => {
+      // Admin can access ANY screen
       const { data: adminRole } = await supabase
         .from("user_roles")
         .select("role")
@@ -34,7 +35,7 @@ const RoleGuard = ({ allowedRoles, redirectTo, children, requireApproval = false
         .eq("role", "admin")
         .maybeSingle();
 
-      if (allowedRoles.includes("admin") && adminRole) {
+      if (adminRole) {
         setAuthorized(true);
         setChecking(false);
         return;
