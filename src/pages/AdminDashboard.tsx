@@ -1002,7 +1002,8 @@ const AdminDashboard = () => {
                             </div>
                           ))}
                           {order.order_items?.map((item: any) => {
-                            const addons = item.addons as any[];
+                            const rawAddons = item.addons;
+                            const addons: any[] = Array.isArray(rawAddons) ? rawAddons : (typeof rawAddons === 'string' ? (() => { try { return JSON.parse(rawAddons); } catch { return []; } })() : []);
                             if (!addons || addons.length === 0) return null;
                             return (
                               <div key={`addons-${item.id}`} className="pl-6 text-[11px] text-muted-foreground">
