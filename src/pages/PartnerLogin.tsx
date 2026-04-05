@@ -76,6 +76,10 @@ const PartnerLogin = () => {
       toast.error("A senha deve ter pelo menos 6 caracteres.");
       return;
     }
+    if (mode === "signup" && !partnerType) {
+      toast.error("Escolha se você quer vender ou entregar.");
+      return;
+    }
 
     setLoading(true);
     try {
