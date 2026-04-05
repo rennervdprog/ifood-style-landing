@@ -97,7 +97,7 @@ const GlanceCard = ({ icon: Icon, label, value, subValue, color = "text-primary"
 type ClientFilter = "all" | "loyal" | "inactive" | "location";
 
 const AdminDashboard = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const audioRef = useRef<HTMLAudioElement | null>(null);
