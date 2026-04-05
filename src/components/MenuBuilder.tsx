@@ -188,7 +188,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
     } as any);
     if (error) { toast.error("Erro ao adicionar produto"); return; }
     toast.success("Produto adicionado!");
-    setProductForm({ name: "", price: "", description: "", image_url: "" });
+    setProductForm({ name: "", price: "", description: "", image_url: "", metadata: {} });
     setShowProductForm(null);
     invalidateAll();
   };
@@ -203,7 +203,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
     if (error) { toast.error("Erro ao atualizar"); return; }
     toast.success("Produto atualizado!");
     setEditingProduct(null);
-    setProductForm({ name: "", price: "", description: "", image_url: "" });
+    setProductForm({ name: "", price: "", description: "", image_url: "", metadata: {} });
     invalidateAll();
   };
 
@@ -430,7 +430,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
                   productForm={productForm}
                   setProductForm={setProductForm}
                   onSaveEdit={() => updateProduct(product.id)}
-                  onCancelEdit={() => { setEditingProduct(null); setProductForm({ name: "", price: "", description: "", image_url: "" }); }}
+                  onCancelEdit={() => { setEditingProduct(null); setProductForm({ name: "", price: "", description: "", image_url: "", metadata: {} }); }}
                   showAddonForm={showAddonForm}
                   setShowAddonForm={setShowAddonForm}
                   addonGroupForm={addonGroupForm}
@@ -452,7 +452,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
                   form={productForm}
                   setForm={setProductForm}
                   onSave={() => addProduct(section.id)}
-                  onCancel={() => { setShowProductForm(null); setProductForm({ name: "", price: "", description: "", image_url: "" }); }}
+                  onCancel={() => { setShowProductForm(null); setProductForm({ name: "", price: "", description: "", image_url: "", metadata: {} }); }}
                 />
               ) : (
                 <button
@@ -498,7 +498,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
               productForm={productForm}
               setProductForm={setProductForm}
               onSaveEdit={() => updateProduct(product.id)}
-              onCancelEdit={() => { setEditingProduct(null); setProductForm({ name: "", price: "", description: "", image_url: "" }); }}
+              onCancelEdit={() => { setEditingProduct(null); setProductForm({ name: "", price: "", description: "", image_url: "", metadata: {} }); }}
               showAddonForm={showAddonForm}
               setShowAddonForm={setShowAddonForm}
               addonGroupForm={addonGroupForm}
@@ -522,7 +522,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
           form={productForm}
           setForm={setProductForm}
           onSave={() => addProduct(null)}
-          onCancel={() => { setShowProductForm(null); setProductForm({ name: "", price: "", description: "", image_url: "" }); }}
+          onCancel={() => { setShowProductForm(null); setProductForm({ name: "", price: "", description: "", image_url: "", metadata: {} }); }}
         />
       ) : (
         <button
