@@ -7,8 +7,11 @@ import {
   Image as ImageIcon, Pause, Play, Package, Save, X, Link2, Upload, Loader2
 } from "lucide-react";
 
+import CategoryProductFields from "@/components/CategoryProductFields";
+
 interface MenuBuilderProps {
   storeId: string;
+  storeCategory?: string;
 }
 
 const MenuBuilder = ({ storeId }: MenuBuilderProps) => {
