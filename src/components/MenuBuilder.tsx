@@ -200,7 +200,8 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
       price: parseFloat(productForm.price),
       description: productForm.description.trim() || null,
       image_url: productForm.image_url.trim() || null,
-    }).eq("id", id);
+      metadata: productForm.metadata || {},
+    } as any).eq("id", id);
     if (error) { toast.error("Erro ao atualizar"); return; }
     toast.success("Produto atualizado!");
     setEditingProduct(null);
