@@ -9,6 +9,7 @@ const PartnerLogin = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [mode, setMode] = useState<"login" | "signup">("login");
+  const [partnerType, setPartnerType] = useState<"lojista" | "motoboy" | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
