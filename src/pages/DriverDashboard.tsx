@@ -9,7 +9,7 @@ import {
   ArrowLeft, Navigation, KeyRound, Smartphone, ShieldCheck,
   Wallet, TrendingUp, Calendar, Download, Clock, ChevronDown,
   CreditCard, Banknote, Settings, Save, AlertTriangle, User,
-  Zap, ArrowRight, BarChart3, Eye
+  Zap, ArrowRight, BarChart3, Eye, LogOut
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import WhatsAppButton from "@/components/WhatsAppButton";
