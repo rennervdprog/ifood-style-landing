@@ -25,6 +25,19 @@ const ClientGuard = ({ children }: ClientGuardProps) => {
     }
 
     const checkRole = async () => {
+      // Admin can access any page, skip redirect
+      const { data: adminRole } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+
+      if (adminRole) {
+        setChecked(true);
+        return;
+      }
+
       const { data: profile } = await supabase
         .from("profiles")
         .select("role")
