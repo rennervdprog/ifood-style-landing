@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, X, Pizza, Beef, Pill, IceCream } from "lucide-react";
+import { Plus, X, Pizza, Beef, Pill, IceCream, Wine } from "lucide-react";
 
 type StoreCategory = string;
 
@@ -108,7 +108,6 @@ const CategoryProductFields = ({ category, metadata, onChange }: CategoryProduct
     </div>
   );
 
-  // Pizza sizes with individual prices
   const PizzaSizeFields = () => (
     <div className="space-y-1.5">
       <label className="text-xs font-bold text-foreground/70">🍕 Tamanhos e Preços</label>
@@ -150,9 +149,32 @@ const CategoryProductFields = ({ category, metadata, onChange }: CategoryProduct
     </div>
   );
 
+  // Beverage fields shared across categories
+  const BeverageFields = () => (
+    <div className="bg-accent/10 border border-accent/20 rounded-xl p-3 space-y-3 mt-2">
+      <div className="flex items-center gap-2 text-accent-foreground text-xs font-bold">
+        <Wine className="h-4 w-4" /> 🥤 Campos de Bebida
+      </div>
+      <TextField label="Volume" fieldKey="drink_volume" placeholder="Ex: 350ml, 500ml, 1L..." />
+      <SelectField label="Tipo de Bebida" fieldKey="drink_type" options={["Refrigerante", "Suco", "Água", "Cerveja", "Vinho", "Destilado", "Energético", "Milkshake", "Outro"]} />
+      <ToggleField label="Servir gelado?" fieldKey="serve_cold" />
+    </div>
+  );
+
+  // Wrap category fields + optional beverage toggle
+  const withBeverageToggle = (categoryFields: React.ReactNode) => (
+    <>
+      {categoryFields}
+      <div className="bg-muted/50 border border-border rounded-xl p-3 space-y-2 mt-2">
+        <ToggleField label="🥤 Este produto é uma bebida?" fieldKey="is_beverage" />
+        {metadata.is_beverage && <BeverageFields />}
+      </div>
+    </>
+  );
+
   switch (category) {
     case "pizzas":
-      return (
+      return withBeverageToggle(
         <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-3">
           <div className="flex items-center gap-2 text-primary text-xs font-bold">
             <Pizza className="h-4 w-4" /> Campos de Pizza
@@ -168,7 +190,7 @@ const CategoryProductFields = ({ category, metadata, onChange }: CategoryProduct
       );
 
     case "lanches":
-      return (
+      return withBeverageToggle(
         <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-3">
           <div className="flex items-center gap-2 text-primary text-xs font-bold">
             <Beef className="h-4 w-4" /> Campos de Lanche
@@ -200,7 +222,7 @@ const CategoryProductFields = ({ category, metadata, onChange }: CategoryProduct
 
     case "sobremesas":
     case "docerias":
-      return (
+      return withBeverageToggle(
         <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-3">
           <div className="flex items-center gap-2 text-primary text-xs font-bold">
             <IceCream className="h-4 w-4" /> Campos de Sorveteria / Doces
@@ -213,7 +235,7 @@ const CategoryProductFields = ({ category, metadata, onChange }: CategoryProduct
       );
 
     case "japonesa":
-      return (
+      return withBeverageToggle(
         <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-3">
           <div className="flex items-center gap-2 text-primary text-xs font-bold">
             🍣 Campos de Comida Japonesa
@@ -226,7 +248,7 @@ const CategoryProductFields = ({ category, metadata, onChange }: CategoryProduct
       );
 
     case "cafeteria":
-      return (
+      return withBeverageToggle(
         <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-3">
           <div className="flex items-center gap-2 text-primary text-xs font-bold">
             ☕ Campos de Cafeteria
@@ -239,7 +261,7 @@ const CategoryProductFields = ({ category, metadata, onChange }: CategoryProduct
       );
 
     case "churrasco":
-      return (
+      return withBeverageToggle(
         <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-3">
           <div className="flex items-center gap-2 text-primary text-xs font-bold">
             🥩 Campos de Churrasco
