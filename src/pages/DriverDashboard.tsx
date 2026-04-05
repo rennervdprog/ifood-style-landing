@@ -372,6 +372,11 @@ const DriverDashboard = () => {
   // ─── Handlers (same logic) ───
   const toggleOnline = async () => {
     const next = !isOnline;
+    // Block going offline if there's an active delivery
+    if (!next && myDelivery) {
+      toast.error("Você tem uma entrega ativa! Finalize antes de ficar offline.");
+      return;
+    }
     setIsOnline(next);
     localStorage.setItem("driver_online", String(next));
     if (next) requestNotificationPermission();
