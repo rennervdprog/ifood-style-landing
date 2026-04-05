@@ -13,7 +13,7 @@ import {
   ChevronDown, ChevronUp, DollarSign, XCircle, Loader2, Search,
   Menu, X, LayoutDashboard, CircleDot, TrendingUp, BarChart3,
   Users, Timer, Star, ShoppingBag, ArrowUpRight, ArrowDownRight,
-  Filter, UserCheck, UserX, MapPinned, Repeat, Heart, AlertTriangle
+  Filter, UserCheck, UserX, MapPinned, Repeat, Heart, AlertTriangle, LogOut
 } from "lucide-react";
 import { openWhatsApp } from "@/lib/whatsapp";
 import WhatsAppButton from "@/components/WhatsAppButton";
