@@ -713,6 +713,7 @@ const ProductCard = ({
         setForm={setProductForm}
         onSave={onSaveEdit}
         onCancel={onCancelEdit}
+        storeCategory={storeCategory}
       />
     );
   }
