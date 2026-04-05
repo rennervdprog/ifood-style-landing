@@ -573,15 +573,23 @@ const DriverDashboard = () => {
             </div>
           </div>
 
-          {/* Toggle Switch */}
-          <button
-            onClick={toggleOnline}
-            data-tour="motoboy-status"
-            className={`relative w-14 h-7 rounded-full transition-all duration-300 ${isOnline ? "bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.4)]" : "bg-muted"}`}
-          >
-            <span className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-transform duration-300 ${isOnline ? "left-7" : "left-0.5"}`} />
-          </button>
-        </div>
+          <div className="flex items-center gap-2">
+            {/* Toggle Switch */}
+            <button
+              onClick={toggleOnline}
+              data-tour="motoboy-status"
+              className={`relative w-14 h-7 rounded-full transition-all duration-300 ${isOnline ? "bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.4)]" : "bg-muted"}`}
+            >
+              <span className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-transform duration-300 ${isOnline ? "left-7" : "left-0.5"}`} />
+            </button>
+            <button
+              onClick={async () => { await signOut(); toast.success("Você saiu da conta."); navigate("/portal-parceiro"); }}
+              className="p-2 rounded-xl hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+              title="Sair da conta"
+            >
+              <LogOut className="h-4.5 w-4.5" />
+            </button>
+          </div>
       </header>
 
       {/* ─── Tab Navigation ─── */}
