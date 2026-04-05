@@ -36,13 +36,14 @@ const App = () => (
           <InstallPrompt />
           <BrowserRouter>
             <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/loja/:id" element={<StorePage />} />
-              <Route path="/carrinho" element={<CartPage />} />
-              <Route path="/checkout" element={<CheckoutPage />} />
-              <Route path="/pedidos" element={<PedidosPage />} />
-              <Route path="/perfil" element={<PerfilPage />} />
+              <Route path="/" element={<ClientGuard><Index /></ClientGuard>} />
+              <Route path="/loja/:id" element={<ClientGuard><StorePage /></ClientGuard>} />
+              <Route path="/carrinho" element={<ClientGuard><CartPage /></ClientGuard>} />
+              <Route path="/checkout" element={<ClientGuard><CheckoutPage /></ClientGuard>} />
+              <Route path="/pedidos" element={<ClientGuard><PedidosPage /></ClientGuard>} />
+              <Route path="/perfil" element={<ClientGuard><PerfilPage /></ClientGuard>} />
               <Route path="/auth" element={<AuthPage />} />
+              <Route path="/portal-parceiro" element={<PartnerLogin />} />
               <Route
                 path="/admin"
                 element={
