@@ -590,6 +590,7 @@ const DriverDashboard = () => {
               <LogOut className="h-4.5 w-4.5" />
             </button>
           </div>
+        </div>
       </header>
 
       {/* ─── Tab Navigation ─── */}
