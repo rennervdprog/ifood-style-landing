@@ -549,68 +549,51 @@ const DriverDashboard = () => {
 
   return (
     <>
-    <div className="min-h-screen bg-background text-foreground overflow-y-auto pb-24">
-      {/* ─── Professional Header ─── */}
-      <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border px-4 py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button onClick={() => navigate("/")} className="text-muted-foreground hover:text-foreground transition-colors">
-              <ArrowLeft className="h-5 w-5" />
-            </button>
-            <div>
-              <h1 className="font-bold text-sm text-foreground flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Bike className="h-3.5 w-3.5 text-primary" />
+    <div className="min-h-screen bg-background text-foreground overflow-y-auto pb-[5.5rem]">
+      {/* ─── Native-Style Status Bar Header ─── */}
+      <header className="sticky top-0 z-50 bg-card border-b border-border pt-safe">
+        <div className="px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <Bike className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h1 className="font-bold text-base text-foreground">
+                  {driverProfile ? (driverProfile as any).full_name?.split(" ")[0] || "Entregador" : "Entregador"}
+                </h1>
+                <div className="flex items-center gap-1.5">
+                  <span className={`w-2 h-2 rounded-full transition-colors duration-500 ${realtimeConnected && isOnline ? "bg-green-500 animate-pulse" : "bg-muted-foreground/30"}`} />
+                  <span className="text-[11px] text-muted-foreground font-medium">
+                    {isOnline ? (realtimeConnected ? "Online" : "Conectando...") : "Offline"}
+                  </span>
                 </div>
-                Painel Entregador
-              </h1>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span className={`w-1.5 h-1.5 rounded-full ${realtimeConnected && isOnline ? "bg-green-500" : "bg-muted-foreground/30"}`} />
-                <span className="text-[10px] text-muted-foreground">
-                  {isOnline ? (realtimeConnected ? "Conectado" : "Conectando...") : "Offline"}
-                </span>
               </div>
             </div>
-          </div>
 
-          <div className="flex items-center gap-2">
-            {/* Toggle Switch */}
-            <button
-              onClick={toggleOnline}
-              data-tour="motoboy-status"
-              className={`relative w-14 h-7 rounded-full transition-all duration-300 ${isOnline ? "bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.4)]" : "bg-muted"}`}
-            >
-              <span className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-transform duration-300 ${isOnline ? "left-7" : "left-0.5"}`} />
-            </button>
-            <button
-              onClick={async () => { await signOut(); toast.success("Você saiu da conta."); navigate("/portal-parceiro"); }}
-              className="p-2 rounded-xl hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
-              title="Sair da conta"
-            >
-              <LogOut className="h-4.5 w-4.5" />
-            </button>
+            <div className="flex items-center gap-3">
+              {/* Online Toggle - iOS style */}
+              <button
+                onClick={toggleOnline}
+                data-tour="motoboy-status"
+                className={`relative w-[52px] h-[31px] rounded-full transition-all duration-300 ${isOnline ? "bg-green-500 shadow-[0_0_16px_rgba(34,197,94,0.35)]" : "bg-muted"}`}
+              >
+                <span className={`absolute top-[2px] w-[27px] h-[27px] rounded-full bg-white shadow-lg transition-transform duration-300 ${isOnline ? "left-[23px]" : "left-[2px]"}`} />
+              </button>
+              <button
+                onClick={async () => { await signOut(); toast.success("Você saiu da conta."); navigate("/portal-parceiro"); }}
+                className="w-10 h-10 rounded-2xl bg-muted/50 flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                title="Sair da conta"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
-      {/* ─── Tab Navigation ─── */}
-      <div className="flex bg-card border-b border-border" data-tour="motoboy-entregas">
-        {tabs.map((tab) => {
-          const isActive = activeTab === tab.key;
-          return (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              data-tour={tab.key === "historico" ? "motoboy-ganhos" : tab.key === "entregas" ? "motoboy-nav" : undefined}
-              className={`flex-1 py-3 flex flex-col items-center gap-1 transition-all relative ${isActive ? "text-primary" : "text-muted-foreground"}`}
-            >
-              <tab.icon className="h-4 w-4" />
-              <span className="text-[10px] font-bold uppercase tracking-wider">{tab.label}</span>
-              {isActive && <div className="absolute bottom-0 left-4 right-4 h-0.5 bg-primary rounded-full" />}
-            </button>
-          );
-        })}
-      </div>
+      {/* ─── Content Area ─── */}
+      <div className="flex-1">{/* Content wrapper */}
 
       {/* ═════════════ ENTREGAS TAB ═════════════ */}
       {activeTab === "entregas" && (
@@ -1305,6 +1288,30 @@ const DriverDashboard = () => {
           )}
         </div>
       )}
+
+      </div>{/* End content wrapper */}
+
+      {/* ─── Native Bottom Tab Bar ─── */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border pb-safe" data-tour="motoboy-entregas">
+        <div className="flex items-center justify-around h-16">
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                data-tour={tab.key === "historico" ? "motoboy-ganhos" : tab.key === "entregas" ? "motoboy-nav" : undefined}
+                className={`flex flex-col items-center gap-0.5 px-5 py-2 transition-all rounded-xl ${isActive ? "text-primary" : "text-muted-foreground"}`}
+              >
+                <div className={`p-1.5 rounded-xl transition-colors ${isActive ? "bg-primary/10" : ""}`}>
+                  <tab.icon className="h-5 w-5" strokeWidth={isActive ? 2.5 : 1.5} />
+                </div>
+                <span className={`text-[10px] font-bold ${isActive ? "text-primary" : "text-muted-foreground"}`}>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
     </div>
       <ProductTour steps={motoboyTourSteps} tourKey="motoboy" />
     </>
