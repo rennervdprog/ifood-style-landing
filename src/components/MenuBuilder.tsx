@@ -705,6 +705,7 @@ const ProductCard = ({
   setAddonItemForm,
   onAddAddonItem,
   onDeleteAddonItem,
+  storeCategory,
 }: any) => {
   if (isEditing) {
     return (
