@@ -142,6 +142,22 @@ const CadastroEntregador = () => {
             <FieldInput icon={Phone} placeholder="Telefone com DDD" value={phone} onChange={setPhone} error={errors.phone} inputMode="tel" />
             <FieldInput icon={Bike} placeholder="Placa da Moto (ex: ABC-1234)" value={vehicle} onChange={setVehicle} error={errors.vehicle} />
 
+            <div>
+              <div className="relative">
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <select
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  className="w-full h-12 pl-10 pr-4 rounded-xl border border-border bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm appearance-none"
+                >
+                  {CITIES.map((c) => (
+                    <option key={c.value} value={c.value}>{c.label}</option>
+                  ))}
+                </select>
+              </div>
+              {errors.city && <p className="text-xs text-destructive mt-1">{errors.city}</p>}
+            </div>
+
             <button
               type="submit"
               disabled={loading}
