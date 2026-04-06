@@ -69,53 +69,69 @@ async function sendOneSignalByExternalId(
 ): Promise<{ sent: number; failed: number; debug: string }> {
   if (userIds.length === 0) return { sent: 0, failed: 0, debug: "no_user_ids" };
 
-  const payload = {
-    app_id: appId,
-    include_aliases: { external_id: userIds },
-    target_channel: "push",
-    headings: { en: title },
-    contents: { en: body || " " },
-    data: data || {},
-  };
+  console.log("[OneSignal] Sending via external_id:", JSON.stringify({ app_id: appId, user_ids: userIds, title }));
 
-  console.log("[OneSignal] Sending via external_id:", JSON.stringify({
-    app_id: appId,
-    user_ids: userIds,
-    title,
-  }));
-
-  try {
-    const res = await fetch("https://api.onesignal.com/notifications", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Basic ${restApiKey}`,
+  // Strategy 1: New API with include_aliases
+  const strategies = [
+    {
+      name: "aliases_v2",
+      payload: {
+        app_id: appId,
+        include_aliases: { external_id: userIds },
+        target_channel: "push",
+        headings: { en: title },
+        contents: { en: body || " " },
+        data: data || {},
       },
-      body: JSON.stringify(payload),
-    });
+    },
+    {
+      name: "external_user_ids_legacy",
+      payload: {
+        app_id: appId,
+        include_external_user_ids: userIds,
+        channel_for_external_user_ids: "push",
+        headings: { en: title },
+        contents: { en: body || " " },
+        data: data || {},
+      },
+    },
+  ];
 
-    const responseText = await res.text();
-    console.log(`[OneSignal] Response status=${res.status}, body=${responseText}`);
-
-    let result: any;
+  for (const strategy of strategies) {
     try {
-      result = JSON.parse(responseText);
-    } catch {
-      return { sent: 0, failed: userIds.length, debug: `parse_error: ${responseText.slice(0, 200)}` };
-    }
+      console.log(`[OneSignal] Trying strategy: ${strategy.name}`);
+      const res = await fetch("https://api.onesignal.com/notifications", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Basic ${restApiKey}`,
+        },
+        body: JSON.stringify(strategy.payload),
+      });
 
-    if (res.ok && !result.errors?.length) {
-      const recipients = result.recipients || 0;
-      console.log(`[OneSignal] ✅ Sent to ${recipients} recipients`);
-      return { sent: recipients, failed: 0, debug: `ok: recipients=${recipients}, id=${result.id}` };
-    } else {
-      console.error("[OneSignal] ❌ Error:", responseText);
-      return { sent: 0, failed: userIds.length, debug: `error: ${responseText.slice(0, 300)}` };
+      const responseText = await res.text();
+      console.log(`[OneSignal] ${strategy.name} status=${res.status}, body=${responseText}`);
+
+      let result: any;
+      try { result = JSON.parse(responseText); } catch {
+        console.log(`[OneSignal] ${strategy.name} parse error, trying next...`);
+        continue;
+      }
+
+      if (res.ok && !result.errors?.length && (result.recipients || 0) > 0) {
+        const recipients = result.recipients || 0;
+        console.log(`[OneSignal] ✅ ${strategy.name} sent to ${recipients} recipients`);
+        return { sent: recipients, failed: 0, debug: `${strategy.name}: recipients=${recipients}, id=${result.id}` };
+      } else {
+        console.log(`[OneSignal] ${strategy.name} failed: ${responseText.slice(0, 200)}, trying next...`);
+      }
+    } catch (e) {
+      console.log(`[OneSignal] ${strategy.name} exception: ${e}, trying next...`);
     }
-  } catch (e) {
-    console.error("[OneSignal] Request exception:", e);
-    return { sent: 0, failed: userIds.length, debug: `exception: ${String(e)}` };
   }
+
+  console.error("[OneSignal] ❌ All strategies failed");
+  return { sent: 0, failed: userIds.length, debug: "all_strategies_failed" };
 }
 
 // Send via OneSignal REST API using player_ids (fallback)
