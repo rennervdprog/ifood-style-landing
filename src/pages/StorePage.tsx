@@ -21,6 +21,7 @@ interface Product {
   image_url: string | null;
   is_available: boolean;
   section_id: string | null;
+  metadata?: Record<string, any>;
 }
 
 interface MenuSection {
