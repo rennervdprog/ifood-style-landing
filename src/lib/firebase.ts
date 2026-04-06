@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getMessaging, getToken, onMessage, isSupported } from "firebase/messaging";
 import { supabase } from "@/integrations/supabase/client";
+import { isGoNative } from "@/lib/gonative";
 
 const firebaseConfig = {
   apiKey: "AIzaSyC7o57Z8Y-F2KLyqSIGtHTSPgTxGRr-JNQ",
@@ -33,6 +34,9 @@ export async function requestPushPermissionAndRegister(): Promise<string | null>
     } catch {
       return null;
     }
+
+    // Native app uses OneSignal/GoNative push, so don't also register web FCM tokens
+    if (isGoNative()) return null;
 
     if (!("Notification" in window)) return null;
 

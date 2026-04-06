@@ -217,18 +217,34 @@ Deno.serve(async (req) => {
     }
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+    const requestedUserIds = [...new Set((user_ids as string[]).filter(Boolean))];
+
+    const { data: osPlayers } = await supabaseAdmin
+      .from("onesignal_players")
+      .select("user_id, player_id")
+      .in("user_id", requestedUserIds);
+
+    const oneSignalUserIds = [...new Set((osPlayers || []).map((player: any) => player.user_id).filter(Boolean))];
+    const oneSignalUserSet = new Set(oneSignalUserIds);
 
     // ── Firebase Web Push ──
     let fcmSent = 0;
     let fcmFailed = 0;
     const staleTokens: string[] = [];
 
-    const { data: fcmTokens } = await supabaseAdmin
-      .from("fcm_tokens")
-      .select("token, user_id")
-      .in("user_id", user_ids);
-
     const serviceAccountJson = Deno.env.get("FCM_SERVICE_ACCOUNT_JSON");
+    const onesignalAppId = Deno.env.get("ONESIGNAL_APP_ID");
+    const onesignalApiKey = Deno.env.get("ONESIGNAL_REST_API_KEY");
+    const fcmTargetUserIds = onesignalAppId && onesignalApiKey
+      ? requestedUserIds.filter((id) => !oneSignalUserSet.has(id))
+      : requestedUserIds;
+
+    const { data: fcmTokens } = fcmTargetUserIds.length > 0
+      ? await supabaseAdmin
+          .from("fcm_tokens")
+          .select("token, user_id")
+          .in("user_id", fcmTargetUserIds)
+      : { data: [] as Array<{ token: string; user_id: string }> };
 
     if (fcmTokens && fcmTokens.length > 0 && serviceAccountJson) {
       const serviceAccount = JSON.parse(serviceAccountJson);
@@ -289,16 +305,13 @@ Deno.serve(async (req) => {
     let osFailed = 0;
     let osDebug = "not_configured";
 
-    const onesignalAppId = Deno.env.get("ONESIGNAL_APP_ID");
-    const onesignalApiKey = Deno.env.get("ONESIGNAL_REST_API_KEY");
-
     console.log(`[OneSignal] Config: appId=${onesignalAppId ? "SET" : "MISSING"}, apiKey=${onesignalApiKey ? "SET" : "MISSING"}`);
 
-    if (onesignalAppId && onesignalApiKey) {
+    if (onesignalAppId && onesignalApiKey && oneSignalUserIds.length > 0) {
       // PRIMARY: Always try external_id first (works when user has external_user_id set in OneSignal)
-      console.log(`[OneSignal] Trying external_id for user_ids: ${JSON.stringify(user_ids)}`);
+      console.log(`[OneSignal] Trying external_id for user_ids: ${JSON.stringify(oneSignalUserIds)}`);
       const extResult = await sendOneSignalByExternalId(
-        user_ids, title, msgBody || "", data, onesignalAppId, onesignalApiKey
+        oneSignalUserIds, title, msgBody || "", data, onesignalAppId, onesignalApiKey
       );
       osSent = extResult.sent;
       osFailed = extResult.failed;
@@ -306,11 +319,6 @@ Deno.serve(async (req) => {
 
       // FALLBACK: If external_id sent 0, try player_ids from DB
       if (osSent === 0) {
-        const { data: osPlayers } = await supabaseAdmin
-          .from("onesignal_players")
-          .select("player_id")
-          .in("user_id", user_ids);
-
         if (osPlayers && osPlayers.length > 0) {
           console.log(`[OneSignal] Fallback: trying ${osPlayers.length} player_ids`);
           const playerIds = osPlayers.map((p: any) => p.player_id);
@@ -325,6 +333,8 @@ Deno.serve(async (req) => {
           osDebug += " | no_player_ids_in_db";
         }
       }
+    } else if (onesignalAppId && onesignalApiKey) {
+      osDebug = "no_native_targets";
     }
 
     const response = {
