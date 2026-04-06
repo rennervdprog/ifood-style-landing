@@ -465,10 +465,15 @@ const AdminDashboard = () => {
     return o.id.slice(0, 8).toLowerCase().includes(search) || (o.driver_id ? getDriverName(o.driver_id).toLowerCase().includes(search) : false) || getClientName(o.client_id).toLowerCase().includes(search);
   });
 
+  const isOwnDelivery = (store as any)?.delivery_mode === "own";
+
   const getMainAction = (status: OrderStatus): { label: string; next: OrderStatus; emoji: string } | null => {
     switch (status) {
       case "pendente": return { label: "ACEITAR PEDIDO", next: "preparando", emoji: "✓" };
       case "preparando": return { label: "MARCAR COMO PRONTO", next: "pronto_para_entrega" as OrderStatus, emoji: "🔔" };
+      case "pronto_para_entrega":
+        if (isOwnDelivery) return { label: "SAIU PARA ENTREGA", next: "saiu_entrega" as OrderStatus, emoji: "🛵" };
+        return null;
       default: return null;
     }
   };
