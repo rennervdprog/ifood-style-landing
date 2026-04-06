@@ -73,6 +73,7 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [deliveryMode, setDeliveryMode] = useState(storeDeliveryMode || "platform");
+  const [ownDeliveryFee, setOwnDeliveryFee] = useState(storeOwnDeliveryFee?.toString() || "0");
 
   // Load whatsapp + pix from profile
   useEffect(() => {
