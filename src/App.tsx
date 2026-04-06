@@ -4,9 +4,9 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/contexts/CartContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { StoreProvider } from "@/contexts/StoreContext";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import RoleGuard from "@/components/RoleGuard";
-import ClientGuard from "@/components/ClientGuard";
 import InstallPrompt from "@/components/InstallPrompt";
 import NotificationPrompt from "@/components/NotificationPrompt";
 import Index from "./pages/Index";
@@ -32,18 +32,27 @@ const App = () => (
     <TooltipProvider>
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="id-delivery-theme">
       <AuthProvider>
+        <StoreProvider>
         <CartProvider>
           <Toaster />
           <InstallPrompt />
           <NotificationPrompt />
           <BrowserRouter>
             <Routes>
-              <Route path="/" element={<ClientGuard><Index /></ClientGuard>} />
-              <Route path="/loja/:id" element={<ClientGuard><StorePage /></ClientGuard>} />
-              <Route path="/carrinho" element={<ClientGuard><CartPage /></ClientGuard>} />
-              <Route path="/checkout" element={<ClientGuard><CheckoutPage /></ClientGuard>} />
-              <Route path="/pedidos" element={<ClientGuard><PedidosPage /></ClientGuard>} />
-              <Route path="/perfil" element={<ClientGuard><PerfilPage /></ClientGuard>} />
+              {/* Admin-only index */}
+              <Route
+                path="/"
+                element={
+                  <RoleGuard allowedRoles={["admin"]} redirectTo="/auth">
+                    <Index />
+                  </RoleGuard>
+                }
+              />
+              <Route path="/loja/:id" element={<StorePage />} />
+              <Route path="/carrinho" element={<CartPage />} />
+              <Route path="/checkout" element={<CheckoutPage />} />
+              <Route path="/pedidos" element={<PedidosPage />} />
+              <Route path="/perfil" element={<PerfilPage />} />
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/portal-parceiro" element={<PartnerLogin />} />
               <Route
@@ -73,11 +82,13 @@ const App = () => (
               <Route path="/parceiro" element={<PartnerOnboarding />} />
               <Route path="/cadastro-entregador" element={<CadastroEntregador />} />
               <Route path="/cadastro-lojista" element={<CadastroLojista />} />
+              {/* Client store access via slug - must be last */}
               <Route path="/:slug" element={<StorePage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
         </CartProvider>
+        </StoreProvider>
       </AuthProvider>
       </ThemeProvider>
     </TooltipProvider>
