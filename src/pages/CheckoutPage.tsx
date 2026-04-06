@@ -92,8 +92,11 @@ const CheckoutPage = () => {
   const profileCep = (userProfile as any)?.cep;
   const hasAddress = !!profileStreet && !!profileNumber && !!profileNeighborhood;
   const storeCep = (storeData as any)?.address_cep;
+  const storeDeliveryMode = (storeData as any)?.delivery_mode || "platform";
+  const storeOwnFee = (storeData as any)?.own_delivery_fee || 0;
+  const isOwnDelivery = storeDeliveryMode === "own";
   const config = deliveryFeeConfig || DEFAULT_DELIVERY_FEE_CONFIG;
-  const activeDeliveryFee = calculatedDeliveryFee !== null ? calculatedDeliveryFee : config.city_fee;
+  const activeDeliveryFee = isOwnDelivery ? storeOwnFee : (calculatedDeliveryFee !== null ? calculatedDeliveryFee : config.city_fee);
   const effectiveDeliveryFee = couponType === "free_shipping" ? 0 : activeDeliveryFee;
   const finalTotal = Math.max(0, addMoney(subtotal, effectiveDeliveryFee, -couponDiscount));
 
