@@ -271,9 +271,6 @@ const StorePage = () => {
         <span className="text-5xl mb-4">🔒</span>
         <h1 className="text-xl font-bold text-foreground mb-2">Loja indisponível</h1>
         <p className="text-sm text-muted-foreground mb-6">Esta loja não está ativa no momento.</p>
-        <button onClick={() => navigate("/")} className="bg-primary text-primary-foreground font-bold px-6 py-3 rounded-xl">
-          Voltar à Home
-        </button>
       </div>
     );
   }
