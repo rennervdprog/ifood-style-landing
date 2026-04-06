@@ -671,9 +671,9 @@ const AdminDashboard = () => {
                 />
                 <GlanceCard
                   icon={Bike}
-                  label="Motoboys Online"
+                  label="Motoboys Plataforma"
                   value={onlineDrivers?.length || 0}
-                  subValue={realtimeDriversConnected ? "Rastreamento ativo" : "Conectando..."}
+                  subValue={realtimeDriversConnected ? "Online na plataforma" : "Conectando..."}
                   color={(onlineDrivers?.length || 0) > 0 ? "text-blue-500" : "text-muted-foreground"}
                 />
                 <GlanceCard
