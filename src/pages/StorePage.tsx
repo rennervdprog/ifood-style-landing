@@ -715,6 +715,12 @@ const ProductCard = ({ product, disabled, onClick }: ProductCardProps) => (
       <div>
         <h3 className="font-bold text-sm text-foreground line-clamp-1 group-hover:text-primary transition-colors">
           {product.name}
+          {product.metadata?.is_beverage && product.metadata?.drink_volume && (
+            <span className="text-muted-foreground font-medium"> · {product.metadata.drink_volume}</span>
+          )}
+          {!product.metadata?.is_beverage && product.metadata?.volume && (
+            <span className="text-muted-foreground font-medium"> · {product.metadata.volume}</span>
+          )}
         </h3>
         {product.description && (
           <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">{product.description}</p>
