@@ -21,6 +21,7 @@ interface Product {
   image_url: string | null;
   is_available: boolean;
   section_id: string | null;
+  metadata?: Record<string, any>;
 }
 
 interface MenuSection {
@@ -499,7 +500,12 @@ const StorePage = () => {
                   <div className="w-full h-24 bg-muted flex items-center justify-center"><span className="text-2xl">🍴</span></div>
                 )}
                 <div className="p-2">
-                  <p className="text-xs font-bold text-foreground line-clamp-1">{product.name}</p>
+                  <p className="text-xs font-bold text-foreground line-clamp-1">
+                    {product.name}
+                    {(product as any).metadata?.is_beverage && (product as any).metadata?.drink_volume && (
+                      <span className="text-muted-foreground font-medium"> · {(product as any).metadata.drink_volume}</span>
+                    )}
+                  </p>
                   <p className="text-xs font-black text-primary mt-0.5">R$ {product.price.toFixed(2)}</p>
                 </div>
               </button>
@@ -536,7 +542,12 @@ const StorePage = () => {
                   <div className="w-full h-24 bg-muted flex items-center justify-center"><span className="text-2xl">🍴</span></div>
                 )}
                 <div className="p-2">
-                  <p className="text-xs font-bold text-foreground line-clamp-1">{product.name}</p>
+                  <p className="text-xs font-bold text-foreground line-clamp-1">
+                    {product.name}
+                    {(product as any).metadata?.is_beverage && (product as any).metadata?.drink_volume && (
+                      <span className="text-muted-foreground font-medium"> · {(product as any).metadata.drink_volume}</span>
+                    )}
+                  </p>
                   <p className="text-xs font-black text-primary mt-0.5">R$ {product.price.toFixed(2)}</p>
                 </div>
               </button>
@@ -714,6 +725,12 @@ const ProductCard = ({ product, disabled, onClick }: ProductCardProps) => (
       <div>
         <h3 className="font-bold text-sm text-foreground line-clamp-1 group-hover:text-primary transition-colors">
           {product.name}
+          {product.metadata?.is_beverage && product.metadata?.drink_volume && (
+            <span className="text-muted-foreground font-medium"> · {product.metadata.drink_volume}</span>
+          )}
+          {!product.metadata?.is_beverage && product.metadata?.volume && (
+            <span className="text-muted-foreground font-medium"> · {product.metadata.volume}</span>
+          )}
         </h3>
         {product.description && (
           <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">{product.description}</p>
