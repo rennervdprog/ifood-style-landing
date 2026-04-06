@@ -184,7 +184,6 @@ const CategoryProductFields = ({ category, metadata, onChange }: CategoryProduct
           {metadata.allows_half && (
             <TextField label="Máx. sabores" fieldKey="max_flavors" placeholder="2" />
           )}
-          <ListField label="Opções de Borda" fieldKey="crust_options" placeholder="Ex: Catupiry, Cheddar..." />
           <ListField label="Sabores Disponíveis" fieldKey="flavors" placeholder="Ex: Calabresa, Margherita..." />
         </div>
       );
@@ -196,12 +195,10 @@ const CategoryProductFields = ({ category, metadata, onChange }: CategoryProduct
             <Beef className="h-4 w-4" /> Campos de Lanche
           </div>
           <ListField label="Ponto da Carne" fieldKey="meat_doneness" placeholder="Ex: Mal passado, Ao ponto..." />
-          <ListField label="Ingredientes Removíveis" fieldKey="removable_ingredients" placeholder="Ex: Cebola, Tomate..." />
           <ToggleField label="Produto é um combo?" fieldKey="is_combo" />
           {metadata.is_combo && (
             <ListField label="Itens do Combo" fieldKey="combo_items" placeholder="Ex: Batata G, Refri 500ml..." />
           )}
-          <ListField label="Extras / Adicionais" fieldKey="extras" placeholder="Ex: Bacon extra, Queijo..." />
         </div>
       );
 
@@ -227,8 +224,6 @@ const CategoryProductFields = ({ category, metadata, onChange }: CategoryProduct
           <div className="flex items-center gap-2 text-primary text-xs font-bold">
             <IceCream className="h-4 w-4" /> Campos de Sorveteria / Doces
           </div>
-          <ListField label="Coberturas" fieldKey="toppings" placeholder="Ex: Chocolate, Morango..." />
-          <ListField label="Acompanhamentos" fieldKey="accompaniments" placeholder="Ex: Granola, Paçoca..." />
           <ListField label="Sabores Disponíveis" fieldKey="flavors" placeholder="Ex: Chocolate, Baunilha..." />
           <TextField label="Tamanho / Peso" fieldKey="size_weight" placeholder="Ex: 300ml, 500g..." />
         </div>
@@ -243,7 +238,6 @@ const CategoryProductFields = ({ category, metadata, onChange }: CategoryProduct
           <TextField label="Quantidade de Peças" fieldKey="pieces_count" placeholder="Ex: 8, 16, 30..." />
           <ListField label="Proteínas" fieldKey="proteins" placeholder="Ex: Salmão, Atum..." />
           <ToggleField label="Serve para compartilhar?" fieldKey="shareable" />
-          <ListField label="Molhos Inclusos" fieldKey="sauces" placeholder="Ex: Shoyu, Tarê..." />
         </div>
       );
 
@@ -256,7 +250,6 @@ const CategoryProductFields = ({ category, metadata, onChange }: CategoryProduct
           <ListField label="Tamanhos" fieldKey="drink_sizes" placeholder="Ex: P, M, G..." />
           <ListField label="Tipos de Leite" fieldKey="milk_options" placeholder="Ex: Integral, Desnatado, Vegetal..." />
           <ToggleField label="Pode ser gelado?" fieldKey="can_be_iced" />
-          <ListField label="Extras" fieldKey="extras" placeholder="Ex: Shot extra, Chantilly..." />
         </div>
       );
 
@@ -269,7 +262,6 @@ const CategoryProductFields = ({ category, metadata, onChange }: CategoryProduct
           <ListField label="Ponto da Carne" fieldKey="meat_doneness" placeholder="Ex: Mal passado, Ao ponto..." />
           <TextField label="Peso / Porção" fieldKey="portion_weight" placeholder="Ex: 300g, 500g..." />
           <ToggleField label="Serve para compartilhar?" fieldKey="shareable" />
-          <ListField label="Acompanhamentos" fieldKey="accompaniments" placeholder="Ex: Arroz, Farofa..." />
         </div>
       );
 
