@@ -24,6 +24,7 @@ import StoreSettings from "@/components/StoreSettings";
 import StoreFinancePanel from "@/components/StoreFinancePanel";
 import { printThermalReceipt } from "@/lib/thermalPrint";
 import { requestNotificationPermission, notifyNewOrder, pushNotifyDeliveryAvailable } from "@/lib/notifications";
+import { sendPushNotification } from "@/lib/firebase";
 import { addMoney, averageMoney, formatCurrency, sumMoney } from "@/lib/utils";
 import ProductTour, { lojistaTourSteps } from "@/components/ProductTour";
 
