@@ -50,7 +50,7 @@ interface StoreSettingsProps {
   storeOwnDeliveryFee?: number | null;
 }
 
-const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, storeIsOpen, forceClosed, storeSlug, storeAddressStreet, storeAddressNumber, storeAddressComplement, storeAddressNeighborhood, storeAddressReference, storeAddressCity, storeAddressState, storeAddressCep, storeDeliveryMode }: StoreSettingsProps) => {
+const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, storeIsOpen, forceClosed, storeSlug, storeAddressStreet, storeAddressNumber, storeAddressComplement, storeAddressNeighborhood, storeAddressReference, storeAddressCity, storeAddressState, storeAddressCep, storeDeliveryMode, storeOwnDeliveryFee }: StoreSettingsProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
