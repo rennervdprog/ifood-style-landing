@@ -10,6 +10,7 @@ import RoleGuard from "@/components/RoleGuard";
 import InstallPrompt from "@/components/InstallPrompt";
 import NotificationPrompt from "@/components/NotificationPrompt";
 import Index from "./pages/Index";
+import StoreDirectory from "./pages/StoreDirectory";
 import StorePage from "./pages/StorePage";
 import CartPage from "./pages/CartPage";
 import CheckoutPage from "./pages/CheckoutPage";
