@@ -175,7 +175,7 @@ async function createAsaasPix(params: {
           "access_token": apiKey,
         },
         body: JSON.stringify({
-          name: params.payerName || "Cliente FoodIta",
+          name: params.payerName || "Cliente ItaSuper",
           cpfCnpj: cleanCpf,
         }),
       });
@@ -546,7 +546,7 @@ function createSimulatedPix(params: {
   externalReference: string;
 }): StandardPixResponse {
   const fakeQr =
-    "00020126580014br.gov.bcb.pix0136SIMULACAO-FOODITA-MODO-TESTE520400005303986540510.005802BR5913FOODITA TESTE6014CIDADE TESTE62070503***6304ABCD";
+    "00020126580014br.gov.bcb.pix0136SIMULACAO-ITASUPER-MODO-TESTE520400005303986540510.005802BR5913ITASUPER TESTE6014CIDADE TESTE62070503***6304ABCD";
   const now = new Date().toISOString();
   return {
     status: "pending",
@@ -633,15 +633,15 @@ async function handleOrderPix(
   if (!cleanCpf || cleanCpf.length !== 11) return json({ error: "CPF inválido. Informe um CPF com 11 dígitos." }, 400);
 
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
-  const desc = String(description || `Pedido FoodIta #${order_id.substring(0, 6).toUpperCase()}`).substring(0, 256);
+  const desc = String(description || `Pedido ItaSuper #${order_id.substring(0, 6).toUpperCase()}`).substring(0, 256);
   const idempotencyKey = `pix-${order_id}-${Date.now()}`;
 
   return await routePixCreation({
     amount,
     description: desc,
-    payerEmail: userEmail || "cliente@foodita.com",
+    payerEmail: userEmail || "cliente@itasuper.com",
     payerFirstName: String(payer_first_name || "Cliente").substring(0, 100),
-    payerLastName: String(payer_last_name || "FoodIta").substring(0, 100),
+    payerLastName: String(payer_last_name || "ItaSuper").substring(0, 100),
     payerCpf: cleanCpf,
     externalReference: order_id,
     idempotencyKey,
@@ -716,15 +716,15 @@ async function handleCommissionCharge(
     .eq("status", "pending")
     .lt("created_at", fiveMinAgo);
 
-  const desc = String(description || `Comissão FoodIta - ${store.name} - ${referenceCode}`).substring(0, 256);
+  const desc = String(description || `Comissão ItaSuper - ${store.name} - ${referenceCode}`).substring(0, 256);
   const idempotencyKey = `commission-${store_id}-${referenceCode}`;
 
   const result = await routePixCreation({
     amount: Number(amount.toFixed(2)),
     description: desc,
-    payerEmail: userEmail || "lojista@foodita.com",
+    payerEmail: userEmail || "lojista@itasuper.com",
     payerFirstName: store.name.substring(0, 100),
-    payerLastName: "FoodIta",
+    payerLastName: "ItaSuper",
     payerCpf: "00000000000",
     externalReference: referenceCode,
     idempotencyKey,
@@ -783,7 +783,7 @@ async function handleStorePayout(
 
   const { data: refData } = await serviceClient.rpc("generate_financial_reference", { _prefix: "REP" });
   const referenceCode = refData || `#REP-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
-  const desc = `Repasse FoodIta - ${store.name} - ${referenceCode}`;
+  const desc = `Repasse ItaSuper - ${store.name} - ${referenceCode}`;
 
   // Try Asaas Transfer (real money transfer) first
   const provider = await getActiveProviderFromDB();
@@ -855,8 +855,8 @@ async function handleStorePayout(
   const result = await routePixCreation({
     amount: Number(amount.toFixed(2)),
     description: desc.substring(0, 256),
-    payerEmail: _userEmail || "admin@foodita.com",
-    payerFirstName: "FoodIta",
+    payerEmail: _userEmail || "admin@itasuper.com",
+    payerFirstName: "ItaSuper",
     payerLastName: "Admin",
     payerCpf: "00000000000",
     externalReference: referenceCode,

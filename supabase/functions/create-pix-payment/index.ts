@@ -98,13 +98,13 @@ Deno.serve(async (req) => {
 
     const paymentBody = {
       transaction_amount: Number(amount),
-      description: String(description || `Pedido FoodIta #${order_id.substring(0, 6).toUpperCase()}`).substring(0, 256),
+      description: String(description || `Pedido ItaSuper #${order_id.substring(0, 6).toUpperCase()}`).substring(0, 256),
       payment_method_id: "pix",
       date_of_expiration: expiresAt,
       payer: {
-        email: userEmail || "cliente@foodita.com",
+        email: userEmail || "cliente@itasuper.com",
         first_name: String(payer_first_name || "Cliente").substring(0, 100),
-        last_name: String(payer_last_name || "FoodIta").substring(0, 100),
+        last_name: String(payer_last_name || "ItaSuper").substring(0, 100),
         identification: {
           type: "CPF",
           number: cleanCpf,

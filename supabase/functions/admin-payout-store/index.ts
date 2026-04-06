@@ -102,15 +102,15 @@ Deno.serve(async (req) => {
     const referenceCode = refData || `#REP-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
 
     // Create Mercado Pago PIX payment to the store owner
-    const desc = `Repasse FoodIta - ${store.name} - ${referenceCode}`;
+    const desc = `Repasse ItaSuper - ${store.name} - ${referenceCode}`;
 
     const paymentBody = {
       transaction_amount: Number(amount.toFixed(2)),
       description: desc.substring(0, 256),
       payment_method_id: "pix",
       payer: {
-        email: userData.user.email || "admin@foodita.com",
-        first_name: "FoodIta",
+        email: userData.user.email || "admin@itasuper.com",
+        first_name: "ItaSuper",
         last_name: "Admin",
         identification: { type: "CPF", number: "00000000000" },
       },

@@ -380,7 +380,7 @@ const CheckoutPage = () => {
             <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 text-center">
               <p className="text-sm font-bold text-yellow-600 mb-2">📍 Endereço não cadastrado</p>
               <p className="text-xs text-muted-foreground mb-3">
-                Precisamos do seu endereço para entregar pelo FoodIta.
+                Precisamos do seu endereço para entregar pelo ItaSuper.
               </p>
               <button
                 onClick={() => setShowAddressModal(true)}

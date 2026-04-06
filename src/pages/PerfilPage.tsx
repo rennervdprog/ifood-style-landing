@@ -555,7 +555,7 @@ const PerfilPage = () => {
           Sair da conta
         </button>
 
-        <p className="text-center text-[10px] text-muted-foreground pb-4">FoodIta v1.0</p>
+        <p className="text-center text-[10px] text-muted-foreground pb-4">ItaSuper v1.0</p>
       </div>
       <BottomNav />
     </div>

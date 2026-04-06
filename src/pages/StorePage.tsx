@@ -302,7 +302,7 @@ const StorePage = () => {
             {ownerProfile?.whatsapp_number && (
               <WhatsAppButton
                 number={ownerProfile.whatsapp_number}
-                message={`Olá! Estou vendo o cardápio da ${store?.name} no FoodIta.`}
+                message={`Olá! Estou vendo o cardápio da ${store?.name} no ItaSuper.`}
                 label=""
                 size="sm"
               />

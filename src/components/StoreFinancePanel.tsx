@@ -356,7 +356,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
           action: "commission_charge",
           store_id: storeId,
           amount: chargeAmount,
-          description: `Comissão FoodIta - ${storeName}`,
+          description: `Comissão ItaSuper - ${storeName}`,
         },
       });
       if (error) throw error;
@@ -413,11 +413,11 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
   };
 
   const copyToClipboard = () => {
-    const text = `📊 Resumo Financeiro FoodIta - ${storeName}\n` +
+    const text = `📊 Resumo Financeiro ItaSuper - ${storeName}\n` +
       `Período: ${format(dateRange.start, "dd/MM", { locale: ptBR })} a ${format(dateRange.end, "dd/MM/yyyy", { locale: ptBR })}\n\n` +
       `💰 Vendas Totais: R$ ${totalSales.toFixed(2)}\n` +
       `🏪 Minha Parte (85%): R$ ${storePart.toFixed(2)}\n` +
-      `📱 Comissão FoodIta (15%): R$ ${totalCommission.toFixed(2)}\n\n` +
+      `📱 Comissão ItaSuper (15%): R$ ${totalCommission.toFixed(2)}\n\n` +
       `--- Detalhes ---\n` +
       `Vendas Presenciais: R$ ${physicalSales.toFixed(2)}\n` +
       `Vendas PIX App: R$ ${appSales.toFixed(2)}\n` +
@@ -428,12 +428,12 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
 
   const downloadTxt = () => {
     const lines = [
-      `EXTRATO FINANCEIRO FOODITA - ${storeName.toUpperCase()}`,
+      `EXTRATO FINANCEIRO ITASUPER - ${storeName.toUpperCase()}`,
       `Período: ${format(dateRange.start, "dd/MM/yyyy")} a ${format(dateRange.end, "dd/MM/yyyy")}`,
       ``,
       `VENDAS TOTAIS: R$ ${totalSales.toFixed(2)}`,
       `MINHA PARTE (85%): R$ ${storePart.toFixed(2)}`,
-      `COMISSÃO FOODITA (15%): R$ ${totalCommission.toFixed(2)}`,
+      `COMISSÃO ITASUPER (15%): R$ ${totalCommission.toFixed(2)}`,
       ``,
       `VENDAS PRESENCIAIS: R$ ${physicalSales.toFixed(2)}`,
       `VENDAS PIX APP: R$ ${appSales.toFixed(2)}`,
@@ -794,7 +794,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
         </div>
         <p className="text-[10px] text-muted-foreground mt-3 text-center">
           {finalBalance >= 0
-            ? "Você tem a receber do FoodIta no próximo fechamento."
+            ? "Você tem a receber do ItaSuper no próximo fechamento."
             : "Comissões pendentes para o fechamento."}
         </p>
       </div>

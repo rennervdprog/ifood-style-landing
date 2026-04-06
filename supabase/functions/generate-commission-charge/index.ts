@@ -153,7 +153,7 @@ Deno.serve(async (req) => {
 
     // Create Mercado Pago PIX charge with expiration
     const desc = String(
-      description || `Comissão FoodIta - ${store.name} - ${referenceCode}`
+      description || `Comissão ItaSuper - ${store.name} - ${referenceCode}`
     ).substring(0, 256);
 
     const paymentBody = {
@@ -162,9 +162,9 @@ Deno.serve(async (req) => {
       payment_method_id: "pix",
       date_of_expiration: expiresAt,
       payer: {
-        email: userData.user.email || "lojista@foodita.com",
+        email: userData.user.email || "lojista@itasuper.com",
         first_name: store.name.substring(0, 100),
-        last_name: "FoodIta",
+        last_name: "ItaSuper",
         identification: { type: "CPF", number: "00000000000" },
       },
       external_reference: referenceCode,

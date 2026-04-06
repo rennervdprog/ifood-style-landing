@@ -4,9 +4,9 @@ importScripts("https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-com
 
 firebase.initializeApp({
   apiKey: "AIzaSyC7o57Z8Y-F2KLyqSIGtHTSPgTxGRr-JNQ",
-  authDomain: "itafood-c71a1.firebaseapp.com",
-  projectId: "itafood-c71a1",
-  storageBucket: "itafood-c71a1.firebasestorage.app",
+  authDomain: "itasuper-c71a1.firebaseapp.com",
+  projectId: "itasuper-c71a1",
+  storageBucket: "itasuper-c71a1.firebasestorage.app",
   messagingSenderId: "344752263518",
   appId: "1:344752263518:web:abcb197795dbd262d37fcf",
 });

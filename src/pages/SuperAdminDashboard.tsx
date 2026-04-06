@@ -285,7 +285,7 @@ const SuperAdminDashboard = () => {
 
   const generateReport = () => {
     const dateLabel = dateFilter === "today" ? "Hoje" : dateFilter === "yesterday" ? "Ontem" : "Últimos 7 dias";
-    let report = `📊 *Relatório ${dateLabel} - FoodIta*\n\n`;
+    let report = `📊 *Relatório ${dateLabel} - ItaSuper*\n\n`;
     report += `💰 Vendas: R$ ${metrics.totalSales.toFixed(2)}\n`;
     report += `📦 Pedidos: ${metrics.totalOrders}\n`;
     report += `🏷️ Comissão Plataforma: R$ ${metrics.commission.toFixed(2)}\n\n`;
@@ -300,9 +300,9 @@ const SuperAdminDashboard = () => {
   const generateStoreWhatsApp = (entry: typeof storeSettlement[0]) => {
     const period = financeFilter === "week" ? "Semana" : "Mês";
     const balanceText = entry.finalBalance >= 0
-      ? `✅ O FoodIta deve transferir R$ ${entry.finalBalance.toFixed(2)} para você.`
-      : `⚠️ Valor a acertar com o FoodIta: R$ ${Math.abs(entry.finalBalance).toFixed(2)}.`;
-    const msg = `💰 *Fechamento FoodIta (${period})*\n\nOlá *${entry.name}*!\n\n` +
+      ? `✅ O ItaSuper deve transferir R$ ${entry.finalBalance.toFixed(2)} para você.`
+      : `⚠️ Valor a acertar com o ItaSuper: R$ ${Math.abs(entry.finalBalance).toFixed(2)}.`;
+    const msg = `💰 *Fechamento ItaSuper (${period})*\n\nOlá *${entry.name}*!\n\n` +
       `📦 Total de Pedidos: ${entry.orderCount}\n` +
       `💵 Vendas Físicas (Dinheiro/Cartão): R$ ${entry.physicalSales.toFixed(2)}\n` +
       `📱 Vendas App (Pix): R$ ${entry.appSales.toFixed(2)}\n\n` +
@@ -355,7 +355,7 @@ const SuperAdminDashboard = () => {
                 <LayoutDashboard className="h-5 w-5 text-primary" />
               </div>
               <div className="min-w-0">
-                <h1 className="font-bold text-sm text-foreground">FoodIta Admin</h1>
+                <h1 className="font-bold text-sm text-foreground">ItaSuper Admin</h1>
                 <p className="text-[10px] text-muted-foreground">Painel Administrativo</p>
               </div>
             </div>
@@ -959,7 +959,7 @@ const FinanceTab = ({
     setChargingStore(entry.storeId);
     try {
       const { data, error } = await supabase.functions.invoke("payment-router", {
-        body: { action: "commission_charge", store_id: entry.storeId, amount: chargeAmount, description: `Comissão FoodIta - ${entry.name}` },
+        body: { action: "commission_charge", store_id: entry.storeId, amount: chargeAmount, description: `Comissão ItaSuper - ${entry.name}` },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);

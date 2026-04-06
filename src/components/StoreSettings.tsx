@@ -358,7 +358,7 @@ const NotificationSection = () => {
         </label>
         <div className="flex gap-2">
           <div className="flex-1 flex items-center bg-secondary border border-border rounded-xl overflow-hidden">
-            <span className="text-xs text-muted-foreground/70 pl-3 whitespace-nowrap">foodita.app/</span>
+            <span className="text-xs text-muted-foreground/70 pl-3 whitespace-nowrap">itasuper.app/</span>
             <input
               type="text"
               value={slug}

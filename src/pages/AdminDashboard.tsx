@@ -385,7 +385,7 @@ const AdminDashboard = () => {
         if (clientPhone) {
           const clientName = getClientName(order.client_id);
           const items = order.order_items?.map((i: any) => `${i.quantity}x ${i.products?.name}`).join("\n") || "";
-          const msg = `✅ *FoodIta* informa: Seu pedido no *${store?.name}* foi aceito! 🍔\n\n${items}\n\n💰 Total: R$ ${Number(order.total_price).toFixed(2)}\nPedido: #${order.id.slice(0, 8).toUpperCase()}`;
+          const msg = `✅ *ItaSuper* informa: Seu pedido no *${store?.name}* foi aceito! 🍔\n\n${items}\n\n💰 Total: R$ ${Number(order.total_price).toFixed(2)}\nPedido: #${order.id.slice(0, 8).toUpperCase()}`;
           setTimeout(() => openWhatsApp(clientPhone, msg), 600);
         }
       }
@@ -398,7 +398,7 @@ const AdminDashboard = () => {
         sendPushNotification([order.client_id], "🛵 Saiu para entrega!", `Seu pedido #${orderId.slice(0, 8).toUpperCase()} saiu para entrega!`, { link: "/pedidos" }).catch(console.error);
         const clientPhone = getClientWhatsApp(order.client_id);
         if (clientPhone) {
-          const msg = `🛵 *FoodIta* informa: Seu pedido #${orderId.slice(0, 8).toUpperCase()} saiu para entrega! 🚀\nEndereço: ${order.address_details}`;
+          const msg = `🛵 *ItaSuper* informa: Seu pedido #${orderId.slice(0, 8).toUpperCase()} saiu para entrega! 🚀\nEndereço: ${order.address_details}`;
           setTimeout(() => openWhatsApp(clientPhone, msg), 600);
         }
       }
@@ -426,8 +426,8 @@ const AdminDashboard = () => {
       const clientPhone = getClientWhatsApp(order.client_id);
       if (clientPhone) {
         const msg = isPix
-          ? `❌ *FoodIta* informa: Seu pedido #${order.id.slice(0, 8).toUpperCase()} foi cancelado.\n\n💰 O reembolso de R$ ${Number(order.total_price).toFixed(2)} via PIX será processado em breve.\n\nDesculpe o transtorno! 🙏`
-          : `❌ *FoodIta* informa: Seu pedido #${order.id.slice(0, 8).toUpperCase()} foi cancelado.\n\nDesculpe o transtorno! 🙏`;
+          ? `❌ *ItaSuper* informa: Seu pedido #${order.id.slice(0, 8).toUpperCase()} foi cancelado.\n\n💰 O reembolso de R$ ${Number(order.total_price).toFixed(2)} via PIX será processado em breve.\n\nDesculpe o transtorno! 🙏`
+          : `❌ *ItaSuper* informa: Seu pedido #${order.id.slice(0, 8).toUpperCase()} foi cancelado.\n\nDesculpe o transtorno! 🙏`;
         setTimeout(() => openWhatsApp(clientPhone, msg), 600);
       }
 
@@ -1280,7 +1280,7 @@ const AdminDashboard = () => {
                           <div className="mx-4 mb-2 flex flex-wrap gap-1.5">
                             {order.status === "pendente" && (
                               <button onClick={() => {
-                                const msg = `Olá ${getClientName(order.client_id)}! *FoodIta*: Pedido aceito e em produção! 🍔\nPedido: #${order.id.slice(0, 8).toUpperCase()}\nTotal: R$ ${Number(order.total_price).toFixed(2)}`;
+                                const msg = `Olá ${getClientName(order.client_id)}! *ItaSuper*: Pedido aceito e em produção! 🍔\nPedido: #${order.id.slice(0, 8).toUpperCase()}\nTotal: R$ ${Number(order.total_price).toFixed(2)}`;
                                 openWhatsApp(getClientWhatsApp(order.client_id), msg);
                               }} className="flex items-center gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold px-2 py-1 rounded-lg">
                                 <MessageCircle className="h-3 w-3" /> Avisar
@@ -1288,7 +1288,7 @@ const AdminDashboard = () => {
                             )}
                             {(order.status === "em_transito" || order.status === "saiu_entrega") && (
                               <button onClick={() => {
-                                const msg = `Olá ${getClientName(order.client_id)}! Motoboy *FoodIta* saiu para entrega! 🚀\nEndereço: ${order.address_details}`;
+                                const msg = `Olá ${getClientName(order.client_id)}! Motoboy *ItaSuper* saiu para entrega! 🚀\nEndereço: ${order.address_details}`;
                                 openWhatsApp(getClientWhatsApp(order.client_id), msg);
                               }} className="flex items-center gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold px-2 py-1 rounded-lg">
                                 <MessageCircle className="h-3 w-3" /> Saiu
@@ -1456,7 +1456,7 @@ const AdminDashboard = () => {
                             const result = await sendPushNotification(
                               driverIds,
                               "🧪 Teste de Notificação",
-                              "Esta é uma notificação de teste do ItaFood!",
+                              "Esta é uma notificação de teste do ItaSuper!",
                               { link: "/entregas" }
                             );
                             setPushLog(prev => [...prev, `✅ Resposta: ${JSON.stringify(result)}`]);

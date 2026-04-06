@@ -117,7 +117,7 @@ const CadastroEntregador = () => {
             <span className="text-4xl mb-3 block">🏍️</span>
             <h2 className="text-xl font-black text-foreground">Quero Entregar</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Cadastre-se como entregador no FoodIta
+              Cadastre-se como entregador no ItaSuper
             </p>
           </div>
 
