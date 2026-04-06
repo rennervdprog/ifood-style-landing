@@ -1251,25 +1251,29 @@ const AdminDashboard = () => {
                       <button
                         className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-medium"
                         onClick={async () => {
+                          setPushLog(prev => [...prev, `[${new Date().toLocaleTimeString()}] Enviando para motoboys...`]);
                           try {
                             if (!onlineDrivers || onlineDrivers.length === 0) {
+                              setPushLog(prev => [...prev, `❌ Nenhum motoboy online.`]);
                               toast.error("Nenhum motoboy online no momento.");
                               return;
                             }
                             const driverIds = onlineDrivers.map((d: any) => d.user_id);
+                            setPushLog(prev => [...prev, `📤 IDs: ${driverIds.join(", ")}`]);
                             const result = await sendPushNotification(
                               driverIds,
                               "🧪 Teste de Notificação",
                               "Esta é uma notificação de teste do ItaFood!",
                               { link: "/entregas" }
                             );
+                            setPushLog(prev => [...prev, `✅ Resposta: ${JSON.stringify(result)}`]);
                             if (result?.total_sent > 0) {
-                              toast.success(`Notificação enviada! FCM: ${result.fcm?.sent || 0}, OneSignal: ${result.onesignal?.sent || 0}`);
+                              toast.success(`Enviado! FCM: ${result.fcm?.sent || 0}, OneSignal: ${result.onesignal?.sent || 0}`);
                             } else {
-                              toast.warning("Nenhum dispositivo recebeu a notificação. Verifique se os motoboys têm tokens registrados.");
+                              toast.warning("Nenhum dispositivo recebeu.");
                             }
-                          } catch (err) {
-                            console.error(err);
+                          } catch (err: any) {
+                            setPushLog(prev => [...prev, `❌ Erro: ${err?.message || JSON.stringify(err)}`]);
                             toast.error("Erro ao enviar notificação de teste.");
                           }
                         }}
@@ -1279,28 +1283,45 @@ const AdminDashboard = () => {
                       <button
                         className="px-4 py-2 bg-secondary text-secondary-foreground rounded-xl text-sm font-medium"
                         onClick={async () => {
+                          setPushLog(prev => [...prev, `[${new Date().toLocaleTimeString()}] Enviando para mim...`]);
                           try {
                             if (!user) return;
+                            setPushLog(prev => [...prev, `📤 ID: ${user.id}`]);
                             const result = await sendPushNotification(
                               [user.id],
                               "🧪 Teste de Notificação",
                               "Se você recebeu isso, as notificações estão funcionando!",
                               { link: "/admin" }
                             );
+                            setPushLog(prev => [...prev, `✅ Resposta: ${JSON.stringify(result)}`]);
                             if (result?.total_sent > 0) {
                               toast.success(`Enviado! FCM: ${result.fcm?.sent || 0}, OneSignal: ${result.onesignal?.sent || 0}`);
                             } else {
-                              toast.warning("Nenhum dispositivo recebeu. Verifique se as notificações estão ativadas.");
+                              toast.warning("Nenhum dispositivo recebeu.");
                             }
-                          } catch (err) {
-                            console.error(err);
+                          } catch (err: any) {
+                            setPushLog(prev => [...prev, `❌ Erro: ${err?.message || JSON.stringify(err)}`]);
                             toast.error("Erro ao enviar.");
                           }
                         }}
                       >
                         <Bell className="w-4 h-4 inline mr-1" /> Enviar para Mim
                       </button>
+                      <button
+                        className="px-3 py-2 bg-muted text-muted-foreground rounded-xl text-xs"
+                        onClick={() => setPushLog([])}
+                      >
+                        Limpar Log
+                      </button>
                     </div>
+                    {pushLog.length > 0 && (
+                      <div className="bg-muted/50 border border-border rounded-xl p-3 max-h-48 overflow-y-auto">
+                        <p className="text-xs font-mono text-muted-foreground mb-1">📋 Log:</p>
+                        {pushLog.map((line, i) => (
+                          <p key={i} className="text-xs font-mono text-foreground break-all">{line}</p>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
