@@ -685,6 +685,72 @@ const AdminDashboard = () => {
                 />
               </div>
 
+              {/* Delivery Mode Quick Config */}
+              <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Truck className="h-4 w-4 text-primary" />
+                    <h3 className="font-bold text-foreground text-sm">Modo de Entrega</h3>
+                  </div>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${(store as any).delivery_mode === "own" ? "bg-amber-500/10 text-amber-600" : "bg-primary/10 text-primary"}`}>
+                    {(store as any).delivery_mode === "own" ? "Motoboy Próprio" : "Motoboy IFood"}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={async () => {
+                      await supabase.from("stores").update({ delivery_mode: "platform" } as any).eq("id", store.id);
+                      queryClient.invalidateQueries({ queryKey: ["my-store", user?.id] });
+                      toast.success("Modo alterado para Motoboy IFood!");
+                    }}
+                    className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
+                      (store as any).delivery_mode !== "own"
+                        ? "border-primary bg-primary/10"
+                        : "border-border bg-card hover:border-primary/30"
+                    }`}
+                  >
+                    <Bike className={`h-5 w-5 ${(store as any).delivery_mode !== "own" ? "text-primary" : "text-muted-foreground"}`} />
+                    <span className={`text-xs font-bold ${(store as any).delivery_mode !== "own" ? "text-primary" : "text-muted-foreground"}`}>Motoboy IFood</span>
+                  </button>
+                  <button
+                    onClick={async () => {
+                      await supabase.from("stores").update({ delivery_mode: "own" } as any).eq("id", store.id);
+                      queryClient.invalidateQueries({ queryKey: ["my-store", user?.id] });
+                      toast.success("Modo alterado para Motoboy Próprio!");
+                    }}
+                    className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
+                      (store as any).delivery_mode === "own"
+                        ? "border-primary bg-primary/10"
+                        : "border-border bg-card hover:border-primary/30"
+                    }`}
+                  >
+                    <Truck className={`h-5 w-5 ${(store as any).delivery_mode === "own" ? "text-primary" : "text-muted-foreground"}`} />
+                    <span className={`text-xs font-bold ${(store as any).delivery_mode === "own" ? "text-primary" : "text-muted-foreground"}`}>Motoboy Próprio</span>
+                  </button>
+                </div>
+                {(store as any).delivery_mode === "own" && (
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-foreground/80">Taxa de entrega fixa (R$)</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        defaultValue={((store as any).own_delivery_fee || 0).toString()}
+                        onBlur={async (e) => {
+                          const val = parseFloat(e.target.value.replace(",", ".")) || 0;
+                          await supabase.from("stores").update({ own_delivery_fee: val } as any).eq("id", store.id);
+                          queryClient.invalidateQueries({ queryKey: ["my-store", user?.id] });
+                          toast.success(`Taxa fixa atualizada para R$ ${val.toFixed(2)}`);
+                        }}
+                        placeholder="Ex: 5.00"
+                        className="flex-1 bg-secondary border border-border rounded-xl px-4 py-2.5 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">Este valor será cobrado para todos os clientes desta loja.</p>
+                  </div>
+                )}
+              </div>
+
               {/* Priority Queue - New orders with pulse */}
               {pendingCount > 0 && (
                 <div className="space-y-3">
