@@ -72,11 +72,11 @@ const CheckoutPage = () => {
   // Load store CEP for the first item's store
   const storeId = items[0]?.store_id;
   const { data: storeData } = useQuery({
-    queryKey: ["store-cep", storeId],
+    queryKey: ["store-checkout", storeId],
     queryFn: async () => {
       const { data } = await supabase
         .from("stores")
-        .select("address_cep")
+        .select("address_cep, delivery_mode, own_delivery_fee")
         .eq("id", storeId!)
         .maybeSingle();
       return data;
