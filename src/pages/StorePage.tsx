@@ -11,6 +11,7 @@ import WhatsAppButton from "@/components/WhatsAppButton";
 import ProductDetailModal from "@/components/ProductDetailModal";
 import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 import { useAuth } from "@/contexts/AuthContext";
+import { useStoreContext } from "@/contexts/StoreContext";
 
 interface Product {
   id: string;
