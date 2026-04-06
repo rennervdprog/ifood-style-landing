@@ -59,6 +59,13 @@ const StorePage = () => {
     enabled: !!(id || slug),
   });
 
+  // Set store context when accessed via slug (client mode)
+  useEffect(() => {
+    if (store && slug) {
+      setCurrentStore(store.id, (store as any).slug || slug, store.name);
+    }
+  }, [store, slug, setCurrentStore]);
+
   const storeId = store?.id || id;
 
   const { data: storeHours } = useQuery({
