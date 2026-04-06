@@ -500,7 +500,12 @@ const StorePage = () => {
                   <div className="w-full h-24 bg-muted flex items-center justify-center"><span className="text-2xl">🍴</span></div>
                 )}
                 <div className="p-2">
-                  <p className="text-xs font-bold text-foreground line-clamp-1">{product.name}</p>
+                  <p className="text-xs font-bold text-foreground line-clamp-1">
+                    {product.name}
+                    {(product as any).metadata?.is_beverage && (product as any).metadata?.drink_volume && (
+                      <span className="text-muted-foreground font-medium"> · {(product as any).metadata.drink_volume}</span>
+                    )}
+                  </p>
                   <p className="text-xs font-black text-primary mt-0.5">R$ {product.price.toFixed(2)}</p>
                 </div>
               </button>
