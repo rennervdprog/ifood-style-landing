@@ -14,7 +14,7 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
-  const notificationTitle = payload.notification?.title || "Itafood";
+  const notificationTitle = payload.notification?.title || "ItaSuper";
   const notificationOptions = {
     body: payload.notification?.body || "",
     icon: "/icon-192x192.png",
