@@ -12,6 +12,7 @@ import {
   Zap, ArrowRight, BarChart3, Eye, LogOut
 } from "lucide-react";
 import confetti from "canvas-confetti";
+import { isGoNative, runNativeDiagnostics, getNativeDebugLog } from "@/lib/gonative";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import { openWhatsApp } from "@/lib/whatsapp";
 import { useIsMobile } from "@/hooks/use-mobile";
