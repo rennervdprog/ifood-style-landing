@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import RoleGuard from "@/components/RoleGuard";
 import ClientGuard from "@/components/ClientGuard";
 import InstallPrompt from "@/components/InstallPrompt";
+import NotificationPrompt from "@/components/NotificationPrompt";
 import Index from "./pages/Index";
 import StorePage from "./pages/StorePage";
 import CartPage from "./pages/CartPage";
