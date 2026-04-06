@@ -94,6 +94,9 @@ const StoreDirectory = () => {
                   <img
                     src={store.image_url}
                     alt={store.name}
+                    loading="lazy"
+                    width={200}
+                    height={80}
                     className="w-full h-20 rounded-xl object-cover mb-2"
                   />
                 ) : (
