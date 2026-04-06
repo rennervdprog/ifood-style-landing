@@ -25,7 +25,7 @@ const Index = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("stores")
-        .select("*")
+        .select("id, name, slug, image_url, category, rating, is_open, force_closed, status, delivery_mode, own_delivery_fee")
         .order("rating", { ascending: false });
       if (error) throw error;
       return (data || []).filter((s: any) => !s.status || s.status === "ativo");
