@@ -563,6 +563,55 @@ const NotificationSection = () => {
         )}
       </div>
 
+      {/* Delivery Mode */}
+      <div className="bg-muted/50 border border-border rounded-2xl p-4 space-y-3">
+        <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
+          <Truck className="h-4 w-4 text-primary" />
+          Modo de Entrega
+        </label>
+        <p className="text-[10px] text-muted-foreground/70">
+          Escolha se quer usar os motoboys da plataforma ou seu próprio motoboy.
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={() => setDeliveryMode("platform")}
+            className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+              deliveryMode === "platform"
+                ? "border-primary bg-primary/10"
+                : "border-border bg-card hover:border-primary/30"
+            }`}
+          >
+            <Bike className={`h-6 w-6 ${deliveryMode === "platform" ? "text-primary" : "text-muted-foreground"}`} />
+            <span className={`text-xs font-bold ${deliveryMode === "platform" ? "text-primary" : "text-muted-foreground"}`}>
+              Motoboy IFood
+            </span>
+            <span className="text-[10px] text-muted-foreground text-center">Entregadores da plataforma</span>
+          </button>
+          <button
+            onClick={() => setDeliveryMode("own")}
+            className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+              deliveryMode === "own"
+                ? "border-primary bg-primary/10"
+                : "border-border bg-card hover:border-primary/30"
+            }`}
+          >
+            <Truck className={`h-6 w-6 ${deliveryMode === "own" ? "text-primary" : "text-muted-foreground"}`} />
+            <span className={`text-xs font-bold ${deliveryMode === "own" ? "text-primary" : "text-muted-foreground"}`}>
+              Motoboy Próprio
+            </span>
+            <span className="text-[10px] text-muted-foreground text-center">Seu próprio entregador</span>
+          </button>
+        </div>
+        {deliveryMode === "own" && (
+          <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-start gap-2">
+            <Truck className="h-4 w-4 text-amber-500 flex-shrink-0 mt-0.5" />
+            <p className="text-[10px] text-amber-600 dark:text-amber-400">
+              Com motoboy próprio, você terá um botão "Saiu para Entrega" direto no painel. Não será necessário aguardar aceite de entregador.
+            </p>
+          </div>
+        )}
+      </div>
+
       {/* Notifications Section */}
       <NotificationSection />
 
