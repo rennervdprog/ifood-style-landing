@@ -271,9 +271,6 @@ const StorePage = () => {
         <span className="text-5xl mb-4">🔒</span>
         <h1 className="text-xl font-bold text-foreground mb-2">Loja indisponível</h1>
         <p className="text-sm text-muted-foreground mb-6">Esta loja não está ativa no momento.</p>
-        <button onClick={() => navigate("/")} className="bg-primary text-primary-foreground font-bold px-6 py-3 rounded-xl">
-          Voltar à Home
-        </button>
       </div>
     );
   }
@@ -294,13 +291,7 @@ const StorePage = () => {
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-black/20" />
 
         {/* Top bar */}
-        <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 z-10">
-          <button
-            onClick={() => navigate(-1)}
-            className="w-10 h-10 bg-card/90 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg border border-border/50"
-          >
-            <ArrowLeft className="h-5 w-5 text-foreground" />
-          </button>
+        <div className="absolute top-0 left-0 right-0 flex items-center justify-end p-4 z-10">
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowSearch(!showSearch)}
