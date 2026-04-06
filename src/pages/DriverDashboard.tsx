@@ -1068,6 +1068,12 @@ const DriverDashboard = () => {
         </>
       )}
 
+      {/* ── Native Push Debug (visible on pedidos tab) ── */}
+      {activeTab === "pedidos" && (
+        <div className="px-4 pb-4">
+          <NativePushDebug />
+        </div>
+      )}
       {/* ═════════════ PIX CONFIG TAB ═════════════ */}
       {activeTab === "config" && (
         <div className="px-4 py-4 space-y-4">
