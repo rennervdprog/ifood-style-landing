@@ -195,6 +195,18 @@ const AuthPage = () => {
                 </div>
               )}
 
+              {mode === "login" && (
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="w-4 h-4 rounded border-border accent-primary"
+                  />
+                  <span className="text-sm text-muted-foreground">Lembrar de mim</span>
+                </label>
+              )}
+
               <button
                 type="submit"
                 disabled={loading}
