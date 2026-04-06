@@ -26,8 +26,9 @@ const CategoryProductFields = ({ category, metadata, onChange }: CategoryProduct
 
   const [tempInputs, setTempInputs] = useState<Record<string, string>>({});
 
-  const ListField = ({ label, fieldKey, placeholder }: { label: string; fieldKey: string; placeholder: string }) => (
-    <div className="space-y-1.5">
+  // Plain render helpers (NOT component declarations) to avoid remounting inputs
+  const renderListField = (label: string, fieldKey: string, placeholder: string) => (
+    <div className="space-y-1.5" key={fieldKey}>
       <label className="text-xs font-bold text-foreground/70">{label}</label>
       <div className="flex flex-wrap gap-1.5">
         {(metadata[fieldKey] || []).map((item: string, i: number) => (
@@ -67,8 +68,8 @@ const CategoryProductFields = ({ category, metadata, onChange }: CategoryProduct
     </div>
   );
 
-  const ToggleField = ({ label, fieldKey }: { label: string; fieldKey: string }) => (
-    <div className="flex items-center justify-between">
+  const renderToggle = (label: string, fieldKey: string) => (
+    <div className="flex items-center justify-between" key={fieldKey}>
       <label className="text-xs font-bold text-foreground/70">{label}</label>
       <button
         onClick={() => set(fieldKey, !metadata[fieldKey])}
@@ -79,8 +80,8 @@ const CategoryProductFields = ({ category, metadata, onChange }: CategoryProduct
     </div>
   );
 
-  const TextField = ({ label, fieldKey, placeholder }: { label: string; fieldKey: string; placeholder: string }) => (
-    <div className="space-y-1">
+  const renderTextField = (label: string, fieldKey: string, placeholder: string) => (
+    <div className="space-y-1" key={fieldKey}>
       <label className="text-xs font-bold text-foreground/70">{label}</label>
       <input
         type="text"
@@ -92,8 +93,8 @@ const CategoryProductFields = ({ category, metadata, onChange }: CategoryProduct
     </div>
   );
 
-  const SelectField = ({ label, fieldKey, options }: { label: string; fieldKey: string; options: string[] }) => (
-    <div className="space-y-1">
+  const renderSelect = (label: string, fieldKey: string, options: string[]) => (
+    <div className="space-y-1" key={fieldKey}>
       <label className="text-xs font-bold text-foreground/70">{label}</label>
       <select
         value={metadata[fieldKey] || ""}
@@ -108,7 +109,7 @@ const CategoryProductFields = ({ category, metadata, onChange }: CategoryProduct
     </div>
   );
 
-  const PizzaSizeFields = () => (
+  const renderPizzaSizes = () => (
     <div className="space-y-1.5">
       <label className="text-xs font-bold text-foreground/70">🍕 Tamanhos e Preços</label>
       {["Brotinho", "Média", "Grande", "Família"].map(size => (
@@ -149,24 +150,22 @@ const CategoryProductFields = ({ category, metadata, onChange }: CategoryProduct
     </div>
   );
 
-  // Beverage fields shared across categories
-  const BeverageFields = () => (
+  const renderBeverageFields = () => (
     <div className="bg-accent/10 border border-accent/20 rounded-xl p-3 space-y-3 mt-2">
       <div className="flex items-center gap-2 text-accent-foreground text-xs font-bold">
         <Wine className="h-4 w-4" /> 🥤 Campos de Bebida
       </div>
-      <TextField label="Volume" fieldKey="drink_volume" placeholder="Ex: 350ml, 500ml, 1L..." />
-      <SelectField label="Tipo de Bebida" fieldKey="drink_type" options={["Refrigerante", "Suco", "Água", "Cerveja", "Vinho", "Destilado", "Energético", "Milkshake", "Outro"]} />
-      <ToggleField label="Servir gelado?" fieldKey="serve_cold" />
+      {renderTextField("Volume", "drink_volume", "Ex: 350ml, 500ml, 1L...")}
+      {renderSelect("Tipo de Bebida", "drink_type", ["Refrigerante", "Suco", "Água", "Cerveja", "Vinho", "Destilado", "Energético", "Milkshake", "Outro"])}
+      {renderToggle("Servir gelado?", "serve_cold")}
     </div>
   );
 
-  // Wrap category fields + optional beverage toggle — hides category fields when beverage is on
   const withBeverageToggle = (categoryFields: React.ReactNode) => (
     <>
       <div className="bg-muted/50 border border-border rounded-xl p-3 space-y-2">
-        <ToggleField label="🥤 Este produto é uma bebida?" fieldKey="is_beverage" />
-        {metadata.is_beverage && <BeverageFields />}
+        {renderToggle("🥤 Este produto é uma bebida?", "is_beverage")}
+        {metadata.is_beverage && renderBeverageFields()}
       </div>
       {!metadata.is_beverage && categoryFields}
     </>
@@ -179,12 +178,10 @@ const CategoryProductFields = ({ category, metadata, onChange }: CategoryProduct
           <div className="flex items-center gap-2 text-primary text-xs font-bold">
             <Pizza className="h-4 w-4" /> Campos de Pizza
           </div>
-          <PizzaSizeFields />
-          <ToggleField label="Permite meia-meia?" fieldKey="allows_half" />
-          {metadata.allows_half && (
-            <TextField label="Máx. sabores" fieldKey="max_flavors" placeholder="2" />
-          )}
-          <ListField label="Sabores Disponíveis" fieldKey="flavors" placeholder="Ex: Calabresa, Margherita..." />
+          {renderPizzaSizes()}
+          {renderToggle("Permite meia-meia?", "allows_half")}
+          {metadata.allows_half && renderTextField("Máx. sabores", "max_flavors", "2")}
+          {renderListField("Sabores Disponíveis", "flavors", "Ex: Calabresa, Margherita...")}
         </div>
       );
 
@@ -194,11 +191,9 @@ const CategoryProductFields = ({ category, metadata, onChange }: CategoryProduct
           <div className="flex items-center gap-2 text-primary text-xs font-bold">
             <Beef className="h-4 w-4" /> Campos de Lanche
           </div>
-          <ListField label="Ponto da Carne" fieldKey="meat_doneness" placeholder="Ex: Mal passado, Ao ponto..." />
-          <ToggleField label="Produto é um combo?" fieldKey="is_combo" />
-          {metadata.is_combo && (
-            <ListField label="Itens do Combo" fieldKey="combo_items" placeholder="Ex: Batata G, Refri 500ml..." />
-          )}
+          {renderListField("Ponto da Carne", "meat_doneness", "Ex: Mal passado, Ao ponto...")}
+          {renderToggle("Produto é um combo?", "is_combo")}
+          {metadata.is_combo && renderListField("Itens do Combo", "combo_items", "Ex: Batata G, Refri 500ml...")}
         </div>
       );
 
@@ -208,12 +203,12 @@ const CategoryProductFields = ({ category, metadata, onChange }: CategoryProduct
           <div className="flex items-center gap-2 text-primary text-xs font-bold">
             <Pill className="h-4 w-4" /> Campos de Farmácia
           </div>
-          <ToggleField label="Receita Obrigatória?" fieldKey="requires_prescription" />
-          <TextField label="Miligramagem / Dosagem" fieldKey="dosage" placeholder="Ex: 500mg, 20ml..." />
-          <TextField label="Laboratório / Fabricante" fieldKey="manufacturer" placeholder="Ex: EMS, Medley..." />
-          <TextField label="Princípio Ativo" fieldKey="active_ingredient" placeholder="Ex: Paracetamol..." />
-          <SelectField label="Tipo de Produto" fieldKey="pharma_type" options={["Medicamento", "Cosmético", "Higiene", "Suplemento", "Outros"]} />
-          <ToggleField label="Produto Genérico?" fieldKey="is_generic" />
+          {renderToggle("Receita Obrigatória?", "requires_prescription")}
+          {renderTextField("Miligramagem / Dosagem", "dosage", "Ex: 500mg, 20ml...")}
+          {renderTextField("Laboratório / Fabricante", "manufacturer", "Ex: EMS, Medley...")}
+          {renderTextField("Princípio Ativo", "active_ingredient", "Ex: Paracetamol...")}
+          {renderSelect("Tipo de Produto", "pharma_type", ["Medicamento", "Cosmético", "Higiene", "Suplemento", "Outros"])}
+          {renderToggle("Produto Genérico?", "is_generic")}
         </div>
       );
 
@@ -224,8 +219,8 @@ const CategoryProductFields = ({ category, metadata, onChange }: CategoryProduct
           <div className="flex items-center gap-2 text-primary text-xs font-bold">
             <IceCream className="h-4 w-4" /> Campos de Sorveteria / Doces
           </div>
-          <ListField label="Sabores Disponíveis" fieldKey="flavors" placeholder="Ex: Chocolate, Baunilha..." />
-          <TextField label="Tamanho / Peso" fieldKey="size_weight" placeholder="Ex: 300ml, 500g..." />
+          {renderListField("Sabores Disponíveis", "flavors", "Ex: Chocolate, Baunilha...")}
+          {renderTextField("Tamanho / Peso", "size_weight", "Ex: 300ml, 500g...")}
         </div>
       );
 
@@ -235,9 +230,9 @@ const CategoryProductFields = ({ category, metadata, onChange }: CategoryProduct
           <div className="flex items-center gap-2 text-primary text-xs font-bold">
             🍣 Campos de Comida Japonesa
           </div>
-          <TextField label="Quantidade de Peças" fieldKey="pieces_count" placeholder="Ex: 8, 16, 30..." />
-          <ListField label="Proteínas" fieldKey="proteins" placeholder="Ex: Salmão, Atum..." />
-          <ToggleField label="Serve para compartilhar?" fieldKey="shareable" />
+          {renderTextField("Quantidade de Peças", "pieces_count", "Ex: 8, 16, 30...")}
+          {renderListField("Proteínas", "proteins", "Ex: Salmão, Atum...")}
+          {renderToggle("Serve para compartilhar?", "shareable")}
         </div>
       );
 
@@ -247,9 +242,9 @@ const CategoryProductFields = ({ category, metadata, onChange }: CategoryProduct
           <div className="flex items-center gap-2 text-primary text-xs font-bold">
             ☕ Campos de Cafeteria
           </div>
-          <ListField label="Tamanhos" fieldKey="drink_sizes" placeholder="Ex: P, M, G..." />
-          <ListField label="Tipos de Leite" fieldKey="milk_options" placeholder="Ex: Integral, Desnatado, Vegetal..." />
-          <ToggleField label="Pode ser gelado?" fieldKey="can_be_iced" />
+          {renderListField("Tamanhos", "drink_sizes", "Ex: P, M, G...")}
+          {renderListField("Tipos de Leite", "milk_options", "Ex: Integral, Desnatado, Vegetal...")}
+          {renderToggle("Pode ser gelado?", "can_be_iced")}
         </div>
       );
 
@@ -259,9 +254,9 @@ const CategoryProductFields = ({ category, metadata, onChange }: CategoryProduct
           <div className="flex items-center gap-2 text-primary text-xs font-bold">
             🥩 Campos de Churrasco
           </div>
-          <ListField label="Ponto da Carne" fieldKey="meat_doneness" placeholder="Ex: Mal passado, Ao ponto..." />
-          <TextField label="Peso / Porção" fieldKey="portion_weight" placeholder="Ex: 300g, 500g..." />
-          <ToggleField label="Serve para compartilhar?" fieldKey="shareable" />
+          {renderListField("Ponto da Carne", "meat_doneness", "Ex: Mal passado, Ao ponto...")}
+          {renderTextField("Peso / Porção", "portion_weight", "Ex: 300g, 500g...")}
+          {renderToggle("Serve para compartilhar?", "shareable")}
         </div>
       );
 
@@ -271,10 +266,10 @@ const CategoryProductFields = ({ category, metadata, onChange }: CategoryProduct
           <div className="flex items-center gap-2 text-primary text-xs font-bold">
             🍷 Campos de Adega
           </div>
-          <TextField label="Volume" fieldKey="volume" placeholder="Ex: 350ml, 750ml, 1L..." />
-          <TextField label="Teor Alcoólico" fieldKey="alcohol_content" placeholder="Ex: 4.5%, 13%..." />
-          <SelectField label="Tipo" fieldKey="drink_type" options={["Cerveja", "Vinho", "Destilado", "Refrigerante", "Água", "Suco", "Energético", "Outro"]} />
-          <ToggleField label="Servir gelado?" fieldKey="serve_cold" />
+          {renderTextField("Volume", "volume", "Ex: 350ml, 750ml, 1L...")}
+          {renderTextField("Teor Alcoólico", "alcohol_content", "Ex: 4.5%, 13%...")}
+          {renderSelect("Tipo", "drink_type", ["Cerveja", "Vinho", "Destilado", "Refrigerante", "Água", "Suco", "Energético", "Outro"])}
+          {renderToggle("Servir gelado?", "serve_cold")}
         </div>
       );
 
