@@ -72,11 +72,11 @@ const CheckoutPage = () => {
   // Load store CEP for the first item's store
   const storeId = items[0]?.store_id;
   const { data: storeData } = useQuery({
-    queryKey: ["store-cep", storeId],
+    queryKey: ["store-checkout", storeId],
     queryFn: async () => {
       const { data } = await supabase
         .from("stores")
-        .select("address_cep")
+        .select("address_cep, delivery_mode, own_delivery_fee")
         .eq("id", storeId!)
         .maybeSingle();
       return data;
@@ -92,8 +92,11 @@ const CheckoutPage = () => {
   const profileCep = (userProfile as any)?.cep;
   const hasAddress = !!profileStreet && !!profileNumber && !!profileNeighborhood;
   const storeCep = (storeData as any)?.address_cep;
+  const storeDeliveryMode = (storeData as any)?.delivery_mode || "platform";
+  const storeOwnFee = (storeData as any)?.own_delivery_fee || 0;
+  const isOwnDelivery = storeDeliveryMode === "own";
   const config = deliveryFeeConfig || DEFAULT_DELIVERY_FEE_CONFIG;
-  const activeDeliveryFee = calculatedDeliveryFee !== null ? calculatedDeliveryFee : config.city_fee;
+  const activeDeliveryFee = isOwnDelivery ? storeOwnFee : (calculatedDeliveryFee !== null ? calculatedDeliveryFee : config.city_fee);
   const effectiveDeliveryFee = couponType === "free_shipping" ? 0 : activeDeliveryFee;
   const finalTotal = Math.max(0, addMoney(subtotal, effectiveDeliveryFee, -couponDiscount));
 
@@ -102,6 +105,14 @@ const CheckoutPage = () => {
     const customerCep = selectedSavedAddressId && savedAddressData?.cep ? savedAddressData.cep : profileCep;
     const activeNeighborhood = selectedSavedAddressId && savedAddressData?.neighborhood ? savedAddressData.neighborhood : profileNeighborhood;
     
+    // Skip CEP calculation for stores with own delivery (fixed fee)
+    if (isOwnDelivery) {
+      setCalculatedDeliveryFee(null);
+      setFeeBreakdown(`Taxa fixa da loja: R$ ${storeOwnFee.toFixed(2)}`);
+      if (activeNeighborhood) setNeighborhood(activeNeighborhood, storeOwnFee);
+      return;
+    }
+
     if (!customerCep || !storeCep) {
       setCalculatedDeliveryFee(null);
       setFeeBreakdown(null);
@@ -123,7 +134,7 @@ const CheckoutPage = () => {
     });
 
     return () => { cancelled = true; };
-  }, [profileCep, storeCep, config, savedAddressData, selectedSavedAddressId, profileNeighborhood]);
+  }, [profileCep, storeCep, config, savedAddressData, selectedSavedAddressId, profileNeighborhood, isOwnDelivery, storeOwnFee]);
 
   // Redirect to login if not authenticated
   // Build address string from profile

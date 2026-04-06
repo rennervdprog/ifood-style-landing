@@ -1363,7 +1363,8 @@ const AdminDashboard = () => {
                     storeAddressCity={(store as any).address_city || null}
                     storeAddressState={(store as any).address_state || null}
                     storeAddressCep={(store as any).address_cep || null}
-                    storeDeliveryMode={(store as any).delivery_mode || "platform"} />
+                    storeDeliveryMode={(store as any).delivery_mode || "platform"}
+                    storeOwnDeliveryFee={(store as any).own_delivery_fee || 0} />
 
                   {/* Test Push Notification */}
                   <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
