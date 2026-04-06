@@ -38,6 +38,7 @@ const CadastroLojista = () => {
   const [storeName, setStoreName] = useState("");
   const [document, setDocument] = useState("");
   const [storeCategory, setStoreCategory] = useState("");
+  const [city, setCity] = useState("itatinga");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
