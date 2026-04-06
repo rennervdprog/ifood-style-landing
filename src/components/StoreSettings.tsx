@@ -71,6 +71,7 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
   const [loadingCep, setLoadingCep] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [deliveryMode, setDeliveryMode] = useState(storeDeliveryMode || "platform");
 
   // Load whatsapp + pix from profile
   useEffect(() => {
