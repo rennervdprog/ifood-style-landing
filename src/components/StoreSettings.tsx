@@ -3,7 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Camera, Upload, Save, Store, Phone, Tag, MapPin, Link, Copy, Wallet, Search, Loader2 } from "lucide-react";
+import { Camera, Upload, Save, Store, Phone, Tag, MapPin, Link, Copy, Wallet, Search, Loader2, Bell, CheckCircle2, XCircle } from "lucide-react";
+import { requestPushPermissionAndRegister } from "@/lib/firebase";
+import { isGoNative, registerGoNativePlayer } from "@/lib/gonative";
 import { maskWhatsApp } from "@/lib/whatsapp";
 import { formatCep, fetchCep } from "@/lib/cepLookup";
 
@@ -180,6 +182,88 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
     setSaving(false);
   };
 
+const NotificationSection = () => {
+  const [notifStatus, setNotifStatus] = useState<"checking" | "granted" | "denied" | "default" | "unsupported">("checking");
+  const [enabling, setEnabling] = useState(false);
+  const native = isGoNative();
+
+  useEffect(() => {
+    if (native) {
+      // In GoNative, notifications are always available via OneSignal
+      setNotifStatus("granted");
+      return;
+    }
+    if (!("Notification" in window)) {
+      setNotifStatus("unsupported");
+      return;
+    }
+    setNotifStatus(Notification.permission as any);
+  }, [native]);
+
+  const handleEnable = async () => {
+    setEnabling(true);
+    try {
+      if (native) {
+        await registerGoNativePlayer();
+        toast.success("Notificações nativas ativadas!");
+        setNotifStatus("granted");
+      } else {
+        const result = await Notification.requestPermission();
+        setNotifStatus(result as any);
+        if (result === "granted") {
+          await requestPushPermissionAndRegister();
+          toast.success("Notificações ativadas!");
+        } else {
+          toast.error("Permissão negada. Ative nas configurações do navegador.");
+        }
+      }
+    } catch (e) {
+      console.error("Notification enable error:", e);
+      toast.error("Erro ao ativar notificações.");
+    }
+    setEnabling(false);
+  };
+
+  return (
+    <div className="bg-muted/50 border border-border rounded-2xl p-4 space-y-3">
+      <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
+        <Bell className="h-4 w-4 text-primary" />
+        Notificações
+      </label>
+
+      {notifStatus === "granted" ? (
+        <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3">
+          <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0" />
+          <div>
+            <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Notificações ativas</p>
+            <p className="text-[10px] text-muted-foreground">Você receberá alertas de novos pedidos.</p>
+          </div>
+        </div>
+      ) : notifStatus === "denied" ? (
+        <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-xl p-3">
+          <XCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
+          <div>
+            <p className="text-xs font-bold text-red-600 dark:text-red-400">Notificações bloqueadas</p>
+            <p className="text-[10px] text-muted-foreground">Acesse as configurações do navegador/app para desbloquear.</p>
+          </div>
+        </div>
+      ) : notifStatus === "unsupported" ? (
+        <p className="text-xs text-muted-foreground">Notificações não suportadas neste navegador.</p>
+      ) : notifStatus === "checking" ? (
+        <p className="text-xs text-muted-foreground">Verificando...</p>
+      ) : (
+        <button
+          onClick={handleEnable}
+          disabled={enabling}
+          className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-50"
+        >
+          <Bell className="h-4 w-4" />
+          {enabling ? "Ativando..." : "Ativar Notificações"}
+        </button>
+      )}
+    </div>
+  );
+};
 
   return (
     <div className="space-y-6 pb-32">
@@ -475,6 +559,9 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
           </div>
         )}
       </div>
+
+      {/* Notifications Section */}
+      <NotificationSection />
 
       {/* Store Status Info */}
       <div className="bg-muted/50 border border-border rounded-2xl p-4 space-y-2">
