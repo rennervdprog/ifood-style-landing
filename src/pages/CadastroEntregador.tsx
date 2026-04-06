@@ -3,7 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
-import { ArrowLeft, Mail, Lock, Eye, EyeOff, User, Phone, Bike, CheckCircle } from "lucide-react";
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, User, Phone, Bike, CheckCircle, MapPin } from "lucide-react";
+
+const CITIES = [
+  { value: "itatinga", label: "Itatinga" },
+  { value: "pardinho", label: "Pardinho" },
+  { value: "bofete", label: "Bofete" },
+  { value: "torre_de_pedra", label: "Torre de Pedra" },
+];
 
 const schema = z.object({
   email: z.string().trim().email("E-mail inválido").max(255),
@@ -11,6 +18,7 @@ const schema = z.object({
   fullName: z.string().trim().min(3, "Nome deve ter pelo menos 3 caracteres").max(100),
   phone: z.string().trim().min(10, "Telefone inválido").max(20),
   vehicle: z.string().trim().min(2, "Informe a placa da moto").max(20),
+  city: z.string().min(1, "Selecione sua cidade"),
 });
 
 const CadastroEntregador = () => {
@@ -20,6 +28,7 @@ const CadastroEntregador = () => {
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [vehicle, setVehicle] = useState("");
+  const [city, setCity] = useState("itatinga");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -29,7 +38,7 @@ const CadastroEntregador = () => {
     e.preventDefault();
     setErrors({});
 
-    const result = schema.safeParse({ email, password, fullName, phone, vehicle });
+    const result = schema.safeParse({ email, password, fullName, phone, vehicle, city });
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
       result.error.errors.forEach((err) => {
@@ -53,6 +62,7 @@ const CadastroEntregador = () => {
             vehicle: vehicle.trim(),
             whatsapp: phone.trim(),
             phone: phone.trim(),
+            city: city,
           },
         },
       });
@@ -131,6 +141,22 @@ const CadastroEntregador = () => {
             <FieldInput icon={User} placeholder="Nome completo" value={fullName} onChange={setFullName} error={errors.fullName} />
             <FieldInput icon={Phone} placeholder="Telefone com DDD" value={phone} onChange={setPhone} error={errors.phone} inputMode="tel" />
             <FieldInput icon={Bike} placeholder="Placa da Moto (ex: ABC-1234)" value={vehicle} onChange={setVehicle} error={errors.vehicle} />
+
+            <div>
+              <div className="relative">
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <select
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  className="w-full h-12 pl-10 pr-4 rounded-xl border border-border bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm appearance-none"
+                >
+                  {CITIES.map((c) => (
+                    <option key={c.value} value={c.value}>{c.label}</option>
+                  ))}
+                </select>
+              </div>
+              {errors.city && <p className="text-xs text-destructive mt-1">{errors.city}</p>}
+            </div>
 
             <button
               type="submit"

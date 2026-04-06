@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
-import { ArrowLeft, Mail, Lock, Eye, EyeOff, Store, FileText, CheckCircle } from "lucide-react";
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, Store, FileText, CheckCircle, MapPin } from "lucide-react";
 import { Constants } from "@/integrations/supabase/types";
 
 const storeCategories = Constants.public.Enums.store_category;
@@ -15,12 +15,20 @@ const categoryLabels: Record<string, string> = {
   farmacias: "💊 Farmácia", docerias: "🍰 Doceria",
 };
 
+const CITIES = [
+  { value: "itatinga", label: "Itatinga" },
+  { value: "pardinho", label: "Pardinho" },
+  { value: "bofete", label: "Bofete" },
+  { value: "torre_de_pedra", label: "Torre de Pedra" },
+];
+
 const schema = z.object({
   email: z.string().trim().email("E-mail inválido").max(255),
   password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres").max(100),
   storeName: z.string().trim().min(3, "Nome da loja deve ter pelo menos 3 caracteres").max(100),
   document: z.string().trim().min(11, "CPF/CNPJ inválido").max(18),
   storeCategory: z.enum(storeCategories as unknown as [string, ...string[]], { errorMap: () => ({ message: "Selecione uma categoria" }) }),
+  city: z.string().min(1, "Selecione a cidade"),
 });
 
 const CadastroLojista = () => {
@@ -30,6 +38,7 @@ const CadastroLojista = () => {
   const [storeName, setStoreName] = useState("");
   const [document, setDocument] = useState("");
   const [storeCategory, setStoreCategory] = useState("");
+  const [city, setCity] = useState("itatinga");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -39,7 +48,7 @@ const CadastroLojista = () => {
     e.preventDefault();
     setErrors({});
 
-    const result = schema.safeParse({ email, password, storeName, document, storeCategory });
+    const result = schema.safeParse({ email, password, storeName, document, storeCategory, city });
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
       result.error.errors.forEach((err) => {
@@ -62,6 +71,7 @@ const CadastroLojista = () => {
             document: document.trim(),
             store_name: storeName.trim(),
             store_category: storeCategory,
+            city: city,
           },
         },
       });
@@ -152,6 +162,22 @@ const CadastroLojista = () => {
                 ))}
               </select>
               {errors.storeCategory && <p className="text-xs text-destructive mt-1">{errors.storeCategory}</p>}
+            </div>
+
+            <div>
+              <div className="relative">
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <select
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  className="w-full h-12 pl-10 pr-4 rounded-xl border border-border bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm appearance-none"
+                >
+                  {CITIES.map((c) => (
+                    <option key={c.value} value={c.value}>{c.label}</option>
+                  ))}
+                </select>
+              </div>
+              {errors.city && <p className="text-xs text-destructive mt-1">{errors.city}</p>}
             </div>
 
             <button
