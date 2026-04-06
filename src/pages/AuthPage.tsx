@@ -73,6 +73,7 @@ const AuthPage = () => {
       if (mode === "login") {
         const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
         if (error) throw error;
+        localStorage.setItem(REMEMBER_KEY, rememberMe ? "true" : "false");
         toast.success("Login realizado com sucesso!");
         navigate(from, { replace: true });
       } else if (mode === "signup") {
