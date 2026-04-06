@@ -192,17 +192,21 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabaseAnon = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    // Verify the caller
+    // Verify the caller using getClaims (faster, no network call)
     const supabaseAuth = createClient(supabaseUrl, supabaseAnon, {
       global: { headers: { Authorization: authHeader } },
     });
-    const { data: { user: callerUser }, error: authError } = await supabaseAuth.auth.getUser();
-    if (authError || !callerUser) {
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: authError } = await supabaseAuth.auth.getClaims(token);
+    if (authError || !claimsData?.claims?.sub) {
+      console.error("[send-push] Auth failed:", authError?.message || "no claims");
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const callerUserId = claimsData.claims.sub;
+    console.log(`[send-push] Authenticated user: ${callerUserId}`);
 
     const body = await req.json();
     const { user_ids, title, body: msgBody, data } = body;
