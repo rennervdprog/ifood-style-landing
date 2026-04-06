@@ -389,9 +389,22 @@ const AdminDashboard = () => {
           setTimeout(() => openWhatsApp(clientPhone, msg), 600);
         }
       }
-      if (newStatus === "pronto_para_entrega" && onlineDrivers && onlineDrivers.length > 0) {
+      if (newStatus === "pronto_para_entrega" && !isOwnDelivery && onlineDrivers && onlineDrivers.length > 0) {
         const driverUserIds = onlineDrivers.map((d: any) => d.user_id);
         pushNotifyDeliveryAvailable(driverUserIds, orderId).catch(console.error);
+      }
+      // Own delivery: notify client when order leaves
+      if (newStatus === "saiu_entrega" && isOwnDelivery && order) {
+        sendPushNotification([order.client_id], "🛵 Saiu para entrega!", `Seu pedido #${orderId.slice(0, 8).toUpperCase()} saiu para entrega!`, { link: "/pedidos" }).catch(console.error);
+        const clientPhone = getClientWhatsApp(order.client_id);
+        if (clientPhone) {
+          const msg = `🛵 *FoodIta* informa: Seu pedido #${orderId.slice(0, 8).toUpperCase()} saiu para entrega! 🚀\nEndereço: ${order.address_details}`;
+          setTimeout(() => openWhatsApp(clientPhone, msg), 600);
+        }
+      }
+      // Own delivery: notify client when delivered
+      if (newStatus === "finalizado" && isOwnDelivery && order) {
+        sendPushNotification([order.client_id], "✅ Pedido Entregue!", `Seu pedido #${orderId.slice(0, 8).toUpperCase()} foi entregue. Bom apetite!`, { link: "/pedidos" }).catch(console.error);
       }
     } catch (e: any) {
       debugLog.push(`💥 Exception: ${e?.message || e}`);
@@ -465,10 +478,18 @@ const AdminDashboard = () => {
     return o.id.slice(0, 8).toLowerCase().includes(search) || (o.driver_id ? getDriverName(o.driver_id).toLowerCase().includes(search) : false) || getClientName(o.client_id).toLowerCase().includes(search);
   });
 
+  const isOwnDelivery = (store as any)?.delivery_mode === "own";
+
   const getMainAction = (status: OrderStatus): { label: string; next: OrderStatus; emoji: string } | null => {
     switch (status) {
       case "pendente": return { label: "ACEITAR PEDIDO", next: "preparando", emoji: "✓" };
       case "preparando": return { label: "MARCAR COMO PRONTO", next: "pronto_para_entrega" as OrderStatus, emoji: "🔔" };
+      case "pronto_para_entrega":
+        if (isOwnDelivery) return { label: "SAIU PARA ENTREGA", next: "saiu_entrega" as OrderStatus, emoji: "🛵" };
+        return null;
+      case "saiu_entrega":
+        if (isOwnDelivery) return { label: "MARCAR COMO ENTREGUE", next: "finalizado" as OrderStatus, emoji: "✅" };
+        return null;
       default: return null;
     }
   };
@@ -1108,8 +1129,8 @@ const AdminDashboard = () => {
                           )}
                         </div>
 
-                        {/* Driver status */}
-                        {order.status === "pronto_para_entrega" && !order.driver_id && (
+                        {/* Driver status - Platform mode */}
+                        {order.status === "pronto_para_entrega" && !order.driver_id && !isOwnDelivery && (
                           <div className="mx-4 mb-2 bg-amber-500/5 border border-amber-500/20 rounded-xl px-3 py-2.5">
                             <div className="flex items-center gap-1.5 mb-1">
                               <Loader2 className="h-3.5 w-3.5 text-amber-500 animate-spin" />
@@ -1123,13 +1144,29 @@ const AdminDashboard = () => {
                             </div>
                           </div>
                         )}
-                        {order.driver_id && order.status === "pronto_para_entrega" && (
+                        {/* Own delivery mode - Ready for pickup */}
+                        {order.status === "pronto_para_entrega" && isOwnDelivery && (
+                          <div className="mx-4 mb-2 bg-blue-500/5 border border-blue-500/20 rounded-xl px-3 py-2.5">
+                            <div className="flex items-center gap-1.5">
+                              <Truck className="h-3.5 w-3.5 text-blue-500" />
+                              <span className="text-xs text-blue-600 dark:text-blue-400 font-semibold">🛵 Pronto — aguardando seu motoboy</span>
+                            </div>
+                          </div>
+                        )}
+                        {order.driver_id && order.status === "pronto_para_entrega" && !isOwnDelivery && (
                           <div className="mx-4 mb-2 flex items-center gap-1.5 bg-emerald-500/5 border border-emerald-500/20 rounded-xl px-3 py-2">
                             <Bike className="h-3.5 w-3.5 text-emerald-500" />
                             <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">🏍️ {getDriverName(order.driver_id)} a caminho da loja</span>
                           </div>
                         )}
-                        {order.driver_id && (order.status === "em_transito" || order.status === "saiu_entrega") && (
+                        {/* Own delivery - saiu_entrega status */}
+                        {order.status === "saiu_entrega" && isOwnDelivery && (
+                          <div className="mx-4 mb-2 flex items-center gap-1.5 bg-blue-500/5 border border-blue-500/20 rounded-xl px-3 py-2">
+                            <Truck className="h-3.5 w-3.5 text-blue-500" />
+                            <span className="text-xs text-blue-600 dark:text-blue-400 font-semibold">🛵 Seu motoboy está entregando</span>
+                          </div>
+                        )}
+                        {order.driver_id && (order.status === "em_transito" || (order.status === "saiu_entrega" && !isOwnDelivery)) && (
                           <div className="mx-4 mb-2 flex items-center gap-1.5 bg-blue-500/5 border border-blue-500/20 rounded-xl px-3 py-2">
                             <Truck className="h-3.5 w-3.5 text-blue-500" />
                             <span className="text-xs text-blue-600 dark:text-blue-400 font-semibold">🛵 {getDriverName(order.driver_id)} entregando</span>
@@ -1325,7 +1362,8 @@ const AdminDashboard = () => {
                     storeAddressReference={(store as any).address_reference || null}
                     storeAddressCity={(store as any).address_city || null}
                     storeAddressState={(store as any).address_state || null}
-                    storeAddressCep={(store as any).address_cep || null} />
+                    storeAddressCep={(store as any).address_cep || null}
+                    storeDeliveryMode={(store as any).delivery_mode || "platform"} />
 
                   {/* Test Push Notification */}
                   <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
