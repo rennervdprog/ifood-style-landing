@@ -154,7 +154,7 @@ const AdminApprovals = () => {
                 {(p as any).whatsapp_number && (
                   <WhatsAppButton
                     number={(p as any).whatsapp_number}
-                    message={`Olá ${p.full_name || ""}! Aqui é o admin do FoodIta. Sobre seu cadastro como ${p.role === "lojista" ? "lojista" : "entregador"}...`}
+                    message={`Olá ${p.full_name || ""}! Aqui é o admin do ItaSuper. Sobre seu cadastro como ${p.role === "lojista" ? "lojista" : "entregador"}...`}
                     label="WhatsApp"
                     size="sm"
                   />

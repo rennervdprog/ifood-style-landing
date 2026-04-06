@@ -248,7 +248,7 @@ const PartnerLogin = () => {
           {/* Security badge */}
           <div className="mt-8 flex items-center justify-center gap-2 text-xs text-muted-foreground">
             <Shield className="h-3.5 w-3.5" />
-            <span>Área exclusiva para parceiros FoodIta</span>
+            <span>Área exclusiva para parceiros ItaSuper</span>
           </div>
         </div>
       </div>

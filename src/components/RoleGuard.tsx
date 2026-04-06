@@ -100,7 +100,7 @@ const RoleGuard = ({ allowedRoles, redirectTo, children, requireApproval = false
         <Shield className="h-16 w-16 text-yellow-500 mb-4" />
         <h1 className="text-xl font-bold text-foreground mb-2">Cadastro em Análise! 🛡️</h1>
         <p className="text-sm text-muted-foreground max-w-xs mb-2">
-          Recebemos seus dados. Em até 24h o administrador do FoodIta liberará seu acesso.
+          Recebemos seus dados. Em até 24h o administrador do ItaSuper liberará seu acesso.
         </p>
         <p className="text-xs text-muted-foreground">Entraremos em contato via WhatsApp.</p>
         <button onClick={() => navigate("/")} className="mt-6 bg-primary text-primary-foreground font-bold px-6 py-3 rounded-xl">

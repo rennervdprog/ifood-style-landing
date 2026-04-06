@@ -6,7 +6,7 @@ import { ArrowLeft, Mail, Lock, Eye, EyeOff, KeyRound } from "lucide-react";
 
 type AuthMode = "login" | "signup" | "forgot" | "reset";
 
-const REMEMBER_KEY = "itafood_remember_me";
+const REMEMBER_KEY = "itasuper_remember_me";
 
 const AuthPage = () => {
   const [mode, setMode] = useState<AuthMode>("login");
@@ -133,8 +133,8 @@ const AuthPage = () => {
               {mode === "reset" && "Defina sua nova senha"}
             </h2>
             <p className="text-sm text-muted-foreground mt-1">
-              {mode === "login" && "Entre para finalizar seu pedido no FoodIta"}
-              {mode === "signup" && "Cadastre-se para pedir no FoodIta"}
+              {mode === "login" && "Entre para finalizar seu pedido no ItaSuper"}
+              {mode === "signup" && "Cadastre-se para pedir no ItaSuper"}
               {mode === "forgot" && "Informe seu e-mail para receber o link de recuperação"}
               {mode === "reset" && "Escolha uma nova senha segura"}
             </p>

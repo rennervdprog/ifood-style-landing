@@ -517,7 +517,7 @@ const DriverDashboard = () => {
         if (clientPhone) {
           const clientName = contactProfiles?.find((c: any) => c.user_id === myDelivery.client_id);
           const name = (clientName as any)?.full_name || "Cliente";
-          const msg = `🏍️ *FoodIta* informa: Seu lanche saiu para entrega! O motoboy já coletou o pedido e está a caminho de: ${myDelivery.address_details} 💨\n\n--------------------------\n💰 Total: R$ ${Number(myDelivery.total_price).toFixed(2)}\n💳 Pagamento: ${myDelivery.payment_method === "pix" ? "PIX" : myDelivery.payment_method === "cartao" ? "Cartão" : myDelivery.payment_method === "dinheiro" ? "Dinheiro" : myDelivery.payment_method}\nPedido: #${myDelivery.id.slice(0, 8).toUpperCase()}\n--------------------------`;
+          const msg = `🏍️ *ItaSuper* informa: Seu lanche saiu para entrega! O motoboy já coletou o pedido e está a caminho de: ${myDelivery.address_details} 💨\n\n--------------------------\n💰 Total: R$ ${Number(myDelivery.total_price).toFixed(2)}\n💳 Pagamento: ${myDelivery.payment_method === "pix" ? "PIX" : myDelivery.payment_method === "cartao" ? "Cartão" : myDelivery.payment_method === "dinheiro" ? "Dinheiro" : myDelivery.payment_method}\nPedido: #${myDelivery.id.slice(0, 8).toUpperCase()}\n--------------------------`;
           setTimeout(() => openWhatsApp(clientPhone, msg), 600);
         }
       }
@@ -898,7 +898,7 @@ const DriverDashboard = () => {
                             <WhatsAppButton number={getContactWhatsApp(deliveryStoreOwnerId)} message={`Pedido #${myDelivery.id.slice(0, 8).toUpperCase()}.`} label="Loja" size="md" className="flex-1" />
                           )}
                           {deliveryClientId && getContactWhatsApp(deliveryClientId) && (
-                            <WhatsAppButton number={getContactWhatsApp(deliveryClientId)} message="Olá, sou o entregador do FoodIta!" label="Cliente" size="md" className="flex-1" />
+                            <WhatsAppButton number={getContactWhatsApp(deliveryClientId)} message="Olá, sou o entregador do ItaSuper!" label="Cliente" size="md" className="flex-1" />
                           )}
                         </div>
 

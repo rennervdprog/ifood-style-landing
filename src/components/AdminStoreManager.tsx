@@ -49,7 +49,7 @@ const AdminStoreManager = () => {
         _store_id: deleteTarget.id,
       } as any);
       if (error) throw error;
-      toast.success("Loja removida do FoodIta com sucesso.");
+      toast.success("Loja removida do ItaSuper com sucesso.");
       queryClient.invalidateQueries({ queryKey: ["admin-stores-list"] });
       queryClient.invalidateQueries({ queryKey: ["admin-all-stores"] });
       queryClient.invalidateQueries({ queryKey: ["stores"] });

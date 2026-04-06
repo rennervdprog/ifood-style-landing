@@ -38,8 +38,8 @@ export default defineConfig(({ mode }) => ({
       },
       includeAssets: ["icon-192x192.png", "icon-512x512.png"],
       manifest: {
-        name: "ItaFood - O delivery oficial de Itatinga",
-        short_name: "ItaFood",
+        name: "ItaSuper - O delivery oficial de Itatinga",
+        short_name: "ItaSuper",
         description: "Peça comida dos melhores restaurantes de Itatinga/SP",
         start_url: "/",
         display: "standalone",

@@ -1,4 +1,4 @@
-// Browser + Push Notification helpers for FoodIta
+// Browser + Push Notification helpers for ItaSuper
 import { sendPushNotification } from "@/lib/firebase";
 
 // ── Local browser notifications ──
@@ -38,7 +38,7 @@ export const pushNotifyOrderDelivered = (clientId: string) =>
 
 // ── Legacy local notifications (kept for compatibility) ──
 
-export const notifyNewOrder = () => sendNotification("🍕 Novo Pedido no FoodIta!", { body: "Abra para aceitar o pedido.", tag: "new-order" });
+export const notifyNewOrder = () => sendNotification("🍕 Novo Pedido no ItaSuper!", { body: "Abra para aceitar o pedido.", tag: "new-order" });
 export const notifyDeliveryAvailable = () => sendNotification("🏍️ Nova Entrega Disponível!", { body: "Veja os detalhes e aceite a corrida.", tag: "delivery-available" });
 export const notifyOrderPreparing = () => sendNotification("👨‍🍳 Seu pedido está sendo preparado!", { body: "O restaurante começou a preparar sua comida.", tag: "order-preparing" });
 export const notifyOrderOnTheWay = () => sendNotification("🛵 O motoboy saiu para entrega!", { body: "Seu pedido está a caminho. Fique atento!", tag: "order-on-way" });

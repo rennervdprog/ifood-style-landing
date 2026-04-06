@@ -30,8 +30,8 @@ const AppHeader = () => {
     <header className="sticky top-0 z-50 bg-card border-b border-border">
       <div className="flex items-center justify-between px-4 h-14">
         <div className="flex items-center gap-2">
-          <img src="/icon-192x192.png" alt="ItaFood" className="w-10 h-10 rounded-lg" />
-          <span className="text-lg font-black text-primary">ItaFood</span>
+          <img src="/icon-192x192.png" alt="ItaSuper" className="w-10 h-10 rounded-lg" />
+          <span className="text-lg font-black text-primary">ItaSuper</span>
         </div>
 
         <div className="flex items-center gap-2">
