@@ -606,11 +606,25 @@ const NotificationSection = () => {
           </button>
         </div>
         {deliveryMode === "own" && (
-          <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-start gap-2">
-            <Truck className="h-4 w-4 text-amber-500 flex-shrink-0 mt-0.5" />
-            <p className="text-[10px] text-amber-600 dark:text-amber-400">
-              Com motoboy próprio, você terá um botão "Saiu para Entrega" direto no painel. Não será necessário aguardar aceite de entregador.
-            </p>
+          <div className="space-y-3">
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-start gap-2">
+              <Truck className="h-4 w-4 text-amber-500 flex-shrink-0 mt-0.5" />
+              <p className="text-[10px] text-amber-600 dark:text-amber-400">
+                Com motoboy próprio, você terá um botão "Saiu para Entrega" direto no painel. Não será necessário aguardar aceite de entregador.
+              </p>
+            </div>
+            <div>
+              <label className="text-xs font-bold text-foreground/80 mb-1 block">Taxa de entrega fixa (R$)</label>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={ownDeliveryFee}
+                onChange={(e) => setOwnDeliveryFee(e.target.value.replace(/[^0-9.,]/g, ""))}
+                placeholder="Ex: 5.00"
+                className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">Este valor será cobrado fixo para todos os clientes.</p>
+            </div>
           </div>
         )}
       </div>
