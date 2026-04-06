@@ -35,6 +35,7 @@ const App = () => (
         <CartProvider>
           <Toaster />
           <InstallPrompt />
+          <NotificationPrompt />
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<ClientGuard><Index /></ClientGuard>} />
