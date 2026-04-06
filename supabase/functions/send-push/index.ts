@@ -58,8 +58,68 @@ async function getAccessToken(serviceAccount: any): Promise<string> {
   return tokenData.access_token;
 }
 
-// Send via OneSignal REST API using player_ids
-async function sendOneSignalPush(
+// Send via OneSignal REST API using external_user_id (PRIMARY method)
+async function sendOneSignalByExternalId(
+  userIds: string[],
+  title: string,
+  body: string,
+  data: Record<string, string> | undefined,
+  appId: string,
+  restApiKey: string
+): Promise<{ sent: number; failed: number; debug: string }> {
+  if (userIds.length === 0) return { sent: 0, failed: 0, debug: "no_user_ids" };
+
+  const payload = {
+    app_id: appId,
+    include_aliases: { external_id: userIds },
+    target_channel: "push",
+    headings: { en: title },
+    contents: { en: body || " " },
+    data: data || {},
+  };
+
+  console.log("[OneSignal] Sending via external_id:", JSON.stringify({
+    app_id: appId,
+    user_ids: userIds,
+    title,
+  }));
+
+  try {
+    const res = await fetch("https://api.onesignal.com/notifications", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Basic ${restApiKey}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const responseText = await res.text();
+    console.log(`[OneSignal] Response status=${res.status}, body=${responseText}`);
+
+    let result: any;
+    try {
+      result = JSON.parse(responseText);
+    } catch {
+      return { sent: 0, failed: userIds.length, debug: `parse_error: ${responseText.slice(0, 200)}` };
+    }
+
+    if (res.ok && !result.errors?.length) {
+      const recipients = result.recipients || 0;
+      console.log(`[OneSignal] ✅ Sent to ${recipients} recipients`);
+      return { sent: recipients, failed: 0, debug: `ok: recipients=${recipients}, id=${result.id}` };
+    } else {
+      console.error("[OneSignal] ❌ Error:", responseText);
+      return { sent: 0, failed: userIds.length, debug: `error: ${responseText.slice(0, 300)}` };
+    }
+  } catch (e) {
+    console.error("[OneSignal] Request exception:", e);
+    return { sent: 0, failed: userIds.length, debug: `exception: ${String(e)}` };
+  }
+}
+
+// Send via OneSignal REST API using player_ids (fallback)
+async function sendOneSignalByPlayerIds(
   playerIds: string[],
   title: string,
   body: string,
@@ -70,7 +130,7 @@ async function sendOneSignalPush(
   if (playerIds.length === 0) return { sent: 0, failed: 0 };
 
   try {
-    const res = await fetch("https://onesignal.com/api/v1/notifications", {
+    const res = await fetch("https://api.onesignal.com/notifications", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -80,7 +140,7 @@ async function sendOneSignalPush(
         app_id: appId,
         include_player_ids: playerIds,
         headings: { en: title },
-        contents: { en: body || "" },
+        contents: { en: body || " " },
         data: data || {},
       }),
     });
@@ -89,54 +149,12 @@ async function sendOneSignalPush(
     if (res.ok && !result.errors) {
       return { sent: result.recipients || playerIds.length, failed: 0 };
     } else {
-      console.error("OneSignal player_ids error:", JSON.stringify(result));
+      console.error("[OneSignal] player_ids error:", JSON.stringify(result));
       return { sent: 0, failed: playerIds.length };
     }
   } catch (e) {
-    console.error("OneSignal request error:", e);
+    console.error("[OneSignal] player_ids request error:", e);
     return { sent: 0, failed: playerIds.length };
-  }
-}
-
-// Send via OneSignal REST API using external_user_id (Supabase user_id)
-async function sendOneSignalByExternalId(
-  userIds: string[],
-  title: string,
-  body: string,
-  data: Record<string, string> | undefined,
-  appId: string,
-  restApiKey: string
-): Promise<{ sent: number; failed: number }> {
-  if (userIds.length === 0) return { sent: 0, failed: 0 };
-
-  try {
-    const res = await fetch("https://onesignal.com/api/v1/notifications", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Basic ${restApiKey}`,
-      },
-      body: JSON.stringify({
-        app_id: appId,
-        include_aliases: { external_id: userIds },
-        target_channel: "push",
-        headings: { en: title },
-        contents: { en: body || "" },
-        data: data || {},
-      }),
-    });
-
-    const result = await res.json();
-    console.log("OneSignal external_id response:", JSON.stringify(result));
-    if (res.ok && !result.errors) {
-      return { sent: result.recipients || userIds.length, failed: 0 };
-    } else {
-      console.error("OneSignal external_id error:", JSON.stringify(result));
-      return { sent: 0, failed: userIds.length };
-    }
-  } catch (e) {
-    console.error("OneSignal external_id request error:", e);
-    return { sent: 0, failed: userIds.length };
   }
 }
 
@@ -235,11 +253,11 @@ Deno.serve(async (req) => {
             if (result?.error?.code === 404 || result?.error?.code === 400) {
               staleTokens.push(fcmToken);
             }
-            console.error("FCM send error:", JSON.stringify(result));
+            console.error("[FCM] send error:", JSON.stringify(result));
           }
         } catch (e) {
           fcmFailed++;
-          console.error("FCM request error:", e);
+          console.error("[FCM] request error:", e);
         }
       }
 
@@ -248,51 +266,63 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ── OneSignal Native Push ──
+    // ── OneSignal Native Push (PRIMARY: external_id, FALLBACK: player_ids) ──
     let osSent = 0;
     let osFailed = 0;
+    let osDebug = "not_configured";
 
     const onesignalAppId = Deno.env.get("ONESIGNAL_APP_ID");
     const onesignalApiKey = Deno.env.get("ONESIGNAL_REST_API_KEY");
 
-    if (onesignalAppId && onesignalApiKey) {
-      // Try player_ids first
-      const { data: osPlayers } = await supabaseAdmin
-        .from("onesignal_players")
-        .select("player_id")
-        .in("user_id", user_ids);
+    console.log(`[OneSignal] Config: appId=${onesignalAppId ? "SET" : "MISSING"}, apiKey=${onesignalApiKey ? "SET" : "MISSING"}`);
 
-      if (osPlayers && osPlayers.length > 0) {
-        const playerIds = osPlayers.map((p: any) => p.player_id);
-        const osResult = await sendOneSignalPush(
-          playerIds, title, msgBody || "", data, onesignalAppId, onesignalApiKey
-        );
-        osSent = osResult.sent;
-        osFailed = osResult.failed;
-      } else {
-        // Fallback: send by external_user_id (Supabase user_id)
-        console.log("No player_ids found, using external_id fallback for user_ids:", user_ids);
-        const osResult = await sendOneSignalByExternalId(
-          user_ids, title, msgBody || "", data, onesignalAppId, onesignalApiKey
-        );
-        osSent = osResult.sent;
-        osFailed = osResult.failed;
+    if (onesignalAppId && onesignalApiKey) {
+      // PRIMARY: Always try external_id first (works when user has external_user_id set in OneSignal)
+      console.log(`[OneSignal] Trying external_id for user_ids: ${JSON.stringify(user_ids)}`);
+      const extResult = await sendOneSignalByExternalId(
+        user_ids, title, msgBody || "", data, onesignalAppId, onesignalApiKey
+      );
+      osSent = extResult.sent;
+      osFailed = extResult.failed;
+      osDebug = `external_id: ${extResult.debug}`;
+
+      // FALLBACK: If external_id sent 0, try player_ids from DB
+      if (osSent === 0) {
+        const { data: osPlayers } = await supabaseAdmin
+          .from("onesignal_players")
+          .select("player_id")
+          .in("user_id", user_ids);
+
+        if (osPlayers && osPlayers.length > 0) {
+          console.log(`[OneSignal] Fallback: trying ${osPlayers.length} player_ids`);
+          const playerIds = osPlayers.map((p: any) => p.player_id);
+          const pidResult = await sendOneSignalByPlayerIds(
+            playerIds, title, msgBody || "", data, onesignalAppId, onesignalApiKey
+          );
+          osSent = pidResult.sent;
+          osFailed = pidResult.failed;
+          osDebug += ` | player_ids: sent=${pidResult.sent}`;
+        } else {
+          console.log("[OneSignal] No player_ids in DB either");
+          osDebug += " | no_player_ids_in_db";
+        }
       }
     }
 
-    return new Response(
-      JSON.stringify({
-        fcm: { sent: fcmSent, failed: fcmFailed, stale_cleaned: staleTokens.length },
-        onesignal: { sent: osSent, failed: osFailed },
-        total_sent: fcmSent + osSent,
-      }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    const response = {
+      fcm: { sent: fcmSent, failed: fcmFailed, stale_cleaned: staleTokens.length },
+      onesignal: { sent: osSent, failed: osFailed, debug: osDebug },
+      total_sent: fcmSent + osSent,
+    };
+
+    console.log("[send-push] Final response:", JSON.stringify(response));
+
+    return new Response(JSON.stringify(response), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error) {
-    console.error("send-push error:", error);
+    console.error("[send-push] error:", error);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
