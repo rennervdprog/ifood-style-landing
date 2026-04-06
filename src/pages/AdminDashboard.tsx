@@ -23,7 +23,7 @@ import AddonManager from "@/components/AddonManager";
 import StoreSettings from "@/components/StoreSettings";
 import StoreFinancePanel from "@/components/StoreFinancePanel";
 import { printThermalReceipt } from "@/lib/thermalPrint";
-import { requestNotificationPermission, notifyNewOrder } from "@/lib/notifications";
+import { requestNotificationPermission, notifyNewOrder, pushNotifyDeliveryAvailable } from "@/lib/notifications";
 import { addMoney, averageMoney, formatCurrency, sumMoney } from "@/lib/utils";
 import ProductTour, { lojistaTourSteps } from "@/components/ProductTour";
 
@@ -364,6 +364,11 @@ const AdminDashboard = () => {
         const msg = `✅ *FoodIta* informa: Seu pedido no *${store?.name}* foi aceito! 🍔\n\n${items}\n\n💰 Total: R$ ${Number(order.total_price).toFixed(2)}\nPedido: #${order.id.slice(0, 8).toUpperCase()}`;
         setTimeout(() => openWhatsApp(clientPhone, msg), 600);
       }
+    }
+    // Push notify all online drivers when order is ready for delivery
+    if (newStatus === "pronto_para_entrega" && onlineDrivers && onlineDrivers.length > 0) {
+      const driverUserIds = onlineDrivers.map((d: any) => d.user_id);
+      pushNotifyDeliveryAvailable(driverUserIds, orderId).catch(console.error);
     }
   };
 
