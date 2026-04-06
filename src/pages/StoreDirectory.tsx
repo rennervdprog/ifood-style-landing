@@ -1,29 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Store, Truck, ShieldCheck, Zap, ChevronRight, Star } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Store, Truck, ShieldCheck, Zap } from "lucide-react";
 
 const StoreDirectory = () => {
-  const navigate = useNavigate();
-
-  const { data: stores, isLoading } = useQuery({
-    queryKey: ["active-stores"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("stores")
-        .select("id, name, slug, image_url, category, rating")
-        .eq("status", "ativo")
-        .order("name");
-      if (error) throw error;
-      return (data || []).filter((s: any) => s.slug);
-    },
-  });
-
-  // Show max 6 random stores
-  const displayStores = stores
-    ? [...stores].sort(() => Math.random() - 0.5).slice(0, 6)
-    : [];
-
   const features = [
     { icon: Zap, title: "Pedido Rápido", desc: "Faça seu pedido em segundos" },
     { icon: Truck, title: "Entrega Ágil", desc: "Motoboys dedicados na sua cidade" },
@@ -63,70 +40,6 @@ const StoreDirectory = () => {
             </div>
           ))}
         </div>
-      </section>
-
-      {/* Partners */}
-      <section className="px-4 pb-12 max-w-md mx-auto">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-black text-foreground">Nossos Parceiros</h2>
-          {stores && stores.length > 6 && (
-            <span className="text-xs text-muted-foreground">
-              {stores.length} lojas
-            </span>
-          )}
-        </div>
-
-        {isLoading ? (
-          <div className="grid grid-cols-2 gap-3">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-32 bg-muted animate-pulse rounded-2xl" />
-            ))}
-          </div>
-        ) : displayStores.length > 0 ? (
-          <div className="grid grid-cols-2 gap-3">
-            {displayStores.map((store: any) => (
-              <button
-                key={store.id}
-                onClick={() => navigate(`/${store.slug}`)}
-                className="group bg-card border border-border rounded-2xl p-3 text-left hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 transition-all active:scale-[0.97]"
-              >
-                {store.image_url ? (
-                  <img
-                    src={store.image_url}
-                    alt={store.name}
-                    loading="lazy"
-                    width={200}
-                    height={80}
-                    className="w-full h-20 rounded-xl object-cover mb-2"
-                  />
-                ) : (
-                  <div className="w-full h-20 rounded-xl bg-primary/10 flex items-center justify-center mb-2">
-                    <Store className="h-8 w-8 text-primary" />
-                  </div>
-                )}
-                <h3 className="font-bold text-sm text-foreground truncate">{store.name}</h3>
-                <div className="flex items-center justify-between mt-1">
-                  <p className="text-[10px] text-muted-foreground capitalize">{store.category}</p>
-                  {store.rating > 0 && (
-                    <span className="flex items-center gap-0.5 text-[10px] text-amber-500 font-bold">
-                      <Star className="h-3 w-3 fill-amber-500" />
-                      {Number(store.rating).toFixed(1)}
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-1 mt-2 text-primary">
-                  <span className="text-[10px] font-bold group-hover:underline">Ver cardápio</span>
-                  <ChevronRight className="h-3 w-3" />
-                </div>
-              </button>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-10 bg-card border border-border rounded-2xl">
-            <Store className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">Nenhum estabelecimento disponível no momento.</p>
-          </div>
-        )}
       </section>
 
       {/* Footer */}
