@@ -22,6 +22,8 @@ type ModernOneSignalInfo = {
 
 type NativeOneSignalInfo = LegacyOneSignalInfo & ModernOneSignalInfo;
 
+let cachedOneSignalInfo: NativeOneSignalInfo | null = null;
+
 type BridgeApi = {
   onesignalInfo?: ((callback?: (info: NativeOneSignalInfo) => void) => Promise<NativeOneSignalInfo | void> | void);
   info?: ((options: { callback: string }) => void);
@@ -37,6 +39,24 @@ declare global {
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function cacheOneSignalInfo(info: NativeOneSignalInfo | null | undefined) {
+  if (!info || typeof info !== "object") return;
+  cachedOneSignalInfo = info;
+  console.log("GoNative/Median OneSignal info cached:", info);
+}
+
+function installGlobalOneSignalCallbacks() {
+  if (typeof window === "undefined") return;
+
+  window.gonative_onesignal_info = (info: NativeOneSignalInfo) => {
+    cacheOneSignalInfo(info);
+  };
+
+  window.median_onesignal_info = (info: NativeOneSignalInfo) => {
+    cacheOneSignalInfo(info);
+  };
+}
 
 function getBridge(): BridgeApi | null {
   return window.median?.onesignal ?? window.gonative?.onesignal ?? null;
@@ -62,6 +82,12 @@ async function waitForBridge(maxAttempts = 12, delayMs = 1000): Promise<BridgeAp
 }
 
 async function readOneSignalInfo(): Promise<NativeOneSignalInfo | null> {
+  installGlobalOneSignalCallbacks();
+
+  if (cachedOneSignalInfo) {
+    return cachedOneSignalInfo;
+  }
+
   const bridge = await waitForBridge();
   if (!bridge) {
     console.warn("GoNative/Median OneSignal bridge not found");
@@ -72,6 +98,7 @@ async function readOneSignalInfo(): Promise<NativeOneSignalInfo | null> {
     try {
       const result = await bridge.onesignalInfo((info) => info);
       if (result && typeof result === "object") {
+        cacheOneSignalInfo(result as NativeOneSignalInfo);
         return result as NativeOneSignalInfo;
       }
     } catch (error) {
@@ -83,6 +110,7 @@ async function readOneSignalInfo(): Promise<NativeOneSignalInfo | null> {
         let settled = false;
         bridge.onesignalInfo?.((info) => {
           settled = true;
+          cacheOneSignalInfo(info);
           resolve(info);
         });
         setTimeout(() => {
@@ -101,10 +129,18 @@ async function readOneSignalInfo(): Promise<NativeOneSignalInfo | null> {
 
     return await new Promise<NativeOneSignalInfo | null>((resolve) => {
       let settled = false;
+      const previousHandler = callbackName === "median_onesignal_info"
+        ? window.median_onesignal_info
+        : window.gonative_onesignal_info;
+
       const handler = (info: NativeOneSignalInfo) => {
         settled = true;
-        if (callbackName === "median_onesignal_info") delete window.median_onesignal_info;
-        else delete window.gonative_onesignal_info;
+        cacheOneSignalInfo(info);
+        if (callbackName === "median_onesignal_info") {
+          window.median_onesignal_info = previousHandler;
+        } else {
+          window.gonative_onesignal_info = previousHandler;
+        }
         resolve(info);
       };
 
@@ -115,16 +151,22 @@ async function readOneSignalInfo(): Promise<NativeOneSignalInfo | null> {
         bridge.info?.({ callback: callbackName });
       } catch (error) {
         console.warn("onesignal info callback bridge failed", error);
-        if (callbackName === "median_onesignal_info") delete window.median_onesignal_info;
-        else delete window.gonative_onesignal_info;
+        if (callbackName === "median_onesignal_info") {
+          window.median_onesignal_info = previousHandler;
+        } else {
+          window.gonative_onesignal_info = previousHandler;
+        }
         resolve(null);
         return;
       }
 
       setTimeout(() => {
         if (!settled) {
-          if (callbackName === "median_onesignal_info") delete window.median_onesignal_info;
-          else delete window.gonative_onesignal_info;
+          if (callbackName === "median_onesignal_info") {
+            window.median_onesignal_info = previousHandler;
+          } else {
+            window.gonative_onesignal_info = previousHandler;
+          }
           resolve(null);
         }
       }, 5000);
@@ -135,6 +177,7 @@ async function readOneSignalInfo(): Promise<NativeOneSignalInfo | null> {
 }
 
 export function isGoNative(): boolean {
+  installGlobalOneSignalCallbacks();
   return typeof window !== "undefined" && (!!window.gonative || !!window.median);
 }
 
@@ -177,4 +220,8 @@ export async function registerGoNativePlayer(): Promise<string | null> {
     console.error("Error saving OneSignal player:", error);
     return null;
   }
+}
+
+if (typeof window !== "undefined") {
+  installGlobalOneSignalCallbacks();
 }
