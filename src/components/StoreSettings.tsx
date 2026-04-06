@@ -46,6 +46,7 @@ interface StoreSettingsProps {
   storeAddressCity?: string | null;
   storeAddressState?: string | null;
   storeAddressCep?: string | null;
+  storeDeliveryMode?: string | null;
 }
 
 const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, storeIsOpen, forceClosed, storeSlug, storeAddressStreet, storeAddressNumber, storeAddressComplement, storeAddressNeighborhood, storeAddressReference, storeAddressCity, storeAddressState, storeAddressCep }: StoreSettingsProps) => {
