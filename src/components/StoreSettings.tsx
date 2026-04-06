@@ -478,6 +478,9 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
         )}
       </div>
 
+      {/* Notifications Section */}
+      <NotificationSection />
+
       {/* Store Status Info */}
       <div className="bg-muted/50 border border-border rounded-2xl p-4 space-y-2">
         <p className="text-sm font-bold text-foreground/80">Status Atual</p>
