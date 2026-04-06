@@ -365,6 +365,11 @@ const AdminDashboard = () => {
         setTimeout(() => openWhatsApp(clientPhone, msg), 600);
       }
     }
+    // Push notify all online drivers when order is ready for delivery
+    if (newStatus === "pronto_para_entrega" && onlineDrivers && onlineDrivers.length > 0) {
+      const driverUserIds = onlineDrivers.map((d: any) => d.user_id);
+      pushNotifyDeliveryAvailable(driverUserIds, orderId).catch(console.error);
+    }
   };
 
   const toggleStoreOpen = async () => {
