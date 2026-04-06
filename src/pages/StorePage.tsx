@@ -337,15 +337,15 @@ const StorePage = () => {
                 )}
               </div>
             </div>
-            <span className={`text-xs font-bold px-3 py-1.5 rounded-full mt-1 ${
-              hasConfiguredHours
-                ? storeStatus.isOpen
+            {hasConfiguredHours && (
+              <span className={`text-xs font-bold px-3 py-1.5 rounded-full mt-1 ${
+                storeStatus.isOpen
                   ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
                   : "bg-destructive/10 text-destructive"
-                : "bg-muted text-muted-foreground"
-            }`}>
-              {statusLabel}
-            </span>
+              }`}>
+                {statusLabel}
+              </span>
+            )}
           </div>
 
           {/* Address + Maps button */}
