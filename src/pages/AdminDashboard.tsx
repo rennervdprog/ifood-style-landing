@@ -110,6 +110,7 @@ const AdminDashboard = () => {
   const [dashboardTab, setDashboardTab] = useState<DashboardTab>("dashboard");
   const [autoPrint, setAutoPrint] = useState(() => localStorage.getItem("autoPrint") === "true");
   const [soundEnabled, setSoundEnabled] = useState(false);
+  const [pushLog, setPushLog] = useState<string[]>([]);
   const [soundMuted, setSoundMuted] = useState(false);
   const [showSoundPrompt, setShowSoundPrompt] = useState(true);
   const [expandedAddresses, setExpandedAddresses] = useState<Set<string>>(new Set());
