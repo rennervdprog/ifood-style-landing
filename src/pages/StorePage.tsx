@@ -337,7 +337,7 @@ const StorePage = () => {
                 ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
                 : "bg-destructive/10 text-destructive"
             }`}>
-              {storeStatus.isOpen ? "● Aberto" : "● Fechado"}
+              {storeStatus.reason ? `● ${storeStatus.reason}` : (storeStatus.isOpen ? "● Aberto" : "● Fechado")}
             </span>
           </div>
 
