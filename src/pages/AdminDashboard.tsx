@@ -1226,17 +1226,83 @@ const AdminDashboard = () => {
               {dashboardTab === "addons" && <AddonManager storeId={store.id} />}
               {dashboardTab === "hours" && <StoreHoursManager storeId={store.id} forceClosed={(store as any).force_closed || false} />}
               {dashboardTab === "settings" && (
-                <StoreSettings storeId={store.id} storeName={store.name} storeCategory={store.category}
-                  storeImageUrl={store.image_url} storeIsOpen={store.is_open}
-                  forceClosed={(store as any).force_closed || false} storeSlug={(store as any).slug || null}
-                  storeAddressStreet={(store as any).address_street || null}
-                  storeAddressNumber={(store as any).address_number || null}
-                  storeAddressComplement={(store as any).address_complement || null}
-                  storeAddressNeighborhood={(store as any).address_neighborhood || null}
-                  storeAddressReference={(store as any).address_reference || null}
-                  storeAddressCity={(store as any).address_city || null}
-                  storeAddressState={(store as any).address_state || null}
-                  storeAddressCep={(store as any).address_cep || null} />
+                <div className="space-y-6">
+                  <StoreSettings storeId={store.id} storeName={store.name} storeCategory={store.category}
+                    storeImageUrl={store.image_url} storeIsOpen={store.is_open}
+                    forceClosed={(store as any).force_closed || false} storeSlug={(store as any).slug || null}
+                    storeAddressStreet={(store as any).address_street || null}
+                    storeAddressNumber={(store as any).address_number || null}
+                    storeAddressComplement={(store as any).address_complement || null}
+                    storeAddressNeighborhood={(store as any).address_neighborhood || null}
+                    storeAddressReference={(store as any).address_reference || null}
+                    storeAddressCity={(store as any).address_city || null}
+                    storeAddressState={(store as any).address_state || null}
+                    storeAddressCep={(store as any).address_cep || null} />
+
+                  {/* Test Push Notification */}
+                  <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
+                    <h4 className="font-semibold text-foreground flex items-center gap-2">
+                      <Bell className="w-4 h-4" /> Teste de Notificação Push
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      Envie uma notificação de teste para todos os motoboys online ou para você mesmo.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-medium"
+                        onClick={async () => {
+                          try {
+                            if (!onlineDrivers || onlineDrivers.length === 0) {
+                              toast.error("Nenhum motoboy online no momento.");
+                              return;
+                            }
+                            const driverIds = onlineDrivers.map((d: any) => d.user_id);
+                            const result = await sendPushNotification(
+                              driverIds,
+                              "🧪 Teste de Notificação",
+                              "Esta é uma notificação de teste do ItaFood!",
+                              { link: "/entregas" }
+                            );
+                            if (result?.total_sent > 0) {
+                              toast.success(`Notificação enviada! FCM: ${result.fcm?.sent || 0}, OneSignal: ${result.onesignal?.sent || 0}`);
+                            } else {
+                              toast.warning("Nenhum dispositivo recebeu a notificação. Verifique se os motoboys têm tokens registrados.");
+                            }
+                          } catch (err) {
+                            console.error(err);
+                            toast.error("Erro ao enviar notificação de teste.");
+                          }
+                        }}
+                      >
+                        <Bike className="w-4 h-4 inline mr-1" /> Enviar para Motoboys ({onlineDrivers?.length || 0})
+                      </button>
+                      <button
+                        className="px-4 py-2 bg-secondary text-secondary-foreground rounded-xl text-sm font-medium"
+                        onClick={async () => {
+                          try {
+                            if (!user) return;
+                            const result = await sendPushNotification(
+                              [user.id],
+                              "🧪 Teste de Notificação",
+                              "Se você recebeu isso, as notificações estão funcionando!",
+                              { link: "/admin" }
+                            );
+                            if (result?.total_sent > 0) {
+                              toast.success(`Enviado! FCM: ${result.fcm?.sent || 0}, OneSignal: ${result.onesignal?.sent || 0}`);
+                            } else {
+                              toast.warning("Nenhum dispositivo recebeu. Verifique se as notificações estão ativadas.");
+                            }
+                          } catch (err) {
+                            console.error(err);
+                            toast.error("Erro ao enviar.");
+                          }
+                        }}
+                      >
+                        <Bell className="w-4 h-4 inline mr-1" /> Enviar para Mim
+                      </button>
+                    </div>
+                  </div>
+                </div>
               )}
               {dashboardTab === "finance" && <StoreFinancePanel storeId={store.id} storeName={store.name} />}
               {dashboardTab === "reports" && (
