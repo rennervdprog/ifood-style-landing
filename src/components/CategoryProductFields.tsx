@@ -1,5 +1,12 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Plus, X, Pizza, Beef, Pill, IceCream, Wine } from "lucide-react";
+
+// Scroll input into view when keyboard opens on mobile
+const scrollOnFocus = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  setTimeout(() => {
+    e.target.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, 300);
+};
 
 type StoreCategory = string;
 
