@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
-import { ArrowLeft, Mail, Lock, Eye, EyeOff, Store, FileText, CheckCircle } from "lucide-react";
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, Store, FileText, CheckCircle, MapPin } from "lucide-react";
 import { Constants } from "@/integrations/supabase/types";
 
 const storeCategories = Constants.public.Enums.store_category;
@@ -15,12 +15,20 @@ const categoryLabels: Record<string, string> = {
   farmacias: "💊 Farmácia", docerias: "🍰 Doceria",
 };
 
+const CITIES = [
+  { value: "itatinga", label: "Itatinga" },
+  { value: "pardinho", label: "Pardinho" },
+  { value: "bofete", label: "Bofete" },
+  { value: "torre_de_pedra", label: "Torre de Pedra" },
+];
+
 const schema = z.object({
   email: z.string().trim().email("E-mail inválido").max(255),
   password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres").max(100),
   storeName: z.string().trim().min(3, "Nome da loja deve ter pelo menos 3 caracteres").max(100),
   document: z.string().trim().min(11, "CPF/CNPJ inválido").max(18),
   storeCategory: z.enum(storeCategories as unknown as [string, ...string[]], { errorMap: () => ({ message: "Selecione uma categoria" }) }),
+  city: z.string().min(1, "Selecione a cidade"),
 });
 
 const CadastroLojista = () => {

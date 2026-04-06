@@ -3,7 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
-import { ArrowLeft, Mail, Lock, Eye, EyeOff, User, Phone, Bike, CheckCircle } from "lucide-react";
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, User, Phone, Bike, CheckCircle, MapPin } from "lucide-react";
+
+const CITIES = [
+  { value: "itatinga", label: "Itatinga" },
+  { value: "pardinho", label: "Pardinho" },
+  { value: "bofete", label: "Bofete" },
+  { value: "torre_de_pedra", label: "Torre de Pedra" },
+];
 
 const schema = z.object({
   email: z.string().trim().email("E-mail inválido").max(255),
@@ -11,6 +18,7 @@ const schema = z.object({
   fullName: z.string().trim().min(3, "Nome deve ter pelo menos 3 caracteres").max(100),
   phone: z.string().trim().min(10, "Telefone inválido").max(20),
   vehicle: z.string().trim().min(2, "Informe a placa da moto").max(20),
+  city: z.string().min(1, "Selecione sua cidade"),
 });
 
 const CadastroEntregador = () => {
