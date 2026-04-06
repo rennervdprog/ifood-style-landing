@@ -389,7 +389,7 @@ const AdminDashboard = () => {
           setTimeout(() => openWhatsApp(clientPhone, msg), 600);
         }
       }
-      if (newStatus === "pronto_para_entrega" && onlineDrivers && onlineDrivers.length > 0) {
+      if (newStatus === "pronto_para_entrega" && !isOwnDelivery && onlineDrivers && onlineDrivers.length > 0) {
         const driverUserIds = onlineDrivers.map((d: any) => d.user_id);
         pushNotifyDeliveryAvailable(driverUserIds, orderId).catch(console.error);
       }
