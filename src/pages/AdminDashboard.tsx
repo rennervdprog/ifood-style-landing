@@ -119,6 +119,7 @@ const AdminDashboard = () => {
   const [clientFilter, setClientFilter] = useState<ClientFilter>("all");
   const [clientSearch, setClientSearch] = useState("");
   const [expandedClient, setExpandedClient] = useState<string | null>(null);
+  const [cancelConfirm, setCancelConfirm] = useState<string | null>(null);
 
   const prevPendingCountRef = useRef(0);
 
