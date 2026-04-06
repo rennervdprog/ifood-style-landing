@@ -196,16 +196,15 @@ Deno.serve(async (req) => {
     const supabaseAuth = createClient(supabaseUrl, supabaseAnon, {
       global: { headers: { Authorization: authHeader } },
     });
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: authError } = await supabaseAuth.auth.getClaims(token);
-    if (authError || !claimsData?.claims?.sub) {
-      console.error("[send-push] Auth failed:", authError?.message || "no claims");
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+    if (authError || !user) {
+      console.error("[send-push] Auth failed:", authError?.message || "no user");
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const callerUserId = claimsData.claims.sub;
+    const callerUserId = user.id;
     console.log(`[send-push] Authenticated user: ${callerUserId}`);
 
     const body = await req.json();
