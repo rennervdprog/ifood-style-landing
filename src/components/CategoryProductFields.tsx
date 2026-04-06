@@ -53,6 +53,7 @@ const CategoryProductFields = ({ category, metadata, onChange }: CategoryProduct
           placeholder={placeholder}
           value={tempInputs[fieldKey] || ""}
           onChange={(e) => setTempInputs({ ...tempInputs, [fieldKey]: e.target.value })}
+          onFocus={scrollOnFocus}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
