@@ -36,24 +36,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     if (!session?.user) return;
 
+    const registerNativePush = () => {
+      registerGoNativePlayer().catch(console.error);
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        registerNativePush();
+      }
+    };
+
     // Small delay to not block initial render
     const timer = setTimeout(() => {
       requestPushPermissionAndRegister().catch(console.error);
-      registerGoNativePlayer().catch(console.error);
+      registerNativePush();
 
       onForegroundMessage((payload) => {
         const title = payload.notification?.title || "Itafood";
         const body = payload.notification?.body || "";
         toast(title, { description: body });
 
-        // Vibrate
         if ("vibrate" in navigator) {
           navigator.vibrate([200, 100, 200]);
         }
       });
     }, 2000);
 
-    return () => clearTimeout(timer);
+    const retryInterval = window.setInterval(registerNativePush, 10000);
+    window.addEventListener("focus", registerNativePush);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearTimeout(timer);
+      window.clearInterval(retryInterval);
+      window.removeEventListener("focus", registerNativePush);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [session?.user?.id]);
 
   const signOut = async () => {
