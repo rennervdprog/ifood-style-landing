@@ -119,6 +119,7 @@ const AdminDashboard = () => {
   const [clientFilter, setClientFilter] = useState<ClientFilter>("all");
   const [clientSearch, setClientSearch] = useState("");
   const [expandedClient, setExpandedClient] = useState<string | null>(null);
+  const [cancelConfirm, setCancelConfirm] = useState<string | null>(null);
 
   const prevPendingCountRef = useRef(0);
 
@@ -399,6 +400,36 @@ const AdminDashboard = () => {
     }
   };
 
+
+  const handleCancelOrder = async (order: any) => {
+    try {
+      const isPix = order.payment_method === "pix";
+      const { error } = await supabase.from("orders").update({ status: "cancelado" as any }).eq("id", order.id);
+      if (error) { toast.error("Erro ao cancelar pedido."); return; }
+      
+      queryClient.invalidateQueries({ queryKey: ["store-orders", store?.id] });
+      setCancelConfirm(null);
+
+      const clientPhone = getClientWhatsApp(order.client_id);
+      if (clientPhone) {
+        const msg = isPix
+          ? `❌ *FoodIta* informa: Seu pedido #${order.id.slice(0, 8).toUpperCase()} foi cancelado.\n\n💰 O reembolso de R$ ${Number(order.total_price).toFixed(2)} via PIX será processado em breve.\n\nDesculpe o transtorno! 🙏`
+          : `❌ *FoodIta* informa: Seu pedido #${order.id.slice(0, 8).toUpperCase()} foi cancelado.\n\nDesculpe o transtorno! 🙏`;
+        setTimeout(() => openWhatsApp(clientPhone, msg), 600);
+      }
+
+      if (isPix) {
+        toast.success("Pedido cancelado! Reembolso PIX pendente.", { duration: 8000, description: `R$ ${Number(order.total_price).toFixed(2)} — envie o PIX de volta ao cliente.` });
+      } else {
+        toast.success("Pedido cancelado e cliente notificado.");
+      }
+
+      sendPushNotification([order.client_id], "❌ Pedido Cancelado", `Seu pedido #${order.id.slice(0, 8).toUpperCase()} foi cancelado.${isPix ? " O reembolso será processado." : ""}`, { link: "/pedidos" }).catch(console.error);
+    } catch (e: any) {
+      toast.error(`Erro ao cancelar: ${e?.message}`);
+    }
+  };
+
   const toggleStoreOpen = async () => {
     if (!store) return;
     const { error } = await supabase.from("stores").update({ is_open: !store.is_open }).eq("id", store.id);
@@ -676,11 +707,8 @@ const AdminDashboard = () => {
                             className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 rounded-xl text-sm active:scale-[0.98] transition-transform">
                             ✓ ACEITAR PEDIDO
                           </button>
-                          <button onClick={async () => {
-                            const { error } = await supabase.from("orders").update({ status: "cancelado" as any }).eq("id", order.id);
-                            if (error) toast.error("Erro ao recusar.");
-                            else { toast.success("Pedido recusado."); queryClient.invalidateQueries({ queryKey: ["store-orders", store?.id] }); }
-                          }} className="px-3 py-3 rounded-xl border border-destructive/30 text-destructive text-xs font-bold hover:bg-destructive/5">
+                          <button onClick={() => handleCancelOrder(order)}
+                            className="px-3 py-3 rounded-xl border border-destructive/30 text-destructive text-xs font-bold hover:bg-destructive/5">
                             <XCircle className="h-4 w-4" />
                           </button>
                         </div>
@@ -1188,19 +1216,53 @@ const AdminDashboard = () => {
                                   className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 rounded-xl text-sm active:scale-[0.98] transition-transform">
                                   ✓ ACEITAR PEDIDO
                                 </button>
-                                <button onClick={async () => {
-                                  const { error } = await supabase.from("orders").update({ status: "cancelado" as any }).eq("id", order.id);
-                                  if (error) toast.error("Erro ao recusar.");
-                                  else { toast.success("Pedido recusado."); queryClient.invalidateQueries({ queryKey: ["store-orders", store?.id] }); }
-                                }} className="w-full text-center text-xs text-destructive hover:text-destructive/80 py-1">
+                                <button onClick={() => handleCancelOrder(order)}
+                                  className="w-full text-center text-xs text-destructive hover:text-destructive/80 py-1">
                                   Recusar pedido
                                 </button>
                               </div>
                             ) : action ? (
-                              <button onClick={() => updateOrderStatus(order.id, action.next)}
-                                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 rounded-xl text-sm active:scale-[0.98] transition-transform">
-                                {action.emoji} {action.label}
-                              </button>
+                              <div className="space-y-1.5">
+                                <button onClick={() => updateOrderStatus(order.id, action.next)}
+                                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 rounded-xl text-sm active:scale-[0.98] transition-transform">
+                                  {action.emoji} {action.label}
+                                </button>
+                                {cancelConfirm === order.id ? (
+                                  <div className="flex gap-1.5">
+                                    <button onClick={() => handleCancelOrder(order)}
+                                      className="flex-1 bg-destructive text-destructive-foreground text-xs font-bold py-2 rounded-xl">
+                                      {order.payment_method === "pix" ? "💰 Cancelar + Reembolso PIX" : "Confirmar Cancelamento"}
+                                    </button>
+                                    <button onClick={() => setCancelConfirm(null)}
+                                      className="px-3 py-2 rounded-xl border border-border text-xs text-muted-foreground">
+                                      Não
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button onClick={() => setCancelConfirm(order.id)}
+                                    className="w-full text-center text-xs text-destructive hover:text-destructive/80 py-1">
+                                    ✕ Cancelar pedido
+                                  </button>
+                                )}
+                              </div>
+                            ) : !["entregue", "finalizado", "cancelado"].includes(order.status) ? (
+                              cancelConfirm === order.id ? (
+                                <div className="flex gap-1.5">
+                                  <button onClick={() => handleCancelOrder(order)}
+                                    className="flex-1 bg-destructive text-destructive-foreground text-xs font-bold py-2 rounded-xl">
+                                    {order.payment_method === "pix" ? "💰 Cancelar + Reembolso PIX" : "Confirmar Cancelamento"}
+                                  </button>
+                                  <button onClick={() => setCancelConfirm(null)}
+                                    className="px-3 py-2 rounded-xl border border-border text-xs text-muted-foreground">
+                                    Não
+                                  </button>
+                                </div>
+                              ) : (
+                                <button onClick={() => setCancelConfirm(order.id)}
+                                  className="w-full text-center text-xs text-destructive hover:text-destructive/80 py-1">
+                                  ✕ Cancelar pedido
+                                </button>
+                              )
                             ) : null}
                           </div>
                         </div>
