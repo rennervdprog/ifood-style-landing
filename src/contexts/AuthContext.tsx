@@ -31,6 +31,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
+  // Register push notifications when user logs in
+  useEffect(() => {
+    if (!session?.user) return;
+
+    // Small delay to not block initial render
+    const timer = setTimeout(() => {
+      requestPushPermissionAndRegister().catch(console.error);
+
+      onForegroundMessage((payload) => {
+        const title = payload.notification?.title || "Itafood";
+        const body = payload.notification?.body || "";
+        toast(title, { description: body });
+
+        // Vibrate
+        if ("vibrate" in navigator) {
+          navigator.vibrate([200, 100, 200]);
+        }
+      });
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [session?.user?.id]);
+
   const signOut = async () => {
     await supabase.auth.signOut();
   };
