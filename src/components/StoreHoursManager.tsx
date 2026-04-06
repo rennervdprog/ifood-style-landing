@@ -259,6 +259,7 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
 
     toast.success("Horários salvos com sucesso! ✅");
     queryClient.invalidateQueries({ queryKey: ["opening-hours", storeId] });
+    queryClient.invalidateQueries({ queryKey: ["store-hours", storeId] });
   };
 
   const toggleForceClosed = async () => {

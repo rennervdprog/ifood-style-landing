@@ -164,6 +164,11 @@ const StorePage = () => {
       )
     : { isOpen: false, reason: "" };
 
+  const hasConfiguredHours = Array.isArray(storeHours) && storeHours.length > 0;
+  const statusLabel = hasConfiguredHours
+    ? `● ${storeStatus.reason || (storeStatus.isOpen ? "Aberto" : "Fechado")}`
+    : "● Horário não informado";
+
   const reorderProductsList = products?.filter(p => reorderProducts?.includes(p.id)) || [];
   const popularProductsList = popularProducts
     ?.map(pp => {
@@ -333,11 +338,13 @@ const StorePage = () => {
               </div>
             </div>
             <span className={`text-xs font-bold px-3 py-1.5 rounded-full mt-1 ${
-              storeStatus.isOpen
-                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                : "bg-destructive/10 text-destructive"
+              hasConfiguredHours
+                ? storeStatus.isOpen
+                  ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                  : "bg-destructive/10 text-destructive"
+                : "bg-muted text-muted-foreground"
             }`}>
-              {storeStatus.reason ? `● ${storeStatus.reason}` : (storeStatus.isOpen ? "● Aberto" : "● Fechado")}
+              {statusLabel}
             </span>
           </div>
 
@@ -369,12 +376,12 @@ const StorePage = () => {
           )}
 
           {/* Opening Hours */}
-          {storeHours && storeHours.length > 0 && (
-            <div className="mt-3 pt-3 border-t border-border">
-              <div className="flex items-center gap-1.5 mb-2">
-                <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-xs font-bold text-foreground">Horários de funcionamento</span>
-              </div>
+          <div className="mt-3 pt-3 border-t border-border">
+            <div className="flex items-center gap-1.5 mb-2">
+              <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-xs font-bold text-foreground">Horários de funcionamento</span>
+            </div>
+            {hasConfiguredHours ? (
               <div className="grid grid-cols-1 gap-0.5">
                 {[0, 1, 2, 3, 4, 5, 6].map(day => {
                   const dayNames = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
@@ -395,8 +402,12 @@ const StorePage = () => {
                   );
                 })}
               </div>
-            </div>
-          )}
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Esta loja ainda não informou os horários de funcionamento.
+              </p>
+            )}
+          </div>
 
           {/* Payment Methods */}
           <div className="mt-3 pt-3 border-t border-border">
