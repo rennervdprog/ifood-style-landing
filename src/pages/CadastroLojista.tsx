@@ -71,6 +71,7 @@ const CadastroLojista = () => {
             document: document.trim(),
             store_name: storeName.trim(),
             store_category: storeCategory,
+            city: city,
           },
         },
       });
