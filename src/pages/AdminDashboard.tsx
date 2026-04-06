@@ -1219,19 +1219,53 @@ const AdminDashboard = () => {
                                   className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 rounded-xl text-sm active:scale-[0.98] transition-transform">
                                   ✓ ACEITAR PEDIDO
                                 </button>
-                                <button onClick={async () => {
-                                  const { error } = await supabase.from("orders").update({ status: "cancelado" as any }).eq("id", order.id);
-                                  if (error) toast.error("Erro ao recusar.");
-                                  else { toast.success("Pedido recusado."); queryClient.invalidateQueries({ queryKey: ["store-orders", store?.id] }); }
-                                }} className="w-full text-center text-xs text-destructive hover:text-destructive/80 py-1">
+                                <button onClick={() => handleCancelOrder(order)}
+                                  className="w-full text-center text-xs text-destructive hover:text-destructive/80 py-1">
                                   Recusar pedido
                                 </button>
                               </div>
                             ) : action ? (
-                              <button onClick={() => updateOrderStatus(order.id, action.next)}
-                                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 rounded-xl text-sm active:scale-[0.98] transition-transform">
-                                {action.emoji} {action.label}
-                              </button>
+                              <div className="space-y-1.5">
+                                <button onClick={() => updateOrderStatus(order.id, action.next)}
+                                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 rounded-xl text-sm active:scale-[0.98] transition-transform">
+                                  {action.emoji} {action.label}
+                                </button>
+                                {cancelConfirm === order.id ? (
+                                  <div className="flex gap-1.5">
+                                    <button onClick={() => handleCancelOrder(order)}
+                                      className="flex-1 bg-destructive text-destructive-foreground text-xs font-bold py-2 rounded-xl">
+                                      {order.payment_method === "pix" ? "💰 Cancelar + Reembolso PIX" : "Confirmar Cancelamento"}
+                                    </button>
+                                    <button onClick={() => setCancelConfirm(null)}
+                                      className="px-3 py-2 rounded-xl border border-border text-xs text-muted-foreground">
+                                      Não
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button onClick={() => setCancelConfirm(order.id)}
+                                    className="w-full text-center text-xs text-destructive hover:text-destructive/80 py-1">
+                                    ✕ Cancelar pedido
+                                  </button>
+                                )}
+                              </div>
+                            ) : !["entregue", "finalizado", "cancelado"].includes(order.status) ? (
+                              cancelConfirm === order.id ? (
+                                <div className="flex gap-1.5">
+                                  <button onClick={() => handleCancelOrder(order)}
+                                    className="flex-1 bg-destructive text-destructive-foreground text-xs font-bold py-2 rounded-xl">
+                                    {order.payment_method === "pix" ? "💰 Cancelar + Reembolso PIX" : "Confirmar Cancelamento"}
+                                  </button>
+                                  <button onClick={() => setCancelConfirm(null)}
+                                    className="px-3 py-2 rounded-xl border border-border text-xs text-muted-foreground">
+                                    Não
+                                  </button>
+                                </div>
+                              ) : (
+                                <button onClick={() => setCancelConfirm(order.id)}
+                                  className="w-full text-center text-xs text-destructive hover:text-destructive/80 py-1">
+                                  ✕ Cancelar pedido
+                                </button>
+                              )
                             ) : null}
                           </div>
                         </div>
