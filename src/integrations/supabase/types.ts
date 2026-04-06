@@ -302,6 +302,7 @@ export type Database = {
       }
       drivers: {
         Row: {
+          city: string | null
           created_at: string
           id: string
           is_active: boolean
@@ -310,6 +311,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          city?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
@@ -318,6 +320,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          city?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
@@ -892,6 +895,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           cep: string | null
+          city: string | null
           complement: string | null
           created_at: string
           document: string | null
@@ -915,6 +919,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           cep?: string | null
+          city?: string | null
           complement?: string | null
           created_at?: string
           document?: string | null
@@ -938,6 +943,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           cep?: string | null
+          city?: string | null
           complement?: string | null
           created_at?: string
           document?: string | null
