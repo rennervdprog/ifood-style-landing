@@ -48,7 +48,7 @@ const CadastroLojista = () => {
     e.preventDefault();
     setErrors({});
 
-    const result = schema.safeParse({ email, password, storeName, document, storeCategory });
+    const result = schema.safeParse({ email, password, storeName, document, storeCategory, city });
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
       result.error.errors.forEach((err) => {
