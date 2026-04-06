@@ -352,25 +352,50 @@ const AdminDashboard = () => {
   };
 
   const updateOrderStatus = async (orderId: string, newStatus: OrderStatus) => {
-    const { error } = await supabase.from("orders").update({ status: newStatus }).eq("id", orderId);
-    if (error) { toast.error("Erro ao atualizar pedido."); return; }
-    toast.success("Pedido atualizado!");
-    queryClient.invalidateQueries({ queryKey: ["store-orders", store?.id] });
-    const order = orders?.find((o: any) => o.id === orderId);
-    if (newStatus === "preparando" && autoPrint && order) handlePrint(order);
-    if (newStatus === "preparando" && order) {
-      const clientPhone = getClientWhatsApp(order.client_id);
-      if (clientPhone) {
-        const clientName = getClientName(order.client_id);
-        const items = order.order_items?.map((i: any) => `${i.quantity}x ${i.products?.name}`).join("\n") || "";
-        const msg = `✅ *FoodIta* informa: Seu pedido no *${store?.name}* foi aceito! 🍔\n\n${items}\n\n💰 Total: R$ ${Number(order.total_price).toFixed(2)}\nPedido: #${order.id.slice(0, 8).toUpperCase()}`;
-        setTimeout(() => openWhatsApp(clientPhone, msg), 600);
+    const debugLog: string[] = [];
+    debugLog.push(`[${new Date().toLocaleTimeString()}] updateOrderStatus: ${orderId.slice(0,8)} → ${newStatus}`);
+    try {
+      const { error, data, count, status, statusText } = await supabase
+        .from("orders")
+        .update({ status: newStatus })
+        .eq("id", orderId)
+        .select();
+      debugLog.push(`Response: status=${status} ${statusText}, rows=${data?.length ?? 0}`);
+      if (error) {
+        debugLog.push(`❌ Error: ${error.message} | code: ${error.code} | details: ${error.details}`);
+        toast.error(`Erro ao atualizar pedido: ${error.message}`, { duration: 10000, description: debugLog.join("\n") });
+        console.error("[updateOrderStatus] DEBUG:", debugLog.join(" | "));
+        return;
       }
-    }
-    // Push notify all online drivers when order is ready for delivery
-    if (newStatus === "pronto_para_entrega" && onlineDrivers && onlineDrivers.length > 0) {
-      const driverUserIds = onlineDrivers.map((d: any) => d.user_id);
-      pushNotifyDeliveryAvailable(driverUserIds, orderId).catch(console.error);
+      if (!data || data.length === 0) {
+        debugLog.push("⚠️ Nenhuma row atualizada (RLS bloqueou ou pedido não encontrado)");
+        toast.error("Pedido não atualizado — verifique permissões", { duration: 10000, description: debugLog.join("\n") });
+        console.error("[updateOrderStatus] DEBUG:", debugLog.join(" | "));
+        return;
+      }
+      debugLog.push(`✅ Atualizado com sucesso. Novo status: ${(data[0] as any)?.status}`);
+      console.log("[updateOrderStatus] DEBUG:", debugLog.join(" | "));
+      toast.success("Pedido atualizado!");
+      queryClient.invalidateQueries({ queryKey: ["store-orders", store?.id] });
+      const order = orders?.find((o: any) => o.id === orderId);
+      if (newStatus === "preparando" && autoPrint && order) handlePrint(order);
+      if (newStatus === "preparando" && order) {
+        const clientPhone = getClientWhatsApp(order.client_id);
+        if (clientPhone) {
+          const clientName = getClientName(order.client_id);
+          const items = order.order_items?.map((i: any) => `${i.quantity}x ${i.products?.name}`).join("\n") || "";
+          const msg = `✅ *FoodIta* informa: Seu pedido no *${store?.name}* foi aceito! 🍔\n\n${items}\n\n💰 Total: R$ ${Number(order.total_price).toFixed(2)}\nPedido: #${order.id.slice(0, 8).toUpperCase()}`;
+          setTimeout(() => openWhatsApp(clientPhone, msg), 600);
+        }
+      }
+      if (newStatus === "pronto_para_entrega" && onlineDrivers && onlineDrivers.length > 0) {
+        const driverUserIds = onlineDrivers.map((d: any) => d.user_id);
+        pushNotifyDeliveryAvailable(driverUserIds, orderId).catch(console.error);
+      }
+    } catch (e: any) {
+      debugLog.push(`💥 Exception: ${e?.message || e}`);
+      toast.error(`Erro inesperado: ${e?.message}`, { duration: 10000, description: debugLog.join("\n") });
+      console.error("[updateOrderStatus] EXCEPTION:", debugLog.join(" | "), e);
     }
   };
 
