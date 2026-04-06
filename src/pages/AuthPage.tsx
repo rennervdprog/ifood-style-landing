@@ -61,7 +61,8 @@ const AuthPage = () => {
           options: { emailRedirectTo: window.location.origin },
         });
         if (error) throw error;
-        toast.success("Conta criada! Verifique seu e-mail para confirmar.");
+        toast.success("Conta criada com sucesso!");
+        navigate(from, { replace: true });
       } else if (mode === "reset") {
         const { error } = await supabase.auth.updateUser({ password });
         if (error) throw error;
