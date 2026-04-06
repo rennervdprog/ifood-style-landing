@@ -134,7 +134,7 @@ const CheckoutPage = () => {
     });
 
     return () => { cancelled = true; };
-  }, [profileCep, storeCep, config, savedAddressData, selectedSavedAddressId, profileNeighborhood]);
+  }, [profileCep, storeCep, config, savedAddressData, selectedSavedAddressId, profileNeighborhood, isOwnDelivery, storeOwnFee]);
 
   // Redirect to login if not authenticated
   // Build address string from profile
