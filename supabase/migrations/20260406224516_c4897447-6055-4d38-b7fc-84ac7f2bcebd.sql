@@ -1,0 +1,1 @@
+ALTER TABLE public.stores ADD COLUMN own_delivery_fee numeric NOT NULL DEFAULT 0;

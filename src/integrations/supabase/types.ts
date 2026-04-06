@@ -1053,6 +1053,7 @@ export type Database = {
           image_url: string | null
           is_open: boolean
           name: string
+          own_delivery_fee: number
           owner_id: string | null
           rating: number | null
           slug: string | null
@@ -1075,6 +1076,7 @@ export type Database = {
           image_url?: string | null
           is_open?: boolean
           name: string
+          own_delivery_fee?: number
           owner_id?: string | null
           rating?: number | null
           slug?: string | null
@@ -1097,6 +1099,7 @@ export type Database = {
           image_url?: string | null
           is_open?: boolean
           name?: string
+          own_delivery_fee?: number
           owner_id?: string | null
           rating?: number | null
           slug?: string | null
