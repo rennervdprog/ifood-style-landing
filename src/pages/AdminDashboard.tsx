@@ -393,6 +393,19 @@ const AdminDashboard = () => {
         const driverUserIds = onlineDrivers.map((d: any) => d.user_id);
         pushNotifyDeliveryAvailable(driverUserIds, orderId).catch(console.error);
       }
+      // Own delivery: notify client when order leaves
+      if (newStatus === "saiu_entrega" && isOwnDelivery && order) {
+        sendPushNotification([order.client_id], "🛵 Saiu para entrega!", `Seu pedido #${orderId.slice(0, 8).toUpperCase()} saiu para entrega!`, { link: "/pedidos" }).catch(console.error);
+        const clientPhone = getClientWhatsApp(order.client_id);
+        if (clientPhone) {
+          const msg = `🛵 *FoodIta* informa: Seu pedido #${orderId.slice(0, 8).toUpperCase()} saiu para entrega! 🚀\nEndereço: ${order.address_details}`;
+          setTimeout(() => openWhatsApp(clientPhone, msg), 600);
+        }
+      }
+      // Own delivery: notify client when delivered
+      if (newStatus === "finalizado" && isOwnDelivery && order) {
+        sendPushNotification([order.client_id], "✅ Pedido Entregue!", `Seu pedido #${orderId.slice(0, 8).toUpperCase()} foi entregue. Bom apetite!`, { link: "/pedidos" }).catch(console.error);
+      }
     } catch (e: any) {
       debugLog.push(`💥 Exception: ${e?.message || e}`);
       toast.error(`Erro inesperado: ${e?.message}`, { duration: 10000, description: debugLog.join("\n") });
