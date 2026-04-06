@@ -96,12 +96,15 @@ export async function sendPushNotification(
 ) {
   try {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    if (!session?.access_token) {
       console.warn("[sendPush] No session, skipping push");
       return null;
     }
 
     const res = await supabase.functions.invoke("send-push", {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
       body: { user_ids: userIds, title, body, data },
     });
 
