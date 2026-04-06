@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { requestPushPermissionAndRegister, onForegroundMessage } from "@/lib/firebase";
+import { registerGoNativePlayer } from "@/lib/gonative";
 import { toast } from "sonner";
 
 interface AuthContextType {
@@ -38,6 +39,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Small delay to not block initial render
     const timer = setTimeout(() => {
       requestPushPermissionAndRegister().catch(console.error);
+      registerGoNativePlayer().catch(console.error);
 
       onForegroundMessage((payload) => {
         const title = payload.notification?.title || "Itafood";
