@@ -152,6 +152,7 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
         image_url: imageUrl || null,
         slug: cleanSlug || null,
         delivery_mode: deliveryMode,
+        own_delivery_fee: parseFloat(ownDeliveryFee) || 0,
         address_street: addressStreet.trim() || null,
         address_number: addressNumber.trim() || null,
         address_complement: addressComplement.trim() || null,
