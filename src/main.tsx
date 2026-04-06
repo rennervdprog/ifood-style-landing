@@ -2,7 +2,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 
-// PWA: Unregister service workers in iframe/preview contexts
+// PWA: aggressively reset stale service workers in preview/iframe contexts
 const isInIframe = (() => {
   try {
     return window.self !== window.top;
@@ -16,8 +16,19 @@ const isPreviewHost =
   window.location.hostname.includes("lovableproject.com");
 
 if (isPreviewHost || isInIframe) {
-  navigator.serviceWorker?.getRegistrations().then((registrations) => {
-    registrations.forEach((r) => r.unregister());
+  navigator.serviceWorker?.getRegistrations().then(async (registrations) => {
+    if (registrations.length === 0) return;
+
+    await Promise.all(registrations.map((registration) => registration.unregister()));
+
+    const reloadKey = "preview-sw-reset";
+    if (!sessionStorage.getItem(reloadKey)) {
+      sessionStorage.setItem(reloadKey, "1");
+      window.location.reload();
+      return;
+    }
+
+    sessionStorage.removeItem(reloadKey);
   });
 }
 
