@@ -95,6 +95,7 @@ const CategoryProductFields = ({ category, metadata, onChange }: CategoryProduct
         type="text"
         value={metadata[fieldKey] || ""}
         onChange={(e) => set(fieldKey, e.target.value)}
+        onFocus={scrollOnFocus}
         placeholder={placeholder}
         className="w-full bg-muted text-foreground px-3 py-1.5 rounded-lg text-xs border border-border focus:border-primary focus:outline-none"
       />
