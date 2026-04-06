@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -6,16 +6,37 @@ import { ArrowLeft, Mail, Lock, Eye, EyeOff, KeyRound } from "lucide-react";
 
 type AuthMode = "login" | "signup" | "forgot" | "reset";
 
+const REMEMBER_KEY = "itafood_remember_me";
+
 const AuthPage = () => {
   const [mode, setMode] = useState<AuthMode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(() => localStorage.getItem(REMEMBER_KEY) !== "false");
   const [loading, setLoading] = useState(false);
   const [resetSent, setResetSent] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: string })?.from || "/";
+
+  // If "remember me" is off, sign out when browser/tab closes
+  useEffect(() => {
+    if (rememberMe) return;
+    const handleUnload = () => {
+      localStorage.setItem(REMEMBER_KEY, "false");
+    };
+    window.addEventListener("beforeunload", handleUnload);
+    return () => window.removeEventListener("beforeunload", handleUnload);
+  }, [rememberMe]);
+
+  // On app load, if remember was false, sign out
+  useEffect(() => {
+    if (localStorage.getItem(REMEMBER_KEY) === "false") {
+      supabase.auth.signOut();
+      localStorage.removeItem(REMEMBER_KEY);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,6 +73,7 @@ const AuthPage = () => {
       if (mode === "login") {
         const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
         if (error) throw error;
+        localStorage.setItem(REMEMBER_KEY, rememberMe ? "true" : "false");
         toast.success("Login realizado com sucesso!");
         navigate(from, { replace: true });
       } else if (mode === "signup") {
@@ -171,6 +193,18 @@ const AuthPage = () => {
                     )}
                   </button>
                 </div>
+              )}
+
+              {mode === "login" && (
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="w-4 h-4 rounded border-border accent-primary"
+                  />
+                  <span className="text-sm text-muted-foreground">Lembrar de mim</span>
+                </label>
               )}
 
               <button
