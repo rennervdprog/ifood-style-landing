@@ -108,6 +108,7 @@ const CategoryProductFields = ({ category, metadata, onChange }: CategoryProduct
       <select
         value={metadata[fieldKey] || ""}
         onChange={(e) => set(fieldKey, e.target.value)}
+        onFocus={scrollOnFocus}
         className="w-full bg-muted text-foreground px-3 py-1.5 rounded-lg text-xs border border-border focus:border-primary focus:outline-none"
       >
         <option value="">Selecione...</option>
