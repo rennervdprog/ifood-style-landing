@@ -707,11 +707,8 @@ const AdminDashboard = () => {
                             className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 rounded-xl text-sm active:scale-[0.98] transition-transform">
                             ✓ ACEITAR PEDIDO
                           </button>
-                          <button onClick={async () => {
-                            const { error } = await supabase.from("orders").update({ status: "cancelado" as any }).eq("id", order.id);
-                            if (error) toast.error("Erro ao recusar.");
-                            else { toast.success("Pedido recusado."); queryClient.invalidateQueries({ queryKey: ["store-orders", store?.id] }); }
-                          }} className="px-3 py-3 rounded-xl border border-destructive/30 text-destructive text-xs font-bold hover:bg-destructive/5">
+                          <button onClick={() => handleCancelOrder(order)}
+                            className="px-3 py-3 rounded-xl border border-destructive/30 text-destructive text-xs font-bold hover:bg-destructive/5">
                             <XCircle className="h-4 w-4" />
                           </button>
                         </div>
