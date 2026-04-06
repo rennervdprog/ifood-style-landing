@@ -1160,8 +1160,7 @@ const DriverDashboard = () => {
             </div>
           </div>
 
-          {/* ── Native Push Debug Panel ── */}
-          <NativePushDebug />
+          {/* Debug panel moved to pedidos tab */}
         </div>
       )}
 
