@@ -1,0 +1,1 @@
+ALTER TABLE public.stores ADD COLUMN delivery_mode text NOT NULL DEFAULT 'platform' CHECK (delivery_mode IN ('platform', 'own'));

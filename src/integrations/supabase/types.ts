@@ -1041,6 +1041,7 @@ export type Database = {
           address_street: string | null
           category: Database["public"]["Enums"]["store_category"]
           created_at: string
+          delivery_mode: string
           force_closed: boolean
           id: string
           image_url: string | null
@@ -1062,6 +1063,7 @@ export type Database = {
           address_street?: string | null
           category: Database["public"]["Enums"]["store_category"]
           created_at?: string
+          delivery_mode?: string
           force_closed?: boolean
           id?: string
           image_url?: string | null
@@ -1083,6 +1085,7 @@ export type Database = {
           address_street?: string | null
           category?: Database["public"]["Enums"]["store_category"]
           created_at?: string
+          delivery_mode?: string
           force_closed?: boolean
           id?: string
           image_url?: string | null
