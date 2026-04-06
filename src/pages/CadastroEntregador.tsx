@@ -62,6 +62,7 @@ const CadastroEntregador = () => {
             vehicle: vehicle.trim(),
             whatsapp: phone.trim(),
             phone: phone.trim(),
+            city: city,
           },
         },
       });
