@@ -400,7 +400,6 @@ const AdminDashboard = () => {
     }
   };
 
-  const [cancelConfirm, setCancelConfirm] = useState<string | null>(null);
 
   const handleCancelOrder = async (order: any) => {
     try {
