@@ -58,7 +58,7 @@ async function getAccessToken(serviceAccount: any): Promise<string> {
   return tokenData.access_token;
 }
 
-// Send via OneSignal REST API
+// Send via OneSignal REST API using player_ids
 async function sendOneSignalPush(
   playerIds: string[],
   title: string,
@@ -89,12 +89,54 @@ async function sendOneSignalPush(
     if (res.ok && !result.errors) {
       return { sent: result.recipients || playerIds.length, failed: 0 };
     } else {
-      console.error("OneSignal error:", JSON.stringify(result));
+      console.error("OneSignal player_ids error:", JSON.stringify(result));
       return { sent: 0, failed: playerIds.length };
     }
   } catch (e) {
     console.error("OneSignal request error:", e);
     return { sent: 0, failed: playerIds.length };
+  }
+}
+
+// Send via OneSignal REST API using external_user_id (Supabase user_id)
+async function sendOneSignalByExternalId(
+  userIds: string[],
+  title: string,
+  body: string,
+  data: Record<string, string> | undefined,
+  appId: string,
+  restApiKey: string
+): Promise<{ sent: number; failed: number }> {
+  if (userIds.length === 0) return { sent: 0, failed: 0 };
+
+  try {
+    const res = await fetch("https://onesignal.com/api/v1/notifications", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Basic ${restApiKey}`,
+      },
+      body: JSON.stringify({
+        app_id: appId,
+        include_aliases: { external_id: userIds },
+        target_channel: "push",
+        headings: { en: title },
+        contents: { en: body || "" },
+        data: data || {},
+      }),
+    });
+
+    const result = await res.json();
+    console.log("OneSignal external_id response:", JSON.stringify(result));
+    if (res.ok && !result.errors) {
+      return { sent: result.recipients || userIds.length, failed: 0 };
+    } else {
+      console.error("OneSignal external_id error:", JSON.stringify(result));
+      return { sent: 0, failed: userIds.length };
+    }
+  } catch (e) {
+    console.error("OneSignal external_id request error:", e);
+    return { sent: 0, failed: userIds.length };
   }
 }
 
@@ -214,6 +256,7 @@ Deno.serve(async (req) => {
     const onesignalApiKey = Deno.env.get("ONESIGNAL_REST_API_KEY");
 
     if (onesignalAppId && onesignalApiKey) {
+      // Try player_ids first
       const { data: osPlayers } = await supabaseAdmin
         .from("onesignal_players")
         .select("player_id")
@@ -222,12 +265,15 @@ Deno.serve(async (req) => {
       if (osPlayers && osPlayers.length > 0) {
         const playerIds = osPlayers.map((p: any) => p.player_id);
         const osResult = await sendOneSignalPush(
-          playerIds,
-          title,
-          msgBody || "",
-          data,
-          onesignalAppId,
-          onesignalApiKey
+          playerIds, title, msgBody || "", data, onesignalAppId, onesignalApiKey
+        );
+        osSent = osResult.sent;
+        osFailed = osResult.failed;
+      } else {
+        // Fallback: send by external_user_id (Supabase user_id)
+        console.log("No player_ids found, using external_id fallback for user_ids:", user_ids);
+        const osResult = await sendOneSignalByExternalId(
+          user_ids, title, msgBody || "", data, onesignalAppId, onesignalApiKey
         );
         osSent = osResult.sent;
         osFailed = osResult.failed;

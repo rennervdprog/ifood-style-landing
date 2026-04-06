@@ -1,206 +1,159 @@
 import { supabase } from "@/integrations/supabase/client";
 
-type LegacyOneSignalInfo = {
-  oneSignalUserId?: string;
-  oneSignalPushToken?: string;
-  oneSignalSubscribed?: boolean;
-  platform?: string;
-  appVersion?: string;
-};
-
-type ModernOneSignalInfo = {
-  oneSignalId?: string;
-  externalId?: string;
-  platform?: string;
-  appVersion?: string;
-  subscription?: {
-    id?: string;
-    token?: string;
-    optedIn?: boolean;
-  };
-};
-
-type NativeOneSignalInfo = LegacyOneSignalInfo & ModernOneSignalInfo;
-
-let cachedOneSignalInfo: NativeOneSignalInfo | null = null;
-
-type BridgeApi = {
-  onesignalInfo?: ((callback?: (info: NativeOneSignalInfo) => void) => Promise<NativeOneSignalInfo | void> | void);
-  info?: ((options: { callback: string }) => void);
-};
-
 declare global {
   interface Window {
-    gonative?: { onesignal?: BridgeApi };
-    median?: { onesignal?: BridgeApi };
-    gonative_onesignal_info?: (info: NativeOneSignalInfo) => void;
-    median_onesignal_info?: (info: NativeOneSignalInfo) => void;
+    gonative?: {
+      onesignal?: {
+        onesignalInfo?: (callback?: (info: any) => void) => Promise<any> | void;
+        info?: (options: { callback: string }) => void;
+        externalUserId?: {
+          set?: (options: { externalId: string }) => void;
+        };
+        setExternalUserId?: (id: string) => void;
+      };
+    };
+    median?: {
+      onesignal?: {
+        onesignalInfo?: (callback?: (info: any) => void) => Promise<any> | void;
+        info?: (options: { callback: string }) => void;
+        externalUserId?: {
+          set?: (options: { externalId: string }) => void;
+        };
+        setExternalUserId?: (id: string) => void;
+      };
+    };
+    gonative_onesignal_info?: (info: any) => void;
+    median_onesignal_info?: (info: any) => void;
   }
 }
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+let cachedInfo: any = null;
 
-function cacheOneSignalInfo(info: NativeOneSignalInfo | null | undefined) {
-  if (!info || typeof info !== "object") return;
-  cachedOneSignalInfo = info;
-  console.log("GoNative/Median OneSignal info cached:", info);
-}
-
-function installGlobalOneSignalCallbacks() {
-  if (typeof window === "undefined") return;
-
-  window.gonative_onesignal_info = (info: NativeOneSignalInfo) => {
-    cacheOneSignalInfo(info);
-  };
-
-  window.median_onesignal_info = (info: NativeOneSignalInfo) => {
-    cacheOneSignalInfo(info);
-  };
-}
-
-function getBridge(): BridgeApi | null {
+function getBridge() {
   return window.median?.onesignal ?? window.gonative?.onesignal ?? null;
 }
 
-function extractPlayerId(info: NativeOneSignalInfo | null | undefined): string | null {
+export function isGoNative(): boolean {
+  return typeof window !== "undefined" && (!!window.gonative || !!window.median);
+}
+
+/**
+ * Tags the OneSignal device with the Supabase user_id as external_user_id.
+ * This allows sending push by user_id without needing the player_id in the DB.
+ */
+export async function setOneSignalExternalUserId(userId: string): Promise<void> {
+  if (!isGoNative()) return;
+
+  // Wait a bit for bridge to be ready
+  for (let i = 0; i < 10; i++) {
+    const bridge = getBridge();
+    if (bridge) {
+      // SDK v5+ style
+      if (bridge.externalUserId?.set) {
+        try {
+          bridge.externalUserId.set({ externalId: userId });
+          console.log("OneSignal external_user_id set (v5):", userId);
+          return;
+        } catch (e) {
+          console.warn("externalUserId.set failed:", e);
+        }
+      }
+      // Legacy style
+      if (typeof bridge.setExternalUserId === "function") {
+        try {
+          bridge.setExternalUserId(userId);
+          console.log("OneSignal external_user_id set (legacy):", userId);
+          return;
+        } catch (e) {
+          console.warn("setExternalUserId failed:", e);
+        }
+      }
+      // If bridge exists but no external user id method, break
+      if (i > 3) break;
+    }
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  console.warn("Could not set OneSignal external_user_id — bridge methods not available");
+}
+
+function installGlobalCallbacks() {
+  if (typeof window === "undefined") return;
+  window.gonative_onesignal_info = (info: any) => { cachedInfo = info; };
+  window.median_onesignal_info = (info: any) => { cachedInfo = info; };
+}
+
+function extractPlayerId(info: any): string | null {
   return info?.subscription?.id ?? info?.oneSignalUserId ?? info?.oneSignalId ?? null;
 }
 
-function isSubscribed(info: NativeOneSignalInfo | null | undefined): boolean | null {
-  if (typeof info?.subscription?.optedIn === "boolean") return info.subscription.optedIn;
-  if (typeof info?.oneSignalSubscribed === "boolean") return info.oneSignalSubscribed;
-  return null;
-}
+async function readOneSignalInfo(): Promise<any> {
+  installGlobalCallbacks();
+  if (cachedInfo) return cachedInfo;
 
-async function waitForBridge(maxAttempts = 12, delayMs = 1000): Promise<BridgeApi | null> {
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const bridge = typeof window !== "undefined" ? getBridge() : null;
-    if (bridge?.onesignalInfo || bridge?.info) return bridge;
-    await sleep(delayMs);
-  }
-  return null;
-}
-
-async function readOneSignalInfo(): Promise<NativeOneSignalInfo | null> {
-  installGlobalOneSignalCallbacks();
-
-  if (cachedOneSignalInfo) {
-    return cachedOneSignalInfo;
-  }
-
-  const bridge = await waitForBridge();
+  const bridge = getBridge();
   if (!bridge) {
-    console.warn("GoNative/Median OneSignal bridge not found");
-    return null;
+    // Wait up to 8s
+    for (let i = 0; i < 8; i++) {
+      await new Promise((r) => setTimeout(r, 1000));
+      if (getBridge()) break;
+    }
   }
 
-  if (typeof bridge.onesignalInfo === "function") {
+  const b = getBridge();
+  if (!b) return null;
+
+  if (typeof b.onesignalInfo === "function") {
     try {
-      const result = await bridge.onesignalInfo((info) => info);
-      if (result && typeof result === "object") {
-        cacheOneSignalInfo(result as NativeOneSignalInfo);
-        return result as NativeOneSignalInfo;
-      }
-    } catch (error) {
-      console.warn("onesignalInfo() promise path failed", error);
-    }
+      const result = await b.onesignalInfo((info: any) => info);
+      if (result && typeof result === "object") { cachedInfo = result; return result; }
+    } catch { /* ignore */ }
 
     try {
-      const callbackResult = await new Promise<NativeOneSignalInfo | null>((resolve) => {
+      return await new Promise<any>((resolve) => {
         let settled = false;
-        bridge.onesignalInfo?.((info) => {
-          settled = true;
-          cacheOneSignalInfo(info);
-          resolve(info);
-        });
-        setTimeout(() => {
-          if (!settled) resolve(null);
-        }, 4000);
+        b.onesignalInfo?.((info: any) => { settled = true; cachedInfo = info; resolve(info); });
+        setTimeout(() => { if (!settled) resolve(null); }, 4000);
       });
-
-      if (callbackResult) return callbackResult;
-    } catch (error) {
-      console.warn("onesignalInfo() callback path failed", error);
-    }
+    } catch { /* ignore */ }
   }
 
-  if (typeof bridge.info === "function") {
-    const callbackName = window.median ? "median_onesignal_info" : "gonative_onesignal_info";
-
-    return await new Promise<NativeOneSignalInfo | null>((resolve) => {
+  if (typeof b.info === "function") {
+    const cbName = window.median ? "median_onesignal_info" : "gonative_onesignal_info";
+    return await new Promise<any>((resolve) => {
       let settled = false;
-      const previousHandler = callbackName === "median_onesignal_info"
-        ? window.median_onesignal_info
-        : window.gonative_onesignal_info;
-
-      const handler = (info: NativeOneSignalInfo) => {
-        settled = true;
-        cacheOneSignalInfo(info);
-        if (callbackName === "median_onesignal_info") {
-          window.median_onesignal_info = previousHandler;
-        } else {
-          window.gonative_onesignal_info = previousHandler;
-        }
-        resolve(info);
+      const prev = (window as any)[cbName];
+      (window as any)[cbName] = (info: any) => {
+        settled = true; cachedInfo = info; (window as any)[cbName] = prev; resolve(info);
       };
-
-      if (callbackName === "median_onesignal_info") window.median_onesignal_info = handler;
-      else window.gonative_onesignal_info = handler;
-
-      try {
-        bridge.info?.({ callback: callbackName });
-      } catch (error) {
-        console.warn("onesignal info callback bridge failed", error);
-        if (callbackName === "median_onesignal_info") {
-          window.median_onesignal_info = previousHandler;
-        } else {
-          window.gonative_onesignal_info = previousHandler;
-        }
-        resolve(null);
-        return;
-      }
-
-      setTimeout(() => {
-        if (!settled) {
-          if (callbackName === "median_onesignal_info") {
-            window.median_onesignal_info = previousHandler;
-          } else {
-            window.gonative_onesignal_info = previousHandler;
-          }
-          resolve(null);
-        }
-      }, 5000);
+      try { b.info?.({ callback: cbName }); } catch { (window as any)[cbName] = prev; resolve(null); return; }
+      setTimeout(() => { if (!settled) { (window as any)[cbName] = prev; resolve(null); } }, 5000);
     });
   }
 
   return null;
 }
 
-export function isGoNative(): boolean {
-  installGlobalOneSignalCallbacks();
-  return typeof window !== "undefined" && (!!window.gonative || !!window.median);
-}
-
 export async function registerGoNativePlayer(): Promise<string | null> {
   if (!isGoNative()) return null;
 
-  const info = await readOneSignalInfo();
-  console.log("Native OneSignal info:", info);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
 
+  // Always try to set external_user_id (this is the key fix)
+  setOneSignalExternalUserId(user.id).catch(console.error);
+
+  const info = await readOneSignalInfo();
   const playerId = extractPlayerId(info);
+
   if (!playerId) {
-    console.warn("OneSignal player ID not available yet");
+    console.warn("OneSignal player ID not available, but external_user_id was set");
     return null;
   }
 
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return null;
-
     const deviceInfo = JSON.stringify({
       ua: navigator.userAgent.slice(0, 120),
       platform: info?.platform ?? null,
-      subscribed: isSubscribed(info),
       appVersion: info?.appVersion ?? null,
     }).slice(0, 200);
 
@@ -214,7 +167,7 @@ export async function registerGoNativePlayer(): Promise<string | null> {
       { onConflict: "user_id,player_id" }
     );
 
-    console.log("GoNative/Median OneSignal player registered:", playerId);
+    console.log("OneSignal player registered:", playerId);
     return playerId;
   } catch (error) {
     console.error("Error saving OneSignal player:", error);
@@ -223,5 +176,5 @@ export async function registerGoNativePlayer(): Promise<string | null> {
 }
 
 if (typeof window !== "undefined") {
-  installGlobalOneSignalCallbacks();
+  installGlobalCallbacks();
 }
