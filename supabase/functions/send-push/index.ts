@@ -256,6 +256,7 @@ Deno.serve(async (req) => {
     const onesignalApiKey = Deno.env.get("ONESIGNAL_REST_API_KEY");
 
     if (onesignalAppId && onesignalApiKey) {
+      // Try player_ids first
       const { data: osPlayers } = await supabaseAdmin
         .from("onesignal_players")
         .select("player_id")
@@ -264,12 +265,15 @@ Deno.serve(async (req) => {
       if (osPlayers && osPlayers.length > 0) {
         const playerIds = osPlayers.map((p: any) => p.player_id);
         const osResult = await sendOneSignalPush(
-          playerIds,
-          title,
-          msgBody || "",
-          data,
-          onesignalAppId,
-          onesignalApiKey
+          playerIds, title, msgBody || "", data, onesignalAppId, onesignalApiKey
+        );
+        osSent = osResult.sent;
+        osFailed = osResult.failed;
+      } else {
+        // Fallback: send by external_user_id (Supabase user_id)
+        console.log("No player_ids found, using external_id fallback for user_ids:", user_ids);
+        const osResult = await sendOneSignalByExternalId(
+          user_ids, title, msgBody || "", data, onesignalAppId, onesignalApiKey
         );
         osSent = osResult.sent;
         osFailed = osResult.failed;
