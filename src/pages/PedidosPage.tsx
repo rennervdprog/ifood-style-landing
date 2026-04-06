@@ -58,15 +58,21 @@ const PedidosPage = () => {
     }
   }, [searchParams, setSearchParams]);
 
+  const storeFilter = searchParams.get("store");
+
   const { data: orders, isLoading } = useQuery({
-    queryKey: ["orders", user?.id],
+    queryKey: ["orders", user?.id, storeFilter],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("orders")
         .select("*, stores(name), order_items(*, products(name))")
         .eq("client_id", user!.id)
         .eq("visible_to_client", true)
         .order("created_at", { ascending: false });
+      if (storeFilter) {
+        query = query.eq("store_id", storeFilter);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },

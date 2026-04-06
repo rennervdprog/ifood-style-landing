@@ -11,6 +11,7 @@ import WhatsAppButton from "@/components/WhatsAppButton";
 import ProductDetailModal from "@/components/ProductDetailModal";
 import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 import { useAuth } from "@/contexts/AuthContext";
+import { useStoreContext } from "@/contexts/StoreContext";
 
 interface Product {
   id: string;
@@ -35,6 +36,7 @@ const StorePage = () => {
   const navigate = useNavigate();
   const { addItem } = useCart();
   const { user } = useAuth();
+  const { setCurrentStore } = useStoreContext();
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -56,6 +58,13 @@ const StorePage = () => {
     },
     enabled: !!(id || slug),
   });
+
+  // Set store context when accessed via slug (client mode)
+  useEffect(() => {
+    if (store && slug) {
+      setCurrentStore(store.id, (store as any).slug || slug, store.name);
+    }
+  }, [store, slug, setCurrentStore]);
 
   const storeId = store?.id || id;
 
