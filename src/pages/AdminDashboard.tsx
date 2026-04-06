@@ -1240,7 +1240,7 @@ const AdminDashboard = () => {
                         )}
 
                         {/* Collection Code */}
-                        {(order.status === "pronto_para_entrega" || order.status === "saiu_entrega" || order.status === "em_transito") && (order as any).collection_code && (
+                        {(order.status === "pronto_para_entrega" || order.status === "saiu_entrega" || order.status === "em_transito") && (order as any).collection_code && !isOwnDelivery && (
                           <div className="mx-4 mb-2 bg-purple-500/5 border border-purple-500/20 rounded-xl p-3 text-center">
                             <p className="text-[10px] text-purple-500 font-bold mb-1">🔐 Código de Coleta</p>
                             <p className="text-2xl font-black text-purple-600 dark:text-purple-400 tracking-[0.3em]">{(order as any).collection_code}</p>
