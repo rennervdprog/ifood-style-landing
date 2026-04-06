@@ -2,7 +2,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart, type CartAddon } from "@/contexts/CartContext";
-import { ArrowLeft, Star, Clock, ChevronRight, MapPin, Search, X, Navigation, CreditCard, Banknote, Smartphone, QrCode, RotateCcw, TrendingUp } from "lucide-react";
+import { ArrowLeft, Star, Clock, ChevronRight, ChevronDown, ChevronUp, MapPin, Search, X, Navigation, CreditCard, Banknote, Smartphone, QrCode, RotateCcw, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import { useRef, useState, useEffect } from "react";
 import CartFAB from "@/components/CartFAB";
@@ -39,6 +39,7 @@ const StorePage = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
+  const [showHours, setShowHours] = useState(false);
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const pageRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLDivElement>(null);
@@ -377,12 +378,18 @@ const StorePage = () => {
 
           {/* Opening Hours */}
           <div className="mt-3 pt-3 border-t border-border">
-            <div className="flex items-center gap-1.5 mb-2">
+            <button
+              onClick={() => setShowHours(!showHours)}
+              className="flex items-center justify-between w-full"
+            >
+            <div className="flex items-center gap-1.5">
               <Clock className="h-3.5 w-3.5 text-muted-foreground" />
               <span className="text-xs font-bold text-foreground">Horários de funcionamento</span>
             </div>
-            {hasConfiguredHours ? (
-              <div className="grid grid-cols-1 gap-0.5">
+              {showHours ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />}
+            </button>
+            {showHours && hasConfiguredHours && (
+              <div className="grid grid-cols-1 gap-0.5 mt-2">
                 {[0, 1, 2, 3, 4, 5, 6].map(day => {
                   const dayNames = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
                   const h = storeHours.find((hr: any) => hr.day_of_week === day);
@@ -402,8 +409,9 @@ const StorePage = () => {
                   );
                 })}
               </div>
-            ) : (
-              <p className="text-xs text-muted-foreground">
+            )}
+            {showHours && !hasConfiguredHours && (
+              <p className="text-xs text-muted-foreground mt-2">
                 Esta loja ainda não informou os horários de funcionamento.
               </p>
             )}
