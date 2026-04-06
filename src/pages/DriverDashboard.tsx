@@ -156,6 +156,7 @@ const DriverDashboard = () => {
   const [verifying, setVerifying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const prevCountRef = useRef(0);
+  const notifiedReadyOrderIdsRef = useRef<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState<TabType>("entregas");
   const [dateFilter, setDateFilter] = useState<DateFilter>("hoje");
 
@@ -415,7 +416,15 @@ const DriverDashboard = () => {
     const channel = supabase
       .channel("driver-orders-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, (payload) => {
-        if (payload.eventType === "UPDATE" && (payload.new as any).status === "pronto_para_entrega" && !(payload.new as any).driver_id) {
+        const nextOrder = payload.new as any;
+        const prevOrder = payload.old as any;
+        const becameReady = payload.eventType === "UPDATE"
+          && nextOrder?.status === "pronto_para_entrega"
+          && prevOrder?.status !== "pronto_para_entrega"
+          && !nextOrder?.driver_id;
+
+        if (becameReady && nextOrder?.id && !notifiedReadyOrderIdsRef.current.has(nextOrder.id)) {
+          notifiedReadyOrderIdsRef.current.add(nextOrder.id);
           playAlert();
           toast.info("🏍️ Nova entrega disponível!");
         }
@@ -453,6 +462,15 @@ const DriverDashboard = () => {
     if (count > prevCountRef.current && prevCountRef.current >= 0) playAlert();
     prevCountRef.current = count;
   }, [availableOrders, playAlert]);
+
+  useEffect(() => {
+    const availableIds = new Set((availableOrders || []).map((order: any) => order.id));
+    notifiedReadyOrderIdsRef.current.forEach((id) => {
+      if (!availableIds.has(id)) {
+        notifiedReadyOrderIdsRef.current.delete(id);
+      }
+    });
+  }, [availableOrders]);
 
   // ─── Handlers (same logic) ───
   const toggleOnline = async () => {

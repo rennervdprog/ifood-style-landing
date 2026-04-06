@@ -308,30 +308,18 @@ Deno.serve(async (req) => {
     console.log(`[OneSignal] Config: appId=${onesignalAppId ? "SET" : "MISSING"}, apiKey=${onesignalApiKey ? "SET" : "MISSING"}`);
 
     if (onesignalAppId && onesignalApiKey && oneSignalUserIds.length > 0) {
-      // PRIMARY: Always try external_id first (works when user has external_user_id set in OneSignal)
-      console.log(`[OneSignal] Trying external_id for user_ids: ${JSON.stringify(oneSignalUserIds)}`);
-      const extResult = await sendOneSignalByExternalId(
-        oneSignalUserIds, title, msgBody || "", data, onesignalAppId, onesignalApiKey
-      );
-      osSent = extResult.sent;
-      osFailed = extResult.failed;
-      osDebug = `external_id: ${extResult.debug}`;
-
-      // FALLBACK: If external_id sent 0, try player_ids from DB
-      if (osSent === 0) {
-        if (osPlayers && osPlayers.length > 0) {
-          console.log(`[OneSignal] Fallback: trying ${osPlayers.length} player_ids`);
-          const playerIds = osPlayers.map((p: any) => p.player_id);
-          const pidResult = await sendOneSignalByPlayerIds(
-            playerIds, title, msgBody || "", data, onesignalAppId, onesignalApiKey
-          );
-          osSent = pidResult.sent;
-          osFailed = pidResult.failed;
-          osDebug += ` | player_ids: sent=${pidResult.sent}`;
-        } else {
-          console.log("[OneSignal] No player_ids in DB either");
-          osDebug += " | no_player_ids_in_db";
-        }
+      if (osPlayers && osPlayers.length > 0) {
+        const playerIds = [...new Set(osPlayers.map((p: any) => p.player_id).filter(Boolean))];
+        console.log(`[OneSignal] Sending only via player_ids for ${playerIds.length} target(s)`);
+        const pidResult = await sendOneSignalByPlayerIds(
+          playerIds, title, msgBody || "", data, onesignalAppId, onesignalApiKey
+        );
+        osSent = pidResult.sent;
+        osFailed = pidResult.failed;
+        osDebug = `player_ids_only: sent=${pidResult.sent}`;
+      } else {
+        console.log("[OneSignal] No player_ids in DB; skipping native push send");
+        osDebug = "no_player_ids_in_db";
       }
     } else if (onesignalAppId && onesignalApiKey) {
       osDebug = "no_native_targets";
