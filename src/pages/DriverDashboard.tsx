@@ -415,9 +415,8 @@ const DriverDashboard = () => {
     const channel = supabase
       .channel("driver-orders-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, (payload) => {
-        if (payload.eventType === "UPDATE" && (payload.new as any).status === "pronto_para_entrega") {
+        if (payload.eventType === "UPDATE" && (payload.new as any).status === "pronto_para_entrega" && !(payload.new as any).driver_id) {
           playAlert();
-          notifyDeliveryAvailable();
           toast.info("🏍️ Nova entrega disponível!");
         }
         queryClient.invalidateQueries({ queryKey: ["driver-available-orders"] });
