@@ -1,5 +1,12 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Plus, X, Pizza, Beef, Pill, IceCream, Wine } from "lucide-react";
+
+// Scroll input into view when keyboard opens on mobile
+const scrollOnFocus = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  setTimeout(() => {
+    e.target.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, 300);
+};
 
 type StoreCategory = string;
 
@@ -46,6 +53,7 @@ const CategoryProductFields = ({ category, metadata, onChange }: CategoryProduct
           placeholder={placeholder}
           value={tempInputs[fieldKey] || ""}
           onChange={(e) => setTempInputs({ ...tempInputs, [fieldKey]: e.target.value })}
+          onFocus={scrollOnFocus}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
@@ -87,6 +95,7 @@ const CategoryProductFields = ({ category, metadata, onChange }: CategoryProduct
         type="text"
         value={metadata[fieldKey] || ""}
         onChange={(e) => set(fieldKey, e.target.value)}
+        onFocus={scrollOnFocus}
         placeholder={placeholder}
         className="w-full bg-muted text-foreground px-3 py-1.5 rounded-lg text-xs border border-border focus:border-primary focus:outline-none"
       />
@@ -99,6 +108,7 @@ const CategoryProductFields = ({ category, metadata, onChange }: CategoryProduct
       <select
         value={metadata[fieldKey] || ""}
         onChange={(e) => set(fieldKey, e.target.value)}
+        onFocus={scrollOnFocus}
         className="w-full bg-muted text-foreground px-3 py-1.5 rounded-lg text-xs border border-border focus:border-primary focus:outline-none"
       >
         <option value="">Selecione...</option>
