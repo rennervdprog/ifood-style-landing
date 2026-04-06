@@ -94,21 +94,25 @@ export async function sendPushNotification(
   body?: string,
   data?: Record<string, string>
 ) {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) return;
-
-  const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-  const res = await fetch(
-    `https://${projectId}.supabase.co/functions/v1/send-push`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({ user_ids: userIds, title, body, data }),
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      console.warn("[sendPush] No session, skipping push");
+      return null;
     }
-  );
 
-  return res.json();
+    const res = await supabase.functions.invoke("send-push", {
+      body: { user_ids: userIds, title, body, data },
+    });
+
+    if (res.error) {
+      console.error("[sendPush] Error:", res.error.message);
+      return null;
+    }
+
+    return res.data;
+  } catch (e: any) {
+    console.error("[sendPush] Exception:", e?.message || e);
+    return null;
+  }
 }
