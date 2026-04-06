@@ -52,7 +52,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       registerNativePush();
 
       onForegroundMessage((payload) => {
-        const title = payload.notification?.title || "Itafood";
+        const title = payload.notification?.title || "ItaSuper";
         const body = payload.notification?.body || "";
         toast(title, { description: body });
 
