@@ -40,11 +40,13 @@ const App = () => (
           <NotificationPrompt />
           <BrowserRouter>
             <Routes>
-              {/* Admin-only index */}
+              {/* Public store directory */}
+              <Route path="/" element={<StoreDirectory />} />
+              {/* Admin dashboard at /index */}
               <Route
-                path="/"
+                path="/painel"
                 element={
-                  <RoleGuard allowedRoles={["admin"]} redirectTo="/auth">
+                  <RoleGuard allowedRoles={["admin"]} redirectTo="/">
                     <Index />
                   </RoleGuard>
                 }
