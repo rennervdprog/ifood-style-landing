@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useCallback, useMemo } from "react";
 
 interface StoreContextType {
   currentStoreId: string | null;
@@ -14,14 +14,18 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [currentStoreSlug, setCurrentStoreSlug] = useState<string | null>(null);
   const [currentStoreName, setCurrentStoreName] = useState<string | null>(null);
 
-  const setCurrentStore = (id: string | null, slug: string | null, name: string | null) => {
+  const setCurrentStore = useCallback((id: string | null, slug: string | null, name: string | null) => {
     setCurrentStoreId(id);
     setCurrentStoreSlug(slug);
     setCurrentStoreName(name);
-  };
+  }, []);
+
+  const value = useMemo(() => ({
+    currentStoreId, currentStoreSlug, currentStoreName, setCurrentStore
+  }), [currentStoreId, currentStoreSlug, currentStoreName, setCurrentStore]);
 
   return (
-    <StoreContext.Provider value={{ currentStoreId, currentStoreSlug, currentStoreName, setCurrentStore }}>
+    <StoreContext.Provider value={value}>
       {children}
     </StoreContext.Provider>
   );

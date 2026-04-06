@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { addMoney, sumMoney } from "@/lib/utils";
 export interface CartAddon {
@@ -8,11 +8,11 @@ export interface CartAddon {
 
 export interface CartItem {
   id: string;
-  cartKey: string; // unique key combining product id + addons + observations
+  cartKey: string;
   store_id: string;
   store_name: string;
   name: string;
-  price: number; // unit price including addons
+  price: number;
   basePrice: number;
   quantity: number;
   image_url?: string | null;
@@ -59,7 +59,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem("cart_items", JSON.stringify(items));
   }, [items]);
 
-  // Clear cart on sign-out
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_OUT") {
@@ -106,16 +105,19 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const clearCart = useCallback(() => setItems([]), []);
 
-  const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
-  const subtotal = sumMoney(items.map((item) => item.price * item.quantity));
-  const total = addMoney(subtotal, neighborhoodFee);
+  // Memoize derived values to prevent re-renders in consumers
+  const totalItems = useMemo(() => items.reduce((sum, i) => sum + i.quantity, 0), [items]);
+  const subtotal = useMemo(() => sumMoney(items.map((item) => item.price * item.quantity)), [items]);
+  const total = useMemo(() => addMoney(subtotal, neighborhoodFee), [subtotal, neighborhoodFee]);
+
+  const value = useMemo(() => ({
+    items, neighborhood, neighborhoodFee, setNeighborhood,
+    addItem, removeItem, updateQuantity, clearCart,
+    totalItems, subtotal, total,
+  }), [items, neighborhood, neighborhoodFee, setNeighborhood, addItem, removeItem, updateQuantity, clearCart, totalItems, subtotal, total]);
 
   return (
-    <CartContext.Provider value={{
-      items, neighborhood, neighborhoodFee, setNeighborhood,
-      addItem, removeItem, updateQuantity, clearCart,
-      totalItems, subtotal, total,
-    }}>
+    <CartContext.Provider value={value}>
       {children}
     </CartContext.Provider>
   );
