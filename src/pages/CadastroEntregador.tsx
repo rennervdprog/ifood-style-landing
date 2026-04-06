@@ -38,7 +38,7 @@ const CadastroEntregador = () => {
     e.preventDefault();
     setErrors({});
 
-    const result = schema.safeParse({ email, password, fullName, phone, vehicle });
+    const result = schema.safeParse({ email, password, fullName, phone, vehicle, city });
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
       result.error.errors.forEach((err) => {
