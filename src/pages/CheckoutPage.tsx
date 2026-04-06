@@ -105,6 +105,14 @@ const CheckoutPage = () => {
     const customerCep = selectedSavedAddressId && savedAddressData?.cep ? savedAddressData.cep : profileCep;
     const activeNeighborhood = selectedSavedAddressId && savedAddressData?.neighborhood ? savedAddressData.neighborhood : profileNeighborhood;
     
+    // Skip CEP calculation for stores with own delivery (fixed fee)
+    if (isOwnDelivery) {
+      setCalculatedDeliveryFee(null);
+      setFeeBreakdown(`Taxa fixa da loja: R$ ${storeOwnFee.toFixed(2)}`);
+      if (activeNeighborhood) setNeighborhood(activeNeighborhood, storeOwnFee);
+      return;
+    }
+
     if (!customerCep || !storeCep) {
       setCalculatedDeliveryFee(null);
       setFeeBreakdown(null);
