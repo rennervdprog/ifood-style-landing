@@ -474,6 +474,9 @@ const AdminDashboard = () => {
       case "pronto_para_entrega":
         if (isOwnDelivery) return { label: "SAIU PARA ENTREGA", next: "saiu_entrega" as OrderStatus, emoji: "🛵" };
         return null;
+      case "saiu_entrega":
+        if (isOwnDelivery) return { label: "MARCAR COMO ENTREGUE", next: "finalizado" as OrderStatus, emoji: "✅" };
+        return null;
       default: return null;
     }
   };
