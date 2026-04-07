@@ -53,7 +53,7 @@ interface StoreSettingsProps {
   storeSettings?: Record<string, any> | null;
 }
 
-const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, storeIsOpen, forceClosed, storeSlug, storeAddressStreet, storeAddressNumber, storeAddressComplement, storeAddressNeighborhood, storeAddressReference, storeAddressCity, storeAddressState, storeAddressCep, storeDeliveryMode, storeOwnDeliveryFee }: StoreSettingsProps) => {
+const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, storeIsOpen, forceClosed, storeSlug, storeAddressStreet, storeAddressNumber, storeAddressComplement, storeAddressNeighborhood, storeAddressReference, storeAddressCity, storeAddressState, storeAddressCep, storeDeliveryMode, storeOwnDeliveryFee, storeSettings }: StoreSettingsProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
