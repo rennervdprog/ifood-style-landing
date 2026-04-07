@@ -438,6 +438,11 @@ const SuperAdminDashboard = () => {
                           {delayedOrders.length}
                         </span>
                       )}
+                      {item.key === "dashboard" && complianceAlerts && complianceAlerts.length > 0 && delayedOrders.length === 0 && (
+                        <span className="ml-auto bg-amber-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full animate-pulse">
+                          ⚠
+                        </span>
+                      )}
                     </button>
                   );
                 })}
