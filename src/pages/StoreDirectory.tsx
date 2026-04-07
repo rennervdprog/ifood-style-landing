@@ -302,68 +302,64 @@ const StoreDirectory = () => {
       {/* ═══ PLANOS E COMISSÃO ═══ */}
       <Section id="planos" bg={THEME.grayBg}>
         <div className="text-center mb-14">
-          <SectionLabel text="Planos e Comissão" />
+          <SectionLabel text="Comissão" />
           <h2 className="text-2xl sm:text-3xl font-black" style={{ color: THEME.dark }}>
-            Escolha o plano ideal para o seu negócio
+            Simples, transparente e sem surpresas
           </h2>
           <p className="text-base mt-3 max-w-xl mx-auto" style={{ color: THEME.muted }}>
             Sem mensalidade. Sem taxa de adesão. Você só paga quando vende.
           </p>
         </div>
 
-        <div className="grid sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
-          {commissionPlans.map((plan) => (
-            <div key={plan.name} className="relative rounded-2xl border-2 p-6 sm:p-8 transition-all hover:shadow-lg" style={{
-              background: THEME.white,
-              borderColor: plan.highlight ? THEME.primary : THEME.border,
-            }}>
-              {plan.badge && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-bold text-white whitespace-nowrap" style={{ background: THEME.primary }}>
-                  {plan.badge}
-                </div>
-              )}
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: THEME.primaryLight }}>
-                  <plan.icon className="h-6 w-6" style={{ color: THEME.primary }} />
-                </div>
-                <div>
-                  <h3 className="font-bold text-lg" style={{ color: THEME.dark }}>{plan.name}</h3>
-                  <p className="text-xs" style={{ color: THEME.muted }}>{plan.desc}</p>
-                </div>
-              </div>
-
-              <div className="mb-6">
-                {plan.originalPrice && (
-                  <span className="text-lg font-bold line-through mr-2" style={{ color: "#B0B3B8" }}>{plan.originalPrice}</span>
-                )}
-                <span className="text-4xl font-black" style={{ color: THEME.primary }}>{plan.price}</span>
-                <span className="text-sm font-semibold ml-1" style={{ color: THEME.muted }}>{plan.commission}</span>
-                {plan.originalPrice && (
-                  <div className="mt-1">
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: "#FEF3C7", color: "#92400E" }}>
-                      Economia de 3% — oferta de lançamento
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <ul className="space-y-3 mb-8">
-                {plan.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-sm" style={{ color: THEME.dark }}>
-                    <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: THEME.primary }} />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-
-              <Button className="w-full rounded-full font-bold text-sm py-5 text-white" style={{ background: plan.highlight ? THEME.primary : THEME.dark }}
-                onClick={() => navigate("/cadastro-lojista")}
-              >
-                {plan.cta}
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
+        <div className="max-w-lg mx-auto">
+          <div className="relative rounded-2xl border-2 p-6 sm:p-8 transition-all hover:shadow-lg" style={{
+            background: THEME.white,
+            borderColor: THEME.primary,
+          }}>
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-bold text-white whitespace-nowrap" style={{ background: THEME.primary }}>
+              Plano único
             </div>
-          ))}
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: THEME.primaryLight }}>
+                <commissionPlan.icon className="h-6 w-6" style={{ color: THEME.primary }} />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg" style={{ color: THEME.dark }}>{commissionPlan.name}</h3>
+                <p className="text-xs" style={{ color: THEME.muted }}>{commissionPlan.desc}</p>
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <span className="text-lg font-bold line-through mr-2" style={{ color: "#B0B3B8" }}>18%</span>
+              <span className="text-4xl font-black" style={{ color: THEME.primary }}>{commissionPlan.price}</span>
+              <span className="text-sm font-semibold ml-1" style={{ color: THEME.muted }}>{commissionPlan.commission}</span>
+              <div className="mt-1">
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: "#FEF3C7", color: "#92400E" }}>
+                  🔥 Oferta de lançamento — economize 3%
+                </span>
+              </div>
+            </div>
+
+            <ul className="space-y-3 mb-8">
+              {commissionPlan.features.map((f) => (
+                <li key={f} className="flex items-start gap-2 text-sm" style={{ color: THEME.dark }}>
+                  <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: THEME.primary }} />
+                  {f}
+                </li>
+              ))}
+            </ul>
+
+            <Button className="w-full rounded-full font-bold text-sm py-5 text-white" style={{ background: THEME.primary }}
+              onClick={() => navigate("/cadastro-lojista")}
+            >
+              {commissionPlan.cta}
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Button>
+
+            <p className="text-xs text-center mt-4" style={{ color: THEME.muted }}>
+              *Motoboys da plataforma disponíveis em cidades com operação ativa
+            </p>
+          </div>
         </div>
 
         {/* Commission explanation */}
