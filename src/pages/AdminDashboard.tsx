@@ -22,6 +22,7 @@ import StoreHoursManager from "@/components/StoreHoursManager";
 import AddonManager from "@/components/AddonManager";
 import StoreSettings from "@/components/StoreSettings";
 import StoreFinancePanel from "@/components/StoreFinancePanel";
+import CommissionAlert from "@/components/CommissionAlert";
 import { printThermalReceipt } from "@/lib/thermalPrint";
 import { requestNotificationPermission, notifyNewOrder, pushNotifyDeliveryAvailable } from "@/lib/notifications";
 import { sendPushNotification } from "@/lib/firebase";
@@ -685,6 +686,12 @@ const AdminDashboard = () => {
                   </div>
                 </div>
               )}
+              {/* Commission Alert */}
+              <CommissionAlert
+                storeId={store.id}
+                storeName={store.name}
+                onGoToFinance={() => setDashboardTab("finance")}
+              />
               {/* At-a-Glance Cards */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 <GlanceCard
