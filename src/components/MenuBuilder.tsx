@@ -177,16 +177,32 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
   };
 
   // Product CRUD
+  const derivePriceFromMetadata = (meta: Record<string, any>): number => {
+    const sizes = meta?.sizes as Array<{ name: string; price: number }> | undefined;
+    if (sizes && sizes.length > 0) {
+      const prices = sizes.map(s => s.price).filter(p => p > 0);
+      return prices.length > 0 ? Math.min(...prices) : 0;
+    }
+    return 0;
+  };
+
+  const isPizzaProduct = (meta: Record<string, any>): boolean => {
+    return storeCategory === "pizzas" && !meta?.is_beverage;
+  };
+
   const addProduct = async (sectionId: string | null) => {
-    if (!productForm.name.trim() || !productForm.price) return;
+    const meta = productForm.metadata || {};
+    const finalPrice = isPizzaProduct(meta) ? derivePriceFromMetadata(meta) : parseFloat(productForm.price);
+    if (!productForm.name.trim() || (!isPizzaProduct(meta) && !productForm.price)) return;
+    if (isPizzaProduct(meta) && finalPrice <= 0) { toast.error("Defina ao menos um tamanho com preço"); return; }
     const { error } = await supabase.from("products").insert({
       store_id: storeId,
       section_id: sectionId,
       name: productForm.name.trim(),
-      price: parseFloat(productForm.price),
+      price: finalPrice,
       description: productForm.description.trim() || null,
       image_url: productForm.image_url.trim() || null,
-      metadata: productForm.metadata || {},
+      metadata: meta,
     } as any);
     if (error) { toast.error("Erro ao adicionar produto"); return; }
     toast.success("Produto adicionado!");
@@ -196,12 +212,14 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
   };
 
   const updateProduct = async (id: string) => {
+    const meta = productForm.metadata || {};
+    const finalPrice = isPizzaProduct(meta) ? derivePriceFromMetadata(meta) : parseFloat(productForm.price);
     const { error } = await supabase.from("products").update({
       name: productForm.name.trim(),
-      price: parseFloat(productForm.price),
+      price: finalPrice,
       description: productForm.description.trim() || null,
       image_url: productForm.image_url.trim() || null,
-      metadata: productForm.metadata || {},
+      metadata: meta,
     } as any).eq("id", id);
     if (error) { toast.error("Erro ao atualizar"); return; }
     toast.success("Produto atualizado!");
@@ -590,6 +608,8 @@ const ProductFormInline = ({
     setUploading(false);
   };
 
+  const hidePriceField = storeCategory === "pizzas" && !form.metadata?.is_beverage;
+
   return (
     <div className="bg-secondary rounded-xl p-3 space-y-2">
       <input
@@ -601,15 +621,17 @@ const ProductFormInline = ({
         autoFocus
       />
       <div className="flex gap-2">
-        <input
-          type="number"
-          placeholder="Preço *"
-          value={form.price}
-          onChange={(e) => setForm({ ...form, price: e.target.value })}
-          className="w-1/3 bg-muted text-foreground px-3 py-2 rounded-lg text-sm border border-border focus:border-primary focus:outline-none"
-          inputMode="decimal"
-          step="0.01"
-        />
+        {!hidePriceField && (
+          <input
+            type="number"
+            placeholder="Preço *"
+            value={form.price}
+            onChange={(e) => setForm({ ...form, price: e.target.value })}
+            className="w-1/3 bg-muted text-foreground px-3 py-2 rounded-lg text-sm border border-border focus:border-primary focus:outline-none"
+            inputMode="decimal"
+            step="0.01"
+          />
+        )}
         <div className="flex-1">
           <input
             ref={fileInputRef}
