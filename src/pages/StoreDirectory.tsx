@@ -11,9 +11,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 /* ──────────────────── Landing-scoped blue theme ──────────────────── */
 const THEME = {
-  primary: "#EA1D2C",
-  primaryDark: "#C41622",
-  primaryLight: "#FDE8EA",
+  primary: "#FF6B00",
+  primaryDark: "#E05E00",
+  primaryLight: "#FFF3E8",
   grayBg: "#F0F2F5",
   white: "#FFFFFF",
 } as const;
