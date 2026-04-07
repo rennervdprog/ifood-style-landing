@@ -719,48 +719,64 @@ const AdminDashboard = () => {
               </div>
 
               {/* Delivery Mode Quick Config */}
-              <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Truck className="h-4 w-4 text-primary" />
-                    <h3 className="font-bold text-foreground text-sm">Modo de Entrega</h3>
-                  </div>
-                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${(store as any).delivery_mode === "own" ? "bg-amber-500/10 text-amber-600" : "bg-primary/10 text-primary"}`}>
-                    {(store as any).delivery_mode === "own" ? "Motoboy Próprio" : "Motoboy IFood"}
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={async () => {
-                      await supabase.from("stores").update({ delivery_mode: "platform" } as any).eq("id", store.id);
-                      queryClient.invalidateQueries({ queryKey: ["my-store", user?.id] });
-                      toast.success("Modo alterado para Motoboy IFood!");
-                    }}
-                    className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
-                      (store as any).delivery_mode !== "own"
-                        ? "border-primary bg-primary/10"
-                        : "border-border bg-card hover:border-primary/30"
-                    }`}
-                  >
-                    <Bike className={`h-5 w-5 ${(store as any).delivery_mode !== "own" ? "text-primary" : "text-muted-foreground"}`} />
-                    <span className={`text-xs font-bold ${(store as any).delivery_mode !== "own" ? "text-primary" : "text-muted-foreground"}`}>Motoboy IFood</span>
-                  </button>
-                  <button
-                    onClick={async () => {
-                      await supabase.from("stores").update({ delivery_mode: "own" } as any).eq("id", store.id);
-                      queryClient.invalidateQueries({ queryKey: ["my-store", user?.id] });
-                      toast.success("Modo alterado para Motoboy Próprio!");
-                    }}
-                    className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
-                      (store as any).delivery_mode === "own"
-                        ? "border-primary bg-primary/10"
-                        : "border-border bg-card hover:border-primary/30"
-                    }`}
-                  >
-                    <Truck className={`h-5 w-5 ${(store as any).delivery_mode === "own" ? "text-primary" : "text-muted-foreground"}`} />
-                    <span className={`text-xs font-bold ${(store as any).delivery_mode === "own" ? "text-primary" : "text-muted-foreground"}`}>Motoboy Próprio</span>
-                  </button>
-                </div>
+              {(() => {
+                const PLATFORM_CITIES = ["itatinga"];
+                const storeCity = ((store as any).address_city || "").toLowerCase().trim();
+                const hasPlatformSupport = PLATFORM_CITIES.includes(storeCity);
+
+                return (
+                  <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Truck className="h-4 w-4 text-primary" />
+                        <h3 className="font-bold text-foreground text-sm">Modo de Entrega</h3>
+                      </div>
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${(store as any).delivery_mode === "own" ? "bg-amber-500/10 text-amber-600" : "bg-primary/10 text-primary"}`}>
+                        {(store as any).delivery_mode === "own" ? "Motoboy Próprio" : "Motoboy Plataforma"}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={async () => {
+                          if (!hasPlatformSupport) {
+                            toast.error("Motoboys da plataforma ainda não estão disponíveis na sua região.");
+                            return;
+                          }
+                          await supabase.from("stores").update({ delivery_mode: "platform" } as any).eq("id", store.id);
+                          queryClient.invalidateQueries({ queryKey: ["my-store", user?.id] });
+                          toast.success("Modo alterado para Motoboy Plataforma!");
+                        }}
+                        className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all relative ${
+                          !hasPlatformSupport
+                            ? "border-border bg-muted/50 opacity-60 cursor-not-allowed"
+                            : (store as any).delivery_mode !== "own"
+                              ? "border-primary bg-primary/10"
+                              : "border-border bg-card hover:border-primary/30"
+                        }`}
+                        disabled={!hasPlatformSupport}
+                      >
+                        <Bike className={`h-5 w-5 ${!hasPlatformSupport ? "text-muted-foreground" : (store as any).delivery_mode !== "own" ? "text-primary" : "text-muted-foreground"}`} />
+                        <span className={`text-xs font-bold ${!hasPlatformSupport ? "text-muted-foreground" : (store as any).delivery_mode !== "own" ? "text-primary" : "text-muted-foreground"}`}>Motoboy Plataforma</span>
+                        {!hasPlatformSupport && (
+                          <span className="text-[9px] text-amber-600 font-bold">Indisponível na sua região</span>
+                        )}
+                      </button>
+                      <button
+                        onClick={async () => {
+                          await supabase.from("stores").update({ delivery_mode: "own" } as any).eq("id", store.id);
+                          queryClient.invalidateQueries({ queryKey: ["my-store", user?.id] });
+                          toast.success("Modo alterado para Motoboy Próprio!");
+                        }}
+                        className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
+                          (store as any).delivery_mode === "own"
+                            ? "border-primary bg-primary/10"
+                            : "border-border bg-card hover:border-primary/30"
+                        }`}
+                      >
+                        <Truck className={`h-5 w-5 ${(store as any).delivery_mode === "own" ? "text-primary" : "text-muted-foreground"}`} />
+                        <span className={`text-xs font-bold ${(store as any).delivery_mode === "own" ? "text-primary" : "text-muted-foreground"}`}>Motoboy Próprio</span>
+                      </button>
+                    </div>
                 {(store as any).delivery_mode === "own" && (
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-foreground/80">Taxa de entrega fixa (R$)</label>
