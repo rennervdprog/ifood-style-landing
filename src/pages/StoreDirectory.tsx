@@ -240,7 +240,8 @@ const StoreDirectory = () => {
           </h1>
           <p className="text-base sm:text-lg mt-5 leading-relaxed max-w-2xl mx-auto" style={{ color: THEME.muted }}>
             Crie seu cardápio online, receba pedidos em tempo real e aumente suas vendas.
-            Comece grátis com motoboy próprio ou use nossa logística completa por apenas 15% de comissão.
+            Crie seu cardápio online, receba pedidos em tempo real e aumente suas vendas.
+            Comissão de apenas 15% por pedido entregue. Sem mensalidade, sem taxa de adesão.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center mt-8">
@@ -250,7 +251,7 @@ const StoreDirectory = () => {
               onClick={() => navigate("/cadastro-lojista")}
             >
               <Store className="h-5 w-5" />
-              Cadastrar minha loja — É grátis
+              Cadastrar minha loja
             </Button>
             <Button size="lg" className="gap-2 rounded-full font-bold text-base px-8 transition-all shadow-md hover:shadow-lg" style={{ background: THEME.white, color: THEME.primary, border: `2px solid ${THEME.primary}` }}
               onMouseEnter={(e) => { e.currentTarget.style.background = THEME.primaryLight; }}
@@ -265,7 +266,7 @@ const StoreDirectory = () => {
           {/* Trust indicators */}
           <div className="flex flex-wrap items-center gap-6 justify-center mt-10">
             {[
-              { icon: CheckCircle2, text: "Cadastro grátis" },
+              { icon: CheckCircle2, text: "Sem mensalidade" },
               { icon: Globe, text: "Qualquer cidade" },
               { icon: ShieldCheck, text: "Sem mensalidade" },
             ].map((t) => (
@@ -312,7 +313,7 @@ const StoreDirectory = () => {
             Transparência total. Sem surpresas.
           </h2>
           <p className="text-base mt-3 max-w-xl mx-auto" style={{ color: THEME.muted }}>
-            Escolha como quer operar. Comece grátis e escale quando a plataforma chegar na sua cidade.
+            Ambos os planos com 15% de comissão por pedido. A diferença está na logística de entrega.
           </p>
         </div>
 
@@ -339,9 +340,7 @@ const StoreDirectory = () => {
 
               <div className="mb-6">
                 <span className="text-4xl font-black" style={{ color: THEME.primary }}>{plan.price}</span>
-                {plan.commission !== "0%" && (
                   <span className="text-sm font-semibold ml-1" style={{ color: THEME.muted }}>{plan.commission}</span>
-                )}
               </div>
 
               <ul className="space-y-3 mb-8">
@@ -508,7 +507,7 @@ const StoreDirectory = () => {
             Comece a vender online hoje mesmo.
           </h2>
           <p className="text-base text-white/80 mb-8 max-w-xl mx-auto">
-            Cadastro grátis, sem mensalidade. Monte seu cardápio digital e receba pedidos em minutos.
+            Sem mensalidade, sem taxa de adesão. Apenas 15% de comissão por pedido entregue.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button size="lg" className="gap-2 rounded-full font-bold text-base px-8 shadow-lg transition-all hover:shadow-xl" style={{ background: THEME.white, color: THEME.primary }}
