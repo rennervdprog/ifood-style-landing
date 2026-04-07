@@ -248,7 +248,7 @@ const StoreDirectory = () => {
             </div>
           </div>
 
-          <div className="hidden lg:block">
+          <div className="mt-10 lg:mt-0">
             <DeviceMockups />
           </div>
         </div>
