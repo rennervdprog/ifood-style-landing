@@ -403,6 +403,42 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
               </div>
             )}
 
+            {/* ===== SOBREMESAS/DOCERIAS INFO ===== */}
+            {isDessert && meta.size_weight && (
+              <div className="mt-2">
+                <span className="text-xs bg-muted text-foreground px-2 py-1 rounded-full font-bold">
+                  📏 {meta.size_weight}
+                </span>
+              </div>
+            )}
+
+            {/* ===== BEVERAGE INFO (any category) ===== */}
+            {isBeverage && (meta.drink_type || meta.drink_volume) && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {meta.drink_type && (
+                  <span className="text-xs bg-purple-500/10 text-purple-600 px-2 py-1 rounded-full font-bold">🥤 {meta.drink_type}</span>
+                )}
+                {meta.drink_volume && (
+                  <span className="text-xs bg-muted text-foreground px-2 py-1 rounded-full font-medium">{meta.drink_volume}</span>
+                )}
+                {meta.serve_cold && (
+                  <span className="text-xs bg-sky-500/10 text-sky-600 px-2 py-1 rounded-full font-bold">❄️ Gelado</span>
+                )}
+              </div>
+            )}
+
+            {/* ===== SAUDÁVEL INFO ===== */}
+            {cat === "saudavel" && !isBeverage && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {meta.is_vegan && <span className="text-xs bg-green-500/10 text-green-600 px-2 py-1 rounded-full font-bold">🌱 Vegano</span>}
+                {meta.is_gluten_free && <span className="text-xs bg-amber-500/10 text-amber-700 px-2 py-1 rounded-full font-bold">🌾 Sem Glúten</span>}
+                {meta.is_lactose_free && <span className="text-xs bg-blue-500/10 text-blue-600 px-2 py-1 rounded-full font-bold">🥛 Sem Lactose</span>}
+                {meta.is_organic && <span className="text-xs bg-green-600/10 text-green-700 px-2 py-1 rounded-full font-bold">🍃 Orgânico</span>}
+                {meta.calories && <span className="text-xs bg-muted text-foreground px-2 py-1 rounded-full font-medium">🔥 {meta.calories} kcal</span>}
+                {meta.protein_grams && <span className="text-xs bg-muted text-foreground px-2 py-1 rounded-full font-medium">💪 {meta.protein_grams}g proteína</span>}
+              </div>
+            )}
+
             {/* Price - hidden for pizza with sizes */}
             {!hasSizes && (
               <p className="text-lg font-black text-primary mt-2">R$ {product.price.toFixed(2)}</p>
