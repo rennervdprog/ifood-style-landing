@@ -273,6 +273,33 @@ const DriverDashboard = () => {
     refetchInterval: 5000,
   });
 
+  // Open stores with platform delivery (for driver info)
+  const { data: openPlatformStores } = useQuery({
+    queryKey: ["open-platform-stores"],
+    queryFn: async () => {
+      const { data: stores } = await supabase
+        .from("stores")
+        .select("id, name, force_closed, is_open, delivery_mode")
+        .eq("status", "ativo")
+        .neq("delivery_mode", "own");
+      if (!stores || stores.length === 0) return [];
+
+      const { data: hours } = await supabase.from("opening_hours").select("*");
+      const now = new Date();
+      const dayOfWeek = now.getDay();
+      const currentTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+
+      return stores.filter((s: any) => {
+        if (s.force_closed) return false;
+        const storeHours = (hours || []).filter((h: any) => h.store_id === s.id && h.day_of_week === dayOfWeek);
+        if (storeHours.length === 0) return s.is_open;
+        return storeHours.some((h: any) => !h.is_closed_all_day && currentTime >= h.open_time && currentTime <= h.close_time);
+      });
+    },
+    enabled: !!user && isOnline,
+    refetchInterval: 60000,
+  });
+
   const { data: driverBalance } = useQuery({
     queryKey: ["driver-balance", user?.id],
     queryFn: async () => {
@@ -717,10 +744,11 @@ const DriverDashboard = () => {
           ) : (
             <div className="px-4 py-4 space-y-4">
               {/* Quick Stats */}
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-4 gap-2">
                 <StatCard icon={DollarSign} label="Hoje" value={`R$ ${todayEarnings.toFixed(2)}`} color="text-green-500" />
                 <StatCard icon={TrendingUp} label="Semana" value={`R$ ${weekEarnings.toFixed(2)}`} color="text-blue-500" />
                 <StatCard icon={Package} label="Entregas" value={String(totalDeliveries)} color="text-primary" />
+                <StatCard icon={Store} label="Abertas" value={String(openPlatformStores?.length || 0)} color="text-emerald-500" />
               </div>
 
               {/* Pix key warning */}
@@ -1265,10 +1293,11 @@ const DriverDashboard = () => {
           )}
 
           {/* Quick Stats */}
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-4 gap-2">
             <StatCard icon={DollarSign} label="Hoje" value={`R$ ${todayEarnings.toFixed(2)}`} color="text-green-500" />
             <StatCard icon={TrendingUp} label="Semana" value={`R$ ${weekEarnings.toFixed(2)}`} color="text-blue-500" />
             <StatCard icon={Package} label="Total" value={String(totalDeliveries)} color="text-primary" />
+            <StatCard icon={Store} label="Abertas" value={String(openPlatformStores?.length || 0)} color="text-emerald-500" />
           </div>
 
           {/* Date filter */}
