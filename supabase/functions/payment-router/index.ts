@@ -141,6 +141,7 @@ async function createAsaasPix(params: {
   externalReference: string;
   expiresAt?: string;
   splitWalletId?: string;
+  splitFixedValue?: number;
 }): Promise<{ ok: boolean; data: any; status: number }> {
   const apiKey = Deno.env.get("ASAAS_API_KEY");
   if (!apiKey) {
@@ -205,15 +206,25 @@ async function createAsaasPix(params: {
       externalReference: params.externalReference,
     };
 
-    // Add split if store has Asaas wallet (85% to store, 15% platform commission)
-    if (params.splitWalletId) {
+    // Add split using FIXED VALUE (85% of subtotal only, excludes delivery fee)
+    // This ensures delivery fee stays with the platform for driver payout
+    if (params.splitWalletId && params.splitFixedValue && params.splitFixedValue > 0) {
       paymentBody.split = [
         {
           walletId: params.splitWalletId,
-          percentualValue: 85, // 85% goes to the store
+          fixedValue: params.splitFixedValue, // Fixed R$ amount to the store
         },
       ];
-      console.log("Asaas split enabled: 85% to wallet", params.splitWalletId);
+      console.log("Asaas split enabled: R$", params.splitFixedValue, "to wallet", params.splitWalletId);
+    } else if (params.splitWalletId) {
+      // Fallback: if no fixed value calculated, use percentage (shouldn't happen)
+      paymentBody.split = [
+        {
+          walletId: params.splitWalletId,
+          percentualValue: 85,
+        },
+      ];
+      console.log("Asaas split fallback: 85% to wallet", params.splitWalletId);
     }
 
     console.log("Asaas creating PIX payment...");
@@ -631,7 +642,7 @@ async function handleOrderPix(
 
   const { data: order, error: orderError } = await supabase
     .from("orders")
-    .select("id, client_id, total_price, status, store_id")
+    .select("id, client_id, total_price, subtotal, delivery_fee, status, store_id")
     .eq("id", order_id)
     .eq("client_id", userId)
     .single();
@@ -646,6 +657,7 @@ async function handleOrderPix(
 
   // Fetch store wallet for Asaas split
   let splitWalletId: string | undefined;
+  let splitFixedValue: number | undefined;
   if (order.store_id) {
     const serviceClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -658,7 +670,11 @@ async function handleOrderPix(
       .single();
     if (store?.asaas_wallet_id) {
       splitWalletId = store.asaas_wallet_id;
-      console.log("Split enabled for store:", order.store_id, "wallet:", splitWalletId);
+      // Split by FIXED VALUE: 85% of subtotal only (excludes delivery fee)
+      // Delivery fee stays with platform for driver payout
+      const subtotal = Number(order.subtotal) || 0;
+      splitFixedValue = Math.round(subtotal * 0.85 * 100) / 100;
+      console.log("Split enabled for store:", order.store_id, "wallet:", splitWalletId, "fixedValue:", splitFixedValue, "subtotal:", subtotal);
     }
   }
 
@@ -677,6 +693,7 @@ async function handleOrderPix(
     idempotencyKey,
     expiresAt,
     splitWalletId,
+    splitFixedValue,
   });
 }
 
@@ -944,6 +961,7 @@ async function routePixCreation(params: {
   idempotencyKey: string;
   expiresAt?: string;
   splitWalletId?: string;
+  splitFixedValue?: number;
 }): Promise<Response> {
   const provider = await getActiveProviderFromDB();
 
@@ -967,6 +985,7 @@ async function routePixCreation(params: {
       externalReference: params.externalReference,
       expiresAt: params.expiresAt,
       splitWalletId: params.splitWalletId,
+      splitFixedValue: params.splitFixedValue,
     });
 
     if (asaasResult.ok) {
