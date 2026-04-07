@@ -42,6 +42,38 @@ const PedidosPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
 
+  // Check if user is lojista
+  const { data: userProfile } = useQuery({
+    queryKey: ["pedidos-profile", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const isLojista = userProfile?.role === "lojista";
+
+  // Get lojista's store ID
+  const { data: ownStore } = useQuery({
+    queryKey: ["own-store-pedidos", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("stores")
+        .select("id, name")
+        .eq("owner_id", user!.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user && isLojista,
+    staleTime: 1000 * 60 * 5,
+  });
+
   // Handle payment return redirect
   useEffect(() => {
     const paymentStatus = searchParams.get("payment");
@@ -53,13 +85,13 @@ const PedidosPage = () => {
       } else if (paymentStatus === "pending") {
         toast("⏳ Pagamento pendente. Aguardando confirmação...");
       }
-      // Clean up URL params
       setSearchParams({}, { replace: true });
     }
   }, [searchParams, setSearchParams]);
 
   const storeFilter = searchParams.get("store");
 
+  // Client orders (for clients and lojistas viewing as client)
   const { data: orders, isLoading } = useQuery({
     queryKey: ["orders", user?.id, storeFilter],
     queryFn: async () => {
@@ -76,7 +108,23 @@ const PedidosPage = () => {
       if (error) throw error;
       return data;
     },
-    enabled: !!user,
+    enabled: !!user && !isLojista,
+  });
+
+  // Store orders (for lojistas)
+  const { data: storeOrders, isLoading: storeOrdersLoading } = useQuery({
+    queryKey: ["store-orders-lojista", ownStore?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*, order_items(*, products(name))")
+        .eq("store_id", ownStore!.id)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!ownStore?.id && isLojista,
   });
 
   // Fetch existing ratings to know which orders are already rated
