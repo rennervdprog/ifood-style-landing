@@ -1,5 +1,7 @@
 import { useState, useCallback } from "react";
-import { Plus, X, Pizza, Beef, Pill, IceCream, Wine } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Plus, X, Pizza, Beef, Pill, IceCream, Wine, AlertTriangle, Check } from "lucide-react";
 
 // Scroll input into view when keyboard opens on mobile
 const scrollOnFocus = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -14,9 +16,10 @@ interface CategoryProductFieldsProps {
   category: StoreCategory;
   metadata: Record<string, any>;
   onChange: (metadata: Record<string, any>) => void;
+  storeId?: string;
 }
 
-const CategoryProductFields = ({ category, metadata, onChange }: CategoryProductFieldsProps) => {
+const CategoryProductFields = ({ category, metadata, onChange, storeId }: CategoryProductFieldsProps) => {
   const set = (key: string, value: any) => onChange({ ...metadata, [key]: value });
 
   const addToList = (key: string, value: string) => {
