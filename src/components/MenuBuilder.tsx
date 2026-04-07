@@ -468,6 +468,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
                   setAddonItemForm={setAddonItemForm}
                   onAddAddonItem={addAddonItem}
                   storeCategory={storeCategory}
+                  storeId={storeId}
                 />
               ))}
 
@@ -479,6 +480,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
                   onSave={() => addProduct(section.id)}
                   onCancel={() => { setShowProductForm(null); setProductForm({ name: "", price: "", description: "", image_url: "", metadata: {} }); }}
                   storeCategory={storeCategory}
+                  storeId={storeId}
                 />
               ) : (
                 <button
@@ -538,6 +540,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
               setAddonItemForm={setAddonItemForm}
               onAddAddonItem={addAddonItem}
               storeCategory={storeCategory}
+              storeId={storeId}
             />
           ))}
         </div>
@@ -551,6 +554,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
           onSave={() => addProduct(null)}
           onCancel={() => { setShowProductForm(null); setProductForm({ name: "", price: "", description: "", image_url: "", metadata: {} }); }}
           storeCategory={storeCategory}
+          storeId={storeId}
         />
       ) : (
         <button
@@ -589,12 +593,14 @@ const ProductFormInline = ({
   onSave,
   onCancel,
   storeCategory,
+  storeId,
 }: {
   form: { name: string; price: string; description: string; image_url: string; metadata: Record<string, any> };
   setForm: (f: any) => void;
   onSave: () => void;
   onCancel: () => void;
   storeCategory?: string;
+  storeId?: string;
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -685,6 +691,7 @@ const ProductFormInline = ({
           category={storeCategory}
           metadata={form.metadata || {}}
           onChange={(metadata) => setForm({ ...form, metadata })}
+          storeId={storeId}
         />
       )}
 
@@ -732,6 +739,7 @@ const ProductCard = ({
   onAddAddonItem,
   onDeleteAddonItem,
   storeCategory,
+  storeId,
 }: any) => {
   if (isEditing) {
     return (
@@ -741,6 +749,7 @@ const ProductCard = ({
         onSave={onSaveEdit}
         onCancel={onCancelEdit}
         storeCategory={storeCategory}
+        storeId={storeId}
       />
     );
   }

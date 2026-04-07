@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback, useMemo, memo } from "react";
+import PizzaFlavorManager from "@/components/PizzaFlavorManager";
 import SimulationBanner from "@/components/SimulationBanner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,7 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import {
-  Wifi, WifiOff, Clock, ChefHat, Truck, CheckCircle2,
+  Wifi, WifiOff, Clock, ChefHat, Truck, CheckCircle2, Pizza,
   MapPin, Package, Settings, Banknote, CreditCard,
   UtensilsCrossed, ListOrdered, Plus, Printer, Bike,
   Volume2, VolumeX, Bell, Store, MessageCircle, Copy, Coins,
@@ -30,7 +31,7 @@ import { addMoney, averageMoney, formatCurrency, sumMoney } from "@/lib/utils";
 import ProductTour, { lojistaTourSteps } from "@/components/ProductTour";
 
 type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_entrega" | "em_transito" | "entregue" | "finalizado";
-type DashboardTab = "dashboard" | "orders" | "menu" | "addons" | "hours" | "settings" | "finance" | "clients" | "reports";
+type DashboardTab = "dashboard" | "orders" | "menu" | "flavors" | "addons" | "hours" | "settings" | "finance" | "clients" | "reports";
 
 const ALERT_SOUND_URL = "https://actions.google.com/sounds/v1/alarms/beep_short.ogg";
 const CASH_REGISTER_SOUND_URL = "https://actions.google.com/sounds/v1/office/cash_register.ogg";
@@ -60,11 +61,12 @@ const orderTabs: { status: OrderStatus; label: string; icon: React.ElementType }
 const paymentLabels: Record<string, string> = { pix: "PIX", cartao: "Cartão", dinheiro: "Dinheiro" };
 const paymentIcons: Record<string, string> = { pix: "⚡", cartao: "💳", dinheiro: "💵" };
 
-const sidebarItems: { key: DashboardTab; label: string; icon: React.ElementType }[] = [
+const baseSidebarItems: { key: DashboardTab; label: string; icon: React.ElementType; pizzaOnly?: boolean }[] = [
   { key: "dashboard", label: "Visão Geral", icon: LayoutDashboard },
   { key: "orders", label: "Pedidos", icon: ListOrdered },
   { key: "clients", label: "Clientes", icon: Users },
   { key: "menu", label: "Cardápio", icon: UtensilsCrossed },
+  { key: "flavors", label: "Sabores", icon: Pizza, pizzaOnly: true },
   { key: "addons", label: "Adicionais", icon: Plus },
   { key: "hours", label: "Horários", icon: Clock },
   { key: "finance", label: "Finanças", icon: Coins },
@@ -575,7 +577,7 @@ const AdminDashboard = () => {
 
         {/* Navigation */}
         <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
-          {sidebarItems.map(item => {
+          {baseSidebarItems.filter(i => !i.pizzaOnly || store?.category === "pizzas").map(item => {
             const isActive = dashboardTab === item.key;
             const Icon = item.icon;
             return (
@@ -634,12 +636,13 @@ const AdminDashboard = () => {
               <Menu className="h-5 w-5 text-foreground" />
             </button>
             <div>
-              <h2 className="font-bold text-foreground text-lg">{sidebarItems.find(i => i.key === dashboardTab)?.label || "Pedidos"}</h2>
+              <h2 className="font-bold text-foreground text-lg">{baseSidebarItems.find(i => i.key === dashboardTab)?.label || "Pedidos"}</h2>
               <p className="text-xs text-muted-foreground hidden sm:block">
                 {dashboardTab === "dashboard" && "Resumo do dia em tempo real"}
                 {dashboardTab === "orders" && `${orders?.length || 0} pedidos ativos`}
                 {dashboardTab === "clients" && `${clientAnalytics.length} clientes registrados`}
                 {dashboardTab === "menu" && "Gerencie seu cardápio"}
+                {dashboardTab === "flavors" && "Sabores e preços das pizzas"}
                 {dashboardTab === "addons" && "Grupos de adicionais"}
                 {dashboardTab === "hours" && "Horários de funcionamento"}
                 {dashboardTab === "finance" && "Resumo financeiro"}
@@ -1480,6 +1483,7 @@ const AdminDashboard = () => {
           {!["dashboard", "orders", "clients"].includes(dashboardTab) && store && (
             <div className="p-4 lg:p-6 max-w-5xl">
               {dashboardTab === "menu" && <MenuBuilder storeId={store.id} storeCategory={store.category} />}
+              {dashboardTab === "flavors" && <PizzaFlavorManager storeId={store.id} />}
               {dashboardTab === "addons" && <AddonManager storeId={store.id} />}
               {dashboardTab === "hours" && <StoreHoursManager storeId={store.id} forceClosed={(store as any).force_closed || false} />}
               {dashboardTab === "settings" && (
