@@ -577,7 +577,7 @@ const AdminDashboard = () => {
 
         {/* Navigation */}
         <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
-          {sidebarItems.map(item => {
+          {baseSidebarItems.filter(i => !i.pizzaOnly || store?.category === "pizzas").map(item => {
             const isActive = dashboardTab === item.key;
             const Icon = item.icon;
             return (
@@ -636,7 +636,7 @@ const AdminDashboard = () => {
               <Menu className="h-5 w-5 text-foreground" />
             </button>
             <div>
-              <h2 className="font-bold text-foreground text-lg">{sidebarItems.find(i => i.key === dashboardTab)?.label || "Pedidos"}</h2>
+              <h2 className="font-bold text-foreground text-lg">{baseSidebarItems.find(i => i.key === dashboardTab)?.label || "Pedidos"}</h2>
               <p className="text-xs text-muted-foreground hidden sm:block">
                 {dashboardTab === "dashboard" && "Resumo do dia em tempo real"}
                 {dashboardTab === "orders" && `${orders?.length || 0} pedidos ativos`}
