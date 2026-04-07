@@ -442,6 +442,7 @@ const FieldInput = ({ icon: Icon, placeholder, value, onChange, error, type = "t
         onChange={(e) => onChange(e.target.value)}
         className="w-full h-12 pl-10 pr-4 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
         autoComplete={autoComplete}
+        maxLength={maxLength}
       />
     </div>
     {error && <p className="text-xs text-destructive mt-1">{error}</p>}
