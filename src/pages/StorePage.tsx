@@ -352,7 +352,7 @@ const StorePage = () => {
           {/* Address + Maps button */}
           {store?.address_neighborhood && (
             <div className="mt-3 pt-3 border-t border-border flex items-center gap-2 text-muted-foreground">
-              <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+              <MapPin className="h-3.5 w-3.5 flex-shrink-0 text-primary" />
               <span className="text-xs truncate flex-1">
                 {[store.address_street, store.address_number, store.address_neighborhood, store.address_city]
                   .filter(Boolean)
