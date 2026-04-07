@@ -961,6 +961,7 @@ async function routePixCreation(params: {
   idempotencyKey: string;
   expiresAt?: string;
   splitWalletId?: string;
+  splitFixedValue?: number;
 }): Promise<Response> {
   const provider = await getActiveProviderFromDB();
 
