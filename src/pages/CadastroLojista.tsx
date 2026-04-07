@@ -185,6 +185,12 @@ const CadastroLojista = () => {
                 </select>
               </div>
               {errors.city && <p className="text-xs text-destructive mt-1">{errors.city}</p>}
+              {!PLATFORM_CITIES.includes(city) && (
+                <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                  <MapPin className="h-3 w-3" />
+                  Motoboys da plataforma ainda não disponíveis nesta cidade. Sua loja funcionará como cardápio digital com motoboy próprio.
+                </p>
+              )}
             </div>
 
             <button

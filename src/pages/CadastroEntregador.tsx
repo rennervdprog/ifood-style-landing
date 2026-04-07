@@ -10,6 +10,8 @@ const CITIES = [
   { value: "pardinho", label: "Pardinho", available: false },
   { value: "bofete", label: "Bofete", available: false },
   { value: "torre_de_pedra", label: "Torre de Pedra", available: false },
+  { value: "botucatu", label: "Botucatu", available: false },
+  { value: "avare", label: "Avaré", available: false },
 ];
 
 const schema = z.object({
