@@ -727,10 +727,7 @@ async function handleCommissionCharge(
     .eq("user_id", store.owner_id)
     .single();
 
-  const serviceClient = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-  );
+  // serviceClient already created above for owner profile lookup
 
   // Check admin via DB function
   const { data: isAdmin } = await serviceClient.rpc("is_platform_admin", { _user_id: userId });
@@ -782,10 +779,10 @@ async function handleCommissionCharge(
   const result = await routePixCreation({
     amount: Number(amount.toFixed(2)),
     description: desc,
-    payerEmail: userEmail || "lojista@itasuper.com",
-    payerFirstName: store.name.substring(0, 100),
-    payerLastName: "ItaSuper",
-    payerCpf: "00000000000",
+    payerEmail: ownerProfile?.email || userEmail || "lojista@itasuper.com",
+    payerFirstName: ownerProfile?.full_name?.split(" ")[0] || store.name.substring(0, 100),
+    payerLastName: ownerProfile?.full_name?.split(" ").slice(1).join(" ") || "ItaSuper",
+    payerCpf: ownerProfile?.document?.replace(/\D/g, "") || "00000000000",
     externalReference: referenceCode,
     idempotencyKey,
     expiresAt,
