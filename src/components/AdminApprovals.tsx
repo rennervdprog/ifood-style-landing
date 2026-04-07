@@ -1,4 +1,4 @@
-import { Shield, Clock, Store, Bike, CheckCircle2, XCircle, Loader2, Trash2 } from "lucide-react";
+import { Shield, Clock, Store, Bike, CheckCircle2, XCircle, Loader2, Trash2, FileText, Camera, ChevronDown, ChevronUp } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
