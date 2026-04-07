@@ -152,6 +152,24 @@ const AdminStoreManager = () => {
         ))}
       </div>
 
+      {/* Bulk create wallets */}
+      {storesWithoutWallet.length > 0 && (
+        <button
+          onClick={handleBulkCreateWallets}
+          disabled={bulkCreating}
+          className="w-full flex items-center justify-center gap-2 bg-primary/10 text-primary font-bold py-3 rounded-xl text-sm hover:bg-primary/20 active:scale-[0.98] transition-all disabled:opacity-50"
+        >
+          {bulkCreating ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Wallet className="h-4 w-4" />
+          )}
+          {bulkCreating
+            ? "Criando subcontas..."
+            : `Criar subconta Asaas em lote (${storesWithoutWallet.length} lojas)`}
+        </button>
+      )}
+
       {/* Store list */}
       {isLoading ? (
         <div className="space-y-2">
