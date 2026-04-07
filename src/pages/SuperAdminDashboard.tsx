@@ -674,6 +674,62 @@ const SuperAdminDashboard = () => {
                     </div>
                   </div>
                 )}
+                {/* Compliance Alerts */}
+                {complianceAlerts && complianceAlerts.length > 0 && (
+                  <div className="bg-amber-500/5 border border-amber-500/30 rounded-2xl p-4 mb-4">
+                    <h2 className="text-sm font-bold text-amber-600 dark:text-amber-400 mb-3 flex items-center gap-2">
+                      <Shield className="h-4 w-4" />
+                      Alertas de Compliance ({complianceAlerts.length})
+                    </h2>
+                    <div className="space-y-2">
+                      {complianceAlerts.map((alert: any) => (
+                        <div key={alert.id} className="flex items-center justify-between p-3 bg-amber-500/5 rounded-xl">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-bold text-foreground">{(alert as any).stores?.name || "Loja"}</p>
+                            <p className="text-xs text-muted-foreground">{alert.message}</p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5">
+                              {new Date(alert.created_at).toLocaleDateString("pt-BR")}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2 ml-3">
+                            <button
+                              onClick={async () => {
+                                const { error } = await supabase
+                                  .from("compliance_alerts" as any)
+                                  .update({ is_resolved: true, resolved_at: new Date().toISOString() } as any)
+                                  .eq("id", alert.id);
+                                if (error) { toast.error("Erro ao resolver."); return; }
+                                toast.success("Alerta resolvido!");
+                                queryClient.invalidateQueries({ queryKey: ["compliance-alerts"] });
+                              }}
+                              className="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-2 py-1 rounded-lg text-xs font-bold hover:bg-emerald-500/40"
+                            >
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              onClick={async () => {
+                                if (!confirm("Suspender esta loja por violação de regras?")) return;
+                                const storeId = alert.store_id;
+                                const { error } = await supabase.from("stores").update({ status: "bloqueado" as any }).eq("id", storeId);
+                                if (error) { toast.error("Erro ao suspender."); return; }
+                                await supabase
+                                  .from("compliance_alerts" as any)
+                                  .update({ is_resolved: true, resolved_at: new Date().toISOString() } as any)
+                                  .eq("id", alert.id);
+                                toast.success("Loja suspensa por violação!");
+                                queryClient.invalidateQueries({ queryKey: ["compliance-alerts"] });
+                                queryClient.invalidateQueries({ queryKey: ["admin-all-stores"] });
+                              }}
+                              className="bg-destructive/20 text-destructive px-2 py-1 rounded-lg text-xs font-bold hover:bg-destructive/40"
+                            >
+                              <XCircle className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </div>
