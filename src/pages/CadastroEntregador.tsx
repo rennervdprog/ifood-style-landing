@@ -27,7 +27,7 @@ const schema = z.object({
     .min(7, "Placa deve ter 7 caracteres (ex: ABC-1234 ou ABC1D23)")
     .max(8, "Placa inválida")
     .refine(v => PLATE_REGEX.test(v.replace(/\s/g, "")), "Placa inválida. Use formato antigo (ABC-1234) ou Mercosul (ABC1D23)"),
-  cnhNumber: z.string().trim().min(9, "CNH deve ter pelo menos 9 dígitos").max(15, "CNH inválida"),
+  cnhNumber: z.string().trim().length(11, "CNH deve ter exatamente 11 dígitos").regex(/^\d{11}$/, "CNH deve conter apenas números"),
   city: z.string().min(1, "Selecione sua cidade"),
 }).refine(data => data.email === data.emailConfirm, {
   message: "Os e-mails não coincidem",
