@@ -468,6 +468,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
                   setAddonItemForm={setAddonItemForm}
                   onAddAddonItem={addAddonItem}
                   storeCategory={storeCategory}
+                  storeId={storeId}
                 />
               ))}
 
@@ -539,6 +540,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
               setAddonItemForm={setAddonItemForm}
               onAddAddonItem={addAddonItem}
               storeCategory={storeCategory}
+              storeId={storeId}
             />
           ))}
         </div>
