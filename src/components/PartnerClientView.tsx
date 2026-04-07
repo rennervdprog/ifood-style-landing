@@ -12,7 +12,7 @@ import PopularProducts from "@/components/PopularProducts";
 import PromoBanners from "@/components/PromoBanners";
 import FirstOrderBanner from "@/components/FirstOrderBanner";
 import { useState } from "react";
-import { isStoreOpen } from "@/lib/storeStatus";
+import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 
 const PartnerClientView = () => {
   const { user } = useAuth();
