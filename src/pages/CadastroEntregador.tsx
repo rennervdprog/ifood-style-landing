@@ -277,7 +277,21 @@ const CadastroEntregador = () => {
             {/* Personal info */}
             <FieldInput icon={User} placeholder="Nome completo" value={fullName} onChange={setFullName} error={errors.fullName} />
             <FieldInput icon={Phone} placeholder="Telefone com DDD" value={phone} onChange={setPhone} error={errors.phone} inputMode="tel" />
-            <FieldInput icon={Bike} placeholder="Placa da Moto (ABC-1234 ou ABC1D23)" value={vehicle} onChange={(v) => setVehicle(v.toUpperCase())} error={errors.vehicle} />
+            <FieldInput icon={Bike} placeholder="Placa (ABC-1234 ou ABC1D23)" value={vehicle} onChange={(v) => {
+              // Strip non-alphanumeric except dash
+              let raw = v.replace(/[^A-Za-z0-9-]/g, "").toUpperCase();
+              // Auto-format: after 3 letters, insert dash if user typed old format
+              if (raw.length === 4 && /^[A-Z]{3}\d$/.test(raw)) {
+                raw = raw.slice(0, 3) + "-" + raw.slice(3);
+              }
+              // Max 8 chars (ABC-1234) or 7 (ABC1D23)
+              if (raw.includes("-")) {
+                raw = raw.slice(0, 8);
+              } else {
+                raw = raw.slice(0, 7);
+              }
+              setVehicle(raw);
+            }} error={errors.vehicle} maxLength={8} />
             
             {/* CNH Number */}
             <FieldInput icon={FileText} placeholder="Número da CNH" value={cnhNumber} onChange={setCnhNumber} error={errors.cnhNumber} inputMode="numeric" />
@@ -414,8 +428,8 @@ const CadastroEntregador = () => {
   );
 };
 
-const FieldInput = ({ icon: Icon, placeholder, value, onChange, error, type = "text", autoComplete, inputMode }: {
-  icon: React.ElementType; placeholder: string; value: string; onChange: (v: string) => void; error?: string; type?: string; autoComplete?: string; inputMode?: string;
+const FieldInput = ({ icon: Icon, placeholder, value, onChange, error, type = "text", autoComplete, inputMode, maxLength }: {
+  icon: React.ElementType; placeholder: string; value: string; onChange: (v: string) => void; error?: string; type?: string; autoComplete?: string; inputMode?: string; maxLength?: number;
 }) => (
   <div>
     <div className="relative">
@@ -428,6 +442,7 @@ const FieldInput = ({ icon: Icon, placeholder, value, onChange, error, type = "t
         onChange={(e) => onChange(e.target.value)}
         className="w-full h-12 pl-10 pr-4 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
         autoComplete={autoComplete}
+        maxLength={maxLength}
       />
     </div>
     {error && <p className="text-xs text-destructive mt-1">{error}</p>}
