@@ -798,7 +798,9 @@ const AdminDashboard = () => {
                     <p className="text-[10px] text-muted-foreground">Este valor será cobrado para todos os clientes desta loja.</p>
                   </div>
                 )}
-              </div>
+                  </div>
+                );
+              })()}
 
               {/* Priority Queue - New orders with pulse */}
               {pendingCount > 0 && (
