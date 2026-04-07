@@ -413,6 +413,20 @@ const AdminDashboard = () => {
     }
   };
 
+  // Check if store has all hours closed (needs configuration)
+  const { data: storeHours } = useQuery({
+    queryKey: ["store-hours-check", store?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("opening_hours").select("*").eq("store_id", store!.id);
+      return data || [];
+    },
+    enabled: !!store,
+  });
+
+  const allHoursClosed = useMemo(() => {
+    if (!storeHours || storeHours.length === 0) return true;
+    return storeHours.every((h: any) => h.is_closed_all_day);
+  }, [storeHours]);
 
   const handleCancelOrder = async (order: any) => {
     try {
