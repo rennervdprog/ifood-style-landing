@@ -159,7 +159,7 @@ Deno.serve(async (req) => {
         }
       } else {
         // This is a financial transaction (commission charge, etc.)
-        const { error: txError } = await supabase
+        const { data: txData, error: txError } = await supabase
           .from("financial_transactions")
           .update({
             status: "approved",
@@ -168,12 +168,57 @@ Deno.serve(async (req) => {
             mercado_pago_payment_id: paymentId,
           })
           .eq("reference_code", externalReference)
-          .eq("status", "pending");
+          .eq("status", "pending")
+          .select("store_id, transaction_kind, amount")
+          .maybeSingle();
 
         if (txError) {
           console.error("Error updating financial transaction:", txError);
         } else {
           console.log(`Financial transaction ${externalReference} confirmed via Asaas`);
+
+          // Auto-reactivate store if commission was paid
+          if (txData?.transaction_kind === "commission_charge" && txData.store_id) {
+            const paidAmount = Number(txData.amount) || 0;
+
+            // Reduce pending commission
+            const { data: balance } = await supabase
+              .from("store_balances")
+              .select("comissao_pendente")
+              .eq("store_id", txData.store_id)
+              .single();
+
+            if (balance) {
+              const newPending = Math.max(0, Number(balance.comissao_pendente) - paidAmount);
+              await supabase
+                .from("store_balances")
+                .update({
+                  comissao_pendente: newPending,
+                  pending_commission: newPending,
+                  updated_at: new Date().toISOString(),
+                })
+                .eq("store_id", txData.store_id);
+            }
+
+            // Reactivate store if it was blocked
+            const { error: reactivateError } = await supabase
+              .from("stores")
+              .update({ status: "ativo" })
+              .eq("id", txData.store_id)
+              .eq("status", "bloqueado");
+
+            if (!reactivateError) {
+              console.log(`Store ${txData.store_id} reactivated after commission payment`);
+
+              // Resolve compliance alerts
+              await supabase
+                .from("compliance_alerts")
+                .update({ is_resolved: true, resolved_at: new Date().toISOString() })
+                .eq("store_id", txData.store_id)
+                .eq("alert_type", "commission_overdue")
+                .eq("is_resolved", false);
+            }
+          }
         }
       }
     } else if (event === "PAYMENT_OVERDUE" || event === "PAYMENT_DELETED" || event === "PAYMENT_REFUNDED") {
