@@ -108,16 +108,22 @@ Deno.serve(async (req) => {
     const isCnpj = cleanDoc.length === 14;
 
     // Step 1: Create Asaas subaccount
-    const subaccountBody = {
+    const phone = (profile.whatsapp_number || profile.phone || "").replace(/\D/g, "");
+    const subaccountBody: Record<string, unknown> = {
       name: profile.full_name || store.name,
       email: profile.email || `lojista-${store_id.substring(0, 8)}@itasuper.app`,
       cpfCnpj: cleanDoc,
       companyType: isCnpj ? "LIMITED" : "MEI",
-      mobilePhone: (profile.whatsapp_number || profile.phone || "").replace(/\D/g, "") || undefined,
+      mobilePhone: phone || undefined,
       address: store.address_city || "Itatinga",
       province: "SP",
       postalCode: "18690000", // Itatinga default
     };
+
+    // Asaas requires birthDate for CPF (individual) accounts
+    if (!isCnpj) {
+      subaccountBody.birthDate = "1990-01-01"; // Default placeholder — Asaas requires this field
+    }
 
     console.log("Creating Asaas subaccount for store:", store.name);
     const createRes = await fetch(`${baseUrl}/accounts`, {
