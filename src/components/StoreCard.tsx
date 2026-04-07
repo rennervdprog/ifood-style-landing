@@ -16,11 +16,8 @@ const StoreCard = ({ id, name, category, image_url, is_open, rating, statusReaso
 
   return (
     <button
-      onClick={() => is_open && navigate(`/loja/${id}`)}
-      disabled={!is_open}
-      className={`w-full text-left rounded-2xl bg-card shadow-sm border border-border overflow-hidden transition-all ${
-        is_open ? "active:scale-[0.98]" : "cursor-not-allowed"
-      }`}
+      onClick={() => navigate(`/loja/${id}`)}
+      className={`w-full text-left rounded-2xl bg-card shadow-sm border border-border overflow-hidden transition-all active:scale-[0.98]`}
     >
       <div className="relative h-36 bg-muted overflow-hidden">
         {image_url ? (
