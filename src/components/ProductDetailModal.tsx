@@ -94,6 +94,9 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
   const isCafe = cat === "cafeteria" && !isBeverage;
   const drinkSizes: string[] = meta.drink_sizes || [];
   const milkOptions: string[] = meta.milk_options || [];
+  const cafeFlavors: string[] = meta.flavors || [];
+  const isCafeDrink = meta.cafe_product_type === "Café / Bebida Quente" || meta.cafe_product_type === "Suco / Bebida Fria";
+  const isCakeLike = meta.cafe_product_type === "Bolo / Fatia" || meta.cafe_product_type === "Torta (fatia)";
 
   // Churrasco
   const isBBQ = cat === "churrasco" && !isBeverage;
@@ -176,6 +179,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
     if (isLanche && meatOptions.length > 0 && !selectedMeatDoneness) return false;
     if (isBBQ && bbqMeatOptions.length > 0 && !selectedMeatDoneness) return false;
     if (isDessert && flavors.length > 0 && !selectedFlavor) return false;
+    if (isCafe && isCakeLike && cafeFlavors.length > 0 && !selectedFlavor) return false;
     return addonsMet;
   }, [addonGroups, selectedAddons, hasSizes, selectedSize, isLanche, meatOptions, selectedMeatDoneness, isBBQ, bbqMeatOptions, isDessert, flavors, selectedFlavor]);
 
@@ -465,12 +469,41 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
             setSelectedFlavor, true
           )}
 
-          {/* ===== CAFETERIA: SIZE + MILK + ICED ===== */}
-          {isCafe && drinkSizes.length > 0 && renderRadioSelector(
+          {/* ===== CAFETERIA INFO CARD ===== */}
+          {isCafe && meta.cafe_product_type && (
+            <div className="flex flex-wrap gap-1.5">
+              <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-bold">
+                ☕ {meta.cafe_product_type}
+              </span>
+              {meta.cafe_custom_type && (
+                <span className="text-xs bg-muted text-foreground px-2 py-1 rounded-full font-medium">
+                  {meta.cafe_custom_type}
+                </span>
+              )}
+              {meta.can_heat && (
+                <span className="text-xs bg-orange-500/10 text-orange-600 px-2 py-1 rounded-full font-bold">🔥 Pode aquecer</span>
+              )}
+              {meta.sells_slice && (
+                <span className="text-xs bg-muted text-foreground px-2 py-1 rounded-full font-medium">🍰 Vende fatia</span>
+              )}
+              {meta.sells_whole && (
+                <span className="text-xs bg-muted text-foreground px-2 py-1 rounded-full font-medium">🎂 Vende inteiro</span>
+              )}
+            </div>
+          )}
+
+          {/* ===== CAFETERIA: FLAVOR SELECTOR (bolo/torta) ===== */}
+          {isCafe && isCakeLike && cafeFlavors.length > 0 && renderRadioSelector(
+            "Escolha o sabor", "🍰", cafeFlavors, selectedFlavor,
+            setSelectedFlavor, true
+          )}
+
+          {/* ===== CAFETERIA: SIZE + MILK + ICED (drinks) ===== */}
+          {isCafe && isCafeDrink && drinkSizes.length > 0 && renderRadioSelector(
             "Tamanho", "☕", drinkSizes, selectedDrinkSize,
             setSelectedDrinkSize, false
           )}
-          {isCafe && milkOptions.length > 0 && renderRadioSelector(
+          {isCafe && isCafeDrink && milkOptions.length > 0 && renderRadioSelector(
             "Tipo de leite", "🥛", milkOptions, selectedMilk,
             setSelectedMilk, false
           )}
