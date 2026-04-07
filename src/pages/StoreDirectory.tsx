@@ -128,33 +128,46 @@ const StoreDirectory = () => {
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
+      setPartnerRole(null);
       setRoleChecked(true);
       return;
     }
+    let cancelled = false;
     const check = async () => {
-      // Admin sees landing page normally (they access via /painel)
-      const { data: adminRole } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id)
-        .eq("role", "admin")
-        .maybeSingle();
-      if (adminRole) {
-        setRoleChecked(true);
-        return;
+      try {
+        // Admin sees landing page normally (they access via /painel)
+        const { data: adminRole } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .eq("role", "admin")
+          .maybeSingle();
+        if (cancelled) return;
+        if (adminRole) {
+          setPartnerRole(null);
+          setRoleChecked(true);
+          return;
+        }
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (cancelled) return;
+        if (profile && (profile.role === "lojista" || profile.role === "motoboy")) {
+          setPartnerRole(profile.role);
+        } else {
+          setPartnerRole(null);
+        }
+      } catch (e) {
+        console.error("StoreDirectory role check error:", e);
       }
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      if (profile && (profile.role === "lojista" || profile.role === "motoboy")) {
-        setPartnerRole(profile.role);
-      }
-      setRoleChecked(true);
+      if (!cancelled) setRoleChecked(true);
     };
+    setRoleChecked(false);
     check();
-  }, [user, authLoading]);
+    return () => { cancelled = true; };
+  }, [user?.id, authLoading]);
 
   // Show client-like store browser for logged-in partners
   if (!authLoading && roleChecked && partnerRole) {
