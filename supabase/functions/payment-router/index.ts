@@ -140,6 +140,7 @@ async function createAsaasPix(params: {
   payerName: string;
   externalReference: string;
   expiresAt?: string;
+  splitWalletId?: string;
 }): Promise<{ ok: boolean; data: any; status: number }> {
   const apiKey = Deno.env.get("ASAAS_API_KEY");
   if (!apiKey) {
@@ -195,7 +196,7 @@ async function createAsaasPix(params: {
     dueDate.setDate(dueDate.getDate() + 1); // Due tomorrow (Asaas requires future date)
     const dueDateStr = dueDate.toISOString().split("T")[0];
 
-    const paymentBody = {
+    const paymentBody: Record<string, unknown> = {
       customer: customerId,
       billingType: "PIX",
       value: params.amount,
@@ -203,6 +204,17 @@ async function createAsaasPix(params: {
       description: params.description.substring(0, 500),
       externalReference: params.externalReference,
     };
+
+    // Add split if store has Asaas wallet (85% to store, 15% platform commission)
+    if (params.splitWalletId) {
+      paymentBody.split = [
+        {
+          walletId: params.splitWalletId,
+          percentualValue: 85, // 85% goes to the store
+        },
+      ];
+      console.log("Asaas split enabled: 85% to wallet", params.splitWalletId);
+    }
 
     console.log("Asaas creating PIX payment...");
     const paymentRes = await fetch(`${baseUrl}/payments`, {
