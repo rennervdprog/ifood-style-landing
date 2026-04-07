@@ -30,6 +30,8 @@ const CATEGORY_OPTIONS = [
   { value: "docerias", label: "Docerias" },
 ];
 
+type PizzaPriceMode = "maior" | "media" | "soma";
+
 interface StoreSettingsProps {
   storeId: string;
   storeName: string;
@@ -48,6 +50,7 @@ interface StoreSettingsProps {
   storeAddressCep?: string | null;
   storeDeliveryMode?: string | null;
   storeOwnDeliveryFee?: number | null;
+  storeSettings?: Record<string, any> | null;
 }
 
 const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, storeIsOpen, forceClosed, storeSlug, storeAddressStreet, storeAddressNumber, storeAddressComplement, storeAddressNeighborhood, storeAddressReference, storeAddressCity, storeAddressState, storeAddressCep, storeDeliveryMode, storeOwnDeliveryFee }: StoreSettingsProps) => {
