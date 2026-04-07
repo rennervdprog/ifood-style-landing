@@ -77,10 +77,6 @@ const CadastroEntregador = () => {
         video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
       });
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play();
-      }
       setShowCamera(true);
     } catch {
       toast.error("Não foi possível acessar a câmera. Verifique as permissões.");
@@ -342,7 +338,19 @@ const CadastroEntregador = () => {
                 </div>
               ) : showCamera ? (
                 <div className="relative rounded-xl overflow-hidden border border-border">
-                  <video ref={videoRef} autoPlay playsInline muted className="w-full h-48 object-cover" />
+                  <video
+                    ref={(el) => {
+                      (videoRef as React.MutableRefObject<HTMLVideoElement | null>).current = el;
+                      if (el && streamRef.current && !el.srcObject) {
+                        el.srcObject = streamRef.current;
+                        el.play().catch(() => {});
+                      }
+                    }}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-48 object-cover"
+                  />
                   <canvas ref={canvasRef} className="hidden" />
                   <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-3">
                     <button
