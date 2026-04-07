@@ -61,11 +61,12 @@ const orderTabs: { status: OrderStatus; label: string; icon: React.ElementType }
 const paymentLabels: Record<string, string> = { pix: "PIX", cartao: "Cartão", dinheiro: "Dinheiro" };
 const paymentIcons: Record<string, string> = { pix: "⚡", cartao: "💳", dinheiro: "💵" };
 
-const sidebarItems: { key: DashboardTab; label: string; icon: React.ElementType }[] = [
+const baseSidebarItems: { key: DashboardTab; label: string; icon: React.ElementType; pizzaOnly?: boolean }[] = [
   { key: "dashboard", label: "Visão Geral", icon: LayoutDashboard },
   { key: "orders", label: "Pedidos", icon: ListOrdered },
   { key: "clients", label: "Clientes", icon: Users },
   { key: "menu", label: "Cardápio", icon: UtensilsCrossed },
+  { key: "flavors", label: "Sabores", icon: Pizza, pizzaOnly: true },
   { key: "addons", label: "Adicionais", icon: Plus },
   { key: "hours", label: "Horários", icon: Clock },
   { key: "finance", label: "Finanças", icon: Coins },
