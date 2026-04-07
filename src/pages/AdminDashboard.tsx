@@ -22,6 +22,7 @@ import StoreHoursManager from "@/components/StoreHoursManager";
 import AddonManager from "@/components/AddonManager";
 import StoreSettings from "@/components/StoreSettings";
 import StoreFinancePanel from "@/components/StoreFinancePanel";
+import CommissionAlert from "@/components/CommissionAlert";
 import { printThermalReceipt } from "@/lib/thermalPrint";
 import { requestNotificationPermission, notifyNewOrder, pushNotifyDeliveryAvailable } from "@/lib/notifications";
 import { sendPushNotification } from "@/lib/firebase";
