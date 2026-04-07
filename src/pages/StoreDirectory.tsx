@@ -182,7 +182,7 @@ const StoreDirectory = () => {
     { step: "1", icon: Store, title: "Cadastre sua loja", desc: "Informe seu CEP. Identificamos sua cidade e criamos seu cardápio digital automaticamente." },
     { step: "2", icon: Smartphone, title: "Monte seu cardápio", desc: "Adicione produtos, fotos e preços. Organize por categorias direto no painel." },
     { step: "3", icon: Package, title: "Receba pedidos", desc: "Clientes pedem pelo app. Você confirma e prepara. Notificação em tempo real." },
-    { step: "4", icon: Bike, title: "Entrega garantida", desc: "Nossos motoboys levam até o cliente. Ou use seu próprio entregador." },
+    { step: "4", icon: Bike, title: "Entrega garantida", desc: "Em cidades com operação ativa, nossos motoboys fazem a entrega. Nas demais, use seu próprio entregador." },
   ];
 
   const features = [
