@@ -383,7 +383,7 @@ const StorePage = () => {
               className="flex items-center justify-between w-full"
             >
             <div className="flex items-center gap-1.5">
-              <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+              <Clock className="h-3.5 w-3.5 text-primary" />
               <span className="text-xs font-bold text-foreground">Horários de funcionamento</span>
             </div>
               {showHours ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />}
