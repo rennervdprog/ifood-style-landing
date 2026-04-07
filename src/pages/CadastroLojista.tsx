@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
-import { ArrowLeft, Mail, Lock, Eye, EyeOff, Store, FileText, CheckCircle, MapPin, Search, Loader2 } from "lucide-react";
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, Store, FileText, CheckCircle, MapPin, Search, Loader2, Key } from "lucide-react";
 import { Constants } from "@/integrations/supabase/types";
 import { formatCep, fetchCep } from "@/lib/cepLookup";
 
@@ -16,6 +16,10 @@ const categoryLabels: Record<string, string> = {
   farmacias: "💊 Farmácia", docerias: "🍰 Doceria",
 };
 
+const pixTypeLabels: Record<string, string> = {
+  cpf: "CPF", cnpj: "CNPJ", email: "E-mail", phone: "Telefone", random: "Chave Aleatória",
+};
+
 // Cities with full platform support (motoboys available)
 const PLATFORM_CITIES = ["itatinga"];
 
@@ -25,6 +29,8 @@ const schema = z.object({
   storeName: z.string().trim().min(3, "Nome da loja deve ter pelo menos 3 caracteres").max(100),
   document: z.string().trim().min(11, "CPF/CNPJ inválido").max(18),
   birthDate: z.string().min(10, "Data de nascimento obrigatória").max(10),
+  pixType: z.enum(["cpf", "cnpj", "email", "phone", "random"] as const, { errorMap: () => ({ message: "Selecione o tipo da chave PIX" }) }),
+  pixKey: z.string().trim().min(1, "Chave PIX obrigatória").max(100),
   storeCategory: z.enum(storeCategories as unknown as [string, ...string[]], { errorMap: () => ({ message: "Selecione uma categoria" }) }),
   cep: z.string().min(8, "CEP inválido"),
   city: z.string().min(1, "Busque o CEP para identificar a cidade"),
@@ -38,6 +44,8 @@ const CadastroLojista = () => {
   const [document, setDocument] = useState("");
   const [storeCategory, setStoreCategory] = useState("");
   const [birthDate, setBirthDate] = useState("");
+  const [pixType, setPixType] = useState("");
+  const [pixKey, setPixKey] = useState("");
   const [cep, setCep] = useState("");
   const [city, setCity] = useState("");
   const [street, setStreet] = useState("");
@@ -90,7 +98,7 @@ const CadastroLojista = () => {
     e.preventDefault();
     setErrors({});
 
-    const result = schema.safeParse({ email, password, storeName, document, birthDate, storeCategory, cep, city });
+    const result = schema.safeParse({ email, password, storeName, document, birthDate, pixType, pixKey, storeCategory, cep, city });
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
       result.error.errors.forEach((err) => {
@@ -112,6 +120,8 @@ const CadastroLojista = () => {
             role: "lojista",
             document: document.trim(),
             birth_date: birthDate,
+            pix_type: pixType,
+            pix_key: pixKey.trim(),
             store_name: storeName.trim(),
             store_category: storeCategory,
             city: normalizedCity,
