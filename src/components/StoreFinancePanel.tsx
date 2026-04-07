@@ -416,12 +416,14 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
     const text = `📊 Resumo Financeiro ItaSuper - ${storeName}\n` +
       `Período: ${format(dateRange.start, "dd/MM", { locale: ptBR })} a ${format(dateRange.end, "dd/MM/yyyy", { locale: ptBR })}\n\n` +
       `💰 Vendas Totais: R$ ${totalSales.toFixed(2)}\n` +
-      `🏪 Minha Parte (85%): R$ ${storePart.toFixed(2)}\n` +
-      `📱 Comissão ItaSuper (15%): R$ ${totalCommission.toFixed(2)}\n\n` +
-      `--- Detalhes ---\n` +
-      `Vendas Presenciais: R$ ${physicalSales.toFixed(2)}\n` +
+      `📱 Comissão Total (15%): R$ ${totalCommission.toFixed(2)}\n\n` +
+      `--- Vendas via App (Split Automático ✅) ---\n` +
       `Vendas PIX App: R$ ${appSales.toFixed(2)}\n` +
-      `Saldo de Acerto: R$ ${Math.abs(finalBalance).toFixed(2)} ${finalBalance >= 0 ? "(Admin deve à Loja)" : "(Loja deve ao Admin)"}`;
+      `Comissão retida: R$ ${multiplyMoney(appSales, 0.15).toFixed(2)}\n` +
+      `Lojista recebeu: R$ ${creditFromApp.toFixed(2)}\n\n` +
+      `--- Vendas Físicas (Cobrança Manual) ---\n` +
+      `Vendas Dinheiro/Cartão: R$ ${physicalSales.toFixed(2)}\n` +
+      `Comissão a cobrar: R$ ${commissionDue.toFixed(2)}`;
     navigator.clipboard.writeText(text);
     toast.success("Resumo copiado!");
   };
