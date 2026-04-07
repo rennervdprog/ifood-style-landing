@@ -686,6 +686,12 @@ const AdminDashboard = () => {
                   </div>
                 </div>
               )}
+              {/* Commission Alert */}
+              <CommissionAlert
+                storeId={store.id}
+                storeName={store.name}
+                onGoToFinance={() => setDashboardTab("finance")}
+              />
               {/* At-a-Glance Cards */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 <GlanceCard
