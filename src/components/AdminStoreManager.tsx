@@ -95,6 +95,36 @@ const AdminStoreManager = () => {
     blocked: stores?.filter((s) => s.status === "bloqueado").length || 0,
   };
 
+  const storesWithoutWallet = stores?.filter((s) => s.status === "ativo" && !s.asaas_wallet_id) || [];
+
+  const handleBulkCreateWallets = async () => {
+    if (storesWithoutWallet.length === 0) {
+      toast.info("Todas as lojas ativas já possuem subconta Asaas.");
+      return;
+    }
+    setBulkCreating(true);
+    let success = 0;
+    let failed = 0;
+    for (const store of storesWithoutWallet) {
+      try {
+        const { error } = await supabase.functions.invoke("asaas-subaccount", {
+          body: { store_id: store.id },
+        });
+        if (error) throw error;
+        success++;
+      } catch {
+        failed++;
+      }
+    }
+    setBulkCreating(false);
+    queryClient.invalidateQueries({ queryKey: ["admin-stores-list"] });
+    if (failed === 0) {
+      toast.success(`✅ ${success} subconta(s) criada(s) com sucesso!`);
+    } else {
+      toast.warning(`${success} criadas, ${failed} falharam. Tente novamente nas que faltam.`);
+    }
+  };
+
   const filters: { key: StoreFilter; label: string }[] = [
     { key: "all", label: `Todas (${counts.all})` },
     { key: "pending", label: `Pendentes (${counts.pending})` },
