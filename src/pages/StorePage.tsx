@@ -646,6 +646,7 @@ const StorePage = () => {
                     key={product.id}
                     product={product}
                     disabled={!storeStatus.isOpen}
+                    storeCategory={store?.category}
                     onClick={() => {
                       if (!storeStatus.isOpen) { toast.error(`Loja fechada. ${storeStatus.reason}`); return; }
                       setSelectedProduct(product);
@@ -684,6 +685,7 @@ const StorePage = () => {
                         key={product.id}
                         product={product}
                         disabled={!storeStatus.isOpen}
+                        storeCategory={store?.category}
                         onClick={() => {
                           if (!storeStatus.isOpen) { toast.error(`Loja fechada. ${storeStatus.reason}`); return; }
                           setSelectedProduct(product);
@@ -711,6 +713,7 @@ const StorePage = () => {
                       key={product.id}
                       product={product}
                       disabled={!storeStatus.isOpen}
+                      storeCategory={store?.category}
                       onClick={() => {
                         if (!storeStatus.isOpen) { toast.error(`Loja fechada. ${storeStatus.reason}`); return; }
                         setSelectedProduct(product);
