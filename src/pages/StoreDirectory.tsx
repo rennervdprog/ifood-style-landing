@@ -109,108 +109,36 @@ const Navbar = ({ onNavigate }: { onNavigate: (path: string) => void }) => {
   );
 };
 
-/* ──────────────────── Device Mockups (CSS-only) ──────────────────── */
+/* ──────────────────── Device Mockups (real images) ──────────────────── */
 const DeviceMockups = () => (
-  <div className="relative w-full max-w-xl mx-auto h-[340px] sm:h-[400px] select-none" aria-label="Mockups do app ItaSuper em celular, tablet e notebook">
-    {/* Notebook */}
-    <div
-      className="absolute left-0 top-4 w-[280px] sm:w-[340px] rounded-xl shadow-2xl overflow-hidden border"
-      style={{ borderColor: "#D1D5DB", transform: "perspective(800px) rotateY(6deg)" }}
-    >
-      <div className="h-5 flex items-center gap-1.5 px-3" style={{ background: "#E5E7EB" }}>
-        <span className="w-2 h-2 rounded-full bg-red-400" />
-        <span className="w-2 h-2 rounded-full bg-yellow-400" />
-        <span className="w-2 h-2 rounded-full bg-green-400" />
-      </div>
-      <div className="p-3" style={{ background: THEME.white }}>
-        <div className="rounded-lg p-3" style={{ background: THEME.grayBg }}>
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-6 h-6 rounded" style={{ background: THEME.primary }} />
-            <div className="h-2.5 rounded-full w-20" style={{ background: "#D1D5DB" }} />
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="rounded-lg p-2" style={{ background: THEME.white }}>
-                <div className="h-2 rounded-full mb-1.5" style={{ background: THEME.primaryLight, width: "70%" }} />
-                <div className="h-6 rounded font-bold text-xs flex items-center justify-center" style={{ color: THEME.primary }}>
-                  {i === 1 ? "R$ 1.240" : i === 2 ? "34" : "4.8★"}
-                </div>
-                <div className="h-1.5 rounded-full mt-1" style={{ background: "#E5E7EB", width: "90%" }} />
-              </div>
-            ))}
-          </div>
-          <div className="mt-3 space-y-1.5">
-            {[1, 2].map((i) => (
-              <div key={i} className="flex items-center gap-2 rounded-lg p-2" style={{ background: THEME.white }}>
-                <div className="w-8 h-8 rounded-lg shrink-0" style={{ background: i === 1 ? "#DCFCE7" : "#FEF3C7" }} />
-                <div className="flex-1">
-                  <div className="h-2 rounded-full mb-1" style={{ background: "#D1D5DB", width: "60%" }} />
-                  <div className="h-1.5 rounded-full" style={{ background: "#E5E7EB", width: "40%" }} />
-                </div>
-                <div
-                  className="text-[9px] font-bold px-2 py-0.5 rounded-full"
-                  style={{ background: i === 1 ? "#DCFCE7" : "#FEF3C7", color: i === 1 ? "#16A34A" : "#CA8A04" }}
-                >
-                  {i === 1 ? "Entregue" : "Preparando"}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-
-    {/* Tablet */}
-    <div
-      className="absolute right-8 sm:right-16 top-6 w-[160px] sm:w-[190px] rounded-2xl shadow-2xl overflow-hidden border-2"
-      style={{ borderColor: "#1C1E21", transform: "perspective(800px) rotateY(-4deg)" }}
-    >
-      <div className="p-2.5" style={{ background: THEME.white }}>
-        <div className="flex items-center gap-1.5 mb-2">
-          <div className="w-5 h-5 rounded" style={{ background: THEME.primary }} />
-          <span className="text-[9px] font-bold" style={{ color: "#1C1E21" }}>Painel Lojista</span>
-        </div>
-        <div className="rounded-lg p-2 mb-2" style={{ background: THEME.primaryLight }}>
-          <div className="text-[8px] font-semibold" style={{ color: THEME.primary }}>Vendas hoje</div>
-          <div className="text-sm font-extrabold" style={{ color: THEME.primaryDark }}>R$ 487,00</div>
-        </div>
-        <div className="space-y-1.5">
-          {["Pedido #42", "Pedido #41"].map((p) => (
-            <div key={p} className="flex items-center justify-between p-1.5 rounded" style={{ background: THEME.grayBg }}>
-              <span className="text-[8px] font-semibold" style={{ color: "#1C1E21" }}>{p}</span>
-              <CheckCircle2 className="h-3 w-3" style={{ color: "#16A34A" }} />
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-
-    {/* Smartphone */}
-    <div
-      className="absolute right-0 bottom-0 w-[120px] sm:w-[140px] rounded-[20px] shadow-2xl overflow-hidden border-2"
-      style={{ borderColor: "#1C1E21", transform: "perspective(800px) rotateY(-6deg)" }}
-    >
-      <div className="h-4 flex justify-center items-end" style={{ background: "#1C1E21" }}>
-        <div className="w-10 h-1.5 rounded-full mb-0.5" style={{ background: "#374151" }} />
-      </div>
-      <div className="p-2" style={{ background: THEME.white }}>
-        <div className="text-[8px] font-bold mb-1.5" style={{ color: "#1C1E21" }}>Minhas Entregas</div>
-        <div className="rounded-lg p-1.5 mb-1.5" style={{ background: "#DCFCE7" }}>
-          <div className="text-[7px] font-semibold" style={{ color: "#16A34A" }}>Entrega em andamento</div>
-          <div className="text-[9px] font-extrabold mt-0.5" style={{ color: "#1C1E21" }}>R. da Saudade, 123</div>
-        </div>
-        <div className="flex gap-1.5">
-          <div className="flex-1 rounded p-1" style={{ background: THEME.grayBg }}>
-            <div className="text-[7px]" style={{ color: "#606770" }}>Hoje</div>
-            <div className="text-[10px] font-bold" style={{ color: THEME.primary }}>R$ 68</div>
-          </div>
-          <div className="flex-1 rounded p-1" style={{ background: THEME.grayBg }}>
-            <div className="text-[7px]" style={{ color: "#606770" }}>Corridas</div>
-            <div className="text-[10px] font-bold" style={{ color: THEME.primary }}>7</div>
-          </div>
-        </div>
-      </div>
-    </div>
+  <div className="relative w-full max-w-2xl mx-auto h-[340px] sm:h-[440px] select-none" aria-label="Mockups do app ItaSuper em celular, tablet e notebook">
+    {/* Laptop — back left */}
+    <img
+      src={mockupLaptop}
+      alt="Painel administrativo do ItaSuper no notebook"
+      width={680}
+      height={680}
+      fetchPriority="high"
+      className="absolute left-0 top-0 w-[320px] sm:w-[420px] drop-shadow-2xl"
+    />
+    {/* Tablet — middle right */}
+    <img
+      src={mockupTablet}
+      alt="Painel do lojista no tablet"
+      width={400}
+      height={400}
+      fetchPriority="high"
+      className="absolute right-4 sm:right-8 top-4 w-[160px] sm:w-[220px] drop-shadow-2xl"
+    />
+    {/* Phone — front right */}
+    <img
+      src={mockupPhone}
+      alt="App de entregas do ItaSuper no iPhone"
+      width={280}
+      height={280}
+      fetchPriority="high"
+      className="absolute right-0 bottom-0 w-[120px] sm:w-[160px] drop-shadow-2xl"
+    />
   </div>
 );
 
