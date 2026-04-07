@@ -101,6 +101,8 @@ type ClientFilter = "all" | "loyal" | "inactive" | "location";
 const AdminDashboard = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const simulateStoreId = searchParams.get("storeId");
   const queryClient = useQueryClient();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const loopIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -134,8 +136,14 @@ const AdminDashboard = () => {
 
   // ── DATA QUERIES ──
   const { data: store } = useQuery({
-    queryKey: ["my-store", user?.id],
+    queryKey: ["my-store", user?.id, simulateStoreId],
     queryFn: async () => {
+      if (simulateStoreId) {
+        // Admin simulation mode: load specific store
+        const { data, error } = await supabase.from("stores").select("*").eq("id", simulateStoreId).single();
+        if (error) throw error;
+        return data;
+      }
       const { data, error } = await supabase.from("stores").select("*").eq("owner_id", user!.id).single();
       if (error) throw error;
       return data;
