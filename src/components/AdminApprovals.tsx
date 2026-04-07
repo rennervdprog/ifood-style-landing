@@ -133,7 +133,7 @@ const AdminApprovals = () => {
                   {p.role === "lojista" ? (
                     <Store className="h-4 w-4 text-orange-500" />
                   ) : (
-                    <Bike className="h-4 w-4 text-blue-500" />
+                   <Bike className="h-4 w-4 text-primary" />
                   )}
                   <div>
                     <p className="text-sm font-bold text-foreground">{p.full_name || "Sem nome"}</p>
