@@ -174,8 +174,12 @@ const AdminApprovals = () => {
                 </span>
               </div>
               {p.vehicle && (
-                <p className="text-xs text-muted-foreground mb-2">🏍️ {p.vehicle}</p>
+                <p className="text-xs text-muted-foreground mb-1">🏍️ Placa: {p.vehicle}</p>
               )}
+              {(p as any).cnh_number && (
+                <p className="text-xs text-muted-foreground mb-1">📄 CNH: {(p as any).cnh_number}</p>
+              )}
+              {p.role === "motoboy" && <DriverDocuments profile={p} />}
               <div className="flex gap-2">
                 {(p as any).whatsapp_number && (
                   <WhatsAppButton
