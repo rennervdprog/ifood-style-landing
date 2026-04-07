@@ -147,6 +147,21 @@ const SuperAdminDashboard = () => {
     enabled: isAdmin && activeTab === "financeiro",
   });
 
+  // Compliance alerts
+  const { data: complianceAlerts } = useQuery({
+    queryKey: ["compliance-alerts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("compliance_alerts" as any)
+        .select("*, stores:store_id(name)")
+        .eq("is_resolved", false)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: isAdmin,
+  });
+
   const { data: withdrawalRequests } = useQuery({
     queryKey: ["withdrawal-requests"],
     queryFn: async () => {
