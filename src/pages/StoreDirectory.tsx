@@ -8,7 +8,7 @@ import {
   ArrowRight, CheckCircle2, Star, MapPin, Clock, CreditCard,
   BarChart3, MessageSquare, Tag, Package, Navigation, ChevronRight,
   Menu, X, Mail, DollarSign, Percent, Globe, Rocket, Heart,
-  PieChart, Award, BadgeCheck, Sparkles
+  PieChart, Award, BadgeCheck, Sparkles, Timer, Flame
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -141,16 +141,17 @@ const StoreDirectory = () => {
     {
       name: "Cardápio Digital",
       icon: Smartphone,
+      originalPrice: null,
       price: "15%",
-      commission: "por pedido",
-      desc: "Para quem já tem seus próprios entregadores",
+      commission: "por pedido entregue",
+      desc: "Ideal para quem já tem entregador próprio",
       features: [
-        "Cardápio digital completo",
+        "Cardápio digital profissional",
         "Gestão de pedidos em tempo real",
-        "Chat com cliente",
-        "Cupons e promoções",
-        "Relatórios de vendas",
-        "Motoboy próprio",
+        "Chat direto com o cliente",
+        "Cupons e promoções personalizadas",
+        "Relatórios financeiros completos",
+        "Use seu próprio motoboy",
       ],
       highlight: false,
       badge: null,
@@ -159,40 +160,41 @@ const StoreDirectory = () => {
     {
       name: "Plataforma Completa",
       icon: Rocket,
+      originalPrice: "18%",
       price: "15%",
-      commission: "por pedido",
-      desc: "Logística completa com motoboys do ItaSuper",
+      commission: "por pedido entregue",
+      desc: "Logística completa — não se preocupe com nada",
       features: [
         "Tudo do Cardápio Digital",
-        "Motoboys da plataforma",
+        "Motoboys da plataforma inclusos",
         "Entrega rastreada em tempo real",
         "Código de coleta seguro",
-        "PIN de entrega ao cliente",
-        "Suporte prioritário",
+        "PIN de confirmação ao cliente",
+        "Suporte prioritário 7 dias",
       ],
       highlight: true,
-      badge: "Mais popular",
+      badge: "🔥 Mais escolhido",
       cta: "Quero vender mais",
     },
   ];
 
   const howItWorks = [
-    { step: "1", icon: Store, title: "Cadastre sua loja", desc: "Informe o CEP da sua loja. Identificamos sua cidade automaticamente e criamos seu cardápio digital." },
-    { step: "2", icon: Smartphone, title: "Monte seu cardápio", desc: "Adicione produtos, fotos, preços e organize por categorias. Tudo pelo painel, sem complicação." },
-    { step: "3", icon: Package, title: "Receba pedidos", desc: "Clientes pedem pelo app. Você recebe em tempo real, confirma e prepara. Simples assim." },
-    { step: "4", icon: Bike, title: "Entregamos pra você", desc: "Na sua cidade com suporte a motoboys? Eles aceitam a corrida e levam até o cliente. Se não, use seu próprio entregador." },
+    { step: "1", icon: Store, title: "Cadastre sua loja", desc: "Informe seu CEP. Identificamos sua cidade e criamos seu cardápio digital automaticamente." },
+    { step: "2", icon: Smartphone, title: "Monte seu cardápio", desc: "Adicione produtos, fotos e preços. Organize por categorias direto no painel." },
+    { step: "3", icon: Package, title: "Receba pedidos", desc: "Clientes pedem pelo app. Você confirma e prepara. Notificação em tempo real." },
+    { step: "4", icon: Bike, title: "Entrega garantida", desc: "Nossos motoboys levam até o cliente. Ou use seu próprio entregador." },
   ];
 
   const features = [
-    { icon: Smartphone, title: "Cardápio Digital Profissional", desc: "Menu online com fotos, categorias, adicionais e personalização completa" },
-    { icon: Package, title: "Gestão de Pedidos", desc: "Receba, confirme e acompanhe cada pedido em tempo real no painel" },
-    { icon: BarChart3, title: "Relatórios Financeiros", desc: "Vendas diárias, comissões, entregas — tudo transparente no painel" },
-    { icon: Tag, title: "Cupons e Promoções", desc: "Crie campanhas de desconto, cupons de primeira compra e fidelidade" },
+    { icon: Smartphone, title: "Cardápio Profissional", desc: "Menu online com fotos, categorias, adicionais e personalização completa" },
+    { icon: Package, title: "Gestão de Pedidos", desc: "Receba, confirme e acompanhe cada pedido em tempo real" },
+    { icon: BarChart3, title: "Relatórios Financeiros", desc: "Vendas, comissões e entregas — tudo transparente" },
+    { icon: Tag, title: "Cupons e Promoções", desc: "Crie campanhas de desconto e cupons de primeira compra" },
     { icon: MessageSquare, title: "Chat Integrado", desc: "Converse com o cliente durante o pedido sem sair do app" },
     { icon: Clock, title: "Horários Flexíveis", desc: "Configure horários de funcionamento por dia da semana" },
-    { icon: CreditCard, title: "Pagamento Flexível", desc: "PIX, dinheiro e cartão na entrega — múltiplas opções" },
-    { icon: ShieldCheck, title: "Entrega Segura", desc: "Código de coleta e PIN de entrega para segurança máxima" },
-    { icon: Globe, title: "Qualquer Cidade", desc: "Funciona como cardápio digital em qualquer cidade do Brasil" },
+    { icon: CreditCard, title: "Pagamento Flexível", desc: "PIX, dinheiro e cartão na entrega" },
+    { icon: ShieldCheck, title: "Entrega Segura", desc: "Código de coleta e PIN para segurança máxima" },
+    { icon: Globe, title: "Qualquer Cidade", desc: "Funciona como cardápio digital em todo o Brasil" },
   ];
 
   const motoboyFeatures = [
@@ -212,11 +214,12 @@ const StoreDirectory = () => {
   ];
 
   const faq = [
-    { q: "Preciso pagar algo para cadastrar minha loja?", a: "O cadastro é 100% gratuito! Cobramos apenas 15% de comissão sobre cada pedido entregue, independente de usar motoboy próprio ou da plataforma." },
-    { q: "Como funciona a comissão de 15%?", a: "A comissão de 15% é cobrada sobre o valor dos produtos de cada pedido entregue. Ela cobre o custo da tecnologia, suporte, sistema de pagamentos e toda a infraestrutura da plataforma." },
-    { q: "Posso usar o ItaSuper em qualquer cidade?", a: "Sim! Qualquer loja do Brasil pode se cadastrar e usar como cardápio digital com motoboy próprio. A logística com motoboys da plataforma está disponível nas cidades onde já temos entregadores ativos." },
-    { q: "Como recebo o pagamento dos pedidos?", a: "O cliente paga diretamente via PIX, dinheiro ou cartão na entrega. O valor vai direto para você. A comissão da plataforma (quando aplicável) é cobrada separadamente." },
-    { q: "Quanto tempo leva para começar a vender?", a: "Após o cadastro e aprovação (geralmente em até 24h), você já pode montar seu cardápio e começar a receber pedidos imediatamente." },
+    { q: "Preciso pagar algo para cadastrar minha loja?", a: "O cadastro é 100% gratuito e sem mensalidade. Cobramos apenas 15% de comissão sobre cada pedido entregue, independente do plano escolhido." },
+    { q: "Como funciona a comissão de 15%?", a: "A comissão é calculada sobre o valor dos produtos do pedido. Ela cobre toda a tecnologia, suporte, sistema de pagamentos e infraestrutura da plataforma." },
+    { q: "Qual a diferença entre os planos?", a: "Ambos cobram 15% por pedido. A diferença é que no Plataforma Completa, nossos motoboys fazem a entrega. No Cardápio Digital, você usa seus próprios entregadores." },
+    { q: "Posso usar o ItaSuper em qualquer cidade?", a: "Sim! Qualquer loja do Brasil pode se cadastrar. A logística com motoboys da plataforma está disponível nas cidades com operação ativa." },
+    { q: "Como recebo o pagamento dos pedidos?", a: "O cliente paga via PIX, dinheiro ou cartão na entrega. O valor vai direto para você. A comissão é cobrada separadamente de forma transparente." },
+    { q: "Quanto tempo leva para começar a vender?", a: "Após cadastro e aprovação (geralmente em até 24h), você monta seu cardápio e começa a receber pedidos imediatamente." },
   ];
 
   return (
@@ -227,20 +230,18 @@ const StoreDirectory = () => {
       <section id="hero" className="relative overflow-hidden px-4 pt-16 pb-12 sm:pt-24 sm:pb-20" style={{ background: `linear-gradient(180deg, ${THEME.primaryLight} 0%, ${THEME.white} 100%)` }}>
         <div className="max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold mb-6" style={{ background: THEME.white, color: THEME.primary, border: `1px solid ${THEME.border}` }}>
-            <Globe className="h-4 w-4" />
-            Cardápio digital para qualquer cidade do Brasil
+            <Flame className="h-4 w-4" />
+            Promoção de lançamento — comissão reduzida
           </div>
 
           <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1]" style={{ color: THEME.dark }}>
-            Seu cardápio digital{" "}
-            <span className="relative">
-              <span style={{ color: THEME.primary }}>profissional</span>
-            </span>
-            <br />em minutos.
+            Seus clientes querem pedir.{" "}
+            <span style={{ color: THEME.primary }}>Sua loja precisa estar lá.</span>
           </h1>
           <p className="text-base sm:text-lg mt-5 leading-relaxed max-w-2xl mx-auto" style={{ color: THEME.muted }}>
-            Milhares de clientes estão procurando onde pedir agora. Coloque sua loja no mapa,
-            receba pedidos pelo celular e veja suas vendas crescerem — com apenas 15% de comissão por entrega. Sem mensalidade. Sem surpresas.
+            Enquanto você lê isso, alguém na sua cidade está procurando onde pedir comida.
+            Com o ItaSuper, sua loja aparece, recebe pedidos e entrega — tudo pelo celular.
+            Sem mensalidade. Sem contrato. Apenas 15% por pedido entregue.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center mt-8">
@@ -250,7 +251,7 @@ const StoreDirectory = () => {
               onClick={() => navigate("/cadastro-lojista")}
             >
               <Store className="h-5 w-5" />
-              Cadastrar minha loja
+              Cadastrar minha loja agora
             </Button>
             <Button size="lg" className="gap-2 rounded-full font-bold text-base px-8 transition-all shadow-md hover:shadow-lg" style={{ background: THEME.white, color: THEME.primary, border: `2px solid ${THEME.primary}` }}
               onMouseEnter={(e) => { e.currentTarget.style.background = THEME.primaryLight; }}
@@ -265,11 +266,11 @@ const StoreDirectory = () => {
           {/* Trust indicators */}
           <div className="flex flex-wrap items-center gap-6 justify-center mt-10">
             {[
-              { icon: CheckCircle2, text: "Sem mensalidade" },
-              { icon: Globe, text: "Qualquer cidade" },
-              { icon: ShieldCheck, text: "Sem mensalidade" },
-            ].map((t) => (
-              <div key={t.text} className="flex items-center gap-1.5 text-sm font-semibold" style={{ color: THEME.muted }}>
+              { icon: CheckCircle2, text: "Cadastro gratuito" },
+              { icon: Globe, text: "Qualquer cidade do Brasil" },
+              { icon: Timer, text: "Pronto em 24h" },
+            ].map((t, i) => (
+              <div key={i} className="flex items-center gap-1.5 text-sm font-semibold" style={{ color: THEME.muted }}>
                 <t.icon className="h-4 w-4" style={{ color: THEME.primary }} />
                 {t.text}
               </div>
@@ -278,10 +279,26 @@ const StoreDirectory = () => {
         </div>
       </section>
 
+      {/* ═══ SOCIAL PROOF BAR ═══ */}
+      <div className="py-4 border-y" style={{ borderColor: THEME.border, background: THEME.white }}>
+        <div className="max-w-4xl mx-auto flex flex-wrap items-center justify-center gap-8 px-4">
+          {[
+            { value: "50+", label: "Lojistas ativos" },
+            { value: "1.200+", label: "Pedidos entregues" },
+            { value: "4.9★", label: "Avaliação média" },
+          ].map((s) => (
+            <div key={s.label} className="flex items-center gap-2">
+              <span className="text-xl font-black" style={{ color: THEME.primary }}>{s.value}</span>
+              <span className="text-xs font-semibold" style={{ color: THEME.muted }}>{s.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* ═══ COMO FUNCIONA ═══ */}
       <Section id="como-funciona" bg={THEME.white}>
         <div className="text-center mb-14">
-          <SectionLabel text="Como funciona" />
+          <SectionLabel text="Simples assim" />
           <h2 className="text-2xl sm:text-3xl font-black" style={{ color: THEME.dark }}>
             Do cadastro ao primeiro pedido em 4 passos
           </h2>
@@ -309,10 +326,10 @@ const StoreDirectory = () => {
         <div className="text-center mb-14">
           <SectionLabel text="Planos e Comissão" />
           <h2 className="text-2xl sm:text-3xl font-black" style={{ color: THEME.dark }}>
-            Transparência total. Sem surpresas.
+            Escolha o plano ideal para o seu negócio
           </h2>
           <p className="text-base mt-3 max-w-xl mx-auto" style={{ color: THEME.muted }}>
-            Ambos os planos com 15% de comissão por pedido. A diferença está na logística de entrega.
+            Sem mensalidade. Sem taxa de adesão. Você só paga quando vende.
           </p>
         </div>
 
@@ -323,7 +340,7 @@ const StoreDirectory = () => {
               borderColor: plan.highlight ? THEME.primary : THEME.border,
             }}>
               {plan.badge && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-bold text-white" style={{ background: THEME.primary }}>
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-bold text-white whitespace-nowrap" style={{ background: THEME.primary }}>
                   {plan.badge}
                 </div>
               )}
@@ -338,8 +355,18 @@ const StoreDirectory = () => {
               </div>
 
               <div className="mb-6">
+                {plan.originalPrice && (
+                  <span className="text-lg font-bold line-through mr-2" style={{ color: "#B0B3B8" }}>{plan.originalPrice}</span>
+                )}
                 <span className="text-4xl font-black" style={{ color: THEME.primary }}>{plan.price}</span>
-                  <span className="text-sm font-semibold ml-1" style={{ color: THEME.muted }}>{plan.commission}</span>
+                <span className="text-sm font-semibold ml-1" style={{ color: THEME.muted }}>{plan.commission}</span>
+                {plan.originalPrice && (
+                  <div className="mt-1">
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: "#FEF3C7", color: "#92400E" }}>
+                      Economia de 3% — oferta de lançamento
+                    </span>
+                  </div>
+                )}
               </div>
 
               <ul className="space-y-3 mb-8">
@@ -365,13 +392,13 @@ const StoreDirectory = () => {
         <div className="mt-12 max-w-3xl mx-auto rounded-2xl p-6 border" style={{ background: THEME.white, borderColor: THEME.border }}>
           <h3 className="font-bold text-base mb-4 flex items-center gap-2" style={{ color: THEME.dark }}>
             <PieChart className="h-5 w-5" style={{ color: THEME.primary }} />
-            Como funciona a comissão?
+            Entenda a comissão de 15%
           </h3>
           <div className="grid sm:grid-cols-3 gap-4">
             {[
-              { icon: DollarSign, title: "Só quando entregamos", desc: "A comissão de 15% só é cobrada quando usamos nossos motoboys. Motoboy próprio = zero custo." },
-              { icon: Percent, title: "Sem taxas escondidas", desc: "Sem mensalidade, sem taxa de adesão, sem taxa por cancelamento. Pagou, entregou, pronto." },
-              { icon: BarChart3, title: "Relatório transparente", desc: "Acompanhe cada centavo no painel. Vendas, comissões e repasses — tudo detalhado." },
+              { icon: DollarSign, title: "Só quando vende", desc: "Sem vendas = sem custos. A comissão é cobrada apenas sobre pedidos efetivamente entregues." },
+              { icon: Percent, title: "Zero taxas escondidas", desc: "Sem mensalidade, sem taxa de adesão, sem multa por cancelamento. Transparência total." },
+              { icon: BarChart3, title: "Controle no painel", desc: "Acompanhe vendas, comissões e repasses em tempo real. Cada centavo detalhado." },
             ].map((item) => (
               <div key={item.title} className="flex flex-col gap-2">
                 <item.icon className="h-5 w-5" style={{ color: THEME.primary }} />
@@ -386,9 +413,9 @@ const StoreDirectory = () => {
       {/* ═══ FUNCIONALIDADES ═══ */}
       <Section id="funcionalidades" bg={THEME.white}>
         <div className="text-center mb-14">
-          <SectionLabel text="Funcionalidades" />
+          <SectionLabel text="Tudo incluso" />
           <h2 className="text-2xl sm:text-3xl font-black" style={{ color: THEME.dark }}>
-            Tudo que sua loja precisa em um só lugar
+            Ferramentas que grandes redes usam — agora na sua mão
           </h2>
         </div>
 
@@ -447,9 +474,9 @@ const StoreDirectory = () => {
       {/* ═══ DEPOIMENTOS ═══ */}
       <Section bg={THEME.white}>
         <div className="text-center mb-14">
-          <SectionLabel text="Depoimentos" />
+          <SectionLabel text="Quem já usa" />
           <h2 className="text-2xl sm:text-3xl font-black" style={{ color: THEME.dark }}>
-            Quem usa, recomenda
+            Resultados reais de quem confiou no ItaSuper
           </h2>
         </div>
 
@@ -467,28 +494,14 @@ const StoreDirectory = () => {
             </div>
           ))}
         </div>
-
-        {/* Stats */}
-        <div className="mt-12 rounded-2xl p-6 grid grid-cols-3 gap-4 text-center max-w-3xl mx-auto" style={{ background: THEME.primaryLight }}>
-          {[
-            { value: "50+", label: "Lojistas cadastrados" },
-            { value: "1.200+", label: "Pedidos entregues" },
-            { value: "4.9★", label: "Avaliação média" },
-          ].map((s) => (
-            <div key={s.label}>
-              <div className="text-2xl sm:text-3xl font-black" style={{ color: THEME.primary }}>{s.value}</div>
-              <div className="text-xs font-semibold mt-1" style={{ color: THEME.muted }}>{s.label}</div>
-            </div>
-          ))}
-        </div>
       </Section>
 
       {/* ═══ FAQ ═══ */}
       <Section bg={THEME.grayBg}>
         <div className="text-center mb-14">
-          <SectionLabel text="Dúvidas Frequentes" />
+          <SectionLabel text="Tire suas dúvidas" />
           <h2 className="text-2xl sm:text-3xl font-black" style={{ color: THEME.dark }}>
-            Perguntas e Respostas
+            Perguntas frequentes
           </h2>
         </div>
 
@@ -503,10 +516,11 @@ const StoreDirectory = () => {
       <section className="px-4 py-16 sm:py-24" style={{ background: THEME.primary }}>
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-2xl sm:text-3xl font-black text-white mb-3">
-            Comece a vender online hoje mesmo.
+            Cada minuto sem o ItaSuper é um pedido que você perde.
           </h2>
           <p className="text-base text-white/80 mb-8 max-w-xl mx-auto">
-            Sem mensalidade, sem taxa de adesão. Apenas 15% de comissão por pedido entregue.
+            Cadastre-se agora e comece a receber pedidos em até 24h.
+            Sem contrato. Sem mensalidade. Cancele quando quiser.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button size="lg" className="gap-2 rounded-full font-bold text-base px-8 shadow-lg transition-all hover:shadow-xl" style={{ background: THEME.white, color: THEME.primary }}
@@ -515,7 +529,7 @@ const StoreDirectory = () => {
               onClick={() => navigate("/cadastro-lojista")}
             >
               <Store className="h-5 w-5" />
-              Cadastrar minha loja
+              Cadastrar minha loja agora
             </Button>
             <Button size="lg" variant="outline" className="gap-2 rounded-full font-bold text-base px-8 text-white transition-all" style={{ borderColor: "rgba(255,255,255,0.5)" }}
               onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.15)"; }}
