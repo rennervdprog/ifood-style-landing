@@ -30,6 +30,8 @@ const CATEGORY_OPTIONS = [
   { value: "docerias", label: "Docerias" },
 ];
 
+type PizzaPriceMode = "maior" | "media" | "soma";
+
 interface StoreSettingsProps {
   storeId: string;
   storeName: string;
@@ -48,9 +50,10 @@ interface StoreSettingsProps {
   storeAddressCep?: string | null;
   storeDeliveryMode?: string | null;
   storeOwnDeliveryFee?: number | null;
+  storeSettings?: Record<string, any> | null;
 }
 
-const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, storeIsOpen, forceClosed, storeSlug, storeAddressStreet, storeAddressNumber, storeAddressComplement, storeAddressNeighborhood, storeAddressReference, storeAddressCity, storeAddressState, storeAddressCep, storeDeliveryMode, storeOwnDeliveryFee }: StoreSettingsProps) => {
+const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, storeIsOpen, forceClosed, storeSlug, storeAddressStreet, storeAddressNumber, storeAddressComplement, storeAddressNeighborhood, storeAddressReference, storeAddressCity, storeAddressState, storeAddressCep, storeDeliveryMode, storeOwnDeliveryFee, storeSettings }: StoreSettingsProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -74,6 +77,9 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
   const [uploading, setUploading] = useState(false);
   const [deliveryMode, setDeliveryMode] = useState(storeDeliveryMode || "platform");
   const [ownDeliveryFee, setOwnDeliveryFee] = useState(storeOwnDeliveryFee?.toString() || "0");
+
+  const [pizzaHalfEnabled, setPizzaHalfEnabled] = useState<boolean>(storeSettings?.pizza_half_enabled || false);
+  const [pizzaPriceMode, setPizzaPriceMode] = useState<PizzaPriceMode>(storeSettings?.pizza_price_mode || "maior");
 
   // Load whatsapp + pix from profile
   useEffect(() => {
@@ -151,6 +157,11 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
         category: category as any,
         image_url: imageUrl || null,
         slug: cleanSlug || null,
+        settings: {
+          ...(storeSettings || {}),
+          pizza_half_enabled: pizzaHalfEnabled,
+          pizza_price_mode: pizzaPriceMode,
+        },
         delivery_mode: deliveryMode,
         own_delivery_fee: parseFloat(ownDeliveryFee) || 0,
         address_street: addressStreet.trim() || null,
@@ -628,6 +639,81 @@ const NotificationSection = () => {
           </div>
         )}
       </div>
+
+      {/* Pizza Half-and-Half Settings */}
+      {category === "pizzas" && (
+        <div className="bg-muted/50 border border-border rounded-2xl p-4 space-y-4">
+          <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
+            🍕 Configurações de Pizza
+          </label>
+
+          {/* Toggle: allow half-and-half */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-bold text-foreground">Permitir meio a meio</p>
+              <p className="text-[10px] text-muted-foreground">Clientes poderão montar pizza com sabores diferentes</p>
+            </div>
+            <button
+              onClick={() => setPizzaHalfEnabled(!pizzaHalfEnabled)}
+              className={`w-12 h-6 rounded-full transition-colors relative ${pizzaHalfEnabled ? "bg-primary" : "bg-muted-foreground/30"}`}
+            >
+              <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${pizzaHalfEnabled ? "translate-x-6" : "translate-x-0.5"}`} />
+            </button>
+          </div>
+
+          {/* Price calculation mode */}
+          {pizzaHalfEnabled && (
+            <div className="space-y-3 pl-1">
+              <p className="text-xs font-bold text-foreground/70">Como calcular o valor da pizza meio a meio?</p>
+
+              {/* Option 1: Maior valor */}
+              <button
+                onClick={() => setPizzaPriceMode("maior")}
+                className={`w-full text-left p-3 rounded-xl border-2 transition-all ${
+                  pizzaPriceMode === "maior" ? "border-primary bg-primary/10" : "border-border bg-card"
+                }`}
+              >
+                <p className={`text-sm font-bold ${pizzaPriceMode === "maior" ? "text-primary" : "text-foreground"}`}>
+                  💰 Maior valor
+                </p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  Cobra o preço do sabor mais caro. Ex: Calabresa R$40 + Mussarela R$35 = <strong>R$40</strong>
+                </p>
+              </button>
+
+              {/* Option 2: Média */}
+              <button
+                onClick={() => setPizzaPriceMode("media")}
+                className={`w-full text-left p-3 rounded-xl border-2 transition-all ${
+                  pizzaPriceMode === "media" ? "border-primary bg-primary/10" : "border-border bg-card"
+                }`}
+              >
+                <p className={`text-sm font-bold ${pizzaPriceMode === "media" ? "text-primary" : "text-foreground"}`}>
+                  📊 Média dos valores
+                </p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  Cobra a média dos sabores. Ex: Calabresa R$40 + Mussarela R$35 = <strong>R$37,50</strong>
+                </p>
+              </button>
+
+              {/* Option 3: Soma dividida */}
+              <button
+                onClick={() => setPizzaPriceMode("soma")}
+                className={`w-full text-left p-3 rounded-xl border-2 transition-all ${
+                  pizzaPriceMode === "soma" ? "border-primary bg-primary/10" : "border-border bg-card"
+                }`}
+              >
+                <p className={`text-sm font-bold ${pizzaPriceMode === "soma" ? "text-primary" : "text-foreground"}`}>
+                  ➗ Soma dividida
+                </p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  Cobra metade de cada sabor. Ex: Calabresa R$40/2 + Mussarela R$35/2 = <strong>R$37,50</strong>
+                </p>
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Notifications Section */}
       <NotificationSection />
