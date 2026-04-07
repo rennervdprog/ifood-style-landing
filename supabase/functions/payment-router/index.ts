@@ -682,6 +682,7 @@ async function handleOrderPix(
     idempotencyKey,
     expiresAt,
     splitWalletId,
+    splitFixedValue,
   });
 }
 
