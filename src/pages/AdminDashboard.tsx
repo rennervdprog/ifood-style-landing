@@ -523,6 +523,14 @@ const AdminDashboard = () => {
   return (
     <div className="min-h-screen bg-background flex native-app">
       <SimulationBanner />
+      {simulateStoreId && store && (
+        <div className="fixed top-0 left-0 right-0 z-[60] bg-amber-500/90 backdrop-blur text-black px-4 py-2 flex items-center justify-between text-sm font-bold">
+          <span>🧪 Simulando: {(store as any).name} ({(store as any).category})</span>
+          <button onClick={() => navigate("/super-admin")} className="bg-black/20 px-3 py-1 rounded-lg text-xs hover:bg-black/30">
+            ← Voltar
+          </button>
+        </div>
+      )}
 
       {/* Sidebar overlay */}
       {sidebarOpen && <div className="fixed inset-0 bg-black/60 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
