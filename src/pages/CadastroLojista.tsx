@@ -24,6 +24,7 @@ const schema = z.object({
   password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres").max(100),
   storeName: z.string().trim().min(3, "Nome da loja deve ter pelo menos 3 caracteres").max(100),
   document: z.string().trim().min(11, "CPF/CNPJ inválido").max(18),
+  birthDate: z.string().min(10, "Data de nascimento obrigatória").max(10),
   storeCategory: z.enum(storeCategories as unknown as [string, ...string[]], { errorMap: () => ({ message: "Selecione uma categoria" }) }),
   cep: z.string().min(8, "CEP inválido"),
   city: z.string().min(1, "Busque o CEP para identificar a cidade"),
@@ -36,6 +37,7 @@ const CadastroLojista = () => {
   const [storeName, setStoreName] = useState("");
   const [document, setDocument] = useState("");
   const [storeCategory, setStoreCategory] = useState("");
+  const [birthDate, setBirthDate] = useState("");
   const [cep, setCep] = useState("");
   const [city, setCity] = useState("");
   const [street, setStreet] = useState("");
@@ -88,7 +90,7 @@ const CadastroLojista = () => {
     e.preventDefault();
     setErrors({});
 
-    const result = schema.safeParse({ email, password, storeName, document, storeCategory, cep, city });
+    const result = schema.safeParse({ email, password, storeName, document, birthDate, storeCategory, cep, city });
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
       result.error.errors.forEach((err) => {
@@ -109,6 +111,7 @@ const CadastroLojista = () => {
             full_name: storeName.trim(),
             role: "lojista",
             document: document.trim(),
+            birth_date: birthDate,
             store_name: storeName.trim(),
             store_category: storeCategory,
             city: normalizedCity,
@@ -192,6 +195,20 @@ const CadastroLojista = () => {
             </div>
             <FieldInput icon={Store} placeholder="Nome da Loja" value={storeName} onChange={setStoreName} error={errors.storeName} />
             <FieldInput icon={FileText} placeholder="CPF ou CNPJ" value={document} onChange={setDocument} error={errors.document} inputMode="numeric" />
+            <div>
+              <div className="relative">
+                <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <input
+                  type="date"
+                  placeholder="Data de Nascimento"
+                  value={birthDate}
+                  onChange={(e) => setBirthDate(e.target.value)}
+                  className="w-full h-12 pl-10 pr-4 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Data de nascimento do responsável</p>
+              {errors.birthDate && <p className="text-xs text-destructive mt-1">{errors.birthDate}</p>}
+            </div>
 
             <div>
               <select
