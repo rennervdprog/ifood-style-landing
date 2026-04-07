@@ -3,8 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
-import { ArrowLeft, Mail, Lock, Eye, EyeOff, Store, FileText, CheckCircle, MapPin } from "lucide-react";
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, Store, FileText, CheckCircle, MapPin, Search, Loader2 } from "lucide-react";
 import { Constants } from "@/integrations/supabase/types";
+import { formatCep, fetchCep } from "@/lib/cepLookup";
 
 const storeCategories = Constants.public.Enums.store_category;
 
@@ -18,22 +19,14 @@ const categoryLabels: Record<string, string> = {
 // Cities with full platform support (motoboys available)
 const PLATFORM_CITIES = ["itatinga"];
 
-const CITIES = [
-  { value: "itatinga", label: "Itatinga", available: true },
-  { value: "pardinho", label: "Pardinho", available: true },
-  { value: "bofete", label: "Bofete", available: true },
-  { value: "torre_de_pedra", label: "Torre de Pedra", available: true },
-  { value: "botucatu", label: "Botucatu", available: true },
-  { value: "avare", label: "Avaré", available: true },
-];
-
 const schema = z.object({
   email: z.string().trim().email("E-mail inválido").max(255),
   password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres").max(100),
   storeName: z.string().trim().min(3, "Nome da loja deve ter pelo menos 3 caracteres").max(100),
   document: z.string().trim().min(11, "CPF/CNPJ inválido").max(18),
   storeCategory: z.enum(storeCategories as unknown as [string, ...string[]], { errorMap: () => ({ message: "Selecione uma categoria" }) }),
-  city: z.string().min(1, "Selecione a cidade"),
+  cep: z.string().min(8, "CEP inválido"),
+  city: z.string().min(1, "Busque o CEP para identificar a cidade"),
 });
 
 const CadastroLojista = () => {
@@ -43,17 +36,59 @@ const CadastroLojista = () => {
   const [storeName, setStoreName] = useState("");
   const [document, setDocument] = useState("");
   const [storeCategory, setStoreCategory] = useState("");
-  const [city, setCity] = useState("itatinga");
+  const [cep, setCep] = useState("");
+  const [city, setCity] = useState("");
+  const [street, setStreet] = useState("");
+  const [neighborhood, setNeighborhood] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadingCep, setLoadingCep] = useState(false);
   const [success, setSuccess] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const handleCepChange = (value: string) => {
+    const formatted = formatCep(value);
+    setCep(formatted);
+    const digits = value.replace(/\D/g, "");
+    if (digits.length === 8) {
+      handleCepLookup(digits);
+    }
+  };
+
+  const handleCepLookup = async (digits?: string) => {
+    const cepDigits = digits || cep.replace(/\D/g, "");
+    if (cepDigits.length !== 8) {
+      toast.error("Digite um CEP válido com 8 dígitos.");
+      return;
+    }
+    setLoadingCep(true);
+    try {
+      const result = await fetchCep(cepDigits);
+      if (!result) {
+        toast.error("CEP não encontrado.");
+        return;
+      }
+      setStreet(result.logradouro || "");
+      setNeighborhood(result.bairro || "");
+      // Normalize city name for storage
+      const detectedCity = result.localidade || "";
+      setCity(detectedCity);
+      toast.success(`Cidade identificada: ${detectedCity} - ${result.uf}`);
+    } catch {
+      toast.error("Erro ao buscar CEP.");
+    } finally {
+      setLoadingCep(false);
+    }
+  };
+
+  const normalizedCity = city.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_");
+  const isPlatformCity = PLATFORM_CITIES.includes(normalizedCity);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
 
-    const result = schema.safeParse({ email, password, storeName, document, storeCategory, city });
+    const result = schema.safeParse({ email, password, storeName, document, storeCategory, cep, city });
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
       result.error.errors.forEach((err) => {
@@ -76,7 +111,10 @@ const CadastroLojista = () => {
             document: document.trim(),
             store_name: storeName.trim(),
             store_category: storeCategory,
-            city: city,
+            city: normalizedCity,
+            cep: cep.replace(/\D/g, ""),
+            street: street,
+            neighborhood: neighborhood,
           },
         },
       });
@@ -169,27 +207,52 @@ const CadastroLojista = () => {
               {errors.storeCategory && <p className="text-xs text-destructive mt-1">{errors.storeCategory}</p>}
             </div>
 
+            {/* CEP field for city detection */}
             <div>
-              <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <select
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  className="w-full h-12 pl-10 pr-4 rounded-xl border border-border bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm appearance-none"
+              <label className="text-xs font-bold text-muted-foreground mb-1 block">Localização da Loja</label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="CEP da loja (ex: 18690-000)"
+                    value={cep}
+                    onChange={(e) => handleCepChange(e.target.value)}
+                    inputMode="numeric"
+                    maxLength={9}
+                    className="w-full h-12 pl-10 pr-4 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleCepLookup()}
+                  disabled={loadingCep}
+                  className="px-4 h-12 rounded-xl bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50 flex items-center gap-1"
                 >
-                  {CITIES.map((c) => (
-                    <option key={c.value} value={c.value}>
-                      {c.label}{!PLATFORM_CITIES.includes(c.value) ? " — Cardápio Digital" : ""}
-                    </option>
-                  ))}
-                </select>
+                  {loadingCep ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                </button>
               </div>
+              {errors.cep && <p className="text-xs text-destructive mt-1">{errors.cep}</p>}
               {errors.city && <p className="text-xs text-destructive mt-1">{errors.city}</p>}
-              {!PLATFORM_CITIES.includes(city) && (
-                <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
-                  <MapPin className="h-3 w-3" />
-                  Motoboys da plataforma ainda não disponíveis nesta cidade. Sua loja funcionará como cardápio digital com motoboy próprio.
-                </p>
+
+              {city && (
+                <div className="mt-2 p-3 rounded-xl border border-border bg-muted/50">
+                  <p className="text-sm font-bold text-foreground flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-primary" />
+                    {city}
+                    {isPlatformCity ? (
+                      <span className="text-xs bg-emerald-500/10 text-emerald-600 px-2 py-0.5 rounded-full">✅ Plataforma Completa</span>
+                    ) : (
+                      <span className="text-xs bg-amber-500/10 text-amber-600 px-2 py-0.5 rounded-full">📱 Cardápio Digital</span>
+                    )}
+                  </p>
+                  {street && <p className="text-xs text-muted-foreground mt-1">{street}{neighborhood ? ` - ${neighborhood}` : ""}</p>}
+                  {!isPlatformCity && (
+                    <p className="text-xs text-amber-600 mt-1">
+                      Motoboys da plataforma ainda não disponíveis. Sua loja funcionará como cardápio digital com motoboy próprio.
+                    </p>
+                  )}
+                </div>
               )}
             </div>
 
