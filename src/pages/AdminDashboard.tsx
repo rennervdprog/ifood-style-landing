@@ -3,7 +3,7 @@ import SimulationBanner from "@/components/SimulationBanner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import {
   Wifi, WifiOff, Clock, ChefHat, Truck, CheckCircle2,
@@ -101,6 +101,8 @@ type ClientFilter = "all" | "loyal" | "inactive" | "location";
 const AdminDashboard = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const simulateStoreId = searchParams.get("storeId");
   const queryClient = useQueryClient();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const loopIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -134,8 +136,14 @@ const AdminDashboard = () => {
 
   // ── DATA QUERIES ──
   const { data: store } = useQuery({
-    queryKey: ["my-store", user?.id],
+    queryKey: ["my-store", user?.id, simulateStoreId],
     queryFn: async () => {
+      if (simulateStoreId) {
+        // Admin simulation mode: load specific store
+        const { data, error } = await supabase.from("stores").select("*").eq("id", simulateStoreId).single();
+        if (error) throw error;
+        return data;
+      }
       const { data, error } = await supabase.from("stores").select("*").eq("owner_id", user!.id).single();
       if (error) throw error;
       return data;
@@ -515,6 +523,14 @@ const AdminDashboard = () => {
   return (
     <div className="min-h-screen bg-background flex native-app">
       <SimulationBanner />
+      {simulateStoreId && store && (
+        <div className="fixed top-0 left-0 right-0 z-[60] bg-amber-500/90 backdrop-blur text-black px-4 py-2 flex items-center justify-between text-sm font-bold">
+          <span>🧪 Simulando: {(store as any).name} ({(store as any).category})</span>
+          <button onClick={() => navigate("/super-admin")} className="bg-black/20 px-3 py-1 rounded-lg text-xs hover:bg-black/30">
+            ← Voltar
+          </button>
+        </div>
+      )}
 
       {/* Sidebar overlay */}
       {sidebarOpen && <div className="fixed inset-0 bg-black/60 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
