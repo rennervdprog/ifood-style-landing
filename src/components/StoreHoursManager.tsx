@@ -435,7 +435,7 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
       <Button
         onClick={saveSchedule}
         disabled={saving}
-        className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white font-bold rounded-xl shadow-lg shadow-pink-500/20 min-h-[48px]"
+        className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl shadow-lg shadow-primary/20 min-h-[48px]"
         size="lg"
       >
         <Save className="h-4 w-4" />
