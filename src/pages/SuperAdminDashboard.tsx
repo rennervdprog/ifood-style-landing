@@ -469,6 +469,7 @@ const SuperAdminDashboard = () => {
                 {activeTab === "entrega" && "Configurações de taxa de entrega"}
                 {activeTab === "approvals" && "Aprovar parceiros e entregadores"}
                 {activeTab === "stores" && `${stores?.length || 0} lojas cadastradas`}
+                {activeTab === "cidades" && "Lojas por cidade"}
                 {activeTab === "coupons" && "Gerenciar cupons de desconto"}
                 {activeTab === "sync" && "Sincronização com banco externo"}
               </p>
@@ -495,6 +496,7 @@ const SuperAdminDashboard = () => {
             {activeTab === "sync" && <SyncExternalTab />}
             {activeTab === "coupons" && <CouponManager isAdmin />}
             {activeTab === "stores" && <AdminStoreManager />}
+            {activeTab === "cidades" && <CidadesTab stores={stores} />}
             {activeTab === "saques" && (
               <SaquesTab
                 withdrawalRequests={withdrawalRequests}
