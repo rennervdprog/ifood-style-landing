@@ -652,6 +652,25 @@ const AdminDashboard = () => {
           {/* ══════ DASHBOARD TAB ══════ */}
           {dashboardTab === "dashboard" && store && (
             <div className="p-4 lg:p-6 max-w-6xl mx-auto space-y-6">
+              {/* Hours Configuration Alert */}
+              {allHoursClosed && (
+                <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <h3 className="font-bold text-amber-600 text-sm">Configure seus horários de funcionamento</h3>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Sua loja está com todos os horários fechados. Configure os horários para que os clientes possam fazer pedidos.
+                    </p>
+                    <button
+                      onClick={() => setDashboardTab("hours")}
+                      className="mt-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold px-4 py-2 rounded-xl transition-colors"
+                    >
+                      <Clock className="inline h-3 w-3 mr-1" />
+                      Configurar Horários
+                    </button>
+                  </div>
+                </div>
+              )}
               {/* At-a-Glance Cards */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 <GlanceCard
