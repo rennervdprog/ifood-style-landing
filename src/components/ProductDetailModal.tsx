@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Minus, Plus, ShoppingCart } from "lucide-react";
+import { Minus, Plus, ShoppingCart, Pizza } from "lucide-react";
 import type { CartAddon } from "@/contexts/CartContext";
 
 interface Product {
@@ -13,6 +13,7 @@ interface Product {
   description: string | null;
   price: number;
   image_url: string | null;
+  metadata?: Record<string, any>;
 }
 
 interface AddonGroup {
@@ -34,22 +35,28 @@ interface AddonItem {
 interface Props {
   product: Product | null;
   storeName: string;
+  storeCategory?: string;
   open: boolean;
   onClose: () => void;
   onAdd: (product: Product, addons: CartAddon[], observations: string, quantity: number, totalUnitPrice: number) => void;
 }
 
-const ProductDetailModal = ({ product, storeName, open, onClose, onAdd }: Props) => {
+const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, onAdd }: Props) => {
   const [selectedAddons, setSelectedAddons] = useState<Record<string, string[]>>({});
   const [observations, setObservations] = useState("");
   const [quantity, setQuantity] = useState(1);
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
 
-  // Reset state when product changes
   const resetState = () => {
     setSelectedAddons({});
     setObservations("");
     setQuantity(1);
+    setSelectedSize(null);
   };
+
+  const isPizza = storeCategory === "pizzas" && !product?.metadata?.is_beverage;
+  const sizes: Array<{ name: string; price: number }> = product?.metadata?.sizes || [];
+  const hasSizes = isPizza && sizes.length > 0;
 
   // Fetch direct addon groups (product_id = product.id)
   const { data: directAddonGroups } = useQuery({
@@ -100,7 +107,6 @@ const ProductDetailModal = ({ product, storeName, open, onClose, onAdd }: Props)
   const addonGroups = useMemo(() => {
     const direct = directAddonGroups || [];
     const linked = linkedAddonGroups || [];
-    // Deduplicate by id
     const seen = new Set(direct.map(g => g.id));
     return [...direct, ...linked.filter(g => !seen.has(g.id))];
   }, [directAddonGroups, linkedAddonGroups]);
@@ -129,7 +135,6 @@ const ProductDetailModal = ({ product, storeName, open, onClose, onAdd }: Props)
         return { ...prev, [groupId]: current.filter(id => id !== itemId) };
       }
       if (current.length >= maxSelect) {
-        // Replace last if max reached
         if (maxSelect === 1) return { ...prev, [groupId]: [itemId] };
         return prev;
       }
@@ -139,11 +144,14 @@ const ProductDetailModal = ({ product, storeName, open, onClose, onAdd }: Props)
 
   const allRequiredMet = useMemo(() => {
     if (!addonGroups) return true;
-    return addonGroups.every(g => {
+    const addonsMet = addonGroups.every(g => {
       if (g.min_select === 0) return true;
       return (selectedAddons[g.id]?.length || 0) >= g.min_select;
     });
-  }, [addonGroups, selectedAddons]);
+    // For pizza with sizes, a size must be selected
+    if (hasSizes && !selectedSize) return false;
+    return addonsMet;
+  }, [addonGroups, selectedAddons, hasSizes, selectedSize]);
 
   const selectedAddonsList: CartAddon[] = useMemo(() => {
     if (!addonItems) return [];
@@ -154,7 +162,13 @@ const ProductDetailModal = ({ product, storeName, open, onClose, onAdd }: Props)
   }, [addonItems, selectedAddons]);
 
   const addonsTotal = selectedAddonsList.reduce((s, a) => s + a.price, 0);
-  const unitPrice = (product?.price || 0) + addonsTotal;
+  
+  // For pizza: use selected size price; otherwise use product.price
+  const basePrice = hasSizes && selectedSize
+    ? (sizes.find(s => s.name === selectedSize)?.price || product?.price || 0)
+    : (product?.price || 0);
+  
+  const unitPrice = basePrice + addonsTotal;
   const lineTotal = unitPrice * quantity;
 
   if (!product) return null;
@@ -167,7 +181,7 @@ const ProductDetailModal = ({ product, storeName, open, onClose, onAdd }: Props)
           <img src={product.image_url} alt={product.name} className="w-full h-56 object-cover rounded-t-2xl" />
         ) : (
           <div className="w-full h-56 bg-muted flex items-center justify-center rounded-t-2xl">
-            <span className="text-6xl">🍴</span>
+            <span className="text-6xl">{isPizza ? "🍕" : "🍴"}</span>
           </div>
         )}
 
@@ -177,8 +191,52 @@ const ProductDetailModal = ({ product, storeName, open, onClose, onAdd }: Props)
             {product.description && (
               <p className="text-sm text-muted-foreground mt-1">{product.description}</p>
             )}
-            <p className="text-lg font-black text-primary mt-2">R$ {product.price.toFixed(2)}</p>
+            {!hasSizes && (
+              <p className="text-lg font-black text-primary mt-2">R$ {product.price.toFixed(2)}</p>
+            )}
           </DialogHeader>
+
+          {/* Pizza size selector */}
+          {hasSizes && (
+            <div className="bg-muted/50 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Pizza className="h-4 w-4 text-primary" />
+                <h4 className="font-bold text-sm text-foreground">Escolha o tamanho</h4>
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-destructive/10 text-destructive">
+                  Obrigatório
+                </span>
+              </div>
+              <div className="space-y-1.5">
+                {sizes.filter(s => s.price > 0).map(size => {
+                  const isSelected = selectedSize === size.name;
+                  return (
+                    <button
+                      key={size.name}
+                      type="button"
+                      onClick={() => setSelectedSize(size.name)}
+                      className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl transition-all text-left ${
+                        isSelected
+                          ? "bg-primary/10 border-2 border-primary ring-1 ring-primary/20"
+                          : "bg-background border-2 border-transparent hover:bg-muted"
+                      }`}
+                    >
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                        isSelected ? "border-primary" : "border-muted-foreground/40"
+                      }`}>
+                        {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-primary" />}
+                      </div>
+                      <span className={`flex-1 text-sm ${isSelected ? "font-bold text-foreground" : "text-foreground"}`}>
+                        {size.name}
+                      </span>
+                      <span className={`text-sm font-black ${isSelected ? "text-primary" : "text-muted-foreground"}`}>
+                        R$ {size.price.toFixed(2)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Addon groups */}
           {addonGroups && addonGroups.length > 0 && (
@@ -284,7 +342,12 @@ const ProductDetailModal = ({ product, storeName, open, onClose, onAdd }: Props)
             <button
               disabled={!allRequiredMet}
               onClick={() => {
-                onAdd(product, selectedAddonsList, observations, quantity, unitPrice);
+                const addonsList = [...selectedAddonsList];
+                // Add size as an addon for display in cart
+                if (hasSizes && selectedSize) {
+                  addonsList.unshift({ name: `Tamanho: ${selectedSize}`, price: 0 });
+                }
+                onAdd(product, addonsList, observations, quantity, unitPrice);
                 onClose();
                 resetState();
               }}
@@ -295,7 +358,10 @@ const ProductDetailModal = ({ product, storeName, open, onClose, onAdd }: Props)
               }`}
             >
               <ShoppingCart className="h-4 w-4" />
-              Adicionar • R$ {lineTotal.toFixed(2)}
+              {hasSizes && !selectedSize
+                ? "Selecione o tamanho"
+                : `Adicionar • R$ ${lineTotal.toFixed(2)}`
+              }
             </button>
           </div>
         </div>
