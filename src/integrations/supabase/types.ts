@@ -1007,6 +1007,9 @@ export type Database = {
           avatar_url: string | null
           cep: string | null
           city: string | null
+          cnh_back_url: string | null
+          cnh_front_url: string | null
+          cnh_number: string | null
           complement: string | null
           created_at: string
           document: string | null
@@ -1022,6 +1025,7 @@ export type Database = {
           pix_type: Database["public"]["Enums"]["pix_type"] | null
           reference_point: string | null
           role: Database["public"]["Enums"]["partner_role"]
+          selfie_url: string | null
           street: string | null
           user_id: string
           vehicle: string | null
@@ -1031,6 +1035,9 @@ export type Database = {
           avatar_url?: string | null
           cep?: string | null
           city?: string | null
+          cnh_back_url?: string | null
+          cnh_front_url?: string | null
+          cnh_number?: string | null
           complement?: string | null
           created_at?: string
           document?: string | null
@@ -1046,6 +1053,7 @@ export type Database = {
           pix_type?: Database["public"]["Enums"]["pix_type"] | null
           reference_point?: string | null
           role?: Database["public"]["Enums"]["partner_role"]
+          selfie_url?: string | null
           street?: string | null
           user_id: string
           vehicle?: string | null
@@ -1055,6 +1063,9 @@ export type Database = {
           avatar_url?: string | null
           cep?: string | null
           city?: string | null
+          cnh_back_url?: string | null
+          cnh_front_url?: string | null
+          cnh_number?: string | null
           complement?: string | null
           created_at?: string
           document?: string | null
@@ -1070,6 +1081,7 @@ export type Database = {
           pix_type?: Database["public"]["Enums"]["pix_type"] | null
           reference_point?: string | null
           role?: Database["public"]["Enums"]["partner_role"]
+          selfie_url?: string | null
           street?: string | null
           user_id?: string
           vehicle?: string | null
