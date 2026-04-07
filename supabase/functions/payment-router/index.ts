@@ -985,6 +985,7 @@ async function routePixCreation(params: {
       externalReference: params.externalReference,
       expiresAt: params.expiresAt,
       splitWalletId: params.splitWalletId,
+      splitFixedValue: params.splitFixedValue,
     });
 
     if (asaasResult.ok) {
