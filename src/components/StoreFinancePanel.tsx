@@ -778,27 +778,21 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
 
       {/* Balance Summary */}
       <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-5 border border-border/30">
-        <p className="text-xs font-bold text-foreground mb-3">Saldo Final</p>
-        <div className="grid grid-cols-3 gap-3 text-center">
+        <p className="text-xs font-bold text-foreground mb-3">Resumo de Acertos</p>
+        <div className="grid grid-cols-2 gap-3 text-center">
           <div>
-            <p className="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">Crédito</p>
-            <p className="text-sm font-black text-emerald-400 mt-1">R$ {creditFromApp.toFixed(2)}</p>
+            <p className="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">App (automático)</p>
+            <p className="text-sm font-black text-emerald-400 mt-1">R$ {multiplyMoney(appSales, 0.15).toFixed(2)}</p>
+            <p className="text-[10px] text-muted-foreground">comissão já retida</p>
           </div>
           <div>
-            <p className="text-[10px] text-red-400 font-semibold uppercase tracking-wider">Débito</p>
+            <p className="text-[10px] text-red-400 font-semibold uppercase tracking-wider">Físico (a cobrar)</p>
             <p className="text-sm font-black text-red-400 mt-1">R$ {(dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue).toFixed(2)}</p>
-          </div>
-          <div>
-            <p className="text-[10px] text-foreground font-semibold uppercase tracking-wider">Líquido</p>
-            <p className={`text-sm font-black mt-1 ${finalBalance >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-              {finalBalance >= 0 ? "+" : "-"}R$ {Math.abs(finalBalance).toFixed(2)}
-            </p>
+            <p className="text-[10px] text-muted-foreground">comissão pendente</p>
           </div>
         </div>
         <p className="text-[10px] text-muted-foreground mt-3 text-center">
-          {finalBalance >= 0
-            ? "Você tem a receber do ItaSuper no próximo fechamento."
-            : "Comissões pendentes para o fechamento."}
+          Vendas via app são acertadas automaticamente pelo split. Vendas físicas precisam de cobrança manual.
         </p>
       </div>
 
