@@ -22,6 +22,7 @@ const AdminStoreManager = () => {
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [creatingWallet, setCreatingWallet] = useState<string | null>(null);
+  const [bulkCreating, setBulkCreating] = useState(false);
 
   const { data: stores, isLoading } = useQuery({
     queryKey: ["admin-stores-list"],
@@ -94,6 +95,36 @@ const AdminStoreManager = () => {
     blocked: stores?.filter((s) => s.status === "bloqueado").length || 0,
   };
 
+  const storesWithoutWallet = stores?.filter((s) => s.status === "ativo" && !s.asaas_wallet_id) || [];
+
+  const handleBulkCreateWallets = async () => {
+    if (storesWithoutWallet.length === 0) {
+      toast.info("Todas as lojas ativas já possuem subconta Asaas.");
+      return;
+    }
+    setBulkCreating(true);
+    let success = 0;
+    let failed = 0;
+    for (const store of storesWithoutWallet) {
+      try {
+        const { error } = await supabase.functions.invoke("asaas-subaccount", {
+          body: { store_id: store.id },
+        });
+        if (error) throw error;
+        success++;
+      } catch {
+        failed++;
+      }
+    }
+    setBulkCreating(false);
+    queryClient.invalidateQueries({ queryKey: ["admin-stores-list"] });
+    if (failed === 0) {
+      toast.success(`✅ ${success} subconta(s) criada(s) com sucesso!`);
+    } else {
+      toast.warning(`${success} criadas, ${failed} falharam. Tente novamente nas que faltam.`);
+    }
+  };
+
   const filters: { key: StoreFilter; label: string }[] = [
     { key: "all", label: `Todas (${counts.all})` },
     { key: "pending", label: `Pendentes (${counts.pending})` },
@@ -120,6 +151,24 @@ const AdminStoreManager = () => {
           </button>
         ))}
       </div>
+
+      {/* Bulk create wallets */}
+      {storesWithoutWallet.length > 0 && (
+        <button
+          onClick={handleBulkCreateWallets}
+          disabled={bulkCreating}
+          className="w-full flex items-center justify-center gap-2 bg-primary/10 text-primary font-bold py-3 rounded-xl text-sm hover:bg-primary/20 active:scale-[0.98] transition-all disabled:opacity-50"
+        >
+          {bulkCreating ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Wallet className="h-4 w-4" />
+          )}
+          {bulkCreating
+            ? "Criando subcontas..."
+            : `Criar subconta Asaas em lote (${storesWithoutWallet.length} lojas)`}
+        </button>
+      )}
 
       {/* Store list */}
       {isLoading ? (
