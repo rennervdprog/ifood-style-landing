@@ -239,9 +239,8 @@ const StoreDirectory = () => {
             <br />em minutos.
           </h1>
           <p className="text-base sm:text-lg mt-5 leading-relaxed max-w-2xl mx-auto" style={{ color: THEME.muted }}>
-            Crie seu cardápio online, receba pedidos em tempo real e aumente suas vendas.
-            Crie seu cardápio online, receba pedidos em tempo real e aumente suas vendas.
-            Comissão de apenas 15% por pedido entregue. Sem mensalidade, sem taxa de adesão.
+            Milhares de clientes estão procurando onde pedir agora. Coloque sua loja no mapa,
+            receba pedidos pelo celular e veja suas vendas crescerem — com apenas 15% de comissão por entrega. Sem mensalidade. Sem surpresas.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center mt-8">
