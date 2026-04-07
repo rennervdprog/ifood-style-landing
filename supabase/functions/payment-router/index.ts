@@ -631,7 +631,7 @@ async function handleOrderPix(
 
   const { data: order, error: orderError } = await supabase
     .from("orders")
-    .select("id, client_id, total_price, status, store_id")
+    .select("id, client_id, total_price, subtotal, delivery_fee, status, store_id")
     .eq("id", order_id)
     .eq("client_id", userId)
     .single();
@@ -646,6 +646,7 @@ async function handleOrderPix(
 
   // Fetch store wallet for Asaas split
   let splitWalletId: string | undefined;
+  let splitFixedValue: number | undefined;
   if (order.store_id) {
     const serviceClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -658,7 +659,11 @@ async function handleOrderPix(
       .single();
     if (store?.asaas_wallet_id) {
       splitWalletId = store.asaas_wallet_id;
-      console.log("Split enabled for store:", order.store_id, "wallet:", splitWalletId);
+      // Split by FIXED VALUE: 85% of subtotal only (excludes delivery fee)
+      // Delivery fee stays with platform for driver payout
+      const subtotal = Number(order.subtotal) || 0;
+      splitFixedValue = Math.round(subtotal * 0.85 * 100) / 100;
+      console.log("Split enabled for store:", order.store_id, "wallet:", splitWalletId, "fixedValue:", splitFixedValue, "subtotal:", subtotal);
     }
   }
 
