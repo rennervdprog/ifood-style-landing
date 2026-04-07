@@ -52,7 +52,6 @@ const BottomNav = () => {
       ]
     : isLojista && ownStore
     ? [
-        { icon: Home, label: "Home", path: "/" },
         { icon: Store, label: "Minha Loja", path: `/loja/${ownStore.id}` },
         { icon: ClipboardList, label: "Pedidos", path: "/pedidos" },
         { icon: User, label: "Perfil", path: "/perfil" },
