@@ -220,6 +220,24 @@ const CadastroLojista = () => {
               {errors.birthDate && <p className="text-xs text-destructive mt-1">{errors.birthDate}</p>}
             </div>
 
+            {/* PIX fields */}
+            <div>
+              <label className="text-xs font-bold text-muted-foreground mb-1 block">Chave PIX para recebimento</label>
+              <select
+                value={pixType}
+                onChange={(e) => setPixType(e.target.value)}
+                className="w-full h-12 px-4 rounded-xl border border-border bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm appearance-none mb-2"
+              >
+                <option value="">Tipo da chave PIX</option>
+                {Object.entries(pixTypeLabels).map(([val, label]) => (
+                  <option key={val} value={val}>{label}</option>
+                ))}
+              </select>
+              {errors.pixType && <p className="text-xs text-destructive mt-1 mb-2">{errors.pixType}</p>}
+              <FieldInput icon={Key} placeholder={pixType === "email" ? "seu@email.com" : pixType === "phone" ? "(11) 99999-9999" : "Sua chave PIX"} value={pixKey} onChange={setPixKey} error={errors.pixKey} />
+              <p className="text-xs text-muted-foreground mt-1">Chave PIX onde você receberá os pagamentos</p>
+            </div>
+
             <div>
               <select
                 value={storeCategory}
