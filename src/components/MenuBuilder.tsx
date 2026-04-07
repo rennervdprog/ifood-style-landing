@@ -192,8 +192,9 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
 
   const addProduct = async (sectionId: string | null) => {
     const meta = productForm.metadata || {};
-    const finalPrice = isPizzaProduct(meta) ? derivePriceFromMetadata(meta) : parseFloat(productForm.price);
-    if (!productForm.name.trim() || (!isPizzaProduct(meta) && !productForm.price)) return;
+    const finalPrice = isPizzaProduct(meta) ? derivePriceFromMetadata(meta) : parseFloat(productForm.price) || 0;
+    if (!productForm.name.trim()) { toast.error("Preencha o nome do produto"); return; }
+    if (!isPizzaProduct(meta) && (!productForm.price || finalPrice <= 0)) { toast.error("Preencha o preço do produto"); return; }
     if (isPizzaProduct(meta) && finalPrice <= 0) { toast.error("Defina ao menos um tamanho com preço"); return; }
     const { error } = await supabase.from("products").insert({
       store_id: storeId,
@@ -204,7 +205,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
       image_url: productForm.image_url.trim() || null,
       metadata: meta,
     } as any);
-    if (error) { toast.error("Erro ao adicionar produto"); return; }
+    if (error) { toast.error("Erro ao adicionar produto: " + error.message); console.error("Product insert error:", error); return; }
     toast.success("Produto adicionado!");
     setProductForm({ name: "", price: "", description: "", image_url: "", metadata: {} });
     setShowProductForm(null);
