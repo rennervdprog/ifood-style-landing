@@ -187,7 +187,12 @@ const CadastroLojista = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <FieldInput icon={Mail} type="email" placeholder="Seu e-mail" value={email} onChange={setEmail} error={errors.email} autoComplete="email" />
+            <div>
+              <FieldInput icon={Mail} type="email" placeholder="Seu e-mail" value={email} onChange={setEmail} error={errors.email} autoComplete="email" />
+              <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 flex items-center gap-1">
+                ⚠️ Certifique-se de que este e-mail está correto. Ele será usado para receber notificações sobre seus ganhos e repasses financeiros.
+              </p>
+            </div>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
