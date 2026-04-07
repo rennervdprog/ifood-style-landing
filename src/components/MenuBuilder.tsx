@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import MenuImportCSV from "@/components/MenuImportCSV";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -305,14 +306,17 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
   return (
     <div className="space-y-4">
       {/* Add Section Button */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-sm font-bold text-foreground/80 uppercase tracking-wider">Cardápio</h2>
-        <button
-          onClick={() => setShowAddSection(true)}
-          className="flex items-center gap-1.5 bg-primary/20 text-primary px-3 py-2 rounded-xl text-xs font-bold"
-        >
-          <Plus className="h-3.5 w-3.5" /> Nova Seção
-        </button>
+        <div className="flex gap-2">
+          <MenuImportCSV storeId={storeId} />
+          <button
+            onClick={() => setShowAddSection(true)}
+            className="flex items-center gap-1.5 bg-primary/20 text-primary px-3 py-2 rounded-xl text-xs font-bold"
+          >
+            <Plus className="h-3.5 w-3.5" /> Nova Seção
+          </button>
+        </div>
       </div>
 
       {/* Add Section Form */}
