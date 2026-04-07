@@ -119,6 +119,19 @@ const CategoryProductFields = ({ category, metadata, onChange }: CategoryProduct
     </div>
   );
 
+  const formatCurrency = (value: string): string => {
+    const digits = value.replace(/\D/g, "");
+    if (!digits) return "";
+    const num = parseInt(digits, 10) / 100;
+    return num.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  };
+
+  const parseCurrency = (formatted: string): number => {
+    const digits = formatted.replace(/\D/g, "");
+    if (!digits) return 0;
+    return parseInt(digits, 10) / 100;
+  };
+
   const renderPizzaSizes = () => (
     <div className="space-y-1.5">
       <label className="text-xs font-bold text-foreground/70">🍕 Tamanhos e Preços</label>
@@ -142,17 +155,21 @@ const CategoryProductFields = ({ category, metadata, onChange }: CategoryProduct
           </label>
           {(metadata.sizes || []).some((s: any) => s.name === size) && (
             <input
-              type="number"
-              placeholder="R$"
-              value={(metadata.sizes || []).find((s: any) => s.name === size)?.price || ""}
+              type="text"
+              inputMode="numeric"
+              placeholder="R$ 0,00"
+              value={(() => {
+                const price = (metadata.sizes || []).find((s: any) => s.name === size)?.price || 0;
+                return price > 0 ? formatCurrency(String(Math.round(price * 100))) : "";
+              })()}
               onChange={(e) => {
+                const parsed = parseCurrency(e.target.value);
                 const sizes = (metadata.sizes || []).map((s: any) =>
-                  s.name === size ? { ...s, price: parseFloat(e.target.value) || 0 } : s
+                  s.name === size ? { ...s, price: parsed } : s
                 );
                 set("sizes", sizes);
               }}
-              className="w-20 bg-muted text-foreground px-2 py-1 rounded text-xs border border-border focus:outline-none"
-              step="0.50"
+              className="w-24 bg-muted text-foreground px-2 py-1 rounded text-xs border border-border focus:outline-none"
             />
           )}
         </div>
@@ -191,7 +208,7 @@ const CategoryProductFields = ({ category, metadata, onChange }: CategoryProduct
           {renderPizzaSizes()}
           {renderToggle("Permite meia-meia?", "allows_half")}
           {metadata.allows_half && renderTextField("Máx. sabores", "max_flavors", "2")}
-          {renderListField("Sabores Disponíveis", "flavors", "Ex: Calabresa, Margherita...")}
+          {metadata.allows_half && renderListField("Sabores Disponíveis", "flavors", "Ex: Calabresa, Margherita...")}
         </div>
       );
 
