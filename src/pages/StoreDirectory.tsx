@@ -191,11 +191,10 @@ const StoreDirectory = () => {
               </Button>
               <Button
                 size="lg"
-                variant="outline"
-                className="gap-2 rounded-full font-bold text-base px-8 transition-all"
-                style={{ borderColor: THEME.primary, color: THEME.primary }}
+                className="gap-2 rounded-full font-bold text-base px-8 transition-all shadow-md hover:shadow-lg"
+                style={{ background: THEME.white, color: THEME.primary, border: `2px solid ${THEME.primary}` }}
                 onMouseEnter={(e) => { e.currentTarget.style.background = THEME.primaryLight; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = THEME.white; }}
                 onClick={() => navigate("/cadastro-entregador")}
               >
                 <Bike className="h-5 w-5" />
