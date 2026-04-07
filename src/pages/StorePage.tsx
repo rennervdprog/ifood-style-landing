@@ -341,7 +341,7 @@ const StorePage = () => {
             {hasConfiguredHours && (
               <span className={`text-xs font-bold px-3 py-1.5 rounded-full mt-1 ${
                 storeStatus.isOpen
-                  ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                  ? "bg-green-100 text-green-800"
                   : "bg-destructive/10 text-destructive"
               }`}>
                 {statusLabel}
@@ -352,7 +352,7 @@ const StorePage = () => {
           {/* Address + Maps button */}
           {store?.address_neighborhood && (
             <div className="mt-3 pt-3 border-t border-border flex items-center gap-2 text-muted-foreground">
-              <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+              <MapPin className="h-3.5 w-3.5 flex-shrink-0 text-primary" />
               <span className="text-xs truncate flex-1">
                 {[store.address_street, store.address_number, store.address_neighborhood, store.address_city]
                   .filter(Boolean)
@@ -383,7 +383,7 @@ const StorePage = () => {
               className="flex items-center justify-between w-full"
             >
             <div className="flex items-center gap-1.5">
-              <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+              <Clock className="h-3.5 w-3.5 text-primary" />
               <span className="text-xs font-bold text-foreground">Horários de funcionamento</span>
             </div>
               {showHours ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />}
@@ -420,7 +420,7 @@ const StorePage = () => {
           {/* Payment Methods */}
           <div className="mt-3 pt-3 border-t border-border">
             <div className="flex items-center gap-1.5 mb-2">
-              <CreditCard className="h-3.5 w-3.5 text-muted-foreground" />
+              <CreditCard className="h-3.5 w-3.5 text-primary" />
               <span className="text-xs font-bold text-foreground">Formas de pagamento</span>
             </div>
             <div className="flex flex-wrap gap-1.5">
