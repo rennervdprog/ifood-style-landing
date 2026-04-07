@@ -199,7 +199,7 @@ const SuperAdminDashboard = () => {
   const metrics = useMemo(() => {
     if (!orders) return { totalSales: 0, commission: 0, activeOrders: 0, totalOrders: 0 };
     const totalSales = sumMoney(orders.map((order) => order.total_price));
-    const commission = sumMoney(orders.map((order) => addMoney(multiplyMoney(order.subtotal, 0.12), (order as any).app_fee || 0)));
+    const commission = sumMoney(orders.map((order) => multiplyMoney(order.subtotal, 0.15)));
     const activeStatuses = ["pendente", "preparando", "pronto_para_entrega", "em_transito", "saiu_entrega"];
     const activeOrders = orders.filter(o => activeStatuses.includes(o.status)).length;
     return { totalSales, commission, activeOrders, totalOrders: orders.length };
@@ -272,7 +272,7 @@ const SuperAdminDashboard = () => {
       const entry = map.get(o.store_id);
       if (entry) {
         entry.totalSold = addMoney(entry.totalSold, o.total_price);
-        entry.commission = addMoney(entry.commission, multiplyMoney(o.subtotal, 0.12));
+        entry.commission = addMoney(entry.commission, multiplyMoney(o.subtotal, 0.15));
         entry.orders += 1;
       }
     });
@@ -576,7 +576,7 @@ const SuperAdminDashboard = () => {
                   ) : (
                     <>
                       <MetricCard icon={ShoppingBag} label="Vendas" value={`R$ ${metrics.totalSales.toFixed(2)}`} sublabel={`${metrics.totalOrders} pedidos`} />
-                      <MetricCard icon={TrendingUp} label="Sua Comissão" value={`R$ ${metrics.commission.toFixed(2)}`} sublabel="12% + taxas" highlight />
+                      <MetricCard icon={TrendingUp} label="Sua Comissão" value={`R$ ${metrics.commission.toFixed(2)}`} sublabel="15% do subtotal" highlight />
                       <MetricCard icon={Clock} label="Pedidos Ativos" value={String(metrics.activeOrders)} sublabel="em andamento" />
                       <MetricCard icon={AlertTriangle} label="Em Atraso" value={String(delayedOrders.length)} sublabel="> 60 min" alert={delayedOrders.length > 0} />
                     </>
