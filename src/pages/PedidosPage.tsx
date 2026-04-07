@@ -97,7 +97,7 @@ const PedidosPage = () => {
     queryFn: async () => {
       let query = supabase
         .from("orders")
-        .select("*, stores(name), order_items(*, products(name))")
+        .select("*, stores(name, delivery_mode), order_items(*, products(name))")
         .eq("client_id", user!.id)
         .eq("visible_to_client", true)
         .order("created_at", { ascending: false });
