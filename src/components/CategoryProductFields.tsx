@@ -330,6 +330,23 @@ const CategoryProductFields = ({ category, metadata, onChange, storeId }: Catego
         </div>
       );
 
+    case "saudavel":
+      return withBeverageToggle(
+        <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-3">
+          <div className="flex items-center gap-2 text-primary text-xs font-bold">
+            🥗 Campos de Alimentação Saudável
+          </div>
+          {renderTextField("Calorias", "calories", "Ex: 350 kcal")}
+          {renderTextField("Proteína (g)", "protein_grams", "Ex: 25g")}
+          {renderToggle("Vegano?", "is_vegan")}
+          {renderToggle("Sem Glúten?", "is_gluten_free")}
+          {renderToggle("Sem Lactose?", "is_lactose_free")}
+          {renderToggle("Orgânico?", "is_organic")}
+          {renderListField("Ingredientes Principais", "main_ingredients", "Ex: Quinoa, Frango grelhado...")}
+          {renderTextField("Tamanho / Peso", "size_weight", "Ex: 300g, 500ml...")}
+        </div>
+      );
+
     default:
       return null;
   }

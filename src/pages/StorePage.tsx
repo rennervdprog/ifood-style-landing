@@ -909,15 +909,67 @@ const ProductCard = ({ product, disabled, onClick, storeCategory }: ProductCardP
             </div>
           )}
 
-          {/* Cafeteria: sizes */}
-          {cat === "cafeteria" && meta.drink_sizes?.length > 0 && (
+          {/* Cafeteria: product type + flavors + badges */}
+          {cat === "cafeteria" && !isBeverage && meta.cafe_product_type && (
             <div className="flex flex-wrap gap-1 mt-1">
-              {meta.drink_sizes.map((s: string) => (
-                <span key={s} className="text-[10px] bg-amber-500/10 text-amber-700 px-1.5 py-0.5 rounded-full font-medium">{s}</span>
-              ))}
+              <span className="text-[10px] bg-amber-500/10 text-amber-700 px-1.5 py-0.5 rounded-full font-medium">
+                ☕ {meta.cafe_product_type}
+              </span>
+              {meta.can_heat && (
+                <span className="text-[10px] bg-orange-500/10 text-orange-600 px-1.5 py-0.5 rounded-full font-medium">🔥 Aquece</span>
+              )}
+              {meta.sells_slice && (
+                <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full font-medium">🍰 Fatia</span>
+              )}
+              {meta.sells_whole && (
+                <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full font-medium">🎂 Inteiro</span>
+              )}
               {meta.can_be_iced && (
                 <span className="text-[10px] bg-sky-500/10 text-sky-600 px-1.5 py-0.5 rounded-full font-medium">❄️ Gelado</span>
               )}
+            </div>
+          )}
+          {/* Cafeteria: drink sizes (only for drink types) */}
+          {cat === "cafeteria" && !isBeverage && (meta.cafe_product_type === "Café / Bebida Quente" || meta.cafe_product_type === "Suco / Bebida Fria") && meta.drink_sizes?.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {meta.drink_sizes.map((s: string) => (
+                <span key={s} className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">{s}</span>
+              ))}
+            </div>
+          )}
+          {/* Cafeteria: cake flavors preview */}
+          {cat === "cafeteria" && !isBeverage && (meta.cafe_product_type === "Bolo / Fatia" || meta.cafe_product_type === "Torta (fatia)") && meta.flavors?.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {meta.flavors.slice(0, 3).map((f: string) => (
+                <span key={f} className="text-[10px] bg-pink-500/10 text-pink-600 px-1.5 py-0.5 rounded-full font-medium">{f}</span>
+              ))}
+              {meta.flavors.length > 3 && (
+                <span className="text-[10px] text-muted-foreground">+{meta.flavors.length - 3}</span>
+              )}
+            </div>
+          )}
+
+          {/* Sobremesas/Docerias: size/weight */}
+          {(cat === "sobremesas" || cat === "docerias") && meta.size_weight && (
+            <p className="text-[10px] text-muted-foreground mt-1 font-medium">📏 {meta.size_weight}</p>
+          )}
+
+          {/* Beverage info (any category with is_beverage) */}
+          {isBeverage && (meta.drink_type || meta.drink_volume) && (
+            <p className="text-[10px] text-muted-foreground mt-1">
+              {meta.drink_type && <span className="font-medium">🥤 {meta.drink_type}</span>}
+              {meta.drink_type && meta.drink_volume && " · "}
+              {meta.drink_volume && <span>{meta.drink_volume}</span>}
+            </p>
+          )}
+
+          {/* Saudável: dietary tags */}
+          {cat === "saudavel" && !isBeverage && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {meta.is_vegan && <span className="text-[10px] bg-green-500/10 text-green-600 px-1.5 py-0.5 rounded-full font-bold">🌱 Vegano</span>}
+              {meta.is_gluten_free && <span className="text-[10px] bg-amber-500/10 text-amber-700 px-1.5 py-0.5 rounded-full font-bold">🌾 Sem Glúten</span>}
+              {meta.is_lactose_free && <span className="text-[10px] bg-blue-500/10 text-blue-600 px-1.5 py-0.5 rounded-full font-bold">🥛 Sem Lactose</span>}
+              {meta.calories && <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full font-medium">🔥 {meta.calories} kcal</span>}
             </div>
           )}
 
