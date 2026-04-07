@@ -744,10 +744,11 @@ const DriverDashboard = () => {
           ) : (
             <div className="px-4 py-4 space-y-4">
               {/* Quick Stats */}
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-4 gap-2">
                 <StatCard icon={DollarSign} label="Hoje" value={`R$ ${todayEarnings.toFixed(2)}`} color="text-green-500" />
                 <StatCard icon={TrendingUp} label="Semana" value={`R$ ${weekEarnings.toFixed(2)}`} color="text-blue-500" />
                 <StatCard icon={Package} label="Entregas" value={String(totalDeliveries)} color="text-primary" />
+                <StatCard icon={Store} label="Abertas" value={String(openPlatformStores?.length || 0)} color="text-emerald-500" />
               </div>
 
               {/* Pix key warning */}
@@ -1292,10 +1293,11 @@ const DriverDashboard = () => {
           )}
 
           {/* Quick Stats */}
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-4 gap-2">
             <StatCard icon={DollarSign} label="Hoje" value={`R$ ${todayEarnings.toFixed(2)}`} color="text-green-500" />
             <StatCard icon={TrendingUp} label="Semana" value={`R$ ${weekEarnings.toFixed(2)}`} color="text-blue-500" />
             <StatCard icon={Package} label="Total" value={String(totalDeliveries)} color="text-primary" />
+            <StatCard icon={Store} label="Abertas" value={String(openPlatformStores?.length || 0)} color="text-emerald-500" />
           </div>
 
           {/* Date filter */}
