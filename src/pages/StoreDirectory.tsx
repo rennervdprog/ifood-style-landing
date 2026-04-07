@@ -4,7 +4,7 @@ import {
   Zap, Store, Bike, ShieldCheck, Smartphone, TrendingUp, Users,
   ArrowRight, CheckCircle2, Star, MapPin, Clock, CreditCard,
   BarChart3, MessageSquare, Tag, Package, Navigation, ChevronRight,
-  Monitor, Tablet, Phone, Menu, X, Mail
+  Menu, X, Mail
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
