@@ -294,7 +294,7 @@ const CadastroEntregador = () => {
             }} error={errors.vehicle} maxLength={8} />
             
             {/* CNH Number */}
-            <FieldInput icon={FileText} placeholder="Número da CNH" value={cnhNumber} onChange={setCnhNumber} error={errors.cnhNumber} inputMode="numeric" />
+            <FieldInput icon={FileText} placeholder="Número da CNH (11 dígitos)" value={cnhNumber} onChange={(v) => setCnhNumber(v.replace(/\D/g, "").slice(0, 11))} error={errors.cnhNumber} inputMode="numeric" maxLength={11} />
 
             {/* City */}
             <div>
