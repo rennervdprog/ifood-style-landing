@@ -239,23 +239,15 @@ const CheckoutPage = () => {
 
         if (itemsError) throw itemsError;
 
-        // Track coupon usage
+        // Track coupon usage atomically (server-side with row locking)
         if (couponId && user) {
-          await supabase.from("coupon_uses" as any).insert({
-            coupon_id: couponId,
-            user_id: user.id,
-            order_id: order.id,
+          const { error: couponError } = await supabase.rpc("use_coupon", {
+            _coupon_id: couponId,
+            _user_id: user.id,
+            _order_id: order.id,
           });
-          // Increment used_count by fetching current value first
-          const { data: currentCoupon } = await supabase
-            .from("coupons" as any)
-            .select("used_count")
-            .eq("id", couponId)
-            .single();
-          if (currentCoupon) {
-            await supabase.from("coupons" as any)
-              .update({ used_count: ((currentCoupon as any).used_count || 0) + 1 } as any)
-              .eq("id", couponId);
+          if (couponError) {
+            console.warn("Coupon usage error:", couponError.message);
           }
         }
       }
