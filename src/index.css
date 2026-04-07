@@ -15,7 +15,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 220 26% 14%;
 
-    --primary: 346 77% 50%;
+    --primary: 355 85% 52%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 220 26% 14%;
@@ -24,26 +24,26 @@
     --muted: 210 20% 94%;
     --muted-foreground: 220 10% 46%;
 
-    --accent: 346 77% 96%;
-    --accent-foreground: 346 77% 50%;
+    --accent: 355 85% 96%;
+    --accent-foreground: 355 85% 52%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 346 77% 50%;
+    --ring: 355 85% 52%;
 
     --radius: 1rem;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 346 77% 50%;
+    --sidebar-primary: 355 85% 52%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 346 10% 95%;
+    --sidebar-accent: 355 10% 95%;
     --sidebar-accent-foreground: 220 26% 14%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 346 77% 50%;
+    --sidebar-ring: 355 85% 52%;
   }
 
   .dark {
@@ -56,7 +56,7 @@
     --popover: 222 40% 10%;
     --popover-foreground: 210 20% 92%;
 
-    --primary: 346 77% 55%;
+    --primary: 355 85% 55%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 215 20% 22%;
@@ -65,24 +65,24 @@
     --muted: 220 20% 16%;
     --muted-foreground: 215 15% 58%;
 
-    --accent: 346 40% 16%;
-    --accent-foreground: 346 77% 65%;
+    --accent: 355 40% 16%;
+    --accent-foreground: 355 85% 65%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
     --border: 220 20% 18%;
     --input: 220 20% 18%;
-    --ring: 346 77% 55%;
+    --ring: 355 85% 55%;
 
     --sidebar-background: 222 40% 8%;
     --sidebar-foreground: 210 20% 82%;
-    --sidebar-primary: 346 77% 55%;
+    --sidebar-primary: 355 85% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 346 20% 14%;
+    --sidebar-accent: 355 20% 14%;
     --sidebar-accent-foreground: 210 20% 92%;
     --sidebar-border: 220 20% 18%;
-    --sidebar-ring: 346 77% 55%;
+    --sidebar-ring: 355 85% 55%;
   }
 }
 
