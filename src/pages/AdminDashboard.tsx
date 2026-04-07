@@ -642,6 +642,7 @@ const AdminDashboard = () => {
                 {dashboardTab === "orders" && `${orders?.length || 0} pedidos ativos`}
                 {dashboardTab === "clients" && `${clientAnalytics.length} clientes registrados`}
                 {dashboardTab === "menu" && "Gerencie seu cardápio"}
+                {dashboardTab === "flavors" && "Sabores e preços das pizzas"}
                 {dashboardTab === "addons" && "Grupos de adicionais"}
                 {dashboardTab === "hours" && "Horários de funcionamento"}
                 {dashboardTab === "finance" && "Resumo financeiro"}
