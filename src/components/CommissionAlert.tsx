@@ -74,7 +74,7 @@ const CommissionAlert = ({ storeId, storeName, onGoToFinance }: CommissionAlertP
     queryKey: ["oldest-pending-commission", storeId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("financial_transactions" as any)
+        .from("financial_transactions")
         .select("created_at")
         .eq("store_id", storeId)
         .eq("transaction_kind", "commission_charge")
@@ -83,7 +83,7 @@ const CommissionAlert = ({ storeId, storeName, onGoToFinance }: CommissionAlertP
         .limit(1)
         .maybeSingle();
       if (error) return null;
-      return data as { created_at: string } | null;
+      return data;
     },
     enabled: !!storeId,
   });
