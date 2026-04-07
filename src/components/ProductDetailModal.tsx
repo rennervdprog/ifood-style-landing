@@ -94,6 +94,9 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
   const isCafe = cat === "cafeteria" && !isBeverage;
   const drinkSizes: string[] = meta.drink_sizes || [];
   const milkOptions: string[] = meta.milk_options || [];
+  const cafeFlavors: string[] = meta.flavors || [];
+  const isCafeDrink = meta.cafe_product_type === "Café / Bebida Quente" || meta.cafe_product_type === "Suco / Bebida Fria";
+  const isCakeLike = meta.cafe_product_type === "Bolo / Fatia" || meta.cafe_product_type === "Torta (fatia)";
 
   // Churrasco
   const isBBQ = cat === "churrasco" && !isBeverage;
