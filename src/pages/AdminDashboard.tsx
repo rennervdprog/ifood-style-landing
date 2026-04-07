@@ -7,7 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import {
-  Wifi, WifiOff, Clock, ChefHat, Truck, CheckCircle2,
+  Wifi, WifiOff, Clock, ChefHat, Truck, CheckCircle2, Pizza,
   MapPin, Package, Settings, Banknote, CreditCard,
   UtensilsCrossed, ListOrdered, Plus, Printer, Bike,
   Volume2, VolumeX, Bell, Store, MessageCircle, Copy, Coins,
