@@ -420,7 +420,7 @@ const StorePage = () => {
           {/* Payment Methods */}
           <div className="mt-3 pt-3 border-t border-border">
             <div className="flex items-center gap-1.5 mb-2">
-              <CreditCard className="h-3.5 w-3.5 text-muted-foreground" />
+              <CreditCard className="h-3.5 w-3.5 text-primary" />
               <span className="text-xs font-bold text-foreground">Formas de pagamento</span>
             </div>
             <div className="flex flex-wrap gap-1.5">
