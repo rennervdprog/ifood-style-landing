@@ -158,6 +158,44 @@ export type Database = {
           },
         ]
       }
+      compliance_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string
+          id: string
+          is_resolved: boolean
+          message: string
+          resolved_at: string | null
+          store_id: string
+        }
+        Insert: {
+          alert_type?: string
+          created_at?: string
+          id?: string
+          is_resolved?: boolean
+          message: string
+          resolved_at?: string | null
+          store_id: string
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string
+          id?: string
+          is_resolved?: boolean
+          message?: string
+          resolved_at?: string | null
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compliance_alerts_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coupon_uses: {
         Row: {
           coupon_id: string
@@ -689,6 +727,7 @@ export type Database = {
           collection_validated: boolean
           confirmed_at: string | null
           created_at: string
+          delivery_confirmed_by_client: boolean
           delivery_fee: number
           delivery_pin: string | null
           driver_id: string | null
@@ -714,6 +753,7 @@ export type Database = {
           collection_validated?: boolean
           confirmed_at?: string | null
           created_at?: string
+          delivery_confirmed_by_client?: boolean
           delivery_fee?: number
           delivery_pin?: string | null
           driver_id?: string | null
@@ -739,6 +779,7 @@ export type Database = {
           collection_validated?: boolean
           confirmed_at?: string | null
           created_at?: string
+          delivery_confirmed_by_client?: boolean
           delivery_fee?: number
           delivery_pin?: string | null
           driver_id?: string | null
@@ -1180,6 +1221,11 @@ export type Database = {
         Returns: undefined
       }
       admin_delete_store: { Args: { _store_id: string }; Returns: undefined }
+      auto_finalize_stale_orders: { Args: never; Returns: Json }
+      client_confirm_delivery: {
+        Args: { _order_id: string }
+        Returns: undefined
+      }
       confirm_order_payment: { Args: { _order_id: string }; Returns: undefined }
       driver_accept_order: { Args: { _order_id: string }; Returns: undefined }
       driver_confirm_store_return: {

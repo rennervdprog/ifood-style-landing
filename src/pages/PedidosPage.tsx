@@ -240,6 +240,22 @@ const PedidosPage = () => {
 
   const [pixCooldownMs, setPixCooldownMs] = useState(0);
   const [safetyModeMs, setSafetyModeMs] = useState(0);
+  const [confirmingDelivery, setConfirmingDelivery] = useState<string | null>(null);
+
+  const handleConfirmDelivery = async (orderId: string) => {
+    if (!user) return;
+    setConfirmingDelivery(orderId);
+    try {
+      const { error } = await supabase.rpc("client_confirm_delivery", { _order_id: orderId });
+      if (error) throw error;
+      toast.success("Entrega confirmada! Obrigado 🎉");
+      queryClient.invalidateQueries({ queryKey: ["orders", user.id] });
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao confirmar entrega.");
+    } finally {
+      setConfirmingDelivery(null);
+    }
+  };
 
   // Poll cooldown / safety mode
   useEffect(() => {
@@ -701,6 +717,33 @@ const PedidosPage = () => {
                     <p className="text-[10px] text-muted-foreground mt-1">
                       Informe ao motoboy apenas quando receber seu pedido.
                     </p>
+                  </div>
+                )}
+
+                {/* Client Delivery Confirmation */}
+                {["saiu_entrega", "em_transito"].includes(order.status) && !(order as any).delivery_confirmed_by_client && (
+                  <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3 mb-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                      <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Recebeu seu pedido?</span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mb-2">
+                      Confirme quando receber para avaliar e ajudar outros clientes.
+                    </p>
+                    <button
+                      onClick={() => handleConfirmDelivery(order.id)}
+                      disabled={confirmingDelivery === order.id}
+                      className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 rounded-xl text-xs disabled:opacity-50 transition-colors"
+                    >
+                      {confirmingDelivery === order.id ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          Confirmando...
+                        </span>
+                      ) : (
+                        "✅ Sim, recebi meu pedido!"
+                      )}
+                    </button>
                   </div>
                 )}
 
