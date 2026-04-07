@@ -684,7 +684,7 @@ const DriverDashboard = () => {
 
   return (
     <>
-    <div className="min-h-screen bg-background text-foreground overflow-y-auto pb-[5.5rem]">
+    <div className="min-h-screen bg-background text-foreground overflow-y-auto pb-[5.5rem] native-app">
       {/* ─── Native-Style Status Bar Header ─── */}
       <header className="sticky top-0 z-50 bg-card border-b border-border pt-safe">
         <div className="px-4 py-3">

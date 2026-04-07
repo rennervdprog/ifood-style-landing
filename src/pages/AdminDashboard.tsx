@@ -513,7 +513,7 @@ const AdminDashboard = () => {
 
   // ── RENDER ──
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-background flex native-app">
       <SimulationBanner />
 
       {/* Sidebar overlay */}
