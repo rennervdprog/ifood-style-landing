@@ -27,7 +27,7 @@ const schema = z.object({
     .min(7, "Placa deve ter 7 caracteres (ex: ABC-1234 ou ABC1D23)")
     .max(8, "Placa inválida")
     .refine(v => PLATE_REGEX.test(v.replace(/\s/g, "")), "Placa inválida. Use formato antigo (ABC-1234) ou Mercosul (ABC1D23)"),
-  cnhNumber: z.string().trim().length(11, "CNH deve ter exatamente 11 dígitos").regex(/^\d{11}$/, "CNH deve conter apenas números"),
+  cnhNumber: z.string().trim().refine(v => v.replace(/\D/g, "").length === 11, "CNH deve ter exatamente 11 dígitos"),
   city: z.string().min(1, "Selecione sua cidade"),
 }).refine(data => data.email === data.emailConfirm, {
   message: "Os e-mails não coincidem",
@@ -294,7 +294,14 @@ const CadastroEntregador = () => {
             }} error={errors.vehicle} maxLength={8} />
             
             {/* CNH Number */}
-            <FieldInput icon={FileText} placeholder="Número da CNH (11 dígitos)" value={cnhNumber} onChange={(v) => setCnhNumber(v.replace(/\D/g, "").slice(0, 11))} error={errors.cnhNumber} inputMode="numeric" maxLength={11} />
+            <FieldInput icon={FileText} placeholder="CNH (0000.0000.0000)" value={cnhNumber} onChange={(v) => {
+              const digits = v.replace(/\D/g, "").slice(0, 11);
+              // Auto-format: 0000.0000.0000 (4-4-3 com pontos) -> total 13 chars com pontos
+              let formatted = digits;
+              if (digits.length > 4) formatted = digits.slice(0, 4) + "." + digits.slice(4);
+              if (digits.length > 8) formatted = digits.slice(0, 4) + "." + digits.slice(4, 8) + "." + digits.slice(8);
+              setCnhNumber(formatted);
+            }} error={errors.cnhNumber} inputMode="numeric" maxLength={13} />
 
             {/* City */}
             <div>
