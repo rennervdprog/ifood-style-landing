@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Store, Trash2, CheckCircle2, Clock, XCircle, Filter } from "lucide-react";
+import { Store, Trash2, CheckCircle2, Clock, XCircle, Filter, Wallet, Loader2 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -21,6 +21,7 @@ const AdminStoreManager = () => {
   const [filter, setFilter] = useState<StoreFilter>("all");
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [creatingWallet, setCreatingWallet] = useState<string | null>(null);
 
   const { data: stores, isLoading } = useQuery({
     queryKey: ["admin-stores-list"],
@@ -153,6 +154,35 @@ const AdminStoreManager = () => {
               </div>
               <div className="flex items-center gap-2 ml-2 shrink-0">
                 {statusBadge(store.status)}
+                {store.status === "ativo" && !store.asaas_wallet_id && (
+                  <button
+                    onClick={async () => {
+                      setCreatingWallet(store.id);
+                      try {
+                        const { error } = await supabase.functions.invoke("asaas-subaccount", {
+                          body: { store_id: store.id },
+                        });
+                        if (error) throw error;
+                        toast.success(`Subconta Asaas criada para ${store.name}`);
+                        queryClient.invalidateQueries({ queryKey: ["admin-stores-list"] });
+                      } catch (err: any) {
+                        toast.error(err.message || "Erro ao criar subconta");
+                      } finally {
+                        setCreatingWallet(null);
+                      }
+                    }}
+                    disabled={creatingWallet === store.id}
+                    className="p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 active:scale-95 transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
+                    title="Criar subconta Asaas (split)"
+                  >
+                    {creatingWallet === store.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wallet className="h-4 w-4" />}
+                  </button>
+                )}
+                {store.asaas_wallet_id && (
+                  <span className="px-2 py-0.5 bg-primary/20 text-primary text-xs font-bold rounded-full flex items-center gap-1">
+                    <Wallet className="h-3 w-3" /> Split
+                  </span>
+                )}
                 <button
                   onClick={() => setDeleteTarget({ id: store.id, name: store.name })}
                   className="p-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 active:scale-95 transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
