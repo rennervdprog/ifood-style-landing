@@ -430,18 +430,23 @@ const StoreDirectory = () => {
           ))}
         </div>
 
-        <div className="text-center mt-8">
-          <Button size="lg" className="gap-2 rounded-full font-bold text-base px-8 text-white" style={{ background: THEME.primary }}
+        {/* Disponibilidade */}
+        <div className="max-w-lg mx-auto mt-10 rounded-2xl border-2 p-6 text-center" style={{ borderColor: THEME.primary, background: THEME.primaryLight }}>
+          <MapPin className="h-8 w-8 mx-auto mb-3" style={{ color: THEME.primary }} />
+          <h3 className="font-bold text-base mb-1" style={{ color: THEME.dark }}>
+            Verifique a disponibilidade na sua região
+          </h3>
+          <p className="text-sm mb-4" style={{ color: THEME.muted }}>
+            Nossos motoboys estão disponíveis em cidades com operação ativa. Atualmente operando em <strong style={{ color: THEME.primary }}>Itatinga/SP</strong>. Novas cidades em breve!
+          </p>
+          <Button className="gap-2 rounded-full font-bold text-sm px-8 text-white" style={{ background: THEME.primary }}
             onMouseEnter={(e) => (e.currentTarget.style.background = THEME.primaryDark)}
             onMouseLeave={(e) => (e.currentTarget.style.background = THEME.primary)}
             onClick={() => navigate("/cadastro-entregador")}
           >
             <Bike className="h-5 w-5" />
-            Quero ser motoboy
+            Cadastrar como motoboy
           </Button>
-          <p className="text-xs mt-3" style={{ color: THEME.muted }}>
-            Disponível em cidades com operação ativa. <strong>Itatinga/SP</strong> aberta agora.
-          </p>
         </div>
       </Section>
 
