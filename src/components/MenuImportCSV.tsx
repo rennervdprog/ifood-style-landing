@@ -1,0 +1,247 @@
+import { useState, useRef } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { Upload, Download, FileSpreadsheet, Loader2, X, AlertTriangle } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+
+interface MenuImportCSVProps {
+  storeId: string;
+}
+
+interface ParsedProduct {
+  section: string;
+  name: string;
+  description: string;
+  price: number;
+  available: boolean;
+  valid: boolean;
+  error?: string;
+}
+
+function parseCSV(text: string): ParsedProduct[] {
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) return [];
+
+  const header = lines[0].toLowerCase().replace(/["\s]/g, "");
+  const sep = header.includes(";") ? ";" : ",";
+
+  const rows = lines.slice(1);
+  return rows.map(row => {
+    const cols = row.split(sep).map(c => c.replace(/^"|"$/g, "").trim());
+    const section = cols[0] || "Sem Seção";
+    const name = cols[1] || "";
+    const description = cols[2] || "";
+    const rawPrice = (cols[3] || "0").replace(",", ".").replace(/[^0-9.]/g, "");
+    const price = parseFloat(rawPrice) || 0;
+    const available = cols[4] ? !["nao", "não", "false", "0", "n"].includes(cols[4].toLowerCase()) : true;
+
+    const valid = name.length > 0 && price > 0;
+    const error = !name ? "Nome vazio" : price <= 0 ? "Preço inválido" : undefined;
+
+    return { section, name, description, price, available, valid, error };
+  });
+}
+
+export default function MenuImportCSV({ storeId }: MenuImportCSVProps) {
+  const [open, setOpen] = useState(false);
+  const [parsed, setParsed] = useState<ParsedProduct[] | null>(null);
+  const [importing, setImporting] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string;
+      const items = parseCSV(text);
+      if (items.length === 0) {
+        toast.error("Planilha vazia ou formato inválido.");
+        return;
+      }
+      setParsed(items);
+    };
+    reader.readAsText(file, "UTF-8");
+    e.target.value = "";
+  };
+
+  const doImport = async () => {
+    if (!parsed) return;
+    const valid = parsed.filter(p => p.valid);
+    if (valid.length === 0) {
+      toast.error("Nenhum produto válido para importar.");
+      return;
+    }
+
+    setImporting(true);
+    try {
+      // Get or create sections
+      const sectionNames = [...new Set(valid.map(p => p.section))];
+      const { data: existingSections } = await supabase
+        .from("menu_sections")
+        .select("id, name")
+        .eq("store_id", storeId);
+
+      const sectionMap: Record<string, string> = {};
+      for (const es of existingSections || []) {
+        sectionMap[es.name.toLowerCase()] = es.id;
+      }
+
+      for (const sName of sectionNames) {
+        if (!sectionMap[sName.toLowerCase()]) {
+          const { data: newSec, error } = await supabase
+            .from("menu_sections")
+            .insert({ store_id: storeId, name: sName, sort_order: Object.keys(sectionMap).length })
+            .select("id")
+            .single();
+          if (error) throw error;
+          sectionMap[sName.toLowerCase()] = newSec.id;
+        }
+      }
+
+      // Insert products
+      const productsToInsert = valid.map(p => ({
+        store_id: storeId,
+        section_id: sectionMap[p.section.toLowerCase()] || null,
+        name: p.name,
+        description: p.description || null,
+        price: p.price,
+        is_available: p.available,
+      }));
+
+      const { error: prodErr } = await supabase.from("products").insert(productsToInsert);
+      if (prodErr) throw prodErr;
+
+      toast.success(`${valid.length} produtos importados com sucesso!`);
+      queryClient.invalidateQueries({ queryKey: ["menu-sections", storeId] });
+      queryClient.invalidateQueries({ queryKey: ["store-products", storeId] });
+      setParsed(null);
+      setOpen(false);
+    } catch (err: any) {
+      toast.error("Erro ao importar: " + (err.message || "Tente novamente"));
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const downloadTemplate = () => {
+    const csv = "Seção;Nome;Descrição;Preço;Disponível\nLanches;X-Burguer;Pão, hambúrguer, queijo e salada;18.90;sim\nLanches;X-Bacon;Pão, hambúrguer, bacon e queijo;22.50;sim\nBebidas;Coca-Cola 350ml;Lata gelada;6.00;sim\nBebidas;Suco Natural;Suco de laranja 500ml;8.00;sim";
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "modelo_cardapio.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const validCount = parsed?.filter(p => p.valid).length || 0;
+  const invalidCount = parsed?.filter(p => !p.valid).length || 0;
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="flex items-center gap-1.5 bg-accent/50 text-accent-foreground px-3 py-2 rounded-xl text-xs font-bold hover:bg-accent/70 transition-colors"
+      >
+        <FileSpreadsheet className="h-3.5 w-3.5" /> Importar Planilha
+      </button>
+    );
+  }
+
+  return (
+    <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="font-bold text-sm flex items-center gap-2">
+          <FileSpreadsheet className="h-4 w-4 text-primary" />
+          Importar Cardápio via Planilha
+        </h3>
+        <button onClick={() => { setOpen(false); setParsed(null); }} className="text-muted-foreground hover:text-foreground">
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+
+      {!parsed ? (
+        <div className="space-y-3">
+          <p className="text-xs text-muted-foreground">
+            Envie um arquivo CSV com as colunas: <strong>Seção, Nome, Descrição, Preço, Disponível</strong>.
+            Use ponto-e-vírgula (;) ou vírgula (,) como separador.
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={downloadTemplate}
+              className="flex items-center gap-1.5 bg-muted text-muted-foreground px-3 py-2 rounded-lg text-xs hover:bg-muted/80"
+            >
+              <Download className="h-3.5 w-3.5" /> Baixar Modelo
+            </button>
+            <button
+              onClick={() => fileRef.current?.click()}
+              className="flex items-center gap-1.5 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-xs font-bold"
+            >
+              <Upload className="h-3.5 w-3.5" /> Enviar Planilha
+            </button>
+            <input ref={fileRef} type="file" accept=".csv,.txt" onChange={handleFile} className="hidden" />
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <div className="flex gap-3 text-xs">
+            <span className="text-green-500 font-bold">✓ {validCount} válidos</span>
+            {invalidCount > 0 && (
+              <span className="text-destructive font-bold flex items-center gap-1">
+                <AlertTriangle className="h-3 w-3" /> {invalidCount} com erro
+              </span>
+            )}
+          </div>
+
+          <div className="max-h-60 overflow-auto rounded-lg border border-border">
+            <table className="w-full text-xs">
+              <thead className="bg-muted sticky top-0">
+                <tr>
+                  <th className="text-left px-2 py-1.5 font-medium">Seção</th>
+                  <th className="text-left px-2 py-1.5 font-medium">Nome</th>
+                  <th className="text-right px-2 py-1.5 font-medium">Preço</th>
+                  <th className="text-center px-2 py-1.5 font-medium">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {parsed.map((p, i) => (
+                  <tr key={i} className={`border-t border-border ${!p.valid ? "bg-destructive/10" : ""}`}>
+                    <td className="px-2 py-1.5 text-muted-foreground">{p.section}</td>
+                    <td className="px-2 py-1.5">{p.name || "—"}</td>
+                    <td className="px-2 py-1.5 text-right">R$ {p.price.toFixed(2)}</td>
+                    <td className="px-2 py-1.5 text-center">
+                      {p.valid ? (
+                        <span className="text-green-500">✓</span>
+                      ) : (
+                        <span className="text-destructive text-[10px]">{p.error}</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={doImport}
+              disabled={importing || validCount === 0}
+              className="flex items-center gap-1.5 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-xs font-bold disabled:opacity-50"
+            >
+              {importing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+              Importar {validCount} Produtos
+            </button>
+            <button
+              onClick={() => setParsed(null)}
+              className="text-muted-foreground text-xs px-3 py-2"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
