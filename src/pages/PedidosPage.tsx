@@ -42,6 +42,38 @@ const PedidosPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
 
+  // Check if user is lojista
+  const { data: userProfile } = useQuery({
+    queryKey: ["pedidos-profile", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const isLojista = userProfile?.role === "lojista";
+
+  // Get lojista's store ID
+  const { data: ownStore } = useQuery({
+    queryKey: ["own-store-pedidos", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("stores")
+        .select("id, name")
+        .eq("owner_id", user!.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user && isLojista,
+    staleTime: 1000 * 60 * 5,
+  });
+
   // Handle payment return redirect
   useEffect(() => {
     const paymentStatus = searchParams.get("payment");
@@ -53,13 +85,13 @@ const PedidosPage = () => {
       } else if (paymentStatus === "pending") {
         toast("⏳ Pagamento pendente. Aguardando confirmação...");
       }
-      // Clean up URL params
       setSearchParams({}, { replace: true });
     }
   }, [searchParams, setSearchParams]);
 
   const storeFilter = searchParams.get("store");
 
+  // Client orders (for clients and lojistas viewing as client)
   const { data: orders, isLoading } = useQuery({
     queryKey: ["orders", user?.id, storeFilter],
     queryFn: async () => {
@@ -76,7 +108,23 @@ const PedidosPage = () => {
       if (error) throw error;
       return data;
     },
-    enabled: !!user,
+    enabled: !!user && !isLojista,
+  });
+
+  // Store orders (for lojistas)
+  const { data: storeOrders, isLoading: storeOrdersLoading } = useQuery({
+    queryKey: ["store-orders-lojista", ownStore?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*, order_items(*, products(name))")
+        .eq("store_id", ownStore!.id)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!ownStore?.id && isLojista,
   });
 
   // Fetch existing ratings to know which orders are already rated
@@ -397,6 +445,77 @@ const PedidosPage = () => {
           >
             Entrar
           </button>
+        </div>
+        <BottomNav />
+      </div>
+    );
+  }
+
+  // Lojista view: show store orders with panel access
+  if (isLojista && ownStore) {
+    return (
+      <div className="min-h-screen bg-background pb-32 overflow-y-auto">
+        <header className="sticky top-0 z-50 bg-card border-b border-border flex items-center justify-between h-14 px-4">
+          <h1 className="font-bold text-foreground">Pedidos — {ownStore.name}</h1>
+          <button
+            onClick={() => navigate("/admin")}
+            className="bg-primary text-primary-foreground font-bold px-4 py-1.5 rounded-full text-xs"
+          >
+            Acessar Painel
+          </button>
+        </header>
+
+        <div className="px-4 py-4 space-y-3">
+          {storeOrdersLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="bg-card rounded-2xl p-4 border border-border animate-pulse space-y-2">
+                  <div className="h-4 bg-muted rounded w-1/2" />
+                  <div className="h-3 bg-muted rounded w-3/4" />
+                  <div className="h-4 bg-muted rounded w-1/4" />
+                </div>
+              ))}
+            </div>
+          ) : storeOrders && storeOrders.length > 0 ? (
+            storeOrders.map((order: any) => {
+              const config = statusConfig[order.status] || statusConfig.pendente;
+              const StatusIcon = config.icon;
+              return (
+                <div key={order.id} className="bg-card rounded-2xl p-4 border border-border">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-bold text-sm text-foreground">
+                      #{order.id.substring(0, 6).toUpperCase()}
+                    </h3>
+                    <div className={`flex items-center gap-1 text-xs font-bold ${config.color}`}>
+                      <StatusIcon className="h-3.5 w-3.5" />
+                      {config.label}
+                    </div>
+                  </div>
+                  <div className="text-xs text-muted-foreground space-y-1">
+                    {order.order_items?.map((item: any) => (
+                      <div key={item.id}>
+                        {item.quantity}x {item.products?.name || "Item"} — R$ {(item.unit_price * item.quantity).toFixed(2)}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex items-center justify-between mt-3 pt-2 border-t border-border">
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(order.created_at).toLocaleDateString("pt-BR")} {new Date(order.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                    <span className="font-bold text-sm text-foreground">
+                      R$ {Number(order.total_price).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <div className="flex flex-col items-center justify-center py-24 text-center">
+              <ClipboardList className="h-16 w-16 text-muted-foreground mb-4" />
+              <h2 className="text-lg font-bold text-foreground mb-1">Nenhum pedido</h2>
+              <p className="text-sm text-muted-foreground">Sua loja ainda não recebeu pedidos.</p>
+            </div>
+          )}
         </div>
         <BottomNav />
       </div>
