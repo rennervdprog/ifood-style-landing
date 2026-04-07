@@ -199,6 +199,38 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
     enabled: !!storeId,
   });
 
+  // Fetch store owner profile to check PIX key
+  const { data: storeData } = useQuery({
+    queryKey: ["store-owner", storeId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("stores")
+        .select("owner_id")
+        .eq("id", storeId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!storeId,
+  });
+
+  const { data: ownerProfile } = useQuery({
+    queryKey: ["owner-profile", storeData?.owner_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("pix_key, pix_type, document")
+        .eq("user_id", storeData!.owner_id!)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!storeData?.owner_id,
+  });
+
+  const hasPixKey = !!ownerProfile?.pix_key;
+  const hasDocument = !!ownerProfile?.document;
+
   const completedOrders = orders?.filter(o => ["entregue", "finalizado"].includes(o.status)) || [];
   const activeOrders = orders?.filter(o => !["entregue", "finalizado"].includes(o.status)) || [];
 
