@@ -14,13 +14,19 @@ const CITIES = [
   { value: "avare", label: "Avaré", available: false },
 ];
 
+// Placa antiga: ABC-1234 | Mercosul: ABC1D23
+const PLATE_REGEX = /^[A-Z]{3}-?\d{4}$|^[A-Z]{3}\d[A-Z]\d{2}$/i;
+
 const schema = z.object({
   email: z.string().trim().email("E-mail inválido").max(255),
   emailConfirm: z.string().trim().email("E-mail inválido").max(255),
   password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres").max(100),
   fullName: z.string().trim().min(3, "Nome deve ter pelo menos 3 caracteres").max(100),
   phone: z.string().trim().min(10, "Telefone inválido").max(20),
-  vehicle: z.string().trim().min(2, "Informe a placa da moto").max(20),
+  vehicle: z.string().trim()
+    .min(7, "Placa deve ter 7 caracteres (ex: ABC-1234 ou ABC1D23)")
+    .max(8, "Placa inválida")
+    .refine(v => PLATE_REGEX.test(v.replace(/\s/g, "")), "Placa inválida. Use formato antigo (ABC-1234) ou Mercosul (ABC1D23)"),
   cnhNumber: z.string().trim().min(9, "CNH deve ter pelo menos 9 dígitos").max(15, "CNH inválida"),
   city: z.string().min(1, "Selecione sua cidade"),
 }).refine(data => data.email === data.emailConfirm, {
@@ -271,7 +277,7 @@ const CadastroEntregador = () => {
             {/* Personal info */}
             <FieldInput icon={User} placeholder="Nome completo" value={fullName} onChange={setFullName} error={errors.fullName} />
             <FieldInput icon={Phone} placeholder="Telefone com DDD" value={phone} onChange={setPhone} error={errors.phone} inputMode="tel" />
-            <FieldInput icon={Bike} placeholder="Placa da Moto (ex: ABC-1234)" value={vehicle} onChange={setVehicle} error={errors.vehicle} />
+            <FieldInput icon={Bike} placeholder="Placa da Moto (ABC-1234 ou ABC1D23)" value={vehicle} onChange={(v) => setVehicle(v.toUpperCase())} error={errors.vehicle} />
             
             {/* CNH Number */}
             <FieldInput icon={FileText} placeholder="Número da CNH" value={cnhNumber} onChange={setCnhNumber} error={errors.cnhNumber} inputMode="numeric" />
