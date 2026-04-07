@@ -204,15 +204,7 @@ const CategoryProductFields = ({ category, metadata, onChange, storeId }: Catego
   switch (category) {
     case "pizzas":
       return withBeverageToggle(
-        <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-3">
-          <div className="flex items-center gap-2 text-primary text-xs font-bold">
-            <Pizza className="h-4 w-4" /> Campos de Pizza
-          </div>
-          {renderPizzaSizes()}
-          {renderToggle("Permite meia-meia?", "allows_half")}
-          {metadata.allows_half && renderTextField("Máx. sabores", "max_flavors", "2")}
-          {metadata.allows_half && renderListField("Sabores Disponíveis", "flavors", "Ex: Calabresa, Margherita...")}
-        </div>
+        <PizzaFlavorSelector storeId={storeId} metadata={metadata} onChange={onChange} />
       );
 
     case "lanches":
