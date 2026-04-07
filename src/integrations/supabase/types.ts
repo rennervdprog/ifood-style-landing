@@ -1086,6 +1086,8 @@ export type Database = {
           address_reference: string | null
           address_state: string | null
           address_street: string | null
+          asaas_account_id: string | null
+          asaas_wallet_id: string | null
           category: Database["public"]["Enums"]["store_category"]
           created_at: string
           delivery_mode: string
@@ -1109,6 +1111,8 @@ export type Database = {
           address_reference?: string | null
           address_state?: string | null
           address_street?: string | null
+          asaas_account_id?: string | null
+          asaas_wallet_id?: string | null
           category: Database["public"]["Enums"]["store_category"]
           created_at?: string
           delivery_mode?: string
@@ -1132,6 +1136,8 @@ export type Database = {
           address_reference?: string | null
           address_state?: string | null
           address_street?: string | null
+          asaas_account_id?: string | null
+          asaas_wallet_id?: string | null
           category?: Database["public"]["Enums"]["store_category"]
           created_at?: string
           delivery_mode?: string
