@@ -589,12 +589,14 @@ const ProductFormInline = ({
   onSave,
   onCancel,
   storeCategory,
+  storeId,
 }: {
   form: { name: string; price: string; description: string; image_url: string; metadata: Record<string, any> };
   setForm: (f: any) => void;
   onSave: () => void;
   onCancel: () => void;
   storeCategory?: string;
+  storeId?: string;
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
