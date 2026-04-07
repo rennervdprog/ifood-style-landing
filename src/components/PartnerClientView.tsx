@@ -47,8 +47,8 @@ const PartnerClientView = () => {
     })
     .map((s: any) => {
       const storeHours = (allHours || []).filter((h: any) => h.store_id === s.id);
-      const open = isStoreOpen(s, storeHours);
-      return { ...s, is_open: open };
+      const status = getStoreOpenStatus(storeHours as OpeningHour[], s.force_closed, s.is_open);
+      return { ...s, is_open: status.isOpen, statusReason: status.reason };
     })
     .sort((a: any, b: any) => (a.is_open === b.is_open ? 0 : a.is_open ? -1 : 1));
 
