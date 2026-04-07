@@ -479,6 +479,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
                   onSave={() => addProduct(section.id)}
                   onCancel={() => { setShowProductForm(null); setProductForm({ name: "", price: "", description: "", image_url: "", metadata: {} }); }}
                   storeCategory={storeCategory}
+                  storeId={storeId}
                 />
               ) : (
                 <button
@@ -551,6 +552,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
           onSave={() => addProduct(null)}
           onCancel={() => { setShowProductForm(null); setProductForm({ name: "", price: "", description: "", image_url: "", metadata: {} }); }}
           storeCategory={storeCategory}
+          storeId={storeId}
         />
       ) : (
         <button
@@ -744,6 +746,7 @@ const ProductCard = ({
         onSave={onSaveEdit}
         onCancel={onCancelEdit}
         storeCategory={storeCategory}
+        storeId={storeId}
       />
     );
   }
