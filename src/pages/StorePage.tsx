@@ -49,7 +49,7 @@ const StorePage = () => {
   const { data: store, isLoading: storeLoading } = useQuery({
     queryKey: ["store", id || slug],
     queryFn: async () => {
-      let query = supabase.from("stores").select("id, name, slug, image_url, category, rating, is_open, force_closed, status, delivery_mode, own_delivery_fee, owner_id, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street").eq("status", "ativo");
+      let query = supabase.from("stores").select("id, name, slug, image_url, category, rating, is_open, force_closed, status, delivery_mode, own_delivery_fee, owner_id, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street").in("status", ["ativo", "bloqueado"]);
       if (id) query = query.eq("id", id);
       else if (slug) query = query.eq("slug", slug);
       const { data, error } = await query.single();
@@ -166,6 +166,8 @@ const StorePage = () => {
     enabled: !!storeId,
   });
 
+  const isSuspended = store?.status === "bloqueado";
+
   const storeStatus = store
     ? getStoreOpenStatus(
         (storeHours as any as OpeningHour[]) || [],
@@ -173,6 +175,12 @@ const StorePage = () => {
         store.is_open
       )
     : { isOpen: false, reason: "" };
+
+  // Suspended stores are always "closed"
+  if (isSuspended) {
+    storeStatus.isOpen = false;
+    storeStatus.reason = "Loja temporariamente fechada";
+  }
 
   const hasConfiguredHours = Array.isArray(storeHours) && storeHours.length > 0;
   const statusLabel = hasConfiguredHours
@@ -461,8 +469,19 @@ const StorePage = () => {
         </div>
       </div>
 
-      {/* Closed banner */}
-      {!storeStatus.isOpen && (
+      {/* Suspended banner */}
+      {isSuspended && (
+        <div className="mx-4 mt-3 bg-destructive/10 border border-destructive/30 rounded-xl p-4 flex items-center gap-3">
+          <span className="text-2xl">🔒</span>
+          <div>
+            <p className="text-sm font-bold text-destructive">Loja fechada no momento</p>
+            <p className="text-xs text-muted-foreground">Esta loja está temporariamente indisponível para pedidos. Você pode consultar o cardápio, mas não é possível fazer pedidos agora.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Closed banner (only when not suspended) */}
+      {!storeStatus.isOpen && !isSuspended && (
         <div className="mx-4 mt-3 bg-destructive/5 border border-destructive/20 rounded-xl p-3 flex items-center gap-3">
           <Clock className="h-5 w-5 text-destructive flex-shrink-0" />
           <div>
