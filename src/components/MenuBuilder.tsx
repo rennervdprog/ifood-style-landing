@@ -737,6 +737,7 @@ const ProductCard = ({
   onAddAddonItem,
   onDeleteAddonItem,
   storeCategory,
+  storeId,
 }: any) => {
   if (isEditing) {
     return (
