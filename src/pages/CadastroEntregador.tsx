@@ -294,7 +294,14 @@ const CadastroEntregador = () => {
             }} error={errors.vehicle} maxLength={8} />
             
             {/* CNH Number */}
-            <FieldInput icon={FileText} placeholder="Número da CNH (11 dígitos)" value={cnhNumber} onChange={(v) => setCnhNumber(v.replace(/\D/g, "").slice(0, 11))} error={errors.cnhNumber} inputMode="numeric" maxLength={11} />
+            <FieldInput icon={FileText} placeholder="CNH (0000.0000.0000)" value={cnhNumber} onChange={(v) => {
+              const digits = v.replace(/\D/g, "").slice(0, 11);
+              // Auto-format: 0000.0000.0000 (4-4-3 com pontos) -> total 13 chars com pontos
+              let formatted = digits;
+              if (digits.length > 4) formatted = digits.slice(0, 4) + "." + digits.slice(4);
+              if (digits.length > 8) formatted = digits.slice(0, 4) + "." + digits.slice(4, 8) + "." + digits.slice(8);
+              setCnhNumber(formatted);
+            }} error={errors.cnhNumber} inputMode="numeric" maxLength={13} />
 
             {/* City */}
             <div>
