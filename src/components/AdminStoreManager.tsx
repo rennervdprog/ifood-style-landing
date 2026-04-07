@@ -22,6 +22,7 @@ const AdminStoreManager = () => {
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [creatingWallet, setCreatingWallet] = useState<string | null>(null);
+  const [bulkCreating, setBulkCreating] = useState(false);
 
   const { data: stores, isLoading } = useQuery({
     queryKey: ["admin-stores-list"],
