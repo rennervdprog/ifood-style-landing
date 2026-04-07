@@ -720,6 +720,33 @@ const PedidosPage = () => {
                   </div>
                 )}
 
+                {/* Client Delivery Confirmation */}
+                {["saiu_entrega", "em_transito"].includes(order.status) && !(order as any).delivery_confirmed_by_client && (
+                  <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3 mb-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                      <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Recebeu seu pedido?</span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mb-2">
+                      Confirme quando receber para avaliar e ajudar outros clientes.
+                    </p>
+                    <button
+                      onClick={() => handleConfirmDelivery(order.id)}
+                      disabled={confirmingDelivery === order.id}
+                      className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 rounded-xl text-xs disabled:opacity-50 transition-colors"
+                    >
+                      {confirmingDelivery === order.id ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          Confirmando...
+                        </span>
+                      ) : (
+                        "✅ Sim, recebi meu pedido!"
+                      )}
+                    </button>
+                  </div>
+                )}
+
                 <div className="text-xs text-muted-foreground space-y-0.5">
                   {order.order_items?.map((item: any) => (
                     <p key={item.id}>
