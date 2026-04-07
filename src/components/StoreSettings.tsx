@@ -157,6 +157,11 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
         category: category as any,
         image_url: imageUrl || null,
         slug: cleanSlug || null,
+        settings: {
+          ...(storeSettings || {}),
+          pizza_half_enabled: pizzaHalfEnabled,
+          pizza_price_mode: pizzaPriceMode,
+        },
         delivery_mode: deliveryMode,
         own_delivery_fee: parseFloat(ownDeliveryFee) || 0,
         address_street: addressStreet.trim() || null,
