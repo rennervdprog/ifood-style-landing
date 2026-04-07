@@ -757,21 +757,49 @@ interface ProductCardProps {
   storeCategory?: string;
 }
 
-const ProductCard = ({ product, disabled, onClick, storeCategory }: ProductCardProps) => {
-  const isPizza = storeCategory === "pizzas" && !product.metadata?.is_beverage;
-  const sizes: Array<{ name: string; price: number }> = product.metadata?.sizes || [];
+const categoryEmoji: Record<string, string> = {
+  pizzas: "🍕", lanches: "🍔", farmacias: "💊", japonesa: "🍣",
+  cafeteria: "☕", churrasco: "🥩", adegas: "🍷", sobremesas: "🍰",
+  docerias: "🧁", saudavel: "🥗",
+};
 
-  const priceDisplay = isPizza && sizes.length > 0
-    ? (() => {
-        const prices = sizes.map(s => s.price).filter(p => p > 0);
-        if (prices.length === 0) return `R$ ${product.price.toFixed(2)}`;
-        const min = Math.min(...prices);
-        const max = Math.max(...prices);
-        return min === max
-          ? `R$ ${min.toFixed(2)}`
-          : `R$ ${min.toFixed(2)} ~ R$ ${max.toFixed(2)}`;
-      })()
-    : `R$ ${product.price.toFixed(2)}`;
+const ProductCard = ({ product, disabled, onClick, storeCategory }: ProductCardProps) => {
+  const meta = product.metadata || {};
+  const cat = storeCategory || "";
+  const isBeverage = !!meta.is_beverage;
+  const emoji = categoryEmoji[cat] || "🍴";
+
+  // ===== PIZZA =====
+  const isPizza = cat === "pizzas" && !isBeverage;
+  const sizes: Array<{ name: string; price: number }> = meta.sizes || [];
+
+  // ===== FARMACIA =====
+  const isPharmacy = cat === "farmacias";
+
+  // Price display logic
+  const priceDisplay = (() => {
+    if (isPizza && sizes.length > 0) {
+      const prices = sizes.map(s => s.price).filter(p => p > 0);
+      if (prices.length === 0) return `R$ ${product.price.toFixed(2)}`;
+      const min = Math.min(...prices);
+      const max = Math.max(...prices);
+      return min === max ? `R$ ${min.toFixed(2)}` : `R$ ${min.toFixed(2)} ~ R$ ${max.toFixed(2)}`;
+    }
+    return `R$ ${product.price.toFixed(2)}`;
+  })();
+
+  // CTA label
+  const ctaLabel = (() => {
+    if (disabled) return "Indisponível";
+    if (isPizza && sizes.length > 0) return "Escolher tamanho";
+    if (isPharmacy && meta.requires_prescription) return "Ver detalhes";
+    return "Adicionar";
+  })();
+
+  // Subtitle/volume info
+  const volumeInfo = isBeverage && meta.drink_volume ? meta.drink_volume
+    : meta.volume ? meta.volume
+    : null;
 
   return (
     <button
@@ -782,19 +810,60 @@ const ProductCard = ({ product, disabled, onClick, storeCategory }: ProductCardP
     >
       <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
         <div>
+          {/* Badges row */}
+          <div className="flex flex-wrap gap-1 mb-1">
+            {/* Pharmacy: prescription badge */}
+            {isPharmacy && meta.requires_prescription && (
+              <span className="text-[9px] bg-destructive/10 text-destructive px-1.5 py-0.5 rounded-full font-bold">
+                📋 Receita obrigatória
+              </span>
+            )}
+            {/* Pharmacy: generic badge */}
+            {isPharmacy && meta.is_generic && (
+              <span className="text-[9px] bg-blue-500/10 text-blue-600 px-1.5 py-0.5 rounded-full font-bold">
+                Genérico
+              </span>
+            )}
+            {/* Lanches: combo badge */}
+            {cat === "lanches" && meta.is_combo && (
+              <span className="text-[9px] bg-amber-500/10 text-amber-600 px-1.5 py-0.5 rounded-full font-bold">
+                🎁 Combo
+              </span>
+            )}
+            {/* Japonesa: pieces */}
+            {cat === "japonesa" && meta.pieces_count && (
+              <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-bold">
+                {meta.pieces_count} peças
+              </span>
+            )}
+            {/* Japonesa: shareable */}
+            {(cat === "japonesa" || cat === "churrasco") && meta.shareable && (
+              <span className="text-[9px] bg-green-500/10 text-green-600 px-1.5 py-0.5 rounded-full font-bold">
+                👥 Compartilhar
+              </span>
+            )}
+            {/* Beverage: cold badge */}
+            {(isBeverage || cat === "adegas") && meta.serve_cold && (
+              <span className="text-[9px] bg-sky-500/10 text-sky-600 px-1.5 py-0.5 rounded-full font-bold">
+                ❄️ Gelado
+              </span>
+            )}
+          </div>
+
+          {/* Product name */}
           <h3 className="font-bold text-sm text-foreground line-clamp-1 group-hover:text-primary transition-colors">
             {product.name}
-            {product.metadata?.is_beverage && product.metadata?.drink_volume && (
-              <span className="text-muted-foreground font-medium"> · {product.metadata.drink_volume}</span>
-            )}
-            {!product.metadata?.is_beverage && product.metadata?.volume && (
-              <span className="text-muted-foreground font-medium"> · {product.metadata.volume}</span>
+            {volumeInfo && (
+              <span className="text-muted-foreground font-medium"> · {volumeInfo}</span>
             )}
           </h3>
+
+          {/* Description / category-specific subtitle */}
           {product.description && (
-            <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">{product.description}</p>
+            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 leading-relaxed">{product.description}</p>
           )}
-          {/* Pizza sizes preview */}
+
+          {/* Pizza: sizes preview */}
           {isPizza && sizes.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-1.5">
               {sizes.map(s => (
@@ -804,7 +873,65 @@ const ProductCard = ({ product, disabled, onClick, storeCategory }: ProductCardP
               ))}
             </div>
           )}
+
+          {/* Farmacia: dosage + manufacturer */}
+          {isPharmacy && (meta.dosage || meta.manufacturer) && (
+            <p className="text-[10px] text-muted-foreground mt-1">
+              {meta.dosage && <span className="font-medium">{meta.dosage}</span>}
+              {meta.dosage && meta.manufacturer && " · "}
+              {meta.manufacturer && <span>{meta.manufacturer}</span>}
+            </p>
+          )}
+
+          {/* Lanches combo items */}
+          {cat === "lanches" && meta.is_combo && meta.combo_items?.length > 0 && (
+            <p className="text-[10px] text-muted-foreground mt-1 line-clamp-1">
+              Inclui: {meta.combo_items.join(", ")}
+            </p>
+          )}
+
+          {/* Churrasco: weight */}
+          {cat === "churrasco" && meta.portion_weight && (
+            <p className="text-[10px] text-muted-foreground mt-1 font-medium">
+              ⚖️ {meta.portion_weight}
+            </p>
+          )}
+
+          {/* Sobremesas/Docerias: flavors preview */}
+          {(cat === "sobremesas" || cat === "docerias") && meta.flavors?.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {meta.flavors.slice(0, 3).map((f: string) => (
+                <span key={f} className="text-[10px] bg-pink-500/10 text-pink-600 px-1.5 py-0.5 rounded-full font-medium">{f}</span>
+              ))}
+              {meta.flavors.length > 3 && (
+                <span className="text-[10px] text-muted-foreground">+{meta.flavors.length - 3}</span>
+              )}
+            </div>
+          )}
+
+          {/* Cafeteria: sizes */}
+          {cat === "cafeteria" && meta.drink_sizes?.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {meta.drink_sizes.map((s: string) => (
+                <span key={s} className="text-[10px] bg-amber-500/10 text-amber-700 px-1.5 py-0.5 rounded-full font-medium">{s}</span>
+              ))}
+              {meta.can_be_iced && (
+                <span className="text-[10px] bg-sky-500/10 text-sky-600 px-1.5 py-0.5 rounded-full font-medium">❄️ Gelado</span>
+              )}
+            </div>
+          )}
+
+          {/* Adegas: type + alcohol */}
+          {cat === "adegas" && (meta.drink_type || meta.alcohol_content) && (
+            <p className="text-[10px] text-muted-foreground mt-1">
+              {meta.drink_type && <span className="font-medium">{meta.drink_type}</span>}
+              {meta.drink_type && meta.alcohol_content && " · "}
+              {meta.alcohol_content && <span>{meta.alcohol_content}</span>}
+            </p>
+          )}
         </div>
+
+        {/* Price + CTA */}
         <div className="flex items-center justify-between mt-2">
           <span className="text-sm font-black text-primary">
             {isPizza && sizes.length > 0 && <span className="text-[10px] font-bold text-muted-foreground mr-1">a partir de</span>}
@@ -815,10 +942,12 @@ const ProductCard = ({ product, disabled, onClick, storeCategory }: ProductCardP
               ? "bg-muted text-muted-foreground"
               : "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground"
           }`}>
-            {disabled ? "Indisponível" : isPizza && sizes.length > 0 ? "Escolher tamanho" : "Ver detalhes"}
+            {ctaLabel}
           </span>
         </div>
       </div>
+
+      {/* Image */}
       <div className="flex-shrink-0">
         {product.image_url ? (
           <img
@@ -829,7 +958,7 @@ const ProductCard = ({ product, disabled, onClick, storeCategory }: ProductCardP
           />
         ) : (
           <div className="w-24 h-24 rounded-xl bg-muted flex items-center justify-center">
-            <span className="text-3xl">{isPizza ? "🍕" : "🍴"}</span>
+            <span className="text-3xl">{emoji}</span>
           </div>
         )}
       </div>
