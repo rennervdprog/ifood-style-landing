@@ -1483,6 +1483,7 @@ const AdminDashboard = () => {
           {!["dashboard", "orders", "clients"].includes(dashboardTab) && store && (
             <div className="p-4 lg:p-6 max-w-5xl">
               {dashboardTab === "menu" && <MenuBuilder storeId={store.id} storeCategory={store.category} />}
+              {dashboardTab === "flavors" && <PizzaFlavorManager storeId={store.id} />}
               {dashboardTab === "addons" && <AddonManager storeId={store.id} />}
               {dashboardTab === "hours" && <StoreHoursManager storeId={store.id} forceClosed={(store as any).force_closed || false} />}
               {dashboardTab === "settings" && (
