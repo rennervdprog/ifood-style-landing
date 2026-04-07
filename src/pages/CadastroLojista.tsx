@@ -25,6 +25,7 @@ const PLATFORM_CITIES = ["itatinga"];
 
 const schema = z.object({
   email: z.string().trim().email("E-mail inválido").max(255),
+  confirmEmail: z.string().trim().email("E-mail inválido").max(255),
   password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres").max(100),
   storeName: z.string().trim().min(3, "Nome da loja deve ter pelo menos 3 caracteres").max(100),
   document: z.string().trim().min(11, "CPF/CNPJ inválido").max(18),
@@ -34,11 +35,15 @@ const schema = z.object({
   storeCategory: z.enum(storeCategories as unknown as [string, ...string[]], { errorMap: () => ({ message: "Selecione uma categoria" }) }),
   cep: z.string().min(8, "CEP inválido"),
   city: z.string().min(1, "Busque o CEP para identificar a cidade"),
+}).refine((data) => data.email === data.confirmEmail, {
+  message: "Os e-mails não coincidem",
+  path: ["confirmEmail"],
 });
 
 const CadastroLojista = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
+  const [confirmEmail, setConfirmEmail] = useState("");
   const [password, setPassword] = useState("");
   const [storeName, setStoreName] = useState("");
   const [document, setDocument] = useState("");
@@ -98,7 +103,7 @@ const CadastroLojista = () => {
     e.preventDefault();
     setErrors({});
 
-    const result = schema.safeParse({ email, password, storeName, document, birthDate, pixType, pixKey, storeCategory, cep, city });
+    const result = schema.safeParse({ email, confirmEmail, password, storeName, document, birthDate, pixType, pixKey, storeCategory, cep, city });
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
       result.error.errors.forEach((err) => {
