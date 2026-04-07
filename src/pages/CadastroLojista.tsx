@@ -15,11 +15,16 @@ const categoryLabels: Record<string, string> = {
   farmacias: "💊 Farmácia", docerias: "🍰 Doceria",
 };
 
+// Cities with full platform support (motoboys available)
+const PLATFORM_CITIES = ["itatinga"];
+
 const CITIES = [
   { value: "itatinga", label: "Itatinga", available: true },
-  { value: "pardinho", label: "Pardinho", available: false },
-  { value: "bofete", label: "Bofete", available: false },
-  { value: "torre_de_pedra", label: "Torre de Pedra", available: false },
+  { value: "pardinho", label: "Pardinho", available: true },
+  { value: "bofete", label: "Bofete", available: true },
+  { value: "torre_de_pedra", label: "Torre de Pedra", available: true },
+  { value: "botucatu", label: "Botucatu", available: true },
+  { value: "avare", label: "Avaré", available: true },
 ];
 
 const schema = z.object({
@@ -173,8 +178,8 @@ const CadastroLojista = () => {
                   className="w-full h-12 pl-10 pr-4 rounded-xl border border-border bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm appearance-none"
                 >
                   {CITIES.map((c) => (
-                    <option key={c.value} value={c.value} disabled={!c.available}>
-                      {c.label}{!c.available ? " — Em breve" : ""}
+                    <option key={c.value} value={c.value}>
+                      {c.label}{!PLATFORM_CITIES.includes(c.value) ? " — Cardápio Digital" : ""}
                     </option>
                   ))}
                 </select>
