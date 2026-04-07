@@ -1,4 +1,4 @@
-import { Shield, Clock, Store, Bike, CheckCircle2, XCircle, Loader2, Trash2 } from "lucide-react";
+import { Shield, Clock, Store, Bike, CheckCircle2, XCircle, Loader2, Trash2, FileText, Camera, ChevronDown, ChevronUp } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -174,8 +174,12 @@ const AdminApprovals = () => {
                 </span>
               </div>
               {p.vehicle && (
-                <p className="text-xs text-muted-foreground mb-2">🏍️ {p.vehicle}</p>
+                <p className="text-xs text-muted-foreground mb-1">🏍️ Placa: {p.vehicle}</p>
               )}
+              {(p as any).cnh_number && (
+                <p className="text-xs text-muted-foreground mb-1">📄 CNH: {(p as any).cnh_number}</p>
+              )}
+              {p.role === "motoboy" && <DriverDocuments profile={p} />}
               <div className="flex gap-2">
                 {(p as any).whatsapp_number && (
                   <WhatsAppButton
@@ -241,6 +245,73 @@ const AdminApprovals = () => {
             ))}
           </div>
         </>
+      )}
+    </div>
+  );
+};
+
+const DriverDocuments = ({ profile }: { profile: any }) => {
+  const [expanded, setExpanded] = useState(false);
+  const [docUrls, setDocUrls] = useState<Record<string, string>>({});
+
+  const loadDocs = async () => {
+    if (expanded) { setExpanded(false); return; }
+    setExpanded(true);
+
+    const urls: Record<string, string> = {};
+    for (const [key, path] of Object.entries({
+      cnh_front: profile.cnh_front_url,
+      cnh_back: profile.cnh_back_url,
+      selfie: profile.selfie_url,
+    })) {
+      if (path) {
+        const { data } = await supabase.storage
+          .from("driver-documents")
+          .createSignedUrl(path as string, 300); // 5 min URL
+        if (data?.signedUrl) urls[key] = data.signedUrl;
+      }
+    }
+    setDocUrls(urls);
+  };
+
+  const hasAnyDoc = profile.cnh_front_url || profile.cnh_back_url || profile.selfie_url;
+  if (!hasAnyDoc) return null;
+
+  return (
+    <div className="mb-2">
+      <button
+        type="button"
+        onClick={loadDocs}
+        className="flex items-center gap-1.5 text-xs font-bold text-primary mb-1"
+      >
+        <FileText className="h-3.5 w-3.5" />
+        {expanded ? "Ocultar documentos" : "Ver documentos"}
+        {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+      </button>
+      {expanded && (
+        <div className="grid grid-cols-3 gap-2 mt-1">
+          {docUrls.cnh_front && (
+            <div>
+              <p className="text-[10px] text-muted-foreground mb-1">Frente CNH</p>
+              <img src={docUrls.cnh_front} alt="CNH Frente" className="w-full h-24 object-cover rounded-lg border border-border cursor-pointer" onClick={() => window.open(docUrls.cnh_front, "_blank")} />
+            </div>
+          )}
+          {docUrls.cnh_back && (
+            <div>
+              <p className="text-[10px] text-muted-foreground mb-1">Verso CNH</p>
+              <img src={docUrls.cnh_back} alt="CNH Verso" className="w-full h-24 object-cover rounded-lg border border-border cursor-pointer" onClick={() => window.open(docUrls.cnh_back, "_blank")} />
+            </div>
+          )}
+          {docUrls.selfie && (
+            <div>
+              <p className="text-[10px] text-muted-foreground mb-1">Selfie</p>
+              <img src={docUrls.selfie} alt="Selfie" className="w-full h-24 object-cover rounded-lg border border-border cursor-pointer" onClick={() => window.open(docUrls.selfie, "_blank")} />
+            </div>
+          )}
+          {Object.keys(docUrls).length === 0 && expanded && (
+            <p className="col-span-3 text-xs text-muted-foreground">Carregando documentos...</p>
+          )}
+        </div>
       )}
     </div>
   );
