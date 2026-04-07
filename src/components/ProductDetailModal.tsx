@@ -179,6 +179,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
     if (isLanche && meatOptions.length > 0 && !selectedMeatDoneness) return false;
     if (isBBQ && bbqMeatOptions.length > 0 && !selectedMeatDoneness) return false;
     if (isDessert && flavors.length > 0 && !selectedFlavor) return false;
+    if (isCafe && isCakeLike && cafeFlavors.length > 0 && !selectedFlavor) return false;
     return addonsMet;
   }, [addonGroups, selectedAddons, hasSizes, selectedSize, isLanche, meatOptions, selectedMeatDoneness, isBBQ, bbqMeatOptions, isDessert, flavors, selectedFlavor]);
 
