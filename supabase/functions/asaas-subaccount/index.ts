@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Get owner profile for CPF/CNPJ and email
+    // Get owner profile for CPF/CNPJ, email, and birth date
     const { data: profile } = await serviceClient
       .from("profiles")
       .select("full_name, document, email, phone, whatsapp_number")
@@ -97,6 +97,10 @@ Deno.serve(async (req) => {
     if (!profile?.document) {
       return json({ error: "Lojista não possui documento (CPF/CNPJ) cadastrado." }, 400);
     }
+
+    // Get birth_date from auth user metadata
+    const { data: ownerAuth } = await serviceClient.auth.admin.getUserById(store.owner_id);
+    const birthDate = ownerAuth?.user?.user_metadata?.birth_date || "1990-01-01";
 
     const apiKey = Deno.env.get("ASAAS_API_KEY");
     if (!apiKey) {
@@ -117,12 +121,12 @@ Deno.serve(async (req) => {
       mobilePhone: phone || undefined,
       address: store.address_city || "Itatinga",
       province: "SP",
-      postalCode: "18690000", // Itatinga default
+      postalCode: "18690000",
     };
 
     // Asaas requires birthDate for CPF (individual) accounts
     if (!isCnpj) {
-      subaccountBody.birthDate = "1990-01-01"; // Default placeholder — Asaas requires this field
+      subaccountBody.birthDate = birthDate;
     }
 
     console.log("Creating Asaas subaccount for store:", store.name);
@@ -148,7 +152,34 @@ Deno.serve(async (req) => {
 
     console.log("Asaas subaccount created:", accountId, "wallet:", walletId);
 
-    // Step 2: Save to store
+    // Step 2: Configure automatic daily transfer (saque automático)
+    try {
+      const transferRes = await fetch(`${baseUrl}/transfers/settings`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "access_token": apiKey,
+          "as_account": accountId,
+        },
+        body: JSON.stringify({
+          transferEnabled: true,
+          scheduleInterval: "DAILY",
+          scheduleOffset: 0,
+        }),
+      });
+
+      if (transferRes.ok) {
+        console.log("Auto-transfer configured for:", store.name);
+      } else {
+        const transferErr = await transferRes.json();
+        console.warn("Auto-transfer config warning:", JSON.stringify(transferErr));
+        // Non-blocking — subaccount is still created
+      }
+    } catch (transferError) {
+      console.warn("Auto-transfer setup failed (non-blocking):", transferError);
+    }
+
+    // Step 3: Save to store
     await serviceClient
       .from("stores")
       .update({
@@ -162,7 +193,7 @@ Deno.serve(async (req) => {
       asaas_account_id: accountId,
       asaas_wallet_id: walletId,
       store_name: store.name,
-      message: `Subconta Asaas criada para ${store.name}`,
+      message: `Subconta Asaas criada para ${store.name} com saque automático diário`,
     });
   } catch (err) {
     console.error("Subaccount error:", err);
