@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import {
   ArrowLeft, DollarSign, ShoppingBag, TrendingUp, Clock,
   Store, Copy, AlertTriangle, Users, Bike, Wallet, CheckCircle2, Banknote, XCircle, Bell, Trash2, QrCode, Loader2, ArrowUpRight, ArrowDownRight, Settings,
-  LayoutDashboard, Shield, Ticket, RefreshCw, Truck, Menu, X
+  LayoutDashboard, Shield, Ticket, RefreshCw, Truck, Menu, X, MapPin, Eye
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -20,7 +20,7 @@ import {
 import { addMoney, multiplyMoney, subtractMoney, sumMoney } from "@/lib/utils";
 
 type DateFilter = "today" | "yesterday" | "week";
-type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "saques" | "sync" | "coupons" | "entrega";
+type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "saques" | "sync" | "coupons" | "entrega" | "cidades";
 
 const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; group: string }[] = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, group: "Principal" },
@@ -29,6 +29,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
   { key: "entrega", label: "Entrega", icon: Truck, group: "Configurações" },
   { key: "approvals", label: "Aprovações", icon: Shield, group: "Gerenciamento" },
   { key: "stores", label: "Lojas", icon: Store, group: "Gerenciamento" },
+  { key: "cidades", label: "Cidades", icon: MapPin, group: "Gerenciamento" },
   { key: "coupons", label: "Cupons", icon: Ticket, group: "Gerenciamento" },
   { key: "sync", label: "Sincronizar", icon: RefreshCw, group: "Sistema" },
 ];
