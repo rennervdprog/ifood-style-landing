@@ -87,10 +87,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Get owner profile for CPF/CNPJ, email, and birth date
+    // Get owner profile for CPF/CNPJ, email, PIX, and birth date
     const { data: profile } = await serviceClient
       .from("profiles")
-      .select("full_name, document, email, phone, whatsapp_number")
+      .select("full_name, document, email, phone, whatsapp_number, pix_key, pix_type")
       .eq("user_id", store.owner_id)
       .single();
 
@@ -152,7 +152,48 @@ Deno.serve(async (req) => {
 
     console.log("Asaas subaccount created:", accountId, "wallet:", walletId);
 
-    // Step 2: Configure automatic daily transfer (saque automático)
+    // Step 2: Register PIX key as bank account for auto-withdrawal
+    if (profile.pix_key) {
+      try {
+        // Map our pix_type to Asaas pixAddressKeyType
+        const pixTypeMap: Record<string, string> = {
+          cpf: "CPF",
+          cnpj: "CNPJ",
+          email: "EMAIL",
+          phone: "PHONE",
+          random: "EVP",
+        };
+        const asaasPixType = pixTypeMap[profile.pix_type || "random"] || "EVP";
+
+        const pixRes = await fetch(`${baseUrl}/accounts/${accountId}/bankAccounts`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "access_token": apiKey,
+          },
+          body: JSON.stringify({
+            bank: { code: "000" }, // PIX via chave — Asaas handles routing
+            accountName: profile.full_name || store.name,
+            ownerName: profile.full_name || store.name,
+            cpfCnpj: cleanDoc,
+            type: "CHECKING",
+            pixAddressKeyType: asaasPixType,
+            pixAddressKey: profile.pix_key,
+          }),
+        });
+
+        if (pixRes.ok) {
+          console.log("PIX bank account registered for:", store.name);
+        } else {
+          const pixErr = await pixRes.json();
+          console.warn("PIX registration warning:", JSON.stringify(pixErr));
+        }
+      } catch (pixError) {
+        console.warn("PIX registration failed (non-blocking):", pixError);
+      }
+    }
+
+    // Step 3: Configure automatic daily transfer (saque automático)
     try {
       const transferRes = await fetch(`${baseUrl}/transfers/settings`, {
         method: "POST",
@@ -173,13 +214,12 @@ Deno.serve(async (req) => {
       } else {
         const transferErr = await transferRes.json();
         console.warn("Auto-transfer config warning:", JSON.stringify(transferErr));
-        // Non-blocking — subaccount is still created
       }
     } catch (transferError) {
       console.warn("Auto-transfer setup failed (non-blocking):", transferError);
     }
 
-    // Step 3: Save to store
+    // Step 4: Save to store
     await serviceClient
       .from("stores")
       .update({
