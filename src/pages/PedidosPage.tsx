@@ -97,7 +97,7 @@ const PedidosPage = () => {
     queryFn: async () => {
       let query = supabase
         .from("orders")
-        .select("*, stores(name), order_items(*, products(name))")
+        .select("*, stores(name, delivery_mode), order_items(*, products(name))")
         .eq("client_id", user!.id)
         .eq("visible_to_client", true)
         .order("created_at", { ascending: false });
@@ -573,7 +573,8 @@ const PedidosPage = () => {
             const isWaitingPayment = order.status === "aguardando_pagamento";
             const isCancelled = order.status === "cancelado";
                 const isPaid = !["aguardando_pagamento", "cancelado"].includes(order.status);
-                const showPin = order.delivery_pin && isPaid && !["entregue", "finalizado"].includes(order.status);
+                const isOwnDeliveryStore = order.stores?.delivery_mode === "own";
+                const showPin = order.delivery_pin && isPaid && !isOwnDeliveryStore && !["entregue", "finalizado"].includes(order.status);
             return (
               <div key={order.id} className={`bg-card rounded-2xl p-4 border ${isCancelled ? "border-red-500/30 opacity-60" : "border-border"}`}>
                 <div className="flex items-center justify-between mb-2">
