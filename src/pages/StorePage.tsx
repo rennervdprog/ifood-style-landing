@@ -49,7 +49,7 @@ const StorePage = () => {
   const { data: store, isLoading: storeLoading } = useQuery({
     queryKey: ["store", id || slug],
     queryFn: async () => {
-      let query = supabase.from("stores").select("id, name, slug, image_url, category, rating, is_open, force_closed, status, delivery_mode, own_delivery_fee, owner_id, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street").in("status", ["ativo", "bloqueado"]);
+      let query = supabase.from("stores").select("id, name, slug, image_url, category, rating, is_open, force_closed, status, delivery_mode, own_delivery_fee, owner_id, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, settings").in("status", ["ativo", "bloqueado"]);
       if (id) query = query.eq("id", id);
       else if (slug) query = query.eq("slug", slug);
       const { data, error } = await query.single();
@@ -750,58 +750,87 @@ interface ProductCardProps {
   product: Product;
   disabled: boolean;
   onClick: () => void;
+  storeCategory?: string;
 }
 
-const ProductCard = ({ product, disabled, onClick }: ProductCardProps) => (
-  <button
-    onClick={onClick}
-    className={`w-full flex gap-3 bg-card rounded-2xl p-3 border border-border text-left transition-all group ${
-      disabled ? "opacity-50" : "hover:shadow-lg hover:border-primary/20 active:scale-[0.98]"
-    }`}
-  >
-    <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
-      <div>
-        <h3 className="font-bold text-sm text-foreground line-clamp-1 group-hover:text-primary transition-colors">
-          {product.name}
-          {product.metadata?.is_beverage && product.metadata?.drink_volume && (
-            <span className="text-muted-foreground font-medium"> · {product.metadata.drink_volume}</span>
+const ProductCard = ({ product, disabled, onClick, storeCategory }: ProductCardProps) => {
+  const isPizza = storeCategory === "pizzas" && !product.metadata?.is_beverage;
+  const sizes: Array<{ name: string; price: number }> = product.metadata?.sizes || [];
+
+  const priceDisplay = isPizza && sizes.length > 0
+    ? (() => {
+        const prices = sizes.map(s => s.price).filter(p => p > 0);
+        if (prices.length === 0) return `R$ ${product.price.toFixed(2)}`;
+        const min = Math.min(...prices);
+        const max = Math.max(...prices);
+        return min === max
+          ? `R$ ${min.toFixed(2)}`
+          : `R$ ${min.toFixed(2)} ~ R$ ${max.toFixed(2)}`;
+      })()
+    : `R$ ${product.price.toFixed(2)}`;
+
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full flex gap-3 bg-card rounded-2xl p-3 border border-border text-left transition-all group ${
+        disabled ? "opacity-50" : "hover:shadow-lg hover:border-primary/20 active:scale-[0.98]"
+      }`}
+    >
+      <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+        <div>
+          <h3 className="font-bold text-sm text-foreground line-clamp-1 group-hover:text-primary transition-colors">
+            {product.name}
+            {product.metadata?.is_beverage && product.metadata?.drink_volume && (
+              <span className="text-muted-foreground font-medium"> · {product.metadata.drink_volume}</span>
+            )}
+            {!product.metadata?.is_beverage && product.metadata?.volume && (
+              <span className="text-muted-foreground font-medium"> · {product.metadata.volume}</span>
+            )}
+          </h3>
+          {product.description && (
+            <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">{product.description}</p>
           )}
-          {!product.metadata?.is_beverage && product.metadata?.volume && (
-            <span className="text-muted-foreground font-medium"> · {product.metadata.volume}</span>
+          {/* Pizza sizes preview */}
+          {isPizza && sizes.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1.5">
+              {sizes.map(s => (
+                <span key={s.name} className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">
+                  {s.name}
+                </span>
+              ))}
+            </div>
           )}
-        </h3>
-        {product.description && (
-          <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">{product.description}</p>
+        </div>
+        <div className="flex items-center justify-between mt-2">
+          <span className="text-sm font-black text-primary">
+            {isPizza && sizes.length > 0 && <span className="text-[10px] font-bold text-muted-foreground mr-1">a partir de</span>}
+            {priceDisplay}
+          </span>
+          <span className={`text-[10px] font-bold px-2 py-1 rounded-full transition-colors ${
+            disabled
+              ? "bg-muted text-muted-foreground"
+              : "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground"
+          }`}>
+            {disabled ? "Indisponível" : isPizza && sizes.length > 0 ? "Escolher tamanho" : "Ver detalhes"}
+          </span>
+        </div>
+      </div>
+      <div className="flex-shrink-0">
+        {product.image_url ? (
+          <img
+            src={product.image_url}
+            alt={product.name}
+            className="w-24 h-24 rounded-xl object-cover shadow-sm group-hover:shadow-md transition-shadow"
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-24 h-24 rounded-xl bg-muted flex items-center justify-center">
+            <span className="text-3xl">{isPizza ? "🍕" : "🍴"}</span>
+          </div>
         )}
       </div>
-      <div className="flex items-center justify-between mt-2">
-        <span className="text-sm font-black text-primary">
-          R$ {product.price.toFixed(2)}
-        </span>
-        <span className={`text-[10px] font-bold px-2 py-1 rounded-full transition-colors ${
-          disabled
-            ? "bg-muted text-muted-foreground"
-            : "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground"
-        }`}>
-          {disabled ? "Indisponível" : "Ver detalhes"}
-        </span>
-      </div>
-    </div>
-    <div className="flex-shrink-0">
-      {product.image_url ? (
-        <img
-          src={product.image_url}
-          alt={product.name}
-          className="w-24 h-24 rounded-xl object-cover shadow-sm group-hover:shadow-md transition-shadow"
-          loading="lazy"
-        />
-      ) : (
-        <div className="w-24 h-24 rounded-xl bg-muted flex items-center justify-center">
-          <span className="text-3xl">🍴</span>
-        </div>
-      )}
-    </div>
-  </button>
-);
+    </button>
+  );
+};
 
 export default StorePage;
