@@ -199,6 +199,38 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
     enabled: !!storeId,
   });
 
+  // Fetch store owner profile to check PIX key
+  const { data: storeData } = useQuery({
+    queryKey: ["store-owner", storeId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("stores")
+        .select("owner_id")
+        .eq("id", storeId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!storeId,
+  });
+
+  const { data: ownerProfile } = useQuery({
+    queryKey: ["owner-profile", storeData?.owner_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("pix_key, pix_type, document")
+        .eq("user_id", storeData!.owner_id!)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!storeData?.owner_id,
+  });
+
+  const hasPixKey = !!ownerProfile?.pix_key;
+  const hasDocument = !!ownerProfile?.document;
+
   const completedOrders = orders?.filter(o => ["entregue", "finalizado"].includes(o.status)) || [];
   const activeOrders = orders?.filter(o => !["entregue", "finalizado"].includes(o.status)) || [];
 
@@ -679,17 +711,37 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
             </div>
           )}
 
+          {(!hasPixKey || !hasDocument) && (
+            <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 flex items-start gap-2">
+              <AlertCircle className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-bold text-amber-400">
+                  {!hasDocument && !hasPixKey
+                    ? "CPF/CNPJ e Chave PIX não cadastrados"
+                    : !hasDocument
+                    ? "CPF/CNPJ não cadastrado"
+                    : "Chave PIX não cadastrada"}
+                </p>
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  O lojista precisa cadastrar {!hasDocument ? "o CPF/CNPJ" : ""}{!hasDocument && !hasPixKey ? " e " : ""}{!hasPixKey ? "a chave PIX" : ""} no perfil para que a cobrança de comissão funcione corretamente.
+                </p>
+              </div>
+            </div>
+          )}
+
           {(dbComissaoPendente > 0 || commissionDue > 0) && (
             <Button
               onClick={handleGenerateCommissionCharge}
-              disabled={generatingCharge || isPixBlocked}
-              className="w-full mt-3 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-bold shadow-lg shadow-red-500/20"
+              disabled={generatingCharge || isPixBlocked || !hasPixKey || !hasDocument}
+              className="w-full mt-3 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-bold shadow-lg shadow-red-500/20 disabled:opacity-50"
               size="lg"
             >
               {generatingCharge ? (
                 <><Loader2 className="h-4 w-4 animate-spin" /> Gerando PIX...</>
               ) : isPixBlocked ? (
                 <><ShieldAlert className="h-4 w-4" /> Aguarde...</>
+              ) : !hasPixKey || !hasDocument ? (
+                <><AlertCircle className="h-4 w-4" /> Dados incompletos</>
               ) : (
                 <><QrCode className="h-4 w-4" /> Cobrar Comissão via PIX</>
               )}
