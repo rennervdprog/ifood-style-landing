@@ -472,7 +472,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
             onClick={() => setDateFilter(f)}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
               dateFilter === f
-                ? "bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-lg shadow-pink-500/20"
+                ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
                 : "bg-card/80 text-muted-foreground hover:text-foreground border border-border/50"
             }`}
           >
@@ -488,7 +488,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
       <div className="grid grid-cols-2 gap-3">
         {/* Faturamento Total */}
         <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-4 border border-border/30 relative overflow-hidden group">
-          <div className="absolute inset-0 bg-gradient-to-br from-pink-500/5 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
           <div className="relative">
             <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Faturamento</p>
             <p className="text-2xl font-black text-foreground mt-1 tracking-tight">

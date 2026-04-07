@@ -288,7 +288,7 @@ const StorePage = () => {
         ) : (
           <div className={`w-full h-full bg-gradient-to-br from-primary/30 to-primary/5 ${!storeStatus.isOpen ? "grayscale" : ""}`} />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-black/20" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
 
         {/* Top bar */}
         <div className="absolute top-0 left-0 right-0 flex items-center justify-end p-4 z-10">
