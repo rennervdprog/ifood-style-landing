@@ -618,74 +618,77 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
         </div>
       )}
 
-      {/* Commission & Balance Section */}
-      <div className="grid grid-cols-1 gap-3">
-        {/* A Receber */}
-        <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-5 border border-emerald-500/20 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent" />
-          <div className="relative">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                <ArrowUpRight className="h-4 w-4 text-emerald-400" />
-              </div>
-              <p className="text-sm font-bold text-foreground">A Receber do App</p>
+      {/* Split Automático - Vendas App */}
+      <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-5 border border-emerald-500/20 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent" />
+        <div className="relative">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+              <CheckCircle2 className="h-4 w-4 text-emerald-400" />
             </div>
-            <p className="text-xs text-muted-foreground mb-1">85% das vendas via PIX App</p>
-            <p className="text-2xl font-black text-emerald-400">R$ {creditFromApp.toFixed(2)}</p>
+            <p className="text-sm font-bold text-foreground">Vendas via App</p>
+            <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-[10px]">Split Automático</Badge>
+          </div>
+          <p className="text-2xl font-black text-emerald-400">R$ {appSales.toFixed(2)}</p>
+          <p className="text-[10px] text-muted-foreground mt-1">
+            O lojista recebe 85% (R$ {creditFromApp.toFixed(2)}) automaticamente via Asaas. Sua comissão de 15% (R$ {multiplyMoney(appSales, 0.15).toFixed(2)}) já foi retida.
+          </p>
+          <div className="mt-2 rounded-xl bg-emerald-500/5 border border-emerald-500/10 p-2.5">
+            <p className="text-[10px] text-emerald-400 font-semibold">✅ Nenhuma ação necessária — tudo automático</p>
           </div>
         </div>
+      </div>
 
-        {/* Comissões Pendentes */}
-        <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-5 border border-red-500/20 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-transparent" />
-          <div className="relative">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 rounded-xl bg-red-500/10 flex items-center justify-center">
-                <ArrowDownRight className="h-4 w-4 text-red-400" />
-              </div>
-              <p className="text-sm font-bold text-foreground">Comissões Pendentes</p>
+      {/* Comissões Pendentes - Vendas Físicas */}
+      <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-5 border border-red-500/20 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-transparent" />
+        <div className="relative">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-8 h-8 rounded-xl bg-red-500/10 flex items-center justify-center">
+              <ArrowDownRight className="h-4 w-4 text-red-400" />
             </div>
-            <p className="text-xs text-muted-foreground mb-1">15% das vendas em Dinheiro/Cartão</p>
-            <p className="text-2xl font-black text-red-400">
-              R$ {(dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue).toFixed(2)}
-            </p>
-
-            {safetyModeMs > 0 && (
-              <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 flex items-start gap-2">
-                <ShieldAlert className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-xs font-bold text-amber-400">Manutenção temporária</p>
-                  <p className="text-[10px] text-muted-foreground mt-1">Volta em {formatCooldownTime(safetyModeMs)}</p>
-                </div>
-              </div>
-            )}
-            {!safetyModeMs && pixCooldownMs > 0 && (
-              <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 flex items-start gap-2">
-                <AlertCircle className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-xs font-bold text-amber-400">Muitas tentativas</p>
-                  <p className="text-[10px] text-muted-foreground mt-1">Aguarde {formatCooldownTime(pixCooldownMs)}</p>
-                </div>
-              </div>
-            )}
-
-            {(dbComissaoPendente > 0 || commissionDue > 0) && (
-              <Button
-                onClick={handleGenerateCommissionCharge}
-                disabled={generatingCharge || isPixBlocked}
-                className="w-full mt-3 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-bold shadow-lg shadow-red-500/20"
-                size="lg"
-              >
-                {generatingCharge ? (
-                  <><Loader2 className="h-4 w-4 animate-spin" /> Gerando PIX...</>
-                ) : isPixBlocked ? (
-                  <><ShieldAlert className="h-4 w-4" /> Aguarde...</>
-                ) : (
-                  <><QrCode className="h-4 w-4" /> Pagar Comissão via PIX</>
-                )}
-              </Button>
-            )}
+            <p className="text-sm font-bold text-foreground">Comissão de Vendas Físicas</p>
           </div>
+          <p className="text-xs text-muted-foreground mb-1">15% das vendas em Dinheiro/Cartão — o lojista já recebeu na hora</p>
+          <p className="text-2xl font-black text-red-400">
+            R$ {(dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue).toFixed(2)}
+          </p>
+
+          {safetyModeMs > 0 && (
+            <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 flex items-start gap-2">
+              <ShieldAlert className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-bold text-amber-400">Manutenção temporária</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Volta em {formatCooldownTime(safetyModeMs)}</p>
+              </div>
+            </div>
+          )}
+          {!safetyModeMs && pixCooldownMs > 0 && (
+            <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 flex items-start gap-2">
+              <AlertCircle className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-bold text-amber-400">Muitas tentativas</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Aguarde {formatCooldownTime(pixCooldownMs)}</p>
+              </div>
+            </div>
+          )}
+
+          {(dbComissaoPendente > 0 || commissionDue > 0) && (
+            <Button
+              onClick={handleGenerateCommissionCharge}
+              disabled={generatingCharge || isPixBlocked}
+              className="w-full mt-3 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-bold shadow-lg shadow-red-500/20"
+              size="lg"
+            >
+              {generatingCharge ? (
+                <><Loader2 className="h-4 w-4 animate-spin" /> Gerando PIX...</>
+              ) : isPixBlocked ? (
+                <><ShieldAlert className="h-4 w-4" /> Aguarde...</>
+              ) : (
+                <><QrCode className="h-4 w-4" /> Cobrar Comissão via PIX</>
+              )}
+            </Button>
+          )}
         </div>
       </div>
 
