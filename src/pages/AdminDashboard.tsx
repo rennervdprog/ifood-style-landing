@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback, useMemo, memo } from "react";
+import PizzaFlavorManager from "@/components/PizzaFlavorManager";
 import SimulationBanner from "@/components/SimulationBanner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,7 +31,7 @@ import { addMoney, averageMoney, formatCurrency, sumMoney } from "@/lib/utils";
 import ProductTour, { lojistaTourSteps } from "@/components/ProductTour";
 
 type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_entrega" | "em_transito" | "entregue" | "finalizado";
-type DashboardTab = "dashboard" | "orders" | "menu" | "addons" | "hours" | "settings" | "finance" | "clients" | "reports";
+type DashboardTab = "dashboard" | "orders" | "menu" | "flavors" | "addons" | "hours" | "settings" | "finance" | "clients" | "reports";
 
 const ALERT_SOUND_URL = "https://actions.google.com/sounds/v1/alarms/beep_short.ogg";
 const CASH_REGISTER_SOUND_URL = "https://actions.google.com/sounds/v1/office/cash_register.ogg";
