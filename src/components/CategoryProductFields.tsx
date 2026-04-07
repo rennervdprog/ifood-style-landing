@@ -264,9 +264,44 @@ const CategoryProductFields = ({ category, metadata, onChange, storeId }: Catego
           <div className="flex items-center gap-2 text-primary text-xs font-bold">
             ☕ Campos de Cafeteria
           </div>
-          {renderListField("Tamanhos", "drink_sizes", "Ex: P, M, G...")}
-          {renderListField("Tipos de Leite", "milk_options", "Ex: Integral, Desnatado, Vegetal...")}
-          {renderToggle("Pode ser gelado?", "can_be_iced")}
+          {renderSelect("Tipo de Produto", "cafe_product_type", [
+            "Café / Bebida Quente",
+            "Suco / Bebida Fria",
+            "Bolo / Fatia",
+            "Pão de Queijo",
+            "Salgado Assado",
+            "Salgado Frito",
+            "Croissant",
+            "Cookie / Biscoito",
+            "Torta (fatia)",
+            "Sanduíche / Wrap",
+            "Tapioca",
+            "Açaí / Bowl",
+            "Waffle / Panqueca",
+            "Muffin / Cupcake",
+            "Coxinha / Empada",
+            "Pão na Chapa",
+            "Omelete",
+            "Granola / Iogurte",
+            "Salada de Frutas",
+            "Outro"
+          ])}
+          {metadata.cafe_product_type === "Outro" && renderTextField("Tipo Personalizado", "cafe_custom_type", "Ex: Crepe, Tapioca especial...")}
+          {(metadata.cafe_product_type === "Café / Bebida Quente" || metadata.cafe_product_type === "Suco / Bebida Fria") && (
+            <>
+              {renderListField("Tamanhos", "drink_sizes", "Ex: P, M, G...")}
+              {renderListField("Tipos de Leite", "milk_options", "Ex: Integral, Desnatado, Vegetal...")}
+              {renderToggle("Pode ser gelado?", "can_be_iced")}
+            </>
+          )}
+          {(metadata.cafe_product_type === "Bolo / Fatia" || metadata.cafe_product_type === "Torta (fatia)") && (
+            <>
+              {renderListField("Sabores Disponíveis", "flavors", "Ex: Chocolate, Cenoura, Red Velvet...")}
+              {renderToggle("Vende fatia?", "sells_slice")}
+              {renderToggle("Vende inteiro?", "sells_whole")}
+            </>
+          )}
+          {renderToggle("Pode aquecer?", "can_heat")}
         </div>
       );
 
