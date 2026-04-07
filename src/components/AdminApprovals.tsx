@@ -49,6 +49,32 @@ const AdminApprovals = () => {
           await supabase.functions.invoke("sync-to-external", {
             body: { action: "sync_profile", data: { profile: { ...(freshProfile || profile), status: "approved" } } },
           });
+
+          // Auto-create Asaas subaccount for lojistas
+          if (profile.role === "lojista") {
+            try {
+              const { data: store } = await supabase
+                .from("stores")
+                .select("id, asaas_wallet_id")
+                .eq("owner_id", profile.user_id)
+                .single();
+              
+              if (store && !store.asaas_wallet_id) {
+                const { data: subResult, error: subError } = await supabase.functions.invoke("asaas-subaccount", {
+                  body: { store_id: store.id },
+                });
+                if (subError) {
+                  console.warn("Asaas subaccount creation failed:", subError);
+                  toast.info("Parceiro aprovado! Subconta Asaas pendente - crie manualmente.");
+                } else {
+                  console.log("Asaas subaccount created:", subResult);
+                }
+              }
+            } catch (e) {
+              console.warn("Auto subaccount creation error:", e);
+            }
+          }
+
           toast.success("Parceiro aprovado e sincronizado!");
         } catch { toast.success("Parceiro aprovado! (sincronização externa pendente)"); }
       } else {
