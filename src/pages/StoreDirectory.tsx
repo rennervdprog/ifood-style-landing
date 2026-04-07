@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import mockupPhone from "@/assets/mockup-phone.png";
+import mockupLaptop from "@/assets/mockup-laptop.png";
+import mockupTablet from "@/assets/mockup-tablet.png";
 import {
   Zap, Store, Bike, ShieldCheck, Smartphone, TrendingUp, Users,
   ArrowRight, CheckCircle2, Star, MapPin, Clock, CreditCard,
