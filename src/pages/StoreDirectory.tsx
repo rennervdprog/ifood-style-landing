@@ -137,46 +137,24 @@ const StoreDirectory = () => {
   );
 
   /* ── Data ── */
-  const commissionPlans = [
-    {
-      name: "Cardápio Digital",
-      icon: Smartphone,
-      originalPrice: null,
-      price: "15%",
-      commission: "por pedido entregue",
-      desc: "Ideal para quem já tem entregador próprio",
-      features: [
-        "Cardápio digital profissional",
-        "Gestão de pedidos em tempo real",
-        "Chat direto com o cliente",
-        "Cupons e promoções personalizadas",
-        "Relatórios financeiros completos",
-        "Use seu próprio motoboy",
-      ],
-      highlight: false,
-      badge: null,
-      cta: "Começar agora",
-    },
-    {
-      name: "Plataforma Completa",
-      icon: Rocket,
-      originalPrice: "18%",
-      price: "15%",
-      commission: "por pedido entregue",
-      desc: "Logística completa — não se preocupe com nada",
-      features: [
-        "Tudo do Cardápio Digital",
-        "Motoboys da plataforma inclusos",
-        "Entrega rastreada em tempo real",
-        "Código de coleta seguro",
-        "PIN de confirmação ao cliente",
-        "Suporte prioritário 7 dias",
-      ],
-      highlight: true,
-      badge: "🔥 Mais escolhido",
-      cta: "Quero vender mais",
-    },
-  ];
+  const commissionPlan = {
+    name: "Cardápio Digital",
+    icon: Smartphone,
+    price: "15%",
+    commission: "por pedido entregue",
+    desc: "Tudo que sua loja precisa para vender online",
+    features: [
+      "Cardápio digital profissional",
+      "Gestão de pedidos em tempo real",
+      "Chat direto com o cliente",
+      "Cupons e promoções personalizadas",
+      "Relatórios financeiros completos",
+      "Pagamento PIX, dinheiro e cartão",
+      "Horários de funcionamento flexíveis",
+      "Entrega com motoboy próprio ou da plataforma*",
+    ],
+    cta: "Começar agora",
+  };
 
   const howItWorks = [
     { step: "1", icon: Store, title: "Cadastre sua loja", desc: "Informe seu CEP. Identificamos sua cidade e criamos seu cardápio digital automaticamente." },
