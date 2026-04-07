@@ -3,7 +3,7 @@ import SimulationBanner from "@/components/SimulationBanner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import {
   Wifi, WifiOff, Clock, ChefHat, Truck, CheckCircle2,
