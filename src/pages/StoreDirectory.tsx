@@ -483,18 +483,24 @@ const StoreDirectory = () => {
             Disponível em Itatinga/SP
           </h2>
           <p className="text-base mb-8" style={{ color: "#606770" }}>
-            Começamos por Itatinga e já estamos expandindo. Em breve sua cidade também terá o ItaSuper.
+            Começamos por Itatinga com entrega completa. Lojistas de outras cidades podem usar como cardápio digital!
           </p>
 
-          {/* Cities coming soon */}
+          {/* Cities status */}
           <div className="flex flex-wrap gap-2 justify-center mb-8">
+            <span
+              className="text-xs font-bold px-4 py-1.5 rounded-full border"
+              style={{ borderColor: THEME.primary, color: THEME.primary, background: THEME.primaryLight }}
+            >
+              ✅ Itatinga — Completo
+            </span>
             {["Pardinho", "Bofete", "Torre de Pedra", "Botucatu", "Avaré"].map((c) => (
               <span
                 key={c}
                 className="text-xs font-semibold px-4 py-1.5 rounded-full border"
                 style={{ borderColor: "#D1D5DB", color: "#606770" }}
               >
-                {c} — em breve
+                {c} — Cardápio Digital
               </span>
             ))}
           </div>
