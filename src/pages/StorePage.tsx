@@ -737,6 +737,7 @@ const StorePage = () => {
       <ProductDetailModal
         product={selectedProduct}
         storeName={store?.name || ""}
+        storeCategory={store?.category}
         open={!!selectedProduct}
         onClose={() => setSelectedProduct(null)}
         onAdd={handleAddToCart}
