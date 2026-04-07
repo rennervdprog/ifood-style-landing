@@ -166,6 +166,8 @@ const StorePage = () => {
     enabled: !!storeId,
   });
 
+  const isSuspended = store?.status === "bloqueado";
+
   const storeStatus = store
     ? getStoreOpenStatus(
         (storeHours as any as OpeningHour[]) || [],
@@ -173,6 +175,12 @@ const StorePage = () => {
         store.is_open
       )
     : { isOpen: false, reason: "" };
+
+  // Suspended stores are always "closed"
+  if (isSuspended) {
+    storeStatus.isOpen = false;
+    storeStatus.reason = "Loja temporariamente fechada";
+  }
 
   const hasConfiguredHours = Array.isArray(storeHours) && storeHours.length > 0;
   const statusLabel = hasConfiguredHours
