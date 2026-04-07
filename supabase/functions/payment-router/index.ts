@@ -924,6 +924,7 @@ async function routePixCreation(params: {
   externalReference: string;
   idempotencyKey: string;
   expiresAt?: string;
+  splitWalletId?: string;
 }): Promise<Response> {
   const provider = await getActiveProviderFromDB();
 
@@ -946,6 +947,7 @@ async function routePixCreation(params: {
       payerName: `${params.payerFirstName} ${params.payerLastName}`.trim(),
       externalReference: params.externalReference,
       expiresAt: params.expiresAt,
+      splitWalletId: params.splitWalletId,
     });
 
     if (asaasResult.ok) {
