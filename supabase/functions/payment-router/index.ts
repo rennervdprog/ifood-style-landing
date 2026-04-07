@@ -715,6 +715,18 @@ async function handleCommissionCharge(
 
   if (storeError || !store) return json({ error: "Loja não encontrada" }, 404);
 
+  // Fetch store owner's profile for real CPF
+  const serviceClient = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  );
+
+  const { data: ownerProfile } = await serviceClient
+    .from("profiles")
+    .select("document, full_name, email")
+    .eq("user_id", store.owner_id)
+    .single();
+
   const serviceClient = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
