@@ -820,12 +820,12 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
             </div>
             <div>
               <p className="text-sm font-medium text-foreground">Vendas PIX App</p>
-              <p className="text-[10px] text-muted-foreground">Pago online</p>
+              <p className="text-[10px] text-emerald-400">Split automático ✅</p>
             </div>
           </div>
           <div className="text-right">
             <p className="text-sm font-bold text-foreground">R$ {appSales.toFixed(2)}</p>
-            <p className="text-[10px] text-emerald-400">+ R$ {creditFromApp.toFixed(2)} crédito</p>
+            <p className="text-[10px] text-emerald-400">comissão já retida</p>
           </div>
         </div>
       </div>
