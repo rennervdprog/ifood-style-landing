@@ -6,10 +6,10 @@ import { z } from "zod";
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, User, Phone, Bike, CheckCircle, MapPin } from "lucide-react";
 
 const CITIES = [
-  { value: "itatinga", label: "Itatinga" },
-  { value: "pardinho", label: "Pardinho" },
-  { value: "bofete", label: "Bofete" },
-  { value: "torre_de_pedra", label: "Torre de Pedra" },
+  { value: "itatinga", label: "Itatinga", available: true },
+  { value: "pardinho", label: "Pardinho", available: false },
+  { value: "bofete", label: "Bofete", available: false },
+  { value: "torre_de_pedra", label: "Torre de Pedra", available: false },
 ];
 
 const schema = z.object({
@@ -151,7 +151,9 @@ const CadastroEntregador = () => {
                   className="w-full h-12 pl-10 pr-4 rounded-xl border border-border bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm appearance-none"
                 >
                   {CITIES.map((c) => (
-                    <option key={c.value} value={c.value}>{c.label}</option>
+                    <option key={c.value} value={c.value} disabled={!c.available}>
+                      {c.label}{!c.available ? " — Em breve" : ""}
+                    </option>
                   ))}
                 </select>
               </div>
