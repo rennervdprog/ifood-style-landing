@@ -631,7 +631,7 @@ async function handleOrderPix(
 
   const { data: order, error: orderError } = await supabase
     .from("orders")
-    .select("id, client_id, total_price, status")
+    .select("id, client_id, total_price, status, store_id")
     .eq("id", order_id)
     .eq("client_id", userId)
     .single();
@@ -643,6 +643,24 @@ async function handleOrderPix(
 
   const cleanCpf = String(payer_cpf || "").replace(/\D/g, "");
   if (!cleanCpf || cleanCpf.length !== 11) return json({ error: "CPF inválido. Informe um CPF com 11 dígitos." }, 400);
+
+  // Fetch store wallet for Asaas split
+  let splitWalletId: string | undefined;
+  if (order.store_id) {
+    const serviceClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+    const { data: store } = await serviceClient
+      .from("stores")
+      .select("asaas_wallet_id")
+      .eq("id", order.store_id)
+      .single();
+    if (store?.asaas_wallet_id) {
+      splitWalletId = store.asaas_wallet_id;
+      console.log("Split enabled for store:", order.store_id, "wallet:", splitWalletId);
+    }
+  }
 
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
   const desc = String(description || `Pedido ItaSuper #${order_id.substring(0, 6).toUpperCase()}`).substring(0, 256);
@@ -658,6 +676,7 @@ async function handleOrderPix(
     externalReference: order_id,
     idempotencyKey,
     expiresAt,
+    splitWalletId,
   });
 }
 
