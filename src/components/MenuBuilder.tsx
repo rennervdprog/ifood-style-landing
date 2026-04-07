@@ -687,6 +687,7 @@ const ProductFormInline = ({
           category={storeCategory}
           metadata={form.metadata || {}}
           onChange={(metadata) => setForm({ ...form, metadata })}
+          storeId={storeId}
         />
       )}
 
