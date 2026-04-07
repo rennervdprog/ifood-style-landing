@@ -300,4 +300,115 @@ const CategoryProductFields = ({ category, metadata, onChange, storeId }: Catego
   }
 };
 
+// Pizza Flavor Selector - uses pre-configured flavors from store settings
+const PizzaFlavorSelector = ({
+  storeId,
+  metadata,
+  onChange,
+}: {
+  storeId?: string;
+  metadata: Record<string, any>;
+  onChange: (m: Record<string, any>) => void;
+}) => {
+  const { data: store } = useQuery({
+    queryKey: ["store-pizza-config", storeId],
+    queryFn: async () => {
+      const { data } = await supabase.from("stores").select("settings").eq("id", storeId!).single();
+      return data;
+    },
+    enabled: !!storeId,
+  });
+
+  const settings = (store?.settings || {}) as Record<string, any>;
+  const pizzaConfig = settings.pizza_config || { sizes: [], flavors: [] };
+  const availableFlavors: Array<{ id: string; name: string; prices: Record<string, number> }> = pizzaConfig.flavors || [];
+  const availableSizes: string[] = pizzaConfig.sizes || [];
+
+  if (availableFlavors.length === 0) {
+    return (
+      <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex items-center gap-3">
+        <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
+        <div>
+          <p className="text-sm font-bold text-amber-600">Configure os sabores primeiro</p>
+          <p className="text-xs text-muted-foreground">Vá na aba "Sabores" no menu lateral para cadastrar sabores e preços antes de criar pizzas.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const selectedFlavors: string[] = metadata.selected_flavors || [];
+
+  const toggleFlavor = (flavorId: string) => {
+    const current = [...selectedFlavors];
+    const idx = current.indexOf(flavorId);
+    if (idx >= 0) {
+      current.splice(idx, 1);
+    } else {
+      current.push(flavorId);
+    }
+    // Derive price from first selected flavor's lowest size price
+    const selectedFlavorData = availableFlavors.filter(f => current.includes(f.id));
+    let minPrice = 0;
+    if (selectedFlavorData.length > 0) {
+      const allPrices = selectedFlavorData.flatMap(f => Object.values(f.prices).filter(p => p > 0));
+      minPrice = allPrices.length > 0 ? Math.min(...allPrices) / 100 : 0;
+    }
+    // Build sizes array from selected flavors for compatibility
+    const sizesWithPrices = availableSizes.map(size => {
+      const maxPrice = Math.max(...selectedFlavorData.map(f => (f.prices[size] || 0)));
+      return { name: size, price: maxPrice / 100 };
+    }).filter(s => s.price > 0);
+
+    onChange({
+      ...metadata,
+      selected_flavors: current,
+      sizes: sizesWithPrices,
+      _derived_price: minPrice,
+    });
+  };
+
+  return (
+    <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-3">
+      <div className="flex items-center gap-2 text-primary text-xs font-bold">
+        <Pizza className="h-4 w-4" /> Selecione os Sabores
+      </div>
+      <p className="text-[10px] text-muted-foreground">Marque os sabores disponíveis para esta pizza. Os preços vêm da aba Sabores.</p>
+      <div className="space-y-1.5 max-h-60 overflow-y-auto">
+        {availableFlavors.map(flavor => {
+          const isSelected = selectedFlavors.includes(flavor.id);
+          const priceDisplay = availableSizes
+            .filter(s => flavor.prices[s] && flavor.prices[s] > 0)
+            .map(s => `${s}: ${(flavor.prices[s] / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`)
+            .join(" · ");
+          return (
+            <button
+              key={flavor.id}
+              type="button"
+              onClick={() => toggleFlavor(flavor.id)}
+              className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-all ${
+                isSelected
+                  ? "bg-primary/10 border border-primary/30"
+                  : "bg-muted border border-border hover:border-primary/20"
+              }`}
+            >
+              <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 ${
+                isSelected ? "bg-primary border-primary" : "border-border"
+              }`}>
+                {isSelected && <Check className="h-3 w-3 text-primary-foreground" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">{flavor.name}</p>
+                {priceDisplay && <p className="text-[10px] text-muted-foreground">{priceDisplay}</p>}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+      {selectedFlavors.length > 0 && (
+        <p className="text-xs text-primary font-medium">{selectedFlavors.length} sabor(es) selecionado(s)</p>
+      )}
+    </div>
+  );
+};
+
 export default CategoryProductFields;
