@@ -469,8 +469,19 @@ const StorePage = () => {
         </div>
       </div>
 
-      {/* Closed banner */}
-      {!storeStatus.isOpen && (
+      {/* Suspended banner */}
+      {isSuspended && (
+        <div className="mx-4 mt-3 bg-destructive/10 border border-destructive/30 rounded-xl p-4 flex items-center gap-3">
+          <span className="text-2xl">🔒</span>
+          <div>
+            <p className="text-sm font-bold text-destructive">Loja fechada no momento</p>
+            <p className="text-xs text-muted-foreground">Esta loja está temporariamente indisponível para pedidos. Você pode consultar o cardápio, mas não é possível fazer pedidos agora.</p>
+          </div>
+        </div>
+      )}
+
+      {/* Closed banner (only when not suspended) */}
+      {!storeStatus.isOpen && !isSuspended && (
         <div className="mx-4 mt-3 bg-destructive/5 border border-destructive/20 rounded-xl p-3 flex items-center gap-3">
           <Clock className="h-5 w-5 text-destructive flex-shrink-0" />
           <div>
