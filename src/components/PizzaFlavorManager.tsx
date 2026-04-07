@@ -59,7 +59,7 @@ const PizzaFlavorManager = ({ storeId }: PizzaFlavorManagerProps) => {
   }
 
   const saveConfig = async (newConfig: PizzaConfig) => {
-    const newSettings = { ...settings, pizza_config: newConfig };
+    const newSettings = { ...settings, pizza_config: newConfig } as any;
     const { error } = await supabase.from("stores").update({ settings: newSettings }).eq("id", storeId);
     if (error) { toast.error("Erro ao salvar"); return; }
     queryClient.invalidateQueries({ queryKey: ["store-for-pizza", storeId] });
