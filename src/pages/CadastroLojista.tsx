@@ -198,6 +198,7 @@ const CadastroLojista = () => {
                 ⚠️ Certifique-se de que este e-mail está correto. Ele será usado para receber notificações sobre seus ganhos e repasses financeiros.
               </p>
             </div>
+            <FieldInput icon={Mail} type="email" placeholder="Confirme seu e-mail" value={confirmEmail} onChange={setConfirmEmail} error={errors.confirmEmail} autoComplete="email" />
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
