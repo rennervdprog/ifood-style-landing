@@ -515,7 +515,12 @@ const SuperAdminDashboard = () => {
             {activeTab === "entrega" && <DeliveryFeeConfigPanel />}
             {activeTab === "sync" && <SyncExternalTab />}
             {activeTab === "coupons" && <CouponManager isAdmin />}
-            {activeTab === "stores" && <AdminStoreManager />}
+            {activeTab === "stores" && (
+              <div className="space-y-6">
+                <TestStoreCreator />
+                <AdminStoreManager />
+              </div>
+            )}
             {activeTab === "cidades" && <CidadesTab stores={stores} />}
             {activeTab === "saques" && (
               <SaquesTab
