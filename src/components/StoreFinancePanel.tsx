@@ -472,7 +472,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
             onClick={() => setDateFilter(f)}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
               dateFilter === f
-                ? "bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-lg shadow-pink-500/20"
+                ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
                 : "bg-card/80 text-muted-foreground hover:text-foreground border border-border/50"
             }`}
           >
