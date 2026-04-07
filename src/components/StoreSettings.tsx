@@ -78,6 +78,9 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
   const [deliveryMode, setDeliveryMode] = useState(storeDeliveryMode || "platform");
   const [ownDeliveryFee, setOwnDeliveryFee] = useState(storeOwnDeliveryFee?.toString() || "0");
 
+  const [pizzaHalfEnabled, setPizzaHalfEnabled] = useState<boolean>(storeSettings?.pizza_half_enabled || false);
+  const [pizzaPriceMode, setPizzaPriceMode] = useState<PizzaPriceMode>(storeSettings?.pizza_price_mode || "maior");
+
   // Load whatsapp + pix from profile
   useEffect(() => {
     if (!user) return;
