@@ -141,8 +141,8 @@ const StoreDirectory = () => {
     {
       name: "Cardápio Digital",
       icon: Smartphone,
-      price: "Grátis",
-      commission: "0%",
+      price: "15%",
+      commission: "por pedido",
       desc: "Para quem já tem seus próprios entregadores",
       features: [
         "Cardápio digital completo",
@@ -154,7 +154,7 @@ const StoreDirectory = () => {
       ],
       highlight: false,
       badge: null,
-      cta: "Começar grátis",
+      cta: "Começar agora",
     },
     {
       name: "Plataforma Completa",
@@ -212,8 +212,8 @@ const StoreDirectory = () => {
   ];
 
   const faq = [
-    { q: "Preciso pagar algo para cadastrar minha loja?", a: "Não! O cadastro é 100% gratuito. Se você usar seus próprios entregadores (Cardápio Digital), não paga nada. Se optar pela logística da plataforma, cobramos 15% de comissão por pedido entregue." },
-    { q: "Como funciona a comissão de 15%?", a: "A comissão é cobrada apenas quando um pedido é entregue usando os motoboys da plataforma. Ela cobre o custo da logística, suporte e tecnologia. Pedidos com motoboy próprio não têm comissão." },
+    { q: "Preciso pagar algo para cadastrar minha loja?", a: "O cadastro é 100% gratuito! Cobramos apenas 15% de comissão sobre cada pedido entregue, independente de usar motoboy próprio ou da plataforma." },
+    { q: "Como funciona a comissão de 15%?", a: "A comissão de 15% é cobrada sobre o valor dos produtos de cada pedido entregue. Ela cobre o custo da tecnologia, suporte, sistema de pagamentos e toda a infraestrutura da plataforma." },
     { q: "Posso usar o ItaSuper em qualquer cidade?", a: "Sim! Qualquer loja do Brasil pode se cadastrar e usar como cardápio digital com motoboy próprio. A logística com motoboys da plataforma está disponível nas cidades onde já temos entregadores ativos." },
     { q: "Como recebo o pagamento dos pedidos?", a: "O cliente paga diretamente via PIX, dinheiro ou cartão na entrega. O valor vai direto para você. A comissão da plataforma (quando aplicável) é cobrada separadamente." },
     { q: "Quanto tempo leva para começar a vender?", a: "Após o cadastro e aprovação (geralmente em até 24h), você já pode montar seu cardápio e começar a receber pedidos imediatamente." },
