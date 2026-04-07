@@ -190,15 +190,59 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
     return storeCategory === "pizzas" && !meta?.is_beverage;
   };
 
+  // Derive a suggested section name from product metadata
+  const getSuggestedSection = (meta: Record<string, any>): string | null => {
+    if (meta?.is_beverage) return "Bebidas";
+    const typeMap: Record<string, string> = {
+      lanche_type: meta?.lanche_type,
+      pharma_type: meta?.pharma_type,
+      cafe_product_type: meta?.cafe_product_type,
+      dessert_type: meta?.dessert_type,
+      japanese_type: meta?.japanese_type,
+      grill_type: meta?.grill_type,
+      adega_type: meta?.adega_type,
+      healthy_type: meta?.healthy_type,
+    };
+    for (const val of Object.values(typeMap)) {
+      if (val && typeof val === "string") return val;
+    }
+    return null;
+  };
+
+  // Find or create a section by name
+  const findOrCreateSection = async (sectionName: string): Promise<string | null> => {
+    const existing = sections?.find(s => s.name.toLowerCase() === sectionName.toLowerCase());
+    if (existing) return existing.id;
+    const maxOrder = sections?.reduce((max, s) => Math.max(max, s.sort_order), 0) || 0;
+    const { data, error } = await supabase.from("menu_sections").insert({
+      store_id: storeId,
+      name: sectionName,
+      sort_order: maxOrder + 1,
+    }).select("id").single();
+    if (error) { console.error("Section create error:", error); return null; }
+    return data.id;
+  };
+
   const addProduct = async (sectionId: string | null) => {
     const meta = productForm.metadata || {};
     const finalPrice = isPizzaProduct(meta) ? derivePriceFromMetadata(meta) : parseFloat(productForm.price) || 0;
     if (!productForm.name.trim()) { toast.error("Preencha o nome do produto"); return; }
     if (!isPizzaProduct(meta) && (!productForm.price || finalPrice <= 0)) { toast.error("Preencha o preço do produto"); return; }
     if (isPizzaProduct(meta) && finalPrice <= 0) { toast.error("Defina ao menos um tamanho com preço"); return; }
+
+    // Auto-suggest section if none provided
+    let finalSectionId = sectionId;
+    if (!finalSectionId) {
+      const suggested = getSuggestedSection(meta);
+      if (suggested) {
+        finalSectionId = await findOrCreateSection(suggested);
+        if (finalSectionId) toast.info(`Seção "${suggested}" atribuída automaticamente`);
+      }
+    }
+
     const { error } = await supabase.from("products").insert({
       store_id: storeId,
-      section_id: sectionId,
+      section_id: finalSectionId,
       name: productForm.name.trim(),
       price: finalPrice,
       description: productForm.description.trim() || null,
