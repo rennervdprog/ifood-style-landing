@@ -492,26 +492,23 @@ const StorePage = () => {
       )}
 
       {/* ===== SEARCH BAR ===== */}
-      {showSearch && (
-        <div className="mx-4 mt-3 animate-in slide-in-from-top-2 duration-200">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input
-              autoFocus
-              type="text"
-              placeholder="Buscar no cardápio..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-10 py-3 rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-            />
-            {searchQuery && (
-              <button onClick={() => { setSearchQuery(""); setShowSearch(false); }} className="absolute right-3 top-1/2 -translate-y-1/2">
-                <X className="h-4 w-4 text-muted-foreground" />
-              </button>
-            )}
-          </div>
+      <div className="mx-4 mt-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Buscar produtos..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-10 py-3 rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2">
+              <X className="h-4 w-4 text-muted-foreground" />
+            </button>
+          )}
         </div>
-      )}
+      </div>
 
       {/* ===== PEÇA DE NOVO ===== */}
       {reorderProductsList.length > 0 && !filteredProducts && (
