@@ -167,18 +167,17 @@ const StoreDirectory = () => {
         className="relative overflow-hidden px-4 pt-12 pb-8 sm:pt-20 sm:pb-16"
         style={{ background: `linear-gradient(135deg, ${THEME.primaryLight} 0%, ${THEME.white} 50%, ${THEME.grayBg} 100%)` }}
       >
-        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-10 items-center">
-          <div className="text-center lg:text-left">
+        <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight" style={{ color: "#1C1E21" }}>
               A entrega mais rápida de{" "}
               <span style={{ color: THEME.primary }}>Itatinga</span>{" "}
               está aqui.
             </h1>
-            <p className="text-base sm:text-lg mt-4 leading-relaxed max-w-lg mx-auto lg:mx-0" style={{ color: "#606770" }}>
+            <p className="text-base sm:text-lg mt-4 leading-relaxed max-w-lg mx-auto" style={{ color: "#606770" }}>
               Conectamos lojistas e motoboys em tempo real. Mais vendas para quem vende, mais corridas para quem entrega.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start mt-8">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center mt-8">
               <Button
                 size="lg"
                 className="gap-2 rounded-full font-bold text-base px-8 text-white shadow-lg transition-all hover:shadow-xl"
@@ -204,17 +203,12 @@ const StoreDirectory = () => {
               </Button>
             </div>
 
-            <div className="flex items-center gap-2 justify-center lg:justify-start mt-6">
+            <div className="flex items-center gap-2 justify-center mt-6">
               <MapPin className="h-4 w-4" style={{ color: THEME.primary }} />
               <span className="text-sm font-semibold" style={{ color: "#606770" }}>
                 Disponível agora em <strong style={{ color: "#1C1E21" }}>Itatinga/SP</strong> · Novas cidades em breve
               </span>
             </div>
-          </div>
-
-          <div className="mt-10 lg:mt-0">
-            <DeviceMockups />
-          </div>
         </div>
       </section>
 
