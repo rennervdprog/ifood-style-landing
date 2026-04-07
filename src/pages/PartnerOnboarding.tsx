@@ -251,8 +251,8 @@ const PartnerOnboarding = () => {
                 }`}
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center">
-                    <Bike className="h-7 w-7 text-blue-500" />
+                  <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+                    <Bike className="h-7 w-7 text-primary" />
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-foreground">🏍️ Quero Entregar</h3>

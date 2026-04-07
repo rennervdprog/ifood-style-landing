@@ -138,8 +138,8 @@ const PartnerLogin = () => {
               <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
                 <Store className="h-7 w-7 text-primary" />
               </div>
-              <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center">
-                <Bike className="h-7 w-7 text-blue-500" />
+              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <Bike className="h-7 w-7 text-primary" />
               </div>
             </div>
             <h2 className="text-xl font-black text-foreground">
