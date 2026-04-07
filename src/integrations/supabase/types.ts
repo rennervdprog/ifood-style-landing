@@ -156,6 +156,13 @@ export type Database = {
             referencedRelation: "stores"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "banners_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       compliance_alerts: {
@@ -194,6 +201,13 @@ export type Database = {
             referencedRelation: "stores"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "compliance_alerts_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       coupon_uses: {
@@ -224,6 +238,13 @@ export type Database = {
             columns: ["coupon_id"]
             isOneToOne: false
             referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coupon_uses_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons_public"
             referencedColumns: ["id"]
           },
         ]
@@ -280,6 +301,13 @@ export type Database = {
             columns: ["store_id"]
             isOneToOne: false
             referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coupons_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores_public"
             referencedColumns: ["id"]
           },
         ]
@@ -458,6 +486,13 @@ export type Database = {
             referencedRelation: "stores"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "financial_transactions_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       loyalty_points: {
@@ -496,6 +531,13 @@ export type Database = {
             referencedRelation: "stores"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "loyalty_points_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       menu_sections: {
@@ -526,6 +568,13 @@ export type Database = {
             columns: ["store_id"]
             isOneToOne: false
             referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_sections_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores_public"
             referencedColumns: ["id"]
           },
         ]
@@ -606,6 +655,13 @@ export type Database = {
             columns: ["store_id"]
             isOneToOne: false
             referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opening_hours_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores_public"
             referencedColumns: ["id"]
           },
         ]
@@ -804,6 +860,13 @@ export type Database = {
             referencedRelation: "stores"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "orders_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       payout_history: {
@@ -928,6 +991,13 @@ export type Database = {
             columns: ["store_id"]
             isOneToOne: false
             referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores_public"
             referencedColumns: ["id"]
           },
         ]
@@ -1213,7 +1283,132 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      coupons_public: {
+        Row: {
+          code: string | null
+          description: string | null
+          discount_type: string | null
+          discount_value: number | null
+          expires_at: string | null
+          first_order_only: boolean | null
+          id: string | null
+          is_active: boolean | null
+          min_order_value: number | null
+          store_id: string | null
+        }
+        Insert: {
+          code?: string | null
+          description?: string | null
+          discount_type?: string | null
+          discount_value?: number | null
+          expires_at?: string | null
+          first_order_only?: boolean | null
+          id?: string | null
+          is_active?: boolean | null
+          min_order_value?: number | null
+          store_id?: string | null
+        }
+        Update: {
+          code?: string | null
+          description?: string | null
+          discount_type?: string | null
+          discount_value?: number | null
+          expires_at?: string | null
+          first_order_only?: boolean | null
+          id?: string | null
+          is_active?: boolean | null
+          min_order_value?: number | null
+          store_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupons_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coupons_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stores_public: {
+        Row: {
+          address_cep: string | null
+          address_city: string | null
+          address_complement: string | null
+          address_neighborhood: string | null
+          address_number: string | null
+          address_reference: string | null
+          address_state: string | null
+          address_street: string | null
+          category: Database["public"]["Enums"]["store_category"] | null
+          created_at: string | null
+          delivery_mode: string | null
+          force_closed: boolean | null
+          id: string | null
+          image_url: string | null
+          is_open: boolean | null
+          name: string | null
+          own_delivery_fee: number | null
+          owner_id: string | null
+          rating: number | null
+          slug: string | null
+          status: Database["public"]["Enums"]["store_status"] | null
+        }
+        Insert: {
+          address_cep?: string | null
+          address_city?: string | null
+          address_complement?: string | null
+          address_neighborhood?: string | null
+          address_number?: string | null
+          address_reference?: string | null
+          address_state?: string | null
+          address_street?: string | null
+          category?: Database["public"]["Enums"]["store_category"] | null
+          created_at?: string | null
+          delivery_mode?: string | null
+          force_closed?: boolean | null
+          id?: string | null
+          image_url?: string | null
+          is_open?: boolean | null
+          name?: string | null
+          own_delivery_fee?: number | null
+          owner_id?: string | null
+          rating?: number | null
+          slug?: string | null
+          status?: Database["public"]["Enums"]["store_status"] | null
+        }
+        Update: {
+          address_cep?: string | null
+          address_city?: string | null
+          address_complement?: string | null
+          address_neighborhood?: string | null
+          address_number?: string | null
+          address_reference?: string | null
+          address_state?: string | null
+          address_street?: string | null
+          category?: Database["public"]["Enums"]["store_category"] | null
+          created_at?: string | null
+          delivery_mode?: string | null
+          force_closed?: boolean | null
+          id?: string | null
+          image_url?: string | null
+          is_open?: boolean | null
+          name?: string | null
+          own_delivery_fee?: number | null
+          owner_id?: string | null
+          rating?: number | null
+          slug?: string | null
+          status?: Database["public"]["Enums"]["store_status"] | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       admin_approve_partner: {
