@@ -608,6 +608,8 @@ const ProductFormInline = ({
     setUploading(false);
   };
 
+  const hidePriceField = storeCategory === "pizzas" && !form.metadata?.is_beverage;
+
   return (
     <div className="bg-secondary rounded-xl p-3 space-y-2">
       <input
@@ -619,15 +621,17 @@ const ProductFormInline = ({
         autoFocus
       />
       <div className="flex gap-2">
-        <input
-          type="number"
-          placeholder="Preço *"
-          value={form.price}
-          onChange={(e) => setForm({ ...form, price: e.target.value })}
-          className="w-1/3 bg-muted text-foreground px-3 py-2 rounded-lg text-sm border border-border focus:border-primary focus:outline-none"
-          inputMode="decimal"
-          step="0.01"
-        />
+        {!hidePriceField && (
+          <input
+            type="number"
+            placeholder="Preço *"
+            value={form.price}
+            onChange={(e) => setForm({ ...form, price: e.target.value })}
+            className="w-1/3 bg-muted text-foreground px-3 py-2 rounded-lg text-sm border border-border focus:border-primary focus:outline-none"
+            inputMode="decimal"
+            step="0.01"
+          />
+        )}
         <div className="flex-1">
           <input
             ref={fileInputRef}
