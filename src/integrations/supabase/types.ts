@@ -1432,6 +1432,13 @@ export type Database = {
       }
       admin_cancel_order: { Args: { _order_id: string }; Returns: undefined }
       admin_cleanup_duplicate_withdrawals: { Args: never; Returns: number }
+      admin_create_test_store: {
+        Args: {
+          _category: Database["public"]["Enums"]["store_category"]
+          _name: string
+        }
+        Returns: string
+      }
       admin_delete_partner: {
         Args: { _profile_user_id: string }
         Returns: undefined
