@@ -240,6 +240,22 @@ const PedidosPage = () => {
 
   const [pixCooldownMs, setPixCooldownMs] = useState(0);
   const [safetyModeMs, setSafetyModeMs] = useState(0);
+  const [confirmingDelivery, setConfirmingDelivery] = useState<string | null>(null);
+
+  const handleConfirmDelivery = async (orderId: string) => {
+    if (!user) return;
+    setConfirmingDelivery(orderId);
+    try {
+      const { error } = await supabase.rpc("client_confirm_delivery", { _order_id: orderId });
+      if (error) throw error;
+      toast.success("Entrega confirmada! Obrigado 🎉");
+      queryClient.invalidateQueries({ queryKey: ["orders", user.id] });
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao confirmar entrega.");
+    } finally {
+      setConfirmingDelivery(null);
+    }
+  };
 
   // Poll cooldown / safety mode
   useEffect(() => {
