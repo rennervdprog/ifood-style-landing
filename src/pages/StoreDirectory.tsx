@@ -68,6 +68,15 @@ const Navbar = ({ onNavigate }: { onNavigate: (path: string) => void }) => {
               {l.label}
             </button>
           ))}
+          <button
+            onClick={() => onNavigate("/portal-parceiro")}
+            className="text-sm font-semibold transition-colors"
+            style={{ color: "#606770" }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = THEME.primary)}
+            onMouseLeave={(e) => (e.currentTarget.style.color = "#606770")}
+          >
+            Já sou parceiro
+          </button>
           <Button
             className="rounded-full font-bold text-sm px-6"
             style={{ background: THEME.primary }}
@@ -96,6 +105,13 @@ const Navbar = ({ onNavigate }: { onNavigate: (path: string) => void }) => {
               {l.label}
             </button>
           ))}
+          <button
+            onClick={() => { setOpen(false); onNavigate("/portal-parceiro"); }}
+            className="block w-full text-left py-3 text-sm font-semibold"
+            style={{ color: THEME.primary }}
+          >
+            Já sou parceiro
+          </button>
           <Button
             className="w-full rounded-full font-bold mt-2"
             style={{ background: THEME.primary }}
