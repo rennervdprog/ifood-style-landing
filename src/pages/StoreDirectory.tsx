@@ -121,6 +121,54 @@ const Section = ({
 /* ──────────────────── Main Component ──────────────────── */
 const StoreDirectory = () => {
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
+  const [partnerRole, setPartnerRole] = useState<string | null>(null);
+  const [roleChecked, setRoleChecked] = useState(false);
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      setRoleChecked(true);
+      return;
+    }
+    const check = async () => {
+      // Admin sees landing page normally (they access via /painel)
+      const { data: adminRole } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+      if (adminRole) {
+        setRoleChecked(true);
+        return;
+      }
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (profile && (profile.role === "lojista" || profile.role === "motoboy")) {
+        setPartnerRole(profile.role);
+      }
+      setRoleChecked(true);
+    };
+    check();
+  }, [user, authLoading]);
+
+  // Show client-like store browser for logged-in partners
+  if (!authLoading && roleChecked && partnerRole) {
+    return <PartnerClientView />;
+  }
+
+  // Show loading while checking role
+  if (authLoading || !roleChecked) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   /* ── Feature cards data ── */
   const lojistaFeatures = [
