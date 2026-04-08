@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
-import { ArrowLeft, Mail, Lock, Eye, EyeOff, Store, FileText, CheckCircle, MapPin, Search, Loader2, Key } from "lucide-react";
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, Store, FileText, CheckCircle, MapPin, Search, Loader2, Key, Phone } from "lucide-react";
 import { Constants } from "@/integrations/supabase/types";
 import { formatCep, fetchCep } from "@/lib/cepLookup";
 
@@ -30,6 +30,7 @@ const schema = z.object({
   storeName: z.string().trim().min(3, "Nome da loja deve ter pelo menos 3 caracteres").max(100),
   document: z.string().trim().min(11, "CPF/CNPJ inválido").max(18),
   birthDate: z.string().min(10, "Data de nascimento obrigatória").max(10),
+  whatsapp: z.string().trim().min(10, "WhatsApp inválido (ex: 14 99999-9999)").max(20),
   pixType: z.enum(["cpf", "cnpj", "email", "phone", "random"] as const, { errorMap: () => ({ message: "Selecione o tipo da chave PIX" }) }),
   pixKey: z.string().trim().min(1, "Chave PIX obrigatória").max(100),
   storeCategory: z.enum(storeCategories as unknown as [string, ...string[]], { errorMap: () => ({ message: "Selecione uma categoria" }) }),
@@ -51,6 +52,7 @@ const CadastroLojista = () => {
   const [birthDate, setBirthDate] = useState("");
   const [pixType, setPixType] = useState("");
   const [pixKey, setPixKey] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
   const [cep, setCep] = useState("");
   const [city, setCity] = useState("");
   const [street, setStreet] = useState("");
@@ -103,7 +105,7 @@ const CadastroLojista = () => {
     e.preventDefault();
     setErrors({});
 
-    const result = schema.safeParse({ email, confirmEmail, password, storeName, document, birthDate, pixType, pixKey, storeCategory, cep, city });
+    const result = schema.safeParse({ email, confirmEmail, password, storeName, document, birthDate, whatsapp, pixType, pixKey, storeCategory, cep, city });
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
       result.error.errors.forEach((err) => {
@@ -125,6 +127,8 @@ const CadastroLojista = () => {
             role: "lojista",
             document: document.trim(),
             birth_date: birthDate,
+            whatsapp: whatsapp.trim(),
+            phone: whatsapp.trim(),
             pix_type: pixType,
             pix_key: pixKey.trim(),
             store_name: storeName.trim(),
@@ -216,6 +220,10 @@ const CadastroLojista = () => {
             </div>
             <FieldInput icon={Store} placeholder="Nome da Loja" value={storeName} onChange={setStoreName} error={errors.storeName} />
             <FieldInput icon={FileText} placeholder="CPF ou CNPJ" value={document} onChange={setDocument} error={errors.document} inputMode="numeric" />
+            <div>
+              <FieldInput icon={Phone} placeholder="WhatsApp (DDD + número)" value={whatsapp} onChange={setWhatsapp} error={errors.whatsapp} inputMode="tel" />
+              <p className="text-xs text-muted-foreground mt-1">Número com DDD. Ex: 14 99999-9999. Usado no Asaas e contato.</p>
+            </div>
             <div>
               <div className="relative">
                 <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
