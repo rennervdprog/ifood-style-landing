@@ -49,9 +49,31 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, price
 
   // Filter only non-beverage pizza products
   const pizzaProducts = useMemo(() =>
-    products.filter(p => !p.metadata?.is_beverage && p.price > 0),
+    products.filter(p => !p.metadata?.is_beverage),
     [products]
   );
+
+  // Get representative price for a product (use grande or first available size, fallback to price)
+  const getProductPrice = (p: Product): number => {
+    const sizes = p.metadata?.pizza_sizes as Record<string, number> | undefined;
+    if (sizes) {
+      return sizes.grande ?? sizes.media ?? sizes.familia ?? sizes.broto ?? Object.values(sizes)[0] ?? p.price;
+    }
+    return p.price;
+  };
+
+  // Available sizes common label
+  const sizeLabels: Record<string, string> = { broto: "Broto", media: "Média", grande: "Grande", familia: "Família" };
+
+  // Get sizes for selection (intersection of both products' sizes)
+  const availableSizes = useMemo(() => {
+    if (!p1 || !p2) return [];
+    const s1 = p1.metadata?.pizza_sizes as Record<string, number> | undefined;
+    const s2 = p2.metadata?.pizza_sizes as Record<string, number> | undefined;
+    if (!s1 || !s2) return [];
+    const common = Object.keys(s1).filter(k => k in s2);
+    return common.map(k => ({ key: k, label: sizeLabels[k] || k }));
+  }, [p1, p2]);
 
   const p1 = pizzaProducts.find(p => p.id === product1Id);
   const p2 = pizzaProducts.find(p => p.id === product2Id);
