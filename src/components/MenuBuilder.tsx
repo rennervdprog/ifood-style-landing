@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import MenuImportCSV from "@/components/MenuImportCSV";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -199,20 +199,20 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
     return storeCategory === "pizzas" && !meta?.is_beverage;
   };
 
-  const addProduct = async (sectionId: string | null) => {
-    const meta = productForm.metadata || {};
-    const finalPrice = isPizzaProduct(meta) ? derivePriceFromMetadata(meta) : parseFloat(productForm.price) || 0;
-    if (!productForm.name.trim()) { toast.error("Preencha o nome do produto"); return; }
-    if (!isPizzaProduct(meta) && (!productForm.price || finalPrice <= 0)) { toast.error("Preencha o preço do produto"); return; }
+  const addProduct = async (sectionId: string | null, formData = productForm) => {
+    const meta = formData.metadata || {};
+    const finalPrice = isPizzaProduct(meta) ? derivePriceFromMetadata(meta) : parseFloat(formData.price) || 0;
+    if (!formData.name.trim()) { toast.error("Preencha o nome do produto"); return; }
+    if (!isPizzaProduct(meta) && (!formData.price || finalPrice <= 0)) { toast.error("Preencha o preço do produto"); return; }
     if (isPizzaProduct(meta) && finalPrice <= 0) { toast.error("Defina ao menos um tamanho com preço"); return; }
 
     const { error } = await supabase.from("products").insert({
       store_id: storeId,
       section_id: sectionId,
-      name: productForm.name.trim(),
+      name: formData.name.trim(),
       price: finalPrice,
-      description: productForm.description.trim() || null,
-      image_url: productForm.image_url.trim() || null,
+      description: formData.description.trim() || null,
+      image_url: formData.image_url.trim() || null,
       metadata: meta,
     } as any);
     if (error) { toast.error("Erro ao adicionar produto"); return; }
@@ -222,14 +222,14 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
     invalidateAll();
   };
 
-  const updateProduct = async (id: string) => {
-    const meta = productForm.metadata || {};
-    const finalPrice = isPizzaProduct(meta) ? derivePriceFromMetadata(meta) : parseFloat(productForm.price);
+  const updateProduct = async (id: string, formData = productForm) => {
+    const meta = formData.metadata || {};
+    const finalPrice = isPizzaProduct(meta) ? derivePriceFromMetadata(meta) : parseFloat(formData.price) || 0;
     const { error } = await supabase.from("products").update({
-      name: productForm.name.trim(),
+      name: formData.name.trim(),
       price: finalPrice,
-      description: productForm.description.trim() || null,
-      image_url: productForm.image_url.trim() || null,
+      description: formData.description.trim() || null,
+      image_url: formData.image_url.trim() || null,
       metadata: meta,
     } as any).eq("id", id);
     if (error) { toast.error("Erro ao atualizar"); return; }
@@ -471,7 +471,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
                   isEditing={editingProduct === product.id}
                   productForm={productForm}
                   setProductForm={setProductForm}
-                  onSaveEdit={() => updateProduct(product.id)}
+                  onSaveEdit={(formData: any) => updateProduct(product.id, formData)}
                   onCancelEdit={() => { setEditingProduct(null); setProductForm({ name: "", price: "", description: "", image_url: "", metadata: {} }); }}
                   showAddonForm={showAddonForm}
                   setShowAddonForm={setShowAddonForm}
@@ -496,7 +496,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
                 <ProductFormInline
                   form={productForm}
                   setForm={setProductForm}
-                  onSave={() => addProduct(section.id)}
+                  onSave={(formData) => addProduct(section.id, formData)}
                   onCancel={() => { setShowProductForm(null); setProductForm({ name: "", price: "", description: "", image_url: "", metadata: {} }); }}
                   storeCategory={storeCategory}
                   storeId={storeId}
@@ -555,7 +555,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
               isEditing={editingProduct === product.id}
               productForm={productForm}
               setProductForm={setProductForm}
-              onSaveEdit={() => updateProduct(product.id)}
+              onSaveEdit={(formData: any) => updateProduct(product.id, formData)}
               onCancelEdit={() => { setEditingProduct(null); setProductForm({ name: "", price: "", description: "", image_url: "", metadata: {} }); }}
               showAddonForm={showAddonForm}
               setShowAddonForm={setShowAddonForm}
@@ -583,7 +583,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
         <ProductFormInline
           form={productForm}
           setForm={setProductForm}
-          onSave={() => addProduct(null)}
+          onSave={(formData) => addProduct(null, formData)}
           onCancel={() => { setShowProductForm(null); setProductForm({ name: "", price: "", description: "", image_url: "", metadata: {} }); }}
           storeCategory={storeCategory}
           storeId={storeId}
@@ -615,61 +615,78 @@ const uploadProductImage = async (file: File): Promise<string | null> => {
 };
 
 // Product Form
+const formatPriceInput = (value: string) => {
+  const digits = value.replace(/\D/g, "");
+  if (!digits) return "";
+  return (Number(digits) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+};
+
+const normalizePriceInput = (value: string) => {
+  const digits = value.replace(/\D/g, "");
+  if (!digits) return "";
+  return (Number(digits) / 100).toFixed(2);
+};
+
 const ProductFormInline = ({
   form, setForm, onSave, onCancel, storeCategory, storeId,
 }: {
   form: { name: string; price: string; description: string; image_url: string; metadata: Record<string, any> };
   setForm: (f: any) => void;
-  onSave: () => void;
+  onSave: (formData: { name: string; price: string; description: string; image_url: string; metadata: Record<string, any> }) => void;
   onCancel: () => void;
   storeCategory?: string;
   storeId?: string;
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [localForm, setLocalForm] = useState(form);
+
+  useEffect(() => {
+    setLocalForm(form);
+  }, [form]);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
     const url = await uploadProductImage(file);
-    if (url) setForm({ ...form, image_url: url });
+    if (url) setLocalForm((prev) => ({ ...prev, image_url: url }));
     setUploading(false);
   };
 
-  const hidePriceField = storeCategory === "pizzas" && !form.metadata?.is_beverage;
+  const hidePriceField = storeCategory === "pizzas" && !localForm.metadata?.is_beverage;
 
   return (
     <div className="bg-secondary/50 border border-border rounded-xl p-4 space-y-3">
       <input
         type="text"
         placeholder="Nome do produto *"
-        value={form.name}
-        onChange={(e) => { const v = e.target.value; setForm((prev: any) => ({ ...prev, name: v })); }}
+        value={localForm.name}
+        onChange={(e) => { const v = e.target.value; setLocalForm((prev) => ({ ...prev, name: v })); }}
         className="w-full bg-background text-foreground px-3 py-2.5 rounded-lg text-sm border border-border focus:border-primary focus:outline-none font-medium"
       />
       <div className="flex gap-2">
         {!hidePriceField && (
           <input
-            type="number"
+            type="text"
             placeholder="Preço *"
-            value={form.price}
-            onChange={(e) => { const v = e.target.value; setForm((prev: any) => ({ ...prev, price: v })); }}
+            value={formatPriceInput(localForm.price)}
+            onChange={(e) => { const v = normalizePriceInput(e.target.value); setLocalForm((prev) => ({ ...prev, price: v })); }}
             className="w-1/3 bg-background text-foreground px-3 py-2.5 rounded-lg text-sm border border-border focus:border-primary focus:outline-none"
-            inputMode="decimal"
-            step="0.01"
+            inputMode="numeric"
           />
         )}
         <div className="flex-1">
           <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/webp" onChange={handleFileSelect} className="hidden" />
-          {form.image_url ? (
+          {localForm.image_url ? (
             <div className="flex items-center gap-2 bg-background rounded-lg px-3 py-2 border border-border">
-              <img src={form.image_url} alt="" className="w-8 h-8 rounded object-cover" />
-              <button onClick={() => setForm((prev: any) => ({ ...prev, image_url: "" }))} className="text-destructive text-xs hover:underline">Remover</button>
-              <button onClick={() => fileInputRef.current?.click()} className="text-primary text-xs hover:underline">Trocar</button>
+              <img src={localForm.image_url} alt="" className="w-8 h-8 rounded object-cover" />
+              <button type="button" onClick={() => setLocalForm((prev) => ({ ...prev, image_url: "" }))} className="text-destructive text-xs hover:underline">Remover</button>
+              <button type="button" onClick={() => fileInputRef.current?.click()} className="text-primary text-xs hover:underline">Trocar</button>
             </div>
           ) : (
             <button
+              type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
               className="w-full flex items-center justify-center gap-2 bg-background text-muted-foreground px-3 py-2.5 rounded-lg text-sm border border-dashed border-border hover:border-primary hover:text-primary transition-colors"
@@ -682,25 +699,25 @@ const ProductFormInline = ({
       <input
         type="text"
         placeholder="Descrição (opcional)"
-        value={form.description}
-        onChange={(e) => { const v = e.target.value; setForm((prev: any) => ({ ...prev, description: v })); }}
+        value={localForm.description}
+        onChange={(e) => { const v = e.target.value; setLocalForm((prev) => ({ ...prev, description: v })); }}
         className="w-full bg-background text-foreground px-3 py-2.5 rounded-lg text-sm border border-border focus:border-primary focus:outline-none"
       />
 
       {storeCategory && (
         <CategoryProductFields
           category={storeCategory}
-          metadata={form.metadata || {}}
-          onChange={(metadata: Record<string, any>) => setForm((prev: any) => ({ ...prev, metadata }))}
+          metadata={localForm.metadata || {}}
+          onChange={(metadata: Record<string, any>) => setLocalForm((prev) => ({ ...prev, metadata }))}
           storeId={storeId}
         />
       )}
 
       <div className="flex gap-2 pt-1">
-        <button onClick={onSave} className="flex-1 bg-primary text-primary-foreground py-2.5 rounded-lg text-sm font-bold hover:bg-primary/90 transition-colors">
+        <button type="button" onClick={() => { setForm(localForm); onSave(localForm); }} className="flex-1 bg-primary text-primary-foreground py-2.5 rounded-lg text-sm font-bold hover:bg-primary/90 transition-colors">
           Salvar Produto
         </button>
-        <button onClick={onCancel} className="px-4 py-2.5 text-muted-foreground text-sm hover:text-foreground transition-colors">
+        <button type="button" onClick={onCancel} className="px-4 py-2.5 text-muted-foreground text-sm hover:text-foreground transition-colors">
           Cancelar
         </button>
       </div>
@@ -724,7 +741,7 @@ const ProductCard = ({
       <ProductFormInline
         form={productForm}
         setForm={setProductForm}
-        onSave={onSaveEdit}
+        onSave={(formData) => onSaveEdit(formData)}
         onCancel={onCancelEdit}
         storeCategory={storeCategory}
         storeId={storeId}
