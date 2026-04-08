@@ -22,6 +22,7 @@ const schema = z.object({
   emailConfirm: z.string().trim().email("E-mail inválido").max(255),
   password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres").max(100),
   fullName: z.string().trim().min(3, "Nome deve ter pelo menos 3 caracteres").max(100),
+  document: z.string().trim().refine(v => v.replace(/\D/g, "").length === 11, "CPF deve ter 11 dígitos"),
   phone: z.string().trim().min(10, "Telefone inválido").max(20),
   vehicle: z.string().trim()
     .min(7, "Placa deve ter 7 caracteres (ex: ABC-1234 ou ABC1D23)")
