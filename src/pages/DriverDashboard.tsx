@@ -25,6 +25,10 @@ import ProductTour, { motoboyTourSteps } from "@/components/ProductTour";
 type TabType = "entregas" | "historico" | "config";
 type DateFilter = "hoje" | "semana" | "mes" | "custom";
 
+const RURAL_NEIGHBORHOODS = [
+  "Distrito do Lobo", "Recanto dos Cambarás", "Engenheiro Serra",
+  "Vila dos Lavradores", "Entorno do CDP", "Fazendas/Sítios (Geral)"
+];
 
 const PIX_TYPE_LABELS: Record<string, string> = {
   cpf: "CPF",
