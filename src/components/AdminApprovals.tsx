@@ -244,6 +244,13 @@ const AdminApprovals = () => {
           }`} variant="outline">
             {isPending ? "⏳ Pendente" : "✅ Ativo"}
           </Badge>
+          <button
+            onClick={toggleSensitive}
+            className={`p-1.5 rounded-lg transition-colors ${isSensitiveVisible ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground hover:text-foreground"}`}
+            title={isSensitiveVisible ? "Ocultar dados sensíveis" : "Mostrar dados sensíveis"}
+          >
+            {isSensitiveVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+          </button>
         </div>
 
         {/* body */}
