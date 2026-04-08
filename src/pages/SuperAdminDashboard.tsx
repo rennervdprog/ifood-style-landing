@@ -493,6 +493,7 @@ const SuperAdminDashboard = () => {
                 {activeTab === "approvals" && "Aprovar parceiros e entregadores"}
                 {activeTab === "stores" && `${stores?.length || 0} lojas cadastradas`}
                 {activeTab === "cidades" && "Lojas por cidade"}
+                {activeTab === "pagamentos" && "Histórico de pagamentos por loja"}
                 {activeTab === "coupons" && "Gerenciar cupons de desconto"}
                 {activeTab === "juridico" && "Consulta jurídica e dados arquivados"}
                 {activeTab === "sync" && "Sincronização com banco externo"}
@@ -526,6 +527,7 @@ const SuperAdminDashboard = () => {
               </div>
             )}
             {activeTab === "cidades" && <CidadesTab stores={stores} />}
+            {activeTab === "pagamentos" && <PagamentosSplitTab stores={stores || []} />}
             {activeTab === "juridico" && <JuridicoTab />}
             {activeTab === "saques" && (
               <SaquesTab
