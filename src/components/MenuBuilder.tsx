@@ -746,13 +746,11 @@ const ProductCard = ({
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between">
-            <div>
-              <h4 className="text-sm font-bold text-foreground truncate">{product.name}</h4>
-              {product.description && <p className="text-xs text-muted-foreground line-clamp-1">{product.description}</p>}
-              <span className="text-sm font-black text-primary">R$ {Number(product.price).toFixed(2)}</span>
-            </div>
-            <div className="flex items-center gap-0.5 ml-2">
+          <h4 className="text-sm font-bold text-foreground truncate">{product.name}</h4>
+          {product.description && <p className="text-xs text-muted-foreground line-clamp-1">{product.description}</p>}
+          <div className="flex items-center justify-between mt-1">
+            <span className="text-sm font-black text-primary">R$ {Number(product.price).toFixed(2)}</span>
+            <div className="flex items-center gap-0.5 flex-shrink-0">
               <button onClick={() => setMovingProductId(isMoving ? null : product.id)} className="p-1.5 rounded-lg hover:bg-muted transition-colors" title="Mover para outra seção">
                 <ArrowRightLeft className={`h-3.5 w-3.5 ${isMoving ? "text-primary" : "text-muted-foreground"}`} />
               </button>
