@@ -188,6 +188,9 @@ const PedidosPage = () => {
           queryClient.invalidateQueries({ queryKey: ["orders", user.id] });
           const newStatus = (payload.new as any).status;
           if (newStatus === "pendente" && (payload.old as any)?.status === "aguardando_pagamento") {
+            const orderId = (payload.new as any).id;
+            clearPixForOrder(orderId);
+            setPixModal(null);
             toast.success("✅ Pagamento confirmado! Seu pedido foi enviado à loja.");
           }
           if (newStatus === "preparando") notifyOrderPreparing();
