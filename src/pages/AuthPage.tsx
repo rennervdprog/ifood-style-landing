@@ -213,6 +213,28 @@ const AuthPage = () => {
                 </div>
               )}
 
+              {mode === "signup" && (
+                <div className="relative">
+                  <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="CPF (000.000.000-00)"
+                    value={cpf}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, "").slice(0, 11);
+                      let formatted = digits;
+                      if (digits.length > 3) formatted = digits.slice(0, 3) + "." + digits.slice(3);
+                      if (digits.length > 6) formatted = digits.slice(0, 3) + "." + digits.slice(3, 6) + "." + digits.slice(6);
+                      if (digits.length > 9) formatted = digits.slice(0, 3) + "." + digits.slice(3, 6) + "." + digits.slice(6, 9) + "-" + digits.slice(9);
+                      setCpf(formatted);
+                    }}
+                    maxLength={14}
+                    className="w-full h-12 pl-10 pr-4 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+              )}
+
               {mode === "login" && (
                 <label className="flex items-center gap-2 cursor-pointer select-none">
                   <input
