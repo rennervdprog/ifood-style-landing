@@ -3,10 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, X, Pizza, AlertTriangle, Check } from "lucide-react";
 
-const scrollOnFocus = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-  setTimeout(() => e.target.scrollIntoView({ behavior: "smooth", block: "center" }), 300);
-};
-
 interface CategoryProductFieldsProps {
   category: string;
   metadata: Record<string, any>;
@@ -47,7 +43,6 @@ const CategoryProductFields = ({ category, metadata, onChange, storeId }: Catego
           placeholder={placeholder}
           value={tempInputs[fieldKey] || ""}
           onChange={(e) => setTempInputs({ ...tempInputs, [fieldKey]: e.target.value })}
-          onFocus={scrollOnFocus}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
@@ -58,6 +53,7 @@ const CategoryProductFields = ({ category, metadata, onChange, storeId }: Catego
           className="flex-1 bg-muted text-foreground px-3 py-1.5 rounded-lg text-xs border border-border focus:border-primary focus:outline-none"
         />
         <button
+          type="button"
           onClick={() => { addToList(fieldKey, tempInputs[fieldKey] || ""); setTempInputs({ ...tempInputs, [fieldKey]: "" }); }}
           className="bg-primary/20 text-primary px-2.5 py-1.5 rounded-lg text-xs font-bold"
         >
@@ -86,7 +82,6 @@ const CategoryProductFields = ({ category, metadata, onChange, storeId }: Catego
         type="text"
         value={metadata[fieldKey] || ""}
         onChange={(e) => set(fieldKey, e.target.value)}
-        onFocus={scrollOnFocus}
         placeholder={placeholder}
         className="w-full bg-muted text-foreground px-3 py-1.5 rounded-lg text-xs border border-border focus:border-primary focus:outline-none"
       />
