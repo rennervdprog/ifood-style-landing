@@ -12,7 +12,7 @@ const PopularProducts = () => {
     queryFn: async () => {
       const { data: orderItems, error } = await supabase
         .from("order_items")
-        .select("product_id, quantity, products(id, name, price, image_url, store_id, is_available, stores:store_id(name, id))");
+        .select("product_id, quantity, products(id, name, price, image_url, store_id, is_available, stores:store_id(name, id, slug))");
       if (error) throw error;
 
       // Aggregate quantities by product
@@ -46,7 +46,7 @@ const PopularProducts = () => {
         {topProducts.map(({ product, totalQty }) => (
           <div
             key={product.id}
-            onClick={() => navigate(`/loja/${product.store_id}`)}
+            onClick={() => navigate(product.stores?.slug ? `/${product.stores.slug}` : `/loja/${product.store_id}`)}
             className="flex-shrink-0 w-32 bg-card border border-border rounded-2xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
           >
             {product.image_url ? (

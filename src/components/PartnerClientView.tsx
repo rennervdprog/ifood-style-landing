@@ -86,6 +86,7 @@ const PartnerClientView = () => {
                 image_url={store.image_url}
                 is_open={store.is_open}
                 rating={store.rating}
+                slug={store.slug}
               />
             ))}
           </div>
