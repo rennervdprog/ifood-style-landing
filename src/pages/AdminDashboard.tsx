@@ -409,9 +409,7 @@ const AdminDashboard = () => {
         sendPushNotification([order.client_id], "✅ Pedido Entregue!", `Seu pedido #${orderId.slice(0, 8).toUpperCase()} foi entregue. Bom apetite!`, { link: "/pedidos" }).catch(console.error);
       }
     } catch (e: any) {
-      debugLog.push(`💥 Exception: ${e?.message || e}`);
-      toast.error(`Erro inesperado: ${e?.message}`, { duration: 10000, description: debugLog.join("\n") });
-      console.error("[updateOrderStatus] EXCEPTION:", debugLog.join(" | "), e);
+      toast.error(`Erro inesperado: ${e?.message}`);
     }
   };
 
