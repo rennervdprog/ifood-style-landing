@@ -274,14 +274,14 @@ const AdminApprovals = () => {
           {/* info grid */}
           <div className="grid grid-cols-2 gap-x-4 gap-y-0">
             <InfoRow icon={User} label="Nome completo" value={p.full_name} warn={!p.full_name} />
-            <InfoRow icon={Hash} label="CPF / CNPJ" value={fmtDoc(p.document)} warn={!p.document} />
-            <InfoRow icon={Mail} label="E-mail" value={p.email} warn={!p.email} />
-            <InfoRow icon={Phone} label="Telefone / WhatsApp" value={p.whatsapp_number || p.phone} warn={!p.whatsapp_number && !p.phone} />
+            <InfoRow icon={Hash} label="CPF / CNPJ" value={fmtDoc(p.document)} warn={!p.document} masked={hide} />
+            <InfoRow icon={Mail} label="E-mail" value={p.email} warn={!p.email} masked={hide} />
+            <InfoRow icon={Phone} label="Telefone / WhatsApp" value={p.whatsapp_number || p.phone} warn={!p.whatsapp_number && !p.phone} masked={hide} />
             <InfoRow icon={MapPin} label="Cidade" value={p.city || "Não informado"} />
             <InfoRow icon={Calendar} label="Cadastro em" value={fmtDate(p.created_at)} />
             {p.role === "lojista" && (
               <>
-                <InfoRow icon={CreditCard} label="Chave PIX" value={p.pix_key ? `${(p.pix_type || "").toUpperCase()}: ${p.pix_key}` : null} warn={!p.pix_key} />
+                <InfoRow icon={CreditCard} label="Chave PIX" value={p.pix_key ? `${(p.pix_type || "").toUpperCase()}: ${p.pix_key}` : null} warn={!p.pix_key} masked={hide} />
                 {store && (
                   <InfoRow icon={Store} label="Categoria da loja" value={store.category} />
                 )}
@@ -293,7 +293,7 @@ const AdminApprovals = () => {
             {p.role === "motoboy" && (
               <>
                 <InfoRow icon={Bike} label="Veículo / Placa" value={p.vehicle} warn={!p.vehicle} />
-                <InfoRow icon={FileText} label="Nº CNH" value={p.cnh_number} warn={!p.cnh_number} />
+                <InfoRow icon={FileText} label="Nº CNH" value={p.cnh_number} warn={!p.cnh_number} masked={hide} />
               </>
             )}
           </div>
