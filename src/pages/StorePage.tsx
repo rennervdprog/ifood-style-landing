@@ -815,28 +815,15 @@ const ProductCard = ({ product, disabled, onClick, storeCategory }: ProductCardP
   const emoji = categoryEmoji[cat] || "🍴";
 
   // ===== PIZZA =====
-  const isPizza = cat === "pizzas" && !isBeverage;
-  const sizes: Array<{ name: string; price: number }> = meta.sizes || [];
-
   // ===== FARMACIA =====
   const isPharmacy = cat === "farmacias";
 
   // Price display logic
-  const priceDisplay = (() => {
-    if (isPizza && sizes.length > 0) {
-      const prices = sizes.map(s => s.price).filter(p => p > 0);
-      if (prices.length === 0) return `R$ ${product.price.toFixed(2)}`;
-      const min = Math.min(...prices);
-      const max = Math.max(...prices);
-      return min === max ? `R$ ${min.toFixed(2)}` : `R$ ${min.toFixed(2)} ~ R$ ${max.toFixed(2)}`;
-    }
-    return `R$ ${product.price.toFixed(2)}`;
-  })();
+  const priceDisplay = `R$ ${product.price.toFixed(2)}`;
 
   // CTA label
   const ctaLabel = (() => {
     if (disabled) return "Indisponível";
-    if (isPizza && sizes.length > 0) return "Escolher tamanho";
     if (isPharmacy && meta.requires_prescription) return "Ver detalhes";
     return "Adicionar";
   })();
