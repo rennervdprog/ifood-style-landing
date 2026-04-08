@@ -59,7 +59,7 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
 
   const [name, setName] = useState(storeName);
   const [category, setCategory] = useState(storeCategory);
-  const [slug, setSlug] = useState(storeSlug || "");
+  const [slug, setSlug] = useState(storeSlug || storeName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""));
   const [whatsapp, setWhatsapp] = useState("");
   const [imageUrl, setImageUrl] = useState(storeImageUrl || "");
   const [pixKey, setPixKey] = useState("");
@@ -369,11 +369,11 @@ const NotificationSection = () => {
         </label>
         <div className="flex gap-2">
           <div className="flex-1 flex items-center bg-secondary border border-border rounded-xl overflow-hidden">
-            <span className="text-xs text-muted-foreground/70 pl-3 whitespace-nowrap">itasuper.app/</span>
+            <span className="text-xs text-muted-foreground/70 pl-3 whitespace-nowrap">itasuper.com.br/</span>
             <input
               type="text"
               value={slug}
-              onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
+              onChange={(e) => setSlug(e.target.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9-]/g, "").replace(/--+/g, "-"))}
               placeholder="nome-da-loja"
               maxLength={50}
               className="flex-1 bg-transparent px-1 py-3 text-foreground text-sm focus:outline-none"
