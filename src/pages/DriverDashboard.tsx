@@ -54,70 +54,6 @@ const SectionTitle = ({ icon: Icon, children }: { icon: any; children: React.Rea
   </div>
 );
 
-const NativePushDebug = () => {
-  const [diagResult, setDiagResult] = useState<Record<string, any> | null>(null);
-  const [running, setRunning] = useState(false);
-  const [logs, setLogs] = useState<string[]>([]);
-
-  const runDiag = async () => {
-    setRunning(true);
-    try {
-      const result = await runNativeDiagnostics();
-      setDiagResult(result);
-      setLogs(getNativeDebugLog());
-    } catch (e: any) {
-      setDiagResult({ error: e.message });
-    }
-    setRunning(false);
-  };
-
-  return (
-    <div className="bg-card border border-border rounded-2xl overflow-hidden">
-      <div className="bg-amber-500/10 px-4 py-3 flex items-center justify-between border-b border-border">
-        <div className="flex items-center gap-2">
-          <Bell className="h-4 w-4 text-amber-500" />
-          <span className="text-sm font-bold text-foreground">Debug Push Nativo</span>
-        </div>
-        <button
-          onClick={runDiag}
-          disabled={running}
-          className="px-3 py-1.5 bg-primary text-primary-foreground text-xs font-bold rounded-lg disabled:opacity-50"
-        >
-          {running ? "..." : "Executar"}
-        </button>
-      </div>
-      <div className="p-4 space-y-2">
-        <p className="text-[10px] text-muted-foreground">
-          Clique em "Executar" para diagnosticar o bridge OneSignal/GoNative.
-        </p>
-        {diagResult && (
-          <div className="space-y-2">
-            <div className="grid grid-cols-2 gap-2 text-[10px]">
-              <div className="bg-muted rounded-lg p-2">
-                <span className="text-muted-foreground">GoNative:</span>{" "}
-                <span className={diagResult.isGoNative ? "text-emerald-500 font-bold" : "text-red-500 font-bold"}>
-                  {diagResult.isGoNative ? "SIM" : "NÃO"}
-                </span>
-              </div>
-              <div className="bg-muted rounded-lg p-2">
-                <span className="text-muted-foreground">Bridge:</span>{" "}
-                <span className={diagResult.bridgeExists ? "text-emerald-500 font-bold" : "text-red-500 font-bold"}>
-                  {diagResult.bridgeExists ? "SIM" : "NÃO"}
-                </span>
-              </div>
-              <div className="bg-muted rounded-lg p-2">
-                <span className="text-muted-foreground">Player ID:</span>{" "}
-                <span className={diagResult.freshPlayerId ? "text-emerald-500 font-bold" : "text-red-500 font-bold"}>
-                  {diagResult.freshPlayerId || "NULO"}
-                </span>
-              </div>
-              <div className="bg-muted rounded-lg p-2">
-                <span className="text-muted-foreground">Métodos:</span>{" "}
-                <span className="text-foreground font-mono">
-                  {diagResult.bridgeMethods?.join(", ") || "nenhum"}
-                </span>
-              </div>
-            </div>
             {diagResult.freshInfo && (
               <div className="bg-muted rounded-lg p-2">
                 <p className="text-[10px] text-muted-foreground font-bold mb-1">Info OneSignal:</p>
@@ -1111,12 +1047,6 @@ const DriverDashboard = () => {
         </>
       )}
 
-      {/* ── Native Push Debug (visible on pedidos tab) ── */}
-      {activeTab === "entregas" && (
-        <div className="px-4 pb-4">
-          <NativePushDebug />
-        </div>
-      )}
       {/* ═════════════ PIX CONFIG TAB ═════════════ */}
       {activeTab === "config" && (
         <div className="px-4 py-4 space-y-4">

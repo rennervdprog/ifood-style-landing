@@ -364,29 +364,20 @@ const AdminDashboard = () => {
   };
 
   const updateOrderStatus = async (orderId: string, newStatus: OrderStatus) => {
-    const debugLog: string[] = [];
-    debugLog.push(`[${new Date().toLocaleTimeString()}] updateOrderStatus: ${orderId.slice(0,8)} → ${newStatus}`);
     try {
-      const { error, data, count, status, statusText } = await supabase
+      const { error, data } = await supabase
         .from("orders")
         .update({ status: newStatus })
         .eq("id", orderId)
         .select();
-      debugLog.push(`Response: status=${status} ${statusText}, rows=${data?.length ?? 0}`);
       if (error) {
-        debugLog.push(`❌ Error: ${error.message} | code: ${error.code} | details: ${error.details}`);
-        toast.error(`Erro ao atualizar pedido: ${error.message}`, { duration: 10000, description: debugLog.join("\n") });
-        console.error("[updateOrderStatus] DEBUG:", debugLog.join(" | "));
+        toast.error(`Erro ao atualizar pedido: ${error.message}`);
         return;
       }
       if (!data || data.length === 0) {
-        debugLog.push("⚠️ Nenhuma row atualizada (RLS bloqueou ou pedido não encontrado)");
-        toast.error("Pedido não atualizado — verifique permissões", { duration: 10000, description: debugLog.join("\n") });
-        console.error("[updateOrderStatus] DEBUG:", debugLog.join(" | "));
+        toast.error("Pedido não atualizado — verifique permissões");
         return;
       }
-      debugLog.push(`✅ Atualizado com sucesso. Novo status: ${(data[0] as any)?.status}`);
-      console.log("[updateOrderStatus] DEBUG:", debugLog.join(" | "));
       toast.success("Pedido atualizado!");
       queryClient.invalidateQueries({ queryKey: ["store-orders", store?.id] });
       const order = orders?.find((o: any) => o.id === orderId);
