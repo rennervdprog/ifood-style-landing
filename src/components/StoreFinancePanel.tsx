@@ -664,15 +664,15 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
             <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center">
               <CheckCircle2 className="h-4 w-4 text-emerald-400" />
             </div>
-            <p className="text-sm font-bold text-foreground">Vendas via App</p>
-            <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-[10px]">Split Automático</Badge>
+           <p className="text-sm font-bold text-foreground">Vendas via App (PIX)</p>
+            <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-[10px]">Automático</Badge>
           </div>
-          <p className="text-2xl font-black text-emerald-400">R$ {appSales.toFixed(2)}</p>
+          <p className="text-2xl font-black text-emerald-400">R$ {creditFromApp.toFixed(2)}</p>
           <p className="text-[10px] text-muted-foreground mt-1">
-            O lojista recebe 85% (R$ {creditFromApp.toFixed(2)}) automaticamente via Asaas. Sua comissão de 15% (R$ {multiplyMoney(appSales, 0.15).toFixed(2)}) já foi retida.
+            Você recebeu R$ {creditFromApp.toFixed(2)} de R$ {appSales.toFixed(2)} em vendas pelo app. A taxa da plataforma (15% = R$ {multiplyMoney(appSales, 0.15).toFixed(2)}) já foi descontada automaticamente.
           </p>
           <div className="mt-2 rounded-xl bg-emerald-500/5 border border-emerald-500/10 p-2.5">
-            <p className="text-[10px] text-emerald-400 font-semibold">✅ Nenhuma ação necessária — tudo automático</p>
+            <p className="text-[10px] text-emerald-400 font-semibold">✅ Valor já depositado na sua conta — nada a fazer</p>
           </div>
         </div>
       </div>
@@ -685,9 +685,9 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
             <div className="w-8 h-8 rounded-xl bg-red-500/10 flex items-center justify-center">
               <ArrowDownRight className="h-4 w-4 text-red-400" />
             </div>
-            <p className="text-sm font-bold text-foreground">Comissão de Vendas Físicas</p>
+            <p className="text-sm font-bold text-foreground">Taxa Pendente — Vendas Físicas</p>
           </div>
-          <p className="text-xs text-muted-foreground mb-1">15% das vendas em Dinheiro/Cartão — o lojista já recebeu na hora</p>
+          <p className="text-xs text-muted-foreground mb-1">Você recebeu o valor na hora (dinheiro/cartão). A taxa de 15% da plataforma precisa ser repassada.</p>
           <p className="text-2xl font-black text-red-400">
             R$ {(dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue).toFixed(2)}
           </p>
