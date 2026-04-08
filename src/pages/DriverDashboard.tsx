@@ -54,26 +54,8 @@ const SectionTitle = ({ icon: Icon, children }: { icon: any; children: React.Rea
   </div>
 );
 
-            {diagResult.freshInfo && (
-              <div className="bg-muted rounded-lg p-2">
-                <p className="text-[10px] text-muted-foreground font-bold mb-1">Info OneSignal:</p>
-                <pre className="text-[9px] text-foreground font-mono whitespace-pre-wrap break-all">{diagResult.freshInfo}</pre>
-              </div>
-            )}
-          </div>
-        )}
-        {logs.length > 0 && (
-          <div className="bg-muted rounded-lg p-2 max-h-48 overflow-y-auto">
-            <p className="text-[10px] text-muted-foreground font-bold mb-1">Log ({logs.length} entradas):</p>
-            {logs.map((l, i) => (
-              <p key={i} className="text-[9px] text-foreground font-mono">{l}</p>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
+
+
 
 const DriverDashboard = () => {
   const isMobile = useIsMobile();
