@@ -221,6 +221,10 @@ const CadastroLojista = () => {
             <FieldInput icon={Store} placeholder="Nome da Loja" value={storeName} onChange={setStoreName} error={errors.storeName} />
             <FieldInput icon={FileText} placeholder="CPF ou CNPJ" value={document} onChange={setDocument} error={errors.document} inputMode="numeric" />
             <div>
+              <FieldInput icon={Phone} placeholder="WhatsApp (DDD + número)" value={whatsapp} onChange={setWhatsapp} error={errors.whatsapp} inputMode="tel" />
+              <p className="text-xs text-muted-foreground mt-1">Número com DDD. Ex: 14 99999-9999. Usado no Asaas e contato.</p>
+            </div>
+            <div>
               <div className="relative">
                 <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input
