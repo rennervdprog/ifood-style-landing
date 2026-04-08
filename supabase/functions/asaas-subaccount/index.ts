@@ -129,6 +129,7 @@ Deno.serve(async (req) => {
       address: store.address_city || "Itatinga",
       province: "SP",
       postalCode: "18690000",
+      incomeValue: isCnpj ? 10000 : 3000,
     };
 
     // Asaas requires birthDate for CPF (individual) accounts
