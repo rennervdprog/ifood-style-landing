@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
+import PizzaHalfHalfModal from "@/components/PizzaHalfHalfModal";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart, type CartAddon } from "@/contexts/CartContext";
@@ -42,6 +43,7 @@ const StorePage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [showHours, setShowHours] = useState(false);
+  const [showHalfHalf, setShowHalfHalf] = useState(false);
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const pageRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLDivElement>(null);
