@@ -109,6 +109,10 @@ const PedidosPage = () => {
       return data;
     },
     enabled: !!user && !isLojista,
+    refetchInterval: (query) => {
+      const data = query.state.data as any[] | undefined;
+      return data?.some((o: any) => o.status === "aguardando_pagamento") ? 5000 : false;
+    },
   });
 
   // Store orders (for lojistas)
@@ -184,6 +188,9 @@ const PedidosPage = () => {
           queryClient.invalidateQueries({ queryKey: ["orders", user.id] });
           const newStatus = (payload.new as any).status;
           if (newStatus === "pendente" && (payload.old as any)?.status === "aguardando_pagamento") {
+            const orderId = (payload.new as any).id;
+            clearPixForOrder(orderId);
+            setPixModal(null);
             toast.success("✅ Pagamento confirmado! Seu pedido foi enviado à loja.");
           }
           if (newStatus === "preparando") notifyOrderPreparing();
