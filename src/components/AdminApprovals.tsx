@@ -40,13 +40,13 @@ const completeness = (p: any): number => {
 
 /* ── info row ────────────────────────────────────────────────── */
 
-const InfoRow = ({ icon: Icon, label, value, warn }: { icon: any; label: string; value: string | null | undefined; warn?: boolean }) => (
+const InfoRow = ({ icon: Icon, label, value, warn, masked }: { icon: any; label: string; value: string | null | undefined; warn?: boolean; masked?: boolean }) => (
   <div className="flex items-start gap-2 py-1.5">
     <Icon className={`h-3.5 w-3.5 mt-0.5 shrink-0 ${warn ? "text-yellow-500" : "text-muted-foreground"}`} />
     <div className="min-w-0">
       <p className="text-[10px] uppercase tracking-wider text-muted-foreground leading-none mb-0.5">{label}</p>
       <p className={`text-xs font-medium leading-tight ${value ? "text-foreground" : "text-muted-foreground/50 italic"}`}>
-        {value || "Não informado"}
+        {masked && value ? "••••••••" : (value || "Não informado")}
       </p>
     </div>
   </div>
