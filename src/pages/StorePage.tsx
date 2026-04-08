@@ -596,10 +596,9 @@ const StorePage = () => {
       {/* ===== MONTE SUA PIZZA MEIO A MEIO ===== */}
       {store?.category === "pizzas" && !filteredProducts && (() => {
         const storeSettings = (store?.settings || {}) as Record<string, any>;
-        const pizzaConfig = storeSettings.pizza_config || { sizes: [], flavors: [] };
         const halfEnabled = !!storeSettings.pizza_half_enabled;
-        const hasFlavors = (pizzaConfig.flavors || []).length >= 2;
-        if (!halfEnabled || !hasFlavors) return null;
+        const pizzaProducts = (products || []).filter(p => !p.metadata?.is_beverage && p.price > 0);
+        if (!halfEnabled || pizzaProducts.length < 2) return null;
         return (
           <div className="px-4 mt-4">
             <button
