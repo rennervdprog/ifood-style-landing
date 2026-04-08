@@ -112,13 +112,20 @@ Deno.serve(async (req) => {
     const isCnpj = cleanDoc.length === 14;
 
     // Step 1: Create Asaas subaccount
-    const phone = (profile.whatsapp_number || profile.phone || "").replace(/\D/g, "");
+    let phone = (profile.whatsapp_number || profile.phone || "").replace(/\D/g, "");
+    // Asaas requires valid Brazilian mobile: 2-digit DDD + 9-digit number = 11 digits
+    // Remove country code 55 if present at start
+    if (phone.startsWith("55") && phone.length >= 12) {
+      phone = phone.substring(2);
+    }
+    // Must be exactly 11 digits (DDD + 9XXXXXXXX) to be valid mobile
+    const isValidMobile = phone.length === 11 && phone[2] === "9";
     const subaccountBody: Record<string, unknown> = {
       name: profile.full_name || store.name,
       email: profile.email || `lojista-${store_id.substring(0, 8)}@itasuper.app`,
       cpfCnpj: cleanDoc,
       companyType: isCnpj ? "LIMITED" : "MEI",
-      mobilePhone: phone || undefined,
+      mobilePhone: isValidMobile ? phone : undefined,
       address: store.address_city || "Itatinga",
       province: "SP",
       postalCode: "18690000",
@@ -130,6 +137,7 @@ Deno.serve(async (req) => {
     }
 
     console.log("Creating Asaas subaccount for store:", store.name);
+    console.log("Phone sanitized:", phone, "valid:", isValidMobile, "sent:", isValidMobile ? phone : "omitted");
     const createRes = await fetch(`${baseUrl}/accounts`, {
       method: "POST",
       headers: {
