@@ -52,6 +52,7 @@ const CadastroLojista = () => {
   const [birthDate, setBirthDate] = useState("");
   const [pixType, setPixType] = useState("");
   const [pixKey, setPixKey] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
   const [cep, setCep] = useState("");
   const [city, setCity] = useState("");
   const [street, setStreet] = useState("");
