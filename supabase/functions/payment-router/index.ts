@@ -675,9 +675,9 @@ async function handleOrderPix(
       const isOwnDelivery = store.delivery_mode === "own";
 
       if (isOwnDelivery) {
-        // Own delivery: store gets subtotal + delivery_fee - R$0.90 platform fee
-        splitFixedValue = Math.round((subtotal + deliveryFee - 0.90) * 100) / 100;
-        console.log("Split (own delivery): store gets R$", splitFixedValue, "platform keeps R$0.90");
+        // Own delivery: store gets 85% of subtotal + full delivery fee
+        splitFixedValue = Math.round((subtotal * 0.85 + deliveryFee) * 100) / 100;
+        console.log("Split (own delivery): store gets R$", splitFixedValue, "platform keeps 15% =", Math.round(subtotal * 0.15 * 100) / 100);
       } else {
         // Platform delivery: store gets 85% of subtotal, platform keeps 15% + delivery fee
         splitFixedValue = Math.round(subtotal * 0.85 * 100) / 100;
