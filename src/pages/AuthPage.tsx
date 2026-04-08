@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, Mail, Lock, Eye, EyeOff, KeyRound } from "lucide-react";
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, KeyRound, FileText } from "lucide-react";
 
 type AuthMode = "login" | "signup" | "forgot" | "reset";
 
@@ -13,6 +13,7 @@ const AuthPage = () => {
   const [mode, setMode] = useState<AuthMode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [cpf, setCpf] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -56,6 +57,10 @@ const AuthPage = () => {
       toast.error("Preencha todos os campos.");
       return;
     }
+    if (mode === "signup" && cpf.replace(/\D/g, "").length !== 11) {
+      toast.error("CPF deve ter 11 dígitos.");
+      return;
+    }
     if (mode === "signup" && !acceptedTerms) {
       toast.error("Você precisa aceitar os Termos de Uso e Política de Privacidade.");
       return;
@@ -84,7 +89,6 @@ const AuthPage = () => {
           options: { emailRedirectTo: window.location.origin },
         });
         if (error) throw error;
-        // Record terms acceptance
         if (signUpData?.user?.id) {
           await supabase.from("terms_acceptance").insert({
             user_id: signUpData.user.id,
@@ -94,6 +98,7 @@ const AuthPage = () => {
           });
           await supabase.from("profiles").update({
             terms_accepted_at: new Date().toISOString(),
+            document: cpf.replace(/\D/g, ""),
           }).eq("user_id", signUpData.user.id);
         }
         toast.success("Conta criada com sucesso!");
