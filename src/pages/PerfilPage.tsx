@@ -263,7 +263,30 @@ const PerfilPage = () => {
     } catch (err: any) { toast.error(err.message || "Erro ao salvar."); } finally { setSavingPix(false); }
   };
 
-  const copyPixKey = () => { if (pixKey) { navigator.clipboard.writeText(pixKey); toast.success("Chave PIX copiada!"); } };
+  const maskCpf = (value: string) => {
+    const digits = value.replace(/\D/g, "").slice(0, 11);
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+    if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+  };
+
+  const handleSavePersonal = async () => {
+    if (!fullName.trim()) { toast.error("Preencha seu nome."); return; }
+    setSavingPersonal(true);
+    try {
+      const { error } = await supabase.from("profiles").upsert({
+        user_id: user!.id,
+        full_name: fullName.trim(),
+        document: document.replace(/\D/g, "") || null,
+      } as any, { onConflict: "user_id" });
+      if (error) throw error;
+      toast.success("Dados pessoais salvos!");
+      queryClient.invalidateQueries({ queryKey: ["my-profile", user?.id] });
+    } catch (err: any) { toast.error(err.message || "Erro ao salvar."); } finally { setSavingPersonal(false); }
+  };
+
+
 
   const handleDeleteAccount = async () => {
     setDeletingAccount(true);
