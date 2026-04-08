@@ -185,23 +185,8 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
     invalidateAll();
   };
 
-  // Product price derivation for pizzas
-  const derivePriceFromMetadata = (meta: Record<string, any>): number => {
-    const sizes = meta?.sizes as Array<{ name: string; price: number }> | undefined;
-    if (sizes && sizes.length > 0) {
-      const prices = sizes.map(s => s.price).filter(p => p > 0);
-      return prices.length > 0 ? Math.min(...prices) : 0;
-    }
-    return 0;
-  };
-
-  const isPizzaProduct = (meta: Record<string, any>): boolean => {
-    return storeCategory === "pizzas" && !meta?.is_beverage;
-  };
-
   const addProduct = async (sectionId: string | null, formData = productForm) => {
-    const meta = formData.metadata || {};
-    const finalPrice = isPizzaProduct(meta) ? derivePriceFromMetadata(meta) : parseFloat(formData.price) || 0;
+    const finalPrice = parseFloat(formData.price) || 0;
     if (!formData.name.trim()) { toast.error("Preencha o nome do produto"); return; }
     if (!isPizzaProduct(meta) && (!formData.price || finalPrice <= 0)) { toast.error("Preencha o preço do produto"); return; }
     if (isPizzaProduct(meta) && finalPrice <= 0) { toast.error("Defina ao menos um tamanho com preço"); return; }
