@@ -188,8 +188,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
   const addProduct = async (sectionId: string | null, formData = productForm) => {
     const finalPrice = parseFloat(formData.price) || 0;
     if (!formData.name.trim()) { toast.error("Preencha o nome do produto"); return; }
-    if (!isPizzaProduct(meta) && (!formData.price || finalPrice <= 0)) { toast.error("Preencha o preço do produto"); return; }
-    if (isPizzaProduct(meta) && finalPrice <= 0) { toast.error("Defina ao menos um tamanho com preço"); return; }
+    if (!formData.price || finalPrice <= 0) { toast.error("Preencha o preço do produto"); return; }
 
     const { error } = await supabase.from("products").insert({
       store_id: storeId,
@@ -197,8 +196,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
       name: formData.name.trim(),
       price: finalPrice,
       description: formData.description.trim() || null,
-      image_url: formData.image_url.trim() || null,
-      metadata: meta,
+      metadata: formData.metadata || {},
     } as any);
     if (error) { toast.error("Erro ao adicionar produto"); return; }
     toast.success("Produto adicionado!");
@@ -208,8 +206,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
   };
 
   const updateProduct = async (id: string, formData = productForm) => {
-    const meta = formData.metadata || {};
-    const finalPrice = isPizzaProduct(meta) ? derivePriceFromMetadata(meta) : parseFloat(formData.price) || 0;
+    const finalPrice = parseFloat(formData.price) || 0;
     const { error } = await supabase.from("products").update({
       name: formData.name.trim(),
       price: finalPrice,
