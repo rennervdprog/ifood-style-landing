@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -48,6 +48,7 @@ const CadastroEntregador = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   // Document uploads
   const [cnhFront, setCnhFront] = useState<File | null>(null);
@@ -151,6 +152,10 @@ const CadastroEntregador = () => {
       toast.error("Tire uma selfie usando a câmera");
       return;
     }
+    if (!acceptedTerms) {
+      toast.error("Você precisa aceitar os Termos de Uso e Política de Privacidade.");
+      return;
+    }
 
     setLoading(true);
     try {
@@ -188,7 +193,16 @@ const CadastroEntregador = () => {
         cnh_front_url: cnhFrontPath,
         cnh_back_url: cnhBackPath,
         selfie_url: selfiePath,
+        terms_accepted_at: new Date().toISOString(),
       }).eq("user_id", userId);
+
+      // Record terms acceptance
+      await supabase.from("terms_acceptance").insert({
+        user_id: userId,
+        terms_version: "1.0",
+        privacy_version: "1.0",
+        user_agent: navigator.userAgent,
+      });
 
       setSuccess(true);
     } catch (err: any) {
