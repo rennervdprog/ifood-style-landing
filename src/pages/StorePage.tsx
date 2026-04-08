@@ -593,6 +593,37 @@ const StorePage = () => {
         </div>
       )}
 
+      {/* ===== MONTE SUA PIZZA MEIO A MEIO ===== */}
+      {store?.category === "pizzas" && !filteredProducts && (() => {
+        const storeSettings = (store?.settings || {}) as Record<string, any>;
+        const pizzaConfig = storeSettings.pizza_config || { sizes: [], flavors: [] };
+        const halfEnabled = !!storeSettings.pizza_half_enabled;
+        const hasFlavors = (pizzaConfig.flavors || []).length >= 2;
+        if (!halfEnabled || !hasFlavors) return null;
+        return (
+          <div className="px-4 mt-4">
+            <button
+              onClick={() => {
+                if (!storeStatus.isOpen) { toast.error(`Loja fechada. ${storeStatus.reason}`); return; }
+                setShowHalfHalf(true);
+              }}
+              className={`w-full bg-gradient-to-r from-primary/15 to-primary/5 border-2 border-primary/30 rounded-2xl p-4 flex items-center gap-4 text-left transition-all ${
+                !storeStatus.isOpen ? "opacity-50" : "hover:border-primary/50 active:scale-[0.98]"
+              }`}
+            >
+              <div className="w-14 h-14 rounded-2xl bg-primary/20 flex items-center justify-center flex-shrink-0">
+                <span className="text-3xl">🍕</span>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-black text-foreground">Monte sua Pizza Meio a Meio</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Escolha 2 sabores diferentes em uma pizza</p>
+              </div>
+              <ChevronRight className="h-5 w-5 text-primary flex-shrink-0" />
+            </button>
+          </div>
+        );
+      })()}
+
       {/* ===== CATEGORY NAV ===== */}
       {sections && sections.length > 0 && !filteredProducts && (
         <div
