@@ -465,6 +465,46 @@ const PerfilPage = () => {
           </div>
         </SectionCard>
 
+        {/* Personal data section */}
+        <SectionCard>
+          <button onClick={() => setActiveSection(activeSection === "personal" ? null : "personal")}
+            className="w-full flex items-center justify-between px-5 py-4 hover:bg-muted/50 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                <User className="h-4 w-4 text-primary" />
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-semibold text-foreground">Dados Pessoais</p>
+                <p className="text-xs text-muted-foreground">
+                  {fullName || "Nome não cadastrado"}{document ? ` • CPF: ***${document.replace(/\D/g, "").slice(-4)}` : ""}
+                </p>
+              </div>
+            </div>
+            <ChevronRight className={`h-4 w-4 text-muted-foreground transition-transform ${activeSection === "personal" ? "rotate-90" : ""}`} />
+          </button>
+
+          {activeSection === "personal" && (
+            <div className="px-5 pb-5 space-y-3 border-t border-border pt-4">
+              <InputField label="Nome completo" placeholder="Seu nome" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+              <InputField label="CPF" placeholder="000.000.000-00" value={maskCpf(document)} onChange={(e) => setDocument(e.target.value.replace(/\D/g, ""))} inputMode="numeric" maxLength={14} />
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">E-mail</label>
+                <input
+                  value={user?.email || ""}
+                  disabled
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-muted text-muted-foreground text-sm cursor-not-allowed"
+                />
+                <p className="text-[10px] text-muted-foreground mt-1">O e-mail não pode ser alterado.</p>
+              </div>
+              <button onClick={handleSavePersonal} disabled={savingPersonal}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-primary-foreground font-bold text-sm disabled:opacity-50 transition-all active:scale-[0.98]">
+                <Save className="h-4 w-4" />
+                {savingPersonal ? "Salvando..." : "Salvar Dados"}
+              </button>
+            </div>
+          )}
+        </SectionCard>
+
         {/* Address section - collapsible */}
         <SectionCard>
           <button onClick={() => setActiveSection(activeSection === "address" ? null : "address")}
