@@ -1,3 +1,4 @@
+import { memo, useCallback } from "react";
 import { Pizza, Beef, Beer, Utensils, Fish, IceCream, Coffee, Flame, Pill, Cake } from "lucide-react";
 
 const categories = [
@@ -18,7 +19,7 @@ interface Props {
   onSelect: (value: string) => void;
 }
 
-const CategoryScroll = ({ selected, onSelect }: Props) => {
+const CategoryScroll = memo(({ selected, onSelect }: Props) => {
   return (
     <div className="flex gap-3 overflow-x-auto hide-scrollbar py-4 px-4">
       {categories.map((cat) => {
@@ -52,6 +53,8 @@ const CategoryScroll = ({ selected, onSelect }: Props) => {
       })}
     </div>
   );
-};
+});
+
+CategoryScroll.displayName = "CategoryScroll";
 
 export default CategoryScroll;
