@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, Mail, Lock, Eye, EyeOff, KeyRound } from "lucide-react";
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, KeyRound, FileText } from "lucide-react";
 
 type AuthMode = "login" | "signup" | "forgot" | "reset";
 
@@ -13,6 +13,7 @@ const AuthPage = () => {
   const [mode, setMode] = useState<AuthMode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [cpf, setCpf] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -56,6 +57,10 @@ const AuthPage = () => {
       toast.error("Preencha todos os campos.");
       return;
     }
+    if (mode === "signup" && cpf.replace(/\D/g, "").length !== 11) {
+      toast.error("CPF deve ter 11 dígitos.");
+      return;
+    }
     if (mode === "signup" && !acceptedTerms) {
       toast.error("Você precisa aceitar os Termos de Uso e Política de Privacidade.");
       return;
@@ -84,7 +89,6 @@ const AuthPage = () => {
           options: { emailRedirectTo: window.location.origin },
         });
         if (error) throw error;
-        // Record terms acceptance
         if (signUpData?.user?.id) {
           await supabase.from("terms_acceptance").insert({
             user_id: signUpData.user.id,
@@ -94,6 +98,7 @@ const AuthPage = () => {
           });
           await supabase.from("profiles").update({
             terms_accepted_at: new Date().toISOString(),
+            document: cpf.replace(/\D/g, ""),
           }).eq("user_id", signUpData.user.id);
         }
         toast.success("Conta criada com sucesso!");
@@ -205,6 +210,28 @@ const AuthPage = () => {
                       <Eye className="h-4 w-4 text-muted-foreground" />
                     )}
                   </button>
+                </div>
+              )}
+
+              {mode === "signup" && (
+                <div className="relative">
+                  <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="CPF (000.000.000-00)"
+                    value={cpf}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, "").slice(0, 11);
+                      let formatted = digits;
+                      if (digits.length > 3) formatted = digits.slice(0, 3) + "." + digits.slice(3);
+                      if (digits.length > 6) formatted = digits.slice(0, 3) + "." + digits.slice(3, 6) + "." + digits.slice(6);
+                      if (digits.length > 9) formatted = digits.slice(0, 3) + "." + digits.slice(3, 6) + "." + digits.slice(6, 9) + "-" + digits.slice(9);
+                      setCpf(formatted);
+                    }}
+                    maxLength={14}
+                    className="w-full h-12 pl-10 pr-4 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
                 </div>
               )}
 

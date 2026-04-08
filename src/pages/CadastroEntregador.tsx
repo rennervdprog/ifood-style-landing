@@ -22,6 +22,7 @@ const schema = z.object({
   emailConfirm: z.string().trim().email("E-mail inválido").max(255),
   password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres").max(100),
   fullName: z.string().trim().min(3, "Nome deve ter pelo menos 3 caracteres").max(100),
+  document: z.string().trim().refine(v => v.replace(/\D/g, "").length === 11, "CPF deve ter 11 dígitos"),
   phone: z.string().trim().min(10, "Telefone inválido").max(20),
   vehicle: z.string().trim()
     .min(7, "Placa deve ter 7 caracteres (ex: ABC-1234 ou ABC1D23)")
@@ -40,6 +41,7 @@ const CadastroEntregador = () => {
   const [emailConfirm, setEmailConfirm] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [document, setDocument] = useState("");
   const [phone, setPhone] = useState("");
   const [vehicle, setVehicle] = useState("");
   const [cnhNumber, setCnhNumber] = useState("");
@@ -134,7 +136,7 @@ const CadastroEntregador = () => {
     e.preventDefault();
     setErrors({});
 
-    const result = schema.safeParse({ email, emailConfirm, password, fullName, phone, vehicle, cnhNumber, city });
+    const result = schema.safeParse({ email, emailConfirm, password, fullName, document, phone, vehicle, cnhNumber, city });
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
       result.error.errors.forEach((err) => {
@@ -167,7 +169,7 @@ const CadastroEntregador = () => {
           data: {
             full_name: fullName.trim(),
             role: "motoboy",
-            document: phone.trim(),
+            document: document.replace(/\D/g, ""),
             vehicle: vehicle.trim(),
             whatsapp: phone.trim(),
             phone: phone.trim(),
@@ -290,6 +292,14 @@ const CadastroEntregador = () => {
 
             {/* Personal info */}
             <FieldInput icon={User} placeholder="Nome completo" value={fullName} onChange={setFullName} error={errors.fullName} />
+            <FieldInput icon={FileText} placeholder="CPF (000.000.000-00)" value={document} onChange={(v) => {
+              const digits = v.replace(/\D/g, "").slice(0, 11);
+              let formatted = digits;
+              if (digits.length > 3) formatted = digits.slice(0, 3) + "." + digits.slice(3);
+              if (digits.length > 6) formatted = digits.slice(0, 3) + "." + digits.slice(3, 6) + "." + digits.slice(6);
+              if (digits.length > 9) formatted = digits.slice(0, 3) + "." + digits.slice(3, 6) + "." + digits.slice(6, 9) + "-" + digits.slice(9);
+              setDocument(formatted);
+            }} error={errors.document} inputMode="numeric" maxLength={14} />
             <FieldInput icon={Phone} placeholder="Telefone com DDD" value={phone} onChange={setPhone} error={errors.phone} inputMode="tel" />
             <FieldInput icon={Bike} placeholder="Placa (ABC-1234 ou ABC1D23)" value={vehicle} onChange={(v) => {
               // Strip non-alphanumeric except dash
