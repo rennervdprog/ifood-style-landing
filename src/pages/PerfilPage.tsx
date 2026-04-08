@@ -153,6 +153,14 @@ const PerfilPage = () => {
     }
   }, [profile, pixLoaded]);
 
+  useEffect(() => {
+    if (profile && !personalLoaded) {
+      setFullName((profile as any).full_name || "");
+      setDocument((profile as any).document || "");
+      setPersonalLoaded(true);
+    }
+  }, [profile, personalLoaded]);
+
   // PWA Install state
   interface BeforeInstallPromptEvent extends Event {
     prompt(): Promise<void>;
