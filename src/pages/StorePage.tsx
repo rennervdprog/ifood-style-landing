@@ -597,8 +597,7 @@ const StorePage = () => {
       {store?.category === "pizzas" && (() => {
         const storeSettings = (store?.settings || {}) as Record<string, any>;
         const halfEnabled = !!storeSettings.pizza_half_enabled;
-        const pizzaProducts = (products || []).filter(p => !p.metadata?.is_beverage && p.price > 0);
-        if (!halfEnabled || pizzaProducts.length < 2) return null;
+        if (!halfEnabled) return null;
         return (
           <div className="px-4 mt-4">
             <button
