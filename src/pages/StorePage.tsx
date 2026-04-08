@@ -596,10 +596,9 @@ const StorePage = () => {
       {/* ===== MONTE SUA PIZZA MEIO A MEIO ===== */}
       {store?.category === "pizzas" && !filteredProducts && (() => {
         const storeSettings = (store?.settings || {}) as Record<string, any>;
-        const pizzaConfig = storeSettings.pizza_config || { sizes: [], flavors: [] };
         const halfEnabled = !!storeSettings.pizza_half_enabled;
-        const hasFlavors = (pizzaConfig.flavors || []).length >= 2;
-        if (!halfEnabled || !hasFlavors) return null;
+        const pizzaProducts = (products || []).filter(p => !p.metadata?.is_beverage && p.price > 0);
+        if (!halfEnabled || pizzaProducts.length < 2) return null;
         return (
           <div className="px-4 mt-4">
             <button
@@ -776,15 +775,13 @@ const StorePage = () => {
       {/* ===== PIZZA HALF-HALF MODAL ===== */}
       {store?.category === "pizzas" && (() => {
         const storeSettings = (store?.settings || {}) as Record<string, any>;
-        const pizzaConfig = storeSettings.pizza_config || { sizes: [], flavors: [] };
         return (
           <PizzaHalfHalfModal
             open={showHalfHalf}
             onClose={() => setShowHalfHalf(false)}
             storeName={store?.name || ""}
             storeId={store?.id || ""}
-            flavors={pizzaConfig.flavors || []}
-            sizes={pizzaConfig.sizes || []}
+            products={products || []}
             priceMode={storeSettings.pizza_price_mode || "maior"}
             onAdd={handleAddToCart}
           />
@@ -818,28 +815,15 @@ const ProductCard = ({ product, disabled, onClick, storeCategory }: ProductCardP
   const emoji = categoryEmoji[cat] || "🍴";
 
   // ===== PIZZA =====
-  const isPizza = cat === "pizzas" && !isBeverage;
-  const sizes: Array<{ name: string; price: number }> = meta.sizes || [];
-
   // ===== FARMACIA =====
   const isPharmacy = cat === "farmacias";
 
   // Price display logic
-  const priceDisplay = (() => {
-    if (isPizza && sizes.length > 0) {
-      const prices = sizes.map(s => s.price).filter(p => p > 0);
-      if (prices.length === 0) return `R$ ${product.price.toFixed(2)}`;
-      const min = Math.min(...prices);
-      const max = Math.max(...prices);
-      return min === max ? `R$ ${min.toFixed(2)}` : `R$ ${min.toFixed(2)} ~ R$ ${max.toFixed(2)}`;
-    }
-    return `R$ ${product.price.toFixed(2)}`;
-  })();
+  const priceDisplay = `R$ ${product.price.toFixed(2)}`;
 
   // CTA label
   const ctaLabel = (() => {
     if (disabled) return "Indisponível";
-    if (isPizza && sizes.length > 0) return "Escolher tamanho";
     if (isPharmacy && meta.requires_prescription) return "Ver detalhes";
     return "Adicionar";
   })();
@@ -911,16 +895,6 @@ const ProductCard = ({ product, disabled, onClick, storeCategory }: ProductCardP
             <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 leading-relaxed">{product.description}</p>
           )}
 
-          {/* Pizza: sizes preview */}
-          {isPizza && sizes.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-1.5">
-              {sizes.map(s => (
-                <span key={s.name} className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">
-                  {s.name}
-                </span>
-              ))}
-            </div>
-          )}
 
           {/* Farmacia: dosage + manufacturer */}
           {isPharmacy && (meta.dosage || meta.manufacturer) && (
@@ -1034,7 +1008,6 @@ const ProductCard = ({ product, disabled, onClick, storeCategory }: ProductCardP
         {/* Price + CTA */}
         <div className="flex items-center justify-between mt-2">
           <span className="text-sm font-black text-primary">
-            {isPizza && sizes.length > 0 && <span className="text-[10px] font-bold text-muted-foreground mr-1">a partir de</span>}
             {priceDisplay}
           </span>
           <span className={`text-[10px] font-bold px-2 py-1 rounded-full transition-colors ${

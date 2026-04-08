@@ -4,10 +4,14 @@ import { Pizza, ShoppingCart, Check, Minus, Plus } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import type { CartAddon } from "@/contexts/CartContext";
 
-interface PizzaFlavor {
+interface Product {
   id: string;
+  store_id: string;
   name: string;
-  prices: Record<string, number>;
+  description: string | null;
+  price: number;
+  image_url: string | null;
+  metadata?: Record<string, any>;
 }
 
 interface Props {
@@ -15,8 +19,7 @@ interface Props {
   onClose: () => void;
   storeName: string;
   storeId: string;
-  flavors: PizzaFlavor[];
-  sizes: string[];
+  products: Product[];
   priceMode: "maior" | "media";
   onAdd: (product: {
     id: string;
@@ -29,57 +32,49 @@ interface Props {
   }, addons: CartAddon[], observations: string, quantity: number, unitPrice: number) => void;
 }
 
-const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, flavors, sizes, priceMode, onAdd }: Props) => {
-  const [flavor1, setFlavor1] = useState<string | null>(null);
-  const [flavor2, setFlavor2] = useState<string | null>(null);
-  const [selectedSize, setSelectedSize] = useState<string | null>(null);
+const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, priceMode, onAdd }: Props) => {
+  const [product1Id, setProduct1Id] = useState<string | null>(null);
+  const [product2Id, setProduct2Id] = useState<string | null>(null);
   const [observations, setObservations] = useState("");
   const [quantity, setQuantity] = useState(1);
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<1 | 2>(1);
 
   const reset = () => {
-    setFlavor1(null);
-    setFlavor2(null);
-    setSelectedSize(null);
+    setProduct1Id(null);
+    setProduct2Id(null);
     setObservations("");
     setQuantity(1);
     setStep(1);
   };
 
-  const f1 = flavors.find(f => f.id === flavor1);
-  const f2 = flavors.find(f => f.id === flavor2);
+  // Filter only non-beverage pizza products
+  const pizzaProducts = useMemo(() =>
+    products.filter(p => !p.metadata?.is_beverage && p.price > 0),
+    [products]
+  );
 
-  const calcPrice = (size: string): number => {
-    if (!f1 || !f2) return 0;
-    const p1 = (f1.prices[size] || 0) / 100;
-    const p2 = (f2.prices[size] || 0) / 100;
-    if (priceMode === "media") return (p1 + p2) / 2;
-    return Math.max(p1, p2);
+  const p1 = pizzaProducts.find(p => p.id === product1Id);
+  const p2 = pizzaProducts.find(p => p.id === product2Id);
+
+  const calcPrice = (): number => {
+    if (!p1 || !p2) return 0;
+    if (priceMode === "media") return (p1.price + p2.price) / 2;
+    return Math.max(p1.price, p2.price);
   };
 
-  const availableSizes = useMemo(() => {
-    if (!f1 || !f2) return [];
-    return sizes.filter(s => {
-      const p1 = f1.prices[s] || 0;
-      const p2 = f2.prices[s] || 0;
-      return p1 > 0 && p2 > 0;
-    });
-  }, [f1, f2, sizes]);
-
-  const unitPrice = selectedSize ? calcPrice(selectedSize) : 0;
+  const unitPrice = calcPrice();
   const lineTotal = unitPrice * quantity;
 
   const handleAdd = () => {
-    if (!f1 || !f2 || !selectedSize) return;
-    const name = `Pizza Meio a Meio: ${f1.name} / ${f2.name}`;
+    if (!p1 || !p2) return;
+    const name = `Pizza Meio a Meio: ${p1.name} / ${p2.name}`;
     const addons: CartAddon[] = [
-      { name: `½ ${f1.name}`, price: 0 },
-      { name: `½ ${f2.name}`, price: 0 },
-      { name: `Tamanho: ${selectedSize}`, price: 0 },
+      { name: `½ ${p1.name}`, price: 0 },
+      { name: `½ ${p2.name}`, price: 0 },
     ];
     onAdd(
       {
-        id: `half-${f1.id}-${f2.id}-${selectedSize}`,
+        id: `half-${p1.id}-${p2.id}`,
         store_id: storeId,
         name,
         description: null,
@@ -96,18 +91,18 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, flavors, sizes,
     reset();
   };
 
-  const selectFlavor = (id: string) => {
+  const selectProduct = (id: string) => {
     if (step === 1) {
-      setFlavor1(id);
+      setProduct1Id(id);
       setStep(2);
     } else if (step === 2) {
-      if (id === flavor1) return;
-      setFlavor2(id);
-      setStep(3);
+      if (id === product1Id) return;
+      setProduct2Id(id);
     }
   };
 
-  const stepTitle = step === 1 ? "Escolha o 1º sabor" : step === 2 ? "Escolha o 2º sabor" : "Escolha o tamanho";
+  const bothSelected = !!p1 && !!p2;
+  const stepTitle = step === 1 ? "Escolha o 1º sabor" : !p2 ? "Escolha o 2º sabor" : "Finalize seu pedido";
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) { onClose(); reset(); } }}>
@@ -126,37 +121,40 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, flavors, sizes,
 
           {/* Progress */}
           <div className="flex items-center gap-2 mt-4">
-            {[1, 2, 3].map(s => (
+            {[1, 2].map(s => (
               <div key={s} className="flex items-center gap-2 flex-1">
                 <button
                   onClick={() => {
-                    if (s === 1) { setStep(1); setFlavor1(null); setFlavor2(null); setSelectedSize(null); }
-                    else if (s === 2 && flavor1) { setStep(2); setFlavor2(null); setSelectedSize(null); }
-                    else if (s === 3 && flavor1 && flavor2) setStep(3);
+                    if (s === 1) { setStep(1); setProduct1Id(null); setProduct2Id(null); }
+                    else if (s === 2 && product1Id) { setStep(2); setProduct2Id(null); }
                   }}
                   className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                    step >= s ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                    (s === 1 && product1Id) || (s === 2 && product2Id)
+                      ? "bg-primary text-primary-foreground"
+                      : step === s
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground"
                   }`}
                 >
-                  {step > s ? <Check className="h-3.5 w-3.5" /> : s}
+                  {(s === 1 && product1Id) || (s === 2 && product2Id) ? <Check className="h-3.5 w-3.5" /> : s}
                 </button>
-                {s < 3 && <div className={`flex-1 h-0.5 rounded-full ${step > s ? "bg-primary" : "bg-muted"}`} />}
+                {s < 2 && <div className={`flex-1 h-0.5 rounded-full ${product1Id ? "bg-primary" : "bg-muted"}`} />}
               </div>
             ))}
           </div>
 
           {/* Selected summary */}
-          {(f1 || f2) && (
+          {(p1 || p2) && (
             <div className="flex items-center gap-2 mt-3 bg-card/80 rounded-xl px-3 py-2">
               <span className="text-lg">🍕</span>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1 text-xs">
-                  {f1 && <span className="font-bold text-foreground truncate">½ {f1.name}</span>}
-                  {f1 && f2 && <span className="text-muted-foreground">+</span>}
-                  {f2 && <span className="font-bold text-foreground truncate">½ {f2.name}</span>}
+                  {p1 && <span className="font-bold text-foreground truncate">½ {p1.name}</span>}
+                  {p1 && p2 && <span className="text-muted-foreground">+</span>}
+                  {p2 && <span className="font-bold text-foreground truncate">½ {p2.name}</span>}
                 </div>
-                {selectedSize && (
-                  <span className="text-[10px] text-muted-foreground">{selectedSize} • R$ {unitPrice.toFixed(2)}</span>
+                {bothSelected && (
+                  <span className="text-[10px] text-muted-foreground">R$ {unitPrice.toFixed(2)}</span>
                 )}
               </div>
             </div>
@@ -166,23 +164,19 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, flavors, sizes,
         <div className="p-5 space-y-4">
           <h3 className="text-sm font-bold text-foreground">{stepTitle}</h3>
 
-          {/* Steps 1 & 2: Flavor selection */}
-          {(step === 1 || step === 2) && (
+          {/* Product selection list */}
+          {!bothSelected && (
             <div className="space-y-1.5 max-h-64 overflow-y-auto">
-              {flavors.map(flavor => {
-                const isSelected = flavor.id === flavor1 || flavor.id === flavor2;
-                const isDisabled = step === 2 && flavor.id === flavor1;
-                const priceRange = sizes
-                  .filter(s => flavor.prices[s] && flavor.prices[s] > 0)
-                  .map(s => (flavor.prices[s] / 100));
-                const minPrice = priceRange.length > 0 ? Math.min(...priceRange) : 0;
+              {pizzaProducts.map(product => {
+                const isSelected = product.id === product1Id || product.id === product2Id;
+                const isDisabled = step === 2 && product.id === product1Id;
 
                 return (
                   <button
-                    key={flavor.id}
+                    key={product.id}
                     type="button"
                     disabled={isDisabled}
-                    onClick={() => selectFlavor(flavor.id)}
+                    onClick={() => selectProduct(product.id)}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all ${
                       isDisabled
                         ? "opacity-40 cursor-not-allowed bg-muted"
@@ -191,63 +185,33 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, flavors, sizes,
                         : "bg-background border-2 border-transparent hover:bg-muted"
                     }`}
                   >
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                      isSelected ? "border-primary bg-primary" : "border-muted-foreground/40"
-                    }`}>
-                      {isSelected && <Check className="h-3 w-3 text-primary-foreground" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-sm font-bold text-foreground">{flavor.name}</span>
-                    </div>
-                    {minPrice > 0 && (
-                      <span className="text-xs text-muted-foreground">
-                        a partir de R$ {minPrice.toFixed(2)}
-                      </span>
+                    {product.image_url ? (
+                      <img src={product.image_url} alt={product.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
+                    ) : (
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                        isSelected ? "border-primary bg-primary" : "border-muted-foreground/40"
+                      }`}>
+                        {isSelected && <Check className="h-3 w-3 text-primary-foreground" />}
+                      </div>
                     )}
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-bold text-foreground">{product.name}</span>
+                      {product.description && (
+                        <p className="text-[10px] text-muted-foreground line-clamp-1">{product.description}</p>
+                      )}
+                    </div>
+                    <span className="text-xs font-black text-primary">
+                      R$ {product.price.toFixed(2)}
+                    </span>
                   </button>
                 );
               })}
             </div>
           )}
 
-          {/* Step 3: Size selection + observations + add */}
-          {step === 3 && (
+          {/* Both selected: show final details */}
+          {bothSelected && (
             <div className="space-y-4">
-              <div className="space-y-1.5">
-                {availableSizes.map(size => {
-                  const price = calcPrice(size);
-                  const isSelected = selectedSize === size;
-                  return (
-                    <button
-                      key={size}
-                      type="button"
-                      onClick={() => setSelectedSize(size)}
-                      className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl transition-all text-left ${
-                        isSelected
-                          ? "bg-primary/10 border-2 border-primary"
-                          : "bg-background border-2 border-transparent hover:bg-muted"
-                      }`}
-                    >
-                      <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                        isSelected ? "border-primary" : "border-muted-foreground/40"
-                      }`}>
-                        {isSelected && <div className="w-2 h-2 rounded-full bg-primary" />}
-                      </div>
-                      <span className={`flex-1 text-sm ${isSelected ? "font-bold" : ""} text-foreground`}>{size}</span>
-                      <span className={`text-sm font-black ${isSelected ? "text-primary" : "text-muted-foreground"}`}>
-                        R$ {price.toFixed(2)}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {availableSizes.length === 0 && (
-                <div className="text-center py-4 text-sm text-muted-foreground">
-                  Nenhum tamanho disponível para esses sabores.
-                </div>
-              )}
-
               {/* Price mode info */}
               <p className="text-[10px] text-muted-foreground text-center">
                 {priceMode === "maior"
@@ -288,16 +252,11 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, flavors, sizes,
                 </div>
 
                 <button
-                  disabled={!selectedSize}
                   onClick={handleAdd}
-                  className={`flex-1 py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95 ${
-                    selectedSize
-                      ? "bg-primary text-primary-foreground shadow-lg"
-                      : "bg-muted text-muted-foreground cursor-not-allowed"
-                  }`}
+                  className="flex-1 py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95 bg-primary text-primary-foreground shadow-lg"
                 >
                   <ShoppingCart className="h-4 w-4" />
-                  {selectedSize ? `Adicionar • R$ ${lineTotal.toFixed(2)}` : "Escolha o tamanho"}
+                  Adicionar • R$ {lineTotal.toFixed(2)}
                 </button>
               </div>
             </div>
