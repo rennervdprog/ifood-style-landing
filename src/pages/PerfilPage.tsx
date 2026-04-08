@@ -163,6 +163,12 @@ const PerfilPage = () => {
   const isStandalone = useMemo(() => window.matchMedia("(display-mode: standalone)").matches, []);
 
   useEffect(() => {
+    // Hide install button inside GoNative native app
+    const goNativeCheck = async () => {
+      const { isGoNative } = await import("@/lib/gonative");
+      if (isGoNative()) { setIsInstalled(true); return; }
+    };
+    goNativeCheck();
     if (isStandalone) { setIsInstalled(true); return; }
     if (isIOS) { setShowInstallButton(true); return; }
     const handler = (e: Event) => { e.preventDefault(); setDeferredPrompt(e as BeforeInstallPromptEvent); setShowInstallButton(true); };
