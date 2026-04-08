@@ -62,14 +62,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
     }, 2000);
 
-    const retryInterval = window.setInterval(registerNativePush, 10000);
-    window.addEventListener("focus", registerNativePush);
+    // Only retry on visibility change, no polling interval
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       clearTimeout(timer);
-      window.clearInterval(retryInterval);
-      window.removeEventListener("focus", registerNativePush);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [session?.user?.id]);
