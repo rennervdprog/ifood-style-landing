@@ -636,8 +636,6 @@ const ProductFormInline = ({
     setUploading(false);
   };
 
-  const hidePriceField = storeCategory === "pizzas" && !localForm.metadata?.is_beverage;
-
   return (
     <div className="bg-secondary/50 border border-border rounded-xl p-4 space-y-3">
       <input
@@ -648,7 +646,7 @@ const ProductFormInline = ({
         className="w-full bg-background text-foreground px-3 py-2.5 rounded-lg text-sm border border-border focus:border-primary focus:outline-none font-medium"
       />
       <div className="flex gap-2">
-        {!hidePriceField && (
+        {(
           <input
             type="text"
             placeholder="Preço *"
