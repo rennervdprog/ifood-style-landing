@@ -1,7 +1,7 @@
 import {
   Shield, Clock, Store, Bike, CheckCircle2, XCircle, Loader2, Trash2,
   FileText, ChevronDown, ChevronUp, User, Phone, Mail, MapPin,
-  Calendar, CreditCard, Hash, Eye, AlertTriangle, Search, Filter,
+  Calendar, CreditCard, Hash, Eye, EyeOff, AlertTriangle, Search, Filter,
 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -40,13 +40,13 @@ const completeness = (p: any): number => {
 
 /* ── info row ────────────────────────────────────────────────── */
 
-const InfoRow = ({ icon: Icon, label, value, warn }: { icon: any; label: string; value: string | null | undefined; warn?: boolean }) => (
+const InfoRow = ({ icon: Icon, label, value, warn, masked }: { icon: any; label: string; value: string | null | undefined; warn?: boolean; masked?: boolean }) => (
   <div className="flex items-start gap-2 py-1.5">
     <Icon className={`h-3.5 w-3.5 mt-0.5 shrink-0 ${warn ? "text-yellow-500" : "text-muted-foreground"}`} />
     <div className="min-w-0">
       <p className="text-[10px] uppercase tracking-wider text-muted-foreground leading-none mb-0.5">{label}</p>
       <p className={`text-xs font-medium leading-tight ${value ? "text-foreground" : "text-muted-foreground/50 italic"}`}>
-        {value || "Não informado"}
+        {masked && value ? "••••••••" : (value || "Não informado")}
       </p>
     </div>
   </div>
@@ -74,6 +74,7 @@ const AdminApprovals = () => {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | "lojista" | "motoboy">("all");
+  const [visibleSensitive, setVisibleSensitive] = useState<Set<string>>(new Set());
 
   const { data: allProfiles, isLoading } = useQuery({
     queryKey: ["admin-pending-profiles"],
@@ -184,6 +185,16 @@ const AdminApprovals = () => {
   const renderProfileCard = (p: any, isPending: boolean) => {
     const pct = completeness(p);
     const store = storeByOwner[p.user_id];
+    const isSensitiveVisible = visibleSensitive.has(p.id);
+    const toggleSensitive = () => {
+      setVisibleSensitive(prev => {
+        const next = new Set(prev);
+        if (next.has(p.id)) next.delete(p.id);
+        else next.add(p.id);
+        return next;
+      });
+    };
+    const hide = !isSensitiveVisible;
     const missingFields: string[] = [];
     if (!p.full_name) missingFields.push("Nome");
     if (!p.document) missingFields.push("Documento");
@@ -233,6 +244,13 @@ const AdminApprovals = () => {
           }`} variant="outline">
             {isPending ? "⏳ Pendente" : "✅ Ativo"}
           </Badge>
+          <button
+            onClick={toggleSensitive}
+            className={`p-1.5 rounded-lg transition-colors ${isSensitiveVisible ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground hover:text-foreground"}`}
+            title={isSensitiveVisible ? "Ocultar dados sensíveis" : "Mostrar dados sensíveis"}
+          >
+            {isSensitiveVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+          </button>
         </div>
 
         {/* body */}
@@ -256,14 +274,14 @@ const AdminApprovals = () => {
           {/* info grid */}
           <div className="grid grid-cols-2 gap-x-4 gap-y-0">
             <InfoRow icon={User} label="Nome completo" value={p.full_name} warn={!p.full_name} />
-            <InfoRow icon={Hash} label="CPF / CNPJ" value={fmtDoc(p.document)} warn={!p.document} />
-            <InfoRow icon={Mail} label="E-mail" value={p.email} warn={!p.email} />
-            <InfoRow icon={Phone} label="Telefone / WhatsApp" value={p.whatsapp_number || p.phone} warn={!p.whatsapp_number && !p.phone} />
+            <InfoRow icon={Hash} label="CPF / CNPJ" value={fmtDoc(p.document)} warn={!p.document} masked={hide} />
+            <InfoRow icon={Mail} label="E-mail" value={p.email} warn={!p.email} masked={hide} />
+            <InfoRow icon={Phone} label="Telefone / WhatsApp" value={p.whatsapp_number || p.phone} warn={!p.whatsapp_number && !p.phone} masked={hide} />
             <InfoRow icon={MapPin} label="Cidade" value={p.city || "Não informado"} />
             <InfoRow icon={Calendar} label="Cadastro em" value={fmtDate(p.created_at)} />
             {p.role === "lojista" && (
               <>
-                <InfoRow icon={CreditCard} label="Chave PIX" value={p.pix_key ? `${(p.pix_type || "").toUpperCase()}: ${p.pix_key}` : null} warn={!p.pix_key} />
+                <InfoRow icon={CreditCard} label="Chave PIX" value={p.pix_key ? `${(p.pix_type || "").toUpperCase()}: ${p.pix_key}` : null} warn={!p.pix_key} masked={hide} />
                 {store && (
                   <InfoRow icon={Store} label="Categoria da loja" value={store.category} />
                 )}
@@ -275,7 +293,7 @@ const AdminApprovals = () => {
             {p.role === "motoboy" && (
               <>
                 <InfoRow icon={Bike} label="Veículo / Placa" value={p.vehicle} warn={!p.vehicle} />
-                <InfoRow icon={FileText} label="Nº CNH" value={p.cnh_number} warn={!p.cnh_number} />
+                <InfoRow icon={FileText} label="Nº CNH" value={p.cnh_number} warn={!p.cnh_number} masked={hide} />
               </>
             )}
           </div>
