@@ -775,15 +775,13 @@ const StorePage = () => {
       {/* ===== PIZZA HALF-HALF MODAL ===== */}
       {store?.category === "pizzas" && (() => {
         const storeSettings = (store?.settings || {}) as Record<string, any>;
-        const pizzaConfig = storeSettings.pizza_config || { sizes: [], flavors: [] };
         return (
           <PizzaHalfHalfModal
             open={showHalfHalf}
             onClose={() => setShowHalfHalf(false)}
             storeName={store?.name || ""}
             storeId={store?.id || ""}
-            flavors={pizzaConfig.flavors || []}
-            sizes={pizzaConfig.sizes || []}
+            products={products || []}
             priceMode={storeSettings.pizza_price_mode || "maior"}
             onAdd={handleAddToCart}
           />
