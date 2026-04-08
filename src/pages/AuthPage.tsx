@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, KeyRound } from "lucide-react";
@@ -14,6 +14,7 @@ const AuthPage = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(() => localStorage.getItem(REMEMBER_KEY) !== "false");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [resetSent, setResetSent] = useState(false);
   const navigate = useNavigate();
@@ -63,6 +64,10 @@ const AuthPage = () => {
       toast.error("Preencha todos os campos.");
       return;
     }
+    if (mode === "signup" && !acceptedTerms) {
+      toast.error("Você precisa aceitar os Termos de Uso e Política de Privacidade.");
+      return;
+    }
     if (password.length < 6) {
       toast.error("A senha deve ter pelo menos 6 caracteres.");
       return;
@@ -77,12 +82,24 @@ const AuthPage = () => {
         toast.success("Login realizado com sucesso!");
         navigate(from, { replace: true });
       } else if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data: signUpData, error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
           options: { emailRedirectTo: window.location.origin },
         });
         if (error) throw error;
+        // Record terms acceptance
+        if (signUpData?.user?.id) {
+          await supabase.from("terms_acceptance").insert({
+            user_id: signUpData.user.id,
+            terms_version: "1.0",
+            privacy_version: "1.0",
+            user_agent: navigator.userAgent,
+          });
+          await supabase.from("profiles").update({
+            terms_accepted_at: new Date().toISOString(),
+          }).eq("user_id", signUpData.user.id);
+        }
         toast.success("Conta criada com sucesso!");
         navigate(from, { replace: true });
       } else if (mode === "reset") {
