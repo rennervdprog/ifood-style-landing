@@ -120,11 +120,15 @@ const PerfilPage = () => {
   const [pixType, setPixType] = useState("");
   const [savingPix, setSavingPix] = useState(false);
   const [pixLoaded, setPixLoaded] = useState(false);
-  const [activeSection, setActiveSection] = useState<"address" | "pix" | null>(null);
+  const [activeSection, setActiveSection] = useState<"address" | "pix" | "personal" | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteReason, setDeleteReason] = useState("");
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [deleteStep, setDeleteStep] = useState(0);
+  const [fullName, setFullName] = useState("");
+  const [document, setDocument] = useState("");
+  const [savingPersonal, setSavingPersonal] = useState(false);
+  const [personalLoaded, setPersonalLoaded] = useState(false);
 
   useEffect(() => {
     if (profile && !addressLoaded) {
