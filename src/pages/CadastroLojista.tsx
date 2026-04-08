@@ -30,6 +30,7 @@ const schema = z.object({
   storeName: z.string().trim().min(3, "Nome da loja deve ter pelo menos 3 caracteres").max(100),
   document: z.string().trim().min(11, "CPF/CNPJ inválido").max(18),
   birthDate: z.string().min(10, "Data de nascimento obrigatória").max(10),
+  whatsapp: z.string().trim().min(10, "WhatsApp inválido (ex: 14 99999-9999)").max(20),
   pixType: z.enum(["cpf", "cnpj", "email", "phone", "random"] as const, { errorMap: () => ({ message: "Selecione o tipo da chave PIX" }) }),
   pixKey: z.string().trim().min(1, "Chave PIX obrigatória").max(100),
   storeCategory: z.enum(storeCategories as unknown as [string, ...string[]], { errorMap: () => ({ message: "Selecione uma categoria" }) }),
