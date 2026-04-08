@@ -246,7 +246,7 @@ const AuthPage = () => {
                 </label>
               )}
 
-                type="submit"
+              <button
                 disabled={loading}
                 className="w-full h-12 bg-primary text-primary-foreground font-bold rounded-xl active:scale-[0.98] transition-transform disabled:opacity-50"
               >
