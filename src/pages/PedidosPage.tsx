@@ -109,6 +109,7 @@ const PedidosPage = () => {
       return data;
     },
     enabled: !!user && !isLojista,
+    refetchInterval: orders?.some((o: any) => o.status === "aguardando_pagamento") ? 5000 : false,
   });
 
   // Store orders (for lojistas)
