@@ -185,6 +185,16 @@ const AdminApprovals = () => {
   const renderProfileCard = (p: any, isPending: boolean) => {
     const pct = completeness(p);
     const store = storeByOwner[p.user_id];
+    const isSensitiveVisible = visibleSensitive.has(p.id);
+    const toggleSensitive = () => {
+      setVisibleSensitive(prev => {
+        const next = new Set(prev);
+        if (next.has(p.id)) next.delete(p.id);
+        else next.add(p.id);
+        return next;
+      });
+    };
+    const hide = !isSensitiveVisible;
     const missingFields: string[] = [];
     if (!p.full_name) missingFields.push("Nome");
     if (!p.document) missingFields.push("Documento");
