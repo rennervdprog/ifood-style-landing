@@ -117,9 +117,21 @@ Deno.serve(async (req) => {
           console.log(`Order ${externalReference} payment confirmed via Asaas, status → pendente`);
         }
 
-        // Track 15% commission for online payments
+        // Track commission for online payments
         if (order.store_id && order.subtotal) {
-          const commission = Math.round(Number(order.subtotal) * 0.15 * 100) / 100;
+          // Check store delivery mode to determine commission
+          const { data: storeInfo } = await supabase
+            .from("stores")
+            .select("delivery_mode")
+            .eq("id", order.store_id)
+            .single();
+
+          const isOwnDelivery = storeInfo?.delivery_mode === "own";
+          // Own delivery: fixed R$0.90 platform fee; Platform delivery: 15% of subtotal
+          const commission = isOwnDelivery
+            ? 0.90
+            : Math.round(Number(order.subtotal) * 0.15 * 100) / 100;
+
           const { error: balanceError } = await supabase
             .from("store_balances")
             .upsert(
@@ -132,7 +144,6 @@ Deno.serve(async (req) => {
             );
 
           if (balanceError) {
-            // Try increment approach
             const { data: existing } = await supabase
               .from("store_balances")
               .select("pending_commission")
@@ -155,7 +166,7 @@ Deno.serve(async (req) => {
               });
             }
           }
-          console.log(`Commission R$${commission} tracked for store ${order.store_id}`);
+          console.log(`Commission R$${commission} tracked for store ${order.store_id} (${isOwnDelivery ? 'own delivery' : 'platform'})`);
         }
       } else {
         // This is a financial transaction (commission charge, etc.)

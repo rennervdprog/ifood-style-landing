@@ -197,7 +197,7 @@ const CheckoutPage = () => {
 
       for (const [storeId, storeItems] of Object.entries(storeGroups)) {
         const storeSubtotal = sumMoney(storeItems.map((item) => item.price * item.quantity));
-        const appFee = multiplyMoney(storeSubtotal, 0.15);
+        const appFee = isOwnDelivery ? 0.90 : multiplyMoney(storeSubtotal, 0.15);
         const storeTotalPrice = Math.max(0, addMoney(storeSubtotal, effectiveDeliveryFee, -couponDiscount));
 
         const changeValue = paymentMethod === "dinheiro" && needsChange ? addMoney(parseFloat(changeFor)) : 0;
