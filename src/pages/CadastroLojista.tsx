@@ -127,6 +127,8 @@ const CadastroLojista = () => {
             role: "lojista",
             document: document.trim(),
             birth_date: birthDate,
+            whatsapp: whatsapp.trim(),
+            phone: whatsapp.trim(),
             pix_type: pixType,
             pix_key: pixKey.trim(),
             store_name: storeName.trim(),
