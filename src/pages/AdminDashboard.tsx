@@ -1,5 +1,4 @@
 import { useEffect, useState, useRef, useCallback, useMemo, memo } from "react";
-import PizzaFlavorManager from "@/components/PizzaFlavorManager";
 import SimulationBanner from "@/components/SimulationBanner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
