@@ -74,6 +74,7 @@ const AdminApprovals = () => {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | "lojista" | "motoboy">("all");
+  const [visibleSensitive, setVisibleSensitive] = useState<Set<string>>(new Set());
 
   const { data: allProfiles, isLoading } = useQuery({
     queryKey: ["admin-pending-profiles"],
