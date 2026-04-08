@@ -580,12 +580,120 @@ const PerfilPage = () => {
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
         </button>
 
+        {/* Delete account */}
+        <SectionCard>
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-destructive/5 transition-colors"
+          >
+            <div className="w-9 h-9 rounded-xl bg-destructive/10 flex items-center justify-center">
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </div>
+            <div className="flex-1 text-left">
+              <p className="text-sm font-semibold text-destructive">Excluir minha conta</p>
+              <p className="text-xs text-muted-foreground">Seus dados serão mantidos conforme exigências legais</p>
+            </div>
+            <ChevronRight className="h-4 w-4 text-destructive" />
+          </button>
+        </SectionCard>
+
+        {/* Delete account confirmation modal */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4" onClick={() => !deletingAccount && setShowDeleteConfirm(false)}>
+            <div className="bg-card w-full max-w-md rounded-2xl p-6 space-y-4" onClick={e => e.stopPropagation()}>
+              {deleteStep === 0 && (
+                <>
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">
+                      <AlertTriangle className="h-6 w-6 text-destructive" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-foreground">Excluir Conta</h3>
+                      <p className="text-xs text-muted-foreground">Esta ação não pode ser desfeita</p>
+                    </div>
+                  </div>
+                  <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-3 space-y-2 text-xs text-muted-foreground">
+                    <p className="font-bold text-destructive text-sm">O que acontece ao excluir:</p>
+                    <p>• Seus dados pessoais serão removidos da plataforma</p>
+                    <p>• Endereços salvos e tokens de notificação serão apagados</p>
+                    <p>• Você não poderá mais acessar sua conta</p>
+                    <p className="font-bold text-foreground mt-2">Dados retidos por lei (LGPD/CTN):</p>
+                    <p>• Histórico de pedidos: 5 anos (fins fiscais)</p>
+                    <p>• Dados financeiros: 5 anos (obrigações tributárias)</p>
+                    <p>• Aceites de termos: mantidos como prova legal</p>
+                  </div>
+                  <button
+                    onClick={() => setDeleteStep(1)}
+                    className="w-full py-3 rounded-xl bg-destructive text-destructive-foreground font-bold text-sm"
+                  >
+                    Entendo, quero continuar
+                  </button>
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    className="w-full py-3 rounded-xl border border-border text-muted-foreground font-bold text-sm"
+                  >
+                    Cancelar
+                  </button>
+                </>
+              )}
+              {deleteStep === 1 && (
+                <>
+                  <h3 className="text-lg font-bold text-foreground">Confirmar Exclusão</h3>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Motivo (opcional)</label>
+                    <textarea
+                      value={deleteReason}
+                      onChange={e => setDeleteReason(e.target.value)}
+                      placeholder="Por que deseja excluir sua conta?"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-destructive/50 resize-none h-20"
+                    />
+                  </div>
+                  <p className="text-xs text-destructive font-bold text-center">
+                    Digite "EXCLUIR" para confirmar
+                  </p>
+                  <input
+                    type="text"
+                    placeholder='Digite "EXCLUIR"'
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-destructive/50 bg-background text-foreground text-sm text-center font-bold focus:outline-none focus:ring-2 focus:ring-destructive/50"
+                    onChange={e => {
+                      if (e.target.value.toUpperCase() === "EXCLUIR") {
+                        handleDeleteAccount();
+                      }
+                    }}
+                    disabled={deletingAccount}
+                  />
+                  {deletingAccount && (
+                    <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Excluindo conta...
+                    </div>
+                  )}
+                  <button
+                    onClick={() => { setDeleteStep(0); setShowDeleteConfirm(false); }}
+                    disabled={deletingAccount}
+                    className="w-full py-3 rounded-xl border border-border text-muted-foreground font-bold text-sm disabled:opacity-50"
+                  >
+                    Cancelar
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Sign out */}
         <button onClick={handleSignOut}
           className="w-full flex items-center justify-center gap-2 p-3.5 rounded-2xl border border-destructive/20 bg-destructive/5 text-destructive font-semibold text-sm hover:bg-destructive/10 transition-colors">
           <LogOut className="h-4 w-4" />
           Sair da conta
         </button>
+
+        {/* Legal links */}
+        <div className="flex items-center justify-center gap-4 text-[10px] text-muted-foreground">
+          <a href="/termos-de-uso" className="hover:underline">Termos de Uso</a>
+          <span>•</span>
+          <a href="/politica-de-privacidade" className="hover:underline">Política de Privacidade</a>
+        </div>
 
         <p className="text-center text-[10px] text-muted-foreground pb-4">ItaSuper v1.0</p>
       </div>
