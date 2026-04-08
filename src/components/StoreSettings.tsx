@@ -384,11 +384,11 @@ const NotificationSection = () => {
           <div className="flex items-center gap-2 bg-primary/10 border border-primary/30 rounded-xl p-3">
             <Link className="h-4 w-4 text-primary flex-shrink-0" />
             <span className="text-xs text-primary font-bold truncate">
-              {window.location.origin}/{slug}
+              itasuper.com.br/{slug}
             </span>
             <button
               onClick={() => {
-                navigator.clipboard.writeText(`${window.location.origin}/${slug}`);
+                navigator.clipboard.writeText(`https://itasuper.com.br/${slug}`);
                 toast.success("Link copiado!");
               }}
               className="ml-auto flex items-center gap-1 bg-primary/20 text-primary font-bold px-2.5 py-1.5 rounded-lg text-xs active:scale-95 transition-transform"
