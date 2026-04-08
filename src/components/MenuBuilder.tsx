@@ -212,7 +212,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
       price: finalPrice,
       description: formData.description.trim() || null,
       image_url: formData.image_url.trim() || null,
-      metadata: meta,
+      metadata: formData.metadata || {},
     } as any).eq("id", id);
     if (error) { toast.error("Erro ao atualizar"); return; }
     toast.success("Produto atualizado!");
