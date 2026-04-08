@@ -286,6 +286,8 @@ const PerfilPage = () => {
     } catch (err: any) { toast.error(err.message || "Erro ao salvar."); } finally { setSavingPersonal(false); }
   };
 
+  const copyPixKey = () => { if (pixKey) { navigator.clipboard.writeText(pixKey); toast.success("Chave PIX copiada!"); } };
+
 
 
   const handleDeleteAccount = async () => {
