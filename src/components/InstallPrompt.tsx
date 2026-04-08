@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Download, X, Smartphone } from "lucide-react";
+import { isGoNative } from "@/lib/gonative";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -13,6 +14,9 @@ const InstallPrompt = () => {
   const [showIOSGuide, setShowIOSGuide] = useState(false);
 
   useEffect(() => {
+    // Don't show inside GoNative native app
+    if (isGoNative()) return;
+
     // Don't show in iframe/preview
     try {
       if (window.self !== window.top) return;
