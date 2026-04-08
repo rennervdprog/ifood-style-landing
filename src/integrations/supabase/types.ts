@@ -111,6 +111,84 @@ export type Database = {
         }
         Relationships: []
       }
+      archived_accounts: {
+        Row: {
+          account_created_at: string | null
+          address_number: string | null
+          cep: string | null
+          city: string | null
+          deleted_at: string
+          deletion_reason: string | null
+          document: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          metadata: Json | null
+          neighborhood: string | null
+          order_count: number | null
+          original_user_id: string
+          phone: string | null
+          pix_key: string | null
+          pix_type: string | null
+          retain_until: string
+          role: string | null
+          street: string | null
+          terms_accepted_at: string | null
+          total_spent: number | null
+          whatsapp_number: string | null
+        }
+        Insert: {
+          account_created_at?: string | null
+          address_number?: string | null
+          cep?: string | null
+          city?: string | null
+          deleted_at?: string
+          deletion_reason?: string | null
+          document?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          metadata?: Json | null
+          neighborhood?: string | null
+          order_count?: number | null
+          original_user_id: string
+          phone?: string | null
+          pix_key?: string | null
+          pix_type?: string | null
+          retain_until?: string
+          role?: string | null
+          street?: string | null
+          terms_accepted_at?: string | null
+          total_spent?: number | null
+          whatsapp_number?: string | null
+        }
+        Update: {
+          account_created_at?: string | null
+          address_number?: string | null
+          cep?: string | null
+          city?: string | null
+          deleted_at?: string
+          deletion_reason?: string | null
+          document?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          metadata?: Json | null
+          neighborhood?: string | null
+          order_count?: number | null
+          original_user_id?: string
+          phone?: string | null
+          pix_key?: string | null
+          pix_type?: string | null
+          retain_until?: string
+          role?: string | null
+          street?: string | null
+          terms_accepted_at?: string | null
+          total_spent?: number | null
+          whatsapp_number?: string | null
+        }
+        Relationships: []
+      }
       banners: {
         Row: {
           created_at: string
@@ -1012,6 +1090,7 @@ export type Database = {
           cnh_number: string | null
           complement: string | null
           created_at: string
+          deleted_at: string | null
           document: string | null
           email: string | null
           full_name: string
@@ -1041,6 +1120,7 @@ export type Database = {
           cnh_number?: string | null
           complement?: string | null
           created_at?: string
+          deleted_at?: string | null
           document?: string | null
           email?: string | null
           full_name?: string
@@ -1070,6 +1150,7 @@ export type Database = {
           cnh_number?: string | null
           complement?: string | null
           created_at?: string
+          deleted_at?: string | null
           document?: string | null
           email?: string | null
           full_name?: string
