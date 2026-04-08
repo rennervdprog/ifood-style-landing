@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, X, Pizza, AlertTriangle, Check } from "lucide-react";
@@ -9,6 +9,45 @@ interface CategoryProductFieldsProps {
   onChange: (metadata: Record<string, any>) => void;
   storeId?: string;
 }
+
+const ManagedTextField = ({
+  label,
+  value,
+  placeholder,
+  onCommit,
+}: {
+  label: string;
+  value: string;
+  placeholder: string;
+  onCommit: (value: string) => void;
+}) => {
+  const [localValue, setLocalValue] = useState(value || "");
+
+  useEffect(() => {
+    setLocalValue(value || "");
+  }, [value]);
+
+  return (
+    <div className="space-y-1">
+      <label className="text-xs font-bold text-foreground/70">{label}</label>
+      <input
+        type="text"
+        value={localValue}
+        onChange={(e) => setLocalValue(e.target.value)}
+        onBlur={() => onCommit(localValue)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            onCommit(localValue);
+            e.currentTarget.blur();
+          }
+        }}
+        placeholder={placeholder}
+        className="w-full bg-muted text-foreground px-3 py-1.5 rounded-lg text-xs border border-border focus:border-primary focus:outline-none"
+      />
+    </div>
+  );
+};
 
 const CategoryProductFields = ({ category, metadata, onChange, storeId }: CategoryProductFieldsProps) => {
   const set = (key: string, value: any) => onChange({ ...metadata, [key]: value });
@@ -67,6 +106,7 @@ const CategoryProductFields = ({ category, metadata, onChange, storeId }: Catego
     <div className="flex items-center justify-between" key={fieldKey}>
       <label className="text-xs font-bold text-foreground/70">{label}</label>
       <button
+        type="button"
         onClick={() => set(fieldKey, !metadata[fieldKey])}
         className={`w-10 h-5 rounded-full transition-colors relative ${metadata[fieldKey] ? "bg-primary" : "bg-muted-foreground/30"}`}
       >
@@ -76,16 +116,13 @@ const CategoryProductFields = ({ category, metadata, onChange, storeId }: Catego
   );
 
   const renderTextField = (label: string, fieldKey: string, placeholder: string) => (
-    <div className="space-y-1" key={fieldKey}>
-      <label className="text-xs font-bold text-foreground/70">{label}</label>
-      <input
-        type="text"
-        value={metadata[fieldKey] || ""}
-        onChange={(e) => set(fieldKey, e.target.value)}
-        placeholder={placeholder}
-        className="w-full bg-muted text-foreground px-3 py-1.5 rounded-lg text-xs border border-border focus:border-primary focus:outline-none"
-      />
-    </div>
+    <ManagedTextField
+      key={fieldKey}
+      label={label}
+      value={metadata[fieldKey] || ""}
+      placeholder={placeholder}
+      onCommit={(value) => set(fieldKey, value)}
+    />
   );
 
   const renderBeverageToggle = (categoryFields: React.ReactNode) => (
