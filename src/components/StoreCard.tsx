@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -11,13 +12,13 @@ interface StoreCardProps {
   statusReason?: string;
 }
 
-const StoreCard = ({ id, name, category, image_url, is_open, rating, statusReason }: StoreCardProps) => {
+const StoreCard = memo(({ id, name, category, image_url, is_open, rating, statusReason }: StoreCardProps) => {
   const navigate = useNavigate();
 
   return (
     <button
       onClick={() => navigate(`/loja/${id}`)}
-      className={`w-full text-left rounded-2xl bg-card shadow-sm border border-border overflow-hidden transition-all active:scale-[0.98]`}
+      className="w-full text-left rounded-2xl bg-card shadow-sm border border-border overflow-hidden transition-all active:scale-[0.98]"
     >
       <div className="relative h-36 bg-muted overflow-hidden">
         {image_url ? (
@@ -26,6 +27,7 @@ const StoreCard = ({ id, name, category, image_url, is_open, rating, statusReaso
             alt={name}
             className={`w-full h-full object-cover ${!is_open ? "grayscale" : ""}`}
             loading="lazy"
+            decoding="async"
           />
         ) : (
           <div className={`w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center ${!is_open ? "grayscale" : ""}`}>
@@ -68,6 +70,8 @@ const StoreCard = ({ id, name, category, image_url, is_open, rating, statusReaso
       </div>
     </button>
   );
-};
+});
+
+StoreCard.displayName = "StoreCard";
 
 export default StoreCard;

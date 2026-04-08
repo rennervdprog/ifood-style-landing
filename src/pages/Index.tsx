@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PackageOpen } from "lucide-react";
@@ -11,7 +11,6 @@ import StoreCardSkeleton from "@/components/StoreCardSkeleton";
 import SearchBar from "@/components/SearchBar";
 import PromoBanners from "@/components/PromoBanners";
 import ReorderSection from "@/components/ReorderSection";
-
 import FirstOrderBanner from "@/components/FirstOrderBanner";
 import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 import ProductTour, { clienteTourSteps } from "@/components/ProductTour";
@@ -45,7 +44,8 @@ const Index = () => {
     enabled: search.length >= 2,
   });
 
-  const storeIds = stores?.map(s => s.id) || [];
+  const storeIds = useMemo(() => stores?.map(s => s.id) || [], [stores]);
+
   const { data: allHours } = useQuery({
     queryKey: ["all-opening-hours", storeIds],
     queryFn: async () => {
@@ -59,29 +59,33 @@ const Index = () => {
     enabled: storeIds.length > 0,
   });
 
-  const storesWithStatus = stores?.map(store => {
-    const hours = (allHours as any[])?.filter((h: any) => h.store_id === store.id) || [];
-    const status = getStoreOpenStatus(hours as OpeningHour[], (store as any).force_closed || false, store.is_open);
-    return { ...store, computedOpen: status.isOpen, statusReason: status.reason };
-  });
+  const sorted = useMemo(() => {
+    if (!stores) return undefined;
+    const withStatus = stores.map(store => {
+      const hours = (allHours as any[])?.filter((h: any) => h.store_id === store.id) || [];
+      const status = getStoreOpenStatus(hours as OpeningHour[], (store as any).force_closed || false, store.is_open);
+      return { ...store, computedOpen: status.isOpen, statusReason: status.reason };
+    });
+    return withStatus.sort((a, b) => {
+      if (a.computedOpen && !b.computedOpen) return -1;
+      if (!a.computedOpen && b.computedOpen) return 1;
+      return 0;
+    });
+  }, [stores, allHours]);
 
-  const sorted = storesWithStatus?.sort((a, b) => {
-    if (a.computedOpen && !b.computedOpen) return -1;
-    if (!a.computedOpen && b.computedOpen) return 1;
-    return 0;
-  });
-
-  let filtered = sorted?.filter((s) => category === "all" || s.category === category);
-
-  if (search.length >= 2 && filtered) {
-    const searchLower = search.toLowerCase();
-    const matchingStoreIds = new Set<string>();
-    filtered.forEach(s => { if (s.name.toLowerCase().includes(searchLower)) matchingStoreIds.add(s.id); });
-    if (products) {
-      products.forEach((p: any) => { if (p.name.toLowerCase().includes(searchLower)) matchingStoreIds.add(p.store_id); });
+  const filtered = useMemo(() => {
+    let result = sorted?.filter((s) => category === "all" || s.category === category);
+    if (search.length >= 2 && result) {
+      const searchLower = search.toLowerCase();
+      const matchingStoreIds = new Set<string>();
+      result.forEach(s => { if (s.name.toLowerCase().includes(searchLower)) matchingStoreIds.add(s.id); });
+      if (products) {
+        products.forEach((p: any) => { if (p.name.toLowerCase().includes(searchLower)) matchingStoreIds.add(p.store_id); });
+      }
+      result = result.filter(s => matchingStoreIds.has(s.id));
     }
-    filtered = filtered.filter(s => matchingStoreIds.has(s.id));
-  }
+    return result;
+  }, [sorted, category, search, products]);
 
   return (
     <div className="min-h-screen bg-background pb-32 overflow-y-auto">
@@ -96,19 +100,14 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Promotional banners */}
       <PromoBanners />
-
-      {/* First order coupon banner */}
       <FirstOrderBanner />
 
       <div data-tour="categories">
         <CategoryScroll selected={category} onSelect={setCategory} />
       </div>
 
-      {/* Reorder section */}
       <ReorderSection />
-
 
       <div className="px-4 mt-4">
         <h2 className="text-sm font-bold text-foreground mb-3">Estabelecimentos</h2>
