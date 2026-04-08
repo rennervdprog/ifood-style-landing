@@ -43,7 +43,7 @@ const PromoBanners = () => {
 
   const handleClick = (banner: any) => {
     if (banner.link_type === "store" && banner.link_value) {
-      navigate(`/loja/${banner.link_value}`);
+      navigate(`/${banner.link_value}`);
     } else if (banner.link_type === "url" && banner.link_value) {
       window.open(banner.link_value, "_blank");
     }

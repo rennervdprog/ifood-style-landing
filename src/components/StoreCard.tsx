@@ -10,14 +10,15 @@ interface StoreCardProps {
   is_open: boolean;
   rating: number | null;
   statusReason?: string;
+  slug?: string | null;
 }
 
-const StoreCard = memo(({ id, name, category, image_url, is_open, rating, statusReason }: StoreCardProps) => {
+const StoreCard = memo(({ id, name, category, image_url, is_open, rating, statusReason, slug }: StoreCardProps) => {
   const navigate = useNavigate();
 
   return (
     <button
-      onClick={() => navigate(`/loja/${id}`)}
+      onClick={() => navigate(slug ? `/${slug}` : `/loja/${id}`)}
       className="w-full text-left rounded-2xl bg-card shadow-sm border border-border overflow-hidden transition-all active:scale-[0.98]"
     >
       <div className="relative h-36 bg-muted overflow-hidden">

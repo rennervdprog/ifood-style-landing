@@ -97,7 +97,7 @@ const PedidosPage = () => {
     queryFn: async () => {
       let query = supabase
         .from("orders")
-        .select("*, stores(name, delivery_mode), order_items(*, products(name))")
+        .select("*, stores(name, delivery_mode, slug), order_items(*, products(name))")
         .eq("client_id", user!.id)
         .eq("visible_to_client", true)
         .order("created_at", { ascending: false });
@@ -777,7 +777,7 @@ const PedidosPage = () => {
                   {["entregue", "finalizado"].includes(order.status) && (
                     <button
                       onClick={() => {
-                        navigate(`/loja/${order.store_id}`);
+                        navigate(order.stores?.slug ? `/${order.stores.slug}` : `/loja/${order.store_id}`);
                         toast.info("Adicione os mesmos itens ao carrinho!");
                       }}
                       className="flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-lg hover:bg-primary/20 transition-colors"
