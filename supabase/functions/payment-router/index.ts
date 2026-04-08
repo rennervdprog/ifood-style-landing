@@ -665,16 +665,24 @@ async function handleOrderPix(
     );
     const { data: store } = await serviceClient
       .from("stores")
-      .select("asaas_wallet_id")
+      .select("asaas_wallet_id, delivery_mode")
       .eq("id", order.store_id)
       .single();
     if (store?.asaas_wallet_id) {
       splitWalletId = store.asaas_wallet_id;
-      // Split by FIXED VALUE: 85% of subtotal only (excludes delivery fee)
-      // Delivery fee stays with platform for driver payout
       const subtotal = Number(order.subtotal) || 0;
-      splitFixedValue = Math.round(subtotal * 0.85 * 100) / 100;
-      console.log("Split enabled for store:", order.store_id, "wallet:", splitWalletId, "fixedValue:", splitFixedValue, "subtotal:", subtotal);
+      const deliveryFee = Number(order.delivery_fee) || 0;
+      const isOwnDelivery = store.delivery_mode === "own";
+
+      if (isOwnDelivery) {
+        // Own delivery: store gets subtotal + delivery_fee - R$0.90 platform fee
+        splitFixedValue = Math.round((subtotal + deliveryFee - 0.90) * 100) / 100;
+        console.log("Split (own delivery): store gets R$", splitFixedValue, "platform keeps R$0.90");
+      } else {
+        // Platform delivery: store gets 85% of subtotal, platform keeps 15% + delivery fee
+        splitFixedValue = Math.round(subtotal * 0.85 * 100) / 100;
+        console.log("Split (platform): store gets R$", splitFixedValue, "from subtotal:", subtotal);
+      }
     }
   }
 
