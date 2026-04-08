@@ -1,7 +1,7 @@
 import {
   Shield, Clock, Store, Bike, CheckCircle2, XCircle, Loader2, Trash2,
   FileText, ChevronDown, ChevronUp, User, Phone, Mail, MapPin,
-  Calendar, CreditCard, Hash, Eye, AlertTriangle, Search, Filter,
+  Calendar, CreditCard, Hash, Eye, EyeOff, AlertTriangle, Search, Filter,
 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
