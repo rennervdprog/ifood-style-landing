@@ -6,14 +6,15 @@ import { ArrowLeft, Mail, Lock, Eye, EyeOff, KeyRound } from "lucide-react";
 
 type AuthMode = "login" | "signup" | "forgot" | "reset";
 
-const REMEMBER_KEY = "itasuper_remember_me";
+const REMEMBER_KEY = "itasuper_remember_until";
+const TWO_MONTHS_MS = 60 * 24 * 60 * 60 * 1000; // 60 days
 
 const AuthPage = () => {
   const [mode, setMode] = useState<AuthMode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(() => localStorage.getItem(REMEMBER_KEY) !== "false");
+  const [rememberMe, setRememberMe] = useState(true);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [resetSent, setResetSent] = useState(false);
@@ -21,19 +22,10 @@ const AuthPage = () => {
   const location = useLocation();
   const from = (location.state as { from?: string })?.from || "/";
 
-  // If "remember me" is off, sign out when browser/tab closes
+  // If "remember me" expired, sign out
   useEffect(() => {
-    if (rememberMe) return;
-    const handleUnload = () => {
-      localStorage.setItem(REMEMBER_KEY, "false");
-    };
-    window.addEventListener("beforeunload", handleUnload);
-    return () => window.removeEventListener("beforeunload", handleUnload);
-  }, [rememberMe]);
-
-  // On app load, if remember was false, sign out
-  useEffect(() => {
-    if (localStorage.getItem(REMEMBER_KEY) === "false") {
+    const until = localStorage.getItem(REMEMBER_KEY);
+    if (until && Date.now() > Number(until)) {
       supabase.auth.signOut();
       localStorage.removeItem(REMEMBER_KEY);
     }
