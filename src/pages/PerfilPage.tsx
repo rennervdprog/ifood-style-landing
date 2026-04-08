@@ -247,6 +247,34 @@ const PerfilPage = () => {
 
   const copyPixKey = () => { if (pixKey) { navigator.clipboard.writeText(pixKey); toast.success("Chave PIX copiada!"); } };
 
+  const handleDeleteAccount = async () => {
+    setDeletingAccount(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Sessão expirada");
+      
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-account`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ reason: deleteReason || "Solicitação do usuário" }),
+      });
+      
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Erro ao excluir conta");
+      
+      toast.success("Conta excluída com sucesso.");
+      await signOut();
+      navigate("/");
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao excluir conta");
+    } finally {
+      setDeletingAccount(false);
+    }
+  };
+
   if (!user) {
     return (
       <div className="min-h-screen bg-background pb-32 overflow-y-auto">
