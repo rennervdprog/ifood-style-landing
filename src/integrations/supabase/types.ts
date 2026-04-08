@@ -1027,6 +1027,7 @@ export type Database = {
           role: Database["public"]["Enums"]["partner_role"]
           selfie_url: string | null
           street: string | null
+          terms_accepted_at: string | null
           user_id: string
           vehicle: string | null
           whatsapp_number: string | null
@@ -1055,6 +1056,7 @@ export type Database = {
           role?: Database["public"]["Enums"]["partner_role"]
           selfie_url?: string | null
           street?: string | null
+          terms_accepted_at?: string | null
           user_id: string
           vehicle?: string | null
           whatsapp_number?: string | null
@@ -1083,6 +1085,7 @@ export type Database = {
           role?: Database["public"]["Enums"]["partner_role"]
           selfie_url?: string | null
           street?: string | null
+          terms_accepted_at?: string | null
           user_id?: string
           vehicle?: string | null
           whatsapp_number?: string | null
@@ -1236,6 +1239,36 @@ export type Database = {
           settings?: Json
           slug?: string | null
           status?: Database["public"]["Enums"]["store_status"]
+        }
+        Relationships: []
+      }
+      terms_acceptance: {
+        Row: {
+          accepted_at: string
+          id: string
+          ip_address: string | null
+          privacy_version: string
+          terms_version: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string
+          id?: string
+          ip_address?: string | null
+          privacy_version?: string
+          terms_version?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string
+          id?: string
+          ip_address?: string | null
+          privacy_version?: string
+          terms_version?: string
+          user_agent?: string | null
+          user_id?: string
         }
         Relationships: []
       }
