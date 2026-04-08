@@ -149,9 +149,7 @@ const CategoryProductFields = ({ category, metadata, onChange, storeId }: Catego
 
   switch (category) {
     case "pizzas":
-      return renderBeverageToggle(
-        <PizzaFlavorSelector storeId={storeId} metadata={metadata} onChange={onChange} />
-      );
+      return renderBeverageToggle(<></>);
 
     case "lanches":
       return renderBeverageToggle(
