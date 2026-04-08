@@ -210,58 +210,11 @@ const CategoryProductFields = ({ category, metadata, onChange, storeId }: Catego
       return withBeverageToggle(
         <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-3">
           <div className="flex items-center gap-2 text-primary text-xs font-bold">
-            <Beef className="h-4 w-4" /> 🍔 Campos de Lanche
+            <Beef className="h-4 w-4" /> 🍔 Detalhes do Lanche
           </div>
-          {renderSelect("Tipo de Produto", "lanche_type", [
-            "Hambúrguer",
-            "X-Burguer",
-            "X-Salada",
-            "X-Bacon",
-            "X-Tudo",
-            "X-Egg",
-            "Smash Burger",
-            "Hot Dog",
-            "Cachorro-Quente",
-            "Sanduíche Natural",
-            "Wrap / Burrito",
-            "Batata Frita",
-            "Batata Recheada",
-            "Onion Rings",
-            "Nuggets",
-            "Porção de Frango",
-            "Tacos",
-            "Bauru",
-            "Misto Quente",
-            "Combo",
-            "Acompanhamento",
-            "Molho Extra",
-            "Outro"
-          ])}
-          {metadata.lanche_type === "Outro" && renderTextField("Tipo Personalizado", "lanche_custom_type", "Ex: Crepe, Beirute...")}
-          {(metadata.lanche_type?.includes("Hambúrguer") || metadata.lanche_type?.includes("X-") || metadata.lanche_type === "Smash Burger" || metadata.lanche_type === "X-Tudo" || metadata.lanche_type === "X-Egg") && (
-            <>
-              {renderListField("Ponto da Carne", "meat_doneness", "Ex: Mal passado, Ao ponto...")}
-              {renderTextField("Peso do Hambúrguer", "patty_weight", "Ex: 150g, 200g...")}
-              {renderListField("Tipo de Pão", "bread_types", "Ex: Brioche, Australiano, Tradicional...")}
-            </>
-          )}
-          {(metadata.lanche_type === "Batata Frita" || metadata.lanche_type === "Batata Recheada" || metadata.lanche_type === "Onion Rings" || metadata.lanche_type === "Nuggets" || metadata.lanche_type === "Porção de Frango" || metadata.lanche_type === "Acompanhamento") && (
-            <>
-              {renderSelect("Tamanho", "side_size", ["P", "M", "G", "GG", "Porção Individual", "Porção para Compartilhar"])}
-            </>
-          )}
-          {metadata.lanche_type === "Hot Dog" || metadata.lanche_type === "Cachorro-Quente" ? (
-            <>
-              {renderListField("Complementos", "hotdog_toppings", "Ex: Vinagrete, Purê, Milho, Batata Palha...")}
-            </>
-          ) : null}
-          {metadata.lanche_type === "Combo" && (
-            <>
-              {renderListField("Itens do Combo", "combo_items", "Ex: Hambúrguer, Batata M, Refri 500ml...")}
-            </>
-          )}
           {renderToggle("Produto é um combo?", "is_combo")}
-          {metadata.is_combo && !metadata.combo_items?.length && renderListField("Itens do Combo", "combo_items", "Ex: Batata G, Refri 500ml...")}
+          {metadata.is_combo && renderListField("Itens do Combo", "combo_items", "Ex: Hambúrguer, Batata M, Refri 500ml...")}
+          {renderTextField("Peso (opcional)", "patty_weight", "Ex: 150g, 200g...")}
         </div>
       );
 
