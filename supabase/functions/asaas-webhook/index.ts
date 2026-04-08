@@ -126,11 +126,8 @@ Deno.serve(async (req) => {
             .eq("id", order.store_id)
             .single();
 
-          const isOwnDelivery = storeInfo?.delivery_mode === "own";
-          // Own delivery: fixed R$0.90 platform fee; Platform delivery: 15% of subtotal
-          const commission = isOwnDelivery
-            ? 0.90
-            : Math.round(Number(order.subtotal) * 0.15 * 100) / 100;
+          // Always 15% commission regardless of delivery mode
+          const commission = Math.round(Number(order.subtotal) * 0.15 * 100) / 100;
 
           const { error: balanceError } = await supabase
             .from("store_balances")
