@@ -32,9 +32,23 @@ export function getStoreOpenStatus(
       : { isOpen: false, reason: "Fechado" };
   }
 
+  // Force Brazil timezone (UTC-3) to avoid device timezone differences
   const now = new Date();
-  const currentDay = now.getDay(); // 0=Sunday
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const brFmt = new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  const parts = brFmt.formatToParts(now);
+  const brHour = Number(parts.find(p => p.type === "hour")?.value ?? 0);
+  const brMinute = Number(parts.find(p => p.type === "minute")?.value ?? 0);
+
+  // Get day of week in Brazil timezone
+  const brDate = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+  const currentDay = brDate.getDay(); // 0=Sunday
+  const currentMinutes = brHour * 60 + brMinute;
 
   const todayHours = hours.find(h => h.day_of_week === currentDay);
 
