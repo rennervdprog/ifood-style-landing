@@ -4,7 +4,7 @@ import AdminApprovals from "@/components/AdminApprovals";
 import CouponManager from "@/components/CouponManager";
 import AdminStoreManager from "@/components/AdminStoreManager";
 import DeliveryFeeConfigPanel from "@/components/DeliveryFeeConfig";
-
+import TestStoreCreator from "@/components/TestStoreCreator";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -520,6 +520,7 @@ const SuperAdminDashboard = () => {
             {activeTab === "coupons" && <CouponManager isAdmin />}
             {activeTab === "stores" && (
               <div className="space-y-6">
+                <TestStoreCreator />
                 <AdminStoreManager />
               </div>
             )}
