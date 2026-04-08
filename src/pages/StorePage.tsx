@@ -594,7 +594,7 @@ const StorePage = () => {
       )}
 
       {/* ===== MONTE SUA PIZZA MEIO A MEIO ===== */}
-      {store?.category === "pizzas" && !filteredProducts && (() => {
+      {store?.category === "pizzas" && (() => {
         const storeSettings = (store?.settings || {}) as Record<string, any>;
         const halfEnabled = !!storeSettings.pizza_half_enabled;
         const pizzaProducts = (products || []).filter(p => !p.metadata?.is_beverage && p.price > 0);
