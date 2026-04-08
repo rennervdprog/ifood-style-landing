@@ -645,9 +645,8 @@ const ProductFormInline = ({
         type="text"
         placeholder="Nome do produto *"
         value={form.name}
-        onChange={(e) => setForm({ ...form, name: e.target.value })}
+        onChange={(e) => { const v = e.target.value; setForm((prev: any) => ({ ...prev, name: v })); }}
         className="w-full bg-background text-foreground px-3 py-2.5 rounded-lg text-sm border border-border focus:border-primary focus:outline-none font-medium"
-        autoFocus
       />
       <div className="flex gap-2">
         {!hidePriceField && (
@@ -655,7 +654,7 @@ const ProductFormInline = ({
             type="number"
             placeholder="Preço *"
             value={form.price}
-            onChange={(e) => setForm({ ...form, price: e.target.value })}
+            onChange={(e) => { const v = e.target.value; setForm((prev: any) => ({ ...prev, price: v })); }}
             className="w-1/3 bg-background text-foreground px-3 py-2.5 rounded-lg text-sm border border-border focus:border-primary focus:outline-none"
             inputMode="decimal"
             step="0.01"
@@ -666,7 +665,7 @@ const ProductFormInline = ({
           {form.image_url ? (
             <div className="flex items-center gap-2 bg-background rounded-lg px-3 py-2 border border-border">
               <img src={form.image_url} alt="" className="w-8 h-8 rounded object-cover" />
-              <button onClick={() => setForm({ ...form, image_url: "" })} className="text-destructive text-xs hover:underline">Remover</button>
+              <button onClick={() => setForm((prev: any) => ({ ...prev, image_url: "" }))} className="text-destructive text-xs hover:underline">Remover</button>
               <button onClick={() => fileInputRef.current?.click()} className="text-primary text-xs hover:underline">Trocar</button>
             </div>
           ) : (
@@ -684,7 +683,7 @@ const ProductFormInline = ({
         type="text"
         placeholder="Descrição (opcional)"
         value={form.description}
-        onChange={(e) => setForm({ ...form, description: e.target.value })}
+        onChange={(e) => { const v = e.target.value; setForm((prev: any) => ({ ...prev, description: v })); }}
         className="w-full bg-background text-foreground px-3 py-2.5 rounded-lg text-sm border border-border focus:border-primary focus:outline-none"
       />
 
@@ -692,7 +691,7 @@ const ProductFormInline = ({
         <CategoryProductFields
           category={storeCategory}
           metadata={form.metadata || {}}
-          onChange={(metadata) => setForm({ ...form, metadata })}
+          onChange={(metadata: Record<string, any>) => setForm((prev: any) => ({ ...prev, metadata }))}
           storeId={storeId}
         />
       )}
