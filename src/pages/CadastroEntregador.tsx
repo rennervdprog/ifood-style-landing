@@ -41,6 +41,7 @@ const CadastroEntregador = () => {
   const [emailConfirm, setEmailConfirm] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [document, setDocument] = useState("");
   const [phone, setPhone] = useState("");
   const [vehicle, setVehicle] = useState("");
   const [cnhNumber, setCnhNumber] = useState("");
@@ -135,7 +136,7 @@ const CadastroEntregador = () => {
     e.preventDefault();
     setErrors({});
 
-    const result = schema.safeParse({ email, emailConfirm, password, fullName, phone, vehicle, cnhNumber, city });
+    const result = schema.safeParse({ email, emailConfirm, password, fullName, document, phone, vehicle, cnhNumber, city });
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
       result.error.errors.forEach((err) => {
@@ -168,7 +169,7 @@ const CadastroEntregador = () => {
           data: {
             full_name: fullName.trim(),
             role: "motoboy",
-            document: phone.trim(),
+            document: document.replace(/\D/g, ""),
             vehicle: vehicle.trim(),
             whatsapp: phone.trim(),
             phone: phone.trim(),
