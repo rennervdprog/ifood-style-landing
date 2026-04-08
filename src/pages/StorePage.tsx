@@ -895,16 +895,6 @@ const ProductCard = ({ product, disabled, onClick, storeCategory }: ProductCardP
             <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 leading-relaxed">{product.description}</p>
           )}
 
-          {/* Pizza: sizes preview */}
-          {isPizza && sizes.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-1.5">
-              {sizes.map(s => (
-                <span key={s.name} className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">
-                  {s.name}
-                </span>
-              ))}
-            </div>
-          )}
 
           {/* Farmacia: dosage + manufacturer */}
           {isPharmacy && (meta.dosage || meta.manufacturer) && (
@@ -1018,7 +1008,6 @@ const ProductCard = ({ product, disabled, onClick, storeCategory }: ProductCardP
         {/* Price + CTA */}
         <div className="flex items-center justify-between mt-2">
           <span className="text-sm font-black text-primary">
-            {isPizza && sizes.length > 0 && <span className="text-[10px] font-bold text-muted-foreground mr-1">a partir de</span>}
             {priceDisplay}
           </span>
           <span className={`text-[10px] font-bold px-2 py-1 rounded-full transition-colors ${
