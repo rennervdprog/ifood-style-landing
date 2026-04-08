@@ -117,53 +117,35 @@ Deno.serve(async (req) => {
           console.log(`Order ${externalReference} payment confirmed via Asaas, status → pendente`);
         }
 
-        // Track commission for online payments
+        // Track commission for online payments (always 15% of subtotal)
         if (order.store_id && order.subtotal) {
-          // Check store delivery mode to determine commission
-          const { data: storeInfo } = await supabase
-            .from("stores")
-            .select("delivery_mode")
-            .eq("id", order.store_id)
-            .single();
-
-          // Always 15% commission regardless of delivery mode
           const commission = Math.round(Number(order.subtotal) * 0.15 * 100) / 100;
 
-          const { error: balanceError } = await supabase
+          // Try to read existing balance first, then insert or update
+          const { data: existing } = await supabase
             .from("store_balances")
-            .upsert(
-              {
-                store_id: order.store_id,
-                pending_commission: commission,
-                updated_at: new Date().toISOString(),
-              },
-              { onConflict: "store_id" }
-            );
+            .select("comissao_pendente, pending_commission")
+            .eq("store_id", order.store_id)
+            .single();
 
-          if (balanceError) {
-            const { data: existing } = await supabase
+          if (existing) {
+            await supabase
               .from("store_balances")
-              .select("pending_commission")
-              .eq("store_id", order.store_id)
-              .single();
-
-            if (existing) {
-              await supabase
-                .from("store_balances")
-                .update({
-                  pending_commission: Number(existing.pending_commission) + commission,
-                  updated_at: new Date().toISOString(),
-                })
-                .eq("store_id", order.store_id);
-            } else {
-              await supabase.from("store_balances").insert({
-                store_id: order.store_id,
-                pending_commission: commission,
+              .update({
+                comissao_pendente: Number(existing.comissao_pendente || 0) + commission,
+                pending_commission: Number(existing.pending_commission || 0) + commission,
                 updated_at: new Date().toISOString(),
-              });
-            }
+              })
+              .eq("store_id", order.store_id);
+          } else {
+            await supabase.from("store_balances").insert({
+              store_id: order.store_id,
+              comissao_pendente: commission,
+              pending_commission: commission,
+              updated_at: new Date().toISOString(),
+            });
           }
-          console.log(`Commission R$${commission} tracked for store ${order.store_id} (${isOwnDelivery ? 'own delivery' : 'platform'})`);
+          console.log(`Commission R$${commission} tracked for store ${order.store_id}`);
         }
       } else {
         // This is a financial transaction (commission charge, etc.)
