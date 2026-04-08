@@ -528,7 +528,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
                 setEditingProduct(product.id);
                 setProductForm({
                   name: product.name,
-                  price: String(product.price),
+                  price: Number(product.price).toFixed(2),
                   description: product.description || "",
                   image_url: product.image_url || "",
                   metadata: (product as any).metadata || {},
