@@ -105,7 +105,7 @@ const CadastroLojista = () => {
     e.preventDefault();
     setErrors({});
 
-    const result = schema.safeParse({ email, confirmEmail, password, storeName, document, birthDate, pixType, pixKey, storeCategory, cep, city });
+    const result = schema.safeParse({ email, confirmEmail, password, storeName, document, birthDate, whatsapp, pixType, pixKey, storeCategory, cep, city });
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
       result.error.errors.forEach((err) => {
