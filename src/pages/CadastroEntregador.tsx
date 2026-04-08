@@ -292,6 +292,14 @@ const CadastroEntregador = () => {
 
             {/* Personal info */}
             <FieldInput icon={User} placeholder="Nome completo" value={fullName} onChange={setFullName} error={errors.fullName} />
+            <FieldInput icon={FileText} placeholder="CPF (000.000.000-00)" value={document} onChange={(v) => {
+              const digits = v.replace(/\D/g, "").slice(0, 11);
+              let formatted = digits;
+              if (digits.length > 3) formatted = digits.slice(0, 3) + "." + digits.slice(3);
+              if (digits.length > 6) formatted = digits.slice(0, 3) + "." + digits.slice(3, 6) + "." + digits.slice(6);
+              if (digits.length > 9) formatted = digits.slice(0, 3) + "." + digits.slice(3, 6) + "." + digits.slice(6, 9) + "-" + digits.slice(9);
+              setDocument(formatted);
+            }} error={errors.document} inputMode="numeric" maxLength={14} />
             <FieldInput icon={Phone} placeholder="Telefone com DDD" value={phone} onChange={setPhone} error={errors.phone} inputMode="tel" />
             <FieldInput icon={Bike} placeholder="Placa (ABC-1234 ou ABC1D23)" value={vehicle} onChange={(v) => {
               // Strip non-alphanumeric except dash
