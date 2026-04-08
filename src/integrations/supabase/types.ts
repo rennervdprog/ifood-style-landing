@@ -1466,6 +1466,33 @@ export type Database = {
           },
         ]
       }
+      profile_contacts: {
+        Row: {
+          email: string | null
+          full_name: string | null
+          neighborhood: string | null
+          phone: string | null
+          user_id: string | null
+          whatsapp_number: string | null
+        }
+        Insert: {
+          email?: string | null
+          full_name?: string | null
+          neighborhood?: string | null
+          phone?: string | null
+          user_id?: string | null
+          whatsapp_number?: string | null
+        }
+        Update: {
+          email?: string | null
+          full_name?: string | null
+          neighborhood?: string | null
+          phone?: string | null
+          user_id?: string | null
+          whatsapp_number?: string | null
+        }
+        Relationships: []
+      }
       stores_public: {
         Row: {
           address_cep: string | null
