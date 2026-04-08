@@ -27,6 +27,8 @@ const SuperAdminDashboard = lazy(() => import("./pages/SuperAdminDashboard"));
 const PartnerOnboarding = lazy(() => import("./pages/PartnerOnboarding"));
 const CadastroEntregador = lazy(() => import("./pages/CadastroEntregador"));
 const CadastroLojista = lazy(() => import("./pages/CadastroLojista"));
+const TermosDeUso = lazy(() => import("./pages/TermosDeUso"));
+const PoliticaPrivacidade = lazy(() => import("./pages/PoliticaPrivacidade"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const PageLoader = () => (
@@ -102,6 +104,8 @@ const App = () => (
                 <Route path="/parceiro" element={<PartnerOnboarding />} />
                 <Route path="/cadastro-entregador" element={<CadastroEntregador />} />
                 <Route path="/cadastro-lojista" element={<CadastroLojista />} />
+                <Route path="/termos-de-uso" element={<TermosDeUso />} />
+                <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
                 {/* Client store access via slug - must be last */}
                 <Route path="/:slug" element={<StorePage />} />
                 <Route path="*" element={<NotFound />} />
