@@ -59,7 +59,7 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
 
   const [name, setName] = useState(storeName);
   const [category, setCategory] = useState(storeCategory);
-  const [slug, setSlug] = useState(storeSlug || "");
+  const [slug, setSlug] = useState(storeSlug || storeName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""));
   const [whatsapp, setWhatsapp] = useState("");
   const [imageUrl, setImageUrl] = useState(storeImageUrl || "");
   const [pixKey, setPixKey] = useState("");
@@ -369,11 +369,11 @@ const NotificationSection = () => {
         </label>
         <div className="flex gap-2">
           <div className="flex-1 flex items-center bg-secondary border border-border rounded-xl overflow-hidden">
-            <span className="text-xs text-muted-foreground/70 pl-3 whitespace-nowrap">itasuper.app/</span>
+            <span className="text-xs text-muted-foreground/70 pl-3 whitespace-nowrap">itasuper.com.br/</span>
             <input
               type="text"
               value={slug}
-              onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
+              onChange={(e) => setSlug(e.target.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9-]/g, "").replace(/--+/g, "-"))}
               placeholder="nome-da-loja"
               maxLength={50}
               className="flex-1 bg-transparent px-1 py-3 text-foreground text-sm focus:outline-none"
@@ -384,11 +384,11 @@ const NotificationSection = () => {
           <div className="flex items-center gap-2 bg-primary/10 border border-primary/30 rounded-xl p-3">
             <Link className="h-4 w-4 text-primary flex-shrink-0" />
             <span className="text-xs text-primary font-bold truncate">
-              {window.location.origin}/{slug}
+              itasuper.com.br/{slug}
             </span>
             <button
               onClick={() => {
-                navigator.clipboard.writeText(`${window.location.origin}/${slug}`);
+                navigator.clipboard.writeText(`https://itasuper.com.br/${slug}`);
                 toast.success("Link copiado!");
               }}
               className="ml-auto flex items-center gap-1 bg-primary/20 text-primary font-bold px-2.5 py-1.5 rounded-lg text-xs active:scale-95 transition-transform"
