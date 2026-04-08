@@ -224,7 +224,28 @@ const AuthPage = () => {
                 </label>
               )}
 
-              <button
+              {mode === "signup" && (
+                <label className="flex items-start gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={acceptedTerms}
+                    onChange={(e) => setAcceptedTerms(e.target.checked)}
+                    className="w-4 h-4 rounded border-border accent-primary mt-0.5 shrink-0"
+                  />
+                  <span className="text-xs text-muted-foreground leading-relaxed">
+                    Li e aceito os{" "}
+                    <Link to="/termos-de-uso" target="_blank" className="text-primary font-bold underline">
+                      Termos de Uso
+                    </Link>{" "}
+                    e a{" "}
+                    <Link to="/politica-de-privacidade" target="_blank" className="text-primary font-bold underline">
+                      Política de Privacidade
+                    </Link>
+                    {" "}do ItaSuper.
+                  </span>
+                </label>
+              )}
+
                 type="submit"
                 disabled={loading}
                 className="w-full h-12 bg-primary text-primary-foreground font-bold rounded-xl active:scale-[0.98] transition-transform disabled:opacity-50"

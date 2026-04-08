@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -61,6 +61,7 @@ const CadastroLojista = () => {
   const [loading, setLoading] = useState(false);
   const [loadingCep, setLoadingCep] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleCepChange = (value: string) => {
@@ -115,9 +116,14 @@ const CadastroLojista = () => {
       return;
     }
 
+    if (!acceptedTerms) {
+      toast.error("Você precisa aceitar os Termos de Uso e Política de Privacidade.");
+      return;
+    }
+
     setLoading(true);
     try {
-      const { error: signUpError } = await supabase.auth.signUp({
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: email.trim(),
         password,
         options: {
@@ -141,6 +147,19 @@ const CadastroLojista = () => {
         },
       });
       if (signUpError) throw signUpError;
+
+      // Record terms acceptance
+      if (signUpData?.user?.id) {
+        await supabase.from("terms_acceptance").insert({
+          user_id: signUpData.user.id,
+          terms_version: "1.0",
+          privacy_version: "1.0",
+          user_agent: navigator.userAgent,
+        });
+        await supabase.from("profiles").update({
+          terms_accepted_at: new Date().toISOString(),
+        }).eq("user_id", signUpData.user.id);
+      }
 
       setSuccess(true);
     } catch (err: any) {
