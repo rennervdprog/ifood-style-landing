@@ -1859,6 +1859,8 @@ const JuridicoTab = () => {
     if (!search.trim()) return;
     setLoading(true);
     setSelectedUser(null);
+    setResults([]);
+    setArchivedResults([]);
     try {
       const cleanSearch = search.trim();
       
@@ -1868,19 +1870,33 @@ const JuridicoTab = () => {
       else if (searchType === "cpf") query = query.eq("document", cleanSearch.replace(/\D/g, ""));
       else if (searchType === "email") query = query.ilike("email", `%${cleanSearch}%`);
       
-      const { data: profiles } = await query.limit(20);
+      const { data: profiles, error: profilesError } = await query.limit(20);
+      if (profilesError) {
+        console.error("Erro ao buscar profiles:", profilesError);
+        toast.error("Erro ao buscar perfis: " + profilesError.message);
+      }
       setResults(profiles || []);
 
       // Search archived accounts
-      let archiveQuery = supabase.from("archived_accounts" as any).select("*");
+      let archiveQuery = supabase.from("archived_accounts").select("*");
       if (searchType === "name") archiveQuery = archiveQuery.ilike("full_name", `%${cleanSearch}%`);
       else if (searchType === "cpf") archiveQuery = archiveQuery.ilike("document", `%${cleanSearch}%`);
       else if (searchType === "email") archiveQuery = archiveQuery.ilike("email", `%${cleanSearch}%`);
       
-      const { data: archived } = await archiveQuery.limit(20);
+      const { data: archived, error: archivedError } = await archiveQuery.limit(20);
+      if (archivedError) {
+        console.error("Erro ao buscar archived_accounts:", archivedError);
+      }
       setArchivedResults((archived || []) as any[]);
+
+      if ((profiles?.length || 0) === 0 && (archived?.length || 0) === 0) {
+        toast.info(`Nenhum resultado para "${cleanSearch}"`);
+      } else {
+        toast.success(`${(profiles?.length || 0) + (archived?.length || 0)} resultado(s) encontrado(s)`);
+      }
     } catch (err) {
-      console.error(err);
+      console.error("Erro na busca jurídica:", err);
+      toast.error("Erro inesperado na busca");
     } finally {
       setLoading(false);
     }
