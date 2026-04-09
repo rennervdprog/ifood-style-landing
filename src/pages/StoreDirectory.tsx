@@ -42,7 +42,7 @@ const Navbar = ({ onNavigate, isLoggedIn }: { onNavigate: (path: string) => void
   const links = [
     { label: "Vantagens", href: "#vantagens" },
     { label: "Como funciona", href: "#como-funciona" },
-    { label: "Comissão", href: "#planos" },
+    { label: "Planos", href: "#planos" },
     { label: "Motoboys", href: "#motoboys" },
   ];
 
@@ -206,12 +206,12 @@ const StoreDirectory = () => {
   ];
 
   const faq = [
-    { q: "Preciso pagar algo para cadastrar?", a: "Nada! O cadastro é 100% gratuito. Sem mensalidade, sem taxa de adesão. Você só paga 15% quando efetivamente vende e entrega." },
+    { q: "Quais planos estão disponíveis?", a: "Temos dois planos: o Plano Essencial por R$180/mês (sem taxa por pedido) e o Plano Crescimento por R$100/mês + 2,5% por pedido entregue. Ambos incluem cardápio digital, gestão de pedidos e painel financeiro." },
     { q: "Funciona fora de Itatinga/SP?", a: "Sim! Em qualquer cidade do Brasil você pode usar o ItaSuper como cardápio digital profissional com gestão de pedidos completa. Nesse caso, você utiliza seu próprio entregador. A operação com motoboys da plataforma está disponível em Itatinga/SP, com expansão para novas cidades em breve." },
-    { q: "Qual a diferença entre usar em Itatinga e em outras cidades?", a: "Em Itatinga/SP, o ItaSuper funciona como uma plataforma completa de delivery: você recebe o pedido e um motoboy da plataforma busca e entrega para o cliente. No restante do Brasil, você tem todo o sistema de cardápio digital, pedidos e pagamentos — e a entrega é feita pelo seu próprio motoboy ou entregador." },
-    { q: "Como funciona a comissão de 15%?", a: "A comissão é calculada sobre o valor dos produtos. Ela cobre toda a tecnologia, sistema de pagamentos, suporte e infraestrutura. Delivery fee não entra no cálculo." },
-    { q: "Posso usar em qualquer cidade?", a: "Sim! Qualquer loja do Brasil pode se cadastrar e usar como cardápio digital. A logística com motoboys da plataforma está disponível nas cidades com operação ativa." },
-    { q: "Como recebo meu dinheiro?", a: "Pagamentos PIX vão direto para sua conta via split automático. Para dinheiro/cartão na entrega, o valor fica com você e a comissão é cobrada separadamente de forma transparente." },
+    { q: "Qual a diferença entre os planos?", a: "O Plano Essencial (R$180/mês) é ideal para quem já tem bom volume de vendas — sem taxa por pedido. O Plano Crescimento (R$100/mês + 2,5%) é perfeito para quem está começando — mensalidade menor e taxa mínima por venda. Ambos dão acesso ao sistema completo." },
+    { q: "Qual plano inclui pagamento por PIX?", a: "O Plano Crescimento (Híbrido) inclui pagamento por PIX integrado com split automático. No Plano Essencial (Fixo), os pagamentos são por dinheiro e cartão diretamente com o cliente." },
+    { q: "Posso trocar de plano depois?", a: "Sim! Você pode fazer upgrade ou downgrade a qualquer momento pelo painel da loja, sem multa." },
+    { q: "Como recebo meu dinheiro?", a: "No Plano Crescimento, pagamentos PIX vão direto para sua conta via split automático. No Plano Essencial, você recebe diretamente do cliente (dinheiro/cartão). A mensalidade é cobrada separadamente." },
     { q: "Quanto tempo para começar a vender?", a: "Após cadastro e aprovação (geralmente em até 24h), você monta seu cardápio e começa a receber pedidos imediatamente." },
     { q: "Posso cancelar a qualquer momento?", a: "Sim! Sem contrato, sem multa, sem fidelidade. Se não estiver satisfeito, pode sair quando quiser." },
   ];
@@ -236,7 +236,7 @@ const StoreDirectory = () => {
           </h1>
 
           <p className="text-lg sm:text-xl mt-8 leading-relaxed max-w-2xl mx-auto text-white/60">
-            Cardápio profissional, pedidos organizados e pagamentos automáticos — em qualquer cidade do Brasil.
+            Cardápio profissional, pedidos organizados e pagamentos automáticos — a partir de R$100/mês.
           </p>
 
           {/* CTA Buttons */}
@@ -354,63 +354,111 @@ const StoreDirectory = () => {
         </div>
       </Section>
 
-      {/* ═══ COMISSÃO — Focus on the number ═══ */}
+      {/* ═══ PLANOS — Two plan cards ═══ */}
       <Section id="planos" bg={THEME.white}>
         <div className="text-center mb-12">
-          <SectionLabel text="Transparência total" />
+          <SectionLabel text="Planos" />
           <h2 className="text-2xl sm:text-4xl font-black" style={{ color: THEME.dark }}>
-            Quanto custa? <span style={{ color: THEME.primary }}>Só 15% por venda.</span>
+            Escolha o plano ideal <span style={{ color: THEME.primary }}>para sua loja.</span>
           </h2>
+          <p className="text-sm mt-3 max-w-lg mx-auto" style={{ color: THEME.muted }}>
+            Dois planos flexíveis. Sem contrato, sem multa. Troque quando quiser.
+          </p>
         </div>
 
-        {/* Price card */}
-        <div className="max-w-md mx-auto">
-          <div className="rounded-3xl overflow-hidden shadow-2xl" style={{ border: `2px solid ${THEME.border}` }}>
-            {/* Header — clean */}
-            <div className="px-8 py-12 text-center" style={{ background: `linear-gradient(135deg, ${THEME.dark}, #2D1810)` }}>
-              <div className="text-7xl font-black text-white">15<span className="text-4xl">%</span></div>
-              <p className="text-white/50 text-sm mt-3">por pedido entregue com sucesso</p>
+        <div className="grid sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
+          {/* Plano Essencial (Fixo) */}
+          <div className="rounded-3xl overflow-hidden shadow-xl border-2 transition-all hover:shadow-2xl" style={{ borderColor: THEME.border }}>
+            <div className="px-6 py-8 text-center" style={{ background: THEME.grayBg }}>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold mb-4" style={{ background: THEME.white, color: THEME.muted, border: `1px solid ${THEME.border}` }}>
+                <Package className="h-3.5 w-3.5" /> Ideal para alto volume
+              </div>
+              <h3 className="text-lg font-black" style={{ color: THEME.dark }}>Plano Essencial</h3>
+              <div className="mt-3">
+                <span className="text-4xl font-black" style={{ color: THEME.dark }}>R$180</span>
+                <span className="text-sm font-medium" style={{ color: THEME.muted }}>/mês</span>
+              </div>
+              <p className="text-xs mt-2 font-semibold" style={{ color: THEME.green }}>0% de taxa por pedido</p>
             </div>
-
-            {/* Features — max 6 */}
-            <div className="px-8 py-8" style={{ background: THEME.white }}>
-              <ul className="space-y-3">
+            <div className="px-6 py-6" style={{ background: THEME.white }}>
+              <ul className="space-y-2.5">
                 {[
                   "Cardápio digital profissional",
                   "Gestão de pedidos em tempo real",
-                  "PIX, dinheiro e cartão",
-                  "Relatórios financeiros",
-                  "Motoboys da plataforma — Itatinga/SP",
-                  "Seu próprio entregador — qualquer cidade",
+                  "Pagamento: dinheiro e cartão",
+                  "Painel financeiro básico",
+                  "Horários flexíveis",
+                  "Cupons e promoções",
+                  "Motoboy próprio ou da plataforma*",
                 ].map((f) => (
-                  <li key={f} className="flex items-center gap-3 text-sm" style={{ color: THEME.dark }}>
-                    <CheckCircle2 className="h-4 w-4 flex-shrink-0" style={{ color: THEME.green }} />
+                  <li key={f} className="flex items-center gap-2.5 text-xs" style={{ color: THEME.dark }}>
+                    <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0" style={{ color: THEME.green }} />
                     {f}
                   </li>
                 ))}
               </ul>
-
-              <Button className="w-full rounded-full font-bold text-base py-6 mt-8 text-white shadow-lg transition-all hover:shadow-xl hover:scale-[1.02]" style={{ background: THEME.primary }}
+              <Button className="w-full rounded-full font-bold text-sm py-5 mt-6 transition-all hover:scale-[1.02]" style={{ background: THEME.dark, color: "white" }}
                 onClick={() => navigate("/cadastro-lojista")}
               >
-                Cadastrar grátis agora
-                <ArrowRight className="h-5 w-5 ml-2" />
+                Escolher Essencial
+                <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
+            </div>
+          </div>
 
-              <div className="flex items-center justify-center gap-4 mt-4 text-xs" style={{ color: THEME.muted }}>
-                <span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3" style={{ color: THEME.green }} /> Sem mensalidade</span>
-                <span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3" style={{ color: THEME.green }} /> Sem contrato</span>
+          {/* Plano Crescimento (Híbrido) */}
+          <div className="rounded-3xl overflow-hidden shadow-xl border-2 transition-all hover:shadow-2xl relative" style={{ borderColor: THEME.primary }}>
+            <div className="absolute top-0 left-0 right-0 text-center py-1 text-xs font-bold text-white" style={{ background: THEME.primary }}>
+              ⭐ Mais popular
+            </div>
+            <div className="px-6 py-8 pt-10 text-center" style={{ background: `linear-gradient(135deg, ${THEME.dark}, #2D1810)` }}>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold mb-4" style={{ background: "rgba(255,107,0,0.15)", color: THEME.primary }}>
+                <TrendingUp className="h-3.5 w-3.5" /> Ideal para começar
               </div>
+              <h3 className="text-lg font-black text-white">Plano Crescimento</h3>
+              <div className="mt-3">
+                <span className="text-4xl font-black text-white">R$100</span>
+                <span className="text-sm font-medium text-white/60">/mês</span>
+              </div>
+              <p className="text-xs mt-2 font-semibold" style={{ color: THEME.primary }}>+ 2,5% por pedido entregue</p>
+            </div>
+            <div className="px-6 py-6" style={{ background: THEME.white }}>
+              <ul className="space-y-2.5">
+                {[
+                  "Tudo do Plano Essencial",
+                  "PIX integrado com split automático",
+                  "Painel financeiro completo (CRM)",
+                  "Relatórios avançados de vendas",
+                  "Gestão de comissões automática",
+                  "Extrato detalhado por período",
+                  "Motoboy próprio ou da plataforma*",
+                ].map((f) => (
+                  <li key={f} className="flex items-center gap-2.5 text-xs" style={{ color: THEME.dark }}>
+                    <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0" style={{ color: THEME.green }} />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Button className="w-full rounded-full font-bold text-sm py-5 mt-6 text-white shadow-lg transition-all hover:scale-[1.02]" style={{ background: THEME.primary }}
+                onClick={() => navigate("/cadastro-lojista")}
+              >
+                Escolher Crescimento
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
             </div>
           </div>
         </div>
 
-        {/* Commission breakdown */}
+        <p className="text-center text-xs mt-6" style={{ color: THEME.muted }}>
+          * Motoboys da plataforma disponíveis em Itatinga/SP. Demais cidades: use seu próprio entregador.
+        </p>
+
+        {/* Plan comparison highlights */}
         <div className="mt-16 max-w-3xl mx-auto grid sm:grid-cols-3 gap-8">
           {[
-            { icon: DollarSign, title: "Só quando vende", desc: "Sem vendas, zero custos. Comissão apenas sobre pedidos entregues." },
-            { icon: Percent, title: "Zero taxas ocultas", desc: "Sem mensalidade, adesão ou multa. O que você vê é o que paga." },
-            { icon: BarChart3, title: "Controle total", desc: "Painel com cada venda, comissão e repasse detalhados." },
+            { icon: DollarSign, title: "Sem taxa de adesão", desc: "Zero custo para começar. Pague apenas a mensalidade do plano escolhido." },
+            { icon: Rocket, title: "Troque quando quiser", desc: "Upgrade ou downgrade sem multa. Adapte o plano ao momento da sua loja." },
+            { icon: BarChart3, title: "Controle total", desc: "Painel com cada venda, assinatura e extrato detalhados." },
           ].map((item) => (
             <div key={item.title} className="rounded-2xl p-6 border transition-all hover:shadow-md" style={{ borderColor: THEME.border }}>
               <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4" style={{ background: THEME.primaryLight }}>
@@ -571,7 +619,7 @@ const StoreDirectory = () => {
             Pronto para <span style={{ color: THEME.primary }}>começar?</span>
           </h2>
           <p className="text-base text-white/50 mb-12 max-w-md mx-auto">
-            Cadastro grátis. Sem contrato. Sem mensalidade.
+            Planos a partir de R$100/mês. Sem contrato. Sem multa.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button size="lg" className="gap-2 rounded-full font-bold text-base px-10 py-6 shadow-2xl transition-all hover:scale-105" style={{ background: THEME.primary, color: "white" }}

@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
-import { ArrowLeft, Mail, Lock, Eye, EyeOff, Store, FileText, CheckCircle, MapPin, Search, Loader2, Key, Phone, Shield, ChevronRight, User } from "lucide-react";
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, Store, FileText, CheckCircle, CheckCircle2, MapPin, Search, Loader2, Key, Phone, Shield, ChevronRight, User, Package, TrendingUp, Zap, CreditCard, BarChart3, Crown } from "lucide-react";
 import { Constants } from "@/integrations/supabase/types";
 import { formatCep, fetchCep } from "@/lib/cepLookup";
 
@@ -35,12 +35,14 @@ const schema = z.object({
   storeCategory: z.enum(storeCategories as unknown as [string, ...string[]], { errorMap: () => ({ message: "Selecione uma categoria" }) }),
   cep: z.string().min(8, "CEP inválido"),
   city: z.string().min(1, "Busque o CEP para identificar a cidade"),
+  selectedPlan: z.enum(["fixed", "hybrid"], { errorMap: () => ({ message: "Selecione um plano" }) }),
 }).refine((data) => data.email === data.confirmEmail, {
   message: "Os e-mails não coincidem",
   path: ["confirmEmail"],
 });
 
 const STEPS = [
+  { label: "Plano", icon: Crown },
   { label: "Conta", icon: Mail },
   { label: "Loja", icon: Store },
   { label: "Dados", icon: User },
@@ -68,6 +70,7 @@ const CadastroLojista = () => {
   const [loadingCep, setLoadingCep] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [selectedPlan, setSelectedPlan] = useState<"fixed" | "hybrid" | "">("");
 
   const handleCepChange = (value: string) => {
     const formatted = formatCep(value);
@@ -109,6 +112,12 @@ const CadastroLojista = () => {
   const validateStep = (stepIndex: number): boolean => {
     setErrors({});
     if (stepIndex === 0) {
+      if (!selectedPlan) {
+        toast.error("Selecione um plano para continuar.");
+        return false;
+      }
+    }
+    if (stepIndex === 1) {
       const fieldErrors: Record<string, string> = {};
       if (!email.trim()) fieldErrors.email = "E-mail obrigatório";
       else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) fieldErrors.email = "E-mail inválido";
@@ -118,7 +127,7 @@ const CadastroLojista = () => {
       else if (password.length < 6) fieldErrors.password = "Senha deve ter pelo menos 6 caracteres";
       if (Object.keys(fieldErrors).length > 0) { setErrors(fieldErrors); return false; }
     }
-    if (stepIndex === 1) {
+    if (stepIndex === 2) {
       const fieldErrors: Record<string, string> = {};
       if (storeName.trim().length < 3) fieldErrors.storeName = "Nome da loja deve ter pelo menos 3 caracteres";
       if (!storeCategory) fieldErrors.storeCategory = "Selecione uma categoria";
@@ -130,14 +139,14 @@ const CadastroLojista = () => {
   };
 
   const nextStep = () => {
-    if (validateStep(step)) setStep(prev => Math.min(prev + 1, 2));
+    if (validateStep(step)) setStep(prev => Math.min(prev + 1, 3));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
 
-    const result = schema.safeParse({ email, confirmEmail, password, storeName, document, birthDate, whatsapp, pixType, pixKey, storeCategory, cep, city });
+    const result = schema.safeParse({ email, confirmEmail, password, storeName, document, birthDate, whatsapp, pixType, pixKey, storeCategory, cep, city, selectedPlan });
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
       result.error.errors.forEach((err) => {
@@ -159,22 +168,23 @@ const CadastroLojista = () => {
         password,
         options: {
           emailRedirectTo: window.location.origin,
-          data: {
-            full_name: storeName.trim(),
-            role: "lojista",
-            document: document.trim(),
-            birth_date: birthDate,
-            whatsapp: whatsapp.trim(),
-            phone: whatsapp.trim(),
-            pix_type: pixType,
-            pix_key: pixKey.trim(),
-            store_name: storeName.trim(),
-            store_category: storeCategory,
-            city: normalizedCity,
-            cep: cep.replace(/\D/g, ""),
-            street: street,
-            neighborhood: neighborhood,
-          },
+            data: {
+              full_name: storeName.trim(),
+              role: "lojista",
+              document: document.trim(),
+              birth_date: birthDate,
+              whatsapp: whatsapp.trim(),
+              phone: whatsapp.trim(),
+              pix_type: pixType,
+              pix_key: pixKey.trim(),
+              store_name: storeName.trim(),
+              store_category: storeCategory,
+              city: normalizedCity,
+              cep: cep.replace(/\D/g, ""),
+              street: street,
+              neighborhood: neighborhood,
+              selected_plan: selectedPlan,
+            },
         },
       });
       if (signUpError) throw signUpError;
@@ -204,7 +214,7 @@ const CadastroLojista = () => {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-xl border-b border-border flex items-center h-14 px-4 gap-3">
-        <button onClick={() => step > 0 ? setStep(step - 1) : navigate(-1)} className="w-9 h-9 rounded-xl bg-muted/50 flex items-center justify-center">
+        <button onClick={() => step > 0 ? setStep(step - 1) : navigate("/")} className="w-9 h-9 rounded-xl bg-muted/50 flex items-center justify-center">
           <ArrowLeft className="h-4 w-4 text-foreground" />
         </button>
         <div className="flex items-center gap-2">
@@ -249,8 +259,95 @@ const CadastroLojista = () => {
         <div className="w-full max-w-sm">
           <form onSubmit={handleSubmit} className="space-y-4">
 
-            {/* ═══ Step 0: Conta ═══ */}
+            {/* ═══ Step 0: Plano ═══ */}
             {step === 0 && (
+              <div className="space-y-4">
+                <div className="text-center mb-2">
+                  <h2 className="text-lg font-black text-foreground">Escolha seu plano</h2>
+                  <p className="text-xs text-muted-foreground mt-1">Sem contrato. Troque quando quiser.</p>
+                </div>
+
+                {/* Plano Essencial */}
+                <button
+                  type="button"
+                  onClick={() => setSelectedPlan("fixed")}
+                  className={`w-full text-left rounded-2xl border-2 p-4 transition-all ${
+                    selectedPlan === "fixed" ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/40"
+                  }`}
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-10 h-10 rounded-xl bg-muted/50 flex items-center justify-center">
+                      <Package className="h-5 w-5 text-foreground" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-sm text-foreground">Plano Essencial</h3>
+                      <p className="text-xs text-muted-foreground">Ideal para alto volume</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-lg font-black text-foreground">R$180</span>
+                      <span className="text-xs text-muted-foreground">/mês</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {["0% taxa", "Dinheiro/Cartão", "Painel básico"].map(tag => (
+                      <span key={tag} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{tag}</span>
+                    ))}
+                  </div>
+                </button>
+
+                {/* Plano Crescimento */}
+                <button
+                  type="button"
+                  onClick={() => setSelectedPlan("hybrid")}
+                  className={`w-full text-left rounded-2xl border-2 p-4 transition-all relative ${
+                    selectedPlan === "hybrid" ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/40"
+                  }`}
+                >
+                  <span className="absolute -top-2.5 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary text-primary-foreground">⭐ Popular</span>
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <TrendingUp className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-sm text-foreground">Plano Crescimento</h3>
+                      <p className="text-xs text-muted-foreground">Ideal para começar</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-lg font-black text-foreground">R$100</span>
+                      <span className="text-xs text-muted-foreground">/mês</span>
+                    </div>
+                  </div>
+                  <p className="text-[10px] font-semibold text-primary mb-2">+ 2,5% por pedido entregue</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {["PIX integrado", "CRM completo", "Relatórios"].map(tag => (
+                      <span key={tag} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">{tag}</span>
+                    ))}
+                  </div>
+                </button>
+
+                {selectedPlan && (
+                  <div className="rounded-xl bg-muted/50 p-3 text-xs text-muted-foreground">
+                    {selectedPlan === "fixed" ? (
+                      <p><strong className="text-foreground">Essencial:</strong> Mensalidade fixa de R$180. Sem taxa por pedido. Pagamentos por dinheiro e cartão. Perfeito para quem já tem bom volume.</p>
+                    ) : (
+                      <p><strong className="text-foreground">Crescimento:</strong> Mensalidade de R$100 + 2,5% por pedido. PIX integrado com split automático e painel financeiro completo com CRM.</p>
+                    )}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={nextStep}
+                  disabled={!selectedPlan}
+                  className="w-full bg-primary text-primary-foreground font-bold py-3.5 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  Próximo <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+
+            {/* ═══ Step 1: Conta ═══ */}
+            {step === 1 && (
               <div className="space-y-4">
                 <div className="text-center mb-2">
                   <h2 className="text-lg font-black text-foreground">Crie sua conta</h2>
@@ -290,8 +387,8 @@ const CadastroLojista = () => {
               </div>
             )}
 
-            {/* ═══ Step 1: Loja ═══ */}
-            {step === 1 && (
+            {/* ═══ Step 2: Loja ═══ */}
+            {step === 2 && (
               <div className="space-y-4">
                 <div className="text-center mb-2">
                   <h2 className="text-lg font-black text-foreground">Sobre sua loja</h2>
@@ -376,8 +473,8 @@ const CadastroLojista = () => {
               </div>
             )}
 
-            {/* ═══ Step 2: Dados Pessoais & Financeiro ═══ */}
-            {step === 2 && (
+            {/* ═══ Step 3: Dados Pessoais & Financeiro ═══ */}
+            {step === 3 && (
               <div className="space-y-4">
                 <div className="text-center mb-2">
                   <h2 className="text-lg font-black text-foreground">Dados pessoais</h2>
