@@ -337,17 +337,31 @@ const SuperAdminDashboard = () => {
 
   const generateStoreWhatsApp = (entry: typeof storeSettlement[0]) => {
     const period = financeFilter === "week" ? "Semana" : "Mês";
-    const balanceText = entry.finalBalance >= 0
-      ? `✅ O ItaSuper deve transferir R$ ${entry.finalBalance.toFixed(2)} para você.`
-      : `⚠️ Valor a acertar com o ItaSuper: R$ ${Math.abs(entry.finalBalance).toFixed(2)}.`;
+    const storePlan = parentStorePlans?.find((p: any) => p.store_id === entry.storeId);
+    const isFixed = storePlan?.plan_type === "fixed";
     const storeRate = Math.round(getStoreRate(entry.storeId) * 100);
-    const msg = `💰 *Fechamento ItaSuper (${period})*\n\nOlá *${entry.name}*!\n\n` +
-      `📦 Total de Pedidos: ${entry.orderCount}\n` +
-      `💵 Vendas Físicas (Dinheiro/Cartão): R$ ${entry.physicalSales.toFixed(2)}\n` +
-      `📱 Vendas App (Pix): R$ ${entry.appSales.toFixed(2)}\n\n` +
-      `🏷️ Comissão ${storeRate}% sobre Físicas: R$ ${entry.commissionDue.toFixed(2)}\n` +
-      `💸 Repasse Líquido (App - ${storeRate}%): R$ ${entry.netTransfer.toFixed(2)}\n\n` +
-      `---\n${balanceText}\n---`;
+
+    let msg: string;
+    if (isFixed) {
+      msg = `💰 *Resumo ItaSuper (${period})*\n\nOlá *${entry.name}*!\n\n` +
+        `📋 Plano: Fixo Mensal — R$ ${Number(storePlan?.monthly_fee || 180).toFixed(2)}/mês\n\n` +
+        `📦 Total de Pedidos: ${entry.orderCount}\n` +
+        `💵 Vendas Totais: R$ ${entry.totalSales.toFixed(2)}\n\n` +
+        `✅ Sem taxas por pedido. Toda receita é sua!\n` +
+        `📌 Assinatura mensal cobrada à parte.`;
+    } else {
+      const balanceText = entry.finalBalance >= 0
+        ? `✅ O ItaSuper deve transferir R$ ${entry.finalBalance.toFixed(2)} para você.`
+        : `⚠️ Valor a acertar com o ItaSuper: R$ ${Math.abs(entry.finalBalance).toFixed(2)}.`;
+      msg = `💰 *Fechamento ItaSuper (${period})*\n\nOlá *${entry.name}*!\n\n` +
+        `📋 Plano: ${storePlan?.plan_type === "hybrid" ? "Assinatura + Taxa" : "Comissão"}\n\n` +
+        `📦 Total de Pedidos: ${entry.orderCount}\n` +
+        `💵 Vendas Físicas (Dinheiro/Cartão): R$ ${entry.physicalSales.toFixed(2)}\n` +
+        `📱 Vendas App (Pix): R$ ${entry.appSales.toFixed(2)}\n\n` +
+        `🏷️ Comissão ${storeRate}% sobre Físicas: R$ ${entry.commissionDue.toFixed(2)}\n` +
+        `💸 Repasse Líquido (App - ${storeRate}%): R$ ${entry.netTransfer.toFixed(2)}\n\n` +
+        `---\n${balanceText}\n---`;
+    }
     navigator.clipboard.writeText(msg);
     toast.success(`Extrato de ${entry.name} copiado!`);
   };
