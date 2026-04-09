@@ -920,7 +920,39 @@ const FinanceTab = ({
   const [savingGateway, setSavingGateway] = useState(false);
   const [expandedStore, setExpandedStore] = useState<string | null>(null);
 
+  // Fetch store plans for badges & logic
+  const { data: storePlans } = useQuery({
+    queryKey: ["admin-store-plans-finance"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("store_plans").select("*").eq("is_active", true);
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+  });
+
+  const getStorePlan = (storeId: string) => storePlans?.find((p: any) => p.store_id === storeId);
+
+  const planLabel = (planType: string) => {
+    if (planType === "fixed") return "Fixo";
+    if (planType === "hybrid") return "Híbrido";
+    return "Comissão";
+  };
+
+  const planColor = (planType: string) => {
+    if (planType === "fixed") return "bg-blue-500/10 text-blue-500 border-blue-500/20";
+    if (planType === "hybrid") return "bg-purple-500/10 text-purple-500 border-purple-500/20";
+    return "bg-amber-500/10 text-amber-500 border-amber-500/20";
+  };
+
+  // Subscription revenue KPI
+  const subscriptionRevenue = useMemo(() => {
+    if (!storePlans) return 0;
+    return sumMoney(storePlans.filter((p: any) => p.monthly_fee > 0).map((p: any) => Number(p.monthly_fee)));
+  }, [storePlans]);
+
   const getStoreRate = (storeId: string) => {
+    const plan = getStorePlan(storeId);
+    if (plan) return Number(plan.commission_rate) / 100;
     const store = stores?.find((s: any) => s.id === storeId);
     return ((store as any)?.commission_rate ?? 15) / 100;
   };
