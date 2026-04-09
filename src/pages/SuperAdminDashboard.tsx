@@ -782,6 +782,7 @@ const FinanceTab = ({
   const [markingPaid, setMarkingPaid] = useState<string | null>(null);
   const [savingLimits, setSavingLimits] = useState(false);
   const [savingGateway, setSavingGateway] = useState(false);
+  const [expandedStore, setExpandedStore] = useState<string | null>(null);
 
   const { data: dbGateway } = useQuery({
     queryKey: ["payment-gateway"],
@@ -894,7 +895,6 @@ const FinanceTab = ({
     const label = key === "store_payout" ? "Repasse Lojista" : key === "driver_payout" ? "Repasse Motoboy" : "Comissão Admin";
     const mode = newModes[key] === "auto" ? "Automático" : "Manual";
     toast.success(`${label}: modo ${mode} ativado`);
-    if (newModes[key] === "auto") toast.info("✅ Repasse automático via Asaas ativado.", { duration: 5000 });
   };
 
   const { data: driverBalances } = useQuery({
@@ -964,7 +964,7 @@ const FinanceTab = ({
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      if (data?.success) toast.success(`✅ R$ ${amount.toFixed(2)} transferido para ${driverName}! Ref: ${data.reference_code}`, { duration: 8000 });
+      if (data?.success) toast.success(`✅ R$ ${amount.toFixed(2)} transferido para ${driverName}!`, { duration: 8000 });
       else toast.warning(`⚠️ ${data?.message || "Transferência falhou."}`, { duration: 10000 });
       queryClient.invalidateQueries({ queryKey: ["driver-balances-finance"] });
       queryClient.invalidateQueries({ queryKey: ["withdrawal-requests"] });
@@ -986,10 +986,15 @@ const FinanceTab = ({
 
   const getDriverPixInfo = (driverUserId: string) => driverProfiles?.find((p: any) => p.user_id === driverUserId) || null;
 
-  const pendingStorePayouts = storeSettlement.filter(e => e.netTransfer > 0 || e.commissionDue > 0);
+  // FIX: Use store_balances as source of truth for pending amounts
+  const pendingStorePayouts = storeSettlement.filter(e => {
+    const balance = storeBalances.find((b: any) => b.store_id === e.storeId);
+    const dbComissao = Number(balance?.comissao_pendente || balance?.pending_commission || 0);
+    return dbComissao > 0;
+  });
   const pendingDriverPayouts = driverSettlement.filter(e => {
     const bal = driverBalances?.find((b: any) => b.driver_user_id === e.driverId);
-    return (bal && Number(bal.pending_amount) > 0) || e.appFees > 0;
+    return bal && Number(bal.pending_amount) > 0;
   });
 
   const { data: ownerProfiles } = useQuery({
@@ -1057,467 +1062,520 @@ const FinanceTab = ({
       const pixCode = data?.pix_code || data?.qr_code;
       if (pixCode) {
         navigator.clipboard.writeText(pixCode);
-        const providerLabel = data?.provider === "efi_bank" ? "Efí Bank" : data?.provider === "asaas" ? "Asaas" : data?.provider === "simulated" ? "Simulação" : "Mercado Pago";
-        toast.success(`${data.reference_code}: Cobrança PIX via ${providerLabel}! R$ ${Number(data.amount || chargeAmount).toFixed(2)}`, { duration: 10000 });
+        toast.success(`${data.reference_code}: Cobrança PIX gerada! R$ ${Number(data.amount || chargeAmount).toFixed(2)}`, { duration: 10000 });
       } else toast.success(`${data.reference_code}: Cobrança registrada. R$ ${Number(data.amount || chargeAmount).toFixed(2)}`);
       queryClient.invalidateQueries({ queryKey: ["store-balances"] });
     } catch (err: any) { toast.error(err.message || "Erro ao gerar cobrança."); }
     finally { setChargingStore(null); }
   };
 
+  // Totals from DB (source of truth)
+  const totalDbComissao = sumMoney(storeBalances.map((b: any) => Number(b.comissao_pendente || b.pending_commission || 0)));
+  const pendingDriverAmount = sumMoney((withdrawalRequests || [])
+    .filter((w: any) => w.status === "solicitado").map((w: any) => w.amount));
+
   return (
-    <div className="space-y-4">
-      {/* Period filter + Settings */}
-      <div className="flex gap-2 items-center flex-wrap">
-        {(["week", "month"] as const).map(f => (
-          <button key={f} onClick={() => setFinanceFilter(f)}
-            className={`px-4 py-2 rounded-xl text-sm font-bold ${financeFilter === f ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
-            {f === "week" ? "📅 Semana" : "📅 Mês"}
-          </button>
-        ))}
+    <div className="space-y-5">
+      {/* ═══ Header Bar ═══ */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex bg-muted/50 rounded-xl p-0.5 gap-0.5">
+          {(["week", "month"] as const).map(f => (
+            <button key={f} onClick={() => setFinanceFilter(f)}
+              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${financeFilter === f ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
+              {f === "week" ? "7 dias" : "30 dias"}
+            </button>
+          ))}
+        </div>
         <div className="flex-1" />
         <button onClick={() => setShowPayoutSettings(!showPayoutSettings)}
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors ${showPayoutSettings ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"}`}>
-          <Settings className="h-3.5 w-3.5" /> Modo Repasse
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all ${showPayoutSettings ? "bg-primary text-primary-foreground" : "bg-muted/50 text-muted-foreground hover:text-foreground"}`}>
+          <Settings className="h-3.5 w-3.5" />
         </button>
       </div>
 
-      {/* Payout Settings */}
+      {/* ═══ KPI Cards ═══ */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="bg-card rounded-2xl p-4 border border-border relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-full -mr-4 -mt-4" />
+          <div className="relative">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
+                <ShoppingBag className="h-4 w-4 text-primary" />
+              </div>
+            </div>
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Volume Total</p>
+            <p className="text-xl font-black text-foreground mt-0.5">R$ {financeTotals.totalVolume.toFixed(2)}</p>
+          </div>
+        </div>
+
+        <div className="bg-card rounded-2xl p-4 border border-primary/20 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-full -mr-4 -mt-4" />
+          <div className="relative">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
+                <TrendingUp className="h-4 w-4 text-primary" />
+              </div>
+            </div>
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Lucro (15%)</p>
+            <p className="text-xl font-black text-primary mt-0.5">R$ {financeTotals.grossProfit.toFixed(2)}</p>
+          </div>
+        </div>
+
+        <div className="bg-card rounded-2xl p-4 border border-border relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-16 h-16 bg-amber-500/5 rounded-full -mr-4 -mt-4" />
+          <div className="relative">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                <Receipt className="h-4 w-4 text-amber-500" />
+              </div>
+            </div>
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Comissão Pendente</p>
+            <p className="text-xl font-black text-amber-500 mt-0.5">R$ {totalDbComissao.toFixed(2)}</p>
+          </div>
+        </div>
+
+        <div className="bg-card rounded-2xl p-4 border border-border relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/5 rounded-full -mr-4 -mt-4" />
+          <div className="relative">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                <Bike className="h-4 w-4 text-emerald-500" />
+              </div>
+            </div>
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Motoboys Pend.</p>
+            <p className="text-xl font-black text-emerald-500 mt-0.5">R$ {pendingDriverAmount.toFixed(2)}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ═══ Payout Settings (collapsible) ═══ */}
       {showPayoutSettings && (
-        <div className="bg-card rounded-2xl p-4 border border-border space-y-4">
-          <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-            <Settings className="h-4 w-4 text-primary" /> Configurações de Repasse
-          </h3>
-          
-          {/* Gateway */}
-          <div className="space-y-2">
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Gateway de Pagamento</p>
-            <div className="grid grid-cols-2 gap-2">
+        <div className="bg-card rounded-2xl border border-border overflow-hidden">
+          <div className="px-5 py-4 border-b border-border bg-muted/30">
+            <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+              <Settings className="h-4 w-4 text-primary" /> Configurações de Repasse
+            </h3>
+          </div>
+          <div className="p-5 space-y-5">
+            {/* Gateway */}
+            <div className="space-y-2">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Gateway de Pagamento</p>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { key: "MERCADO_PAGO", label: "Mercado Pago" },
+                  { key: "EFI_BANK", label: "Efí Bank" },
+                  { key: "ASAAS", label: "Asaas" },
+                  { key: "SIMULATED", label: "Simulação" },
+                ].map(gw => (
+                  <button key={gw.key} onClick={() => saveGateway(gw.key)} disabled={savingGateway}
+                    className={`py-2.5 rounded-xl text-xs font-bold transition-all ${gatewayProvider === gw.key ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:text-foreground"}`}>
+                    {gw.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Payout modes */}
+            <div className="space-y-2">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Modo de Repasse</p>
               {[
-                { key: "MERCADO_PAGO", label: "Mercado Pago" },
-                { key: "EFI_BANK", label: "Efí Bank" },
-                { key: "ASAAS", label: "Asaas" },
-                { key: "SIMULATED", label: "Simulação" },
-              ].map(gw => (
-                <button key={gw.key} onClick={() => saveGateway(gw.key)} disabled={savingGateway}
-                  className={`py-2.5 rounded-xl text-xs font-bold transition-colors ${gatewayProvider === gw.key ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"}`}>
-                  {gw.label}
-                </button>
+                { key: "store_payout" as const, label: "Repasse Lojista", icon: Store },
+                { key: "driver_payout" as const, label: "Repasse Motoboy", icon: Bike },
+                { key: "admin_commission" as const, label: "Comissão Admin", icon: DollarSign },
+              ].map(({ key, label, icon: Icon }) => (
+                <div key={key} className="flex items-center justify-between bg-muted/30 rounded-xl p-3">
+                  <div className="flex items-center gap-2">
+                    <Icon className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-foreground">{label}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-muted-foreground font-bold">{payoutModes[key] === "auto" ? "Auto" : "Manual"}</span>
+                    <Switch checked={payoutModes[key] === "auto"} onCheckedChange={() => togglePayoutMode(key)} />
+                  </div>
+                </div>
               ))}
             </div>
-          </div>
 
-          {/* Payout modes */}
-          <div className="space-y-2">
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Modo de Repasse</p>
-            {[
-              { key: "store_payout" as const, label: "Repasse Lojista", icon: Store },
-              { key: "driver_payout" as const, label: "Repasse Motoboy", icon: Bike },
-              { key: "admin_commission" as const, label: "Comissão Admin", icon: DollarSign },
-            ].map(({ key, label, icon: Icon }) => (
-              <div key={key} className="flex items-center justify-between bg-muted/50 rounded-xl p-3">
-                <div className="flex items-center gap-2">
-                  <Icon className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-foreground">{label}</span>
+            {/* Withdrawal limits */}
+            <div className="space-y-2">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Limites de Saque</p>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] text-muted-foreground font-semibold">Máx/semana</label>
+                  <input type="number" value={withdrawalLimits.max_per_week}
+                    onChange={e => setWithdrawalLimits(p => ({ ...p, max_per_week: Number(e.target.value) }))}
+                    className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-sm text-foreground mt-1" />
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">{payoutModes[key] === "auto" ? "Auto" : "Manual"}</span>
-                  <Switch checked={payoutModes[key] === "auto"} onCheckedChange={() => togglePayoutMode(key)} />
+                <div>
+                  <label className="text-[10px] text-muted-foreground font-semibold">Valor mínimo</label>
+                  <input type="number" value={withdrawalLimits.min_amount}
+                    onChange={e => setWithdrawalLimits(p => ({ ...p, min_amount: Number(e.target.value) }))}
+                    className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-sm text-foreground mt-1" />
                 </div>
               </div>
-            ))}
-          </div>
-
-          {/* Withdrawal limits */}
-          <div className="space-y-2">
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Limites de Saque</p>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-xs text-muted-foreground">Máx/semana</label>
-                <input type="number" value={withdrawalLimits.max_per_week}
-                  onChange={e => setWithdrawalLimits(p => ({ ...p, max_per_week: Number(e.target.value) }))}
-                  className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-sm text-foreground" />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground">Valor mínimo</label>
-                <input type="number" value={withdrawalLimits.min_amount}
-                  onChange={e => setWithdrawalLimits(p => ({ ...p, min_amount: Number(e.target.value) }))}
-                  className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-sm text-foreground" />
-              </div>
+              <button onClick={saveWithdrawalLimits} disabled={savingLimits}
+                className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold disabled:opacity-50">
+                {savingLimits ? "Salvando..." : "Salvar Limites"}
+              </button>
             </div>
-            <button onClick={saveWithdrawalLimits} disabled={savingLimits}
-              className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50">
-              {savingLimits ? "Salvando..." : "Salvar Limites"}
-            </button>
-          </div>
 
-          {/* Payout schedule */}
-          <div className="space-y-2">
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Agenda Automática</p>
-            <div className="flex items-center justify-between bg-muted/50 rounded-xl p-3">
-              <span className="text-sm text-foreground">Repasse automático</span>
-              <Switch checked={payoutSchedule.enabled} onCheckedChange={(checked) => savePayoutSchedule({ ...payoutSchedule, enabled: checked })} />
+            {/* Schedule */}
+            <div className="space-y-2">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Agenda Automática</p>
+              <div className="flex items-center justify-between bg-muted/30 rounded-xl p-3">
+                <span className="text-sm text-foreground">Repasse automático</span>
+                <Switch checked={payoutSchedule.enabled} onCheckedChange={(checked) => savePayoutSchedule({ ...payoutSchedule, enabled: checked })} />
+              </div>
+              {payoutSchedule.enabled && (
+                <select value={payoutSchedule.day_of_week}
+                  onChange={e => savePayoutSchedule({ ...payoutSchedule, day_of_week: Number(e.target.value) })}
+                  className="w-full bg-muted border border-border rounded-xl px-3 py-2.5 text-sm text-foreground">
+                  {["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"].map((d, i) => (
+                    <option key={i} value={i}>{d}</option>
+                  ))}
+                </select>
+              )}
             </div>
-            {payoutSchedule.enabled && (
-              <select value={payoutSchedule.day_of_week}
-                onChange={e => savePayoutSchedule({ ...payoutSchedule, day_of_week: Number(e.target.value) })}
-                className="w-full bg-muted border border-border rounded-xl px-3 py-2.5 text-sm text-foreground">
-                {["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"].map((d, i) => (
-                  <option key={i} value={i}>{d}</option>
-                ))}
-              </select>
-            )}
           </div>
         </div>
       )}
 
-      {/* Pending Payouts */}
-      <div className="space-y-3">
+      {/* ═══ Pending Payouts Alert ═══ */}
+      {(pendingStorePayouts.length > 0 || pendingDriverPayouts.length > 0) && (
         <button onClick={() => setShowPendingPayouts(!showPendingPayouts)}
-          className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-colors ${showPendingPayouts ? "bg-primary text-primary-foreground" : "bg-card border border-border text-foreground hover:bg-accent"}`}>
-          <span className="flex items-center gap-2">
-            <Banknote className="h-4 w-4" /> Repasses Pendentes ({pendingStorePayouts.length + pendingDriverPayouts.length})
+          className="w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-sm font-bold transition-all bg-amber-500/10 border border-amber-500/20 text-amber-600 hover:bg-amber-500/15">
+          <span className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-amber-500/20 flex items-center justify-center">
+              <Banknote className="h-3.5 w-3.5" />
+            </div>
+            <span>{pendingStorePayouts.length + pendingDriverPayouts.length} repasses pendentes</span>
           </span>
-          <span className="text-xs">{showPendingPayouts ? "▲" : "▼"}</span>
+          {showPendingPayouts ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </button>
+      )}
 
-        {showPendingPayouts && (
-          <div className="space-y-3">
-            {pendingStorePayouts.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider px-1">🏪 Lojistas</p>
-                {pendingStorePayouts.map((entry) => {
-                  const balance = storeBalances.find((b: any) => b.store_id === entry.storeId);
-                  const dbComissao = Number((balance as any)?.comissao_pendente || 0);
-                  return (
-                    <div key={entry.storeId} className="bg-card rounded-xl p-3 space-y-2 border border-border">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Store className="h-4 w-4 text-primary" />
-                          <span className="text-sm font-bold text-foreground">{entry.name}</span>
-                        </div>
-                        <span className="text-xs text-muted-foreground">{entry.orderCount} pedidos</span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div className="bg-green-500/10 rounded-lg p-2 text-center">
-                          <p className="text-green-500 text-[10px]">A Pagar (85%)</p>
-                          <p className="text-sm font-bold text-green-500">R$ {entry.netTransfer.toFixed(2)}</p>
-                        </div>
-                        <div className="bg-destructive/10 rounded-lg p-2 text-center">
-                          <p className="text-destructive text-[10px]">A Receber (15%)</p>
-                          <p className="text-sm font-bold text-destructive">R$ {(dbComissao > 0 ? dbComissao : entry.commissionDue).toFixed(2)}</p>
-                        </div>
-                      </div>
-                      <button onClick={() => handleMarkStorePaidManually(entry)} disabled={markingPaid === entry.storeId}
-                        className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 disabled:opacity-30 text-primary-foreground py-2.5 rounded-xl text-xs font-bold active:scale-95 transition-all">
-                        {markingPaid === entry.storeId ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
-                        Marcar como Pago
-                      </button>
-                    </div>
-                  );
-                })}
+      {showPendingPayouts && (
+        <div className="space-y-3">
+          {pendingStorePayouts.map((entry) => {
+            const balance = storeBalances.find((b: any) => b.store_id === entry.storeId);
+            const dbComissao = Number(balance?.comissao_pendente || 0);
+            return (
+              <div key={entry.storeId} className="bg-card rounded-2xl border border-amber-500/20 overflow-hidden">
+                <div className="px-4 py-3 bg-amber-500/5 flex items-center justify-between border-b border-amber-500/10">
+                  <div className="flex items-center gap-2">
+                    <Store className="h-4 w-4 text-amber-500" />
+                    <span className="text-sm font-bold text-foreground">{entry.name}</span>
+                  </div>
+                  <span className="text-lg font-black text-amber-500">R$ {dbComissao.toFixed(2)}</span>
+                </div>
+                <div className="p-3 flex gap-2">
+                  <button onClick={() => handleChargeCommission(entry)} disabled={chargingStore === entry.storeId}
+                    className="flex-1 flex items-center justify-center gap-1.5 bg-primary hover:bg-primary/90 disabled:opacity-30 text-primary-foreground py-2.5 rounded-xl text-xs font-bold transition-all">
+                    {chargingStore === entry.storeId ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <QrCode className="h-3.5 w-3.5" />}
+                    Cobrar PIX
+                  </button>
+                  <button onClick={() => markAsPaid(entry.storeId, entry.name)}
+                    className="flex items-center justify-center gap-1.5 bg-muted hover:bg-muted/80 text-foreground px-4 py-2.5 rounded-xl text-xs font-bold transition-all">
+                    <CheckCircle2 className="h-3.5 w-3.5" /> Pago
+                  </button>
+                </div>
               </div>
-            )}
-
-            {pendingDriverPayouts.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider px-1">🛵 Motoboys</p>
-                {pendingDriverPayouts.map((entry) => {
-                  const driverPix = getDriverPixInfo(entry.driverId);
-                  return (
-                    <div key={entry.driverId} className="bg-card rounded-xl p-3 space-y-2 border border-border">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Bike className="h-4 w-4 text-primary" />
-                          <span className="text-sm font-bold text-foreground">{entry.name}</span>
-                        </div>
-                        <span className="text-xs text-muted-foreground">{entry.deliveryCount} entregas</span>
-                      </div>
-                      <div className="bg-amber-500/10 rounded-lg p-2 text-center">
-                        <p className="text-amber-500 text-[10px]">A Pagar (Entrega App)</p>
-                        <p className="text-sm font-bold text-amber-500">R$ {entry.appFees.toFixed(2)}</p>
-                      </div>
-                      {driverPix?.pix_key && (
-                        <div className="bg-muted rounded-lg p-2 flex items-center gap-2">
-                          <Wallet className="h-3 w-3 text-green-500 flex-shrink-0" />
-                          <p className="text-[10px] text-muted-foreground truncate">PIX: {driverPix.pix_key} ({driverPix.pix_type})</p>
-                        </div>
-                      )}
-                      <div className="grid grid-cols-2 gap-2">
-                        <button onClick={() => handleAutoPayDriver(entry.driverId, entry.name, entry.appFees, driverPix?.pix_key || "", driverPix?.pix_type || "cpf")}
-                          disabled={payingDriver === entry.driverId || !driverPix?.pix_key}
-                          className="flex items-center justify-center gap-1.5 bg-green-500 hover:bg-green-600 disabled:opacity-30 text-white py-2.5 rounded-xl text-xs font-bold active:scale-95 transition-all">
-                          {payingDriver === entry.driverId ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ArrowUpRight className="h-3.5 w-3.5" />}
-                          Pagar via Asaas
-                        </button>
-                        <button onClick={() => handleMarkDriverPaidManually(entry)} disabled={markingPaid === entry.driverId}
-                          className="flex items-center justify-center gap-1.5 bg-primary hover:bg-primary/90 disabled:opacity-30 text-primary-foreground py-2.5 rounded-xl text-xs font-bold active:scale-95 transition-all">
-                          {markingPaid === entry.driverId ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
-                          Manual
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
+            );
+          })}
+          {pendingDriverPayouts.map((entry) => {
+            const driverPix = getDriverPixInfo(entry.driverId);
+            const bal = driverBalances?.find((b: any) => b.driver_user_id === entry.driverId);
+            const pendingAmt = Number(bal?.pending_amount || 0);
+            return (
+              <div key={entry.driverId} className="bg-card rounded-2xl border border-emerald-500/20 overflow-hidden">
+                <div className="px-4 py-3 bg-emerald-500/5 flex items-center justify-between border-b border-emerald-500/10">
+                  <div className="flex items-center gap-2">
+                    <Bike className="h-4 w-4 text-emerald-500" />
+                    <span className="text-sm font-bold text-foreground">{entry.name}</span>
+                  </div>
+                  <span className="text-lg font-black text-emerald-500">R$ {pendingAmt.toFixed(2)}</span>
+                </div>
+                <div className="p-3 flex gap-2">
+                  <button onClick={() => handleAutoPayDriver(entry.driverId, entry.name, pendingAmt, driverPix?.pix_key || "", driverPix?.pix_type || "cpf")}
+                    disabled={payingDriver === entry.driverId || !driverPix?.pix_key || pendingAmt <= 0}
+                    className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-30 text-white py-2.5 rounded-xl text-xs font-bold transition-all">
+                    {payingDriver === entry.driverId ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ArrowUpRight className="h-3.5 w-3.5" />}
+                    Transferir
+                  </button>
+                  <button onClick={() => handleMarkDriverPaidManually(entry)}
+                    className="flex items-center justify-center gap-1.5 bg-muted hover:bg-muted/80 text-foreground px-4 py-2.5 rounded-xl text-xs font-bold transition-all">
+                    <CheckCircle2 className="h-3.5 w-3.5" /> Manual
+                  </button>
+                </div>
               </div>
-            )}
+            );
+          })}
 
-            {pendingStorePayouts.length === 0 && pendingDriverPayouts.length === 0 && (
-              <div className="bg-card rounded-xl p-6 text-center border border-border">
-                <CheckCircle2 className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">Nenhum repasse pendente!</p>
+          {/* History */}
+          {payoutHistory && payoutHistory.length > 0 && (
+            <div className="bg-card rounded-2xl border border-border overflow-hidden">
+              <div className="px-4 py-3 bg-muted/30 border-b border-border">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Histórico de Pagamentos</p>
               </div>
-            )}
-
-            {payoutHistory && payoutHistory.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider px-1">📋 Histórico</p>
-                {payoutHistory.slice(0, 10).map((h: any) => (
-                  <div key={h.id} className="bg-muted/50 rounded-xl p-3 flex items-center justify-between">
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                      {h.entity_type === "store" ? <Store className="h-3.5 w-3.5 text-primary flex-shrink-0" /> : <Bike className="h-3.5 w-3.5 text-primary flex-shrink-0" />}
+              <div className="divide-y divide-border">
+                {payoutHistory.slice(0, 8).map((h: any) => (
+                  <div key={h.id} className="px-4 py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${h.entity_type === "store" ? "bg-primary/10" : "bg-emerald-500/10"}`}>
+                        {h.entity_type === "store" ? <Store className="h-3.5 w-3.5 text-primary" /> : <Bike className="h-3.5 w-3.5 text-emerald-500" />}
+                      </div>
                       <div className="min-w-0">
                         <p className="text-xs font-bold text-foreground truncate">{h.entity_name}</p>
                         <p className="text-[10px] text-muted-foreground">{new Date(h.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</p>
                       </div>
                     </div>
-                    <div className="text-right ml-2">
-                      <p className="text-xs font-bold text-green-500">R$ {Number(h.amount).toFixed(2)}</p>
-                      <p className="text-[10px] text-muted-foreground capitalize">{h.payout_type}</p>
-                    </div>
+                    <p className="text-xs font-black text-emerald-500">R$ {Number(h.amount).toFixed(2)}</p>
                   </div>
                 ))}
               </div>
-            )}
-          </div>
-        )}
-      </div>
+            </div>
+          )}
+        </div>
+      )}
 
-      {/* Finance summary cards */}
-      {(() => {
-        const pendingDriverAmount = sumMoney((withdrawalRequests || [])
-          .filter((w: any) => w.status === "solicitado")
-          .map((w: any) => w.amount));
-        const paidDriverAmount = sumMoney((withdrawalRequests || [])
-          .filter((w: any) => w.status === "pago")
-          .map((w: any) => w.amount));
-        return (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <div className="bg-card rounded-2xl p-4 border border-border">
-              <div className="flex items-center gap-2 mb-1">
-                <ShoppingBag className="h-4 w-4 text-primary" />
-                <span className="text-xs text-muted-foreground">Volume Total</span>
-              </div>
-              <p className="text-lg font-black text-foreground">R$ {financeTotals.totalVolume.toFixed(2)}</p>
-            </div>
-            <div className="bg-card rounded-2xl p-4 border border-border">
-              <div className="flex items-center gap-2 mb-1">
-                <TrendingUp className="h-4 w-4 text-primary" />
-                <span className="text-xs text-muted-foreground">Lucro Bruto</span>
-              </div>
-              <p className="text-lg font-black text-primary">R$ {financeTotals.grossProfit.toFixed(2)}</p>
-              <p className="text-[10px] text-muted-foreground">15% comissões</p>
-            </div>
-            <div className="bg-card rounded-2xl p-4 border border-border">
-              <div className="flex items-center gap-2 mb-1">
-                <Bike className="h-4 w-4 text-amber-500" />
-                <span className="text-xs text-muted-foreground">Motoboys (Pend.)</span>
-              </div>
-              <p className="text-lg font-black text-amber-500">R$ {pendingDriverAmount.toFixed(2)}</p>
-            </div>
-            <div className="bg-card rounded-2xl p-4 border border-border">
-              <div className="flex items-center gap-2 mb-1">
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-                <span className="text-xs text-muted-foreground">Motoboys (Pago)</span>
-              </div>
-              <p className="text-lg font-black text-green-500">R$ {paidDriverAmount.toFixed(2)}</p>
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* Sub-tabs: Stores vs Drivers */}
-      <div className="flex gap-2">
+      {/* ═══ Sub-tabs ═══ */}
+      <div className="flex bg-muted/50 rounded-xl p-0.5 gap-0.5">
         <button onClick={() => setFinanceSubTab("stores")}
-          className={`flex-1 py-2.5 rounded-xl text-sm font-bold ${financeSubTab === "stores" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
-          🏪 Lojas
+          className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${financeSubTab === "stores" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
+          <Store className="h-3.5 w-3.5" /> Lojas
         </button>
         <button onClick={() => setFinanceSubTab("drivers")}
-          className={`flex-1 py-2.5 rounded-xl text-sm font-bold ${financeSubTab === "drivers" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
-          🛵 Entregadores
+          className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${financeSubTab === "drivers" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
+          <Bike className="h-3.5 w-3.5" /> Entregadores
         </button>
       </div>
 
       {/* Store filter */}
       {financeSubTab === "stores" && (
         <select value={selectedStore} onChange={e => setSelectedStore(e.target.value)}
-          className="w-full bg-card text-foreground border border-border rounded-xl px-4 py-2.5 text-sm">
+          className="w-full bg-card text-foreground border border-border rounded-xl px-4 py-2.5 text-sm font-medium">
           <option value="all">Todas as lojas</option>
           {stores.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
         </select>
       )}
 
+      {/* ═══ Store Cards ═══ */}
       {loading ? (
         <div className="space-y-3">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-32 bg-card rounded-2xl animate-pulse border border-border" />
+            <div key={i} className="h-28 bg-card rounded-2xl animate-pulse border border-border" />
           ))}
         </div>
       ) : financeSubTab === "stores" ? (
         storeSettlement.length > 0 ? (
           <div className="space-y-3">
-            {storeSettlement.map((entry, i) => {
+            {storeSettlement.map((entry) => {
               const balance = storeBalances.find((b: any) => b.store_id === entry.storeId);
-              const dbComissao = Number((balance as any)?.comissao_pendente || balance?.pending_commission || 0);
+              const dbComissao = Number(balance?.comissao_pendente || balance?.pending_commission || 0);
+              const isExpanded = expandedStore === entry.storeId;
+              const pixInfo = getStorePixInfo(entry.storeId);
+              const splitPaid = multiplyMoney(entry.appSales, 0.15);
+
               return (
-                <div key={i} className="bg-card rounded-2xl p-4 space-y-3 border border-border">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-bold text-foreground">{entry.name}</h3>
-                    <span className="text-xs text-muted-foreground">{entry.orderCount} pedidos</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="bg-muted rounded-xl p-2.5">
-                      <p className="text-muted-foreground">💵 Vendas Físicas</p>
-                      <p className="text-sm font-bold text-foreground">R$ {entry.physicalSales.toFixed(2)}</p>
-                    </div>
-                    <div className="bg-muted rounded-xl p-2.5">
-                      <p className="text-muted-foreground">📱 Vendas App</p>
-                      <p className="text-sm font-bold text-foreground">R$ {entry.appSales.toFixed(2)}</p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-3">
-                      <div className="flex items-center gap-1 mb-1">
-                        <ArrowUpRight className="h-3 w-3 text-green-500" />
-                        <p className="text-green-500 font-bold">A Pagar (85%)</p>
+                <div key={entry.storeId} className="bg-card rounded-2xl border border-border overflow-hidden transition-all">
+                  {/* Store Header — always visible */}
+                  <button onClick={() => setExpandedStore(isExpanded ? null : entry.storeId)}
+                    className="w-full px-4 py-3.5 flex items-center justify-between hover:bg-muted/30 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                        <Store className="h-4 w-4 text-primary" />
                       </div>
-                      <p className="text-lg font-black text-green-500">R$ {entry.netTransfer.toFixed(2)}</p>
-                    </div>
-                    <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-3">
-                      <div className="flex items-center gap-1 mb-1">
-                        <ArrowDownRight className="h-3 w-3 text-destructive" />
-                        <p className="text-destructive font-bold">A Receber (15%)</p>
-                      </div>
-                      <p className="text-lg font-black text-destructive">R$ {(dbComissao > 0 ? dbComissao : entry.commissionDue).toFixed(2)}</p>
-                    </div>
-                  </div>
-                  <div className="bg-muted rounded-xl p-3 text-center">
-                    <p className="text-xs text-muted-foreground mb-1">SALDO LÍQUIDO</p>
-                    <div className="grid grid-cols-3 gap-1">
-                      <div>
-                        <p className="text-[10px] text-green-500">Crédito</p>
-                        <p className="text-sm font-bold text-green-500">R$ {(dbComissao > 0 ? dbComissao : entry.commissionDue).toFixed(2)}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] text-destructive">Débito</p>
-                        <p className="text-sm font-bold text-destructive">R$ {entry.netTransfer.toFixed(2)}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] text-foreground">Total</p>
-                        <p className={`text-sm font-black ${entry.finalBalance >= 0 ? "text-green-500" : "text-destructive"}`}>
-                          {entry.finalBalance >= 0 ? "+" : "-"}R$ {Math.abs(entry.finalBalance).toFixed(2)}
-                        </p>
+                      <div className="text-left">
+                        <p className="text-sm font-bold text-foreground">{entry.name}</p>
+                        <p className="text-[10px] text-muted-foreground">{entry.orderCount} pedidos • R$ {entry.totalSales.toFixed(2)}</p>
                       </div>
                     </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button onClick={() => handleAdminPayout(entry)} disabled={payingStore === entry.storeId || entry.netTransfer <= 0}
-                      className="flex items-center justify-center gap-1.5 bg-green-500 hover:bg-green-600 disabled:opacity-30 text-white py-3 rounded-xl text-xs font-bold active:scale-95 transition-all">
-                      {payingStore === entry.storeId ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ArrowUpRight className="h-3.5 w-3.5" />}
-                      Pagar Lojista
-                    </button>
-                    <button onClick={() => handleChargeCommission(entry)} disabled={chargingStore === entry.storeId || (entry.commissionDue <= 0 && dbComissao <= 0)}
-                      className="flex items-center justify-center gap-1.5 bg-destructive hover:bg-destructive/90 disabled:opacity-30 text-destructive-foreground py-3 rounded-xl text-xs font-bold active:scale-95 transition-all">
-                      {chargingStore === entry.storeId ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <QrCode className="h-3.5 w-3.5" />}
-                      Gerar Cobrança
-                    </button>
-                  </div>
-                  {(() => {
-                    const pixInfo = getStorePixInfo(entry.storeId);
-                    return pixInfo?.pixKey ? (
-                      <div className="bg-muted rounded-xl p-2.5 flex items-center gap-2">
-                        <Wallet className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[10px] text-muted-foreground">Chave PIX</p>
-                          <p className="text-xs text-foreground truncate">{pixInfo.pixKey}</p>
+                    <div className="flex items-center gap-3">
+                      {dbComissao > 0 && (
+                        <span className="text-xs font-black text-amber-500 bg-amber-500/10 px-2 py-1 rounded-lg">
+                          R$ {dbComissao.toFixed(2)}
+                        </span>
+                      )}
+                      {dbComissao === 0 && (
+                        <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded-lg">
+                          ✓ Quitado
+                        </span>
+                      )}
+                      <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                    </div>
+                  </button>
+
+                  {/* Expanded details */}
+                  {isExpanded && (
+                    <div className="border-t border-border">
+                      <div className="p-4 space-y-4">
+                        {/* Sales breakdown */}
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="bg-muted/30 rounded-xl p-3">
+                            <p className="text-[10px] text-muted-foreground font-semibold uppercase">Vendas Físicas</p>
+                            <p className="text-base font-black text-foreground mt-0.5">R$ {entry.physicalSales.toFixed(2)}</p>
+                            <p className="text-[10px] text-muted-foreground">Dinheiro + Cartão</p>
+                          </div>
+                          <div className="bg-muted/30 rounded-xl p-3">
+                            <p className="text-[10px] text-muted-foreground font-semibold uppercase">Vendas App</p>
+                            <p className="text-base font-black text-foreground mt-0.5">R$ {entry.appSales.toFixed(2)}</p>
+                            <p className="text-[10px] text-muted-foreground">PIX Online</p>
+                          </div>
                         </div>
-                        <span className="text-[10px] text-muted-foreground uppercase">{pixInfo.pixType}</span>
+
+                        {/* Commission status — source of truth from DB */}
+                        <div className="space-y-2">
+                          {/* App sales: split auto */}
+                          {entry.appSales > 0 && (
+                            <div className="bg-emerald-500/5 border border-emerald-500/15 rounded-xl p-3 flex items-start gap-2.5">
+                              <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
+                              <div>
+                                <p className="text-xs font-bold text-emerald-600">Split automático liquidado</p>
+                                <p className="text-[10px] text-muted-foreground mt-0.5">
+                                  R$ {splitPaid.toFixed(2)} retido automaticamente de R$ {entry.appSales.toFixed(2)} em vendas PIX
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Physical sales: pending commission */}
+                          {dbComissao > 0 ? (
+                            <div className="bg-amber-500/5 border border-amber-500/15 rounded-xl p-3 flex items-start gap-2.5">
+                              <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                              <div className="flex-1">
+                                <p className="text-xs font-bold text-amber-600">Comissão pendente (vendas físicas)</p>
+                                <p className="text-lg font-black text-amber-500 mt-1">R$ {dbComissao.toFixed(2)}</p>
+                                <p className="text-[10px] text-muted-foreground mt-0.5">
+                                  15% sobre vendas em dinheiro/cartão que o lojista recebeu diretamente
+                                </p>
+                              </div>
+                            </div>
+                          ) : entry.physicalSales > 0 ? (
+                            <div className="bg-emerald-500/5 border border-emerald-500/15 rounded-xl p-3 flex items-start gap-2.5">
+                              <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
+                              <div>
+                                <p className="text-xs font-bold text-emerald-600">Comissão quitada</p>
+                                <p className="text-[10px] text-muted-foreground mt-0.5">Todas as comissões deste período foram pagas</p>
+                              </div>
+                            </div>
+                          ) : null}
+                        </div>
+
+                        {/* PIX key */}
+                        {pixInfo?.pixKey ? (
+                          <div className="bg-muted/30 rounded-xl p-2.5 flex items-center gap-2">
+                            <Wallet className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                            <p className="text-[10px] text-muted-foreground flex-1 truncate">{pixInfo.pixKey}</p>
+                            <span className="text-[10px] text-muted-foreground uppercase font-bold">{pixInfo.pixType}</span>
+                          </div>
+                        ) : (
+                          <div className="bg-amber-500/5 border border-amber-500/15 rounded-xl p-2.5 flex items-center gap-2">
+                            <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                            <p className="text-[10px] text-amber-500 font-bold">Sem chave PIX cadastrada</p>
+                          </div>
+                        )}
+
+                        {/* Actions */}
+                        <div className="grid grid-cols-2 gap-2">
+                          {dbComissao > 0 && (
+                            <button onClick={() => handleChargeCommission(entry)} disabled={chargingStore === entry.storeId}
+                              className="flex items-center justify-center gap-1.5 bg-primary hover:bg-primary/90 disabled:opacity-30 text-primary-foreground py-2.5 rounded-xl text-xs font-bold transition-all">
+                              {chargingStore === entry.storeId ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <QrCode className="h-3.5 w-3.5" />}
+                              Cobrar PIX
+                            </button>
+                          )}
+                          {dbComissao > 0 && (
+                            <button onClick={() => markAsPaid(entry.storeId, entry.name)}
+                              className="flex items-center justify-center gap-1.5 bg-muted hover:bg-muted/80 text-foreground py-2.5 rounded-xl text-xs font-bold transition-all">
+                              <CheckCircle2 className="h-3.5 w-3.5" /> Marcar Pago
+                            </button>
+                          )}
+                          <button onClick={() => generateStoreWhatsApp(entry)}
+                            className="flex items-center justify-center gap-1.5 bg-emerald-500/10 text-emerald-600 py-2.5 rounded-xl text-xs font-bold transition-all col-span-2">
+                            <Copy className="h-3.5 w-3.5" /> Copiar Extrato
+                          </button>
+                        </div>
                       </div>
-                    ) : (
-                      <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5 flex items-center gap-2">
-                        <AlertTriangle className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />
-                        <p className="text-[10px] text-amber-500 font-bold">Sem chave PIX cadastrada</p>
-                      </div>
-                    );
-                  })()}
-                  <div className="flex gap-2">
-                    <button onClick={() => generateStoreWhatsApp(entry)}
-                      className="flex-1 flex items-center justify-center gap-2 bg-green-500/10 text-green-500 py-2.5 rounded-xl text-xs font-bold active:scale-95 transition-transform">
-                      <Copy className="h-3.5 w-3.5" /> Extrato WhatsApp
-                    </button>
-                    <button onClick={() => markAsPaid(entry.storeId, entry.name)}
-                      className="flex-1 flex items-center justify-center gap-2 bg-primary/10 text-primary py-2.5 rounded-xl text-xs font-bold active:scale-95 transition-transform">
-                      <CheckCircle2 className="h-3.5 w-3.5" /> Marcar Pago
-                    </button>
-                  </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
           </div>
         ) : (
-          <div className="bg-card rounded-2xl p-8 text-center border border-border">
-            <Wallet className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+          <div className="bg-card rounded-2xl p-10 text-center border border-border">
+            <div className="w-14 h-14 bg-muted/50 rounded-2xl flex items-center justify-center mx-auto mb-3">
+              <Wallet className="h-6 w-6 text-muted-foreground" />
+            </div>
             <p className="text-sm text-muted-foreground">Sem vendas finalizadas no período</p>
           </div>
         )
       ) : (
+        /* ═══ Driver Cards ═══ */
         driverSettlement.length > 0 ? (
           <div className="space-y-3">
-            {driverSettlement.map((entry, i) => {
-              const driverPending = withdrawalRequests
-                .filter((w: any) => w.driver_user_id === entry.driverId && w.status === "solicitado")
-                .map((w: any) => w.amount);
-              const driverPaid = withdrawalRequests
-                .filter((w: any) => w.driver_user_id === entry.driverId && w.status === "pago")
-                .map((w: any) => w.amount);
-              const driverPendingAmount = sumMoney(driverPending);
-              const driverPaidAmount = sumMoney(driverPaid);
+            {driverSettlement.map((entry) => {
+              const bal = driverBalances?.find((b: any) => b.driver_user_id === entry.driverId);
+              const pendingAmt = Number(bal?.pending_amount || 0);
+              const paidAmt = Number(bal?.paid_amount || 0);
+              const driverPix = getDriverPixInfo(entry.driverId);
+
               return (
-                <div key={i} className="bg-card rounded-2xl p-4 space-y-3 border border-border">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
-                        <Bike className="h-4 w-4 text-green-500" />
+                <div key={entry.driverId} className="bg-card rounded-2xl border border-border overflow-hidden">
+                  <div className="px-4 py-3.5 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                        <Bike className="h-4 w-4 text-emerald-500" />
                       </div>
-                      <h3 className="text-sm font-bold text-foreground">{entry.name}</h3>
+                      <div>
+                        <p className="text-sm font-bold text-foreground">{entry.name}</p>
+                        <p className="text-[10px] text-muted-foreground">{entry.deliveryCount} entregas</p>
+                      </div>
                     </div>
-                    <span className="text-xs text-muted-foreground">{entry.deliveryCount} entregas</span>
+                    <div className="text-right">
+                      <p className="text-base font-black text-foreground">R$ {entry.totalFees.toFixed(2)}</p>
+                      <p className="text-[10px] text-muted-foreground">total ganho</p>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="bg-muted rounded-xl p-2.5 text-center">
-                      <p className="text-muted-foreground">💵 Em mãos</p>
-                      <p className="text-sm font-bold text-amber-500">R$ {entry.cashFees.toFixed(2)}</p>
+                  <div className="px-4 pb-4 space-y-3">
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="bg-muted/30 rounded-xl p-2.5 text-center">
+                        <p className="text-[10px] text-muted-foreground font-semibold">Em mãos</p>
+                        <p className="text-sm font-black text-foreground">{entry.cashFees.toFixed(2)}</p>
+                      </div>
+                      <div className="bg-amber-500/5 rounded-xl p-2.5 text-center border border-amber-500/10">
+                        <p className="text-[10px] text-amber-500 font-semibold">Pendente</p>
+                        <p className="text-sm font-black text-amber-500">{pendingAmt.toFixed(2)}</p>
+                      </div>
+                      <div className="bg-emerald-500/5 rounded-xl p-2.5 text-center border border-emerald-500/10">
+                        <p className="text-[10px] text-emerald-500 font-semibold">Pago</p>
+                        <p className="text-sm font-black text-emerald-500">{paidAmt.toFixed(2)}</p>
+                      </div>
                     </div>
-                    <div className="bg-muted rounded-xl p-2.5 text-center">
-                      <p className="text-muted-foreground">📱 Total App</p>
-                      <p className="text-sm font-bold text-foreground">R$ {entry.appFees.toFixed(2)}</p>
-                    </div>
-                    <div className="bg-amber-500/10 rounded-xl p-2.5 text-center border border-amber-500/20">
-                      <p className="text-amber-500">⏳ A Receber</p>
-                      <p className="text-sm font-bold text-amber-500">R$ {Math.max(0, subtractMoney(entry.appFees, driverPaidAmount)).toFixed(2)}</p>
-                    </div>
-                    <div className="bg-green-500/10 rounded-xl p-2.5 text-center border border-green-500/20">
-                      <p className="text-green-500">✅ Já Pago</p>
-                      <p className="text-sm font-bold text-green-500">R$ {driverPaidAmount.toFixed(2)}</p>
-                    </div>
+                    {pendingAmt > 0 && (
+                      <div className="flex gap-2">
+                        <button onClick={() => handleAutoPayDriver(entry.driverId, entry.name, pendingAmt, driverPix?.pix_key || "", driverPix?.pix_type || "cpf")}
+                          disabled={payingDriver === entry.driverId || !driverPix?.pix_key}
+                          className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-30 text-white py-2.5 rounded-xl text-xs font-bold transition-all">
+                          {payingDriver === entry.driverId ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ArrowUpRight className="h-3.5 w-3.5" />}
+                          Transferir R$ {pendingAmt.toFixed(2)}
+                        </button>
+                        <button onClick={() => handleMarkDriverPaidManually(entry)} disabled={markingPaid === entry.driverId}
+                          className="flex items-center justify-center gap-1.5 bg-muted hover:bg-muted/80 text-foreground px-4 py-2.5 rounded-xl text-xs font-bold transition-all">
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
             })}
           </div>
         ) : (
-          <div className="bg-card rounded-2xl p-8 text-center border border-border">
-            <Bike className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+          <div className="bg-card rounded-2xl p-10 text-center border border-border">
+            <div className="w-14 h-14 bg-muted/50 rounded-2xl flex items-center justify-center mx-auto mb-3">
+              <Bike className="h-6 w-6 text-muted-foreground" />
+            </div>
             <p className="text-sm text-muted-foreground">Sem entregas finalizadas no período</p>
           </div>
         )
