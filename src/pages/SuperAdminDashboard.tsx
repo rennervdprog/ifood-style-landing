@@ -364,7 +364,6 @@ const SuperAdminDashboard = () => {
     { key: "stores", label: "Lojas", icon: Store },
   ];
 
-  const [showMoreSheet, setShowMoreSheet] = useState(false);
   const moreTabs = sidebarItems.filter(i => !bottomTabs.some(b => b.key === i.key));
 
   return (
