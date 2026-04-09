@@ -32,7 +32,7 @@ export interface StorePlanFeatures {
   isLoading: boolean;
 }
 
-const PLAN_FEATURES: Record<StorePlanType, Omit<StorePlanFeatures, "planType" | "monthlyFee" | "commissionRate" | "isLoading">> = {
+const PLAN_FEATURES: Record<StorePlanType, Omit<StorePlanFeatures, "planType" | "monthlyFee" | "commissionRate" | "isLoading" | "trialEndsAt" | "isInTrial" | "trialDaysLeft">> = {
   commission_only: {
     allowPix: true,
     allowPlatformDelivery: true,
