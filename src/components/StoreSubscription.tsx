@@ -139,28 +139,29 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
             {featureList.map(({ key, label, icon: Icon }) => {
               const enabled = (plan as any)[key];
               return (
-                <div key={key} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Icon className={`h-4 w-4 ${enabled ? "text-primary" : "text-muted-foreground/40"}`} />
-                    <span className={`text-sm ${enabled ? "text-foreground" : "text-muted-foreground/60 line-through"}`}>
-                      {label}
-                    </span>
+                <div key={key}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Icon className={`h-4 w-4 ${enabled ? "text-primary" : "text-muted-foreground/40"}`} />
+                      <span className={`text-sm ${enabled ? "text-foreground" : "text-muted-foreground/60 line-through"}`}>
+                        {label}
+                      </span>
+                    </div>
+                    {enabled ? (
+                      <Check className="h-4 w-4 text-emerald-500" />
+                    ) : (
+                      <X className="h-4 w-4 text-muted-foreground/30" />
+                    )}
                   </div>
-                  {enabled ? (
-                    <Check className="h-4 w-4 text-emerald-500" />
-                  ) : (
-                    <X className="h-4 w-4 text-muted-foreground/30" />
+                  {key === "allowPlatformDelivery" && (
+                    <p className="text-xs text-muted-foreground mt-1 ml-7">
+                      * Disponível apenas em cidades com motoboys ativos
+                    </p>
                   )}
                 </div>
               );
             })}
           </div>
-          
-          {key === "allowPlatformDelivery" && (
-            <p className="text-xs text-muted-foreground mt-1 ml-7">
-              * Disponível apenas em cidades com motoboys ativos
-            </p>
-          )}
         </CardContent>
       </Card>
 
