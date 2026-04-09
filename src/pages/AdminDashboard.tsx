@@ -165,12 +165,35 @@ const AdminDashboard = () => {
   });
 
   const isApproved = myProfile?.is_approved ?? false;
+  const { data: adminRole, isLoading: adminRoleLoading } = useQuery({
+    queryKey: ["admin-role", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user!.id)
+        .eq("role", "admin")
+        .maybeSingle();
+
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const isPlatformAdmin = Boolean(adminRole);
+  const activeSimulateStoreId = isPlatformAdmin ? simulateStoreId : null;
+
+  useEffect(() => {
+    if (simulateStoreId && !adminRoleLoading && !isPlatformAdmin) {
+      navigate("/admin", { replace: true });
+    }
+  }, [simulateStoreId, adminRoleLoading, isPlatformAdmin, navigate]);
 
   const { data: store, error: storeError, isLoading: storeLoading } = useQuery({
-    queryKey: ["my-store", user?.id, simulateStoreId],
+    queryKey: ["my-store", user?.id, activeSimulateStoreId],
     queryFn: async () => {
-      if (simulateStoreId) {
-        const { data, error } = await supabase.from("stores").select("*").eq("id", simulateStoreId).maybeSingle();
+      if (activeSimulateStoreId) {
+        const { data, error } = await supabase.from("stores").select("*").eq("id", activeSimulateStoreId).maybeSingle();
         if (error) throw error;
         return data;
       }
@@ -745,6 +768,36 @@ const AdminDashboard = () => {
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto pb-20 lg:pb-0">
+          {!storeLoading && isApproved && !store && (
+            <div className="p-4 lg:p-6 max-w-lg mx-auto flex flex-col items-center justify-center text-center min-h-[60vh]">
+              <div className="w-20 h-20 bg-amber-500/10 rounded-3xl flex items-center justify-center mb-5">
+                <Store className="h-10 w-10 text-amber-500" />
+              </div>
+              <h2 className="text-xl font-black text-foreground mb-2">
+                {activeSimulateStoreId ? "Loja de simulação não encontrada" : "Nenhuma loja vinculada a esta conta"}
+              </h2>
+              <p className="text-sm text-muted-foreground max-w-sm mb-4">
+                {activeSimulateStoreId
+                  ? "A loja simulada não pôde ser carregada agora."
+                  : "Seu acesso foi liberado, mas a loja desta conta não carregou no painel."}
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => window.location.reload()}
+                  className="bg-primary text-primary-foreground font-bold px-5 py-3 rounded-xl text-sm"
+                >
+                  Tentar novamente
+                </button>
+                <button
+                  onClick={() => navigate("/")}
+                  className="bg-muted text-foreground font-bold px-5 py-3 rounded-xl text-sm"
+                >
+                  Ir para início
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* ══════ DASHBOARD TAB ══════ */}
           {dashboardTab === "dashboard" && !isApproved && (
             <div className="p-4 lg:p-6 max-w-lg mx-auto flex flex-col items-center justify-center text-center min-h-[60vh]">
