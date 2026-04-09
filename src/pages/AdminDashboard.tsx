@@ -1755,7 +1755,8 @@ const AdminDashboard = () => {
                 </div>
               )}
               {dashboardTab === "finance" && storePlan.hasCommission && <StoreFinancePanel storeId={store.id} storeName={store.name} />}
-              {dashboardTab === "finance" && !storePlan.hasCommission && <StoreFinanceBasic storeId={store.id} storeName={store.name} />}
+               {dashboardTab === "finance" && !storePlan.hasCommission && <StoreFinanceBasic storeId={store.id} storeName={store.name} />}
+              {dashboardTab === "subscription" && <StoreSubscription storeId={store.id} storeName={store.name} />}
               {dashboardTab === "reports" && (
                 <div className="space-y-6">
                   <h3 className="text-lg font-bold text-foreground">Relatórios de Vendas</h3>
