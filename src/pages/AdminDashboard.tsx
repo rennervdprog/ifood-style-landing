@@ -124,6 +124,7 @@ const AdminDashboard = () => {
   const [clientSearch, setClientSearch] = useState("");
   const [expandedClient, setExpandedClient] = useState<string | null>(null);
   const [cancelConfirm, setCancelConfirm] = useState<string | null>(null);
+  const [showDelayedPanel, setShowDelayedPanel] = useState(false);
 
   const prevPendingCountRef = useRef(0);
 
