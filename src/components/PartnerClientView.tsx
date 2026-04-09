@@ -40,7 +40,7 @@ const PartnerClientView = () => {
     queryKey: ["stores-client"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("stores")
+        .from("stores_public")
         .select("*")
         .in("status", ["ativo", "bloqueado"]);
       if (error) throw error;

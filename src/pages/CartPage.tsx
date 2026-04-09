@@ -16,7 +16,7 @@ const CartPage = () => {
     queryKey: ["cart-store-status", storeId],
     queryFn: async () => {
       const { data: store } = await supabase
-        .from("stores")
+        .from("stores_public")
         .select("is_open, force_closed")
         .eq("id", storeId!)
         .maybeSingle();

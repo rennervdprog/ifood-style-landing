@@ -185,7 +185,7 @@ const DriverDashboard = () => {
     queryKey: ["driver-contacts", profileIds],
     queryFn: async () => {
       const { data } = await supabase
-        .from("profiles")
+        .from("profile_contacts")
         .select("user_id, whatsapp_number, phone, full_name")
         .in("user_id", profileIds);
       return data || [];
@@ -220,7 +220,7 @@ const DriverDashboard = () => {
     queryKey: ["open-platform-stores"],
     queryFn: async () => {
       const { data: stores } = await supabase
-        .from("stores")
+        .from("stores_public")
         .select("id, name, force_closed, is_open, delivery_mode")
         .eq("status", "ativo")
         .neq("delivery_mode", "own");
