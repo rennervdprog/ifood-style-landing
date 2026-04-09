@@ -1859,10 +1859,10 @@ const JuridicoTab = () => {
   const handleSearch = async () => {
     if (!search.trim()) return;
     setLoading(true);
+    setSearchAttempted(true);
     setSelectedUser(null);
     setResults([]);
     setArchivedResults([]);
-    try {
       const cleanSearch = search.trim();
       const normalizedDocument = cleanSearch.replace(/\D/g, "");
       const namePattern = `%${cleanSearch}%`;
