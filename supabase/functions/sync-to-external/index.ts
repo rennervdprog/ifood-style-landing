@@ -4,6 +4,14 @@ import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2/cors";
 
 const JSON_HEADERS = { ...corsHeaders, "Content-Type": "application/json" };
 
+const ALLOWED_SYNC_TABLES = new Set([
+  "stores", "products", "menu_sections", "neighborhood_fees", "profiles",
+  "addon_groups", "addon_items", "product_addon_groups", "opening_hours",
+  "orders", "order_items", "order_messages", "drivers", "driver_balances",
+  "driver_earnings", "financial_transactions", "store_balances", "coupons",
+  "banners",
+]);
+
 function jsonRes(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: JSON_HEADERS });
 }
@@ -89,6 +97,7 @@ serve(async (req) => {
     if (action === "sync_record") {
       const { table, record, conflict_column } = payload || {};
       if (!table || !record) return jsonRes({ error: "Missing table or record" }, 400);
+      if (!ALLOWED_SYNC_TABLES.has(table)) return jsonRes({ error: "Table not allowed for sync" }, 400);
 
       // Enrich profiles with email from auth.users
       if (table === "profiles" && record.user_id && !record.email) {
