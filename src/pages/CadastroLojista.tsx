@@ -200,7 +200,6 @@ const CadastroLojista = () => {
       setLoading(false);
     }
   };
-  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
