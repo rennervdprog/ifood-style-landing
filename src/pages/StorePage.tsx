@@ -808,12 +808,13 @@ const StorePage = () => {
       {store?.category === "pizzas" && (() => {
         const storeSettings = (store?.settings || {}) as Record<string, any>;
         return (
-          <PizzaHalfHalfModal
+           <PizzaHalfHalfModal
             open={showHalfHalf}
             onClose={() => setShowHalfHalf(false)}
             storeName={store?.name || ""}
             storeId={store?.id || ""}
             products={products || []}
+            sections={sections || []}
             priceMode={storeSettings.pizza_price_mode || "maior"}
             onAdd={handleAddToCart}
           />
