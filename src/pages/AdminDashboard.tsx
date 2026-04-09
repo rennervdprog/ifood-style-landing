@@ -851,6 +851,17 @@ const AdminDashboard = () => {
                   onGoToFinance={() => setDashboardTab("finance")}
                 />
               )}
+              {/* Plan Badge */}
+              <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold ${
+                storePlan.planType === "fixed" ? "bg-amber-500/10 text-amber-600 border border-amber-500/20" :
+                storePlan.planType === "hybrid" ? "bg-blue-500/10 text-blue-600 border border-blue-500/20" :
+                "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
+              }`}>
+                <CreditCard className="h-3.5 w-3.5" />
+                {storePlan.planType === "fixed" && `Plano Fixo • R$ ${storePlan.monthlyFee.toFixed(0)}/mês`}
+                {storePlan.planType === "hybrid" && `Assinatura + ${storePlan.commissionRate}% • R$ ${storePlan.monthlyFee.toFixed(0)}/mês`}
+                {storePlan.planType === "commission_only" && `Comissão ${storePlan.commissionRate}%`}
+              </div>
               {/* At-a-Glance Cards */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-3">
                 <GlanceCard
@@ -868,14 +879,17 @@ const AdminDashboard = () => {
                   subValue={`${todayCount} pedidos`}
                   color="text-emerald-500"
                   trend={todayTotal > 0 ? "up" : null}
+                  onClick={() => setDashboardTab("finance")}
                 />
-                <GlanceCard
-                  icon={Bike}
-                  label="Motoboys"
-                  value={onlineDrivers?.length || 0}
-                  subValue={realtimeDriversConnected ? "Online" : "Conectando..."}
-                  color={(onlineDrivers?.length || 0) > 0 ? "text-blue-500" : "text-muted-foreground"}
-                />
+                {storePlan.allowPlatformDelivery && (
+                  <GlanceCard
+                    icon={Bike}
+                    label="Motoboys"
+                    value={onlineDrivers?.length || 0}
+                    subValue={realtimeDriversConnected ? "Online" : "Conectando..."}
+                    color={(onlineDrivers?.length || 0) > 0 ? "text-blue-500" : "text-muted-foreground"}
+                  />
+                )}
                 <GlanceCard
                   icon={Timer}
                   label="Tempo Médio"
@@ -883,6 +897,16 @@ const AdminDashboard = () => {
                   subValue="Pedido → Entrega"
                   color="text-purple-500"
                 />
+                {!storePlan.allowPlatformDelivery && (
+                  <GlanceCard
+                    icon={Users}
+                    label="Clientes"
+                    value={clientAnalytics.length}
+                    subValue="Total cadastrados"
+                    color="text-blue-500"
+                    onClick={() => setDashboardTab("clients")}
+                  />
+                )}
               </div>
               {delayedOrders.length > 0 && (
                 <div className="bg-destructive/5 border border-destructive/20 rounded-2xl p-3">
