@@ -1688,6 +1688,7 @@ export type Database = {
           own_delivery_fee: number | null
           owner_id: string | null
           rating: number | null
+          settings: Json | null
           slug: string | null
           status: Database["public"]["Enums"]["store_status"] | null
         }
@@ -1711,6 +1712,7 @@ export type Database = {
           own_delivery_fee?: number | null
           owner_id?: string | null
           rating?: number | null
+          settings?: Json | null
           slug?: string | null
           status?: Database["public"]["Enums"]["store_status"] | null
         }
@@ -1734,6 +1736,7 @@ export type Database = {
           own_delivery_fee?: number | null
           owner_id?: string | null
           rating?: number | null
+          settings?: Json | null
           slug?: string | null
           status?: Database["public"]["Enums"]["store_status"] | null
         }
