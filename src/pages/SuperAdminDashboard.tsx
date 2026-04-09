@@ -359,118 +359,136 @@ const SuperAdminDashboard = () => {
     <div className="min-h-screen bg-background flex">
       {/* Sidebar overlay (mobile) */}
       {sidebarOpen && (
-        <div className="fixed inset-0 bg-black/60 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Sidebar */}
-      <aside className={`fixed lg:sticky top-0 left-0 z-50 h-screen w-64 bg-card border-r border-border flex flex-col transition-transform duration-300 ${
+      {/* Sidebar — 80vw on mobile, fixed 280px on desktop */}
+      <aside className={`fixed lg:sticky top-0 left-0 z-50 h-screen w-[80vw] max-w-[320px] lg:w-[280px] bg-card/95 backdrop-blur-xl border-r border-border/50 flex flex-col transition-all duration-300 ease-out shadow-2xl lg:shadow-none ${
         sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       }`}>
-        {/* Header */}
-        <div className="p-4 border-b border-border">
+        {/* Brand Header */}
+        <div className="p-5 border-b border-border/50">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <LayoutDashboard className="h-5 w-5 text-primary" />
+              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary/20">
+                <LayoutDashboard className="h-5 w-5 text-primary-foreground" />
               </div>
               <div className="min-w-0">
-                <h1 className="font-bold text-sm text-foreground">ItaSuper Admin</h1>
-                <p className="text-[10px] text-muted-foreground">Painel Administrativo</p>
+                <h1 className="font-black text-sm text-foreground tracking-tight">ItaSuper</h1>
+                <p className="text-[10px] text-muted-foreground font-medium">Painel Admin</p>
               </div>
             </div>
-            <button onClick={() => setSidebarOpen(false)} className="lg:hidden p-1 text-muted-foreground hover:text-foreground">
+            <button onClick={() => setSidebarOpen(false)} className="lg:hidden p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent/80 transition-colors">
               <X className="h-5 w-5" />
             </button>
           </div>
         </div>
 
-        {/* Quick stats */}
-        <div className="p-3 space-y-2 border-b border-border">
-          <div className="grid grid-cols-2 gap-2">
-            <div className="bg-primary/5 border border-primary/10 rounded-xl p-2.5 text-center">
-              <p className="text-lg font-black text-primary">{metrics.activeOrders}</p>
-              <p className="text-[10px] text-muted-foreground font-medium">Ativos</p>
+        {/* Live Stats Banner */}
+        <div className="mx-4 mt-4 mb-2">
+          <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/15 rounded-2xl p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-primary/70">Resumo {filterLabels[dateFilter]}</span>
+              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
             </div>
-            <div className="bg-accent/50 rounded-xl p-2.5 text-center">
-              <p className="text-lg font-black text-foreground">{metrics.totalOrders}</p>
-              <p className="text-[10px] text-muted-foreground font-medium">Total</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-xl font-black text-foreground leading-none">{metrics.activeOrders}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">Pedidos ativos</p>
+              </div>
+              <div>
+                <p className="text-xl font-black text-foreground leading-none">{metrics.totalOrders}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">Total pedidos</p>
+              </div>
             </div>
-          </div>
-          <div className="bg-muted/50 rounded-xl p-2.5 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-green-500" />
-              <span className="text-xs text-muted-foreground">Vendas</span>
-            </div>
-            <div className="text-right">
-              <p className="text-sm font-bold text-foreground">R$ {metrics.totalSales.toFixed(2)}</p>
-              <p className="text-[10px] text-muted-foreground">{filterLabels[dateFilter]}</p>
+            <div className="pt-2 border-t border-primary/10 flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <TrendingUp className="h-3.5 w-3.5 text-green-500" />
+                <span className="text-[10px] text-muted-foreground">Vendas</span>
+              </div>
+              <span className="text-sm font-black text-foreground">R$ {metrics.totalSales.toFixed(2)}</span>
             </div>
           </div>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-2 overflow-y-auto">
+        <nav className="flex-1 px-3 py-2 overflow-y-auto scrollbar-thin">
           {["Principal", "Gerenciamento", "Configurações", "Sistema"].map(group => {
             const items = sidebarItems.filter(i => i.group === group);
             if (items.length === 0) return null;
             return (
-              <div key={group} className="mb-3">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-3 mb-1">{group}</p>
-                {items.map(item => {
-                  const isActive = activeTab === item.key;
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={item.key}
-                      onClick={() => handleTabChange(item.key)}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                        isActive
-                          ? "bg-primary text-primary-foreground shadow-sm"
-                          : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                      }`}
-                    >
-                      <Icon className="h-4 w-4 flex-shrink-0" />
-                      <span>{item.label}</span>
-                      {item.key === "saques" && pendingWithdrawals.length > 0 && (
-                        <span className="ml-auto bg-destructive text-destructive-foreground text-[10px] font-black px-1.5 py-0.5 rounded-full animate-pulse">
-                          {pendingWithdrawals.length}
-                        </span>
-                      )}
-                      {item.key === "dashboard" && delayedOrders.length > 0 && (
-                        <span className="ml-auto bg-destructive text-destructive-foreground text-[10px] font-black px-1.5 py-0.5 rounded-full">
-                          {delayedOrders.length}
-                        </span>
-                      )}
-                      {item.key === "dashboard" && complianceAlerts && complianceAlerts.length > 0 && delayedOrders.length === 0 && (
-                        <span className="ml-auto bg-amber-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full animate-pulse">
-                          ⚠
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
+              <div key={group} className="mb-4">
+                <p className="text-[10px] font-extrabold text-muted-foreground/60 uppercase tracking-[0.15em] px-3 mb-1.5">{group}</p>
+                <div className="space-y-0.5">
+                  {items.map(item => {
+                    const isActive = activeTab === item.key;
+                    const Icon = item.icon;
+                    const hasBadge = (item.key === "saques" && pendingWithdrawals.length > 0) ||
+                      (item.key === "dashboard" && (delayedOrders.length > 0 || (complianceAlerts && complianceAlerts.length > 0)));
+                    return (
+                      <button
+                        key={item.key}
+                        onClick={() => handleTabChange(item.key)}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-200 ${
+                          isActive
+                            ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
+                            : "text-muted-foreground hover:bg-accent/80 hover:text-foreground"
+                        }`}
+                      >
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${
+                          isActive ? "bg-primary-foreground/15" : "bg-muted/50"
+                        }`}>
+                          <Icon className="h-4 w-4" />
+                        </div>
+                        <span className="flex-1 text-left">{item.label}</span>
+                        {item.key === "saques" && pendingWithdrawals.length > 0 && (
+                          <span className="bg-destructive text-destructive-foreground text-[10px] font-black min-w-[20px] h-5 flex items-center justify-center px-1.5 rounded-full animate-pulse">
+                            {pendingWithdrawals.length}
+                          </span>
+                        )}
+                        {item.key === "dashboard" && delayedOrders.length > 0 && (
+                          <span className="bg-destructive text-destructive-foreground text-[10px] font-black min-w-[20px] h-5 flex items-center justify-center px-1.5 rounded-full">
+                            {delayedOrders.length}
+                          </span>
+                        )}
+                        {item.key === "dashboard" && complianceAlerts && complianceAlerts.length > 0 && delayedOrders.length === 0 && (
+                          <span className="bg-amber-500 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full animate-pulse">
+                            ⚠
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             );
           })}
         </nav>
 
-        {/* Bottom section */}
-        <div className="p-3 border-t border-border space-y-2">
-          <div className="flex items-center gap-2">
-            <Store className="h-4 w-4 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground flex-1">Lojas</span>
-            <span className="text-xs font-bold text-foreground">{stores?.length || 0}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Bike className="h-4 w-4 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground flex-1">Entregadores</span>
-            <span className="text-xs font-bold text-foreground">{drivers?.length || 0}</span>
+        {/* Bottom Stats & Actions */}
+        <div className="p-4 border-t border-border/50 space-y-3">
+          <div className="bg-muted/30 rounded-xl p-3 space-y-2">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Store className="h-3.5 w-3.5 text-primary" />
+              </div>
+              <span className="text-xs text-muted-foreground flex-1">Lojas</span>
+              <span className="text-xs font-black text-foreground bg-accent px-2 py-0.5 rounded-md">{stores?.length || 0}</span>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Bike className="h-3.5 w-3.5 text-primary" />
+              </div>
+              <span className="text-xs text-muted-foreground flex-1">Entregadores</span>
+              <span className="text-xs font-black text-foreground bg-accent px-2 py-0.5 rounded-md">{drivers?.length || 0}</span>
+            </div>
           </div>
           <button
             onClick={() => navigate("/")}
-            className="w-full py-2 rounded-lg text-xs font-bold border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            className="w-full py-2.5 rounded-xl text-xs font-bold border border-border/60 text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-all flex items-center justify-center gap-2"
           >
-            ← Voltar à Home
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Voltar à Home
           </button>
         </div>
       </aside>
