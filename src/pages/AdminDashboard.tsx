@@ -739,7 +739,26 @@ const AdminDashboard = () => {
         {/* Content */}
         <div className="flex-1 overflow-y-auto pb-20 lg:pb-0">
           {/* ══════ DASHBOARD TAB ══════ */}
-          {dashboardTab === "dashboard" && store && (
+          {dashboardTab === "dashboard" && !isApproved && (
+            <div className="p-4 lg:p-6 max-w-lg mx-auto flex flex-col items-center justify-center text-center min-h-[60vh]">
+              <div className="w-20 h-20 bg-amber-500/10 rounded-3xl flex items-center justify-center mb-5">
+                <Shield className="h-10 w-10 text-amber-500" />
+              </div>
+              <h2 className="text-xl font-black text-foreground mb-2">Cadastro em Análise 🔍</h2>
+              <p className="text-sm text-muted-foreground max-w-xs mb-3">
+                Recebemos seus dados com sucesso! Em até <span className="font-bold text-foreground">24 horas</span> o administrador do ItaSuper liberará seu acesso.
+              </p>
+              <div className="bg-primary/5 border border-primary/10 rounded-2xl p-4 max-w-xs mb-4">
+                <p className="text-xs text-muted-foreground">
+                  📲 Entraremos em contato via <span className="font-bold text-foreground">WhatsApp</span> assim que seu cadastro for aprovado.
+                </p>
+              </div>
+              <button onClick={() => window.location.reload()} className="bg-primary text-primary-foreground font-bold px-6 py-3 rounded-xl text-sm">
+                Verificar Status
+              </button>
+            </div>
+          )}
+          {dashboardTab === "dashboard" && isApproved && store && (
             <div className="p-4 lg:p-6 max-w-6xl mx-auto space-y-4 lg:space-y-6">
               {/* Hours Configuration Alert */}
               {allHoursClosed && (
