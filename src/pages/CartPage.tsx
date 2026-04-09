@@ -46,7 +46,7 @@ const CartPage = () => {
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
 
   return (
-    <div className="min-h-screen bg-background pb-44 overflow-y-auto">
+    <div className="min-h-screen bg-background pb-60 overflow-y-auto">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-sm border-b border-border flex items-center justify-between h-14 px-4">
         <div className="flex items-center gap-3">
@@ -126,7 +126,7 @@ const CartPage = () => {
       </div>
 
       {/* Fixed bottom summary + CTA */}
-      <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border z-40">
+      <div className="fixed bottom-16 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border z-40">
         <div className="px-4 pt-3 pb-1 space-y-1.5">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Subtotal</span>
