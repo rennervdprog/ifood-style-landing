@@ -403,7 +403,7 @@ export default function MenuImportCSV({ storeId }: MenuImportCSVProps) {
             <button onClick={() => fileRef.current?.click()} className="flex items-center gap-1.5 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-xs font-bold">
               <Upload className="h-3.5 w-3.5" /> Enviar CSV
             </button>
-            <input ref={fileRef} type="file" accept=".csv,.txt,.json" onChange={handleCSVFile} className="hidden" />
+            <input ref={fileRef} type="file" accept=".csv,.txt,.json,text/csv,text/plain,application/json,application/vnd.ms-excel" onChange={handleCSVFile} className="hidden" />
           </div>
           <button onClick={() => setMode(null)} className="text-xs text-muted-foreground hover:underline">← Voltar</button>
         </div>
@@ -439,7 +439,7 @@ export default function MenuImportCSV({ storeId }: MenuImportCSVProps) {
             <button onClick={() => pdfRef.current?.click()} className="flex items-center gap-1.5 bg-muted text-muted-foreground px-3 py-2 rounded-lg text-xs hover:bg-muted/80">
               <FileText className="h-3.5 w-3.5" /> Enviar Arquivo
             </button>
-            <input ref={pdfRef} type="file" accept=".pdf,.txt,.csv" onChange={handlePDFFile} className="hidden" />
+            <input ref={pdfRef} type="file" accept=".pdf,.txt,.csv,application/pdf,text/csv,text/plain,application/vnd.ms-excel" onChange={handlePDFFile} className="hidden" />
           </div>
           <button onClick={() => { setMode(null); setPasteText(""); }} className="text-xs text-muted-foreground hover:underline">← Voltar</button>
         </div>
