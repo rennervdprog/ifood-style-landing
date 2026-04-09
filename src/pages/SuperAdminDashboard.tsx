@@ -47,6 +47,7 @@ const SuperAdminDashboard = () => {
   const [financeSubTab, setFinanceSubTab] = useState<"stores" | "drivers">("stores");
   const [selectedStore, setSelectedStore] = useState<string>("all");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showMoreSheet, setShowMoreSheet] = useState(false);
 
   const getDateRange = (filter: DateFilter) => {
     const now = new Date();
