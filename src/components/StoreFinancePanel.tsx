@@ -114,16 +114,6 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
   const [nowMs, setNowMs] = useState(() => Date.now());
   const queryClient = useQueryClient();
 
-  const { data: storeData } = useQuery({
-    queryKey: ["store-commission-rate", storeId],
-    queryFn: async () => {
-      const { data } = await supabase.from("stores").select("commission_rate").eq("id", storeId).single();
-      return data;
-    },
-    enabled: !!storeId,
-  });
-  const commissionRate = ((storeData as any)?.commission_rate ?? 15) / 100;
-  const commissionPct = Math.round(commissionRate * 100);
   const now = new Date();
   const dateRange = useMemo(() => {
     switch (dateFilter) {
