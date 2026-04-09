@@ -68,6 +68,39 @@ const StorePage = () => {
     }
   }, [store, slug, setCurrentStore]);
 
+  // Dynamic OG meta tags for social sharing (WhatsApp, Facebook, etc.)
+  useEffect(() => {
+    if (!store) return;
+    const ogTitle = document.querySelector('meta[property="og:title"]');
+    const ogDesc = document.querySelector('meta[property="og:description"]');
+    const ogImage = document.querySelector('meta[property="og:image"]');
+    const twTitle = document.querySelector('meta[name="twitter:title"]');
+    const twDesc = document.querySelector('meta[name="twitter:description"]');
+    const twImage = document.querySelector('meta[name="twitter:image"]');
+
+    const title = `${store.name} - ItaSuper`;
+    const desc = `Peça pelo ItaSuper: ${store.name} - ${store.category}. Entrega rápida!`;
+    const img = store.image_url || "";
+
+    document.title = title;
+    if (ogTitle) ogTitle.setAttribute("content", title);
+    if (ogDesc) ogDesc.setAttribute("content", desc);
+    if (ogImage && img) ogImage.setAttribute("content", img);
+    if (twTitle) twTitle.setAttribute("content", title);
+    if (twDesc) twDesc.setAttribute("content", desc);
+    if (twImage && img) twImage.setAttribute("content", img);
+
+    return () => {
+      document.title = "ItaSuper - O delivery oficial de Itatinga";
+      if (ogTitle) ogTitle.setAttribute("content", "ItaSuper - O delivery oficial de Itatinga");
+      if (ogDesc) ogDesc.setAttribute("content", "ItaSuper: Peça comida dos melhores restaurantes de Itatinga/SP.");
+      if (ogImage) ogImage.setAttribute("content", "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8e986ee9-d281-4fb2-a26b-042833db7491/id-preview-8c7bce6c--e8d28ade-d633-4d74-be21-61c8dbe24765.lovable.app-1775438464166.png");
+      if (twTitle) twTitle.setAttribute("content", "ItaSuper - O delivery oficial de Itatinga");
+      if (twDesc) twDesc.setAttribute("content", "ItaSuper: Peça comida dos melhores restaurantes de Itatinga/SP.");
+      if (twImage) twImage.setAttribute("content", "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8e986ee9-d281-4fb2-a26b-042833db7491/id-preview-8c7bce6c--e8d28ade-d633-4d74-be21-61c8dbe24765.lovable.app-1775438464166.png");
+    };
+  }, [store]);
+
   const storeId = store?.id || id;
 
   const { data: storeHours } = useQuery({
