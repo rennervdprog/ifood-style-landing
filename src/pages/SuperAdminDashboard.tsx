@@ -619,6 +619,7 @@ const SuperAdminDashboard = () => {
                 {activeTab === "coupons" && "Gerenciar cupons de desconto"}
                 {activeTab === "juridico" && "Consulta jurídica e dados arquivados"}
                 {activeTab === "sync" && "Sincronização com banco externo"}
+                {activeTab === "planos" && "Gerenciar planos e assinaturas das lojas"}
               </p>
             </div>
           </div>
@@ -660,6 +661,7 @@ const SuperAdminDashboard = () => {
               </div>
             )}
             {activeTab === "cidades" && <CidadesTab stores={stores} />}
+            {activeTab === "planos" && <AdminPlanManager />}
             {activeTab === "pagamentos" && <PagamentosSplitTab stores={stores || []} />}
             {activeTab === "juridico" && <JuridicoTab />}
             {activeTab === "saques" && (
