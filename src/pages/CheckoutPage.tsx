@@ -125,7 +125,7 @@ const CheckoutPage = () => {
   const config = deliveryFeeConfig || DEFAULT_DELIVERY_FEE_CONFIG;
   const activeDeliveryFee = isOwnDelivery ? storeOwnFee : (calculatedDeliveryFee !== null ? calculatedDeliveryFee : config.city_fee);
   const effectiveDeliveryFee = couponType === "free_shipping" ? 0 : activeDeliveryFee;
-  const finalTotal = Math.max(0, addMoney(subtotal, effectiveDeliveryFee, -couponDiscount));
+  const finalTotal = Math.max(0, addMoney(subtotal, effectiveDeliveryFee, -couponDiscount, -loyaltyDiscount));
 
   useEffect(() => {
     const customerCep = selectedSavedAddressId && savedAddressData?.cep ? savedAddressData.cep : profileCep;
