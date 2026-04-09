@@ -209,6 +209,8 @@ const AdminDashboard = () => {
     enabled: !!user,
   });
 
+  const storePlan = useStorePlan(store?.id);
+
   console.log("[AdminDashboard] store:", store?.name, "storeError:", storeError, "storeLoading:", storeLoading, "isApproved:", isApproved, "user:", user?.id);
 
   const { data: orders, isLoading } = useQuery({
