@@ -46,7 +46,7 @@ const CartPage = () => {
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
 
   return (
-    <div className="min-h-screen bg-background pb-44 overflow-y-auto">
+    <div className="min-h-screen bg-background pb-60 overflow-y-auto">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-sm border-b border-border flex items-center justify-between h-14 px-4">
         <div className="flex items-center gap-3">
