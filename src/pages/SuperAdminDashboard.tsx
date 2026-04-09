@@ -1849,6 +1849,7 @@ const JuridicoTab = () => {
   const [searchType, setSearchType] = useState<"name" | "cpf" | "email">("name");
   const [results, setResults] = useState<any[]>([]);
   const [archivedResults, setArchivedResults] = useState<any[]>([]);
+  const [searchAttempted, setSearchAttempted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [userOrders, setUserOrders] = useState<any[]>([]);
