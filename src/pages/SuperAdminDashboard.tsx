@@ -1256,7 +1256,7 @@ const FinanceTab = ({
                 <TrendingUp className="h-4 w-4 text-primary" />
               </div>
             </div>
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Lucro (15%)</p>
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Lucro Comissões</p>
             <p className="text-xl font-black text-primary mt-0.5">R$ {financeTotals.grossProfit.toFixed(2)}</p>
           </div>
         </div>
