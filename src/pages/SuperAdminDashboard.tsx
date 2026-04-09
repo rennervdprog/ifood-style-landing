@@ -1149,7 +1149,7 @@ const FinanceTab = ({
         pixType: profiles?.find(p => p.user_id === s.owner_id)?.pix_type || null,
       }));
     },
-    enabled: stores.length > 0,
+    enabled: !!stores && stores.length > 0,
   });
 
   const getStorePixInfo = (storeId: string) => ownerProfiles?.find((p: any) => p.storeId === storeId) || null;
@@ -1491,7 +1491,7 @@ const FinanceTab = ({
         <select value={selectedStore} onChange={e => setSelectedStore(e.target.value)}
           className="w-full bg-card text-foreground border border-border rounded-xl px-4 py-2.5 text-sm font-medium">
           <option value="all">Todas as lojas</option>
-          {stores.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+          {stores?.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
         </select>
       )}
 
@@ -2581,7 +2581,7 @@ const PagamentosSplitTab = ({ stores }: { stores: any[] }) => {
     const map = new Map<string, { storeName: string; storeId: string; records: any[]; totalPaid: number; totalPending: number }>();
     
     transactions.forEach((tx: any) => {
-      const store = stores.find(s => s.id === tx.store_id);
+      const store = stores?.find(s => s.id === tx.store_id);
       const storeName = store?.name || "Loja Desconhecida";
       if (!map.has(tx.store_id)) {
         map.set(tx.store_id, { storeName, storeId: tx.store_id, records: [], totalPaid: 0, totalPending: 0 });
