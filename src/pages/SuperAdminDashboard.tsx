@@ -411,8 +411,8 @@ const SuperAdminDashboard = () => {
       {/* ═══ More Sheet (mobile) ═══ */}
       {showMoreSheet && (
         <>
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden" onClick={() => setShowMoreSheet(false)} />
-          <div className="fixed bottom-16 left-0 right-0 z-45 bg-card border-t border-border rounded-t-3xl shadow-2xl lg:hidden animate-in slide-in-from-bottom-4 max-h-[60vh] overflow-y-auto" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] lg:hidden" onClick={() => setShowMoreSheet(false)} />
+          <div className="fixed bottom-16 left-0 right-0 z-[70] bg-card border-t border-border rounded-t-3xl shadow-2xl lg:hidden animate-in slide-in-from-bottom-4 max-h-[60vh] overflow-y-auto" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
             <div className="w-12 h-1 bg-muted-foreground/20 rounded-full mx-auto mt-3 mb-2" />
             <div className="px-4 pb-4 space-y-1">
               {moreTabs.map((item) => {
