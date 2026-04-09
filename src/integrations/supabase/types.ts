@@ -1242,6 +1242,63 @@ export type Database = {
         }
         Relationships: []
       }
+      store_plans: {
+        Row: {
+          commission_rate: number
+          created_at: string
+          id: string
+          is_active: boolean
+          last_billed_at: string | null
+          monthly_fee: number
+          next_billing_date: string | null
+          plan_type: Database["public"]["Enums"]["store_plan_type"]
+          started_at: string
+          store_id: string
+          updated_at: string
+        }
+        Insert: {
+          commission_rate?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_billed_at?: string | null
+          monthly_fee?: number
+          next_billing_date?: string | null
+          plan_type?: Database["public"]["Enums"]["store_plan_type"]
+          started_at?: string
+          store_id: string
+          updated_at?: string
+        }
+        Update: {
+          commission_rate?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_billed_at?: string | null
+          monthly_fee?: number
+          next_billing_date?: string | null
+          plan_type?: Database["public"]["Enums"]["store_plan_type"]
+          started_at?: string
+          store_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_plans_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: true
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_plans_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: true
+            referencedRelation: "stores_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stores: {
         Row: {
           address_cep: string | null
@@ -1712,6 +1769,7 @@ export type Database = {
         | "churrasco"
         | "farmacias"
         | "docerias"
+      store_plan_type: "fixed" | "hybrid" | "commission_only"
       store_status: "analise" | "ativo" | "bloqueado"
     }
     CompositeTypes: {
@@ -1878,6 +1936,7 @@ export const Constants = {
         "farmacias",
         "docerias",
       ],
+      store_plan_type: ["fixed", "hybrid", "commission_only"],
       store_status: ["analise", "ativo", "bloqueado"],
     },
   },
