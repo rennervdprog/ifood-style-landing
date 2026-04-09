@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { LayoutDashboard, Truck, ChevronRight } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
 import CategoryScroll from "@/components/CategoryScroll";
@@ -16,8 +18,23 @@ import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 
 const PartnerClientView = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const { data: profile } = useQuery({
+    queryKey: ["partner-role-banner", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+    staleTime: 1000 * 60 * 5,
+  });
 
   const { data: stores, isLoading } = useQuery({
     queryKey: ["stores-client"],
@@ -56,6 +73,39 @@ const PartnerClientView = () => {
   return (
     <div className="min-h-screen bg-background pb-20">
       <AppHeader />
+
+      {/* Banner "Acessar Painel" para lojista/motoboy */}
+      {profile?.role === "lojista" && (
+        <button
+          onClick={() => navigate("/admin")}
+          className="mx-4 mt-3 flex items-center gap-3 rounded-xl bg-primary/10 border border-primary/20 p-3 transition-colors active:bg-primary/20"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <LayoutDashboard className="h-5 w-5" />
+          </div>
+          <div className="flex-1 text-left">
+            <p className="text-sm font-bold text-foreground">Acessar Painel do Lojista</p>
+            <p className="text-xs text-muted-foreground">Gerencie sua loja e pedidos</p>
+          </div>
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        </button>
+      )}
+      {profile?.role === "motoboy" && (
+        <button
+          onClick={() => navigate("/entregador")}
+          className="mx-4 mt-3 flex items-center gap-3 rounded-xl bg-primary/10 border border-primary/20 p-3 transition-colors active:bg-primary/20"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <Truck className="h-5 w-5" />
+          </div>
+          <div className="flex-1 text-left">
+            <p className="text-sm font-bold text-foreground">Acessar Painel de Entregas</p>
+            <p className="text-xs text-muted-foreground">Veja entregas disponíveis</p>
+          </div>
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        </button>
+      )}
+
       <FirstOrderBanner />
       <PromoBanners />
       
