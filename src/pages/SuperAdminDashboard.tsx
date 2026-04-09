@@ -5,6 +5,7 @@ import CouponManager from "@/components/CouponManager";
 import AdminStoreManager from "@/components/AdminStoreManager";
 import DeliveryFeeConfigPanel from "@/components/DeliveryFeeConfig";
 import TestStoreCreator from "@/components/TestStoreCreator";
+import AdminPlanManager from "@/components/AdminPlanManager";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -12,7 +13,7 @@ import { toast } from "sonner";
 import {
   ArrowLeft, DollarSign, ShoppingBag, TrendingUp, Clock,
   Store, Copy, AlertTriangle, Users, Bike, Wallet, CheckCircle2, Banknote, XCircle, Bell, Trash2, QrCode, Loader2, ArrowUpRight, ArrowDownRight, Settings,
-  LayoutDashboard, Shield, Ticket, RefreshCw, Truck, Menu, X, MapPin, Eye, Scale, Search, FileText, Mail, Phone, User, Download, Calendar, CreditCard, Receipt, ChevronDown, ChevronUp, Percent
+  LayoutDashboard, Shield, Ticket, RefreshCw, Truck, Menu, X, MapPin, Eye, Scale, Search, FileText, Mail, Phone, User, Download, Calendar, CreditCard, Receipt, ChevronDown, ChevronUp, Percent, Crown
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -21,10 +22,11 @@ import {
 import { addMoney, multiplyMoney, subtractMoney, sumMoney } from "@/lib/utils";
 
 type DateFilter = "today" | "yesterday" | "week";
-type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamentos" | "saques" | "sync" | "coupons" | "entrega" | "cidades" | "juridico";
+type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamentos" | "saques" | "sync" | "coupons" | "entrega" | "cidades" | "juridico" | "planos";
 
 const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; group: string }[] = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, group: "Principal" },
+  { key: "planos", label: "Planos", icon: Crown, group: "Principal" },
   { key: "financeiro", label: "Financeiro", icon: DollarSign, group: "Principal" },
   { key: "pagamentos", label: "Pagamentos", icon: CreditCard, group: "Principal" },
   { key: "saques", label: "Saques", icon: Wallet, group: "Principal" },
@@ -328,12 +330,13 @@ const SuperAdminDashboard = () => {
     const balanceText = entry.finalBalance >= 0
       ? `✅ O ItaSuper deve transferir R$ ${entry.finalBalance.toFixed(2)} para você.`
       : `⚠️ Valor a acertar com o ItaSuper: R$ ${Math.abs(entry.finalBalance).toFixed(2)}.`;
+    const storeRate = Math.round(getStoreRate(entry.storeId) * 100);
     const msg = `💰 *Fechamento ItaSuper (${period})*\n\nOlá *${entry.name}*!\n\n` +
       `📦 Total de Pedidos: ${entry.orderCount}\n` +
       `💵 Vendas Físicas (Dinheiro/Cartão): R$ ${entry.physicalSales.toFixed(2)}\n` +
       `📱 Vendas App (Pix): R$ ${entry.appSales.toFixed(2)}\n\n` +
-      `🏷️ Comissão 15% sobre Físicas: R$ ${entry.commissionDue.toFixed(2)}\n` +
-      `💸 Repasse Líquido (App - 15%): R$ ${entry.netTransfer.toFixed(2)}\n\n` +
+      `🏷️ Comissão ${storeRate}% sobre Físicas: R$ ${entry.commissionDue.toFixed(2)}\n` +
+      `💸 Repasse Líquido (App - ${storeRate}%): R$ ${entry.netTransfer.toFixed(2)}\n\n` +
       `---\n${balanceText}\n---`;
     navigator.clipboard.writeText(msg);
     toast.success(`Extrato de ${entry.name} copiado!`);
@@ -617,6 +620,7 @@ const SuperAdminDashboard = () => {
                 {activeTab === "coupons" && "Gerenciar cupons de desconto"}
                 {activeTab === "juridico" && "Consulta jurídica e dados arquivados"}
                 {activeTab === "sync" && "Sincronização com banco externo"}
+                {activeTab === "planos" && "Gerenciar planos e assinaturas das lojas"}
               </p>
             </div>
           </div>
@@ -658,6 +662,7 @@ const SuperAdminDashboard = () => {
               </div>
             )}
             {activeTab === "cidades" && <CidadesTab stores={stores} />}
+            {activeTab === "planos" && <AdminPlanManager />}
             {activeTab === "pagamentos" && <PagamentosSplitTab stores={stores || []} />}
             {activeTab === "juridico" && <JuridicoTab />}
             {activeTab === "saques" && (
@@ -713,7 +718,7 @@ const SuperAdminDashboard = () => {
                   ) : (
                     <>
                       <MetricCard icon={ShoppingBag} label="Vendas" value={`R$ ${metrics.totalSales.toFixed(2)}`} sublabel={`${metrics.totalOrders} pedidos`} />
-                      <MetricCard icon={TrendingUp} label="Comissão" value={`R$ ${metrics.commission.toFixed(2)}`} sublabel="15% subtotal" highlight />
+                      <MetricCard icon={TrendingUp} label="Comissão" value={`R$ ${metrics.commission.toFixed(2)}`} sublabel="taxa por loja" highlight />
                       <MetricCard icon={Clock} label="Ativos" value={String(metrics.activeOrders)} sublabel="em andamento" />
                       <MetricCard icon={AlertTriangle} label="Atraso" value={String(delayedOrders.length)} sublabel="> 60 min" alert={delayedOrders.length > 0} />
                     </>
@@ -1252,7 +1257,7 @@ const FinanceTab = ({
                 <TrendingUp className="h-4 w-4 text-primary" />
               </div>
             </div>
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Lucro (15%)</p>
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Lucro Comissões</p>
             <p className="text-xl font-black text-primary mt-0.5">R$ {financeTotals.grossProfit.toFixed(2)}</p>
           </div>
         </div>
