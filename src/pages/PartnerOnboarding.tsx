@@ -7,7 +7,8 @@ import { toast } from "sonner";
 import { z } from "zod";
 import {
   Store, Bike, ArrowLeft, ArrowRight, Camera, Upload,
-  User, FileText, Truck, ChefHat, MessageCircle
+  User, FileText, Truck, ChefHat, MessageCircle,
+  Package, TrendingUp, Crown, Check
 } from "lucide-react";
 import { Constants } from "@/integrations/supabase/types";
 import { maskWhatsApp, isValidWhatsApp, formatWhatsAppNumber } from "@/lib/whatsapp";
@@ -63,6 +64,7 @@ const PartnerOnboarding = () => {
   const [storeCategory, setStoreCategory] = useState("");
   const [vehicle, setVehicle] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
+  const [selectedPlan, setSelectedPlan] = useState<"fixed" | "hybrid" | "">("");
 
   // Check if user already has a profile with a role
   const { data: profile, isLoading: profileLoading } = useQuery({
@@ -161,6 +163,7 @@ const PartnerOnboarding = () => {
           _store_category: storeCategory,
           _avatar_url: avatarUrl,
           _whatsapp: formattedWhatsapp,
+          _selected_plan: selectedPlan || "commission_only",
         } as any);
         if (error) throw error;
         toast.success("Cadastro realizado com sucesso! Bem-vindo ao ItaSuper. 🎉");
@@ -184,7 +187,7 @@ const PartnerOnboarding = () => {
     }
   };
 
-  const totalSteps = 2;
+  const totalSteps = partnerType === "lojista" ? 3 : 2;
   const progressPercent = (step / totalSteps) * 100;
 
   return (
@@ -222,7 +225,7 @@ const PartnerOnboarding = () => {
 
             <div className="space-y-3">
               <button
-                onClick={() => { setPartnerType("lojista"); setStep(2); }}
+                onClick={() => { setPartnerType("lojista"); setStep(2); setSelectedPlan(""); }}
                 className={`w-full p-6 rounded-2xl border-2 transition-all text-left ${
                   partnerType === "lojista"
                     ? "border-primary bg-primary/5"
