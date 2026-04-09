@@ -596,279 +596,354 @@ const PedidosPage = () => {
     );
   }
 
+  // Separate active and completed orders
+  const activeOrders = orders?.filter((o: any) => !["entregue", "finalizado", "cancelado"].includes(o.status)) || [];
+  const completedOrders = orders?.filter((o: any) => ["entregue", "finalizado", "cancelado"].includes(o.status)) || [];
+
   return (
     <div className="min-h-screen bg-background pb-32 overflow-y-auto">
       <SimulationBanner />
-      <header className="sticky top-0 z-50 bg-card border-b border-border flex items-center justify-between h-14 px-4">
-        <h1 className="font-bold text-foreground">Meus Pedidos</h1>
-        {hasCompletedOrders && (
-          <button
-            onClick={clearHistory}
-            disabled={clearingHistory}
-            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
-          >
-            <Trash2 className="h-4 w-4" />
-            Limpar
-          </button>
-        )}
+      
+      {/* Header */}
+      <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border">
+        <div className="flex items-center justify-between h-14 px-4">
+          <div className="flex items-center gap-2">
+            <ClipboardList className="h-5 w-5 text-primary" />
+            <h1 className="font-black text-foreground">Meus Pedidos</h1>
+          </div>
+          {hasCompletedOrders && (
+            <button
+              onClick={clearHistory}
+              disabled={clearingHistory}
+              className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50 bg-muted/50 px-3 py-1.5 rounded-full"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Limpar
+            </button>
+          )}
+        </div>
       </header>
 
-      <div className="px-4 py-4 space-y-3">
+      <div className="px-4 py-4 space-y-4">
         {isLoading ? (
           <div className="space-y-3">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="bg-card rounded-2xl p-4 border border-border animate-pulse space-y-2">
-                <div className="h-4 bg-muted rounded w-1/2" />
-                <div className="h-3 bg-muted rounded w-3/4" />
-                <div className="h-4 bg-muted rounded w-1/4" />
+              <div key={i} className="bg-card rounded-2xl p-5 border border-border animate-pulse space-y-3">
+                <div className="flex justify-between">
+                  <div className="h-5 bg-muted rounded-full w-32" />
+                  <div className="h-5 bg-muted rounded-full w-24" />
+                </div>
+                <div className="h-8 bg-muted rounded w-full" />
+                <div className="h-4 bg-muted rounded w-2/3" />
               </div>
             ))}
           </div>
         ) : orders && orders.length > 0 ? (
-          orders.map((order: any) => {
-            const config = statusConfig[order.status] || statusConfig.pendente;
-            const StatusIcon = config.icon;
-            const isWaitingPayment = order.status === "aguardando_pagamento";
-            const isCancelled = order.status === "cancelado";
-                const isPaid = !["aguardando_pagamento", "cancelado"].includes(order.status);
-                const isOwnDeliveryStore = order.stores?.delivery_mode === "own";
-                const showPin = order.delivery_pin && isPaid && !isOwnDeliveryStore && !["entregue", "finalizado"].includes(order.status);
-            return (
-              <div key={order.id} className={`bg-card rounded-2xl p-4 border ${isCancelled ? "border-red-500/30 opacity-60" : "border-border"}`}>
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-bold text-sm text-foreground">
-                    {order.stores?.name || "Loja"}
-                  </h3>
-                  <div className="flex items-center gap-2">
-                    <DeliveryTimeEstimate status={order.status} createdAt={order.created_at} confirmedAt={order.confirmed_at} />
-                    <div className={`flex items-center gap-1 text-xs font-bold ${config.color}`}>
-                      <StatusIcon className="h-3.5 w-3.5" />
-                      {config.label}
-                    </div>
-                  </div>
-                </div>
+          <>
+            {/* Active orders section */}
+            {activeOrders.length > 0 && (
+              <div className="space-y-3">
+                <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider px-1">
+                  Pedidos em andamento ({activeOrders.length})
+                </h2>
+                {activeOrders.map((order: any) => {
+                  const config = statusConfig[order.status] || statusConfig.pendente;
+                  const StatusIcon = config.icon;
+                  const isWaitingPayment = order.status === "aguardando_pagamento";
+                  const isPaid = !["aguardando_pagamento", "cancelado"].includes(order.status);
+                  const isOwnDeliveryStore = order.stores?.delivery_mode === "own";
+                  const showPin = order.delivery_pin && isPaid && !isOwnDeliveryStore && !["entregue", "finalizado"].includes(order.status);
 
-                {/* Waiting Payment Banner */}
-                {isWaitingPayment && (() => {
-                  const hasSavedPix = savedPixData[order.id];
                   return (
-                  <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-3 mb-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <div className="relative">
-                          <Loader2 className="h-4 w-4 text-amber-500 animate-spin" />
+                    <div key={order.id} className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
+                      {/* Status bar top */}
+                      <div className={`px-4 py-2.5 flex items-center justify-between ${config.bg} border-b ${config.border}`}>
+                        <div className="flex items-center gap-2">
+                          <StatusIcon className={`h-4 w-4 ${config.color}`} />
+                          <span className={`text-xs font-bold ${config.color}`}>{config.label}</span>
                         </div>
-                        <span className="text-xs font-semibold text-amber-500">Aguardando Pagamento</span>
+                        <div className="flex items-center gap-2">
+                          <DeliveryTimeEstimate status={order.status} createdAt={order.created_at} confirmedAt={order.confirmed_at} />
+                          <span className="text-[10px] text-muted-foreground font-medium">
+                            #{order.id.substring(0, 6).toUpperCase()}
+                          </span>
+                        </div>
                       </div>
-                      <button
-                        onClick={() => cancelOrder(order.id)}
-                        disabled={cancellingOrderId === order.id}
-                        className="text-muted-foreground hover:text-red-500 transition-colors"
-                      >
-                        <XCircle className="h-4 w-4" />
-                      </button>
-                    </div>
 
-                    {/* Show saved QR code inline */}
-                    {hasSavedPix && (hasSavedPix.qrCode || hasSavedPix.qrCodeBase64) && (
-                      <div className="space-y-3 mb-3">
-                        {hasSavedPix.qrCodeBase64 && (
-                          <div className="flex justify-center">
-                            <img
-                              src={hasSavedPix.qrCodeBase64.startsWith("data:") ? hasSavedPix.qrCodeBase64 : `data:image/png;base64,${hasSavedPix.qrCodeBase64}`}
-                              alt="QR Code PIX"
-                              className="w-48 h-48 rounded-xl border border-border"
-                            />
+                      <div className="p-4 space-y-3">
+                        {/* Store name */}
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-bold text-foreground text-sm">{order.stores?.name || "Loja"}</h3>
+                          <span className="text-sm font-black text-primary">
+                            R$ {Number(order.total_price).toFixed(2)}
+                          </span>
+                        </div>
+
+                        {/* Timeline */}
+                        {!isWaitingPayment && <StatusTimeline status={order.status} />}
+
+                        {/* Waiting Payment */}
+                        {isWaitingPayment && (() => {
+                          const hasSavedPix = savedPixData[order.id];
+                          return (
+                            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <Loader2 className="h-4 w-4 text-amber-500 animate-spin" />
+                                  <span className="text-xs font-semibold text-amber-600">Aguardando Pagamento</span>
+                                </div>
+                                <button
+                                  onClick={() => cancelOrder(order.id)}
+                                  disabled={cancellingOrderId === order.id}
+                                  className="text-muted-foreground hover:text-red-500 transition-colors"
+                                >
+                                  <XCircle className="h-4 w-4" />
+                                </button>
+                              </div>
+
+                              {hasSavedPix && (hasSavedPix.qrCode || hasSavedPix.qrCodeBase64) && (
+                                <div className="space-y-3 mb-3">
+                                  {hasSavedPix.qrCodeBase64 && (
+                                    <div className="flex justify-center">
+                                      <img
+                                        src={hasSavedPix.qrCodeBase64.startsWith("data:") ? hasSavedPix.qrCodeBase64 : `data:image/png;base64,${hasSavedPix.qrCodeBase64}`}
+                                        alt="QR Code PIX"
+                                        className="w-48 h-48 rounded-xl border border-border"
+                                      />
+                                    </div>
+                                  )}
+                                  {hasSavedPix.qrCode && (
+                                    <button
+                                      onClick={() => copyPixCode(hasSavedPix.qrCode!)}
+                                      className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold py-2.5 rounded-xl text-xs"
+                                    >
+                                      <Copy className="h-3.5 w-3.5" />
+                                      Copiar Código PIX
+                                    </button>
+                                  )}
+                                  <div className="bg-card rounded-lg p-2 text-center">
+                                    <p className="text-[10px] text-muted-foreground">
+                                      📱 Escaneie o QR Code ou cole o código no app do seu banco.
+                                    </p>
+                                    <p className="text-[10px] text-primary font-bold mt-1">
+                                      ✅ Após pagar, seu pedido será liberado automaticamente!
+                                    </p>
+                                  </div>
+                                  <button
+                                    onClick={() => generatePix(order)}
+                                    disabled={payingOrderId === order.id || isPixBlocked}
+                                    className="w-full flex items-center justify-center gap-2 text-muted-foreground font-medium py-1.5 text-[10px] hover:text-foreground transition-colors"
+                                  >
+                                    <RefreshCw className="h-3 w-3" />
+                                    Gerar novo QR Code
+                                  </button>
+                                </div>
+                              )}
+
+                              {!hasSavedPix && (
+                                <>
+                                  {safetyModeMs > 0 && (
+                                    <div className="rounded-lg border border-amber-300 bg-amber-50 p-2 mb-2 flex items-start gap-2">
+                                      <ShieldAlert className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                                      <p className="text-[10px] text-amber-600">
+                                        Manutenção temporária. Voltará em {formatCooldownTime(safetyModeMs)}.
+                                      </p>
+                                    </div>
+                                  )}
+                                  {!safetyModeMs && pixCooldownMs > 0 && (
+                                    <div className="rounded-lg border border-amber-300 bg-amber-50 p-2 mb-2 flex items-start gap-2">
+                                      <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                                      <p className="text-[10px] text-amber-600">
+                                        Muitas tentativas. Aguarde {formatCooldownTime(pixCooldownMs)}.
+                                      </p>
+                                    </div>
+                                  )}
+                                  <button
+                                    onClick={() => generatePix(order)}
+                                    disabled={payingOrderId === order.id || isPixBlocked}
+                                    className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold py-2.5 rounded-xl text-xs disabled:opacity-50"
+                                  >
+                                    {isPixBlocked ? (
+                                      <>
+                                        <ShieldAlert className="h-3.5 w-3.5" />
+                                        Aguarde...
+                                      </>
+                                    ) : (
+                                      <>
+                                        <QrCode className="h-3.5 w-3.5" />
+                                        {payingOrderId === order.id ? "Gerando..." : "Pagar com PIX"}
+                                      </>
+                                    )}
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          );
+                        })()}
+
+                        {/* Delivery PIN */}
+                        {showPin && (
+                          <div className="bg-primary/5 border border-primary/20 rounded-xl p-3">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Lock className="h-4 w-4 text-primary" />
+                              <span className="text-xs font-bold text-primary">Código de Entrega</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-2xl font-black text-foreground tracking-[0.3em]">
+                                {order.delivery_pin}
+                              </span>
+                              <button
+                                onClick={() => copyPin(order.delivery_pin)}
+                                className="flex items-center gap-1 text-xs text-primary font-bold px-3 py-1.5 rounded-lg bg-primary/10"
+                              >
+                                <Copy className="h-3 w-3" />
+                                Copiar
+                              </button>
+                            </div>
+                            <p className="text-[10px] text-muted-foreground mt-1">
+                              Informe ao motoboy apenas quando receber seu pedido.
+                            </p>
                           </div>
                         )}
-                        {hasSavedPix.qrCode && (
+
+                        {/* Confirm Delivery */}
+                        {["saiu_entrega", "em_transito"].includes(order.status) && !(order as any).delivery_confirmed_by_client && (
+                          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3">
+                            <div className="flex items-center gap-2 mb-2">
+                              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                              <span className="text-xs font-bold text-emerald-600">Recebeu seu pedido?</span>
+                            </div>
+                            <button
+                              onClick={() => handleConfirmDelivery(order.id)}
+                              disabled={confirmingDelivery === order.id}
+                              className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2.5 rounded-xl text-xs disabled:opacity-50 transition-colors"
+                            >
+                              {confirmingDelivery === order.id ? (
+                                <span className="flex items-center justify-center gap-2">
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  Confirmando...
+                                </span>
+                              ) : (
+                                "✅ Sim, recebi meu pedido!"
+                              )}
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Items */}
+                        <div className="bg-muted/30 rounded-xl p-3">
+                          <div className="text-xs text-muted-foreground space-y-1">
+                            {order.order_items?.map((item: any) => (
+                              <div key={item.id} className="flex justify-between">
+                                <span>{item.quantity}x {item.products?.name || "Item"}</span>
+                                <span className="font-medium text-foreground">R$ {(item.unit_price * item.quantity).toFixed(2)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Footer: date + chat */}
+                        <div className="flex items-center justify-between pt-1">
+                          <span className="text-[10px] text-muted-foreground">
+                            {new Date(order.created_at).toLocaleDateString("pt-BR", {
+                              day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
+                            })}
+                          </span>
+                          {!["cancelado", "finalizado"].includes(order.status) && (
+                            <OrderChat orderId={order.id} storeName={order.stores?.name || "Loja"} />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Completed orders */}
+            {completedOrders.length > 0 && (
+              <div className="space-y-3">
+                <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider px-1 mt-2">
+                  Anteriores ({completedOrders.length})
+                </h2>
+                {completedOrders.map((order: any) => {
+                  const config = statusConfig[order.status] || statusConfig.pendente;
+                  const StatusIcon = config.icon;
+                  const isCancelled = order.status === "cancelado";
+
+                  return (
+                    <div key={order.id} className={`bg-card rounded-2xl border overflow-hidden ${isCancelled ? "border-red-200 opacity-60" : "border-border"}`}>
+                      {/* Compact header */}
+                      <div className="px-4 py-3 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${config.bg}`}>
+                            <StatusIcon className={`h-4 w-4 ${config.color}`} />
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-sm text-foreground">{order.stores?.name || "Loja"}</h3>
+                            <span className="text-[10px] text-muted-foreground">
+                              {new Date(order.created_at).toLocaleDateString("pt-BR", {
+                                day: "2-digit", month: "2-digit", year: "2-digit",
+                              })} · {config.label}
+                            </span>
+                          </div>
+                        </div>
+                        <span className="text-sm font-bold text-foreground">
+                          R$ {Number(order.total_price).toFixed(2)}
+                        </span>
+                      </div>
+
+                      {/* Items summary */}
+                      <div className="px-4 pb-2">
+                        <p className="text-xs text-muted-foreground truncate">
+                          {order.order_items?.map((item: any) => `${item.quantity}x ${item.products?.name || "Item"}`).join(", ")}
+                        </p>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="px-4 pb-3 flex items-center gap-2">
+                        {["entregue", "finalizado"].includes(order.status) && (
                           <button
-                            onClick={() => copyPixCode(hasSavedPix.qrCode!)}
-                            className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold py-2.5 rounded-xl text-xs"
+                            onClick={() => {
+                              navigate(order.stores?.slug ? `/${order.stores.slug}` : `/loja/${order.store_id}`);
+                              toast.info("Adicione os mesmos itens ao carrinho!");
+                            }}
+                            className="flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-full hover:bg-primary/20 transition-colors"
                           >
-                            <Copy className="h-3.5 w-3.5" />
-                            Copiar Código PIX
+                            <RefreshCw className="h-3 w-3" />
+                            Pedir novamente
                           </button>
                         )}
-                        <div className="bg-muted/50 rounded-lg p-2 text-center">
-                          <p className="text-[10px] text-muted-foreground">
-                            📱 Escaneie o QR Code ou cole o código no app do seu banco.
-                          </p>
-                          <p className="text-[10px] text-primary font-bold mt-1">
-                            ✅ Após pagar, seu pedido será liberado automaticamente!
-                          </p>
-                        </div>
-                        {/* Button to regenerate if needed */}
-                        <button
-                          onClick={() => generatePix(order)}
-                          disabled={payingOrderId === order.id || isPixBlocked}
-                          className="w-full flex items-center justify-center gap-2 text-muted-foreground font-medium py-1.5 text-[10px] hover:text-foreground transition-colors"
-                        >
-                          <RefreshCw className="h-3 w-3" />
-                          Gerar novo QR Code
-                        </button>
                       </div>
-                    )}
 
-                    {/* Show generate button only if no saved PIX */}
-                    {!hasSavedPix && (
-                      <>
-                        {/* Safety mode / cooldown banners */}
-                        {safetyModeMs > 0 && (
-                          <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-2 mb-2 flex items-start gap-2">
-                            <ShieldAlert className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
-                            <p className="text-[10px] text-amber-600">
-                              Manutenção temporária no sistema de pagamentos. Voltará em {formatCooldownTime(safetyModeMs)}.
-                            </p>
-                          </div>
-                        )}
-                        {!safetyModeMs && pixCooldownMs > 0 && (
-                          <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-2 mb-2 flex items-start gap-2">
-                            <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
-                            <p className="text-[10px] text-amber-600">
-                              Muitas tentativas. Aguarde {formatCooldownTime(pixCooldownMs)}.
-                            </p>
-                          </div>
-                        )}
-
-                        <button
-                          onClick={() => generatePix(order)}
-                          disabled={payingOrderId === order.id || isPixBlocked}
-                          className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold py-2.5 rounded-xl text-xs disabled:opacity-50"
-                        >
-                          {isPixBlocked ? (
-                            <>
-                              <ShieldAlert className="h-3.5 w-3.5" />
-                              Aguarde...
-                            </>
-                          ) : (
-                            <>
-                              <QrCode className="h-3.5 w-3.5" />
-                              {payingOrderId === order.id ? "Gerando..." : "Pagar com PIX"}
-                            </>
-                          )}
-                        </button>
-                      </>
-                    )}
-                  </div>
-                  );
-                })()}
-
-                {/* Delivery PIN Card */}
-                {showPin && (
-                  <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 mb-3">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Lock className="h-4 w-4 text-primary" />
-                      <span className="text-xs font-bold text-primary">Código de Entrega</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-2xl font-black text-foreground tracking-[0.3em]">
-                        {order.delivery_pin}
-                      </span>
-                      <button
-                        onClick={() => copyPin(order.delivery_pin)}
-                        className="flex items-center gap-1 text-xs text-primary font-bold px-2 py-1 rounded-lg bg-primary/10"
-                      >
-                        <Copy className="h-3 w-3" />
-                        Copiar
-                      </button>
-                    </div>
-                    <p className="text-[10px] text-muted-foreground mt-1">
-                      Informe ao motoboy apenas quando receber seu pedido.
-                    </p>
-                  </div>
-                )}
-
-                {/* Client Delivery Confirmation */}
-                {["saiu_entrega", "em_transito"].includes(order.status) && !(order as any).delivery_confirmed_by_client && (
-                  <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3 mb-3">
-                    <div className="flex items-center gap-2 mb-2">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                      <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Recebeu seu pedido?</span>
-                    </div>
-                    <p className="text-[10px] text-muted-foreground mb-2">
-                      Confirme quando receber para avaliar e ajudar outros clientes.
-                    </p>
-                    <button
-                      onClick={() => handleConfirmDelivery(order.id)}
-                      disabled={confirmingDelivery === order.id}
-                      className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 rounded-xl text-xs disabled:opacity-50 transition-colors"
-                    >
-                      {confirmingDelivery === order.id ? (
-                        <span className="flex items-center justify-center gap-2">
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          Confirmando...
-                        </span>
-                      ) : (
-                        "✅ Sim, recebi meu pedido!"
+                      {/* Rating */}
+                      {["entregue", "finalizado"].includes(order.status) && user && !existingRatings?.has(order.id) && (
+                        <div className="px-4 pb-4 border-t border-border pt-3">
+                          <OrderRating
+                            orderId={order.id}
+                            storeId={order.store_id}
+                            storeName={order.stores?.name || "Loja"}
+                            userId={user.id}
+                            onRated={() => refetchRatings()}
+                          />
+                        </div>
                       )}
-                    </button>
-                  </div>
-                )}
-
-                <div className="text-xs text-muted-foreground space-y-0.5">
-                  {order.order_items?.map((item: any) => (
-                    <p key={item.id}>
-                      {item.quantity}x {item.products?.name || "Item"}
-                    </p>
-                  ))}
-                </div>
-                <div className="flex items-center justify-between mt-3 pt-2 border-t border-border">
-                  <span className="text-xs text-muted-foreground">
-                    {new Date(order.created_at).toLocaleDateString("pt-BR", {
-                      day: "2-digit",
-                      month: "2-digit",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </span>
-                  <span className="text-sm font-black text-primary">
-                    R$ {Number(order.total_price).toFixed(2)}
-                  </span>
-                </div>
-
-                {/* Chat + Repeat buttons */}
-                <div className="flex gap-2 mt-3">
-                  {!["cancelado", "finalizado"].includes(order.status) && (
-                    <OrderChat orderId={order.id} storeName={order.stores?.name || "Loja"} />
-                  )}
-                  {["entregue", "finalizado"].includes(order.status) && (
-                    <button
-                      onClick={() => {
-                        navigate(order.stores?.slug ? `/${order.stores.slug}` : `/loja/${order.store_id}`);
-                        toast.info("Adicione os mesmos itens ao carrinho!");
-                      }}
-                      className="flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-lg hover:bg-primary/20 transition-colors"
-                    >
-                      <RefreshCw className="h-3.5 w-3.5" />
-                      Pedir novamente
-                    </button>
-                  )}
-                </div>
-
-                {/* Rating section for delivered/finalized orders */}
-                {["entregue", "finalizado"].includes(order.status) && user && !existingRatings?.has(order.id) && (
-                  <div className="mt-3">
-                    <OrderRating
-                      orderId={order.id}
-                      storeId={order.store_id}
-                      storeName={order.stores?.name || "Loja"}
-                      userId={user.id}
-                      onRated={() => refetchRatings()}
-                    />
-                  </div>
-                )}
+                    </div>
+                  );
+                })}
               </div>
-            );
-          })
+            )}
+          </>
         ) : (
           <div className="flex flex-col items-center justify-center py-20 text-center px-6">
-            <div className="text-6xl mb-4">🍔</div>
-            <h2 className="text-lg font-bold text-foreground mb-1">Tudo limpo por aqui!</h2>
-            <p className="text-sm text-muted-foreground mb-6">Que tal pedir algo gostoso agora?</p>
+            <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+              <ClipboardList className="h-10 w-10 text-primary" />
+            </div>
+            <h2 className="text-lg font-bold text-foreground mb-1">Nenhum pedido ainda</h2>
+            <p className="text-sm text-muted-foreground mb-6">Explore as lojas e faça seu primeiro pedido!</p>
             <button
               onClick={() => navigate("/")}
-              className="bg-primary text-primary-foreground font-bold px-8 py-3 rounded-2xl text-sm"
+              className="bg-primary text-primary-foreground font-bold px-8 py-3 rounded-2xl text-sm shadow-lg"
             >
               Ver Restaurantes
             </button>
@@ -878,11 +953,16 @@ const PedidosPage = () => {
 
       {/* PIX QR Code Modal */}
       {pixModal && (
-        <div className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-4" onClick={() => setPixModal(null)}>
-          <div className="bg-card rounded-2xl p-6 w-full max-w-sm border border-border" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setPixModal(null)}>
+          <div className="bg-card rounded-2xl p-6 w-full max-w-sm border border-border shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-foreground text-lg">Pagamento PIX</h3>
-              <button onClick={() => setPixModal(null)} className="text-muted-foreground hover:text-foreground">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <QrCode className="h-4 w-4 text-primary" />
+                </div>
+                <h3 className="font-bold text-foreground">Pagamento PIX</h3>
+              </div>
+              <button onClick={() => setPixModal(null)} className="text-muted-foreground hover:text-foreground p-1 rounded-full hover:bg-muted transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -894,7 +974,6 @@ const PedidosPage = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {/* QR Code Image */}
                 {pixModal.qrCodeBase64 && (
                   <div className="flex justify-center">
                     <img
@@ -905,18 +984,16 @@ const PedidosPage = () => {
                   </div>
                 )}
 
-                {/* Copy Pix Code */}
                 {pixModal.qrCode && (
                   <button
                     onClick={() => copyPixCode(pixModal.qrCode!)}
-                    className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold py-3 rounded-xl text-sm"
+                    className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold py-3 rounded-xl text-sm shadow-lg"
                   >
                     <Copy className="h-4 w-4" />
                     Copiar Código PIX
                   </button>
                 )}
 
-                {/* Simulation: Simulate Payment Button */}
                 {SIMULATION_MODE && (
                   <button
                     onClick={handleSimulateOrderPayment}
