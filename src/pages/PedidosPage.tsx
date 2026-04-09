@@ -24,16 +24,67 @@ import {
 import { SIMULATION_MODE, createSimulatedPixCharge, simulatePaymentDelay } from "@/lib/pixSimulation";
 import SimulationBanner from "@/components/SimulationBanner";
 
-const statusConfig: Record<string, { label: string; icon: React.ElementType; color: string }> = {
-  aguardando_pagamento: { label: "Aguardando Pagamento", icon: Clock, color: "text-amber-500" },
-  pendente: { label: "Pendente", icon: Clock, color: "text-yellow-500" },
-  preparando: { label: "Preparando", icon: ChefHat, color: "text-orange-500" },
-  pronto_para_entrega: { label: "Pronto p/ entrega", icon: CheckCircle2, color: "text-purple-500" },
-  saiu_entrega: { label: "Saiu p/ entrega", icon: Truck, color: "text-blue-500" },
-  em_transito: { label: "Em trânsito", icon: Truck, color: "text-cyan-500" },
-  entregue: { label: "Entregue", icon: CheckCircle2, color: "text-green-500" },
-  finalizado: { label: "Finalizado", icon: CheckCircle2, color: "text-green-500" },
-  cancelado: { label: "Cancelado", icon: Clock, color: "text-red-500" },
+const statusConfig: Record<string, { label: string; icon: React.ElementType; color: string; bg: string; border: string }> = {
+  aguardando_pagamento: { label: "Aguardando Pagamento", icon: Clock, color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-200" },
+  pendente: { label: "Pedido Recebido", icon: Clock, color: "text-yellow-600", bg: "bg-yellow-50", border: "border-yellow-200" },
+  preparando: { label: "Preparando", icon: ChefHat, color: "text-orange-600", bg: "bg-orange-50", border: "border-orange-200" },
+  pronto_para_entrega: { label: "Pronto p/ Entrega", icon: CheckCircle2, color: "text-purple-600", bg: "bg-purple-50", border: "border-purple-200" },
+  saiu_entrega: { label: "Saiu p/ Entrega", icon: Truck, color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-200" },
+  em_transito: { label: "Em Trânsito", icon: Truck, color: "text-cyan-600", bg: "bg-cyan-50", border: "border-cyan-200" },
+  entregue: { label: "Entregue", icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-200" },
+  finalizado: { label: "Finalizado", icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-200" },
+  cancelado: { label: "Cancelado", icon: XCircle, color: "text-red-500", bg: "bg-red-50", border: "border-red-200" },
+};
+
+/* Status timeline steps for visual progress */
+const statusSteps = ["pendente", "preparando", "pronto_para_entrega", "saiu_entrega", "entregue"];
+
+const getStepIndex = (status: string) => {
+  if (status === "aguardando_pagamento") return -1;
+  if (status === "em_transito") return 3; // same visual as saiu_entrega
+  if (status === "finalizado") return 4; // same as entregue
+  return statusSteps.indexOf(status);
+};
+
+const StatusTimeline = ({ status }: { status: string }) => {
+  const currentIdx = getStepIndex(status);
+  if (currentIdx < 0 || status === "cancelado") return null;
+  
+  const labels = ["Recebido", "Preparando", "Pronto", "A caminho", "Entregue"];
+  const icons = [Clock, ChefHat, CheckCircle2, Truck, CheckCircle2];
+  
+  return (
+    <div className="flex items-center justify-between mt-3 mb-1 px-1">
+      {labels.map((label, i) => {
+        const Icon = icons[i];
+        const done = i <= currentIdx;
+        const active = i === currentIdx;
+        return (
+          <div key={label} className="flex flex-col items-center gap-1 flex-1 relative">
+            {i > 0 && (
+              <div
+                className={`absolute top-3 -left-1/2 right-1/2 h-0.5 ${i <= currentIdx ? "bg-primary" : "bg-border"}`}
+              />
+            )}
+            <div
+              className={`relative z-10 w-6 h-6 rounded-full flex items-center justify-center transition-all ${
+                active
+                  ? "bg-primary text-primary-foreground ring-4 ring-primary/20"
+                  : done
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground"
+              }`}
+            >
+              <Icon className="h-3 w-3" />
+            </div>
+            <span className={`text-[9px] font-bold leading-tight text-center ${active ? "text-primary" : done ? "text-foreground" : "text-muted-foreground"}`}>
+              {label}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
 };
 
 const PedidosPage = () => {
