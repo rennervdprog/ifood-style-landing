@@ -41,13 +41,14 @@ Deno.serve(async (req) => {
       ? "https://api.asaas.com/v3"
       : "https://sandbox.asaas.com/api/v3";
 
-    // Get all active plans with monthly_fee > 0 that are due for billing
+    // Get all active plans with monthly_fee > 0 that are due for billing and not in trial
     const now = new Date();
     const { data: duePlans, error: plansError } = await supabase
       .from("store_plans")
       .select("*, stores!inner(id, name, owner_id, asaas_account_id, status)")
       .gt("monthly_fee", 0)
       .eq("is_active", true)
+      .or(`trial_ends_at.is.null,trial_ends_at.lte.${now.toISOString()}`)
       .or(`next_billing_date.is.null,next_billing_date.lte.${now.toISOString()}`);
 
     if (plansError) {

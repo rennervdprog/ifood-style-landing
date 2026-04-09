@@ -265,6 +265,10 @@ const CadastroLojista = () => {
                 <div className="text-center mb-2">
                   <h2 className="text-lg font-black text-foreground">Escolha seu plano</h2>
                   <p className="text-xs text-muted-foreground mt-1">Sem contrato. Troque quando quiser.</p>
+                  <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30">
+                    <Zap className="h-3.5 w-3.5 text-emerald-500" />
+                    <span className="text-xs font-bold text-emerald-600">7 dias grátis em todos os planos!</span>
+                  </div>
                 </div>
 
                 {/* Plano Essencial */}
@@ -288,6 +292,7 @@ const CadastroLojista = () => {
                       <span className="text-xs text-muted-foreground">/mês</span>
                     </div>
                   </div>
+                  <p className="text-[10px] font-bold text-emerald-500 mb-1">🎁 7 dias grátis para testar</p>
                   <div className="flex flex-wrap gap-1.5 mt-2">
                     {["0% taxa", "Dinheiro/Cartão", "Painel básico"].map(tag => (
                       <span key={tag} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{tag}</span>
@@ -317,6 +322,7 @@ const CadastroLojista = () => {
                       <span className="text-xs text-muted-foreground">/mês</span>
                     </div>
                   </div>
+                  <p className="text-[10px] font-bold text-emerald-500 mb-1">🎁 7 dias grátis para testar</p>
                   <p className="text-[10px] font-semibold text-primary mb-2">+ 2,5% por pedido entregue</p>
                   <div className="flex flex-wrap gap-1.5">
                     {["PIX integrado", "CRM completo", "Relatórios"].map(tag => (

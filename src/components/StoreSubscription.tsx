@@ -154,6 +154,18 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Trial banner */}
+          {plan.isInTrial && (
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
+              <Zap className="h-5 w-5 text-emerald-500 shrink-0" />
+              <div>
+                <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400">
+                  Período de teste grátis — {plan.trialDaysLeft} {plan.trialDaysLeft === 1 ? "dia restante" : "dias restantes"}
+                </p>
+                <p className="text-xs text-muted-foreground">Aproveite todos os recursos sem custo. A cobrança começa após o período de teste.</p>
+              </div>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-background/60 rounded-xl p-4 border border-border">
               <div className="flex items-center gap-2 text-muted-foreground text-sm mb-1">
