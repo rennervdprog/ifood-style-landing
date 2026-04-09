@@ -199,14 +199,19 @@ const SuperAdminDashboard = () => {
     return () => { supabase.removeChannel(channel); };
   }, [isAdmin, queryClient]);
 
+  const getStoreRate = (storeId: string) => {
+    const store = stores?.find((s: any) => s.id === storeId);
+    return ((store as any)?.commission_rate ?? 15) / 100;
+  };
+
   const metrics = useMemo(() => {
     if (!orders) return { totalSales: 0, commission: 0, activeOrders: 0, totalOrders: 0 };
     const totalSales = sumMoney(orders.map((order) => order.total_price));
-    const commission = sumMoney(orders.map((order) => multiplyMoney(order.subtotal, 0.15)));
+    const commission = sumMoney(orders.map((order) => multiplyMoney(order.subtotal, getStoreRate(order.store_id))));
     const activeStatuses = ["pendente", "preparando", "pronto_para_entrega", "em_transito", "saiu_entrega"];
     const activeOrders = orders.filter(o => activeStatuses.includes(o.status)).length;
     return { totalSales, commission, activeOrders, totalOrders: orders.length };
-  }, [orders]);
+  }, [orders, stores]);
 
   const storeSettlement = useMemo(() => {
     if (!financeOrders || !stores) return [];
@@ -231,9 +236,10 @@ const SuperAdminDashboard = () => {
       entry.deliveryFees = addMoney(entry.deliveryFees, deliveryFee);
       entry.orderCount += 1;
     });
-    map.forEach(entry => {
-      entry.commissionDue = multiplyMoney(entry.physicalSales, 0.15);
-      entry.netTransfer = subtractMoney(entry.appSales, multiplyMoney(entry.appSales, 0.15));
+    map.forEach((entry, storeId) => {
+      const rate = getStoreRate(storeId);
+      entry.commissionDue = multiplyMoney(entry.physicalSales, rate);
+      entry.netTransfer = subtractMoney(entry.appSales, multiplyMoney(entry.appSales, rate));
       entry.finalBalance = subtractMoney(entry.netTransfer, entry.commissionDue);
     });
     return Array.from(map.values()).filter(e => e.orderCount > 0).sort((a, b) => b.totalSales - a.totalSales);
@@ -262,10 +268,10 @@ const SuperAdminDashboard = () => {
 
   const financeTotals = useMemo(() => {
     const totalVolume = sumMoney(storeSettlement.map((entry) => entry.totalSales));
-    const grossProfit = sumMoney(storeSettlement.map((entry) => multiplyMoney(entry.totalSales, 0.15)));
+    const grossProfit = sumMoney(storeSettlement.map((entry) => entry.commissionDue + multiplyMoney(entry.appSales, getStoreRate(entry.storeId))));
     const totalDriverFees = sumMoney(driverSettlement.map((entry) => entry.appFees));
     return { totalVolume, grossProfit, totalDriverFees };
-  }, [storeSettlement, driverSettlement]);
+  }, [storeSettlement, driverSettlement, stores]);
 
   const storeConciliation = useMemo(() => {
     if (!orders || !stores) return [];
@@ -275,7 +281,7 @@ const SuperAdminDashboard = () => {
       const entry = map.get(o.store_id);
       if (entry) {
         entry.totalSold = addMoney(entry.totalSold, o.total_price);
-        entry.commission = addMoney(entry.commission, multiplyMoney(o.subtotal, 0.15));
+        entry.commission = addMoney(entry.commission, multiplyMoney(o.subtotal, getStoreRate(o.store_id)));
         entry.orders += 1;
       }
     });
@@ -1499,7 +1505,7 @@ const FinanceTab = ({
               const dbComissao = Number(balance?.comissao_pendente || balance?.pending_commission || 0);
               const isExpanded = expandedStore === entry.storeId;
               const pixInfo = getStorePixInfo(entry.storeId);
-              const splitPaid = multiplyMoney(entry.appSales, 0.15);
+              const splitPaid = multiplyMoney(entry.appSales, getStoreRate(entry.storeId));
 
               return (
                 <div key={entry.storeId} className="bg-card rounded-2xl border border-border overflow-hidden transition-all">
