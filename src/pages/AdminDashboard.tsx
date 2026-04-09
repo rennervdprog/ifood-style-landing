@@ -25,6 +25,7 @@ import StoreFinancePanel from "@/components/StoreFinancePanel";
 import StoreFinanceBasic from "@/components/StoreFinanceBasic";
 import StoreSubscription from "@/components/StoreSubscription";
 import CommissionAlert from "@/components/CommissionAlert";
+import LoyaltyConfigPanel from "@/components/LoyaltyConfigPanel";
 import { printThermalReceipt } from "@/lib/thermalPrint";
 import { requestNotificationPermission, notifyNewOrder, pushNotifyDeliveryAvailable } from "@/lib/notifications";
 import { sendPushNotification } from "@/lib/firebase";
@@ -33,7 +34,7 @@ import ProductTour, { lojistaTourSteps } from "@/components/ProductTour";
 import { useStorePlan } from "@/hooks/useStorePlan";
 
 type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_entrega" | "em_transito" | "entregue" | "finalizado";
-type DashboardTab = "dashboard" | "orders" | "menu" | "addons" | "hours" | "settings" | "finance" | "clients" | "reports" | "subscription";
+type DashboardTab = "dashboard" | "orders" | "menu" | "addons" | "hours" | "settings" | "finance" | "clients" | "reports" | "subscription" | "loyalty";
 
 const ALERT_SOUND_URL = "https://actions.google.com/sounds/v1/alarms/beep_short.ogg";
 const CASH_REGISTER_SOUND_URL = "https://actions.google.com/sounds/v1/office/cash_register.ogg";
@@ -74,6 +75,7 @@ const baseSidebarItems: { key: DashboardTab; label: string; icon: React.ElementT
   { key: "finance", label: "Finanças", icon: Coins },
   { key: "reports", label: "Relatórios", icon: BarChart3 },
   { key: "subscription", label: "Assinatura", icon: CreditCard },
+  { key: "loyalty", label: "Fidelidade", icon: Star },
   { key: "settings", label: "Configurações", icon: Settings },
 ];
 
@@ -92,6 +94,7 @@ const moreSheetItems: { key: DashboardTab; label: string; icon: React.ElementTyp
   { key: "finance", label: "Finanças", icon: Coins },
   { key: "reports", label: "Relatórios", icon: BarChart3 },
   { key: "subscription", label: "Assinatura", icon: CreditCard },
+  { key: "loyalty", label: "Fidelidade", icon: Star },
   { key: "settings", label: "Configurações", icon: Settings },
 ];
 
@@ -1757,6 +1760,16 @@ const AdminDashboard = () => {
               {dashboardTab === "finance" && storePlan.hasCommission && <StoreFinancePanel storeId={store.id} storeName={store.name} />}
                {dashboardTab === "finance" && !storePlan.hasCommission && <StoreFinanceBasic storeId={store.id} storeName={store.name} />}
               {dashboardTab === "subscription" && <StoreSubscription storeId={store.id} storeName={store.name} />}
+              {dashboardTab === "loyalty" && storePlan.allowLoyalty && <LoyaltyConfigPanel storeId={store.id} />}
+              {dashboardTab === "loyalty" && !storePlan.allowLoyalty && (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <Star className="h-12 w-12 text-muted-foreground/30 mb-4" />
+                  <h3 className="text-base font-bold text-foreground mb-1">Programa de Fidelidade</h3>
+                  <p className="text-sm text-muted-foreground max-w-xs">
+                    Disponível nos planos Crescimento e Comissão. Faça upgrade para fidelizar seus clientes!
+                  </p>
+                </div>
+              )}
               {dashboardTab === "reports" && (
                 <div className="space-y-6">
                   <h3 className="text-lg font-bold text-foreground">Relatórios de Vendas</h3>

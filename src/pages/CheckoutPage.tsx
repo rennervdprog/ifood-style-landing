@@ -5,7 +5,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Edit3, Loader2, Truck, CheckCircle2, ShoppingBag, Tag, ChevronRight, Clock, AlertTriangle } from "lucide-react";
+import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Edit3, Loader2, Truck, CheckCircle2, ShoppingBag, Tag, ChevronRight, Clock, AlertTriangle, Star } from "lucide-react";
 import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 import confetti from "canvas-confetti";
 import AddressModal from "@/components/AddressModal";
@@ -15,6 +15,7 @@ import { calculateDeliveryFee, DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConf
 import { formatCep, fetchCep } from "@/lib/cepLookup";
 import { addMoney, multiplyMoney, sumMoney } from "@/lib/utils";
 import { useStorePlan } from "@/hooks/useStorePlan";
+import LoyaltyRedemption from "@/components/LoyaltyRedemption";
 
 const allPaymentMethods = [
   { id: "pix", label: "PIX Online", desc: "Pagamento instantâneo", icon: QrCode },
@@ -40,6 +41,8 @@ const CheckoutPage = () => {
   const [calculatedDeliveryFee, setCalculatedDeliveryFee] = useState<number | null>(null);
   const [calculatingFee, setCalculatingFee] = useState(false);
   const [feeBreakdown, setFeeBreakdown] = useState<string | null>(null);
+  const [loyaltyDiscount, setLoyaltyDiscount] = useState(0);
+  const [loyaltyPointsUsed, setLoyaltyPointsUsed] = useState(0);
 
   const { data: userProfile, refetch: refetchProfile } = useQuery({
     queryKey: ["my-profile-checkout", user?.id],
@@ -122,7 +125,7 @@ const CheckoutPage = () => {
   const config = deliveryFeeConfig || DEFAULT_DELIVERY_FEE_CONFIG;
   const activeDeliveryFee = isOwnDelivery ? storeOwnFee : (calculatedDeliveryFee !== null ? calculatedDeliveryFee : config.city_fee);
   const effectiveDeliveryFee = couponType === "free_shipping" ? 0 : activeDeliveryFee;
-  const finalTotal = Math.max(0, addMoney(subtotal, effectiveDeliveryFee, -couponDiscount));
+  const finalTotal = Math.max(0, addMoney(subtotal, effectiveDeliveryFee, -couponDiscount, -loyaltyDiscount));
 
   useEffect(() => {
     const customerCep = selectedSavedAddressId && savedAddressData?.cep ? savedAddressData.cep : profileCep;
@@ -221,7 +224,7 @@ const CheckoutPage = () => {
       for (const [storeId, storeItems] of Object.entries(storeGroups)) {
         const storeSubtotal = sumMoney(storeItems.map((item) => item.price * item.quantity));
         const appFee = 0; // Calculated by DB trigger using store's commission_rate
-        const storeTotalPrice = Math.max(0, addMoney(storeSubtotal, effectiveDeliveryFee, -couponDiscount));
+        const storeTotalPrice = Math.max(0, addMoney(storeSubtotal, effectiveDeliveryFee, -couponDiscount, -loyaltyDiscount));
 
         const changeValue = paymentMethod === "dinheiro" && needsChange ? addMoney(parseFloat(changeFor)) : 0;
         const orderStatus = paymentMethod === "pix" ? "aguardando_pagamento" : "pendente";
@@ -567,6 +570,31 @@ const CheckoutPage = () => {
           </div>
         </section>
 
+        {/* SECTION: Loyalty Points */}
+        <section className="bg-card rounded-2xl border border-border overflow-hidden">
+          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50">
+            <div className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center">
+              <Star className="h-4 w-4 text-amber-500" />
+            </div>
+            <h2 className="text-sm font-bold text-foreground">Pontos de fidelidade</h2>
+          </div>
+          <div className="p-4">
+            <LoyaltyRedemption
+              storeId={storeId}
+              subtotal={subtotal}
+              onApply={(discount, points) => {
+                setLoyaltyDiscount(discount);
+                setLoyaltyPointsUsed(points);
+              }}
+              onRemove={() => {
+                setLoyaltyDiscount(0);
+                setLoyaltyPointsUsed(0);
+              }}
+              appliedPoints={loyaltyPointsUsed}
+            />
+          </div>
+        </section>
+
         {/* SECTION: Summary */}
         <section className="bg-card rounded-2xl border border-border overflow-hidden">
           <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50">
@@ -604,6 +632,15 @@ const CheckoutPage = () => {
                     <Tag className="h-3 w-3" /> {couponCode}
                   </span>
                   <span className="font-bold text-green-600">-R$ {couponDiscount.toFixed(2)}</span>
+                </div>
+              )}
+
+              {loyaltyDiscount > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-amber-600 flex items-center gap-1">
+                    <Star className="h-3 w-3 fill-amber-500" /> {loyaltyPointsUsed} pontos
+                  </span>
+                  <span className="font-bold text-amber-600">-R$ {loyaltyDiscount.toFixed(2)}</span>
                 </div>
               )}
 

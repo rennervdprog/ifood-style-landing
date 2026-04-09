@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart, type CartAddon } from "@/contexts/CartContext";
 import { Star, Clock, ChevronRight, ChevronDown, ChevronUp, MapPin, Search, X, Navigation, CreditCard, Banknote, Smartphone, QrCode, RotateCcw, TrendingUp } from "lucide-react";
+import LoyaltyBanner from "@/components/LoyaltyBanner";
 import { toast } from "sonner";
 import { useRef, useState, useEffect } from "react";
 import CartFAB from "@/components/CartFAB";
@@ -485,6 +486,9 @@ const StorePage = () => {
               </span>
             </div>
           </div>
+
+          {/* Loyalty */}
+          {store && <LoyaltyBanner storeId={store.id} storeName={store.name} />}
 
           {/* Stats row */}
           <div className="mt-3 pt-3 border-t border-border flex items-center gap-4">

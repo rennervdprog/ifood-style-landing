@@ -573,6 +573,57 @@ export type Database = {
           },
         ]
       }
+      loyalty_config: {
+        Row: {
+          created_at: string
+          discount_per_point: number
+          id: string
+          is_enabled: boolean
+          max_discount_percent: number
+          min_points_redeem: number
+          points_per_real: number
+          store_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          discount_per_point?: number
+          id?: string
+          is_enabled?: boolean
+          max_discount_percent?: number
+          min_points_redeem?: number
+          points_per_real?: number
+          store_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          discount_per_point?: number
+          id?: string
+          is_enabled?: boolean
+          max_discount_percent?: number
+          min_points_redeem?: number
+          points_per_real?: number
+          store_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_config_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: true
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loyalty_config_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: true
+            referencedRelation: "stores_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loyalty_points: {
         Row: {
           id: string
