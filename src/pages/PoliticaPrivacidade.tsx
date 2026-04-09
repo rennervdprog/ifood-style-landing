@@ -15,7 +15,7 @@ const PoliticaPrivacidade = () => {
 
       <div className="flex-1 px-4 py-6 max-w-2xl mx-auto">
         <div className="prose prose-sm dark:prose-invert max-w-none space-y-6">
-          <p className="text-xs text-muted-foreground">Última atualização: 08 de Abril de 2026 — Versão 1.0</p>
+          <p className="text-xs text-muted-foreground">Última atualização: 09 de Abril de 2026 — Versão 2.0</p>
 
           <p className="text-sm text-muted-foreground">
             Esta Política de Privacidade descreve como o <strong className="text-foreground">ItaSuper</strong> coleta, utiliza, armazena e protege 
@@ -39,18 +39,20 @@ const PoliticaPrivacidade = () => {
             <li>Endereço de entrega (rua, número, bairro, CEP, complemento, ponto de referência)</li>
             <li>Telefone/WhatsApp</li>
             <li>Histórico de pedidos e avaliações</li>
+            <li>Pontos de fidelidade acumulados por loja</li>
           </ul>
 
           <h3 className="text-base font-bold text-foreground">2.2. Lojistas (Parceiros)</h3>
           <ul className="text-sm text-muted-foreground list-disc pl-4 space-y-1">
             <li>E-mail, nome completo e senha</li>
             <li>CPF ou CNPJ</li>
-            <li>Data de nascimento</li>
             <li>WhatsApp/telefone</li>
-            <li>Endereço do estabelecimento (CEP, rua, bairro, cidade)</li>
+            <li>Endereço do estabelecimento (CEP, rua, bairro, cidade, estado)</li>
             <li>Dados financeiros: tipo e chave PIX para recebimento de pagamentos</li>
-            <li>Nome e categoria da loja</li>
-            <li>Dados de subconta Asaas (ID da conta, ID da carteira) para processamento de pagamentos</li>
+            <li>Nome, categoria e logotipo da loja</li>
+            <li>Plano contratado (Essencial, Crescimento ou Comissão)</li>
+            <li>Dados de subconta de pagamento (Asaas/Mercado Pago) para processamento de transações</li>
+            <li>Configurações de horário de funcionamento</li>
           </ul>
 
           <h3 className="text-base font-bold text-foreground">2.3. Entregadores (Motoboys)</h3>
@@ -68,7 +70,7 @@ const PoliticaPrivacidade = () => {
           <h2 className="text-lg font-bold text-foreground">3. Base Legal para o Tratamento (Art. 7º LGPD)</h2>
           <ul className="text-sm text-muted-foreground list-disc pl-4 space-y-1">
             <li><strong className="text-foreground">Execução de contrato</strong> (Art. 7º, V): processamento de pedidos, entregas e pagamentos.</li>
-            <li><strong className="text-foreground">Consentimento</strong> (Art. 7º, I): para comunicações de marketing e notificações push (Firebase/OneSignal).</li>
+            <li><strong className="text-foreground">Consentimento</strong> (Art. 7º, I): para comunicações de marketing e notificações push.</li>
             <li><strong className="text-foreground">Cumprimento de obrigação legal</strong> (Art. 7º, II): retenção de dados fiscais e financeiros conforme legislação tributária.</li>
             <li><strong className="text-foreground">Legítimo interesse</strong> (Art. 7º, IX): prevenção de fraudes, análise de conformidade e melhoria dos serviços.</li>
           </ul>
@@ -77,22 +79,24 @@ const PoliticaPrivacidade = () => {
           <ul className="text-sm text-muted-foreground list-disc pl-4 space-y-1">
             <li>Criação e gerenciamento de contas de usuários</li>
             <li>Processamento e acompanhamento de pedidos</li>
-            <li>Processamento de pagamentos via PIX (split automático via Asaas)</li>
-            <li>Cálculo e cobrança de comissões (15%)</li>
+            <li>Processamento de pagamentos via PIX (Asaas e/ou Mercado Pago)</li>
+            <li>Cálculo e cobrança de comissões e mensalidades conforme plano contratado</li>
             <li>Comunicação sobre status de pedidos (push notifications)</li>
             <li>Verificação de identidade de entregadores e lojistas</li>
-            <li>Prevenção de fraudes e evasão de comissões (compliance alerts)</li>
+            <li>Prevenção de fraudes e evasão de comissões</li>
             <li>Cálculo de taxa de entrega por bairro</li>
-            <li>Programa de fidelidade (pontos por pedido)</li>
+            <li>Programa de fidelidade (acúmulo e resgate de pontos por pedido)</li>
+            <li>Validação de cupons de desconto</li>
+            <li>Exibição de banners promocionais personalizados</li>
           </ul>
 
           <h2 className="text-lg font-bold text-foreground">5. Compartilhamento de Dados</h2>
           <p className="text-sm text-muted-foreground">Compartilhamos dados pessoais apenas com:</p>
           <ul className="text-sm text-muted-foreground list-disc pl-4 space-y-1">
-            <li><strong className="text-foreground">Asaas (processador de pagamentos):</strong> CPF/CNPJ, nome, e-mail, telefone, cidade e chave PIX do Lojista para criação de subconta e processamento de split de pagamento.</li>
-            <li><strong className="text-foreground">Lojista:</strong> nome, endereço de entrega, telefone do Cliente para preparação e entrega do pedido.</li>
+            <li><strong className="text-foreground">Asaas e Mercado Pago (processadores de pagamento):</strong> CPF/CNPJ, nome, e-mail, telefone e chave PIX do Lojista para criação de subconta e processamento de pagamentos.</li>
+            <li><strong className="text-foreground">Lojista:</strong> nome, endereço de entrega e telefone do Cliente para preparação e entrega do pedido.</li>
             <li><strong className="text-foreground">Entregador:</strong> nome, endereço e telefone do Cliente para realização da entrega.</li>
-            <li><strong className="text-foreground">Firebase/OneSignal:</strong> tokens de dispositivo para envio de notificações push.</li>
+            <li><strong className="text-foreground">Serviços de notificação:</strong> tokens de dispositivo para envio de notificações push.</li>
             <li><strong className="text-foreground">Autoridades competentes:</strong> quando exigido por lei, decisão judicial ou requisição de autoridade.</li>
           </ul>
 
@@ -110,6 +114,9 @@ const PoliticaPrivacidade = () => {
           <p className="text-sm text-muted-foreground">
             6.4. Senhas são armazenadas com hash criptográfico e nunca são acessíveis em texto plano.
           </p>
+          <p className="text-sm text-muted-foreground">
+            6.5. Dados financeiros sensíveis (IDs de subconta de pagamento) não são expostos publicamente, sendo acessíveis apenas ao próprio lojista e ao administrador.
+          </p>
 
           <h2 className="text-lg font-bold text-foreground">7. Retenção de Dados</h2>
           <ul className="text-sm text-muted-foreground list-disc pl-4 space-y-1">
@@ -118,6 +125,7 @@ const PoliticaPrivacidade = () => {
             <li><strong className="text-foreground">Dados financeiros:</strong> mantidos por 5 anos conforme obrigações tributárias.</li>
             <li><strong className="text-foreground">Documentos de entregadores:</strong> mantidos enquanto o cadastro estiver ativo, eliminados em até 30 dias após exclusão.</li>
             <li><strong className="text-foreground">Registros de aceitação de termos:</strong> mantidos indefinidamente como comprovação legal.</li>
+            <li><strong className="text-foreground">Contas excluídas:</strong> dados arquivados são retidos por 5 anos conforme obrigação legal, após o qual são eliminados.</li>
           </ul>
 
           <h2 className="text-lg font-bold text-foreground">8. Direitos do Titular (Art. 18 LGPD)</h2>
@@ -130,9 +138,10 @@ const PoliticaPrivacidade = () => {
             <li><strong className="text-foreground">Eliminação:</strong> solicitar a exclusão dos dados tratados com base no consentimento.</li>
             <li><strong className="text-foreground">Revogação do consentimento:</strong> retirar o consentimento a qualquer momento.</li>
             <li><strong className="text-foreground">Oposição:</strong> opor-se ao tratamento em caso de descumprimento da LGPD.</li>
+            <li><strong className="text-foreground">Exclusão de conta:</strong> solicitar a exclusão definitiva da conta e dados pessoais diretamente pela Plataforma.</li>
           </ul>
           <p className="text-sm text-muted-foreground">
-            Para exercer seus direitos, entre em contato pelo WhatsApp da Plataforma ou e-mail de suporte. 
+            Para exercer seus direitos, utilize a funcionalidade de exclusão de conta na Plataforma ou entre em contato pelo WhatsApp. 
             Responderemos em até 15 dias úteis, conforme Art. 18, §5º da LGPD.
           </p>
 
@@ -141,10 +150,10 @@ const PoliticaPrivacidade = () => {
             9.1. Utilizamos localStorage para armazenar preferências do Usuário (tema, sessão, carrinho).
           </p>
           <p className="text-sm text-muted-foreground">
-            9.2. Tokens de autenticação são gerenciados pelo Supabase Auth de forma segura.
+            9.2. Tokens de autenticação são gerenciados de forma segura pelo sistema de autenticação da Plataforma.
           </p>
           <p className="text-sm text-muted-foreground">
-            9.3. Tokens de push notification (Firebase/OneSignal) são armazenados para envio de notificações.
+            9.3. Tokens de push notification são armazenados para envio de notificações sobre status de pedidos.
           </p>
 
           <h2 className="text-lg font-bold text-foreground">10. Transferência Internacional de Dados</h2>
