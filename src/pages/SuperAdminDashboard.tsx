@@ -330,12 +330,13 @@ const SuperAdminDashboard = () => {
     const balanceText = entry.finalBalance >= 0
       ? `✅ O ItaSuper deve transferir R$ ${entry.finalBalance.toFixed(2)} para você.`
       : `⚠️ Valor a acertar com o ItaSuper: R$ ${Math.abs(entry.finalBalance).toFixed(2)}.`;
+    const storeRate = Math.round(getStoreRate(entry.storeId) * 100);
     const msg = `💰 *Fechamento ItaSuper (${period})*\n\nOlá *${entry.name}*!\n\n` +
       `📦 Total de Pedidos: ${entry.orderCount}\n` +
       `💵 Vendas Físicas (Dinheiro/Cartão): R$ ${entry.physicalSales.toFixed(2)}\n` +
       `📱 Vendas App (Pix): R$ ${entry.appSales.toFixed(2)}\n\n` +
-      `🏷️ Comissão 15% sobre Físicas: R$ ${entry.commissionDue.toFixed(2)}\n` +
-      `💸 Repasse Líquido (App - 15%): R$ ${entry.netTransfer.toFixed(2)}\n\n` +
+      `🏷️ Comissão ${storeRate}% sobre Físicas: R$ ${entry.commissionDue.toFixed(2)}\n` +
+      `💸 Repasse Líquido (App - ${storeRate}%): R$ ${entry.netTransfer.toFixed(2)}\n\n` +
       `---\n${balanceText}\n---`;
     navigator.clipboard.writeText(msg);
     toast.success(`Extrato de ${entry.name} copiado!`);
