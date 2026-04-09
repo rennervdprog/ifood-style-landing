@@ -178,6 +178,7 @@ const StoreDirectory = () => {
     { icon: MessageSquare, problem: "Pedidos perdidos no WhatsApp", solution: "Sistema organizado que recebe, notifica e rastreia cada pedido" },
     { icon: Banknote, problem: "Sem controle financeiro", solution: "Painel com vendas, comissões e relatórios em tempo real" },
     { icon: Target, problem: "Clientes não te encontram", solution: "Cardápio digital profissional com link próprio" },
+    { icon: Truck, problem: "Plataformas tradicionais cobram até 30% e ainda controlam sua operação", solution: "15% de comissão. Você tem seu cardápio, seus clientes, seu negócio." },
   ];
 
   const howItWorks = [
@@ -215,6 +216,8 @@ const StoreDirectory = () => {
 
   const faq = [
     { q: "Preciso pagar algo para cadastrar?", a: "Nada! O cadastro é 100% gratuito. Sem mensalidade, sem taxa de adesão. Você só paga 15% quando efetivamente vende e entrega." },
+    { q: "Funciona fora de Itatinga/SP?", a: "Sim! Em qualquer cidade do Brasil você pode usar o ItaSuper como cardápio digital profissional com gestão de pedidos completa. Nesse caso, você utiliza seu próprio entregador. A operação com motoboys da plataforma está disponível em Itatinga/SP, com expansão para novas cidades em breve." },
+    { q: "Qual a diferença entre usar em Itatinga e em outras cidades?", a: "Em Itatinga/SP, o ItaSuper funciona como uma plataforma completa de delivery: você recebe o pedido e um motoboy da plataforma busca e entrega para o cliente. No restante do Brasil, você tem todo o sistema de cardápio digital, pedidos e pagamentos — e a entrega é feita pelo seu próprio motoboy ou entregador." },
     { q: "Como funciona a comissão de 15%?", a: "A comissão é calculada sobre o valor dos produtos. Ela cobre toda a tecnologia, sistema de pagamentos, suporte e infraestrutura. Delivery fee não entra no cálculo." },
     { q: "Posso usar em qualquer cidade?", a: "Sim! Qualquer loja do Brasil pode se cadastrar e usar como cardápio digital. A logística com motoboys da plataforma está disponível nas cidades com operação ativa." },
     { q: "Como recebo meu dinheiro?", a: "Pagamentos PIX vão direto para sua conta via split automático. Para dinheiro/cartão na entrega, o valor fica com você e a comissão é cobrada separadamente de forma transparente." },
@@ -234,23 +237,23 @@ const StoreDirectory = () => {
             {/* Urgency badge */}
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold mb-8 animate-pulse" style={{ background: "rgba(255,107,0,0.2)", color: THEME.primary, border: `1px solid rgba(255,107,0,0.3)` }}>
               <Flame className="h-4 w-4" />
-              Vagas limitadas na sua cidade — Garanta sua loja
+              🔥 Operação completa com motoboys disponível em Itatinga/SP
             </div>
 
             <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.08] text-white">
-              Sua loja{" "}
+              Seu cardápio digital.{" "}
               <span className="relative">
-                <span style={{ color: THEME.primary }}>vendendo online</span>
+                <span style={{ color: THEME.primary }}>Seus pedidos organizados.</span>
                 <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 300 12" fill="none"><path d="M2 10C50 2 150 2 298 10" stroke={THEME.primary} strokeWidth="3" strokeLinecap="round"/></svg>
               </span>
               <br />
-              em menos de 24 horas.
+              Sua entrega no controle.
             </h1>
 
             <p className="text-lg sm:text-xl mt-6 leading-relaxed max-w-2xl mx-auto text-white/70">
-              Enquanto você lê isso, seus concorrentes já estão recebendo pedidos pelo celular.
-              <span className="text-white font-semibold"> Zero investimento. Zero mensalidade. </span>
-              Comece agora e pague apenas quando vender.
+              No Brasil inteiro: cardápio digital profissional com seu próprio entregador.
+              Em Itatinga/SP: plataforma completa com motoboys inclusos
+              <span className="text-white font-semibold"> — sem as taxas abusivas das grandes plataformas.</span>
             </p>
 
             {/* CTA Buttons */}
@@ -311,11 +314,11 @@ const StoreDirectory = () => {
         <div className="text-center mb-12">
           <SectionLabel text="Você se identifica?" />
           <h2 className="text-2xl sm:text-3xl font-black" style={{ color: THEME.dark }}>
-            Problemas que acabam <span style={{ color: THEME.primary }}>hoje</span>
+            Por que lojistas estão migrando para o <span style={{ color: THEME.primary }}>ItaSuper</span>?
           </h2>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
           {painPoints.map((p, i) => (
             <div key={i} className="rounded-2xl overflow-hidden border transition-all hover:shadow-xl hover:-translate-y-1 group" style={{ borderColor: THEME.border }}>
               {/* Problem */}
@@ -365,6 +368,20 @@ const StoreDirectory = () => {
               )}
             </div>
           ))}
+        </div>
+
+        {/* Nota informativa Itatinga vs Brasil */}
+        <div className="max-w-3xl mx-auto mt-10 rounded-2xl p-5 text-center" style={{ background: THEME.primaryLight, border: `1px solid rgba(255,107,0,0.3)` }}>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8">
+            <div className="flex items-center gap-2 text-sm" style={{ color: THEME.muted }}>
+              <MapPin className="h-4 w-4 flex-shrink-0" style={{ color: THEME.primary }} />
+              <span>Em <strong style={{ color: THEME.dark }}>Itatinga/SP</strong>: após aprovação, seus pedidos já chegam com motoboy da plataforma incluído.</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm" style={{ color: THEME.muted }}>
+              <MapPin className="h-4 w-4 flex-shrink-0" style={{ color: THEME.primary }} />
+              <span>No <strong style={{ color: THEME.dark }}>restante do Brasil</strong>: você usa seu próprio entregador e gerencia tudo pelo painel.</span>
+            </div>
+          </div>
         </div>
 
         {/* CTA inline */}
@@ -421,13 +438,20 @@ const StoreDirectory = () => {
                   "PIX, dinheiro e cartão",
                   "Horários flexíveis",
                   "Suporte dedicado",
-                  "Entrega com motoboy próprio ou da plataforma",
                 ].map((f) => (
                   <li key={f} className="flex items-center gap-2.5 text-sm" style={{ color: THEME.dark }}>
                     <CheckCircle2 className="h-4 w-4 flex-shrink-0" style={{ color: THEME.green }} />
                     {f}
                   </li>
                 ))}
+                <li className="flex items-center gap-2.5 text-sm" style={{ color: THEME.dark }}>
+                  <CheckCircle2 className="h-4 w-4 flex-shrink-0" style={{ color: THEME.green }} />
+                  Motoboys da plataforma inclusos — Itatinga/SP
+                </li>
+                <li className="flex items-center gap-2.5 text-sm" style={{ color: THEME.dark, opacity: 0.85 }}>
+                  <CheckCircle2 className="h-4 w-4 flex-shrink-0" style={{ color: THEME.green, opacity: 0.7 }} />
+                  Seu próprio entregador — qualquer cidade
+                </li>
               </ul>
 
               <Button className="w-full rounded-full font-bold text-base py-6 mt-6 text-white shadow-lg transition-all hover:shadow-xl hover:scale-[1.02]" style={{ background: THEME.primary }}
@@ -498,10 +522,15 @@ const StoreDirectory = () => {
               Ganhe dinheiro{" "}
               <span style={{ color: THEME.primary }}>no seu tempo.</span>
             </h2>
-            <p className="text-base mb-8" style={{ color: THEME.muted }}>
+            <p className="text-base mb-4" style={{ color: THEME.muted }}>
               Sem patrão, sem horário fixo, sem vínculo. Rode quando quiser e ganhe por cada entrega.
               Atualmente operando em <strong style={{ color: THEME.primary }}>Itatinga/SP</strong>.
             </p>
+
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-8" style={{ background: THEME.primaryLight }}>
+              <MapPin className="h-4 w-4" style={{ color: THEME.primary }} />
+              <span style={{ color: THEME.muted }}>Operação de motoboys ativa em <strong style={{ color: THEME.dark }}>Itatinga/SP</strong> — expansão em breve</span>
+            </div>
 
             <div className="grid grid-cols-2 gap-4 mb-8">
               {motoboyBenefits.map((b) => (
@@ -522,6 +551,7 @@ const StoreDirectory = () => {
               Cadastrar como motoboy
               <ArrowRight className="h-5 w-5" />
             </Button>
+            <p className="text-xs mt-3" style={{ color: THEME.muted }}>* Disponível para entregas em Itatinga/SP</p>
           </div>
 
           {/* Visual card */}
@@ -541,6 +571,10 @@ const StoreDirectory = () => {
                     <div className="text-xs font-medium text-white/70">{item.label}</div>
                   </div>
                 ))}
+              </div>
+              {/* Expansão */}
+              <div className="mt-5 pt-4 border-t" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
+                <p className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>📡 Novas cidades em breve — cadastre-se e seja notificado</p>
               </div>
             </div>
           </div>
@@ -612,7 +646,7 @@ const StoreDirectory = () => {
             <span style={{ color: THEME.primary }}>cliente perdido.</span>
           </h2>
           <p className="text-base text-white/70 mb-10 max-w-xl mx-auto">
-            Seus concorrentes já estão online. Cadastre-se agora e comece a receber pedidos em até 24 horas. Grátis. Sem risco.
+            De Itatinga ou do Brasil inteiro — cadastre-se grátis e comece a vender online hoje. Sem mensalidade, sem contrato, sem risco.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button size="lg" className="gap-2 rounded-full font-bold text-base px-10 py-6 shadow-2xl transition-all hover:scale-105" style={{ background: THEME.primary, color: "white" }}
