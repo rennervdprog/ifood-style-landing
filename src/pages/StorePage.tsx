@@ -469,16 +469,20 @@ const StorePage = () => {
               <span className="text-xs font-bold text-foreground">Formas de pagamento</span>
             </div>
             <div className="flex flex-wrap gap-1.5">
-              {[
-                { icon: QrCode, label: "Pix" },
-                { icon: Banknote, label: "Dinheiro" },
-                { icon: CreditCard, label: "Cartão na entrega" },
-              ].map(pm => (
-                <span key={pm.label} className="flex items-center gap-1 bg-muted px-2.5 py-1 rounded-full text-[10px] font-medium text-muted-foreground">
-                  <pm.icon className="h-3 w-3" />
-                  {pm.label}
+              {storePlan.allowPix && (
+                <span className="flex items-center gap-1 bg-muted px-2.5 py-1 rounded-full text-[10px] font-medium text-muted-foreground">
+                  <QrCode className="h-3 w-3" />
+                  Pix
                 </span>
-              ))}
+              )}
+              <span className="flex items-center gap-1 bg-muted px-2.5 py-1 rounded-full text-[10px] font-medium text-muted-foreground">
+                <Banknote className="h-3 w-3" />
+                Dinheiro
+              </span>
+              <span className="flex items-center gap-1 bg-muted px-2.5 py-1 rounded-full text-[10px] font-medium text-muted-foreground">
+                <CreditCard className="h-3 w-3" />
+                Cartão na entrega
+              </span>
             </div>
           </div>
 
