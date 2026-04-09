@@ -156,6 +156,7 @@ const AdminDashboard = () => {
   const [cancelConfirm, setCancelConfirm] = useState<string | null>(null);
   const [showDelayedPanel, setShowDelayedPanel] = useState(false);
   const [showMoreSheet, setShowMoreSheet] = useState(false);
+  const [selectedReportPeriod, setSelectedReportPeriod] = useState(30);
 
   const prevPendingCountRef = useRef(0);
 
