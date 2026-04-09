@@ -1863,6 +1863,8 @@ const JuridicoTab = () => {
     setSelectedUser(null);
     setResults([]);
     setArchivedResults([]);
+
+    try {
       const cleanSearch = search.trim();
       const normalizedDocument = cleanSearch.replace(/\D/g, "");
       const namePattern = `%${cleanSearch}%`;
@@ -2280,7 +2282,7 @@ const JuridicoTab = () => {
       )}
 
       {/* Empty state */}
-      {results.length === 0 && archivedResults.length === 0 && !loading && search.trim() && (
+      {results.length === 0 && archivedResults.length === 0 && !loading && searchAttempted && search.trim() && (
         <div className="text-center py-12">
           <Search className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
           <p className="text-sm text-muted-foreground">Nenhum resultado encontrado para "{search}"</p>
