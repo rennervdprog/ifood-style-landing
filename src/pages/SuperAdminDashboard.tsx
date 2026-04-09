@@ -717,7 +717,7 @@ const SuperAdminDashboard = () => {
                   ) : (
                     <>
                       <MetricCard icon={ShoppingBag} label="Vendas" value={`R$ ${metrics.totalSales.toFixed(2)}`} sublabel={`${metrics.totalOrders} pedidos`} />
-                      <MetricCard icon={TrendingUp} label="Comissão" value={`R$ ${metrics.commission.toFixed(2)}`} sublabel="15% subtotal" highlight />
+                      <MetricCard icon={TrendingUp} label="Comissão" value={`R$ ${metrics.commission.toFixed(2)}`} sublabel="taxa por loja" highlight />
                       <MetricCard icon={Clock} label="Ativos" value={String(metrics.activeOrders)} sublabel="em andamento" />
                       <MetricCard icon={AlertTriangle} label="Atraso" value={String(delayedOrders.length)} sublabel="> 60 min" alert={delayedOrders.length > 0} />
                     </>
