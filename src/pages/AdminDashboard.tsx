@@ -22,6 +22,7 @@ import StoreHoursManager from "@/components/StoreHoursManager";
 import AddonManager from "@/components/AddonManager";
 import StoreSettings from "@/components/StoreSettings";
 import StoreFinancePanel from "@/components/StoreFinancePanel";
+import StoreFinanceBasic from "@/components/StoreFinanceBasic";
 import CommissionAlert from "@/components/CommissionAlert";
 import { printThermalReceipt } from "@/lib/thermalPrint";
 import { requestNotificationPermission, notifyNewOrder, pushNotifyDeliveryAvailable } from "@/lib/notifications";
@@ -593,7 +594,7 @@ const AdminDashboard = () => {
               <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
             </div>
             <div className="px-4 pb-4 grid grid-cols-3 gap-3">
-              {moreSheetItems.filter(item => item.key !== "finance" || storePlan.hasCommission).map(item => {
+              {moreSheetItems.filter(item => item.key !== "reports" || storePlan.allowFullReports).map(item => {
                 const Icon = item.icon;
                 const isActive = dashboardTab === item.key;
                 return (
@@ -657,7 +658,7 @@ const AdminDashboard = () => {
 
         {/* Navigation */}
         <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
-          {baseSidebarItems.filter(i => (!i.pizzaOnly || store?.category === "pizzas") && (i.key !== "finance" || storePlan.hasCommission)).map(item => {
+          {baseSidebarItems.filter(i => (!i.pizzaOnly || store?.category === "pizzas") && (i.key !== "reports" || storePlan.allowFullReports)).map(item => {
             const isActive = dashboardTab === item.key;
             const Icon = item.icon;
             return (
@@ -850,6 +851,17 @@ const AdminDashboard = () => {
                   onGoToFinance={() => setDashboardTab("finance")}
                 />
               )}
+              {/* Plan Badge */}
+              <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold ${
+                storePlan.planType === "fixed" ? "bg-amber-500/10 text-amber-600 border border-amber-500/20" :
+                storePlan.planType === "hybrid" ? "bg-blue-500/10 text-blue-600 border border-blue-500/20" :
+                "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
+              }`}>
+                <CreditCard className="h-3.5 w-3.5" />
+                {storePlan.planType === "fixed" && `Plano Fixo • R$ ${storePlan.monthlyFee.toFixed(0)}/mês`}
+                {storePlan.planType === "hybrid" && `Assinatura + ${storePlan.commissionRate}% • R$ ${storePlan.monthlyFee.toFixed(0)}/mês`}
+                {storePlan.planType === "commission_only" && `Comissão ${storePlan.commissionRate}%`}
+              </div>
               {/* At-a-Glance Cards */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-3">
                 <GlanceCard
@@ -867,14 +879,17 @@ const AdminDashboard = () => {
                   subValue={`${todayCount} pedidos`}
                   color="text-emerald-500"
                   trend={todayTotal > 0 ? "up" : null}
+                  onClick={() => setDashboardTab("finance")}
                 />
-                <GlanceCard
-                  icon={Bike}
-                  label="Motoboys"
-                  value={onlineDrivers?.length || 0}
-                  subValue={realtimeDriversConnected ? "Online" : "Conectando..."}
-                  color={(onlineDrivers?.length || 0) > 0 ? "text-blue-500" : "text-muted-foreground"}
-                />
+                {storePlan.allowPlatformDelivery && (
+                  <GlanceCard
+                    icon={Bike}
+                    label="Motoboys"
+                    value={onlineDrivers?.length || 0}
+                    subValue={realtimeDriversConnected ? "Online" : "Conectando..."}
+                    color={(onlineDrivers?.length || 0) > 0 ? "text-blue-500" : "text-muted-foreground"}
+                  />
+                )}
                 <GlanceCard
                   icon={Timer}
                   label="Tempo Médio"
@@ -882,6 +897,16 @@ const AdminDashboard = () => {
                   subValue="Pedido → Entrega"
                   color="text-purple-500"
                 />
+                {!storePlan.allowPlatformDelivery && (
+                  <GlanceCard
+                    icon={Users}
+                    label="Clientes"
+                    value={clientAnalytics.length}
+                    subValue="Total cadastrados"
+                    color="text-blue-500"
+                    onClick={() => setDashboardTab("clients")}
+                  />
+                )}
               </div>
               {delayedOrders.length > 0 && (
                 <div className="bg-destructive/5 border border-destructive/20 rounded-2xl p-3">
@@ -1727,17 +1752,7 @@ const AdminDashboard = () => {
                 </div>
               )}
               {dashboardTab === "finance" && storePlan.hasCommission && <StoreFinancePanel storeId={store.id} storeName={store.name} />}
-              {dashboardTab === "finance" && !storePlan.hasCommission && (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <Coins className="h-8 w-8 text-primary" />
-                  </div>
-                  <h3 className="text-lg font-bold text-foreground mb-2">Plano Fixo Mensal</h3>
-                  <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                    Seu plano é de assinatura fixa (R$ {storePlan.monthlyFee.toFixed(2)}/mês) sem cobrança de comissão por pedido. Não há comissões pendentes.
-                  </p>
-                </div>
-              )}
+              {dashboardTab === "finance" && !storePlan.hasCommission && <StoreFinanceBasic storeId={store.id} storeName={store.name} />}
               {dashboardTab === "reports" && (
                 <div className="space-y-6">
                   <h3 className="text-lg font-bold text-foreground">Relatórios de Vendas</h3>
