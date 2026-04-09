@@ -422,6 +422,40 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
           {/* Section Products */}
           {expandedSection === section.id && (
             <div className="px-4 pb-4 space-y-2">
+              {/* Beverage section toggle */}
+              <div className="flex items-center justify-between bg-muted/50 border border-border rounded-xl p-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">🥤</span>
+                  <span className="text-xs font-bold text-foreground/70">Seção de bebidas</span>
+                  <span className="text-[10px] text-muted-foreground">(marca todos como bebida)</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    const sectionProducts = getProductsBySection(section.id);
+                    const allBeverage = sectionProducts.length > 0 && sectionProducts.every((p: any) => p.metadata?.is_beverage);
+                    const newValue = !allBeverage;
+                    const updates = sectionProducts.map((p: any) =>
+                      supabase.from("products").update({
+                        metadata: { ...(p.metadata || {}), is_beverage: newValue }
+                      } as any).eq("id", p.id)
+                    );
+                    await Promise.all(updates);
+                    toast.success(newValue ? "Todos marcados como bebida!" : "Bebida removido dos itens!");
+                    invalidateAll();
+                  }}
+                  className={`w-10 h-5 rounded-full transition-colors relative ${
+                    getProductsBySection(section.id).length > 0 && getProductsBySection(section.id).every((p: any) => p.metadata?.is_beverage)
+                      ? "bg-primary" : "bg-muted-foreground/30"
+                  }`}
+                >
+                  <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-transform ${
+                    getProductsBySection(section.id).length > 0 && getProductsBySection(section.id).every((p: any) => p.metadata?.is_beverage)
+                      ? "translate-x-5" : "translate-x-0.5"
+                  }`} />
+                </button>
+              </div>
               {getProductsBySection(section.id).length === 0 && (
                 <p className="text-xs text-muted-foreground text-center py-4">Nenhum produto nesta seção</p>
               )}
