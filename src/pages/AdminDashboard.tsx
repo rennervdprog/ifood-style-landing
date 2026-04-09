@@ -798,7 +798,7 @@ const AdminDashboard = () => {
                                 </button>
                               )}
                               {getClientWhatsApp(order.client_id) && (
-                                <WhatsAppButton phone={getClientWhatsApp(order.client_id)} message={`Olá! Sobre seu pedido #${order.id.slice(0, 8).toUpperCase()}, estamos cuidando dele!`} />
+                                <WhatsAppButton number={getClientWhatsApp(order.client_id)} message={`Olá! Sobre seu pedido #${order.id.slice(0, 8).toUpperCase()}, estamos cuidando dele!`} />
                               )}
                             </div>
                           </div>
