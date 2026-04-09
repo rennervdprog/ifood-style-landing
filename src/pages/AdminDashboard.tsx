@@ -74,10 +74,10 @@ const baseSidebarItems: { key: DashboardTab; label: string; icon: React.ElementT
 ];
 
 // ── At-a-Glance Card Component ──
-const GlanceCard = ({ icon: Icon, label, value, subValue, color = "text-primary", trend }: {
-  icon: React.ElementType; label: string; value: string | number; subValue?: string; color?: string; trend?: "up" | "down" | null;
+const GlanceCard = ({ icon: Icon, label, value, subValue, color = "text-primary", trend, onClick }: {
+  icon: React.ElementType; label: string; value: string | number; subValue?: string; color?: string; trend?: "up" | "down" | null; onClick?: () => void;
 }) => (
-  <div className="bg-card border border-border rounded-2xl p-4 flex flex-col gap-2 hover:shadow-md transition-shadow">
+  <div onClick={onClick} className={`bg-card border border-border rounded-2xl p-4 flex flex-col gap-2 hover:shadow-md transition-shadow ${onClick ? "cursor-pointer active:scale-[0.97]" : ""}`}>
     <div className="flex items-center justify-between">
       <div className={`w-10 h-10 rounded-xl ${color.replace("text-", "bg-").replace("500", "500/10")} flex items-center justify-center`}>
         <Icon className={`h-5 w-5 ${color}`} />
