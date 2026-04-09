@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://esm.sh/zod@3.25.76";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,7 +22,11 @@ Deno.serve(async (req) => {
     const { data: { user }, error: authError } = await userClient.auth.getUser();
     if (authError || !user) throw new Error("Não autorizado");
 
-    const { reason } = await req.json().catch(() => ({ reason: "Solicitação do usuário" }));
+    const ReasonSchema = z.object({
+      reason: z.string().max(500).optional().default("Solicitação do usuário"),
+    });
+    const parsed = ReasonSchema.safeParse(await req.json().catch(() => ({})));
+    const reason = parsed.success ? parsed.data.reason : "Solicitação do usuário";
     const adminClient = createClient(supabaseUrl, serviceKey);
 
     // Get profile
