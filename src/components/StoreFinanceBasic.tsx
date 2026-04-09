@@ -1,12 +1,19 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { DollarSign, TrendingUp, ShoppingBag, CreditCard, Banknote, Calendar, Download } from "lucide-react";
+import {
+  DollarSign, TrendingUp, TrendingDown, ShoppingBag, CreditCard, Banknote, Calendar,
+  Download, Wallet, Receipt, Clock, ArrowUpRight, ArrowDownRight, Target, Percent,
+} from "lucide-react";
 import { sumMoney, averageMoney, formatCurrency } from "@/lib/utils";
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, endOfDay } from "date-fns";
-import { useState } from "react";
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, endOfDay, subWeeks, subMonths } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { useStorePlan } from "@/hooks/useStorePlan";
+import {
+  AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip,
+  ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar,
+} from "recharts";
 
 interface StoreFinanceBasicProps {
   storeId: string;
@@ -14,6 +21,17 @@ interface StoreFinanceBasicProps {
 }
 
 type DateFilter = "today" | "week" | "month";
+
+const COLORS = {
+  pink: "#ec4899",
+  blue: "#3b82f6",
+  green: "#10b981",
+  amber: "#f59e0b",
+  purple: "#a855f7",
+  cyan: "#06b6d4",
+};
+
+const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
 
 const StoreFinanceBasic = ({ storeId, storeName }: StoreFinanceBasicProps) => {
   const [dateFilter, setDateFilter] = useState<DateFilter>("week");
@@ -27,6 +45,18 @@ const StoreFinanceBasic = ({ storeId, storeName }: StoreFinanceBasicProps) => {
       case "month": return { start: startOfMonth(now), end: endOfMonth(now) };
     }
   }, [dateFilter]);
+
+  const prevRange = useMemo(() => {
+    switch (dateFilter) {
+      case "today": {
+        const yesterday = new Date(now);
+        yesterday.setDate(yesterday.getDate() - 1);
+        return { start: startOfDay(yesterday), end: endOfDay(yesterday) };
+      }
+      case "week": return { start: subWeeks(dateRange.start, 1), end: subWeeks(dateRange.end, 1) };
+      case "month": return { start: subMonths(dateRange.start, 1), end: subMonths(dateRange.end, 1) };
+    }
+  }, [dateFilter, dateRange]);
 
   const { data: orders, isLoading } = useQuery({
     queryKey: ["store-finance-basic", storeId, dateFilter],
@@ -45,11 +75,31 @@ const StoreFinanceBasic = ({ storeId, storeName }: StoreFinanceBasicProps) => {
     enabled: !!storeId,
   });
 
+  const { data: prevOrders } = useQuery({
+    queryKey: ["store-finance-basic-prev", storeId, dateFilter],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("subtotal, status")
+        .eq("store_id", storeId)
+        .gte("created_at", prevRange.start.toISOString())
+        .lte("created_at", prevRange.end.toISOString())
+        .in("status", ["entregue", "finalizado"]);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!storeId,
+  });
+
   const completedOrders = orders?.filter(o => ["entregue", "finalizado"].includes(o.status)) || [];
   const totalSales = sumMoney(completedOrders.map(o => o.subtotal));
   const totalDeliveryFees = sumMoney(completedOrders.map(o => o.delivery_fee));
   const totalRevenue = sumMoney(completedOrders.map(o => o.total_price));
   const ticketMedio = averageMoney(totalSales, completedOrders.length);
+
+  const prevTotalSales = sumMoney((prevOrders || []).map(o => o.subtotal));
+  const growthPercent = prevTotalSales > 0 ? ((totalSales - prevTotalSales) / prevTotalSales) * 100 : 0;
+  const prevLabel = dateFilter === "today" ? "ontem" : dateFilter === "week" ? "semana passada" : "mês passado";
 
   const paymentBreakdown = useMemo(() => {
     const pix = completedOrders.filter(o => o.payment_method === "pix");
@@ -62,7 +112,6 @@ const StoreFinanceBasic = ({ storeId, storeName }: StoreFinanceBasicProps) => {
     };
   }, [completedOrders]);
 
-  // Daily sales for bar chart
   const dailyData = useMemo(() => {
     if (!completedOrders.length) return [];
     const dayMap: Record<string, { vendas: number; pedidos: number }> = {};
@@ -72,8 +121,26 @@ const StoreFinanceBasic = ({ storeId, storeName }: StoreFinanceBasicProps) => {
       dayMap[day].vendas += Number(o.subtotal);
       dayMap[day].pedidos += 1;
     });
-    return Object.entries(dayMap).map(([day, data]) => ({ day, ...data }));
+    return Object.entries(dayMap).map(([day, data]) => ({ day, ...data, vendas: Math.round(data.vendas * 100) / 100 }));
   }, [completedOrders]);
+
+  const hourlyData = useMemo(() => {
+    if (!completedOrders.length) return [];
+    const hours: Record<number, number> = {};
+    completedOrders.forEach(o => {
+      const h = new Date(o.created_at).getHours();
+      hours[h] = (hours[h] || 0) + 1;
+    });
+    return Array.from({ length: 24 }, (_, h) => ({ hour: `${String(h).padStart(2, "0")}h`, pedidos: hours[h] || 0 })).filter(h => h.pedidos > 0 || (h.hour >= "08h" && h.hour <= "23h"));
+  }, [completedOrders]);
+
+  const donutData = useMemo(() => {
+    return [
+      { name: "PIX", value: paymentBreakdown.pix.count },
+      { name: "Cartão", value: paymentBreakdown.card.count },
+      { name: "Dinheiro", value: paymentBreakdown.cash.count },
+    ].filter(d => d.value > 0);
+  }, [paymentBreakdown]);
 
   const exportCSV = () => {
     const lines = ["Data,Vendas,Pedidos", ...dailyData.map(d => `${d.day},${d.vendas.toFixed(2)},${d.pedidos}`)];
@@ -85,26 +152,28 @@ const StoreFinanceBasic = ({ storeId, storeName }: StoreFinanceBasicProps) => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Subscription Info */}
+    <div className="space-y-5">
+      {/* Plan Info */}
       <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4">
-        <div className="flex items-center gap-3 mb-2">
+        <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
             <CreditCard className="h-5 w-5 text-primary" />
           </div>
-          <div>
-            <h3 className="font-bold text-foreground text-sm">Plano {storePlan.planType === "fixed" ? "Fixo Mensal" : "Assinatura + Taxa"}</h3>
+          <div className="flex-1">
+            <h3 className="font-bold text-foreground text-sm">
+              Plano {storePlan.planType === "fixed" ? "Essencial" : storePlan.planType === "hybrid" ? "Crescimento" : "Comissão"}
+            </h3>
             <p className="text-xs text-muted-foreground">
               R$ {storePlan.monthlyFee.toFixed(2)}/mês
               {storePlan.commissionRate > 0 && ` + ${storePlan.commissionRate}% por pedido`}
             </p>
           </div>
+          {storePlan.isInTrial && (
+            <span className="bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[10px] font-bold px-2 py-1 rounded-full">
+              Trial {storePlan.trialDaysLeft}d
+            </span>
+          )}
         </div>
-        <p className="text-[11px] text-muted-foreground">
-          {storePlan.planType === "fixed"
-            ? "Sua assinatura mensal inclui acesso ao painel, cardápio digital e gestão de pedidos. Sem cobranças por pedido."
-            : "Sua assinatura mensal inclui todos os recursos da plataforma, com taxa reduzida por pedido entregue."}
-        </p>
       </div>
 
       {/* Date filter */}
@@ -112,12 +181,15 @@ const StoreFinanceBasic = ({ storeId, storeName }: StoreFinanceBasicProps) => {
         <Calendar className="h-4 w-4 text-muted-foreground" />
         {(["today", "week", "month"] as DateFilter[]).map(f => (
           <button key={f} onClick={() => setDateFilter(f)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-              dateFilter === f ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+              dateFilter === f ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "bg-card text-muted-foreground hover:bg-accent border border-border"
             }`}>
             {f === "today" ? "Hoje" : f === "week" ? "Semana" : "Mês"}
           </button>
         ))}
+        <span className="text-[10px] text-muted-foreground ml-auto">
+          {format(dateRange.start, "dd/MM", { locale: ptBR })} — {format(dateRange.end, "dd/MM", { locale: ptBR })}
+        </span>
       </div>
 
       {isLoading ? (
@@ -126,103 +198,184 @@ const StoreFinanceBasic = ({ storeId, storeName }: StoreFinanceBasicProps) => {
         </div>
       ) : (
         <>
-          {/* Summary Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <div className="bg-card border border-border rounded-2xl p-4 text-center">
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center mx-auto mb-2">
-                <DollarSign className="h-4 w-4 text-emerald-500" />
+          {/* KPI Cards */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-4 border border-border/30 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent" />
+              <div className="relative">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <DollarSign className="h-3.5 w-3.5 text-emerald-500" />
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Faturamento</p>
+                </div>
+                <p className="text-2xl font-black text-emerald-500 tracking-tight">{formatCurrency(totalRevenue)}</p>
+                <p className="text-[10px] text-muted-foreground mt-1">{completedOrders.length} pedidos concluídos</p>
               </div>
-              <p className="text-xl font-black text-emerald-500">{formatCurrency(totalRevenue)}</p>
-              <p className="text-[10px] text-muted-foreground mt-1">Faturamento Total</p>
             </div>
-            <div className="bg-card border border-border rounded-2xl p-4 text-center">
-              <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center mx-auto mb-2">
-                <ShoppingBag className="h-4 w-4 text-blue-500" />
+
+            <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-4 border border-border/30 relative overflow-hidden">
+              <div className={`absolute inset-0 bg-gradient-to-br ${growthPercent >= 0 ? "from-emerald-500/5" : "from-red-500/5"} to-transparent`} />
+              <div className="relative">
+                <div className="flex items-center gap-1.5 mb-1">
+                  {growthPercent >= 0 ? <TrendingUp className="h-3.5 w-3.5 text-emerald-500" /> : <TrendingDown className="h-3.5 w-3.5 text-red-500" />}
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Crescimento</p>
+                </div>
+                <p className={`text-2xl font-black tracking-tight ${growthPercent >= 0 ? "text-emerald-500" : "text-red-500"}`}>
+                  {growthPercent >= 0 ? "+" : ""}{growthPercent.toFixed(1)}%
+                </p>
+                <p className="text-[10px] text-muted-foreground mt-1">vs {prevLabel}</p>
               </div>
-              <p className="text-xl font-black text-foreground">{completedOrders.length}</p>
-              <p className="text-[10px] text-muted-foreground mt-1">Pedidos Concluídos</p>
             </div>
-            <div className="bg-card border border-border rounded-2xl p-4 text-center">
-              <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center mx-auto mb-2">
-                <TrendingUp className="h-4 w-4 text-purple-500" />
+
+            <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-4 border border-border/30 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent" />
+              <div className="relative">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Target className="h-3.5 w-3.5 text-purple-500" />
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Ticket Médio</p>
+                </div>
+                <p className="text-2xl font-black text-purple-500 tracking-tight">{formatCurrency(ticketMedio)}</p>
+                <p className="text-[10px] text-muted-foreground mt-1">por pedido</p>
               </div>
-              <p className="text-xl font-black text-foreground">{formatCurrency(ticketMedio)}</p>
-              <p className="text-[10px] text-muted-foreground mt-1">Ticket Médio</p>
             </div>
-            <div className="bg-card border border-border rounded-2xl p-4 text-center">
-              <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center mx-auto mb-2">
-                <Banknote className="h-4 w-4 text-amber-500" />
+
+            <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-4 border border-border/30 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent" />
+              <div className="relative">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Banknote className="h-3.5 w-3.5 text-amber-500" />
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Tx Entrega</p>
+                </div>
+                <p className="text-2xl font-black text-amber-500 tracking-tight">{formatCurrency(totalDeliveryFees)}</p>
+                <p className="text-[10px] text-muted-foreground mt-1">arrecadado em fretes</p>
               </div>
-              <p className="text-xl font-black text-foreground">{formatCurrency(totalDeliveryFees)}</p>
-              <p className="text-[10px] text-muted-foreground mt-1">Taxas de Entrega</p>
             </div>
           </div>
 
-          {/* Payment Methods Breakdown */}
-          <div className="bg-card border border-border rounded-2xl p-4">
-            <h4 className="text-sm font-bold text-foreground mb-3">Métodos de Pagamento</h4>
-            <div className="space-y-3">
-              {paymentBreakdown.cash.count > 0 && (
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">💵</span>
-                    <span className="text-sm text-foreground font-medium">Dinheiro</span>
-                    <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{paymentBreakdown.cash.count}x</span>
-                  </div>
-                  <span className="text-sm font-bold text-foreground">{formatCurrency(paymentBreakdown.cash.total)}</span>
-                </div>
-              )}
-              {paymentBreakdown.card.count > 0 && (
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">💳</span>
-                    <span className="text-sm text-foreground font-medium">Cartão</span>
-                    <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{paymentBreakdown.card.count}x</span>
-                  </div>
-                  <span className="text-sm font-bold text-foreground">{formatCurrency(paymentBreakdown.card.total)}</span>
-                </div>
-              )}
-              {paymentBreakdown.pix.count > 0 && (
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">⚡</span>
-                    <span className="text-sm text-foreground font-medium">PIX</span>
-                    <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{paymentBreakdown.pix.count}x</span>
-                  </div>
-                  <span className="text-sm font-bold text-foreground">{formatCurrency(paymentBreakdown.pix.total)}</span>
-                </div>
-              )}
-              {completedOrders.length === 0 && (
-                <p className="text-xs text-muted-foreground text-center py-4">Nenhum pedido neste período</p>
-              )}
-            </div>
-          </div>
-
-          {/* Simple Bar Chart */}
-          {dailyData.length > 0 && (
-            <div className="bg-card border border-border rounded-2xl p-4">
-              <h4 className="text-sm font-bold text-foreground mb-3">Vendas por Dia</h4>
-              <div className="flex items-end gap-2 h-32">
-                {dailyData.map((d, i) => {
-                  const max = Math.max(...dailyData.map(x => x.vendas), 1);
-                  const height = (d.vendas / max) * 100;
-                  return (
-                    <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                      <span className="text-[9px] text-muted-foreground font-bold">R${d.vendas.toFixed(0)}</span>
-                      <div className="w-full rounded-t-lg bg-primary/80 transition-all" style={{ height: `${Math.max(height, 4)}%` }} />
-                      <span className="text-[9px] text-muted-foreground">{d.day}</span>
-                    </div>
-                  );
-                })}
+          {/* Area Chart: Daily Sales */}
+          {dailyData.length > 1 && (
+            <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-5 border border-border/30">
+              <p className="text-xs font-bold text-foreground mb-4">📈 Evolução de Vendas</p>
+              <div className="h-44">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={dailyData}>
+                    <defs>
+                      <linearGradient id="basicSalesGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={COLORS.green} stopOpacity={0.4} />
+                        <stop offset="100%" stopColor={COLORS.green} stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="day" tick={{ fontSize: 10, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+                    <YAxis hide />
+                    <RechartsTooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "12px",
+                        fontSize: "12px",
+                        color: "hsl(var(--foreground))",
+                      }}
+                      formatter={(value: number) => [`R$ ${value.toFixed(2)}`, "Vendas"]}
+                    />
+                    <Area type="monotone" dataKey="vendas" stroke={COLORS.green} strokeWidth={2.5} fill="url(#basicSalesGrad)" />
+                  </AreaChart>
+                </ResponsiveContainer>
               </div>
             </div>
           )}
 
+          {/* Hourly Heatmap */}
+          {hourlyData.length > 0 && (
+            <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-5 border border-border/30">
+              <p className="text-xs font-bold text-foreground mb-4">🕐 Horários de Pico</p>
+              <div className="h-32">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={hourlyData}>
+                    <XAxis dataKey="hour" tick={{ fontSize: 9, fill: "#9ca3af" }} axisLine={false} tickLine={false} interval={1} />
+                    <YAxis hide />
+                    <RechartsTooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "12px",
+                        fontSize: "12px",
+                        color: "hsl(var(--foreground))",
+                      }}
+                      formatter={(value: number) => [`${value} pedidos`, "Horário"]}
+                    />
+                    <Bar dataKey="pedidos" fill={COLORS.blue} radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
+          {/* Payment Distribution */}
+          {donutData.length > 0 && (
+            <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-5 border border-border/30">
+              <p className="text-xs font-bold text-foreground mb-4">💳 Distribuição por Pagamento</p>
+              <div className="flex items-center gap-4">
+                <div className="w-28 h-28 shrink-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={donutData} innerRadius={30} outerRadius={50} paddingAngle={4} dataKey="value" strokeWidth={0}>
+                        {donutData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex-1 space-y-3">
+                  {[
+                    { name: "PIX", data: paymentBreakdown.pix, color: COLORS.green, emoji: "⚡" },
+                    { name: "Cartão", data: paymentBreakdown.card, color: COLORS.blue, emoji: "💳" },
+                    { name: "Dinheiro", data: paymentBreakdown.cash, color: COLORS.amber, emoji: "💵" },
+                  ].filter(p => p.data.count > 0).map((p) => (
+                    <div key={p.name} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: p.color }} />
+                        <span className="text-xs text-muted-foreground">{p.emoji} {p.name}</span>
+                        <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground">{p.data.count}x</span>
+                      </div>
+                      <span className="text-xs font-bold text-foreground">{formatCurrency(p.data.total)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Revenue Breakdown */}
+          <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-5 border border-border/30 space-y-3">
+            <p className="text-xs font-bold text-foreground">📊 Composição da Receita</p>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Vendas (produtos)</span>
+                <span className="text-sm font-bold text-foreground">{formatCurrency(totalSales)}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Taxas de entrega</span>
+                <span className="text-sm font-bold text-foreground">{formatCurrency(totalDeliveryFees)}</span>
+              </div>
+              <div className="h-px bg-border" />
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-foreground">Total bruto</span>
+                <span className="text-sm font-black text-emerald-500">{formatCurrency(totalRevenue)}</span>
+              </div>
+            </div>
+          </div>
+
           {/* Export */}
           {completedOrders.length > 0 && (
-            <button onClick={exportCSV} className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2">
+            <button onClick={exportCSV}
+              className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg shadow-primary/20">
               <Download className="h-4 w-4" /> Exportar CSV
             </button>
+          )}
+
+          {completedOrders.length === 0 && (
+            <div className="text-center py-12">
+              <Receipt className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+              <p className="text-muted-foreground text-sm">Nenhum pedido concluído neste período</p>
+            </div>
           )}
         </>
       )}

@@ -13,8 +13,13 @@ import {
   ChevronDown, ChevronUp, DollarSign, XCircle, Loader2, Search,
   Menu, X, LayoutDashboard, CircleDot, TrendingUp, BarChart3,
   Users, Timer, Star, ShoppingBag, ArrowUpRight, ArrowDownRight,
-  Filter, UserCheck, UserX, MapPinned, Repeat, Heart, AlertTriangle, LogOut, User, Shield
+  Filter, UserCheck, UserX, MapPinned, Repeat, Heart, AlertTriangle, LogOut, User, Shield,
+  Calendar, Download
 } from "lucide-react";
+import {
+  AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip,
+  ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar,
+} from "recharts";
 import { openWhatsApp } from "@/lib/whatsapp";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import MenuBuilder from "@/components/MenuBuilder";
@@ -151,6 +156,7 @@ const AdminDashboard = () => {
   const [cancelConfirm, setCancelConfirm] = useState<string | null>(null);
   const [showDelayedPanel, setShowDelayedPanel] = useState(false);
   const [showMoreSheet, setShowMoreSheet] = useState(false);
+  const [selectedReportPeriod, setSelectedReportPeriod] = useState(30);
 
   const prevPendingCountRef = useRef(0);
 
@@ -1772,104 +1778,302 @@ const AdminDashboard = () => {
               )}
               {dashboardTab === "reports" && (
                 <div className="space-y-6">
-                  <h3 className="text-lg font-bold text-foreground">Relatórios de Vendas</h3>
+                  <h3 className="text-lg font-bold text-foreground">Relatórios Avançados</h3>
                   {(() => {
-                    const last7Days = Array.from({ length: 7 }, (_, i) => {
-                      const d = new Date(); d.setDate(d.getDate() - (6 - i));
+                    const periods = [7, 14, 30, 90];
+                    const selectedPeriod = selectedReportPeriod;
+                    const setSelectedPeriod = setSelectedReportPeriod;
+
+                    const periodDays = Array.from({ length: selectedPeriod }, (_, i) => {
+                      const d = new Date(); d.setDate(d.getDate() - (selectedPeriod - 1 - i));
                       return d.toISOString().split("T")[0];
                     });
-                    const dailyData = last7Days.map(date => {
-                      const dayOrders = (allOrders || []).filter((o: any) => 
-                        new Date(o.created_at).toISOString().split("T")[0] === date && !["cancelado", "aguardando_pagamento"].includes(o.status)
-                      );
+                    const periodOrders = (allOrders || []).filter((o: any) => {
+                      const d = new Date(o.created_at).toISOString().split("T")[0];
+                      return periodDays.includes(d) && !["cancelado", "aguardando_pagamento"].includes(o.status);
+                    });
+
+                    // Previous period for comparison
+                    const prevPeriodDays = Array.from({ length: selectedPeriod }, (_, i) => {
+                      const d = new Date(); d.setDate(d.getDate() - (selectedPeriod * 2 - 1 - i));
+                      return d.toISOString().split("T")[0];
+                    });
+                    const prevPeriodOrders = (allOrders || []).filter((o: any) => {
+                      const d = new Date(o.created_at).toISOString().split("T")[0];
+                      return prevPeriodDays.includes(d) && !["cancelado", "aguardando_pagamento"].includes(o.status);
+                    });
+
+                    const completedPeriod = periodOrders.filter((o: any) => ["entregue", "finalizado"].includes(o.status));
+                    const completedPrev = prevPeriodOrders.filter((o: any) => ["entregue", "finalizado"].includes(o.status));
+
+                    const totalRevenue = sumMoney(completedPeriod.map((o: any) => o.total_price));
+                    const prevRevenue = sumMoney(completedPrev.map((o: any) => o.total_price));
+                    const revenueGrowth = prevRevenue > 0 ? ((totalRevenue - prevRevenue) / prevRevenue * 100) : 0;
+
+                    const totalOrders = completedPeriod.length;
+                    const prevOrderCount = completedPrev.length;
+                    const orderGrowth = prevOrderCount > 0 ? ((totalOrders - prevOrderCount) / prevOrderCount * 100) : 0;
+
+                    const avgTicket = averageMoney(totalRevenue, totalOrders);
+                    const prevAvgTicket = averageMoney(prevRevenue, prevOrderCount);
+                    const ticketGrowth = prevAvgTicket > 0 ? ((avgTicket - prevAvgTicket) / prevAvgTicket * 100) : 0;
+
+                    const cancelledOrders = periodOrders.filter((o: any) => o.status === "cancelado").length;
+                    const cancelRate = periodOrders.length > 0 ? (cancelledOrders / periodOrders.length * 100) : 0;
+
+                    // Daily chart data
+                    const dailyChart = periodDays.map(date => {
+                      const dayOrders = completedPeriod.filter((o: any) => new Date(o.created_at).toISOString().split("T")[0] === date);
                       return {
-                        day: new Date(date).toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit" }),
-                        vendas: sumMoney(dayOrders.map((order: any) => order.total_price)),
+                        day: new Date(date).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
+                        vendas: Math.round(sumMoney(dayOrders.map((o: any) => o.total_price)) * 100) / 100,
                         pedidos: dayOrders.length,
                       };
                     });
-                    const topProducts = new Map<string, number>();
-                    (allOrders || []).forEach((o: any) => {
-                      if (["cancelado", "aguardando_pagamento"].includes(o.status)) return;
+
+                    // Hourly distribution
+                    const hourlyMap: Record<number, number> = {};
+                    completedPeriod.forEach((o: any) => {
+                      const h = new Date(o.created_at).getHours();
+                      hourlyMap[h] = (hourlyMap[h] || 0) + 1;
+                    });
+                    const hourlyChart = Array.from({ length: 24 }, (_, h) => ({
+                      hour: `${String(h).padStart(2, "0")}h`,
+                      pedidos: hourlyMap[h] || 0,
+                    })).filter(h => h.pedidos > 0 || (parseInt(h.hour) >= 8 && parseInt(h.hour) <= 23));
+                    const peakHour = Object.entries(hourlyMap).sort(([,a], [,b]) => b - a)[0];
+
+                    // Payment breakdown
+                    const paymentPie = [
+                      { name: "PIX", value: completedPeriod.filter((o: any) => o.payment_method === "pix").length, total: sumMoney(completedPeriod.filter((o: any) => o.payment_method === "pix").map((o: any) => o.total_price)) },
+                      { name: "Cartão", value: completedPeriod.filter((o: any) => o.payment_method === "cartao").length, total: sumMoney(completedPeriod.filter((o: any) => o.payment_method === "cartao").map((o: any) => o.total_price)) },
+                      { name: "Dinheiro", value: completedPeriod.filter((o: any) => o.payment_method !== "pix" && o.payment_method !== "cartao").length, total: sumMoney(completedPeriod.filter((o: any) => o.payment_method !== "pix" && o.payment_method !== "cartao").map((o: any) => o.total_price)) },
+                    ].filter(d => d.value > 0);
+
+                    // Top products
+                    const topProducts = new Map<string, { qty: number; revenue: number }>();
+                    completedPeriod.forEach((o: any) => {
                       o.order_items?.forEach((item: any) => {
                         const name = item.products?.name || "Item";
-                        topProducts.set(name, (topProducts.get(name) || 0) + item.quantity);
+                        const existing = topProducts.get(name) || { qty: 0, revenue: 0 };
+                        topProducts.set(name, { qty: existing.qty + item.quantity, revenue: existing.revenue + (item.unit_price * item.quantity) });
                       });
                     });
-                    const sortedProducts = Array.from(topProducts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 10);
-                    const totalRevenue = sumMoney(dailyData.map((day) => day.vendas));
-                    const totalOrders = dailyData.reduce((s, d) => s + d.pedidos, 0);
-                    const avgTicket = averageMoney(totalRevenue, totalOrders);
+                    const sortedProducts = Array.from(topProducts.entries()).sort((a, b) => b[1].revenue - a[1].revenue).slice(0, 10);
+
+                    // Weekday distribution
+                    const weekdayNames = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+                    const weekdayMap: Record<number, { pedidos: number; vendas: number }> = {};
+                    completedPeriod.forEach((o: any) => {
+                      const wd = new Date(o.created_at).getDay();
+                      if (!weekdayMap[wd]) weekdayMap[wd] = { pedidos: 0, vendas: 0 };
+                      weekdayMap[wd].pedidos += 1;
+                      weekdayMap[wd].vendas += Number(o.total_price);
+                    });
+                    const weekdayChart = Array.from({ length: 7 }, (_, i) => ({
+                      dia: weekdayNames[i],
+                      pedidos: weekdayMap[i]?.pedidos || 0,
+                      vendas: Math.round((weekdayMap[i]?.vendas || 0) * 100) / 100,
+                    }));
+                    const bestDay = weekdayChart.reduce((best, d) => d.vendas > best.vendas ? d : best, weekdayChart[0]);
+
+                    const PIE_COLORS = ["#10b981", "#3b82f6", "#f59e0b"];
 
                     const exportCSV = () => {
-                      const lines = ["Data,Vendas,Pedidos", ...dailyData.map(d => `${d.day},${d.vendas.toFixed(2)},${d.pedidos}`)];
-                      const blob = new Blob([lines.join("\n")], { type: "text/csv" });
+                      const header = "Data,Vendas,Pedidos";
+                      const rows = dailyChart.map(d => `${d.day},${d.vendas.toFixed(2)},${d.pedidos}`);
+                      const productHeader = "\n\nProduto,Quantidade,Receita";
+                      const productRows = sortedProducts.map(([name, d]) => `${name},${d.qty},${d.revenue.toFixed(2)}`);
+                      const blob = new Blob([[header, ...rows, productHeader, ...productRows].join("\n")], { type: "text/csv" });
                       const url = URL.createObjectURL(blob);
-                      const a = document.createElement("a"); a.href = url; a.download = `relatorio-vendas-${store?.name || "loja"}.csv`; a.click();
+                      const a = document.createElement("a"); a.href = url; a.download = `relatorio-${store?.name || "loja"}-${selectedPeriod}d.csv`; a.click();
                       URL.revokeObjectURL(url);
-                      toast.success("CSV exportado!");
+                      toast.success("Relatório CSV exportado!");
                     };
 
                     return (
                       <>
-                        <div className="grid grid-cols-3 gap-3">
-                          <div className="bg-card border border-border rounded-2xl p-4 text-center">
-                            <p className="text-2xl font-black text-emerald-500">R$ {totalRevenue.toFixed(2)}</p>
-                            <p className="text-[10px] text-muted-foreground">Últimos 7 dias</p>
+                        {/* Period selector */}
+                        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                          <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
+                          {periods.map(p => (
+                            <button key={p} onClick={() => setSelectedPeriod(p)}
+                              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                                selectedPeriod === p
+                                  ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                                  : "bg-card text-muted-foreground hover:bg-accent border border-border"
+                              }`}>
+                              {p}d
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* KPI Cards with comparison */}
+                        <div className="grid grid-cols-2 gap-3">
+                          {[
+                            { label: "Receita Total", value: formatCurrency(totalRevenue), growth: revenueGrowth, color: "emerald" },
+                            { label: "Pedidos", value: totalOrders.toString(), growth: orderGrowth, color: "blue" },
+                            { label: "Ticket Médio", value: formatCurrency(avgTicket), growth: ticketGrowth, color: "purple" },
+                            { label: "Taxa Cancelamento", value: `${cancelRate.toFixed(1)}%`, growth: null, color: cancelRate > 5 ? "red" : "emerald" },
+                          ].map((kpi) => (
+                            <div key={kpi.label} className={`bg-card/60 backdrop-blur-sm rounded-2xl p-4 border border-border/30 relative overflow-hidden`}>
+                              <div className={`absolute inset-0 bg-gradient-to-br from-${kpi.color}-500/5 to-transparent`} />
+                              <div className="relative">
+                                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">{kpi.label}</p>
+                                <p className={`text-2xl font-black tracking-tight mt-1 text-${kpi.color}-500`}>{kpi.value}</p>
+                                {kpi.growth !== null && (
+                                  <div className={`flex items-center gap-1 mt-1 text-[10px] font-bold ${kpi.growth >= 0 ? "text-emerald-500" : "text-red-500"}`}>
+                                    {kpi.growth >= 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                                    {kpi.growth >= 0 ? "+" : ""}{kpi.growth.toFixed(1)}% vs anterior
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Insights Cards */}
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="bg-card/60 rounded-2xl p-4 border border-border/30">
+                            <p className="text-[10px] text-muted-foreground font-semibold uppercase">🔥 Horário de Pico</p>
+                            <p className="text-lg font-black text-foreground mt-1">{peakHour ? `${peakHour[0].padStart(2, "0")}:00` : "—"}</p>
+                            <p className="text-[10px] text-muted-foreground">{peakHour ? `${peakHour[1]} pedidos` : "Sem dados"}</p>
                           </div>
-                          <div className="bg-card border border-border rounded-2xl p-4 text-center">
-                            <p className="text-2xl font-black text-foreground">{totalOrders}</p>
-                            <p className="text-[10px] text-muted-foreground">Pedidos</p>
-                          </div>
-                          <div className="bg-card border border-border rounded-2xl p-4 text-center">
-                            <p className="text-2xl font-black text-primary">R$ {avgTicket.toFixed(2)}</p>
-                            <p className="text-[10px] text-muted-foreground">Ticket Médio</p>
+                          <div className="bg-card/60 rounded-2xl p-4 border border-border/30">
+                            <p className="text-[10px] text-muted-foreground font-semibold uppercase">📅 Melhor Dia</p>
+                            <p className="text-lg font-black text-foreground mt-1">{bestDay?.dia || "—"}</p>
+                            <p className="text-[10px] text-muted-foreground">{bestDay ? `${formatCurrency(bestDay.vendas)}` : "Sem dados"}</p>
                           </div>
                         </div>
 
-                        <div className="bg-card border border-border rounded-2xl p-4">
-                          <h4 className="text-sm font-bold text-foreground mb-3">Vendas por Dia</h4>
-                          <div className="flex items-end gap-2 h-32">
-                            {dailyData.map((d, i) => {
-                              const max = Math.max(...dailyData.map(x => x.vendas), 1);
-                              const height = (d.vendas / max) * 100;
-                              return (
-                                <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                                  <span className="text-[9px] text-muted-foreground font-bold">R${d.vendas.toFixed(2)}</span>
-                                  <div className="w-full rounded-t-lg bg-primary/80 transition-all" style={{ height: `${Math.max(height, 4)}%` }} />
-                                  <span className="text-[9px] text-muted-foreground">{d.day}</span>
-                                </div>
-                              );
-                            })}
+                        {/* Revenue Chart */}
+                        {dailyChart.length > 1 && (
+                          <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-5 border border-border/30">
+                            <p className="text-xs font-bold text-foreground mb-4">📈 Evolução de Vendas ({selectedPeriod} dias)</p>
+                            <div className="h-48">
+                              <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={dailyChart}>
+                                  <defs>
+                                    <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
+                                      <stop offset="0%" stopColor="#10b981" stopOpacity={0.4} />
+                                      <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+                                    </linearGradient>
+                                  </defs>
+                                  <XAxis dataKey="day" tick={{ fontSize: 9, fill: "#9ca3af" }} axisLine={false} tickLine={false} interval={Math.max(0, Math.floor(dailyChart.length / 8))} />
+                                  <YAxis hide />
+                                  <RechartsTooltip
+                                    contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "12px", fontSize: "12px", color: "hsl(var(--foreground))" }}
+                                    formatter={(value: number, name: string) => [name === "vendas" ? `R$ ${value.toFixed(2)}` : `${value}`, name === "vendas" ? "Vendas" : "Pedidos"]}
+                                  />
+                                  <Area type="monotone" dataKey="vendas" stroke="#10b981" strokeWidth={2} fill="url(#revenueGrad)" />
+                                </AreaChart>
+                              </ResponsiveContainer>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Hourly Distribution */}
+                        {hourlyChart.length > 0 && (
+                          <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-5 border border-border/30">
+                            <p className="text-xs font-bold text-foreground mb-4">🕐 Distribuição por Horário</p>
+                            <div className="h-36">
+                              <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={hourlyChart}>
+                                  <XAxis dataKey="hour" tick={{ fontSize: 9, fill: "#9ca3af" }} axisLine={false} tickLine={false} interval={1} />
+                                  <YAxis hide />
+                                  <RechartsTooltip
+                                    contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "12px", fontSize: "12px", color: "hsl(var(--foreground))" }}
+                                    formatter={(value: number) => [`${value} pedidos`, ""]}
+                                  />
+                                  <Bar dataKey="pedidos" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                              </ResponsiveContainer>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Weekday Performance */}
+                        <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-5 border border-border/30">
+                          <p className="text-xs font-bold text-foreground mb-4">📊 Desempenho por Dia da Semana</p>
+                          <div className="h-36">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <BarChart data={weekdayChart}>
+                                <XAxis dataKey="dia" tick={{ fontSize: 10, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+                                <YAxis hide />
+                                <RechartsTooltip
+                                  contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "12px", fontSize: "12px", color: "hsl(var(--foreground))" }}
+                                  formatter={(value: number, name: string) => [name === "vendas" ? `R$ ${value.toFixed(2)}` : `${value}`, name === "vendas" ? "Vendas" : "Pedidos"]}
+                                />
+                                <Bar dataKey="vendas" fill="#a855f7" radius={[4, 4, 0, 0]} />
+                              </BarChart>
+                            </ResponsiveContainer>
                           </div>
                         </div>
 
-                        <div className="bg-card border border-border rounded-2xl p-4">
-                          <h4 className="text-sm font-bold text-foreground mb-3">Produtos Mais Vendidos</h4>
-                          <div className="space-y-2">
-                            {sortedProducts.map(([name, qty], i) => {
-                              const max = sortedProducts[0]?.[1] || 1;
+                        {/* Payment Distribution */}
+                        {paymentPie.length > 0 && (
+                          <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-5 border border-border/30">
+                            <p className="text-xs font-bold text-foreground mb-4">💳 Métodos de Pagamento</p>
+                            <div className="flex items-center gap-4">
+                              <div className="w-28 h-28 shrink-0">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <PieChart>
+                                    <Pie data={paymentPie} innerRadius={30} outerRadius={50} paddingAngle={4} dataKey="value" strokeWidth={0}>
+                                      {paymentPie.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                                    </Pie>
+                                  </PieChart>
+                                </ResponsiveContainer>
+                              </div>
+                              <div className="flex-1 space-y-3">
+                                {paymentPie.map((p, i) => (
+                                  <div key={p.name} className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: PIE_COLORS[i] }} />
+                                      <span className="text-xs text-muted-foreground">{p.name}</span>
+                                      <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded">{p.value}x</span>
+                                    </div>
+                                    <span className="text-xs font-bold text-foreground">{formatCurrency(p.total)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Top Products */}
+                        <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-5 border border-border/30">
+                          <p className="text-xs font-bold text-foreground mb-4">🏆 Produtos Mais Vendidos</p>
+                          <div className="space-y-2.5">
+                            {sortedProducts.map(([name, data], i) => {
+                              const maxRev = sortedProducts[0]?.[1]?.revenue || 1;
                               return (
                                 <div key={name} className="flex items-center gap-3">
-                                  <span className="text-xs font-bold text-muted-foreground w-5">{i + 1}.</span>
+                                  <span className={`text-xs font-black w-6 text-center ${i < 3 ? "text-amber-500" : "text-muted-foreground"}`}>
+                                    {i < 3 ? ["🥇", "🥈", "🥉"][i] : `${i + 1}.`}
+                                  </span>
                                   <div className="flex-1">
-                                    <div className="flex justify-between text-xs mb-0.5">
+                                    <div className="flex justify-between text-xs mb-1">
                                       <span className="font-bold text-foreground">{name}</span>
-                                      <span className="text-muted-foreground">{qty}x</span>
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-muted-foreground">{data.qty}x</span>
+                                        <span className="font-bold text-emerald-500">{formatCurrency(data.revenue)}</span>
+                                      </div>
                                     </div>
                                     <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                                      <div className="h-full bg-primary rounded-full" style={{ width: `${(qty / max) * 100}%` }} />
+                                      <div className="h-full bg-gradient-to-r from-primary to-primary/60 rounded-full transition-all" style={{ width: `${(data.revenue / maxRev) * 100}%` }} />
                                     </div>
                                   </div>
                                 </div>
                               );
                             })}
-                            {sortedProducts.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">Sem dados ainda</p>}
+                            {sortedProducts.length === 0 && <p className="text-xs text-muted-foreground text-center py-6">Sem dados de produtos neste período</p>}
                           </div>
                         </div>
 
-                        <button onClick={exportCSV} className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-xl text-sm">
-                          📊 Exportar CSV
+                        {/* Export */}
+                        <button onClick={exportCSV}
+                          className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg shadow-primary/20">
+                          <Download className="h-4 w-4" /> Exportar Relatório CSV
                         </button>
                       </>
                     );
