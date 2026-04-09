@@ -140,14 +140,15 @@ Deno.serve(async (req) => {
       }
 
       let userMessage = "Erro ao gerar PIX. Tente novamente.";
-      if (mpData?.message?.includes("access_token")) {
+      const mpMsg = mpData?.message || "";
+      if (mpMsg.includes("access_token")) {
         userMessage = "Chave do Mercado Pago inválida. Contate o administrador.";
-      } else if (mpData?.message?.includes("identification") || mpData?.message?.includes("payer")) {
+      } else if (mpMsg.includes("identification") || mpMsg.includes("payer")) {
         userMessage = "Erro ao gerar Pix: verifique se seu e-mail e CPF estão corretos.";
-      } else if (mpData?.message?.includes("QR render") || mpData?.message?.includes("without key enabled")) {
+      } else if (mpMsg.includes("QR render") || mpMsg.includes("without key enabled")) {
         userMessage = "Erro: Chave Pix não configurada na conta recebedora. Verifique o painel do administrador.";
       }
-      return new Response(JSON.stringify({ error: userMessage, mp_error: mpData?.message }), {
+      return new Response(JSON.stringify({ error: userMessage }), {
         status: 500,
         headers: corsHeaders,
       });

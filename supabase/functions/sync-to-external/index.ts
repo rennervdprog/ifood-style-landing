@@ -228,9 +228,9 @@ serve(async (req) => {
       return jsonRes({ success: !hasErrors, results });
     }
 
-    return jsonRes({ error: "Unknown action. Use: test_connection, sync_record, sync_order, sync_profile, sync_all" }, 400);
+    return jsonRes({ error: "Unknown action" }, 400);
   } catch (err) {
     console.error("sync-to-external error:", err);
-    return jsonRes({ error: err.message || "Internal error" }, 500);
+    return jsonRes({ error: "Internal error" }, 500);
   }
 });

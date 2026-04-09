@@ -157,8 +157,16 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: any) {
+    console.error("delete-account error:", error);
+    const safeMessages = [
+      "Não autorizado",
+      "Perfil não encontrado",
+      "Você possui pedidos ativos. Finalize-os antes de excluir a conta.",
+      "Suas lojas possuem pedidos ativos. Finalize-os antes de excluir a conta.",
+    ];
+    const msg = safeMessages.includes(error.message) ? error.message : "Erro ao excluir conta";
     return new Response(
-      JSON.stringify({ error: error.message || "Erro ao excluir conta" }),
+      JSON.stringify({ error: msg }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

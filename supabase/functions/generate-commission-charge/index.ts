@@ -199,7 +199,6 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({
           error: "Erro ao gerar cobrança PIX. Tente novamente.",
-          mp_error: mpData?.message,
         }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
