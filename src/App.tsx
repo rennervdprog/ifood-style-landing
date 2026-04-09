@@ -80,7 +80,7 @@ const App = () => (
                 <Route
                   path="/admin"
                   element={
-                    <RoleGuard allowedRoles={["lojista", "admin"]} redirectTo="/" requireApproval>
+                    <RoleGuard allowedRoles={["lojista", "admin"]} redirectTo="/">
                       <AdminDashboard />
                     </RoleGuard>
                   }
