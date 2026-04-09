@@ -168,6 +168,10 @@ const CheckoutPage = () => {
   }
 
   const handleConfirm = async () => {
+    if (isStoreClosed) {
+      toast.error(`Loja fechada. ${storeStatus?.reason || ""}`);
+      return;
+    }
     const useSavedAddr = selectedSavedAddressId && savedAddressData;
     const finalHasAddress = useSavedAddr || hasAddress;
     const finalNeighborhood = useSavedAddr ? savedAddressData.neighborhood : (profileNeighborhood || neighborhood);
