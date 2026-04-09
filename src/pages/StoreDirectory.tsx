@@ -208,7 +208,7 @@ const StoreDirectory = () => {
   const faq = [
     { q: "Quais planos estão disponíveis?", a: "Temos dois planos: o Plano Essencial por R$180/mês (sem taxa por pedido) e o Plano Crescimento por R$100/mês + 2,5% por pedido entregue. Ambos incluem cardápio digital, gestão de pedidos e painel financeiro." },
     { q: "Funciona fora de Itatinga/SP?", a: "Sim! Em qualquer cidade do Brasil você pode usar o ItaSuper como cardápio digital profissional com gestão de pedidos completa. Nesse caso, você utiliza seu próprio entregador. A operação com motoboys da plataforma está disponível em Itatinga/SP, com expansão para novas cidades em breve." },
-    { q: "Qual a diferença entre os planos?", a: "O Plano Essencial (R$180/mês) é ideal para quem já tem bom volume de vendas — sem taxa por pedido. O Plano Crescimento (R$100/mês + 2,5%) é perfeito para quem está começando — mensalidade menor e taxa mínima por venda. Ambos dão acesso ao sistema completo." },
+    { q: "Qual a diferença entre os planos?", a: "O Plano Essencial (R$180/mês) é ideal para quem já tem bom volume de vendas — sem taxa por pedido, mas usa apenas motoboy próprio. O Plano Crescimento (R$100/mês + 2,5%) inclui PIX integrado e acesso ao motoboy da plataforma (onde disponível)." },
     { q: "Qual plano inclui pagamento por PIX?", a: "O Plano Crescimento (Híbrido) inclui pagamento por PIX integrado com split automático. No Plano Essencial (Fixo), os pagamentos são por dinheiro e cartão diretamente com o cliente." },
     { q: "Posso trocar de plano depois?", a: "Sim! Você pode fazer upgrade ou downgrade a qualquer momento pelo painel da loja, sem multa." },
     { q: "Como recebo meu dinheiro?", a: "No Plano Crescimento, pagamentos PIX vão direto para sua conta via split automático. No Plano Essencial, você recebe diretamente do cliente (dinheiro/cartão). A mensalidade é cobrada separadamente." },
@@ -382,14 +382,14 @@ const StoreDirectory = () => {
             </div>
             <div className="px-6 py-6" style={{ background: THEME.white }}>
               <ul className="space-y-2.5">
-                {[
+              {[
                   "Cardápio digital profissional",
                   "Gestão de pedidos em tempo real",
                   "Pagamento: dinheiro e cartão",
                   "Painel financeiro básico",
                   "Horários flexíveis",
                   "Cupons e promoções",
-                  "Motoboy próprio ou da plataforma*",
+                  "Apenas motoboy próprio",
                 ].map((f) => (
                   <li key={f} className="flex items-center gap-2.5 text-xs" style={{ color: THEME.dark }}>
                     <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0" style={{ color: THEME.green }} />
@@ -450,7 +450,7 @@ const StoreDirectory = () => {
         </div>
 
         <p className="text-center text-xs mt-6" style={{ color: THEME.muted }}>
-          * Motoboys da plataforma disponíveis em Itatinga/SP. Demais cidades: use seu próprio entregador.
+          * Motoboys da plataforma disponíveis apenas no Plano Crescimento e em cidades com cobertura (Itatinga/SP). Plano Essencial: apenas motoboy próprio.
         </p>
 
         {/* Plan comparison highlights */}
