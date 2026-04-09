@@ -1,11 +1,39 @@
 import { useCart } from "@/contexts/CartContext";
-import { ArrowLeft, Minus, Plus, Trash2, MapPin, ShoppingBag, ChevronRight, Truck, Store } from "lucide-react";
+import { ArrowLeft, Minus, Plus, Trash2, MapPin, ShoppingBag, ChevronRight, Truck, Store, Clock, AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 import BottomNav from "@/components/BottomNav";
 
 const CartPage = () => {
   const { items, neighborhood, neighborhoodFee, subtotal, total, updateQuantity, removeItem, clearCart } = useCart();
   const navigate = useNavigate();
+
+  const storeId = items[0]?.store_id;
+
+  const { data: storeInfo } = useQuery({
+    queryKey: ["cart-store-status", storeId],
+    queryFn: async () => {
+      const { data: store } = await supabase
+        .from("stores")
+        .select("is_open, force_closed")
+        .eq("id", storeId!)
+        .maybeSingle();
+      const { data: hours } = await supabase
+        .from("opening_hours")
+        .select("day_of_week, open_time, close_time, is_closed_all_day")
+        .eq("store_id", storeId!);
+      return { store, hours: (hours || []) as OpeningHour[] };
+    },
+    enabled: !!storeId,
+    refetchInterval: 60_000,
+  });
+
+  const storeStatus = storeInfo
+    ? getStoreOpenStatus(storeInfo.hours, storeInfo.store?.force_closed ?? false, storeInfo.store?.is_open ?? true)
+    : null;
+  const isClosed = storeStatus ? !storeStatus.isOpen : false;
 
   if (items.length === 0) {
     return (
@@ -63,6 +91,27 @@ const CartPage = () => {
           Limpar
         </button>
       </header>
+
+      {/* Store Closed Alert */}
+      {isClosed && storeStatus && (
+        <div className="mx-4 mt-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-start gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center shrink-0 mt-0.5">
+            <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-sm font-bold text-amber-700 dark:text-amber-300">Loja fechada no momento</h3>
+            <p className="text-xs text-amber-600/80 dark:text-amber-400/80 mt-0.5">
+              Seu pedido não pode ser finalizado agora.
+            </p>
+            <div className="flex items-center gap-1.5 mt-2 bg-amber-500/10 rounded-lg px-3 py-1.5 w-fit">
+              <AlertTriangle className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+              <span className="text-xs font-bold text-amber-700 dark:text-amber-300">
+                {storeStatus.reason}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="px-4 py-4 space-y-4">
         {/* Items grouped by store */}
@@ -146,13 +195,25 @@ const CartPage = () => {
           </div>
         </div>
         <div className="px-4 pb-4 pt-2">
-          <button
-            onClick={() => navigate("/checkout")}
-            className="w-full bg-primary text-primary-foreground font-bold py-4 rounded-2xl active:scale-[0.98] transition-all shadow-lg shadow-primary/25 text-base flex items-center justify-center gap-2"
-          >
-            Finalizar pedido
-            <ChevronRight className="h-5 w-5" />
-          </button>
+          {isClosed ? (
+            <button
+              disabled
+              className="w-full bg-muted text-muted-foreground font-bold py-4 rounded-2xl text-base flex items-center justify-center gap-2 cursor-not-allowed"
+            >
+              <Clock className="h-5 w-5" />
+              {storeStatus?.nextOpenDay && storeStatus?.nextOpenTime
+                ? `${storeStatus.nextOpenDay === "Hoje" ? "Abre" : `Abre ${storeStatus.nextOpenDay}`} às ${storeStatus.nextOpenTime}`
+                : "Loja fechada"}
+            </button>
+          ) : (
+            <button
+              onClick={() => navigate("/checkout")}
+              className="w-full bg-primary text-primary-foreground font-bold py-4 rounded-2xl active:scale-[0.98] transition-all shadow-lg shadow-primary/25 text-base flex items-center justify-center gap-2"
+            >
+              Finalizar pedido
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          )}
         </div>
       </div>
 
