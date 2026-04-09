@@ -593,7 +593,7 @@ const AdminDashboard = () => {
               <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
             </div>
             <div className="px-4 pb-4 grid grid-cols-3 gap-3">
-              {moreSheetItems.map(item => {
+              {moreSheetItems.filter(item => item.key !== "finance" || storePlan.hasCommission).map(item => {
                 const Icon = item.icon;
                 const isActive = dashboardTab === item.key;
                 return (
