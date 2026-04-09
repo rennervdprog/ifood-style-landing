@@ -199,13 +199,13 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
     enabled: !!storeId,
   });
 
-  // Fetch store owner profile to check PIX key
+  // Fetch store owner profile to check PIX key + commission rate
   const { data: storeData } = useQuery({
     queryKey: ["store-owner", storeId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("stores")
-        .select("owner_id")
+        .select("owner_id, commission_rate")
         .eq("id", storeId)
         .single();
       if (error) throw error;
@@ -213,6 +213,9 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
     },
     enabled: !!storeId,
   });
+
+  const commissionRate = ((storeData as any)?.commission_rate ?? 15) / 100;
+  const commissionPct = Math.round(commissionRate * 100);
 
   const { data: ownerProfile } = useQuery({
     queryKey: ["owner-profile", storeData?.owner_id],
@@ -235,14 +238,14 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
   const activeOrders = orders?.filter(o => !["entregue", "finalizado"].includes(o.status)) || [];
 
   const totalSales = sumMoney(completedOrders.map((order) => order.subtotal));
-  const totalCommission = multiplyMoney(totalSales, 0.15);
+  const totalCommission = multiplyMoney(totalSales, commissionRate);
   const storePart = subtractMoney(totalSales, totalCommission);
 
   const physicalSales = sumMoney(completedOrders.filter(o => o.payment_method !== "pix").map((order) => order.subtotal));
-  const commissionDue = multiplyMoney(physicalSales, 0.15);
+  const commissionDue = multiplyMoney(physicalSales, commissionRate);
 
   const appSales = sumMoney(completedOrders.filter(o => o.payment_method === "pix").map((order) => order.subtotal));
-  const creditFromApp = subtractMoney(appSales, multiplyMoney(appSales, 0.15));
+  const creditFromApp = subtractMoney(appSales, multiplyMoney(appSales, commissionRate));
 
   const activePixSales = sumMoney(activeOrders.filter(o => o.payment_method === "pix").map((order) => order.subtotal));
   const finalBalance = subtractMoney(creditFromApp, commissionDue);
@@ -448,10 +451,10 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
     const text = `📊 Resumo Financeiro ItaSuper - ${storeName}\n` +
       `Período: ${format(dateRange.start, "dd/MM", { locale: ptBR })} a ${format(dateRange.end, "dd/MM/yyyy", { locale: ptBR })}\n\n` +
       `💰 Vendas Totais: R$ ${totalSales.toFixed(2)}\n` +
-      `📱 Comissão Total (15%): R$ ${totalCommission.toFixed(2)}\n\n` +
+      `📱 Comissão Total (${commissionPct}%): R$ ${totalCommission.toFixed(2)}\n\n` +
       `--- Vendas via App (Split Automático ✅) ---\n` +
       `Vendas PIX App: R$ ${appSales.toFixed(2)}\n` +
-      `Comissão retida: R$ ${multiplyMoney(appSales, 0.15).toFixed(2)}\n` +
+      `Comissão retida: R$ ${multiplyMoney(appSales, commissionRate).toFixed(2)}\n` +
       `Lojista recebeu: R$ ${creditFromApp.toFixed(2)}\n\n` +
       `--- Vendas Físicas (Cobrança Manual) ---\n` +
       `Vendas Dinheiro/Cartão: R$ ${physicalSales.toFixed(2)}\n` +
@@ -466,11 +469,11 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
       `Período: ${format(dateRange.start, "dd/MM/yyyy")} a ${format(dateRange.end, "dd/MM/yyyy")}`,
       ``,
       `VENDAS TOTAIS: R$ ${totalSales.toFixed(2)}`,
-      `COMISSÃO TOTAL (15%): R$ ${totalCommission.toFixed(2)}`,
+      `COMISSÃO TOTAL (${commissionPct}%): R$ ${totalCommission.toFixed(2)}`,
       ``,
       `--- VENDAS VIA APP (SPLIT AUTOMÁTICO) ---`,
       `VENDAS PIX APP: R$ ${appSales.toFixed(2)}`,
-      `COMISSÃO RETIDA: R$ ${multiplyMoney(appSales, 0.15).toFixed(2)}`,
+      `COMISSÃO RETIDA: R$ ${multiplyMoney(appSales, commissionRate).toFixed(2)}`,
       `LOJISTA RECEBEU: R$ ${creditFromApp.toFixed(2)}`,
       ``,
       `--- VENDAS FÍSICAS (COBRANÇA MANUAL) ---`,
@@ -479,7 +482,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
       ``,
       `--- PEDIDOS ---`,
       ...(orders || []).map(o =>
-        `#${o.id.substring(0, 6).toUpperCase()} | ${format(new Date(o.created_at), "dd/MM HH:mm")} | ${o.payment_method === "pix" ? "PIX App" : o.payment_method === "cartao" ? "Cartão" : "Dinheiro"} | R$ ${Number(o.subtotal).toFixed(2)} | Comissão: R$ ${(Number(o.subtotal) * 0.15).toFixed(2)}`
+        `#${o.id.substring(0, 6).toUpperCase()} | ${format(new Date(o.created_at), "dd/MM HH:mm")} | ${o.payment_method === "pix" ? "PIX App" : o.payment_method === "cartao" ? "Cartão" : "Dinheiro"} | R$ ${Number(o.subtotal).toFixed(2)} | Comissão: R$ ${(Number(o.subtotal) * commissionRate).toFixed(2)}`
       ),
     ];
     const blob = new Blob([lines.join("\n")], { type: "text/plain" });
@@ -669,7 +672,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
           </div>
           <p className="text-2xl font-black text-emerald-400">R$ {creditFromApp.toFixed(2)}</p>
           <p className="text-[10px] text-muted-foreground mt-1">
-            Você recebeu R$ {creditFromApp.toFixed(2)} de R$ {appSales.toFixed(2)} em vendas pelo app. A taxa da plataforma (15% = R$ {multiplyMoney(appSales, 0.15).toFixed(2)}) já foi descontada automaticamente.
+            Você recebeu R$ {creditFromApp.toFixed(2)} de R$ {appSales.toFixed(2)} em vendas pelo app. A taxa da plataforma (${commissionPct}% = R$ {multiplyMoney(appSales, commissionRate).toFixed(2)}) já foi descontada automaticamente.
           </p>
           <div className="mt-2 rounded-xl bg-emerald-500/5 border border-emerald-500/10 p-2.5">
             <p className="text-[10px] text-emerald-400 font-semibold">✅ Valor já depositado na sua conta — nada a fazer</p>
@@ -687,7 +690,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
             </div>
             <p className="text-sm font-bold text-foreground">Taxa Pendente — Vendas Físicas</p>
           </div>
-          <p className="text-xs text-muted-foreground mb-1">Você recebeu o valor na hora (dinheiro/cartão). A taxa de 15% da plataforma precisa ser repassada.</p>
+          <p className="text-xs text-muted-foreground mb-1">Você recebeu o valor na hora (dinheiro/cartão). A taxa de ${commissionPct}% da plataforma precisa ser repassada.</p>
           <p className="text-2xl font-black text-red-400">
             R$ {(dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue).toFixed(2)}
           </p>
@@ -840,7 +843,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
         <div className="grid grid-cols-2 gap-3 text-center">
           <div>
             <p className="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">App (automático)</p>
-            <p className="text-sm font-black text-emerald-400 mt-1">R$ {multiplyMoney(appSales, 0.15).toFixed(2)}</p>
+            <p className="text-sm font-black text-emerald-400 mt-1">R$ {multiplyMoney(appSales, commissionRate).toFixed(2)}</p>
             <p className="text-[10px] text-muted-foreground">comissão já retida</p>
           </div>
           <div>
@@ -984,7 +987,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
           <div className="divide-y divide-border/20">
             {completedOrders.map(order => {
               const sub = Number(order.subtotal);
-              const commission = multiplyMoney(sub, 0.15);
+              const commission = multiplyMoney(sub, commissionRate);
               const net = subtractMoney(sub, commission);
               const isPix = order.payment_method === "pix";
               return (

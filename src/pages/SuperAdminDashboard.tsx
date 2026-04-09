@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import {
   ArrowLeft, DollarSign, ShoppingBag, TrendingUp, Clock,
   Store, Copy, AlertTriangle, Users, Bike, Wallet, CheckCircle2, Banknote, XCircle, Bell, Trash2, QrCode, Loader2, ArrowUpRight, ArrowDownRight, Settings,
-  LayoutDashboard, Shield, Ticket, RefreshCw, Truck, Menu, X, MapPin, Eye, Scale, Search, FileText, Mail, Phone, User, Download, Calendar, CreditCard, Receipt, ChevronDown, ChevronUp
+  LayoutDashboard, Shield, Ticket, RefreshCw, Truck, Menu, X, MapPin, Eye, Scale, Search, FileText, Mail, Phone, User, Download, Calendar, CreditCard, Receipt, ChevronDown, ChevronUp, Percent
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -199,14 +199,19 @@ const SuperAdminDashboard = () => {
     return () => { supabase.removeChannel(channel); };
   }, [isAdmin, queryClient]);
 
+  const getStoreRate = (storeId: string) => {
+    const store = stores?.find((s: any) => s.id === storeId);
+    return ((store as any)?.commission_rate ?? 15) / 100;
+  };
+
   const metrics = useMemo(() => {
     if (!orders) return { totalSales: 0, commission: 0, activeOrders: 0, totalOrders: 0 };
     const totalSales = sumMoney(orders.map((order) => order.total_price));
-    const commission = sumMoney(orders.map((order) => multiplyMoney(order.subtotal, 0.15)));
+    const commission = sumMoney(orders.map((order) => multiplyMoney(order.subtotal, getStoreRate(order.store_id))));
     const activeStatuses = ["pendente", "preparando", "pronto_para_entrega", "em_transito", "saiu_entrega"];
     const activeOrders = orders.filter(o => activeStatuses.includes(o.status)).length;
     return { totalSales, commission, activeOrders, totalOrders: orders.length };
-  }, [orders]);
+  }, [orders, stores]);
 
   const storeSettlement = useMemo(() => {
     if (!financeOrders || !stores) return [];
@@ -231,9 +236,10 @@ const SuperAdminDashboard = () => {
       entry.deliveryFees = addMoney(entry.deliveryFees, deliveryFee);
       entry.orderCount += 1;
     });
-    map.forEach(entry => {
-      entry.commissionDue = multiplyMoney(entry.physicalSales, 0.15);
-      entry.netTransfer = subtractMoney(entry.appSales, multiplyMoney(entry.appSales, 0.15));
+    map.forEach((entry, storeId) => {
+      const rate = getStoreRate(storeId);
+      entry.commissionDue = multiplyMoney(entry.physicalSales, rate);
+      entry.netTransfer = subtractMoney(entry.appSales, multiplyMoney(entry.appSales, rate));
       entry.finalBalance = subtractMoney(entry.netTransfer, entry.commissionDue);
     });
     return Array.from(map.values()).filter(e => e.orderCount > 0).sort((a, b) => b.totalSales - a.totalSales);
@@ -262,10 +268,10 @@ const SuperAdminDashboard = () => {
 
   const financeTotals = useMemo(() => {
     const totalVolume = sumMoney(storeSettlement.map((entry) => entry.totalSales));
-    const grossProfit = sumMoney(storeSettlement.map((entry) => multiplyMoney(entry.totalSales, 0.15)));
+    const grossProfit = sumMoney(storeSettlement.map((entry) => entry.commissionDue + multiplyMoney(entry.appSales, getStoreRate(entry.storeId))));
     const totalDriverFees = sumMoney(driverSettlement.map((entry) => entry.appFees));
     return { totalVolume, grossProfit, totalDriverFees };
-  }, [storeSettlement, driverSettlement]);
+  }, [storeSettlement, driverSettlement, stores]);
 
   const storeConciliation = useMemo(() => {
     if (!orders || !stores) return [];
@@ -275,7 +281,7 @@ const SuperAdminDashboard = () => {
       const entry = map.get(o.store_id);
       if (entry) {
         entry.totalSold = addMoney(entry.totalSold, o.total_price);
-        entry.commission = addMoney(entry.commission, multiplyMoney(o.subtotal, 0.15));
+        entry.commission = addMoney(entry.commission, multiplyMoney(o.subtotal, getStoreRate(o.store_id)));
         entry.orders += 1;
       }
     });
@@ -909,6 +915,11 @@ const FinanceTab = ({
   const [savingGateway, setSavingGateway] = useState(false);
   const [expandedStore, setExpandedStore] = useState<string | null>(null);
 
+  const getStoreRate = (storeId: string) => {
+    const store = stores?.find((s: any) => s.id === storeId);
+    return ((store as any)?.commission_rate ?? 15) / 100;
+  };
+
   const { data: dbGateway } = useQuery({
     queryKey: ["payment-gateway"],
     queryFn: async () => {
@@ -1499,7 +1510,7 @@ const FinanceTab = ({
               const dbComissao = Number(balance?.comissao_pendente || balance?.pending_commission || 0);
               const isExpanded = expandedStore === entry.storeId;
               const pixInfo = getStorePixInfo(entry.storeId);
-              const splitPaid = multiplyMoney(entry.appSales, 0.15);
+              const splitPaid = multiplyMoney(entry.appSales, getStoreRate(entry.storeId));
 
               return (
                 <div key={entry.storeId} className="bg-card rounded-2xl border border-border overflow-hidden transition-all">
@@ -1512,7 +1523,7 @@ const FinanceTab = ({
                       </div>
                       <div className="text-left">
                         <p className="text-sm font-bold text-foreground">{entry.name}</p>
-                        <p className="text-[10px] text-muted-foreground">{entry.orderCount} pedidos • R$ {entry.totalSales.toFixed(2)}</p>
+                        <p className="text-[10px] text-muted-foreground">{entry.orderCount} pedidos • R$ {entry.totalSales.toFixed(2)} • {Math.round(getStoreRate(entry.storeId) * 100)}%</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
@@ -1571,7 +1582,7 @@ const FinanceTab = ({
                                 <p className="text-xs font-bold text-amber-600">Comissão pendente (vendas físicas)</p>
                                 <p className="text-lg font-black text-amber-500 mt-1">R$ {dbComissao.toFixed(2)}</p>
                                 <p className="text-[10px] text-muted-foreground mt-0.5">
-                                  15% sobre vendas em dinheiro/cartão que o lojista recebeu diretamente
+                                  {Math.round(getStoreRate(entry.storeId) * 100)}% sobre vendas em dinheiro/cartão que o lojista recebeu diretamente
                                 </p>
                               </div>
                             </div>
@@ -1586,7 +1597,33 @@ const FinanceTab = ({
                           ) : null}
                         </div>
 
-                        {/* PIX key */}
+                        {/* Commission rate editor */}
+                        <div className="bg-muted/30 rounded-xl p-3 flex items-center gap-3">
+                          <Percent className="h-4 w-4 text-primary shrink-0" />
+                          <div className="flex-1">
+                            <p className="text-[10px] text-muted-foreground font-semibold uppercase">Taxa de comissão</p>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="1"
+                              defaultValue={Math.round(getStoreRate(entry.storeId) * 100)}
+                              className="w-16 bg-background border border-border rounded-lg px-2 py-1 text-sm font-bold text-center"
+                              onBlur={async (e) => {
+                                const newRate = Math.min(100, Math.max(0, Number(e.target.value)));
+                                if (newRate === Math.round(getStoreRate(entry.storeId) * 100)) return;
+                                const { error } = await supabase.from("stores").update({ commission_rate: newRate } as any).eq("id", entry.storeId);
+                                if (error) { toast.error("Erro ao atualizar taxa"); return; }
+                                toast.success(`Taxa de ${entry.name} atualizada para ${newRate}%`);
+                                queryClient.invalidateQueries({ queryKey: ["admin-all-stores"] });
+                              }}
+                            />
+                            <span className="text-xs font-bold text-muted-foreground">%</span>
+                          </div>
+                        </div>
+
                         {pixInfo?.pixKey ? (
                           <div className="bg-muted/30 rounded-xl p-2.5 flex items-center gap-2">
                             <Wallet className="h-3.5 w-3.5 text-emerald-500 shrink-0" />

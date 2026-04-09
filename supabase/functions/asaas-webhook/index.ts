@@ -118,9 +118,11 @@ Deno.serve(async (req) => {
           console.log(`Order ${externalReference} payment confirmed via Asaas, status → pendente`);
         }
 
-        // Track commission for online payments (always 15% of subtotal)
+        // Track commission for online payments using store's commission_rate
         if (order.store_id && order.subtotal) {
-          const commission = Math.round(Number(order.subtotal) * 0.15 * 100) / 100;
+          const { data: storeInfo } = await supabase.from("stores").select("commission_rate").eq("id", order.store_id).single();
+          const rate = (storeInfo?.commission_rate ?? 15) / 100;
+          const commission = Math.round(Number(order.subtotal) * rate * 100) / 100;
 
           // Try to read existing balance first, then insert or update
           const { data: existing } = await supabase

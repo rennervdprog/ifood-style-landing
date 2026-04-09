@@ -665,7 +665,7 @@ async function handleOrderPix(
     );
     const { data: store } = await serviceClient
       .from("stores")
-      .select("asaas_wallet_id, delivery_mode")
+      .select("asaas_wallet_id, delivery_mode, commission_rate")
       .eq("id", order.store_id)
       .single();
     if (store?.asaas_wallet_id) {
@@ -673,15 +673,15 @@ async function handleOrderPix(
       const subtotal = Number(order.subtotal) || 0;
       const deliveryFee = Number(order.delivery_fee) || 0;
       const isOwnDelivery = store.delivery_mode === "own";
+      const rate = (store.commission_rate ?? 15) / 100;
+      const storeShare = 1 - rate;
 
       if (isOwnDelivery) {
-        // Own delivery: store gets 85% of subtotal + full delivery fee
-        splitFixedValue = Math.round((subtotal * 0.85 + deliveryFee) * 100) / 100;
-        console.log("Split (own delivery): store gets R$", splitFixedValue, "platform keeps 15% =", Math.round(subtotal * 0.15 * 100) / 100);
+        splitFixedValue = Math.round((subtotal * storeShare + deliveryFee) * 100) / 100;
+        console.log(`Split (own delivery): store gets R$${splitFixedValue}, platform keeps ${rate * 100}% = R$${Math.round(subtotal * rate * 100) / 100}`);
       } else {
-        // Platform delivery: store gets 85% of subtotal, platform keeps 15% + delivery fee
-        splitFixedValue = Math.round(subtotal * 0.85 * 100) / 100;
-        console.log("Split (platform): store gets R$", splitFixedValue, "from subtotal:", subtotal);
+        splitFixedValue = Math.round(subtotal * storeShare * 100) / 100;
+        console.log(`Split (platform): store gets R$${splitFixedValue} from subtotal: ${subtotal}`);
       }
     }
   }

@@ -1255,6 +1255,7 @@ export type Database = {
           asaas_account_id: string | null
           asaas_wallet_id: string | null
           category: Database["public"]["Enums"]["store_category"]
+          commission_rate: number
           created_at: string
           delivery_mode: string
           force_closed: boolean
@@ -1281,6 +1282,7 @@ export type Database = {
           asaas_account_id?: string | null
           asaas_wallet_id?: string | null
           category: Database["public"]["Enums"]["store_category"]
+          commission_rate?: number
           created_at?: string
           delivery_mode?: string
           force_closed?: boolean
@@ -1307,6 +1309,7 @@ export type Database = {
           asaas_account_id?: string | null
           asaas_wallet_id?: string | null
           category?: Database["public"]["Enums"]["store_category"]
+          commission_rate?: number
           created_at?: string
           delivery_mode?: string
           force_closed?: boolean
