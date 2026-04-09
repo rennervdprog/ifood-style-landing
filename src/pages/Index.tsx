@@ -1,7 +1,9 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { PackageOpen } from "lucide-react";
+import { PackageOpen, LayoutDashboard, Truck, ShoppingBag, ChevronRight } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
 import CartFAB from "@/components/CartFAB";
