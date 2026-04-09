@@ -1312,11 +1312,11 @@ const FinanceTab = ({
           <div className="relative">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                <Bike className="h-4 w-4 text-emerald-500" />
+                <Crown className="h-4 w-4 text-emerald-500" />
               </div>
             </div>
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Motoboys Pend.</p>
-            <p className="text-xl font-black text-emerald-500 mt-0.5">R$ {pendingDriverAmount.toFixed(2)}</p>
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Assinaturas/Mês</p>
+            <p className="text-xl font-black text-emerald-500 mt-0.5">R$ {subscriptionRevenue.toFixed(2)}</p>
           </div>
         </div>
       </div>
