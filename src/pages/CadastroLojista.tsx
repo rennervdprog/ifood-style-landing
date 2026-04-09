@@ -387,8 +387,8 @@ const CadastroLojista = () => {
               </div>
             )}
 
-            {/* ═══ Step 1: Loja ═══ */}
-            {step === 1 && (
+            {/* ═══ Step 2: Loja ═══ */}
+            {step === 2 && (
               <div className="space-y-4">
                 <div className="text-center mb-2">
                   <h2 className="text-lg font-black text-foreground">Sobre sua loja</h2>
@@ -473,8 +473,8 @@ const CadastroLojista = () => {
               </div>
             )}
 
-            {/* ═══ Step 2: Dados Pessoais & Financeiro ═══ */}
-            {step === 2 && (
+            {/* ═══ Step 3: Dados Pessoais & Financeiro ═══ */}
+            {step === 3 && (
               <div className="space-y-4">
                 <div className="text-center mb-2">
                   <h2 className="text-lg font-black text-foreground">Dados pessoais</h2>
