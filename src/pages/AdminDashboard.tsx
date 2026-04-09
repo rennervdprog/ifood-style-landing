@@ -468,6 +468,14 @@ const AdminDashboard = () => {
   const pendingCount = orders?.filter(o => o.status === "pendente").length || 0;
   const preparingCount = orders?.filter(o => o.status === "preparando").length || 0;
   const readyCount = orders?.filter(o => o.status === "pronto_para_entrega").length || 0;
+  const delayedOrders = useMemo(() => {
+    if (!orders) return [];
+    const now = Date.now();
+    return orders.filter(o => {
+      const elapsedMin = Math.floor((now - new Date(o.created_at).getTime()) / 60000);
+      return elapsedMin > 20 && ["pendente", "preparando"].includes(o.status);
+    });
+  }, [orders]);
   const todayOrders = orders?.filter(o => new Date(o.created_at).toDateString() === new Date().toDateString() && !["cancelado", "aguardando_pagamento"].includes(o.status)) || [];
   const todayTotal = sumMoney(todayOrders.map((order) => order.total_price));
   const todayCount = todayOrders.length;
