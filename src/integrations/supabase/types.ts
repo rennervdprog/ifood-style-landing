@@ -983,6 +983,66 @@ export type Database = {
         }
         Relationships: []
       }
+      plan_change_requests: {
+        Row: {
+          admin_notes: string | null
+          current_monthly_fee: number
+          current_plan_type: Database["public"]["Enums"]["store_plan_type"]
+          id: string
+          processed_at: string | null
+          prorata_credit: number
+          requested_at: string
+          requested_commission_rate: number
+          requested_monthly_fee: number
+          requested_plan_type: Database["public"]["Enums"]["store_plan_type"]
+          status: string
+          store_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          current_monthly_fee?: number
+          current_plan_type: Database["public"]["Enums"]["store_plan_type"]
+          id?: string
+          processed_at?: string | null
+          prorata_credit?: number
+          requested_at?: string
+          requested_commission_rate?: number
+          requested_monthly_fee?: number
+          requested_plan_type: Database["public"]["Enums"]["store_plan_type"]
+          status?: string
+          store_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          current_monthly_fee?: number
+          current_plan_type?: Database["public"]["Enums"]["store_plan_type"]
+          id?: string
+          processed_at?: string | null
+          prorata_credit?: number
+          requested_at?: string
+          requested_commission_rate?: number
+          requested_monthly_fee?: number
+          requested_plan_type?: Database["public"]["Enums"]["store_plan_type"]
+          status?: string
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_change_requests_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_change_requests_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_addon_groups: {
         Row: {
           addon_group_id: string
@@ -1645,7 +1705,12 @@ export type Database = {
         Returns: undefined
       }
       admin_delete_store: { Args: { _store_id: string }; Returns: undefined }
+      approve_plan_change: {
+        Args: { _admin_notes?: string; _request_id: string }
+        Returns: undefined
+      }
       auto_finalize_stale_orders: { Args: never; Returns: Json }
+      calculate_prorata_credit: { Args: { _store_id: string }; Returns: number }
       client_confirm_delivery: {
         Args: { _order_id: string }
         Returns: undefined
@@ -1735,6 +1800,10 @@ export type Database = {
             }
             Returns: undefined
           }
+      reject_plan_change: {
+        Args: { _admin_notes?: string; _request_id: string }
+        Returns: undefined
+      }
       use_coupon: {
         Args: { _coupon_id: string; _order_id: string; _user_id: string }
         Returns: boolean
