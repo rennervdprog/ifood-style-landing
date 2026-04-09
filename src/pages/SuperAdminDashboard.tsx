@@ -153,6 +153,16 @@ const SuperAdminDashboard = () => {
     enabled: isAdmin && activeTab === "financeiro",
   });
 
+  const { data: parentStorePlans } = useQuery({
+    queryKey: ["admin-store-plans-parent"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("store_plans").select("*").eq("is_active", true);
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: isAdmin,
+  });
+
   // Compliance alerts
   const { data: complianceAlerts } = useQuery({
     queryKey: ["compliance-alerts"],
