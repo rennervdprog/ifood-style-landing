@@ -1597,7 +1597,33 @@ const FinanceTab = ({
                           ) : null}
                         </div>
 
-                        {/* PIX key */}
+                        {/* Commission rate editor */}
+                        <div className="bg-muted/30 rounded-xl p-3 flex items-center gap-3">
+                          <Percent className="h-4 w-4 text-primary shrink-0" />
+                          <div className="flex-1">
+                            <p className="text-[10px] text-muted-foreground font-semibold uppercase">Taxa de comissão</p>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="1"
+                              defaultValue={Math.round(getStoreRate(entry.storeId) * 100)}
+                              className="w-16 bg-background border border-border rounded-lg px-2 py-1 text-sm font-bold text-center"
+                              onBlur={async (e) => {
+                                const newRate = Math.min(100, Math.max(0, Number(e.target.value)));
+                                if (newRate === Math.round(getStoreRate(entry.storeId) * 100)) return;
+                                const { error } = await supabase.from("stores").update({ commission_rate: newRate } as any).eq("id", entry.storeId);
+                                if (error) { toast.error("Erro ao atualizar taxa"); return; }
+                                toast.success(`Taxa de ${entry.name} atualizada para ${newRate}%`);
+                                queryClient.invalidateQueries({ queryKey: ["admin-all-stores"] });
+                              }}
+                            />
+                            <span className="text-xs font-bold text-muted-foreground">%</span>
+                          </div>
+                        </div>
+
                         {pixInfo?.pixKey ? (
                           <div className="bg-muted/30 rounded-xl p-2.5 flex items-center gap-2">
                             <Wallet className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
