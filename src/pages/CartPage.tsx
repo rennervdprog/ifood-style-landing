@@ -126,7 +126,7 @@ const CartPage = () => {
       </div>
 
       {/* Fixed bottom summary + CTA */}
-      <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border z-40">
+      <div className="fixed bottom-16 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border z-40">
         <div className="px-4 pt-3 pb-1 space-y-1.5">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Subtotal</span>
