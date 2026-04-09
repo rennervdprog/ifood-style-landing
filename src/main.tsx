@@ -32,4 +32,9 @@ if (isPreviewHost || isInIframe) {
   });
 }
 
+// Apply native-app class globally for GoNative/Median apps
+if (window.gonative || window.median) {
+  document.documentElement.classList.add("native-app");
+}
+
 createRoot(document.getElementById("root")!).render(<App />);
