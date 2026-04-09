@@ -12,6 +12,13 @@ interface Product {
   price: number;
   image_url: string | null;
   metadata?: Record<string, any>;
+  section_id?: string | null;
+}
+
+interface MenuSection {
+  id: string;
+  name: string;
+  sort_order: number;
 }
 
 interface Props {
@@ -20,6 +27,7 @@ interface Props {
   storeName: string;
   storeId: string;
   products: Product[];
+  sections?: MenuSection[];
   priceMode: "maior" | "media";
   onAdd: (product: {
     id: string;
@@ -32,7 +40,7 @@ interface Props {
   }, addons: CartAddon[], observations: string, quantity: number, unitPrice: number) => void;
 }
 
-const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, priceMode, onAdd }: Props) => {
+const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, sections, priceMode, onAdd }: Props) => {
   const [product1Id, setProduct1Id] = useState<string | null>(null);
   const [product2Id, setProduct2Id] = useState<string | null>(null);
   const [observations, setObservations] = useState("");
@@ -45,7 +53,6 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, price
     setQuantity(1);
   };
 
-  // All non-beverage products — use their actual name & price
   const pizzaProducts = products.filter(p => !p.metadata?.is_beverage);
 
   const p1 = pizzaProducts.find(p => p.id === product1Id);
@@ -105,6 +112,79 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, price
 
   const selectedCount = (product1Id ? 1 : 0) + (product2Id ? 1 : 0);
 
+  // Group products by section
+  const groupedProducts = (() => {
+    if (!sections || sections.length === 0) {
+      return [{ section: null, items: pizzaProducts }];
+    }
+
+    const sectionMap = new Map<string, Product[]>();
+    const unsectioned: Product[] = [];
+
+    for (const p of pizzaProducts) {
+      if (p.section_id) {
+        const existing = sectionMap.get(p.section_id) || [];
+        existing.push(p);
+        sectionMap.set(p.section_id, existing);
+      } else {
+        unsectioned.push(p);
+      }
+    }
+
+    const groups: { section: MenuSection | null; items: Product[] }[] = [];
+    for (const sec of sections) {
+      const items = sectionMap.get(sec.id);
+      if (items && items.length > 0) {
+        groups.push({ section: sec, items });
+      }
+    }
+    if (unsectioned.length > 0) {
+      groups.push({ section: null, items: unsectioned });
+    }
+
+    return groups;
+  })();
+
+  const renderProductButton = (product: Product) => {
+    const isSelected = product.id === product1Id || product.id === product2Id;
+    const isDisabled = selectedCount >= 2 && !isSelected;
+
+    return (
+      <button
+        key={product.id}
+        type="button"
+        disabled={isDisabled}
+        onClick={() => toggleProduct(product.id)}
+        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all ${
+          isDisabled
+            ? "opacity-40 cursor-not-allowed bg-muted"
+            : isSelected
+            ? "bg-primary/10 border-2 border-primary"
+            : "bg-background border-2 border-transparent hover:bg-muted"
+        }`}
+      >
+        {product.image_url ? (
+          <img src={product.image_url} alt={product.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
+        ) : (
+          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+            isSelected ? "border-primary bg-primary" : "border-muted-foreground/40"
+          }`}>
+            {isSelected && <Check className="h-3 w-3 text-primary-foreground" />}
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <span className="text-sm font-bold text-foreground">{product.name}</span>
+          {product.description && (
+            <p className="text-[10px] text-muted-foreground line-clamp-1">{product.description}</p>
+          )}
+        </div>
+        <span className="text-xs font-black text-primary whitespace-nowrap">
+          R$ {product.price.toFixed(2)}
+        </span>
+      </button>
+    );
+  };
+
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) { onClose(); reset(); } }}>
       <DialogContent className="max-w-lg p-0 gap-0 max-h-[90vh] overflow-y-auto rounded-2xl" onOpenAutoFocus={(e) => e.preventDefault()}>
@@ -145,47 +225,22 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, price
         </div>
 
         <div className="p-5 space-y-4">
-          {/* Product list */}
-          <div className="space-y-1.5 max-h-64 overflow-y-auto">
-            {pizzaProducts.map(product => {
-              const isSelected = product.id === product1Id || product.id === product2Id;
-              const isDisabled = selectedCount >= 2 && !isSelected;
-
-              return (
-                <button
-                  key={product.id}
-                  type="button"
-                  disabled={isDisabled}
-                  onClick={() => toggleProduct(product.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all ${
-                    isDisabled
-                      ? "opacity-40 cursor-not-allowed bg-muted"
-                      : isSelected
-                      ? "bg-primary/10 border-2 border-primary"
-                      : "bg-background border-2 border-transparent hover:bg-muted"
-                  }`}
-                >
-                  {product.image_url ? (
-                    <img src={product.image_url} alt={product.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
-                  ) : (
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                      isSelected ? "border-primary bg-primary" : "border-muted-foreground/40"
-                    }`}>
-                      {isSelected && <Check className="h-3 w-3 text-primary-foreground" />}
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <span className="text-sm font-bold text-foreground">{product.name}</span>
-                    {product.description && (
-                      <p className="text-[10px] text-muted-foreground line-clamp-1">{product.description}</p>
-                    )}
+          {/* Product list grouped by section */}
+          <div className="space-y-3 max-h-64 overflow-y-auto">
+            {groupedProducts.map((group, idx) => (
+              <div key={group.section?.id || `unsectioned-${idx}`}>
+                {group.section && (
+                  <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm py-1.5 px-1 mb-1">
+                    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                      {group.section.name}
+                    </h3>
                   </div>
-                  <span className="text-xs font-black text-primary whitespace-nowrap">
-                    R$ {product.price.toFixed(2)}
-                  </span>
-                </button>
-              );
-            })}
+                )}
+                <div className="space-y-1.5">
+                  {group.items.map(renderProductButton)}
+                </div>
+              </div>
+            ))}
             {pizzaProducts.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-8">Nenhum sabor cadastrado ainda.</p>
             )}
