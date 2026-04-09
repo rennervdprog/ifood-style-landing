@@ -643,7 +643,7 @@ const DriverDashboard = () => {
 
   return (
     <>
-    <div className="min-h-screen bg-background text-foreground overflow-y-auto pb-[5.5rem] native-app">
+    <div className="min-h-screen bg-background text-foreground pb-[5.5rem] native-app">
       {/* ═══════════ Premium Header ═══════════ */}
       <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-xl border-b border-border pt-safe">
         <div className="px-4 py-3">
