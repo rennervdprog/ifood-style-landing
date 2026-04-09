@@ -220,7 +220,7 @@ const DriverDashboard = () => {
     queryKey: ["open-platform-stores"],
     queryFn: async () => {
       const { data: stores } = await supabase
-        .from("stores")
+        .from("stores_public")
         .select("id, name, force_closed, is_open, delivery_mode")
         .eq("status", "ativo")
         .neq("delivery_mode", "own");

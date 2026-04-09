@@ -53,7 +53,7 @@ const StorePage = () => {
   const { data: store, isLoading: storeLoading } = useQuery({
     queryKey: ["store", id || slug],
     queryFn: async () => {
-      let query = supabase.from("stores").select("id, name, slug, image_url, category, rating, is_open, force_closed, status, delivery_mode, own_delivery_fee, owner_id, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, settings").in("status", ["ativo", "bloqueado"]);
+      let query = supabase.from("stores_public").select("id, name, slug, image_url, category, rating, is_open, force_closed, status, delivery_mode, own_delivery_fee, owner_id, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, settings").in("status", ["ativo", "bloqueado"]);
       if (id) query = query.eq("id", id);
       else if (slug) query = query.eq("slug", slug);
       const { data, error } = await query.single();
