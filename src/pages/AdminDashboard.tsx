@@ -75,9 +75,10 @@ const baseSidebarItems: { key: DashboardTab; label: string; icon: React.ElementT
 
 // Bottom nav tabs (mobile)
 const bottomNavTabs: { key: DashboardTab; label: string; icon: React.ElementType }[] = [
-  { key: "dashboard", label: "Minha Loja", icon: Store },
+  { key: "dashboard", label: "Início", icon: LayoutDashboard },
   { key: "orders", label: "Pedidos", icon: ListOrdered },
-  { key: "settings", label: "Perfil", icon: User },
+  { key: "menu", label: "Cardápio", icon: UtensilsCrossed },
+  { key: "clients", label: "Clientes", icon: Users },
 ];
 
 // "More" sheet items
