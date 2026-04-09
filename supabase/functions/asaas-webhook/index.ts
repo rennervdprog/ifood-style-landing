@@ -46,8 +46,9 @@ Deno.serve(async (req) => {
       return json({ error: "Not configured" }, 500);
     }
 
-    if (asaasToken && asaasToken !== expectedToken) {
-      console.warn("Invalid Asaas webhook token");
+    // SECURITY: Require token header on ALL requests, not just when present
+    if (!asaasToken || asaasToken !== expectedToken) {
+      console.warn("Missing or invalid Asaas webhook token — rejecting request");
       return json({ error: "Unauthorized" }, 401);
     }
 
