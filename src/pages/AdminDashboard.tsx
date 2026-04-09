@@ -1728,17 +1728,7 @@ const AdminDashboard = () => {
                 </div>
               )}
               {dashboardTab === "finance" && storePlan.hasCommission && <StoreFinancePanel storeId={store.id} storeName={store.name} />}
-              {dashboardTab === "finance" && !storePlan.hasCommission && (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <Coins className="h-8 w-8 text-primary" />
-                  </div>
-                  <h3 className="text-lg font-bold text-foreground mb-2">Plano Fixo Mensal</h3>
-                  <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                    Seu plano é de assinatura fixa (R$ {storePlan.monthlyFee.toFixed(2)}/mês) sem cobrança de comissão por pedido. Não há comissões pendentes.
-                  </p>
-                </div>
-              )}
+              {dashboardTab === "finance" && !storePlan.hasCommission && <StoreFinanceBasic storeId={store.id} storeName={store.name} />}
               {dashboardTab === "reports" && (
                 <div className="space-y-6">
                   <h3 className="text-lg font-bold text-foreground">Relatórios de Vendas</h3>
