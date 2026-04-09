@@ -71,13 +71,31 @@ const CheckoutPage = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("stores")
-        .select("address_cep, delivery_mode, own_delivery_fee")
+        .select("address_cep, delivery_mode, own_delivery_fee, is_open, force_closed")
         .eq("id", storeId!)
         .maybeSingle();
       return data;
     },
     enabled: !!storeId,
   });
+
+  const { data: storeHours } = useQuery({
+    queryKey: ["store-hours-checkout", storeId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("opening_hours")
+        .select("day_of_week, open_time, close_time, is_closed_all_day")
+        .eq("store_id", storeId!);
+      return (data || []) as OpeningHour[];
+    },
+    enabled: !!storeId,
+    refetchInterval: 60_000,
+  });
+
+  const storeStatus = storeData && storeHours
+    ? getStoreOpenStatus(storeHours, storeData.force_closed ?? false, storeData.is_open ?? true)
+    : null;
+  const isStoreClosed = storeStatus ? !storeStatus.isOpen : false;
 
   const profileNeighborhood = (userProfile as any)?.neighborhood;
   const profileStreet = (userProfile as any)?.street;
