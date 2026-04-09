@@ -152,7 +152,7 @@ const AuthPage = () => {
       </div>
 
       {/* Form card overlapping header */}
-      <div className="flex-1 px-5 -mt-10 pb-8">
+      <div className="flex-1 px-5 -mt-6 pb-8">
         <div className="w-full max-w-sm mx-auto bg-card rounded-2xl shadow-xl border border-border/50 p-6">
           {mode === "forgot" && resetSent ? (
             <div className="text-center space-y-4 py-4">
