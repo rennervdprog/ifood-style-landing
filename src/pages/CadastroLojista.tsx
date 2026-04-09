@@ -230,9 +230,9 @@ const CadastroLojista = () => {
             const isActive = i === step;
             const isDone = i < step;
             return (
-              <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
+              <div key={i} className="flex-1 flex flex-col items-center gap-1.5 cursor-pointer" onClick={() => { if (isDone) setStep(i); }}>
                 <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all ${
-                  isDone ? "bg-green-500/10" : isActive ? "bg-primary/10" : "bg-muted/50"
+                  isDone ? "bg-green-500/10 hover:bg-green-500/20" : isActive ? "bg-primary/10" : "bg-muted/50"
                 }`}>
                   {isDone ? (
                     <CheckCircle className="h-5 w-5 text-green-500" />
