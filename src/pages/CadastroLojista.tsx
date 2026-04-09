@@ -293,8 +293,6 @@ const CadastroLojista = () => {
                     </div>
                   </div>
                   <p className="text-[10px] font-bold text-emerald-500 mb-1">🎁 7 dias grátis para testar</p>
-                    </div>
-                  </div>
                   <div className="flex flex-wrap gap-1.5 mt-2">
                     {["0% taxa", "Dinheiro/Cartão", "Painel básico"].map(tag => (
                       <span key={tag} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{tag}</span>
@@ -325,8 +323,6 @@ const CadastroLojista = () => {
                     </div>
                   </div>
                   <p className="text-[10px] font-bold text-emerald-500 mb-1">🎁 7 dias grátis para testar</p>
-                    </div>
-                  </div>
                   <p className="text-[10px] font-semibold text-primary mb-2">+ 2,5% por pedido entregue</p>
                   <div className="flex flex-wrap gap-1.5">
                     {["PIX integrado", "CRM completo", "Relatórios"].map(tag => (
