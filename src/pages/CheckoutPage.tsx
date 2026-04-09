@@ -635,6 +635,15 @@ const CheckoutPage = () => {
                 </div>
               )}
 
+              {loyaltyDiscount > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-amber-600 flex items-center gap-1">
+                    <Star className="h-3 w-3 fill-amber-500" /> {loyaltyPointsUsed} pontos
+                  </span>
+                  <span className="font-bold text-amber-600">-R$ {loyaltyDiscount.toFixed(2)}</span>
+                </div>
+              )}
+
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground flex items-center gap-1">
                   <Truck className="h-3 w-3" /> Entrega
