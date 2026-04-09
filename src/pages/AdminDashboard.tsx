@@ -170,11 +170,11 @@ const AdminDashboard = () => {
     queryKey: ["my-store", user?.id, simulateStoreId],
     queryFn: async () => {
       if (simulateStoreId) {
-        const { data, error } = await supabase.from("stores").select("*").eq("id", simulateStoreId).single();
+        const { data, error } = await supabase.from("stores").select("*").eq("id", simulateStoreId).maybeSingle();
         if (error) throw error;
         return data;
       }
-      const { data, error } = await supabase.from("stores").select("*").eq("owner_id", user!.id).single();
+      const { data, error } = await supabase.from("stores").select("*").eq("owner_id", user!.id).maybeSingle();
       if (error) {
         console.error("[AdminDashboard] store query error:", error);
         throw error;
