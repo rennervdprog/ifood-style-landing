@@ -915,6 +915,11 @@ const FinanceTab = ({
   const [savingGateway, setSavingGateway] = useState(false);
   const [expandedStore, setExpandedStore] = useState<string | null>(null);
 
+  const getStoreRate = (storeId: string) => {
+    const store = stores?.find((s: any) => s.id === storeId);
+    return ((store as any)?.commission_rate ?? 15) / 100;
+  };
+
   const { data: dbGateway } = useQuery({
     queryKey: ["payment-gateway"],
     queryFn: async () => {
