@@ -708,6 +708,7 @@ const AdminDashboard = () => {
                   value={pendingCount}
                   subValue={preparingCount > 0 ? `+ ${preparingCount} preparando` : undefined}
                   color={pendingCount > 0 ? "text-amber-500" : "text-muted-foreground"}
+                  onClick={() => { setDashboardTab("orders"); setActiveTab("pendente"); }}
                 />
                 <GlanceCard
                   icon={DollarSign}
@@ -731,6 +732,16 @@ const AdminDashboard = () => {
                   subValue="Pedido → Entrega"
                   color="text-purple-500"
                 />
+                {delayedOrders.length > 0 && (
+                  <GlanceCard
+                    icon={AlertTriangle}
+                    label="Em Atraso"
+                    value={delayedOrders.length}
+                    subValue="> 20 min sem ação"
+                    color="text-destructive"
+                    onClick={() => setShowDelayedPanel(!showDelayedPanel)}
+                  />
+                )}
               </div>
 
               {/* Delayed Orders Panel */}
