@@ -1021,9 +1021,14 @@ const AdminDashboard = () => {
                             </div>
                           ))}
                         </div>
+                        {order.payment_method === "pix" && (
+                          <div className="text-center mb-2">
+                            <span className="text-[10px] bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded font-bold">💰 PIX — Pagamento Confirmado</span>
+                          </div>
+                        )}
                         <button onClick={() => updateOrderStatus(order.id, "preparando")}
                           className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 rounded-xl text-sm active:scale-[0.98] transition-transform h-12">
-                          ✓ ACEITAR PEDIDO
+                          {order.payment_method === "pix" ? "🍳 COMEÇAR PRODUÇÃO" : "✓ ACEITAR PEDIDO"}
                         </button>
                         <button onClick={() => handleCancelOrder(order)}
                           className="w-full text-center text-xs text-destructive hover:text-destructive/80 py-1 mt-1">
@@ -1531,12 +1536,12 @@ const AdminDashboard = () => {
                               <div className="space-y-1">
                                 {order.payment_method === "pix" && (
                                   <div className="text-center">
-                                    <span className="text-[10px] bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded font-bold">💰 Pagamento Garantido</span>
+                                    <span className="text-[10px] bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded font-bold">💰 PIX — Pagamento Confirmado</span>
                                   </div>
                                 )}
                                 <button onClick={() => updateOrderStatus(order.id, "preparando")}
                                   className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 rounded-xl text-sm active:scale-[0.98] transition-transform h-12">
-                                  ✓ ACEITAR PEDIDO
+                                  {order.payment_method === "pix" ? "🍳 COMEÇAR PRODUÇÃO" : "✓ ACEITAR PEDIDO"}
                                 </button>
                                 <button onClick={() => handleCancelOrder(order)}
                                   className="w-full text-center text-xs text-destructive hover:text-destructive/80 py-1">
