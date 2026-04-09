@@ -158,6 +158,32 @@ export default function AdminPlanManager() {
 
   return (
     <div className="space-y-5">
+      {/* Pending Plan Change Requests */}
+      {pendingRequests.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-5 w-5 text-amber-500" />
+            <h3 className="font-bold text-foreground">
+              Solicitações de Troca ({pendingRequests.length})
+            </h3>
+          </div>
+          {pendingRequests.map((req: any) => {
+            const storeName = stores?.find(s => s.id === req.store_id)?.name || "Loja";
+            return (
+              <PlanChangeRequestCard
+                key={req.id}
+                request={req}
+                storeName={storeName}
+                onProcessed={() => {
+                  queryClient.invalidateQueries({ queryKey: ["admin-plan-requests"] });
+                  queryClient.invalidateQueries({ queryKey: ["admin-store-plans"] });
+                }}
+              />
+            );
+          })}
+        </div>
+      )}
+
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="bg-card rounded-2xl p-4 border border-border">
