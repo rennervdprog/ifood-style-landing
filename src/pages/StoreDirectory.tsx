@@ -9,7 +9,8 @@ import {
   BarChart3, MessageSquare, Tag, Package, Navigation, ChevronRight,
   Menu, X, DollarSign, Percent, Globe, Rocket, Heart,
   PieChart, Award, BadgeCheck, Sparkles, Timer, Flame, Play,
-  ChevronDown, ArrowDown, Banknote, Target, Trophy, Headphones
+  ChevronDown, ArrowDown, Banknote, Target, Trophy, Headphones,
+  ShoppingBag, LayoutDashboard, Truck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -35,7 +36,7 @@ const AnimatedNumber = ({ value, suffix = "" }: { value: string; suffix?: string
 );
 
 /* ──────────────────── Navbar ──────────────────── */
-const Navbar = ({ onNavigate }: { onNavigate: (path: string) => void }) => {
+const Navbar = ({ onNavigate, isLoggedIn }: { onNavigate: (path: string) => void; isLoggedIn?: boolean }) => {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -76,13 +77,22 @@ const Navbar = ({ onNavigate }: { onNavigate: (path: string) => void }) => {
               onMouseLeave={(e) => (e.currentTarget.style.color = THEME.muted)}
             >{l.label}</button>
           ))}
-          <button onClick={() => onNavigate("/portal-parceiro")} className="text-sm font-semibold transition-colors" style={{ color: THEME.muted }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = THEME.primary)}
-            onMouseLeave={(e) => (e.currentTarget.style.color = THEME.muted)}
-          >Já sou parceiro</button>
-          <Button className="rounded-full font-bold text-sm px-6 text-white shadow-lg" style={{ background: THEME.primary }} onClick={() => onNavigate("/cadastro-lojista")}>
-            Cadastrar grátis
-          </Button>
+          {isLoggedIn ? (
+            <Button className="rounded-full font-bold text-sm px-6 text-white shadow-lg gap-2" style={{ background: THEME.primary }} onClick={() => onNavigate("/pedidos")}>
+              <ShoppingBag className="h-4 w-4" />
+              Meus Pedidos
+            </Button>
+          ) : (
+            <>
+              <button onClick={() => onNavigate("/portal-parceiro")} className="text-sm font-semibold transition-colors" style={{ color: THEME.muted }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = THEME.primary)}
+                onMouseLeave={(e) => (e.currentTarget.style.color = THEME.muted)}
+              >Já sou parceiro</button>
+              <Button className="rounded-full font-bold text-sm px-6 text-white shadow-lg" style={{ background: THEME.primary }} onClick={() => onNavigate("/cadastro-lojista")}>
+                Cadastrar grátis
+              </Button>
+            </>
+          )}
         </div>
 
         <button className="md:hidden" onClick={() => setOpen(!open)}>
@@ -95,10 +105,19 @@ const Navbar = ({ onNavigate }: { onNavigate: (path: string) => void }) => {
           {links.map((l) => (
             <button key={l.href} onClick={() => scrollTo(l.href)} className="block w-full text-left py-3 text-sm font-semibold" style={{ color: THEME.muted }}>{l.label}</button>
           ))}
-          <button onClick={() => { setOpen(false); onNavigate("/portal-parceiro"); }} className="block w-full text-left py-3 text-sm font-semibold" style={{ color: THEME.primary }}>Já sou parceiro</button>
-          <Button className="w-full rounded-full font-bold mt-2 text-white" style={{ background: THEME.primary }} onClick={() => { setOpen(false); onNavigate("/cadastro-lojista"); }}>
-            Cadastrar minha loja
-          </Button>
+          {isLoggedIn ? (
+            <Button className="w-full rounded-full font-bold mt-2 text-white gap-2" style={{ background: THEME.primary }} onClick={() => { setOpen(false); onNavigate("/pedidos"); }}>
+              <ShoppingBag className="h-4 w-4" />
+              Meus Pedidos
+            </Button>
+          ) : (
+            <>
+              <button onClick={() => { setOpen(false); onNavigate("/portal-parceiro"); }} className="block w-full text-left py-3 text-sm font-semibold" style={{ color: THEME.primary }}>Já sou parceiro</button>
+              <Button className="w-full rounded-full font-bold mt-2 text-white" style={{ background: THEME.primary }} onClick={() => { setOpen(false); onNavigate("/cadastro-lojista"); }}>
+                Cadastrar minha loja
+              </Button>
+            </>
+          )}
         </div>
       )}
     </nav>
