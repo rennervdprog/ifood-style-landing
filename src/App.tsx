@@ -60,11 +60,7 @@ const App = () => (
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 {/* Public store directory */}
-                <Route path="/" element={
-                  <RoleGuard allowedRoles={["admin"]} redirectTo="/auth">
-                    <StoreDirectory />
-                  </RoleGuard>
-                } />
+                <Route path="/" element={<StoreDirectory />} />
                 {/* Admin dashboard at /index */}
                 <Route
                   path="/painel"

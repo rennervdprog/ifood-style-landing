@@ -47,7 +47,35 @@ const RoleGuard = ({ allowedRoles, redirectTo, children, requireApproval = false
         .eq("user_id", user.id)
         .maybeSingle();
 
-      if (!profile) {
+      let resolvedRole = (profile as any)?.role as string | undefined;
+      let resolvedApproved = Boolean((profile as any)?.is_approved);
+
+      if (!resolvedRole && allowedRoles.includes("lojista")) {
+        const { data: ownedStore } = await supabase
+          .from("stores")
+          .select("id")
+          .eq("owner_id", user.id)
+          .maybeSingle();
+
+        if (ownedStore) {
+          resolvedRole = "lojista";
+        }
+      }
+
+      if (!resolvedRole && allowedRoles.includes("motoboy")) {
+        const { data: driver } = await supabase
+          .from("drivers")
+          .select("user_id, is_active")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (driver) {
+          resolvedRole = "motoboy";
+          resolvedApproved = Boolean((driver as any).is_active);
+        }
+      }
+
+      if (!resolvedRole) {
         if (allowedRoles.includes("cliente")) {
           setAuthorized(true);
         } else {
@@ -58,7 +86,7 @@ const RoleGuard = ({ allowedRoles, redirectTo, children, requireApproval = false
         return;
       }
 
-      const role = (profile as any).role as string;
+      const role = resolvedRole;
       
       if (!allowedRoles.includes(role)) {
         toast.error("Acesso negado. Redirecionando...");
@@ -73,7 +101,7 @@ const RoleGuard = ({ allowedRoles, redirectTo, children, requireApproval = false
         return;
       }
 
-      if (requireApproval && !(profile as any).is_approved) {
+      if (requireApproval && !resolvedApproved) {
         setAuthorized(false);
         setChecking(false);
         return;
