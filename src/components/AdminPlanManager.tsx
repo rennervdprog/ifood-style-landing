@@ -455,3 +455,136 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, planType, onSave }
     </div>
   );
 }
+
+function PlanChangeRequestCard({ request, storeName, onProcessed }: {
+  request: any; storeName: string; onProcessed: () => void;
+}) {
+  const [processing, setProcessing] = useState(false);
+  const [notes, setNotes] = useState("");
+  const [showNotes, setShowNotes] = useState(false);
+
+  const handleApprove = async () => {
+    setProcessing(true);
+    try {
+      const { error } = await supabase.rpc("approve_plan_change", {
+        _request_id: request.id,
+        _admin_notes: notes || null,
+      });
+      if (error) throw error;
+      toast.success(`Plano de "${storeName}" alterado com sucesso!`);
+      onProcessed();
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao aprovar.");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!notes.trim()) {
+      toast.error("Informe o motivo da recusa.");
+      setShowNotes(true);
+      return;
+    }
+    setProcessing(true);
+    try {
+      const { error } = await supabase.rpc("reject_plan_change", {
+        _request_id: request.id,
+        _admin_notes: notes,
+      });
+      if (error) throw error;
+      toast.success(`Solicitação de "${storeName}" recusada.`);
+      onProcessed();
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao recusar.");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  return (
+    <div className="bg-card rounded-2xl border-2 border-amber-500/20 p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center">
+            <Store className="h-4 w-4 text-amber-500" />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-foreground">{storeName}</p>
+            <p className="text-[10px] text-muted-foreground">
+              Solicitado em {new Date(request.requested_at).toLocaleDateString("pt-BR")}
+            </p>
+          </div>
+        </div>
+        <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/30 border">
+          Pendente
+        </Badge>
+      </div>
+
+      <div className="flex items-center gap-3 bg-muted/30 rounded-xl p-3">
+        <div className="flex-1 text-center">
+          <p className="text-[10px] text-muted-foreground uppercase font-semibold">Plano Atual</p>
+          <p className="text-sm font-bold text-foreground">{planLabels[request.current_plan_type as PlanType]}</p>
+          <p className="text-xs text-muted-foreground">R$ {Number(request.current_monthly_fee).toFixed(0)}/mês</p>
+        </div>
+        <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
+        <div className="flex-1 text-center">
+          <p className="text-[10px] text-muted-foreground uppercase font-semibold">Novo Plano</p>
+          <p className="text-sm font-bold text-primary">{planLabels[request.requested_plan_type as PlanType]}</p>
+          <p className="text-xs text-muted-foreground">
+            R$ {Number(request.requested_monthly_fee).toFixed(0)}/mês
+            {request.requested_commission_rate > 0 && ` + ${request.requested_commission_rate}%`}
+          </p>
+        </div>
+      </div>
+
+      {request.prorata_credit > 0 && (
+        <div className="flex items-center justify-between bg-emerald-500/10 rounded-xl px-3 py-2">
+          <span className="text-xs text-emerald-600 font-semibold">Crédito prorata</span>
+          <span className="text-sm font-bold text-emerald-600">R$ {Number(request.prorata_credit).toFixed(2)}</span>
+        </div>
+      )}
+
+      {showNotes && (
+        <Textarea
+          placeholder="Observações (obrigatório para recusa)..."
+          value={notes}
+          onChange={e => setNotes(e.target.value)}
+          className="text-sm"
+          rows={2}
+        />
+      )}
+
+      {!showNotes && (
+        <button
+          onClick={() => setShowNotes(true)}
+          className="text-xs text-primary font-semibold"
+        >
+          + Adicionar observação
+        </button>
+      )}
+
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex-1 text-destructive border-destructive/30 hover:bg-destructive/10"
+          disabled={processing}
+          onClick={handleReject}
+        >
+          <XCircle className="h-4 w-4 mr-1" />
+          Recusar
+        </Button>
+        <Button
+          size="sm"
+          className="flex-1"
+          disabled={processing}
+          onClick={handleApprove}
+        >
+          {processing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
+          Aprovar e Aplicar
+        </Button>
+      </div>
+    </div>
+  );
+}
