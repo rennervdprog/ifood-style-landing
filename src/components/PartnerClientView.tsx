@@ -73,6 +73,39 @@ const PartnerClientView = () => {
   return (
     <div className="min-h-screen bg-background pb-20">
       <AppHeader />
+
+      {/* Banner "Acessar Painel" para lojista/motoboy */}
+      {profile?.role === "lojista" && (
+        <button
+          onClick={() => navigate("/admin")}
+          className="mx-4 mt-3 flex items-center gap-3 rounded-xl bg-primary/10 border border-primary/20 p-3 transition-colors active:bg-primary/20"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <LayoutDashboard className="h-5 w-5" />
+          </div>
+          <div className="flex-1 text-left">
+            <p className="text-sm font-bold text-foreground">Acessar Painel do Lojista</p>
+            <p className="text-xs text-muted-foreground">Gerencie sua loja e pedidos</p>
+          </div>
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        </button>
+      )}
+      {profile?.role === "motoboy" && (
+        <button
+          onClick={() => navigate("/entregador")}
+          className="mx-4 mt-3 flex items-center gap-3 rounded-xl bg-primary/10 border border-primary/20 p-3 transition-colors active:bg-primary/20"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <Truck className="h-5 w-5" />
+          </div>
+          <div className="flex-1 text-left">
+            <p className="text-sm font-bold text-foreground">Acessar Painel de Entregas</p>
+            <p className="text-xs text-muted-foreground">Veja entregas disponíveis</p>
+          </div>
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        </button>
+      )}
+
       <FirstOrderBanner />
       <PromoBanners />
       
