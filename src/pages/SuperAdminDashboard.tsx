@@ -344,7 +344,7 @@ const SuperAdminDashboard = () => {
     setSidebarOpen(false);
   };
 
-  if (authLoading) return null;
+  if (authLoading || isAdminLoading) return null;
 
   if (!user || !isAdmin) {
     return (
