@@ -1699,6 +1699,7 @@ export type Database = {
               _full_name: string
               _store_category: Database["public"]["Enums"]["store_category"]
               _store_name: string
+              _whatsapp?: string
             }
             Returns: string
           }
@@ -1707,6 +1708,7 @@ export type Database = {
               _avatar_url?: string
               _document: string
               _full_name: string
+              _selected_plan?: string
               _store_category: Database["public"]["Enums"]["store_category"]
               _store_name: string
               _whatsapp?: string
