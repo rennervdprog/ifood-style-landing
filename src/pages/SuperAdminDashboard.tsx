@@ -2581,7 +2581,7 @@ const PagamentosSplitTab = ({ stores }: { stores: any[] }) => {
     const map = new Map<string, { storeName: string; storeId: string; records: any[]; totalPaid: number; totalPending: number }>();
     
     transactions.forEach((tx: any) => {
-      const store = stores.find(s => s.id === tx.store_id);
+      const store = stores?.find(s => s.id === tx.store_id);
       const storeName = store?.name || "Loja Desconhecida";
       if (!map.has(tx.store_id)) {
         map.set(tx.store_id, { storeName, storeId: tx.store_id, records: [], totalPaid: 0, totalPending: 0 });
