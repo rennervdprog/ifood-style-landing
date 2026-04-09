@@ -1314,6 +1314,7 @@ export type Database = {
           plan_type: Database["public"]["Enums"]["store_plan_type"]
           started_at: string
           store_id: string
+          trial_ends_at: string | null
           updated_at: string
         }
         Insert: {
@@ -1327,6 +1328,7 @@ export type Database = {
           plan_type?: Database["public"]["Enums"]["store_plan_type"]
           started_at?: string
           store_id: string
+          trial_ends_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -1340,6 +1342,7 @@ export type Database = {
           plan_type?: Database["public"]["Enums"]["store_plan_type"]
           started_at?: string
           store_id?: string
+          trial_ends_at?: string | null
           updated_at?: string
         }
         Relationships: [
