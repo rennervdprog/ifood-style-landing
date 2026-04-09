@@ -1523,7 +1523,7 @@ const FinanceTab = ({
                       </div>
                       <div className="text-left">
                         <p className="text-sm font-bold text-foreground">{entry.name}</p>
-                        <p className="text-[10px] text-muted-foreground">{entry.orderCount} pedidos • R$ {entry.totalSales.toFixed(2)}</p>
+                        <p className="text-[10px] text-muted-foreground">{entry.orderCount} pedidos • R$ {entry.totalSales.toFixed(2)} • {Math.round(getStoreRate(entry.storeId) * 100)}%</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
@@ -1582,7 +1582,7 @@ const FinanceTab = ({
                                 <p className="text-xs font-bold text-amber-600">Comissão pendente (vendas físicas)</p>
                                 <p className="text-lg font-black text-amber-500 mt-1">R$ {dbComissao.toFixed(2)}</p>
                                 <p className="text-[10px] text-muted-foreground mt-0.5">
-                                  15% sobre vendas em dinheiro/cartão que o lojista recebeu diretamente
+                                  {Math.round(getStoreRate(entry.storeId) * 100)}% sobre vendas em dinheiro/cartão que o lojista recebeu diretamente
                                 </p>
                               </div>
                             </div>
