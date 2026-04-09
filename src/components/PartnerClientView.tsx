@@ -18,8 +18,23 @@ import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 
 const PartnerClientView = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const { data: profile } = useQuery({
+    queryKey: ["partner-role-banner", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+    staleTime: 1000 * 60 * 5,
+  });
 
   const { data: stores, isLoading } = useQuery({
     queryKey: ["stores-client"],
