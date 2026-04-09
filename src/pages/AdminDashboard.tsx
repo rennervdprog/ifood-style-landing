@@ -25,6 +25,7 @@ import StoreFinancePanel from "@/components/StoreFinancePanel";
 import StoreFinanceBasic from "@/components/StoreFinanceBasic";
 import StoreSubscription from "@/components/StoreSubscription";
 import CommissionAlert from "@/components/CommissionAlert";
+import LoyaltyConfigPanel from "@/components/LoyaltyConfigPanel";
 import { printThermalReceipt } from "@/lib/thermalPrint";
 import { requestNotificationPermission, notifyNewOrder, pushNotifyDeliveryAvailable } from "@/lib/notifications";
 import { sendPushNotification } from "@/lib/firebase";
@@ -74,6 +75,7 @@ const baseSidebarItems: { key: DashboardTab; label: string; icon: React.ElementT
   { key: "finance", label: "Finanças", icon: Coins },
   { key: "reports", label: "Relatórios", icon: BarChart3 },
   { key: "subscription", label: "Assinatura", icon: CreditCard },
+  { key: "loyalty", label: "Fidelidade", icon: Star },
   { key: "settings", label: "Configurações", icon: Settings },
 ];
 
@@ -92,6 +94,7 @@ const moreSheetItems: { key: DashboardTab; label: string; icon: React.ElementTyp
   { key: "finance", label: "Finanças", icon: Coins },
   { key: "reports", label: "Relatórios", icon: BarChart3 },
   { key: "subscription", label: "Assinatura", icon: CreditCard },
+  { key: "loyalty", label: "Fidelidade", icon: Star },
   { key: "settings", label: "Configurações", icon: Settings },
 ];
 
