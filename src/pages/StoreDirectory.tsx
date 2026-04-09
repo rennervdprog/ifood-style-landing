@@ -238,7 +238,7 @@ const StoreDirectory = () => {
           </h1>
 
           <p className="text-lg sm:text-xl mt-8 leading-relaxed max-w-2xl mx-auto text-white/60">
-            Cardápio profissional, pedidos organizados e pagamentos automáticos — a partir de R$100/mês.
+            Cardápio profissional, pedidos organizados e pagamentos automáticos — a partir de R$100/mês. <strong className="text-white/80">7 dias grátis!</strong>
           </p>
 
           {/* CTA Buttons */}
