@@ -53,7 +53,17 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
     setQuantity(1);
   };
 
-  const pizzaProducts = products.filter(p => !p.metadata?.is_beverage);
+  const beverageSectionKeywords = ["bebida", "drink", "suco", "refrigerante", "água", "cerveja", "energético"];
+  const beverageSectionIds = new Set(
+    (sections || [])
+      .filter(s => beverageSectionKeywords.some(kw => s.name.toLowerCase().includes(kw)))
+      .map(s => s.id)
+  );
+  const pizzaProducts = products.filter(p => {
+    if (p.metadata?.is_beverage) return false;
+    if (p.section_id && beverageSectionIds.has(p.section_id)) return false;
+    return true;
+  });
 
   const p1 = pizzaProducts.find(p => p.id === product1Id);
   const p2 = pizzaProducts.find(p => p.id === product2Id);
