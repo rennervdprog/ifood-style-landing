@@ -186,8 +186,9 @@ const StoreDirectory = () => {
     { icon: BarChart3, title: "Painel Financeiro", desc: "Vendas, comissões e repasses — tudo transparente" },
     { icon: Tag, title: "Cupons & Promoções", desc: "Crie campanhas de desconto para atrair mais clientes" },
     { icon: Clock, title: "Horários Flexíveis", desc: "Configure por dia da semana. Abra e feche quando quiser" },
-    { icon: CreditCard, title: "PIX, Dinheiro & Cartão", desc: "Aceite todas as formas de pagamento" },
+    { icon: CreditCard, title: "Dinheiro, Cartão & PIX*", desc: "Aceite pagamentos em dinheiro e cartão. PIX no Plano Crescimento" },
     { icon: ShieldCheck, title: "Entrega Segura", desc: "Código de coleta e PIN para cada entrega" },
+    { icon: Award, title: "Fidelidade & Banners*", desc: "Programa de pontos e banners promocionais no Plano Crescimento" },
     { icon: Globe, title: "Qualquer Cidade", desc: "Funciona em todo o Brasil como cardápio digital" },
   ];
 
@@ -206,13 +207,14 @@ const StoreDirectory = () => {
   ];
 
   const faq = [
-    { q: "Quais planos estão disponíveis?", a: "Temos dois planos: o Plano Essencial por R$180/mês (sem taxa por pedido) e o Plano Crescimento por R$100/mês + 2,5% por pedido entregue. Ambos incluem cardápio digital, gestão de pedidos e painel financeiro." },
+    { q: "Quais planos estão disponíveis?", a: "Temos dois planos: o Plano Essencial por R$180/mês (sem taxa por pedido) e o Plano Crescimento por R$100/mês + 2,5% por pedido entregue. Ambos incluem cardápio digital, gestão de pedidos e painel financeiro. Os dois planos têm 7 dias grátis para testar!" },
     { q: "Funciona fora de Itatinga/SP?", a: "Sim! Em qualquer cidade do Brasil você pode usar o ItaSuper como cardápio digital profissional com gestão de pedidos completa. Nesse caso, você utiliza seu próprio entregador. A operação com motoboys da plataforma está disponível em Itatinga/SP, com expansão para novas cidades em breve." },
-    { q: "Qual a diferença entre os planos?", a: "O Plano Essencial (R$180/mês) é ideal para quem já tem bom volume de vendas — sem taxa por pedido, mas usa apenas motoboy próprio. O Plano Crescimento (R$100/mês + 2,5%) inclui PIX integrado e acesso ao motoboy da plataforma (onde disponível)." },
+    { q: "Qual a diferença entre os planos?", a: "O Plano Essencial (R$180/mês) é ideal para quem já tem bom volume de vendas — sem taxa por pedido, até 3 cupons ativos e motoboy próprio. O Plano Crescimento (R$100/mês + 2,5%) inclui PIX integrado, programa de fidelidade, banners promocionais, agendamento, cupons ilimitados e acesso ao motoboy da plataforma (onde disponível)." },
     { q: "Qual plano inclui pagamento por PIX?", a: "O Plano Crescimento (Híbrido) inclui pagamento por PIX integrado com split automático. No Plano Essencial (Fixo), os pagamentos são por dinheiro e cartão diretamente com o cliente." },
-    { q: "Posso trocar de plano depois?", a: "Sim! Você pode fazer upgrade ou downgrade a qualquer momento pelo painel da loja, sem multa." },
+    { q: "O que é o Programa de Fidelidade?", a: "Exclusivo do Plano Crescimento! Seus clientes acumulam pontos a cada compra e podem trocar por descontos. Você configura os valores no painel da loja." },
+    { q: "Posso trocar de plano depois?", a: "Sim! Você pode solicitar upgrade ou downgrade a qualquer momento pelo painel da loja. O valor pago é calculado proporcionalmente (pro-rata)." },
     { q: "Como recebo meu dinheiro?", a: "No Plano Crescimento, pagamentos PIX vão direto para sua conta via split automático. No Plano Essencial, você recebe diretamente do cliente (dinheiro/cartão). A mensalidade é cobrada separadamente." },
-    { q: "Quanto tempo para começar a vender?", a: "Após cadastro e aprovação (geralmente em até 24h), você monta seu cardápio e começa a receber pedidos imediatamente." },
+    { q: "Quanto tempo para começar a vender?", a: "Após cadastro e aprovação (geralmente em até 24h), você monta seu cardápio e começa a receber pedidos imediatamente. Você tem 7 dias grátis para configurar tudo!" },
     { q: "Posso cancelar a qualquer momento?", a: "Sim! Sem contrato, sem multa, sem fidelidade. Se não estiver satisfeito, pode sair quando quiser." },
   ];
 
@@ -364,6 +366,10 @@ const StoreDirectory = () => {
           <p className="text-sm mt-3 max-w-lg mx-auto" style={{ color: THEME.muted }}>
             Dois planos flexíveis. Sem contrato, sem multa. Troque quando quiser.
           </p>
+          <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold" style={{ background: THEME.greenLight, color: THEME.green, border: `1px solid rgba(22,163,74,0.2)` }}>
+            <Sparkles className="h-3.5 w-3.5" />
+            🎁 7 dias grátis em todos os planos!
+          </div>
         </div>
 
         <div className="grid sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
@@ -379,6 +385,7 @@ const StoreDirectory = () => {
                 <span className="text-sm font-medium" style={{ color: THEME.muted }}>/mês</span>
               </div>
               <p className="text-xs mt-2 font-semibold" style={{ color: THEME.green }}>0% de taxa por pedido</p>
+              <p className="text-[10px] mt-1 font-bold" style={{ color: THEME.green }}>🎁 Teste grátis por 7 dias</p>
             </div>
             <div className="px-6 py-6" style={{ background: THEME.white }}>
               <ul className="space-y-2.5">
@@ -388,7 +395,7 @@ const StoreDirectory = () => {
                   "Pagamento: dinheiro e cartão",
                   "Painel financeiro básico",
                   "Horários flexíveis",
-                  "Cupons e promoções",
+                  "Até 3 cupons ativos",
                   "Apenas motoboy próprio",
                 ].map((f) => (
                   <li key={f} className="flex items-center gap-2.5 text-xs" style={{ color: THEME.dark }}>
@@ -400,7 +407,7 @@ const StoreDirectory = () => {
               <Button className="w-full rounded-full font-bold text-sm py-5 mt-6 transition-all hover:scale-[1.02]" style={{ background: THEME.dark, color: "white" }}
                 onClick={() => navigate("/cadastro-lojista")}
               >
-                Escolher Essencial
+                Começar grátis por 7 dias
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </div>
@@ -421,6 +428,7 @@ const StoreDirectory = () => {
                 <span className="text-sm font-medium text-white/60">/mês</span>
               </div>
               <p className="text-xs mt-2 font-semibold" style={{ color: THEME.primary }}>+ 2,5% por pedido entregue</p>
+              <p className="text-[10px] mt-1 font-bold" style={{ color: THEME.green }}>🎁 Teste grátis por 7 dias</p>
             </div>
             <div className="px-6 py-6" style={{ background: THEME.white }}>
               <ul className="space-y-2.5">
@@ -429,8 +437,10 @@ const StoreDirectory = () => {
                   "PIX integrado com split automático",
                   "Painel financeiro completo (CRM)",
                   "Relatórios avançados de vendas",
-                  "Gestão de comissões automática",
-                  "Extrato detalhado por período",
+                  "Programa de Fidelidade (pontos)",
+                  "Banners promocionais",
+                  "Agendamento de pedidos",
+                  "Cupons ilimitados",
                   "Motoboy próprio ou da plataforma*",
                 ].map((f) => (
                   <li key={f} className="flex items-center gap-2.5 text-xs" style={{ color: THEME.dark }}>
@@ -442,7 +452,7 @@ const StoreDirectory = () => {
               <Button className="w-full rounded-full font-bold text-sm py-5 mt-6 text-white shadow-lg transition-all hover:scale-[1.02]" style={{ background: THEME.primary }}
                 onClick={() => navigate("/cadastro-lojista")}
               >
-                Escolher Crescimento
+                Começar grátis por 7 dias
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </div>
