@@ -2,12 +2,12 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, Mail, Lock, Eye, EyeOff, KeyRound, FileText } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, KeyRound, FileText, ShoppingBag } from "lucide-react";
 
 type AuthMode = "login" | "signup" | "forgot" | "reset";
 
 const REMEMBER_KEY = "itasuper_remember_until";
-const TWO_MONTHS_MS = 60 * 24 * 60 * 60 * 1000; // 60 days
+const TWO_MONTHS_MS = 60 * 24 * 60 * 60 * 1000;
 
 const AuthPage = () => {
   const [mode, setMode] = useState<AuthMode>("login");
@@ -23,7 +23,6 @@ const AuthPage = () => {
   const location = useLocation();
   const from = (location.state as { from?: string })?.from || "/";
 
-  // If "remember me" expired, sign out
   useEffect(() => {
     const until = localStorage.getItem(REMEMBER_KEY);
     if (until && Date.now() > Number(until)) {
@@ -116,55 +115,56 @@ const AuthPage = () => {
     }
   };
 
-  // Check if we're in reset mode from URL
   const searchParams = new URLSearchParams(location.search);
   if (searchParams.get("mode") === "reset" && mode !== "reset") {
     setMode("reset");
   }
 
-  const titles: Record<AuthMode, string> = {
-    login: "Entrar",
-    signup: "Criar conta",
-    forgot: "Recuperar senha",
-    reset: "Nova senha",
-  };
-
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <header className="sticky top-0 z-50 bg-card border-b border-border flex items-center h-14 px-4 gap-3">
-        <button onClick={() => navigate(-1)}>
-          <ArrowLeft className="h-5 w-5 text-foreground" />
-        </button>
-        <h1 className="font-bold text-foreground">{titles[mode]}</h1>
-      </header>
-
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
-        <div className="w-full max-w-sm">
-          <div className="text-center mb-8">
-            <span className="text-5xl mb-4 block">
-              {mode === "forgot" || mode === "reset" ? "🔑" : "🍕"}
-            </span>
-            <h2 className="text-xl font-black text-foreground">
-              {mode === "login" && "Bem-vindo de volta!"}
-              {mode === "signup" && "Crie sua conta"}
-              {mode === "forgot" && "Esqueceu a senha?"}
-              {mode === "reset" && "Defina sua nova senha"}
-            </h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              {mode === "login" && "Entre para finalizar seu pedido no ItaSuper"}
-              {mode === "signup" && "Cadastre-se para pedir no ItaSuper"}
-              {mode === "forgot" && "Informe seu e-mail para receber o link de recuperação"}
-              {mode === "reset" && "Escolha uma nova senha segura"}
-            </p>
+      {/* Hero gradient header */}
+      <div className="relative bg-gradient-to-br from-primary via-primary to-primary/80 pt-12 pb-16 px-6 text-center overflow-hidden">
+        {/* Decorative circles */}
+        <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full" />
+        <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-white/5 rounded-full" />
+        
+        <div className="relative z-10">
+          <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+            {mode === "forgot" || mode === "reset" ? (
+              <KeyRound className="h-10 w-10 text-white" />
+            ) : (
+              <ShoppingBag className="h-10 w-10 text-white" />
+            )}
           </div>
+          <h1 className="text-2xl font-black text-white tracking-tight">
+            {mode === "login" && "Bem-vindo de volta!"}
+            {mode === "signup" && "Crie sua conta"}
+            {mode === "forgot" && "Esqueceu a senha?"}
+            {mode === "reset" && "Nova senha"}
+          </h1>
+          <p className="text-white/80 text-sm mt-1.5 max-w-[260px] mx-auto">
+            {mode === "login" && "Entre para pedir seus pratos favoritos"}
+            {mode === "signup" && "Cadastre-se e peça no ItaSuper"}
+            {mode === "forgot" && "Enviaremos um link de recuperação"}
+            {mode === "reset" && "Escolha uma nova senha segura"}
+          </p>
+        </div>
+      </div>
 
+      {/* Form card overlapping header */}
+      <div className="flex-1 px-5 -mt-8 pb-8">
+        <div className="w-full max-w-sm mx-auto bg-card rounded-2xl shadow-xl border border-border/50 p-6">
           {mode === "forgot" && resetSent ? (
-            <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-6 text-center space-y-3">
-              <KeyRound className="h-10 w-10 text-green-500 mx-auto" />
-              <h3 className="font-bold text-foreground">E-mail enviado!</h3>
-              <p className="text-sm text-muted-foreground">
-                Verifique sua caixa de entrada e clique no link para redefinir sua senha.
-              </p>
+            <div className="text-center space-y-4 py-4">
+              <div className="w-16 h-16 bg-green-500/10 rounded-2xl flex items-center justify-center mx-auto">
+                <KeyRound className="h-8 w-8 text-green-500" />
+              </div>
+              <div>
+                <h3 className="font-bold text-foreground text-lg">E-mail enviado!</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Verifique sua caixa de entrada e clique no link para redefinir sua senha.
+                </p>
+              </div>
               <button
                 onClick={() => { setMode("login"); setResetSent(false); }}
                 className="text-primary font-bold text-sm"
@@ -175,80 +175,100 @@ const AuthPage = () => {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               {mode !== "reset" && (
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <input
-                    type="email"
-                    placeholder="Seu e-mail"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full h-12 pl-10 pr-4 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                    autoComplete="email"
-                  />
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">E-mail</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <input
+                      type="email"
+                      placeholder="seu@email.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full h-12 pl-10 pr-4 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                      autoComplete="email"
+                    />
+                  </div>
                 </div>
               )}
 
               {mode !== "forgot" && (
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    placeholder={mode === "reset" ? "Nova senha" : "Sua senha"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full h-12 pl-10 pr-12 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                    autoComplete={mode === "login" ? "current-password" : "new-password"}
-                  />
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">
+                    {mode === "reset" ? "Nova senha" : "Senha"}
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      placeholder={mode === "reset" ? "Mínimo 6 caracteres" : "••••••"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full h-12 pl-10 pr-12 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                      autoComplete={mode === "login" ? "current-password" : "new-password"}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {mode === "signup" && (
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">CPF</label>
+                  <div className="relative">
+                    <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="000.000.000-00"
+                      value={cpf}
+                      onChange={(e) => {
+                        const digits = e.target.value.replace(/\D/g, "").slice(0, 11);
+                        let formatted = digits;
+                        if (digits.length > 3) formatted = digits.slice(0, 3) + "." + digits.slice(3);
+                        if (digits.length > 6) formatted = digits.slice(0, 3) + "." + digits.slice(3, 6) + "." + digits.slice(6);
+                        if (digits.length > 9) formatted = digits.slice(0, 3) + "." + digits.slice(3, 6) + "." + digits.slice(6, 9) + "-" + digits.slice(9);
+                        setCpf(formatted);
+                      }}
+                      maxLength={14}
+                      className="w-full h-12 pl-10 pr-4 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {mode === "login" && (
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="w-4 h-4 rounded border-border accent-primary"
+                    />
+                    <span className="text-sm text-muted-foreground">Lembrar-me</span>
+                  </label>
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2"
+                    onClick={() => setMode("forgot")}
+                    className="text-sm text-primary font-semibold"
                   >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <Eye className="h-4 w-4 text-muted-foreground" />
-                    )}
+                    Esqueceu a senha?
                   </button>
                 </div>
               )}
 
               {mode === "signup" && (
-                <div className="relative">
-                  <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="CPF (000.000.000-00)"
-                    value={cpf}
-                    onChange={(e) => {
-                      const digits = e.target.value.replace(/\D/g, "").slice(0, 11);
-                      let formatted = digits;
-                      if (digits.length > 3) formatted = digits.slice(0, 3) + "." + digits.slice(3);
-                      if (digits.length > 6) formatted = digits.slice(0, 3) + "." + digits.slice(3, 6) + "." + digits.slice(6);
-                      if (digits.length > 9) formatted = digits.slice(0, 3) + "." + digits.slice(3, 6) + "." + digits.slice(6, 9) + "-" + digits.slice(9);
-                      setCpf(formatted);
-                    }}
-                    maxLength={14}
-                    className="w-full h-12 pl-10 pr-4 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                </div>
-              )}
-
-              {mode === "login" && (
-                <label className="flex items-center gap-2 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="w-4 h-4 rounded border-border accent-primary"
-                  />
-                  <span className="text-sm text-muted-foreground">Lembrar de mim</span>
-                </label>
-              )}
-
-              {mode === "signup" && (
-                <label className="flex items-start gap-2 cursor-pointer select-none">
+                <label className="flex items-start gap-2.5 cursor-pointer select-none">
                   <input
                     type="checkbox"
                     checked={acceptedTerms}
@@ -264,14 +284,13 @@ const AuthPage = () => {
                     <Link to="/politica-de-privacidade" target="_blank" className="text-primary font-bold underline">
                       Política de Privacidade
                     </Link>
-                    {" "}do ItaSuper.
                   </span>
                 </label>
               )}
 
               <button
                 disabled={loading}
-                className="w-full h-12 bg-primary text-primary-foreground font-bold rounded-xl active:scale-[0.98] transition-transform disabled:opacity-50"
+                className="w-full h-12 bg-primary text-primary-foreground font-bold rounded-xl active:scale-[0.98] transition-all disabled:opacity-50 shadow-lg shadow-primary/25 hover:shadow-primary/40"
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -287,36 +306,36 @@ const AuthPage = () => {
             </form>
           )}
 
-          {mode === "login" && (
-            <button
-              onClick={() => setMode("forgot")}
-              className="w-full text-center text-sm text-muted-foreground mt-3 hover:text-primary"
-            >
-              Esqueceu sua senha?
-            </button>
-          )}
-
           {(mode === "login" || mode === "signup") && (
-            <p className="text-center text-sm text-muted-foreground mt-6">
-              {mode === "login" ? "Não tem conta? " : "Já tem conta? "}
-              <button
-                onClick={() => setMode(mode === "login" ? "signup" : "login")}
-                className="text-primary font-bold"
-              >
-                {mode === "login" ? "Cadastre-se" : "Faça login"}
-              </button>
-            </p>
+            <div className="mt-6 pt-5 border-t border-border/50">
+              <p className="text-center text-sm text-muted-foreground">
+                {mode === "login" ? "Não tem conta? " : "Já tem conta? "}
+                <button
+                  onClick={() => setMode(mode === "login" ? "signup" : "login")}
+                  className="text-primary font-bold"
+                >
+                  {mode === "login" ? "Cadastre-se" : "Faça login"}
+                </button>
+              </p>
+            </div>
           )}
 
           {(mode === "forgot" && !resetSent) && (
-            <p className="text-center text-sm text-muted-foreground mt-6">
-              Lembrou a senha?{" "}
-              <button onClick={() => setMode("login")} className="text-primary font-bold">
-                Faça login
-              </button>
-            </p>
+            <div className="mt-6 pt-5 border-t border-border/50">
+              <p className="text-center text-sm text-muted-foreground">
+                Lembrou a senha?{" "}
+                <button onClick={() => setMode("login")} className="text-primary font-bold">
+                  Faça login
+                </button>
+              </p>
+            </div>
           )}
         </div>
+
+        {/* Bottom branding */}
+        <p className="text-center text-xs text-muted-foreground/60 mt-6">
+          ItaSuper · O delivery oficial de Itatinga
+        </p>
       </div>
     </div>
   );
