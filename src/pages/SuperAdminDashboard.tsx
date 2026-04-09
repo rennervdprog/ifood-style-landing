@@ -74,7 +74,7 @@ const SuperAdminDashboard = () => {
     return { start: start.toISOString(), end: now.toISOString() };
   };
 
-  const { data: isAdmin } = useQuery({
+  const { data: isAdmin, isLoading: isAdminLoading } = useQuery({
     queryKey: ["is-admin", user?.id],
     queryFn: async () => {
       const { data } = await supabase
@@ -344,7 +344,7 @@ const SuperAdminDashboard = () => {
     setSidebarOpen(false);
   };
 
-  if (authLoading) return null;
+  if (authLoading || isAdminLoading) return null;
 
   if (!user || !isAdmin) {
     return (
