@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Store, Trash2, CheckCircle2, Clock, XCircle, Filter, Wallet, Loader2 } from "lucide-react";
+import { Store, Trash2, CheckCircle2, Clock, XCircle, Filter, Wallet, Loader2, Percent, DollarSign, ChevronDown, ChevronUp } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -15,6 +15,19 @@ import {
 } from "@/components/ui/alert-dialog";
 
 type StoreFilter = "all" | "pending" | "active" | "blocked";
+type PlanType = "commission_only" | "fixed" | "hybrid";
+
+const planLabels: Record<PlanType, string> = {
+  commission_only: "Só Comissão",
+  fixed: "Fixo Mensal",
+  hybrid: "Híbrido",
+};
+
+const planColors: Record<PlanType, string> = {
+  commission_only: "bg-amber-500/20 text-amber-600",
+  fixed: "bg-blue-500/20 text-blue-600",
+  hybrid: "bg-purple-500/20 text-purple-600",
+};
 
 const AdminStoreManager = () => {
   const queryClient = useQueryClient();
@@ -23,6 +36,11 @@ const AdminStoreManager = () => {
   const [deleting, setDeleting] = useState(false);
   const [creatingWallet, setCreatingWallet] = useState<string | null>(null);
   const [bulkCreating, setBulkCreating] = useState(false);
+  const [editingPlan, setEditingPlan] = useState<string | null>(null);
+  const [planForm, setPlanForm] = useState<{ plan_type: PlanType; monthly_fee: number; commission_rate: number }>({
+    plan_type: "commission_only", monthly_fee: 0, commission_rate: 15,
+  });
+  const [savingPlan, setSavingPlan] = useState(false);
 
   const { data: stores, isLoading } = useQuery({
     queryKey: ["admin-stores-list"],
@@ -35,6 +53,100 @@ const AdminStoreManager = () => {
       return data || [];
     },
   });
+
+  const { data: storePlans } = useQuery({
+    queryKey: ["admin-store-plans"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("store_plans")
+        .select("*");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const getStorePlan = (storeId: string) => {
+    return (storePlans as any[])?.find((p: any) => p.store_id === storeId);
+  };
+
+  const handleEditPlan = (storeId: string) => {
+    const existing = getStorePlan(storeId);
+    if (existing) {
+      setPlanForm({
+        plan_type: existing.plan_type as PlanType,
+        monthly_fee: Number(existing.monthly_fee),
+        commission_rate: Number(existing.commission_rate),
+      });
+    } else {
+      setPlanForm({ plan_type: "commission_only", monthly_fee: 0, commission_rate: 15 });
+    }
+    setEditingPlan(storeId);
+  };
+
+  const handleSavePlan = async () => {
+    if (!editingPlan) return;
+    setSavingPlan(true);
+    try {
+      const existing = getStorePlan(editingPlan);
+      const now = new Date();
+      const nextBilling = planForm.monthly_fee > 0
+        ? new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString()
+        : null;
+
+      if (existing) {
+        const { error } = await supabase
+          .from("store_plans")
+          .update({
+            plan_type: planForm.plan_type as any,
+            monthly_fee: planForm.monthly_fee,
+            commission_rate: planForm.commission_rate,
+            next_billing_date: nextBilling,
+          })
+          .eq("id", existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("store_plans")
+          .insert({
+            store_id: editingPlan,
+            plan_type: planForm.plan_type as any,
+            monthly_fee: planForm.monthly_fee,
+            commission_rate: planForm.commission_rate,
+            next_billing_date: nextBilling,
+          } as any);
+        if (error) throw error;
+      }
+
+      // Sync commission_rate to stores table
+      await supabase
+        .from("stores")
+        .update({ commission_rate: planForm.commission_rate })
+        .eq("id", editingPlan);
+
+      toast.success("Plano atualizado com sucesso!");
+      queryClient.invalidateQueries({ queryKey: ["admin-store-plans"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-stores-list"] });
+      setEditingPlan(null);
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao salvar plano.");
+    } finally {
+      setSavingPlan(false);
+    }
+  };
+
+  const handlePlanTypeChange = (type: PlanType) => {
+    switch (type) {
+      case "commission_only":
+        setPlanForm({ plan_type: type, monthly_fee: 0, commission_rate: 15 });
+        break;
+      case "fixed":
+        setPlanForm({ plan_type: type, monthly_fee: 180, commission_rate: 0 });
+        break;
+      case "hybrid":
+        setPlanForm({ plan_type: type, monthly_fee: 100, commission_rate: 2.5 });
+        break;
+    }
+  };
 
   const filtered = stores?.filter((s) => {
     if (filter === "pending") return s.status === "analise";
@@ -179,69 +291,177 @@ const AdminStoreManager = () => {
         </div>
       ) : filtered && filtered.length > 0 ? (
         <div className="space-y-2">
-          {filtered.map((store) => (
-            <div
-              key={store.id}
-              className="bg-card rounded-xl p-4 flex items-center justify-between border border-border"
-            >
-              <div className="flex items-center gap-3 min-w-0 flex-1">
-                {store.image_url ? (
-                  <img
-                    src={store.image_url}
-                    alt={store.name}
-                    className="w-10 h-10 rounded-lg object-cover shrink-0"
-                  />
-                ) : (
-                  <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                    <Store className="h-5 w-5 text-muted-foreground" />
+          {filtered.map((store) => {
+            const plan = getStorePlan(store.id);
+            const planType = (plan?.plan_type || "commission_only") as PlanType;
+
+            return (
+              <div key={store.id} className="bg-card rounded-xl border border-border overflow-hidden">
+                <div className="p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    {store.image_url ? (
+                      <img src={store.image_url} alt={store.name} className="w-10 h-10 rounded-lg object-cover shrink-0" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                        <Store className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-foreground truncate">{store.name}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <p className="text-xs text-muted-foreground capitalize">{store.category}</p>
+                        <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded-full ${planColors[planType]}`}>
+                          {planLabels[planType]}
+                        </span>
+                      </div>
+                      {plan && (
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                          {Number(plan.monthly_fee) > 0 && `R$${Number(plan.monthly_fee)}/mês`}
+                          {Number(plan.monthly_fee) > 0 && Number(plan.commission_rate) > 0 && " + "}
+                          {Number(plan.commission_rate) > 0 && `${plan.commission_rate}% por pedido`}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 ml-2 shrink-0">
+                    {statusBadge(store.status)}
+                    {/* Plan edit button */}
+                    <button
+                      onClick={() => editingPlan === store.id ? setEditingPlan(null) : handleEditPlan(store.id)}
+                      className="p-2 rounded-lg bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary active:scale-95 transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
+                      title="Gerenciar plano"
+                    >
+                      {editingPlan === store.id ? <ChevronUp className="h-4 w-4" /> : <Percent className="h-4 w-4" />}
+                    </button>
+                    {store.status === "ativo" && !store.asaas_wallet_id && (
+                      <button
+                        onClick={async () => {
+                          setCreatingWallet(store.id);
+                          try {
+                            const { error } = await supabase.functions.invoke("asaas-subaccount", { body: { store_id: store.id } });
+                            if (error) throw error;
+                            toast.success(`Subconta Asaas criada para ${store.name}`);
+                            queryClient.invalidateQueries({ queryKey: ["admin-stores-list"] });
+                          } catch (err: any) {
+                            toast.error(err.message || "Erro ao criar subconta");
+                          } finally {
+                            setCreatingWallet(null);
+                          }
+                        }}
+                        disabled={creatingWallet === store.id}
+                        className="p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 active:scale-95 transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
+                        title="Criar subconta Asaas (split)"
+                      >
+                        {creatingWallet === store.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wallet className="h-4 w-4" />}
+                      </button>
+                    )}
+                    {store.asaas_wallet_id && (
+                      <span className="px-2 py-0.5 bg-primary/20 text-primary text-xs font-bold rounded-full flex items-center gap-1">
+                        <Wallet className="h-3 w-3" /> Split
+                      </span>
+                    )}
+                    <button
+                      onClick={() => setDeleteTarget({ id: store.id, name: store.name })}
+                      className="p-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 active:scale-95 transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
+                      title="Excluir loja"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Expandable plan editor */}
+                {editingPlan === store.id && (
+                  <div className="border-t border-border bg-muted/30 p-4 space-y-3">
+                    <p className="text-xs font-bold text-foreground">Plano de {store.name}</p>
+
+                    {/* Plan type selector */}
+                    <div className="grid grid-cols-3 gap-2">
+                      {(["commission_only", "fixed", "hybrid"] as PlanType[]).map((type) => (
+                        <button
+                          key={type}
+                          onClick={() => handlePlanTypeChange(type)}
+                          className={`px-2 py-2 rounded-lg text-xs font-bold transition-all ${
+                            planForm.plan_type === type
+                              ? "bg-primary text-primary-foreground ring-2 ring-primary"
+                              : "bg-muted text-muted-foreground hover:bg-muted/80"
+                          }`}
+                        >
+                          {planLabels[type]}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Monthly fee */}
+                    {(planForm.plan_type === "fixed" || planForm.plan_type === "hybrid") && (
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">Mensalidade (R$)</label>
+                        <div className="relative">
+                          <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <input
+                            type="number"
+                            value={planForm.monthly_fee}
+                            onChange={(e) => setPlanForm(p => ({ ...p, monthly_fee: Number(e.target.value) }))}
+                            className="w-full pl-9 pr-3 py-2 rounded-lg bg-background border border-border text-sm"
+                            min={0}
+                            step={10}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Commission rate */}
+                    {(planForm.plan_type === "commission_only" || planForm.plan_type === "hybrid") && (
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">Taxa por pedido (%)</label>
+                        <div className="relative">
+                          <Percent className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <input
+                            type="number"
+                            value={planForm.commission_rate}
+                            onChange={(e) => setPlanForm(p => ({ ...p, commission_rate: Number(e.target.value) }))}
+                            className="w-full pl-9 pr-3 py-2 rounded-lg bg-background border border-border text-sm"
+                            min={0}
+                            max={100}
+                            step={0.5}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Summary */}
+                    <div className="bg-background rounded-lg p-3 text-xs text-muted-foreground">
+                      {planForm.plan_type === "fixed" && (
+                        <p>💰 Cobrança de <strong className="text-foreground">R${planForm.monthly_fee}/mês</strong> sem taxa por pedido.</p>
+                      )}
+                      {planForm.plan_type === "hybrid" && (
+                        <p>💰 Cobrança de <strong className="text-foreground">R${planForm.monthly_fee}/mês</strong> + <strong className="text-foreground">{planForm.commission_rate}%</strong> por pedido entregue.</p>
+                      )}
+                      {planForm.plan_type === "commission_only" && (
+                        <p>💰 Cobrança de <strong className="text-foreground">{planForm.commission_rate}%</strong> por pedido entregue. Sem mensalidade.</p>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setEditingPlan(null)}
+                        className="flex-1 py-2 rounded-lg bg-muted text-muted-foreground text-sm font-bold"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        onClick={handleSavePlan}
+                        disabled={savingPlan}
+                        className="flex-1 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50"
+                      >
+                        {savingPlan ? "Salvando..." : "Salvar Plano"}
+                      </button>
+                    </div>
                   </div>
                 )}
-                <div className="min-w-0">
-                  <p className="text-sm font-bold text-foreground truncate">{store.name}</p>
-                  <p className="text-xs text-muted-foreground capitalize">{store.category}</p>
-                </div>
               </div>
-              <div className="flex items-center gap-2 ml-2 shrink-0">
-                {statusBadge(store.status)}
-                {store.status === "ativo" && !store.asaas_wallet_id && (
-                  <button
-                    onClick={async () => {
-                      setCreatingWallet(store.id);
-                      try {
-                        const { error } = await supabase.functions.invoke("asaas-subaccount", {
-                          body: { store_id: store.id },
-                        });
-                        if (error) throw error;
-                        toast.success(`Subconta Asaas criada para ${store.name}`);
-                        queryClient.invalidateQueries({ queryKey: ["admin-stores-list"] });
-                      } catch (err: any) {
-                        toast.error(err.message || "Erro ao criar subconta");
-                      } finally {
-                        setCreatingWallet(null);
-                      }
-                    }}
-                    disabled={creatingWallet === store.id}
-                    className="p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 active:scale-95 transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
-                    title="Criar subconta Asaas (split)"
-                  >
-                    {creatingWallet === store.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wallet className="h-4 w-4" />}
-                  </button>
-                )}
-                {store.asaas_wallet_id && (
-                  <span className="px-2 py-0.5 bg-primary/20 text-primary text-xs font-bold rounded-full flex items-center gap-1">
-                    <Wallet className="h-3 w-3" /> Split
-                  </span>
-                )}
-                <button
-                  onClick={() => setDeleteTarget({ id: store.id, name: store.name })}
-                  className="p-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 active:scale-95 transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
-                  title="Excluir loja"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <p className="text-sm text-muted-foreground text-center py-8">
