@@ -3,10 +3,13 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Store, Crown, Search, Loader2, Check, X,
   CreditCard, TrendingUp, Zap, Truck, Heart,
-  Image, Clock, BarChart3, Ticket, ChevronDown, ChevronUp
+  Image, Clock, BarChart3, Ticket, ChevronDown, ChevronUp,
+  AlertCircle, CheckCircle2, XCircle, ArrowRight
 } from "lucide-react";
 
 type PlanType = "fixed" | "hybrid" | "commission_only";
