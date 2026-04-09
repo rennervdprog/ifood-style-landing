@@ -5,6 +5,7 @@ import CouponManager from "@/components/CouponManager";
 import AdminStoreManager from "@/components/AdminStoreManager";
 import DeliveryFeeConfigPanel from "@/components/DeliveryFeeConfig";
 import TestStoreCreator from "@/components/TestStoreCreator";
+import AdminPlanManager from "@/components/AdminPlanManager";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -12,7 +13,7 @@ import { toast } from "sonner";
 import {
   ArrowLeft, DollarSign, ShoppingBag, TrendingUp, Clock,
   Store, Copy, AlertTriangle, Users, Bike, Wallet, CheckCircle2, Banknote, XCircle, Bell, Trash2, QrCode, Loader2, ArrowUpRight, ArrowDownRight, Settings,
-  LayoutDashboard, Shield, Ticket, RefreshCw, Truck, Menu, X, MapPin, Eye, Scale, Search, FileText, Mail, Phone, User, Download, Calendar, CreditCard, Receipt, ChevronDown, ChevronUp, Percent
+  LayoutDashboard, Shield, Ticket, RefreshCw, Truck, Menu, X, MapPin, Eye, Scale, Search, FileText, Mail, Phone, User, Download, Calendar, CreditCard, Receipt, ChevronDown, ChevronUp, Percent, Crown
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -21,10 +22,11 @@ import {
 import { addMoney, multiplyMoney, subtractMoney, sumMoney } from "@/lib/utils";
 
 type DateFilter = "today" | "yesterday" | "week";
-type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamentos" | "saques" | "sync" | "coupons" | "entrega" | "cidades" | "juridico";
+type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamentos" | "saques" | "sync" | "coupons" | "entrega" | "cidades" | "juridico" | "planos";
 
 const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; group: string }[] = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, group: "Principal" },
+  { key: "planos", label: "Planos", icon: Crown, group: "Principal" },
   { key: "financeiro", label: "Financeiro", icon: DollarSign, group: "Principal" },
   { key: "pagamentos", label: "Pagamentos", icon: CreditCard, group: "Principal" },
   { key: "saques", label: "Saques", icon: Wallet, group: "Principal" },
