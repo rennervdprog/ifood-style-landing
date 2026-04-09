@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { notifyOrderPreparing, notifyOrderOnTheWay, notifyOrderDelivered } from "@/lib/notifications";
 import OrderRating from "@/components/OrderRating";
 import DeliveryTimeEstimate from "@/components/DeliveryTimeEstimate";
-import OrderChat from "@/components/OrderChat";
+
 import {
   recordPixAttempt,
   resetPixAttempts,
@@ -842,16 +842,13 @@ const PedidosPage = () => {
                           </div>
                         </div>
 
-                        {/* Footer: date + chat */}
+                        {/* Footer: date */}
                         <div className="flex items-center justify-between pt-1">
                           <span className="text-[10px] text-muted-foreground">
                             {new Date(order.created_at).toLocaleDateString("pt-BR", {
                               day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
                             })}
                           </span>
-                          {!["cancelado", "finalizado"].includes(order.status) && (
-                            <OrderChat orderId={order.id} storeName={order.stores?.name || "Loja"} />
-                          )}
                         </div>
                       </div>
                     </div>
