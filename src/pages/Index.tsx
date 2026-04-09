@@ -179,6 +179,7 @@ const Index = () => {
         </div>
       </div>
 
+      <RoleBanner />
       <PromoBanners />
       <FirstOrderBanner />
 
