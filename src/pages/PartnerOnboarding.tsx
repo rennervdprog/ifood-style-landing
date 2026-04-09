@@ -269,8 +269,83 @@ const PartnerOnboarding = () => {
           </div>
         )}
 
-        {/* Step 2: Form */}
-        {step === 2 && partnerType && (
+        {/* Step 2 (lojista): Plan Selection */}
+        {step === 2 && partnerType === "lojista" && (
+          <div className="space-y-4">
+            <div className="text-center mb-2">
+              <h2 className="text-xl font-black text-foreground">Escolha seu plano</h2>
+              <p className="text-sm text-muted-foreground mt-1">Sem contrato. Troque quando quiser.</p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setSelectedPlan("fixed")}
+              className={`w-full text-left rounded-2xl border-2 p-4 transition-all ${
+                selectedPlan === "fixed" ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/40"
+              }`}
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 rounded-xl bg-muted/50 flex items-center justify-center">
+                  <Package className="h-5 w-5 text-foreground" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-sm text-foreground">Plano Essencial</h3>
+                  <p className="text-xs text-muted-foreground">Ideal para alto volume</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-lg font-black text-foreground">R$180</span>
+                  <span className="text-xs text-muted-foreground">/mês</span>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {["0% taxa", "Dinheiro/Cartão", "Apenas motoboy próprio"].map(tag => (
+                  <span key={tag} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{tag}</span>
+                ))}
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSelectedPlan("hybrid")}
+              className={`w-full text-left rounded-2xl border-2 p-4 transition-all relative ${
+                selectedPlan === "hybrid" ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/40"
+              }`}
+            >
+              <span className="absolute -top-2.5 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary text-primary-foreground">⭐ Popular</span>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <TrendingUp className="h-5 w-5 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-sm text-foreground">Plano Crescimento</h3>
+                  <p className="text-xs text-muted-foreground">Ideal para começar</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-lg font-black text-foreground">R$100</span>
+                  <span className="text-xs text-muted-foreground">/mês</span>
+                </div>
+              </div>
+              <p className="text-[10px] font-semibold text-primary mb-2">+ 2,5% por pedido entregue</p>
+              <div className="flex flex-wrap gap-1.5">
+                {["PIX integrado", "CRM completo", "Entrega plataforma*"].map(tag => (
+                  <span key={tag} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">{tag}</span>
+                ))}
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => { if (selectedPlan) setStep(3); else toast.error("Selecione um plano."); }}
+              disabled={!selectedPlan}
+              className="w-full bg-primary text-primary-foreground font-bold py-3.5 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              Próximo <ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Step 2 (motoboy) or Step 3 (lojista): Form */}
+        {((step === 2 && partnerType === "motoboy") || (step === 3 && partnerType === "lojista")) && partnerType && (
           <div className="space-y-5">
             <div className="text-center">
               <h2 className="text-xl font-black text-foreground">
