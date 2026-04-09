@@ -97,15 +97,26 @@ const RoleGuard = ({ allowedRoles, redirectTo, children, requireApproval = false
   if (!authorized) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center text-center px-6">
-        <Shield className="h-16 w-16 text-yellow-500 mb-4" />
-        <h1 className="text-xl font-bold text-foreground mb-2">Cadastro em Análise! 🛡️</h1>
-        <p className="text-sm text-muted-foreground max-w-xs mb-2">
-          Recebemos seus dados. Em até 24h o administrador do ItaSuper liberará seu acesso.
+        <div className="w-20 h-20 bg-amber-500/10 rounded-3xl flex items-center justify-center mb-5">
+          <Shield className="h-10 w-10 text-amber-500" />
+        </div>
+        <h1 className="text-xl font-black text-foreground mb-2">Cadastro em Análise 🔍</h1>
+        <p className="text-sm text-muted-foreground max-w-xs mb-3">
+          Recebemos seus dados com sucesso! Em até <span className="font-bold text-foreground">24 horas</span> o administrador do ItaSuper liberará seu acesso.
         </p>
-        <p className="text-xs text-muted-foreground">Entraremos em contato via WhatsApp.</p>
-        <button onClick={() => navigate("/")} className="mt-6 bg-primary text-primary-foreground font-bold px-6 py-3 rounded-xl">
-          Voltar à Home
-        </button>
+        <div className="bg-primary/5 border border-primary/10 rounded-2xl p-4 max-w-xs mb-6">
+          <p className="text-xs text-muted-foreground">
+            📲 Entraremos em contato via <span className="font-bold text-foreground">WhatsApp</span> assim que seu cadastro for aprovado.
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <button onClick={() => navigate("/")} className="bg-muted text-foreground font-bold px-5 py-3 rounded-xl text-sm">
+            Voltar à Home
+          </button>
+          <button onClick={() => window.location.reload()} className="bg-primary text-primary-foreground font-bold px-5 py-3 rounded-xl text-sm">
+            Verificar Status
+          </button>
+        </div>
       </div>
     );
   }
