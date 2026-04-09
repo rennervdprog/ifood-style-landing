@@ -1849,6 +1849,7 @@ const JuridicoTab = () => {
   const [searchType, setSearchType] = useState<"name" | "cpf" | "email">("name");
   const [results, setResults] = useState<any[]>([]);
   const [archivedResults, setArchivedResults] = useState<any[]>([]);
+  const [searchAttempted, setSearchAttempted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [userOrders, setUserOrders] = useState<any[]>([]);
@@ -1858,45 +1859,65 @@ const JuridicoTab = () => {
   const handleSearch = async () => {
     if (!search.trim()) return;
     setLoading(true);
+    setSearchAttempted(true);
     setSelectedUser(null);
     setResults([]);
     setArchivedResults([]);
+
     try {
       const cleanSearch = search.trim();
-      
-      // Search active profiles
-      let query = supabase.from("profiles").select("*");
-      if (searchType === "name") query = query.ilike("full_name", `%${cleanSearch}%`);
-      else if (searchType === "cpf") query = query.eq("document", cleanSearch.replace(/\D/g, ""));
-      else if (searchType === "email") query = query.ilike("email", `%${cleanSearch}%`);
-      
-      const { data: profiles, error: profilesError } = await query.limit(20);
-      if (profilesError) {
-        console.error("Erro ao buscar profiles:", profilesError);
-        toast.error("Erro ao buscar perfis: " + profilesError.message);
-      }
-      setResults(profiles || []);
+      const normalizedDocument = cleanSearch.replace(/\D/g, "");
+      const namePattern = `%${cleanSearch}%`;
+      const documentPattern = `%${normalizedDocument}%`;
+      const emailPattern = `%${cleanSearch.toLowerCase()}%`;
 
-      // Search archived accounts
-      let archiveQuery = supabase.from("archived_accounts").select("*");
-      if (searchType === "name") archiveQuery = archiveQuery.ilike("full_name", `%${cleanSearch}%`);
-      else if (searchType === "cpf") archiveQuery = archiveQuery.ilike("document", `%${cleanSearch}%`);
-      else if (searchType === "email") archiveQuery = archiveQuery.ilike("email", `%${cleanSearch}%`);
-      
-      const { data: archived, error: archivedError } = await archiveQuery.limit(20);
-      if (archivedError) {
-        console.error("Erro ao buscar archived_accounts:", archivedError);
-      }
-      setArchivedResults((archived || []) as any[]);
+      const profileQuery = supabase.from("profiles").select("*");
+      const archivedQuery = supabase.from("archived_accounts").select("*");
 
-      if ((profiles?.length || 0) === 0 && (archived?.length || 0) === 0) {
+      const activeSearch =
+        searchType === "name"
+          ? profileQuery.ilike("full_name", namePattern)
+          : searchType === "cpf"
+            ? profileQuery.ilike("document", documentPattern)
+            : profileQuery.ilike("email", emailPattern);
+
+      const archivedSearch =
+        searchType === "name"
+          ? archivedQuery.ilike("full_name", namePattern)
+          : searchType === "cpf"
+            ? archivedQuery.ilike("document", documentPattern)
+            : archivedQuery.ilike("email", emailPattern);
+
+      const [profilesResponse, archivedResponse] = await Promise.all([
+        activeSearch.limit(20),
+        archivedSearch.limit(20),
+      ]);
+
+      if (profilesResponse.error) {
+        console.error("Erro ao buscar perfis:", profilesResponse.error);
+        throw new Error(`Erro ao buscar perfis: ${profilesResponse.error.message}`);
+      }
+
+      if (archivedResponse.error) {
+        console.error("Erro ao buscar contas arquivadas:", archivedResponse.error);
+        throw new Error(`Erro ao buscar contas arquivadas: ${archivedResponse.error.message}`);
+      }
+
+      const activeProfiles = (profilesResponse.data || []) as any[];
+      const archivedAccounts = (archivedResponse.data || []) as any[];
+
+      setResults(activeProfiles);
+      setArchivedResults(archivedAccounts);
+
+      const totalResults = activeProfiles.length + archivedAccounts.length;
+      if (totalResults === 0) {
         toast.info(`Nenhum resultado para "${cleanSearch}"`);
       } else {
-        toast.success(`${(profiles?.length || 0) + (archived?.length || 0)} resultado(s) encontrado(s)`);
+        toast.success(`${totalResults} resultado(s) encontrado(s)`);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Erro na busca jurídica:", err);
-      toast.error("Erro inesperado na busca");
+      toast.error(err?.message || "Erro inesperado na busca");
     } finally {
       setLoading(false);
     }
@@ -2261,7 +2282,7 @@ const JuridicoTab = () => {
       )}
 
       {/* Empty state */}
-      {results.length === 0 && archivedResults.length === 0 && !loading && search.trim() && (
+      {results.length === 0 && archivedResults.length === 0 && !loading && searchAttempted && search.trim() && (
         <div className="text-center py-12">
           <Search className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
           <p className="text-sm text-muted-foreground">Nenhum resultado encontrado para "{search}"</p>
