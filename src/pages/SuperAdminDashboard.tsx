@@ -355,32 +355,117 @@ const SuperAdminDashboard = () => {
   const filterLabels: Record<DateFilter, string> = { today: "Hoje", yesterday: "Ontem", week: "7 dias" };
   const currentTab = sidebarItems.find(i => i.key === activeTab);
 
+  // Bottom nav tabs (mobile)
+  const bottomTabs: { key: AdminTab; label: string; icon: React.ElementType }[] = [
+    { key: "dashboard", label: "Início", icon: LayoutDashboard },
+    { key: "financeiro", label: "Financeiro", icon: DollarSign },
+    { key: "saques", label: "Saques", icon: Wallet },
+    { key: "stores", label: "Lojas", icon: Store },
+  ];
+
+  const [showMoreSheet, setShowMoreSheet] = useState(false);
+  const moreTabs = sidebarItems.filter(i => !bottomTabs.some(b => b.key === i.key));
+
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Sidebar overlay (mobile) */}
+      {/* ═══ Mobile Bottom Navigation ═══ */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-t border-border lg:hidden" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+        <div className="flex items-center justify-around h-16">
+          {bottomTabs.map((tab) => {
+            const isActive = activeTab === tab.key;
+            const Icon = tab.icon;
+            const hasBadge = tab.key === "saques" && pendingWithdrawals.length > 0;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => { handleTabChange(tab.key); setShowMoreSheet(false); }}
+                className={`flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-xl transition-all relative ${
+                  isActive ? "bg-primary/10" : ""
+                }`}
+              >
+                <div className="relative">
+                  <Icon className={`h-5 w-5 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
+                  {hasBadge && (
+                    <span className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground text-[8px] font-black min-w-[16px] h-4 flex items-center justify-center px-1 rounded-full animate-pulse">
+                      {pendingWithdrawals.length}
+                    </span>
+                  )}
+                </div>
+                <span className={`text-[10px] font-bold ${isActive ? "text-primary" : "text-muted-foreground"}`}>{tab.label}</span>
+              </button>
+            );
+          })}
+          {/* More button */}
+          <button
+            onClick={() => setShowMoreSheet(!showMoreSheet)}
+            className={`flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-xl transition-all ${
+              showMoreSheet || moreTabs.some(t => t.key === activeTab) ? "bg-primary/10" : ""
+            }`}
+          >
+            <Menu className={`h-5 w-5 ${showMoreSheet || moreTabs.some(t => t.key === activeTab) ? "text-primary" : "text-muted-foreground"}`} />
+            <span className={`text-[10px] font-bold ${showMoreSheet || moreTabs.some(t => t.key === activeTab) ? "text-primary" : "text-muted-foreground"}`}>Mais</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ═══ More Sheet (mobile) ═══ */}
+      {showMoreSheet && (
+        <>
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden" onClick={() => setShowMoreSheet(false)} />
+          <div className="fixed bottom-16 left-0 right-0 z-45 bg-card border-t border-border rounded-t-3xl shadow-2xl lg:hidden animate-in slide-in-from-bottom-4 max-h-[60vh] overflow-y-auto" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+            <div className="w-12 h-1 bg-muted-foreground/20 rounded-full mx-auto mt-3 mb-2" />
+            <div className="px-4 pb-4 space-y-1">
+              {moreTabs.map((item) => {
+                const isActive = activeTab === item.key;
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.key}
+                    onClick={() => { handleTabChange(item.key); setShowMoreSheet(false); }}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${
+                      isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                    }`}
+                  >
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${isActive ? "bg-primary-foreground/15" : "bg-muted/50"}`}>
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <span>{item.label}</span>
+                    {item.key === "approvals" && (
+                      <span className="ml-auto text-[10px] bg-amber-500/20 text-amber-600 px-2 py-0.5 rounded-full font-bold">Pendentes</span>
+                    )}
+                  </button>
+                );
+              })}
+              <button
+                onClick={() => { navigate("/"); setShowMoreSheet(false); }}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-muted-foreground hover:bg-accent hover:text-foreground"
+              >
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-muted/50">
+                  <ArrowLeft className="h-4 w-4" />
+                </div>
+                <span>Voltar à Home</span>
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ═══ Desktop Sidebar ═══ */}
       {sidebarOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Sidebar — 80vw on mobile, fixed 280px on desktop */}
-      <aside className={`fixed lg:sticky top-0 left-0 z-50 h-screen w-[80vw] max-w-[320px] lg:w-[280px] bg-card/95 backdrop-blur-xl border-r border-border/50 flex flex-col transition-all duration-300 ease-out shadow-2xl lg:shadow-none ${
-        sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-      }`}>
+      <aside className={`fixed lg:sticky top-0 left-0 z-50 h-screen w-[80vw] max-w-[320px] lg:w-[280px] bg-card/95 backdrop-blur-xl border-r border-border/50 flex-col transition-all duration-300 ease-out shadow-2xl lg:shadow-none hidden lg:flex`}>
         {/* Brand Header */}
         <div className="p-5 border-b border-border/50">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary/20">
-                <LayoutDashboard className="h-5 w-5 text-primary-foreground" />
-              </div>
-              <div className="min-w-0">
-                <h1 className="font-black text-sm text-foreground tracking-tight">ItaSuper</h1>
-                <p className="text-[10px] text-muted-foreground font-medium">Painel Admin</p>
-              </div>
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary/20">
+              <LayoutDashboard className="h-5 w-5 text-primary-foreground" />
             </div>
-            <button onClick={() => setSidebarOpen(false)} className="lg:hidden p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent/80 transition-colors">
-              <X className="h-5 w-5" />
-            </button>
+            <div className="min-w-0">
+              <h1 className="font-black text-sm text-foreground tracking-tight">ItaSuper</h1>
+              <p className="text-[10px] text-muted-foreground font-medium">Painel Admin</p>
+            </div>
           </div>
         </div>
 
@@ -423,8 +508,6 @@ const SuperAdminDashboard = () => {
                   {items.map(item => {
                     const isActive = activeTab === item.key;
                     const Icon = item.icon;
-                    const hasBadge = (item.key === "saques" && pendingWithdrawals.length > 0) ||
-                      (item.key === "dashboard" && (delayedOrders.length > 0 || (complianceAlerts && complianceAlerts.length > 0)));
                     return (
                       <button
                         key={item.key}
@@ -494,16 +577,29 @@ const SuperAdminDashboard = () => {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 min-w-0 flex flex-col">
-        {/* Top bar */}
-        <header className="sticky top-0 z-30 bg-card/95 backdrop-blur border-b border-border px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 -ml-2 rounded-lg hover:bg-accent">
-              <Menu className="h-5 w-5 text-foreground" />
-            </button>
-            <div>
+      <main className="flex-1 min-w-0 flex flex-col pb-20 lg:pb-0">
+        {/* Top bar — Mobile header */}
+        <header className="sticky top-0 z-30 bg-card/95 backdrop-blur-xl border-b border-border px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3 min-w-0">
+            {/* Mobile: show brand + current tab */}
+            <div className="lg:hidden flex items-center gap-2.5 min-w-0">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center flex-shrink-0">
+                <LayoutDashboard className="h-4 w-4 text-primary-foreground" />
+              </div>
+              <div className="min-w-0">
+                <h2 className="font-bold text-foreground text-sm truncate">{currentTab?.label || "Dashboard"}</h2>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-muted-foreground">R$ {metrics.totalSales.toFixed(2)}</span>
+                  {metrics.activeOrders > 0 && (
+                    <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-md">{metrics.activeOrders} ativos</span>
+                  )}
+                </div>
+              </div>
+            </div>
+            {/* Desktop: tab title */}
+            <div className="hidden lg:block">
               <h2 className="font-bold text-foreground text-lg">{currentTab?.label || "Dashboard"}</h2>
-              <p className="text-xs text-muted-foreground hidden sm:block">
+              <p className="text-xs text-muted-foreground">
                 {activeTab === "dashboard" && `${metrics.totalOrders} pedidos no período`}
                 {activeTab === "financeiro" && "Gestão financeira e repasses"}
                 {activeTab === "saques" && `${pendingWithdrawals.length} solicitações pendentes`}
@@ -526,6 +622,17 @@ const SuperAdminDashboard = () => {
               >
                 <Copy className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Copiar Relatório</span>
+              </button>
+            )}
+            {pendingWithdrawals.length > 0 && activeTab !== "saques" && (
+              <button
+                onClick={() => handleTabChange("saques")}
+                className="relative p-2 rounded-xl bg-destructive/10 hover:bg-destructive/20 transition-colors lg:hidden"
+              >
+                <Bell className="h-4 w-4 text-destructive" />
+                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[8px] font-black w-4 h-4 flex items-center justify-center rounded-full animate-pulse">
+                  {pendingWithdrawals.length}
+                </span>
               </button>
             )}
           </div>
@@ -595,14 +702,14 @@ const SuperAdminDashboard = () => {
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
                   {isLoading ? (
                     Array.from({ length: 4 }).map((_, i) => (
-                      <div key={i} className="bg-card rounded-2xl p-4 animate-pulse h-24 border border-border" />
+                      <div key={i} className="bg-card rounded-2xl p-3 animate-pulse h-20 border border-border" />
                     ))
                   ) : (
                     <>
                       <MetricCard icon={ShoppingBag} label="Vendas" value={`R$ ${metrics.totalSales.toFixed(2)}`} sublabel={`${metrics.totalOrders} pedidos`} />
-                      <MetricCard icon={TrendingUp} label="Sua Comissão" value={`R$ ${metrics.commission.toFixed(2)}`} sublabel="15% do subtotal" highlight />
-                      <MetricCard icon={Clock} label="Pedidos Ativos" value={String(metrics.activeOrders)} sublabel="em andamento" />
-                      <MetricCard icon={AlertTriangle} label="Em Atraso" value={String(delayedOrders.length)} sublabel="> 60 min" alert={delayedOrders.length > 0} />
+                      <MetricCard icon={TrendingUp} label="Comissão" value={`R$ ${metrics.commission.toFixed(2)}`} sublabel="15% subtotal" highlight />
+                      <MetricCard icon={Clock} label="Ativos" value={String(metrics.activeOrders)} sublabel="em andamento" />
+                      <MetricCard icon={AlertTriangle} label="Atraso" value={String(delayedOrders.length)} sublabel="> 60 min" alert={delayedOrders.length > 0} />
                     </>
                   )}
                 </div>
