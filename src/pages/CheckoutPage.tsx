@@ -296,6 +296,27 @@ const CheckoutPage = () => {
         </span>
       </header>
 
+      {/* Store Closed Alert */}
+      {isStoreClosed && storeStatus && (
+        <div className="mx-4 mt-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-start gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center shrink-0 mt-0.5">
+            <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-sm font-bold text-amber-700 dark:text-amber-300">Loja fechada no momento</h3>
+            <p className="text-xs text-amber-600/80 dark:text-amber-400/80 mt-0.5">
+              Seu pedido não pode ser finalizado agora.
+            </p>
+            <div className="flex items-center gap-1.5 mt-2 bg-amber-500/10 rounded-lg px-3 py-1.5 w-fit">
+              <AlertTriangle className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+              <span className="text-xs font-bold text-amber-700 dark:text-amber-300">
+                {storeStatus.reason}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Progress steps */}
       <div className="px-4 pt-4 pb-2">
         <div className="flex items-center gap-2">
