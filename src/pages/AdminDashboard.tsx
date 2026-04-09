@@ -733,6 +733,82 @@ const AdminDashboard = () => {
                 />
               </div>
 
+              {/* Delayed Orders Panel */}
+              {delayedOrders.length > 0 && (
+                <div className="bg-destructive/5 border border-destructive/30 rounded-2xl overflow-hidden">
+                  <button
+                    onClick={() => setShowDelayedPanel(!showDelayedPanel)}
+                    className="w-full flex items-center justify-between p-4"
+                  >
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-destructive" />
+                      <span className="text-sm font-bold text-destructive">Pedidos em Atraso ({delayedOrders.length})</span>
+                    </div>
+                    {showDelayedPanel ? <ChevronUp className="h-4 w-4 text-destructive" /> : <ChevronDown className="h-4 w-4 text-destructive" />}
+                  </button>
+                  {showDelayedPanel && (
+                    <div className="px-4 pb-4 space-y-3">
+                      {delayedOrders.map((order: any) => {
+                        const elapsedMin = Math.floor((Date.now() - new Date(order.created_at).getTime()) / 60000);
+                        const sc = statusColors[order.status] || statusColors.pendente;
+                        return (
+                          <div key={order.id} className="bg-card border border-destructive/20 rounded-xl p-3 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-black text-foreground">#{order.id.slice(0, 8).toUpperCase()}</span>
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${sc.bg} ${sc.text}`}>{sc.label}</span>
+                              </div>
+                              <span className="text-xs font-bold text-destructive bg-destructive/10 px-2 py-0.5 rounded-full">
+                                {elapsedMin} min
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <span>{getClientName(order.client_id)}</span>
+                              <span>•</span>
+                              <span>{paymentIcons[order.payment_method]} {paymentLabels[order.payment_method] || order.payment_method}</span>
+                              <span>•</span>
+                              <span className="font-bold text-foreground">R$ {Number(order.total_price).toFixed(2)}</span>
+                            </div>
+                            <div className="bg-muted/50 rounded-lg px-2.5 py-1.5 space-y-0.5">
+                              {order.order_items?.slice(0, 4).map((item: any) => (
+                                <div key={item.id} className="flex justify-between text-xs">
+                                  <span className="text-foreground"><span className="text-primary font-bold">{item.quantity}x</span> {item.products?.name || "Item"}</span>
+                                  <span className="text-muted-foreground">R$ {(item.unit_price * item.quantity).toFixed(2)}</span>
+                                </div>
+                              ))}
+                              {(order.order_items?.length || 0) > 4 && (
+                                <p className="text-[10px] text-muted-foreground">+{order.order_items.length - 4} itens...</p>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <MapPin className="h-3 w-3" />
+                              <span>{order.neighborhood}</span>
+                            </div>
+                            <div className="flex gap-2">
+                              {order.status === "pendente" && (
+                                <button onClick={() => updateOrderStatus(order.id, "preparando")}
+                                  className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 rounded-xl text-xs active:scale-[0.98] transition-transform">
+                                  ✓ ACEITAR
+                                </button>
+                              )}
+                              {order.status === "preparando" && (
+                                <button onClick={() => updateOrderStatus(order.id, "pronto_para_entrega" as OrderStatus)}
+                                  className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 rounded-xl text-xs active:scale-[0.98] transition-transform">
+                                  🔔 MARCAR PRONTO
+                                </button>
+                              )}
+                              {getClientWhatsApp(order.client_id) && (
+                                <WhatsAppButton phone={getClientWhatsApp(order.client_id)} message={`Olá! Sobre seu pedido #${order.id.slice(0, 8).toUpperCase()}, estamos cuidando dele!`} />
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Delivery Mode Quick Config */}
               {(() => {
                 const PLATFORM_CITIES = ["itatinga"];
