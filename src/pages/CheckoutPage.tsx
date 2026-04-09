@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useCart } from "@/contexts/CartContext";
@@ -14,8 +14,9 @@ import CouponInput from "@/components/CouponInput";
 import { calculateDeliveryFee, DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig } from "@/lib/deliveryFee";
 import { formatCep, fetchCep } from "@/lib/cepLookup";
 import { addMoney, multiplyMoney, sumMoney } from "@/lib/utils";
+import { useStorePlan } from "@/hooks/useStorePlan";
 
-const paymentMethods = [
+const allPaymentMethods = [
   { id: "pix", label: "PIX Online", desc: "Pagamento instantâneo", icon: QrCode },
   { id: "cartao", label: "Cartão na Entrega", desc: "Débito ou crédito", icon: CreditCard },
   { id: "dinheiro", label: "Dinheiro", desc: "Pague na entrega", icon: Banknote },
@@ -66,6 +67,16 @@ const CheckoutPage = () => {
   });
 
   const storeId = items[0]?.store_id;
+  const storePlan = useStorePlan(storeId);
+
+  // Filter payment methods based on store plan
+  const paymentMethods = useMemo(() => {
+    if (!storePlan.allowPix) {
+      return allPaymentMethods.filter(pm => pm.id !== "pix");
+    }
+    return allPaymentMethods;
+  }, [storePlan.allowPix]);
+
   const { data: storeData } = useQuery({
     queryKey: ["store-checkout", storeId],
     queryFn: async () => {
