@@ -1781,7 +1781,8 @@ const AdminDashboard = () => {
                   <h3 className="text-lg font-bold text-foreground">Relatórios Avançados</h3>
                   {(() => {
                     const periods = [7, 14, 30, 90];
-                    const [selectedPeriod, setSelectedPeriod] = useState(30);
+                    const selectedPeriod = selectedReportPeriod;
+                    const setSelectedPeriod = setSelectedReportPeriod;
 
                     const periodDays = Array.from({ length: selectedPeriod }, (_, i) => {
                       const d = new Date(); d.setDate(d.getDate() - (selectedPeriod - 1 - i));
