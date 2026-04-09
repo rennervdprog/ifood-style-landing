@@ -886,7 +886,7 @@ const AdminDashboard = () => {
                               {order.status === "pendente" && (
                                 <button onClick={() => updateOrderStatus(order.id, "preparando")}
                                   className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 rounded-xl text-xs active:scale-[0.98] transition-transform">
-                                  ✓ ACEITAR
+                                  {order.payment_method === "pix" ? "🍳 PRODUZIR" : "✓ ACEITAR"}
                                 </button>
                               )}
                               {order.status === "preparando" && (
