@@ -1760,6 +1760,16 @@ const AdminDashboard = () => {
               {dashboardTab === "finance" && storePlan.hasCommission && <StoreFinancePanel storeId={store.id} storeName={store.name} />}
                {dashboardTab === "finance" && !storePlan.hasCommission && <StoreFinanceBasic storeId={store.id} storeName={store.name} />}
               {dashboardTab === "subscription" && <StoreSubscription storeId={store.id} storeName={store.name} />}
+              {dashboardTab === "loyalty" && storePlan.allowLoyalty && <LoyaltyConfigPanel storeId={store.id} />}
+              {dashboardTab === "loyalty" && !storePlan.allowLoyalty && (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <Star className="h-12 w-12 text-muted-foreground/30 mb-4" />
+                  <h3 className="text-base font-bold text-foreground mb-1">Programa de Fidelidade</h3>
+                  <p className="text-sm text-muted-foreground max-w-xs">
+                    Disponível nos planos Crescimento e Comissão. Faça upgrade para fidelizar seus clientes!
+                  </p>
+                </div>
+              )}
               {dashboardTab === "reports" && (
                 <div className="space-y-6">
                   <h3 className="text-lg font-bold text-foreground">Relatórios de Vendas</h3>
