@@ -103,6 +103,7 @@ const StorePage = () => {
   }, [store]);
 
   const storeId = store?.id || id;
+  const storePlan = useStorePlan(storeId);
 
   const { data: storeHours } = useQuery({
     queryKey: ["store-hours", storeId],
