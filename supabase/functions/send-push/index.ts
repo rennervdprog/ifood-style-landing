@@ -71,7 +71,6 @@ async function sendOneSignalByExternalId(
 
   console.log("[OneSignal] Sending via external_id:", JSON.stringify({ app_id: appId, user_ids: userIds, title }));
 
-  // Strategy 1: New API with include_aliases
   const strategies = [
     {
       name: "aliases_v2",
@@ -192,7 +191,7 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabaseAnon = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    // Verify the caller using getClaims (faster, no network call)
+    // Verify the caller
     const supabaseAuth = createClient(supabaseUrl, supabaseAnon);
     const token = authHeader.replace("Bearer ", "").trim();
     const { data: { user }, error: authError } = await supabaseAuth.auth.getUser(token);
@@ -217,7 +216,83 @@ Deno.serve(async (req) => {
     }
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-    const requestedUserIds = [...new Set((user_ids as string[]).filter(Boolean))];
+
+    // ── ROLE CHECK: Only admin, store owners, or drivers can send push ──
+    const { data: isAdmin } = await supabaseAdmin.rpc("is_platform_admin", { _user_id: callerUserId });
+
+    if (!isAdmin) {
+      // Check if caller is a store owner or driver
+      const { data: callerProfile } = await supabaseAdmin
+        .from("profiles")
+        .select("role")
+        .eq("user_id", callerUserId)
+        .maybeSingle();
+
+      const callerRole = callerProfile?.role;
+
+      if (callerRole !== "lojista" && callerRole !== "motoboy") {
+        return new Response(JSON.stringify({ error: "Sem permissão para enviar notificações." }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Validate that target user_ids are related to caller's orders
+      const requestedUserIds = [...new Set((user_ids as string[]).filter(Boolean))];
+      let allowedUserIds: Set<string>;
+
+      if (callerRole === "lojista") {
+        // Store owner can only notify clients/drivers from their store orders
+        const { data: storeOrders } = await supabaseAdmin
+          .from("orders")
+          .select("client_id, driver_id")
+          .in("store_id", (
+            await supabaseAdmin.from("stores").select("id").eq("owner_id", callerUserId)
+          ).data?.map((s: any) => s.id) || []);
+
+        allowedUserIds = new Set<string>();
+        for (const o of storeOrders || []) {
+          if (o.client_id) allowedUserIds.add(o.client_id);
+          if (o.driver_id) allowedUserIds.add(o.driver_id);
+        }
+      } else {
+        // Driver can only notify clients/store owners from their assigned orders
+        const { data: driverOrders } = await supabaseAdmin
+          .from("orders")
+          .select("client_id, store_id")
+          .eq("driver_id", callerUserId);
+
+        allowedUserIds = new Set<string>();
+        for (const o of driverOrders || []) {
+          if (o.client_id) allowedUserIds.add(o.client_id);
+        }
+        // Also get store owners
+        if (driverOrders?.length) {
+          const storeIds = [...new Set(driverOrders.map((o: any) => o.store_id).filter(Boolean))];
+          const { data: stores } = await supabaseAdmin
+            .from("stores")
+            .select("owner_id")
+            .in("id", storeIds);
+          for (const s of stores || []) {
+            if (s.owner_id) allowedUserIds.add(s.owner_id);
+          }
+        }
+      }
+
+      // Filter to only allowed targets
+      const filteredUserIds = requestedUserIds.filter((id) => allowedUserIds.has(id));
+      if (filteredUserIds.length === 0) {
+        return new Response(JSON.stringify({ error: "Nenhum destinatário autorizado." }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Replace user_ids with filtered list
+      body.user_ids = filteredUserIds;
+    }
+
+    const requestedUserIds = [...new Set((body.user_ids as string[]).filter(Boolean))];
 
     const { data: osPlayers } = await supabaseAdmin
       .from("onesignal_players")
@@ -300,7 +375,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ── OneSignal Native Push (PRIMARY: external_id, FALLBACK: player_ids) ──
+    // ── OneSignal Native Push ──
     let osSent = 0;
     let osFailed = 0;
     let osDebug = "not_configured";
