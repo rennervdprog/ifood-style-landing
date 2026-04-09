@@ -192,7 +192,7 @@ const StoreDirectory = () => {
     { icon: Package, title: "Gestão de Pedidos", desc: "Receba, confirme e acompanhe cada pedido em tempo real", tag: "Operação" },
     { icon: BarChart3, title: "Painel Financeiro", desc: "Vendas, comissões e repasses — tudo transparente", tag: "Finanças" },
     { icon: Tag, title: "Cupons & Promoções", desc: "Crie campanhas de desconto para atrair mais clientes", tag: "Marketing" },
-    { icon: MessageSquare, title: "Chat com Cliente", desc: "Converse durante o pedido sem sair do app", tag: "Comunicação" },
+    
     { icon: Clock, title: "Horários Flexíveis", desc: "Configure por dia da semana. Abra e feche quando quiser", tag: "Controle" },
     { icon: CreditCard, title: "PIX, Dinheiro & Cartão", desc: "Aceite todas as formas de pagamento", tag: "Pagamento" },
     { icon: ShieldCheck, title: "Entrega Segura", desc: "Código de coleta e PIN para cada entrega", tag: "Segurança" },
@@ -415,7 +415,7 @@ const StoreDirectory = () => {
                 {[
                   "Cardápio digital profissional",
                   "Gestão de pedidos em tempo real",
-                  "Chat direto com o cliente",
+                  
                   "Cupons e promoções",
                   "Relatórios financeiros",
                   "PIX, dinheiro e cartão",
