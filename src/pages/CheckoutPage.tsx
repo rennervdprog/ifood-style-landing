@@ -5,7 +5,8 @@ import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Edit3, Loader2, Truck, CheckCircle2, ShoppingBag, Tag, ChevronRight } from "lucide-react";
+import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Edit3, Loader2, Truck, CheckCircle2, ShoppingBag, Tag, ChevronRight, Clock, AlertTriangle } from "lucide-react";
+import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 import confetti from "canvas-confetti";
 import AddressModal from "@/components/AddressModal";
 import SavedAddressPicker from "@/components/SavedAddressPicker";
@@ -70,13 +71,31 @@ const CheckoutPage = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("stores")
-        .select("address_cep, delivery_mode, own_delivery_fee")
+        .select("address_cep, delivery_mode, own_delivery_fee, is_open, force_closed")
         .eq("id", storeId!)
         .maybeSingle();
       return data;
     },
     enabled: !!storeId,
   });
+
+  const { data: storeHours } = useQuery({
+    queryKey: ["store-hours-checkout", storeId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("opening_hours")
+        .select("day_of_week, open_time, close_time, is_closed_all_day")
+        .eq("store_id", storeId!);
+      return (data || []) as OpeningHour[];
+    },
+    enabled: !!storeId,
+    refetchInterval: 60_000,
+  });
+
+  const storeStatus = storeData && storeHours
+    ? getStoreOpenStatus(storeHours, storeData.force_closed ?? false, storeData.is_open ?? true)
+    : null;
+  const isStoreClosed = storeStatus ? !storeStatus.isOpen : false;
 
   const profileNeighborhood = (userProfile as any)?.neighborhood;
   const profileStreet = (userProfile as any)?.street;
@@ -149,6 +168,10 @@ const CheckoutPage = () => {
   }
 
   const handleConfirm = async () => {
+    if (isStoreClosed) {
+      toast.error(`Loja fechada. ${storeStatus?.reason || ""}`);
+      return;
+    }
     const useSavedAddr = selectedSavedAddressId && savedAddressData;
     const finalHasAddress = useSavedAddr || hasAddress;
     const finalNeighborhood = useSavedAddr ? savedAddressData.neighborhood : (profileNeighborhood || neighborhood);
@@ -272,6 +295,27 @@ const CheckoutPage = () => {
           {items.length} {items.length === 1 ? "item" : "itens"}
         </span>
       </header>
+
+      {/* Store Closed Alert */}
+      {isStoreClosed && storeStatus && (
+        <div className="mx-4 mt-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-start gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center shrink-0 mt-0.5">
+            <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-sm font-bold text-amber-700 dark:text-amber-300">Loja fechada no momento</h3>
+            <p className="text-xs text-amber-600/80 dark:text-amber-400/80 mt-0.5">
+              Seu pedido não pode ser finalizado agora.
+            </p>
+            <div className="flex items-center gap-1.5 mt-2 bg-amber-500/10 rounded-lg px-3 py-1.5 w-fit">
+              <AlertTriangle className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+              <span className="text-xs font-bold text-amber-700 dark:text-amber-300">
+                {storeStatus.reason}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Progress steps */}
       <div className="px-4 pt-4 pb-2">
@@ -585,23 +629,35 @@ const CheckoutPage = () => {
           <span className="text-sm text-muted-foreground">Total</span>
           <span className="text-lg font-black text-primary">R$ {finalTotal.toFixed(2)}</span>
         </div>
-        <button
-          onClick={handleConfirm}
-          disabled={loading}
-          className="w-full bg-primary text-primary-foreground font-bold py-4 rounded-2xl active:scale-[0.98] transition-all disabled:opacity-50 shadow-lg shadow-primary/25 text-base"
-        >
-          {loading ? (
-            <span className="flex items-center justify-center gap-2">
-              <Loader2 className="w-5 h-5 animate-spin" />
-              Enviando pedido...
-            </span>
-          ) : (
-            <span className="flex items-center justify-center gap-2">
-              Confirmar Pedido
-              <ChevronRight className="h-5 w-5" />
-            </span>
-          )}
-        </button>
+        {isStoreClosed ? (
+          <button
+            disabled
+            className="w-full bg-muted text-muted-foreground font-bold py-4 rounded-2xl text-base flex items-center justify-center gap-2 cursor-not-allowed"
+          >
+            <Clock className="h-5 w-5" />
+            {storeStatus?.nextOpenDay && storeStatus?.nextOpenTime
+              ? `${storeStatus.nextOpenDay === "Hoje" ? "Abre" : `Abre ${storeStatus.nextOpenDay}`} às ${storeStatus.nextOpenTime}`
+              : "Loja fechada"}
+          </button>
+        ) : (
+          <button
+            onClick={handleConfirm}
+            disabled={loading}
+            className="w-full bg-primary text-primary-foreground font-bold py-4 rounded-2xl active:scale-[0.98] transition-all disabled:opacity-50 shadow-lg shadow-primary/25 text-base"
+          >
+            {loading ? (
+              <span className="flex items-center justify-center gap-2">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Enviando pedido...
+              </span>
+            ) : (
+              <span className="flex items-center justify-center gap-2">
+                Confirmar Pedido
+                <ChevronRight className="h-5 w-5" />
+              </span>
+            )}
+          </button>
+        )}
       </div>
 
       {showAddressModal && (
