@@ -199,13 +199,13 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
     enabled: !!storeId,
   });
 
-  // Fetch store owner profile to check PIX key
+  // Fetch store owner profile to check PIX key + commission rate
   const { data: storeData } = useQuery({
     queryKey: ["store-owner", storeId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("stores")
-        .select("owner_id")
+        .select("owner_id, commission_rate")
         .eq("id", storeId)
         .single();
       if (error) throw error;
@@ -213,6 +213,9 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
     },
     enabled: !!storeId,
   });
+
+  const commissionRate = ((storeData as any)?.commission_rate ?? 15) / 100;
+  const commissionPct = Math.round(commissionRate * 100);
 
   const { data: ownerProfile } = useQuery({
     queryKey: ["owner-profile", storeData?.owner_id],
