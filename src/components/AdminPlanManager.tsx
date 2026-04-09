@@ -72,10 +72,10 @@ export default function AdminPlanManager() {
   const handleSetPlan = async (storeId: string, planType: PlanType, monthlyFee: number, commissionRate: number) => {
     setSaving(storeId);
     try {
-      // Deactivate existing plans
+      // Delete existing plan (unique constraint on store_id)
       await supabase
         .from("store_plans")
-        .update({ is_active: false } as any)
+        .delete()
         .eq("store_id", storeId);
 
       // Create new plan
