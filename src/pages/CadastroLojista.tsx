@@ -192,42 +192,14 @@ const CadastroLojista = () => {
         }).eq("user_id", signUpData.user.id);
       }
 
-      setSuccess(true);
+      toast.success("Cadastro realizado com sucesso!");
+      navigate("/admin", { replace: true });
     } catch (err: any) {
       toast.error(err.message || "Erro ao cadastrar.");
     } finally {
       setLoading(false);
     }
   };
-
-  if (success) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
-        <div className="text-center space-y-5 max-w-sm">
-          <div className="w-20 h-20 bg-green-500/10 rounded-3xl flex items-center justify-center mx-auto">
-            <CheckCircle className="h-10 w-10 text-green-500" />
-          </div>
-          <div>
-            <h2 className="text-xl font-black text-foreground">Cadastro Enviado! 🎉</h2>
-            <p className="text-sm text-muted-foreground mt-2">
-              Seu cadastro foi enviado e está em análise. Você receberá um aviso quando for aprovado.
-            </p>
-          </div>
-          <div className="bg-primary/5 border border-primary/10 rounded-2xl p-4 flex items-start gap-3">
-            <Mail className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-            <p className="text-xs text-muted-foreground text-left">
-              Verifique seu e-mail <span className="font-bold text-foreground">{email}</span> para confirmar sua conta.
-            </p>
-          </div>
-          <button
-            onClick={() => navigate("/")}
-            className="w-full bg-primary text-primary-foreground font-bold py-3.5 rounded-2xl active:scale-[0.98] transition-all"
-          >
-            Voltar ao Início
-          </button>
-        </div>
-      </div>
-    );
   }
 
   return (
