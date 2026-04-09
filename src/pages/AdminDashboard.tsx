@@ -73,14 +73,31 @@ const baseSidebarItems: { key: DashboardTab; label: string; icon: React.ElementT
   { key: "settings", label: "Configurações", icon: Settings },
 ];
 
+// Bottom nav tabs (mobile)
+const bottomNavTabs: { key: DashboardTab; label: string; icon: React.ElementType }[] = [
+  { key: "dashboard", label: "Início", icon: LayoutDashboard },
+  { key: "orders", label: "Pedidos", icon: ListOrdered },
+  { key: "menu", label: "Cardápio", icon: UtensilsCrossed },
+  { key: "clients", label: "Clientes", icon: Users },
+];
+
+// "More" sheet items
+const moreSheetItems: { key: DashboardTab; label: string; icon: React.ElementType }[] = [
+  { key: "addons", label: "Adicionais", icon: Plus },
+  { key: "hours", label: "Horários", icon: Clock },
+  { key: "finance", label: "Finanças", icon: Coins },
+  { key: "reports", label: "Relatórios", icon: BarChart3 },
+  { key: "settings", label: "Configurações", icon: Settings },
+];
+
 // ── At-a-Glance Card Component ──
 const GlanceCard = ({ icon: Icon, label, value, subValue, color = "text-primary", trend, onClick }: {
   icon: React.ElementType; label: string; value: string | number; subValue?: string; color?: string; trend?: "up" | "down" | null; onClick?: () => void;
 }) => (
-  <div onClick={onClick} className={`bg-card border border-border rounded-2xl p-4 flex flex-col gap-2 hover:shadow-md transition-shadow ${onClick ? "cursor-pointer active:scale-[0.97]" : ""}`}>
+  <div onClick={onClick} className={`bg-card border border-border rounded-2xl p-3 flex flex-col gap-1.5 hover:shadow-md transition-shadow ${onClick ? "cursor-pointer active:scale-[0.97]" : ""}`}>
     <div className="flex items-center justify-between">
-      <div className={`w-10 h-10 rounded-xl ${color.replace("text-", "bg-").replace("500", "500/10")} flex items-center justify-center`}>
-        <Icon className={`h-5 w-5 ${color}`} />
+      <div className={`w-8 h-8 rounded-lg ${color.replace("text-", "bg-").replace("500", "500/10")} flex items-center justify-center`}>
+        <Icon className={`h-4 w-4 ${color}`} />
       </div>
       {trend && (
         <div className={`flex items-center gap-0.5 text-xs font-bold ${trend === "up" ? "text-emerald-500" : "text-red-500"}`}>
@@ -89,9 +106,9 @@ const GlanceCard = ({ icon: Icon, label, value, subValue, color = "text-primary"
       )}
     </div>
     <div>
-      <p className="text-2xl font-black text-foreground">{value}</p>
-      <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
-      {subValue && <p className="text-[10px] text-muted-foreground/70">{subValue}</p>}
+      <p className="text-xl font-black text-foreground">{value}</p>
+      <p className="text-[10px] text-muted-foreground mt-0.5">{label}</p>
+      {subValue && <p className="text-[10px] text-muted-foreground/70 hidden sm:block">{subValue}</p>}
     </div>
   </div>
 );
@@ -125,6 +142,7 @@ const AdminDashboard = () => {
   const [expandedClient, setExpandedClient] = useState<string | null>(null);
   const [cancelConfirm, setCancelConfirm] = useState<string | null>(null);
   const [showDelayedPanel, setShowDelayedPanel] = useState(false);
+  const [showMoreSheet, setShowMoreSheet] = useState(false);
 
   const prevPendingCountRef = useRef(0);
 
@@ -141,7 +159,6 @@ const AdminDashboard = () => {
     queryKey: ["my-store", user?.id, simulateStoreId],
     queryFn: async () => {
       if (simulateStoreId) {
-        // Admin simulation mode: load specific store
         const { data, error } = await supabase.from("stores").select("*").eq("id", simulateStoreId).single();
         if (error) throw error;
         return data;
@@ -169,7 +186,6 @@ const AdminDashboard = () => {
     enabled: !!store,
   });
 
-  // All orders including cancelled for client analytics
   const { data: allOrders } = useQuery({
     queryKey: ["store-all-orders", store?.id],
     queryFn: async () => {
@@ -248,7 +264,6 @@ const AdminDashboard = () => {
       const completedOrders = data.orders.filter((o: any) => !["cancelado", "aguardando_pagamento"].includes(o.status));
       const ticketMedio = averageMoney(data.totalSpent, completedOrders.length);
 
-      // Find favorite product
       const productCount = new Map<string, number>();
       data.orders.forEach((o: any) => {
         o.order_items?.forEach((item: any) => {
@@ -395,7 +410,6 @@ const AdminDashboard = () => {
         const driverUserIds = onlineDrivers.map((d: any) => d.user_id);
         pushNotifyDeliveryAvailable(driverUserIds, orderId).catch(console.error);
       }
-      // Own delivery: notify client when order leaves
       if (newStatus === "saiu_entrega" && isOwnDelivery && order) {
         sendPushNotification([order.client_id], "🛵 Saiu para entrega!", `Seu pedido #${orderId.slice(0, 8).toUpperCase()} saiu para entrega!`, { link: "/pedidos" }).catch(console.error);
         const clientPhone = getClientWhatsApp(order.client_id);
@@ -404,7 +418,6 @@ const AdminDashboard = () => {
           setTimeout(() => openWhatsApp(clientPhone, msg), 600);
         }
       }
-      // Own delivery: notify client when delivered
       if (newStatus === "finalizado" && isOwnDelivery && order) {
         sendPushNotification([order.client_id], "✅ Pedido Entregue!", `Seu pedido #${orderId.slice(0, 8).toUpperCase()} foi entregue. Bom apetite!`, { link: "/pedidos" }).catch(console.error);
       }
@@ -413,7 +426,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // Check if store has all hours closed (needs configuration)
   const { data: storeHours } = useQuery({
     queryKey: ["store-hours-check", store?.id],
     queryFn: async () => {
@@ -480,7 +492,6 @@ const AdminDashboard = () => {
   const todayTotal = sumMoney(todayOrders.map((order) => order.total_price));
   const todayCount = todayOrders.length;
 
-  // Average delivery time (from pendente to finalizado/entregue, today)
   const avgDeliveryTime = useMemo(() => {
     const delivered = (allOrders || []).filter((o: any) => {
       const isToday = new Date(o.created_at).toDateString() === new Date().toDateString();
@@ -516,7 +527,9 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleTabChange = (tab: DashboardTab) => { setDashboardTab(tab); setSidebarOpen(false); };
+  const handleTabChange = (tab: DashboardTab) => { setDashboardTab(tab); setSidebarOpen(false); setShowMoreSheet(false); };
+
+  const isBottomNavMore = !bottomNavTabs.some(t => t.key === dashboardTab) && dashboardTab !== "dashboard";
 
   // ── RENDER ──
   return (
@@ -526,7 +539,34 @@ const AdminDashboard = () => {
       {/* Sidebar overlay */}
       {sidebarOpen && <div className="fixed inset-0 bg-black/60 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
 
-      {/* ── SIDEBAR ── */}
+      {/* More sheet overlay */}
+      {showMoreSheet && <div className="fixed inset-0 bg-black/60 z-[60] lg:hidden" onClick={() => setShowMoreSheet(false)} />}
+
+      {/* ── MORE BOTTOM SHEET (mobile) ── */}
+      {showMoreSheet && (
+        <div className="fixed inset-x-0 bottom-0 z-[70] lg:hidden animate-fade-in">
+          <div className="bg-card border-t border-border rounded-t-2xl pb-safe">
+            <div className="flex justify-center pt-3 pb-2">
+              <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+            </div>
+            <div className="px-4 pb-4 grid grid-cols-3 gap-3">
+              {moreSheetItems.map(item => {
+                const Icon = item.icon;
+                const isActive = dashboardTab === item.key;
+                return (
+                  <button key={item.key} onClick={() => handleTabChange(item.key)}
+                    className={`flex flex-col items-center gap-2 p-3 rounded-2xl transition-all ${isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent"}`}>
+                    <Icon className="h-5 w-5" />
+                    <span className="text-[11px] font-bold">{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── SIDEBAR (desktop only) ── */}
       <aside className={`fixed lg:sticky top-0 left-0 z-50 h-screen w-64 bg-card border-r border-border flex flex-col transition-transform duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}>
         <div className="p-4 border-b border-border">
           <div className="flex items-center justify-between">
@@ -549,18 +589,18 @@ const AdminDashboard = () => {
         </div>
 
         {/* Quick stats in sidebar */}
-        <div className="p-3 space-y-2 border-b border-border" data-tour="loja-stats">
-          <div className="grid grid-cols-2 gap-2">
-            <div className={`rounded-xl p-2.5 text-center border ${pendingCount > 0 ? "bg-amber-500/10 border-amber-500/20" : "bg-muted/50 border-border"}`}>
+        <div className="p-2 space-y-1.5 border-b border-border" data-tour="loja-stats">
+          <div className="grid grid-cols-2 gap-1.5">
+            <div className={`rounded-xl p-2 text-center border ${pendingCount > 0 ? "bg-amber-500/10 border-amber-500/20" : "bg-muted/50 border-border"}`}>
               <p className={`text-lg font-black ${pendingCount > 0 ? "text-amber-500" : "text-foreground"}`}>{pendingCount}</p>
               <p className="text-[10px] text-muted-foreground font-medium">Novos</p>
             </div>
-            <div className="bg-muted/50 border border-border rounded-xl p-2.5 text-center">
+            <div className="bg-muted/50 border border-border rounded-xl p-2 text-center">
               <p className="text-lg font-black text-foreground">{preparingCount}</p>
               <p className="text-[10px] text-muted-foreground font-medium">Preparando</p>
             </div>
           </div>
-          <div className="bg-muted/50 border border-border rounded-xl p-2.5 flex items-center justify-between">
+          <div className="bg-muted/50 border border-border rounded-xl p-2 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-emerald-500" />
               <span className="text-xs text-muted-foreground">Hoje</span>
@@ -580,7 +620,7 @@ const AdminDashboard = () => {
             return (
               <button key={item.key} onClick={() => handleTabChange(item.key)}
                 data-tour={item.key === "orders" ? "loja-orders" : item.key === "menu" ? "loja-menu" : item.key === "clients" ? "loja-clients" : undefined}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${isActive ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-accent hover:text-foreground"}`}>
+                className={`w-full flex items-center gap-3 py-2 px-3 rounded-xl text-sm font-medium transition-all ${isActive ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-accent hover:text-foreground"}`}>
                 <Icon className="h-4 w-4 flex-shrink-0" />
                 <span>{item.label}</span>
                 {item.key === "orders" && pendingCount > 0 && (
@@ -595,8 +635,8 @@ const AdminDashboard = () => {
         </nav>
 
         {/* Bottom controls */}
-        <div className="p-3 border-t border-border space-y-2">
-          <div className="flex items-center gap-2">
+        <div className="p-2 border-t border-border space-y-1.5">
+          <div className="flex items-center gap-2 px-1">
             <Bike className="h-4 w-4 text-muted-foreground" />
             <span className="text-xs text-muted-foreground flex-1">Entregadores</span>
             <span className={`flex items-center gap-1 text-xs font-bold ${(onlineDrivers?.length || 0) > 0 ? "text-emerald-500" : "text-muted-foreground"}`}>
@@ -604,19 +644,19 @@ const AdminDashboard = () => {
               {onlineDrivers?.length || 0}
             </span>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="grid grid-cols-4 gap-1">
             {soundEnabled && (
               <button onClick={() => setSoundMuted(prev => { if (!prev) toast("🔇 Silenciado"); else toast.success("🔊 Ativo!"); return !prev; })}
                 className={`p-2 rounded-xl border border-border ${soundMuted ? "text-destructive" : "text-emerald-500"}`}>
-                {soundMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                {soundMuted ? <VolumeX className="h-4 w-4 mx-auto" /> : <Volume2 className="h-4 w-4 mx-auto" />}
               </button>
             )}
             <button onClick={toggleAutoPrint}
               className={`p-2 rounded-xl border border-border ${autoPrint ? "text-primary bg-primary/5" : "text-muted-foreground"}`}>
-              <Printer className="h-4 w-4" />
+              <Printer className="h-4 w-4 mx-auto" />
             </button>
             <button onClick={toggleStoreOpen}
-              className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-colors ${store?.is_open ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/30" : "bg-destructive/10 text-destructive border-destructive/30"}`}
+              className={`col-span-2 py-2 rounded-xl text-xs font-bold border transition-colors ${store?.is_open ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/30" : "bg-destructive/10 text-destructive border-destructive/30"}`}
               data-tour="loja-status">
               {store?.is_open ? "✓ Aberto" : "✕ Pausado"}
             </button>
@@ -626,20 +666,30 @@ const AdminDashboard = () => {
 
       {/* ── MAIN CONTENT ── */}
       <main className="flex-1 min-w-0 flex flex-col">
-        {/* Top bar */}
-        <header className="sticky top-0 z-30 bg-card/95 backdrop-blur border-b border-border px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 -ml-2 rounded-xl hover:bg-accent">
+        {/* Mobile Header */}
+        <header className="sticky top-0 z-30 bg-card/95 backdrop-blur border-b border-border px-4 py-2.5 flex items-center justify-between">
+          <div className="flex items-center gap-3 min-w-0">
+            {/* Desktop: hamburger for sidebar */}
+            <button onClick={() => setSidebarOpen(true)} className="hidden lg:hidden p-2 -ml-2 rounded-xl hover:bg-accent">
               <Menu className="h-5 w-5 text-foreground" />
             </button>
-            <div>
-              <h2 className="font-bold text-foreground text-lg">{baseSidebarItems.find(i => i.key === dashboardTab)?.label || "Pedidos"}</h2>
-              <p className="text-xs text-muted-foreground hidden sm:block">
+            <div className="min-w-0">
+              <h2 className="font-bold text-foreground text-base truncate">{store?.name || "Painel"}</h2>
+              <button onClick={toggleStoreOpen}
+                className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold mt-0.5 transition-colors lg:hidden ${
+                  store?.is_open
+                    ? "bg-emerald-500/10 text-emerald-600"
+                    : "bg-red-500/10 text-red-500"
+                }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${store?.is_open ? "bg-emerald-500" : "bg-red-500"}`} />
+                {store?.is_open ? "Aberta" : "Pausada"}
+              </button>
+              {/* Desktop subtitle */}
+              <p className="text-xs text-muted-foreground hidden lg:block">
                 {dashboardTab === "dashboard" && "Resumo do dia em tempo real"}
                 {dashboardTab === "orders" && `${orders?.length || 0} pedidos ativos`}
                 {dashboardTab === "clients" && `${clientAnalytics.length} clientes registrados`}
                 {dashboardTab === "menu" && "Gerencie seu cardápio"}
-                
                 {dashboardTab === "addons" && "Grupos de adicionais"}
                 {dashboardTab === "hours" && "Horários de funcionamento"}
                 {dashboardTab === "finance" && "Resumo financeiro"}
@@ -647,17 +697,23 @@ const AdminDashboard = () => {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             {showSoundPrompt && !soundEnabled && (
               <button onClick={activateSound}
-                className="flex items-center gap-1.5 bg-amber-400/10 border border-amber-400/30 text-amber-500 px-3 py-1.5 rounded-xl text-xs font-bold animate-pulse">
-                <Bell className="h-3.5 w-3.5" /> Ativar alertas
+                className="flex items-center gap-1 bg-amber-400/10 border border-amber-400/30 text-amber-500 px-2.5 py-1.5 rounded-xl text-[11px] font-bold animate-pulse">
+                <Bell className="h-3.5 w-3.5" /> Alertas
               </button>
             )}
             {pendingCount > 0 && dashboardTab !== "orders" && (
               <button onClick={() => { setDashboardTab("orders"); setActiveTab("pendente"); }}
-                className="flex items-center gap-1.5 bg-amber-400 text-amber-900 px-3 py-1.5 rounded-xl text-xs font-bold animate-bounce">
-                <Clock className="h-3.5 w-3.5" /> {pendingCount} novo{pendingCount > 1 ? "s" : ""}
+                className="flex items-center gap-1 bg-amber-400 text-amber-900 px-2.5 py-1.5 rounded-xl text-[11px] font-bold animate-bounce">
+                <Clock className="h-3.5 w-3.5" /> {pendingCount}
+              </button>
+            )}
+            {soundEnabled && (
+              <button onClick={() => setSoundMuted(prev => { if (!prev) toast("🔇 Silenciado"); else toast.success("🔊 Ativo!"); return !prev; })}
+                className={`p-2 rounded-xl lg:hidden ${soundMuted ? "text-destructive" : "text-emerald-500"}`}>
+                {soundMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
               </button>
             )}
             <button
@@ -665,28 +721,28 @@ const AdminDashboard = () => {
               className="p-2 rounded-xl hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
               title="Sair da conta"
             >
-              <LogOut className="h-4.5 w-4.5" />
+              <LogOut className="h-4 w-4" />
             </button>
           </div>
         </header>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto pb-20 lg:pb-0">
           {/* ══════ DASHBOARD TAB ══════ */}
           {dashboardTab === "dashboard" && store && (
-            <div className="p-4 lg:p-6 max-w-6xl mx-auto space-y-6">
+            <div className="p-4 lg:p-6 max-w-6xl mx-auto space-y-4 lg:space-y-6">
               {/* Hours Configuration Alert */}
               {allHoursClosed && (
                 <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-start gap-3">
                   <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
                   <div className="flex-1">
-                    <h3 className="font-bold text-amber-600 text-sm">Configure seus horários de funcionamento</h3>
+                    <h3 className="font-bold text-amber-600 text-sm">Configure seus horários</h3>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Sua loja está com todos os horários fechados. Configure os horários para que os clientes possam fazer pedidos.
+                      Sua loja está com todos os horários fechados. Configure para receber pedidos.
                     </p>
                     <button
                       onClick={() => setDashboardTab("hours")}
-                      className="mt-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold px-4 py-2 rounded-xl transition-colors"
+                      className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-amber-600 hover:text-amber-700 bg-amber-500/10 px-3 py-1.5 rounded-lg transition-colors"
                     >
                       <Clock className="inline h-3 w-3 mr-1" />
                       Configurar Horários
@@ -701,10 +757,10 @@ const AdminDashboard = () => {
                 onGoToFinance={() => setDashboardTab("finance")}
               />
               {/* At-a-Glance Cards */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-3">
                 <GlanceCard
                   icon={ShoppingBag}
-                  label="Pedidos Pendentes"
+                  label="Pendentes"
                   value={pendingCount}
                   subValue={preparingCount > 0 ? `+ ${preparingCount} preparando` : undefined}
                   color={pendingCount > 0 ? "text-amber-500" : "text-muted-foreground"}
@@ -720,9 +776,9 @@ const AdminDashboard = () => {
                 />
                 <GlanceCard
                   icon={Bike}
-                  label="Motoboys Plataforma"
+                  label="Motoboys"
                   value={onlineDrivers?.length || 0}
-                  subValue={realtimeDriversConnected ? "Online na plataforma" : "Conectando..."}
+                  subValue={realtimeDriversConnected ? "Online" : "Conectando..."}
                   color={(onlineDrivers?.length || 0) > 0 ? "text-blue-500" : "text-muted-foreground"}
                 />
                 <GlanceCard
@@ -732,7 +788,9 @@ const AdminDashboard = () => {
                   subValue="Pedido → Entrega"
                   color="text-purple-500"
                 />
-                {delayedOrders.length > 0 && (
+              </div>
+              {delayedOrders.length > 0 && (
+                <div className="bg-destructive/5 border border-destructive/20 rounded-2xl p-3">
                   <GlanceCard
                     icon={AlertTriangle}
                     label="Em Atraso"
@@ -741,24 +799,24 @@ const AdminDashboard = () => {
                     color="text-destructive"
                     onClick={() => setShowDelayedPanel(!showDelayedPanel)}
                   />
-                )}
-              </div>
+                </div>
+              )}
 
               {/* Delayed Orders Panel */}
               {delayedOrders.length > 0 && (
                 <div className="bg-destructive/5 border border-destructive/30 rounded-2xl overflow-hidden">
                   <button
                     onClick={() => setShowDelayedPanel(!showDelayedPanel)}
-                    className="w-full flex items-center justify-between p-4"
+                    className="w-full flex items-center justify-between p-3"
                   >
                     <div className="flex items-center gap-2">
                       <AlertTriangle className="h-4 w-4 text-destructive" />
-                      <span className="text-sm font-bold text-destructive">Pedidos em Atraso ({delayedOrders.length})</span>
+                      <span className="text-sm font-bold text-destructive">Em Atraso ({delayedOrders.length})</span>
                     </div>
                     {showDelayedPanel ? <ChevronUp className="h-4 w-4 text-destructive" /> : <ChevronDown className="h-4 w-4 text-destructive" />}
                   </button>
                   {showDelayedPanel && (
-                    <div className="px-4 pb-4 space-y-3">
+                    <div className="px-3 pb-3 space-y-2">
                       {delayedOrders.map((order: any) => {
                         const elapsedMin = Math.floor((Date.now() - new Date(order.created_at).getTime()) / 60000);
                         const sc = statusColors[order.status] || statusColors.pendente;
@@ -827,14 +885,14 @@ const AdminDashboard = () => {
                 const hasPlatformSupport = PLATFORM_CITIES.includes(storeCity);
 
                 return (
-                  <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
+                  <div className="bg-card border border-border rounded-2xl p-3 lg:p-4 space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Truck className="h-4 w-4 text-primary" />
                         <h3 className="font-bold text-foreground text-sm">Modo de Entrega</h3>
                       </div>
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${(store as any).delivery_mode === "own" ? "bg-amber-500/10 text-amber-600" : "bg-primary/10 text-primary"}`}>
-                        {(store as any).delivery_mode === "own" ? "Motoboy Próprio" : "Motoboy Plataforma"}
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${(store as any).delivery_mode === "own" ? "bg-amber-500/10 text-amber-600" : "bg-primary/10 text-primary"}`}>
+                        {(store as any).delivery_mode === "own" ? "Próprio" : "Plataforma"}
                       </span>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
@@ -848,7 +906,7 @@ const AdminDashboard = () => {
                           queryClient.invalidateQueries({ queryKey: ["my-store", user?.id] });
                           toast.success("Modo alterado para Motoboy Plataforma!");
                         }}
-                        className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all relative ${
+                        className={`flex flex-col items-center gap-1 p-2.5 rounded-xl border-2 transition-all relative ${
                           !hasPlatformSupport
                             ? "border-border bg-muted/50 opacity-60 cursor-not-allowed"
                             : (store as any).delivery_mode !== "own"
@@ -858,9 +916,9 @@ const AdminDashboard = () => {
                         disabled={!hasPlatformSupport}
                       >
                         <Bike className={`h-5 w-5 ${!hasPlatformSupport ? "text-muted-foreground" : (store as any).delivery_mode !== "own" ? "text-primary" : "text-muted-foreground"}`} />
-                        <span className={`text-xs font-bold ${!hasPlatformSupport ? "text-muted-foreground" : (store as any).delivery_mode !== "own" ? "text-primary" : "text-muted-foreground"}`}>Motoboy Plataforma</span>
+                        <span className={`text-[11px] font-bold ${!hasPlatformSupport ? "text-muted-foreground" : (store as any).delivery_mode !== "own" ? "text-primary" : "text-muted-foreground"}`}>Plataforma</span>
                         {!hasPlatformSupport && (
-                          <span className="text-[9px] text-amber-600 font-bold">Indisponível na sua região</span>
+                          <span className="text-[9px] text-amber-600 font-bold">Indisponível</span>
                         )}
                       </button>
                       <button
@@ -869,14 +927,14 @@ const AdminDashboard = () => {
                           queryClient.invalidateQueries({ queryKey: ["my-store", user?.id] });
                           toast.success("Modo alterado para Motoboy Próprio!");
                         }}
-                        className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all ${
+                        className={`flex flex-col items-center gap-1 p-2.5 rounded-xl border-2 transition-all ${
                           (store as any).delivery_mode === "own"
                             ? "border-primary bg-primary/10"
                             : "border-border bg-card hover:border-primary/30"
                         }`}
                       >
                         <Truck className={`h-5 w-5 ${(store as any).delivery_mode === "own" ? "text-primary" : "text-muted-foreground"}`} />
-                        <span className={`text-xs font-bold ${(store as any).delivery_mode === "own" ? "text-primary" : "text-muted-foreground"}`}>Motoboy Próprio</span>
+                        <span className={`text-[11px] font-bold ${(store as any).delivery_mode === "own" ? "text-primary" : "text-muted-foreground"}`}>Próprio</span>
                       </button>
                     </div>
                 {(store as any).delivery_mode === "own" && (
@@ -897,7 +955,6 @@ const AdminDashboard = () => {
                         className="flex-1 bg-secondary border border-border rounded-xl px-4 py-2.5 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                       />
                     </div>
-                    <p className="text-[10px] text-muted-foreground">Este valor será cobrado para todos os clientes desta loja.</p>
                   </div>
                 )}
                   </div>
@@ -906,52 +963,43 @@ const AdminDashboard = () => {
 
               {/* Priority Queue - New orders with pulse */}
               {pendingCount > 0 && (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
-                    <h3 className="font-bold text-foreground text-sm">Pedidos Aguardando Atenção</h3>
-                    <span className="text-xs text-muted-foreground">({pendingCount})</span>
+                    <h3 className="font-bold text-foreground text-sm">Aguardando</h3>
+                    <span className="bg-amber-400 text-amber-900 text-[10px] font-black px-1.5 py-0.5 rounded-full">{pendingCount}</span>
                   </div>
                   <div className="space-y-2">
                     {orders?.filter(o => o.status === "pendente").slice(0, 5).map((order: any) => (
-                      <div key={order.id} className="bg-card border-2 border-amber-500/40 rounded-2xl p-4 animate-pulse-border hover:shadow-lg transition-shadow">
+                      <div key={order.id} className="bg-card border-2 border-amber-500/40 rounded-2xl p-3 animate-pulse-border hover:shadow-lg transition-shadow">
                         <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-3">
-                            <span className="text-lg font-black text-foreground">#{order.id.slice(0, 8).toUpperCase()}</span>
-                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${statusColors.pendente.bg} ${statusColors.pendente.text}`}>
-                              {statusColors.pendente.label}
-                            </span>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xl font-black text-emerald-500">R$ {Number(order.total_price).toFixed(2)}</p>
-                            <p className="text-[10px] text-muted-foreground">{paymentLabels[order.payment_method] || order.payment_method}</p>
-                          </div>
+                          <span className="text-base font-black text-foreground">#{order.id.slice(0, 8).toUpperCase()}</span>
+                          <p className="text-xl font-black text-emerald-500">R$ {Number(order.total_price).toFixed(2)}</p>
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2 flex-wrap">
                           <span>{getClientName(order.client_id)}</span>
+                          <span>•</span>
+                          <span>{order.neighborhood}</span>
                           <span>•</span>
                           <span>{new Date(order.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>
                           <span>•</span>
-                          <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{order.neighborhood}</span>
+                          <span>{paymentIcons[order.payment_method]}</span>
                         </div>
-                        <div className="bg-muted/50 rounded-xl px-3 py-2 mb-3 space-y-1">
+                        <div className="bg-muted/50 rounded-xl px-3 py-2 mb-3 space-y-0.5">
                           {order.order_items?.map((item: any) => (
-                            <div key={item.id} className="flex justify-between text-sm">
-                              <span className="text-foreground"><span className="text-primary font-bold">{item.quantity}x</span> {item.products?.name || "Item"}</span>
-                              <span className="text-muted-foreground text-xs">R$ {(item.unit_price * item.quantity).toFixed(2)}</span>
+                            <div key={item.id} className="text-sm text-foreground">
+                              <span className="text-primary font-bold">{item.quantity}x</span> {item.products?.name || "Item"}
                             </div>
                           ))}
                         </div>
-                        <div className="flex gap-2">
-                          <button onClick={() => updateOrderStatus(order.id, "preparando")}
-                            className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 rounded-xl text-sm active:scale-[0.98] transition-transform">
-                            ✓ ACEITAR PEDIDO
-                          </button>
-                          <button onClick={() => handleCancelOrder(order)}
-                            className="px-3 py-3 rounded-xl border border-destructive/30 text-destructive text-xs font-bold hover:bg-destructive/5">
-                            <XCircle className="h-4 w-4" />
-                          </button>
-                        </div>
+                        <button onClick={() => updateOrderStatus(order.id, "preparando")}
+                          className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 rounded-xl text-sm active:scale-[0.98] transition-transform h-12">
+                          ✓ ACEITAR PEDIDO
+                        </button>
+                        <button onClick={() => handleCancelOrder(order)}
+                          className="w-full text-center text-xs text-destructive hover:text-destructive/80 py-1 mt-1">
+                          Recusar pedido
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -960,53 +1008,49 @@ const AdminDashboard = () => {
 
               {/* Orders in progress summary */}
               {(preparingCount > 0 || readyCount > 0) && (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <h3 className="font-bold text-foreground text-sm">Em Andamento</h3>
-                  <div className="grid gap-2">
+                  <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
                     {orders?.filter(o => ["preparando", "pronto_para_entrega", "em_transito", "saiu_entrega"].includes(o.status)).slice(0, 6).map((order: any) => {
                       const sc = statusColors[order.status] || statusColors.pendente;
                       return (
-                        <div key={order.id} className={`bg-card border ${sc.border} rounded-xl p-3 flex items-center justify-between`}>
-                          <div className="flex items-center gap-3">
-                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${sc.bg} ${sc.text}`}>{sc.label}</span>
-                            <span className="text-sm font-bold text-foreground">#{order.id.slice(0, 8).toUpperCase()}</span>
-                            <span className="text-xs text-muted-foreground">{getClientName(order.client_id)}</span>
-                          </div>
-                          <span className="text-sm font-bold text-foreground">R$ {Number(order.total_price).toFixed(2)}</span>
-                        </div>
+                        <button key={order.id}
+                          onClick={() => { setDashboardTab("orders"); setActiveTab(order.status as OrderStatus); }}
+                          className={`flex-shrink-0 bg-card border ${sc.border} rounded-xl p-2.5 flex items-center gap-2 min-w-[180px] hover:shadow-md transition-shadow`}>
+                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${sc.bg} ${sc.text}`}>{sc.label}</span>
+                          <span className="text-xs font-bold text-foreground">#{order.id.slice(0, 6).toUpperCase()}</span>
+                          <span className="text-[10px] text-muted-foreground truncate">{getClientName(order.client_id)}</span>
+                        </button>
                       );
                     })}
                   </div>
                   <button onClick={() => { setDashboardTab("orders"); }}
                     className="text-xs text-primary font-bold hover:underline">
-                    Ver todos os pedidos →
+                    Ver todos →
                   </button>
                 </div>
               )}
 
               {/* Top clients preview */}
               {clientAnalytics.length > 0 && (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <h3 className="font-bold text-foreground text-sm">Top Clientes</h3>
                     <button onClick={() => setDashboardTab("clients")} className="text-xs text-primary font-bold hover:underline">Ver todos →</button>
                   </div>
-                  <div className="grid gap-2">
+                  <div className="grid gap-1.5">
                     {clientAnalytics.slice(0, 5).map(client => (
-                      <div key={client.clientId} className="bg-card border border-border rounded-xl p-3 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                      <div key={client.clientId} className="bg-card border border-border rounded-xl p-2.5 flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
                             {client.name.charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <p className="text-sm font-bold text-foreground">{client.name}</p>
-                            <p className="text-[10px] text-muted-foreground">{client.totalOrders} pedidos • Ticket: R$ {client.ticketMedio.toFixed(2)}</p>
+                            <p className="text-xs font-bold text-foreground">{client.name}</p>
+                            <p className="text-[10px] text-muted-foreground">{client.totalOrders} pedidos</p>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-xs font-bold text-emerald-500">R$ {client.totalSpent.toFixed(2)}</p>
-                          <p className="text-[10px] text-muted-foreground">{client.favProduct}</p>
-                        </div>
+                        <p className="text-xs font-bold text-emerald-500">R$ {client.totalSpent.toFixed(2)}</p>
                       </div>
                     ))}
                   </div>
@@ -1017,17 +1061,17 @@ const AdminDashboard = () => {
 
           {/* ══════ CLIENTS TAB ══════ */}
           {dashboardTab === "clients" && store && (
-            <div className="p-4 lg:p-6 max-w-5xl mx-auto space-y-4">
-              {/* Filters */}
-              <div className="flex flex-wrap gap-2">
+            <div className="p-4 lg:p-6 max-w-5xl mx-auto space-y-3">
+              {/* Filters - horizontal scroll */}
+              <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
                 {([
                   { key: "all" as ClientFilter, label: "Todos", icon: Users },
-                  { key: "loyal" as ClientFilter, label: "Mais Fiéis (3+)", icon: Heart },
-                  { key: "inactive" as ClientFilter, label: "Inativos 15+ dias", icon: UserX },
-                  { key: "location" as ClientFilter, label: "Por Localização", icon: MapPinned },
+                  { key: "loyal" as ClientFilter, label: "Fiéis (3+)", icon: Heart },
+                  { key: "inactive" as ClientFilter, label: "Inativos 15d", icon: UserX },
+                  { key: "location" as ClientFilter, label: "Localização", icon: MapPinned },
                 ]).map(f => (
                   <button key={f.key} onClick={() => setClientFilter(f.key)}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+                    className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
                       clientFilter === f.key ? "bg-primary text-primary-foreground shadow-sm" : "bg-card border border-border text-muted-foreground hover:text-foreground"
                     }`}>
                     <f.icon className="h-3.5 w-3.5" /> {f.label}
@@ -1048,7 +1092,7 @@ const AdminDashboard = () => {
                 <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4 text-amber-500 flex-shrink-0" />
                   <p className="text-xs text-amber-600 dark:text-amber-400">
-                    <span className="font-bold">{filteredClients.length} clientes</span> não pedem há 15+ dias. Envie uma promoção!
+                    <span className="font-bold">{filteredClients.length} clientes</span> sem pedidos há 15+ dias
                   </p>
                 </div>
               )}
@@ -1063,49 +1107,45 @@ const AdminDashboard = () => {
                 ) : filteredClients.map(client => (
                   <div key={client.clientId} className="bg-card border border-border rounded-2xl overflow-hidden">
                     <button onClick={() => setExpandedClient(expandedClient === client.clientId ? null : client.clientId)}
-                      className="w-full p-4 flex items-center justify-between text-left hover:bg-accent/30 transition-colors">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary flex-shrink-0">
+                      className="w-full p-3 flex items-center justify-between text-left hover:bg-accent/30 transition-colors">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary flex-shrink-0">
                           {client.name.charAt(0).toUpperCase()}
                         </div>
                         <div className="min-w-0">
-                          <p className="text-sm font-bold text-foreground truncate">{client.name}</p>
-                          <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                            <span>{client.totalOrders} pedidos</span>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-bold text-foreground truncate">{client.name}</p>
+                            <span className="bg-primary/10 text-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0">{client.totalOrders}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                            <span>{client.daysSinceLastOrder === 0 ? "Hoje" : `${client.daysSinceLastOrder}d atrás`}</span>
                             <span>•</span>
                             <span>{client.neighborhood || "—"}</span>
-                            {client.daysSinceLastOrder > 15 && (
-                              <span className="text-amber-500 font-bold">• {client.daysSinceLastOrder}d inativo</span>
-                            )}
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <div className="text-right">
-                          <p className="text-sm font-bold text-foreground">R$ {client.ticketMedio.toFixed(2)}</p>
-                          <p className="text-[10px] text-muted-foreground">ticket médio</p>
-                        </div>
+                      <div className="flex items-center gap-2">
                         {expandedClient === client.clientId ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
                       </div>
                     </button>
 
                     {/* Expanded details */}
                     {expandedClient === client.clientId && (
-                      <div className="px-4 pb-4 border-t border-border pt-3 space-y-3">
+                      <div className="px-3 pb-3 border-t border-border pt-3 space-y-3">
                         {/* Stats */}
                         <div className="grid grid-cols-3 gap-2">
-                          <div className="bg-muted/50 rounded-xl p-3 text-center">
-                            <p className="text-lg font-black text-foreground">{formatCurrency(client.totalSpent)}</p>
+                          <div className="bg-muted/50 rounded-xl p-2.5 text-center">
+                            <p className="text-sm font-black text-foreground">{formatCurrency(client.totalSpent)}</p>
                             <p className="text-[10px] text-muted-foreground">Total Gasto</p>
                           </div>
-                          <div className="bg-muted/50 rounded-xl p-3 text-center">
-                            <p className="text-lg font-black text-foreground">{formatCurrency(client.ticketMedio)}</p>
+                          <div className="bg-muted/50 rounded-xl p-2.5 text-center">
+                            <p className="text-sm font-black text-foreground">{formatCurrency(client.ticketMedio)}</p>
                             <p className="text-[10px] text-muted-foreground">Ticket Médio</p>
                           </div>
-                          <div className="bg-muted/50 rounded-xl p-3 text-center">
+                          <div className="bg-muted/50 rounded-xl p-2.5 text-center">
                             <div className="flex items-center justify-center gap-1">
-                              <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
-                              <p className="text-sm font-black text-foreground">{client.favProduct}</p>
+                              <Star className="h-3.5 w-3.5 text-amber-400 fill-amber-400" />
+                              <p className="text-xs font-black text-foreground truncate">{client.favProduct}</p>
                             </div>
                             <p className="text-[10px] text-muted-foreground">Favorito</p>
                           </div>
@@ -1140,7 +1180,7 @@ const AdminDashboard = () => {
                           <div className="flex gap-2">
                             <WhatsAppButton number={client.phone}
                               message={`Olá ${client.name}! Temos novidades no ${store?.name}! 🍔`}
-                              label="Enviar Promoção" size="sm" />
+                              label="Promoção" size="sm" />
                             <WhatsAppButton number={client.phone}
                               message={`Olá ${client.name}! Sentimos sua falta no ${store?.name}! 😊 Que tal pedir algo hoje?`}
                               label="Reativar" size="sm" />
@@ -1159,15 +1199,19 @@ const AdminDashboard = () => {
             <>
               {/* Order status tabs */}
               <div className="sticky top-0 z-20 bg-background border-b border-border">
-                <div className="flex overflow-x-auto gap-1 px-4 py-2 no-scrollbar">
+                <div className="flex overflow-x-auto gap-1 px-3 py-2 no-scrollbar">
                   {orderTabs.map((tab) => {
                     const count = orders?.filter(o => o.status === tab.status).length || 0;
                     const Icon = tab.icon;
                     const isActive = activeTab === tab.status;
                     return (
                       <button key={tab.status} onClick={() => setActiveTab(tab.status)}
-                        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${isActive ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-accent hover:text-foreground"}`}>
-                        <Icon className="h-3.5 w-3.5" />
+                        className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                          isActive
+                            ? tab.status === "pendente" ? "bg-amber-500/20 text-amber-600 border border-amber-400/40" : "bg-primary text-primary-foreground shadow-sm"
+                            : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                        }`}>
+                        <Icon className="h-3 w-3" />
                         {tab.label}
                         {count > 0 && (
                           <span className={`ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-black ${
@@ -1198,7 +1242,7 @@ const AdminDashboard = () => {
               )}
 
               {/* Order cards */}
-              <div className="p-4 pb-24 space-y-3 max-w-3xl mx-auto">
+              <div className="p-4 space-y-3 max-w-3xl mx-auto">
                 {isLoading ? (
                   <div className="space-y-3">
                     {Array.from({ length: 4 }).map((_, i) => (
@@ -1238,7 +1282,6 @@ const AdminDashboard = () => {
                     const isAddressExpanded = expandedAddresses.has(order.id);
                     const sc = statusColors[order.status] || statusColors.pendente;
                     
-                    // Wait time calculation
                     const elapsedMs = Date.now() - new Date(order.created_at).getTime();
                     const elapsedMin = Math.floor(elapsedMs / 60000);
                     const isDelayed = elapsedMin > 20 && ["pendente", "preparando"].includes(order.status);
@@ -1251,7 +1294,7 @@ const AdminDashboard = () => {
                           order.status === "pendente" ? "border-amber-400/40 shadow-amber-400/5 animate-pulse-border" : "border-border"
                         } hover:shadow-md`}>
                         {/* Status bar with wait timer */}
-                        <div className={`px-4 py-1.5 ${sc.bg} flex items-center justify-between`}>
+                        <div className={`px-3 py-1.5 ${sc.bg} flex items-center justify-between`}>
                           <div className="flex items-center gap-2">
                             <span className={`text-[10px] font-bold uppercase ${sc.text}`}>{sc.label}</span>
                             {isDelayed && (
@@ -1277,35 +1320,31 @@ const AdminDashboard = () => {
                           </div>
                         </div>
 
-                        {/* Critical info bar: Total + Neighborhood + Payment */}
-                        <div className="px-4 pt-3 pb-2 flex items-start justify-between">
+                        {/* Critical info: ID + Value */}
+                        <div className="px-3 pt-2.5 pb-1.5 flex items-start justify-between">
                           <div>
-                            <p className="text-lg font-black text-foreground tracking-wide">#{order.id.slice(0, 8).toUpperCase()}</p>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              <span className="text-[11px] text-muted-foreground">{getClientName(order.client_id)}</span>
+                            <p className="text-base font-black text-foreground">#{order.id.slice(0, 8).toUpperCase()}</p>
+                            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap text-[11px] text-muted-foreground">
+                              <span>{getClientName(order.client_id)}</span>
                               <span className="text-muted-foreground/40">•</span>
-                              <span className="flex items-center gap-0.5 text-[11px] text-muted-foreground">
-                                <MapPin className="h-3 w-3" />{order.neighborhood}
-                              </span>
+                              <span>{order.neighborhood}</span>
+                              <span className="text-muted-foreground/40">•</span>
+                              <span>{paymentIcons[order.payment_method]}</span>
                             </div>
                           </div>
-                          <div className="text-right flex items-center gap-2">
-                            <span className="text-2xl" title={paymentLabels[order.payment_method]}>{paymentIcons[order.payment_method] || "💳"}</span>
-                            <div>
-                              <p className="text-xl font-black text-emerald-500">R$ {Number(order.total_price).toFixed(2)}</p>
-                              {order.payment_method === "pix" && (
-                                <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded">PIX PAGO</span>
-                              )}
-                            </div>
+                          <div className="text-right">
+                            <p className="text-xl font-black text-emerald-500">R$ {Number(order.total_price).toFixed(2)}</p>
+                            {order.payment_method === "pix" && (
+                              <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded">PIX PAGO</span>
+                            )}
                           </div>
                         </div>
 
-                        {/* Items */}
-                        <div className="mx-4 mb-2 bg-muted/50 rounded-xl px-3 py-2 space-y-1">
+                        {/* Items - compact */}
+                        <div className="mx-3 mb-2 bg-muted/50 rounded-xl px-3 py-2 space-y-0.5">
                           {order.order_items?.map((item: any) => (
-                            <div key={item.id} className="flex justify-between text-sm">
-                              <span className="text-foreground"><span className="text-primary font-bold">{item.quantity}x</span> {item.products?.name || "Item"}</span>
-                              <span className="text-muted-foreground text-xs">R$ {(item.unit_price * item.quantity).toFixed(2)}</span>
+                            <div key={item.id} className="text-sm text-foreground">
+                              <span className="text-primary font-bold">{item.quantity}x</span> {item.products?.name || "Item"}
                             </div>
                           ))}
                           {order.order_items?.map((item: any) => {
@@ -1313,7 +1352,7 @@ const AdminDashboard = () => {
                             const addons: any[] = Array.isArray(rawAddons) ? rawAddons : (typeof rawAddons === 'string' ? (() => { try { return JSON.parse(rawAddons); } catch { return []; } })() : []);
                             if (!addons || addons.length === 0) return null;
                             return (
-                              <div key={`addons-${item.id}`} className="pl-6 text-[11px] text-muted-foreground">
+                              <div key={`addons-${item.id}`} className="pl-5 text-[11px] text-muted-foreground">
                                 {addons.map((a: any, idx: number) => (
                                   <span key={idx}>+ {a.name}{a.price > 0 ? ` (R$${Number(a.price).toFixed(2)})` : ""}{idx < addons.length - 1 ? ", " : ""}</span>
                                 ))}
@@ -1322,7 +1361,7 @@ const AdminDashboard = () => {
                           })}
                           {order.order_items?.map((item: any) => {
                             if (!item.observations) return null;
-                            return <div key={`obs-${item.id}`} className="pl-6 text-[11px] text-muted-foreground italic">📝 {item.observations}</div>;
+                            return <div key={`obs-${item.id}`} className="pl-5 text-[11px] text-muted-foreground italic">📝 {item.observations}</div>;
                           })}
                           {order.payment_method === "dinheiro" && (order as any).needs_change && Number((order as any).change_for) > 0 && (
                             <div className="flex items-center gap-1 pt-1 border-t border-border">
@@ -1333,7 +1372,7 @@ const AdminDashboard = () => {
                         </div>
 
                         {/* Address */}
-                        <div className="mx-4 mb-2">
+                        <div className="mx-3 mb-2">
                           <button onClick={() => toggleAddress(order.id)}
                             className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground w-full">
                             <MapPin className="h-3 w-3" />
@@ -1350,7 +1389,7 @@ const AdminDashboard = () => {
 
                         {/* Driver status - Platform mode */}
                         {order.status === "pronto_para_entrega" && !order.driver_id && !isOwnDelivery && (
-                          <div className="mx-4 mb-2 bg-amber-500/5 border border-amber-500/20 rounded-xl px-3 py-2.5">
+                          <div className="mx-3 mb-2 bg-amber-500/5 border border-amber-500/20 rounded-xl px-3 py-2">
                             <div className="flex items-center gap-1.5 mb-1">
                               <Loader2 className="h-3.5 w-3.5 text-amber-500 animate-spin" />
                               <span className="text-xs text-amber-600 dark:text-amber-400 font-semibold">Aguardando entregador</span>
@@ -1363,9 +1402,8 @@ const AdminDashboard = () => {
                             </div>
                           </div>
                         )}
-                        {/* Own delivery mode - Ready for pickup */}
                         {order.status === "pronto_para_entrega" && isOwnDelivery && (
-                          <div className="mx-4 mb-2 bg-blue-500/5 border border-blue-500/20 rounded-xl px-3 py-2.5">
+                          <div className="mx-3 mb-2 bg-blue-500/5 border border-blue-500/20 rounded-xl px-3 py-2">
                             <div className="flex items-center gap-1.5">
                               <Truck className="h-3.5 w-3.5 text-blue-500" />
                               <span className="text-xs text-blue-600 dark:text-blue-400 font-semibold">🛵 Pronto — aguardando seu motoboy</span>
@@ -1373,20 +1411,19 @@ const AdminDashboard = () => {
                           </div>
                         )}
                         {order.driver_id && order.status === "pronto_para_entrega" && !isOwnDelivery && (
-                          <div className="mx-4 mb-2 flex items-center gap-1.5 bg-emerald-500/5 border border-emerald-500/20 rounded-xl px-3 py-2">
+                          <div className="mx-3 mb-2 flex items-center gap-1.5 bg-emerald-500/5 border border-emerald-500/20 rounded-xl px-3 py-2">
                             <Bike className="h-3.5 w-3.5 text-emerald-500" />
                             <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">🏍️ {getDriverName(order.driver_id)} a caminho da loja</span>
                           </div>
                         )}
-                        {/* Own delivery - saiu_entrega status */}
                         {order.status === "saiu_entrega" && isOwnDelivery && (
-                          <div className="mx-4 mb-2 flex items-center gap-1.5 bg-blue-500/5 border border-blue-500/20 rounded-xl px-3 py-2">
+                          <div className="mx-3 mb-2 flex items-center gap-1.5 bg-blue-500/5 border border-blue-500/20 rounded-xl px-3 py-2">
                             <Truck className="h-3.5 w-3.5 text-blue-500" />
                             <span className="text-xs text-blue-600 dark:text-blue-400 font-semibold">🛵 Seu motoboy está entregando</span>
                           </div>
                         )}
                         {order.driver_id && (order.status === "em_transito" || (order.status === "saiu_entrega" && !isOwnDelivery)) && (
-                          <div className="mx-4 mb-2 flex items-center gap-1.5 bg-blue-500/5 border border-blue-500/20 rounded-xl px-3 py-2">
+                          <div className="mx-3 mb-2 flex items-center gap-1.5 bg-blue-500/5 border border-blue-500/20 rounded-xl px-3 py-2">
                             <Truck className="h-3.5 w-3.5 text-blue-500" />
                             <span className="text-xs text-blue-600 dark:text-blue-400 font-semibold">🛵 {getDriverName(order.driver_id)} entregando</span>
                           </div>
@@ -1394,7 +1431,7 @@ const AdminDashboard = () => {
 
                         {/* Collection Code */}
                         {(order.status === "pronto_para_entrega" || order.status === "saiu_entrega" || order.status === "em_transito") && (order as any).collection_code && !isOwnDelivery && (
-                          <div className="mx-4 mb-2 bg-purple-500/5 border border-purple-500/20 rounded-xl p-3 text-center">
+                          <div className="mx-3 mb-2 bg-purple-500/5 border border-purple-500/20 rounded-xl p-3 text-center">
                             <p className="text-[10px] text-purple-500 font-bold mb-1">🔐 Código de Coleta</p>
                             <p className="text-2xl font-black text-purple-600 dark:text-purple-400 tracking-[0.3em]">{(order as any).collection_code}</p>
                           </div>
@@ -1402,7 +1439,7 @@ const AdminDashboard = () => {
 
                         {/* Settlement Code */}
                         {["dinheiro", "cartao"].includes(order.payment_method) && (order as any).settlement_code && ["entregue", "finalizado"].includes(order.status) && !(order as any).return_to_store_confirmed && (
-                          <div className="mx-4 mb-2 bg-amber-500/5 border border-amber-500/20 rounded-xl p-3">
+                          <div className="mx-3 mb-2 bg-amber-500/5 border border-amber-500/20 rounded-xl p-3">
                             {order.driver_id && (
                               <div className="flex items-center gap-2 mb-2 pb-2 border-b border-amber-500/10">
                                 <Bike className="h-4 w-4 text-amber-500" />
@@ -1422,29 +1459,29 @@ const AdminDashboard = () => {
                           </div>
                         )}
                         {["dinheiro", "cartao"].includes(order.payment_method) && (order as any).return_to_store_confirmed && ["entregue", "finalizado"].includes(order.status) && (
-                          <div className="mx-4 mb-2 flex items-center gap-1.5 bg-emerald-500/5 border border-emerald-500/20 rounded-xl px-3 py-2">
+                          <div className="mx-3 mb-2 flex items-center gap-1.5 bg-emerald-500/5 border border-emerald-500/20 rounded-xl px-3 py-2">
                             <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
                             <span className="text-xs text-emerald-500 font-bold">Acerto realizado ✅</span>
                           </div>
                         )}
 
-                        {/* WhatsApp actions */}
+                        {/* WhatsApp actions - icons only on mobile */}
                         {getClientWhatsApp(order.client_id) && (
-                          <div className="mx-4 mb-2 flex flex-wrap gap-1.5">
+                          <div className="mx-3 mb-2 flex flex-wrap gap-1.5">
                             {order.status === "pendente" && (
                               <button onClick={() => {
                                 const msg = `Olá ${getClientName(order.client_id)}! *ItaSuper*: Pedido aceito e em produção! 🍔\nPedido: #${order.id.slice(0, 8).toUpperCase()}\nTotal: R$ ${Number(order.total_price).toFixed(2)}`;
                                 openWhatsApp(getClientWhatsApp(order.client_id), msg);
-                              }} className="flex items-center gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold px-2 py-1 rounded-lg">
-                                <MessageCircle className="h-3 w-3" /> Avisar
+                              }} className="flex items-center gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold px-2 py-1 rounded-lg" title="Avisar cliente">
+                                <MessageCircle className="h-3 w-3" /> <span className="hidden sm:inline">Avisar</span>
                               </button>
                             )}
                             {(order.status === "em_transito" || order.status === "saiu_entrega") && (
                               <button onClick={() => {
                                 const msg = `Olá ${getClientName(order.client_id)}! Motoboy *ItaSuper* saiu para entrega! 🚀\nEndereço: ${order.address_details}`;
                                 openWhatsApp(getClientWhatsApp(order.client_id), msg);
-                              }} className="flex items-center gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold px-2 py-1 rounded-lg">
-                                <MessageCircle className="h-3 w-3" /> Saiu
+                              }} className="flex items-center gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold px-2 py-1 rounded-lg" title="Informar saída">
+                                <MessageCircle className="h-3 w-3" /> <span className="hidden sm:inline">Saiu</span>
                               </button>
                             )}
                             <WhatsAppButton number={getClientWhatsApp(order.client_id)}
@@ -1453,8 +1490,8 @@ const AdminDashboard = () => {
                           </div>
                         )}
 
-                        {/* Main action - One-click buttons directly visible */}
-                        <div className="px-4 pb-4 pt-1 flex items-center gap-2">
+                        {/* Main action */}
+                        <div className="px-3 pb-3 pt-1 flex items-center gap-2">
                           <button onClick={() => handlePrint(order)}
                             title="Imprimir"
                             className="p-2.5 bg-muted rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
@@ -1462,14 +1499,14 @@ const AdminDashboard = () => {
                           </button>
                           <div className="flex-1">
                             {action && order.status === "pendente" ? (
-                              <div className="space-y-1.5">
+                              <div className="space-y-1">
                                 {order.payment_method === "pix" && (
                                   <div className="text-center">
                                     <span className="text-[10px] bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded font-bold">💰 Pagamento Garantido</span>
                                   </div>
                                 )}
                                 <button onClick={() => updateOrderStatus(order.id, "preparando")}
-                                  className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 rounded-xl text-sm active:scale-[0.98] transition-transform">
+                                  className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 rounded-xl text-sm active:scale-[0.98] transition-transform h-12">
                                   ✓ ACEITAR PEDIDO
                                 </button>
                                 <button onClick={() => handleCancelOrder(order)}
@@ -1478,9 +1515,9 @@ const AdminDashboard = () => {
                                 </button>
                               </div>
                             ) : action ? (
-                              <div className="space-y-1.5">
+                              <div className="space-y-1">
                                 <button onClick={() => updateOrderStatus(order.id, action.next)}
-                                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 rounded-xl text-sm active:scale-[0.98] transition-transform">
+                                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 rounded-xl text-sm active:scale-[0.98] transition-transform h-12">
                                   {action.emoji} {action.label}
                                 </button>
                                 {cancelConfirm === order.id ? (
@@ -1526,28 +1563,27 @@ const AdminDashboard = () => {
                     );
                   })
                 ) : (
-                  /* ── Empty State with friendly illustration ── */
                   <div className="flex flex-col items-center justify-center py-20 text-center animate-fade-in">
-                    <div className="w-20 h-20 rounded-3xl bg-muted/80 flex items-center justify-center mb-5">
-                      {activeTab === "pendente" && <Clock className="h-10 w-10 text-muted-foreground/60" />}
-                      {activeTab === "preparando" && <ChefHat className="h-10 w-10 text-muted-foreground/60" />}
-                      {activeTab === "pronto_para_entrega" && <Package className="h-10 w-10 text-muted-foreground/60" />}
-                      {(activeTab === "saiu_entrega" || activeTab === "em_transito") && <Truck className="h-10 w-10 text-muted-foreground/60" />}
-                      {(activeTab === "entregue" || activeTab === "finalizado") && <CheckCircle2 className="h-10 w-10 text-muted-foreground/60" />}
+                    <div className="w-16 h-16 rounded-2xl bg-muted/80 flex items-center justify-center mb-4">
+                      {activeTab === "pendente" && <Clock className="h-8 w-8 text-muted-foreground/60" />}
+                      {activeTab === "preparando" && <ChefHat className="h-8 w-8 text-muted-foreground/60" />}
+                      {activeTab === "pronto_para_entrega" && <Package className="h-8 w-8 text-muted-foreground/60" />}
+                      {(activeTab === "saiu_entrega" || activeTab === "em_transito") && <Truck className="h-8 w-8 text-muted-foreground/60" />}
+                      {(activeTab === "entregue" || activeTab === "finalizado") && <CheckCircle2 className="h-8 w-8 text-muted-foreground/60" />}
                     </div>
-                    <p className="text-base font-bold text-foreground mb-1">
-                      {activeTab === "pendente" && "Tudo em ordem por aqui! 🎉"}
+                    <p className="text-sm font-bold text-foreground mb-1">
+                      {activeTab === "pendente" && "Tudo em ordem! 🎉"}
                       {activeTab === "preparando" && "Nenhum pedido em preparo"}
                       {activeTab === "pronto_para_entrega" && "Nenhum pedido pronto"}
                       {(activeTab === "saiu_entrega" || activeTab === "em_transito") && "Nenhuma entrega em andamento"}
                       {(activeTab === "entregue" || activeTab === "finalizado") && "Nenhum pedido finalizado"}
                     </p>
-                    <p className="text-sm text-muted-foreground max-w-xs">
-                      {activeTab === "pendente" && "Nenhum pedido pendente. Novos pedidos aparecerão automaticamente."}
+                    <p className="text-xs text-muted-foreground max-w-xs">
+                      {activeTab === "pendente" && "Novos pedidos aparecerão automaticamente."}
                       {activeTab === "preparando" && "Aceite pedidos pendentes para vê-los aqui."}
-                      {activeTab === "pronto_para_entrega" && "Marque pedidos como prontos para aparecer aqui."}
-                      {(activeTab === "saiu_entrega" || activeTab === "em_transito") && "Entregas em andamento aparecerão aqui."}
-                      {(activeTab === "entregue" || activeTab === "finalizado") && "Pedidos concluídos do dia aparecerão aqui."}
+                      {activeTab === "pronto_para_entrega" && "Marque pedidos como prontos."}
+                      {(activeTab === "saiu_entrega" || activeTab === "em_transito") && "Entregas aparecerão aqui."}
+                      {(activeTab === "entregue" || activeTab === "finalizado") && "Pedidos concluídos aparecerão aqui."}
                     </p>
                   </div>
                 )}
@@ -1556,7 +1592,7 @@ const AdminDashboard = () => {
               {/* Floating pending badge */}
               {pendingCount > 0 && activeTab !== "pendente" && (
                 <button onClick={() => setActiveTab("pendente")}
-                  className="fixed bottom-6 right-6 bg-amber-400 text-amber-900 font-bold px-4 py-2.5 rounded-xl shadow-lg animate-bounce flex items-center gap-2 text-sm z-30">
+                  className="fixed bottom-24 lg:bottom-6 right-6 bg-amber-400 text-amber-900 font-bold px-4 py-2.5 rounded-xl shadow-lg animate-bounce flex items-center gap-2 text-sm z-30">
                   <Clock className="h-4 w-4" /> {pendingCount} novo{pendingCount > 1 ? "s" : ""}
                 </button>
               )}
@@ -1783,6 +1819,40 @@ const AdminDashboard = () => {
             </div>
           )}
         </div>
+
+        {/* ── BOTTOM NAVIGATION (mobile only) ── */}
+        <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border lg:hidden pb-safe">
+          <div className="flex items-center justify-around h-14">
+            {bottomNavTabs.map(tab => {
+              const Icon = tab.icon;
+              const isActive = dashboardTab === tab.key;
+              return (
+                <button key={tab.key} onClick={() => handleTabChange(tab.key)}
+                  className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-colors relative ${
+                    isActive ? "text-primary" : "text-muted-foreground"
+                  }`}>
+                  {isActive && <div className="absolute inset-0 bg-primary/10 rounded-xl" />}
+                  <div className="relative">
+                    <Icon className="h-5 w-5 relative z-10" strokeWidth={isActive ? 2.5 : 2} />
+                    {tab.key === "orders" && pendingCount > 0 && (
+                      <span className="absolute -top-1.5 -right-2 bg-amber-400 text-amber-900 text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center animate-pulse">{pendingCount}</span>
+                    )}
+                  </div>
+                  <span className={`text-[10px] relative z-10 ${isActive ? "font-bold" : "font-medium"}`}>{tab.label}</span>
+                </button>
+              );
+            })}
+            {/* More button */}
+            <button onClick={() => setShowMoreSheet(!showMoreSheet)}
+              className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-colors relative ${
+                isBottomNavMore || showMoreSheet ? "text-primary" : "text-muted-foreground"
+              }`}>
+              {(isBottomNavMore || showMoreSheet) && <div className="absolute inset-0 bg-primary/10 rounded-xl" />}
+              <Menu className="h-5 w-5 relative z-10" strokeWidth={isBottomNavMore || showMoreSheet ? 2.5 : 2} />
+              <span className={`text-[10px] relative z-10 ${isBottomNavMore || showMoreSheet ? "font-bold" : "font-medium"}`}>Mais</span>
+            </button>
+          </div>
+        </nav>
       </main>
       <ProductTour steps={lojistaTourSteps} tourKey="lojista" />
     </div>
