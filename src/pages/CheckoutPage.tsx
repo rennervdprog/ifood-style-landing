@@ -570,6 +570,31 @@ const CheckoutPage = () => {
           </div>
         </section>
 
+        {/* SECTION: Loyalty Points */}
+        <section className="bg-card rounded-2xl border border-border overflow-hidden">
+          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50">
+            <div className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center">
+              <Star className="h-4 w-4 text-amber-500" />
+            </div>
+            <h2 className="text-sm font-bold text-foreground">Pontos de fidelidade</h2>
+          </div>
+          <div className="p-4">
+            <LoyaltyRedemption
+              storeId={storeId}
+              subtotal={subtotal}
+              onApply={(discount, points) => {
+                setLoyaltyDiscount(discount);
+                setLoyaltyPointsUsed(points);
+              }}
+              onRemove={() => {
+                setLoyaltyDiscount(0);
+                setLoyaltyPointsUsed(0);
+              }}
+              appliedPoints={loyaltyPointsUsed}
+            />
+          </div>
+        </section>
+
         {/* SECTION: Summary */}
         <section className="bg-card rounded-2xl border border-border overflow-hidden">
           <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50">
