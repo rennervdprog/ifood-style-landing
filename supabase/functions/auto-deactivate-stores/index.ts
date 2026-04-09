@@ -12,10 +12,42 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const serviceClient = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    // Auth: only service_role (cron) or platform admin
+    const authHeader = req.headers.get("Authorization");
+    const token = authHeader?.replace("Bearer ", "") || "";
+    const isServiceRole = token === serviceKey;
+
+    if (!isServiceRole) {
+      if (!authHeader?.startsWith("Bearer ")) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const authClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!);
+      const { data: { user }, error: authError } = await authClient.auth.getUser(token);
+      if (authError || !user) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const adminClient = createClient(supabaseUrl, serviceKey);
+      const { data: isAdmin } = await adminClient.rpc("is_platform_admin", { _user_id: user.id });
+      if (!isAdmin) {
+        return new Response(JSON.stringify({ error: "Apenas administradores podem executar esta função." }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    const serviceClient = createClient(supabaseUrl, serviceKey);
 
     const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
 
@@ -51,7 +83,6 @@ Deno.serve(async (req) => {
       if (recentPayment) continue; // Store paid recently, skip
 
       // Check if store has had pending commission for more than 3 days
-      // by looking at when the balance was last at zero (or first charge created)
       const { data: oldestUnpaidCharge } = await serviceClient
         .from("financial_transactions")
         .select("created_at")
@@ -62,11 +93,9 @@ Deno.serve(async (req) => {
         .limit(1)
         .maybeSingle();
 
-      // Only deactivate if the oldest unpaid charge is older than 3 days
-      // OR if the balance has been pending and no charge was ever created (use balance update time)
       const shouldDeactivate = oldestUnpaidCharge
         ? new Date(oldestUnpaidCharge.created_at).getTime() < Date.now() - 3 * 24 * 60 * 60 * 1000
-        : false; // If no charge exists, we can't deactivate based on charge age
+        : false;
 
       if (!shouldDeactivate) continue;
 

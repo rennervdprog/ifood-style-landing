@@ -60,6 +60,30 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    // Auth: only service_role (cron) or platform admin
+    const authHeader = req.headers.get("Authorization");
+    const token = authHeader?.replace("Bearer ", "") || "";
+    const isServiceRole = token === serviceKey;
+
+    if (!isServiceRole) {
+      if (!authHeader?.startsWith("Bearer ")) {
+        return json({ error: "Unauthorized" }, 401);
+      }
+
+      const authClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!);
+      const { data: { user }, error: authError } = await authClient.auth.getUser(token);
+      if (authError || !user) {
+        return json({ error: "Unauthorized" }, 401);
+      }
+
+      const adminCheck = createClient(supabaseUrl, serviceKey);
+      const { data: isAdmin } = await adminCheck.rpc("is_platform_admin", { _user_id: user.id });
+      if (!isAdmin) {
+        return json({ error: "Apenas administradores podem executar esta função." }, 403);
+      }
+    }
+
     const supabase = createClient(supabaseUrl, serviceKey);
 
     // Check payout schedule (day of week)
@@ -76,12 +100,10 @@ Deno.serve(async (req) => {
     }
 
     // Check if today is the configured payout day (0=Sunday ... 6=Saturday)
-    // Use Brasilia timezone (UTC-3)
     const now = new Date();
-    const brasiliaOffset = -3 * 60; // minutes
-    const utcMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
+    const brasiliaOffset = -3 * 60;
     const brasiliaDate = new Date(now.getTime() + brasiliaOffset * 60 * 1000);
-    const todayDow = brasiliaDate.getUTCDay(); // 0-6
+    const todayDow = brasiliaDate.getUTCDay();
 
     if (todayDow !== schedule.day_of_week) {
       return json({ message: `Hoje não é o dia de repasse. Configurado: ${schedule.day_of_week}, Hoje: ${todayDow}` });
@@ -103,14 +125,12 @@ Deno.serve(async (req) => {
 
     // ── AUTO DRIVER PAYOUTS ──────────────────────────────────────────
     if (modes.driver_payout === "auto") {
-      // Find drivers with pending balance > 0
       const { data: balances } = await supabase
         .from("driver_balances")
         .select("*")
         .gt("pending_amount", 0);
 
       for (const balance of balances || []) {
-        // Get driver PIX info
         const { data: profile } = await supabase
           .from("profiles")
           .select("full_name, pix_key, pix_type")
@@ -128,7 +148,6 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Check if there's already a pending withdrawal being processed
         const { data: existingWithdrawal } = await supabase
           .from("withdrawal_requests")
           .select("id")
@@ -149,7 +168,6 @@ Deno.serve(async (req) => {
         });
 
         if (transfer.ok) {
-          // Update balance
           await supabase
             .from("driver_balances")
             .update({
@@ -159,14 +177,12 @@ Deno.serve(async (req) => {
             })
             .eq("driver_user_id", balance.driver_user_id);
 
-          // Mark earnings as paid
           await supabase
             .from("driver_earnings")
             .update({ status: "pago" })
             .eq("driver_user_id", balance.driver_user_id)
             .eq("status", "pendente");
 
-          // Record in payout_history
           await supabase.from("payout_history").insert({
             admin_user_id: "00000000-0000-0000-0000-000000000000",
             entity_type: "driver",
@@ -177,7 +193,6 @@ Deno.serve(async (req) => {
             notes: `Transfer ID: ${transfer.data.transfer_id}`,
           });
 
-          // Update pending withdrawal requests to completed
           await supabase
             .from("withdrawal_requests")
             .update({ status: "pago", processed_at: new Date().toISOString(), admin_notes: "Pago automaticamente via Asaas" })
@@ -193,9 +208,6 @@ Deno.serve(async (req) => {
 
     // ── AUTO STORE PAYOUTS ───────────────────────────────────────────
     if (modes.store_payout === "auto") {
-      // Find stores with pending commission (comissao_pendente) that already paid their commission
-      // Actually for store payouts, we pay the store their revenue minus commission
-      // store_balances.repasse_pendente tracks how much we owe the store
       const { data: storeBalances } = await supabase
         .from("store_balances")
         .select("*, stores:store_id(name, owner_id)")
@@ -205,7 +217,6 @@ Deno.serve(async (req) => {
         const store = (sb as any).stores;
         if (!store?.owner_id) continue;
 
-        // Get store owner PIX info
         const { data: ownerProfile } = await supabase
           .from("profiles")
           .select("full_name, pix_key, pix_type")
