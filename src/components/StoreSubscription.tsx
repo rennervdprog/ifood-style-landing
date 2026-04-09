@@ -425,6 +425,38 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
                 {plan.commissionRate > 0 ? `${plan.commissionRate}%` : "Sem taxa"}
               </span>
             </div>
+            {plan.isInTrial && plan.trialEndsAt && (
+              <div className="flex justify-between items-center py-2 border-b border-border/50">
+                <span className="text-sm text-muted-foreground">Trial expira em</span>
+                <span className="text-sm font-bold text-orange-600 dark:text-orange-400">
+                  {new Date(plan.trialEndsAt).toLocaleDateString("pt-BR")} ({plan.trialDaysLeft} dias)
+                </span>
+              </div>
+            )}
+            {plan.startedAt && (
+              <div className="flex justify-between items-center py-2 border-b border-border/50">
+                <span className="text-sm text-muted-foreground">Início do plano</span>
+                <span className="text-sm text-foreground">
+                  {new Date(plan.startedAt).toLocaleDateString("pt-BR")}
+                </span>
+              </div>
+            )}
+            {plan.lastBilledAt && (
+              <div className="flex justify-between items-center py-2 border-b border-border/50">
+                <span className="text-sm text-muted-foreground">Última cobrança</span>
+                <span className="text-sm text-foreground">
+                  {new Date(plan.lastBilledAt).toLocaleDateString("pt-BR")}
+                </span>
+              </div>
+            )}
+            {plan.nextBillingDate && (
+              <div className="flex justify-between items-center py-2 border-b border-border/50">
+                <span className="text-sm text-muted-foreground">Próxima cobrança</span>
+                <span className="text-sm font-bold text-foreground">
+                  {new Date(plan.nextBillingDate).toLocaleDateString("pt-BR")}
+                </span>
+              </div>
+            )}
             <div className="flex justify-between items-center py-2">
               <span className="text-sm text-muted-foreground">Status</span>
               <Badge className={`${planBadgeColors[plan.planType]} border`}>
