@@ -52,6 +52,19 @@ Deno.serve(async (req) => {
     const userId = userData.user.id;
     const { amount, pix_key, pix_type } = parsed.data;
 
+    // SECURITY: Verify the user is actually a driver before allowing withdrawal
+    const serviceClientAuth = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+    const { data: isDriver } = await serviceClientAuth.rpc("is_driver", { _user_id: userId });
+    if (!isDriver) {
+      return new Response(JSON.stringify({ error: "Apenas entregadores ativos podem solicitar saque." }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Check for existing pending request
     const { data: existingPending, error: existingError } = await supabase
       .from("withdrawal_requests")
