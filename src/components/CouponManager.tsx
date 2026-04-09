@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Trash2, Tag, Percent, DollarSign, Truck } from "lucide-react";
+import { useStorePlan } from "@/hooks/useStorePlan";
 
 interface CouponManagerProps {
   storeId?: string; // if provided, manage store-specific coupons
@@ -17,6 +18,7 @@ const discountTypeLabels: Record<string, { label: string; icon: React.ElementTyp
 
 const CouponManager = ({ storeId, isAdmin }: CouponManagerProps) => {
   const queryClient = useQueryClient();
+  const storePlan = useStorePlan(storeId);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({
     code: "",
@@ -44,6 +46,15 @@ const CouponManager = ({ storeId, isAdmin }: CouponManagerProps) => {
     if (!form.code.trim()) {
       toast.error("Informe o código do cupom.");
       return;
+    }
+
+    // Enforce coupon limit for fixed plan
+    if (!isAdmin && storePlan.maxCoupons !== null) {
+      const activeCoupons = (coupons || []).filter((c: any) => c.is_active);
+      if (activeCoupons.length >= storePlan.maxCoupons) {
+        toast.error(`Seu plano permite no máximo ${storePlan.maxCoupons} cupons ativos. Desative um cupom existente ou faça upgrade.`);
+        return;
+      }
     }
 
     try {
