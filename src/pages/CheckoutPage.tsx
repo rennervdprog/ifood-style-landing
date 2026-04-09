@@ -41,6 +41,8 @@ const CheckoutPage = () => {
   const [calculatedDeliveryFee, setCalculatedDeliveryFee] = useState<number | null>(null);
   const [calculatingFee, setCalculatingFee] = useState(false);
   const [feeBreakdown, setFeeBreakdown] = useState<string | null>(null);
+  const [loyaltyDiscount, setLoyaltyDiscount] = useState(0);
+  const [loyaltyPointsUsed, setLoyaltyPointsUsed] = useState(0);
 
   const { data: userProfile, refetch: refetchProfile } = useQuery({
     queryKey: ["my-profile-checkout", user?.id],
