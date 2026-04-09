@@ -9,7 +9,8 @@ import {
   ArrowLeft, Navigation, KeyRound, Smartphone, ShieldCheck,
   Wallet, TrendingUp, Calendar, Download, Clock, ChevronDown,
   CreditCard, Banknote, Settings, Save, AlertTriangle, User,
-  Zap, ArrowRight, BarChart3, Eye, LogOut, Bell
+  Zap, ArrowRight, BarChart3, Eye, LogOut, Bell, ChevronRight,
+  CircleDollarSign, Flame, Shield, Star
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { isGoNative, runNativeDiagnostics, getNativeDebugLog } from "@/lib/gonative";
@@ -38,24 +39,50 @@ const PIX_TYPE_LABELS: Record<string, string> = {
   random: "Chave Aleatória",
 };
 
-/* ─── Reusable UI Primitives ─── */
-const StatCard = ({ icon: Icon, label, value, color = "text-primary" }: { icon: any; label: string; value: string; color?: string }) => (
-  <div className="bg-card border border-border rounded-2xl p-4 flex flex-col items-center gap-1">
-    <Icon className={`h-5 w-5 ${color}`} />
-    <p className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wide">{label}</p>
-    <p className={`text-lg font-black ${color}`}>{value}</p>
+/* ─── Premium UI Primitives ─── */
+const StatCard = ({ icon: Icon, label, value, sub, accent = "primary" }: { icon: any; label: string; value: string; sub?: string; accent?: string }) => {
+  const colorMap: Record<string, string> = {
+    primary: "bg-primary/10 text-primary",
+    green: "bg-green-500/10 text-green-500",
+    blue: "bg-blue-500/10 text-blue-500",
+    amber: "bg-amber-500/10 text-amber-500",
+    emerald: "bg-emerald-500/10 text-emerald-500",
+  };
+  const colors = colorMap[accent] || colorMap.primary;
+  const [bgClass, textClass] = colors.split(" ");
+  return (
+    <div className="bg-card border border-border rounded-2xl p-3 flex flex-col gap-1.5 relative overflow-hidden group">
+      <div className={`w-8 h-8 rounded-xl ${bgClass} flex items-center justify-center`}>
+        <Icon className={`h-4 w-4 ${textClass}`} />
+      </div>
+      <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider leading-tight">{label}</p>
+      <p className={`text-base font-black ${textClass} leading-tight`}>{value}</p>
+      {sub && <p className="text-[9px] text-muted-foreground">{sub}</p>}
+    </div>
+  );
+};
+
+const SectionHeader = ({ icon: Icon, children, action }: { icon: any; children: React.ReactNode; action?: React.ReactNode }) => (
+  <div className="flex items-center justify-between px-1 mb-3">
+    <div className="flex items-center gap-2">
+      <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+        <Icon className="h-3.5 w-3.5 text-primary" />
+      </div>
+      <h3 className="text-sm font-bold text-foreground">{children}</h3>
+    </div>
+    {action}
   </div>
 );
 
-const SectionTitle = ({ icon: Icon, children }: { icon: any; children: React.ReactNode }) => (
-  <div className="flex items-center gap-2 px-1">
-    <Icon className="h-4 w-4 text-muted-foreground" />
-    <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{children}</h3>
+const EmptyState = ({ icon: Icon, title, subtitle }: { icon: any; title: string; subtitle: string }) => (
+  <div className="flex flex-col items-center justify-center py-20 text-center px-6">
+    <div className="w-20 h-20 rounded-3xl bg-muted/80 flex items-center justify-center mb-5">
+      <Icon className="h-9 w-9 text-muted-foreground/60" />
+    </div>
+    <h2 className="text-base font-bold text-foreground mb-1.5">{title}</h2>
+    <p className="text-sm text-muted-foreground max-w-[260px]">{subtitle}</p>
   </div>
 );
-
-
-
 
 const DriverDashboard = () => {
   const isMobile = useIsMobile();
@@ -83,7 +110,7 @@ const DriverDashboard = () => {
   const { data: driverProfile } = useQuery({
     queryKey: ["my-profile-approval", user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("is_approved, role, pix_key, pix_type").eq("user_id", user!.id).maybeSingle();
+      const { data } = await supabase.from("profiles").select("is_approved, role, pix_key, pix_type, full_name").eq("user_id", user!.id).maybeSingle();
       return data;
     },
     enabled: !!user,
@@ -189,7 +216,6 @@ const DriverDashboard = () => {
     refetchInterval: 5000,
   });
 
-  // Open stores with platform delivery (for driver info)
   const { data: openPlatformStores } = useQuery({
     queryKey: ["open-platform-stores"],
     queryFn: async () => {
@@ -332,7 +358,7 @@ const DriverDashboard = () => {
     return { pixEarnings, cashEarnings, pixCount, cashCount };
   }, [filteredHistory]);
 
-  // ─── Side effects (same logic, untouched) ───
+  // ─── Side effects (unchanged) ───
   useEffect(() => {
     if (!user) return;
     supabase.from("drivers").update({ is_online: isOnline } as any).eq("user_id", user.id).then(() => {});
@@ -415,10 +441,9 @@ const DriverDashboard = () => {
     });
   }, [availableOrders]);
 
-  // ─── Handlers (same logic) ───
+  // ─── Handlers (unchanged) ───
   const toggleOnline = async () => {
     const next = !isOnline;
-    // Block going offline if there's an active delivery
     if (!next && myDelivery) {
       toast.error("Você tem uma entrega ativa! Finalize antes de ficar offline.");
       return;
@@ -560,6 +585,7 @@ const DriverDashboard = () => {
     });
   };
 
+  // ─── Guards ───
   if (authLoading) return null;
   if (!user) { navigate("/auth", { replace: true }); return null; }
 
@@ -567,7 +593,7 @@ const DriverDashboard = () => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-8">
         <div className="max-w-md text-center space-y-6">
-          <div className="w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto">
+          <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center mx-auto">
             <Smartphone className="h-10 w-10 text-primary" />
           </div>
           <h1 className="text-2xl font-black text-foreground">Acesso Mobile</h1>
@@ -592,49 +618,63 @@ const DriverDashboard = () => {
     );
   }
 
+  const driverFirstName = (driverProfile as any)?.full_name?.split(" ")[0] || "Entregador";
   const tabs = [
     { key: "entregas" as TabType, label: "Entregas", icon: Bike },
     { key: "historico" as TabType, label: "Ganhos", icon: BarChart3 },
     { key: "config" as TabType, label: "Pix", icon: CreditCard },
   ];
 
+  const NavigationLinks = ({ addr }: { addr: string }) => {
+    const encoded = encodeURIComponent(addr);
+    return (
+      <div className="flex gap-2 mt-2">
+        <a href={`https://www.google.com/maps/search/?api=1&query=${encoded}`} target="_blank" rel="noopener noreferrer"
+          className="flex-1 flex items-center justify-center gap-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-bold px-3 py-2.5 rounded-xl active:scale-[0.97] transition-all">
+          <Navigation className="h-3.5 w-3.5" /> Google Maps
+        </a>
+        <a href={`https://waze.com/ul?q=${encoded}&navigate=yes`} target="_blank" rel="noopener noreferrer"
+          className="flex-1 flex items-center justify-center gap-1.5 bg-purple-500/10 text-purple-600 dark:text-purple-400 text-xs font-bold px-3 py-2.5 rounded-xl active:scale-[0.97] transition-all">
+          <Navigation className="h-3.5 w-3.5" /> Waze
+        </a>
+      </div>
+    );
+  };
+
   return (
     <>
     <div className="min-h-screen bg-background text-foreground overflow-y-auto pb-[5.5rem] native-app">
-      {/* ─── Native-Style Status Bar Header ─── */}
-      <header className="sticky top-0 z-50 bg-card border-b border-border pt-safe">
+      {/* ═══════════ Premium Header ═══════════ */}
+      <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-xl border-b border-border pt-safe">
         <div className="px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <div className="w-11 h-11 rounded-2xl bg-primary/10 flex items-center justify-center relative">
                 <Bike className="h-5 w-5 text-primary" />
+                {isOnline && realtimeConnected && (
+                  <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-card animate-pulse" />
+                )}
               </div>
               <div>
-                <h1 className="font-bold text-base text-foreground">
-                  {driverProfile ? (driverProfile as any).full_name?.split(" ")[0] || "Entregador" : "Entregador"}
-                </h1>
-                <div className="flex items-center gap-1.5">
-                  <span className={`w-2 h-2 rounded-full transition-colors duration-500 ${realtimeConnected && isOnline ? "bg-green-500 animate-pulse" : "bg-muted-foreground/30"}`} />
-                  <span className="text-[11px] text-muted-foreground font-medium">
-                    {isOnline ? (realtimeConnected ? "Online" : "Conectando...") : "Offline"}
-                  </span>
-                </div>
+                <h1 className="font-black text-base text-foreground leading-tight">{driverFirstName}</h1>
+                <p className="text-[11px] text-muted-foreground font-medium">
+                  {isOnline ? (realtimeConnected ? "Online • Recebendo pedidos" : "Conectando...") : "Offline"}
+                </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              {/* Online Toggle - iOS style */}
+            <div className="flex items-center gap-2.5">
               <button
                 onClick={toggleOnline}
                 data-tour="motoboy-status"
-                className={`relative w-[52px] h-[31px] rounded-full transition-all duration-300 ${isOnline ? "bg-green-500 shadow-[0_0_16px_rgba(34,197,94,0.35)]" : "bg-muted"}`}
+                className={`relative w-[54px] h-[32px] rounded-full transition-all duration-300 ${isOnline ? "bg-green-500 shadow-[0_0_20px_rgba(34,197,94,0.3)]" : "bg-muted"}`}
               >
-                <span className={`absolute top-[2px] w-[27px] h-[27px] rounded-full bg-white shadow-lg transition-transform duration-300 ${isOnline ? "left-[23px]" : "left-[2px]"}`} />
+                <span className={`absolute top-[3px] w-[26px] h-[26px] rounded-full bg-white shadow-lg transition-transform duration-300 ${isOnline ? "left-[25px]" : "left-[3px]"}`} />
               </button>
               <button
                 onClick={async () => { await signOut(); toast.success("Você saiu da conta."); navigate("/portal-parceiro"); }}
-                className="w-10 h-10 rounded-2xl bg-muted/50 flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                title="Sair da conta"
+                className="w-10 h-10 rounded-2xl bg-muted/50 flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all active:scale-95"
+                title="Sair"
               >
                 <LogOut className="h-4 w-4" />
               </button>
@@ -643,315 +683,269 @@ const DriverDashboard = () => {
         </div>
       </header>
 
-      {/* ─── Content Area ─── */}
-      <div className="flex-1">{/* Content wrapper */}
+      {/* ═══════════ Content ═══════════ */}
+      <div className="flex-1">
 
-      {/* ═════════════ ENTREGAS TAB ═════════════ */}
+      {/* ═══════════ TAB: ENTREGAS ═══════════ */}
       {activeTab === "entregas" && (
         <>
           {!isOnline ? (
-            <div className="flex flex-col items-center justify-center py-32 text-center px-6">
-              <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-6">
-                <Bike className="h-10 w-10 text-muted-foreground" />
-              </div>
-              <h2 className="text-lg font-bold text-foreground mb-2">Você está offline</h2>
-              <p className="text-sm text-muted-foreground max-w-xs">Ative o modo online para receber entregas.</p>
-            </div>
+            <EmptyState
+              icon={Bike}
+              title="Você está offline"
+              subtitle="Ative o modo online no topo da tela para começar a receber entregas."
+            />
           ) : (
-            <div className="px-4 py-4 space-y-4">
-              {/* Quick Stats */}
+            <div className="px-4 py-4 space-y-5">
+              {/* Quick Stats Row */}
               <div className="grid grid-cols-4 gap-2">
-                <StatCard icon={DollarSign} label="Hoje" value={`R$ ${todayEarnings.toFixed(2)}`} color="text-green-500" />
-                <StatCard icon={TrendingUp} label="Semana" value={`R$ ${weekEarnings.toFixed(2)}`} color="text-blue-500" />
-                <StatCard icon={Package} label="Entregas" value={String(totalDeliveries)} color="text-primary" />
-                <StatCard icon={Store} label="Abertas" value={String(openPlatformStores?.length || 0)} color="text-emerald-500" />
+                <StatCard icon={DollarSign} label="Hoje" value={`R$${todayEarnings.toFixed(0)}`} accent="green" />
+                <StatCard icon={TrendingUp} label="Semana" value={`R$${weekEarnings.toFixed(0)}`} accent="blue" />
+                <StatCard icon={Package} label="Entregas" value={String(totalDeliveries)} accent="primary" />
+                <StatCard icon={Store} label="Abertas" value={String(openPlatformStores?.length || 0)} accent="emerald" />
               </div>
 
               {/* Pix key warning */}
               {!(driverProfile as any)?.pix_key && (
-                <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 flex items-center gap-3">
+                <button
+                  onClick={() => setActiveTab("config")}
+                  className="w-full bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 flex items-center gap-3 active:scale-[0.99] transition-all"
+                >
                   <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
                     <CreditCard className="h-5 w-5 text-amber-500" />
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 text-left">
                     <p className="text-sm font-bold text-foreground">Cadastre sua chave Pix</p>
-                    <p className="text-xs text-muted-foreground">Receba pagamentos automáticos</p>
+                    <p className="text-xs text-muted-foreground">Para receber pagamentos automáticos</p>
                   </div>
-                  <button onClick={() => setActiveTab("config")} className="bg-primary text-primary-foreground text-xs font-bold px-4 py-2 rounded-xl whitespace-nowrap">
-                    Cadastrar
-                  </button>
-                </div>
+                  <ChevronRight className="h-4 w-4 text-amber-500" />
+                </button>
               )}
 
-              {/* ─── Active Delivery ─── */}
+              {/* ─── Active Delivery Card ─── */}
               {myDelivery && (
-                <div className="bg-card border-2 border-primary/30 rounded-2xl overflow-hidden">
-                  {/* Delivery status banner */}
-                  <div className="bg-primary/10 px-4 py-3 flex items-center gap-2">
-                    <Navigation className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-bold text-primary">
+                <div className="bg-card border-2 border-primary/30 rounded-2xl overflow-hidden shadow-lg shadow-primary/5">
+                  {/* Status Banner */}
+                  <div className={`px-4 py-3 flex items-center gap-2.5 ${
+                    (myDelivery as any).collection_validated || (myDelivery as any).status === 'saiu_entrega'
+                      ? "bg-green-500/10"
+                      : "bg-primary/10"
+                  }`}>
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                      (myDelivery as any).collection_validated || (myDelivery as any).status === 'saiu_entrega'
+                        ? "bg-green-500/20"
+                        : "bg-primary/20"
+                    }`}>
+                      <Navigation className={`h-4 w-4 ${
+                        (myDelivery as any).collection_validated || (myDelivery as any).status === 'saiu_entrega'
+                          ? "text-green-500"
+                          : "text-primary"
+                      }`} />
+                    </div>
+                    <span className={`text-sm font-black tracking-wide ${
+                      (myDelivery as any).collection_validated || (myDelivery as any).status === 'saiu_entrega'
+                        ? "text-green-600 dark:text-green-400"
+                        : "text-primary"
+                    }`}>
                       {(myDelivery as any).status === 'pronto_para_entrega' && !(myDelivery as any).collection_validated
                         ? "A CAMINHO DA LOJA"
-                        : (myDelivery as any).collection_validated || (myDelivery as any).status === 'saiu_entrega'
-                        ? "ENTREGA EM ANDAMENTO"
-                        : "COLETA NA LOJA"}
+                        : "ENTREGA EM ANDAMENTO"}
                     </span>
                   </div>
 
-                  <div className="p-4 space-y-3">
-                    {/* Store name & address - only show before collection validated */}
+                  <div className="p-4 space-y-4">
+                    {/* Store info - before collection */}
                     {!(myDelivery as any).collection_validated && (myDelivery as any).status === 'pronto_para_entrega' && (
-                      <div className="flex items-start gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <Store className="h-4 w-4 text-muted-foreground" />
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
+                            <Store className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className="text-sm font-bold text-foreground">{(myDelivery as any).stores?.name || "Loja"}</span>
+                            {(() => {
+                              const s = (myDelivery as any).stores;
+                              const storeAddr = s?.address_street
+                                ? `${s.address_street}${s.address_number ? `, ${s.address_number}` : ""} - ${s.address_neighborhood || ""}, ${s.address_city || "Itatinga"}`
+                                : null;
+                              if (!storeAddr) return null;
+                              return (
+                                <>
+                                  <p className="text-xs text-muted-foreground mt-0.5">{storeAddr}</p>
+                                  <NavigationLinks addr={storeAddr} />
+                                </>
+                              );
+                            })()}
+                          </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <span className="text-sm font-semibold text-foreground">{(myDelivery as any).stores?.name || "Loja"}</span>
-                          {(() => {
-                            const s = (myDelivery as any).stores;
-                            const storeAddr = s?.address_street
-                              ? `${s.address_street}${s.address_number ? `, ${s.address_number}` : ""} - ${s.address_neighborhood || ""}, ${s.address_city || "Itatinga"}`
-                              : null;
-                            if (!storeAddr) return null;
-                            const encodedAddr = encodeURIComponent(storeAddr);
-                            return (
-                              <div className="mt-1 space-y-1.5">
-                                <p className="text-xs text-muted-foreground">{storeAddr}</p>
-                                <div className="flex gap-1.5">
-                                  <a href={`https://www.google.com/maps/search/?api=1&query=${encodedAddr}`} target="_blank" rel="noopener noreferrer"
-                                    className="flex items-center gap-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-bold px-2 py-1 rounded-lg">
-                                    <Navigation className="h-3 w-3" /> Google Maps
-                                  </a>
-                                  <a href={`https://waze.com/ul?q=${encodedAddr}&navigate=yes`} target="_blank" rel="noopener noreferrer"
-                                    className="flex items-center gap-1 bg-purple-500/10 text-purple-600 dark:text-purple-400 text-[10px] font-bold px-2 py-1 rounded-lg">
-                                    <Navigation className="h-3 w-3" /> Waze
-                                  </a>
-                                </div>
-                              </div>
-                            );
-                          })()}
-                        </div>
-                      </div>
-                    )}
 
-                    {!(myDelivery as any).collection_validated && (myDelivery as any).status === 'pronto_para_entrega' ? (
-                      <>
-                        {/* Collection code section */}
-                        <div className="bg-muted/50 rounded-xl p-4 space-y-3">
+                        {/* WhatsApp lojista */}
+                        {deliveryStoreOwnerId && getContactWhatsApp(deliveryStoreOwnerId) && (
+                          <WhatsAppButton
+                            number={getContactWhatsApp(deliveryStoreOwnerId)}
+                            message={`Olá! Sou o motoboy do ItaSuper. Estou a caminho para coletar o pedido #${myDelivery.id.slice(0, 8).toUpperCase()}.`}
+                            label="Falar com Lojista"
+                            size="sm"
+                          />
+                        )}
+
+                        {/* Collection code */}
+                        <div className="bg-muted/50 rounded-2xl p-4 space-y-3">
                           <div className="flex items-center gap-2">
                             <ShieldCheck className="h-4 w-4 text-primary" />
                             <span className="text-sm font-bold text-foreground">Validar Coleta</span>
                           </div>
                           <p className="text-xs text-muted-foreground">Peça o código de 4 dígitos ao lojista.</p>
-                          <div className="relative">
-                            <input
-                              type="text"
-                              inputMode="numeric"
-                              maxLength={4}
-                              placeholder="0000"
-                              value={collectionCodeInput}
-                              onChange={(e) => setCollectionCodeInput(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                              className={`w-full text-center text-3xl font-black tracking-[0.5em] py-3 bg-card border-2 rounded-xl text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:ring-2 transition-all ${
-                                collectionCodeInput.length === 4 ? "border-green-500 focus:ring-green-500" : "border-border focus:ring-primary"
-                              }`}
-                            />
-                            {collectionCodeInput.length === 4 && (
-                              <div className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500 animate-bounce">
-                                <CheckCircle2 className="h-6 w-6" />
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Order items */}
-                        <div className="bg-muted/30 rounded-xl p-3">
-                          <p className="text-[10px] text-muted-foreground uppercase font-semibold mb-2">Itens do pedido</p>
-                          {(myDelivery as any).order_items?.map((item: any) => (
-                            <p key={item.id} className="text-sm text-foreground">
-                              <span className="text-primary font-bold">{item.quantity}x</span> {item.products?.name || "Item"}
-                            </p>
-                          ))}
-                        </div>
-
-                        {/* Earning display */}
-                        <div className="flex items-center justify-between bg-green-500/10 border border-green-500/20 rounded-xl p-3">
-                          <span className="text-sm font-semibold text-foreground">Ganho da entrega</span>
-                          <span className="text-xl font-black text-green-500">R$ {Number(myDelivery.delivery_fee).toFixed(2)}</span>
-                        </div>
-
-                        {/* WhatsApp store */}
-                        {deliveryStoreOwnerId && getContactWhatsApp(deliveryStoreOwnerId) && (
-                          <WhatsAppButton
-                            number={getContactWhatsApp(deliveryStoreOwnerId)}
-                            message={`Olá! Sou o entregador do app. Pedido #${myDelivery.id.slice(0, 8).toUpperCase()}.`}
-                            label="Falar com a Loja"
-                            size="md"
-                            className="w-full"
-                          />
-                        )}
-
-                        <button
-                          onClick={() => validateCollection(myDelivery.id)}
-                          disabled={collectionCodeInput.length !== 4 || verifyingCollection}
-                          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-4 rounded-2xl text-base active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                        >
-                          <ShieldCheck className="h-5 w-5" />
-                          {verifyingCollection ? "Verificando..." : "VALIDAR COLETA"}
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        {/* Delivery address with Maps/Waze */}
-                        <div className="flex items-start gap-2">
-                          <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center mt-0.5 flex-shrink-0">
-                            <MapPin className="h-4 w-4 text-destructive" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <span className="text-sm font-medium text-foreground">{myDelivery.neighborhood}</span>
-                            <p className="text-xs text-muted-foreground mt-0.5">{myDelivery.address_details}</p>
-                            <div className="flex gap-1.5 mt-1.5">
-                              <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(myDelivery.address_details + ", " + myDelivery.neighborhood + ", Itatinga SP")}`} target="_blank" rel="noopener noreferrer"
-                                className="flex items-center gap-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-bold px-2 py-1 rounded-lg">
-                                <Navigation className="h-3 w-3" /> Google Maps
-                              </a>
-                              <a href={`https://waze.com/ul?q=${encodeURIComponent(myDelivery.address_details + ", " + myDelivery.neighborhood + ", Itatinga SP")}&navigate=yes`} target="_blank" rel="noopener noreferrer"
-                                className="flex items-center gap-1 bg-purple-500/10 text-purple-600 dark:text-purple-400 text-[10px] font-bold px-2 py-1 rounded-lg">
-                                <Navigation className="h-3 w-3" /> Waze
-                              </a>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Cash payment warning */}
-                        {myDelivery.payment_method === "dinheiro" && (
-                          <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
-                            <p className="text-sm font-bold text-amber-500 mb-2">💰 Pagamento em Dinheiro</p>
-                            <div className="text-xs text-muted-foreground space-y-1">
-                              {(myDelivery as any).needs_change && Number((myDelivery as any).change_for) > 0 && (
-                                <p>1️⃣ Pegar <span className="font-bold text-amber-500">R$ {(Number((myDelivery as any).change_for) - Number(myDelivery.total_price)).toFixed(2)}</span> de troco.</p>
-                              )}
-                              <p>{(myDelivery as any).needs_change ? "2️⃣" : "1️⃣"} Receber <span className="font-bold text-green-500">R$ {Number(myDelivery.total_price).toFixed(2)}</span> do cliente.</p>
-                              <p>{(myDelivery as any).needs_change ? "3️⃣" : "2️⃣"} Retornar à loja para entregar o valor.</p>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* WhatsApp contacts */}
-                        <div className="flex gap-2">
-                          {deliveryStoreOwnerId && getContactWhatsApp(deliveryStoreOwnerId) && (
-                            <WhatsAppButton number={getContactWhatsApp(deliveryStoreOwnerId)} message={`Pedido #${myDelivery.id.slice(0, 8).toUpperCase()}.`} label="Loja" size="md" className="flex-1" />
-                          )}
-                          {deliveryClientId && getContactWhatsApp(deliveryClientId) && (
-                            <WhatsAppButton number={getContactWhatsApp(deliveryClientId)} message="Olá, sou o entregador do ItaSuper!" label="Cliente" size="md" className="flex-1" />
-                          )}
-                        </div>
-
-                        {/* Items */}
-                        <div className="bg-muted/30 rounded-xl p-3">
-                          <p className="text-[10px] text-muted-foreground uppercase font-semibold mb-2">Itens</p>
-                          {(myDelivery as any).order_items?.map((item: any) => (
-                            <p key={item.id} className="text-sm text-foreground">
-                              <span className="text-primary font-bold">{item.quantity}x</span> {item.products?.name || "Item"}
-                            </p>
-                          ))}
-                        </div>
-
-                        {/* Earning */}
-                        <div className="flex items-center justify-between bg-green-500/10 border border-green-500/20 rounded-xl p-3">
-                          <span className="text-sm font-semibold text-foreground">Ganho</span>
-                          <span className="text-xl font-black text-green-500">R$ {Number(myDelivery.delivery_fee).toFixed(2)}</span>
-                        </div>
-
-                        {/* PIN Input */}
-                        <div className="bg-muted/50 rounded-xl p-4 space-y-3">
-                          <div className="flex items-center gap-2">
-                            <KeyRound className="h-4 w-4 text-amber-500" />
-                            <span className="text-sm font-bold text-foreground">Código do Cliente</span>
-                          </div>
-                          <p className="text-xs text-muted-foreground">Peça o código de 4 dígitos ao cliente para finalizar.</p>
                           <input
                             type="text"
                             inputMode="numeric"
                             maxLength={4}
-                            placeholder="0000"
-                            value={pinInput}
-                            onChange={(e) => setPinInput(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                            className="w-full text-center text-3xl font-black tracking-[0.5em] py-3 bg-card border-2 border-border rounded-xl text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                            placeholder="• • • •"
+                            value={collectionCodeInput}
+                            onChange={(e) => setCollectionCodeInput(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                            className="w-full text-center text-3xl font-black tracking-[0.5em] bg-card border-2 border-primary/20 rounded-2xl py-4 text-foreground placeholder:text-muted-foreground/20 focus:outline-none focus:border-primary transition-colors"
                           />
+                          <button
+                            onClick={() => validateCollection(myDelivery.id)}
+                            disabled={collectionCodeInput.length !== 4 || verifyingCollection}
+                            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3.5 rounded-2xl text-sm active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                          >
+                            <ShieldCheck className="h-4 w-4" />
+                            {verifyingCollection ? "Validando..." : "Confirmar Coleta"}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* After collection - delivery phase */}
+                    {((myDelivery as any).collection_validated || (myDelivery as any).status === 'saiu_entrega' || (myDelivery as any).status === 'em_transito') && (
+                      <div className="space-y-4">
+                        {/* Customer address */}
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <MapPin className="h-5 w-5 text-destructive" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs text-muted-foreground font-medium">Endereço de entrega</p>
+                            <p className="text-sm text-foreground font-semibold mt-0.5">{myDelivery.neighborhood}</p>
+                            <p className="text-xs text-muted-foreground">{myDelivery.address_details}</p>
+                            <NavigationLinks addr={myDelivery.address_details} />
+                          </div>
                         </div>
 
-                        <button
-                          onClick={() => finishDelivery(myDelivery.id)}
-                          disabled={pinInput.length !== 4 || verifying}
-                          className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-2xl text-base active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                        >
-                          <CheckCircle2 className="h-5 w-5" />
-                          {verifying ? "Verificando..." : "CONFIRMAR ENTREGA"}
-                        </button>
-                      </>
+                        {/* WhatsApp cliente */}
+                        {deliveryClientId && getContactWhatsApp(deliveryClientId) && (
+                          <WhatsAppButton
+                            number={getContactWhatsApp(deliveryClientId)}
+                            message={`Olá! Sou o motoboy do ItaSuper. Estou a caminho com seu pedido #${myDelivery.id.slice(0, 8).toUpperCase()}.`}
+                            label="Falar com Cliente"
+                            size="sm"
+                          />
+                        )}
+
+                        {/* Order items */}
+                        <div className="bg-muted/50 rounded-xl p-3">
+                          <p className="text-[10px] text-muted-foreground font-bold uppercase mb-2">Itens do pedido</p>
+                          <div className="space-y-1">
+                            {(myDelivery as any).order_items?.map((item: any) => (
+                              <div key={item.id} className="flex justify-between text-xs">
+                                <span className="text-foreground">{item.quantity}x {item.products?.name}</span>
+                                <span className="text-muted-foreground">R$ {(item.quantity * item.unit_price).toFixed(2)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Payment & fee info */}
+                        <div className="flex items-center justify-between bg-green-500/10 rounded-2xl px-4 py-3">
+                          <div>
+                            <p className="text-[10px] text-muted-foreground font-semibold uppercase">Sua taxa</p>
+                            <p className="text-xl font-black text-green-500">R$ {Number(myDelivery.delivery_fee).toFixed(2)}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-[10px] text-muted-foreground font-semibold uppercase">Pagamento</p>
+                            <p className="text-sm font-bold text-foreground">
+                              {myDelivery.payment_method === "pix" ? "📱 PIX" : myDelivery.payment_method === "dinheiro" ? "💵 Dinheiro" : myDelivery.payment_method === "cartao" ? "💳 Cartão" : myDelivery.payment_method}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Delivery PIN */}
+                        <div className="bg-muted/50 rounded-2xl p-4 space-y-3">
+                          <div className="flex items-center gap-2">
+                            <KeyRound className="h-4 w-4 text-green-500" />
+                            <span className="text-sm font-bold text-foreground">Confirmar Entrega</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">Peça o código de 4 dígitos ao cliente.</p>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            maxLength={4}
+                            placeholder="• • • •"
+                            value={pinInput}
+                            onChange={(e) => setPinInput(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                            className="w-full text-center text-3xl font-black tracking-[0.5em] bg-card border-2 border-green-500/20 rounded-2xl py-4 text-foreground placeholder:text-muted-foreground/20 focus:outline-none focus:border-green-500 transition-colors"
+                          />
+                          <button
+                            onClick={() => finishDelivery(myDelivery.id)}
+                            disabled={pinInput.length !== 4 || verifying}
+                            className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3.5 rounded-2xl text-sm active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                          >
+                            <CheckCircle2 className="h-4 w-4" />
+                            {verifying ? "Verificando..." : "Finalizar Entrega"}
+                          </button>
+                        </div>
+                      </div>
                     )}
                   </div>
                 </div>
               )}
 
               {/* ─── Pending Return ─── */}
-              {!myDelivery && pendingReturn && (
-                <div className="bg-card border-2 border-amber-500/30 rounded-2xl overflow-hidden">
-                  <div className="bg-amber-500/10 px-4 py-3 flex items-center gap-2">
-                    <DollarSign className="h-4 w-4 text-amber-500" />
-                    <span className="text-sm font-bold text-amber-500">AGUARDANDO RETORNO À LOJA</span>
+              {pendingReturn && (
+                <div className="bg-card border-2 border-amber-500/30 rounded-2xl overflow-hidden shadow-lg shadow-amber-500/5">
+                  <div className="bg-amber-500/10 px-4 py-3 flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                      <Store className="h-4 w-4 text-amber-500" />
+                    </div>
+                    <span className="text-sm font-black text-amber-600 dark:text-amber-400 tracking-wide">RETORNO À LOJA</span>
                   </div>
-                  <div className="p-4 space-y-3">
+                  <div className="p-4 space-y-4">
                     <p className="text-sm text-muted-foreground">
                       Entregue <span className="font-bold text-amber-500">R$ {Number(pendingReturn.total_price).toFixed(2)}</span> na loja <span className="font-bold text-foreground">{(pendingReturn as any).stores?.name}</span> e receba sua taxa.
                     </p>
-                    {/* Store address for return */}
                     {(() => {
                       const s = (pendingReturn as any).stores;
                       const storeAddr = s?.address_street
                         ? `${s.address_street}${s.address_number ? `, ${s.address_number}` : ""} - ${s.address_neighborhood || ""}, ${s.address_city || "Itatinga"}`
                         : null;
                       if (!storeAddr) return null;
-                      const encodedAddr = encodeURIComponent(storeAddr);
                       return (
-                        <div className="flex items-start gap-2">
-                          <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <Store className="h-4 w-4 text-amber-500" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs text-muted-foreground">{storeAddr}</p>
-                            <div className="flex gap-1.5 mt-1.5">
-                              <a href={`https://www.google.com/maps/search/?api=1&query=${encodedAddr}`} target="_blank" rel="noopener noreferrer"
-                                className="flex items-center gap-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-bold px-2 py-1 rounded-lg">
-                                <Navigation className="h-3 w-3" /> Google Maps
-                              </a>
-                              <a href={`https://waze.com/ul?q=${encodedAddr}&navigate=yes`} target="_blank" rel="noopener noreferrer"
-                                className="flex items-center gap-1 bg-purple-500/10 text-purple-600 dark:text-purple-400 text-[10px] font-bold px-2 py-1 rounded-lg">
-                                <Navigation className="h-3 w-3" /> Waze
-                              </a>
-                            </div>
-                          </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">{storeAddr}</p>
+                          <NavigationLinks addr={storeAddr} />
                         </div>
                       );
                     })()}
-                    <div>
-                      <label className="text-xs font-bold text-amber-500 mb-2 block">🔐 Código de Acerto</label>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-amber-500">🔐 Código de Acerto</label>
                       <input
                         type="text"
                         inputMode="numeric"
                         maxLength={4}
                         value={settlementCodeInput}
                         onChange={(e) => setSettlementCodeInput(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                        placeholder="0000"
-                        className="w-full text-center text-2xl font-black tracking-[0.4em] bg-card border-2 border-amber-500/30 rounded-xl py-3 text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:border-amber-500"
+                        placeholder="• • • •"
+                        className="w-full text-center text-3xl font-black tracking-[0.5em] bg-card border-2 border-amber-500/20 rounded-2xl py-4 text-foreground placeholder:text-muted-foreground/20 focus:outline-none focus:border-amber-500 transition-colors"
                       />
                     </div>
                     <button
                       onClick={() => confirmStoreReturn(pendingReturn.id)}
                       disabled={settlementCodeInput.length !== 4 || confirmingReturn}
-                      className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-2xl text-sm active:scale-[0.98] transition-all disabled:opacity-50"
+                      className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3.5 rounded-2xl text-sm active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                     >
-                      {confirmingReturn ? "Validando..." : "✅ Confirmar Acerto"}
+                      <CheckCircle2 className="h-4 w-4" />
+                      {confirmingReturn ? "Validando..." : "Confirmar Acerto"}
                     </button>
                   </div>
                 </div>
@@ -960,51 +954,58 @@ const DriverDashboard = () => {
               {/* ─── Available Orders ─── */}
               {!myDelivery && !pendingReturn && (
                 <>
-                  <SectionTitle icon={Package}>Entregas disponíveis</SectionTitle>
+                  <SectionHeader icon={Package}>Entregas Disponíveis</SectionHeader>
                   {loadingAvailable ? (
                     <div className="space-y-3">
                       {Array.from({ length: 3 }).map((_, i) => (
                         <div key={i} className="bg-card border border-border rounded-2xl p-4 animate-pulse space-y-3">
-                          <div className="h-4 bg-muted rounded w-1/2" />
-                          <div className="h-3 bg-muted rounded w-3/4" />
-                          <div className="h-12 bg-muted rounded" />
+                          <div className="h-5 bg-muted rounded-lg w-1/2" />
+                          <div className="h-4 bg-muted rounded-lg w-3/4" />
+                          <div className="h-12 bg-muted rounded-xl" />
                         </div>
                       ))}
                     </div>
                   ) : availableOrders && availableOrders.length > 0 ? (
                     <div className="space-y-3">
                       {availableOrders.map((order: any) => (
-                        <div key={order.id} className="bg-card border border-border rounded-2xl overflow-hidden">
+                        <div key={order.id} className="bg-card border border-border rounded-2xl overflow-hidden hover:border-primary/30 transition-colors">
                           <div className="p-4 space-y-3">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                                <Store className="h-4 w-4 text-primary" />
+                            {/* Store */}
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                                <Store className="h-5 w-5 text-primary" />
                               </div>
-                              <span className="text-sm font-semibold text-foreground">{order.stores?.name || "Loja"}</span>
-                            </div>
-
-                            <div className="flex items-start gap-2">
-                              <MapPin className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
                               <div>
-                                <span className="text-sm text-foreground">{order.neighborhood}</span>
-                                <p className="text-xs text-muted-foreground mt-0.5">{order.address_details}</p>
+                                <span className="text-sm font-bold text-foreground">{order.stores?.name || "Loja"}</span>
+                                <p className="text-[10px] text-muted-foreground">Pedido #{order.id.slice(0, 6).toUpperCase()}</p>
                               </div>
                             </div>
 
-                            <div className="text-xs text-muted-foreground">
+                            {/* Address */}
+                            <div className="flex items-start gap-2.5 bg-muted/50 rounded-xl p-3">
+                              <MapPin className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                              <div className="min-w-0">
+                                <span className="text-sm font-semibold text-foreground">{order.neighborhood}</span>
+                                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{order.address_details}</p>
+                              </div>
+                            </div>
+
+                            {/* Items */}
+                            <div className="text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-0.5">
                               {order.order_items?.map((item: any) => (
-                                <span key={item.id} className="mr-2">{item.quantity}x {item.products?.name}</span>
+                                <span key={item.id}>{item.quantity}x {item.products?.name}</span>
                               ))}
                             </div>
 
-                            <div className="flex items-center justify-between pt-2 border-t border-border">
+                            {/* Fee + Accept */}
+                            <div className="flex items-center justify-between pt-3 border-t border-border">
                               <div>
-                                <span className="text-[10px] text-muted-foreground uppercase font-semibold">Ganho</span>
-                                <p className="text-xl font-black text-green-500">R$ {Number(order.delivery_fee).toFixed(2)}</p>
+                                <p className="text-[10px] text-muted-foreground font-semibold uppercase">Ganho</p>
+                                <p className="text-2xl font-black text-green-500">R$ {Number(order.delivery_fee).toFixed(2)}</p>
                               </div>
                               <button
                                 onClick={() => acceptOrder(order.id)}
-                                className="bg-primary text-primary-foreground font-bold px-6 py-3 rounded-xl text-sm active:scale-[0.98] transition-all flex items-center gap-2"
+                                className="bg-primary text-primary-foreground font-bold px-7 py-3.5 rounded-2xl text-sm active:scale-[0.97] transition-all flex items-center gap-2 shadow-lg shadow-primary/20"
                               >
                                 ACEITAR <ArrowRight className="h-4 w-4" />
                               </button>
@@ -1014,13 +1015,11 @@ const DriverDashboard = () => {
                       ))}
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center justify-center py-20 text-center">
-                      <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-                        <Package className="h-8 w-8 text-muted-foreground" />
-                      </div>
-                      <h2 className="text-base font-bold text-foreground mb-1">Aguardando pedidos...</h2>
-                      <p className="text-sm text-muted-foreground">Aproveite para descansar! 😴</p>
-                    </div>
+                    <EmptyState
+                      icon={Package}
+                      title="Aguardando pedidos..."
+                      subtitle="Quando uma loja tiver um pedido pronto, ele aparecerá aqui. 🏍️"
+                    />
                   )}
                 </>
               )}
@@ -1029,17 +1028,17 @@ const DriverDashboard = () => {
         </>
       )}
 
-      {/* ═════════════ PIX CONFIG TAB ═════════════ */}
+      {/* ═══════════ TAB: PIX CONFIG ═══════════ */}
       {activeTab === "config" && (
         <div className="px-4 py-4 space-y-4">
           <div className="bg-card border border-border rounded-2xl overflow-hidden">
-            <div className="bg-primary/5 px-4 py-3 flex items-center gap-3 border-b border-border">
-              <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center">
-                <CreditCard className="h-4 w-4 text-green-500" />
+            <div className="bg-primary/5 px-4 py-4 flex items-center gap-3 border-b border-border">
+              <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center">
+                <CreditCard className="h-5 w-5 text-green-500" />
               </div>
               <div>
                 <h2 className="text-sm font-bold text-foreground">Minha Chave Pix</h2>
-                <p className="text-[10px] text-muted-foreground">Recebimentos instantâneos</p>
+                <p className="text-[11px] text-muted-foreground">Recebimentos instantâneos</p>
               </div>
             </div>
 
@@ -1095,59 +1094,71 @@ const DriverDashboard = () => {
           )}
 
           <div className="bg-card border border-border rounded-2xl p-4">
-            <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+            <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
               <Zap className="h-4 w-4 text-primary" />
               Como funciona?
             </h3>
-            <div className="space-y-3 text-xs text-muted-foreground">
+            <div className="space-y-4 text-xs text-muted-foreground">
               <div className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-md bg-green-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <CreditCard className="h-3 w-3 text-green-500" />
+                <div className="w-8 h-8 rounded-xl bg-green-500/10 flex items-center justify-center flex-shrink-0">
+                  <CreditCard className="h-4 w-4 text-green-500" />
                 </div>
-                <p><strong className="text-foreground">Pedidos via Pix/App:</strong> A taxa é transferida automaticamente para sua chave Pix.</p>
+                <div>
+                  <p className="font-bold text-foreground mb-0.5">Pedidos via Pix/App</p>
+                  <p>A taxa é transferida automaticamente para sua chave Pix.</p>
+                </div>
               </div>
               <div className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-md bg-amber-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <Banknote className="h-3 w-3 text-amber-500" />
+                <div className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+                  <Banknote className="h-4 w-4 text-amber-500" />
                 </div>
-                <p><strong className="text-foreground">Dinheiro:</strong> Você recebe a taxa em mãos. O sistema registra como "recebido".</p>
+                <div>
+                  <p className="font-bold text-foreground mb-0.5">Dinheiro/Cartão</p>
+                  <p>Você recebe a taxa em mãos ao retornar à loja.</p>
+                </div>
               </div>
               <div className="flex items-start gap-3">
-                <div className="w-6 h-6 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <BarChart3 className="h-3 w-3 text-primary" />
+                <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <BarChart3 className="h-4 w-4 text-primary" />
                 </div>
-                <p><strong className="text-foreground">Histórico:</strong> Na aba "Ganhos" veja o detalhamento.</p>
+                <div>
+                  <p className="font-bold text-foreground mb-0.5">Acompanhamento</p>
+                  <p>Na aba "Ganhos" veja seu histórico detalhado.</p>
+                </div>
               </div>
             </div>
           </div>
-
-          {/* Debug panel moved to pedidos tab */}
         </div>
       )}
 
-      {/* ═════════════ GANHOS / FINANCEIRO TAB ═════════════ */}
+      {/* ═══════════ TAB: GANHOS ═══════════ */}
       {activeTab === "historico" && (
         <div className="px-4 py-4 space-y-4">
           {/* Wallet Card */}
           {driverBalance && (
             <div className="bg-card border border-border rounded-2xl overflow-hidden">
-              <div className="bg-primary/5 px-4 py-3 flex items-center gap-2 border-b border-border">
-                <Wallet className="h-4 w-4 text-primary" />
-                <span className="text-sm font-bold text-foreground">Minha Carteira</span>
+              <div className="bg-primary/5 px-4 py-4 flex items-center gap-3 border-b border-border">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Wallet className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-foreground">Minha Carteira</h2>
+                  <p className="text-[11px] text-muted-foreground">Saldo e pagamentos</p>
+                </div>
               </div>
               <div className="p-4">
                 <div className="grid grid-cols-3 gap-3 mb-4">
-                  <div className="text-center">
-                    <p className="text-[10px] text-muted-foreground font-semibold">Total Ganho</p>
-                    <p className="text-lg font-black text-foreground">R$ {Number(driverBalance.total_earned || 0).toFixed(2)}</p>
+                  <div className="text-center bg-muted/50 rounded-xl py-3">
+                    <p className="text-[10px] text-muted-foreground font-semibold mb-0.5">Total</p>
+                    <p className="text-base font-black text-foreground">R$ {Number(driverBalance.total_earned || 0).toFixed(2)}</p>
                   </div>
-                  <div className="text-center">
-                    <p className="text-[10px] text-amber-500 font-semibold">Pendente</p>
-                    <p className="text-lg font-black text-amber-500">R$ {Number(driverBalance.pending_amount || 0).toFixed(2)}</p>
+                  <div className="text-center bg-amber-500/5 rounded-xl py-3">
+                    <p className="text-[10px] text-amber-500 font-semibold mb-0.5">Pendente</p>
+                    <p className="text-base font-black text-amber-500">R$ {Number(driverBalance.pending_amount || 0).toFixed(2)}</p>
                   </div>
-                  <div className="text-center">
-                    <p className="text-[10px] text-green-500 font-semibold">Pago</p>
-                    <p className="text-lg font-black text-green-500">R$ {Number(driverBalance.paid_amount || 0).toFixed(2)}</p>
+                  <div className="text-center bg-green-500/5 rounded-xl py-3">
+                    <p className="text-[10px] text-green-500 font-semibold mb-0.5">Pago</p>
+                    <p className="text-base font-black text-green-500">R$ {Number(driverBalance.paid_amount || 0).toFixed(2)}</p>
                   </div>
                 </div>
 
@@ -1190,13 +1201,18 @@ const DriverDashboard = () => {
                         queryClient.invalidateQueries({ queryKey: ["pending-withdrawal"] });
                       } finally { setRequestingSaque(false); }
                     }}
-                    className="w-full bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white font-bold py-3.5 rounded-2xl text-sm active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                    className="w-full bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white font-bold py-3.5 rounded-2xl text-sm active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-500/20"
                   >
                     <DollarSign className="h-4 w-4" />
                     {requestingSaque ? "PROCESSANDO..." : "SOLICITAR PAGAMENTO (PIX)"}
                   </button>
                 ) : Number(driverBalance.pending_amount || 0) > 0 && !(driverProfile as any)?.pix_key ? (
-                  <p className="text-xs text-amber-500 text-center">⚠️ Cadastre sua chave PIX na aba Pix para solicitar saque.</p>
+                  <button
+                    onClick={() => setActiveTab("config")}
+                    className="w-full bg-amber-500/10 text-amber-500 font-bold py-3 rounded-2xl text-xs flex items-center justify-center gap-2"
+                  >
+                    <CreditCard className="h-4 w-4" /> Cadastre sua chave PIX para solicitar saque
+                  </button>
                 ) : null}
               </div>
             </div>
@@ -1204,14 +1220,14 @@ const DriverDashboard = () => {
 
           {/* Quick Stats */}
           <div className="grid grid-cols-4 gap-2">
-            <StatCard icon={DollarSign} label="Hoje" value={`R$ ${todayEarnings.toFixed(2)}`} color="text-green-500" />
-            <StatCard icon={TrendingUp} label="Semana" value={`R$ ${weekEarnings.toFixed(2)}`} color="text-blue-500" />
-            <StatCard icon={Package} label="Total" value={String(totalDeliveries)} color="text-primary" />
-            <StatCard icon={Store} label="Abertas" value={String(openPlatformStores?.length || 0)} color="text-emerald-500" />
+            <StatCard icon={DollarSign} label="Hoje" value={`R$${todayEarnings.toFixed(0)}`} accent="green" />
+            <StatCard icon={TrendingUp} label="Semana" value={`R$${weekEarnings.toFixed(0)}`} accent="blue" />
+            <StatCard icon={Package} label="Total" value={String(totalDeliveries)} accent="primary" />
+            <StatCard icon={Store} label="Abertas" value={String(openPlatformStores?.length || 0)} accent="emerald" />
           </div>
 
           {/* Date filter */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 bg-muted/50 p-1.5 rounded-2xl">
             {([
               { key: "hoje" as DateFilter, label: "Hoje" },
               { key: "semana" as DateFilter, label: "7 dias" },
@@ -1221,7 +1237,7 @@ const DriverDashboard = () => {
               <button
                 key={f.key}
                 onClick={() => setDateFilter(f.key)}
-                className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all ${dateFilter === f.key ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground"}`}
+                className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all ${dateFilter === f.key ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}
               >
                 {f.label}
               </button>
@@ -1230,21 +1246,25 @@ const DriverDashboard = () => {
 
           {/* Earnings Breakdown */}
           <div className="grid grid-cols-2 gap-2">
-            <div className="bg-card border border-border rounded-2xl p-3">
-              <div className="flex items-center gap-2 mb-1">
-                <CreditCard className="h-3.5 w-3.5 text-green-500" />
-                <p className="text-[10px] text-muted-foreground">Pix App</p>
+            <div className="bg-card border border-border rounded-2xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-7 h-7 rounded-lg bg-green-500/10 flex items-center justify-center">
+                  <CreditCard className="h-3.5 w-3.5 text-green-500" />
+                </div>
+                <p className="text-xs text-muted-foreground font-semibold">Pix App</p>
               </div>
               <p className="text-lg font-black text-green-500">R$ {Number(driverBalance?.pending_amount || 0).toFixed(2)}</p>
-              <p className="text-[10px] text-muted-foreground">{earningsBreakdown.pixCount} entregas</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">{earningsBreakdown.pixCount} entregas</p>
             </div>
-            <div className="bg-card border border-border rounded-2xl p-3">
-              <div className="flex items-center gap-2 mb-1">
-                <Banknote className="h-3.5 w-3.5 text-amber-500" />
-                <p className="text-[10px] text-muted-foreground">Dinheiro</p>
+            <div className="bg-card border border-border rounded-2xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-7 h-7 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                  <Banknote className="h-3.5 w-3.5 text-amber-500" />
+                </div>
+                <p className="text-xs text-muted-foreground font-semibold">Dinheiro</p>
               </div>
               <p className="text-lg font-black text-amber-500">R$ {earningsBreakdown.cashEarnings.toFixed(2)}</p>
-              <p className="text-[10px] text-muted-foreground">{earningsBreakdown.cashCount} entregas</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">{earningsBreakdown.cashCount} entregas</p>
             </div>
           </div>
 
@@ -1253,11 +1273,11 @@ const DriverDashboard = () => {
             <div>
               <p className="text-[10px] text-muted-foreground uppercase font-semibold">Total no período</p>
               <p className="text-2xl font-black text-green-500">R$ {filteredEarnings.toFixed(2)}</p>
-              <p className="text-xs text-muted-foreground">{filteredHistory.length} entregas</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{filteredHistory.length} entregas realizadas</p>
             </div>
             <button
               onClick={exportSummary}
-              className="bg-muted hover:bg-muted/80 text-foreground p-3 rounded-xl active:scale-95 transition-all"
+              className="w-12 h-12 bg-muted hover:bg-muted/80 text-foreground rounded-2xl flex items-center justify-center active:scale-95 transition-all"
             >
               <Download className="h-5 w-5" />
             </button>
@@ -1266,10 +1286,10 @@ const DriverDashboard = () => {
           {/* Withdrawal History */}
           {withdrawalHistory && withdrawalHistory.length > 0 && (
             <>
-              <SectionTitle icon={Wallet}>Histórico de Saques</SectionTitle>
+              <SectionHeader icon={Wallet}>Histórico de Saques</SectionHeader>
               <div className="space-y-2">
                 {withdrawalHistory.map((w: any) => (
-                  <div key={w.id} className="bg-card border border-border rounded-xl p-3 flex items-center justify-between">
+                  <div key={w.id} className="bg-card border border-border rounded-2xl p-3.5 flex items-center justify-between">
                     <div>
                       <p className="text-sm font-bold text-foreground">{w.transaction_code || "#---"}</p>
                       <p className="text-xs text-muted-foreground">
@@ -1278,7 +1298,7 @@ const DriverDashboard = () => {
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-black text-foreground">R$ {Number(w.amount).toFixed(2)}</p>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${w.status === "solicitado" ? "bg-amber-500/10 text-amber-500" : "bg-green-500/10 text-green-500"}`}>
+                      <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg inline-block mt-0.5 ${w.status === "solicitado" ? "bg-amber-500/10 text-amber-500" : "bg-green-500/10 text-green-500"}`}>
                         {w.status === "solicitado" ? "⏳ Pendente" : "✅ Pago"}
                       </span>
                     </div>
@@ -1289,14 +1309,14 @@ const DriverDashboard = () => {
           )}
 
           {/* Delivery History */}
-          <SectionTitle icon={Clock}>Histórico de Corridas</SectionTitle>
+          <SectionHeader icon={Clock}>Histórico de Corridas</SectionHeader>
 
           {loadingHistory ? (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="bg-card border border-border rounded-xl p-4 animate-pulse space-y-2">
-                  <div className="h-4 bg-muted rounded w-1/3" />
-                  <div className="h-3 bg-muted rounded w-2/3" />
+                <div key={i} className="bg-card border border-border rounded-2xl p-4 animate-pulse space-y-2">
+                  <div className="h-4 bg-muted rounded-lg w-1/3" />
+                  <div className="h-3 bg-muted rounded-lg w-2/3" />
                 </div>
               ))}
             </div>
@@ -1307,47 +1327,47 @@ const DriverDashboard = () => {
                 const orderDate = parseISO(order.confirmed_at || order.created_at);
                 const isCash = order.payment_method === "dinheiro";
                 return (
-                  <div key={order.id} className="bg-card border border-border rounded-xl p-3 flex items-center justify-between">
+                  <div key={order.id} className="bg-card border border-border rounded-2xl p-3.5 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center flex-shrink-0">
+                      <CheckCircle2 className="h-5 w-5 text-green-500" />
+                    </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <Store className="h-3.5 w-3.5 text-primary flex-shrink-0" />
-                        <span className="text-sm text-foreground font-medium truncate">{(order as any).stores?.name || "Loja"}</span>
+                        <span className="text-sm text-foreground font-bold truncate">{(order as any).stores?.name || "Loja"}</span>
                       </div>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <span>{format(orderDate, "dd/MM HH:mm", { locale: ptBR })}</span>
-                        <span>•</span>
+                        <span className="text-border">•</span>
                         <span className="truncate">{order.neighborhood}</span>
                       </div>
                       <div className="flex items-center gap-1.5 mt-1.5">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${isRural ? "bg-amber-500/10 text-amber-500" : "bg-blue-500/10 text-blue-500"}`}>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg ${isRural ? "bg-amber-500/10 text-amber-500" : "bg-blue-500/10 text-blue-500"}`}>
                           {isRural ? "Rural" : "Urbano"}
                         </span>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${isCash ? "bg-amber-500/10 text-amber-500" : "bg-green-500/10 text-green-500"}`}>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg ${isCash ? "bg-amber-500/10 text-amber-500" : "bg-green-500/10 text-green-500"}`}>
                           {isCash ? "💵 Dinheiro" : "📱 Pix"}
                         </span>
                       </div>
                     </div>
-                    <p className="text-lg font-black text-green-500 ml-3">R$ {Number(order.delivery_fee).toFixed(2)}</p>
+                    <p className="text-lg font-black text-green-500 ml-2">R$ {Number(order.delivery_fee).toFixed(2)}</p>
                   </div>
                 );
               })}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mb-4">
-                <Wallet className="h-7 w-7 text-muted-foreground" />
-              </div>
-              <h2 className="text-base font-bold text-foreground mb-1">Nenhuma entrega neste período</h2>
-              <p className="text-sm text-muted-foreground">Suas entregas finalizadas aparecerão aqui.</p>
-            </div>
+            <EmptyState
+              icon={Wallet}
+              title="Nenhuma entrega neste período"
+              subtitle="Suas entregas finalizadas aparecerão aqui."
+            />
           )}
         </div>
       )}
 
       </div>{/* End content wrapper */}
 
-      {/* ─── Native Bottom Tab Bar ─── */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border pb-safe" data-tour="motoboy-entregas">
+      {/* ═══════════ Bottom Tab Bar ═══════════ */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-t border-border pb-safe" data-tour="motoboy-entregas">
         <div className="flex items-center justify-around h-16">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.key;
@@ -1356,12 +1376,12 @@ const DriverDashboard = () => {
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
                 data-tour={tab.key === "historico" ? "motoboy-ganhos" : tab.key === "entregas" ? "motoboy-nav" : undefined}
-                className={`flex flex-col items-center gap-0.5 px-5 py-2 transition-all rounded-xl ${isActive ? "text-primary" : "text-muted-foreground"}`}
+                className={`flex flex-col items-center gap-1 px-5 py-2 transition-all rounded-xl relative`}
               >
-                <div className={`p-1.5 rounded-xl transition-colors ${isActive ? "bg-primary/10" : ""}`}>
-                  <tab.icon className="h-5 w-5" strokeWidth={isActive ? 2.5 : 1.5} />
+                <div className={`p-2 rounded-2xl transition-all ${isActive ? "bg-primary/10" : ""}`}>
+                  <tab.icon className={`h-5 w-5 transition-colors ${isActive ? "text-primary" : "text-muted-foreground"}`} strokeWidth={isActive ? 2.5 : 1.5} />
                 </div>
-                <span className={`text-[10px] font-bold ${isActive ? "text-primary" : "text-muted-foreground"}`}>{tab.label}</span>
+                <span className={`text-[10px] font-bold transition-colors ${isActive ? "text-primary" : "text-muted-foreground"}`}>{tab.label}</span>
               </button>
             );
           })}
