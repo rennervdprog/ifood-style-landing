@@ -451,7 +451,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
     const text = `📊 Resumo Financeiro ItaSuper - ${storeName}\n` +
       `Período: ${format(dateRange.start, "dd/MM", { locale: ptBR })} a ${format(dateRange.end, "dd/MM/yyyy", { locale: ptBR })}\n\n` +
       `💰 Vendas Totais: R$ ${totalSales.toFixed(2)}\n` +
-      `📱 Comissão Total (15%): R$ ${totalCommission.toFixed(2)}\n\n` +
+      `📱 Comissão Total (${commissionPct}%): R$ ${totalCommission.toFixed(2)}\n\n` +
       `--- Vendas via App (Split Automático ✅) ---\n` +
       `Vendas PIX App: R$ ${appSales.toFixed(2)}\n` +
       `Comissão retida: R$ ${multiplyMoney(appSales, commissionRate).toFixed(2)}\n` +
@@ -469,7 +469,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
       `Período: ${format(dateRange.start, "dd/MM/yyyy")} a ${format(dateRange.end, "dd/MM/yyyy")}`,
       ``,
       `VENDAS TOTAIS: R$ ${totalSales.toFixed(2)}`,
-      `COMISSÃO TOTAL (15%): R$ ${totalCommission.toFixed(2)}`,
+      `COMISSÃO TOTAL (${commissionPct}%): R$ ${totalCommission.toFixed(2)}`,
       ``,
       `--- VENDAS VIA APP (SPLIT AUTOMÁTICO) ---`,
       `VENDAS PIX APP: R$ ${appSales.toFixed(2)}`,
@@ -672,7 +672,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
           </div>
           <p className="text-2xl font-black text-emerald-400">R$ {creditFromApp.toFixed(2)}</p>
           <p className="text-[10px] text-muted-foreground mt-1">
-            Você recebeu R$ {creditFromApp.toFixed(2)} de R$ {appSales.toFixed(2)} em vendas pelo app. A taxa da plataforma (15% = R$ {multiplyMoney(appSales, commissionRate).toFixed(2)}) já foi descontada automaticamente.
+            Você recebeu R$ {creditFromApp.toFixed(2)} de R$ {appSales.toFixed(2)} em vendas pelo app. A taxa da plataforma (${commissionPct}% = R$ {multiplyMoney(appSales, commissionRate).toFixed(2)}) já foi descontada automaticamente.
           </p>
           <div className="mt-2 rounded-xl bg-emerald-500/5 border border-emerald-500/10 p-2.5">
             <p className="text-[10px] text-emerald-400 font-semibold">✅ Valor já depositado na sua conta — nada a fazer</p>
@@ -690,7 +690,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
             </div>
             <p className="text-sm font-bold text-foreground">Taxa Pendente — Vendas Físicas</p>
           </div>
-          <p className="text-xs text-muted-foreground mb-1">Você recebeu o valor na hora (dinheiro/cartão). A taxa de 15% da plataforma precisa ser repassada.</p>
+          <p className="text-xs text-muted-foreground mb-1">Você recebeu o valor na hora (dinheiro/cartão). A taxa de ${commissionPct}% da plataforma precisa ser repassada.</p>
           <p className="text-2xl font-black text-red-400">
             R$ {(dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue).toFixed(2)}
           </p>
