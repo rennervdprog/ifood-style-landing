@@ -166,7 +166,7 @@ const AdminDashboard = () => {
 
   const isApproved = myProfile?.is_approved ?? false;
 
-  const { data: store } = useQuery({
+  const { data: store, error: storeError, isLoading: storeLoading } = useQuery({
     queryKey: ["my-store", user?.id, simulateStoreId],
     queryFn: async () => {
       if (simulateStoreId) {
@@ -175,11 +175,17 @@ const AdminDashboard = () => {
         return data;
       }
       const { data, error } = await supabase.from("stores").select("*").eq("owner_id", user!.id).single();
-      if (error) throw error;
+      if (error) {
+        console.error("[AdminDashboard] store query error:", error);
+        throw error;
+      }
+      console.log("[AdminDashboard] store loaded:", data?.name, "is_open:", data?.is_open);
       return data;
     },
     enabled: !!user,
   });
+
+  console.log("[AdminDashboard] store:", store?.name, "storeError:", storeError, "storeLoading:", storeLoading, "isApproved:", isApproved, "user:", user?.id);
 
   const { data: orders, isLoading } = useQuery({
     queryKey: ["store-orders", store?.id],
