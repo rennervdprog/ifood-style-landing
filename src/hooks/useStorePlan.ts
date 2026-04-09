@@ -29,6 +29,12 @@ export interface StorePlanFeatures {
   isInTrial: boolean;
   /** Days remaining in trial */
   trialDaysLeft: number;
+  /** Next billing date */
+  nextBillingDate: string | null;
+  /** Last billed date */
+  lastBilledAt: string | null;
+  /** Plan start date */
+  startedAt: string | null;
   isLoading: boolean;
 }
 
@@ -71,7 +77,7 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
     queryFn: async () => {
       const { data, error } = await supabase
         .from("store_plans")
-        .select("plan_type, monthly_fee, commission_rate, trial_ends_at")
+        .select("plan_type, monthly_fee, commission_rate, trial_ends_at, next_billing_date, last_billed_at, started_at")
         .eq("store_id", storeId!)
         .eq("is_active", true)
         .maybeSingle();
@@ -101,6 +107,9 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
     trialEndsAt,
     isInTrial,
     trialDaysLeft,
+    nextBillingDate: (data as any)?.next_billing_date ?? null,
+    lastBilledAt: (data as any)?.last_billed_at ?? null,
+    startedAt: (data as any)?.started_at ?? null,
     isLoading,
   };
 }
