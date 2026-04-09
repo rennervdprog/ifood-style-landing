@@ -629,23 +629,35 @@ const CheckoutPage = () => {
           <span className="text-sm text-muted-foreground">Total</span>
           <span className="text-lg font-black text-primary">R$ {finalTotal.toFixed(2)}</span>
         </div>
-        <button
-          onClick={handleConfirm}
-          disabled={loading}
-          className="w-full bg-primary text-primary-foreground font-bold py-4 rounded-2xl active:scale-[0.98] transition-all disabled:opacity-50 shadow-lg shadow-primary/25 text-base"
-        >
-          {loading ? (
-            <span className="flex items-center justify-center gap-2">
-              <Loader2 className="w-5 h-5 animate-spin" />
-              Enviando pedido...
-            </span>
-          ) : (
-            <span className="flex items-center justify-center gap-2">
-              Confirmar Pedido
-              <ChevronRight className="h-5 w-5" />
-            </span>
-          )}
-        </button>
+        {isStoreClosed ? (
+          <button
+            disabled
+            className="w-full bg-muted text-muted-foreground font-bold py-4 rounded-2xl text-base flex items-center justify-center gap-2 cursor-not-allowed"
+          >
+            <Clock className="h-5 w-5" />
+            {storeStatus?.nextOpenDay && storeStatus?.nextOpenTime
+              ? `${storeStatus.nextOpenDay === "Hoje" ? "Abre" : `Abre ${storeStatus.nextOpenDay}`} às ${storeStatus.nextOpenTime}`
+              : "Loja fechada"}
+          </button>
+        ) : (
+          <button
+            onClick={handleConfirm}
+            disabled={loading}
+            className="w-full bg-primary text-primary-foreground font-bold py-4 rounded-2xl active:scale-[0.98] transition-all disabled:opacity-50 shadow-lg shadow-primary/25 text-base"
+          >
+            {loading ? (
+              <span className="flex items-center justify-center gap-2">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Enviando pedido...
+              </span>
+            ) : (
+              <span className="flex items-center justify-center gap-2">
+                Confirmar Pedido
+                <ChevronRight className="h-5 w-5" />
+              </span>
+            )}
+          </button>
+        )}
       </div>
 
       {showAddressModal && (
