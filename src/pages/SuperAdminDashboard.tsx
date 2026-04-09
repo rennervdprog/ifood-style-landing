@@ -1548,6 +1548,9 @@ const FinanceTab = ({
               const isExpanded = expandedStore === entry.storeId;
               const pixInfo = getStorePixInfo(entry.storeId);
               const splitPaid = multiplyMoney(entry.appSales, getStoreRate(entry.storeId));
+              const plan = getStorePlan(entry.storeId);
+              const storePlanType = plan?.plan_type || "commission_only";
+              const isFixedPlan = storePlanType === "fixed";
 
               return (
                 <div key={entry.storeId} className="bg-card rounded-2xl border border-border overflow-hidden transition-all">
@@ -1559,8 +1562,16 @@ const FinanceTab = ({
                         <Store className="h-4 w-4 text-primary" />
                       </div>
                       <div className="text-left">
-                        <p className="text-sm font-bold text-foreground">{entry.name}</p>
-                        <p className="text-[10px] text-muted-foreground">{entry.orderCount} pedidos • R$ {entry.totalSales.toFixed(2)} • {Math.round(getStoreRate(entry.storeId) * 100)}%</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-bold text-foreground">{entry.name}</p>
+                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md border ${planColor(storePlanType)}`}>
+                            {planLabel(storePlanType)}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">
+                          {entry.orderCount} pedidos • R$ {entry.totalSales.toFixed(2)}
+                          {!isFixedPlan && ` • ${Math.round(getStoreRate(entry.storeId) * 100)}%`}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
