@@ -657,7 +657,7 @@ const AdminDashboard = () => {
 
         {/* Navigation */}
         <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
-          {baseSidebarItems.filter(i => !i.pizzaOnly || store?.category === "pizzas").map(item => {
+          {baseSidebarItems.filter(i => (!i.pizzaOnly || store?.category === "pizzas") && (i.key !== "finance" || storePlan.hasCommission)).map(item => {
             const isActive = dashboardTab === item.key;
             const Icon = item.icon;
             return (
@@ -842,12 +842,14 @@ const AdminDashboard = () => {
                   </div>
                 </div>
               )}
-              {/* Commission Alert */}
-              <CommissionAlert
-                storeId={store.id}
-                storeName={store.name}
-                onGoToFinance={() => setDashboardTab("finance")}
-              />
+              {/* Commission Alert - only for plans with commission */}
+              {storePlan.hasCommission && (
+                <CommissionAlert
+                  storeId={store.id}
+                  storeName={store.name}
+                  onGoToFinance={() => setDashboardTab("finance")}
+                />
+              )}
               {/* At-a-Glance Cards */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-3">
                 <GlanceCard
@@ -974,7 +976,7 @@ const AdminDashboard = () => {
               {(() => {
                 const PLATFORM_CITIES = ["itatinga"];
                 const storeCity = ((store as any).address_city || "").toLowerCase().trim();
-                const hasPlatformSupport = PLATFORM_CITIES.includes(storeCity);
+                const hasPlatformSupport = PLATFORM_CITIES.includes(storeCity) && storePlan.allowPlatformDelivery;
 
                 return (
                   <div className="bg-card border border-border rounded-2xl p-3 lg:p-4 space-y-3">
@@ -1010,7 +1012,9 @@ const AdminDashboard = () => {
                         <Bike className={`h-5 w-5 ${!hasPlatformSupport ? "text-muted-foreground" : (store as any).delivery_mode !== "own" ? "text-primary" : "text-muted-foreground"}`} />
                         <span className={`text-[11px] font-bold ${!hasPlatformSupport ? "text-muted-foreground" : (store as any).delivery_mode !== "own" ? "text-primary" : "text-muted-foreground"}`}>Plataforma</span>
                         {!hasPlatformSupport && (
-                          <span className="text-[9px] text-amber-600 font-bold">Indisponível</span>
+                          <span className="text-[9px] text-amber-600 font-bold">
+                            {!storePlan.allowPlatformDelivery ? "Plano Fixo" : "Indisponível"}
+                          </span>
                         )}
                       </button>
                       <button
@@ -1722,7 +1726,18 @@ const AdminDashboard = () => {
 
                 </div>
               )}
-              {dashboardTab === "finance" && <StoreFinancePanel storeId={store.id} storeName={store.name} />}
+              {dashboardTab === "finance" && storePlan.hasCommission && <StoreFinancePanel storeId={store.id} storeName={store.name} />}
+              {dashboardTab === "finance" && !storePlan.hasCommission && (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Coins className="h-8 w-8 text-primary" />
+                  </div>
+                  <h3 className="text-lg font-bold text-foreground mb-2">Plano Fixo Mensal</h3>
+                  <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                    Seu plano é de assinatura fixa (R$ {storePlan.monthlyFee.toFixed(2)}/mês) sem cobrança de comissão por pedido. Não há comissões pendentes.
+                  </p>
+                </div>
+              )}
               {dashboardTab === "reports" && (
                 <div className="space-y-6">
                   <h3 className="text-lg font-bold text-foreground">Relatórios de Vendas</h3>
