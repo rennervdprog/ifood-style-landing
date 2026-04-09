@@ -123,7 +123,7 @@ const AuthPage = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Hero gradient header */}
-      <div className="relative bg-gradient-to-br from-primary via-primary to-primary/80 pt-12 pb-16 px-6 text-center overflow-hidden">
+      <div className="relative bg-gradient-to-br from-primary via-primary to-primary/80 pt-12 pb-20 px-6 text-center overflow-hidden">
         {/* Decorative circles */}
         <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full" />
         <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-white/5 rounded-full" />
