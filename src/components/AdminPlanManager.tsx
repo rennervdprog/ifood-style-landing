@@ -68,6 +68,21 @@ export default function AdminPlanManager() {
     },
   });
 
+  // Fetch plan change requests
+  const { data: planRequests } = useQuery({
+    queryKey: ["admin-plan-requests"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("plan_change_requests" as any)
+        .select("*")
+        .order("requested_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+  });
+
+  const pendingRequests = (planRequests || []).filter((r: any) => r.status === "pending");
+
   const getStorePlan = (storeId: string) => {
     return storePlans?.find(p => p.store_id === storeId);
   };
