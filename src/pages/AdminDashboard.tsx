@@ -13,8 +13,13 @@ import {
   ChevronDown, ChevronUp, DollarSign, XCircle, Loader2, Search,
   Menu, X, LayoutDashboard, CircleDot, TrendingUp, BarChart3,
   Users, Timer, Star, ShoppingBag, ArrowUpRight, ArrowDownRight,
-  Filter, UserCheck, UserX, MapPinned, Repeat, Heart, AlertTriangle, LogOut, User, Shield
+  Filter, UserCheck, UserX, MapPinned, Repeat, Heart, AlertTriangle, LogOut, User, Shield,
+  Calendar, Download
 } from "lucide-react";
+import {
+  AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip,
+  ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar,
+} from "recharts";
 import { openWhatsApp } from "@/lib/whatsapp";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import MenuBuilder from "@/components/MenuBuilder";
