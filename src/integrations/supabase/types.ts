@@ -1678,6 +1678,10 @@ export type Database = {
           whatsapp_number: string
         }[]
       }
+      get_store_commission_rate: {
+        Args: { _store_id: string }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
