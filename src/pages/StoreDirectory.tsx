@@ -224,7 +224,7 @@ const StoreDirectory = () => {
 
   return (
     <div className="min-h-screen" style={{ background: THEME.white, color: THEME.dark }}>
-      <Navbar onNavigate={navigate} />
+      <Navbar onNavigate={navigate} isLoggedIn={!!user} />
 
       {/* ═══ HERO — Impactful ═══ */}
       <section id="hero" className="relative overflow-hidden px-4 pt-12 pb-16 sm:pt-20 sm:pb-24" style={{ background: `linear-gradient(135deg, ${THEME.dark} 0%, #2D1810 50%, ${THEME.primaryDark} 100%)` }}>
