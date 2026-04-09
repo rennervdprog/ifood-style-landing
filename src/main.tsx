@@ -30,6 +30,13 @@ if (isPreviewHost || isInIframe) {
 
     sessionStorage.removeItem(reloadKey);
   });
+} else {
+  // Production: detect SW updates and reload immediately
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      window.location.reload();
+    });
+  }
 }
 
 // Apply native-app class globally for GoNative/Median apps
