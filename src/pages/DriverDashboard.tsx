@@ -185,7 +185,7 @@ const DriverDashboard = () => {
     queryKey: ["driver-contacts", profileIds],
     queryFn: async () => {
       const { data } = await supabase
-        .from("profiles")
+        .from("profile_contacts")
         .select("user_id, whatsapp_number, phone, full_name")
         .in("user_id", profileIds);
       return data || [];
