@@ -153,6 +153,16 @@ const SuperAdminDashboard = () => {
     enabled: isAdmin && activeTab === "financeiro",
   });
 
+  const { data: parentStorePlans } = useQuery({
+    queryKey: ["admin-store-plans-parent"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("store_plans").select("*").eq("is_active", true);
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: isAdmin,
+  });
+
   // Compliance alerts
   const { data: complianceAlerts } = useQuery({
     queryKey: ["compliance-alerts"],
@@ -327,17 +337,31 @@ const SuperAdminDashboard = () => {
 
   const generateStoreWhatsApp = (entry: typeof storeSettlement[0]) => {
     const period = financeFilter === "week" ? "Semana" : "Mês";
-    const balanceText = entry.finalBalance >= 0
-      ? `✅ O ItaSuper deve transferir R$ ${entry.finalBalance.toFixed(2)} para você.`
-      : `⚠️ Valor a acertar com o ItaSuper: R$ ${Math.abs(entry.finalBalance).toFixed(2)}.`;
+    const storePlan = parentStorePlans?.find((p: any) => p.store_id === entry.storeId);
+    const isFixed = storePlan?.plan_type === "fixed";
     const storeRate = Math.round(getStoreRate(entry.storeId) * 100);
-    const msg = `💰 *Fechamento ItaSuper (${period})*\n\nOlá *${entry.name}*!\n\n` +
-      `📦 Total de Pedidos: ${entry.orderCount}\n` +
-      `💵 Vendas Físicas (Dinheiro/Cartão): R$ ${entry.physicalSales.toFixed(2)}\n` +
-      `📱 Vendas App (Pix): R$ ${entry.appSales.toFixed(2)}\n\n` +
-      `🏷️ Comissão ${storeRate}% sobre Físicas: R$ ${entry.commissionDue.toFixed(2)}\n` +
-      `💸 Repasse Líquido (App - ${storeRate}%): R$ ${entry.netTransfer.toFixed(2)}\n\n` +
-      `---\n${balanceText}\n---`;
+
+    let msg: string;
+    if (isFixed) {
+      msg = `💰 *Resumo ItaSuper (${period})*\n\nOlá *${entry.name}*!\n\n` +
+        `📋 Plano: Fixo Mensal — R$ ${Number(storePlan?.monthly_fee || 180).toFixed(2)}/mês\n\n` +
+        `📦 Total de Pedidos: ${entry.orderCount}\n` +
+        `💵 Vendas Totais: R$ ${entry.totalSales.toFixed(2)}\n\n` +
+        `✅ Sem taxas por pedido. Toda receita é sua!\n` +
+        `📌 Assinatura mensal cobrada à parte.`;
+    } else {
+      const balanceText = entry.finalBalance >= 0
+        ? `✅ O ItaSuper deve transferir R$ ${entry.finalBalance.toFixed(2)} para você.`
+        : `⚠️ Valor a acertar com o ItaSuper: R$ ${Math.abs(entry.finalBalance).toFixed(2)}.`;
+      msg = `💰 *Fechamento ItaSuper (${period})*\n\nOlá *${entry.name}*!\n\n` +
+        `📋 Plano: ${storePlan?.plan_type === "hybrid" ? "Assinatura + Taxa" : "Comissão"}\n\n` +
+        `📦 Total de Pedidos: ${entry.orderCount}\n` +
+        `💵 Vendas Físicas (Dinheiro/Cartão): R$ ${entry.physicalSales.toFixed(2)}\n` +
+        `📱 Vendas App (Pix): R$ ${entry.appSales.toFixed(2)}\n\n` +
+        `🏷️ Comissão ${storeRate}% sobre Físicas: R$ ${entry.commissionDue.toFixed(2)}\n` +
+        `💸 Repasse Líquido (App - ${storeRate}%): R$ ${entry.netTransfer.toFixed(2)}\n\n` +
+        `---\n${balanceText}\n---`;
+    }
     navigator.clipboard.writeText(msg);
     toast.success(`Extrato de ${entry.name} copiado!`);
   };
@@ -920,7 +944,39 @@ const FinanceTab = ({
   const [savingGateway, setSavingGateway] = useState(false);
   const [expandedStore, setExpandedStore] = useState<string | null>(null);
 
+  // Fetch store plans for badges & logic
+  const { data: storePlans } = useQuery({
+    queryKey: ["admin-store-plans-finance"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("store_plans").select("*").eq("is_active", true);
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+  });
+
+  const getStorePlan = (storeId: string) => storePlans?.find((p: any) => p.store_id === storeId);
+
+  const planLabel = (planType: string) => {
+    if (planType === "fixed") return "Fixo";
+    if (planType === "hybrid") return "Híbrido";
+    return "Comissão";
+  };
+
+  const planColor = (planType: string) => {
+    if (planType === "fixed") return "bg-blue-500/10 text-blue-500 border-blue-500/20";
+    if (planType === "hybrid") return "bg-purple-500/10 text-purple-500 border-purple-500/20";
+    return "bg-amber-500/10 text-amber-500 border-amber-500/20";
+  };
+
+  // Subscription revenue KPI
+  const subscriptionRevenue = useMemo(() => {
+    if (!storePlans) return 0;
+    return sumMoney(storePlans.filter((p: any) => p.monthly_fee > 0).map((p: any) => Number(p.monthly_fee)));
+  }, [storePlans]);
+
   const getStoreRate = (storeId: string) => {
+    const plan = getStorePlan(storeId);
+    if (plan) return Number(plan.commission_rate) / 100;
     const store = stores?.find((s: any) => s.id === storeId);
     return ((store as any)?.commission_rate ?? 15) / 100;
   };
@@ -1280,11 +1336,11 @@ const FinanceTab = ({
           <div className="relative">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                <Bike className="h-4 w-4 text-emerald-500" />
+                <Crown className="h-4 w-4 text-emerald-500" />
               </div>
             </div>
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Motoboys Pend.</p>
-            <p className="text-xl font-black text-emerald-500 mt-0.5">R$ {pendingDriverAmount.toFixed(2)}</p>
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Assinaturas/Mês</p>
+            <p className="text-xl font-black text-emerald-500 mt-0.5">R$ {subscriptionRevenue.toFixed(2)}</p>
           </div>
         </div>
       </div>
@@ -1516,6 +1572,9 @@ const FinanceTab = ({
               const isExpanded = expandedStore === entry.storeId;
               const pixInfo = getStorePixInfo(entry.storeId);
               const splitPaid = multiplyMoney(entry.appSales, getStoreRate(entry.storeId));
+              const plan = getStorePlan(entry.storeId);
+              const storePlanType = plan?.plan_type || "commission_only";
+              const isFixedPlan = storePlanType === "fixed";
 
               return (
                 <div key={entry.storeId} className="bg-card rounded-2xl border border-border overflow-hidden transition-all">
@@ -1527,8 +1586,16 @@ const FinanceTab = ({
                         <Store className="h-4 w-4 text-primary" />
                       </div>
                       <div className="text-left">
-                        <p className="text-sm font-bold text-foreground">{entry.name}</p>
-                        <p className="text-[10px] text-muted-foreground">{entry.orderCount} pedidos • R$ {entry.totalSales.toFixed(2)} • {Math.round(getStoreRate(entry.storeId) * 100)}%</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-bold text-foreground">{entry.name}</p>
+                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md border ${planColor(storePlanType)}`}>
+                            {planLabel(storePlanType)}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">
+                          {entry.orderCount} pedidos • R$ {entry.totalSales.toFixed(2)}
+                          {!isFixedPlan && ` • ${Math.round(getStoreRate(entry.storeId) * 100)}%`}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
@@ -1550,6 +1617,20 @@ const FinanceTab = ({
                   {isExpanded && (
                     <div className="border-t border-border">
                       <div className="p-4 space-y-4">
+                        {/* Plan Info Banner */}
+                        {plan && (
+                          <div className={`rounded-xl p-3 flex items-center gap-3 border ${planColor(storePlanType)}`}>
+                            <Crown className="h-4 w-4 shrink-0" />
+                            <div className="flex-1">
+                              <p className="text-xs font-bold">Plano {planLabel(storePlanType)}</p>
+                              <p className="text-[10px] opacity-80">
+                                R$ {Number(plan.monthly_fee).toFixed(2)}/mês
+                                {Number(plan.commission_rate) > 0 && ` + ${Number(plan.commission_rate)}% por pedido`}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
                         {/* Sales breakdown */}
                         <div className="grid grid-cols-2 gap-2">
                           <div className="bg-muted/30 rounded-xl p-3">
@@ -1560,74 +1641,59 @@ const FinanceTab = ({
                           <div className="bg-muted/30 rounded-xl p-3">
                             <p className="text-[10px] text-muted-foreground font-semibold uppercase">Vendas App</p>
                             <p className="text-base font-black text-foreground mt-0.5">R$ {entry.appSales.toFixed(2)}</p>
-                            <p className="text-[10px] text-muted-foreground">PIX Online</p>
+                            <p className="text-[10px] text-muted-foreground">{isFixedPlan ? "Somente dinheiro/cartão" : "PIX Online"}</p>
                           </div>
                         </div>
 
-                        {/* Commission status — source of truth from DB */}
-                        <div className="space-y-2">
-                          {/* App sales: split auto */}
-                          {entry.appSales > 0 && (
-                            <div className="bg-emerald-500/5 border border-emerald-500/15 rounded-xl p-3 flex items-start gap-2.5">
-                              <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
-                              <div>
-                                <p className="text-xs font-bold text-emerald-600">Split automático liquidado</p>
-                                <p className="text-[10px] text-muted-foreground mt-0.5">
-                                  R$ {splitPaid.toFixed(2)} retido automaticamente de R$ {entry.appSales.toFixed(2)} em vendas PIX
-                                </p>
+                        {/* Commission status — only for plans with commission */}
+                        {!isFixedPlan && (
+                          <div className="space-y-2">
+                            {entry.appSales > 0 && (
+                              <div className="bg-emerald-500/5 border border-emerald-500/15 rounded-xl p-3 flex items-start gap-2.5">
+                                <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
+                                <div>
+                                  <p className="text-xs font-bold text-emerald-600">Split automático liquidado</p>
+                                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                                    R$ {splitPaid.toFixed(2)} retido de R$ {entry.appSales.toFixed(2)} em vendas PIX
+                                  </p>
+                                </div>
                               </div>
-                            </div>
-                          )}
-
-                          {/* Physical sales: pending commission */}
-                          {dbComissao > 0 ? (
-                            <div className="bg-amber-500/5 border border-amber-500/15 rounded-xl p-3 flex items-start gap-2.5">
-                              <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
-                              <div className="flex-1">
-                                <p className="text-xs font-bold text-amber-600">Comissão pendente (vendas físicas)</p>
-                                <p className="text-lg font-black text-amber-500 mt-1">R$ {dbComissao.toFixed(2)}</p>
-                                <p className="text-[10px] text-muted-foreground mt-0.5">
-                                  {Math.round(getStoreRate(entry.storeId) * 100)}% sobre vendas em dinheiro/cartão que o lojista recebeu diretamente
-                                </p>
+                            )}
+                            {dbComissao > 0 ? (
+                              <div className="bg-amber-500/5 border border-amber-500/15 rounded-xl p-3 flex items-start gap-2.5">
+                                <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                                <div className="flex-1">
+                                  <p className="text-xs font-bold text-amber-600">Comissão pendente (vendas físicas)</p>
+                                  <p className="text-lg font-black text-amber-500 mt-1">R$ {dbComissao.toFixed(2)}</p>
+                                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                                    {Math.round(getStoreRate(entry.storeId) * 100)}% sobre vendas em dinheiro/cartão
+                                  </p>
+                                </div>
                               </div>
-                            </div>
-                          ) : entry.physicalSales > 0 ? (
-                            <div className="bg-emerald-500/5 border border-emerald-500/15 rounded-xl p-3 flex items-start gap-2.5">
-                              <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
-                              <div>
-                                <p className="text-xs font-bold text-emerald-600">Comissão quitada</p>
-                                <p className="text-[10px] text-muted-foreground mt-0.5">Todas as comissões deste período foram pagas</p>
+                            ) : entry.physicalSales > 0 ? (
+                              <div className="bg-emerald-500/5 border border-emerald-500/15 rounded-xl p-3 flex items-start gap-2.5">
+                                <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
+                                <div>
+                                  <p className="text-xs font-bold text-emerald-600">Comissão quitada</p>
+                                  <p className="text-[10px] text-muted-foreground mt-0.5">Todas as comissões foram pagas</p>
+                                </div>
                               </div>
-                            </div>
-                          ) : null}
-                        </div>
-
-                        {/* Commission rate editor */}
-                        <div className="bg-muted/30 rounded-xl p-3 flex items-center gap-3">
-                          <Percent className="h-4 w-4 text-primary shrink-0" />
-                          <div className="flex-1">
-                            <p className="text-[10px] text-muted-foreground font-semibold uppercase">Taxa de comissão</p>
+                            ) : null}
                           </div>
-                          <div className="flex items-center gap-1.5">
-                            <input
-                              type="number"
-                              min="0"
-                              max="100"
-                              step="1"
-                              defaultValue={Math.round(getStoreRate(entry.storeId) * 100)}
-                              className="w-16 bg-background border border-border rounded-lg px-2 py-1 text-sm font-bold text-center"
-                              onBlur={async (e) => {
-                                const newRate = Math.min(100, Math.max(0, Number(e.target.value)));
-                                if (newRate === Math.round(getStoreRate(entry.storeId) * 100)) return;
-                                const { error } = await supabase.from("stores").update({ commission_rate: newRate } as any).eq("id", entry.storeId);
-                                if (error) { toast.error("Erro ao atualizar taxa"); return; }
-                                toast.success(`Taxa de ${entry.name} atualizada para ${newRate}%`);
-                                queryClient.invalidateQueries({ queryKey: ["admin-all-stores"] });
-                              }}
-                            />
-                            <span className="text-xs font-bold text-muted-foreground">%</span>
+                        )}
+
+                        {/* Fixed plan: show subscription info instead of commission */}
+                        {isFixedPlan && (
+                          <div className="bg-blue-500/5 border border-blue-500/15 rounded-xl p-3 flex items-start gap-2.5">
+                            <CreditCard className="h-4 w-4 text-blue-500 mt-0.5 shrink-0" />
+                            <div>
+                              <p className="text-xs font-bold text-blue-600">Plano Fixo — Sem comissão por pedido</p>
+                              <p className="text-[10px] text-muted-foreground mt-0.5">
+                                Cobrança mensal de R$ {Number(plan?.monthly_fee || 180).toFixed(2)}. Sem taxas sobre vendas.
+                              </p>
+                            </div>
                           </div>
-                        </div>
+                        )}
 
                         {pixInfo?.pixKey ? (
                           <div className="bg-muted/30 rounded-xl p-2.5 flex items-center gap-2">
@@ -1642,16 +1708,16 @@ const FinanceTab = ({
                           </div>
                         )}
 
-                        {/* Actions */}
+                        {/* Actions — hide commission buttons for fixed plan */}
                         <div className="grid grid-cols-2 gap-2">
-                          {dbComissao > 0 && (
+                          {!isFixedPlan && dbComissao > 0 && (
                             <button onClick={() => handleChargeCommission(entry)} disabled={chargingStore === entry.storeId}
                               className="flex items-center justify-center gap-1.5 bg-primary hover:bg-primary/90 disabled:opacity-30 text-primary-foreground py-2.5 rounded-xl text-xs font-bold transition-all">
                               {chargingStore === entry.storeId ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <QrCode className="h-3.5 w-3.5" />}
                               Cobrar PIX
                             </button>
                           )}
-                          {dbComissao > 0 && (
+                          {!isFixedPlan && dbComissao > 0 && (
                             <button onClick={() => markAsPaid(entry.storeId, entry.name)}
                               className="flex items-center justify-center gap-1.5 bg-muted hover:bg-muted/80 text-foreground py-2.5 rounded-xl text-xs font-bold transition-all">
                               <CheckCircle2 className="h-3.5 w-3.5" /> Marcar Pago
