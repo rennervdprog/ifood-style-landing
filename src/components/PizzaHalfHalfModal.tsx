@@ -389,17 +389,27 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
       {/* Fixed bottom bar - above BottomNav */}
       <div className="fixed bottom-16 left-0 right-0 z-30 bg-background border-t px-4 py-3">
         {step < 3 ? (
-          <button
-            onClick={handleNext}
-            disabled={!canAdvance()}
-            className={`w-full py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all ${
-              canAdvance()
-                ? "bg-primary text-primary-foreground shadow-lg active:scale-[0.98]"
-                : "bg-muted text-muted-foreground cursor-not-allowed"
-            }`}
-          >
-            Próximo →
-          </button>
+          <div className="flex items-center gap-3">
+            {step > 1 && (
+              <button
+                onClick={handleBack}
+                className="py-4 px-5 rounded-xl font-bold text-base bg-muted text-foreground active:scale-[0.98] transition-all"
+              >
+                ← Anterior
+              </button>
+            )}
+            <button
+              onClick={handleNext}
+              disabled={!canAdvance()}
+              className={`flex-1 py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all ${
+                canAdvance()
+                  ? "bg-primary text-primary-foreground shadow-lg active:scale-[0.98]"
+                  : "bg-muted text-muted-foreground cursor-not-allowed"
+              }`}
+            >
+              Próximo →
+            </button>
+          </div>
         ) : (
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 bg-muted rounded-xl px-3 py-2">
