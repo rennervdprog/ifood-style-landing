@@ -1,13 +1,15 @@
 /**
- * Dual notification system: WhatsApp + Push for order status changes.
+ * Dual notification system: WhatsApp + Push + Z-API for order status changes.
  * Used by AdminDashboard (lojista) when updating order statuses.
  */
 import { openWhatsApp } from "@/lib/whatsapp";
 import { sendPushNotification } from "@/lib/firebase";
+import { supabase } from "@/integrations/supabase/client";
 
 interface OrderNotifyParams {
   orderId: string;
   storeName: string;
+  storeId: string;
   clientId: string;
   clientPhone: string;
   clientName: string;
@@ -76,14 +78,35 @@ const STATUS_MESSAGES: Record<string, {
 /** Statuses that should open WhatsApp (manual send by lojista) */
 const WHATSAPP_STATUSES = new Set(["preparando", "saiu_entrega"]);
 
+/** Statuses that trigger Z-API automatic messages */
+const ZAPI_STATUSES = new Set(["preparando", "pronto_para_entrega", "saiu_entrega", "em_transito", "entregue", "finalizado", "cancelado"]);
+
+/**
+ * Send Z-API WhatsApp message via edge function
+ */
+const sendZapiMessage = async (storeId: string, phone: string, message: string) => {
+  try {
+    const { data, error } = await supabase.functions.invoke("zapi-send-message", {
+      body: { store_id: storeId, phone, message },
+    });
+    if (error) {
+      console.error("Z-API send error:", error);
+    }
+    return data;
+  } catch (e) {
+    console.error("Z-API invoke error:", e);
+  }
+};
+
 /**
  * Send Push notification for ALL status changes.
- * Open WhatsApp ONLY for "preparando" and "saiu_entrega".
+ * Send Z-API message if configured.
+ * Open WhatsApp ONLY for "preparando" and "saiu_entrega" (if Z-API not active).
  */
 export const notifyOrderStatusChange = (
   newStatus: string,
   params: OrderNotifyParams,
-  options?: { skipWhatsApp?: boolean; delayWhatsApp?: number }
+  options?: { skipWhatsApp?: boolean; delayWhatsApp?: number; zapiEnabled?: boolean }
 ) => {
   const config = STATUS_MESSAGES[newStatus];
   if (!config) return;
@@ -96,8 +119,15 @@ export const notifyOrderStatusChange = (
     { link: "/pedidos", order_id: params.orderId }
   ).catch(console.error);
 
-  // WhatsApp only for key moments: pedido aceito + saiu entrega
+  // Z-API automatic WhatsApp (if enabled and phone available)
+  if (options?.zapiEnabled && params.clientPhone && ZAPI_STATUSES.has(newStatus)) {
+    const msg = config.whatsApp(params);
+    sendZapiMessage(params.storeId, params.clientPhone, msg);
+  }
+
+  // Manual WhatsApp only if Z-API is NOT enabled
   if (
+    !options?.zapiEnabled &&
     params.clientPhone &&
     !options?.skipWhatsApp &&
     WHATSAPP_STATUSES.has(newStatus)
