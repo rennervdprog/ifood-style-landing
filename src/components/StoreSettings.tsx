@@ -188,10 +188,7 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
           ...(storeSettings || {}),
           pizza_half_enabled: pizzaHalfEnabled,
           pizza_price_mode: pizzaPriceMode,
-          zapi_enabled: zapiEnabled,
-          zapi_instance_id: zapiInstanceId.trim() || null,
-          zapi_token: zapiToken.trim() || null,
-          zapi_client_token: zapiClientToken.trim() || null,
+          zapi_enabled: zapiEnabled, // keep a flag here for quick checks (no secrets)
         },
         delivery_mode: deliveryMode,
         own_delivery_fee: parseFloat(ownDeliveryFee) || 0,
@@ -210,6 +207,24 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
       toast.error("Erro ao salvar dados da loja.");
       setSaving(false);
       return;
+    }
+
+    // Save Z-API secrets to store_secrets table (secure, RLS-protected)
+    if (zapiEnabled || zapiInstanceId || zapiToken || zapiClientToken) {
+      const { error: secretsError } = await supabase
+        .from("store_secrets")
+        .upsert({
+          store_id: storeId,
+          zapi_enabled: zapiEnabled,
+          zapi_instance_id: zapiInstanceId.trim() || null,
+          zapi_token: zapiToken.trim() || null,
+          zapi_client_token: zapiClientToken.trim() || null,
+        } as any, { onConflict: "store_id" });
+
+      if (secretsError) {
+        console.error("Error saving Z-API secrets:", secretsError);
+        toast.error("Erro ao salvar credenciais Z-API.");
+      }
     }
 
     // Update whatsapp + pix on profile
