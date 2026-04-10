@@ -43,7 +43,7 @@ const Navbar = ({ onNavigate, isLoggedIn }: { onNavigate: (path: string) => void
     { label: "Vantagens", href: "#vantagens" },
     { label: "Como funciona", href: "#como-funciona" },
     { label: "Planos", href: "#planos" },
-    { label: "Motoboys", href: "#motoboys" },
+    // { label: "Motoboys", href: "#motoboys" },
   ];
 
   const scrollTo = (id: string) => {
@@ -141,7 +141,7 @@ const StoreDirectory = () => {
     if (metaDesc) {
       metaDesc.setAttribute("content",
         "Peça comida dos melhores restaurantes de Itatinga/SP. " +
-        "Entrega rápida com motoboys da plataforma. " +
+        "Entrega rápida direto do restaurante. " +
         "Cadastre sua loja grátis — sem mensalidade."
       );
     }
@@ -219,7 +219,7 @@ const StoreDirectory = () => {
   const testimonials = [
     { name: "Lojista", business: "Restaurante parceiro", role: "lojista", stars: 5, text: "Antes eu perdia pedidos no WhatsApp. Agora recebo tudo organizado e consigo focar na cozinha." },
     { name: "Lojista", business: "Doceria parceira", role: "lojista", stars: 5, text: "O cardápio digital ficou lindo e profissional. Meus clientes adoram pedir pelo link." },
-    { name: "Motoboy", business: "Entregador parceiro", role: "motoboy", stars: 5, text: "Escolho meus horários, ganho por entrega e o pagamento é transparente." },
+    { name: "Cliente", business: "Cliente parceiro", role: "cliente", stars: 5, text: "Pedir ficou muito fácil, o cardápio é bonito e a entrega chega rápido." },
   ];
 
   const faq = [
@@ -241,7 +241,7 @@ const StoreDirectory = () => {
     },
     {
       q: "Funciona na minha cidade?",
-      a: "Sim, em todo o Brasil. Fora de Itatinga/SP, você usa seu próprio entregador. Em Itatinga, temos motoboys da plataforma."
+      a: "Sim, em todo o Brasil! Use seu próprio entregador e tenha seu cardápio digital profissional."
     },
     {
       q: "O que vem incluso nos dois planos?",
@@ -272,7 +272,7 @@ const StoreDirectory = () => {
           {/* Static pill */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold mb-10" style={{ background: "rgba(255,107,0,0.15)", color: THEME.primary, border: `1px solid rgba(255,107,0,0.2)` }}>
             <MapPin className="h-3.5 w-3.5" />
-            Motoboys inclusos em Itatinga/SP
+            Cardápio digital para todo o Brasil
           </div>
 
           <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[1.05] text-white">
@@ -386,7 +386,7 @@ const StoreDirectory = () => {
 
         {/* Nota Itatinga vs Brasil — compacta */}
         <div className="max-w-3xl mx-auto mt-12 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-8 text-sm" style={{ background: THEME.primaryLight, border: `1px solid rgba(255,107,0,0.15)` }}>
-          <span style={{ color: THEME.muted }}><MapPin className="h-3.5 w-3.5 inline mr-1" style={{ color: THEME.primary }} /><strong style={{ color: THEME.dark }}>Itatinga/SP</strong> — motoboy da plataforma incluído</span>
+          <span style={{ color: THEME.muted }}><MapPin className="h-3.5 w-3.5 inline mr-1" style={{ color: THEME.primary }} /><strong style={{ color: THEME.dark }}>Itatinga/SP</strong> — entrega disponível na região</span>
           <span style={{ color: THEME.muted }}><MapPin className="h-3.5 w-3.5 inline mr-1" style={{ color: THEME.primary }} /><strong style={{ color: THEME.dark }}>Brasil</strong> — use seu próprio entregador</span>
         </div>
 
@@ -445,7 +445,7 @@ const StoreDirectory = () => {
                   "Horários flexíveis",
                   "Chatbot WhatsApp automático (Z-API)",
                   "R$2/entrega (qualquer pagamento)**",
-                  "Motoboy próprio ou da plataforma***",
+                  "Entregador próprio",
                 ].map((f) => (
                   <li key={f} className="flex items-center gap-2.5 text-xs" style={{ color: THEME.dark }}>
                     <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0" style={{ color: THEME.green }} />
@@ -487,7 +487,7 @@ const StoreDirectory = () => {
                   "Chatbot WhatsApp automático (Z-API)",
                   "Sem taxa fixa adicional por pedido",
                   "Ideal para quem está começando",
-                  "Motoboy próprio ou da plataforma*",
+                  "Entregador próprio",
                 ].map((f) => (
                   <li key={f} className="flex items-center gap-2.5 text-xs" style={{ color: THEME.dark }}>
                     <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0" style={{ color: THEME.green }} />
@@ -508,7 +508,7 @@ const StoreDirectory = () => {
         <div className="text-center text-xs mt-6 space-y-1" style={{ color: THEME.muted }}>
           <p>* R$1 por pedido PIX (dinheiro/cartão não tem essa taxa).</p>
           <p>** R$2 por entrega, independente da forma de pagamento. Acumulado no painel para repasse.</p>
-          <p>*** Motoboys da plataforma disponíveis em Itatinga/SP. Demais cidades: use seu próprio entregador.</p>
+          {/* <p>*** Motoboys da plataforma disponíveis em Itatinga/SP. Demais cidades: use seu próprio entregador.</p> */}
           <p>**** Chatbot WhatsApp via Z-API — a conta Z-API deve ser criada e gerenciada pelo próprio lojista fora da plataforma.</p>
         </div>
 
