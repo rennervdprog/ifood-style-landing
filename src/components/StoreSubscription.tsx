@@ -244,6 +244,24 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
         </div>
 
         <CardContent className="p-6 space-y-5">
+          {/* Itatinga Fixed Plan Info Banner */}
+          {plan.isItatingaFixed && (
+            <div className="flex items-start gap-3 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+              <div className="h-10 w-10 rounded-xl bg-blue-500/20 flex items-center justify-center shrink-0">
+                <Zap className="h-5 w-5 text-blue-500" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-blue-700 dark:text-blue-400">
+                  Plano Especial Itatinga
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  PIX integrado + Motoboy da plataforma inclusos. Taxa operacional de R$ 1 por pedido PIX. 
+                  Split de entrega: R$ 4 motoboy + R$ 2 plataforma.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Price Grid */}
           <div className="grid grid-cols-3 gap-3">
             <div className="bg-muted/40 rounded-xl p-4 text-center border border-border/50">
@@ -256,9 +274,11 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
             <div className="bg-muted/40 rounded-xl p-4 text-center border border-border/50">
               <TrendingUp className="h-4 w-4 mx-auto mb-2 text-muted-foreground" />
               <p className="text-2xl font-bold text-foreground">
-                {plan.commissionRate > 0 ? `${plan.commissionRate}%` : "—"}
+                {plan.isItatingaFixed ? "R$1" : plan.commissionRate > 0 ? `${plan.commissionRate}%` : "—"}
               </p>
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mt-1">Taxa/Pedido</p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mt-1">
+                {plan.isItatingaFixed ? "Taxa/PIX" : "Taxa/Pedido"}
+              </p>
             </div>
             <div className="bg-muted/40 rounded-xl p-4 text-center border border-border/50">
               <Ticket className="h-4 w-4 mx-auto mb-2 text-muted-foreground" />
