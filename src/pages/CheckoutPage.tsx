@@ -288,14 +288,14 @@ const CheckoutPage = () => {
       if (paymentMethod === "pix") {
         clearCart();
         toast.success("Pedido criado! Acesse 'Meus Pedidos' para pagar com PIX.", { duration: 5000 });
-        navigate("/pedidos");
+        navigate("/pedidos?new_order=1");
         return;
       }
 
       clearCart();
       confetti({ particleCount: 120, spread: 80, origin: { y: 0.7 } });
-      toast.success("Pedido enviado com sucesso! Acompanhe o status agora.");
-      navigate("/pedidos", { replace: true });
+      toast.success("Pedido enviado com sucesso! Acompanhe pelo chat.");
+      navigate("/pedidos?new_order=1", { replace: true });
     } catch (err: any) {
       toast.error(err.message || "Erro ao enviar pedido.");
     } finally {
