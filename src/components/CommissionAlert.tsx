@@ -39,6 +39,19 @@ const CommissionAlert = ({ storeId, storeName, onGoToFinance }: CommissionAlertP
     refetchInterval: 60000,
   });
 
+  const { data: minPayoutSetting } = useQuery({
+    queryKey: ["min-payout-amount"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("admin_settings")
+        .select("value")
+        .eq("key", "min_payout_amount")
+        .maybeSingle();
+      return Number(data?.value || 100);
+    },
+    staleTime: 1000 * 60 * 10,
+  });
+
   // Check store status to see if blocked
   const { data: storeData } = useQuery({
     queryKey: ["store-status-alert", storeId],
