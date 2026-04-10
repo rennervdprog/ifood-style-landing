@@ -193,6 +193,7 @@ const StoreDirectory = () => {
     { icon: CreditCard, title: "Dinheiro, Cartão & PIX", desc: "Aceite todos os meios de pagamento. PIX integrado em todos os planos*" },
     { icon: ShieldCheck, title: "Entrega Segura", desc: "Código de coleta e PIN para cada entrega — segurança total" },
     { icon: Award, title: "Programa de Fidelidade", desc: "Clientes acumulam pontos e trocam por descontos. Configure no painel" },
+    { icon: MessageSquare, title: "Chatbot WhatsApp (Z-API)", desc: "Notificações automáticas no WhatsApp do cliente: pedido aceito, saiu para entrega, entregue e mais" },
     { icon: Globe, title: "Qualquer Cidade do Brasil", desc: "Use como cardápio digital com entregador próprio em qualquer lugar" },
   ];
 
@@ -429,6 +430,7 @@ const StoreDirectory = () => {
                   "Cupons ilimitados",
                   "Banners promocionais",
                   "Horários flexíveis",
+                  "Chatbot WhatsApp automático (Z-API)",
                   "R$2/entrega (qualquer pagamento)**",
                   "Motoboy próprio ou da plataforma***",
                 ].map((f) => (
@@ -469,6 +471,7 @@ const StoreDirectory = () => {
                 {[
                   "Tudo do Plano Essencial",
                   "PIX integrado (taxa inclusa nos 2,5%)",
+                  "Chatbot WhatsApp automático (Z-API)",
                   "Sem taxa fixa adicional por pedido",
                   "Ideal para quem está começando",
                   "Motoboy próprio ou da plataforma*",
