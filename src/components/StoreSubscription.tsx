@@ -74,6 +74,9 @@ const planOptions: { type: StorePlanType; label: string; fee: number; rate: numb
   },
 ];
 
+// Itatinga-specific plan highlights
+const itatingaFixedHighlights = ["PIX integrado", "Motoboy plataforma", "R$1/pedido PIX", "Cupons ilimitados"];
+
 const featureCategories = [
   {
     title: "Pagamentos",
