@@ -516,15 +516,17 @@ const AdminDashboard = () => {
       setCancelConfirm(null);
 
       const clientPhone = getClientWhatsApp(order.client_id);
+      const cancelSettings = (store?.settings || {}) as Record<string, any>;
       notifyOrderStatusChange("cancelado", {
         orderId: order.id,
         storeName: store?.name || "Loja",
+        storeId: store?.id || "",
         clientId: order.client_id,
         clientPhone,
         clientName: getClientName(order.client_id),
         totalPrice: Number(order.total_price),
         paymentMethod: order.payment_method,
-      });
+      }, { zapiEnabled: !!cancelSettings.zapi_enabled });
 
       if (isPix) {
         toast.success("Pedido cancelado! Reembolso PIX pendente.", { duration: 8000, description: `R$ ${Number(order.total_price).toFixed(2)} — envie o PIX de volta ao cliente.` });
