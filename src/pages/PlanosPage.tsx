@@ -31,7 +31,7 @@ const plans = [
     commission: "2,5% por pedido",
     features: [
       "Tudo do plano Comissão",
-      "Comissão reduzida para 10%",
+      "Comissão reduzida para 2,5%",
       "Suporte prioritário",
       "Relatórios avançados",
       "Banners ilimitados",
@@ -50,7 +50,8 @@ const plans = [
     features: [
       "Tudo do plano Híbrido",
       "Zero comissão por pedido",
-      "Taxa PIX fixa de R$1",
+      "Taxa PIX fixa de R$1 por transação",
+      "Taxa de entrega: R$2 por pedido (plataforma)",
       "Suporte VIP prioritário",
       "Relatórios premium",
       "Prioridade em novidades",
