@@ -305,7 +305,7 @@ const SuperAdminDashboard = () => {
       }
     });
     return Array.from(map.values()).filter(e => e.orders > 0).sort((a, b) => b.totalSold - a.totalSold);
-  }, [orders, stores]);
+  }, [orders, stores, parentStorePlans]);
 
   const hourlyData = useMemo(() => {
     if (!orders) return [];
