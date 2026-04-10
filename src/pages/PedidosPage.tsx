@@ -8,6 +8,7 @@ import { ClipboardList, Clock, ChefHat, Truck, CheckCircle2, Lock, Copy, QrCode,
 import { toast } from "sonner";
 import { notifyOrderPreparing, notifyOrderOnTheWay, notifyOrderDelivered } from "@/lib/notifications";
 import OrderRating from "@/components/OrderRating";
+import OrderChat from "@/components/OrderChat";
 import DeliveryTimeEstimate from "@/components/DeliveryTimeEstimate";
 
 import {
