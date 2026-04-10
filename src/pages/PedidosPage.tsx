@@ -573,6 +573,18 @@ const PedidosPage = () => {
                       </div>
                     ))}
                   </div>
+                  {/* Chat for active orders */}
+                  {!["aguardando_pagamento", "cancelado"].includes(order.status) && (
+                    <div className="pt-1">
+                      <OrderChat
+                        orderId={order.id}
+                        storeName={ownStore.name}
+                        storeOwnerId={user?.id}
+                        clientId={order.client_id}
+                        driverId={order.driver_id}
+                      />
+                    </div>
+                  )}
                   <div className="flex items-center justify-between mt-3 pt-2 border-t border-border">
                     <span className="text-xs text-muted-foreground">
                       {new Date(order.created_at).toLocaleDateString("pt-BR")} {new Date(order.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
