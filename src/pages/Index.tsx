@@ -176,32 +176,42 @@ const Index = () => {
       <AppHeader />
 
       {/* ══════ HERO ══════ */}
-      <section className="relative py-12 md:py-20 px-4 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/20 pointer-events-none" />
-        <div className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
+      <section className="relative py-14 md:py-24 px-4 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/20 pointer-events-none" />
+        <div className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-primary/8 blur-3xl pointer-events-none" />
         <div className="absolute -bottom-40 -left-40 w-[400px] h-[400px] rounded-full bg-accent/30 blur-3xl pointer-events-none" />
 
         <div className="relative mx-auto max-w-5xl text-center">
           <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-semibold text-primary mb-6 animate-fade-in">
             <Zap className="h-4 w-4" />
-            Peça comida de verdade, sem complicação
+            Cardápio digital para todo o Brasil
           </div>
 
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-foreground leading-[1.1] mb-5 animate-fade-in">
-            Seus restaurantes favoritos{" "}
+            Delivery digital{" "}
             <span className="relative inline-block">
-              <span className="relative z-10 text-primary">na palma da mão</span>
+              <span className="relative z-10 text-primary">para sua loja</span>
               <span className="absolute bottom-1 left-0 w-full h-3 bg-primary/15 -z-0 rounded" />
             </span>
           </h1>
 
           <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto mb-8 animate-fade-in leading-relaxed">
-            Cardápio digital, pagamento PIX automático e acompanhamento em tempo real.
-            <span className="block mt-1 font-semibold text-primary">Peça agora sem baixar nenhum app!</span>
+            Cardápio profissional, pedidos organizados e pagamentos automáticos — a partir de <strong className="text-foreground">R$100/mês</strong>.
+            <span className="block mt-1 font-semibold text-primary">7 dias grátis!</span>
           </p>
 
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in mb-4">
+            <Button size="lg" onClick={() => navigate("/cadastro-lojista")} className="text-base px-8 py-6 rounded-2xl shadow-lg shadow-primary/20">
+              Cadastrar minha loja — É grátis <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+            <Button size="lg" variant="outline" onClick={() => navigate("/planos")} className="text-base px-8 py-6 rounded-2xl">
+              Ver planos
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground animate-fade-in">Sem cartão de crédito • Cancele quando quiser</p>
+
           {/* Social proof micro */}
-          <div className="flex items-center justify-center gap-3 text-sm text-muted-foreground animate-fade-in mb-6">
+          <div className="flex items-center justify-center gap-3 text-sm text-muted-foreground animate-fade-in mt-6">
             <div className="flex -space-x-2">
               {[1, 2, 3, 4, 5].map((i) => (
                 <div key={i} className="w-7 h-7 rounded-full bg-primary/20 border-2 border-background flex items-center justify-center text-xs font-bold text-primary">
@@ -209,7 +219,7 @@ const Index = () => {
                 </div>
               ))}
             </div>
-            <span>+1.000 clientes satisfeitos</span>
+            <span>+50 lojas já usam o ItaSuper</span>
           </div>
         </div>
       </section>
