@@ -230,7 +230,7 @@ const SuperAdminDashboard = () => {
     const activeStatuses = ["pendente", "preparando", "pronto_para_entrega", "em_transito", "saiu_entrega"];
     const activeOrders = orders.filter(o => activeStatuses.includes(o.status)).length;
     return { totalSales, commission, activeOrders, totalOrders: orders.length };
-  }, [orders, stores]);
+  }, [orders, stores, parentStorePlans]);
 
   const storeSettlement = useMemo(() => {
     if (!financeOrders || !stores) return [];
@@ -262,7 +262,7 @@ const SuperAdminDashboard = () => {
       entry.finalBalance = subtractMoney(entry.netTransfer, entry.commissionDue);
     });
     return Array.from(map.values()).filter(e => e.orderCount > 0).sort((a, b) => b.totalSales - a.totalSales);
-  }, [financeOrders, stores, selectedStore]);
+  }, [financeOrders, stores, selectedStore, parentStorePlans]);
 
   const driverSettlement = useMemo(() => {
     if (!financeOrders || !drivers) return [];
@@ -290,7 +290,7 @@ const SuperAdminDashboard = () => {
     const grossProfit = sumMoney(storeSettlement.map((entry) => entry.commissionDue + multiplyMoney(entry.appSales, getStoreRate(entry.storeId))));
     const totalDriverFees = sumMoney(driverSettlement.map((entry) => entry.appFees));
     return { totalVolume, grossProfit, totalDriverFees };
-  }, [storeSettlement, driverSettlement, stores]);
+  }, [storeSettlement, driverSettlement, stores, parentStorePlans]);
 
   const storeConciliation = useMemo(() => {
     if (!orders || !stores) return [];
