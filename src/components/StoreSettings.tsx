@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Camera, Upload, Save, Store, Phone, Tag, MapPin, Link, Copy, Wallet, Search, Loader2, Bell, CheckCircle2, XCircle, Truck, Bike } from "lucide-react";
+import { Camera, Upload, Save, Store, Phone, Tag, MapPin, Link, Copy, Wallet, Search, Loader2, Bell, CheckCircle2, XCircle, Truck, Bike, MessageSquare, Eye, EyeOff, ExternalLink } from "lucide-react";
 import { requestPushPermissionAndRegister } from "@/lib/firebase";
 import { isGoNative, registerGoNativePlayer } from "@/lib/gonative";
 import { maskWhatsApp } from "@/lib/whatsapp";
@@ -80,6 +80,33 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
 
   const [pizzaHalfEnabled, setPizzaHalfEnabled] = useState<boolean>(storeSettings?.pizza_half_enabled || false);
   const [pizzaPriceMode, setPizzaPriceMode] = useState<PizzaPriceMode>(storeSettings?.pizza_price_mode || "maior");
+
+  // Z-API WhatsApp integration
+  const [zapiEnabled, setZapiEnabled] = useState<boolean>(false);
+  const [zapiInstanceId, setZapiInstanceId] = useState<string>("");
+  const [zapiToken, setZapiToken] = useState<string>("");
+  const [zapiClientToken, setZapiClientToken] = useState<string>("");
+  const [showZapiToken, setShowZapiToken] = useState(false);
+  const [showZapiClientToken, setShowZapiClientToken] = useState(false);
+  const [testingZapi, setTestingZapi] = useState(false);
+
+  // Load Z-API secrets from store_secrets table
+  useEffect(() => {
+    if (!storeId) return;
+    supabase
+      .from("store_secrets")
+      .select("zapi_enabled, zapi_instance_id, zapi_token, zapi_client_token")
+      .eq("store_id", storeId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setZapiEnabled(data.zapi_enabled || false);
+          setZapiInstanceId(data.zapi_instance_id || "");
+          setZapiToken(data.zapi_token || "");
+          setZapiClientToken(data.zapi_client_token || "");
+        }
+      });
+  }, [storeId]);
 
   // Load whatsapp + pix from profile
   useEffect(() => {
@@ -161,6 +188,7 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
           ...(storeSettings || {}),
           pizza_half_enabled: pizzaHalfEnabled,
           pizza_price_mode: pizzaPriceMode,
+          zapi_enabled: zapiEnabled, // keep a flag here for quick checks (no secrets)
         },
         delivery_mode: deliveryMode,
         own_delivery_fee: parseFloat(ownDeliveryFee) || 0,
@@ -179,6 +207,24 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
       toast.error("Erro ao salvar dados da loja.");
       setSaving(false);
       return;
+    }
+
+    // Save Z-API secrets to store_secrets table (secure, RLS-protected)
+    if (zapiEnabled || zapiInstanceId || zapiToken || zapiClientToken) {
+      const { error: secretsError } = await supabase
+        .from("store_secrets")
+        .upsert({
+          store_id: storeId,
+          zapi_enabled: zapiEnabled,
+          zapi_instance_id: zapiInstanceId.trim() || null,
+          zapi_token: zapiToken.trim() || null,
+          zapi_client_token: zapiClientToken.trim() || null,
+        } as any, { onConflict: "store_id" });
+
+      if (secretsError) {
+        console.error("Error saving Z-API secrets:", secretsError);
+        toast.error("Erro ao salvar credenciais Z-API.");
+      }
     }
 
     // Update whatsapp + pix on profile
@@ -714,6 +760,122 @@ const NotificationSection = () => {
           )}
         </div>
       )}
+
+      {/* Z-API WhatsApp Integration */}
+      <div className="bg-muted/50 border border-border rounded-2xl p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
+            <MessageSquare className="h-4 w-4 text-primary" />
+            Chatbot WhatsApp (Z-API)
+          </label>
+          <button
+            onClick={() => setZapiEnabled(!zapiEnabled)}
+            className={`relative w-11 h-6 rounded-full transition-colors ${zapiEnabled ? "bg-primary" : "bg-muted-foreground/30"}`}
+          >
+            <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${zapiEnabled ? "translate-x-5" : ""}`} />
+          </button>
+        </div>
+
+        <p className="text-[10px] text-muted-foreground">
+          Envie notificações automáticas via WhatsApp para seus clientes quando o status do pedido mudar.
+          Você precisa criar uma conta na{" "}
+          <a href="https://z-api.io" target="_blank" rel="noopener noreferrer" className="text-primary underline inline-flex items-center gap-0.5">
+            Z-API <ExternalLink className="h-3 w-3" />
+          </a>{" "}
+          e obter suas credenciais.
+        </p>
+
+        {zapiEnabled && (
+          <div className="space-y-3">
+            <div className="bg-primary/5 border border-primary/20 rounded-xl p-3">
+              <p className="text-xs font-bold text-primary mb-1">📋 Como configurar:</p>
+              <ol className="text-[10px] text-muted-foreground space-y-1 list-decimal list-inside">
+                <li>Acesse <a href="https://z-api.io" target="_blank" rel="noopener noreferrer" className="text-primary underline">z-api.io</a> e crie sua conta</li>
+                <li>Crie uma nova instância e conecte seu WhatsApp</li>
+                <li>Copie o <strong>Instance ID</strong>, <strong>Token</strong> e <strong>Client-Token</strong></li>
+                <li>Cole nos campos abaixo e salve</li>
+              </ol>
+            </div>
+
+            {/* Instance ID */}
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-foreground/70">Instance ID</label>
+              <input
+                type="text"
+                value={zapiInstanceId}
+                onChange={(e) => setZapiInstanceId(e.target.value.trim())}
+                placeholder="Ex: 3C2A7B..."
+                maxLength={100}
+                className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary font-mono"
+              />
+            </div>
+
+            {/* Token */}
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-foreground/70">Token</label>
+              <div className="relative">
+                <input
+                  type={showZapiToken ? "text" : "password"}
+                  value={zapiToken}
+                  onChange={(e) => setZapiToken(e.target.value.trim())}
+                  placeholder="Seu token da Z-API"
+                  maxLength={200}
+                  className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 pr-10 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary font-mono"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowZapiToken(!showZapiToken)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                >
+                  {showZapiToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Client Token */}
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-foreground/70">Client-Token</label>
+              <div className="relative">
+                <input
+                  type={showZapiClientToken ? "text" : "password"}
+                  value={zapiClientToken}
+                  onChange={(e) => setZapiClientToken(e.target.value.trim())}
+                  placeholder="Seu client-token da Z-API"
+                  maxLength={200}
+                  className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 pr-10 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary font-mono"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowZapiClientToken(!showZapiClientToken)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                >
+                  {showZapiClientToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Status indicator */}
+            {zapiInstanceId && zapiToken && zapiClientToken ? (
+              <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3">
+                <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0" />
+                <div>
+                  <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Credenciais configuradas</p>
+                  <p className="text-[10px] text-muted-foreground">Salve as configurações para ativar. Mensagens serão enviadas automaticamente.</p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 rounded-xl p-3">
+                <Bell className="h-4 w-4 text-amber-500 flex-shrink-0" />
+                <p className="text-xs text-amber-600 dark:text-amber-400">Preencha todas as credenciais para ativar.</p>
+              </div>
+            )}
+
+            <p className="text-[10px] text-muted-foreground/60">
+              💡 O cliente receberá mensagens automáticas quando o pedido for aceito, estiver pronto, sair para entrega e ser entregue.
+            </p>
+          </div>
+        )}
+      </div>
 
       {/* Notifications Section */}
       <NotificationSection />

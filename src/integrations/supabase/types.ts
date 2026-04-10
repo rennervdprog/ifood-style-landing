@@ -1458,6 +1458,51 @@ export type Database = {
           },
         ]
       }
+      store_secrets: {
+        Row: {
+          id: string
+          store_id: string
+          updated_at: string
+          zapi_client_token: string | null
+          zapi_enabled: boolean
+          zapi_instance_id: string | null
+          zapi_token: string | null
+        }
+        Insert: {
+          id?: string
+          store_id: string
+          updated_at?: string
+          zapi_client_token?: string | null
+          zapi_enabled?: boolean
+          zapi_instance_id?: string | null
+          zapi_token?: string | null
+        }
+        Update: {
+          id?: string
+          store_id?: string
+          updated_at?: string
+          zapi_client_token?: string | null
+          zapi_enabled?: boolean
+          zapi_instance_id?: string | null
+          zapi_token?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_secrets_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: true
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_secrets_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: true
+            referencedRelation: "stores_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stores: {
         Row: {
           address_cep: string | null
