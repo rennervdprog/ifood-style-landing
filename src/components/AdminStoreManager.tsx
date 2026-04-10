@@ -38,7 +38,7 @@ const AdminStoreManager = () => {
   const [bulkCreating, setBulkCreating] = useState(false);
   const [editingPlan, setEditingPlan] = useState<string | null>(null);
   const [planForm, setPlanForm] = useState<{ plan_type: PlanType; monthly_fee: number; commission_rate: number }>({
-    plan_type: "commission_only", monthly_fee: 0, commission_rate: 15,
+    plan_type: "commission_only", monthly_fee: 0, commission_rate: 5,
   });
   const [savingPlan, setSavingPlan] = useState(false);
 
@@ -78,7 +78,7 @@ const AdminStoreManager = () => {
         commission_rate: Number(existing.commission_rate),
       });
     } else {
-      setPlanForm({ plan_type: "commission_only", monthly_fee: 0, commission_rate: 15 });
+      setPlanForm({ plan_type: "commission_only", monthly_fee: 0, commission_rate: 5 });
     }
     setEditingPlan(storeId);
   };
@@ -137,7 +137,7 @@ const AdminStoreManager = () => {
   const handlePlanTypeChange = (type: PlanType) => {
     switch (type) {
       case "commission_only":
-        setPlanForm({ plan_type: type, monthly_fee: 0, commission_rate: 15 });
+        setPlanForm({ plan_type: type, monthly_fee: 0, commission_rate: 5 });
         break;
       case "fixed":
         setPlanForm({ plan_type: type, monthly_fee: 180, commission_rate: 0 });

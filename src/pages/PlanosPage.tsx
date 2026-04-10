@@ -10,7 +10,7 @@ const plans = [
     period: "mensalidade",
     highlight: false,
     description: "Comece agora sem investir nada. Pague só quando vender.",
-    commission: "15% por pedido",
+    commission: "5% por pedido",
     features: [
       "Cardápio digital ilimitado",
       "QR Code exclusivo da loja",

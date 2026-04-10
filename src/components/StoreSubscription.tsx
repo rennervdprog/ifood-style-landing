@@ -68,8 +68,8 @@ const planOptions: { type: StorePlanType; label: string; fee: number; rate: numb
     highlights: ["Entregador próprio", "Relatórios completos", "Cupons ilimitados"],
   },
   {
-    type: "commission_only", label: "Comissão", fee: 0, rate: 15,
-    desc: "Sem mensalidade • 15% por pedido",
+    type: "commission_only", label: "Comissão", fee: 0, rate: 5,
+    desc: "Sem mensalidade • 5% por pedido",
     highlights: ["Sem investimento inicial", "Todos os recursos", "Suporte completo"],
   },
 ];

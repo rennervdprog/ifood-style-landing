@@ -214,7 +214,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
     enabled: !!storeId,
   });
 
-  const commissionRate = ((storeData as any)?.commission_rate ?? 15) / 100;
+  const commissionRate = ((storeData as any)?.commission_rate ?? 5) / 100;
   const commissionPct = Math.round(commissionRate * 100);
 
   const { data: ownerProfile } = useQuery({

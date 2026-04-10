@@ -216,11 +216,11 @@ const SuperAdminDashboard = () => {
     const plan = parentStorePlans?.find((p: any) => p.store_id === storeId);
     if (plan) {
       if (plan.plan_type === "fixed") return 0;
-      return (plan.commission_rate ?? 15) / 100;
+      return (plan.commission_rate ?? 5) / 100;
     }
     // Fallback to legacy store commission_rate
     const store = stores?.find((s: any) => s.id === storeId);
-    return ((store as any)?.commission_rate ?? 15) / 100;
+    return ((store as any)?.commission_rate ?? 5) / 100;
   };
 
   const metrics = useMemo(() => {
@@ -998,7 +998,7 @@ const FinanceTab = ({
     const plan = getStorePlan(storeId);
     if (plan) return Number(plan.commission_rate) / 100;
     const store = stores?.find((s: any) => s.id === storeId);
-    return ((store as any)?.commission_rate ?? 15) / 100;
+    return ((store as any)?.commission_rate ?? 5) / 100;
   };
 
   const { data: dbGateway } = useQuery({
