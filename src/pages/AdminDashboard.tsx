@@ -603,6 +603,7 @@ const AdminDashboard = () => {
 
   // ── RENDER ──
   return (
+    <TrialExpiredGuard storePlan={storePlan} storeId={store?.id || ""}>
     <div className="min-h-screen bg-background flex native-app">
       <SimulationBanner />
 
