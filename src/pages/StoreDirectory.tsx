@@ -211,13 +211,13 @@ const StoreDirectory = () => {
   ];
 
   const faq = [
-    { q: "Quais planos estão disponíveis?", a: "Temos dois planos: o Plano Essencial por R$180/mês (sem taxa por pedido) e o Plano Crescimento por R$100/mês + 2,5% por pedido entregue. Ambos incluem cardápio digital, gestão de pedidos e painel financeiro. Os dois planos têm 7 dias grátis para testar!" },
-    { q: "Funciona fora de Itatinga/SP?", a: "Sim! Em qualquer cidade do Brasil você pode usar o ItaSuper como cardápio digital profissional com gestão de pedidos completa. Nesse caso, você utiliza seu próprio entregador. A operação com motoboys da plataforma está disponível em Itatinga/SP, com expansão para novas cidades em breve." },
-    { q: "Qual a diferença entre os planos?", a: "O Plano Essencial (R$180/mês) é ideal para quem já tem bom volume de vendas — sem taxa por pedido, até 3 cupons ativos e motoboy próprio. O Plano Crescimento (R$100/mês + 2,5%) inclui PIX integrado, programa de fidelidade, banners promocionais, agendamento, cupons ilimitados e acesso ao motoboy da plataforma (onde disponível)." },
-    { q: "Qual plano inclui pagamento por PIX?", a: "O Plano Crescimento (Híbrido) inclui pagamento por PIX integrado com split automático. No Plano Essencial (Fixo), os pagamentos são por dinheiro e cartão diretamente com o cliente." },
-    { q: "O que é o Programa de Fidelidade?", a: "Exclusivo do Plano Crescimento! Seus clientes acumulam pontos a cada compra e podem trocar por descontos. Você configura os valores no painel da loja." },
+    { q: "Quais planos estão disponíveis?", a: "Temos dois planos: o Plano Essencial por R$180/mês (com PIX integrado* e todas as ferramentas) e o Plano Crescimento por R$100/mês + 2,5% por pedido entregue. Ambos incluem cardápio digital, gestão de pedidos e painel financeiro. Os dois planos têm 7 dias grátis para testar!" },
+    { q: "Funciona fora de Itatinga/SP?", a: "Sim! Em qualquer cidade do Brasil você pode usar o ItaSuper com todas as ferramentas, incluindo PIX integrado. Nesse caso, você utiliza seu próprio entregador. A operação com motoboys da plataforma está disponível em Itatinga/SP, com expansão para novas cidades em breve." },
+    { q: "Qual a diferença entre os planos?", a: "O Plano Essencial (R$180/mês) é ideal para quem já tem bom volume de vendas — sem taxa percentual por pedido, PIX integrado com taxa fixa de R$1 + R$2 por entrega, e todas as ferramentas. O Plano Crescimento (R$100/mês + 2,5%) inclui PIX sem taxa fixa adicional, com split automático." },
+    { q: "Qual plano inclui pagamento por PIX?", a: "Os dois planos incluem PIX integrado! No Plano Essencial, há uma taxa operacional de R$1 por pedido PIX + R$2 de plataforma por entrega. No Plano Crescimento, o PIX é incluso na taxa de 2,5%." },
+    { q: "O que é o Programa de Fidelidade?", a: "Disponível nos dois planos! Seus clientes acumulam pontos a cada compra e podem trocar por descontos. Você configura os valores no painel da loja." },
     { q: "Posso trocar de plano depois?", a: "Sim! Você pode solicitar upgrade ou downgrade a qualquer momento pelo painel da loja. O valor pago é calculado proporcionalmente (pro-rata)." },
-    { q: "Como recebo meu dinheiro?", a: "No Plano Crescimento, pagamentos PIX vão direto para sua conta via split automático. No Plano Essencial, você recebe diretamente do cliente (dinheiro/cartão). A mensalidade é cobrada separadamente." },
+    { q: "Como recebo meu dinheiro?", a: "Nos dois planos, pagamentos PIX vão para sua conta. No Plano Essencial, há uma taxa fixa por pedido. No Plano Crescimento, a taxa é percentual (2,5%). Pagamentos em dinheiro/cartão você recebe diretamente do cliente." },
     { q: "Quanto tempo para começar a vender?", a: "Após cadastro e aprovação (geralmente em até 24h), você monta seu cardápio e começa a receber pedidos imediatamente. Você tem 7 dias grátis para configurar tudo!" },
     { q: "Posso cancelar a qualquer momento?", a: "Sim! Sem contrato, sem multa, sem fidelidade. Se não estiver satisfeito, pode sair quando quiser." },
   ];
@@ -396,11 +396,13 @@ const StoreDirectory = () => {
               {[
                   "Cardápio digital profissional",
                   "Gestão de pedidos em tempo real",
+                  "PIX integrado*",
                   "Pagamento: dinheiro e cartão",
-                  "Painel financeiro básico",
+                  "Painel financeiro completo",
+                  "Programa de Fidelidade",
                   "Horários flexíveis",
-                  "Até 3 cupons ativos",
-                  "Apenas motoboy próprio",
+                  "Cupons ilimitados",
+                  "Motoboy próprio ou da plataforma**",
                 ].map((f) => (
                   <li key={f} className="flex items-center gap-2.5 text-xs" style={{ color: THEME.dark }}>
                     <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0" style={{ color: THEME.green }} />
@@ -463,9 +465,10 @@ const StoreDirectory = () => {
           </div>
         </div>
 
-        <p className="text-center text-xs mt-6" style={{ color: THEME.muted }}>
-          * Motoboys da plataforma disponíveis apenas no Plano Crescimento e em cidades com cobertura (Itatinga/SP). Plano Essencial: apenas motoboy próprio.
-        </p>
+        <div className="text-center text-xs mt-6 space-y-1" style={{ color: THEME.muted }}>
+          <p>* PIX no Plano Essencial: taxa operacional de R$1 por pedido + R$2 de taxa de plataforma por entrega.</p>
+          <p>** Motoboys da plataforma disponíveis em cidades com cobertura (Itatinga/SP). Demais cidades: motoboy próprio.</p>
+        </div>
 
         {/* Plan comparison highlights */}
         <div className="mt-16 max-w-3xl mx-auto grid sm:grid-cols-3 gap-8">

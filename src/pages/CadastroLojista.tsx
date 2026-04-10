@@ -339,11 +339,7 @@ const CadastroLojista = () => {
                 {selectedPlan && (
                   <div className="rounded-xl bg-muted/50 p-3 text-xs text-muted-foreground">
                     {selectedPlan === "fixed" ? (
-                      isPlatformCity ? (
-                        <p><strong className="text-foreground">Essencial Itatinga:</strong> Mensalidade fixa de R$180. PIX integrado + Motoboy da plataforma inclusos. Taxa operacional de R$1 por pedido PIX. Split de entrega: R$4 motoboy + R$2 plataforma.</p>
-                      ) : (
-                        <p><strong className="text-foreground">Essencial:</strong> Mensalidade fixa de R$180. Sem taxa por pedido. Pagamentos por dinheiro e cartão. Perfeito para quem já tem bom volume.</p>
-                      )
+                      <p><strong className="text-foreground">Essencial:</strong> Mensalidade fixa de R$180. PIX integrado com taxa operacional de R$1 por pedido + R$2 de plataforma por entrega. Todas as ferramentas inclusas. Motoboy próprio ou da plataforma (onde disponível).</p>
                     ) : (
                       <p><strong className="text-foreground">Crescimento:</strong> Mensalidade de R$100 + 2,5% por pedido. PIX integrado com split automático e painel financeiro completo com CRM.</p>
                     )}
