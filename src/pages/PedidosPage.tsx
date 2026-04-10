@@ -127,6 +127,9 @@ const PedidosPage = () => {
   });
 
   // Handle payment return redirect
+  const [showNewOrderNotifPrompt, setShowNewOrderNotifPrompt] = useState(false);
+  const [isNewOrder, setIsNewOrder] = useState(false);
+
   useEffect(() => {
     const paymentStatus = searchParams.get("payment");
     if (paymentStatus) {
@@ -138,6 +141,17 @@ const PedidosPage = () => {
         toast("⏳ Pagamento pendente. Aguardando confirmação...");
       }
       setSearchParams({}, { replace: true });
+    }
+
+    // Show notification prompt + auto-open chat after new order
+    if (searchParams.get("new_order") === "1") {
+      setIsNewOrder(true);
+      setSearchParams({}, { replace: true });
+      
+      // Prompt notifications if not granted
+      if ("Notification" in window && Notification.permission === "default") {
+        setTimeout(() => setShowNewOrderNotifPrompt(true), 1500);
+      }
     }
   }, [searchParams, setSearchParams]);
 
