@@ -462,8 +462,8 @@ const StoreDirectory = () => {
         </div>
 
         <div className="text-center text-xs mt-6 space-y-1" style={{ color: THEME.muted }}>
-          <p>* PIX no Plano Essencial: taxa operacional de R$1 por pedido + R$2 de taxa de plataforma por entrega.</p>
-          <p>** Motoboys da plataforma disponíveis em cidades com cobertura (Itatinga/SP). Demais cidades: motoboy próprio.</p>
+          <p>* PIX no Plano Essencial: taxa operacional de R$1 por pedido + R$2 de plataforma por entrega. No Plano Crescimento, incluso nos 2,5%.</p>
+          <p>** Motoboys da plataforma disponíveis em Itatinga/SP. Demais cidades: use seu próprio entregador.</p>
         </div>
 
         {/* Plan comparison highlights */}
