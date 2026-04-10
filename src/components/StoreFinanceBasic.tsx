@@ -37,7 +37,53 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
 
 const StoreFinanceBasic = ({ storeId, storeName }: StoreFinanceBasicProps) => {
   const [dateFilter, setDateFilter] = useState<DateFilter>("week");
+  const [isGeneratingPix, setIsGeneratingPix] = useState(false);
+  const [pixData, setPixData] = useState<{ qr_code: string; qr_code_base64: string; amount: number } | null>(null);
   const storePlan = useStorePlan(storeId);
+  const queryClient = useQueryClient();
+
+  // Fetch store balance (repasse_pendente)
+  const { data: storeBalance } = useQuery({
+    queryKey: ["store-balance", storeId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("store_balances")
+        .select("repasse_pendente")
+        .eq("store_id", storeId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!storeId,
+    refetchInterval: 30000,
+  });
+
+  const pendingFee = Number(storeBalance?.repasse_pendente || 0);
+
+  const handlePayPlatformFee = async () => {
+    if (pendingFee <= 0) return;
+    setIsGeneratingPix(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("store-platform-fee-pix", {
+        body: { store_id: storeId, amount: pendingFee },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setPixData({ qr_code: data.qr_code, qr_code_base64: data.qr_code_base64, amount: data.amount });
+      toast.success("PIX gerado! Escaneie o QR Code para pagar.");
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao gerar PIX.");
+    } finally {
+      setIsGeneratingPix(false);
+    }
+  };
+
+  const copyPixCode = () => {
+    if (pixData?.qr_code) {
+      navigator.clipboard.writeText(pixData.qr_code);
+      toast.success("Código PIX copiado!");
+    }
+  };
 
   const now = new Date();
   const dateRange = useMemo(() => {
