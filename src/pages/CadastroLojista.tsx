@@ -35,7 +35,7 @@ const schema = z.object({
   storeCategory: z.enum(storeCategories as unknown as [string, ...string[]], { errorMap: () => ({ message: "Selecione uma categoria" }) }),
   cep: z.string().min(8, "CEP inválido"),
   city: z.string().min(1, "Busque o CEP para identificar a cidade"),
-  selectedPlan: z.enum(["fixed", "hybrid"], { errorMap: () => ({ message: "Selecione um plano" }) }),
+  selectedPlan: z.enum(["fixed", "hybrid", "commission_only"], { errorMap: () => ({ message: "Selecione um plano" }) }),
 }).refine((data) => data.email === data.confirmEmail, {
   message: "Os e-mails não coincidem",
   path: ["confirmEmail"],
@@ -70,7 +70,7 @@ const CadastroLojista = () => {
   const [loadingCep, setLoadingCep] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [selectedPlan, setSelectedPlan] = useState<"fixed" | "hybrid" | "">("");
+  const [selectedPlan, setSelectedPlan] = useState<"fixed" | "hybrid" | "commission_only" | "">("");
 
   const handleCepChange = (value: string) => {
     const formatted = formatCep(value);
@@ -336,12 +336,44 @@ const CadastroLojista = () => {
                   </div>
                 </button>
 
+                {/* Plano Comissão */}
+                <button
+                  type="button"
+                  onClick={() => setSelectedPlan("commission_only")}
+                  className={`w-full text-left rounded-2xl border-2 p-4 transition-all ${
+                    selectedPlan === "commission_only" ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/40"
+                  }`}
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-10 h-10 rounded-xl bg-muted/50 flex items-center justify-center">
+                      <CreditCard className="h-5 w-5 text-foreground" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-sm text-foreground">Plano Comissão</h3>
+                      <p className="text-xs text-muted-foreground">Zero mensalidade, pague só quando vender</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-lg font-black text-foreground">R$0</span>
+                      <span className="text-xs text-muted-foreground">/mês</span>
+                    </div>
+                  </div>
+                  <p className="text-[10px] font-bold text-emerald-500 mb-1">🎁 7 dias grátis para testar</p>
+                  <p className="text-[10px] font-semibold text-primary mb-2">+ 5% por pedido entregue</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {["Sem mensalidade", "Todos os recursos", "PIX integrado"].map(tag => (
+                      <span key={tag} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{tag}</span>
+                    ))}
+                  </div>
+                </button>
+
                 {selectedPlan && (
                   <div className="rounded-xl bg-muted/50 p-3 text-xs text-muted-foreground">
                     {selectedPlan === "fixed" ? (
                       <p><strong className="text-foreground">Essencial:</strong> R$180/mês. R$1 por pedido PIX (dinheiro/cartão não paga). R$2 por entrega (qualquer pagamento). Valores acumulam no painel para repasse. Todas as ferramentas inclusas.</p>
-                    ) : (
+                    ) : selectedPlan === "hybrid" ? (
                       <p><strong className="text-foreground">Crescimento:</strong> Mensalidade de R$100 + 2,5% por pedido. PIX integrado com split automático e painel financeiro completo com CRM.</p>
+                    ) : (
+                      <p><strong className="text-foreground">Comissão:</strong> R$0/mês + 5% por pedido. Sem custo fixo, ideal para quem está começando. Todas as ferramentas inclusas.</p>
                     )}
                   </div>
                 )}
