@@ -146,7 +146,11 @@ const StoreDirectory = () => {
         if (adminRole) { setPartnerRole(null); setRoleChecked(true); return; }
         const { data: profile } = await supabase.from("profiles").select("role").eq("user_id", user.id).maybeSingle();
         if (cancelled) return;
-        if (profile && (profile.role === "lojista" || profile.role === "motoboy")) {
+        if (profile?.role === "lojista") {
+          navigate("/admin", { replace: true });
+          return;
+        }
+        if (profile?.role === "motoboy") {
           setPartnerRole(profile.role);
         } else {
           setPartnerRole(null);
