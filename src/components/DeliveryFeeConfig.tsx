@@ -169,6 +169,20 @@ const DeliveryFeeConfigPanel = () => {
           </p>
         </div>
 
+        {/* Split Info */}
+        <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-3 space-y-1">
+          <p className="text-xs font-bold text-blue-600 dark:text-blue-400">🏍️ Split de Entrega (Plano Fixo Itatinga)</p>
+          <p className="text-xs text-muted-foreground">
+            Motoboy plataforma: <span className="text-foreground font-bold">R$ 4,00</span> por corrida
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Plataforma: <span className="text-foreground font-bold">R$ 2,00</span> por corrida
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Motoboy próprio: taxa do lojista + <span className="text-foreground font-bold">R$ 2,00</span> plataforma
+          </p>
+        </div>
+
         <button
           onClick={handleSave}
           disabled={saving}

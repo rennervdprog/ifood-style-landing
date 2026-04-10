@@ -285,7 +285,9 @@ const CadastroLojista = () => {
                     </div>
                     <div className="flex-1">
                       <h3 className="font-bold text-sm text-foreground">Plano Essencial</h3>
-                      <p className="text-xs text-muted-foreground">Ideal para alto volume</p>
+                      <p className="text-xs text-muted-foreground">
+                        {isPlatformCity ? "PIX + Motoboy inclusos" : "Ideal para alto volume"}
+                      </p>
                     </div>
                     <div className="text-right">
                       <span className="text-lg font-black text-foreground">R$180</span>
@@ -294,7 +296,10 @@ const CadastroLojista = () => {
                   </div>
                   <p className="text-[10px] font-bold text-emerald-500 mb-1">🎁 7 dias grátis para testar</p>
                   <div className="flex flex-wrap gap-1.5 mt-2">
-                    {["0% taxa", "Dinheiro/Cartão", "Painel básico"].map(tag => (
+                    {(isPlatformCity
+                      ? ["0% taxa", "PIX integrado", "Motoboy plataforma", "R$1/pedido PIX"]
+                      : ["0% taxa", "Dinheiro/Cartão", "Painel básico"]
+                    ).map(tag => (
                       <span key={tag} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{tag}</span>
                     ))}
                   </div>
@@ -334,7 +339,11 @@ const CadastroLojista = () => {
                 {selectedPlan && (
                   <div className="rounded-xl bg-muted/50 p-3 text-xs text-muted-foreground">
                     {selectedPlan === "fixed" ? (
-                      <p><strong className="text-foreground">Essencial:</strong> Mensalidade fixa de R$180. Sem taxa por pedido. Pagamentos por dinheiro e cartão. Perfeito para quem já tem bom volume.</p>
+                      isPlatformCity ? (
+                        <p><strong className="text-foreground">Essencial Itatinga:</strong> Mensalidade fixa de R$180. PIX integrado + Motoboy da plataforma inclusos. Taxa operacional de R$1 por pedido PIX. Split de entrega: R$4 motoboy + R$2 plataforma.</p>
+                      ) : (
+                        <p><strong className="text-foreground">Essencial:</strong> Mensalidade fixa de R$180. Sem taxa por pedido. Pagamentos por dinheiro e cartão. Perfeito para quem já tem bom volume.</p>
+                      )
                     ) : (
                       <p><strong className="text-foreground">Crescimento:</strong> Mensalidade de R$100 + 2,5% por pedido. PIX integrado com split automático e painel financeiro completo com CRM.</p>
                     )}

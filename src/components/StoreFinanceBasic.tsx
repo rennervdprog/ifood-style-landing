@@ -162,10 +162,14 @@ const StoreFinanceBasic = ({ storeId, storeName }: StoreFinanceBasicProps) => {
           <div className="flex-1">
             <h3 className="font-bold text-foreground text-sm">
               Plano {storePlan.planType === "fixed" ? "Essencial" : storePlan.planType === "hybrid" ? "Crescimento" : "Comissão"}
+              {storePlan.isItatingaFixed && " • Itatinga"}
             </h3>
             <p className="text-xs text-muted-foreground">
               R$ {storePlan.monthlyFee.toFixed(2)}/mês
-              {storePlan.commissionRate > 0 && ` + ${storePlan.commissionRate}% por pedido`}
+              {storePlan.isItatingaFixed 
+                ? " • R$1/pedido PIX • Split entrega R$4+R$2"
+                : storePlan.commissionRate > 0 ? ` + ${storePlan.commissionRate}% por pedido` : ""
+              }
             </p>
           </div>
           {storePlan.isInTrial && (
@@ -355,10 +359,30 @@ const StoreFinanceBasic = ({ storeId, storeName }: StoreFinanceBasicProps) => {
                 <span className="text-xs text-muted-foreground">Taxas de entrega</span>
                 <span className="text-sm font-bold text-foreground">{formatCurrency(totalDeliveryFees)}</span>
               </div>
+              {storePlan.isItatingaFixed && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Taxa operacional PIX ({paymentBreakdown.pix.count}x R$1)</span>
+                    <span className="text-sm font-bold text-red-500">-{formatCurrency(paymentBreakdown.pix.count)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Split entrega plataforma ({completedOrders.length}x R$2)</span>
+                    <span className="text-sm font-bold text-red-500">-{formatCurrency(completedOrders.length * 2)}</span>
+                  </div>
+                </>
+              )}
               <div className="h-px bg-border" />
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-foreground">Total bruto</span>
-                <span className="text-sm font-black text-emerald-500">{formatCurrency(totalRevenue)}</span>
+                <span className="text-xs font-bold text-foreground">
+                  {storePlan.isItatingaFixed ? "Receita líquida estimada" : "Total bruto"}
+                </span>
+                <span className="text-sm font-black text-emerald-500">
+                  {formatCurrency(
+                    storePlan.isItatingaFixed
+                      ? totalRevenue - paymentBreakdown.pix.count - completedOrders.length * 2
+                      : totalRevenue
+                  )}
+                </span>
               </div>
             </div>
           </div>

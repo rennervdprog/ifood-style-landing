@@ -35,10 +35,18 @@ export interface StorePlanFeatures {
   lastBilledAt: string | null;
   /** Plan start date */
   startedAt: string | null;
+  /** Whether the store is in Itatinga (platform city) with fixed plan benefits */
+  isItatingaFixed: boolean;
+  /** Platform fee per PIX order (R$1 operational tax) */
+  pixOperationalFee: number;
+  /** Platform split from delivery fee */
+  platformDeliverySplit: number;
+  /** Driver split from delivery fee */
+  driverDeliverySplit: number;
   isLoading: boolean;
 }
 
-const PLAN_FEATURES: Record<StorePlanType, Omit<StorePlanFeatures, "planType" | "monthlyFee" | "commissionRate" | "isLoading" | "trialEndsAt" | "isInTrial" | "trialDaysLeft" | "nextBillingDate" | "lastBilledAt" | "startedAt">> = {
+const PLAN_FEATURES_DEFAULT: Record<StorePlanType, Omit<StorePlanFeatures, "planType" | "monthlyFee" | "commissionRate" | "isLoading" | "trialEndsAt" | "isInTrial" | "trialDaysLeft" | "nextBillingDate" | "lastBilledAt" | "startedAt" | "isItatingaFixed" | "pixOperationalFee" | "platformDeliverySplit" | "driverDeliverySplit">> = {
   commission_only: {
     allowPix: true,
     allowPlatformDelivery: true,
@@ -71,27 +79,60 @@ const PLAN_FEATURES: Record<StorePlanType, Omit<StorePlanFeatures, "planType" | 
   },
 };
 
+// Itatinga fixed plan overrides — unlocks all features
+const ITATINGA_FIXED_OVERRIDES = {
+  allowPix: true,
+  allowPlatformDelivery: true,
+  allowLoyalty: true,
+  allowBanners: true,
+  allowScheduling: true,
+  allowFullReports: true,
+  hasCommission: false, // No commission on fixed plan
+  maxCoupons: null as number | null,
+};
+
+const PLATFORM_CITIES = ["itatinga"];
+
 export function useStorePlan(storeId: string | undefined | null): StorePlanFeatures {
   const { data, isLoading } = useQuery({
     queryKey: ["store-plan", storeId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("store_plans")
-        .select("plan_type, monthly_fee, commission_rate, trial_ends_at, next_billing_date, last_billed_at, started_at")
-        .eq("store_id", storeId!)
-        .eq("is_active", true)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
+      // Fetch plan + store city in parallel
+      const [planResult, storeResult] = await Promise.all([
+        supabase
+          .from("store_plans")
+          .select("plan_type, monthly_fee, commission_rate, trial_ends_at, next_billing_date, last_billed_at, started_at")
+          .eq("store_id", storeId!)
+          .eq("is_active", true)
+          .maybeSingle(),
+        supabase
+          .from("stores_public")
+          .select("address_city, delivery_mode")
+          .eq("id", storeId!)
+          .maybeSingle(),
+      ]);
+      if (planResult.error) throw planResult.error;
+      return {
+        plan: planResult.data,
+        city: (storeResult.data as any)?.address_city || "itatinga",
+        deliveryMode: (storeResult.data as any)?.delivery_mode || "platform",
+      };
     },
     enabled: !!storeId,
     staleTime: 1000 * 60 * 5,
   });
 
-  const planType: StorePlanType = (data?.plan_type as StorePlanType) || "commission_only";
-  const features = PLAN_FEATURES[planType];
+  const planType: StorePlanType = (data?.plan?.plan_type as StorePlanType) || "commission_only";
+  const normalizedCity = (data?.city || "itatinga").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_");
+  const isPlatformCity = PLATFORM_CITIES.includes(normalizedCity);
+  const isItatingaFixed = planType === "fixed" && isPlatformCity;
 
-  const trialEndsAt = (data as any)?.trial_ends_at ?? null;
+  // Apply features: if Itatinga + fixed, override with unlocked features
+  const features = isItatingaFixed
+    ? { ...PLAN_FEATURES_DEFAULT[planType], ...ITATINGA_FIXED_OVERRIDES }
+    : PLAN_FEATURES_DEFAULT[planType];
+
+  const trialEndsAt = (data?.plan as any)?.trial_ends_at ?? null;
   const now = new Date();
   const trialEnd = trialEndsAt ? new Date(trialEndsAt) : null;
   const isInTrial = trialEnd ? trialEnd > now : false;
@@ -101,15 +142,19 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
 
   return {
     planType,
-    monthlyFee: data?.monthly_fee ?? 0,
-    commissionRate: data?.commission_rate ?? 15,
+    monthlyFee: data?.plan?.monthly_fee ?? 0,
+    commissionRate: data?.plan?.commission_rate ?? 15,
     ...features,
     trialEndsAt,
     isInTrial,
     trialDaysLeft,
-    nextBillingDate: (data as any)?.next_billing_date ?? null,
-    lastBilledAt: (data as any)?.last_billed_at ?? null,
-    startedAt: (data as any)?.started_at ?? null,
+    nextBillingDate: (data?.plan as any)?.next_billing_date ?? null,
+    lastBilledAt: (data?.plan as any)?.last_billed_at ?? null,
+    startedAt: (data?.plan as any)?.started_at ?? null,
+    isItatingaFixed,
+    pixOperationalFee: isItatingaFixed ? 1 : 0,
+    platformDeliverySplit: isItatingaFixed ? 2 : 0,
+    driverDeliverySplit: isItatingaFixed ? 4 : 0,
     isLoading,
   };
 }

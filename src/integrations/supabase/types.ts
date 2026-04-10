@@ -1800,6 +1800,10 @@ export type Database = {
           whatsapp_number: string
         }[]
       }
+      get_fixed_plan_platform_split: {
+        Args: { _store_id: string }
+        Returns: number
+      }
       get_store_commission_rate: {
         Args: { _store_id: string }
         Returns: number
