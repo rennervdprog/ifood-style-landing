@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
     // Verify user owns the store
     const { data: store, error: storeError } = await supabase
       .from("stores")
-      .select("id, owner_id, settings")
+      .select("id, owner_id")
       .eq("id", store_id)
       .single();
 
@@ -68,7 +68,6 @@ Deno.serve(async (req) => {
     }
 
     if (store.owner_id !== userId) {
-      // Check if platform admin
       const adminClient = createClient(
         Deno.env.get("SUPABASE_URL")!,
         Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
@@ -82,13 +81,19 @@ Deno.serve(async (req) => {
       }
     }
 
-    const settings = (store.settings || {}) as Record<string, unknown>;
-    const zapiInstanceId = settings.zapi_instance_id as string | undefined;
-    const zapiToken = settings.zapi_token as string | undefined;
-    const zapiClientToken = settings.zapi_client_token as string | undefined;
-    const zapiEnabled = settings.zapi_enabled as boolean | undefined;
+    // Read Z-API credentials from secure store_secrets table (service role to bypass RLS)
+    const adminClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
 
-    if (!zapiEnabled || !zapiInstanceId || !zapiToken || !zapiClientToken) {
+    const { data: secrets } = await adminClient
+      .from("store_secrets")
+      .select("zapi_enabled, zapi_instance_id, zapi_token, zapi_client_token")
+      .eq("store_id", store_id)
+      .single();
+
+    if (!secrets?.zapi_enabled || !secrets?.zapi_instance_id || !secrets?.zapi_token || !secrets?.zapi_client_token) {
       return new Response(JSON.stringify({ error: "Z-API not configured for this store" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
