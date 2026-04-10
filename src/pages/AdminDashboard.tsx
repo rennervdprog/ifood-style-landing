@@ -916,15 +916,7 @@ const AdminDashboard = () => {
                   trend={todayTotal > 0 ? "up" : null}
                   onClick={() => setDashboardTab("finance")}
                 />
-                {storePlan.allowPlatformDelivery && (
-                  <GlanceCard
-                    icon={Bike}
-                    label="Motoboys"
-                    value={onlineDrivers?.length || 0}
-                    subValue={realtimeDriversConnected ? "Online" : "Conectando..."}
-                    color={(onlineDrivers?.length || 0) > 0 ? "text-blue-500" : "text-muted-foreground"}
-                  />
-                )}
+                {/* Motoboy plataforma oculto */}
                 <GlanceCard
                   icon={Timer}
                   label="Tempo Médio"
@@ -932,16 +924,14 @@ const AdminDashboard = () => {
                   subValue="Pedido → Entrega"
                   color="text-purple-500"
                 />
-                {!storePlan.allowPlatformDelivery && (
-                  <GlanceCard
-                    icon={Users}
-                    label="Clientes"
-                    value={clientAnalytics.length}
-                    subValue="Total cadastrados"
-                    color="text-blue-500"
-                    onClick={() => setDashboardTab("clients")}
-                  />
-                )}
+                <GlanceCard
+                  icon={Users}
+                  label="Clientes"
+                  value={clientAnalytics.length}
+                  subValue="Total cadastrados"
+                  color="text-blue-500"
+                  onClick={() => setDashboardTab("clients")}
+                />
               </div>
               {delayedOrders.length > 0 && (
                 <div className="bg-destructive/5 border border-destructive/20 rounded-2xl p-3">
@@ -1056,49 +1046,10 @@ const AdminDashboard = () => {
                         {(store as any).delivery_mode === "own" ? "Próprio" : "Plataforma"}
                       </span>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        onClick={async () => {
-                          if (!hasPlatformSupport) {
-                            toast.error("Motoboys da plataforma ainda não estão disponíveis na sua região.");
-                            return;
-                          }
-                          await supabase.from("stores").update({ delivery_mode: "platform" } as any).eq("id", store.id);
-                          queryClient.invalidateQueries({ queryKey: ["my-store", user?.id] });
-                          toast.success("Modo alterado para Motoboy Plataforma!");
-                        }}
-                        className={`flex flex-col items-center gap-1 p-2.5 rounded-xl border-2 transition-all relative ${
-                          !hasPlatformSupport
-                            ? "border-border bg-muted/50 opacity-60 cursor-not-allowed"
-                            : (store as any).delivery_mode !== "own"
-                              ? "border-primary bg-primary/10"
-                              : "border-border bg-card hover:border-primary/30"
-                        }`}
-                        disabled={!hasPlatformSupport}
-                      >
-                        <Bike className={`h-5 w-5 ${!hasPlatformSupport ? "text-muted-foreground" : (store as any).delivery_mode !== "own" ? "text-primary" : "text-muted-foreground"}`} />
-                        <span className={`text-[11px] font-bold ${!hasPlatformSupport ? "text-muted-foreground" : (store as any).delivery_mode !== "own" ? "text-primary" : "text-muted-foreground"}`}>Plataforma</span>
-                        {!hasPlatformSupport && (
-                          <span className="text-[9px] text-amber-600 font-bold">
-                            {!storePlan.allowPlatformDelivery ? "Plano Fixo" : "Indisponível"}
-                          </span>
-                        )}
-                      </button>
-                      <button
-                        onClick={async () => {
-                          await supabase.from("stores").update({ delivery_mode: "own" } as any).eq("id", store.id);
-                          queryClient.invalidateQueries({ queryKey: ["my-store", user?.id] });
-                          toast.success("Modo alterado para Motoboy Próprio!");
-                        }}
-                        className={`flex flex-col items-center gap-1 p-2.5 rounded-xl border-2 transition-all ${
-                          (store as any).delivery_mode === "own"
-                            ? "border-primary bg-primary/10"
-                            : "border-border bg-card hover:border-primary/30"
-                        }`}
-                      >
-                        <Truck className={`h-5 w-5 ${(store as any).delivery_mode === "own" ? "text-primary" : "text-muted-foreground"}`} />
-                        <span className={`text-[11px] font-bold ${(store as any).delivery_mode === "own" ? "text-primary" : "text-muted-foreground"}`}>Próprio</span>
-                      </button>
+                    {/* Motoboy plataforma oculto — só mostra "Próprio" como ativo */}
+                    <div className="flex items-center gap-2 p-2.5 rounded-xl border-2 border-primary bg-primary/10">
+                      <Truck className="h-5 w-5 text-primary" />
+                      <span className="text-[11px] font-bold text-primary">Motoboy Próprio</span>
                     </div>
                 {(store as any).delivery_mode === "own" && (
                   <div className="space-y-2">
