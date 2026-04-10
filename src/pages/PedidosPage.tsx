@@ -630,6 +630,46 @@ const PedidosPage = () => {
   return (
     <div className="min-h-screen bg-background pb-32 overflow-y-auto">
       <SimulationBanner />
+
+      {/* New order notification prompt */}
+      {showNewOrderNotifPrompt && (
+        <div className="fixed top-4 left-4 right-4 z-50 bg-card border border-primary/30 rounded-2xl p-4 shadow-2xl animate-in slide-in-from-top-4">
+          <button onClick={() => setShowNewOrderNotifPrompt(false)} className="absolute top-3 right-3 text-muted-foreground hover:text-foreground">
+            <X className="h-4 w-4" />
+          </button>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <Bell className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-bold text-sm text-foreground">🔔 Ative as notificações!</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">Receba avisos quando seu pedido estiver pronto ou a caminho.</p>
+            </div>
+          </div>
+          <div className="flex gap-2 mt-3">
+            <button
+              onClick={async () => {
+                const result = await Notification.requestPermission();
+                if (result === "granted") {
+                  const { requestPushPermissionAndRegister } = await import("@/lib/firebase");
+                  await requestPushPermissionAndRegister();
+                  toast.success("Notificações ativadas! 🎉");
+                }
+                setShowNewOrderNotifPrompt(false);
+              }}
+              className="flex-1 bg-primary text-primary-foreground font-bold py-2.5 rounded-xl text-sm active:scale-95 transition-transform"
+            >
+              Ativar agora
+            </button>
+            <button
+              onClick={() => setShowNewOrderNotifPrompt(false)}
+              className="px-4 py-2.5 rounded-xl text-sm font-medium text-muted-foreground bg-muted hover:bg-muted/80"
+            >
+              Depois
+            </button>
+          </div>
+        </div>
+      )}
       
       {/* Header */}
       <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border">
