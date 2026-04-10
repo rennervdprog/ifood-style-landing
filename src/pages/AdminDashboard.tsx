@@ -1637,6 +1637,13 @@ const AdminDashboard = () => {
                             <WhatsAppButton number={getClientWhatsApp(order.client_id)}
                               message={`Olá ${getClientName(order.client_id)}! Aqui é do ${store?.name}. Pedido #${order.id.slice(0, 8).toUpperCase()}...`}
                               label="Chat" size="sm" />
+                            <OrderChat
+                              orderId={order.id}
+                              storeName={store?.name || "Loja"}
+                              storeOwnerId={store?.owner_id}
+                              clientId={order.client_id}
+                              driverId={order.driver_id}
+                            />
                           </div>
                         )}
 
