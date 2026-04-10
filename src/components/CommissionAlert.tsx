@@ -102,6 +102,8 @@ const CommissionAlert = ({ storeId, storeName, onGoToFinance }: CommissionAlertP
   });
 
   const pendingCommission = Number(storeBalance?.comissao_pendente || storeBalance?.pending_commission || 0);
+  const minPayout = minPayoutSetting ?? 100;
+  const canPay = pendingCommission >= minPayout || isBlocked; // Always allow if blocked
   const hasPixKey = !!ownerProfile?.pix_key;
   const hasDocument = !!ownerProfile?.document;
   const isBlocked = storeData?.status === "bloqueado";
