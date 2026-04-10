@@ -32,6 +32,7 @@ import StoreFinancePanel from "@/components/StoreFinancePanel";
 import StoreFinanceBasic from "@/components/StoreFinanceBasic";
 import StoreSubscription from "@/components/StoreSubscription";
 import CommissionAlert from "@/components/CommissionAlert";
+import PlatformSplitAlert from "@/components/PlatformSplitAlert";
 import LoyaltyConfigPanel from "@/components/LoyaltyConfigPanel";
 import PizzaBorderManager from "@/components/PizzaBorderManager";
 import OrderChat from "@/components/OrderChat";
@@ -869,6 +870,15 @@ const AdminDashboard = () => {
                 <CommissionAlert
                   storeId={store.id}
                   storeName={store.name}
+                  onGoToFinance={() => setDashboardTab("finance")}
+                />
+              )}
+              {/* Platform Split Alert - for fixed plans (R$2 per cash/card order) */}
+              {!storePlan.hasCommission && storePlan.isItatingaFixed && (
+                <PlatformSplitAlert
+                  storeId={store.id}
+                  storeName={store.name}
+                  splitPerOrder={storePlan.platformDeliverySplit}
                   onGoToFinance={() => setDashboardTab("finance")}
                 />
               )}
