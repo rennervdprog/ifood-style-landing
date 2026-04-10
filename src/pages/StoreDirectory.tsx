@@ -18,8 +18,10 @@ import { Card, CardContent } from "@/components/ui/card";
 /* ─── hooks ─── */
 function useCountUp(end: number, duration = 2000, start = false) {
   const [val, setVal] = useState(0);
+  const done = useRef(false);
   useEffect(() => {
-    if (!start) return;
+    if (!start || done.current) return;
+    done.current = true;
     let startTime: number;
     const step = (ts: number) => {
       if (!startTime) startTime = ts;
