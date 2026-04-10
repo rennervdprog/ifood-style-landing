@@ -54,7 +54,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       onForegroundMessage((payload) => {
         const title = payload.notification?.title || "ItaSuper";
         const body = payload.notification?.body || "";
-        toast(title, { description: body });
+        const orderId = payload.data?.order_id;
+        
+        toast(title, {
+          description: body,
+          action: orderId
+            ? {
+                label: "Abrir Chat",
+                onClick: () => {
+                  window.location.href = `/pedidos?chat=${orderId}`;
+                },
+              }
+            : undefined,
+        });
 
         if ("vibrate" in navigator) {
           navigator.vibrate([200, 100, 200]);

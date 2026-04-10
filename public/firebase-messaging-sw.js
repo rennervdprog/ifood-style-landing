@@ -28,6 +28,23 @@ messaging.onBackgroundMessage((payload) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const link = event.notification.data?.link || "/";
-  event.waitUntil(clients.openWindow(link));
+  const data = event.notification.data || {};
+  // If notification has an order_id, open the chat for that order
+  let link = data.link || "/";
+  if (data.order_id) {
+    link = "/pedidos?chat=" + data.order_id;
+  }
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((windowClients) => {
+      // Try to focus an existing window and navigate it
+      for (const client of windowClients) {
+        if ("focus" in client) {
+          client.focus();
+          client.navigate(link);
+          return;
+        }
+      }
+      return clients.openWindow(link);
+    })
+  );
 });

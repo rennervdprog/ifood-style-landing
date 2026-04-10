@@ -597,6 +597,7 @@ const PedidosPage = () => {
                         storeOwnerId={user?.id}
                         clientId={order.client_id}
                         driverId={order.driver_id}
+                        defaultOpen={searchParams.get("chat") === order.id}
                       />
                     </div>
                   )}
@@ -913,13 +914,13 @@ const PedidosPage = () => {
                         {/* Chat */}
                         {!["aguardando_pagamento", "cancelado"].includes(order.status) && (
                           <div className="pt-1">
-                            <OrderChat
+                          <OrderChat
                               orderId={order.id}
                               storeName={order.stores?.name || "Loja"}
                               storeOwnerId={order.stores?.owner_id}
                               clientId={order.client_id}
                               driverId={order.driver_id}
-                              defaultOpen={isNewOrder && orderIdx === 0}
+                              defaultOpen={(isNewOrder && orderIdx === 0) || searchParams.get("chat") === order.id}
                             />
                           </div>
                         )}
