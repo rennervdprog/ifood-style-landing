@@ -713,7 +713,7 @@ const PedidosPage = () => {
                 <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider px-1">
                   Pedidos em andamento ({activeOrders.length})
                 </h2>
-                {activeOrders.map((order: any) => {
+                {activeOrders.map((order: any, orderIdx: number) => {
                   const config = statusConfig[order.status] || statusConfig.pendente;
                   const StatusIcon = config.icon;
                   const isWaitingPayment = order.status === "aguardando_pagamento";
@@ -918,6 +918,7 @@ const PedidosPage = () => {
                               storeOwnerId={order.stores?.owner_id}
                               clientId={order.client_id}
                               driverId={order.driver_id}
+                              defaultOpen={isNewOrder && orderIdx === 0}
                             />
                           </div>
                         )}
