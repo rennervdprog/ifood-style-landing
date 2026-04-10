@@ -137,8 +137,13 @@ const CheckoutPage = () => {
 
     if (isOwnDelivery) {
       setCalculatedDeliveryFee(null);
-      setFeeBreakdown(`Taxa fixa da loja: R$ ${storeOwnFee.toFixed(2)}`);
-      if (activeNeighborhood) setNeighborhood(activeNeighborhood, storeOwnFee);
+      const totalOwnFee = ownDeliveryFeeWithSplit;
+      if (storePlan.isItatingaFixed && storePlan.platformDeliverySplit > 0) {
+        setFeeBreakdown(`Entrega loja: R$ ${storeOwnFee.toFixed(2)} + Taxa plataforma: R$ ${storePlan.platformDeliverySplit.toFixed(2)}`);
+      } else {
+        setFeeBreakdown(`Taxa fixa da loja: R$ ${storeOwnFee.toFixed(2)}`);
+      }
+      if (activeNeighborhood) setNeighborhood(activeNeighborhood, totalOwnFee);
       return;
     }
 
@@ -163,7 +168,7 @@ const CheckoutPage = () => {
     });
 
     return () => { cancelled = true; };
-  }, [profileCep, storeCep, config, savedAddressData, selectedSavedAddressId, profileNeighborhood, isOwnDelivery, storeOwnFee]);
+  }, [profileCep, storeCep, config, savedAddressData, selectedSavedAddressId, profileNeighborhood, isOwnDelivery, storeOwnFee, ownDeliveryFeeWithSplit, storePlan.isItatingaFixed, storePlan.platformDeliverySplit]);
 
   const buildAddressString = () => {
     if (!hasAddress) return "";
