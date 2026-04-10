@@ -8,6 +8,7 @@ import { ClipboardList, Clock, ChefHat, Truck, CheckCircle2, Lock, Copy, QrCode,
 import { toast } from "sonner";
 import { notifyOrderPreparing, notifyOrderOnTheWay, notifyOrderDelivered } from "@/lib/notifications";
 import OrderRating from "@/components/OrderRating";
+import OrderChat from "@/components/OrderChat";
 import DeliveryTimeEstimate from "@/components/DeliveryTimeEstimate";
 
 import {
@@ -148,7 +149,7 @@ const PedidosPage = () => {
     queryFn: async () => {
       let query = supabase
         .from("orders")
-        .select("*, stores(name, delivery_mode, slug), order_items(*, products(name))")
+        .select("*, stores(name, delivery_mode, slug, owner_id), order_items(*, products(name))")
         .eq("client_id", user!.id)
         .eq("visible_to_client", true)
         .order("created_at", { ascending: false });
@@ -899,6 +900,15 @@ const PedidosPage = () => {
 
                       {/* Actions */}
                       <div className="px-4 pb-3 flex items-center gap-2">
+                        {!["cancelado"].includes(order.status) && (
+                          <OrderChat
+                            orderId={order.id}
+                            storeName={order.stores?.name || "Loja"}
+                            storeOwnerId={order.stores?.owner_id}
+                            clientId={order.client_id}
+                            driverId={order.driver_id}
+                          />
+                        )}
                         {["entregue", "finalizado"].includes(order.status) && (
                           <button
                             onClick={() => {

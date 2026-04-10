@@ -15,6 +15,7 @@ import {
 import confetti from "canvas-confetti";
 import { isGoNative, runNativeDiagnostics, getNativeDebugLog } from "@/lib/gonative";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import OrderChat from "@/components/OrderChat";
 import { openWhatsApp } from "@/lib/whatsapp";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { format, startOfDay, startOfWeek, subDays, isWithinInterval, parseISO } from "date-fns";
@@ -842,6 +843,13 @@ const DriverDashboard = () => {
                             size="sm"
                           />
                         )}
+                        <OrderChat
+                          orderId={myDelivery.id}
+                          storeName={(myDelivery as any).stores?.name || "Loja"}
+                          storeOwnerId={deliveryStoreOwnerId}
+                          clientId={deliveryClientId}
+                          driverId={user?.id}
+                        />
 
                         {/* Order items */}
                         <div className="bg-muted/50 rounded-xl p-3">
