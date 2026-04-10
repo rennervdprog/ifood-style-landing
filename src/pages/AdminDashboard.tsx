@@ -31,6 +31,7 @@ import StoreFinanceBasic from "@/components/StoreFinanceBasic";
 import StoreSubscription from "@/components/StoreSubscription";
 import CommissionAlert from "@/components/CommissionAlert";
 import LoyaltyConfigPanel from "@/components/LoyaltyConfigPanel";
+import PizzaBorderManager from "@/components/PizzaBorderManager";
 import { printThermalReceipt } from "@/lib/thermalPrint";
 import { requestNotificationPermission, notifyNewOrder, pushNotifyDeliveryAvailable } from "@/lib/notifications";
 import { sendPushNotification } from "@/lib/firebase";
@@ -39,7 +40,7 @@ import ProductTour, { lojistaTourSteps } from "@/components/ProductTour";
 import { useStorePlan } from "@/hooks/useStorePlan";
 
 type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_entrega" | "em_transito" | "entregue" | "finalizado";
-type DashboardTab = "dashboard" | "orders" | "menu" | "addons" | "hours" | "settings" | "finance" | "clients" | "reports" | "subscription" | "loyalty";
+type DashboardTab = "dashboard" | "orders" | "menu" | "addons" | "bordas" | "hours" | "settings" | "finance" | "clients" | "reports" | "subscription" | "loyalty";
 
 const ALERT_SOUND_URL = "https://actions.google.com/sounds/v1/alarms/beep_short.ogg";
 const CASH_REGISTER_SOUND_URL = "https://actions.google.com/sounds/v1/office/cash_register.ogg";
@@ -76,6 +77,7 @@ const baseSidebarItems: { key: DashboardTab; label: string; icon: React.ElementT
   { key: "menu", label: "Cardápio", icon: UtensilsCrossed },
   
   { key: "addons", label: "Adicionais", icon: Plus },
+  { key: "bordas", label: "Bordas", icon: CircleDot, pizzaOnly: true },
   { key: "hours", label: "Horários", icon: Clock },
   { key: "finance", label: "Finanças", icon: Coins },
   { key: "reports", label: "Relatórios", icon: BarChart3 },
@@ -93,8 +95,9 @@ const bottomNavTabs: { key: DashboardTab; label: string; icon: React.ElementType
 ];
 
 // "More" sheet items
-const moreSheetItems: { key: DashboardTab; label: string; icon: React.ElementType }[] = [
+const moreSheetItems: { key: DashboardTab; label: string; icon: React.ElementType; pizzaOnly?: boolean }[] = [
   { key: "addons", label: "Adicionais", icon: Plus },
+  { key: "bordas", label: "Bordas", icon: CircleDot, pizzaOnly: true },
   { key: "hours", label: "Horários", icon: Clock },
   { key: "finance", label: "Finanças", icon: Coins },
   { key: "reports", label: "Relatórios", icon: BarChart3 },
@@ -606,7 +609,7 @@ const AdminDashboard = () => {
               <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
             </div>
             <div className="px-4 pb-4 grid grid-cols-3 gap-3">
-              {moreSheetItems.filter(item => (item.key !== "reports" || storePlan.allowFullReports) && (item.key !== "clients" || storePlan.allowFullReports)).map(item => {
+              {moreSheetItems.filter(item => (!item.pizzaOnly || store?.category === "pizzas") && (item.key !== "reports" || storePlan.allowFullReports) && (item.key !== "clients" || storePlan.allowFullReports)).map(item => {
                 const Icon = item.icon;
                 const isActive = dashboardTab === item.key;
                 return (
@@ -747,6 +750,7 @@ const AdminDashboard = () => {
                 {dashboardTab === "clients" && `${clientAnalytics.length} clientes registrados`}
                 {dashboardTab === "menu" && "Gerencie seu cardápio"}
                 {dashboardTab === "addons" && "Grupos de adicionais"}
+                {dashboardTab === "bordas" && "Opções de borda para pizzas"}
                 {dashboardTab === "hours" && "Horários de funcionamento"}
                 {dashboardTab === "finance" && "Resumo financeiro"}
                 {dashboardTab === "settings" && "Configurações da loja"}
@@ -1743,6 +1747,7 @@ const AdminDashboard = () => {
               {dashboardTab === "menu" && <MenuBuilder storeId={store.id} storeCategory={store.category} />}
               
               {dashboardTab === "addons" && <AddonManager storeId={store.id} />}
+              {dashboardTab === "bordas" && store.category === "pizzas" && <PizzaBorderManager storeId={store.id} />}
               {dashboardTab === "hours" && <StoreHoursManager storeId={store.id} forceClosed={(store as any).force_closed || false} />}
               {dashboardTab === "settings" && (
                 <div className="space-y-6">
