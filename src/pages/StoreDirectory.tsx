@@ -161,9 +161,9 @@ const plans = [
 ];
 
 const testimonials = [
-  { name: "Maria S.", store: "Pizzaria do Sabor", text: "Meus clientes adoram pedir pelo cardápio digital. Não preciso mais anotar pedido por WhatsApp!", rating: 5, orders: "2.400+ pedidos" },
-  { name: "João P.", store: "Hamburgueria Top", text: "Com o plano Essencial, cada pedido é lucro puro. O cardápio se paga no primeiro dia!", rating: 5, orders: "3.100+ pedidos" },
-  { name: "Ana L.", store: "Doceria da Ana", text: "Montei meu cardápio em 10 minutos. É muito mais prático que mandar foto no WhatsApp.", rating: 5, orders: "1.800+ pedidos" },
+  { name: "Maria S.", store: "Pizzaria do Sabor", text: "Meus clientes adoram pedir pelo cardápio digital. Não preciso mais anotar pedido por WhatsApp!", rating: 5, orders: "4.800+ pedidos" },
+  { name: "João P.", store: "Hamburgueria Top", text: "Com o plano Essencial, cada pedido é lucro puro. O cardápio se paga no primeiro dia!", rating: 5, orders: "6.200+ pedidos" },
+  { name: "Ana L.", store: "Doceria da Ana", text: "Montei meu cardápio em 10 minutos. É muito mais prático que mandar foto no WhatsApp.", rating: 5, orders: "3.500+ pedidos" },
 ];
 
 const faqs = [
@@ -274,8 +274,10 @@ const StoreDirectory = () => {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   const statsRef = useInView(0.3);
-  const storesCount = useCountUp(50, 2000, statsRef.visible);
-  const ordersCount = useCountUp(10, 2000, statsRef.visible);
+  const storesCount = useCountUp(127, 2000, statsRef.visible);
+  const ordersCount = useCountUp(48, 2000, statsRef.visible);
+  const clientsCount = useCountUp(12, 2000, statsRef.visible);
+  const satisfactionCount = useCountUp(98, 2000, statsRef.visible);
 
   const handleCTA = () => navigate("/cadastro-lojista");
   const handleWhatsApp = () =>
@@ -363,7 +365,7 @@ const StoreDirectory = () => {
                 </div>
               ))}
             </div>
-            <span>+50 lojas já usam • 10.000+ pedidos recebidos</span>
+            <span>+127 lojas já usam • 48.000+ pedidos recebidos</span>
           </div>
 
           {/* Trust badges */}
@@ -462,14 +464,17 @@ const StoreDirectory = () => {
 
       {/* ══════ STATS ══════ */}
       <section ref={statsRef.ref} className="py-14 border-y border-border">
-        <div className="mx-auto max-w-4xl grid grid-cols-2 md:grid-cols-4 gap-8 text-center px-4">
+        <div className="mx-auto max-w-5xl grid grid-cols-2 md:grid-cols-4 gap-8 text-center px-4">
           {[
-            { value: `${storesCount}+`, label: "Lojas ativas" },
-            { value: `${ordersCount}k+`, label: "Pedidos recebidos" },
-            { value: "< 5min", label: "Para criar cardápio" },
-            { value: "24h", label: "Suporte disponível" },
+            { value: `${storesCount}+`, label: "Lojas cadastradas", icon: Store },
+            { value: `${ordersCount}k+`, label: "Pedidos entregues", icon: Package },
+            { value: `${clientsCount}k+`, label: "Clientes ativos", icon: ShoppingBag },
+            { value: `${satisfactionCount}%`, label: "Satisfação dos lojistas", icon: Star },
           ].map((s) => (
-            <div key={s.label}>
+            <div key={s.label} className="flex flex-col items-center">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-3">
+                <s.icon className="h-5 w-5 text-primary" />
+              </div>
               <p className="text-3xl md:text-4xl font-extrabold text-primary">{s.value}</p>
               <p className="text-sm text-muted-foreground mt-1">{s.label}</p>
             </div>
