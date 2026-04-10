@@ -275,11 +275,10 @@ const StoreDirectory = () => {
   const [roleChecked, setRoleChecked] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  const statsRef = useInView(0.15);
-  const storesCount = useCountUp(127, 2000, statsRef.visible);
-  const ordersCount = useCountUp(48, 2000, statsRef.visible);
-  const clientsCount = useCountUp(12, 2000, statsRef.visible);
-  const satisfactionCount = useCountUp(98, 2000, statsRef.visible);
+  const storesCount = 127;
+  const ordersCount = 48;
+  const clientsCount = 12;
+  const satisfactionCount = 98;
 
   const handleCTA = () => navigate("/cadastro-lojista");
   const handleWhatsApp = () =>
@@ -465,7 +464,7 @@ const StoreDirectory = () => {
       </section>
 
       {/* ══════ STATS ══════ */}
-      <section ref={statsRef.ref} className="py-14 border-y border-border">
+      <section className="py-14 border-y border-border">
         <div className="mx-auto max-w-5xl grid grid-cols-2 md:grid-cols-4 gap-8 text-center px-4">
           {[
             { value: `${storesCount}+`, label: "Lojas cadastradas", icon: Store },
