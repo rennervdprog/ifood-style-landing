@@ -67,14 +67,14 @@ const LoyaltyConfigPanel = ({ storeId }: LoyaltyConfigPanelProps) => {
 
       if (config) {
         const { error } = await supabase
-          .from("loyalty_config" as any)
-          .update(payload as any)
+          .from("loyalty_config")
+          .update(payload)
           .eq("id", config.id);
         if (error) throw error;
       } else {
         const { error } = await supabase
-          .from("loyalty_config" as any)
-          .insert(payload as any);
+          .from("loyalty_config")
+          .insert(payload);
         if (error) throw error;
       }
 
