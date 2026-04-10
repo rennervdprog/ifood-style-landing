@@ -42,6 +42,7 @@ import { sendPushNotification } from "@/lib/firebase";
 import { addMoney, averageMoney, formatCurrency, sumMoney } from "@/lib/utils";
 import ProductTour, { lojistaTourSteps } from "@/components/ProductTour";
 import { useStorePlan } from "@/hooks/useStorePlan";
+import TrialExpiredGuard from "@/components/TrialExpiredGuard";
 
 type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_entrega" | "em_transito" | "entregue" | "finalizado";
 type DashboardTab = "dashboard" | "orders" | "menu" | "addons" | "bordas" | "hours" | "settings" | "finance" | "clients" | "reports" | "subscription" | "loyalty";
@@ -602,6 +603,7 @@ const AdminDashboard = () => {
 
   // ── RENDER ──
   return (
+    <TrialExpiredGuard storePlan={storePlan} storeId={store?.id || ""}>
     <div className="min-h-screen bg-background flex native-app">
       <SimulationBanner />
 
@@ -2111,6 +2113,7 @@ const AdminDashboard = () => {
       </main>
       <ProductTour steps={lojistaTourSteps} tourKey="lojista" />
     </div>
+    </TrialExpiredGuard>
   );
 };
 
