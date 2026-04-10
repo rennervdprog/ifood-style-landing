@@ -5,6 +5,12 @@ export interface DeliveryFeeConfig {
   city_fee: number;
   rural_base_fee: number;
   rural_per_km: number;
+  /** R$ the driver receives per platform delivery */
+  driver_split: number;
+  /** R$ the platform keeps per platform delivery */
+  platform_split: number;
+  /** R$ operational fee deducted from store per PIX transaction (fixed plan) */
+  pix_operational_fee: number;
 }
 
 export const DEFAULT_DELIVERY_FEE_CONFIG: DeliveryFeeConfig = {
@@ -12,6 +18,9 @@ export const DEFAULT_DELIVERY_FEE_CONFIG: DeliveryFeeConfig = {
   city_fee: 5.0,
   rural_base_fee: 5.0,
   rural_per_km: 0.6,
+  driver_split: 4.0,
+  platform_split: 2.0,
+  pix_operational_fee: 1.0,
 };
 
 // Centro de Itatinga - coordenadas fixas de referência

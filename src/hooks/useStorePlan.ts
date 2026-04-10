@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig } from "@/lib/deliveryFee";
 
 export type StorePlanType = "fixed" | "hybrid" | "commission_only";
 
@@ -97,8 +98,8 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
   const { data, isLoading } = useQuery({
     queryKey: ["store-plan", storeId],
     queryFn: async () => {
-      // Fetch plan + store city in parallel
-      const [planResult, storeResult] = await Promise.all([
+      // Fetch plan + store city + delivery config in parallel
+      const [planResult, storeResult, configResult] = await Promise.all([
         supabase
           .from("store_plans")
           .select("plan_type, monthly_fee, commission_rate, trial_ends_at, next_billing_date, last_billed_at, started_at")
@@ -110,12 +111,19 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
           .select("address_city, delivery_mode")
           .eq("id", storeId!)
           .maybeSingle(),
+        supabase
+          .from("admin_settings")
+          .select("value")
+          .eq("key", "delivery_fee_config")
+          .maybeSingle(),
       ]);
       if (planResult.error) throw planResult.error;
+      const feeConfig = configResult.data?.value as unknown as DeliveryFeeConfig | null;
       return {
         plan: planResult.data,
         city: (storeResult.data as any)?.address_city || "itatinga",
         deliveryMode: (storeResult.data as any)?.delivery_mode || "platform",
+        feeConfig,
       };
     },
     enabled: !!storeId,
@@ -152,9 +160,9 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
     lastBilledAt: (data?.plan as any)?.last_billed_at ?? null,
     startedAt: (data?.plan as any)?.started_at ?? null,
     isItatingaFixed,
-    pixOperationalFee: isItatingaFixed ? 1 : 0,
-    platformDeliverySplit: isItatingaFixed ? 2 : 0,
-    driverDeliverySplit: isItatingaFixed ? 4 : 0,
+    pixOperationalFee: isItatingaFixed ? (data?.feeConfig?.pix_operational_fee ?? DEFAULT_DELIVERY_FEE_CONFIG.pix_operational_fee) : 0,
+    platformDeliverySplit: isItatingaFixed ? (data?.feeConfig?.platform_split ?? DEFAULT_DELIVERY_FEE_CONFIG.platform_split) : 0,
+    driverDeliverySplit: isItatingaFixed ? (data?.feeConfig?.driver_split ?? DEFAULT_DELIVERY_FEE_CONFIG.driver_split) : 0,
     isLoading,
   };
 }

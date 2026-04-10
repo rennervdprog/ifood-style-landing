@@ -680,6 +680,26 @@ async function handleOrderPix(
 
     const isFixedPlan = storePlan?.plan_type === "fixed";
 
+    // Read delivery fee config from admin_settings for split values
+    let driverSplitVal = 4;
+    let platformSplitVal = 2;
+    let pixOpFee = 1;
+    try {
+      const { data: feeConfigRow } = await serviceClient
+        .from("admin_settings")
+        .select("value")
+        .eq("key", "delivery_fee_config")
+        .maybeSingle();
+      if (feeConfigRow?.value) {
+        const fc = feeConfigRow.value as any;
+        driverSplitVal = fc.driver_split ?? 4;
+        platformSplitVal = fc.platform_split ?? 2;
+        pixOpFee = fc.pix_operational_fee ?? 1;
+      }
+    } catch (e) {
+      console.warn("Could not load delivery_fee_config, using defaults", e);
+    }
+
     if (store?.asaas_wallet_id) {
       splitWalletId = store.asaas_wallet_id;
       const subtotal = Number(order.subtotal) || 0;
@@ -687,18 +707,18 @@ async function handleOrderPix(
       const isOwnDelivery = store.delivery_mode === "own";
 
       if (isFixedPlan) {
-        // Fixed plan (Itatinga): 0% commission, but R$1 PIX operational fee per transaction
-        const pixOperationalFee = 1; // R$1 per PIX transaction
-        const platformDeliverySplit = 2; // R$2 platform keeps from delivery fee
+        // Fixed plan: 0% commission, PIX operational fee per transaction
+        const pixOperationalFee = pixOpFee;
+        const platformDeliverySplit = platformSplitVal;
 
         if (isOwnDelivery) {
-          // Own delivery: store gets subtotal - R$1 + full delivery fee
+          // Own delivery: store gets subtotal - PIX fee + full delivery fee
           splitFixedValue = Math.round((subtotal - pixOperationalFee + deliveryFee) * 100) / 100;
           console.log(`Split FIXED (own delivery): store gets R$${splitFixedValue}, platform keeps R$${pixOperationalFee} (PIX fee)`);
         } else {
-          // Platform delivery: store gets subtotal - R$1, platform keeps delivery fee (pays R$4 to driver, keeps R$2)
+          // Platform delivery: store gets subtotal - PIX fee, platform keeps delivery fee
           splitFixedValue = Math.round((subtotal - pixOperationalFee) * 100) / 100;
-          console.log(`Split FIXED (platform): store gets R$${splitFixedValue}, platform keeps R$${pixOperationalFee} (PIX) + R$${deliveryFee} delivery (R$${deliveryFee - platformDeliverySplit} driver / R$${platformDeliverySplit} platform)`);
+          console.log(`Split FIXED (platform): store gets R$${splitFixedValue}, platform keeps R$${pixOperationalFee} (PIX) + R$${deliveryFee} delivery (R$${driverSplitVal} driver / R$${platformDeliverySplit} platform)`);
         }
 
         // Ensure store share is not negative
