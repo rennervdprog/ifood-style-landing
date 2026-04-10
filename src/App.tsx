@@ -107,6 +107,7 @@ const App = () => (
                 <Route path="/cadastro-lojista" element={<CadastroLojista />} />
                 <Route path="/termos-de-uso" element={<TermosDeUso />} />
                 <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
+                <Route path="/planos" element={<PlanosPage />} />
                 {/* Client store access via slug - must be last */}
                 <Route path="/:slug" element={<StorePage />} />
                 <Route path="*" element={<NotFound />} />
