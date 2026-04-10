@@ -160,9 +160,9 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
     lastBilledAt: (data?.plan as any)?.last_billed_at ?? null,
     startedAt: (data?.plan as any)?.started_at ?? null,
     isItatingaFixed,
-    pixOperationalFee: isItatingaFixed ? 1 : 0,
-    platformDeliverySplit: isItatingaFixed ? 2 : 0,
-    driverDeliverySplit: isItatingaFixed ? 4 : 0,
+    pixOperationalFee: isItatingaFixed ? (data?.feeConfig?.pix_operational_fee ?? DEFAULT_DELIVERY_FEE_CONFIG.pix_operational_fee) : 0,
+    platformDeliverySplit: isItatingaFixed ? (data?.feeConfig?.platform_split ?? DEFAULT_DELIVERY_FEE_CONFIG.platform_split) : 0,
+    driverDeliverySplit: isItatingaFixed ? (data?.feeConfig?.driver_split ?? DEFAULT_DELIVERY_FEE_CONFIG.driver_split) : 0,
     isLoading,
   };
 }
