@@ -169,9 +169,10 @@ const DeliveryFeeConfigPanel = () => {
 
         {/* Split Config */}
         <div className="border-t border-border pt-4">
-          <p className="text-xs font-bold text-muted-foreground mb-3 flex items-center gap-1.5">
+          <p className="text-xs font-bold text-muted-foreground mb-1 flex items-center gap-1.5">
             <Users className="h-3.5 w-3.5" /> 🏍️ Split de Entrega (Plano Fixo)
           </p>
+          <p className="text-[10px] text-muted-foreground mb-3">Esses valores só se aplicam a lojas no <strong>Plano Fixo</strong>. Lojas com comissão usam a % do plano.</p>
 
           {/* Driver Split */}
           <div className="space-y-1 mb-3">
@@ -233,25 +234,8 @@ const DeliveryFeeConfigPanel = () => {
             Zona rural (ex: 15km): <span className="text-foreground font-bold">R$ {exampleRuralFee.toFixed(2)}</span>
             <span className="text-[10px] ml-1">(R$ {(parseFloat(ruralBaseFee) || 0).toFixed(2)} + 15 × R$ {(parseFloat(ruralPerKm) || 0).toFixed(2)})</span>
           </p>
-        </div>
-
-        {/* Split Info */}
-        <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-3 space-y-1">
-          <p className="text-xs font-bold text-blue-600 dark:text-blue-400">🏍️ Split de Entrega (Plano Fixo {cityName})</p>
           <p className="text-xs text-muted-foreground">
-            Motoboy plataforma: <span className="text-foreground font-bold">R$ {(parseFloat(driverSplit) || 0).toFixed(2)}</span> por corrida
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Plataforma: <span className="text-foreground font-bold">R$ {(parseFloat(platformSplit) || 0).toFixed(2)}</span> por corrida
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Total taxa entrega (plataforma): <span className="text-foreground font-bold">R$ {totalDeliveryFee.toFixed(2)}</span>
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Taxa PIX operacional: <span className="text-foreground font-bold">R$ {(parseFloat(pixOperationalFee) || 0).toFixed(2)}</span> por transação
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Motoboy próprio: taxa do lojista + <span className="text-foreground font-bold">R$ {(parseFloat(platformSplit) || 0).toFixed(2)}</span> plataforma
+            Plano fixo — motoboy recebe: <span className="text-foreground font-bold">R$ {(parseFloat(driverSplit) || 0).toFixed(2)}</span> + plataforma: <span className="text-foreground font-bold">R$ {(parseFloat(platformSplit) || 0).toFixed(2)}</span> = total <span className="text-foreground font-bold">R$ {totalDeliveryFee.toFixed(2)}</span>
           </p>
         </div>
 
