@@ -271,9 +271,6 @@ const AdminApprovals = () => {
                 {store && (
                   <InfoRow icon={Store} label="Categoria da loja" value={store.category} />
                 )}
-                {store && (
-                  <InfoRow icon={Shield} label="Subconta financeira" value={store.asaas_wallet_id ? "Configurada ✅" : "Pendente ⚠️"} warn={!store.asaas_wallet_id} />
-                )}
               </>
             )}
             {p.role === "motoboy" && (
