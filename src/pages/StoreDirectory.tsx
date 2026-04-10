@@ -396,11 +396,13 @@ const StoreDirectory = () => {
               {[
                   "Cardápio digital profissional",
                   "Gestão de pedidos em tempo real",
+                  "PIX integrado*",
                   "Pagamento: dinheiro e cartão",
-                  "Painel financeiro básico",
+                  "Painel financeiro completo",
+                  "Programa de Fidelidade",
                   "Horários flexíveis",
-                  "Até 3 cupons ativos",
-                  "Apenas motoboy próprio",
+                  "Cupons ilimitados",
+                  "Motoboy próprio ou da plataforma**",
                 ].map((f) => (
                   <li key={f} className="flex items-center gap-2.5 text-xs" style={{ color: THEME.dark }}>
                     <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0" style={{ color: THEME.green }} />
@@ -463,9 +465,10 @@ const StoreDirectory = () => {
           </div>
         </div>
 
-        <p className="text-center text-xs mt-6" style={{ color: THEME.muted }}>
-          * Motoboys da plataforma disponíveis apenas no Plano Crescimento e em cidades com cobertura (Itatinga/SP). Plano Essencial: apenas motoboy próprio.
-        </p>
+        <div className="text-center text-xs mt-6 space-y-1" style={{ color: THEME.muted }}>
+          <p>* PIX no Plano Essencial: taxa operacional de R$1 por pedido + R$2 de taxa de plataforma por entrega.</p>
+          <p>** Motoboys da plataforma disponíveis em cidades com cobertura (Itatinga/SP). Demais cidades: motoboy próprio.</p>
+        </div>
 
         {/* Plan comparison highlights */}
         <div className="mt-16 max-w-3xl mx-auto grid sm:grid-cols-3 gap-8">
