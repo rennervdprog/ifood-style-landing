@@ -263,11 +263,13 @@ Deno.serve(async (req) => {
           }
         }
       } else {
-        // This is a financial transaction (commission charge, etc.)
+        // This is a financial transaction (commission charge, platform fee, etc.)
+        const isPlatformFee = externalReference.startsWith("TAXA-");
+
         const { data: txData, error: txError } = await supabase
           .from("financial_transactions")
           .update({
-            status: "approved",
+            status: "paid",
             settled_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
             mercado_pago_payment_id: paymentId,
@@ -282,11 +284,18 @@ Deno.serve(async (req) => {
         } else {
           console.log(`Financial transaction ${externalReference} confirmed via Asaas`);
 
-          // Auto-reactivate store if commission was paid
-          if (txData?.transaction_kind === "commission_charge" && txData.store_id) {
+          if (isPlatformFee && txData?.store_id) {
+            // Platform fee paid — clear repasse_pendente
+            await supabase
+              .from("store_balances")
+              .update({ repasse_pendente: 0, updated_at: new Date().toISOString() })
+              .eq("store_id", txData.store_id);
+
+            console.log(`Store ${txData.store_id} platform fee R$${txData.amount} paid, repasse_pendente cleared`);
+          } else if (txData?.transaction_kind === "commission_charge" && txData.store_id) {
+            // Commission charge paid
             const paidAmount = Number(txData.amount) || 0;
 
-            // Reduce pending commission
             const { data: balance } = await supabase
               .from("store_balances")
               .select("comissao_pendente")
@@ -315,7 +324,6 @@ Deno.serve(async (req) => {
             if (!reactivateError) {
               console.log(`Store ${txData.store_id} reactivated after commission payment`);
 
-              // Resolve compliance alerts
               await supabase
                 .from("compliance_alerts")
                 .update({ is_resolved: true, resolved_at: new Date().toISOString() })

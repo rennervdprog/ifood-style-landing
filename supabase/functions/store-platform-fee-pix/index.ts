@@ -94,14 +94,18 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Generate PIX charge via Mercado Pago
-    const ACCESS_TOKEN = Deno.env.get("MERCADO_PAGO_ACCESS_TOKEN");
-    if (!ACCESS_TOKEN) {
+    // Generate PIX charge via Asaas
+    const ASAAS_API_KEY = Deno.env.get("ASAAS_API_KEY");
+    if (!ASAAS_API_KEY) {
       return new Response(JSON.stringify({ error: "Chave de pagamento não configurada." }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    const baseUrl = ASAAS_API_KEY.startsWith("$aact_")
+      ? "https://api.asaas.com/v3"
+      : "https://sandbox.asaas.com/api/v3";
 
     // Get store owner profile for payer info
     const { data: profile } = await adminSupabase
@@ -111,50 +115,91 @@ Deno.serve(async (req) => {
       .single();
 
     const cleanCpf = String(profile?.document || "").replace(/\D/g, "");
-    const nameParts = (profile?.full_name || "Lojista").split(" ");
-    const firstName = nameParts[0] || "Lojista";
-    const lastName = nameParts.slice(1).join(" ") || "ItaSuper";
-
     const referenceCode = `TAXA-${store_id.substring(0, 6).toUpperCase()}-${Date.now()}`;
-    const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString(); // 30 min
 
-    const paymentBody: Record<string, unknown> = {
-      transaction_amount: Number(amount.toFixed(2)),
-      description: `Taxa plataforma - ${store.name}`,
-      payment_method_id: "pix",
-      date_of_expiration: expiresAt,
-      payer: {
-        email: profile?.email || userData.user.email || "lojista@itasuper.com",
-        first_name: firstName.substring(0, 100),
-        last_name: lastName.substring(0, 100),
-        ...(cleanCpf.length === 11 ? {
-          identification: { type: "CPF", number: cleanCpf },
-        } : {}),
-      },
-      external_reference: referenceCode,
+    // Step 1: Find or create customer in Asaas
+    const customerEmail = profile?.email || userData.user.email || `lojista-${userId.substring(0, 8)}@itasuper.com`;
+    
+    // Search existing customer by cpfCnpj or email
+    let customerId: string | null = null;
+
+    if (cleanCpf.length >= 11) {
+      const searchRes = await fetch(`${baseUrl}/customers?cpfCnpj=${cleanCpf}`, {
+        headers: { "access_token": ASAAS_API_KEY },
+      });
+      const searchData = await searchRes.json();
+      if (searchData.data?.length > 0) {
+        customerId = searchData.data[0].id;
+      }
+    }
+
+    if (!customerId) {
+      // Create customer
+      const customerBody: Record<string, unknown> = {
+        name: profile?.full_name || "Lojista",
+        email: customerEmail,
+      };
+      if (cleanCpf.length >= 11) {
+        customerBody.cpfCnpj = cleanCpf;
+      }
+
+      const createRes = await fetch(`${baseUrl}/customers`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "access_token": ASAAS_API_KEY,
+        },
+        body: JSON.stringify(customerBody),
+      });
+      const createData = await createRes.json();
+      if (!createRes.ok) {
+        console.error("Asaas create customer error:", JSON.stringify(createData));
+        return new Response(JSON.stringify({ error: "Erro ao criar cliente no gateway." }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      customerId = createData.id;
+    }
+
+    // Step 2: Create PIX payment
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 1); // due tomorrow
+    const dueDateStr = dueDate.toISOString().split("T")[0];
+
+    const paymentBody = {
+      customer: customerId,
+      billingType: "PIX",
+      value: Number(amount.toFixed(2)),
+      dueDate: dueDateStr,
+      description: `Taxa plataforma - ${store.name}`.substring(0, 140),
+      externalReference: referenceCode,
     };
 
-    const mpResponse = await fetch("https://api.mercadopago.com/v1/payments", {
+    const paymentRes = await fetch(`${baseUrl}/payments`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${ACCESS_TOKEN}`,
-        "X-Idempotency-Key": `store-fee-${store_id}-${Date.now()}`,
+        "access_token": ASAAS_API_KEY,
       },
       body: JSON.stringify(paymentBody),
     });
 
-    const mpData = await mpResponse.json();
+    const paymentData = await paymentRes.json();
 
-    if (!mpResponse.ok) {
-      console.error("MP PIX Error for store fee:", JSON.stringify(mpData));
+    if (!paymentRes.ok) {
+      console.error("Asaas PIX Error for store fee:", JSON.stringify(paymentData));
       return new Response(JSON.stringify({ error: "Erro ao gerar PIX. Tente novamente." }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const pixInfo = mpData.point_of_interaction?.transaction_data;
+    // Step 3: Get PIX QR Code
+    const pixRes = await fetch(`${baseUrl}/payments/${paymentData.id}/pixQrCode`, {
+      headers: { "access_token": ASAAS_API_KEY },
+    });
+    const pixInfo = await pixRes.json();
 
     // Record the transaction
     await adminSupabase.from("financial_transactions").insert({
@@ -163,22 +208,22 @@ Deno.serve(async (req) => {
       amount,
       reference_code: referenceCode,
       status: "pending",
-      provider: "mercado_pago",
-      mercado_pago_payment_id: String(mpData.id),
-      pix_qr_code: pixInfo?.qr_code || null,
-      pix_qr_code_base64: pixInfo?.qr_code_base64 || null,
-      pix_copy_paste: pixInfo?.qr_code || null,
+      provider: "asaas",
+      mercado_pago_payment_id: paymentData.id,
+      pix_qr_code: pixInfo?.payload || null,
+      pix_qr_code_base64: pixInfo?.encodedImage || null,
+      pix_copy_paste: pixInfo?.payload || null,
       metadata: { type: "platform_fee", store_name: store.name },
     });
 
     return new Response(
       JSON.stringify({
-        payment_id: mpData.id,
-        qr_code: pixInfo?.qr_code || null,
-        qr_code_base64: pixInfo?.qr_code_base64 || null,
+        payment_id: paymentData.id,
+        qr_code: pixInfo?.payload || null,
+        qr_code_base64: pixInfo?.encodedImage || null,
         reference_code: referenceCode,
         amount,
-        expires_at: expiresAt,
+        expires_at: dueDateStr,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
