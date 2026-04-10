@@ -228,6 +228,72 @@ const StoreFinanceBasic = ({ storeId, storeName }: StoreFinanceBasicProps) => {
         </div>
       </div>
 
+      {/* Platform Fee Balance Card */}
+      {pendingFee > 0 && (
+        <div className="bg-destructive/5 border border-destructive/20 rounded-2xl p-4 space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-bold text-foreground text-sm">Taxa plataforma pendente</h3>
+              <p className="text-xs text-muted-foreground">
+                R$2 por entrega • Acumulado de pedidos finalizados
+              </p>
+            </div>
+            <span className="text-lg font-black text-destructive">
+              {formatCurrency(pendingFee)}
+            </span>
+          </div>
+
+          {!pixData ? (
+            <Button
+              onClick={handlePayPlatformFee}
+              disabled={isGeneratingPix}
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl"
+            >
+              {isGeneratingPix ? (
+                <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Gerando PIX...</>
+              ) : (
+                <><QrCode className="h-4 w-4 mr-2" /> Pagar {formatCurrency(pendingFee)} via PIX</>
+              )}
+            </Button>
+          ) : (
+            <div className="space-y-3">
+              {pixData.qr_code_base64 && (
+                <div className="flex justify-center">
+                  <img
+                    src={`data:image/png;base64,${pixData.qr_code_base64}`}
+                    alt="QR Code PIX"
+                    className="w-48 h-48 rounded-xl border border-border"
+                  />
+                </div>
+              )}
+              <p className="text-center text-xs text-muted-foreground">
+                Escaneie o QR Code ou copie o código abaixo
+              </p>
+              <Button
+                onClick={copyPixCode}
+                variant="outline"
+                className="w-full rounded-xl"
+              >
+                <Copy className="h-4 w-4 mr-2" /> Copiar código PIX
+              </Button>
+              <Button
+                onClick={() => {
+                  setPixData(null);
+                  queryClient.invalidateQueries({ queryKey: ["store-balance", storeId] });
+                }}
+                variant="ghost"
+                className="w-full text-xs text-muted-foreground"
+              >
+                <CheckCircle2 className="h-3 w-3 mr-1" /> Já paguei / Fechar
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Date filter */}
       <div className="flex items-center gap-2">
         <Calendar className="h-4 w-4 text-muted-foreground" />
