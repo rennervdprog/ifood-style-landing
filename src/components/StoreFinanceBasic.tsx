@@ -58,7 +58,22 @@ const StoreFinanceBasic = ({ storeId, storeName }: StoreFinanceBasicProps) => {
     refetchInterval: 30000,
   });
 
+  const { data: minPayoutSetting } = useQuery({
+    queryKey: ["min-payout-amount"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("admin_settings")
+        .select("value")
+        .eq("key", "min_payout_amount")
+        .maybeSingle();
+      return Number(data?.value || 100);
+    },
+    staleTime: 1000 * 60 * 10,
+  });
+
+  const minPayout = minPayoutSetting ?? 100;
   const pendingFee = Number(storeBalance?.repasse_pendente || 0);
+  const canPay = pendingFee >= minPayout;
 
   const handlePayPlatformFee = async () => {
     if (pendingFee <= 0) return;
