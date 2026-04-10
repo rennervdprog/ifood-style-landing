@@ -1034,6 +1034,51 @@ export type Database = {
         }
         Relationships: []
       }
+      pizza_borders: {
+        Row: {
+          created_at: string
+          id: string
+          is_available: boolean
+          name: string
+          price: number
+          sort_order: number
+          store_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_available?: boolean
+          name?: string
+          price?: number
+          sort_order?: number
+          store_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_available?: boolean
+          name?: string
+          price?: number
+          sort_order?: number
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pizza_borders_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pizza_borders_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plan_change_requests: {
         Row: {
           admin_notes: string | null
