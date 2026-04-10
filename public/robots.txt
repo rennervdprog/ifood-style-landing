@@ -10,4 +10,4 @@ Disallow: /carrinho
 Disallow: /perfil
 Disallow: /auth
 
-Sitemap: https://itasuper.lovable.app/sitemap.xml
+Sitemap: https://itasuper.com.br/sitemap.xml
