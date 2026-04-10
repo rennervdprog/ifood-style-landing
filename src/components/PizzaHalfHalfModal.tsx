@@ -129,13 +129,13 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
     }
     onAdd(
       {
-        id: `half-${p1.id}-${p2.id}-${selectedBorderId || "trad"}`,
+        id: p1.id,
         store_id: storeId,
         name,
         description: null,
         price: unitPrice,
         image_url: null,
-        metadata: { is_half_half: true, border: borderName },
+        metadata: { is_half_half: true, border: borderName, half2_id: p2.id },
       },
       addons,
       observations,
