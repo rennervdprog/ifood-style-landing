@@ -28,7 +28,7 @@ const plans = [
     period: "/mês",
     highlight: false,
     description: "Comissão menor com mensalidade acessível.",
-    commission: "10% por pedido",
+    commission: "2,5% por pedido",
     features: [
       "Tudo do plano Comissão",
       "Comissão reduzida para 10%",
