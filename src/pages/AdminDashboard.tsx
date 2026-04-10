@@ -2113,6 +2113,7 @@ const AdminDashboard = () => {
       </main>
       <ProductTour steps={lojistaTourSteps} tourKey="lojista" />
     </div>
+    </TrialExpiredGuard>
   );
 };
 
