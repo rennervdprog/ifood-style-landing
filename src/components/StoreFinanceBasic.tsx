@@ -58,7 +58,22 @@ const StoreFinanceBasic = ({ storeId, storeName }: StoreFinanceBasicProps) => {
     refetchInterval: 30000,
   });
 
+  const { data: minPayoutSetting } = useQuery({
+    queryKey: ["min-payout-amount"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("admin_settings")
+        .select("value")
+        .eq("key", "min_payout_amount")
+        .maybeSingle();
+      return Number(data?.value || 100);
+    },
+    staleTime: 1000 * 60 * 10,
+  });
+
+  const minPayout = minPayoutSetting ?? 100;
   const pendingFee = Number(storeBalance?.repasse_pendente || 0);
+  const canPay = pendingFee >= minPayout;
 
   const handlePayPlatformFee = async () => {
     if (pendingFee <= 0) return;
@@ -246,7 +261,7 @@ const StoreFinanceBasic = ({ storeId, storeName }: StoreFinanceBasicProps) => {
             </span>
           </div>
 
-          {!pixData ? (
+          {!pixData && canPay ? (
             <Button
               onClick={handlePayPlatformFee}
               disabled={isGeneratingPix}
@@ -258,6 +273,19 @@ const StoreFinanceBasic = ({ storeId, storeName }: StoreFinanceBasicProps) => {
                 <><QrCode className="h-4 w-4 mr-2" /> Pagar {formatCurrency(pendingFee)} via PIX</>
               )}
             </Button>
+          ) : !pixData ? (
+            <div className="space-y-2">
+              <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-destructive/80 to-destructive rounded-full transition-all duration-500"
+                  style={{ width: `${Math.min(100, (pendingFee / minPayout) * 100)}%` }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground text-center">
+                PIX disponível a partir de <strong className="text-foreground">R$ {minPayout.toFixed(2)}</strong>
+                {" "}— faltam <strong className="text-destructive">R$ {(minPayout - pendingFee).toFixed(2)}</strong>
+              </p>
+            </div>
           ) : (
             <div className="space-y-3">
               {pixData.qr_code_base64 && (
