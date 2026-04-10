@@ -512,20 +512,21 @@ const AdminDashboard = () => {
       setCancelConfirm(null);
 
       const clientPhone = getClientWhatsApp(order.client_id);
-      if (clientPhone) {
-        const msg = isPix
-          ? `❌ *ItaSuper* informa: Seu pedido #${order.id.slice(0, 8).toUpperCase()} foi cancelado.\n\n💰 O reembolso de R$ ${Number(order.total_price).toFixed(2)} via PIX será processado em breve.\n\nDesculpe o transtorno! 🙏`
-          : `❌ *ItaSuper* informa: Seu pedido #${order.id.slice(0, 8).toUpperCase()} foi cancelado.\n\nDesculpe o transtorno! 🙏`;
-        setTimeout(() => openWhatsApp(clientPhone, msg), 600);
-      }
+      notifyOrderStatusChange("cancelado", {
+        orderId: order.id,
+        storeName: store?.name || "Loja",
+        clientId: order.client_id,
+        clientPhone,
+        clientName: getClientName(order.client_id),
+        totalPrice: Number(order.total_price),
+        paymentMethod: order.payment_method,
+      });
 
       if (isPix) {
         toast.success("Pedido cancelado! Reembolso PIX pendente.", { duration: 8000, description: `R$ ${Number(order.total_price).toFixed(2)} — envie o PIX de volta ao cliente.` });
       } else {
         toast.success("Pedido cancelado e cliente notificado.");
       }
-
-      sendPushNotification([order.client_id], "❌ Pedido Cancelado", `Seu pedido #${order.id.slice(0, 8).toUpperCase()} foi cancelado.${isPix ? " O reembolso será processado." : ""}`, { link: "/pedidos" }).catch(console.error);
     } catch (e: any) {
       toast.error(`Erro ao cancelar: ${e?.message}`);
     }
