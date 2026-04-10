@@ -207,35 +207,7 @@ const AdminStoreManager = () => {
     blocked: stores?.filter((s) => s.status === "bloqueado").length || 0,
   };
 
-  const storesWithoutWallet = stores?.filter((s) => s.status === "ativo" && !s.asaas_wallet_id) || [];
-
-  const handleBulkCreateWallets = async () => {
-    if (storesWithoutWallet.length === 0) {
-      toast.info("Todas as lojas ativas já possuem subconta Asaas.");
-      return;
-    }
-    setBulkCreating(true);
-    let success = 0;
-    let failed = 0;
-    for (const store of storesWithoutWallet) {
-      try {
-        const { error } = await supabase.functions.invoke("asaas-subaccount", {
-          body: { store_id: store.id },
-        });
-        if (error) throw error;
-        success++;
-      } catch {
-        failed++;
-      }
-    }
-    setBulkCreating(false);
-    queryClient.invalidateQueries({ queryKey: ["admin-stores-list"] });
-    if (failed === 0) {
-      toast.success(`✅ ${success} subconta(s) criada(s) com sucesso!`);
-    } else {
-      toast.warning(`${success} criadas, ${failed} falharam. Tente novamente nas que faltam.`);
-    }
-  };
+  // Subaccount system removed — split is now automatic via webhook transfers
 
   const filters: { key: StoreFilter; label: string }[] = [
     { key: "all", label: `Todas (${counts.all})` },
@@ -264,23 +236,6 @@ const AdminStoreManager = () => {
         ))}
       </div>
 
-      {/* Bulk create wallets */}
-      {storesWithoutWallet.length > 0 && (
-        <button
-          onClick={handleBulkCreateWallets}
-          disabled={bulkCreating}
-          className="w-full flex items-center justify-center gap-2 bg-primary/10 text-primary font-bold py-3 rounded-xl text-sm hover:bg-primary/20 active:scale-[0.98] transition-all disabled:opacity-50"
-        >
-          {bulkCreating ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Wallet className="h-4 w-4" />
-          )}
-          {bulkCreating
-            ? "Criando subcontas..."
-            : `Criar subconta Asaas em lote (${storesWithoutWallet.length} lojas)`}
-        </button>
-      )}
 
       {/* Store list */}
       {isLoading ? (
@@ -333,33 +288,6 @@ const AdminStoreManager = () => {
                     >
                       {editingPlan === store.id ? <ChevronUp className="h-4 w-4" /> : <Percent className="h-4 w-4" />}
                     </button>
-                    {store.status === "ativo" && !store.asaas_wallet_id && (
-                      <button
-                        onClick={async () => {
-                          setCreatingWallet(store.id);
-                          try {
-                            const { error } = await supabase.functions.invoke("asaas-subaccount", { body: { store_id: store.id } });
-                            if (error) throw error;
-                            toast.success(`Subconta Asaas criada para ${store.name}`);
-                            queryClient.invalidateQueries({ queryKey: ["admin-stores-list"] });
-                          } catch (err: any) {
-                            toast.error(err.message || "Erro ao criar subconta");
-                          } finally {
-                            setCreatingWallet(null);
-                          }
-                        }}
-                        disabled={creatingWallet === store.id}
-                        className="p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 active:scale-95 transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
-                        title="Criar subconta Asaas (split)"
-                      >
-                        {creatingWallet === store.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wallet className="h-4 w-4" />}
-                      </button>
-                    )}
-                    {store.asaas_wallet_id && (
-                      <span className="px-2 py-0.5 bg-primary/20 text-primary text-xs font-bold rounded-full flex items-center gap-1">
-                        <Wallet className="h-3 w-3" /> Split
-                      </span>
-                    )}
                     <button
                       onClick={() => setDeleteTarget({ id: store.id, name: store.name })}
                       className="p-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 active:scale-95 transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"

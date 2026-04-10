@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
         // This is an order payment
         const { data: order, error: fetchError } = await supabase
           .from("orders")
-          .select("id, status, store_id, subtotal, payment_method")
+          .select("id, status, store_id, subtotal, delivery_fee, payment_method")
           .eq("id", externalReference)
           .single();
 
@@ -118,37 +118,149 @@ Deno.serve(async (req) => {
           console.log(`Order ${externalReference} payment confirmed via Asaas, status → pendente`);
         }
 
-        // Track commission for online payments using store's commission_rate
+        // ── Auto-transfer store share to owner's PIX key ──
         if (order.store_id && order.subtotal) {
-          const { data: storeInfo } = await supabase.from("stores").select("commission_rate").eq("id", order.store_id).single();
-          const rate = (storeInfo?.commission_rate ?? 15) / 100;
-          const commission = Math.round(Number(order.subtotal) * rate * 100) / 100;
+          const subtotal = Number(order.subtotal) || 0;
+          const deliveryFee = Number(order.delivery_fee) || 0;
 
-          // Try to read existing balance first, then insert or update
-          const { data: existing } = await supabase
-            .from("store_balances")
-            .select("comissao_pendente, pending_commission")
-            .eq("store_id", order.store_id)
+          // Get store info + owner PIX key
+          const { data: store } = await supabase
+            .from("stores")
+            .select("id, name, owner_id, delivery_mode, commission_rate")
+            .eq("id", order.store_id)
             .single();
 
-          if (existing) {
-            await supabase
-              .from("store_balances")
-              .update({
-                comissao_pendente: Number(existing.comissao_pendente || 0) + commission,
-                pending_commission: Number(existing.pending_commission || 0) + commission,
-                updated_at: new Date().toISOString(),
-              })
-              .eq("store_id", order.store_id);
+          const { data: storePlan } = await supabase
+            .from("store_plans")
+            .select("plan_type, commission_rate")
+            .eq("store_id", order.store_id)
+            .eq("is_active", true)
+            .limit(1)
+            .maybeSingle();
+
+          const { data: ownerProfile } = await supabase
+            .from("profiles")
+            .select("pix_key, pix_type, full_name")
+            .eq("user_id", store?.owner_id)
+            .single();
+
+          if (store && ownerProfile?.pix_key) {
+            const isFixedPlan = storePlan?.plan_type === "fixed";
+            const isOwnDelivery = store.delivery_mode === "own";
+
+            // Read delivery fee config for PIX operational fee
+            let pixOpFee = 1;
+            try {
+              const { data: feeConfigRow } = await supabase
+                .from("admin_settings")
+                .select("value")
+                .eq("key", "delivery_fee_config")
+                .maybeSingle();
+              if (feeConfigRow?.value) {
+                const fc = feeConfigRow.value as any;
+                pixOpFee = fc.pix_operational_fee ?? 1;
+              }
+            } catch (e) {
+              console.warn("Could not load delivery_fee_config, using defaults", e);
+            }
+
+            let storeShare = 0;
+            let commissionAmount = 0;
+
+            if (isFixedPlan) {
+              // Fixed plan: 0% commission, only PIX operational fee
+              if (isOwnDelivery) {
+                storeShare = Math.round((subtotal - pixOpFee + deliveryFee) * 100) / 100;
+              } else {
+                storeShare = Math.round((subtotal - pixOpFee) * 100) / 100;
+              }
+              commissionAmount = 0;
+            } else {
+              // Commission-based plans
+              const rate = (storePlan?.commission_rate ?? store.commission_rate ?? 15) / 100;
+              commissionAmount = Math.round(subtotal * rate * 100) / 100;
+              if (isOwnDelivery) {
+                storeShare = Math.round((subtotal * (1 - rate) + deliveryFee) * 100) / 100;
+              } else {
+                storeShare = Math.round(subtotal * (1 - rate) * 100) / 100;
+              }
+            }
+
+            // Ensure store share is positive
+            if (storeShare < 0) storeShare = 0;
+
+            // Transfer store share via Asaas
+            if (storeShare > 0) {
+              const apiKey = Deno.env.get("ASAAS_API_KEY");
+              if (apiKey) {
+                const baseUrl = apiKey.startsWith("$aact_")
+                  ? "https://api.asaas.com/v3"
+                  : "https://sandbox.asaas.com/api/v3";
+
+                const pixTypeMap: Record<string, string> = {
+                  cpf: "CPF", cnpj: "CNPJ", email: "EMAIL", phone: "PHONE", random: "EVP",
+                };
+
+                const transferBody = {
+                  value: storeShare,
+                  operationType: "PIX",
+                  pixAddressKey: ownerProfile.pix_key,
+                  pixAddressKeyType: pixTypeMap[ownerProfile.pix_type || "random"] || "EVP",
+                  description: `Repasse pedido #${externalReference.substring(0, 8)} - ${store.name}`.substring(0, 140),
+                };
+
+                try {
+                  const transferRes = await fetch(`${baseUrl}/transfers`, {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      "access_token": apiKey,
+                    },
+                    body: JSON.stringify(transferBody),
+                  });
+
+                  const transferData = await transferRes.json();
+                  if (transferRes.ok) {
+                    console.log(`Auto-transfer R$${storeShare} to ${store.name} (PIX: ${ownerProfile.pix_key}) — transfer ID: ${transferData.id}`);
+                  } else {
+                    console.error(`Auto-transfer failed for ${store.name}:`, JSON.stringify(transferData));
+                  }
+                } catch (transferErr) {
+                  console.error(`Auto-transfer exception for ${store.name}:`, transferErr);
+                }
+              }
+            }
+
+            // Track commission for commission-based plans
+            if (commissionAmount > 0) {
+              const { data: existing } = await supabase
+                .from("store_balances")
+                .select("comissao_pendente, pending_commission")
+                .eq("store_id", order.store_id)
+                .single();
+
+              if (existing) {
+                await supabase
+                  .from("store_balances")
+                  .update({
+                    comissao_pendente: Number(existing.comissao_pendente || 0) + commissionAmount,
+                    pending_commission: Number(existing.pending_commission || 0) + commissionAmount,
+                    updated_at: new Date().toISOString(),
+                  })
+                  .eq("store_id", order.store_id);
+              } else {
+                await supabase.from("store_balances").insert({
+                  store_id: order.store_id,
+                  comissao_pendente: commissionAmount,
+                  pending_commission: commissionAmount,
+                  updated_at: new Date().toISOString(),
+                });
+              }
+              console.log(`Commission R$${commissionAmount} tracked for store ${order.store_id}`);
+            }
           } else {
-            await supabase.from("store_balances").insert({
-              store_id: order.store_id,
-              comissao_pendente: commission,
-              pending_commission: commission,
-              updated_at: new Date().toISOString(),
-            });
+            console.warn(`Store ${order.store_id} owner has no PIX key, skipping auto-transfer`);
           }
-          console.log(`Commission R$${commission} tracked for store ${order.store_id}`);
         }
       } else {
         // This is a financial transaction (commission charge, etc.)
