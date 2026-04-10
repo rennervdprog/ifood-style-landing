@@ -169,9 +169,10 @@ const DeliveryFeeConfigPanel = () => {
 
         {/* Split Config */}
         <div className="border-t border-border pt-4">
-          <p className="text-xs font-bold text-muted-foreground mb-3 flex items-center gap-1.5">
+          <p className="text-xs font-bold text-muted-foreground mb-1 flex items-center gap-1.5">
             <Users className="h-3.5 w-3.5" /> 🏍️ Split de Entrega (Plano Fixo)
           </p>
+          <p className="text-[10px] text-muted-foreground mb-3">Esses valores só se aplicam a lojas no <strong>Plano Fixo</strong>. Lojas com comissão usam a % do plano.</p>
 
           {/* Driver Split */}
           <div className="space-y-1 mb-3">
