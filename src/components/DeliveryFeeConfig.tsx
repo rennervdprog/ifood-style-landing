@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Truck, Save, MapPin, DollarSign } from "lucide-react";
+import { Truck, Save, MapPin, DollarSign, Users } from "lucide-react";
 import { DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig as FeeConfig } from "@/lib/deliveryFee";
 
 const DeliveryFeeConfigPanel = () => {
@@ -11,6 +11,9 @@ const DeliveryFeeConfigPanel = () => {
   const [cityFee, setCityFee] = useState(DEFAULT_DELIVERY_FEE_CONFIG.city_fee.toString());
   const [ruralBaseFee, setRuralBaseFee] = useState(DEFAULT_DELIVERY_FEE_CONFIG.rural_base_fee.toString());
   const [ruralPerKm, setRuralPerKm] = useState(DEFAULT_DELIVERY_FEE_CONFIG.rural_per_km.toString());
+  const [driverSplit, setDriverSplit] = useState(DEFAULT_DELIVERY_FEE_CONFIG.driver_split.toString());
+  const [platformSplit, setPlatformSplit] = useState(DEFAULT_DELIVERY_FEE_CONFIG.platform_split.toString());
+  const [pixOperationalFee, setPixOperationalFee] = useState(DEFAULT_DELIVERY_FEE_CONFIG.pix_operational_fee.toString());
   const [saving, setSaving] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
@@ -32,6 +35,9 @@ const DeliveryFeeConfigPanel = () => {
       setCityFee((configData.city_fee ?? DEFAULT_DELIVERY_FEE_CONFIG.city_fee).toString());
       setRuralBaseFee((configData.rural_base_fee ?? DEFAULT_DELIVERY_FEE_CONFIG.rural_base_fee).toString());
       setRuralPerKm((configData.rural_per_km ?? DEFAULT_DELIVERY_FEE_CONFIG.rural_per_km).toString());
+      setDriverSplit((configData.driver_split ?? DEFAULT_DELIVERY_FEE_CONFIG.driver_split).toString());
+      setPlatformSplit((configData.platform_split ?? DEFAULT_DELIVERY_FEE_CONFIG.platform_split).toString());
+      setPixOperationalFee((configData.pix_operational_fee ?? DEFAULT_DELIVERY_FEE_CONFIG.pix_operational_fee).toString());
       setLoaded(true);
     }
   }, [configData, loaded]);
@@ -42,6 +48,9 @@ const DeliveryFeeConfigPanel = () => {
       city_fee: parseFloat(cityFee) || 0,
       rural_base_fee: parseFloat(ruralBaseFee) || 0,
       rural_per_km: parseFloat(ruralPerKm) || 0,
+      driver_split: parseFloat(driverSplit) || 0,
+      platform_split: parseFloat(platformSplit) || 0,
+      pix_operational_fee: parseFloat(pixOperationalFee) || 0,
     };
 
     if (!config.city_name) {
@@ -79,6 +88,7 @@ const DeliveryFeeConfigPanel = () => {
 
   // Preview calculation
   const exampleRuralFee = (parseFloat(ruralBaseFee) || 0) + (parseFloat(ruralPerKm) || 0) * 15;
+  const totalDeliveryFee = (parseFloat(driverSplit) || 0) + (parseFloat(platformSplit) || 0);
 
   return (
     <div className="space-y-4">
@@ -157,6 +167,62 @@ const DeliveryFeeConfigPanel = () => {
           </div>
         </div>
 
+        {/* Split Config */}
+        <div className="border-t border-border pt-4">
+          <p className="text-xs font-bold text-muted-foreground mb-3 flex items-center gap-1.5">
+            <Users className="h-3.5 w-3.5" /> 🏍️ Split de Entrega (Plano Fixo)
+          </p>
+
+          {/* Driver Split */}
+          <div className="space-y-1 mb-3">
+            <label className="text-xs font-bold text-muted-foreground">Motoboy da plataforma (por corrida)</label>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">R$</span>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={driverSplit}
+                onChange={(e) => setDriverSplit(e.target.value.replace(/[^0-9.,]/g, ""))}
+                placeholder="4.00"
+                className="flex-1 bg-background border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+          </div>
+
+          {/* Platform Split */}
+          <div className="space-y-1 mb-3">
+            <label className="text-xs font-bold text-muted-foreground">Plataforma (por corrida)</label>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">R$</span>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={platformSplit}
+                onChange={(e) => setPlatformSplit(e.target.value.replace(/[^0-9.,]/g, ""))}
+                placeholder="2.00"
+                className="flex-1 bg-background border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+          </div>
+
+          {/* PIX Operational Fee */}
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-muted-foreground">Taxa operacional PIX (por transação)</label>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">R$</span>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={pixOperationalFee}
+                onChange={(e) => setPixOperationalFee(e.target.value.replace(/[^0-9.,]/g, ""))}
+                placeholder="1.00"
+                className="flex-1 bg-background border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+            <p className="text-[10px] text-muted-foreground">Cobrado da loja em cada pagamento PIX (plano fixo).</p>
+          </div>
+        </div>
+
         {/* Preview */}
         <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-1">
           <p className="text-xs font-bold text-primary">📊 Simulação</p>
@@ -171,15 +237,21 @@ const DeliveryFeeConfigPanel = () => {
 
         {/* Split Info */}
         <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-3 space-y-1">
-          <p className="text-xs font-bold text-blue-600 dark:text-blue-400">🏍️ Split de Entrega (Plano Fixo Itatinga)</p>
+          <p className="text-xs font-bold text-blue-600 dark:text-blue-400">🏍️ Split de Entrega (Plano Fixo {cityName})</p>
           <p className="text-xs text-muted-foreground">
-            Motoboy plataforma: <span className="text-foreground font-bold">R$ 4,00</span> por corrida
+            Motoboy plataforma: <span className="text-foreground font-bold">R$ {(parseFloat(driverSplit) || 0).toFixed(2)}</span> por corrida
           </p>
           <p className="text-xs text-muted-foreground">
-            Plataforma: <span className="text-foreground font-bold">R$ 2,00</span> por corrida
+            Plataforma: <span className="text-foreground font-bold">R$ {(parseFloat(platformSplit) || 0).toFixed(2)}</span> por corrida
           </p>
           <p className="text-xs text-muted-foreground">
-            Motoboy próprio: taxa do lojista + <span className="text-foreground font-bold">R$ 2,00</span> plataforma
+            Total taxa entrega (plataforma): <span className="text-foreground font-bold">R$ {totalDeliveryFee.toFixed(2)}</span>
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Taxa PIX operacional: <span className="text-foreground font-bold">R$ {(parseFloat(pixOperationalFee) || 0).toFixed(2)}</span> por transação
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Motoboy próprio: taxa do lojista + <span className="text-foreground font-bold">R$ {(parseFloat(platformSplit) || 0).toFixed(2)}</span> plataforma
           </p>
         </div>
 
