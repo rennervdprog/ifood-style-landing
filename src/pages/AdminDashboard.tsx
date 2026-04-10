@@ -31,6 +31,7 @@ import StoreFinanceBasic from "@/components/StoreFinanceBasic";
 import StoreSubscription from "@/components/StoreSubscription";
 import CommissionAlert from "@/components/CommissionAlert";
 import LoyaltyConfigPanel from "@/components/LoyaltyConfigPanel";
+import PizzaBorderManager from "@/components/PizzaBorderManager";
 import { printThermalReceipt } from "@/lib/thermalPrint";
 import { requestNotificationPermission, notifyNewOrder, pushNotifyDeliveryAvailable } from "@/lib/notifications";
 import { sendPushNotification } from "@/lib/firebase";
