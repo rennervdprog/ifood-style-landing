@@ -900,6 +900,15 @@ const PedidosPage = () => {
 
                       {/* Actions */}
                       <div className="px-4 pb-3 flex items-center gap-2">
+                        {!["cancelado"].includes(order.status) && (
+                          <OrderChat
+                            orderId={order.id}
+                            storeName={order.stores?.name || "Loja"}
+                            storeOwnerId={order.stores?.owner_id}
+                            clientId={order.client_id}
+                            driverId={order.driver_id}
+                          />
+                        )}
                         {["entregue", "finalizado"].includes(order.status) && (
                           <button
                             onClick={() => {
