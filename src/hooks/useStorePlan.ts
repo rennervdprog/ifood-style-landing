@@ -36,7 +36,9 @@ export interface StorePlanFeatures {
   lastBilledAt: string | null;
   /** Plan start date */
   startedAt: string | null;
-  /** Whether the store is in Itatinga (platform city) with fixed plan benefits */
+  /** Whether the store has fixed plan (all fixed plans get full features) */
+  isFixedPlan: boolean;
+  /** @deprecated Use isFixedPlan instead */
   isItatingaFixed: boolean;
   /** Platform fee per PIX order (R$1 operational tax) */
   pixOperationalFee: number;
@@ -47,7 +49,19 @@ export interface StorePlanFeatures {
   isLoading: boolean;
 }
 
-const PLAN_FEATURES_DEFAULT: Record<StorePlanType, Omit<StorePlanFeatures, "planType" | "monthlyFee" | "commissionRate" | "isLoading" | "trialEndsAt" | "isInTrial" | "trialDaysLeft" | "nextBillingDate" | "lastBilledAt" | "startedAt" | "isItatingaFixed" | "pixOperationalFee" | "platformDeliverySplit" | "driverDeliverySplit">> = {
+// All fixed plans get full features (PIX with operational fee, all tools)
+const FIXED_PLAN_FEATURES = {
+  allowPix: true,
+  allowPlatformDelivery: true,
+  allowLoyalty: true,
+  allowBanners: true,
+  allowScheduling: true,
+  allowFullReports: true,
+  hasCommission: false,
+  maxCoupons: null as number | null,
+};
+
+const PLAN_FEATURES: Record<StorePlanType, typeof FIXED_PLAN_FEATURES> = {
   commission_only: {
     allowPix: true,
     allowPlatformDelivery: true,
@@ -68,37 +82,13 @@ const PLAN_FEATURES_DEFAULT: Record<StorePlanType, Omit<StorePlanFeatures, "plan
     hasCommission: true,
     maxCoupons: null,
   },
-  fixed: {
-    allowPix: false,
-    allowPlatformDelivery: false,
-    allowLoyalty: false,
-    allowBanners: false,
-    allowScheduling: false,
-    allowFullReports: false,
-    hasCommission: false,
-    maxCoupons: 3,
-  },
+  fixed: FIXED_PLAN_FEATURES,
 };
-
-// Itatinga fixed plan overrides — unlocks all features
-const ITATINGA_FIXED_OVERRIDES = {
-  allowPix: true,
-  allowPlatformDelivery: true,
-  allowLoyalty: true,
-  allowBanners: true,
-  allowScheduling: true,
-  allowFullReports: true,
-  hasCommission: false, // No commission on fixed plan
-  maxCoupons: null as number | null,
-};
-
-const PLATFORM_CITIES = ["itatinga"];
 
 export function useStorePlan(storeId: string | undefined | null): StorePlanFeatures {
   const { data, isLoading } = useQuery({
     queryKey: ["store-plan", storeId],
     queryFn: async () => {
-      // Fetch plan + store city + delivery config in parallel
       const [planResult, storeResult, configResult] = await Promise.all([
         supabase
           .from("store_plans")
@@ -131,14 +121,8 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
   });
 
   const planType: StorePlanType = (data?.plan?.plan_type as StorePlanType) || "commission_only";
-  const normalizedCity = (data?.city || "itatinga").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_");
-  const isPlatformCity = PLATFORM_CITIES.includes(normalizedCity);
-  const isItatingaFixed = planType === "fixed" && isPlatformCity;
-
-  // Apply features: if Itatinga + fixed, override with unlocked features
-  const features = isItatingaFixed
-    ? { ...PLAN_FEATURES_DEFAULT[planType], ...ITATINGA_FIXED_OVERRIDES }
-    : PLAN_FEATURES_DEFAULT[planType];
+  const isFixedPlan = planType === "fixed";
+  const features = PLAN_FEATURES[planType];
 
   const trialEndsAt = (data?.plan as any)?.trial_ends_at ?? null;
   const now = new Date();
@@ -159,10 +143,11 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
     nextBillingDate: (data?.plan as any)?.next_billing_date ?? null,
     lastBilledAt: (data?.plan as any)?.last_billed_at ?? null,
     startedAt: (data?.plan as any)?.started_at ?? null,
-    isItatingaFixed,
-    pixOperationalFee: isItatingaFixed ? (data?.feeConfig?.pix_operational_fee ?? DEFAULT_DELIVERY_FEE_CONFIG.pix_operational_fee) : 0,
-    platformDeliverySplit: isItatingaFixed ? (data?.feeConfig?.platform_split ?? DEFAULT_DELIVERY_FEE_CONFIG.platform_split) : 0,
-    driverDeliverySplit: isItatingaFixed ? (data?.feeConfig?.driver_split ?? DEFAULT_DELIVERY_FEE_CONFIG.driver_split) : 0,
+    isFixedPlan,
+    isItatingaFixed: isFixedPlan, // backward compat
+    pixOperationalFee: isFixedPlan ? (data?.feeConfig?.pix_operational_fee ?? DEFAULT_DELIVERY_FEE_CONFIG.pix_operational_fee) : 0,
+    platformDeliverySplit: isFixedPlan ? (data?.feeConfig?.platform_split ?? DEFAULT_DELIVERY_FEE_CONFIG.platform_split) : 0,
+    driverDeliverySplit: isFixedPlan ? (data?.feeConfig?.driver_split ?? DEFAULT_DELIVERY_FEE_CONFIG.driver_split) : 0,
     isLoading,
   };
 }
