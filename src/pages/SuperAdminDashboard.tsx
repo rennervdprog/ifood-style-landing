@@ -212,6 +212,13 @@ const SuperAdminDashboard = () => {
   }, [isAdmin, queryClient]);
 
   const getStoreRate = (storeId: string) => {
+    // Use active plan's commission rate (fixed plans = 0%)
+    const plan = parentStorePlans?.find((p: any) => p.store_id === storeId);
+    if (plan) {
+      if (plan.plan_type === "fixed") return 0;
+      return (plan.commission_rate ?? 15) / 100;
+    }
+    // Fallback to legacy store commission_rate
     const store = stores?.find((s: any) => s.id === storeId);
     return ((store as any)?.commission_rate ?? 15) / 100;
   };
@@ -223,7 +230,7 @@ const SuperAdminDashboard = () => {
     const activeStatuses = ["pendente", "preparando", "pronto_para_entrega", "em_transito", "saiu_entrega"];
     const activeOrders = orders.filter(o => activeStatuses.includes(o.status)).length;
     return { totalSales, commission, activeOrders, totalOrders: orders.length };
-  }, [orders, stores]);
+  }, [orders, stores, parentStorePlans]);
 
   const storeSettlement = useMemo(() => {
     if (!financeOrders || !stores) return [];
@@ -255,7 +262,7 @@ const SuperAdminDashboard = () => {
       entry.finalBalance = subtractMoney(entry.netTransfer, entry.commissionDue);
     });
     return Array.from(map.values()).filter(e => e.orderCount > 0).sort((a, b) => b.totalSales - a.totalSales);
-  }, [financeOrders, stores, selectedStore]);
+  }, [financeOrders, stores, selectedStore, parentStorePlans]);
 
   const driverSettlement = useMemo(() => {
     if (!financeOrders || !drivers) return [];
@@ -283,7 +290,7 @@ const SuperAdminDashboard = () => {
     const grossProfit = sumMoney(storeSettlement.map((entry) => entry.commissionDue + multiplyMoney(entry.appSales, getStoreRate(entry.storeId))));
     const totalDriverFees = sumMoney(driverSettlement.map((entry) => entry.appFees));
     return { totalVolume, grossProfit, totalDriverFees };
-  }, [storeSettlement, driverSettlement, stores]);
+  }, [storeSettlement, driverSettlement, stores, parentStorePlans]);
 
   const storeConciliation = useMemo(() => {
     if (!orders || !stores) return [];
@@ -298,7 +305,7 @@ const SuperAdminDashboard = () => {
       }
     });
     return Array.from(map.values()).filter(e => e.orders > 0).sort((a, b) => b.totalSold - a.totalSold);
-  }, [orders, stores]);
+  }, [orders, stores, parentStorePlans]);
 
   const hourlyData = useMemo(() => {
     if (!orders) return [];
@@ -795,18 +802,27 @@ const SuperAdminDashboard = () => {
                       </div>
                     ) : storeConciliation.length > 0 ? (
                       <div className="space-y-2 max-h-[220px] overflow-y-auto">
-                        {storeConciliation.map((s, i) => (
+                        {storeConciliation.map((s, i) => {
+                          const plan = parentStorePlans?.find((p: any) => p.store_id === stores?.find((st: any) => st.name === s.name)?.id);
+                          const isFixed = plan?.plan_type === "fixed";
+                          return (
                           <div key={i} className="flex items-center justify-between p-3 bg-muted/50 rounded-xl">
                             <div className="min-w-0 flex-1">
                               <p className="text-sm font-bold text-foreground truncate">{s.name}</p>
-                              <p className="text-xs text-muted-foreground">{s.orders} pedidos</p>
+                              <p className="text-xs text-muted-foreground">
+                                {s.orders} pedidos
+                                {isFixed && <span className="ml-1 text-[10px] font-bold text-primary">• Plano Fixo</span>}
+                              </p>
                             </div>
                             <div className="text-right ml-3">
                               <p className="text-sm font-bold text-foreground">R$ {s.totalSold.toFixed(2)}</p>
-                              <p className="text-xs text-primary font-bold">R$ {s.commission.toFixed(2)}</p>
+                              <p className={`text-xs font-bold ${isFixed ? "text-muted-foreground" : "text-primary"}`}>
+                                {isFixed ? "Sem comissão" : `R$ ${s.commission.toFixed(2)}`}
+                              </p>
                             </div>
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     ) : (
                       <p className="text-sm text-muted-foreground text-center py-6">Sem vendas no período</p>
