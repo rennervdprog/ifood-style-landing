@@ -496,6 +496,7 @@ const StoreDirectory = () => {
           <p>* R$1 por pedido PIX (dinheiro/cartão não tem essa taxa).</p>
           <p>** R$2 por entrega, independente da forma de pagamento. Acumulado no painel para repasse.</p>
           <p>*** Motoboys da plataforma disponíveis em Itatinga/SP. Demais cidades: use seu próprio entregador.</p>
+          <p>**** Chatbot WhatsApp via Z-API — a conta Z-API deve ser criada e gerenciada pelo próprio lojista fora da plataforma.</p>
         </div>
 
         {/* Plan comparison highlights */}
