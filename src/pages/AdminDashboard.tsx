@@ -1629,37 +1629,39 @@ const AdminDashboard = () => {
                           </div>
                         )}
 
-                        {/* WhatsApp actions - icons only on mobile */}
-                        {getClientWhatsApp(order.client_id) && (
-                          <div className="mx-3 mb-2 flex flex-wrap gap-1.5">
-                            {order.status === "pendente" && (
-                              <button onClick={() => {
-                                const msg = `Olá ${getClientName(order.client_id)}! *ItaSuper*: Pedido aceito e em produção! 🍔\nPedido: #${order.id.slice(0, 8).toUpperCase()}\nTotal: R$ ${Number(order.total_price).toFixed(2)}`;
-                                openWhatsApp(getClientWhatsApp(order.client_id), msg);
-                              }} className="flex items-center gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold px-2 py-1 rounded-lg" title="Avisar cliente">
-                                <MessageCircle className="h-3 w-3" /> <span className="hidden sm:inline">Avisar</span>
-                              </button>
-                            )}
-                            {(order.status === "em_transito" || order.status === "saiu_entrega") && (
-                              <button onClick={() => {
-                                const msg = `Olá ${getClientName(order.client_id)}! Motoboy *ItaSuper* saiu para entrega! 🚀\nEndereço: ${order.address_details}`;
-                                openWhatsApp(getClientWhatsApp(order.client_id), msg);
-                              }} className="flex items-center gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold px-2 py-1 rounded-lg" title="Informar saída">
-                                <MessageCircle className="h-3 w-3" /> <span className="hidden sm:inline">Saiu</span>
-                              </button>
-                            )}
-                            <WhatsAppButton number={getClientWhatsApp(order.client_id)}
-                              message={`Olá ${getClientName(order.client_id)}! Aqui é do ${store?.name}. Pedido #${order.id.slice(0, 8).toUpperCase()}...`}
-                              label="Chat" size="sm" />
-                            <OrderChat
-                              orderId={order.id}
-                              storeName={store?.name || "Loja"}
-                              storeOwnerId={store?.owner_id}
-                              clientId={order.client_id}
-                              driverId={order.driver_id}
-                            />
-                          </div>
-                        )}
+                        {/* WhatsApp actions + Chat */}
+                        <div className="mx-3 mb-2 flex flex-wrap gap-1.5">
+                          {getClientWhatsApp(order.client_id) && (
+                            <>
+                              {order.status === "pendente" && (
+                                <button onClick={() => {
+                                  const msg = `Olá ${getClientName(order.client_id)}! *ItaSuper*: Pedido aceito e em produção! 🍔\nPedido: #${order.id.slice(0, 8).toUpperCase()}\nTotal: R$ ${Number(order.total_price).toFixed(2)}`;
+                                  openWhatsApp(getClientWhatsApp(order.client_id), msg);
+                                }} className="flex items-center gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold px-2 py-1 rounded-lg" title="Avisar cliente">
+                                  <MessageCircle className="h-3 w-3" /> <span className="hidden sm:inline">Avisar</span>
+                                </button>
+                              )}
+                              {(order.status === "em_transito" || order.status === "saiu_entrega") && (
+                                <button onClick={() => {
+                                  const msg = `Olá ${getClientName(order.client_id)}! Motoboy *ItaSuper* saiu para entrega! 🚀\nEndereço: ${order.address_details}`;
+                                  openWhatsApp(getClientWhatsApp(order.client_id), msg);
+                                }} className="flex items-center gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold px-2 py-1 rounded-lg" title="Informar saída">
+                                  <MessageCircle className="h-3 w-3" /> <span className="hidden sm:inline">Saiu</span>
+                                </button>
+                              )}
+                              <WhatsAppButton number={getClientWhatsApp(order.client_id)}
+                                message={`Olá ${getClientName(order.client_id)}! Aqui é do ${store?.name}. Pedido #${order.id.slice(0, 8).toUpperCase()}...`}
+                                label="Chat" size="sm" />
+                            </>
+                          )}
+                          <OrderChat
+                            orderId={order.id}
+                            storeName={store?.name || "Loja"}
+                            storeOwnerId={store?.owner_id}
+                            clientId={order.client_id}
+                            driverId={order.driver_id}
+                          />
+                        </div>
 
                         {/* Main action */}
                         <div className="px-3 pb-3 pt-1 flex items-center gap-2">
