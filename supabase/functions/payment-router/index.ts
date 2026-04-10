@@ -668,20 +668,53 @@ async function handleOrderPix(
       .select("asaas_wallet_id, delivery_mode, commission_rate")
       .eq("id", order.store_id)
       .single();
+
+    // Check if store has a fixed plan (commission = 0, monthly fee instead)
+    const { data: storePlan } = await serviceClient
+      .from("store_plans")
+      .select("plan_type, commission_rate")
+      .eq("store_id", order.store_id)
+      .eq("is_active", true)
+      .limit(1)
+      .maybeSingle();
+
+    const isFixedPlan = storePlan?.plan_type === "fixed";
+
     if (store?.asaas_wallet_id) {
       splitWalletId = store.asaas_wallet_id;
       const subtotal = Number(order.subtotal) || 0;
       const deliveryFee = Number(order.delivery_fee) || 0;
       const isOwnDelivery = store.delivery_mode === "own";
-      const rate = (store.commission_rate ?? 15) / 100;
-      const storeShare = 1 - rate;
 
-      if (isOwnDelivery) {
-        splitFixedValue = Math.round((subtotal * storeShare + deliveryFee) * 100) / 100;
-        console.log(`Split (own delivery): store gets R$${splitFixedValue}, platform keeps ${rate * 100}% = R$${Math.round(subtotal * rate * 100) / 100}`);
+      if (isFixedPlan) {
+        // Fixed plan (Itatinga): 0% commission, but R$1 PIX operational fee per transaction
+        const pixOperationalFee = 1; // R$1 per PIX transaction
+        const platformDeliverySplit = 2; // R$2 platform keeps from delivery fee
+
+        if (isOwnDelivery) {
+          // Own delivery: store gets subtotal - R$1 + full delivery fee
+          splitFixedValue = Math.round((subtotal - pixOperationalFee + deliveryFee) * 100) / 100;
+          console.log(`Split FIXED (own delivery): store gets R$${splitFixedValue}, platform keeps R$${pixOperationalFee} (PIX fee)`);
+        } else {
+          // Platform delivery: store gets subtotal - R$1, platform keeps delivery fee (pays R$4 to driver, keeps R$2)
+          splitFixedValue = Math.round((subtotal - pixOperationalFee) * 100) / 100;
+          console.log(`Split FIXED (platform): store gets R$${splitFixedValue}, platform keeps R$${pixOperationalFee} (PIX) + R$${deliveryFee} delivery (R$${deliveryFee - platformDeliverySplit} driver / R$${platformDeliverySplit} platform)`);
+        }
+
+        // Ensure store share is not negative
+        if (splitFixedValue < 0) splitFixedValue = 0;
       } else {
-        splitFixedValue = Math.round(subtotal * storeShare * 100) / 100;
-        console.log(`Split (platform): store gets R$${splitFixedValue} from subtotal: ${subtotal}`);
+        // Commission-based plans: use commission_rate from store_plans or stores table
+        const rate = (storePlan?.commission_rate ?? store.commission_rate ?? 15) / 100;
+        const storeShare = 1 - rate;
+
+        if (isOwnDelivery) {
+          splitFixedValue = Math.round((subtotal * storeShare + deliveryFee) * 100) / 100;
+          console.log(`Split (own delivery): store gets R$${splitFixedValue}, platform keeps ${rate * 100}% = R$${Math.round(subtotal * rate * 100) / 100}`);
+        } else {
+          splitFixedValue = Math.round(subtotal * storeShare * 100) / 100;
+          console.log(`Split (platform): store gets R$${splitFixedValue} from subtotal: ${subtotal}`);
+        }
       }
     }
   }
