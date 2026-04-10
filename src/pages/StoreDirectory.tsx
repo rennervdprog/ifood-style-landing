@@ -212,18 +212,18 @@ const StoreDirectory = () => {
   const faq = [
     {
       q: "Quais são os planos?",
-      a: "Plano Essencial: R$180/mês + R$2 por entrega (split de plataforma). Plano Crescimento: R$100/mês + 2,5% por pedido. Ambos com 7 dias grátis e todas as ferramentas."
+      a: "Plano Essencial: R$180/mês + R$1 por pedido PIX + R$2 por entrega. Plano Crescimento: R$100/mês + 2,5% por pedido. Ambos com 7 dias grátis e todas as ferramentas."
     },
     {
       q: "Qual a diferença entre eles?",
-      a: "No Essencial a mensalidade é maior, mas só tem R$2 de split por entrega. No Crescimento a mensalidade é menor, mas cobra 2,5% em cada pedido. As ferramentas são idênticas."
+      a: "No Essencial a mensalidade é maior com taxas fixas pequenas. No Crescimento a mensalidade é menor com taxa percentual de 2,5%. As ferramentas são idênticas."
     },
     {
-      q: "O que é o split de R$2 por entrega?",
-      a: "É uma taxa de plataforma de R$2 por entrega realizada. Ela fica acumulada no painel do lojista, que faz o repasse. Não é cobrada diretamente do cliente."
+      q: "Como funcionam as taxas do Essencial?",
+      a: "R$1 por pedido quando o cliente paga via PIX (pedidos em dinheiro ou cartão não têm essa taxa). R$2 por entrega realizada, independente da forma de pagamento. Ambas acumulam no painel para repasse."
     },
     {
-      q: "E no Crescimento, tem split por entrega?",
+      q: "E no Crescimento, tem essas taxas?",
       a: "Não. No Crescimento tudo já está incluso nos 2,5% por pedido. Sem cobranças extras."
     },
     {
@@ -414,7 +414,7 @@ const StoreDirectory = () => {
                 <span className="text-4xl font-black" style={{ color: THEME.dark }}>R$180</span>
                 <span className="text-sm font-medium" style={{ color: THEME.muted }}>/mês</span>
               </div>
-              <p className="text-xs mt-2 font-semibold" style={{ color: THEME.green }}>+ R$2 de split por entrega</p>
+              <p className="text-xs mt-2 font-semibold" style={{ color: THEME.green }}>+ R$1/pedido PIX · + R$2/entrega</p>
               <p className="text-[10px] mt-1 font-bold" style={{ color: THEME.green }}>🎁 Teste grátis por 7 dias</p>
             </div>
             <div className="px-6 py-6" style={{ background: THEME.white }}>
@@ -422,14 +422,15 @@ const StoreDirectory = () => {
               {[
                   "Cardápio digital profissional",
                   "Gestão de pedidos em tempo real",
-                  "PIX integrado + R$2/entrega (split)",
+                  "PIX integrado (R$1/pedido PIX)*",
                   "Dinheiro e cartão na entrega",
                   "Painel financeiro completo",
                   "Programa de Fidelidade",
                   "Cupons ilimitados",
                   "Banners promocionais",
                   "Horários flexíveis",
-                  "Motoboy próprio ou da plataforma**",
+                  "R$2/entrega (qualquer pagamento)**",
+                  "Motoboy próprio ou da plataforma***",
                 ].map((f) => (
                   <li key={f} className="flex items-center gap-2.5 text-xs" style={{ color: THEME.dark }}>
                     <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0" style={{ color: THEME.green }} />
@@ -489,8 +490,9 @@ const StoreDirectory = () => {
         </div>
 
         <div className="text-center text-xs mt-6 space-y-1" style={{ color: THEME.muted }}>
-          <p>* Plano Essencial: R$2 de split de plataforma por entrega, acumulado no painel para repasse. No Plano Crescimento, incluso nos 2,5%.</p>
-          <p>** Motoboys da plataforma disponíveis em Itatinga/SP. Demais cidades: use seu próprio entregador.</p>
+          <p>* R$1 por pedido PIX (dinheiro/cartão não tem essa taxa).</p>
+          <p>** R$2 por entrega, independente da forma de pagamento. Acumulado no painel para repasse.</p>
+          <p>*** Motoboys da plataforma disponíveis em Itatinga/SP. Demais cidades: use seu próprio entregador.</p>
         </div>
 
         {/* Plan comparison highlights */}
