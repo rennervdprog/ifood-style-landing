@@ -269,7 +269,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
       </div>
 
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto px-4 pb-32">
+      <div className="flex-1 overflow-y-auto px-4 pb-40">
         {/* Step 1 & 2: product list */}
         {(step === 1 || step === 2) && (
           <div className="space-y-3 pt-2">
@@ -386,8 +386,8 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
         )}
       </div>
 
-      {/* Fixed bottom bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 bg-background border-t px-4 py-4 safe-area-bottom">
+      {/* Fixed bottom bar - above BottomNav */}
+      <div className="fixed bottom-16 left-0 right-0 z-30 bg-background border-t px-4 py-3">
         {step < 3 ? (
           <button
             onClick={handleNext}
