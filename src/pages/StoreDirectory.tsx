@@ -210,15 +210,42 @@ const StoreDirectory = () => {
   ];
 
   const faq = [
-    { q: "Quais planos estão disponíveis?", a: "Temos dois planos: o Plano Essencial (R$180/mês, sem taxa por pedido) e o Plano Crescimento (R$100/mês + 2,5% por pedido entregue). Ambos incluem cardápio digital, PIX integrado, programa de fidelidade, cupons ilimitados e painel financeiro completo. Os dois planos oferecem 7 dias grátis para testar." },
-    { q: "Funciona fora de Itatinga/SP?", a: "Sim! Em qualquer cidade do Brasil você pode usar o ItaSuper com todas as ferramentas, incluindo PIX integrado. Nesse caso, você utiliza seu próprio entregador. A operação com motoboys da plataforma está disponível em Itatinga/SP, com expansão para novas cidades em breve." },
-    { q: "Qual a diferença entre os planos?", a: "A diferença é apenas no modelo de cobrança. O Plano Essencial (R$180/mês) não tem taxa percentual — ideal para quem já tem bom volume. O PIX tem taxa operacional de R$1/pedido + R$2 de plataforma por entrega. O Plano Crescimento (R$100/mês + 2,5%) cobra uma taxa percentual por pedido, sem taxa fixa adicional no PIX. As ferramentas são idênticas em ambos." },
-    { q: "Como funciona o PIX nos dois planos?", a: "Os dois planos incluem PIX integrado! No Plano Essencial, há uma taxa operacional de R$1 por pedido PIX + R$2 de plataforma por entrega. No Plano Crescimento, o custo do PIX já está incluso na taxa de 2,5% por pedido." },
-    { q: "O que é o Programa de Fidelidade?", a: "Disponível em todos os planos! Seus clientes acumulam pontos a cada compra e podem trocar por descontos no checkout. Você configura os valores de pontos e resgate diretamente no painel da loja." },
-    { q: "Posso trocar de plano depois?", a: "Sim! Você pode solicitar upgrade ou downgrade a qualquer momento pelo painel da loja. O valor já pago é calculado proporcionalmente (pro-rata)." },
-    { q: "Como recebo meu dinheiro?", a: "Pagamentos em dinheiro ou cartão você recebe diretamente do cliente. Pagamentos via PIX vão para sua conta automaticamente. No Plano Essencial há uma taxa fixa por pedido, no Crescimento a taxa é percentual (2,5%)." },
-    { q: "Quanto tempo para começar a vender?", a: "Após cadastro e aprovação (geralmente em até 24h), você monta seu cardápio e começa a receber pedidos imediatamente. Você tem 7 dias grátis para configurar tudo!" },
-    { q: "Posso cancelar a qualquer momento?", a: "Sim! Sem contrato, sem multa, sem fidelidade. Se não estiver satisfeito, pode sair quando quiser." },
+    {
+      q: "Quais são os planos?",
+      a: "Plano Essencial: R$180/mês (sem taxa por pedido). Plano Crescimento: R$100/mês + 2,5% por pedido. Ambos com 7 dias grátis e todas as ferramentas inclusas."
+    },
+    {
+      q: "Qual a diferença entre eles?",
+      a: "Só muda a cobrança. Essencial = mensalidade maior, sem percentual. Crescimento = mensalidade menor, com 2,5% por pedido. Ferramentas idênticas nos dois."
+    },
+    {
+      q: "Tem taxa no PIX?",
+      a: "No Plano Essencial: R$1 por pedido PIX + R$2 por entrega. No Plano Crescimento: já incluso nos 2,5%."
+    },
+    {
+      q: "Funciona na minha cidade?",
+      a: "Sim, funciona em todo o Brasil. Fora de Itatinga/SP, você usa seu próprio entregador. Em Itatinga, temos motoboys da plataforma."
+    },
+    {
+      q: "O que vem incluso?",
+      a: "Cardápio digital, PIX integrado, programa de fidelidade, cupons, banners promocionais e painel financeiro completo."
+    },
+    {
+      q: "Como recebo meu dinheiro?",
+      a: "Dinheiro e cartão: direto do cliente. PIX: cai na sua conta automaticamente, descontada a taxa do seu plano."
+    },
+    {
+      q: "Posso trocar de plano?",
+      a: "Sim, a qualquer momento pelo painel. O valor já pago é recalculado proporcionalmente."
+    },
+    {
+      q: "Quanto tempo para começar?",
+      a: "Cadastro aprovado em até 24h. Depois é só montar o cardápio e começar a vender."
+    },
+    {
+      q: "Tem contrato ou multa?",
+      a: "Não. Cancele quando quiser, sem multa e sem fidelidade."
+    },
   ];
 
   return (
