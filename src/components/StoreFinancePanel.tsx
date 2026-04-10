@@ -199,22 +199,25 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
     enabled: !!storeId,
   });
 
-  // Fetch store owner profile to check PIX key + commission rate
+  // Fetch store owner profile to check PIX key + use plan commission rate
   const { data: storeData } = useQuery({
     queryKey: ["store-owner", storeId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("stores")
-        .select("owner_id, commission_rate")
-        .eq("id", storeId)
-        .single();
-      if (error) throw error;
-      return data;
+      const [storeResult, planResult] = await Promise.all([
+        supabase.from("stores").select("owner_id, commission_rate").eq("id", storeId).single(),
+        supabase.from("store_plans").select("commission_rate").eq("store_id", storeId).eq("is_active", true).maybeSingle(),
+      ]);
+      if (storeResult.error) throw storeResult.error;
+      return {
+        ...storeResult.data,
+        plan_commission_rate: planResult.data?.commission_rate,
+      };
     },
     enabled: !!storeId,
   });
 
-  const commissionRate = ((storeData as any)?.commission_rate ?? 5) / 100;
+  // Use plan commission rate (accurate per-plan) with fallback to store default
+  const commissionRate = ((storeData as any)?.plan_commission_rate ?? (storeData as any)?.commission_rate ?? 5) / 100;
   const commissionPct = Math.round(commissionRate * 100);
 
   const { data: ownerProfile } = useQuery({
