@@ -98,8 +98,8 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
   const { data, isLoading } = useQuery({
     queryKey: ["store-plan", storeId],
     queryFn: async () => {
-      // Fetch plan + store city in parallel
-      const [planResult, storeResult] = await Promise.all([
+      // Fetch plan + store city + delivery config in parallel
+      const [planResult, storeResult, configResult] = await Promise.all([
         supabase
           .from("store_plans")
           .select("plan_type, monthly_fee, commission_rate, trial_ends_at, next_billing_date, last_billed_at, started_at")
@@ -111,12 +111,19 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
           .select("address_city, delivery_mode")
           .eq("id", storeId!)
           .maybeSingle(),
+        supabase
+          .from("admin_settings")
+          .select("value")
+          .eq("key", "delivery_fee_config")
+          .maybeSingle(),
       ]);
       if (planResult.error) throw planResult.error;
+      const feeConfig = configResult.data?.value as unknown as DeliveryFeeConfig | null;
       return {
         plan: planResult.data,
         city: (storeResult.data as any)?.address_city || "itatinga",
         deliveryMode: (storeResult.data as any)?.delivery_mode || "platform",
+        feeConfig,
       };
     },
     enabled: !!storeId,
