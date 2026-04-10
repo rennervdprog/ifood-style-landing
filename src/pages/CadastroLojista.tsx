@@ -297,8 +297,8 @@ const CadastroLojista = () => {
                   <p className="text-[10px] font-bold text-emerald-500 mb-1">🎁 7 dias grátis para testar</p>
                   <div className="flex flex-wrap gap-1.5 mt-2">
                     {(isPlatformCity
-                      ? ["0% taxa", "PIX integrado", "Motoboy plataforma", "R$1/pedido PIX"]
-                      : ["0% taxa", "Dinheiro/Cartão", "Painel básico"]
+                      ? ["R$2/entrega (split)", "PIX integrado", "Motoboy plataforma", "Fidelidade"]
+                      : ["R$2/entrega (split)", "PIX integrado", "Painel completo"]
                     ).map(tag => (
                       <span key={tag} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{tag}</span>
                     ))}
@@ -339,7 +339,7 @@ const CadastroLojista = () => {
                 {selectedPlan && (
                   <div className="rounded-xl bg-muted/50 p-3 text-xs text-muted-foreground">
                     {selectedPlan === "fixed" ? (
-                      <p><strong className="text-foreground">Essencial:</strong> Mensalidade fixa de R$180. PIX integrado com taxa operacional de R$1 por pedido + R$2 de plataforma por entrega. Todas as ferramentas inclusas. Motoboy próprio ou da plataforma (onde disponível).</p>
+                      <p><strong className="text-foreground">Essencial:</strong> Mensalidade fixa de R$180 + R$2 de split de plataforma por entrega (acumulado no painel para repasse). PIX integrado. Todas as ferramentas inclusas.</p>
                     ) : (
                       <p><strong className="text-foreground">Crescimento:</strong> Mensalidade de R$100 + 2,5% por pedido. PIX integrado com split automático e painel financeiro completo com CRM.</p>
                     )}
