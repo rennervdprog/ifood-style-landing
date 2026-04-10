@@ -21,11 +21,11 @@ const LoyaltyConfigPanel = ({ storeId }: LoyaltyConfigPanelProps) => {
     queryKey: ["loyalty-config-admin", storeId],
     queryFn: async () => {
       const { data } = await supabase
-        .from("loyalty_config" as any)
+        .from("loyalty_config")
         .select("*")
         .eq("store_id", storeId)
         .maybeSingle();
-      return data as any;
+      return data;
     },
     enabled: !!storeId,
   });
@@ -67,14 +67,14 @@ const LoyaltyConfigPanel = ({ storeId }: LoyaltyConfigPanelProps) => {
 
       if (config) {
         const { error } = await supabase
-          .from("loyalty_config" as any)
-          .update(payload as any)
+          .from("loyalty_config")
+          .update(payload)
           .eq("id", config.id);
         if (error) throw error;
       } else {
         const { error } = await supabase
-          .from("loyalty_config" as any)
-          .insert(payload as any);
+          .from("loyalty_config")
+          .insert(payload);
         if (error) throw error;
       }
 
