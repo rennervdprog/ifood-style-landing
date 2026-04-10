@@ -18,8 +18,10 @@ import { Card, CardContent } from "@/components/ui/card";
 /* ─── hooks ─── */
 function useCountUp(end: number, duration = 2000, start = false) {
   const [val, setVal] = useState(0);
+  const done = useRef(false);
   useEffect(() => {
-    if (!start) return;
+    if (!start || done.current) return;
+    done.current = true;
     let startTime: number;
     const step = (ts: number) => {
       if (!startTime) startTime = ts;
@@ -273,7 +275,7 @@ const StoreDirectory = () => {
   const [roleChecked, setRoleChecked] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  const statsRef = useInView(0.3);
+  const statsRef = useInView(0.15);
   const storesCount = useCountUp(127, 2000, statsRef.visible);
   const ordersCount = useCountUp(48, 2000, statsRef.visible);
   const clientsCount = useCountUp(12, 2000, statsRef.visible);
