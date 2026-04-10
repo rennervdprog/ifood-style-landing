@@ -172,28 +172,28 @@ const StoreDirectory = () => {
 
   /* ── Data ── */
   const painPoints = [
-    { icon: MessageSquare, title: "Pedidos sem caos", desc: "Tudo centralizado, notificado e rastreado" },
-    { icon: BarChart3, title: "Financeiro transparente", desc: "Vendas e repasses em tempo real" },
-    { icon: Globe, title: "Presença digital", desc: "Cardápio com link próprio, bonito e profissional" },
+    { icon: MessageSquare, title: "Chega de perder pedidos", desc: "Pedidos organizados com notificação instantânea. Nada mais perdido no WhatsApp." },
+    { icon: BarChart3, title: "Financeiro na sua mão", desc: "Acompanhe vendas, repasses e comissões em tempo real pelo celular." },
+    { icon: Globe, title: "Seu cardápio digital", desc: "Link exclusivo da sua loja, bonito e profissional — funciona em qualquer cidade." },
   ];
 
   const howItWorks = [
-    { step: "1", icon: Store, title: "Cadastre em 2 minutos", desc: "Preencha seus dados e crie sua loja." },
-    { step: "2", icon: Smartphone, title: "Monte seu cardápio", desc: "Adicione produtos com fotos e preços." },
-    { step: "3", icon: Package, title: "Receba pedidos", desc: "Notificação instantânea no celular." },
-    { step: "4", icon: DollarSign, title: "Receba e lucre", desc: "Pagamento direto na sua conta." },
+    { step: "1", icon: Store, title: "Cadastre em 2 minutos", desc: "Preencha seus dados e escolha seu plano." },
+    { step: "2", icon: Smartphone, title: "Monte seu cardápio", desc: "Adicione produtos com fotos, preços e adicionais." },
+    { step: "3", icon: Package, title: "Receba pedidos", desc: "Notificação instantânea no celular a cada novo pedido." },
+    { step: "4", icon: DollarSign, title: "Receba e lucre", desc: "Dinheiro, cartão ou PIX — direto na sua conta." },
   ];
 
   const features = [
     { icon: Smartphone, title: "Cardápio Profissional", desc: "Menu com fotos, categorias, adicionais e personalização completa" },
     { icon: Package, title: "Gestão de Pedidos", desc: "Receba, confirme e acompanhe cada pedido em tempo real" },
     { icon: BarChart3, title: "Painel Financeiro", desc: "Vendas, comissões e repasses — tudo transparente" },
-    { icon: Tag, title: "Cupons & Promoções", desc: "Crie campanhas de desconto para atrair mais clientes" },
+    { icon: Tag, title: "Cupons Ilimitados", desc: "Crie cupons de desconto para atrair e fidelizar clientes" },
     { icon: Clock, title: "Horários Flexíveis", desc: "Configure por dia da semana. Abra e feche quando quiser" },
-    { icon: CreditCard, title: "Dinheiro, Cartão & PIX*", desc: "Aceite pagamentos em dinheiro e cartão. PIX no Plano Crescimento" },
-    { icon: ShieldCheck, title: "Entrega Segura", desc: "Código de coleta e PIN para cada entrega" },
-    { icon: Award, title: "Fidelidade & Banners*", desc: "Programa de pontos e banners promocionais no Plano Crescimento" },
-    { icon: Globe, title: "Qualquer Cidade", desc: "Funciona em todo o Brasil como cardápio digital" },
+    { icon: CreditCard, title: "Dinheiro, Cartão & PIX", desc: "Aceite todos os meios de pagamento. PIX integrado em todos os planos*" },
+    { icon: ShieldCheck, title: "Entrega Segura", desc: "Código de coleta e PIN para cada entrega — segurança total" },
+    { icon: Award, title: "Programa de Fidelidade", desc: "Clientes acumulam pontos e trocam por descontos. Configure no painel" },
+    { icon: Globe, title: "Qualquer Cidade do Brasil", desc: "Use como cardápio digital com entregador próprio em qualquer lugar" },
   ];
 
   const motoboyBenefits = [
@@ -204,20 +204,19 @@ const StoreDirectory = () => {
   ];
 
   const testimonials = [
-    { name: "Carlos", business: "Espetinhos do Carlão", role: "lojista", stars: 5, text: "Antes eu perdia pedidos no WhatsApp. Agora recebo tudo organizado e minhas vendas aumentaram 40%." },
-    { name: "Fernanda", business: "Doces da Fê", role: "lojista", stars: 5, text: "O cardápio digital ficou lindo! Meus clientes adoram pedir pelo app." },
-    { name: "Lucas", business: "Motoboy parceiro", role: "motoboy", stars: 5, text: "Ganho bem, escolho meus horários e o pagamento cai certinho." },
-    { name: "Dona Maria", business: "Marmitas da Maria", role: "lojista", stars: 5, text: "Sou lojista há 30 anos e nunca pensei que ia ter um app. Foi muito fácil!" },
+    { name: "Lojista", business: "Restaurante parceiro", role: "lojista", stars: 5, text: "Antes eu perdia pedidos no WhatsApp. Agora recebo tudo organizado e consigo focar na cozinha." },
+    { name: "Lojista", business: "Doceria parceira", role: "lojista", stars: 5, text: "O cardápio digital ficou lindo e profissional. Meus clientes adoram pedir pelo link." },
+    { name: "Motoboy", business: "Entregador parceiro", role: "motoboy", stars: 5, text: "Escolho meus horários, ganho por entrega e o pagamento é transparente." },
   ];
 
   const faq = [
-    { q: "Quais planos estão disponíveis?", a: "Temos dois planos: o Plano Essencial por R$180/mês (com PIX integrado* e todas as ferramentas) e o Plano Crescimento por R$100/mês + 2,5% por pedido entregue. Ambos incluem cardápio digital, gestão de pedidos e painel financeiro. Os dois planos têm 7 dias grátis para testar!" },
+    { q: "Quais planos estão disponíveis?", a: "Temos dois planos: o Plano Essencial (R$180/mês, sem taxa por pedido) e o Plano Crescimento (R$100/mês + 2,5% por pedido entregue). Ambos incluem cardápio digital, PIX integrado, programa de fidelidade, cupons ilimitados e painel financeiro completo. Os dois planos oferecem 7 dias grátis para testar." },
     { q: "Funciona fora de Itatinga/SP?", a: "Sim! Em qualquer cidade do Brasil você pode usar o ItaSuper com todas as ferramentas, incluindo PIX integrado. Nesse caso, você utiliza seu próprio entregador. A operação com motoboys da plataforma está disponível em Itatinga/SP, com expansão para novas cidades em breve." },
-    { q: "Qual a diferença entre os planos?", a: "O Plano Essencial (R$180/mês) é ideal para quem já tem bom volume de vendas — sem taxa percentual por pedido, PIX integrado com taxa fixa de R$1 + R$2 por entrega, e todas as ferramentas. O Plano Crescimento (R$100/mês + 2,5%) inclui PIX sem taxa fixa adicional, com split automático." },
-    { q: "Qual plano inclui pagamento por PIX?", a: "Os dois planos incluem PIX integrado! No Plano Essencial, há uma taxa operacional de R$1 por pedido PIX + R$2 de plataforma por entrega. No Plano Crescimento, o PIX é incluso na taxa de 2,5%." },
-    { q: "O que é o Programa de Fidelidade?", a: "Disponível nos dois planos! Seus clientes acumulam pontos a cada compra e podem trocar por descontos. Você configura os valores no painel da loja." },
-    { q: "Posso trocar de plano depois?", a: "Sim! Você pode solicitar upgrade ou downgrade a qualquer momento pelo painel da loja. O valor pago é calculado proporcionalmente (pro-rata)." },
-    { q: "Como recebo meu dinheiro?", a: "Nos dois planos, pagamentos PIX vão para sua conta. No Plano Essencial, há uma taxa fixa por pedido. No Plano Crescimento, a taxa é percentual (2,5%). Pagamentos em dinheiro/cartão você recebe diretamente do cliente." },
+    { q: "Qual a diferença entre os planos?", a: "A diferença é apenas no modelo de cobrança. O Plano Essencial (R$180/mês) não tem taxa percentual — ideal para quem já tem bom volume. O PIX tem taxa operacional de R$1/pedido + R$2 de plataforma por entrega. O Plano Crescimento (R$100/mês + 2,5%) cobra uma taxa percentual por pedido, sem taxa fixa adicional no PIX. As ferramentas são idênticas em ambos." },
+    { q: "Como funciona o PIX nos dois planos?", a: "Os dois planos incluem PIX integrado! No Plano Essencial, há uma taxa operacional de R$1 por pedido PIX + R$2 de plataforma por entrega. No Plano Crescimento, o custo do PIX já está incluso na taxa de 2,5% por pedido." },
+    { q: "O que é o Programa de Fidelidade?", a: "Disponível em todos os planos! Seus clientes acumulam pontos a cada compra e podem trocar por descontos no checkout. Você configura os valores de pontos e resgate diretamente no painel da loja." },
+    { q: "Posso trocar de plano depois?", a: "Sim! Você pode solicitar upgrade ou downgrade a qualquer momento pelo painel da loja. O valor já pago é calculado proporcionalmente (pro-rata)." },
+    { q: "Como recebo meu dinheiro?", a: "Pagamentos em dinheiro ou cartão você recebe diretamente do cliente. Pagamentos via PIX vão para sua conta automaticamente. No Plano Essencial há uma taxa fixa por pedido, no Crescimento a taxa é percentual (2,5%)." },
     { q: "Quanto tempo para começar a vender?", a: "Após cadastro e aprovação (geralmente em até 24h), você monta seu cardápio e começa a receber pedidos imediatamente. Você tem 7 dias grátis para configurar tudo!" },
     { q: "Posso cancelar a qualquer momento?", a: "Sim! Sem contrato, sem multa, sem fidelidade. Se não estiver satisfeito, pode sair quando quiser." },
   ];
@@ -279,9 +278,9 @@ const StoreDirectory = () => {
           {/* Stats */}
           <div className="mt-20 grid grid-cols-3 gap-8 max-w-md mx-auto">
             {[
-              { value: "50+", label: "Lojistas ativos" },
-              { value: "1.2k", label: "Pedidos entregues" },
-              { value: "4.9", label: "Avaliação ★" },
+              { value: "100%", label: "Digital" },
+              { value: "0%", label: "Taxa de adesão" },
+              { value: "7", label: "Dias grátis" },
             ].map((s) => (
               <div key={s.label} className="text-center">
                 <div className="text-2xl sm:text-3xl font-black" style={{ color: THEME.primary }}>{s.value}</div>
@@ -397,11 +396,12 @@ const StoreDirectory = () => {
                   "Cardápio digital profissional",
                   "Gestão de pedidos em tempo real",
                   "PIX integrado*",
-                  "Pagamento: dinheiro e cartão",
+                  "Dinheiro e cartão na entrega",
                   "Painel financeiro completo",
                   "Programa de Fidelidade",
-                  "Horários flexíveis",
                   "Cupons ilimitados",
+                  "Banners promocionais",
+                  "Horários flexíveis",
                   "Motoboy próprio ou da plataforma**",
                 ].map((f) => (
                   <li key={f} className="flex items-center gap-2.5 text-xs" style={{ color: THEME.dark }}>
@@ -440,13 +440,9 @@ const StoreDirectory = () => {
               <ul className="space-y-2.5">
                 {[
                   "Tudo do Plano Essencial",
-                  "PIX integrado com split automático",
-                  "Painel financeiro completo (CRM)",
-                  "Relatórios avançados de vendas",
-                  "Programa de Fidelidade (pontos)",
-                  "Banners promocionais",
-                  "Agendamento de pedidos",
-                  "Cupons ilimitados",
+                  "PIX integrado (taxa inclusa nos 2,5%)",
+                  "Sem taxa fixa adicional por pedido",
+                  "Ideal para quem está começando",
                   "Motoboy próprio ou da plataforma*",
                 ].map((f) => (
                   <li key={f} className="flex items-center gap-2.5 text-xs" style={{ color: THEME.dark }}>
@@ -466,8 +462,8 @@ const StoreDirectory = () => {
         </div>
 
         <div className="text-center text-xs mt-6 space-y-1" style={{ color: THEME.muted }}>
-          <p>* PIX no Plano Essencial: taxa operacional de R$1 por pedido + R$2 de taxa de plataforma por entrega.</p>
-          <p>** Motoboys da plataforma disponíveis em cidades com cobertura (Itatinga/SP). Demais cidades: motoboy próprio.</p>
+          <p>* PIX no Plano Essencial: taxa operacional de R$1 por pedido + R$2 de plataforma por entrega. No Plano Crescimento, incluso nos 2,5%.</p>
+          <p>** Motoboys da plataforma disponíveis em Itatinga/SP. Demais cidades: use seu próprio entregador.</p>
         </div>
 
         {/* Plan comparison highlights */}
