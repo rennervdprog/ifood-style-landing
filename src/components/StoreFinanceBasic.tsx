@@ -1,15 +1,17 @@
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
   DollarSign, TrendingUp, TrendingDown, ShoppingBag, CreditCard, Banknote, Calendar,
   Download, Wallet, Receipt, Clock, ArrowUpRight, ArrowDownRight, Target, Percent,
+  AlertTriangle, QrCode, Copy, Loader2, CheckCircle2,
 } from "lucide-react";
 import { sumMoney, averageMoney, formatCurrency } from "@/lib/utils";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, endOfDay, subWeeks, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { useStorePlan } from "@/hooks/useStorePlan";
+import { Button } from "@/components/ui/button";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip,
   ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar,
@@ -35,7 +37,53 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
 
 const StoreFinanceBasic = ({ storeId, storeName }: StoreFinanceBasicProps) => {
   const [dateFilter, setDateFilter] = useState<DateFilter>("week");
+  const [isGeneratingPix, setIsGeneratingPix] = useState(false);
+  const [pixData, setPixData] = useState<{ qr_code: string; qr_code_base64: string; amount: number } | null>(null);
   const storePlan = useStorePlan(storeId);
+  const queryClient = useQueryClient();
+
+  // Fetch store balance (repasse_pendente)
+  const { data: storeBalance } = useQuery({
+    queryKey: ["store-balance", storeId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("store_balances")
+        .select("repasse_pendente")
+        .eq("store_id", storeId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!storeId,
+    refetchInterval: 30000,
+  });
+
+  const pendingFee = Number(storeBalance?.repasse_pendente || 0);
+
+  const handlePayPlatformFee = async () => {
+    if (pendingFee <= 0) return;
+    setIsGeneratingPix(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("store-platform-fee-pix", {
+        body: { store_id: storeId, amount: pendingFee },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setPixData({ qr_code: data.qr_code, qr_code_base64: data.qr_code_base64, amount: data.amount });
+      toast.success("PIX gerado! Escaneie o QR Code para pagar.");
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao gerar PIX.");
+    } finally {
+      setIsGeneratingPix(false);
+    }
+  };
+
+  const copyPixCode = () => {
+    if (pixData?.qr_code) {
+      navigator.clipboard.writeText(pixData.qr_code);
+      toast.success("Código PIX copiado!");
+    }
+  };
 
   const now = new Date();
   const dateRange = useMemo(() => {
@@ -179,6 +227,72 @@ const StoreFinanceBasic = ({ storeId, storeName }: StoreFinanceBasicProps) => {
           )}
         </div>
       </div>
+
+      {/* Platform Fee Balance Card */}
+      {pendingFee > 0 && (
+        <div className="bg-destructive/5 border border-destructive/20 rounded-2xl p-4 space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-bold text-foreground text-sm">Taxa plataforma pendente</h3>
+              <p className="text-xs text-muted-foreground">
+                R$2 por entrega • Acumulado de pedidos finalizados
+              </p>
+            </div>
+            <span className="text-lg font-black text-destructive">
+              {formatCurrency(pendingFee)}
+            </span>
+          </div>
+
+          {!pixData ? (
+            <Button
+              onClick={handlePayPlatformFee}
+              disabled={isGeneratingPix}
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl"
+            >
+              {isGeneratingPix ? (
+                <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Gerando PIX...</>
+              ) : (
+                <><QrCode className="h-4 w-4 mr-2" /> Pagar {formatCurrency(pendingFee)} via PIX</>
+              )}
+            </Button>
+          ) : (
+            <div className="space-y-3">
+              {pixData.qr_code_base64 && (
+                <div className="flex justify-center">
+                  <img
+                    src={`data:image/png;base64,${pixData.qr_code_base64}`}
+                    alt="QR Code PIX"
+                    className="w-48 h-48 rounded-xl border border-border"
+                  />
+                </div>
+              )}
+              <p className="text-center text-xs text-muted-foreground">
+                Escaneie o QR Code ou copie o código abaixo
+              </p>
+              <Button
+                onClick={copyPixCode}
+                variant="outline"
+                className="w-full rounded-xl"
+              >
+                <Copy className="h-4 w-4 mr-2" /> Copiar código PIX
+              </Button>
+              <Button
+                onClick={() => {
+                  setPixData(null);
+                  queryClient.invalidateQueries({ queryKey: ["store-balance", storeId] });
+                }}
+                variant="ghost"
+                className="w-full text-xs text-muted-foreground"
+              >
+                <CheckCircle2 className="h-3 w-3 mr-1" /> Já paguei / Fechar
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Date filter */}
       <div className="flex items-center gap-2">

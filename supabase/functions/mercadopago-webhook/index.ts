@@ -155,8 +155,8 @@ Deno.serve(async (req) => {
       transaction_amount: payment.transaction_amount,
     }));
 
-    const orderId = payment.external_reference;
-    if (!orderId) {
+    const externalRef = payment.external_reference;
+    if (!externalRef) {
       return new Response(JSON.stringify({ error: "No order reference" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -169,7 +169,38 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    if (payment.status === "approved") {
+    // Check if this is a platform fee payment (reference starts with TAXA-)
+    const isPlatformFee = externalRef.startsWith("TAXA-");
+
+    if (payment.status === "approved" && isPlatformFee) {
+      // Platform fee payment confirmed — update financial_transaction and clear balance
+      console.log(`Platform fee payment approved: ${externalRef}`);
+
+      const { data: txn } = await supabase
+        .from("financial_transactions")
+        .select("id, store_id, amount")
+        .eq("mercado_pago_payment_id", String(paymentId))
+        .single();
+
+      if (txn) {
+        // Mark transaction as paid
+        await supabase
+          .from("financial_transactions")
+          .update({ status: "paid", settled_at: new Date().toISOString() })
+          .eq("id", txn.id);
+
+        // Clear repasse_pendente for the store
+        await supabase
+          .from("store_balances")
+          .update({ repasse_pendente: 0, updated_at: new Date().toISOString() })
+          .eq("store_id", txn.store_id);
+
+        console.log(`Store ${txn.store_id} platform fee R$${txn.amount} paid, balance cleared`);
+      } else {
+        console.warn(`No financial_transaction found for MP payment ${paymentId}`);
+      }
+    } else if (payment.status === "approved" && !isPlatformFee) {
+      const orderId = externalRef;
       // Fetch order to get store_id and subtotal for commission tracking
       const { data: order, error: fetchError } = await supabase
         .from("orders")
@@ -264,7 +295,7 @@ Deno.serve(async (req) => {
         console.log(`Commission R$${commission} tracked for store ${order.store_id}`);
       }
     } else if (payment.status === "rejected" || payment.status === "cancelled") {
-      console.log(`Payment ${paymentId} was ${payment.status} for order ${orderId}`);
+      console.log(`Payment ${paymentId} was ${payment.status} for ref ${externalRef}`);
     }
 
     return new Response(JSON.stringify({ received: true }), {
