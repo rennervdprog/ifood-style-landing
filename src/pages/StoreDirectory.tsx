@@ -278,9 +278,9 @@ const StoreDirectory = () => {
           {/* Stats */}
           <div className="mt-20 grid grid-cols-3 gap-8 max-w-md mx-auto">
             {[
-              { value: "50+", label: "Lojistas ativos" },
-              { value: "1.2k", label: "Pedidos entregues" },
-              { value: "4.9", label: "Avaliação ★" },
+              { value: "100%", label: "Digital" },
+              { value: "0%", label: "Taxa de adesão" },
+              { value: "7", label: "Dias grátis" },
             ].map((s) => (
               <div key={s.label} className="text-center">
                 <div className="text-2xl sm:text-3xl font-black" style={{ color: THEME.primary }}>{s.value}</div>
@@ -396,11 +396,12 @@ const StoreDirectory = () => {
                   "Cardápio digital profissional",
                   "Gestão de pedidos em tempo real",
                   "PIX integrado*",
-                  "Pagamento: dinheiro e cartão",
+                  "Dinheiro e cartão na entrega",
                   "Painel financeiro completo",
                   "Programa de Fidelidade",
-                  "Horários flexíveis",
                   "Cupons ilimitados",
+                  "Banners promocionais",
+                  "Horários flexíveis",
                   "Motoboy próprio ou da plataforma**",
                 ].map((f) => (
                   <li key={f} className="flex items-center gap-2.5 text-xs" style={{ color: THEME.dark }}>
@@ -439,13 +440,9 @@ const StoreDirectory = () => {
               <ul className="space-y-2.5">
                 {[
                   "Tudo do Plano Essencial",
-                  "PIX integrado com split automático",
-                  "Painel financeiro completo (CRM)",
-                  "Relatórios avançados de vendas",
-                  "Programa de Fidelidade (pontos)",
-                  "Banners promocionais",
-                  "Agendamento de pedidos",
-                  "Cupons ilimitados",
+                  "PIX integrado (taxa inclusa nos 2,5%)",
+                  "Sem taxa fixa adicional por pedido",
+                  "Ideal para quem está começando",
                   "Motoboy próprio ou da plataforma*",
                 ].map((f) => (
                   <li key={f} className="flex items-center gap-2.5 text-xs" style={{ color: THEME.dark }}>
