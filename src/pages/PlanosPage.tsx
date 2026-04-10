@@ -1,4 +1,4 @@
-import { Check, Star, Zap, Shield, ArrowRight, MessageCircle } from "lucide-react";
+import { Check, Star, Zap, Shield, ArrowRight, MessageCircle, Smartphone, QrCode, Clock, TrendingUp, Utensils, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
@@ -9,17 +9,17 @@ const plans = [
     price: "0",
     period: "mensalidade",
     highlight: false,
-    description: "Ideal para quem está começando. Sem custo fixo, pague apenas por pedido.",
+    description: "Comece agora sem investir nada. Pague só quando vender.",
     commission: "15% por pedido",
     features: [
-      "Cardápio digital completo",
-      "Pagamento PIX online",
-      "Entrega pela plataforma",
+      "Cardápio digital ilimitado",
+      "QR Code exclusivo da loja",
+      "Pagamento PIX automático",
+      "Notificação de pedidos em tempo real",
       "Programa de fidelidade",
-      "Banners promocionais",
-      "Agendamento de pedidos",
-      "Relatórios completos",
-      "Cupons ilimitados",
+      "Cupons e promoções",
+      "Relatórios de vendas",
+      "Entrega integrada",
     ],
   },
   {
@@ -27,17 +27,17 @@ const plans = [
     price: "100",
     period: "/mês",
     highlight: false,
-    description: "Equilíbrio perfeito entre custo fixo reduzido e comissão menor.",
+    description: "Comissão menor com mensalidade acessível.",
     commission: "10% por pedido",
     features: [
       "Tudo do plano Comissão",
-      "Comissão reduzida",
+      "Comissão reduzida para 10%",
       "Suporte prioritário",
       "Relatórios avançados",
-      "Cupons ilimitados",
       "Banners ilimitados",
       "Agendamento de pedidos",
-      "Programa de fidelidade",
+      "Destaque na vitrine",
+      "Cardápio com fotos HD",
     ],
   },
   {
@@ -45,33 +45,56 @@ const plans = [
     price: "180",
     period: "/mês",
     highlight: true,
-    description: "Máximo de economia. Sem comissão, apenas a mensalidade fixa.",
+    description: "Zero comissão. Lucro máximo em cada pedido.",
     commission: "0% comissão",
     features: [
       "Tudo do plano Híbrido",
       "Zero comissão por pedido",
-      "Taxa operacional PIX R$1",
-      "Todas as ferramentas",
-      "Cupons ilimitados",
-      "Suporte VIP",
+      "Taxa PIX fixa de R$1",
+      "Suporte VIP prioritário",
       "Relatórios premium",
       "Prioridade em novidades",
+      "Todas as ferramentas",
+      "ROI garantido",
     ],
+  },
+];
+
+const steps = [
+  {
+    step: "1",
+    title: "Cadastre sua loja",
+    desc: "Preencha os dados e seu cardápio digital fica pronto em minutos.",
+  },
+  {
+    step: "2",
+    title: "Monte seu cardápio",
+    desc: "Adicione produtos, fotos, preços e categorias de forma simples.",
+  },
+  {
+    step: "3",
+    title: "Compartilhe o link",
+    desc: "Envie pelo WhatsApp, redes sociais ou imprima o QR Code.",
+  },
+  {
+    step: "4",
+    title: "Receba pedidos!",
+    desc: "Clientes pedem pelo celular e você recebe na hora com notificação.",
   },
 ];
 
 const testimonials = [
   {
     name: "Maria — Pizzaria do Sabor",
-    text: "Desde que entrei na plataforma, meus pedidos triplicaram! A facilidade do cardápio digital fez toda a diferença.",
+    text: "Meus clientes adoram pedir pelo cardápio digital. Não preciso mais anotar pedido por WhatsApp!",
   },
   {
     name: "João — Hamburgueria Top",
-    text: "O plano fixo compensa muito. Sem comissão, consigo manter meus preços competitivos.",
+    text: "Com o plano fixo, cada pedido é lucro puro. O cardápio digital se paga no primeiro dia.",
   },
   {
     name: "Ana — Doceria da Ana",
-    text: "O programa de fidelidade aumentou muito o retorno dos clientes. Super recomendo!",
+    text: "Montei meu cardápio em 10 minutos. É muito mais prático que ficar mandando foto de cardápio no WhatsApp.",
   },
 ];
 
@@ -91,37 +114,111 @@ export default function PlanosPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero */}
+      {/* Hero — foco no cardápio digital */}
       <section className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-background to-accent/30 py-16 px-4 md:py-24">
         <div className="mx-auto max-w-4xl text-center">
           <span className="inline-block rounded-full bg-primary/15 px-4 py-1.5 text-sm font-semibold text-primary mb-6">
-            🚀 Plataforma #1 de delivery em Itatinga
+            📱 Seu cardápio digital em minutos
           </span>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground leading-tight">
-            Venda mais com seu <span className="text-primary">delivery digital</span>
+            Chega de anotar pedido no <span className="text-primary">WhatsApp</span>
           </h1>
           <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-            Cardápio digital, pagamento PIX, entrega integrada e programa de fidelidade.
-            Tudo o que sua loja precisa para crescer — a partir de <strong className="text-foreground">R$0/mês</strong>.
+            Tenha um <strong className="text-foreground">cardápio digital profissional</strong> com fotos, preços atualizados, 
+            pagamento PIX automático e notificação de pedidos — tudo pelo celular, a partir de <strong className="text-foreground">R$0/mês</strong>.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button size="lg" onClick={handleCTA} className="text-base px-8 py-6 rounded-xl shadow-lg">
-              Cadastrar minha loja <ArrowRight className="ml-2 h-5 w-5" />
+              Criar meu cardápio grátis <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <Button size="lg" variant="outline" onClick={handleWhatsApp} className="text-base px-8 py-6 rounded-xl">
-              <MessageCircle className="mr-2 h-5 w-5" /> Falar no WhatsApp
+              <MessageCircle className="mr-2 h-5 w-5" /> Tirar dúvidas
             </Button>
           </div>
         </div>
       </section>
 
+      {/* Pain points → Solution */}
+      <section className="py-14 px-4 border-b border-border">
+        <div className="mx-auto max-w-4xl">
+          <h2 className="text-2xl md:text-3xl font-bold text-center text-foreground mb-10">
+            Você ainda faz isso? 🤔
+          </h2>
+          <div className="grid sm:grid-cols-3 gap-6">
+            {[
+              { emoji: "😩", pain: "Manda foto do cardápio pelo WhatsApp", solution: "Cardápio digital com link próprio" },
+              { emoji: "📝", pain: "Anota pedido na mão e erra quantidade", solution: "Pedidos organizados automaticamente" },
+              { emoji: "💸", pain: "Perde tempo conferindo PIX manualmente", solution: "Confirmação de pagamento automática" },
+            ].map((item) => (
+              <div key={item.pain} className="rounded-xl border border-border bg-card p-5 text-center">
+                <p className="text-3xl mb-3">{item.emoji}</p>
+                <p className="text-sm text-muted-foreground line-through mb-3">{item.pain}</p>
+                <p className="text-sm font-semibold text-primary">{item.solution}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Como funciona */}
+      <section className="py-16 px-4 bg-muted/40">
+        <div className="mx-auto max-w-4xl">
+          <h2 className="text-3xl font-bold text-center text-foreground mb-12">
+            Simples como deve ser
+          </h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {steps.map((s) => (
+              <div key={s.step} className="text-center">
+                <div className="mx-auto w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold mb-4">
+                  {s.step}
+                </div>
+                <h3 className="font-semibold text-foreground mb-1">{s.title}</h3>
+                <p className="text-sm text-muted-foreground">{s.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Benefícios do cardápio digital */}
+      <section className="py-16 px-4">
+        <div className="mx-auto max-w-4xl">
+          <h2 className="text-3xl font-bold text-center text-foreground mb-4">
+            Tudo que seu delivery precisa
+          </h2>
+          <p className="text-center text-muted-foreground mb-12 max-w-xl mx-auto">
+            Praticidade total para você e para seu cliente.
+          </p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              { icon: Smartphone, title: "Cardápio no celular", desc: "Seu cliente abre o link e já faz o pedido. Sem baixar app." },
+              { icon: QrCode, title: "QR Code da loja", desc: "Imprima e cole no balcão. Cliente aponta a câmera e pede." },
+              { icon: Zap, title: "PIX automático", desc: "Pagamento confirmado na hora, sem precisar conferir extrato." },
+              { icon: Bell, title: "Notificação instantânea", desc: "Novo pedido? Você recebe alerta sonoro no celular na hora." },
+              { icon: Utensils, title: "Cardápio organizado", desc: "Categorias, fotos, descrições e adicionais. Profissional." },
+              { icon: TrendingUp, title: "Relatórios de vendas", desc: "Saiba quanto vendeu, quais produtos bombam e quando." },
+            ].map((b) => (
+              <div key={b.title} className="flex gap-4 items-start p-4 rounded-xl bg-card border border-border">
+                <div className="rounded-lg bg-primary/10 p-2.5">
+                  <b.icon className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">{b.title}</h3>
+                  <p className="text-sm text-muted-foreground mt-1">{b.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Stats */}
-      <section className="py-12 border-b border-border">
+      <section className="py-12 border-y border-border bg-muted/30">
         <div className="mx-auto max-w-4xl grid grid-cols-2 md:grid-cols-4 gap-6 text-center px-4">
           {[
-            { value: "50+", label: "Lojas ativas" },
-            { value: "10k+", label: "Pedidos entregues" },
-            { value: "4.8★", label: "Avaliação média" },
+            { value: "50+", label: "Lojas usando" },
+            { value: "10k+", label: "Pedidos pelo cardápio" },
+            { value: "< 5min", label: "Para criar o cardápio" },
             { value: "24h", label: "Suporte" },
           ].map((s) => (
             <div key={s.label}>
@@ -136,10 +233,10 @@ export default function PlanosPage() {
       <section className="py-16 px-4" id="planos">
         <div className="mx-auto max-w-5xl">
           <h2 className="text-3xl md:text-4xl font-bold text-center text-foreground mb-4">
-            Escolha o plano ideal para sua loja
+            Escolha seu plano
           </h2>
           <p className="text-center text-muted-foreground mb-12 max-w-xl mx-auto">
-            Todos os planos incluem cardápio digital, PIX online e entrega integrada.
+            Todos incluem cardápio digital completo, PIX online e notificações.
           </p>
 
           <div className="grid md:grid-cols-3 gap-6">
@@ -185,7 +282,7 @@ export default function PlanosPage() {
                     className="w-full rounded-xl py-5"
                     variant={plan.highlight ? "default" : "outline"}
                   >
-                    Começar agora
+                    Criar meu cardápio
                   </Button>
                 </CardContent>
               </Card>
@@ -194,40 +291,11 @@ export default function PlanosPage() {
         </div>
       </section>
 
-      {/* Benefits */}
+      {/* Testimonials */}
       <section className="py-16 px-4 bg-muted/40">
         <div className="mx-auto max-w-4xl">
           <h2 className="text-3xl font-bold text-center text-foreground mb-12">
-            Por que escolher nossa plataforma?
-          </h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              { icon: Zap, title: "Rápido de configurar", desc: "Cadastre sua loja e comece a vender em minutos." },
-              { icon: Shield, title: "Pagamento seguro", desc: "PIX online com confirmação automática e segura." },
-              { icon: Star, title: "Fidelize clientes", desc: "Programa de pontos que traz o cliente de volta." },
-              { icon: MessageCircle, title: "Suporte dedicado", desc: "Atendimento rápido via WhatsApp sempre que precisar." },
-              { icon: ArrowRight, title: "Entrega integrada", desc: "Motoboys da plataforma ou entrega própria, você escolhe." },
-              { icon: Check, title: "Sem surpresas", desc: "Preços transparentes, sem taxas escondidas." },
-            ].map((b) => (
-              <div key={b.title} className="flex gap-4 items-start p-4 rounded-xl bg-card border border-border">
-                <div className="rounded-lg bg-primary/10 p-2.5">
-                  <b.icon className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">{b.title}</h3>
-                  <p className="text-sm text-muted-foreground mt-1">{b.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section className="py-16 px-4">
-        <div className="mx-auto max-w-4xl">
-          <h2 className="text-3xl font-bold text-center text-foreground mb-12">
-            O que nossos parceiros dizem
+            Quem usa, recomenda
           </h2>
           <div className="grid sm:grid-cols-3 gap-6">
             {testimonials.map((t) => (
@@ -251,14 +319,14 @@ export default function PlanosPage() {
       <section className="py-16 px-4 bg-primary/5">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Pronto para vender mais?
+            Seu cardápio digital pronto em 5 minutos
           </h2>
           <p className="text-muted-foreground mb-8">
-            Cadastre sua loja agora e comece a receber pedidos ainda hoje.
+            Cadastre sua loja agora e comece a receber pedidos pelo celular ainda hoje.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button size="lg" onClick={handleCTA} className="text-base px-8 py-6 rounded-xl shadow-lg">
-              Cadastrar minha loja <ArrowRight className="ml-2 h-5 w-5" />
+              Criar meu cardápio grátis <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <Button size="lg" variant="outline" onClick={handleWhatsApp} className="text-base px-8 py-6 rounded-xl">
               <MessageCircle className="mr-2 h-5 w-5" /> Falar no WhatsApp
