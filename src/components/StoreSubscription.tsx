@@ -65,7 +65,7 @@ const planOptions: { type: StorePlanType; label: string; fee: number; rate: numb
   {
     type: "hybrid", label: "Crescimento", fee: 100, rate: 2.5,
     desc: "R$ 100/mês + 2,5% por pedido",
-    highlights: ["Motoboy da plataforma", "Relatórios completos", "Cupons ilimitados"],
+    highlights: ["Entregador próprio", "Relatórios completos", "Cupons ilimitados"],
   },
   {
     type: "commission_only", label: "Comissão", fee: 0, rate: 15,
@@ -75,7 +75,7 @@ const planOptions: { type: StorePlanType; label: string; fee: number; rate: numb
 ];
 
 // Itatinga-specific plan highlights
-const itatingaFixedHighlights = ["PIX integrado", "Motoboy plataforma", "R$1/pedido PIX", "Cupons ilimitados"];
+const itatingaFixedHighlights = ["PIX integrado", "Entregador próprio", "R$1/pedido PIX", "Cupons ilimitados"];
 
 const featureCategories = [
   {
@@ -85,13 +85,14 @@ const featureCategories = [
       { key: "allowPix", label: "Pagamento PIX Online", desc: "Receba via PIX com QR Code automático" },
     ],
   },
-  {
+  /* Logística — motoboy plataforma oculto */
+  /*{
     title: "Logística",
     icon: Truck,
     features: [
       { key: "allowPlatformDelivery", label: "Motoboys da Plataforma", desc: "Entregadores disponíveis na sua região" },
     ],
-  },
+  },*/
   {
     title: "Marketing",
     icon: Heart,
@@ -255,8 +256,8 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
                   Plano Especial Itatinga
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  PIX integrado + Motoboy da plataforma inclusos. Taxa operacional de R$ 1 por pedido PIX. 
-                  Split de entrega: R$ 4 motoboy + R$ 2 plataforma.
+                  PIX integrado incluso. Taxa operacional de R$ 1 por pedido PIX. 
+                  Use seu próprio entregador.
                 </p>
               </div>
             </div>
