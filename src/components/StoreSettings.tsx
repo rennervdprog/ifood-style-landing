@@ -82,13 +82,31 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
   const [pizzaPriceMode, setPizzaPriceMode] = useState<PizzaPriceMode>(storeSettings?.pizza_price_mode || "maior");
 
   // Z-API WhatsApp integration
-  const [zapiEnabled, setZapiEnabled] = useState<boolean>(storeSettings?.zapi_enabled || false);
-  const [zapiInstanceId, setZapiInstanceId] = useState<string>(storeSettings?.zapi_instance_id || "");
-  const [zapiToken, setZapiToken] = useState<string>(storeSettings?.zapi_token || "");
-  const [zapiClientToken, setZapiClientToken] = useState<string>(storeSettings?.zapi_client_token || "");
+  const [zapiEnabled, setZapiEnabled] = useState<boolean>(false);
+  const [zapiInstanceId, setZapiInstanceId] = useState<string>("");
+  const [zapiToken, setZapiToken] = useState<string>("");
+  const [zapiClientToken, setZapiClientToken] = useState<string>("");
   const [showZapiToken, setShowZapiToken] = useState(false);
   const [showZapiClientToken, setShowZapiClientToken] = useState(false);
   const [testingZapi, setTestingZapi] = useState(false);
+
+  // Load Z-API secrets from store_secrets table
+  useEffect(() => {
+    if (!storeId) return;
+    supabase
+      .from("store_secrets")
+      .select("zapi_enabled, zapi_instance_id, zapi_token, zapi_client_token")
+      .eq("store_id", storeId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setZapiEnabled(data.zapi_enabled || false);
+          setZapiInstanceId(data.zapi_instance_id || "");
+          setZapiToken(data.zapi_token || "");
+          setZapiClientToken(data.zapi_client_token || "");
+        }
+      });
+  }, [storeId]);
 
   // Load whatsapp + pix from profile
   useEffect(() => {
