@@ -5,7 +5,11 @@
 export function getOrderItemDisplayName(
   item: { products?: { name: string } | null; addons?: any[] | any | null }
 ): string {
-  const addons = Array.isArray(item.addons) ? item.addons : [];
+  let raw = item.addons;
+  if (typeof raw === "string") {
+    try { raw = JSON.parse(raw); } catch { raw = []; }
+  }
+  const addons = Array.isArray(raw) ? raw : [];
   const halfAddons = addons.filter((a: any) => typeof a?.name === "string" && a.name.startsWith("½ "));
 
   if (halfAddons.length === 2) {
