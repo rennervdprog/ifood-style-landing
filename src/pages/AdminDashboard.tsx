@@ -22,6 +22,7 @@ import {
 } from "recharts";
 import { openWhatsApp } from "@/lib/whatsapp";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import { notifyOrderStatusChange } from "@/lib/orderNotifications";
 import MenuBuilder from "@/components/MenuBuilder";
 import StoreHoursManager from "@/components/StoreHoursManager";
 import AddonManager from "@/components/AddonManager";
@@ -457,29 +458,30 @@ const AdminDashboard = () => {
       queryClient.invalidateQueries({ queryKey: ["store-orders", store?.id] });
       const order = orders?.find((o: any) => o.id === orderId);
       if (newStatus === "preparando" && autoPrint && order) handlePrint(order);
-      if (newStatus === "preparando" && order) {
+
+      // Send dual notifications (Push + WhatsApp) for all status changes
+      if (order) {
         const clientPhone = getClientWhatsApp(order.client_id);
-        if (clientPhone) {
-          const clientName = getClientName(order.client_id);
-          const items = order.order_items?.map((i: any) => `${i.quantity}x ${i.products?.name}`).join("\n") || "";
-          const msg = `✅ *ItaSuper* informa: Seu pedido no *${store?.name}* foi aceito! 🍔\n\n${items}\n\n💰 Total: R$ ${Number(order.total_price).toFixed(2)}\nPedido: #${order.id.slice(0, 8).toUpperCase()}`;
-          setTimeout(() => openWhatsApp(clientPhone, msg), 600);
-        }
+        const clientName = getClientName(order.client_id);
+        const items = order.order_items?.map((i: any) => `${i.quantity}x ${i.products?.name}`).join("\n") || "";
+        
+        notifyOrderStatusChange(newStatus, {
+          orderId: order.id,
+          storeName: store?.name || "Loja",
+          clientId: order.client_id,
+          clientPhone,
+          clientName,
+          totalPrice: Number(order.total_price),
+          addressDetails: order.address_details,
+          items,
+          paymentMethod: order.payment_method,
+        });
       }
+
+      // Notify drivers when order is ready for platform delivery
       if (newStatus === "pronto_para_entrega" && !isOwnDelivery && onlineDrivers && onlineDrivers.length > 0) {
         const driverUserIds = onlineDrivers.map((d: any) => d.user_id);
         pushNotifyDeliveryAvailable(driverUserIds, orderId).catch(console.error);
-      }
-      if (newStatus === "saiu_entrega" && isOwnDelivery && order) {
-        sendPushNotification([order.client_id], "🛵 Saiu para entrega!", `Seu pedido #${orderId.slice(0, 8).toUpperCase()} saiu para entrega!`, { link: "/pedidos" }).catch(console.error);
-        const clientPhone = getClientWhatsApp(order.client_id);
-        if (clientPhone) {
-          const msg = `🛵 *ItaSuper* informa: Seu pedido #${orderId.slice(0, 8).toUpperCase()} saiu para entrega! 🚀\nEndereço: ${order.address_details}`;
-          setTimeout(() => openWhatsApp(clientPhone, msg), 600);
-        }
-      }
-      if (newStatus === "finalizado" && isOwnDelivery && order) {
-        sendPushNotification([order.client_id], "✅ Pedido Entregue!", `Seu pedido #${orderId.slice(0, 8).toUpperCase()} foi entregue. Bom apetite!`, { link: "/pedidos" }).catch(console.error);
       }
     } catch (e: any) {
       toast.error(`Erro inesperado: ${e?.message}`);
@@ -510,20 +512,21 @@ const AdminDashboard = () => {
       setCancelConfirm(null);
 
       const clientPhone = getClientWhatsApp(order.client_id);
-      if (clientPhone) {
-        const msg = isPix
-          ? `❌ *ItaSuper* informa: Seu pedido #${order.id.slice(0, 8).toUpperCase()} foi cancelado.\n\n💰 O reembolso de R$ ${Number(order.total_price).toFixed(2)} via PIX será processado em breve.\n\nDesculpe o transtorno! 🙏`
-          : `❌ *ItaSuper* informa: Seu pedido #${order.id.slice(0, 8).toUpperCase()} foi cancelado.\n\nDesculpe o transtorno! 🙏`;
-        setTimeout(() => openWhatsApp(clientPhone, msg), 600);
-      }
+      notifyOrderStatusChange("cancelado", {
+        orderId: order.id,
+        storeName: store?.name || "Loja",
+        clientId: order.client_id,
+        clientPhone,
+        clientName: getClientName(order.client_id),
+        totalPrice: Number(order.total_price),
+        paymentMethod: order.payment_method,
+      });
 
       if (isPix) {
         toast.success("Pedido cancelado! Reembolso PIX pendente.", { duration: 8000, description: `R$ ${Number(order.total_price).toFixed(2)} — envie o PIX de volta ao cliente.` });
       } else {
         toast.success("Pedido cancelado e cliente notificado.");
       }
-
-      sendPushNotification([order.client_id], "❌ Pedido Cancelado", `Seu pedido #${order.id.slice(0, 8).toUpperCase()} foi cancelado.${isPix ? " O reembolso será processado." : ""}`, { link: "/pedidos" }).catch(console.error);
     } catch (e: any) {
       toast.error(`Erro ao cancelar: ${e?.message}`);
     }

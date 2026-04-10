@@ -225,11 +225,13 @@ const SuperAdminDashboard = () => {
 
   const metrics = useMemo(() => {
     if (!orders) return { totalSales: 0, commission: 0, activeOrders: 0, totalOrders: 0 };
-    const totalSales = sumMoney(orders.map((order) => order.total_price));
-    const commission = sumMoney(orders.map((order) => multiplyMoney(order.subtotal, getStoreRate(order.store_id))));
+    // Exclude cancelled and waiting-payment orders from financial metrics
+    const billableOrders = orders.filter(o => !["cancelado", "aguardando_pagamento"].includes(o.status));
+    const totalSales = sumMoney(billableOrders.map((order) => order.total_price));
+    const commission = sumMoney(billableOrders.map((order) => multiplyMoney(order.subtotal, getStoreRate(order.store_id))));
     const activeStatuses = ["pendente", "preparando", "pronto_para_entrega", "em_transito", "saiu_entrega"];
     const activeOrders = orders.filter(o => activeStatuses.includes(o.status)).length;
-    return { totalSales, commission, activeOrders, totalOrders: orders.length };
+    return { totalSales, commission, activeOrders, totalOrders: billableOrders.length };
   }, [orders, stores, parentStorePlans]);
 
   const storeSettlement = useMemo(() => {
@@ -294,9 +296,11 @@ const SuperAdminDashboard = () => {
 
   const storeConciliation = useMemo(() => {
     if (!orders || !stores) return [];
+    // Exclude cancelled and waiting-payment orders
+    const billableOrders = orders.filter(o => !["cancelado", "aguardando_pagamento"].includes(o.status));
     const map = new Map<string, { name: string; totalSold: number; commission: number; orders: number }>();
     stores.forEach(s => map.set(s.id, { name: s.name, totalSold: 0, commission: 0, orders: 0 }));
-    orders.forEach(o => {
+    billableOrders.forEach(o => {
       const entry = map.get(o.store_id);
       if (entry) {
         entry.totalSold = addMoney(entry.totalSold, o.total_price);
