@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Mail, Lock, Eye, EyeOff, Bike, Store, Shield } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, Store, Shield } from "lucide-react";
 
 const PartnerLogin = () => {
   const { user, loading: authLoading } = useAuth();
@@ -112,17 +112,14 @@ const PartnerLogin = () => {
               <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
                 <Store className="h-7 w-7 text-primary" />
               </div>
-              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
-                <Bike className="h-7 w-7 text-primary" />
-              </div>
             </div>
             <h2 className="text-xl font-black text-foreground">
               {mode === "login" ? "Acesso Parceiro" : "Como deseja se cadastrar?"}
             </h2>
             <p className="text-sm text-muted-foreground mt-1">
               {mode === "login"
-                ? "Entre com sua conta de lojista ou entregador"
-                : "Escolha uma opção para iniciar seu cadastro"}
+                ? "Entre com sua conta de lojista"
+                : "Cadastre sua loja na plataforma"}
             </p>
           </div>
 
@@ -203,19 +200,6 @@ const PartnerLogin = () => {
                   <div className="text-left">
                     <span className="text-base font-bold text-foreground block">Cadastrar Loja</span>
                     <span className="text-xs text-muted-foreground">Quero vender meus produtos</span>
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => navigate("/cadastro-entregador")}
-                  className="w-full p-5 rounded-xl border-2 border-border bg-card hover:border-primary/50 transition-all flex items-center gap-4 active:scale-[0.98]"
-                >
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Bike className="h-6 w-6 text-primary" />
-                  </div>
-                  <div className="text-left">
-                    <span className="text-base font-bold text-foreground block">Quero ser Motoboy</span>
-                    <span className="text-xs text-muted-foreground">Quero fazer entregas</span>
                   </div>
                 </button>
               </div>
