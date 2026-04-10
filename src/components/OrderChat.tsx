@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { MessageCircle, Send, X, ChefHat, Package, Truck, CheckCircle2, XCircle, Bell, Check, CheckCheck, Clock } from "lucide-react";
+import { MessageCircle, Send, X, ChefHat, Package, Truck, CheckCircle2, XCircle, Bell, CheckCheck } from "lucide-react";
 import { toast } from "sonner";
 import { sendPushNotification } from "@/lib/firebase";
 
@@ -36,7 +36,6 @@ const formatDate = (dateStr: string) => {
   const today = new Date();
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
-
   if (d.toDateString() === today.toDateString()) return "Hoje";
   if (d.toDateString() === yesterday.toDateString()) return "Ontem";
   return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" });
@@ -52,10 +51,12 @@ const OrderChat = ({ orderId, storeName, storeOwnerId, clientId, driverId, defau
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Track unread messages even when closed
+  // Determine if current user is the store owner
+  const isStoreOwner = user?.id === storeOwnerId;
+  const isDriver = user?.id === driverId;
+
   useEffect(() => {
     if (!user) return;
-
     const channel = supabase
       .channel(`order-chat-unread-${orderId}`)
       .on("postgres_changes", {
@@ -76,14 +77,11 @@ const OrderChat = ({ orderId, storeName, storeOwnerId, clientId, driverId, defau
         }
       })
       .subscribe();
-
     return () => { supabase.removeChannel(channel); };
   }, [orderId, user, open]);
 
-  // Fetch messages when opened
   useEffect(() => {
     if (!open || !user) return;
-
     const fetchMessages = async () => {
       const { data } = await supabase
         .from("order_messages" as any)
@@ -93,15 +91,12 @@ const OrderChat = ({ orderId, storeName, storeOwnerId, clientId, driverId, defau
       setMessages(data || []);
       setUnreadCount(0);
     };
-
     fetchMessages();
   }, [open, orderId, user]);
 
   useEffect(() => {
     if (open) {
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-      }, 100);
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     }
   }, [messages, open]);
 
@@ -130,7 +125,6 @@ const OrderChat = ({ orderId, storeName, storeOwnerId, clientId, driverId, defau
         message: newMessage.trim(),
       });
       if (error) throw error;
-
       const recipients = getRecipientIds();
       if (recipients.length > 0) {
         sendPushNotification(
@@ -140,13 +134,50 @@ const OrderChat = ({ orderId, storeName, storeOwnerId, clientId, driverId, defau
           { link: "/pedidos", order_id: orderId }
         ).catch(console.error);
       }
-
       setNewMessage("");
     } catch {
       toast.error("Erro ao enviar mensagem.");
     } finally {
       setSending(false);
     }
+  };
+
+  /**
+   * Determines if a message should render on the RIGHT side for the current viewer.
+   * 
+   * For the STORE OWNER viewing:
+   *   - Their own messages → RIGHT (green)
+   *   - System/status messages (sent by store trigger) → RIGHT (green, they "own" these)
+   *   - Client messages → LEFT (white)
+   * 
+   * For the CLIENT viewing:
+   *   - Their own messages → RIGHT (green)
+   *   - System/status messages → LEFT (white, "from the store")
+   *   - Store owner messages → LEFT (white)
+   * 
+   * For DRIVERS:
+   *   - Their own messages → RIGHT
+   *   - Everything else → LEFT
+   */
+  const isBubbleRight = (msg: any): boolean => {
+    const isMine = msg.sender_id === user?.id;
+    if (isMine) return true;
+
+    const isSystem = isSystemMessage(msg.message);
+    if (isSystem && isStoreOwner) return true; // store sees system msgs on right
+    
+    return false;
+  };
+
+  const getSenderLabel = (msg: any): string | null => {
+    const isMine = msg.sender_id === user?.id;
+    const isSystem = isSystemMessage(msg.message);
+    if (isMine || isSystem) return null;
+
+    if (msg.sender_id === storeOwnerId) return storeName;
+    if (msg.sender_id === driverId) return "🛵 Entregador";
+    if (msg.sender_id === clientId) return "Cliente";
+    return null;
   };
 
   // Group messages by date
@@ -179,40 +210,41 @@ const OrderChat = ({ orderId, storeName, storeOwnerId, clientId, driverId, defau
   }
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/70 flex items-end justify-center sm:items-center p-0 sm:p-4">
-      <div className="bg-card w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl border border-border flex flex-col max-h-[85vh] overflow-hidden">
-        {/* Header — WhatsApp style */}
-        <div className="flex items-center gap-3 px-4 py-3 bg-primary text-primary-foreground">
-          <div className="w-9 h-9 rounded-full bg-primary-foreground/20 flex items-center justify-center flex-shrink-0">
-            <MessageCircle className="h-4.5 w-4.5" />
+    <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-end justify-center sm:items-center p-0 sm:p-4">
+      <div className="w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl flex flex-col max-h-[90vh] sm:max-h-[85vh] overflow-hidden shadow-2xl">
+
+        {/* ── Header ── */}
+        <div className="flex items-center gap-3 px-4 py-3" style={{ background: "#075E54" }}>
+          <div className="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center flex-shrink-0">
+            <MessageCircle className="h-5 w-5 text-white" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-sm truncate">{storeName}</h3>
-            <p className="text-[10px] opacity-80">Pedido #{orderId.slice(0, 8).toUpperCase()}</p>
+            <h3 className="font-bold text-sm text-white truncate">{storeName}</h3>
+            <p className="text-[11px] text-white/70">Pedido #{orderId.slice(0, 8).toUpperCase()}</p>
           </div>
-          <button onClick={() => setOpen(false)} className="p-1.5 rounded-full hover:bg-primary-foreground/10 transition-colors">
-            <X className="h-5 w-5" />
+          <button
+            onClick={() => setOpen(false)}
+            className="p-2 rounded-full hover:bg-white/10 transition-colors"
+          >
+            <X className="h-5 w-5 text-white" />
           </button>
         </div>
 
-        {/* Messages area — WhatsApp style background */}
+        {/* ── Messages ── */}
         <div
-          className="flex-1 overflow-y-auto px-3 py-3 space-y-1 min-h-[300px] max-h-[60vh]"
-          style={{
-            backgroundColor: "hsl(var(--muted) / 0.3)",
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          }}
+          className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5 min-h-[320px] max-h-[65vh]"
+          style={{ backgroundColor: "#ECE5DD" }}
         >
           {messages.length === 0 && (
             <div className="text-center py-16">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <MessageCircle className="h-8 w-8 text-primary/40" />
+              <div className="w-16 h-16 rounded-full bg-[#075E54]/10 flex items-center justify-center mx-auto mb-4">
+                <MessageCircle className="h-8 w-8 text-[#075E54]/40" />
               </div>
-              <p className="text-sm font-medium text-muted-foreground">
+              <p className="text-sm font-semibold text-[#303030]">
                 Acompanhe seu pedido aqui
               </p>
-              <p className="text-xs text-muted-foreground/60 mt-1 max-w-[250px] mx-auto">
-                As atualizações de status e mensagens da loja aparecerão automaticamente.
+              <p className="text-xs text-[#667781] mt-1 max-w-[250px] mx-auto">
+                Atualizações de status e mensagens aparecerão automaticamente.
               </p>
             </div>
           )}
@@ -221,59 +253,68 @@ const OrderChat = ({ orderId, storeName, storeOwnerId, clientId, driverId, defau
             <div key={group.date}>
               {/* Date separator */}
               <div className="flex justify-center my-3">
-                <span className="text-[10px] font-medium text-muted-foreground bg-muted/80 backdrop-blur-sm px-3 py-1 rounded-full shadow-sm">
+                <span className="text-[11px] font-medium text-[#54656F] bg-white/90 px-3 py-1 rounded-lg shadow-sm">
                   {group.date}
                 </span>
               </div>
 
               {group.messages.map((msg: any) => {
-                const isMine = msg.sender_id === user?.id;
+                const right = isBubbleRight(msg);
                 const isSystem = isSystemMessage(msg.message);
-
-                if (isSystem) {
-                  const Icon = getSystemIcon(msg.message);
-                  return (
-                    <div key={msg.id} className="flex justify-center my-2">
-                      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-50/90 dark:bg-amber-950/30 border border-amber-200/50 dark:border-amber-800/30 max-w-[85%] shadow-sm backdrop-blur-sm">
-                        <Icon className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
-                        <span className="text-[11px] text-amber-800 dark:text-amber-300 font-medium leading-snug">{msg.message}</span>
-                        <span className="text-[9px] text-amber-500/70 flex-shrink-0 ml-1">
-                          {formatTime(msg.created_at)}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                }
+                const senderLabel = getSenderLabel(msg);
+                const Icon = isSystem ? getSystemIcon(msg.message) : null;
 
                 return (
-                  <div key={msg.id} className={`flex ${isMine ? "justify-end" : "justify-start"} mb-1`}>
+                  <div key={msg.id} className={`flex ${right ? "justify-end" : "justify-start"} mb-1`}>
                     <div
-                      className={`relative max-w-[80%] px-3 py-2 shadow-sm ${
-                        isMine
-                          ? "bg-emerald-100 dark:bg-emerald-900/40 text-foreground rounded-2xl rounded-br-sm"
-                          : "bg-card text-foreground rounded-2xl rounded-bl-sm border border-border/50"
-                      }`}
+                      className="relative max-w-[82%] px-2.5 py-1.5 shadow-sm"
+                      style={{
+                        backgroundColor: right ? "#D9FDD3" : "#FFFFFF",
+                        borderRadius: right
+                          ? "8px 0px 8px 8px"
+                          : "0px 8px 8px 8px",
+                      }}
                     >
                       {/* Tail */}
                       <div
-                        className={`absolute bottom-0 w-3 h-3 ${
-                          isMine
-                            ? "-right-1.5 bg-emerald-100 dark:bg-emerald-900/40"
-                            : "-left-1.5 bg-card"
-                        }`}
+                        className="absolute top-0 w-2 h-3"
                         style={{
-                          clipPath: isMine
-                            ? "polygon(0 0, 100% 100%, 0 100%)"
-                            : "polygon(100% 0, 0 100%, 100% 100%)",
+                          [right ? "right" : "left"]: "-7px",
+                          backgroundColor: right ? "#D9FDD3" : "#FFFFFF",
+                          clipPath: right
+                            ? "polygon(0 0, 100% 0, 0 100%)"
+                            : "polygon(0 0, 100% 0, 100% 100%)",
                         }}
                       />
-                      <p className="text-[13px] leading-relaxed break-words whitespace-pre-wrap">{msg.message}</p>
-                      <div className={`flex items-center gap-1 justify-end mt-0.5 ${isMine ? "-mb-0.5" : ""}`}>
-                        <span className="text-[9px] text-muted-foreground/60">
+
+                      {/* Sender label (for multi-party chats) */}
+                      {senderLabel && (
+                        <p className="text-[11px] font-bold mb-0.5" style={{ color: "#075E54" }}>
+                          {senderLabel}
+                        </p>
+                      )}
+
+                      {/* System icon inline */}
+                      {isSystem && Icon ? (
+                        <div className="flex items-start gap-1.5">
+                          <Icon className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: "#075E54" }} />
+                          <p className="text-[13px] leading-relaxed break-words whitespace-pre-wrap" style={{ color: "#111B21" }}>
+                            {msg.message}
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="text-[13px] leading-relaxed break-words whitespace-pre-wrap" style={{ color: "#111B21" }}>
+                          {msg.message}
+                        </p>
+                      )}
+
+                      {/* Time + read receipt */}
+                      <div className="flex items-center gap-1 justify-end -mb-0.5 mt-0.5">
+                        <span className="text-[10px]" style={{ color: "#667781" }}>
                           {formatTime(msg.created_at)}
                         </span>
-                        {isMine && (
-                          <CheckCheck className="h-3 w-3 text-blue-500/70" />
+                        {right && (
+                          <CheckCheck className="h-3.5 w-3.5" style={{ color: "#53BDEB" }} />
                         )}
                       </div>
                     </div>
@@ -285,8 +326,8 @@ const OrderChat = ({ orderId, storeName, storeOwnerId, clientId, driverId, defau
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input area — WhatsApp style */}
-        <div className="px-3 py-2.5 border-t border-border flex gap-2 items-end bg-muted/30">
+        {/* ── Input ── */}
+        <div className="px-2 py-2 flex gap-2 items-end" style={{ backgroundColor: "#F0F2F5" }}>
           <input
             ref={inputRef}
             type="text"
@@ -295,14 +336,16 @@ const OrderChat = ({ orderId, storeName, storeOwnerId, clientId, driverId, defau
             onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
             placeholder="Mensagem"
             maxLength={500}
-            className="flex-1 px-4 py-2.5 rounded-full border border-border bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="flex-1 px-4 py-2.5 rounded-full border-0 text-sm focus:outline-none focus:ring-2 focus:ring-[#075E54]/30"
+            style={{ backgroundColor: "#FFFFFF", color: "#111B21" }}
           />
           <button
             onClick={sendMessage}
             disabled={!newMessage.trim() || sending}
-            className="bg-primary text-primary-foreground p-2.5 rounded-full disabled:opacity-50 active:scale-95 transition-all hover:shadow-md flex-shrink-0"
+            className="p-2.5 rounded-full disabled:opacity-40 active:scale-95 transition-all flex-shrink-0"
+            style={{ backgroundColor: "#075E54", color: "#FFFFFF" }}
           >
-            <Send className="h-4 w-4" />
+            <Send className="h-4.5 w-4.5" />
           </button>
         </div>
       </div>
