@@ -162,10 +162,14 @@ const StoreFinanceBasic = ({ storeId, storeName }: StoreFinanceBasicProps) => {
           <div className="flex-1">
             <h3 className="font-bold text-foreground text-sm">
               Plano {storePlan.planType === "fixed" ? "Essencial" : storePlan.planType === "hybrid" ? "Crescimento" : "Comissão"}
+              {storePlan.isItatingaFixed && " • Itatinga"}
             </h3>
             <p className="text-xs text-muted-foreground">
               R$ {storePlan.monthlyFee.toFixed(2)}/mês
-              {storePlan.commissionRate > 0 && ` + ${storePlan.commissionRate}% por pedido`}
+              {storePlan.isItatingaFixed 
+                ? " • R$1/pedido PIX • Split entrega R$4+R$2"
+                : storePlan.commissionRate > 0 ? ` + ${storePlan.commissionRate}% por pedido` : ""
+              }
             </p>
           </div>
           {storePlan.isInTrial && (
