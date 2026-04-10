@@ -843,6 +843,13 @@ const DriverDashboard = () => {
                             size="sm"
                           />
                         )}
+                        <OrderChat
+                          orderId={myDelivery.id}
+                          storeName={(myDelivery as any).stores?.name || "Loja"}
+                          storeOwnerId={deliveryStoreOwnerId}
+                          clientId={deliveryClientId}
+                          driverId={user?.id}
+                        />
 
                         {/* Order items */}
                         <div className="bg-muted/50 rounded-xl p-3">
