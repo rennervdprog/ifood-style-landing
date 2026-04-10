@@ -635,89 +635,7 @@ async function handleOrderPix(
   const cleanCpf = String(payer_cpf || "").replace(/\D/g, "");
   if (!cleanCpf || cleanCpf.length !== 11) return json({ error: "CPF inválido. Informe um CPF com 11 dígitos." }, 400);
 
-  // Fetch store wallet for Asaas split
-  let splitWalletId: string | undefined;
-  let splitFixedValue: number | undefined;
-  if (order.store_id) {
-    const serviceClient = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
-    const { data: store } = await serviceClient
-      .from("stores")
-      .select("asaas_wallet_id, delivery_mode, commission_rate")
-      .eq("id", order.store_id)
-      .single();
-
-    // Check if store has a fixed plan (commission = 0, monthly fee instead)
-    const { data: storePlan } = await serviceClient
-      .from("store_plans")
-      .select("plan_type, commission_rate")
-      .eq("store_id", order.store_id)
-      .eq("is_active", true)
-      .limit(1)
-      .maybeSingle();
-
-    const isFixedPlan = storePlan?.plan_type === "fixed";
-
-    // Read delivery fee config from admin_settings for split values
-    let driverSplitVal = 4;
-    let platformSplitVal = 2;
-    let pixOpFee = 1;
-    try {
-      const { data: feeConfigRow } = await serviceClient
-        .from("admin_settings")
-        .select("value")
-        .eq("key", "delivery_fee_config")
-        .maybeSingle();
-      if (feeConfigRow?.value) {
-        const fc = feeConfigRow.value as any;
-        driverSplitVal = fc.driver_split ?? 4;
-        platformSplitVal = fc.platform_split ?? 2;
-        pixOpFee = fc.pix_operational_fee ?? 1;
-      }
-    } catch (e) {
-      console.warn("Could not load delivery_fee_config, using defaults", e);
-    }
-
-    if (store?.asaas_wallet_id) {
-      splitWalletId = store.asaas_wallet_id;
-      const subtotal = Number(order.subtotal) || 0;
-      const deliveryFee = Number(order.delivery_fee) || 0;
-      const isOwnDelivery = store.delivery_mode === "own";
-
-      if (isFixedPlan) {
-        // Fixed plan: 0% commission, PIX operational fee per transaction
-        const pixOperationalFee = pixOpFee;
-        const platformDeliverySplit = platformSplitVal;
-
-        if (isOwnDelivery) {
-          // Own delivery: store gets subtotal - PIX fee + full delivery fee
-          splitFixedValue = Math.round((subtotal - pixOperationalFee + deliveryFee) * 100) / 100;
-          console.log(`Split FIXED (own delivery): store gets R$${splitFixedValue}, platform keeps R$${pixOperationalFee} (PIX fee)`);
-        } else {
-          // Platform delivery: store gets subtotal - PIX fee, platform keeps delivery fee
-          splitFixedValue = Math.round((subtotal - pixOperationalFee) * 100) / 100;
-          console.log(`Split FIXED (platform): store gets R$${splitFixedValue}, platform keeps R$${pixOperationalFee} (PIX) + R$${deliveryFee} delivery (R$${driverSplitVal} driver / R$${platformDeliverySplit} platform)`);
-        }
-
-        // Ensure store share is not negative
-        if (splitFixedValue < 0) splitFixedValue = 0;
-      } else {
-        // Commission-based plans: use commission_rate from store_plans or stores table
-        const rate = (storePlan?.commission_rate ?? store.commission_rate ?? 15) / 100;
-        const storeShare = 1 - rate;
-
-        if (isOwnDelivery) {
-          splitFixedValue = Math.round((subtotal * storeShare + deliveryFee) * 100) / 100;
-          console.log(`Split (own delivery): store gets R$${splitFixedValue}, platform keeps ${rate * 100}% = R$${Math.round(subtotal * rate * 100) / 100}`);
-        } else {
-          splitFixedValue = Math.round(subtotal * storeShare * 100) / 100;
-          console.log(`Split (platform): store gets R$${splitFixedValue} from subtotal: ${subtotal}`);
-        }
-      }
-    }
-  }
+  // Payment goes 100% to main account. Store share transferred via webhook on confirmation.
 
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
   const desc = String(description || `Pedido ItaSuper #${order_id.substring(0, 6).toUpperCase()}`).substring(0, 256);
@@ -733,8 +651,6 @@ async function handleOrderPix(
     externalReference: order_id,
     idempotencyKey,
     expiresAt,
-    splitWalletId,
-    splitFixedValue,
   });
 }
 
