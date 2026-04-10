@@ -269,7 +269,7 @@ const CommissionAlert = ({ storeId, storeName, onGoToFinance }: CommissionAlertP
               Após o pagamento, a confirmação é automática e sua comissão será zerada.
             </p>
           </div>
-        ) : (
+        ) : canPay ? (
           <Button
             onClick={handlePayCommission}
             disabled={generating || (!hasPixKey || !hasDocument)}
@@ -288,6 +288,19 @@ const CommissionAlert = ({ storeId, storeName, onGoToFinance }: CommissionAlertP
               <><QrCode className="h-4 w-4" /> Pagar Comissão via PIX</>
             )}
           </Button>
+        ) : (
+          <div className="space-y-2">
+            <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full transition-all duration-500"
+                style={{ width: `${Math.min(100, (pendingCommission / minPayout) * 100)}%` }}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground text-center">
+              PIX disponível a partir de <strong className="text-foreground">R$ {minPayout.toFixed(2)}</strong>
+              {" "}— faltam <strong className="text-amber-500">R$ {(minPayout - pendingCommission).toFixed(2)}</strong>
+            </p>
+          </div>
         )}
 
         {onGoToFinance && !chargeResult && (
