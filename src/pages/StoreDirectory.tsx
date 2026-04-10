@@ -54,7 +54,7 @@ const Navbar = ({ onNavigate, isLoggedIn }: { onNavigate: (path: string) => void
   return (
     <nav className={`sticky top-0 z-50 border-b backdrop-blur-md transition-all duration-300 ${scrolled ? "shadow-md" : ""}`} style={{ background: "rgba(255,255,255,0.97)", borderColor: THEME.border }}>
       <div className="max-w-6xl mx-auto flex items-center justify-between px-4 h-16">
-        <button onClick={() => scrollTo("#hero")} className="flex items-center gap-2">
+        <button onClick={() => scrollTo("#hero")} className="flex items-center gap-2" aria-label="Ir para o início">
           <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: THEME.primary }}>
             <Zap className="h-5 w-5 text-white" />
           </div>
@@ -88,7 +88,7 @@ const Navbar = ({ onNavigate, isLoggedIn }: { onNavigate: (path: string) => void
           )}
         </div>
 
-        <button className="md:hidden" onClick={() => setOpen(!open)}>
+        <button className="md:hidden" onClick={() => setOpen(!open)} aria-label={open ? "Fechar menu" : "Abrir menu"}>
           {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
       </div>
@@ -262,7 +262,7 @@ const StoreDirectory = () => {
   ];
 
   return (
-    <div className="min-h-screen" style={{ background: THEME.white, color: THEME.dark }}>
+    <main className="min-h-screen" style={{ background: THEME.white, color: THEME.dark }}>
       <Navbar onNavigate={navigate} isLoggedIn={!!user} />
 
       {/* ═══ HERO — Clean & Bold ═══ */}
@@ -673,7 +673,7 @@ const StoreDirectory = () => {
           </div>
         </div>
       </footer>
-    </div>
+    </main>
   );
 };
 
