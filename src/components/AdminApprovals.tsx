@@ -94,7 +94,7 @@ const AdminApprovals = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("stores")
-        .select("id, name, owner_id, category, status, asaas_wallet_id, address_city, created_at");
+        .select("id, name, owner_id, category, status, address_city, created_at");
       if (error) throw error;
       return data || [];
     },
@@ -142,21 +142,7 @@ const AdminApprovals = () => {
             body: { action: "sync_profile", data: { profile: { ...(freshProfile || profile), status: "approved" } } },
           });
 
-          if (profile.role === "lojista") {
-            try {
-              const { data: store } = await supabase
-                .from("stores")
-                .select("id, asaas_wallet_id")
-                .eq("owner_id", profile.user_id)
-                .single();
-              if (store && !store.asaas_wallet_id) {
-                const { error: subError } = await supabase.functions.invoke("asaas-subaccount", {
-                  body: { store_id: store.id },
-                });
-                if (subError) toast.info("Aprovado! Subconta financeira pendente.");
-              }
-            } catch (e) { console.warn("Auto subaccount error:", e); }
-          }
+          toast.success("Parceiro aprovado e sincronizado!");
 
           toast.success("Parceiro aprovado e sincronizado!");
         } catch { toast.success("Parceiro aprovado!"); }
