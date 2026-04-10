@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { getOrderItemDisplayName } from "@/lib/orderItemName";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -583,7 +584,7 @@ const PedidosPage = () => {
                   <div className="text-xs text-muted-foreground space-y-1">
                     {order.order_items?.map((item: any) => (
                       <div key={item.id}>
-                        {item.quantity}x {item.products?.name || "Item"} — R$ {(item.unit_price * item.quantity).toFixed(2)}
+                        {item.quantity}x {getOrderItemDisplayName(item)} — R$ {(item.unit_price * item.quantity).toFixed(2)}
                       </div>
                     ))}
                   </div>
@@ -902,7 +903,7 @@ const PedidosPage = () => {
                           <div className="text-xs text-muted-foreground space-y-1">
                             {order.order_items?.map((item: any) => (
                               <div key={item.id} className="flex justify-between">
-                                <span>{item.quantity}x {item.products?.name || "Item"}</span>
+                                <span>{item.quantity}x {getOrderItemDisplayName(item)}</span>
                                 <span className="font-medium text-foreground">R$ {(item.unit_price * item.quantity).toFixed(2)}</span>
                               </div>
                             ))}
@@ -974,7 +975,7 @@ const PedidosPage = () => {
                       {/* Items summary */}
                       <div className="px-4 pb-2">
                         <p className="text-xs text-muted-foreground truncate">
-                          {order.order_items?.map((item: any) => `${item.quantity}x ${item.products?.name || "Item"}`).join(", ")}
+                          {order.order_items?.map((item: any) => `${item.quantity}x ${getOrderItemDisplayName(item)}`).join(", ")}
                         </p>
                       </div>
 

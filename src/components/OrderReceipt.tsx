@@ -1,4 +1,5 @@
 import { forwardRef } from "react";
+import { getOrderItemDisplayName } from "@/lib/orderItemName";
 
 interface OrderItem {
   id: string;
@@ -82,7 +83,7 @@ const OrderReceipt = forwardRef<HTMLDivElement, OrderReceiptProps>(
             <div key={item.id} style={{ marginBottom: "6px" }}>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <span style={{ fontWeight: "bold" }}>
-                  {item.quantity}x {item.products?.name || "Item"}
+                  {item.quantity}x {getOrderItemDisplayName(item)}
                 </span>
                 <span>R$ {(item.unit_price * item.quantity).toFixed(2)}</span>
               </div>

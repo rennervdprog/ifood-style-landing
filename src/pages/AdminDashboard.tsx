@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback, useMemo, memo } from "react";
+import { getOrderItemDisplayName } from "@/lib/orderItemName";
 import SimulationBanner from "@/components/SimulationBanner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -328,7 +329,7 @@ const AdminDashboard = () => {
       const productCount = new Map<string, number>();
       data.orders.forEach((o: any) => {
         o.order_items?.forEach((item: any) => {
-          const name = item.products?.name || "Item";
+          const name = getOrderItemDisplayName(item);
           productCount.set(name, (productCount.get(name) || 0) + item.quantity);
         });
       });
@@ -463,7 +464,7 @@ const AdminDashboard = () => {
       if (order) {
         const clientPhone = getClientWhatsApp(order.client_id);
         const clientName = getClientName(order.client_id);
-        const items = order.order_items?.map((i: any) => `${i.quantity}x ${i.products?.name}`).join("\n") || "";
+        const items = order.order_items?.map((i: any) => `${i.quantity}x ${getOrderItemDisplayName(i)}`).join("\n") || "";
         
         notifyOrderStatusChange(newStatus, {
           orderId: order.id,
@@ -980,7 +981,7 @@ const AdminDashboard = () => {
                             <div className="bg-muted/50 rounded-lg px-2.5 py-1.5 space-y-0.5">
                               {order.order_items?.slice(0, 4).map((item: any) => (
                                 <div key={item.id} className="flex justify-between text-xs">
-                                  <span className="text-foreground"><span className="text-primary font-bold">{item.quantity}x</span> {item.products?.name || "Item"}</span>
+                                  <span className="text-foreground"><span className="text-primary font-bold">{item.quantity}x</span> {getOrderItemDisplayName(item)}</span>
                                   <span className="text-muted-foreground">R$ {(item.unit_price * item.quantity).toFixed(2)}</span>
                                 </div>
                               ))}
@@ -1136,7 +1137,7 @@ const AdminDashboard = () => {
                         <div className="bg-muted/50 rounded-xl px-3 py-2 mb-3 space-y-0.5">
                           {order.order_items?.map((item: any) => (
                             <div key={item.id} className="text-sm text-foreground">
-                              <span className="text-primary font-bold">{item.quantity}x</span> {item.products?.name || "Item"}
+                              <span className="text-primary font-bold">{item.quantity}x</span> {getOrderItemDisplayName(item)}
                             </div>
                           ))}
                         </div>
@@ -1497,7 +1498,7 @@ const AdminDashboard = () => {
                         <div className="mx-3 mb-2 bg-muted/50 rounded-xl px-3 py-2 space-y-0.5">
                           {order.order_items?.map((item: any) => (
                             <div key={item.id} className="text-sm text-foreground">
-                              <span className="text-primary font-bold">{item.quantity}x</span> {item.products?.name || "Item"}
+                              <span className="text-primary font-bold">{item.quantity}x</span> {getOrderItemDisplayName(item)}
                             </div>
                           ))}
                           {order.order_items?.map((item: any) => {
@@ -1877,7 +1878,7 @@ const AdminDashboard = () => {
                     const topProducts = new Map<string, { qty: number; revenue: number }>();
                     completedPeriod.forEach((o: any) => {
                       o.order_items?.forEach((item: any) => {
-                        const name = item.products?.name || "Item";
+                        const name = getOrderItemDisplayName(item);
                         const existing = topProducts.get(name) || { qty: 0, revenue: 0 };
                         topProducts.set(name, { qty: existing.qty + item.quantity, revenue: existing.revenue + (item.unit_price * item.quantity) });
                       });

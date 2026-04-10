@@ -1,3 +1,5 @@
+import { getOrderItemDisplayName } from "./orderItemName";
+
 interface PrintOrderItem {
   id: string;
   quantity: number;
@@ -51,7 +53,8 @@ export function printThermalReceipt(
   let itemsHtml = "";
   order.order_items?.forEach((item) => {
     const lineTotal = (item.unit_price * item.quantity).toFixed(2);
-    itemsHtml += `<div class="tp-item-row"><span><b>${item.quantity}x</b> ${item.products?.name || "Item"}</span><span>R$ ${lineTotal}</span></div>`;
+    const displayName = getOrderItemDisplayName(item);
+    itemsHtml += `<div class="tp-item-row"><span><b>${item.quantity}x</b> ${displayName}</span><span>R$ ${lineTotal}</span></div>`;
     if (item.addons && Array.isArray(item.addons) && item.addons.length > 0) {
       item.addons.forEach((a: any) => {
         itemsHtml += `<div class="tp-addon">- ${a.name}${Number(a.price) > 0 ? ` (+R$ ${Number(a.price).toFixed(2)})` : ""}</div>`;

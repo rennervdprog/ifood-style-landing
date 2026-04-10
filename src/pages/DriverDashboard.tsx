@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
+import { getOrderItemDisplayName } from "@/lib/orderItemName";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -857,7 +858,7 @@ const DriverDashboard = () => {
                           <div className="space-y-1">
                             {(myDelivery as any).order_items?.map((item: any) => (
                               <div key={item.id} className="flex justify-between text-xs">
-                                <span className="text-foreground">{item.quantity}x {item.products?.name}</span>
+                                <span className="text-foreground">{item.quantity}x {getOrderItemDisplayName(item)}</span>
                                 <span className="text-muted-foreground">R$ {(item.quantity * item.unit_price).toFixed(2)}</span>
                               </div>
                             ))}
@@ -1001,7 +1002,7 @@ const DriverDashboard = () => {
                             {/* Items */}
                             <div className="text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-0.5">
                               {order.order_items?.map((item: any) => (
-                                <span key={item.id}>{item.quantity}x {item.products?.name}</span>
+                                <span key={item.id}>{item.quantity}x {getOrderItemDisplayName(item)}</span>
                               ))}
                             </div>
 
