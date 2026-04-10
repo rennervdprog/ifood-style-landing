@@ -136,6 +136,18 @@ const StoreDirectory = () => {
   const [roleChecked, setRoleChecked] = useState(false);
 
   useEffect(() => {
+    document.title = "ItaSuper — Delivery em Itatinga/SP | Peça Agora";
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+      metaDesc.setAttribute("content",
+        "Peça comida dos melhores restaurantes de Itatinga/SP. " +
+        "Entrega rápida com motoboys da plataforma. " +
+        "Cadastre sua loja grátis — sem mensalidade."
+      );
+    }
+  }, []);
+
+  useEffect(() => {
     if (authLoading) return;
     if (!user) { setPartnerRole(null); setRoleChecked(true); return; }
     let cancelled = false;

@@ -1,14 +1,13 @@
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
 User-agent: *
 Allow: /
+Allow: /loja/
+Disallow: /admin
+Disallow: /super-admin
+Disallow: /entregador
+Disallow: /painel
+Disallow: /checkout
+Disallow: /carrinho
+Disallow: /perfil
+Disallow: /auth
+
+Sitemap: https://itasuper.lovable.app/sitemap.xml
