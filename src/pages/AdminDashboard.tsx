@@ -95,8 +95,9 @@ const bottomNavTabs: { key: DashboardTab; label: string; icon: React.ElementType
 ];
 
 // "More" sheet items
-const moreSheetItems: { key: DashboardTab; label: string; icon: React.ElementType }[] = [
+const moreSheetItems: { key: DashboardTab; label: string; icon: React.ElementType; pizzaOnly?: boolean }[] = [
   { key: "addons", label: "Adicionais", icon: Plus },
+  { key: "bordas", label: "Bordas", icon: CircleDot, pizzaOnly: true },
   { key: "hours", label: "Horários", icon: Clock },
   { key: "finance", label: "Finanças", icon: Coins },
   { key: "reports", label: "Relatórios", icon: BarChart3 },
@@ -749,6 +750,7 @@ const AdminDashboard = () => {
                 {dashboardTab === "clients" && `${clientAnalytics.length} clientes registrados`}
                 {dashboardTab === "menu" && "Gerencie seu cardápio"}
                 {dashboardTab === "addons" && "Grupos de adicionais"}
+                {dashboardTab === "bordas" && "Opções de borda para pizzas"}
                 {dashboardTab === "hours" && "Horários de funcionamento"}
                 {dashboardTab === "finance" && "Resumo financeiro"}
                 {dashboardTab === "settings" && "Configurações da loja"}
