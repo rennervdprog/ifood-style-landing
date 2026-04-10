@@ -1745,6 +1745,7 @@ const AdminDashboard = () => {
               {dashboardTab === "menu" && <MenuBuilder storeId={store.id} storeCategory={store.category} />}
               
               {dashboardTab === "addons" && <AddonManager storeId={store.id} />}
+              {dashboardTab === "bordas" && store.category === "pizzas" && <PizzaBorderManager storeId={store.id} />}
               {dashboardTab === "hours" && <StoreHoursManager storeId={store.id} forceClosed={(store as any).force_closed || false} />}
               {dashboardTab === "settings" && (
                 <div className="space-y-6">
