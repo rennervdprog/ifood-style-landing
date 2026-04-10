@@ -212,35 +212,35 @@ const StoreDirectory = () => {
   const faq = [
     {
       q: "Quais são os planos?",
-      a: "Plano Essencial: R$180/mês (sem taxa por pedido). Plano Crescimento: R$100/mês + 2,5% por pedido. Ambos com 7 dias grátis e todas as ferramentas inclusas."
+      a: "Plano Essencial: R$180/mês + R$1 por pedido PIX + R$2 por entrega. Plano Crescimento: R$100/mês + 2,5% por pedido (PIX já incluso). Ambos com 7 dias grátis e todas as ferramentas."
     },
     {
       q: "Qual a diferença entre eles?",
-      a: "Só muda a cobrança. Essencial = mensalidade maior, sem percentual. Crescimento = mensalidade menor, com 2,5% por pedido. Ferramentas idênticas nos dois."
+      a: "No Essencial você paga mensalidade maior e taxas fixas pequenas (R$1 + R$2). No Crescimento você paga mensalidade menor e uma taxa percentual de 2,5% por pedido, sem cobranças extras. As ferramentas são as mesmas."
     },
     {
-      q: "Tem taxa no PIX?",
-      a: "No Plano Essencial: R$1 por pedido PIX + R$2 por entrega. No Plano Crescimento: já incluso nos 2,5%."
+      q: "O que significa R$1 + R$2 no Essencial?",
+      a: "R$1 é a taxa operacional do PIX por pedido. R$2 é o split de plataforma por entrega. Só são cobrados quando o cliente paga via PIX. Pedidos em dinheiro ou cartão não têm essa taxa."
+    },
+    {
+      q: "E no Crescimento, tem taxa extra no PIX?",
+      a: "Não. No Crescimento, o custo do PIX já está incluso nos 2,5% por pedido. Sem surpresas."
     },
     {
       q: "Funciona na minha cidade?",
-      a: "Sim, funciona em todo o Brasil. Fora de Itatinga/SP, você usa seu próprio entregador. Em Itatinga, temos motoboys da plataforma."
+      a: "Sim, em todo o Brasil. Fora de Itatinga/SP, você usa seu próprio entregador. Em Itatinga, temos motoboys da plataforma."
     },
     {
-      q: "O que vem incluso?",
+      q: "O que vem incluso nos dois planos?",
       a: "Cardápio digital, PIX integrado, programa de fidelidade, cupons, banners promocionais e painel financeiro completo."
     },
     {
       q: "Como recebo meu dinheiro?",
-      a: "Dinheiro e cartão: direto do cliente. PIX: cai na sua conta automaticamente, descontada a taxa do seu plano."
+      a: "Dinheiro e cartão: direto do cliente. PIX: cai na sua conta automaticamente, já descontada a taxa do seu plano."
     },
     {
       q: "Posso trocar de plano?",
       a: "Sim, a qualquer momento pelo painel. O valor já pago é recalculado proporcionalmente."
-    },
-    {
-      q: "Quanto tempo para começar?",
-      a: "Cadastro aprovado em até 24h. Depois é só montar o cardápio e começar a vender."
     },
     {
       q: "Tem contrato ou multa?",
@@ -414,7 +414,7 @@ const StoreDirectory = () => {
                 <span className="text-4xl font-black" style={{ color: THEME.dark }}>R$180</span>
                 <span className="text-sm font-medium" style={{ color: THEME.muted }}>/mês</span>
               </div>
-              <p className="text-xs mt-2 font-semibold" style={{ color: THEME.green }}>0% de taxa por pedido</p>
+              <p className="text-xs mt-2 font-semibold" style={{ color: THEME.green }}>+ R$1/pedido PIX + R$2/entrega</p>
               <p className="text-[10px] mt-1 font-bold" style={{ color: THEME.green }}>🎁 Teste grátis por 7 dias</p>
             </div>
             <div className="px-6 py-6" style={{ background: THEME.white }}>
@@ -422,7 +422,7 @@ const StoreDirectory = () => {
               {[
                   "Cardápio digital profissional",
                   "Gestão de pedidos em tempo real",
-                  "PIX integrado*",
+                  "PIX integrado (R$1/pedido + R$2/entrega)",
                   "Dinheiro e cartão na entrega",
                   "Painel financeiro completo",
                   "Programa de Fidelidade",
