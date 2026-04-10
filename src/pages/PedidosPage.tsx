@@ -597,6 +597,7 @@ const PedidosPage = () => {
                         storeOwnerId={user?.id}
                         clientId={order.client_id}
                         driverId={order.driver_id}
+                        defaultOpen={searchParams.get("chat") === order.id}
                       />
                     </div>
                   )}
