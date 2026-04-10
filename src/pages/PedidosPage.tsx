@@ -589,7 +589,7 @@ const PedidosPage = () => {
                     ))}
                   </div>
                   {/* Chat for active orders */}
-                  {!["aguardando_pagamento", "cancelado"].includes(order.status) && (
+                  {!["aguardando_pagamento", "cancelado", "finalizado", "entregue"].includes(order.status) && (
                     <div className="pt-1">
                       <OrderChat
                         orderId={order.id}
@@ -912,7 +912,7 @@ const PedidosPage = () => {
                         </div>
 
                         {/* Chat */}
-                        {!["aguardando_pagamento", "cancelado"].includes(order.status) && (
+                        {!["aguardando_pagamento", "cancelado", "finalizado", "entregue"].includes(order.status) && (
                           <div className="pt-1">
                           <OrderChat
                               orderId={order.id}
