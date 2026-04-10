@@ -135,7 +135,7 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
   return {
     planType,
     monthlyFee: data?.plan?.monthly_fee ?? 0,
-    commissionRate: data?.plan?.commission_rate ?? 15,
+    commissionRate: data?.plan?.commission_rate ?? 5,
     ...features,
     trialEndsAt,
     isInTrial,

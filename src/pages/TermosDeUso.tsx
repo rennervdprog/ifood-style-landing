@@ -74,7 +74,7 @@ const TermosDeUso = () => {
           <ul className="text-sm text-muted-foreground list-disc pl-4 space-y-1">
             <li><strong className="text-foreground">Essencial (R$ 49,90/mês):</strong> Cardápio digital, pedidos ilimitados, até 3 cupons ativos, entrega com motoboy próprio. Sem comissão por pedido. Não inclui PIX online nem motoboy da plataforma.</li>
             <li><strong className="text-foreground">Crescimento (R$ 179,90/mês):</strong> Todas as funcionalidades do Essencial, mais: PIX online, motoboy da plataforma, cupons ilimitados, programa de fidelidade, banners promocionais, agendamento de pedidos e suporte prioritário. Sem comissão por pedido.</li>
-            <li><strong className="text-foreground">Comissão (0% mensalidade + 15% por pedido):</strong> Todas as funcionalidades do Crescimento. A comissão de 15% é cobrada sobre o subtotal de cada pedido realizado.</li>
+            <li><strong className="text-foreground">Comissão (0% mensalidade + 5% por pedido):</strong> Todas as funcionalidades do Crescimento. A comissão de 5% é cobrada sobre o subtotal de cada pedido realizado.</li>
           </ul>
           <p className="text-sm text-muted-foreground">
             5.2. Todos os planos incluem <strong className="text-foreground">7 dias de teste grátis</strong>. Após o período de teste, a cobrança será realizada automaticamente via Asaas.
@@ -117,11 +117,11 @@ const TermosDeUso = () => {
 
           <h2 className="text-lg font-bold text-foreground">9. Pagamentos e Comissões</h2>
           <p className="text-sm text-muted-foreground">
-            9.1. No plano Comissão, a Plataforma cobra <strong className="text-foreground">15% sobre o subtotal</strong> de cada pedido.
+            9.1. No plano Comissão, a Plataforma cobra <strong className="text-foreground">5% sobre o subtotal</strong> de cada pedido.
           </p>
           <p className="text-sm text-muted-foreground">
             9.2. Para pagamentos via PIX online, o split de pagamento é automático via Asaas ou Mercado Pago, onde o Lojista 
-            recebe 85% diretamente e 15% é retido como comissão da Plataforma (quando aplicável ao plano).
+            recebe 95% diretamente e 5% é retido como comissão da Plataforma (quando aplicável ao plano).
           </p>
           <p className="text-sm text-muted-foreground">
             9.3. Para pagamentos em dinheiro ou cartão na entrega, a comissão (quando aplicável) é registrada como débito pendente 

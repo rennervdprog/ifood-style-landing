@@ -35,7 +35,7 @@ const planDescriptions: Record<PlanType, string> = {
 const planDefaults: Record<PlanType, { monthly_fee: number; commission_rate: number }> = {
   fixed: { monthly_fee: 180, commission_rate: 0 },
   hybrid: { monthly_fee: 100, commission_rate: 2.5 },
-  commission_only: { monthly_fee: 0, commission_rate: 15 },
+  commission_only: { monthly_fee: 0, commission_rate: 5 },
 };
 
 const featuresByPlan: Record<PlanType, string[]> = {

@@ -242,7 +242,7 @@ Deno.serve(async (req) => {
       // Track commission using store's custom rate
       if (order.store_id && order.subtotal) {
         const { data: storeInfo } = await supabase.from("stores").select("commission_rate").eq("id", order.store_id).single();
-        const rate = (storeInfo?.commission_rate ?? 15) / 100;
+        const rate = (storeInfo?.commission_rate ?? 5) / 100;
         const commission = Math.round(Number(order.subtotal) * rate * 100) / 100;
         const { error: balanceError } = await supabase
           .from("store_balances")
