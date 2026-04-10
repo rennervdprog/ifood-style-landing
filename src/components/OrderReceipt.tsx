@@ -90,12 +90,27 @@ const OrderReceipt = forwardRef<HTMLDivElement, OrderReceiptProps>(
               {/* Addons */}
               {item.addons && Array.isArray(item.addons) && item.addons.length > 0 && (
                 <div style={{ paddingLeft: "12px", fontSize: "11px" }}>
-                  {item.addons.map((addon: any, i: number) => (
-                    <p key={i} style={{ margin: "1px 0" }}>
-                      + {addon.name}
-                      {addon.price > 0 ? ` (R$ ${Number(addon.price).toFixed(2)})` : ""}
-                    </p>
-                  ))}
+                  {(() => {
+                    const addons = item.addons as any[];
+                    const halfAddons = addons.filter((a: any) => typeof a?.name === "string" && a.name.startsWith("½ "));
+                    const otherAddons = addons.filter((a: any) => !(typeof a?.name === "string" && a.name.startsWith("½ ")));
+                    return (
+                      <>
+                        {halfAddons.map((addon: any, i: number) => (
+                          <p key={`half-${i}`} style={{ margin: "1px 0" }}>
+                            + 1½/ {addon.name.replace("½ ", "")}
+                            {addon.price > 0 ? ` (R$ ${Number(addon.price).toFixed(2)})` : ""}
+                          </p>
+                        ))}
+                        {otherAddons.map((addon: any, i: number) => (
+                          <p key={`addon-${i}`} style={{ margin: "1px 0" }}>
+                            + {addon.name}
+                            {addon.price > 0 ? ` (R$ ${Number(addon.price).toFixed(2)})` : ""}
+                          </p>
+                        ))}
+                      </>
+                    );
+                  })()}
                 </div>
               )}
               {/* Observations */}
