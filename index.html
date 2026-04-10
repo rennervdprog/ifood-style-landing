@@ -86,7 +86,14 @@
   </head>
 
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Static LCP shell — replaced by React on hydration -->
+      <div id="lcp-shell" style="display:flex;align-items:center;justify-content:center;min-height:60vh;padding:2rem;background:#fff">
+        <h1 style="font-family:Nunito,sans-serif;font-weight:900;font-size:clamp(2.25rem,5vw,4.5rem);line-height:1.05;letter-spacing:-0.025em;text-align:center;color:#1a1a2e">
+          Delivery digital para sua loja.
+        </h1>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
