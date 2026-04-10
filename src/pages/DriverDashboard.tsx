@@ -15,6 +15,7 @@ import {
 import confetti from "canvas-confetti";
 import { isGoNative, runNativeDiagnostics, getNativeDebugLog } from "@/lib/gonative";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import OrderChat from "@/components/OrderChat";
 import { openWhatsApp } from "@/lib/whatsapp";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { format, startOfDay, startOfWeek, subDays, isWithinInterval, parseISO } from "date-fns";
