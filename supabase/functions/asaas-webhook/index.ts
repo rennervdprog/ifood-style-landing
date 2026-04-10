@@ -263,8 +263,9 @@ Deno.serve(async (req) => {
           }
         }
       } else {
-        // This is a financial transaction (commission charge, platform fee, etc.)
+        // This is a financial transaction (commission charge, platform fee, subscription, etc.)
         const isPlatformFee = externalReference.startsWith("TAXA-");
+        const isSubscription = externalReference.startsWith("#ASSIN-");
 
         const { data: txData, error: txError } = await supabase
           .from("financial_transactions")
@@ -276,7 +277,7 @@ Deno.serve(async (req) => {
           })
           .eq("reference_code", externalReference)
           .eq("status", "pending")
-          .select("store_id, transaction_kind, amount")
+          .select("store_id, transaction_kind, amount, metadata")
           .maybeSingle();
 
         if (txError) {
@@ -284,7 +285,25 @@ Deno.serve(async (req) => {
         } else {
           console.log(`Financial transaction ${externalReference} confirmed via Asaas`);
 
-          if (isPlatformFee && txData?.store_id) {
+          if (isSubscription && txData?.store_id) {
+            // Plan subscription paid — clear trial, set billing dates based on payment date
+            const now = new Date();
+            const nextMonth = new Date(now);
+            nextMonth.setMonth(nextMonth.getMonth() + 1);
+
+            await supabase
+              .from("store_plans")
+              .update({
+                trial_ends_at: null,
+                last_billed_at: now.toISOString(),
+                next_billing_date: nextMonth.toISOString(),
+                updated_at: now.toISOString(),
+              })
+              .eq("store_id", txData.store_id)
+              .eq("is_active", true);
+
+            console.log(`Store ${txData.store_id} subscription activated, next billing: ${nextMonth.toISOString()}`);
+          } else if (isPlatformFee && txData?.store_id) {
             // Platform fee paid — clear repasse_pendente
             await supabase
               .from("store_balances")
