@@ -273,7 +273,7 @@ const StoreDirectory = () => {
   const [roleChecked, setRoleChecked] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  const statsRef = useInView(0.3);
+  const statsRef = useInView(0.15);
   const storesCount = useCountUp(127, 2000, statsRef.visible);
   const ordersCount = useCountUp(48, 2000, statsRef.visible);
   const clientsCount = useCountUp(12, 2000, statsRef.visible);
