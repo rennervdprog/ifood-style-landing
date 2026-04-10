@@ -673,7 +673,7 @@ const StoreDirectory = () => {
           </div>
         </div>
       </footer>
-    </div>
+    </main>
   );
 };
 
