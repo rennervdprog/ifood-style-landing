@@ -411,27 +411,34 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
             </button>
           </div>
         ) : (
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 bg-muted rounded-xl px-3 py-2">
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
               <button
-                onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                className="w-9 h-9 rounded-full bg-background flex items-center justify-center active:scale-90 transition-transform"
+                onClick={handleBack}
+                className="py-4 px-5 rounded-xl font-bold text-base bg-muted text-foreground active:scale-[0.98] transition-all"
               >
-                <Minus className="h-4 w-4" />
+                ← Anterior
               </button>
-              <span className="font-black text-lg w-7 text-center">{quantity}</span>
-              <button
-                onClick={() => setQuantity(q => q + 1)}
-                className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center active:scale-90 transition-transform"
-              >
-                <Plus className="h-4 w-4" />
-              </button>
+              <div className="flex items-center gap-2 bg-muted rounded-xl px-3 py-2">
+                <button
+                  onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                  className="w-9 h-9 rounded-full bg-background flex items-center justify-center active:scale-90 transition-transform"
+                >
+                  <Minus className="h-4 w-4" />
+                </button>
+                <span className="font-black text-lg w-7 text-center">{quantity}</span>
+                <button
+                  onClick={() => setQuantity(q => q + 1)}
+                  className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center active:scale-90 transition-transform"
+                >
+                  <Plus className="h-4 w-4" />
+                </button>
+              </div>
             </div>
-
             <button
               onClick={handleAdd}
               disabled={!selectedBorderId}
-              className={`flex-1 py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${
+              className={`w-full py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${
                 selectedBorderId
                   ? "bg-primary text-primary-foreground shadow-lg"
                   : "bg-muted text-muted-foreground cursor-not-allowed"
