@@ -29,6 +29,7 @@ const CadastroEntregador = lazy(() => import("./pages/CadastroEntregador"));
 const CadastroLojista = lazy(() => import("./pages/CadastroLojista"));
 const TermosDeUso = lazy(() => import("./pages/TermosDeUso"));
 const PoliticaPrivacidade = lazy(() => import("./pages/PoliticaPrivacidade"));
+const PlanosPage = lazy(() => import("./pages/PlanosPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const PageLoader = () => (
@@ -106,6 +107,7 @@ const App = () => (
                 <Route path="/cadastro-lojista" element={<CadastroLojista />} />
                 <Route path="/termos-de-uso" element={<TermosDeUso />} />
                 <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
+                <Route path="/planos" element={<PlanosPage />} />
                 {/* Client store access via slug - must be last */}
                 <Route path="/:slug" element={<StorePage />} />
                 <Route path="*" element={<NotFound />} />
