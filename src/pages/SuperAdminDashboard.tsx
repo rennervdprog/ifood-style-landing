@@ -802,18 +802,27 @@ const SuperAdminDashboard = () => {
                       </div>
                     ) : storeConciliation.length > 0 ? (
                       <div className="space-y-2 max-h-[220px] overflow-y-auto">
-                        {storeConciliation.map((s, i) => (
+                        {storeConciliation.map((s, i) => {
+                          const plan = parentStorePlans?.find((p: any) => p.store_id === stores?.find((st: any) => st.name === s.name)?.id);
+                          const isFixed = plan?.plan_type === "fixed";
+                          return (
                           <div key={i} className="flex items-center justify-between p-3 bg-muted/50 rounded-xl">
                             <div className="min-w-0 flex-1">
                               <p className="text-sm font-bold text-foreground truncate">{s.name}</p>
-                              <p className="text-xs text-muted-foreground">{s.orders} pedidos</p>
+                              <p className="text-xs text-muted-foreground">
+                                {s.orders} pedidos
+                                {isFixed && <span className="ml-1 text-[10px] font-bold text-primary">• Plano Fixo</span>}
+                              </p>
                             </div>
                             <div className="text-right ml-3">
                               <p className="text-sm font-bold text-foreground">R$ {s.totalSold.toFixed(2)}</p>
-                              <p className="text-xs text-primary font-bold">R$ {s.commission.toFixed(2)}</p>
+                              <p className={`text-xs font-bold ${isFixed ? "text-muted-foreground" : "text-primary"}`}>
+                                {isFixed ? "Sem comissão" : `R$ ${s.commission.toFixed(2)}`}
+                              </p>
                             </div>
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     ) : (
                       <p className="text-sm text-muted-foreground text-center py-6">Sem vendas no período</p>
