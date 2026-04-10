@@ -21,11 +21,11 @@ const LoyaltyConfigPanel = ({ storeId }: LoyaltyConfigPanelProps) => {
     queryKey: ["loyalty-config-admin", storeId],
     queryFn: async () => {
       const { data } = await supabase
-        .from("loyalty_config" as any)
+        .from("loyalty_config")
         .select("*")
         .eq("store_id", storeId)
         .maybeSingle();
-      return data as any;
+      return data;
     },
     enabled: !!storeId,
   });
