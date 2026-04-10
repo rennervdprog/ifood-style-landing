@@ -1,34 +1,182 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import PartnerClientView from "@/components/PartnerClientView";
 import {
-  Zap, Store, Bike, ShieldCheck, Smartphone, TrendingUp, Users,
+  Zap, Store, ShieldCheck, Smartphone, TrendingUp,
   ArrowRight, CheckCircle2, Star, MapPin, Clock, CreditCard,
-  BarChart3, MessageSquare, Tag, Package, Navigation, ChevronRight,
-  Menu, X, DollarSign, Percent, Globe, Rocket, Heart,
-  PieChart, Award, BadgeCheck, Sparkles, Timer, Flame, Play,
-  ChevronDown, ArrowDown, Banknote, Target, Trophy, Headphones,
-  ShoppingBag, LayoutDashboard, Truck
+  BarChart3, MessageSquare, Tag, Package,
+  Menu, X, DollarSign, Globe, Rocket,
+  Award, Sparkles, ChevronDown,
+  ShoppingBag, Truck, Crown, BadgePercent,
+  Bell, QrCode, Utensils, Gift, MessageCircle, Shield, Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
-/* ──────────────────── Theme ──────────────────── */
-const THEME = {
-  primary: "#FF6B00",
-  primaryDark: "#E05E00",
-  primaryLight: "#FFF3E8",
-  grayBg: "#F8F9FB",
-  white: "#FFFFFF",
-  dark: "#1C1E21",
-  muted: "#606770",
-  border: "#E4E6EB",
-  green: "#16A34A",
-  greenLight: "#F0FDF4",
-} as const;
+/* ─── hooks ─── */
+function useCountUp(end: number, duration = 2000, start = false) {
+  const [val, setVal] = useState(0);
+  useEffect(() => {
+    if (!start) return;
+    let startTime: number;
+    const step = (ts: number) => {
+      if (!startTime) startTime = ts;
+      const p = Math.min((ts - startTime) / duration, 1);
+      setVal(Math.floor(p * end));
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }, [end, duration, start]);
+  return val;
+}
 
-/* ──────────────────── Navbar ──────────────────── */
+function useInView(threshold = 0.3) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setVisible(true); }, { threshold });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [threshold]);
+  return { ref, visible };
+}
+
+/* ─── static data ─── */
+const painPoints = [
+  { emoji: "📸", pain: "Manda foto do cardápio pelo WhatsApp", solution: "Link profissional com fotos e preços atualizados" },
+  { emoji: "📝", pain: "Anota pedido na mão e erra", solution: "Pedidos organizados e detalhados automaticamente" },
+  { emoji: "💸", pain: "Confere PIX no extrato um por um", solution: "Pagamento confirmado na hora, sem conferir nada" },
+  { emoji: "🔇", pain: "Perde pedido porque não ouviu a mensagem", solution: "Alerta sonoro + notificação push no celular" },
+];
+
+const steps = [
+  { step: "01", title: "Cadastre sua loja", desc: "Preencha os dados básicos e escolha seu plano." },
+  { step: "02", title: "Monte seu cardápio", desc: "Adicione categorias, produtos, fotos e preços." },
+  { step: "03", title: "Compartilhe o link", desc: "Envie pelo WhatsApp, redes sociais ou imprima o QR Code." },
+  { step: "04", title: "Receba pedidos!", desc: "Clientes pedem pelo celular e você recebe tudo organizado." },
+];
+
+const features = [
+  { icon: Smartphone, title: "Cardápio no celular", desc: "Cliente abre o link e já faz o pedido. Sem baixar nenhum app." },
+  { icon: QrCode, title: "QR Code exclusivo", desc: "Imprima e cole no balcão. Cliente aponta a câmera e pede." },
+  { icon: CreditCard, title: "PIX automático", desc: "Pagamento confirmado na hora. Sem conferir extrato." },
+  { icon: Bell, title: "Alerta instantâneo", desc: "Novo pedido? Alerta sonoro e push notification no celular." },
+  { icon: Utensils, title: "Cardápio profissional", desc: "Categorias, fotos HD, descrições e adicionais personalizáveis." },
+  { icon: BarChart3, title: "Relatórios completos", desc: "Saiba quanto vendeu, produtos mais pedidos e horários de pico." },
+  { icon: Gift, title: "Fidelidade & Cupons", desc: "Programa de pontos e cupons de desconto para fidelizar clientes." },
+  { icon: Truck, title: "Entrega integrada", desc: "Gerencie entregas, taxas por bairro e motoboys na plataforma." },
+];
+
+const plans = [
+  {
+    id: "commission_only",
+    name: "Comissão",
+    tagline: "Comece sem investir nada",
+    price: "0",
+    period: "/mês",
+    icon: Rocket,
+    highlight: false,
+    badge: null,
+    commission: "5%",
+    commissionLabel: "por pedido",
+    color: "from-emerald-500 to-emerald-600",
+    lightBg: "bg-emerald-50",
+    textColor: "text-emerald-600",
+    borderColor: "border-emerald-200",
+    description: "Ideal para quem está começando e quer testar sem risco.",
+    features: [
+      "Cardápio digital ilimitado",
+      "QR Code exclusivo",
+      "PIX automático",
+      "Notificações em tempo real",
+      "Programa de fidelidade",
+      "Cupons e promoções",
+      "Relatórios de vendas",
+      "Suporte por WhatsApp",
+    ],
+    extraFees: [],
+  },
+  {
+    id: "hybrid",
+    name: "Crescimento",
+    tagline: "Comissão menor, mais recursos",
+    price: "100",
+    period: "/mês",
+    icon: TrendingUp,
+    highlight: false,
+    badge: null,
+    commission: "2,5%",
+    commissionLabel: "por pedido",
+    color: "from-blue-500 to-blue-600",
+    lightBg: "bg-blue-50",
+    textColor: "text-blue-600",
+    borderColor: "border-blue-200",
+    description: "Para lojas que já vendem bem e querem pagar menos comissão.",
+    features: [
+      "Tudo do plano Comissão",
+      "Comissão reduzida (2,5%)",
+      "Suporte prioritário",
+      "Relatórios avançados",
+      "Banners ilimitados",
+      "Agendamento de pedidos",
+      "Destaque na vitrine",
+      "Cardápio com fotos HD",
+    ],
+    extraFees: [],
+  },
+  {
+    id: "fixed",
+    name: "Essencial",
+    tagline: "Lucro máximo em cada pedido",
+    price: "180",
+    period: "/mês",
+    icon: Crown,
+    highlight: true,
+    badge: "⭐ Mais escolhido",
+    commission: "0%",
+    commissionLabel: "comissão",
+    color: "from-primary to-orange-600",
+    lightBg: "bg-accent",
+    textColor: "text-primary",
+    borderColor: "border-primary/30",
+    description: "Zero comissão. Você fica com 100% do valor de cada pedido.",
+    features: [
+      "Tudo do plano Crescimento",
+      "Zero comissão por pedido",
+      "Suporte VIP prioritário",
+      "Relatórios premium",
+      "Prioridade em novidades",
+      "Todas as ferramentas",
+      "ROI garantido",
+    ],
+    extraFees: [
+      { label: "Taxa PIX fixa", value: "R$ 1,00/transação" },
+      { label: "Taxa entrega plataforma", value: "R$ 2,00/pedido" },
+    ],
+  },
+];
+
+const testimonials = [
+  { name: "Maria S.", store: "Pizzaria do Sabor", text: "Meus clientes adoram pedir pelo cardápio digital. Não preciso mais anotar pedido por WhatsApp!", rating: 5, orders: "2.400+ pedidos" },
+  { name: "João P.", store: "Hamburgueria Top", text: "Com o plano Essencial, cada pedido é lucro puro. O cardápio se paga no primeiro dia!", rating: 5, orders: "3.100+ pedidos" },
+  { name: "Ana L.", store: "Doceria da Ana", text: "Montei meu cardápio em 10 minutos. É muito mais prático que mandar foto no WhatsApp.", rating: 5, orders: "1.800+ pedidos" },
+];
+
+const faqs = [
+  { q: "Preciso baixar algum aplicativo?", a: "Não! Você gerencia tudo pelo navegador do celular ou computador. Seus clientes também pedem direto pelo link, sem instalar nada." },
+  { q: "Como funciona o PIX automático?", a: "Quando o cliente escolhe PIX, geramos um QR Code automaticamente. Assim que ele paga, a confirmação é instantânea — sem precisar conferir extrato." },
+  { q: "Posso trocar de plano depois?", a: "Sim! Você pode migrar entre planos a qualquer momento. Basta solicitar pelo painel da loja e o admin aprova a troca." },
+  { q: "O plano Essencial cobra alguma comissão?", a: "Não! Zero comissão. Você fica com 100% do pedido. Há apenas uma taxa PIX fixa de R$1 por transação e R$2 por entrega via plataforma." },
+  { q: "Como recebo os pedidos?", a: "Você recebe notificação sonora e push no celular em tempo real. O painel mostra todos os pedidos organizados para você gerenciar." },
+  { q: "Funciona na minha cidade?", a: "Sim! Em todo o Brasil. Use como cardápio digital com entregador próprio em qualquer lugar." },
+  { q: "Tem contrato ou multa?", a: "Não. Cancele quando quiser, sem multa e sem fidelidade." },
+];
+
+/* ─── Navbar ─── */
 const Navbar = ({ onNavigate, isLoggedIn }: { onNavigate: (path: string) => void; isLoggedIn?: boolean }) => {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -43,7 +191,6 @@ const Navbar = ({ onNavigate, isLoggedIn }: { onNavigate: (path: string) => void
     { label: "Vantagens", href: "#vantagens" },
     { label: "Como funciona", href: "#como-funciona" },
     { label: "Planos", href: "#planos" },
-    // { label: "Motoboys", href: "#motoboys" },
   ];
 
   const scrollTo = (id: string) => {
@@ -52,36 +199,34 @@ const Navbar = ({ onNavigate, isLoggedIn }: { onNavigate: (path: string) => void
   };
 
   return (
-    <nav className={`sticky top-0 z-50 border-b backdrop-blur-md transition-all duration-300 ${scrolled ? "shadow-md" : ""}`} style={{ background: "rgba(255,255,255,0.97)", borderColor: THEME.border }}>
+    <nav className={`sticky top-0 z-50 border-b border-border backdrop-blur-md transition-all duration-300 bg-background/95 ${scrolled ? "shadow-md" : ""}`}>
       <div className="max-w-6xl mx-auto flex items-center justify-between px-4 h-16">
         <button onClick={() => scrollTo("#hero")} className="flex items-center gap-2" aria-label="Ir para o início">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: THEME.primary }}>
-            <Zap className="h-5 w-5 text-white" />
+          <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center">
+            <Zap className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="text-xl font-extrabold tracking-tight" style={{ color: THEME.dark }}>
-            Ita<span style={{ color: THEME.primary }}>Super</span>
+          <span className="text-xl font-extrabold tracking-tight text-foreground">
+            Ita<span className="text-primary">Super</span>
           </span>
         </button>
 
         <div className="hidden md:flex items-center gap-6">
           {links.map((l) => (
-            <button key={l.href} onClick={() => scrollTo(l.href)} className="text-sm font-semibold transition-colors" style={{ color: THEME.muted }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = THEME.primary)}
-              onMouseLeave={(e) => (e.currentTarget.style.color = THEME.muted)}
-            >{l.label}</button>
+            <button key={l.href} onClick={() => scrollTo(l.href)} className="text-sm font-semibold text-muted-foreground hover:text-primary transition-colors">
+              {l.label}
+            </button>
           ))}
           {isLoggedIn ? (
-            <Button className="rounded-full font-bold text-sm px-6 text-white shadow-lg gap-2" style={{ background: THEME.primary }} onClick={() => onNavigate("/pedidos")}>
+            <Button className="rounded-full font-bold text-sm px-6 gap-2" onClick={() => onNavigate("/pedidos")}>
               <ShoppingBag className="h-4 w-4" />
               Meus Pedidos
             </Button>
           ) : (
             <>
-              <button onClick={() => onNavigate("/portal-parceiro")} className="text-sm font-semibold transition-colors" style={{ color: THEME.muted }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = THEME.primary)}
-                onMouseLeave={(e) => (e.currentTarget.style.color = THEME.muted)}
-              >Já sou parceiro</button>
-              <Button className="rounded-full font-bold text-sm px-6 text-white shadow-lg" style={{ background: THEME.primary }} onClick={() => onNavigate("/cadastro-lojista")}>
+              <button onClick={() => onNavigate("/portal-parceiro")} className="text-sm font-semibold text-muted-foreground hover:text-primary transition-colors">
+                Já sou parceiro
+              </button>
+              <Button className="rounded-full font-bold text-sm px-6" onClick={() => onNavigate("/cadastro-lojista")}>
                 Cadastrar grátis
               </Button>
             </>
@@ -94,19 +239,22 @@ const Navbar = ({ onNavigate, isLoggedIn }: { onNavigate: (path: string) => void
       </div>
 
       {open && (
-        <div className="md:hidden border-t px-4 pb-4 pt-2 animate-in slide-in-from-top-2" style={{ borderColor: THEME.border }}>
+        <div className="md:hidden border-t border-border px-4 pb-4 pt-2 animate-in slide-in-from-top-2">
           {links.map((l) => (
-            <button key={l.href} onClick={() => scrollTo(l.href)} className="block w-full text-left py-3 text-sm font-semibold" style={{ color: THEME.muted }}>{l.label}</button>
+            <button key={l.href} onClick={() => scrollTo(l.href)} className="block w-full text-left py-3 text-sm font-semibold text-muted-foreground">
+              {l.label}
+            </button>
           ))}
           {isLoggedIn ? (
-            <Button className="w-full rounded-full font-bold mt-2 text-white gap-2" style={{ background: THEME.primary }} onClick={() => { setOpen(false); onNavigate("/pedidos"); }}>
-              <ShoppingBag className="h-4 w-4" />
-              Meus Pedidos
+            <Button className="w-full rounded-full font-bold mt-2 gap-2" onClick={() => { setOpen(false); onNavigate("/pedidos"); }}>
+              <ShoppingBag className="h-4 w-4" /> Meus Pedidos
             </Button>
           ) : (
             <>
-              <button onClick={() => { setOpen(false); onNavigate("/portal-parceiro"); }} className="block w-full text-left py-3 text-sm font-semibold" style={{ color: THEME.primary }}>Já sou parceiro</button>
-              <Button className="w-full rounded-full font-bold mt-2 text-white" style={{ background: THEME.primary }} onClick={() => { setOpen(false); onNavigate("/cadastro-lojista"); }}>
+              <button onClick={() => { setOpen(false); onNavigate("/portal-parceiro"); }} className="block w-full text-left py-3 text-sm font-semibold text-primary">
+                Já sou parceiro
+              </button>
+              <Button className="w-full rounded-full font-bold mt-2" onClick={() => { setOpen(false); onNavigate("/cadastro-lojista"); }}>
                 Cadastrar minha loja
               </Button>
             </>
@@ -117,34 +265,24 @@ const Navbar = ({ onNavigate, isLoggedIn }: { onNavigate: (path: string) => void
   );
 };
 
-/* ──────────────────── Section ──────────────────── */
-const Section = ({ children, id, bg = THEME.white, className = "" }: { children: React.ReactNode; id?: string; bg?: string; className?: string }) => (
-  <section id={id} className={`px-4 py-20 sm:py-32 ${className}`} style={{ background: bg }}>
-    <div className="max-w-6xl mx-auto">{children}</div>
-  </section>
-);
-
-const SectionLabel = ({ text, color = THEME.primary }: { text: string; color?: string }) => (
-  <p className="text-xs font-bold uppercase tracking-[0.2em] mb-3" style={{ color }}>{text}</p>
-);
-
-/* ──────────────────── Main Component ──────────────────── */
+/* ─── Main Component ─── */
 const StoreDirectory = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const [partnerRole, setPartnerRole] = useState<string | null>(null);
   const [roleChecked, setRoleChecked] = useState(false);
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  const statsRef = useInView(0.3);
+  const storesCount = useCountUp(50, 2000, statsRef.visible);
+  const ordersCount = useCountUp(10, 2000, statsRef.visible);
+
+  const handleCTA = () => navigate("/cadastro-lojista");
+  const handleWhatsApp = () =>
+    window.open("https://wa.me/5514998765432?text=Olá! Tenho interesse em cadastrar minha loja na plataforma.", "_blank");
 
   useEffect(() => {
     document.title = "ItaSuper — Delivery em Itatinga/SP | Peça Agora";
-    const metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc) {
-      metaDesc.setAttribute("content",
-        "Peça comida dos melhores restaurantes de Itatinga/SP. " +
-        "Entrega rápida direto do restaurante. " +
-        "Cadastre sua loja grátis — sem mensalidade."
-      );
-    }
   }, []);
 
   useEffect(() => {
@@ -158,15 +296,9 @@ const StoreDirectory = () => {
         if (adminRole) { setPartnerRole(null); setRoleChecked(true); return; }
         const { data: profile } = await supabase.from("profiles").select("role").eq("user_id", user.id).maybeSingle();
         if (cancelled) return;
-        if (profile?.role === "lojista") {
-          navigate("/admin", { replace: true });
-          return;
-        }
-        if (profile?.role === "motoboy") {
-          setPartnerRole(profile.role);
-        } else {
-          setPartnerRole(null);
-        }
+        if (profile?.role === "lojista") { navigate("/admin", { replace: true }); return; }
+        if (profile?.role === "motoboy") { setPartnerRole(profile.role); }
+        else { setPartnerRole(null); }
       } catch (e) { console.error("StoreDirectory role check error:", e); }
       if (!cancelled) setRoleChecked(true);
     };
@@ -182,515 +314,375 @@ const StoreDirectory = () => {
     </div>
   );
 
-  /* ── Data ── */
-  const painPoints = [
-    { icon: MessageSquare, title: "Chega de perder pedidos", desc: "Pedidos organizados com notificação instantânea. Nada mais perdido no WhatsApp." },
-    { icon: BarChart3, title: "Financeiro na sua mão", desc: "Acompanhe vendas, repasses e comissões em tempo real pelo celular." },
-    { icon: Globe, title: "Seu cardápio digital", desc: "Link exclusivo da sua loja, bonito e profissional — funciona em qualquer cidade." },
-  ];
-
-  const howItWorks = [
-    { step: "1", icon: Store, title: "Cadastre em 2 minutos", desc: "Preencha seus dados e escolha seu plano." },
-    { step: "2", icon: Smartphone, title: "Monte seu cardápio", desc: "Adicione produtos com fotos, preços e adicionais." },
-    { step: "3", icon: Package, title: "Receba pedidos", desc: "Notificação instantânea no celular a cada novo pedido." },
-    { step: "4", icon: DollarSign, title: "Receba e lucre", desc: "Dinheiro, cartão ou PIX — direto na sua conta." },
-  ];
-
-  const features = [
-    { icon: Smartphone, title: "Cardápio Profissional", desc: "Menu com fotos, categorias, adicionais e personalização completa" },
-    { icon: Package, title: "Gestão de Pedidos", desc: "Receba, confirme e acompanhe cada pedido em tempo real" },
-    { icon: BarChart3, title: "Painel Financeiro", desc: "Vendas, comissões e repasses — tudo transparente" },
-    { icon: Tag, title: "Cupons Ilimitados", desc: "Crie cupons de desconto para atrair e fidelizar clientes" },
-    { icon: Clock, title: "Horários Flexíveis", desc: "Configure por dia da semana. Abra e feche quando quiser" },
-    { icon: CreditCard, title: "Dinheiro, Cartão & PIX", desc: "Aceite todos os meios de pagamento. PIX integrado em todos os planos*" },
-    { icon: ShieldCheck, title: "Entrega Segura", desc: "Código de coleta e PIN para cada entrega — segurança total" },
-    { icon: Award, title: "Programa de Fidelidade", desc: "Clientes acumulam pontos e trocam por descontos. Configure no painel" },
-    { icon: MessageSquare, title: "Chatbot WhatsApp (Z-API)", desc: "Notificações automáticas no WhatsApp do cliente: pedido aceito, saiu para entrega, entregue e mais" },
-    { icon: Globe, title: "Qualquer Cidade do Brasil", desc: "Use como cardápio digital com entregador próprio em qualquer lugar" },
-  ];
-
-  const motoboyBenefits = [
-    { icon: Banknote, value: "R$", title: "Ganho por entrega", desc: "Valor claro e transparente por cada corrida" },
-    { icon: Clock, value: "0", title: "Horário fixo", desc: "Você decide quando e quanto quer rodar" },
-    { icon: Navigation, value: "GPS", title: "Corridas automáticas", desc: "Receba entregas sem precisar procurar" },
-    { icon: TrendingUp, value: "📊", title: "Painel completo", desc: "Histórico de ganhos e saques rápidos" },
-  ];
-
-  const testimonials = [
-    { name: "Lojista", business: "Restaurante parceiro", role: "lojista", stars: 5, text: "Antes eu perdia pedidos no WhatsApp. Agora recebo tudo organizado e consigo focar na cozinha." },
-    { name: "Lojista", business: "Doceria parceira", role: "lojista", stars: 5, text: "O cardápio digital ficou lindo e profissional. Meus clientes adoram pedir pelo link." },
-    { name: "Cliente", business: "Cliente parceiro", role: "cliente", stars: 5, text: "Pedir ficou muito fácil, o cardápio é bonito e a entrega chega rápido." },
-  ];
-
-  const faq = [
-    {
-      q: "Quais são os planos?",
-      a: "Plano Essencial: R$180/mês + R$1 por pedido PIX + R$2 por entrega. Plano Crescimento: R$100/mês + 2,5% por pedido. Ambos com 7 dias grátis e todas as ferramentas."
-    },
-    {
-      q: "Qual a diferença entre eles?",
-      a: "No Essencial a mensalidade é maior com taxas fixas pequenas. No Crescimento a mensalidade é menor com taxa percentual de 2,5%. As ferramentas são idênticas."
-    },
-    {
-      q: "Como funcionam as taxas do Essencial?",
-      a: "R$1 por pedido quando o cliente paga via PIX (pedidos em dinheiro ou cartão não têm essa taxa). R$2 por entrega realizada, independente da forma de pagamento. Ambas acumulam no painel para repasse."
-    },
-    {
-      q: "E no Crescimento, tem essas taxas?",
-      a: "Não. No Crescimento tudo já está incluso nos 2,5% por pedido. Sem cobranças extras."
-    },
-    {
-      q: "Funciona na minha cidade?",
-      a: "Sim, em todo o Brasil! Use seu próprio entregador e tenha seu cardápio digital profissional."
-    },
-    {
-      q: "O que vem incluso nos dois planos?",
-      a: "Cardápio digital, PIX integrado, programa de fidelidade, cupons, banners promocionais e painel financeiro completo."
-    },
-    {
-      q: "Como recebo meu dinheiro?",
-      a: "Dinheiro e cartão: direto do cliente. PIX: cai na sua conta automaticamente."
-    },
-    {
-      q: "Posso trocar de plano?",
-      a: "Sim, a qualquer momento pelo painel. O valor já pago é recalculado proporcionalmente."
-    },
-    {
-      q: "Tem contrato ou multa?",
-      a: "Não. Cancele quando quiser, sem multa e sem fidelidade."
-    },
-  ];
-
   return (
-    <main className="min-h-screen" style={{ background: THEME.white, color: THEME.dark }}>
+    <div className="min-h-screen bg-background overflow-x-hidden">
       <Navbar onNavigate={navigate} isLoggedIn={!!user} />
 
-      {/* ═══ HERO — Clean & Bold ═══ */}
-      <section id="hero" className="relative overflow-hidden px-4 pt-20 pb-24 sm:pt-32 sm:pb-36" style={{ background: `linear-gradient(135deg, ${THEME.dark} 0%, #2D1810 50%, ${THEME.primaryDark} 100%)` }}>
-        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle at 70% 30%, rgba(255,107,0,0.4), transparent 50%), radial-gradient(circle at 20% 80%, rgba(255,107,0,0.2), transparent 50%)" }} />
-        <div className="max-w-4xl mx-auto relative text-center">
-          {/* Static pill */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold mb-10" style={{ background: "rgba(255,107,0,0.15)", color: THEME.primary, border: `1px solid rgba(255,107,0,0.2)` }}>
-            <MapPin className="h-3.5 w-3.5" />
+      {/* ══════ HERO ══════ */}
+      <section id="hero" className="relative py-20 md:py-28 px-4 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/20 pointer-events-none" />
+        <div className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-40 -left-40 w-[400px] h-[400px] rounded-full bg-accent/30 blur-3xl pointer-events-none" />
+
+        <div className="relative mx-auto max-w-5xl text-center">
+          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-semibold text-primary mb-8 animate-fade-in">
+            <MapPin className="h-4 w-4" />
             Cardápio digital para todo o Brasil
           </div>
 
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[1.05] text-white">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground leading-[1.1] mb-6 animate-fade-in">
             Delivery digital{" "}
-            <span style={{ color: THEME.primary }}>para sua loja.</span>
+            <span className="relative inline-block">
+              <span className="relative z-10 text-primary">para sua loja.</span>
+              <span className="absolute bottom-1 left-0 w-full h-3 bg-primary/15 -z-0 rounded" />
+            </span>
           </h1>
 
-          <p className="text-lg sm:text-xl mt-8 leading-relaxed max-w-2xl mx-auto text-white/60">
-            Cardápio profissional, pedidos organizados e pagamentos automáticos — a partir de R$100/mês. <strong className="text-white/80">7 dias grátis!</strong>
+          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 animate-fade-in leading-relaxed">
+            Cardápio profissional, pedidos organizados e pagamentos automáticos.
+            <span className="block mt-2 text-primary font-semibold">A partir de R$ 0/mês. 7 dias grátis!</span>
           </p>
 
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 justify-center mt-12">
-            <Button size="lg" className="gap-2 rounded-full font-bold text-base px-10 py-6 text-white shadow-2xl transition-all hover:scale-105 hover:shadow-orange-500/30" style={{ background: THEME.primary }}
-              onClick={() => navigate("/cadastro-lojista")}
-            >
-              <Store className="h-5 w-5" />
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in">
+            <Button size="lg" onClick={handleCTA} className="text-base px-8 py-6 rounded-2xl shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all">
+              <Store className="mr-2 h-5 w-5" />
               Cadastrar minha loja — É grátis
-              <ArrowRight className="h-5 w-5" />
+              <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
-            {/* Motoboy da plataforma oculto — manter código para reativar depois */}
-            {/* <Button size="lg" className="gap-2 rounded-full font-bold text-base px-8 py-6 transition-all hover:scale-105" style={{ background: "rgba(255,255,255,0.08)", color: "white", border: "1px solid rgba(255,255,255,0.15)" }}
-              onClick={() => navigate("/cadastro-entregador")}
-            >
-              <Bike className="h-5 w-5" />
-              Quero ser motoboy
-            </Button> */}
-          </div>
-
-          {/* Trust bar */}
-          <div className="flex flex-wrap items-center gap-8 justify-center mt-12">
-            {[
-              { icon: CheckCircle2, text: "Sem cartão de crédito" },
-              { icon: Timer, text: "Aprovação em 24h" },
-              { icon: ShieldCheck, text: "Cancele quando quiser" },
-            ].map((t, i) => (
-              <div key={i} className="flex items-center gap-1.5 text-sm font-medium text-white/50">
-                <t.icon className="h-4 w-4" style={{ color: THEME.primary }} />
-                {t.text}
-              </div>
-            ))}
-          </div>
-
-          {/* Stats */}
-          <div className="mt-20 grid grid-cols-3 gap-8 max-w-md mx-auto">
-            {[
-              { value: "100%", label: "Digital" },
-              { value: "0%", label: "Taxa de adesão" },
-              { value: "7", label: "Dias grátis" },
-            ].map((s) => (
-              <div key={s.label} className="text-center">
-                <div className="text-2xl sm:text-3xl font-black" style={{ color: THEME.primary }}>{s.value}</div>
-                <div className="text-xs font-medium text-white/40 mt-1">{s.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
-          <ChevronDown className="h-6 w-6 text-white/20" />
-        </div>
-      </section>
-
-      {/* ═══ PAIN POINTS — 3 columns, solution-only ═══ */}
-      <Section id="vantagens" bg={THEME.white}>
-        <div className="text-center mb-16">
-          <SectionLabel text="Vantagens" />
-          <h2 className="text-2xl sm:text-4xl font-black" style={{ color: THEME.dark }}>
-            Por que lojistas escolhem o <span style={{ color: THEME.primary }}>ItaSuper</span>
-          </h2>
-        </div>
-
-        <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-          {painPoints.map((p, i) => (
-            <div key={i} className="text-center">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-5" style={{ background: THEME.primaryLight }}>
-                <p.icon className="h-7 w-7" style={{ color: THEME.primary }} />
-              </div>
-              <h3 className="font-bold text-base mb-2" style={{ color: THEME.dark }}>{p.title}</h3>
-              <p className="text-sm" style={{ color: THEME.muted }}>{p.desc}</p>
-            </div>
-          ))}
-        </div>
-      </Section>
-
-      {/* ═══ COMO FUNCIONA ═══ */}
-      <Section id="como-funciona" bg={THEME.grayBg}>
-        <div className="text-center mb-16">
-          <SectionLabel text="4 passos" />
-          <h2 className="text-2xl sm:text-4xl font-black" style={{ color: THEME.dark }}>
-            Do cadastro ao primeiro pedido
-          </h2>
-        </div>
-
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
-          {howItWorks.map((s, i) => (
-            <div key={s.step} className="relative rounded-2xl p-5 border text-center group transition-all hover:shadow-lg hover:-translate-y-1" style={{ background: THEME.white, borderColor: THEME.border }}>
-              <div className="text-4xl font-black mb-4" style={{ color: THEME.primary, opacity: 0.2 }}>{s.step}</div>
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3" style={{ background: THEME.primaryLight }}>
-                <s.icon className="h-5 w-5" style={{ color: THEME.primary }} />
-              </div>
-              <h3 className="font-bold text-sm mb-1" style={{ color: THEME.dark }}>{s.title}</h3>
-              <p className="text-xs" style={{ color: THEME.muted }}>{s.desc}</p>
-              {i < howItWorks.length - 1 && (
-                <ArrowRight className="hidden lg:block absolute top-1/2 -right-4 h-5 w-5 -translate-y-1/2" style={{ color: THEME.border }} />
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* Nota Itatinga vs Brasil — compacta */}
-        <div className="max-w-3xl mx-auto mt-12 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-8 text-sm" style={{ background: THEME.primaryLight, border: `1px solid rgba(255,107,0,0.15)` }}>
-          <span style={{ color: THEME.muted }}><MapPin className="h-3.5 w-3.5 inline mr-1" style={{ color: THEME.primary }} /><strong style={{ color: THEME.dark }}>Itatinga/SP</strong> — entrega disponível na região</span>
-          <span style={{ color: THEME.muted }}><MapPin className="h-3.5 w-3.5 inline mr-1" style={{ color: THEME.primary }} /><strong style={{ color: THEME.dark }}>Brasil</strong> — use seu próprio entregador</span>
-        </div>
-
-        <div className="text-center mt-12">
-          <Button size="lg" className="gap-2 rounded-full font-bold px-10 text-white shadow-lg transition-all hover:shadow-xl hover:scale-105" style={{ background: THEME.primary }}
-            onClick={() => navigate("/cadastro-lojista")}
-          >
-            Começar agora — é grátis
-            <ArrowRight className="h-5 w-5" />
-          </Button>
-        </div>
-      </Section>
-
-      {/* ═══ PLANOS — Two plan cards ═══ */}
-      <Section id="planos" bg={THEME.white}>
-        <div className="text-center mb-12">
-          <SectionLabel text="Planos" />
-          <h2 className="text-2xl sm:text-4xl font-black" style={{ color: THEME.dark }}>
-            Escolha o plano ideal <span style={{ color: THEME.primary }}>para sua loja.</span>
-          </h2>
-          <p className="text-sm mt-3 max-w-lg mx-auto" style={{ color: THEME.muted }}>
-            Dois planos flexíveis. Sem contrato, sem multa. Troque quando quiser.
-          </p>
-          <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold" style={{ background: THEME.greenLight, color: THEME.green, border: `1px solid rgba(22,163,74,0.2)` }}>
-            <Sparkles className="h-3.5 w-3.5" />
-            🎁 7 dias grátis em todos os planos!
-          </div>
-        </div>
-
-        <div className="grid sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
-          {/* Plano Essencial (Fixo) */}
-          <div className="rounded-3xl overflow-hidden shadow-xl border-2 transition-all hover:shadow-2xl" style={{ borderColor: THEME.border }}>
-            <div className="px-6 py-8 text-center" style={{ background: THEME.grayBg }}>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold mb-4" style={{ background: THEME.white, color: THEME.muted, border: `1px solid ${THEME.border}` }}>
-                <Package className="h-3.5 w-3.5" /> Ideal para alto volume
-              </div>
-              <h3 className="text-lg font-black" style={{ color: THEME.dark }}>Plano Essencial</h3>
-              <div className="mt-3">
-                <span className="text-4xl font-black" style={{ color: THEME.dark }}>R$180</span>
-                <span className="text-sm font-medium" style={{ color: THEME.muted }}>/mês</span>
-              </div>
-              <p className="text-xs mt-2 font-semibold" style={{ color: THEME.green }}>+ R$1/pedido PIX · + R$2/entrega</p>
-              <p className="text-[10px] mt-1 font-bold" style={{ color: THEME.green }}>🎁 Teste grátis por 7 dias</p>
-            </div>
-            <div className="px-6 py-6" style={{ background: THEME.white }}>
-              <ul className="space-y-2.5">
-              {[
-                  "Cardápio digital profissional",
-                  "Gestão de pedidos em tempo real",
-                  "PIX integrado (R$1/pedido PIX)*",
-                  "Dinheiro e cartão na entrega",
-                  "Painel financeiro completo",
-                  "Programa de Fidelidade",
-                  "Cupons ilimitados",
-                  "Banners promocionais",
-                  "Horários flexíveis",
-                  "Chatbot WhatsApp automático (Z-API)",
-                  "R$2/entrega (qualquer pagamento)**",
-                  "Entregador próprio",
-                ].map((f) => (
-                  <li key={f} className="flex items-center gap-2.5 text-xs" style={{ color: THEME.dark }}>
-                    <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0" style={{ color: THEME.green }} />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <Button className="w-full rounded-full font-bold text-sm py-5 mt-6 transition-all hover:scale-[1.02]" style={{ background: THEME.dark, color: "white" }}
-                onClick={() => navigate("/cadastro-lojista")}
-              >
-                Começar grátis por 7 dias
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            </div>
-          </div>
-
-          {/* Plano Crescimento (Híbrido) */}
-          <div className="rounded-3xl overflow-hidden shadow-xl border-2 transition-all hover:shadow-2xl relative" style={{ borderColor: THEME.primary }}>
-            <div className="absolute top-0 left-0 right-0 text-center py-1 text-xs font-bold text-white" style={{ background: THEME.primary }}>
-              ⭐ Mais popular
-            </div>
-            <div className="px-6 py-8 pt-10 text-center" style={{ background: `linear-gradient(135deg, ${THEME.dark}, #2D1810)` }}>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold mb-4" style={{ background: "rgba(255,107,0,0.15)", color: THEME.primary }}>
-                <TrendingUp className="h-3.5 w-3.5" /> Ideal para começar
-              </div>
-              <h3 className="text-lg font-black text-white">Plano Crescimento</h3>
-              <div className="mt-3">
-                <span className="text-4xl font-black text-white">R$100</span>
-                <span className="text-sm font-medium text-white/60">/mês</span>
-              </div>
-              <p className="text-xs mt-2 font-semibold" style={{ color: THEME.primary }}>+ 2,5% por pedido entregue</p>
-              <p className="text-[10px] mt-1 font-bold" style={{ color: THEME.green }}>🎁 Teste grátis por 7 dias</p>
-            </div>
-            <div className="px-6 py-6" style={{ background: THEME.white }}>
-              <ul className="space-y-2.5">
-                {[
-                  "Tudo do Plano Essencial",
-                  "PIX integrado (taxa inclusa nos 2,5%)",
-                  "Chatbot WhatsApp automático (Z-API)",
-                  "Sem taxa fixa adicional por pedido",
-                  "Ideal para quem está começando",
-                  "Entregador próprio",
-                ].map((f) => (
-                  <li key={f} className="flex items-center gap-2.5 text-xs" style={{ color: THEME.dark }}>
-                    <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0" style={{ color: THEME.green }} />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <Button className="w-full rounded-full font-bold text-sm py-5 mt-6 text-white shadow-lg transition-all hover:scale-[1.02]" style={{ background: THEME.primary }}
-                onClick={() => navigate("/cadastro-lojista")}
-              >
-                Começar grátis por 7 dias
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        <div className="text-center text-xs mt-6 space-y-1" style={{ color: THEME.muted }}>
-          <p>* R$1 por pedido PIX (dinheiro/cartão não tem essa taxa).</p>
-          <p>** R$2 por entrega, independente da forma de pagamento. Acumulado no painel para repasse.</p>
-          {/* <p>*** Motoboys da plataforma disponíveis em Itatinga/SP. Demais cidades: use seu próprio entregador.</p> */}
-          <p>**** Chatbot WhatsApp via Z-API — a conta Z-API deve ser criada e gerenciada pelo próprio lojista fora da plataforma.</p>
-        </div>
-
-        {/* Plan comparison highlights */}
-        <div className="mt-16 max-w-3xl mx-auto grid sm:grid-cols-3 gap-8">
-          {[
-            { icon: DollarSign, title: "Sem taxa de adesão", desc: "Zero custo para começar. Pague apenas a mensalidade do plano escolhido." },
-            { icon: Rocket, title: "Troque quando quiser", desc: "Upgrade ou downgrade sem multa. Adapte o plano ao momento da sua loja." },
-            { icon: BarChart3, title: "Controle total", desc: "Painel com cada venda, assinatura e extrato detalhados." },
-          ].map((item) => (
-            <div key={item.title} className="rounded-2xl p-6 border transition-all hover:shadow-md" style={{ borderColor: THEME.border }}>
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4" style={{ background: THEME.primaryLight }}>
-                <item.icon className="h-5 w-5" style={{ color: THEME.primary }} />
-              </div>
-              <h4 className="font-bold text-sm mb-1" style={{ color: THEME.dark }}>{item.title}</h4>
-              <p className="text-xs leading-relaxed" style={{ color: THEME.muted }}>{item.desc}</p>
-            </div>
-          ))}
-        </div>
-      </Section>
-
-      {/* ═══ FUNCIONALIDADES — Clean grid ═══ */}
-      <Section id="funcionalidades" bg={THEME.grayBg}>
-        <div className="text-center mb-16">
-          <SectionLabel text="Tudo incluso" />
-          <h2 className="text-2xl sm:text-4xl font-black" style={{ color: THEME.dark }}>
-            Ferramentas que grandes redes usam
-          </h2>
-        </div>
-
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {features.map((f) => (
-            <div key={f.title} className="rounded-2xl p-6 border transition-all hover:shadow-lg hover:-translate-y-0.5 group" style={{ background: THEME.white, borderColor: THEME.border }}>
-              <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110" style={{ background: THEME.primaryLight }}>
-                <f.icon className="h-5 w-5" style={{ color: THEME.primary }} />
-              </div>
-              <h4 className="font-bold text-sm mb-1" style={{ color: THEME.dark }}>{f.title}</h4>
-              <p className="text-xs leading-relaxed" style={{ color: THEME.muted }}>{f.desc}</p>
-            </div>
-          ))}
-        </div>
-      </Section>
-
-      {/* ═══ MOTOBOYS — Oculto temporariamente ═══ */}
-      {/* <Section id="motoboys" bg={THEME.white}>
-        ... seção completa do motoboy da plataforma oculta ...
-      </Section> */}
-
-      {/* ═══ DEPOIMENTOS — Spacious ═══ */}
-      <Section bg={THEME.grayBg}>
-        <div className="text-center mb-16">
-          <SectionLabel text="Quem já usa, aprova" />
-          <h2 className="text-2xl sm:text-4xl font-black" style={{ color: THEME.dark }}>
-            Resultados reais
-          </h2>
-        </div>
-
-        <div className="grid sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
-          {testimonials.map((t, i) => (
-            <div key={i} className="rounded-2xl p-7 border transition-all hover:shadow-lg" style={{ borderColor: THEME.border, background: THEME.white }}>
-              <div className="text-4xl font-serif mb-3" style={{ color: THEME.primaryLight, lineHeight: 1 }}>❝</div>
-              <div className="flex gap-0.5 mb-3">
-                {Array.from({ length: t.stars }).map((_, j) => (
-                  <Star key={j} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                ))}
-              </div>
-              <p className="text-sm leading-relaxed mb-5" style={{ color: THEME.muted }}>{t.text}</p>
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ background: t.role === "motoboy" ? THEME.green : THEME.primary }}>
-                  {t.name[0]}
-                </div>
-                <div>
-                  <p className="text-sm font-bold" style={{ color: THEME.dark }}>{t.name}</p>
-                  <p className="text-xs" style={{ color: THEME.muted }}>{t.business}</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </Section>
-
-      {/* ═══ FAQ ═══ */}
-      <Section bg={THEME.white}>
-        <div className="text-center mb-16">
-          <SectionLabel text="Dúvidas?" />
-          <h2 className="text-2xl sm:text-4xl font-black" style={{ color: THEME.dark }}>
-            Perguntas frequentes
-          </h2>
-        </div>
-
-        <div className="max-w-2xl mx-auto space-y-3">
-          {faq.map((item, i) => (
-            <FaqItem key={i} question={item.q} answer={item.a} />
-          ))}
-        </div>
-      </Section>
-
-      {/* ═══ CTA FINAL — Clean ═══ */}
-      <section className="px-4 py-20 sm:py-32 relative overflow-hidden" style={{ background: `linear-gradient(135deg, ${THEME.dark} 0%, #2D1810 50%, ${THEME.primaryDark} 100%)` }}>
-        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle at 30% 50%, rgba(255,107,0,0.4), transparent 50%)" }} />
-        <div className="max-w-3xl mx-auto text-center relative">
-          <h2 className="text-3xl sm:text-5xl font-black text-white mb-5">
-            Pronto para <span style={{ color: THEME.primary }}>começar?</span>
-          </h2>
-          <p className="text-base text-white/50 mb-12 max-w-md mx-auto">
-            Planos a partir de R$100/mês. Sem contrato. Sem multa.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button size="lg" className="gap-2 rounded-full font-bold text-base px-10 py-6 shadow-2xl transition-all hover:scale-105" style={{ background: THEME.primary, color: "white" }}
-              onClick={() => navigate("/cadastro-lojista")}
-            >
-              <Store className="h-5 w-5" />
-              Cadastrar minha loja — É grátis
-              <ArrowRight className="h-5 w-5" />
+            <Button size="lg" variant="outline" onClick={handleWhatsApp} className="text-base px-8 py-6 rounded-2xl">
+              <MessageCircle className="mr-2 h-5 w-5" /> Tirar dúvidas
             </Button>
-            {/* Motoboy da plataforma oculto */}
-            {/* <Button size="lg" className="gap-2 rounded-full font-bold text-base px-8 py-6 transition-all hover:scale-105" style={{ background: "rgba(255,255,255,0.08)", color: "white", border: "1px solid rgba(255,255,255,0.15)" }}
-              onClick={() => navigate("/cadastro-entregador")}
-            >
-              <Bike className="h-5 w-5" />
-              Ser motoboy
-            </Button> */}
           </div>
-          <p className="text-sm text-white/30 mt-10">
-            Já é parceiro?{" "}
-            <button onClick={() => navigate("/portal-parceiro")} className="text-white/70 font-bold underline underline-offset-4 hover:text-white transition-colors">
-              Faça login aqui
-            </button>
-          </p>
-        </div>
-      </section>
 
-      {/* ═══ FOOTER ═══ */}
-      <footer className="px-4 py-10 border-t" style={{ borderColor: THEME.border }}>
-        <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: THEME.primary }}>
-                <Zap className="h-4 w-4 text-white" />
-              </div>
-              <span className="text-lg font-extrabold" style={{ color: THEME.dark }}>
-                Ita<span style={{ color: THEME.primary }}>Super</span>
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-6 justify-center">
-              {[
-                { label: "Cadastro Lojista", path: "/cadastro-lojista" },
-                // { label: "Cadastro Motoboy", path: "/cadastro-entregador" },
-                { label: "Login Parceiro", path: "/portal-parceiro" },
-              ].map((l) => (
-                <button key={l.path} onClick={() => navigate(l.path)} className="text-sm font-semibold transition-colors" style={{ color: THEME.muted }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = THEME.primary)}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = THEME.muted)}
-                >{l.label}</button>
+          {/* social proof */}
+          <div className="mt-10 flex items-center justify-center gap-3 text-sm text-muted-foreground animate-fade-in">
+            <div className="flex -space-x-2">
+              {["M", "J", "A", "R"].map((letter, i) => (
+                <div key={i} className="w-8 h-8 rounded-full bg-primary/20 border-2 border-background flex items-center justify-center text-xs font-bold text-primary">
+                  {letter}
+                </div>
               ))}
             </div>
+            <span>+50 lojas já usam • 10.000+ pedidos recebidos</span>
           </div>
-          <div className="mt-8 pt-6 text-center border-t" style={{ borderColor: THEME.border }}>
-            <p className="text-xs" style={{ color: "#9CA3AF" }}>
-              © {new Date().getFullYear()} <strong>ItaSuper</strong> — Plataforma de delivery para lojistas e motoboys de todo o Brasil
-            </p>
+
+          {/* Trust badges */}
+          <div className="flex flex-wrap items-center gap-6 justify-center mt-8 text-sm text-muted-foreground">
+            {[
+              { icon: CheckCircle2, text: "Sem cartão de crédito" },
+              { icon: Clock, text: "Aprovação em 24h" },
+              { icon: ShieldCheck, text: "Cancele quando quiser" },
+            ].map((t, i) => (
+              <div key={i} className="flex items-center gap-1.5">
+                <t.icon className="h-4 w-4 text-primary" />
+                <span className="font-medium">{t.text}</span>
+              </div>
+            ))}
           </div>
+        </div>
+      </section>
+
+      {/* ══════ PAIN POINTS ══════ */}
+      <section id="vantagens" className="py-16 px-4 border-y border-border bg-muted/30">
+        <div className="mx-auto max-w-5xl">
+          <h2 className="text-2xl md:text-3xl font-bold text-center text-foreground mb-4">
+            Você ainda faz isso? 🤔
+          </h2>
+          <p className="text-center text-muted-foreground mb-10 max-w-xl mx-auto">
+            Se identificou com algum desses problemas? Tem solução.
+          </p>
+          <div className="grid sm:grid-cols-2 gap-4">
+            {painPoints.map((item) => (
+              <div key={item.pain} className="group flex gap-4 items-start rounded-2xl border border-border bg-card p-5 hover:shadow-md transition-shadow">
+                <span className="text-3xl flex-shrink-0">{item.emoji}</span>
+                <div>
+                  <p className="text-sm text-muted-foreground line-through mb-1">{item.pain}</p>
+                  <p className="text-sm font-semibold text-primary">{item.solution}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ══════ HOW IT WORKS ══════ */}
+      <section id="como-funciona" className="py-20 px-4">
+        <div className="mx-auto max-w-5xl">
+          <h2 className="text-3xl font-bold text-center text-foreground mb-4">
+            Funciona em 4 passos simples
+          </h2>
+          <p className="text-center text-muted-foreground mb-14 max-w-xl mx-auto">
+            Do cadastro ao primeiro pedido em menos de 10 minutos.
+          </p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {steps.map((s, i) => (
+              <div key={s.step} className="relative text-center group">
+                {i < 3 && (
+                  <div className="hidden lg:block absolute top-6 left-[60%] w-[80%] h-px bg-border" />
+                )}
+                <div className="relative mx-auto w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-orange-600 text-primary-foreground flex items-center justify-center text-lg font-bold mb-4 shadow-lg shadow-primary/20 group-hover:scale-110 transition-transform">
+                  {s.step}
+                </div>
+                <h3 className="font-bold text-foreground mb-1">{s.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* location note */}
+          <div className="max-w-3xl mx-auto mt-12 rounded-xl bg-primary/5 border border-primary/10 p-4 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-8 text-sm">
+            <span className="text-muted-foreground"><MapPin className="h-3.5 w-3.5 inline mr-1 text-primary" /><strong className="text-foreground">Itatinga/SP</strong> — entrega disponível na região</span>
+            <span className="text-muted-foreground"><MapPin className="h-3.5 w-3.5 inline mr-1 text-primary" /><strong className="text-foreground">Brasil</strong> — use seu próprio entregador</span>
+          </div>
+        </div>
+      </section>
+
+      {/* ══════ FEATURES GRID ══════ */}
+      <section className="py-20 px-4 bg-muted/20">
+        <div className="mx-auto max-w-5xl">
+          <h2 className="text-3xl font-bold text-center text-foreground mb-4">
+            Tudo que seu delivery precisa
+          </h2>
+          <p className="text-center text-muted-foreground mb-14 max-w-xl mx-auto">
+            Praticidade total para você e para seu cliente. Incluso em todos os planos.
+          </p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {features.map((f) => (
+              <div key={f.title} className="rounded-2xl border border-border bg-card p-5 hover:shadow-md hover:-translate-y-1 transition-all">
+                <div className="rounded-xl bg-primary/10 w-11 h-11 flex items-center justify-center mb-4">
+                  <f.icon className="h-5 w-5 text-primary" />
+                </div>
+                <h3 className="font-bold text-foreground mb-1">{f.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ══════ STATS ══════ */}
+      <section ref={statsRef.ref} className="py-14 border-y border-border">
+        <div className="mx-auto max-w-4xl grid grid-cols-2 md:grid-cols-4 gap-8 text-center px-4">
+          {[
+            { value: `${storesCount}+`, label: "Lojas ativas" },
+            { value: `${ordersCount}k+`, label: "Pedidos recebidos" },
+            { value: "< 5min", label: "Para criar cardápio" },
+            { value: "24h", label: "Suporte disponível" },
+          ].map((s) => (
+            <div key={s.label}>
+              <p className="text-3xl md:text-4xl font-extrabold text-primary">{s.value}</p>
+              <p className="text-sm text-muted-foreground mt-1">{s.label}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ══════ PLANS ══════ */}
+      <section id="planos" className="py-20 px-4">
+        <div className="mx-auto max-w-6xl">
+          <h2 className="text-3xl md:text-4xl font-bold text-center text-foreground mb-4">
+            Escolha o plano ideal para sua loja
+          </h2>
+          <p className="text-center text-muted-foreground mb-4 max-w-2xl mx-auto">
+            Todos os planos incluem cardápio digital completo, PIX online e notificações.
+            Comece grátis e migre quando quiser.
+          </p>
+          <div className="flex justify-center mb-14">
+            <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-600 border border-emerald-200">
+              <Sparkles className="h-3.5 w-3.5" />
+              🎁 7 dias grátis em todos os planos!
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6 items-start">
+            {plans.map((plan) => {
+              const Icon = plan.icon;
+              return (
+                <Card
+                  key={plan.id}
+                  className={`relative flex flex-col rounded-3xl transition-all hover:shadow-xl ${
+                    plan.highlight
+                      ? "border-2 border-primary shadow-lg shadow-primary/10 ring-2 ring-primary/10 scale-[1.02]"
+                      : "border-border hover:border-primary/30"
+                  }`}
+                >
+                  {plan.badge && (
+                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs font-bold px-5 py-1.5 rounded-full shadow-md whitespace-nowrap">
+                      {plan.badge}
+                    </div>
+                  )}
+                  <CardContent className="flex flex-col flex-1 p-6 pt-8">
+                    <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${plan.color} flex items-center justify-center mb-4`}>
+                      <Icon className="h-6 w-6 text-primary-foreground" />
+                    </div>
+                    <h3 className="text-xl font-bold text-foreground">{plan.name}</h3>
+                    <p className="text-xs text-muted-foreground mt-1 mb-4">{plan.tagline}</p>
+
+                    <div className="mb-2">
+                      <span className="text-4xl font-extrabold text-foreground">R$ {plan.price}</span>
+                      <span className="text-muted-foreground text-sm">{plan.period}</span>
+                    </div>
+
+                    <div className={`inline-flex items-center rounded-xl ${plan.lightBg} px-3 py-2 text-sm font-bold ${plan.textColor} mb-2 w-fit`}>
+                      <BadgePercent className="h-4 w-4 mr-1.5" />
+                      {plan.commission} {plan.commissionLabel}
+                    </div>
+
+                    {plan.extraFees.length > 0 && (
+                      <div className="space-y-1 mb-4">
+                        {plan.extraFees.map((fee) => (
+                          <p key={fee.label} className="text-xs text-muted-foreground flex items-center gap-1">
+                            <span className="w-1 h-1 rounded-full bg-muted-foreground" />
+                            {fee.label}: <span className="font-semibold">{fee.value}</span>
+                          </p>
+                        ))}
+                      </div>
+                    )}
+
+                    <p className="text-sm text-muted-foreground mb-6 leading-relaxed">{plan.description}</p>
+
+                    <ul className="space-y-2.5 flex-1 mb-6">
+                      {plan.features.map((f) => (
+                        <li key={f} className="flex items-start gap-2 text-sm text-foreground">
+                          <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                          {f}
+                        </li>
+                      ))}
+                    </ul>
+
+                    <Button
+                      onClick={handleCTA}
+                      className={`w-full rounded-2xl py-5 text-base font-semibold ${plan.highlight ? "shadow-lg shadow-primary/20" : ""}`}
+                      variant={plan.highlight ? "default" : "outline"}
+                    >
+                      {plan.price === "0" ? "Começar grátis" : "Escolher plano"}
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ══════ TESTIMONIALS ══════ */}
+      <section className="py-20 px-4 bg-muted/20">
+        <div className="mx-auto max-w-5xl">
+          <h2 className="text-3xl font-bold text-center text-foreground mb-4">
+            Quem usa, recomenda
+          </h2>
+          <p className="text-center text-muted-foreground mb-14 max-w-xl mx-auto">
+            Veja o que nossos lojistas dizem sobre a plataforma.
+          </p>
+          <div className="grid sm:grid-cols-3 gap-6">
+            {testimonials.map((t) => (
+              <Card key={t.name} className="border-border rounded-2xl hover:shadow-md transition-shadow">
+                <CardContent className="pt-6">
+                  <div className="flex gap-0.5 mb-3">
+                    {Array.from({ length: t.rating }).map((_, i) => (
+                      <Star key={i} className="h-4 w-4 fill-primary text-primary" />
+                    ))}
+                  </div>
+                  <p className="text-sm text-muted-foreground italic leading-relaxed mb-4">"{t.text}"</p>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-bold text-foreground">{t.name}</p>
+                      <p className="text-xs text-muted-foreground">{t.store}</p>
+                    </div>
+                    <span className="text-xs bg-primary/10 text-primary font-semibold px-2.5 py-1 rounded-full">
+                      {t.orders}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ══════ FAQ ══════ */}
+      <section className="py-20 px-4">
+        <div className="mx-auto max-w-3xl">
+          <h2 className="text-3xl font-bold text-center text-foreground mb-4">
+            Perguntas frequentes
+          </h2>
+          <p className="text-center text-muted-foreground mb-12">
+            Tire suas dúvidas antes de começar.
+          </p>
+          <div className="space-y-3">
+            {faqs.map((faq, i) => (
+              <div key={i} className="rounded-2xl border border-border bg-card overflow-hidden">
+                <button
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  className="w-full flex items-center justify-between p-5 text-left"
+                >
+                  <span className="font-semibold text-foreground text-sm pr-4">{faq.q}</span>
+                  <ChevronDown className={`h-5 w-5 text-muted-foreground shrink-0 transition-transform ${openFaq === i ? "rotate-180" : ""}`} />
+                </button>
+                {openFaq === i && (
+                  <div className="px-5 pb-5 text-sm text-muted-foreground leading-relaxed animate-fade-in">
+                    {faq.a}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ══════ GUARANTEE ══════ */}
+      <section className="py-14 px-4 bg-muted/30 border-y border-border">
+        <div className="mx-auto max-w-3xl text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
+            <Shield className="h-8 w-8 text-primary" />
+          </div>
+          <h2 className="text-2xl font-bold text-foreground mb-3">
+            Sem risco. Sem surpresas.
+          </h2>
+          <p className="text-muted-foreground max-w-lg mx-auto leading-relaxed">
+            Comece pelo plano Comissão (grátis) e migre quando quiser.
+            Sem fidelidade, sem multa, sem pegadinha. Cancele a qualquer momento.
+          </p>
+        </div>
+      </section>
+
+      {/* ══════ FINAL CTA ══════ */}
+      <section className="relative py-20 px-4 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/20 pointer-events-none" />
+        <div className="relative mx-auto max-w-2xl text-center">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+            Seu cardápio digital pronto em 5 minutos
+          </h2>
+          <p className="text-muted-foreground mb-8 leading-relaxed">
+            Cadastre sua loja agora e comece a receber pedidos pelo celular ainda hoje.
+            <span className="block mt-1 font-semibold text-primary">É grátis para começar!</span>
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Button size="lg" onClick={handleCTA} className="text-base px-8 py-6 rounded-2xl shadow-lg shadow-primary/20">
+              Criar meu cardápio grátis <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+            <Button size="lg" variant="outline" onClick={handleWhatsApp} className="text-base px-8 py-6 rounded-2xl">
+              <MessageCircle className="mr-2 h-5 w-5" /> Falar no WhatsApp
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* ══════ FOOTER ══════ */}
+      <footer className="py-8 text-center text-sm text-muted-foreground border-t border-border px-4">
+        <p className="font-semibold text-foreground mb-1">ItaSuper</p>
+        <p>© {new Date().getFullYear()} — Todos os direitos reservados.</p>
+        <div className="mt-3 flex flex-wrap items-center justify-center gap-4 text-xs">
+          <button onClick={() => navigate("/portal-parceiro")} className="hover:text-primary transition-colors">Login Parceiro</button>
+          <span>•</span>
+          <button onClick={() => navigate("/cadastro-lojista")} className="hover:text-primary transition-colors">Cadastro Lojista</button>
+          <span>•</span>
+          <a href="/termos-de-uso" className="hover:text-primary transition-colors">Termos de Uso</a>
+          <span>•</span>
+          <a href="/politica-de-privacidade" className="hover:text-primary transition-colors">Política de Privacidade</a>
         </div>
       </footer>
-    </main>
-  );
-};
-
-/* ──────────────────── FAQ Item ──────────────────── */
-const FaqItem = ({ question, answer }: { question: string; answer: string }) => {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="rounded-2xl border overflow-hidden transition-all" style={{ background: THEME.white, borderColor: open ? THEME.primary : THEME.border }}>
-      <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between p-5 text-left">
-        <span className="font-bold text-sm pr-4" style={{ color: THEME.dark }}>{question}</span>
-        <ChevronRight className={`h-5 w-5 flex-shrink-0 transition-transform duration-200 ${open ? "rotate-90" : ""}`} style={{ color: open ? THEME.primary : THEME.muted }} />
-      </button>
-      {open && (
-        <div className="px-6 pb-6 -mt-1">
-          <p className="text-sm leading-7" style={{ color: THEME.muted }}>{answer}</p>
-        </div>
-      )}
     </div>
   );
 };
