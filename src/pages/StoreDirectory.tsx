@@ -293,12 +293,13 @@ const StoreDirectory = () => {
               Cadastrar minha loja — É grátis
               <ArrowRight className="h-5 w-5" />
             </Button>
-            <Button size="lg" className="gap-2 rounded-full font-bold text-base px-8 py-6 transition-all hover:scale-105" style={{ background: "rgba(255,255,255,0.08)", color: "white", border: "1px solid rgba(255,255,255,0.15)" }}
+            {/* Motoboy da plataforma oculto — manter código para reativar depois */}
+            {/* <Button size="lg" className="gap-2 rounded-full font-bold text-base px-8 py-6 transition-all hover:scale-105" style={{ background: "rgba(255,255,255,0.08)", color: "white", border: "1px solid rgba(255,255,255,0.15)" }}
               onClick={() => navigate("/cadastro-entregador")}
             >
               <Bike className="h-5 w-5" />
               Quero ser motoboy
-            </Button>
+            </Button> */}
           </div>
 
           {/* Trust bar */}
@@ -551,74 +552,10 @@ const StoreDirectory = () => {
         </div>
       </Section>
 
-      {/* ═══ MOTOBOYS ═══ */}
-      <Section id="motoboys" bg={THEME.white}>
-        <div className="grid lg:grid-cols-2 gap-16 items-center">
-          <div>
-            <SectionLabel text="Para Motoboys" />
-            <h2 className="text-2xl sm:text-4xl font-black mb-5" style={{ color: THEME.dark }}>
-              Ganhe dinheiro{" "}
-              <span style={{ color: THEME.primary }}>no seu tempo.</span>
-            </h2>
-            <p className="text-base mb-5" style={{ color: THEME.muted }}>
-              Sem patrão, sem horário fixo, sem vínculo. Rode quando quiser e ganhe por cada entrega.
-            </p>
-
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-10" style={{ background: THEME.primaryLight }}>
-              <MapPin className="h-4 w-4" style={{ color: THEME.primary }} />
-              <span style={{ color: THEME.muted }}>Ativo em <strong style={{ color: THEME.dark }}>Itatinga/SP</strong> — expansão em breve</span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 mb-10">
-              {motoboyBenefits.map((b) => (
-                <div key={b.title} className="rounded-xl p-4 border transition-all hover:shadow-md" style={{ borderColor: THEME.border }}>
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-3" style={{ background: THEME.primaryLight }}>
-                    <b.icon className="h-5 w-5" style={{ color: THEME.primary }} />
-                  </div>
-                  <h4 className="font-bold text-xs mb-0.5" style={{ color: THEME.dark }}>{b.title}</h4>
-                  <p className="text-[11px] leading-relaxed" style={{ color: THEME.muted }}>{b.desc}</p>
-                </div>
-              ))}
-            </div>
-
-            <Button size="lg" className="gap-2 rounded-full font-bold px-10 text-white shadow-lg transition-all hover:shadow-xl hover:scale-105" style={{ background: THEME.primary }}
-              onClick={() => navigate("/cadastro-entregador")}
-            >
-              <Bike className="h-5 w-5" />
-              Cadastrar como motoboy
-              <ArrowRight className="h-5 w-5" />
-            </Button>
-            <p className="text-xs mt-3" style={{ color: THEME.muted }}>* Disponível para entregas em Itatinga/SP</p>
-          </div>
-
-          {/* Visual card — simplified */}
-          <div className="relative">
-            <div className="rounded-3xl p-10 text-center" style={{ background: `linear-gradient(135deg, ${THEME.dark}, #2D1810)` }}>
-              <Bike className="h-16 w-16 mx-auto mb-6" style={{ color: THEME.primary }} />
-              <h3 className="text-2xl font-black text-white mb-2">Entregador ItaSuper</h3>
-              <p className="text-white/50 text-sm mb-10">Faça entregas, ganhe dinheiro</p>
-
-              {/* Simple stats instead of emoji boxes */}
-              <div className="grid grid-cols-3 gap-4">
-                {[
-                  { value: "R$", label: "Por entrega" },
-                  { value: "0", label: "Taxa de cadastro" },
-                  { value: "GPS", label: "Automático" },
-                ].map((item) => (
-                  <div key={item.label} className="text-center">
-                    <div className="text-2xl font-black mb-1" style={{ color: THEME.primary }}>{item.value}</div>
-                    <div className="text-xs text-white/40">{item.label}</div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-8 pt-5 border-t" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
-                <p className="text-xs" style={{ color: "rgba(255,255,255,0.35)" }}>Novas cidades em breve — cadastre-se e seja notificado</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </Section>
+      {/* ═══ MOTOBOYS — Oculto temporariamente ═══ */}
+      {/* <Section id="motoboys" bg={THEME.white}>
+        ... seção completa do motoboy da plataforma oculta ...
+      </Section> */}
 
       {/* ═══ DEPOIMENTOS — Spacious ═══ */}
       <Section bg={THEME.grayBg}>
@@ -687,12 +624,13 @@ const StoreDirectory = () => {
               Cadastrar minha loja — É grátis
               <ArrowRight className="h-5 w-5" />
             </Button>
-            <Button size="lg" className="gap-2 rounded-full font-bold text-base px-8 py-6 transition-all hover:scale-105" style={{ background: "rgba(255,255,255,0.08)", color: "white", border: "1px solid rgba(255,255,255,0.15)" }}
+            {/* Motoboy da plataforma oculto */}
+            {/* <Button size="lg" className="gap-2 rounded-full font-bold text-base px-8 py-6 transition-all hover:scale-105" style={{ background: "rgba(255,255,255,0.08)", color: "white", border: "1px solid rgba(255,255,255,0.15)" }}
               onClick={() => navigate("/cadastro-entregador")}
             >
               <Bike className="h-5 w-5" />
               Ser motoboy
-            </Button>
+            </Button> */}
           </div>
           <p className="text-sm text-white/30 mt-10">
             Já é parceiro?{" "}
@@ -718,7 +656,7 @@ const StoreDirectory = () => {
             <div className="flex flex-wrap gap-6 justify-center">
               {[
                 { label: "Cadastro Lojista", path: "/cadastro-lojista" },
-                { label: "Cadastro Motoboy", path: "/cadastro-entregador" },
+                // { label: "Cadastro Motoboy", path: "/cadastro-entregador" },
                 { label: "Login Parceiro", path: "/portal-parceiro" },
               ].map((l) => (
                 <button key={l.path} onClick={() => navigate(l.path)} className="text-sm font-semibold transition-colors" style={{ color: THEME.muted }}

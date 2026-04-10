@@ -634,7 +634,7 @@ const PerfilPage = () => {
           <div className="divide-y divide-border/50">
             {/* Become partner */}
             {!myStore && !myDriver && profileRole !== "lojista" && profileRole !== "motoboy" && (
-              <MenuRow icon={UserPlus} title="Seja um Parceiro" subtitle="Cadastre sua loja ou seja entregador" onClick={() => navigate("/parceiro")} />
+              <MenuRow icon={UserPlus} title="Seja um Parceiro" subtitle="Cadastre sua loja" onClick={() => navigate("/cadastro-lojista")} />
             )}
             <MenuRow icon={HelpCircle} title="Ver tutorial novamente" subtitle="Reveja o guia de uso do app"
               onClick={async () => {
