@@ -73,10 +73,12 @@ const STATUS_MESSAGES: Record<string, {
   },
 };
 
+/** Statuses that should open WhatsApp (manual send by lojista) */
+const WHATSAPP_STATUSES = new Set(["preparando", "saiu_entrega"]);
+
 /**
- * Send both Push notification AND open WhatsApp for an order status change.
- * WhatsApp only opens if clientPhone is available.
- * Push is always sent.
+ * Send Push notification for ALL status changes.
+ * Open WhatsApp ONLY for "preparando" and "saiu_entrega".
  */
 export const notifyOrderStatusChange = (
   newStatus: string,
@@ -94,8 +96,12 @@ export const notifyOrderStatusChange = (
     { link: "/pedidos", order_id: params.orderId }
   ).catch(console.error);
 
-  // WhatsApp (if phone available and not skipped)
-  if (params.clientPhone && !options?.skipWhatsApp) {
+  // WhatsApp only for key moments: pedido aceito + saiu entrega
+  if (
+    params.clientPhone &&
+    !options?.skipWhatsApp &&
+    WHATSAPP_STATUSES.has(newStatus)
+  ) {
     const msg = config.whatsApp(params);
     const delay = options?.delayWhatsApp ?? 600;
     setTimeout(() => openWhatsApp(params.clientPhone, msg), delay);
