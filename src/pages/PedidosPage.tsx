@@ -843,6 +843,19 @@ const PedidosPage = () => {
                           </div>
                         </div>
 
+                        {/* Chat */}
+                        {!["aguardando_pagamento", "cancelado"].includes(order.status) && (
+                          <div className="pt-1">
+                            <OrderChat
+                              orderId={order.id}
+                              storeName={order.stores?.name || "Loja"}
+                              storeOwnerId={order.stores?.owner_id}
+                              clientId={order.client_id}
+                              driverId={order.driver_id}
+                            />
+                          </div>
+                        )}
+
                         {/* Footer: date */}
                         <div className="flex items-center justify-between pt-1">
                           <span className="text-[10px] text-muted-foreground">
