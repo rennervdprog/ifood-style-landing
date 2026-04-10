@@ -81,6 +81,15 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
   const [pizzaHalfEnabled, setPizzaHalfEnabled] = useState<boolean>(storeSettings?.pizza_half_enabled || false);
   const [pizzaPriceMode, setPizzaPriceMode] = useState<PizzaPriceMode>(storeSettings?.pizza_price_mode || "maior");
 
+  // Z-API WhatsApp integration
+  const [zapiEnabled, setZapiEnabled] = useState<boolean>(storeSettings?.zapi_enabled || false);
+  const [zapiInstanceId, setZapiInstanceId] = useState<string>(storeSettings?.zapi_instance_id || "");
+  const [zapiToken, setZapiToken] = useState<string>(storeSettings?.zapi_token || "");
+  const [zapiClientToken, setZapiClientToken] = useState<string>(storeSettings?.zapi_client_token || "");
+  const [showZapiToken, setShowZapiToken] = useState(false);
+  const [showZapiClientToken, setShowZapiClientToken] = useState(false);
+  const [testingZapi, setTestingZapi] = useState(false);
+
   // Load whatsapp + pix from profile
   useEffect(() => {
     if (!user) return;
