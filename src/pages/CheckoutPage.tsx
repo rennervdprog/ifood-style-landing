@@ -123,7 +123,11 @@ const CheckoutPage = () => {
   const storeOwnFee = (storeData as any)?.own_delivery_fee || 0;
   const isOwnDelivery = storeDeliveryMode === "own";
   const config = deliveryFeeConfig || DEFAULT_DELIVERY_FEE_CONFIG;
-  const activeDeliveryFee = isOwnDelivery ? storeOwnFee : (calculatedDeliveryFee !== null ? calculatedDeliveryFee : config.city_fee);
+  // For fixed Itatinga plan with own delivery: add platform split (R$2) on top of store's own fee
+  const ownDeliveryFeeWithSplit = storePlan.isItatingaFixed && isOwnDelivery
+    ? storeOwnFee + storePlan.platformDeliverySplit
+    : storeOwnFee;
+  const activeDeliveryFee = isOwnDelivery ? ownDeliveryFeeWithSplit : (calculatedDeliveryFee !== null ? calculatedDeliveryFee : config.city_fee);
   const effectiveDeliveryFee = couponType === "free_shipping" ? 0 : activeDeliveryFee;
   const finalTotal = Math.max(0, addMoney(subtotal, effectiveDeliveryFee, -couponDiscount, -loyaltyDiscount));
 
