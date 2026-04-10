@@ -467,9 +467,11 @@ const AdminDashboard = () => {
         const clientName = getClientName(order.client_id);
         const items = order.order_items?.map((i: any) => `${i.quantity}x ${getOrderItemDisplayName(i)}`).join("\n") || "";
         
+        const storeSettings = (store?.settings || {}) as Record<string, any>;
         notifyOrderStatusChange(newStatus, {
           orderId: order.id,
           storeName: store?.name || "Loja",
+          storeId: store?.id || "",
           clientId: order.client_id,
           clientPhone,
           clientName,
@@ -477,7 +479,7 @@ const AdminDashboard = () => {
           addressDetails: order.address_details,
           items,
           paymentMethod: order.payment_method,
-        });
+        }, { zapiEnabled: !!storeSettings.zapi_enabled });
       }
 
       // Notify drivers when order is ready for platform delivery
