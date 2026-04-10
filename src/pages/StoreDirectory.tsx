@@ -422,7 +422,7 @@ const StoreDirectory = () => {
               {[
                   "Cardápio digital profissional",
                   "Gestão de pedidos em tempo real",
-                  "PIX integrado*",
+                  "PIX integrado (R$1/pedido + R$2/entrega)",
                   "Dinheiro e cartão na entrega",
                   "Painel financeiro completo",
                   "Programa de Fidelidade",
