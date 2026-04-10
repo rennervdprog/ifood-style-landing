@@ -1602,7 +1602,7 @@ const AdminDashboard = () => {
                         )}
 
                         {/* Settlement Code */}
-                        {["dinheiro", "cartao"].includes(order.payment_method) && (order as any).settlement_code && ["entregue", "finalizado"].includes(order.status) && !(order as any).return_to_store_confirmed && (
+                        {["dinheiro", "cartao"].includes(order.payment_method) && (order as any).settlement_code && ["entregue", "finalizado"].includes(order.status) && !(order as any).return_to_store_confirmed && !isOwnDelivery && (
                           <div className="mx-3 mb-2 bg-amber-500/5 border border-amber-500/20 rounded-xl p-3">
                             {order.driver_id && (
                               <div className="flex items-center gap-2 mb-2 pb-2 border-b border-amber-500/10">
@@ -1622,7 +1622,7 @@ const AdminDashboard = () => {
                             <p className="text-[10px] text-muted-foreground text-center mt-1">Informe somente após receber R$ {Number(order.total_price).toFixed(2)}</p>
                           </div>
                         )}
-                        {["dinheiro", "cartao"].includes(order.payment_method) && (order as any).return_to_store_confirmed && ["entregue", "finalizado"].includes(order.status) && (
+                        {["dinheiro", "cartao"].includes(order.payment_method) && (order as any).return_to_store_confirmed && ["entregue", "finalizado"].includes(order.status) && !isOwnDelivery && (
                           <div className="mx-3 mb-2 flex items-center gap-1.5 bg-emerald-500/5 border border-emerald-500/20 rounded-xl px-3 py-2">
                             <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
                             <span className="text-xs text-emerald-500 font-bold">Acerto realizado ✅</span>
