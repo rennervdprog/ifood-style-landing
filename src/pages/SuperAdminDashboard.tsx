@@ -296,9 +296,11 @@ const SuperAdminDashboard = () => {
 
   const storeConciliation = useMemo(() => {
     if (!orders || !stores) return [];
+    // Exclude cancelled and waiting-payment orders
+    const billableOrders = orders.filter(o => !["cancelado", "aguardando_pagamento"].includes(o.status));
     const map = new Map<string, { name: string; totalSold: number; commission: number; orders: number }>();
     stores.forEach(s => map.set(s.id, { name: s.name, totalSold: 0, commission: 0, orders: 0 }));
-    orders.forEach(o => {
+    billableOrders.forEach(o => {
       const entry = map.get(o.store_id);
       if (entry) {
         entry.totalSold = addMoney(entry.totalSold, o.total_price);

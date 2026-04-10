@@ -22,6 +22,7 @@ import {
 } from "recharts";
 import { openWhatsApp } from "@/lib/whatsapp";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import { notifyOrderStatusChange } from "@/lib/orderNotifications";
 import MenuBuilder from "@/components/MenuBuilder";
 import StoreHoursManager from "@/components/StoreHoursManager";
 import AddonManager from "@/components/AddonManager";
