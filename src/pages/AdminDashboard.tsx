@@ -1386,7 +1386,7 @@ const AdminDashboard = () => {
                     const Icon = tab.icon;
                     const isActive = activeTab === tab.status;
                     return (
-                      <button key={tab.status} onClick={() => setActiveTab(tab.status)}
+                      <button key={tab.status} onClick={() => { setActiveTab(tab.status); setBatchSelected(new Set()); }}
                         className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                           isActive
                             ? tab.status === "pendente" ? "bg-amber-500/20 text-amber-600 border border-amber-400/40" : "bg-primary text-primary-foreground shadow-sm"
