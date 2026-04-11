@@ -81,26 +81,36 @@ const AuthPage = () => {
         }
         toast.success("Login realizado com sucesso!");
         
-        // Check if user is an unapproved motoboy — force them to /entregador
+        // Check user role and redirect accordingly
         const { data: { user: loggedUser } } = await supabase.auth.getUser();
         if (loggedUser) {
+          // Check admin role first
+          const { data: adminRole } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", loggedUser.id)
+            .eq("role", "admin")
+            .maybeSingle();
+          
+          if (adminRole) {
+            navigate("/super-admin", { replace: true });
+            return;
+          }
+
           const { data: prof } = await supabase
             .from("profiles")
             .select("role, is_approved")
             .eq("user_id", loggedUser.id)
             .maybeSingle();
-          if (prof?.role === "motoboy" && !prof?.is_approved) {
-            // Check if store driver (auto-approved)
-            const { data: sd } = await supabase
-              .from("store_drivers")
-              .select("id")
-              .eq("driver_user_id", loggedUser.id)
-              .limit(1)
-              .maybeSingle();
-            if (!sd) {
-              navigate("/entregador", { replace: true });
-              return;
-            }
+          
+          if (prof?.role === "lojista") {
+            navigate("/admin", { replace: true });
+            return;
+          }
+          
+          if (prof?.role === "motoboy") {
+            navigate("/entregador", { replace: true });
+            return;
           }
         }
         navigate(from, { replace: true });
