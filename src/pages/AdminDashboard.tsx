@@ -541,6 +541,64 @@ const AdminDashboard = () => {
     }
   };
 
+  // ── BATCH DISPATCH (own delivery) ──
+  const toggleBatchOrder = (orderId: string) => {
+    setBatchSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(orderId)) next.delete(orderId); else next.add(orderId);
+      return next;
+    });
+  };
+
+  const selectAllReady = () => {
+    const readyIds = (orders || []).filter(o => o.status === "pronto_para_entrega").map(o => o.id);
+    setBatchSelected(new Set(readyIds));
+  };
+
+  const batchDispatch = async () => {
+    if (batchSelected.size === 0) return;
+    setBatchDispatching(true);
+    try {
+      const ids = Array.from(batchSelected);
+      const { error } = await supabase
+        .from("orders")
+        .update({ status: "saiu_entrega" as any })
+        .in("id", ids);
+      if (error) { toast.error("Erro ao despachar pedidos em lote"); return; }
+
+      queryClient.invalidateQueries({ queryKey: ["store-orders", store?.id] });
+      toast.success(`🛵 ${ids.length} pedido(s) enviados para entrega!`);
+
+      // Send notifications for each order
+      const storeSettings = (store?.settings || {}) as Record<string, any>;
+      for (const orderId of ids) {
+        const order = orders?.find((o: any) => o.id === orderId);
+        if (!order) continue;
+        const clientPhone = getClientWhatsApp(order.client_id);
+        const clientName = getClientName(order.client_id);
+        const items = order.order_items?.map((i: any) => `${i.quantity}x ${getOrderItemDisplayName(i)}`).join("\n") || "";
+        notifyOrderStatusChange("saiu_entrega", {
+          orderId: order.id,
+          storeName: store?.name || "Loja",
+          storeId: store?.id || "",
+          clientId: order.client_id,
+          clientPhone,
+          clientName,
+          totalPrice: Number(order.total_price),
+          addressDetails: order.address_details,
+          items,
+          paymentMethod: order.payment_method,
+        }, { zapiEnabled: !!storeSettings.zapi_enabled });
+      }
+
+      setBatchSelected(new Set());
+    } catch (e: any) {
+      toast.error(`Erro: ${e?.message}`);
+    } finally {
+      setBatchDispatching(false);
+    }
+  };
+
   const toggleStoreOpen = async () => {
     if (!store) return;
     const { error } = await supabase.from("stores").update({ is_open: !store.is_open }).eq("id", store.id);
