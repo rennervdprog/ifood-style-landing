@@ -679,7 +679,9 @@ const DriverDashboard = () => {
               <div>
                 <h1 className="font-black text-base text-foreground leading-tight">{driverFirstName}</h1>
                 <p className="text-[11px] text-muted-foreground font-medium">
-                  {isOnline ? (realtimeConnected ? "Online • Recebendo pedidos" : "Conectando...") : "Offline"}
+                  {isStoreDriver
+                    ? "Motoboy da Loja"
+                    : isOnline ? (realtimeConnected ? "Online • Recebendo pedidos" : "Conectando...") : "Offline"}
                 </p>
               </div>
             </div>
