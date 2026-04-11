@@ -665,7 +665,10 @@ const AdminDashboard = () => {
     return Math.round(totalMinutes / delivered.length);
   }, [allOrders]);
 
-  const filteredOrders = (orders?.filter(o => o.status === activeTab) || []).filter(o => {
+  const filteredOrders = (orders?.filter(o => {
+    if (activeTab === "delivery") return o.status === "saiu_entrega" || o.status === "em_transito";
+    return o.status === activeTab;
+  }) || []).filter(o => {
     if (activeTab !== "entregue" || !settlementSearch.trim()) return true;
     const search = settlementSearch.toLowerCase().trim();
     return o.id.slice(0, 8).toLowerCase().includes(search) || (o.driver_id ? getDriverName(o.driver_id).toLowerCase().includes(search) : false) || getClientName(o.client_id).toLowerCase().includes(search);
