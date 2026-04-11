@@ -8,7 +8,7 @@ import confetti from "canvas-confetti";
 import {
   Bike, MapPin, Navigation, KeyRound, CheckCircle2, Package,
   Store, ChevronRight, Route, Clock, User, Phone, ArrowRight,
-  Loader2, ShieldCheck, Zap
+  Loader2, Zap
 } from "lucide-react";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import OrderChat from "@/components/OrderChat";
