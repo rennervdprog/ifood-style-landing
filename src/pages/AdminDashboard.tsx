@@ -165,6 +165,8 @@ const AdminDashboard = () => {
   const [showDelayedPanel, setShowDelayedPanel] = useState(false);
   const [showMoreSheet, setShowMoreSheet] = useState(false);
   const [selectedReportPeriod, setSelectedReportPeriod] = useState(30);
+  const [batchSelected, setBatchSelected] = useState<Set<string>>(new Set());
+  const [batchDispatching, setBatchDispatching] = useState(false);
 
   const prevPendingCountRef = useRef(0);
 
@@ -536,6 +538,64 @@ const AdminDashboard = () => {
       }
     } catch (e: any) {
       toast.error(`Erro ao cancelar: ${e?.message}`);
+    }
+  };
+
+  // ── BATCH DISPATCH (own delivery) ──
+  const toggleBatchOrder = (orderId: string) => {
+    setBatchSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(orderId)) next.delete(orderId); else next.add(orderId);
+      return next;
+    });
+  };
+
+  const selectAllReady = () => {
+    const readyIds = (orders || []).filter(o => o.status === "pronto_para_entrega").map(o => o.id);
+    setBatchSelected(new Set(readyIds));
+  };
+
+  const batchDispatch = async () => {
+    if (batchSelected.size === 0) return;
+    setBatchDispatching(true);
+    try {
+      const ids = Array.from(batchSelected);
+      const { error } = await supabase
+        .from("orders")
+        .update({ status: "saiu_entrega" as any })
+        .in("id", ids);
+      if (error) { toast.error("Erro ao despachar pedidos em lote"); return; }
+
+      queryClient.invalidateQueries({ queryKey: ["store-orders", store?.id] });
+      toast.success(`🛵 ${ids.length} pedido(s) enviados para entrega!`);
+
+      // Send notifications for each order
+      const storeSettings = (store?.settings || {}) as Record<string, any>;
+      for (const orderId of ids) {
+        const order = orders?.find((o: any) => o.id === orderId);
+        if (!order) continue;
+        const clientPhone = getClientWhatsApp(order.client_id);
+        const clientName = getClientName(order.client_id);
+        const items = order.order_items?.map((i: any) => `${i.quantity}x ${getOrderItemDisplayName(i)}`).join("\n") || "";
+        notifyOrderStatusChange("saiu_entrega", {
+          orderId: order.id,
+          storeName: store?.name || "Loja",
+          storeId: store?.id || "",
+          clientId: order.client_id,
+          clientPhone,
+          clientName,
+          totalPrice: Number(order.total_price),
+          addressDetails: order.address_details,
+          items,
+          paymentMethod: order.payment_method,
+        }, { zapiEnabled: !!storeSettings.zapi_enabled });
+      }
+
+      setBatchSelected(new Set());
+    } catch (e: any) {
+      toast.error(`Erro: ${e?.message}`);
+    } finally {
+      setBatchDispatching(false);
     }
   };
 
@@ -1326,7 +1386,7 @@ const AdminDashboard = () => {
                     const Icon = tab.icon;
                     const isActive = activeTab === tab.status;
                     return (
-                      <button key={tab.status} onClick={() => setActiveTab(tab.status)}
+                      <button key={tab.status} onClick={() => { setActiveTab(tab.status); setBatchSelected(new Set()); }}
                         className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                           isActive
                             ? tab.status === "pendente" ? "bg-amber-500/20 text-amber-600 border border-amber-400/40" : "bg-primary text-primary-foreground shadow-sm"
@@ -1358,6 +1418,36 @@ const AdminDashboard = () => {
                         <XCircle className="h-4 w-4" />
                       </button>
                     )}
+                  </div>
+                </div>
+              )}
+
+              {/* Batch dispatch bar (own delivery + pronto_para_entrega) */}
+              {isOwnDelivery && activeTab === "pronto_para_entrega" && (filteredOrders.length > 0) && (
+                <div className="px-4 pt-3">
+                  <div className="flex items-center gap-2 bg-blue-500/5 border border-blue-500/20 rounded-xl p-3">
+                    <Truck className="h-4 w-4 text-blue-500 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-blue-600 dark:text-blue-400">
+                        🛵 Agrupar pedidos para entrega
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">
+                        Selecione os pedidos prontos e envie todos de uma vez
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button onClick={selectAllReady}
+                        className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-500/10 px-2 py-1 rounded-lg hover:bg-blue-500/20 transition-colors">
+                        Todos
+                      </button>
+                      {batchSelected.size > 0 && (
+                        <button onClick={batchDispatch} disabled={batchDispatching}
+                          className="flex items-center gap-1 text-xs font-black text-white bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50">
+                          {batchDispatching ? <Loader2 className="h-3 w-3 animate-spin" /> : <Truck className="h-3 w-3" />}
+                          Enviar {batchSelected.size}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
@@ -1411,12 +1501,21 @@ const AdminDashboard = () => {
                       <div key={order.id}
                         style={{ animationDelay: `${index * 50}ms` }}
                         className={`bg-card rounded-2xl overflow-hidden border transition-all duration-300 animate-fade-in ${
+                          batchSelected.has(order.id) ? "border-blue-500 ring-2 ring-blue-500/30" :
                           isDelayed ? "border-destructive/50 shadow-[0_0_12px_-4px] shadow-destructive/20" :
                           order.status === "pendente" ? "border-amber-400/40 shadow-amber-400/5 animate-pulse-border" : "border-border"
                         } hover:shadow-md`}>
                         {/* Status bar with wait timer */}
                         <div className={`px-3 py-1.5 ${sc.bg} flex items-center justify-between`}>
                           <div className="flex items-center gap-2">
+                            {isOwnDelivery && order.status === "pronto_para_entrega" && (
+                              <button onClick={() => toggleBatchOrder(order.id)}
+                                className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${
+                                  batchSelected.has(order.id) ? "bg-blue-500 border-blue-500 text-white" : "border-muted-foreground/40 hover:border-blue-400"
+                                }`}>
+                                {batchSelected.has(order.id) && <CheckCircle2 className="h-3.5 w-3.5" />}
+                              </button>
+                            )}
                             <span className={`text-[10px] font-bold uppercase ${sc.text}`}>{sc.label}</span>
                             {isDelayed && (
                               <span className="flex items-center gap-1 text-[10px] font-bold text-destructive bg-destructive/10 px-1.5 py-0.5 rounded-full">
