@@ -304,7 +304,7 @@ const CadastroLojista = () => {
                     ))}
                   </div>
                   <p className="text-[10px] text-muted-foreground mt-1.5">
-                    💡 Pequena taxa operacional: R$1 por pedido via PIX • R$2 por entrega realizada
+                    💡 Pequena taxa operacional: R$1 por pedido via PIX • R$2 na entrega (pago pelo cliente na taxa de entrega)
                   </p>
                 </button>
 
@@ -372,7 +372,7 @@ const CadastroLojista = () => {
                 {selectedPlan && (
                   <div className="rounded-xl bg-muted/50 p-3 text-xs text-muted-foreground">
                     {selectedPlan === "fixed" ? (
-                      <p><strong className="text-foreground">Essencial:</strong> R$180/mês sem comissão por pedido. Inclui uma pequena taxa operacional de <strong className="text-foreground">R$1 por pedido pago via PIX</strong> (pedidos em dinheiro/cartão não pagam) e <strong className="text-foreground">R$2 por entrega realizada</strong>. Valores acumulam no painel para repasse semanal. Todas as ferramentas inclusas.</p>
+                      <p><strong className="text-foreground">Essencial:</strong> R$180/mês sem comissão por pedido. Inclui uma pequena taxa operacional de <strong className="text-foreground">R$1 por pedido pago via PIX</strong> (pedidos em dinheiro/cartão não pagam) e <strong className="text-foreground">R$2 na taxa de entrega (pago pelo cliente)</strong>. Valores acumulam no painel para repasse semanal. Todas as ferramentas inclusas.</p>
                     ) : selectedPlan === "hybrid" ? (
                       <p><strong className="text-foreground">Crescimento:</strong> Mensalidade de R$100 + 2,5% por pedido. PIX integrado com split automático e painel financeiro completo com CRM.</p>
                     ) : (
