@@ -10,9 +10,9 @@ interface StoreDriverManagerProps {
 
 const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
   const queryClient = useQueryClient();
-  const [searchPhone, setSearchPhone] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [searching, setSearching] = useState(false);
-  const [foundDriver, setFoundDriver] = useState<{ user_id: string; full_name: string; phone: string; vehicle: string } | null>(null);
+  const [foundDrivers, setFoundDrivers] = useState<{ user_id: string; full_name: string; phone: string; vehicle: string; email: string }[]>([]);
   const [adding, setAdding] = useState(false);
 
   // Fetch linked drivers
@@ -41,40 +41,39 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
   });
 
   const handleSearch = async () => {
-    if (!searchPhone.trim()) return;
+    if (!searchTerm.trim()) return;
     setSearching(true);
-    setFoundDriver(null);
+    setFoundDrivers([]);
 
     try {
-      // Search for a driver profile by phone/whatsapp
-      const cleanPhone = searchPhone.replace(/\D/g, "");
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("user_id, full_name, phone, vehicle, whatsapp_number, role")
-        .eq("role", "motoboy");
-
-      const match = profiles?.find(p => {
-        const pPhone = (p.phone || "").replace(/\D/g, "");
-        const pWhatsapp = (p.whatsapp_number || "").replace(/\D/g, "");
-        return pPhone.includes(cleanPhone) || pWhatsapp.includes(cleanPhone) || cleanPhone.includes(pPhone) || cleanPhone.includes(pWhatsapp);
+      const { data, error } = await supabase.rpc("search_motoboy_profiles", {
+        _search: searchTerm.trim(),
       });
 
-      if (match) {
-        // Check if already linked
-        const alreadyLinked = storeDrivers?.some(sd => sd.driver_user_id === match.user_id);
-        if (alreadyLinked) {
-          toast.info("Este motoboy já está vinculado à sua loja.");
-        } else {
-          setFoundDriver({
-            user_id: match.user_id,
-            full_name: match.full_name,
-            phone: match.phone || match.whatsapp_number || "",
-            vehicle: match.vehicle || "",
-          });
-        }
-      } else {
-        toast.error("Nenhum motoboy encontrado com esse telefone. Verifique se ele já se cadastrou como entregador na plataforma.");
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        toast.error("Nenhum motoboy encontrado. Verifique se ele já se cadastrou como entregador.");
+        return;
       }
+
+      // Filter out already linked drivers
+      const filtered = (data as any[]).filter(
+        d => !storeDrivers?.some(sd => sd.driver_user_id === d.user_id)
+      );
+
+      if (filtered.length === 0) {
+        toast.info("Todos os motoboys encontrados já estão vinculados à sua loja.");
+        return;
+      }
+
+      setFoundDrivers(filtered.map(d => ({
+        user_id: d.user_id,
+        full_name: d.full_name || "",
+        phone: d.phone || d.whatsapp_number || "",
+        vehicle: d.vehicle || "",
+        email: d.email || "",
+      })));
     } catch {
       toast.error("Erro ao buscar motoboy.");
     } finally {
