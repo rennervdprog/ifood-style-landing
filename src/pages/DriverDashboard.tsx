@@ -131,8 +131,25 @@ const DriverDashboard = () => {
     enabled: !!user,
   });
 
+  // Check if user has a platform drivers entry
+  const { data: platformDriverEntry } = useQuery({
+    queryKey: ["platform-driver-entry", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("drivers")
+        .select("id")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
+
   const isStoreDriver = (storeDriverLinks?.length || 0) > 0;
-  const isPlatformDriver = Boolean((driverProfile as any)?.role === "motoboy" && !isStoreDriver);
+  const hasPlatformDriverEntry = !!platformDriverEntry;
+  // Store motoboy = has role motoboy, no platform drivers entry, and no store link yet
+  const isStoreMotoboyWaiting = (driverProfile as any)?.role === "motoboy" && !hasPlatformDriverEntry && !isStoreDriver;
+  const isPlatformDriver = Boolean((driverProfile as any)?.role === "motoboy" && hasPlatformDriverEntry && !isStoreDriver);
   const linkedStoreIds = useMemo(() => (storeDriverLinks || []).map((l: any) => l.store_id), [storeDriverLinks]);
 
   useEffect(() => {

@@ -73,6 +73,7 @@ const CadastroMotoboyLoja = () => {
           data: {
             full_name: fullName.trim(),
             role: "motoboy",
+            driver_type: "store",
             vehicle: vehicle.trim(),
             whatsapp: phone.trim(),
             phone: phone.trim(),
