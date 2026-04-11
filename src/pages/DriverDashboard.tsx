@@ -118,6 +118,23 @@ const DriverDashboard = () => {
     enabled: !!user,
   });
 
+  // Detect if user is a store driver (not platform driver)
+  const { data: storeDriverLinks } = useQuery({
+    queryKey: ["store-driver-links", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("store_drivers")
+        .select("store_id")
+        .eq("driver_user_id", user!.id);
+      return data || [];
+    },
+    enabled: !!user,
+  });
+
+  const isStoreDriver = (storeDriverLinks?.length || 0) > 0;
+  const isPlatformDriver = Boolean((driverProfile as any)?.role === "motoboy" && !isStoreDriver);
+  const linkedStoreIds = useMemo(() => (storeDriverLinks || []).map((l: any) => l.store_id), [storeDriverLinks]);
+
   useEffect(() => {
     if (driverProfile) {
       setPixKey((driverProfile as any).pix_key || "");
