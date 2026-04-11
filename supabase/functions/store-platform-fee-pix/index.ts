@@ -103,9 +103,12 @@ Deno.serve(async (req) => {
       });
     }
 
-    const baseUrl = ASAAS_API_KEY.startsWith("$aact_")
-      ? "https://api.asaas.com/v3"
-      : "https://sandbox.asaas.com/api/v3";
+    const isSandbox = !ASAAS_API_KEY.startsWith("$aact_");
+    const baseUrl = isSandbox
+      ? "https://sandbox.asaas.com/api/v3"
+      : "https://api.asaas.com/v3";
+
+    console.log(`[Asaas] Mode: ${isSandbox ? "SANDBOX" : "PRODUCTION"}, platform fee for ${store.name}`);
 
     // Get store owner profile for payer info
     const { data: profile } = await adminSupabase
@@ -114,13 +117,18 @@ Deno.serve(async (req) => {
       .eq("user_id", userId)
       .single();
 
-    const cleanCpf = String(profile?.document || "").replace(/\D/g, "");
+    let cleanCpf = String(profile?.document || "").replace(/\D/g, "");
     const referenceCode = `TAXA-${store_id.substring(0, 6).toUpperCase()}-${Date.now()}`;
+
+    // In sandbox, use a valid CPF if the provided one is invalid
+    if (isSandbox && cleanCpf.length < 11) {
+      cleanCpf = "52998224725"; // Valid sandbox CPF
+      console.log("[Asaas Sandbox] Using sandbox CPF for customer creation");
+    }
 
     // Step 1: Find or create customer in Asaas
     const customerEmail = profile?.email || userData.user.email || `lojista-${userId.substring(0, 8)}@itasuper.com`;
     
-    // Search existing customer by cpfCnpj or email
     let customerId: string | null = null;
 
     if (cleanCpf.length >= 11) {
@@ -130,6 +138,7 @@ Deno.serve(async (req) => {
       const searchData = await searchRes.json();
       if (searchData.data?.length > 0) {
         customerId = searchData.data[0].id;
+        console.log(`[Asaas] Found existing customer: ${customerId}`);
       }
     }
 
@@ -143,6 +152,7 @@ Deno.serve(async (req) => {
         customerBody.cpfCnpj = cleanCpf;
       }
 
+      console.log(`[Asaas] Creating customer: ${customerBody.name}`);
       const createRes = await fetch(`${baseUrl}/customers`, {
         method: "POST",
         headers: {
@@ -153,13 +163,15 @@ Deno.serve(async (req) => {
       });
       const createData = await createRes.json();
       if (!createRes.ok) {
-        console.error("Asaas create customer error:", JSON.stringify(createData));
-        return new Response(JSON.stringify({ error: "Erro ao criar cliente no gateway." }), {
+        console.error("[Asaas] Create customer error:", JSON.stringify(createData));
+        const errMsg = createData?.errors?.[0]?.description || "Erro ao criar cliente no gateway.";
+        return new Response(JSON.stringify({ error: errMsg }), {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       customerId = createData.id;
+      console.log(`[Asaas] Customer created: ${customerId}`);
     }
 
     // Step 2: Create PIX payment

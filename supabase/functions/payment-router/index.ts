@@ -133,6 +133,57 @@ async function createMercadoPagoPix(params: {
 
 // ── Provider: Asaas ──────────────────────────────────────────────────
 
+function validateAsaasApiKey(key: string): { valid: boolean; sandbox: boolean; error?: string } {
+  const trimmed = key.trim();
+  if (!trimmed) return { valid: false, sandbox: false, error: "ASAAS_API_KEY is empty" };
+  
+  const isSandbox = !trimmed.startsWith("$aact_");
+  
+  if (trimmed.length < 20) {
+    return { valid: false, sandbox: isSandbox, error: `Key too short (${trimmed.length} chars). Copy the full key from Asaas dashboard.` };
+  }
+  
+  return { valid: true, sandbox: isSandbox };
+}
+
+// Generate a valid CPF for sandbox testing (Asaas sandbox rejects invalid CPFs)
+function generateValidSandboxCpf(): string {
+  const digits = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+  for (let i = 0; i < 9; i++) digits[i] = Math.floor(Math.random() * 9);
+  
+  let sum = 0;
+  for (let i = 0; i < 9; i++) sum += digits[i] * (10 - i);
+  let d1 = 11 - (sum % 11);
+  if (d1 >= 10) d1 = 0;
+  digits.push(d1);
+  
+  sum = 0;
+  for (let i = 0; i < 10; i++) sum += digits[i] * (11 - i);
+  let d2 = 11 - (sum % 11);
+  if (d2 >= 10) d2 = 0;
+  digits.push(d2);
+  
+  return digits.join("");
+}
+
+function isValidCpf(cpf: string): boolean {
+  const clean = cpf.replace(/\D/g, "");
+  if (clean.length !== 11) return false;
+  if (/^(\d)\1+$/.test(clean)) return false;
+  
+  let sum = 0;
+  for (let i = 0; i < 9; i++) sum += parseInt(clean[i]) * (10 - i);
+  let d1 = 11 - (sum % 11);
+  if (d1 >= 10) d1 = 0;
+  if (parseInt(clean[9]) !== d1) return false;
+  
+  sum = 0;
+  for (let i = 0; i < 10; i++) sum += parseInt(clean[i]) * (11 - i);
+  let d2 = 11 - (sum % 11);
+  if (d2 >= 10) d2 = 0;
+  return parseInt(clean[10]) === d2;
+}
+
 async function createAsaasPix(params: {
   amount: number;
   description: string;
@@ -146,16 +197,32 @@ async function createAsaasPix(params: {
     return { ok: false, data: { message: "ASAAS_API_KEY não configurado." }, status: 500 };
   }
 
-  // Asaas uses sandbox or production URL based on key prefix
-  const baseUrl = apiKey.startsWith("$aact_")
-    ? "https://api.asaas.com/v3"
-    : "https://sandbox.asaas.com/api/v3";
+  const keyValidation = validateAsaasApiKey(apiKey);
+  if (!keyValidation.valid) {
+    console.error("Asaas API key validation failed:", keyValidation.error);
+    return { ok: false, data: { message: `Chave Asaas inválida: ${keyValidation.error}` }, status: 500 };
+  }
+
+  const isSandbox = keyValidation.sandbox;
+  const baseUrl = isSandbox
+    ? "https://sandbox.asaas.com/api/v3"
+    : "https://api.asaas.com/v3";
+
+  console.log(`[Asaas] Mode: ${isSandbox ? "SANDBOX" : "PRODUCTION"}, Key prefix: ${apiKey.substring(0, 10)}...`);
 
   try {
     // Step 1: Find or create customer by CPF
-    const cleanCpf = params.payerCpf.replace(/\D/g, "");
+    let cleanCpf = params.payerCpf.replace(/\D/g, "");
+    
+    // In sandbox, use a valid CPF if the provided one is invalid
+    if (isSandbox && !isValidCpf(cleanCpf)) {
+      console.warn(`[Asaas Sandbox] Invalid CPF provided (${cleanCpf}), generating valid sandbox CPF`);
+      cleanCpf = generateValidSandboxCpf();
+    }
+    
     let customerId: string | null = null;
 
+    // Search existing customer
     const searchRes = await fetch(`${baseUrl}/customers?cpfCnpj=${cleanCpf}`, {
       headers: { "access_token": apiKey },
     });
@@ -164,35 +231,60 @@ async function createAsaasPix(params: {
       const searchData = await searchRes.json();
       if (searchData.data && searchData.data.length > 0) {
         customerId = searchData.data[0].id;
+        console.log(`[Asaas] Found existing customer: ${customerId}`);
       }
+    } else {
+      const searchErr = await searchRes.text();
+      console.warn(`[Asaas] Customer search failed (${searchRes.status}):`, searchErr);
     }
 
     if (!customerId) {
+      const customerName = (params.payerName || "Cliente ItaSuper").substring(0, 200);
+      const customerBody: Record<string, unknown> = {
+        name: customerName,
+        cpfCnpj: cleanCpf,
+      };
+      
+      // Sandbox needs email to avoid duplicate issues
+      if (isSandbox) {
+        customerBody.email = `cliente-${cleanCpf}@sandbox.itasuper.com`;
+      }
+
+      console.log(`[Asaas] Creating customer: name=${customerName}, cpf=${cleanCpf.substring(0, 3)}***`);
+      
       const createCustomerRes = await fetch(`${baseUrl}/customers`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "access_token": apiKey,
         },
-        body: JSON.stringify({
-          name: params.payerName || "Cliente ItaSuper",
-          cpfCnpj: cleanCpf,
-        }),
+        body: JSON.stringify(customerBody),
       });
 
       if (!createCustomerRes.ok) {
         const errData = await createCustomerRes.text();
-        console.error("Asaas create customer error:", createCustomerRes.status, errData);
-        return { ok: false, data: { message: "Erro ao criar cliente no Asaas." }, status: createCustomerRes.status };
+        console.error(`[Asaas] Create customer FAILED (${createCustomerRes.status}):`, errData);
+        
+        // Parse Asaas error for better user message
+        let userMsg = "Erro ao criar cliente no Asaas.";
+        try {
+          const errJson = JSON.parse(errData);
+          if (errJson.errors?.[0]?.description) {
+            userMsg = `Asaas: ${errJson.errors[0].description}`;
+          }
+        } catch {}
+        
+        return { ok: false, data: { message: userMsg, asaas_error: errData }, status: createCustomerRes.status };
       }
 
       const customerData = await createCustomerRes.json();
       customerId = customerData.id;
+      console.log(`[Asaas] Customer created: ${customerId}`);
     }
 
     // Step 2: Create payment
     const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + 1); // Due tomorrow (Asaas requires future date)
+    dueDate.setDate(dueDate.getDate() + 1);
     const dueDateStr = dueDate.toISOString().split("T")[0];
 
     const paymentBody: Record<string, unknown> = {
@@ -204,10 +296,7 @@ async function createAsaasPix(params: {
       externalReference: params.externalReference,
     };
 
-    // No split — payment goes 100% to main account.
-    // Store share is transferred automatically via webhook on payment confirmation.
-
-    console.log("Asaas creating PIX payment...");
+    console.log(`[Asaas] Creating PIX payment: R$${params.amount}, ref=${params.externalReference}`);
     const paymentRes = await fetch(`${baseUrl}/payments`, {
       method: "POST",
       headers: {
@@ -219,19 +308,26 @@ async function createAsaasPix(params: {
 
     if (!paymentRes.ok) {
       const errData = await paymentRes.text();
-      console.error("Asaas payment error:", paymentRes.status, errData);
+      console.error(`[Asaas] Payment creation FAILED (${paymentRes.status}):`, errData);
       
-      // Check for minimum amount error
       if (errData.includes("não pode ser menor que R$") || errData.includes("menor que R$ 5")) {
         return { ok: false, data: { message: "O valor mínimo para pagamento PIX é R$ 5,00.", min_amount: true }, status: 400 };
       }
       
-      return { ok: false, data: { message: `Erro ao criar pagamento Asaas: ${paymentRes.status}` }, status: paymentRes.status };
+      let userMsg = `Erro ao criar pagamento Asaas (${paymentRes.status})`;
+      try {
+        const errJson = JSON.parse(errData);
+        if (errJson.errors?.[0]?.description) {
+          userMsg = `Asaas: ${errJson.errors[0].description}`;
+        }
+      } catch {}
+      
+      return { ok: false, data: { message: userMsg, asaas_error: errData }, status: paymentRes.status };
     }
 
     const paymentData = await paymentRes.json();
     const paymentId = paymentData.id;
-    console.log("Asaas payment created:", paymentId, "status:", paymentData.status);
+    console.log(`[Asaas] Payment created: ${paymentId}, status: ${paymentData.status}`);
 
     // Step 3: Get PIX QR Code
     const pixRes = await fetch(`${baseUrl}/payments/${paymentId}/pixQrCode`, {
@@ -245,9 +341,10 @@ async function createAsaasPix(params: {
       const pixData = await pixRes.json();
       pixCode = pixData.payload || null;
       qrCodeBase64 = pixData.encodedImage ? `data:image/png;base64,${pixData.encodedImage}` : null;
-      console.log("Asaas QR code obtained");
+      console.log("[Asaas] QR code obtained successfully");
     } else {
-      console.warn("Asaas QR code fetch failed:", pixRes.status);
+      const pixErr = await pixRes.text();
+      console.warn(`[Asaas] QR code fetch failed (${pixRes.status}):`, pixErr);
     }
 
     return {
@@ -261,7 +358,7 @@ async function createAsaasPix(params: {
       status: 200,
     };
   } catch (err) {
-    console.error("Asaas exception:", err);
+    console.error("[Asaas] Exception:", err);
     return { ok: false, data: { message: "Erro interno ao processar pagamento Asaas." }, status: 500 };
   }
 }
