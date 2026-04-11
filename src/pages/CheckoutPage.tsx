@@ -138,7 +138,7 @@ const CheckoutPage = () => {
     if (isOwnDelivery) {
       setCalculatedDeliveryFee(null);
       const totalOwnFee = ownDeliveryFeeWithSplit;
-      if (storePlan.isItatingaFixed && storePlan.platformDeliverySplit > 0) {
+      if (storePlan.platformDeliverySplit > 0) {
         setFeeBreakdown(`Entrega loja: R$ ${storeOwnFee.toFixed(2)} + Taxa plataforma: R$ ${storePlan.platformDeliverySplit.toFixed(2)}`);
       } else {
         setFeeBreakdown(`Taxa fixa da loja: R$ ${storeOwnFee.toFixed(2)}`);
