@@ -15,7 +15,7 @@ const TermosDeUso = () => {
 
       <div className="flex-1 px-4 py-6 max-w-2xl mx-auto">
         <div className="prose prose-sm dark:prose-invert max-w-none space-y-6">
-          <p className="text-xs text-muted-foreground">Última atualização: 09 de Abril de 2026 — Versão 2.0</p>
+          <p className="text-xs text-muted-foreground">Última atualização: 11 de Abril de 2026 — Versão 2.1</p>
 
           <h2 className="text-lg font-bold text-foreground">1. Identificação da Plataforma</h2>
           <p className="text-sm text-muted-foreground">
@@ -71,13 +71,13 @@ const TermosDeUso = () => {
           <p className="text-sm text-muted-foreground">
             5.1. O ItaSuper oferece três planos para lojistas:
           </p>
-          <ul className="text-sm text-muted-foreground list-disc pl-4 space-y-1">
-            <li><strong className="text-foreground">Essencial (R$ 49,90/mês):</strong> Cardápio digital, pedidos ilimitados, até 3 cupons ativos, entrega com motoboy próprio. Sem comissão por pedido. Não inclui PIX online nem motoboy da plataforma.</li>
-            <li><strong className="text-foreground">Crescimento (R$ 179,90/mês):</strong> Todas as funcionalidades do Essencial, mais: PIX online, motoboy da plataforma, cupons ilimitados, programa de fidelidade, banners promocionais, agendamento de pedidos e suporte prioritário. Sem comissão por pedido.</li>
-            <li><strong className="text-foreground">Comissão (0% mensalidade + 5% por pedido):</strong> Todas as funcionalidades do Crescimento. A comissão de 5% é cobrada sobre o subtotal de cada pedido realizado.</li>
+          <ul className="text-sm text-muted-foreground list-disc pl-4 space-y-2">
+            <li><strong className="text-foreground">Essencial (R$ 180/mês):</strong> Todas as funcionalidades da plataforma com <strong className="text-foreground">zero comissão</strong> por pedido. Você fica com 100% do valor de cada venda. Inclui taxa operacional de <strong className="text-foreground">R$ 1,00 por pedido pago via PIX</strong> e <strong className="text-foreground">R$ 2,00 por entrega realizada pela plataforma</strong> (este valor é cobrado do cliente na taxa de entrega, não do lojista).</li>
+            <li><strong className="text-foreground">Crescimento (R$ 100/mês + 2,5% por pedido):</strong> Todas as funcionalidades da plataforma com mensalidade reduzida e comissão de 2,5% sobre o subtotal de cada pedido. Ideal para lojas que já vendem bem e querem equilibrar custo fixo e variável.</li>
+            <li><strong className="text-foreground">Comissão (R$ 0/mês + 5% por pedido):</strong> Sem mensalidade. Comissão de 5% sobre o subtotal de cada pedido realizado. Ideal para quem está começando e quer testar sem investimento inicial.</li>
           </ul>
           <p className="text-sm text-muted-foreground">
-            5.2. Os planos pagos (Essencial e Crescimento) incluem <strong className="text-foreground">7 dias de teste grátis</strong>. O plano Comissão não possui mensalidade. Após o período de teste dos planos pagos, a cobrança será realizada automaticamente via Asaas.
+            5.2. Os planos Essencial e Crescimento incluem <strong className="text-foreground">7 dias de teste grátis</strong>. O plano Comissão não possui mensalidade e pode ser utilizado imediatamente. Após o período de teste dos planos pagos, a cobrança será realizada automaticamente.
           </p>
           <p className="text-sm text-muted-foreground">
             5.3. O lojista pode solicitar a troca de plano a qualquer momento. Em caso de downgrade de um plano com mensalidade maior para um menor, será calculado um crédito pro-rata proporcional aos dias restantes do período já pago.
@@ -117,21 +117,20 @@ const TermosDeUso = () => {
 
           <h2 className="text-lg font-bold text-foreground">9. Pagamentos e Comissões</h2>
           <p className="text-sm text-muted-foreground">
-            9.1. No plano Comissão, a Plataforma cobra <strong className="text-foreground">5% sobre o subtotal</strong> de cada pedido.
+            9.1. No plano Comissão, a Plataforma cobra <strong className="text-foreground">5% sobre o subtotal</strong> de cada pedido. No plano Crescimento, a comissão é de <strong className="text-foreground">2,5% sobre o subtotal</strong>. No plano Essencial, não há comissão.
           </p>
           <p className="text-sm text-muted-foreground">
-            9.2. Para pagamentos via PIX online, o split de pagamento é automático via Asaas ou Mercado Pago, onde o Lojista 
-            recebe 95% diretamente e 5% é retido como comissão da Plataforma (quando aplicável ao plano).
+            9.2. Para pagamentos via PIX online, o split de pagamento é automático, onde a comissão da Plataforma (quando aplicável ao plano) é retida automaticamente.
           </p>
           <p className="text-sm text-muted-foreground">
             9.3. Para pagamentos em dinheiro ou cartão na entrega, a comissão (quando aplicável) é registrada como débito pendente 
             do Lojista junto à Plataforma.
           </p>
           <p className="text-sm text-muted-foreground">
-            9.4. A taxa de entrega é repassada integralmente ao Entregador designado.
+            9.4. A taxa de entrega é repassada integralmente ao Entregador designado, exceto no plano Essencial onde R$ 2,00 por entrega realizada pela plataforma é retido como taxa operacional (este valor é cobrado do cliente).
           </p>
           <p className="text-sm text-muted-foreground">
-            9.5. Nos planos Essencial e Crescimento, não há cobrança de comissão por pedido, apenas a mensalidade fixa.
+            9.5. No plano Essencial, é cobrada uma taxa fixa de R$ 1,00 por pedido pago via PIX como taxa operacional de processamento. Pedidos pagos em dinheiro ou cartão não possuem esta taxa.
           </p>
 
           <h2 className="text-lg font-bold text-foreground">10. Programa de Fidelidade</h2>

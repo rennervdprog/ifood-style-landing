@@ -15,7 +15,7 @@ const PoliticaPrivacidade = () => {
 
       <div className="flex-1 px-4 py-6 max-w-2xl mx-auto">
         <div className="prose prose-sm dark:prose-invert max-w-none space-y-6">
-          <p className="text-xs text-muted-foreground">Última atualização: 09 de Abril de 2026 — Versão 2.0</p>
+          <p className="text-xs text-muted-foreground">Última atualização: 11 de Abril de 2026 — Versão 2.1</p>
 
           <p className="text-sm text-muted-foreground">
             Esta Política de Privacidade descreve como o <strong className="text-foreground">ItaSuper</strong> coleta, utiliza, armazena e protege 
@@ -50,7 +50,7 @@ const PoliticaPrivacidade = () => {
             <li>Endereço do estabelecimento (CEP, rua, bairro, cidade, estado)</li>
             <li>Dados financeiros: tipo e chave PIX para recebimento de pagamentos</li>
             <li>Nome, categoria e logotipo da loja</li>
-            <li>Plano contratado (Essencial, Crescimento ou Comissão)</li>
+            <li>Plano contratado (Essencial R$180/mês, Crescimento R$100/mês + 2,5%, ou Comissão 5%)</li>
             <li>Dados de subconta de pagamento (Asaas/Mercado Pago) para processamento de transações</li>
             <li>Configurações de horário de funcionamento</li>
           </ul>
