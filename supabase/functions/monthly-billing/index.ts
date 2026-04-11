@@ -150,14 +150,14 @@ Deno.serve(async (req) => {
           },
         });
 
-        // Update plan billing dates
+        // DON'T update last_billed_at here — only set it when payment is confirmed via webhook
+        // Just advance next_billing_date so we don't re-bill the same period
         const nextMonth = new Date(now);
         nextMonth.setMonth(nextMonth.getMonth() + 1);
 
         await supabase
           .from("store_plans")
           .update({
-            last_billed_at: now.toISOString(),
             next_billing_date: nextMonth.toISOString(),
           })
           .eq("id", plan.id);
