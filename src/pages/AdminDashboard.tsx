@@ -1908,26 +1908,32 @@ const AdminDashboard = () => {
                     );
                   })
                 ) : (
-                  <div className="flex flex-col items-center justify-center py-20 text-center animate-fade-in">
-                    <div className="w-16 h-16 rounded-2xl bg-muted/80 flex items-center justify-center mb-4">
-                      {activeTab === "pendente" && <Clock className="h-8 w-8 text-muted-foreground/60" />}
-                      {activeTab === "preparando" && <ChefHat className="h-8 w-8 text-muted-foreground/60" />}
-                      {activeTab === "pronto_para_entrega" && <Package className="h-8 w-8 text-muted-foreground/60" />}
-                      {(activeTab === "saiu_entrega" || activeTab === "em_transito") && <Truck className="h-8 w-8 text-muted-foreground/60" />}
-                      {(activeTab === "entregue" || activeTab === "finalizado") && <CheckCircle2 className="h-8 w-8 text-muted-foreground/60" />}
+                  <div className="flex flex-col items-center justify-center py-24 text-center animate-fade-in">
+                    <div className={`w-20 h-20 rounded-3xl flex items-center justify-center mb-5 ${
+                      activeTab === "pendente" ? "bg-amber-100 dark:bg-amber-500/10" :
+                      activeTab === "preparando" ? "bg-orange-100 dark:bg-orange-500/10" :
+                      activeTab === "pronto_para_entrega" ? "bg-blue-100 dark:bg-blue-500/10" :
+                      activeTab === "delivery" ? "bg-indigo-100 dark:bg-indigo-500/10" :
+                      "bg-emerald-100 dark:bg-emerald-500/10"
+                    }`}>
+                      {activeTab === "pendente" && <Clock className="h-10 w-10 text-amber-400" />}
+                      {activeTab === "preparando" && <ChefHat className="h-10 w-10 text-orange-400" />}
+                      {activeTab === "pronto_para_entrega" && <Package className="h-10 w-10 text-blue-400" />}
+                      {activeTab === "delivery" && <Truck className="h-10 w-10 text-indigo-400" />}
+                      {(activeTab === "entregue" || activeTab === "finalizado") && <CheckCircle2 className="h-10 w-10 text-emerald-400" />}
                     </div>
-                    <p className="text-sm font-bold text-foreground mb-1">
+                    <p className="text-base font-black text-foreground mb-1.5">
                       {activeTab === "pendente" && "Tudo em ordem! 🎉"}
                       {activeTab === "preparando" && "Nenhum pedido em preparo"}
                       {activeTab === "pronto_para_entrega" && "Nenhum pedido pronto"}
-                      {(activeTab === "saiu_entrega" || activeTab === "em_transito") && "Nenhuma entrega em andamento"}
-                      {(activeTab === "entregue" || activeTab === "finalizado") && "Nenhum pedido finalizado"}
+                      {activeTab === "delivery" && "Nenhuma entrega em andamento"}
+                      {(activeTab === "entregue" || activeTab === "finalizado") && "Nenhum pedido aqui"}
                     </p>
-                    <p className="text-xs text-muted-foreground max-w-xs">
-                      {activeTab === "pendente" && "Novos pedidos aparecerão automaticamente."}
-                      {activeTab === "preparando" && "Aceite pedidos pendentes para vê-los aqui."}
-                      {activeTab === "pronto_para_entrega" && "Marque pedidos como prontos."}
-                      {(activeTab === "saiu_entrega" || activeTab === "em_transito") && "Entregas aparecerão aqui."}
+                    <p className="text-sm text-muted-foreground max-w-[240px]">
+                      {activeTab === "pendente" && "Novos pedidos aparecerão automaticamente. Relaxe! 😎"}
+                      {activeTab === "preparando" && "Aceite pedidos pendentes para começar a produzir."}
+                      {activeTab === "pronto_para_entrega" && "Marque pedidos como prontos quando finalizarem."}
+                      {activeTab === "delivery" && "Entregas em andamento aparecerão aqui."}
                       {(activeTab === "entregue" || activeTab === "finalizado") && "Pedidos concluídos aparecerão aqui."}
                     </p>
                   </div>
@@ -1937,8 +1943,8 @@ const AdminDashboard = () => {
               {/* Floating pending badge */}
               {pendingCount > 0 && activeTab !== "pendente" && (
                 <button onClick={() => setActiveTab("pendente")}
-                  className="fixed bottom-24 lg:bottom-6 right-6 bg-amber-400 text-amber-900 font-bold px-4 py-2.5 rounded-xl shadow-lg animate-bounce flex items-center gap-2 text-sm z-30">
-                  <Clock className="h-4 w-4" /> {pendingCount} novo{pendingCount > 1 ? "s" : ""}
+                  className="fixed bottom-24 lg:bottom-6 right-6 bg-amber-400 text-amber-900 font-black px-5 py-3 rounded-2xl shadow-xl animate-bounce flex items-center gap-2 text-sm z-30 ring-4 ring-amber-400/30">
+                  <Bell className="h-4 w-4" /> {pendingCount} novo{pendingCount > 1 ? "s" : ""}!
                 </button>
               )}
             </>
