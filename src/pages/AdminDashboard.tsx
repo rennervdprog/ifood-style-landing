@@ -1687,6 +1687,28 @@ const AdminDashboard = () => {
                           </div>
                         )}
 
+                        {/* Delivery PIN for own delivery (store driver flow) */}
+                        {isOwnDelivery && hasLinkedDrivers && (order as any).delivery_pin && ["saiu_entrega", "em_transito"].includes(order.status) && (
+                          <div className="mx-3 mb-2 bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3 text-center">
+                            <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold mb-1">🔐 PIN de Entrega (cliente confirma)</p>
+                            <p className="text-3xl font-black text-emerald-600 dark:text-emerald-400 tracking-[0.3em]">{(order as any).delivery_pin}</p>
+                            {order.driver_id && (
+                              <p className="text-[10px] text-muted-foreground mt-1">Motoboy: {getDriverName(order.driver_id)}</p>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Delivery confirmed by client */}
+                        {isOwnDelivery && (order as any).delivery_confirmed_by_client && ["entregue", "finalizado"].includes(order.status) && (
+                          <div className="mx-3 mb-2 flex items-center gap-1.5 bg-emerald-500/5 border border-emerald-500/20 rounded-xl px-3 py-2">
+                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                            <span className="text-xs text-emerald-500 font-bold">Cliente confirmou entrega ✅</span>
+                            {order.driver_id && (
+                              <span className="ml-auto text-[10px] text-muted-foreground">{getDriverName(order.driver_id)}</span>
+                            )}
+                          </div>
+                        )}
+
                         {/* Collection Code */}
                         {(order.status === "pronto_para_entrega" || order.status === "saiu_entrega" || order.status === "em_transito") && (order as any).collection_code && !isOwnDelivery && (
                           <div className="mx-3 mb-2 bg-purple-500/5 border border-purple-500/20 rounded-xl p-3 text-center">
