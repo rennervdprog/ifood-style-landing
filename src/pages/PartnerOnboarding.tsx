@@ -39,6 +39,7 @@ const motoboySchema = z.object({
 const categoryLabels: Record<string, string> = {
   lanches: "🍔 Lanches",
   pizzas: "🍕 Pizzas",
+  restaurante: "🍽️ Restaurante / Marmitaria",
   adegas: "🍷 Adegas",
   japonesa: "🍣 Japonesa",
   saudavel: "🥗 Saudável",
