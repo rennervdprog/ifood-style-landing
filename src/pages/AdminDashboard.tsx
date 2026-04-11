@@ -63,12 +63,11 @@ const statusColors: Record<string, { bg: string; text: string; border: string; l
   cancelado: { bg: "bg-red-500/10", text: "text-red-600 dark:text-red-400", border: "border-red-500/30", label: "Cancelado" },
 };
 
-const orderTabs: { status: OrderStatus; label: string; icon: React.ElementType }[] = [
+const orderTabs: { status: OrderStatus | "delivery"; label: string; icon: React.ElementType; mergedStatuses?: OrderStatus[] }[] = [
   { status: "pendente", label: "Novos", icon: Clock },
   { status: "preparando", label: "Preparando", icon: ChefHat },
   { status: "pronto_para_entrega", label: "Pronto", icon: Package },
-  { status: "saiu_entrega", label: "Saiu", icon: Truck },
-  { status: "em_transito", label: "Trânsito", icon: Truck },
+  { status: "delivery" as any, label: "Entregando", icon: Truck, mergedStatuses: ["saiu_entrega", "em_transito"] },
   { status: "entregue", label: "Entregue", icon: CheckCircle2 },
   { status: "finalizado", label: "Finalizados", icon: CheckCircle2 },
 ];
