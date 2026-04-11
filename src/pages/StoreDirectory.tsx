@@ -252,7 +252,7 @@ const StoreDirectory = () => {
 
   const handleCTA = () => navigate("/cadastro-lojista");
   const handleWhatsApp = () =>
-    window.open("https://wa.me/5514998765432?text=Olá! Tenho interesse em cadastrar minha loja na plataforma.", "_blank");
+    window.open("https://wa.me/5514991624997?text=Olá! Tenho interesse em cadastrar minha loja na plataforma.", "_blank");
 
   useEffect(() => {
     document.title = "ItaSuper — Delivery em Itatinga/SP | Peça Agora";
