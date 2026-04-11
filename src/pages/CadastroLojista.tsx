@@ -297,12 +297,15 @@ const CadastroLojista = () => {
                   <p className="text-[10px] font-bold text-emerald-500 mb-1">🎁 7 dias grátis para testar</p>
                   <div className="flex flex-wrap gap-1.5 mt-2">
                     {(isPlatformCity
-                      ? ["R$1/PIX", "R$2/entrega", "Motoboy plataforma", "Fidelidade"]
-                      : ["R$1/PIX", "R$2/entrega", "PIX integrado", "Painel completo"]
+                      ? ["Zero comissão", "Motoboy plataforma", "Fidelidade", "PIX integrado"]
+                      : ["Zero comissão", "PIX integrado", "Painel completo", "Todas as ferramentas"]
                     ).map(tag => (
                       <span key={tag} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{tag}</span>
                     ))}
                   </div>
+                  <p className="text-[10px] text-muted-foreground mt-1.5">
+                    💡 Pequena taxa operacional: R$1 por pedido via PIX • R$2 por entrega realizada
+                  </p>
                 </button>
 
                 {/* Plano Crescimento */}
@@ -369,7 +372,7 @@ const CadastroLojista = () => {
                 {selectedPlan && (
                   <div className="rounded-xl bg-muted/50 p-3 text-xs text-muted-foreground">
                     {selectedPlan === "fixed" ? (
-                      <p><strong className="text-foreground">Essencial:</strong> R$180/mês. R$1 por pedido PIX (dinheiro/cartão não paga). R$2 por entrega (qualquer pagamento). Valores acumulam no painel para repasse. Todas as ferramentas inclusas.</p>
+                      <p><strong className="text-foreground">Essencial:</strong> R$180/mês sem comissão por pedido. Inclui uma pequena taxa operacional de <strong className="text-foreground">R$1 por pedido pago via PIX</strong> (pedidos em dinheiro/cartão não pagam) e <strong className="text-foreground">R$2 por entrega realizada</strong>. Valores acumulam no painel para repasse semanal. Todas as ferramentas inclusas.</p>
                     ) : selectedPlan === "hybrid" ? (
                       <p><strong className="text-foreground">Crescimento:</strong> Mensalidade de R$100 + 2,5% por pedido. PIX integrado com split automático e painel financeiro completo com CRM.</p>
                     ) : (
