@@ -195,8 +195,7 @@ const Index = () => {
           </h1>
 
           <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto mb-8 animate-fade-in leading-relaxed">
-            Cardápio profissional, pedidos organizados e pagamentos automáticos — a partir de <strong className="text-foreground">R$100/mês</strong>.{" "}
-            <strong className="text-primary">7 dias grátis!</strong>
+            Cardápio profissional, pedidos organizados e pagamentos automáticos — <strong className="text-foreground">comece grátis</strong> ou escolha um plano a partir de R$100/mês.
           </p>
 
           <div className="flex flex-col items-center gap-4 animate-fade-in mb-6">
@@ -226,7 +225,7 @@ const Index = () => {
           {[
             { value: "100%", label: "Digital" },
             { value: "0%", label: "Taxa de adesão" },
-            { value: "7", label: "Dias grátis" },
+            { value: "R$0", label: "Para começar" },
           ].map((s) => (
             <div key={s.label}>
               <p className="text-2xl md:text-3xl font-extrabold text-primary">{s.value}</p>
@@ -430,7 +429,7 @@ const Index = () => {
           </h2>
           <p className="text-muted-foreground mb-8 leading-relaxed max-w-lg mx-auto">
             Cadastre-se agora e tenha sua loja online em menos de 5 minutos.
-            <span className="block mt-1 font-semibold text-primary">7 dias grátis — sem cartão de crédito!</span>
+            <span className="block mt-1 font-semibold text-primary">Comece grátis — sem cartão de crédito!</span>
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button size="lg" onClick={handleCTA} className="text-base px-8 py-6 rounded-2xl shadow-lg shadow-primary/20">

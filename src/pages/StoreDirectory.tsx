@@ -313,7 +313,7 @@ const StoreDirectory = () => {
 
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 animate-fade-in leading-relaxed">
             Cardápio profissional, pedidos organizados e pagamentos automáticos.
-            <span className="block mt-2 text-primary font-semibold">A partir de R$ 0/mês. Planos pagos com 7 dias grátis!</span>
+            <span className="block mt-2 text-primary font-semibold">A partir de R$ 0/mês. Comece grátis!</span>
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in">
@@ -466,7 +466,7 @@ const StoreDirectory = () => {
           <div className="flex justify-center mb-14">
             <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-600 border border-emerald-200">
               <Sparkles className="h-3.5 w-3.5" />
-              🎁 7 dias grátis nos planos Essencial e Crescimento!
+              🎁 Plano Comissão grátis para sempre! Planos pagos com 7 dias grátis.
             </div>
           </div>
 
