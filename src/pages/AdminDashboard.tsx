@@ -46,6 +46,7 @@ import StoreDriverManager from "@/components/StoreDriverManager";
 import TrialExpiredGuard from "@/components/TrialExpiredGuard";
 
 type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_entrega" | "em_transito" | "entregue" | "finalizado";
+type OrderTabKey = OrderStatus | "delivery";
 type DashboardTab = "dashboard" | "orders" | "menu" | "addons" | "bordas" | "hours" | "settings" | "finance" | "clients" | "reports" | "subscription" | "loyalty" | "drivers";
 
 const ALERT_SOUND_URL = "https://actions.google.com/sounds/v1/alarms/beep_short.ogg";
@@ -63,12 +64,11 @@ const statusColors: Record<string, { bg: string; text: string; border: string; l
   cancelado: { bg: "bg-red-500/10", text: "text-red-600 dark:text-red-400", border: "border-red-500/30", label: "Cancelado" },
 };
 
-const orderTabs: { status: OrderStatus; label: string; icon: React.ElementType }[] = [
+const orderTabs: { status: OrderStatus | "delivery"; label: string; icon: React.ElementType; mergedStatuses?: OrderStatus[] }[] = [
   { status: "pendente", label: "Novos", icon: Clock },
   { status: "preparando", label: "Preparando", icon: ChefHat },
   { status: "pronto_para_entrega", label: "Pronto", icon: Package },
-  { status: "saiu_entrega", label: "Saiu", icon: Truck },
-  { status: "em_transito", label: "Trânsito", icon: Truck },
+  { status: "delivery" as any, label: "Entregando", icon: Truck, mergedStatuses: ["saiu_entrega", "em_transito"] },
   { status: "entregue", label: "Entregue", icon: CheckCircle2 },
   { status: "finalizado", label: "Finalizados", icon: CheckCircle2 },
 ];
@@ -151,7 +151,7 @@ const AdminDashboard = () => {
 
   const [isOnline, setIsOnline] = useState(true);
   const [realtimeDriversConnected, setRealtimeDriversConnected] = useState(false);
-  const [activeTab, setActiveTab] = useState<OrderStatus>("pendente");
+  const [activeTab, setActiveTab] = useState<OrderTabKey>("pendente");
   const [dashboardTab, setDashboardTab] = useState<DashboardTab>("dashboard");
   const [autoPrint, setAutoPrint] = useState(() => localStorage.getItem("autoPrint") === "true");
   const [soundEnabled, setSoundEnabled] = useState(false);
@@ -665,7 +665,10 @@ const AdminDashboard = () => {
     return Math.round(totalMinutes / delivered.length);
   }, [allOrders]);
 
-  const filteredOrders = (orders?.filter(o => o.status === activeTab) || []).filter(o => {
+  const filteredOrders = (orders?.filter(o => {
+    if (activeTab === "delivery") return o.status === "saiu_entrega" || o.status === "em_transito";
+    return o.status === activeTab;
+  }) || []).filter(o => {
     if (activeTab !== "entregue" || !settlementSearch.trim()) return true;
     const search = settlementSearch.toLowerCase().trim();
     return o.id.slice(0, 8).toLowerCase().includes(search) || (o.driver_id ? getDriverName(o.driver_id).toLowerCase().includes(search) : false) || getClientName(o.client_id).toLowerCase().includes(search);
@@ -1415,24 +1418,73 @@ const AdminDashboard = () => {
           {/* ══════ ORDERS TAB ══════ */}
           {dashboardTab === "orders" && store && (
             <>
+              {/* Quick summary counters */}
+              {(() => {
+                const pendingCount = orders?.filter(o => o.status === "pendente").length || 0;
+                const preparingCount = orders?.filter(o => o.status === "preparando").length || 0;
+                const readyCount = orders?.filter(o => o.status === "pronto_para_entrega").length || 0;
+                const deliveryCount = orders?.filter(o => o.status === "saiu_entrega" || o.status === "em_transito").length || 0;
+                const totalActive = pendingCount + preparingCount + readyCount + deliveryCount;
+                
+                return totalActive > 0 ? (
+                  <div className="px-4 pt-3 pb-1">
+                    <div className="grid grid-cols-4 gap-2">
+                      <button onClick={() => { setActiveTab("pendente"); setBatchSelected(new Set()); }}
+                        className={`relative flex flex-col items-center p-2.5 rounded-xl border transition-all ${
+                          pendingCount > 0 ? "bg-amber-50 dark:bg-amber-500/10 border-amber-300 dark:border-amber-500/30 shadow-sm" : "bg-card border-border"
+                        }`}>
+                        {pendingCount > 0 && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-400 rounded-full animate-ping" />}
+                        <span className={`text-xl font-black ${pendingCount > 0 ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>{pendingCount}</span>
+                        <span className="text-[9px] font-bold text-muted-foreground mt-0.5">Novos</span>
+                      </button>
+                      <button onClick={() => { setActiveTab("preparando"); setBatchSelected(new Set()); }}
+                        className={`flex flex-col items-center p-2.5 rounded-xl border transition-all ${
+                          preparingCount > 0 ? "bg-orange-50 dark:bg-orange-500/10 border-orange-300 dark:border-orange-500/30 shadow-sm" : "bg-card border-border"
+                        }`}>
+                        <span className={`text-xl font-black ${preparingCount > 0 ? "text-orange-600 dark:text-orange-400" : "text-muted-foreground"}`}>{preparingCount}</span>
+                        <span className="text-[9px] font-bold text-muted-foreground mt-0.5">Preparo</span>
+                      </button>
+                      <button onClick={() => { setActiveTab("pronto_para_entrega"); setBatchSelected(new Set()); }}
+                        className={`flex flex-col items-center p-2.5 rounded-xl border transition-all ${
+                          readyCount > 0 ? "bg-blue-50 dark:bg-blue-500/10 border-blue-300 dark:border-blue-500/30 shadow-sm" : "bg-card border-border"
+                        }`}>
+                        <span className={`text-xl font-black ${readyCount > 0 ? "text-blue-600 dark:text-blue-400" : "text-muted-foreground"}`}>{readyCount}</span>
+                        <span className="text-[9px] font-bold text-muted-foreground mt-0.5">Prontos</span>
+                      </button>
+                      <button onClick={() => { setActiveTab("delivery"); setBatchSelected(new Set()); }}
+                        className={`flex flex-col items-center p-2.5 rounded-xl border transition-all ${
+                          deliveryCount > 0 ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-300 dark:border-emerald-500/30 shadow-sm" : "bg-card border-border"
+                        }`}>
+                        <span className={`text-xl font-black ${deliveryCount > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}`}>{deliveryCount}</span>
+                        <span className="text-[9px] font-bold text-muted-foreground mt-0.5">Entrega</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : null;
+              })()}
+
               {/* Order status tabs */}
-              <div className="sticky top-0 z-20 bg-background border-b border-border">
+              <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border">
                 <div className="flex overflow-x-auto gap-1 px-3 py-2 no-scrollbar">
                   {orderTabs.map((tab) => {
-                    const count = orders?.filter(o => o.status === tab.status).length || 0;
+                    const count = tab.mergedStatuses 
+                      ? orders?.filter(o => tab.mergedStatuses!.includes(o.status as OrderStatus)).length || 0
+                      : orders?.filter(o => o.status === tab.status).length || 0;
                     const Icon = tab.icon;
                     const isActive = activeTab === tab.status;
                     return (
-                      <button key={tab.status} onClick={() => { setActiveTab(tab.status); setBatchSelected(new Set()); }}
-                        className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                      <button key={tab.status} onClick={() => { setActiveTab(tab.status as OrderTabKey); setBatchSelected(new Set()); }}
+                        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                           isActive
-                            ? tab.status === "pendente" ? "bg-amber-500/20 text-amber-600 border border-amber-400/40" : "bg-primary text-primary-foreground shadow-sm"
+                            ? tab.status === "pendente" 
+                              ? "bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-400/40 shadow-sm" 
+                              : "bg-primary text-primary-foreground shadow-md"
                             : "text-muted-foreground hover:bg-accent hover:text-foreground"
                         }`}>
-                        <Icon className="h-3 w-3" />
+                        <Icon className={`h-3.5 w-3.5 ${isActive && tab.status === "pendente" ? "animate-pulse" : ""}`} />
                         {tab.label}
                         {count > 0 && (
-                          <span className={`ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-black ${
+                          <span className={`ml-0.5 min-w-[20px] text-center px-1.5 py-0.5 rounded-full text-[10px] font-black ${
                             tab.status === "pendente" ? "bg-amber-400 text-amber-900 animate-pulse" : isActive ? "bg-primary-foreground/20" : "bg-muted text-muted-foreground"
                           }`}>{count}</span>
                         )}
@@ -1856,26 +1908,32 @@ const AdminDashboard = () => {
                     );
                   })
                 ) : (
-                  <div className="flex flex-col items-center justify-center py-20 text-center animate-fade-in">
-                    <div className="w-16 h-16 rounded-2xl bg-muted/80 flex items-center justify-center mb-4">
-                      {activeTab === "pendente" && <Clock className="h-8 w-8 text-muted-foreground/60" />}
-                      {activeTab === "preparando" && <ChefHat className="h-8 w-8 text-muted-foreground/60" />}
-                      {activeTab === "pronto_para_entrega" && <Package className="h-8 w-8 text-muted-foreground/60" />}
-                      {(activeTab === "saiu_entrega" || activeTab === "em_transito") && <Truck className="h-8 w-8 text-muted-foreground/60" />}
-                      {(activeTab === "entregue" || activeTab === "finalizado") && <CheckCircle2 className="h-8 w-8 text-muted-foreground/60" />}
+                  <div className="flex flex-col items-center justify-center py-24 text-center animate-fade-in">
+                    <div className={`w-20 h-20 rounded-3xl flex items-center justify-center mb-5 ${
+                      activeTab === "pendente" ? "bg-amber-100 dark:bg-amber-500/10" :
+                      activeTab === "preparando" ? "bg-orange-100 dark:bg-orange-500/10" :
+                      activeTab === "pronto_para_entrega" ? "bg-blue-100 dark:bg-blue-500/10" :
+                      activeTab === "delivery" ? "bg-indigo-100 dark:bg-indigo-500/10" :
+                      "bg-emerald-100 dark:bg-emerald-500/10"
+                    }`}>
+                      {activeTab === "pendente" && <Clock className="h-10 w-10 text-amber-400" />}
+                      {activeTab === "preparando" && <ChefHat className="h-10 w-10 text-orange-400" />}
+                      {activeTab === "pronto_para_entrega" && <Package className="h-10 w-10 text-blue-400" />}
+                      {activeTab === "delivery" && <Truck className="h-10 w-10 text-indigo-400" />}
+                      {(activeTab === "entregue" || activeTab === "finalizado") && <CheckCircle2 className="h-10 w-10 text-emerald-400" />}
                     </div>
-                    <p className="text-sm font-bold text-foreground mb-1">
+                    <p className="text-base font-black text-foreground mb-1.5">
                       {activeTab === "pendente" && "Tudo em ordem! 🎉"}
                       {activeTab === "preparando" && "Nenhum pedido em preparo"}
                       {activeTab === "pronto_para_entrega" && "Nenhum pedido pronto"}
-                      {(activeTab === "saiu_entrega" || activeTab === "em_transito") && "Nenhuma entrega em andamento"}
-                      {(activeTab === "entregue" || activeTab === "finalizado") && "Nenhum pedido finalizado"}
+                      {activeTab === "delivery" && "Nenhuma entrega em andamento"}
+                      {(activeTab === "entregue" || activeTab === "finalizado") && "Nenhum pedido aqui"}
                     </p>
-                    <p className="text-xs text-muted-foreground max-w-xs">
-                      {activeTab === "pendente" && "Novos pedidos aparecerão automaticamente."}
-                      {activeTab === "preparando" && "Aceite pedidos pendentes para vê-los aqui."}
-                      {activeTab === "pronto_para_entrega" && "Marque pedidos como prontos."}
-                      {(activeTab === "saiu_entrega" || activeTab === "em_transito") && "Entregas aparecerão aqui."}
+                    <p className="text-sm text-muted-foreground max-w-[240px]">
+                      {activeTab === "pendente" && "Novos pedidos aparecerão automaticamente. Relaxe! 😎"}
+                      {activeTab === "preparando" && "Aceite pedidos pendentes para começar a produzir."}
+                      {activeTab === "pronto_para_entrega" && "Marque pedidos como prontos quando finalizarem."}
+                      {activeTab === "delivery" && "Entregas em andamento aparecerão aqui."}
                       {(activeTab === "entregue" || activeTab === "finalizado") && "Pedidos concluídos aparecerão aqui."}
                     </p>
                   </div>
@@ -1885,8 +1943,8 @@ const AdminDashboard = () => {
               {/* Floating pending badge */}
               {pendingCount > 0 && activeTab !== "pendente" && (
                 <button onClick={() => setActiveTab("pendente")}
-                  className="fixed bottom-24 lg:bottom-6 right-6 bg-amber-400 text-amber-900 font-bold px-4 py-2.5 rounded-xl shadow-lg animate-bounce flex items-center gap-2 text-sm z-30">
-                  <Clock className="h-4 w-4" /> {pendingCount} novo{pendingCount > 1 ? "s" : ""}
+                  className="fixed bottom-24 lg:bottom-6 right-6 bg-amber-400 text-amber-900 font-black px-5 py-3 rounded-2xl shadow-xl animate-bounce flex items-center gap-2 text-sm z-30 ring-4 ring-amber-400/30">
+                  <Bell className="h-4 w-4" /> {pendingCount} novo{pendingCount > 1 ? "s" : ""}!
                 </button>
               )}
             </>
