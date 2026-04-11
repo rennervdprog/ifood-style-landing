@@ -15,7 +15,7 @@ const TermosDeUso = () => {
 
       <div className="flex-1 px-4 py-6 max-w-2xl mx-auto">
         <div className="prose prose-sm dark:prose-invert max-w-none space-y-6">
-          <p className="text-xs text-muted-foreground">Última atualização: 09 de Abril de 2026 — Versão 2.0</p>
+          <p className="text-xs text-muted-foreground">Última atualização: 11 de Abril de 2026 — Versão 2.1</p>
 
           <h2 className="text-lg font-bold text-foreground">1. Identificação da Plataforma</h2>
           <p className="text-sm text-muted-foreground">
