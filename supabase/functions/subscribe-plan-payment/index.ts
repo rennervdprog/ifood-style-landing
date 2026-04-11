@@ -135,14 +135,26 @@ Deno.serve(async (req) => {
     // Find or create customer
     let customerId: string | null = null;
     const customerEmail = profile?.email || userData.user.email || `lojista-${userId.substring(0, 8)}@itasuper.com`;
+    const isSandbox = !ASAAS_API_KEY.startsWith("$aact_");
 
-    if (cleanCpf.length >= 11) {
-      const searchRes = await fetch(`${baseUrl}/customers?cpfCnpj=${cleanCpf}`, {
+    // Use a valid CPF for sandbox if needed
+    let effectiveCpf = cleanCpf;
+    if (isSandbox && cleanCpf.length < 11) {
+      // Generate deterministic sandbox CPF based on userId
+      effectiveCpf = "52998224725"; // Valid sandbox CPF
+      console.log("[Asaas Sandbox] Using sandbox CPF for customer creation");
+    }
+
+    console.log(`[Asaas] Mode: ${isSandbox ? "SANDBOX" : "PRODUCTION"}, creating subscription for ${store.name}`);
+
+    if (effectiveCpf.length >= 11) {
+      const searchRes = await fetch(`${baseUrl}/customers?cpfCnpj=${effectiveCpf}`, {
         headers: { "access_token": ASAAS_API_KEY },
       });
       const searchData = await searchRes.json();
       if (searchData.data?.length > 0) {
         customerId = searchData.data[0].id;
+        console.log(`[Asaas] Found existing customer: ${customerId}`);
       }
     }
 
@@ -151,10 +163,11 @@ Deno.serve(async (req) => {
         name: profile?.full_name || "Lojista",
         email: customerEmail,
       };
-      if (cleanCpf.length >= 11) {
-        customerBody.cpfCnpj = cleanCpf;
+      if (effectiveCpf.length >= 11) {
+        customerBody.cpfCnpj = effectiveCpf;
       }
 
+      console.log(`[Asaas] Creating customer for subscription: ${customerBody.name}`);
       const createRes = await fetch(`${baseUrl}/customers`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "access_token": ASAAS_API_KEY },
@@ -162,10 +175,12 @@ Deno.serve(async (req) => {
       });
       const createData = await createRes.json();
       if (!createRes.ok) {
-        console.error("Asaas create customer error:", JSON.stringify(createData));
-        return json({ error: "Erro ao criar cliente no gateway." }, 500);
+        console.error("[Asaas] Create customer error:", JSON.stringify(createData));
+        const errMsg = createData?.errors?.[0]?.description || "Erro ao criar cliente no gateway.";
+        return json({ error: errMsg, asaas_details: createData }, 500);
       }
       customerId = createData.id;
+      console.log(`[Asaas] Customer created: ${customerId}`);
     }
 
     // Create PIX payment
