@@ -652,6 +652,32 @@ const DriverDashboard = () => {
         </div>
       </div>
     );
+  // Store motoboy waiting for store owner to link them
+  if (isStoreMotoboyWaiting) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center text-center px-6">
+        <div className="w-20 h-20 bg-amber-500/10 rounded-3xl flex items-center justify-center mb-5">
+          <Store className="h-10 w-10 text-amber-500" />
+        </div>
+        <h1 className="text-xl font-black text-foreground mb-2">Aguardando Vinculação 🔗</h1>
+        <p className="text-sm text-muted-foreground max-w-xs mb-3">
+          Sua conta foi criada com sucesso! Agora peça ao <span className="font-bold text-foreground">dono da loja</span> para te adicionar como motoboy próprio no painel dele.
+        </p>
+        <div className="bg-primary/5 border border-primary/10 rounded-2xl p-4 max-w-xs mb-6">
+          <p className="text-xs text-muted-foreground">
+            📲 Assim que o lojista vincular seu cadastro, esta tela será atualizada automaticamente.
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <button onClick={() => navigate("/")} className="bg-muted text-foreground font-bold px-5 py-3 rounded-xl text-sm">
+            Voltar à Home
+          </button>
+          <button onClick={() => window.location.reload()} className="bg-primary text-primary-foreground font-bold px-5 py-3 rounded-xl text-sm">
+            Verificar Status
+          </button>
+        </div>
+      </div>
+    );
   }
 
   const driverFirstName = (driverProfile as any)?.full_name?.split(" ")[0] || "Entregador";
