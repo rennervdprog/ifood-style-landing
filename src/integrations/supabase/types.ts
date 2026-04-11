@@ -1995,6 +1995,7 @@ export type Database = {
         | "churrasco"
         | "farmacias"
         | "docerias"
+        | "restaurante"
       store_plan_type: "fixed" | "hybrid" | "commission_only"
       store_status: "analise" | "ativo" | "bloqueado"
     }
@@ -2161,6 +2162,7 @@ export const Constants = {
         "churrasco",
         "farmacias",
         "docerias",
+        "restaurante",
       ],
       store_plan_type: ["fixed", "hybrid", "commission_only"],
       store_status: ["analise", "ativo", "bloqueado"],
