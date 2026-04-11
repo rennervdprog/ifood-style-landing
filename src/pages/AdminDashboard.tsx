@@ -1522,7 +1522,7 @@ const AdminDashboard = () => {
                   </div>
                 ) : filteredOrders.length > 0 ? (
                   filteredOrders.map((order: any, index: number) => {
-                    const action = getMainAction(order.status);
+                    const action = getMainAction(order.status, order);
                     const isAddressExpanded = expandedAddresses.has(order.id);
                     const sc = statusColors[order.status] || statusColors.pendente;
                     
