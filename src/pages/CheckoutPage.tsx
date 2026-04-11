@@ -123,8 +123,8 @@ const CheckoutPage = () => {
   const storeOwnFee = (storeData as any)?.own_delivery_fee || 0;
   const isOwnDelivery = storeDeliveryMode === "own";
   const config = deliveryFeeConfig || DEFAULT_DELIVERY_FEE_CONFIG;
-  // For fixed Itatinga plan with own delivery: add platform split (R$2) on top of store's own fee
-  const ownDeliveryFeeWithSplit = storePlan.isItatingaFixed && isOwnDelivery
+  // For own delivery stores: always add platform split (R$2) on top of store's own fee
+  const ownDeliveryFeeWithSplit = isOwnDelivery && storePlan.platformDeliverySplit > 0
     ? storeOwnFee + storePlan.platformDeliverySplit
     : storeOwnFee;
   const activeDeliveryFee = isOwnDelivery ? ownDeliveryFeeWithSplit : (calculatedDeliveryFee !== null ? calculatedDeliveryFee : config.city_fee);
@@ -138,7 +138,7 @@ const CheckoutPage = () => {
     if (isOwnDelivery) {
       setCalculatedDeliveryFee(null);
       const totalOwnFee = ownDeliveryFeeWithSplit;
-      if (storePlan.isItatingaFixed && storePlan.platformDeliverySplit > 0) {
+      if (storePlan.platformDeliverySplit > 0) {
         setFeeBreakdown(`Entrega loja: R$ ${storeOwnFee.toFixed(2)} + Taxa plataforma: R$ ${storePlan.platformDeliverySplit.toFixed(2)}`);
       } else {
         setFeeBreakdown(`Taxa fixa da loja: R$ ${storeOwnFee.toFixed(2)}`);
