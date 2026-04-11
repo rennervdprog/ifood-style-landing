@@ -677,8 +677,8 @@ const AdminDashboard = () => {
       case "preparando": return { label: "MARCAR COMO PRONTO", next: "pronto_para_entrega" as OrderStatus, emoji: "🔔" };
       case "pronto_para_entrega":
         if (isOwnDelivery) {
-          // If store has linked drivers, let them accept via their app
-          if (hasLinkedDrivers) return null;
+          // If store has linked drivers OR a driver already accepted, let the driver control
+          if (hasLinkedDrivers || order?.driver_id) return null;
           // No linked drivers — lojista controls manually
           return { label: "SAIU PARA ENTREGA", next: "saiu_entrega" as OrderStatus, emoji: "🛵" };
         }
