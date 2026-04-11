@@ -50,7 +50,7 @@ const PoliticaPrivacidade = () => {
             <li>Endereço do estabelecimento (CEP, rua, bairro, cidade, estado)</li>
             <li>Dados financeiros: tipo e chave PIX para recebimento de pagamentos</li>
             <li>Nome, categoria e logotipo da loja</li>
-            <li>Plano contratado (Essencial, Crescimento ou Comissão)</li>
+            <li>Plano contratado (Essencial R$180/mês, Crescimento R$100/mês + 2,5%, ou Comissão 5%)</li>
             <li>Dados de subconta de pagamento (Asaas/Mercado Pago) para processamento de transações</li>
             <li>Configurações de horário de funcionamento</li>
           </ul>
