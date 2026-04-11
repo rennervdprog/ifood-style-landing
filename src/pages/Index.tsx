@@ -80,9 +80,9 @@ const features = [
 ];
 
 const plans = [
-  { name: "Comissão", price: "R$0", sub: "/mês", desc: "5% por pedido", icon: Rocket, tags: ["Sem mensalidade", "Ideal para começar"], popular: false },
-  { name: "Crescimento", price: "R$100", sub: "/mês", desc: "+ 2,5% por pedido", icon: TrendingUp, tags: ["Comissão reduzida", "Relatórios avançados", "Destaque na vitrine"], popular: true },
-  { name: "Essencial", price: "R$180", sub: "/mês", desc: "0% de comissão", icon: Crown, tags: ["Zero comissão", "Suporte VIP", "Lucro máximo"], popular: false },
+  { name: "Comissão", price: "R$0", sub: "/mês", desc: "5% por pedido", icon: Rocket, tags: ["Sem mensalidade"], subtitle: "Teste grátis, pague só quando vender", popular: false },
+  { name: "Crescimento", price: "R$100", sub: "/mês", desc: "+ 2,5% por pedido", icon: TrendingUp, tags: ["Relatórios avançados", "Destaque na vitrine", "Suporte prioritário"], subtitle: "Menos comissão + ferramentas extras", popular: true },
+  { name: "Essencial", price: "R$180", sub: "/mês", desc: "0% de comissão", icon: Crown, tags: ["Zero comissão", "Suporte VIP", "Prioridade em novidades", "Lucro máximo"], subtitle: "100% do pedido é seu. Lucro total.", popular: false },
 ];
 
 const testimonials = [
@@ -329,7 +329,8 @@ const Index = () => {
                     <span className="text-3xl font-extrabold text-foreground">{plan.price}</span>
                     <span className="text-sm text-muted-foreground">{plan.sub}</span>
                   </div>
-                  <p className="text-sm font-semibold text-primary mb-4">{plan.desc}</p>
+                  <p className="text-sm font-semibold text-primary mb-2">{plan.desc}</p>
+                  <p className="text-xs text-muted-foreground mb-4">{plan.subtitle}</p>
                   <div className="flex flex-wrap justify-center gap-1.5">
                     {plan.tags.map(tag => (
                       <span key={tag} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{tag}</span>
