@@ -165,6 +165,8 @@ const AdminDashboard = () => {
   const [showDelayedPanel, setShowDelayedPanel] = useState(false);
   const [showMoreSheet, setShowMoreSheet] = useState(false);
   const [selectedReportPeriod, setSelectedReportPeriod] = useState(30);
+  const [batchSelected, setBatchSelected] = useState<Set<string>>(new Set());
+  const [batchDispatching, setBatchDispatching] = useState(false);
 
   const prevPendingCountRef = useRef(0);
 
