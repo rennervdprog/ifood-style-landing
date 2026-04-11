@@ -42,6 +42,7 @@ import { sendPushNotification } from "@/lib/firebase";
 import { addMoney, averageMoney, formatCurrency, sumMoney } from "@/lib/utils";
 import ProductTour, { lojistaTourSteps } from "@/components/ProductTour";
 import { useStorePlan } from "@/hooks/useStorePlan";
+import StoreDriverManager from "@/components/StoreDriverManager";
 import TrialExpiredGuard from "@/components/TrialExpiredGuard";
 
 type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_entrega" | "em_transito" | "entregue" | "finalizado";
