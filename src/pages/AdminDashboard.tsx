@@ -295,7 +295,30 @@ const AdminDashboard = () => {
     enabled: driverIds.length > 0,
   });
 
-  const getDriverName = (driverId: string) => driverProfiles?.find((dr: any) => dr.user_id === driverId)?.name || "Entregador";
+  // Fetch store drivers list for own-delivery stores
+  const { data: linkedStoreDrivers } = useQuery({
+    queryKey: ["store-drivers-list", store?.id],
+    queryFn: async () => {
+      const { data: sdLinks } = await supabase.from("store_drivers").select("driver_user_id").eq("store_id", store!.id);
+      if (!sdLinks?.length) return [];
+      const userIds = sdLinks.map(d => d.driver_user_id);
+      const { data: profiles } = await supabase.from("profiles").select("user_id, full_name, phone, whatsapp_number").in("user_id", userIds);
+      return profiles || [];
+    },
+    enabled: !!store && (store as any)?.delivery_mode === "own",
+  });
+
+  const getDriverName = (driverId: string) => {
+    // First try drivers table
+    const fromDrivers = driverProfiles?.find((dr: any) => dr.user_id === driverId);
+    if (fromDrivers?.name) return fromDrivers.name;
+    // Then try linked store drivers (profiles)
+    const fromLinked = linkedStoreDrivers?.find((p: any) => p.user_id === driverId);
+    if (fromLinked?.full_name) return fromLinked.full_name;
+    return "Entregador";
+  };
+
+  const isStoreDriver = (driverId: string) => linkedStoreDrivers?.some((p: any) => p.user_id === driverId) ?? false;
 
   const clientIds = [...new Set(orders?.map(o => o.client_id) || [])];
   const { data: clientProfiles } = useQuery({
