@@ -708,7 +708,9 @@ const DriverDashboard = () => {
       {/* ═══════════ TAB: ENTREGAS ═══════════ */}
       {activeTab === "entregas" && (
         <>
-          {!isOnline ? (
+          {isStoreDriver ? (
+            <StoreDriverView linkedStoreIds={linkedStoreIds} />
+          ) : !isOnline ? (
             <EmptyState
               icon={Bike}
               title="Você está offline"
