@@ -80,9 +80,9 @@ const features = [
 ];
 
 const plans = [
-  { name: "Comissão", price: "R$0", sub: "/mês", desc: "5% por pedido", icon: Rocket, tags: ["Sem mensalidade", "PIX integrado", "Ideal para testar"], popular: false },
-  { name: "Crescimento", price: "R$100", sub: "/mês", desc: "+ 2,5% por pedido", icon: TrendingUp, tags: ["PIX integrado", "CRM completo", "Menor comissão"], popular: true },
-  { name: "Essencial", price: "R$180", sub: "/mês", desc: "0% de comissão", icon: Crown, tags: ["Zero comissão", "Lucro máximo", "Alto volume"], popular: false },
+  { name: "Comissão", price: "R$0", sub: "/mês", desc: "5% por pedido", icon: Rocket, tags: ["Sem mensalidade", "Ideal para começar"], popular: false },
+  { name: "Crescimento", price: "R$100", sub: "/mês", desc: "+ 2,5% por pedido", icon: TrendingUp, tags: ["Comissão reduzida", "Relatórios avançados", "Destaque na vitrine"], popular: true },
+  { name: "Essencial", price: "R$180", sub: "/mês", desc: "0% de comissão", icon: Crown, tags: ["Zero comissão", "Suporte VIP", "Lucro máximo"], popular: false },
 ];
 
 const testimonials = [
