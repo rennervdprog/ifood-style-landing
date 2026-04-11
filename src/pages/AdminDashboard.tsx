@@ -1871,6 +1871,7 @@ const AdminDashboard = () => {
                   </p>
                 </div>
               )}
+              {dashboardTab === "drivers" && store && <StoreDriverManager storeId={store.id} />}
               {dashboardTab === "reports" && (
                 <div className="space-y-6">
                   <h3 className="text-lg font-bold text-foreground">Relatórios Avançados</h3>
