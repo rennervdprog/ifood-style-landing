@@ -72,6 +72,19 @@ const RoleGuard = ({ allowedRoles, redirectTo, children, requireApproval = false
         if (driver) {
           resolvedRole = "motoboy";
           resolvedApproved = Boolean((driver as any).is_active);
+        } else {
+          // Check if user is a store-linked driver
+          const { data: storeDriver } = await supabase
+            .from("store_drivers")
+            .select("id")
+            .eq("driver_user_id", user.id)
+            .limit(1)
+            .maybeSingle();
+
+          if (storeDriver) {
+            resolvedRole = "motoboy";
+            resolvedApproved = true; // Store drivers are approved by the store owner
+          }
         }
       }
 
