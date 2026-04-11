@@ -1459,8 +1459,8 @@ const AdminDashboard = () => {
                 </div>
               )}
 
-              {/* Batch dispatch bar (own delivery + pronto_para_entrega) */}
-              {isOwnDelivery && activeTab === "pronto_para_entrega" && (filteredOrders.length > 0) && (
+              {/* Batch dispatch bar (own delivery WITHOUT linked drivers + pronto_para_entrega) */}
+              {isOwnDelivery && !hasLinkedDrivers && !driversLoading && activeTab === "pronto_para_entrega" && (filteredOrders.length > 0) && (
                 <div className="px-4 pt-3">
                   <div className="flex items-center gap-2 bg-blue-500/5 border border-blue-500/20 rounded-xl p-3">
                     <Truck className="h-4 w-4 text-blue-500 shrink-0" />
@@ -1545,7 +1545,7 @@ const AdminDashboard = () => {
                         {/* Status bar with wait timer */}
                         <div className={`px-3 py-1.5 ${sc.bg} flex items-center justify-between`}>
                           <div className="flex items-center gap-2">
-                            {isOwnDelivery && order.status === "pronto_para_entrega" && (
+                            {isOwnDelivery && !hasLinkedDrivers && !driversLoading && order.status === "pronto_para_entrega" && (
                               <button onClick={() => toggleBatchOrder(order.id)}
                                 className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${
                                   batchSelected.has(order.id) ? "bg-blue-500 border-blue-500 text-white" : "border-muted-foreground/40 hover:border-blue-400"
