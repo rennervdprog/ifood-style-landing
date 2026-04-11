@@ -1501,12 +1501,21 @@ const AdminDashboard = () => {
                       <div key={order.id}
                         style={{ animationDelay: `${index * 50}ms` }}
                         className={`bg-card rounded-2xl overflow-hidden border transition-all duration-300 animate-fade-in ${
+                          batchSelected.has(order.id) ? "border-blue-500 ring-2 ring-blue-500/30" :
                           isDelayed ? "border-destructive/50 shadow-[0_0_12px_-4px] shadow-destructive/20" :
                           order.status === "pendente" ? "border-amber-400/40 shadow-amber-400/5 animate-pulse-border" : "border-border"
                         } hover:shadow-md`}>
                         {/* Status bar with wait timer */}
                         <div className={`px-3 py-1.5 ${sc.bg} flex items-center justify-between`}>
                           <div className="flex items-center gap-2">
+                            {isOwnDelivery && order.status === "pronto_para_entrega" && (
+                              <button onClick={() => toggleBatchOrder(order.id)}
+                                className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${
+                                  batchSelected.has(order.id) ? "bg-blue-500 border-blue-500 text-white" : "border-muted-foreground/40 hover:border-blue-400"
+                                }`}>
+                                {batchSelected.has(order.id) && <CheckCircle2 className="h-3.5 w-3.5" />}
+                              </button>
+                            )}
                             <span className={`text-[10px] font-bold uppercase ${sc.text}`}>{sc.label}</span>
                             {isDelayed && (
                               <span className="flex items-center gap-1 text-[10px] font-bold text-destructive bg-destructive/10 px-1.5 py-0.5 rounded-full">
