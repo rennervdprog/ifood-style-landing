@@ -9,6 +9,7 @@ import { Plus, Store, Eye, Trash2, Loader2 } from "lucide-react";
 const CATEGORIES = [
   { value: "lanches", label: "🍔 Lanches", emoji: "🍔" },
   { value: "pizzas", label: "🍕 Pizzas", emoji: "🍕" },
+  { value: "restaurante", label: "🍽️ Restaurante", emoji: "🍽️" },
   { value: "adegas", label: "🍷 Adegas", emoji: "🍷" },
   { value: "japonesa", label: "🍣 Japonesa", emoji: "🍣" },
   { value: "saudavel", label: "🥗 Saudável", emoji: "🥗" },

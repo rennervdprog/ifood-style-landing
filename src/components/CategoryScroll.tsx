@@ -1,10 +1,11 @@
 import { memo, useCallback } from "react";
-import { Pizza, Beef, Beer, Utensils, Fish, IceCream, Coffee, Flame, Pill, Cake } from "lucide-react";
+import { Pizza, Beef, Beer, Utensils, Fish, IceCream, Coffee, Flame, Pill, Cake, ChefHat } from "lucide-react";
 
 const categories = [
   { icon: Utensils, label: "Todos", value: "all" },
   { icon: Beef, label: "Lanches", value: "lanches" },
   { icon: Pizza, label: "Pizzas", value: "pizzas" },
+  { icon: ChefHat, label: "Restaurante", value: "restaurante" },
   { icon: Beer, label: "Adegas", value: "adegas" },
   { icon: Fish, label: "Japonesa", value: "japonesa" },
   { icon: IceCream, label: "Doces", value: "sobremesas" },
