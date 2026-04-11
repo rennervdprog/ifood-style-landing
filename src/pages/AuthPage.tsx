@@ -80,6 +80,29 @@ const AuthPage = () => {
           localStorage.removeItem(REMEMBER_KEY);
         }
         toast.success("Login realizado com sucesso!");
+        
+        // Check if user is an unapproved motoboy — force them to /entregador
+        const { data: { user: loggedUser } } = await supabase.auth.getUser();
+        if (loggedUser) {
+          const { data: prof } = await supabase
+            .from("profiles")
+            .select("role, is_approved")
+            .eq("user_id", loggedUser.id)
+            .maybeSingle();
+          if (prof?.role === "motoboy" && !prof?.is_approved) {
+            // Check if store driver (auto-approved)
+            const { data: sd } = await supabase
+              .from("store_drivers")
+              .select("id")
+              .eq("driver_user_id", loggedUser.id)
+              .limit(1)
+              .maybeSingle();
+            if (!sd) {
+              navigate("/entregador", { replace: true });
+              return;
+            }
+          }
+        }
         navigate(from, { replace: true });
       } else if (mode === "signup") {
         const { data: signUpData, error } = await supabase.auth.signUp({

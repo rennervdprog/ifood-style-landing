@@ -267,11 +267,18 @@ const StoreDirectory = () => {
         const { data: adminRole } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
         if (cancelled) return;
         if (adminRole) { setPartnerRole(null); setRoleChecked(true); return; }
-        const { data: profile } = await supabase.from("profiles").select("role").eq("user_id", user.id).maybeSingle();
+        const { data: profile } = await supabase.from("profiles").select("role, is_approved").eq("user_id", user.id).maybeSingle();
         if (cancelled) return;
         if (profile?.role === "lojista") { navigate("/admin", { replace: true }); return; }
-        if (profile?.role === "motoboy") { setPartnerRole(profile.role); }
-        else { setPartnerRole(null); }
+        if (profile?.role === "motoboy") {
+          // If unapproved, redirect to /entregador (approval screen)
+          if (!profile?.is_approved) {
+            // Check if store driver (auto-approved)
+            const { data: sd } = await supabase.from("store_drivers").select("id").eq("driver_user_id", user.id).limit(1).maybeSingle();
+            if (!sd) { navigate("/entregador", { replace: true }); return; }
+          }
+          setPartnerRole(profile.role);
+        }
       } catch (e) { console.error("StoreDirectory role check error:", e); }
       if (!cancelled) setRoleChecked(true);
     };
