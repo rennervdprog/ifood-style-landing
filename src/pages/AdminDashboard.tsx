@@ -669,15 +669,22 @@ const AdminDashboard = () => {
 
   const isOwnDelivery = (store as any)?.delivery_mode === "own";
 
-  const getMainAction = (status: OrderStatus): { label: string; next: OrderStatus; emoji: string } | null => {
+  const hasLinkedDrivers = (linkedStoreDrivers?.length || 0) > 0;
+
+  const getMainAction = (status: OrderStatus, order?: any): { label: string; next: OrderStatus; emoji: string } | null => {
     switch (status) {
       case "pendente": return { label: "ACEITAR PEDIDO", next: "preparando", emoji: "✓" };
       case "preparando": return { label: "MARCAR COMO PRONTO", next: "pronto_para_entrega" as OrderStatus, emoji: "🔔" };
       case "pronto_para_entrega":
-        if (isOwnDelivery) return { label: "SAIU PARA ENTREGA", next: "saiu_entrega" as OrderStatus, emoji: "🛵" };
+        if (isOwnDelivery) {
+          // If store has linked drivers, let them accept via their app
+          if (hasLinkedDrivers) return null;
+          // No linked drivers — lojista controls manually
+          return { label: "SAIU PARA ENTREGA", next: "saiu_entrega" as OrderStatus, emoji: "🛵" };
+        }
         return null;
       case "saiu_entrega":
-        if (isOwnDelivery) return { label: "MARCAR COMO ENTREGUE", next: "finalizado" as OrderStatus, emoji: "✅" };
+        if (isOwnDelivery && !hasLinkedDrivers) return { label: "MARCAR COMO ENTREGUE", next: "finalizado" as OrderStatus, emoji: "✅" };
         return null;
       default: return null;
     }
