@@ -45,7 +45,8 @@ import { useStorePlan } from "@/hooks/useStorePlan";
 import StoreDriverManager from "@/components/StoreDriverManager";
 import TrialExpiredGuard from "@/components/TrialExpiredGuard";
 
-type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_entrega" | "em_transito" | "entregue" | "finalizado" | "delivery";
+type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_entrega" | "em_transito" | "entregue" | "finalizado";
+type OrderTabKey = OrderStatus | "delivery";
 type DashboardTab = "dashboard" | "orders" | "menu" | "addons" | "bordas" | "hours" | "settings" | "finance" | "clients" | "reports" | "subscription" | "loyalty" | "drivers";
 
 const ALERT_SOUND_URL = "https://actions.google.com/sounds/v1/alarms/beep_short.ogg";
