@@ -8,7 +8,7 @@ import confetti from "canvas-confetti";
 import {
   Bike, MapPin, Navigation, KeyRound, CheckCircle2, Package,
   Store, ChevronRight, Route, Clock, User, Phone, ArrowRight,
-  Loader2, ShieldCheck, Zap
+  Loader2, Zap
 } from "lucide-react";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import OrderChat from "@/components/OrderChat";
@@ -104,9 +104,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [pinInputs, setPinInputs] = useState<Record<string, string>>({});
-  const [collectionInputs, setCollectionInputs] = useState<Record<string, string>>({});
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
-  const [collectingId, setCollectingId] = useState<string | null>(null);
   const [useOptimized, setUseOptimized] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [activeStoreId, setActiveStoreId] = useState<string | null>(null);
@@ -252,19 +250,33 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     queryClient.invalidateQueries({ queryKey: ["store-driver-my-deliveries"] });
   };
 
-  const validateCollection = async (orderId: string) => {
-    const code = collectionInputs[orderId];
-    if (!code || code.length !== 4) { toast.error("Digite o código de 4 dígitos."); return; }
-    setCollectingId(orderId);
-    const { error } = await supabase.rpc("driver_validate_collection" as any, { _order_id: orderId, _code: code });
+  const [departingId, setDepartingId] = useState<string | null>(null);
+
+  const departForDelivery = async (orderId: string) => {
+    setDepartingId(orderId);
+    const { error } = await supabase
+      .from("orders")
+      .update({ status: "saiu_entrega" as any })
+      .eq("id", orderId);
     if (error) {
-      toast.error(error.message || "Código inválido.");
+      toast.error("Erro ao atualizar status.");
     } else {
-      toast.success("✅ Coleta validada!");
-      setCollectionInputs((prev) => ({ ...prev, [orderId]: "" }));
+      toast.success("🚀 Saiu para entrega!");
       queryClient.invalidateQueries({ queryKey: ["store-driver-my-deliveries"] });
     }
-    setCollectingId(null);
+    setDepartingId(null);
+  };
+
+  const departAll = async () => {
+    const readyOrders = filteredDeliveries.filter((o: any) => o.status === "pronto_para_entrega");
+    if (!readyOrders.length) return;
+    setDepartingId("all");
+    for (const order of readyOrders) {
+      await supabase.from("orders").update({ status: "saiu_entrega" as any }).eq("id", order.id);
+    }
+    toast.success(`🚀 ${readyOrders.length} pedido(s) saíram para entrega!`);
+    queryClient.invalidateQueries({ queryKey: ["store-driver-my-deliveries"] });
+    setDepartingId(null);
   };
 
   const finishDelivery = async (orderId: string) => {
@@ -370,13 +382,24 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       {/* ═══ ACTIVE ROUTE ═══ */}
       {hasActiveDeliveries && (
         <div className="space-y-3">
-          <div className="flex items-center gap-2 px-1">
-            <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Route className="h-3.5 w-3.5 text-primary" />
+          <div className="flex items-center justify-between px-1">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Route className="h-3.5 w-3.5 text-primary" />
+              </div>
+              <h3 className="text-sm font-bold text-foreground">
+                Sua Rota ({filteredDeliveries.length} {filteredDeliveries.length === 1 ? "entrega" : "entregas"})
+              </h3>
             </div>
-            <h3 className="text-sm font-bold text-foreground">
-              Sua Rota ({filteredDeliveries.length} {filteredDeliveries.length === 1 ? "entrega" : "entregas"})
-            </h3>
+            {filteredDeliveries.some((o: any) => o.status === "pronto_para_entrega") && (
+              <button
+                onClick={departAll}
+                disabled={departingId === "all"}
+                className="bg-amber-500 text-white px-3 py-1.5 rounded-xl text-[11px] font-bold flex items-center gap-1 active:scale-[0.98] transition-all disabled:opacity-50"
+              >
+                {departingId === "all" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Navigation className="h-3 w-3" />} Sair p/ Entrega
+              </button>
+            )}
           </div>
 
           {filteredDeliveries.map((order: any, index: number) => {
@@ -384,8 +407,8 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
             const contact = getContact(order.client_id);
             const contactPhone = (contact as any)?.whatsapp_number || (contact as any)?.phone || "";
             const contactName = (contact as any)?.full_name || "Cliente";
-            const needsCollection = order.status === "pronto_para_entrega" && !order.collection_validated;
-            const inDelivery = order.collection_validated || order.status === "saiu_entrega" || order.status === "em_transito";
+            const readyToDepart = order.status === "pronto_para_entrega";
+            const inDelivery = order.status === "saiu_entrega" || order.status === "em_transito";
 
             return (
               <div key={order.id} className="bg-card border border-border rounded-2xl overflow-hidden">
@@ -394,7 +417,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                   className="w-full flex items-center gap-3 px-4 py-3 text-left"
                 >
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black ${
-                    inDelivery ? "bg-green-500 text-white" : "bg-primary/10 text-primary"
+                    inDelivery ? "bg-green-500 text-white" : readyToDepart ? "bg-amber-500/10 text-amber-500" : "bg-primary/10 text-primary"
                   }`}>
                     {index + 1}
                   </div>
@@ -408,9 +431,9 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                     </p>
                   </div>
                   <div className={`px-2 py-1 rounded-lg text-[10px] font-bold ${
-                    needsCollection ? "bg-amber-500/10 text-amber-500" : inDelivery ? "bg-green-500/10 text-green-500" : "bg-muted text-muted-foreground"
+                    readyToDepart ? "bg-amber-500/10 text-amber-500" : inDelivery ? "bg-green-500/10 text-green-500" : "bg-muted text-muted-foreground"
                   }`}>
-                    {needsCollection ? "COLETAR" : inDelivery ? "ENTREGAR" : order.status}
+                    {readyToDepart ? "PRONTO" : inDelivery ? "ENTREGAR" : order.status}
                   </div>
                   <ChevronRight className={`h-4 w-4 text-muted-foreground transition-transform ${isExpanded ? "rotate-90" : ""}`} />
                 </button>
@@ -466,28 +489,20 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                       )}
                     </div>
 
-                    {needsCollection && (
+                    {readyToDepart && (
                       <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-4 space-y-3">
                         <div className="flex items-center gap-2">
-                          <ShieldCheck className="h-4 w-4 text-amber-500" />
-                          <span className="text-sm font-bold text-foreground">Validar Coleta</span>
+                          <Bike className="h-4 w-4 text-amber-500" />
+                          <span className="text-sm font-bold text-foreground">Sair para Entrega</span>
                         </div>
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          maxLength={4}
-                          placeholder="• • • •"
-                          value={collectionInputs[order.id] || ""}
-                          onChange={(e) => setCollectionInputs((prev) => ({ ...prev, [order.id]: e.target.value.replace(/\D/g, "").slice(0, 4) }))}
-                          className="w-full text-center text-2xl font-black tracking-[0.5em] bg-card border-2 border-amber-500/20 rounded-xl py-3 text-foreground placeholder:text-muted-foreground/20 focus:outline-none focus:border-amber-500"
-                        />
+                        <p className="text-xs text-muted-foreground">Clique quando estiver saindo da loja com este pedido.</p>
                         <button
-                          onClick={() => validateCollection(order.id)}
-                          disabled={!collectionInputs[order.id] || collectionInputs[order.id].length !== 4 || collectingId === order.id}
-                          className="w-full bg-amber-500 text-white font-bold py-3 rounded-xl text-sm disabled:opacity-50 flex items-center justify-center gap-2"
+                          onClick={() => departForDelivery(order.id)}
+                          disabled={departingId === order.id || departingId === "all"}
+                          className="w-full bg-amber-500 text-white font-bold py-3 rounded-xl text-sm disabled:opacity-50 flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
                         >
-                          {collectingId === order.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-                          Confirmar Coleta
+                          {departingId === order.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Navigation className="h-4 w-4" />}
+                          Saindo para Entrega
                         </button>
                       </div>
                     )}
