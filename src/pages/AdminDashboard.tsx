@@ -957,137 +957,119 @@ const AdminDashboard = () => {
             </div>
           )}
           {dashboardTab === "dashboard" && isApproved && store && (
-            <div className="p-4 lg:p-6 max-w-6xl mx-auto space-y-4 lg:space-y-6">
-              {/* Hours Configuration Alert */}
+            <div className="p-4 lg:p-6 max-w-6xl mx-auto space-y-5 lg:space-y-6">
+
+              {/* ── Welcome Header ── */}
+              <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/10 rounded-3xl p-5 lg:p-6">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <h2 className="text-lg lg:text-xl font-black text-foreground">
+                      Olá, {store.name}! 👋
+                    </h2>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}
+                    </p>
+                  </div>
+                  <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold ${
+                    store.is_open 
+                      ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20" 
+                      : "bg-red-500/10 text-red-500 border border-red-500/20"
+                  }`}>
+                    <div className={`w-2 h-2 rounded-full ${store.is_open ? "bg-emerald-500 animate-pulse" : "bg-red-500"}`} />
+                    {store.is_open ? "Aberta" : "Fechada"}
+                  </div>
+                </div>
+                <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-[11px] font-bold ${
+                  storePlan.planType === "fixed" ? "bg-amber-500/10 text-amber-600 border border-amber-500/20" :
+                  storePlan.planType === "hybrid" ? "bg-blue-500/10 text-blue-600 border border-blue-500/20" :
+                  "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
+                }`}>
+                  <CreditCard className="h-3 w-3" />
+                  {storePlan.planType === "fixed" && `Plano Fixo • R$ ${storePlan.monthlyFee.toFixed(0)}/mês`}
+                  {storePlan.planType === "hybrid" && `Crescimento • ${storePlan.commissionRate}% + R$ ${storePlan.monthlyFee.toFixed(0)}/mês`}
+                  {storePlan.planType === "commission_only" && `Comissão ${storePlan.commissionRate}%`}
+                </div>
+              </div>
+
               {allHoursClosed && (
                 <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-start gap-3">
                   <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
                   <div className="flex-1">
-                    <h3 className="font-bold text-amber-600 text-sm">Configure seus horários</h3>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Sua loja está com todos os horários fechados. Configure para receber pedidos.
-                    </p>
-                    <button
-                      onClick={() => setDashboardTab("hours")}
-                      className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-amber-600 hover:text-amber-700 bg-amber-500/10 px-3 py-1.5 rounded-lg transition-colors"
-                    >
-                      <Clock className="inline h-3 w-3 mr-1" />
-                      Configurar Horários
+                    <h3 className="font-bold text-amber-600 dark:text-amber-400 text-sm">⚠️ Configure seus horários</h3>
+                    <p className="text-xs text-muted-foreground mt-1">Sua loja está com todos os horários fechados.</p>
+                    <button onClick={() => setDashboardTab("hours")}
+                      className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-amber-600 hover:text-amber-700 bg-amber-500/10 px-3 py-1.5 rounded-lg transition-colors">
+                      <Clock className="inline h-3 w-3 mr-1" /> Configurar Horários
                     </button>
                   </div>
                 </div>
               )}
-              {/* Commission Alert - only for plans with commission */}
+
               {storePlan.hasCommission && (
-                <CommissionAlert
-                  storeId={store.id}
-                  storeName={store.name}
-                  onGoToFinance={() => setDashboardTab("finance")}
-                />
+                <CommissionAlert storeId={store.id} storeName={store.name} onGoToFinance={() => setDashboardTab("finance")} />
               )}
-              {/* Platform Split Alert - for fixed plans (R$2 per cash/card order) */}
               {!storePlan.hasCommission && storePlan.isItatingaFixed && (
-                <PlatformSplitAlert
-                  storeId={store.id}
-                  storeName={store.name}
-                  splitPerOrder={storePlan.platformDeliverySplit}
-                  onGoToFinance={() => setDashboardTab("finance")}
-                />
+                <PlatformSplitAlert storeId={store.id} storeName={store.name} splitPerOrder={storePlan.platformDeliverySplit} onGoToFinance={() => setDashboardTab("finance")} />
               )}
-              {/* Plan Badge */}
-              <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold ${
-                storePlan.planType === "fixed" ? "bg-amber-500/10 text-amber-600 border border-amber-500/20" :
-                storePlan.planType === "hybrid" ? "bg-blue-500/10 text-blue-600 border border-blue-500/20" :
-                "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
-              }`}>
-                <CreditCard className="h-3.5 w-3.5" />
-                {storePlan.planType === "fixed" && `Plano Fixo • R$ ${storePlan.monthlyFee.toFixed(0)}/mês`}
-                {storePlan.planType === "hybrid" && `Assinatura + ${storePlan.commissionRate}% • R$ ${storePlan.monthlyFee.toFixed(0)}/mês`}
-                {storePlan.planType === "commission_only" && `Comissão ${storePlan.commissionRate}%`}
-              </div>
-              {/* At-a-Glance Cards */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-3">
+
+              {/* ── KPI Cards ── */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
                 <GlanceCard
-                  icon={ShoppingBag}
-                  label="Pendentes"
-                  value={pendingCount}
-                  subValue={preparingCount > 0 ? `+ ${preparingCount} preparando` : undefined}
+                  icon={ShoppingBag} label="Pedidos Pendentes" value={pendingCount}
+                  subValue={preparingCount > 0 ? `+ ${preparingCount} em preparo` : "Sem pedidos novos"}
                   color={pendingCount > 0 ? "text-amber-500" : "text-muted-foreground"}
+                  highlight={pendingCount > 0}
                   onClick={() => { setDashboardTab("orders"); setActiveTab("pendente"); }}
                 />
                 <GlanceCard
-                  icon={DollarSign}
-                  label="Faturamento Hoje"
-                  value={`R$ ${todayTotal.toFixed(2)}`}
-                  subValue={`${todayCount} pedidos`}
-                  color="text-emerald-500"
-                  trend={todayTotal > 0 ? "up" : null}
+                  icon={DollarSign} label="Faturamento Hoje" value={`R$ ${todayTotal.toFixed(2)}`}
+                  subValue={`${todayCount} pedido${todayCount !== 1 ? "s" : ""} hoje`}
+                  color="text-emerald-500" trend={todayTotal > 0 ? "up" : null}
                   onClick={() => setDashboardTab("finance")}
                 />
-                {/* Motoboy plataforma oculto */}
                 <GlanceCard
-                  icon={Timer}
-                  label="Tempo Médio"
-                  value={avgDeliveryTime ? `${avgDeliveryTime} min` : "—"}
-                  subValue="Pedido → Entrega"
-                  color="text-purple-500"
+                  icon={Timer} label="Tempo Médio" value={avgDeliveryTime ? `${avgDeliveryTime} min` : "—"}
+                  subValue="Pedido até entrega" color="text-purple-500"
                 />
                 <GlanceCard
-                  icon={Users}
-                  label="Clientes"
-                  value={clientAnalytics.length}
-                  subValue="Total cadastrados"
-                  color="text-blue-500"
+                  icon={Users} label="Total Clientes" value={clientAnalytics.length}
+                  subValue="Clientes registrados" color="text-blue-500"
                   onClick={() => setDashboardTab("clients")}
                 />
               </div>
-              {delayedOrders.length > 0 && (
-                <div className="bg-destructive/5 border border-destructive/20 rounded-2xl p-3">
-                  <GlanceCard
-                    icon={AlertTriangle}
-                    label="Em Atraso"
-                    value={delayedOrders.length}
-                    subValue="> 20 min sem ação"
-                    color="text-destructive"
-                    onClick={() => setShowDelayedPanel(!showDelayedPanel)}
-                  />
-                </div>
-              )}
 
-              {/* Delayed Orders Panel */}
+              {/* ── Delayed Alert ── */}
               {delayedOrders.length > 0 && (
-                <div className="bg-destructive/5 border border-destructive/30 rounded-2xl overflow-hidden">
-                  <button
-                    onClick={() => setShowDelayedPanel(!showDelayedPanel)}
-                    className="w-full flex items-center justify-between p-3"
-                  >
-                    <div className="flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4 text-destructive" />
-                      <span className="text-sm font-bold text-destructive">Em Atraso ({delayedOrders.length})</span>
+                <div className="bg-red-500/5 border-2 border-red-500/20 rounded-2xl overflow-hidden">
+                  <button onClick={() => setShowDelayedPanel(!showDelayedPanel)} className="w-full flex items-center justify-between p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-red-500/10 rounded-xl flex items-center justify-center">
+                        <AlertTriangle className="h-5 w-5 text-red-500" />
+                      </div>
+                      <div className="text-left">
+                        <span className="text-sm font-black text-red-600 dark:text-red-400">{delayedOrders.length} pedido{delayedOrders.length > 1 ? "s" : ""} em atraso</span>
+                        <p className="text-[10px] text-muted-foreground">Mais de 20 min sem atualização</p>
+                      </div>
                     </div>
-                    {showDelayedPanel ? <ChevronUp className="h-4 w-4 text-destructive" /> : <ChevronDown className="h-4 w-4 text-destructive" />}
+                    {showDelayedPanel ? <ChevronUp className="h-5 w-5 text-red-500" /> : <ChevronDown className="h-5 w-5 text-red-500" />}
                   </button>
                   {showDelayedPanel && (
-                    <div className="px-3 pb-3 space-y-2">
+                    <div className="px-4 pb-4 space-y-2">
                       {delayedOrders.map((order: any) => {
                         const elapsedMin = Math.floor((Date.now() - new Date(order.created_at).getTime()) / 60000);
                         const sc = statusColors[order.status] || statusColors.pendente;
                         return (
-                          <div key={order.id} className="bg-card border border-destructive/20 rounded-xl p-3 space-y-2">
+                          <div key={order.id} className="bg-card border border-red-500/20 rounded-xl p-3 space-y-2">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
                                 <span className="text-sm font-black text-foreground">#{order.id.slice(0, 8).toUpperCase()}</span>
                                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${sc.bg} ${sc.text}`}>{sc.label}</span>
                               </div>
-                              <span className="text-xs font-bold text-destructive bg-destructive/10 px-2 py-0.5 rounded-full">
-                                {elapsedMin} min
-                              </span>
+                              <span className="text-xs font-bold text-red-500 bg-red-500/10 px-2 py-0.5 rounded-full">⏱️ {elapsedMin} min</span>
                             </div>
                             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                              <span>{getClientName(order.client_id)}</span>
-                              <span>•</span>
-                              <span>{paymentIcons[order.payment_method]} {paymentLabels[order.payment_method] || order.payment_method}</span>
-                              <span>•</span>
+                              <span>{getClientName(order.client_id)}</span><span>•</span>
+                              <span>{paymentIcons[order.payment_method]} {paymentLabels[order.payment_method] || order.payment_method}</span><span>•</span>
                               <span className="font-bold text-foreground">R$ {Number(order.total_price).toFixed(2)}</span>
                             </div>
                             <div className="bg-muted/50 rounded-lg px-2.5 py-1.5 space-y-0.5">
@@ -1097,37 +1079,25 @@ const AdminDashboard = () => {
                                   <span className="text-muted-foreground">R$ {(item.unit_price * item.quantity).toFixed(2)}</span>
                                 </div>
                               ))}
-                              {(order.order_items?.length || 0) > 4 && (
-                                <p className="text-[10px] text-muted-foreground">+{order.order_items.length - 4} itens...</p>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                              <MapPin className="h-3 w-3" />
-                              <span>{order.neighborhood}</span>
+                              {(order.order_items?.length || 0) > 4 && <p className="text-[10px] text-muted-foreground">+{order.order_items.length - 4} itens...</p>}
                             </div>
                             <div className="flex gap-2">
                               {order.status === "pendente" && (
                                 <button onClick={() => updateOrderStatus(order.id, "preparando")}
-                                  className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 rounded-xl text-xs active:scale-[0.98] transition-transform">
+                                  className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2.5 rounded-xl text-xs active:scale-[0.98] transition-transform">
                                   {order.payment_method === "pix" ? "🍳 PRODUZIR" : "✓ ACEITAR"}
                                 </button>
                               )}
                               {order.status === "preparando" && (
                                 <button onClick={() => updateOrderStatus(order.id, "pronto_para_entrega" as OrderStatus)}
-                                  className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 rounded-xl text-xs active:scale-[0.98] transition-transform">
+                                  className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2.5 rounded-xl text-xs active:scale-[0.98] transition-transform">
                                   🔔 MARCAR PRONTO
                                 </button>
                               )}
                               {getClientWhatsApp(order.client_id) && (
                                 <WhatsAppButton number={getClientWhatsApp(order.client_id)} message={`Olá! Sobre seu pedido #${order.id.slice(0, 8).toUpperCase()}, estamos cuidando dele!`} />
                               )}
-                              <OrderChat
-                                orderId={order.id}
-                                storeName={store?.name || "Loja"}
-                                storeOwnerId={store?.owner_id}
-                                clientId={order.client_id}
-                                driverId={order.driver_id}
-                              />
+                              <OrderChat orderId={order.id} storeName={store?.name || "Loja"} storeOwnerId={store?.owner_id} clientId={order.client_id} driverId={order.driver_id} />
                             </div>
                           </div>
                         );
@@ -1137,94 +1107,57 @@ const AdminDashboard = () => {
                 </div>
               )}
 
-              {/* Delivery Mode Quick Config */}
-              {(() => {
-                const PLATFORM_CITIES = ["itatinga"];
-                const storeCity = ((store as any).address_city || "").toLowerCase().trim();
-                const hasPlatformSupport = PLATFORM_CITIES.includes(storeCity) && storePlan.allowPlatformDelivery;
-
-                return (
-                  <div className="bg-card border border-border rounded-2xl p-3 lg:p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Truck className="h-4 w-4 text-primary" />
-                        <h3 className="font-bold text-foreground text-sm">Modo de Entrega</h3>
-                      </div>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${(store as any).delivery_mode === "own" ? "bg-amber-500/10 text-amber-600" : "bg-primary/10 text-primary"}`}>
-                        {(store as any).delivery_mode === "own" ? "Próprio" : "Plataforma"}
-                      </span>
-                    </div>
-                    {/* Motoboy plataforma oculto — só mostra "Próprio" como ativo */}
-                    <div className="flex items-center gap-2 p-2.5 rounded-xl border-2 border-primary bg-primary/10">
-                      <Truck className="h-5 w-5 text-primary" />
-                      <span className="text-[11px] font-bold text-primary">Motoboy Próprio</span>
-                    </div>
-                {(store as any).delivery_mode === "own" && (
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-foreground/80">Taxa de entrega fixa (R$)</label>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        inputMode="decimal"
-                        defaultValue={((store as any).own_delivery_fee || 0).toString()}
-                        onBlur={async (e) => {
-                          const val = parseFloat(e.target.value.replace(",", ".")) || 0;
-                          await supabase.from("stores").update({ own_delivery_fee: val } as any).eq("id", store.id);
-                          queryClient.invalidateQueries({ queryKey: ["my-store", user?.id] });
-                          toast.success(`Taxa fixa atualizada para R$ ${val.toFixed(2)}`);
-                        }}
-                        placeholder="Ex: 5.00"
-                        className="flex-1 bg-secondary border border-border rounded-xl px-4 py-2.5 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-                      />
-                    </div>
-                  </div>
-                )}
-                  </div>
-                );
-              })()}
-
-              {/* Priority Queue - New orders with pulse */}
+              {/* ── New Orders Queue ── */}
               {pendingCount > 0 && (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
-                    <h3 className="font-bold text-foreground text-sm">Aguardando</h3>
-                    <span className="bg-amber-400 text-amber-900 text-[10px] font-black px-1.5 py-0.5 rounded-full">{pendingCount}</span>
+                    <div className="relative">
+                      <div className="w-3 h-3 bg-amber-500 rounded-full animate-ping absolute" />
+                      <div className="w-3 h-3 bg-amber-500 rounded-full relative" />
+                    </div>
+                    <h3 className="font-black text-foreground text-base">Novos Pedidos</h3>
+                    <span className="bg-amber-500 text-white text-[11px] font-black px-2 py-0.5 rounded-full">{pendingCount}</span>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {orders?.filter(o => o.status === "pendente").slice(0, 5).map((order: any) => (
-                      <div key={order.id} className="bg-card border-2 border-amber-500/40 rounded-2xl p-3 animate-pulse-border hover:shadow-lg transition-shadow">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-base font-black text-foreground">#{order.id.slice(0, 8).toUpperCase()}</span>
+                      <div key={order.id} className="bg-card border-2 border-amber-500/30 rounded-2xl p-4 hover:shadow-lg hover:shadow-amber-500/5 transition-all">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-base font-black text-foreground">#{order.id.slice(0, 8).toUpperCase()}</span>
+                            <span className="text-[10px] text-muted-foreground">
+                              {new Date(order.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                          </div>
                           <p className="text-xl font-black text-emerald-500">R$ {Number(order.total_price).toFixed(2)}</p>
                         </div>
-                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2 flex-wrap">
-                          <span>{getClientName(order.client_id)}</span>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3 flex-wrap">
+                          <div className="flex items-center gap-1"><User className="h-3 w-3" /><span className="font-medium">{getClientName(order.client_id)}</span></div>
                           <span>•</span>
-                          <span>{order.neighborhood}</span>
+                          <div className="flex items-center gap-1"><MapPin className="h-3 w-3" /><span>{order.neighborhood}</span></div>
                           <span>•</span>
-                          <span>{new Date(order.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>
-                          <span>•</span>
-                          <span>{paymentIcons[order.payment_method]}</span>
+                          <span className="font-medium">{paymentIcons[order.payment_method]} {paymentLabels[order.payment_method] || order.payment_method}</span>
                         </div>
-                        <div className="bg-muted/50 rounded-xl px-3 py-2 mb-3 space-y-0.5">
+                        <div className="bg-muted/40 rounded-xl px-3 py-2.5 mb-3 space-y-1">
                           {order.order_items?.map((item: any) => (
-                            <div key={item.id} className="text-sm text-foreground">
-                              <span className="text-primary font-bold">{item.quantity}x</span> {getOrderItemDisplayName(item)}
+                            <div key={item.id} className="text-sm text-foreground flex justify-between">
+                              <span><span className="text-primary font-bold">{item.quantity}x</span> {getOrderItemDisplayName(item)}</span>
+                              <span className="text-muted-foreground text-xs">R$ {(item.unit_price * item.quantity).toFixed(2)}</span>
                             </div>
                           ))}
                         </div>
                         {order.payment_method === "pix" && (
-                          <div className="text-center mb-2">
-                            <span className="text-[10px] bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded font-bold">💰 PIX — Pagamento Confirmado</span>
+                          <div className="text-center mb-3">
+                            <span className="text-[11px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-3 py-1 rounded-lg font-bold inline-flex items-center gap-1">
+                              <CheckCircle2 className="h-3 w-3" /> PIX Confirmado
+                            </span>
                           </div>
                         )}
                         <button onClick={() => updateOrderStatus(order.id, "preparando")}
-                          className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 rounded-xl text-sm active:scale-[0.98] transition-transform h-12">
+                          className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3.5 rounded-xl text-sm active:scale-[0.98] transition-all shadow-lg shadow-emerald-500/20 h-12">
                           {order.payment_method === "pix" ? "🍳 COMEÇAR PRODUÇÃO" : "✓ ACEITAR PEDIDO"}
                         </button>
                         <button onClick={() => handleCancelOrder(order)}
-                          className="w-full text-center text-xs text-destructive hover:text-destructive/80 py-1 mt-1">
+                          className="w-full text-center text-xs text-muted-foreground hover:text-red-500 py-1.5 mt-1 transition-colors">
                           Recusar pedido
                         </button>
                       </div>
@@ -1233,54 +1166,135 @@ const AdminDashboard = () => {
                 </div>
               )}
 
-              {/* Orders in progress summary */}
+              {/* ── In-Progress Summary ── */}
               {(preparingCount > 0 || readyCount > 0) && (
-                <div className="space-y-2">
-                  <h3 className="font-bold text-foreground text-sm">Em Andamento</h3>
-                  <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-black text-foreground text-base">Em Andamento</h3>
+                    <button onClick={() => setDashboardTab("orders")} className="text-xs text-primary font-bold hover:underline flex items-center gap-1">
+                      Ver todos <ArrowUpRight className="h-3 w-3" />
+                    </button>
+                  </div>
+                  <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1">
                     {orders?.filter(o => ["preparando", "pronto_para_entrega", "em_transito", "saiu_entrega"].includes(o.status)).slice(0, 6).map((order: any) => {
                       const sc = statusColors[order.status] || statusColors.pendente;
                       return (
                         <button key={order.id}
                           onClick={() => { setDashboardTab("orders"); setActiveTab(order.status as OrderStatus); }}
-                          className={`flex-shrink-0 bg-card border ${sc.border} rounded-xl p-2.5 flex items-center gap-2 min-w-[180px] hover:shadow-md transition-shadow`}>
-                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${sc.bg} ${sc.text}`}>{sc.label}</span>
-                          <span className="text-xs font-bold text-foreground">#{order.id.slice(0, 6).toUpperCase()}</span>
-                          <span className="text-[10px] text-muted-foreground truncate">{getClientName(order.client_id)}</span>
+                          className={`flex-shrink-0 bg-card border-2 ${sc.border} rounded-2xl p-3 flex flex-col gap-2 min-w-[160px] hover:shadow-md transition-all`}>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full self-start ${sc.bg} ${sc.text}`}>{sc.label}</span>
+                          <span className="text-sm font-black text-foreground">#{order.id.slice(0, 6).toUpperCase()}</span>
+                          <span className="text-[11px] text-muted-foreground truncate w-full text-left">{getClientName(order.client_id)}</span>
                         </button>
                       );
                     })}
                   </div>
-                  <button onClick={() => { setDashboardTab("orders"); }}
-                    className="text-xs text-primary font-bold hover:underline">
-                    Ver todos →
-                  </button>
                 </div>
               )}
 
-              {/* Top clients preview */}
-              {clientAnalytics.length > 0 && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-bold text-foreground text-sm">Top Clientes</h3>
-                    <button onClick={() => setDashboardTab("clients")} className="text-xs text-primary font-bold hover:underline">Ver todos →</button>
+              {/* ── Delivery Mode Config ── */}
+              {(() => {
+                return (
+                  <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-9 h-9 bg-primary/10 rounded-xl flex items-center justify-center">
+                          <Truck className="h-4 w-4 text-primary" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-foreground text-sm">Modo de Entrega</h3>
+                          <p className="text-[10px] text-muted-foreground">Configure como seus pedidos são entregues</p>
+                        </div>
+                      </div>
+                      <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${(store as any).delivery_mode === "own" ? "bg-amber-500/10 text-amber-600 border border-amber-500/20" : "bg-primary/10 text-primary border border-primary/20"}`}>
+                        {(store as any).delivery_mode === "own" ? "🛵 Próprio" : "📦 Plataforma"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 p-3 rounded-xl border-2 border-primary/20 bg-primary/5">
+                      <Truck className="h-5 w-5 text-primary" />
+                      <span className="text-xs font-bold text-primary">Motoboy Próprio</span>
+                    </div>
+                    {(store as any).delivery_mode === "own" && (
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-foreground/80">Taxa de entrega fixa (R$)</label>
+                        <input type="text" inputMode="decimal"
+                          defaultValue={((store as any).own_delivery_fee || 0).toString()}
+                          onBlur={async (e) => {
+                            const val = parseFloat(e.target.value.replace(",", ".")) || 0;
+                            await supabase.from("stores").update({ own_delivery_fee: val } as any).eq("id", store.id);
+                            queryClient.invalidateQueries({ queryKey: ["my-store", user?.id] });
+                            toast.success(`Taxa fixa atualizada para R$ ${val.toFixed(2)}`);
+                          }}
+                          placeholder="Ex: 5.00"
+                          className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        />
+                      </div>
+                    )}
                   </div>
-                  <div className="grid gap-1.5">
-                    {clientAnalytics.slice(0, 5).map(client => (
-                      <div key={client.clientId} className="bg-card border border-border rounded-xl p-2.5 flex items-center justify-between">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
-                            {client.name.charAt(0).toUpperCase()}
+                );
+              })()}
+
+              {/* ── Quick Actions ── */}
+              <div className="space-y-3">
+                <h3 className="font-black text-foreground text-base">Ações Rápidas</h3>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+                  {[
+                    { label: "Cardápio", icon: UtensilsCrossed, tab: "menu" as DashboardTab, color: "text-orange-500", bg: "bg-orange-500/10" },
+                    { label: "Finanças", icon: Coins, tab: "finance" as DashboardTab, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+                    { label: "Horários", icon: Clock, tab: "hours" as DashboardTab, color: "text-blue-500", bg: "bg-blue-500/10" },
+                    { label: "Configurações", icon: Settings, tab: "settings" as DashboardTab, color: "text-purple-500", bg: "bg-purple-500/10" },
+                  ].map((action) => (
+                    <button key={action.label} onClick={() => setDashboardTab(action.tab)}
+                      className="flex items-center gap-3 bg-card border border-border rounded-2xl p-3.5 hover:shadow-md hover:border-border/80 active:scale-[0.97] transition-all text-left">
+                      <div className={`w-10 h-10 ${action.bg} rounded-xl flex items-center justify-center flex-shrink-0`}>
+                        <action.icon className={`h-5 w-5 ${action.color}`} />
+                      </div>
+                      <span className="text-sm font-bold text-foreground">{action.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* ── Top Clients ── */}
+              {clientAnalytics.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-black text-foreground text-base">Top Clientes</h3>
+                    <button onClick={() => setDashboardTab("clients")} className="text-xs text-primary font-bold hover:underline flex items-center gap-1">
+                      Ver todos <ArrowUpRight className="h-3 w-3" />
+                    </button>
+                  </div>
+                  <div className="grid gap-2">
+                    {clientAnalytics.slice(0, 5).map((client, i) => (
+                      <div key={client.clientId} className="bg-card border border-border rounded-2xl p-3 flex items-center justify-between hover:shadow-sm transition-shadow">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-xs font-black text-primary">
+                            {i + 1}º
                           </div>
                           <div>
-                            <p className="text-xs font-bold text-foreground">{client.name}</p>
-                            <p className="text-[10px] text-muted-foreground">{client.totalOrders} pedidos</p>
+                            <p className="text-sm font-bold text-foreground">{client.name}</p>
+                            <p className="text-[10px] text-muted-foreground">{client.totalOrders} pedidos • {client.neighborhood || "—"}</p>
                           </div>
                         </div>
-                        <p className="text-xs font-bold text-emerald-500">R$ {client.totalSpent.toFixed(2)}</p>
+                        <p className="text-sm font-black text-emerald-500">R$ {client.totalSpent.toFixed(2)}</p>
                       </div>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {/* ── Empty state ── */}
+              {pendingCount === 0 && preparingCount === 0 && readyCount === 0 && todayCount === 0 && clientAnalytics.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <div className="w-24 h-24 bg-muted/50 rounded-3xl flex items-center justify-center mb-5">
+                    <Store className="h-12 w-12 text-muted-foreground/50" />
+                  </div>
+                  <h3 className="text-lg font-black text-foreground mb-2">Tudo tranquilo por aqui! 😌</h3>
+                  <p className="text-sm text-muted-foreground max-w-xs">Nenhum pedido ainda hoje. Compartilhe o link da sua loja para começar a receber pedidos!</p>
+                  <button onClick={() => setDashboardTab("settings")}
+                    className="mt-4 bg-primary text-primary-foreground font-bold px-6 py-3 rounded-xl text-sm active:scale-[0.97] transition-transform">
+                    Configurar Loja
+                  </button>
                 </div>
               )}
             </div>
