@@ -1422,6 +1422,36 @@ const AdminDashboard = () => {
                 </div>
               )}
 
+              {/* Batch dispatch bar (own delivery + pronto_para_entrega) */}
+              {isOwnDelivery && activeTab === "pronto_para_entrega" && (filteredOrders.length > 0) && (
+                <div className="px-4 pt-3">
+                  <div className="flex items-center gap-2 bg-blue-500/5 border border-blue-500/20 rounded-xl p-3">
+                    <Truck className="h-4 w-4 text-blue-500 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-blue-600 dark:text-blue-400">
+                        🛵 Agrupar pedidos para entrega
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">
+                        Selecione os pedidos prontos e envie todos de uma vez
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button onClick={selectAllReady}
+                        className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-500/10 px-2 py-1 rounded-lg hover:bg-blue-500/20 transition-colors">
+                        Todos
+                      </button>
+                      {batchSelected.size > 0 && (
+                        <button onClick={batchDispatch} disabled={batchDispatching}
+                          className="flex items-center gap-1 text-xs font-black text-white bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50">
+                          {batchDispatching ? <Loader2 className="h-3 w-3 animate-spin" /> : <Truck className="h-3 w-3" />}
+                          Enviar {batchSelected.size}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Order cards */}
               <div className="p-4 space-y-3 max-w-3xl mx-auto">
                 {isLoading ? (
