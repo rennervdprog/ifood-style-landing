@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { AlertTriangle, Clock, Copy, CheckCircle2, Loader2, CreditCard, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -25,36 +25,76 @@ export default function TrialExpiredGuard({ storePlan, storeId, children }: Tria
   const [copied, setCopied] = useState(false);
   const [polling, setPolling] = useState(false);
 
-  // Only block if: has trial_ends_at, trial expired, and monthly_fee > 0
+  // Check for pending subscription/monthly payment
+  const { data: pendingPayment } = useQuery({
+    queryKey: ["pending-subscription-payment", storeId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("financial_transactions")
+        .select("id, reference_code, pix_copy_paste, pix_qr_code_base64, amount, status")
+        .eq("store_id", storeId)
+        .eq("status", "pending")
+        .or("reference_code.like.#ASSIN-%,reference_code.like.#MENS-%")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!storeId && storePlan.monthlyFee > 0,
+    staleTime: 1000 * 30,
+  });
+
+  // Block if:
+  // 1. Trial expired and never paid (original check)
+  // 2. Has a pending monthly/subscription payment (recurring billing unpaid)
   const isTrialExpired =
     storePlan.trialEndsAt !== null &&
     !storePlan.isInTrial &&
     storePlan.monthlyFee > 0 &&
-    // Don't block if there's already a next_billing_date set (means they already paid)
     !storePlan.lastBilledAt;
+
+  const hasUnpaidBill = !!pendingPayment && storePlan.monthlyFee > 0;
+
+  const shouldBlock = isTrialExpired || hasUnpaidBill;
 
   // Poll for payment confirmation
   useEffect(() => {
-    if (!polling || !pixData) return;
+    const refCode = pixData?.reference_code || pendingPayment?.reference_code;
+    if (!polling || !refCode) return;
 
     const interval = setInterval(async () => {
       const { data } = await supabase
         .from("financial_transactions")
         .select("status")
-        .eq("reference_code", pixData.reference_code)
+        .eq("reference_code", refCode)
         .single();
 
       if (data?.status === "paid") {
         setPolling(false);
-        toast.success("Pagamento confirmado! Bem-vindo ao seu plano.");
+        setPixData(null);
+        toast.success("Pagamento confirmado! Acesso liberado.");
         queryClient.invalidateQueries({ queryKey: ["store-plan", storeId] });
+        queryClient.invalidateQueries({ queryKey: ["pending-subscription-payment", storeId] });
       }
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [polling, pixData, storeId, queryClient]);
+  }, [polling, pixData, pendingPayment, storeId, queryClient]);
 
-  if (!isTrialExpired) {
+  // Auto-show existing pending payment PIX
+  useEffect(() => {
+    if (hasUnpaidBill && pendingPayment?.pix_copy_paste && !pixData) {
+      setPixData({
+        qr_code: pendingPayment.pix_copy_paste,
+        qr_code_base64: pendingPayment.pix_qr_code_base64,
+        reference_code: pendingPayment.reference_code,
+        amount: Number(pendingPayment.amount),
+      });
+      setPolling(true);
+    }
+  }, [hasUnpaidBill, pendingPayment, pixData]);
+
+  if (!shouldBlock) {
     return <>{children}</>;
   }
 
@@ -95,6 +135,7 @@ export default function TrialExpiredGuard({ storePlan, storeId, children }: Tria
   };
 
   const planLabel = storePlan.planType === "fixed" ? "Essencial" : "Crescimento";
+  const isRecurring = hasUnpaidBill && !isTrialExpired;
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -105,11 +146,23 @@ export default function TrialExpiredGuard({ storePlan, storeId, children }: Tria
             <div className="w-16 h-16 rounded-2xl bg-amber-500/10 flex items-center justify-center mx-auto">
               <Clock className="h-8 w-8 text-amber-500" />
             </div>
-            <h1 className="text-2xl font-black text-foreground">Período de teste expirou</h1>
+            <h1 className="text-2xl font-black text-foreground">
+              {isRecurring ? "Mensalidade pendente" : "Período de teste expirou"}
+            </h1>
             <p className="text-muted-foreground leading-relaxed">
-              Seu período de teste no plano{" "}
-              <span className="font-bold text-primary">{planLabel}</span> terminou.
-              Para continuar usando todos os recursos, ative seu plano.
+              {isRecurring ? (
+                <>
+                  Sua mensalidade do plano{" "}
+                  <span className="font-bold text-primary">{planLabel}</span> está pendente.
+                  Efetue o pagamento para continuar usando todos os recursos.
+                </>
+              ) : (
+                <>
+                  Seu período de teste no plano{" "}
+                  <span className="font-bold text-primary">{planLabel}</span> terminou.
+                  Para continuar usando todos os recursos, ative seu plano.
+                </>
+              )}
             </p>
           </div>
 
@@ -145,7 +198,7 @@ export default function TrialExpiredGuard({ storePlan, storeId, children }: Tria
                 ) : (
                   <>
                     <CreditCard className="mr-2 h-5 w-5" />
-                    Ativar plano — Pagar via PIX
+                    {isRecurring ? "Pagar mensalidade — PIX" : "Ativar plano — Pagar via PIX"}
                   </>
                 )}
               </Button>
