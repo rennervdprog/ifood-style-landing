@@ -687,13 +687,15 @@ const DriverDashboard = () => {
             </div>
 
             <div className="flex items-center gap-2.5">
-              <button
-                onClick={toggleOnline}
-                data-tour="motoboy-status"
-                className={`relative w-[54px] h-[32px] rounded-full transition-all duration-300 ${isOnline ? "bg-green-500 shadow-[0_0_20px_rgba(34,197,94,0.3)]" : "bg-muted"}`}
-              >
-                <span className={`absolute top-[3px] w-[26px] h-[26px] rounded-full bg-white shadow-lg transition-transform duration-300 ${isOnline ? "left-[25px]" : "left-[3px]"}`} />
-              </button>
+              {!isStoreDriver && (
+                <button
+                  onClick={toggleOnline}
+                  data-tour="motoboy-status"
+                  className={`relative w-[54px] h-[32px] rounded-full transition-all duration-300 ${isOnline ? "bg-green-500 shadow-[0_0_20px_rgba(34,197,94,0.3)]" : "bg-muted"}`}
+                >
+                  <span className={`absolute top-[3px] w-[26px] h-[26px] rounded-full bg-white shadow-lg transition-transform duration-300 ${isOnline ? "left-[25px]" : "left-[3px]"}`} />
+                </button>
+              )}
               <button
                 onClick={async () => { await signOut(); toast.success("Você saiu da conta."); navigate("/portal-parceiro"); }}
                 className="w-10 h-10 rounded-2xl bg-muted/50 flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all active:scale-95"
