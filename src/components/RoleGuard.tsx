@@ -151,9 +151,6 @@ const RoleGuard = ({ allowedRoles, redirectTo, children, requireApproval = false
           </p>
         </div>
         <div className="flex gap-3">
-          <button onClick={() => navigate("/")} className="bg-muted text-foreground font-bold px-5 py-3 rounded-xl text-sm">
-            Voltar à Home
-          </button>
           <button onClick={() => window.location.reload()} className="bg-primary text-primary-foreground font-bold px-5 py-3 rounded-xl text-sm">
             Verificar Status
           </button>
