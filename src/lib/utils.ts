@@ -43,5 +43,9 @@ export function averageMoney(value: number | string | null | undefined, count: n
 }
 
 export function formatCurrency(value: number | string | null | undefined) {
-  return `R$ ${fromCents(toCents(value)).toFixed(2)}`;
+  return fromCents(toCents(value)).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+export function formatBRL(value: number) {
+  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
