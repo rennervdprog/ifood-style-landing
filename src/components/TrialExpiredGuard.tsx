@@ -107,7 +107,7 @@ export default function TrialExpiredGuard({ storePlan, storeId, children }: Tria
             </div>
             <h1 className="text-2xl font-black text-foreground">Período de teste expirou</h1>
             <p className="text-muted-foreground leading-relaxed">
-              Seu trial de <span className="font-bold text-foreground">7 dias</span> no plano{" "}
+              Seu período de teste no plano{" "}
               <span className="font-bold text-primary">{planLabel}</span> terminou.
               Para continuar usando todos os recursos, ative seu plano.
             </p>

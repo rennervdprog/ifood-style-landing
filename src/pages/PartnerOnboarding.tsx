@@ -107,7 +107,7 @@ const faqs = [
   { q: "Quanto tempo leva para começar a vender?", a: "Após o cadastro, sua loja pode estar ativa em menos de 24 horas. Basta montar seu cardápio e começar a receber pedidos." },
   { q: "Preciso de computador para gerenciar?", a: "Não! Tudo funciona perfeitamente pelo celular. O painel é 100% responsivo e otimizado para mobile." },
   { q: "Posso trocar de plano depois?", a: "Sim! Você pode mudar de plano a qualquer momento, sem multa ou fidelidade. Basta solicitar pelo painel." },
-  { q: "Como funciona o período de teste?", a: "Você ganha 7 dias grátis para testar tudo. Sem cartão de crédito. Se não gostar, é só cancelar." },
+  { q: "Como funciona o período de teste?", a: "Nos planos pagos (Essencial e Crescimento), você ganha 7 dias grátis para testar tudo. O plano Comissão já é gratuito — sem mensalidade!" },
   { q: "Como faço para receber meus pagamentos?", a: "Os pagamentos via PIX são depositados diretamente na sua conta. Para pedidos em dinheiro/cartão, o repasse é semanal." },
 ];
 
@@ -271,7 +271,7 @@ const PartnerOnboarding = () => {
 
             <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto mb-8 animate-fade-in leading-relaxed">
               Cardápio profissional, pedidos organizados e pagamentos automáticos.
-              <span className="block mt-1 font-semibold text-primary">A partir de R$100/mês • 7 dias grátis!</span>
+              <span className="block mt-1 font-semibold text-primary">Comece grátis ou a partir de R$100/mês!</span>
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in mb-3">
@@ -457,7 +457,7 @@ const PartnerOnboarding = () => {
             <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">Pronto para vender mais?</h2>
             <p className="text-muted-foreground mb-8 leading-relaxed max-w-lg mx-auto">
               Cadastre-se agora e tenha sua loja online em menos de 5 minutos.
-              <span className="block mt-1 font-semibold text-primary">7 dias grátis — sem cartão de crédito!</span>
+              <span className="block mt-1 font-semibold text-primary">Comece grátis — sem cartão de crédito!</span>
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button

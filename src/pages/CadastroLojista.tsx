@@ -267,7 +267,7 @@ const CadastroLojista = () => {
                   <p className="text-xs text-muted-foreground mt-1">Sem contrato. Troque quando quiser.</p>
                   <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30">
                     <Zap className="h-3.5 w-3.5 text-emerald-500" />
-                    <span className="text-xs font-bold text-emerald-600">7 dias grátis em todos os planos!</span>
+                    <span className="text-xs font-bold text-emerald-600">7 dias grátis nos planos pagos!</span>
                   </div>
                 </div>
 
@@ -357,7 +357,7 @@ const CadastroLojista = () => {
                       <span className="text-xs text-muted-foreground">/mês</span>
                     </div>
                   </div>
-                  <p className="text-[10px] font-bold text-emerald-500 mb-1">🎁 7 dias grátis para testar</p>
+                  <p className="text-[10px] font-bold text-emerald-500 mb-1">✅ Comece agora — sem mensalidade!</p>
                   <p className="text-[10px] font-semibold text-primary mb-2">+ 5% por pedido entregue</p>
                   <div className="flex flex-wrap gap-1.5">
                     {["Sem mensalidade", "Todos os recursos", "PIX integrado"].map(tag => (
