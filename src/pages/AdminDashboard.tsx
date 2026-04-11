@@ -684,7 +684,7 @@ const AdminDashboard = () => {
         }
         return null;
       case "saiu_entrega":
-        if (isOwnDelivery && !hasLinkedDrivers) return { label: "MARCAR COMO ENTREGUE", next: "finalizado" as OrderStatus, emoji: "✅" };
+        if (isOwnDelivery && !hasLinkedDrivers && !driversLoading) return { label: "MARCAR COMO ENTREGUE", next: "finalizado" as OrderStatus, emoji: "✅" };
         return null;
       default: return null;
     }
