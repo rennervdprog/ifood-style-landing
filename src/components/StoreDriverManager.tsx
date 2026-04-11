@@ -81,18 +81,17 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
     }
   };
 
-  const handleAdd = async () => {
-    if (!foundDriver) return;
+  const handleAdd = async (driver: typeof foundDrivers[0]) => {
     setAdding(true);
     try {
       const { error } = await supabase
         .from("store_drivers")
-        .insert({ store_id: storeId, driver_user_id: foundDriver.user_id });
+        .insert({ store_id: storeId, driver_user_id: driver.user_id });
 
       if (error) throw error;
-      toast.success(`${foundDriver.full_name} vinculado à sua loja!`);
-      setFoundDriver(null);
-      setSearchPhone("");
+      toast.success(`${driver.full_name} vinculado à sua loja!`);
+      setFoundDrivers(prev => prev.filter(d => d.user_id !== driver.user_id));
+      setSearchTerm("");
       queryClient.invalidateQueries({ queryKey: ["store-drivers", storeId] });
     } catch {
       toast.error("Erro ao adicionar motoboy.");
@@ -170,17 +169,17 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
-              type="tel"
-              placeholder="Telefone ou WhatsApp do motoboy"
-              value={searchPhone}
-              onChange={e => setSearchPhone(e.target.value)}
+              type="text"
+              placeholder="Nome, e-mail ou telefone"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
               onKeyDown={e => e.key === "Enter" && handleSearch()}
               className="w-full pl-9 pr-3 py-2.5 bg-muted/50 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
           <button
             onClick={handleSearch}
-            disabled={searching || !searchPhone.trim()}
+            disabled={searching || !searchTerm.trim()}
             className="bg-primary text-primary-foreground px-4 py-2.5 rounded-xl text-sm font-bold disabled:opacity-50 flex items-center gap-1.5"
           >
             {searching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
@@ -188,20 +187,20 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
           </button>
         </div>
 
-        {/* Found driver card */}
-        {foundDriver && (
-          <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3 flex items-center justify-between">
+        {/* Found drivers */}
+        {foundDrivers.map(driver => (
+          <div key={driver.user_id} className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-lg bg-emerald-500/10 flex items-center justify-center">
                 <UserCheck className="h-4 w-4 text-emerald-500" />
               </div>
               <div>
-                <p className="text-sm font-bold text-foreground">{foundDriver.full_name}</p>
-                <p className="text-[11px] text-muted-foreground">{foundDriver.phone} • {foundDriver.vehicle || "Veículo não informado"}</p>
+                <p className="text-sm font-bold text-foreground">{driver.full_name}</p>
+                <p className="text-[11px] text-muted-foreground">{driver.email || driver.phone} • {driver.vehicle || "Veículo não informado"}</p>
               </div>
             </div>
             <button
-              onClick={handleAdd}
+              onClick={() => handleAdd(driver)}
               disabled={adding}
               className="bg-emerald-500 text-white px-3 py-2 rounded-xl text-xs font-bold disabled:opacity-50 flex items-center gap-1"
             >
@@ -209,7 +208,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
               Adicionar
             </button>
           </div>
-        )}
+        ))}
       </div>
 
       {/* Linked Drivers List */}
