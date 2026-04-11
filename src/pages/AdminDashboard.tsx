@@ -151,7 +151,7 @@ const AdminDashboard = () => {
 
   const [isOnline, setIsOnline] = useState(true);
   const [realtimeDriversConnected, setRealtimeDriversConnected] = useState(false);
-  const [activeTab, setActiveTab] = useState<OrderStatus>("pendente");
+  const [activeTab, setActiveTab] = useState<OrderTabKey>("pendente");
   const [dashboardTab, setDashboardTab] = useState<DashboardTab>("dashboard");
   const [autoPrint, setAutoPrint] = useState(() => localStorage.getItem("autoPrint") === "true");
   const [soundEnabled, setSoundEnabled] = useState(false);
