@@ -303,7 +303,11 @@ const AdminDashboard = () => {
       if (!sdLinks?.length) return [];
       const userIds = sdLinks.map(d => d.driver_user_id);
       const { data: profiles } = await supabase.from("profiles").select("user_id, full_name, phone, whatsapp_number").in("user_id", userIds);
-      return profiles || [];
+      // If RLS blocks profile reads, still return driver links so hasLinkedDrivers is accurate
+      if (!profiles?.length) {
+        return sdLinks.map(d => ({ user_id: d.driver_user_id, full_name: "Motoboy", phone: null, whatsapp_number: null }));
+      }
+      return profiles;
     },
     enabled: !!store && (store as any)?.delivery_mode === "own",
   });
