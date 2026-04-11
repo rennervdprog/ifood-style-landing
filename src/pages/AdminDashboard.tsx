@@ -42,10 +42,11 @@ import { sendPushNotification } from "@/lib/firebase";
 import { addMoney, averageMoney, formatCurrency, sumMoney } from "@/lib/utils";
 import ProductTour, { lojistaTourSteps } from "@/components/ProductTour";
 import { useStorePlan } from "@/hooks/useStorePlan";
+import StoreDriverManager from "@/components/StoreDriverManager";
 import TrialExpiredGuard from "@/components/TrialExpiredGuard";
 
 type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_entrega" | "em_transito" | "entregue" | "finalizado";
-type DashboardTab = "dashboard" | "orders" | "menu" | "addons" | "bordas" | "hours" | "settings" | "finance" | "clients" | "reports" | "subscription" | "loyalty";
+type DashboardTab = "dashboard" | "orders" | "menu" | "addons" | "bordas" | "hours" | "settings" | "finance" | "clients" | "reports" | "subscription" | "loyalty" | "drivers";
 
 const ALERT_SOUND_URL = "https://actions.google.com/sounds/v1/alarms/beep_short.ogg";
 const CASH_REGISTER_SOUND_URL = "https://actions.google.com/sounds/v1/office/cash_register.ogg";
@@ -88,6 +89,7 @@ const baseSidebarItems: { key: DashboardTab; label: string; icon: React.ElementT
   { key: "reports", label: "Relatórios", icon: BarChart3 },
   { key: "subscription", label: "Assinatura", icon: CreditCard },
   { key: "loyalty", label: "Fidelidade", icon: Star },
+  { key: "drivers", label: "Motoboys", icon: Bike },
   { key: "settings", label: "Configurações", icon: Settings },
 ];
 
@@ -108,6 +110,7 @@ const moreSheetItems: { key: DashboardTab; label: string; icon: React.ElementTyp
   { key: "reports", label: "Relatórios", icon: BarChart3 },
   { key: "subscription", label: "Assinatura", icon: CreditCard },
   { key: "loyalty", label: "Fidelidade", icon: Star },
+  { key: "drivers", label: "Motoboys", icon: Bike },
   { key: "settings", label: "Configurações", icon: Settings },
 ];
 
@@ -1868,6 +1871,7 @@ const AdminDashboard = () => {
                   </p>
                 </div>
               )}
+              {dashboardTab === "drivers" && store && <StoreDriverManager storeId={store.id} />}
               {dashboardTab === "reports" && (
                 <div className="space-y-6">
                   <h3 className="text-lg font-bold text-foreground">Relatórios Avançados</h3>
