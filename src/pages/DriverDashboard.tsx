@@ -652,6 +652,8 @@ const DriverDashboard = () => {
         </div>
       </div>
     );
+  }
+
   // Store motoboy waiting for store owner to link them
   if (isStoreMotoboyWaiting) {
     return (
