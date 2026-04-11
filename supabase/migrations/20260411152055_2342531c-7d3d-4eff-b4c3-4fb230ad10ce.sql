@@ -1,0 +1,1 @@
+DELETE FROM public.drivers WHERE user_id = '901e44d6-fc0e-487b-af03-f6460a2d60fa';

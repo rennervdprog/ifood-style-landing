@@ -131,8 +131,25 @@ const DriverDashboard = () => {
     enabled: !!user,
   });
 
+  // Check if user has a platform drivers entry
+  const { data: platformDriverEntry } = useQuery({
+    queryKey: ["platform-driver-entry", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("drivers")
+        .select("id")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
+
   const isStoreDriver = (storeDriverLinks?.length || 0) > 0;
-  const isPlatformDriver = Boolean((driverProfile as any)?.role === "motoboy" && !isStoreDriver);
+  const hasPlatformDriverEntry = !!platformDriverEntry;
+  // Store motoboy = has role motoboy, no platform drivers entry, and no store link yet
+  const isStoreMotoboyWaiting = (driverProfile as any)?.role === "motoboy" && !hasPlatformDriverEntry && !isStoreDriver;
+  const isPlatformDriver = Boolean((driverProfile as any)?.role === "motoboy" && hasPlatformDriverEntry && !isStoreDriver);
   const linkedStoreIds = useMemo(() => (storeDriverLinks || []).map((l: any) => l.store_id), [storeDriverLinks]);
 
   useEffect(() => {
@@ -631,6 +648,34 @@ const DriverDashboard = () => {
           </div>
           <button onClick={() => navigate("/")} className="text-primary hover:underline text-sm font-bold">
             ← Voltar para a Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Store motoboy waiting for store owner to link them
+  if (isStoreMotoboyWaiting) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center text-center px-6">
+        <div className="w-20 h-20 bg-amber-500/10 rounded-3xl flex items-center justify-center mb-5">
+          <Store className="h-10 w-10 text-amber-500" />
+        </div>
+        <h1 className="text-xl font-black text-foreground mb-2">Aguardando Vinculação 🔗</h1>
+        <p className="text-sm text-muted-foreground max-w-xs mb-3">
+          Sua conta foi criada com sucesso! Agora peça ao <span className="font-bold text-foreground">dono da loja</span> para te adicionar como motoboy próprio no painel dele.
+        </p>
+        <div className="bg-primary/5 border border-primary/10 rounded-2xl p-4 max-w-xs mb-6">
+          <p className="text-xs text-muted-foreground">
+            📲 Assim que o lojista vincular seu cadastro, esta tela será atualizada automaticamente.
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <button onClick={() => navigate("/")} className="bg-muted text-foreground font-bold px-5 py-3 rounded-xl text-sm">
+            Voltar à Home
+          </button>
+          <button onClick={() => window.location.reload()} className="bg-primary text-primary-foreground font-bold px-5 py-3 rounded-xl text-sm">
+            Verificar Status
           </button>
         </div>
       </div>
