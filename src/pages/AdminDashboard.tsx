@@ -296,7 +296,7 @@ const AdminDashboard = () => {
   });
 
   // Fetch store drivers list for own-delivery stores
-  const { data: linkedStoreDrivers } = useQuery({
+  const { data: linkedStoreDrivers, isLoading: driversLoading } = useQuery({
     queryKey: ["store-drivers-list", store?.id],
     queryFn: async () => {
       const { data: sdLinks } = await supabase.from("store_drivers").select("driver_user_id").eq("store_id", store!.id);
