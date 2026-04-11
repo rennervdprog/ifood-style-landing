@@ -17,6 +17,24 @@ const schema = z.object({
   path: ["emailConfirm"],
 });
 
+const InputField = ({ label, icon: Icon, value, onChange, error, type = "text", placeholder, ...props }: any) => (
+  <div className="space-y-1.5">
+    <label className="text-xs font-bold text-foreground">{label}</label>
+    <div className="relative">
+      <Icon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <input
+        type={type}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        className={`w-full pl-10 pr-3 py-3 bg-muted/50 border ${error ? "border-red-500" : "border-border"} rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30`}
+        {...props}
+      />
+    </div>
+    {error && <p className="text-[11px] text-red-500 font-medium">{error}</p>}
+  </div>
+);
+
 const CadastroMotoboyLoja = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -123,24 +141,6 @@ const CadastroMotoboyLoja = () => {
       </div>
     );
   }
-
-  const InputField = ({ label, icon: Icon, value, onChange, error, type = "text", placeholder, ...props }: any) => (
-    <div className="space-y-1.5">
-      <label className="text-xs font-bold text-foreground">{label}</label>
-      <div className="relative">
-        <Icon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <input
-          type={type}
-          value={value}
-          onChange={onChange}
-          placeholder={placeholder}
-          className={`w-full pl-10 pr-3 py-3 bg-muted/50 border ${error ? "border-red-500" : "border-border"} rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30`}
-          {...props}
-        />
-      </div>
-      {error && <p className="text-[11px] text-red-500 font-medium">{error}</p>}
-    </div>
-  );
 
   return (
     <div className="min-h-screen bg-background">
