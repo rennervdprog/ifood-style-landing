@@ -182,7 +182,7 @@ const AdminDashboard = () => {
   };
 
   // ── DATA QUERIES ──
-  const { data: myProfile } = useQuery({
+  const { data: myProfile, isLoading: profileLoading } = useQuery({
     queryKey: ["my-profile-approval", user?.id],
     queryFn: async () => {
       const { data } = await supabase.from("profiles").select("is_approved, role").eq("user_id", user!.id).maybeSingle();
