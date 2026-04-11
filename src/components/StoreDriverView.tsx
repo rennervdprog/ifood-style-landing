@@ -1,0 +1,506 @@
+import { useState, useCallback, useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
+import { getOrderItemDisplayName } from "@/lib/orderItemName";
+import confetti from "canvas-confetti";
+import {
+  Bike, MapPin, Navigation, KeyRound, CheckCircle2, Package,
+  Store, ChevronRight, Route, Clock, User, Phone, ArrowRight,
+  Loader2, ShieldCheck, Zap
+} from "lucide-react";
+import WhatsAppButton from "@/components/WhatsAppButton";
+import OrderChat from "@/components/OrderChat";
+
+/* ── Helpers ── */
+const NavigationLinks = ({ addr }: { addr: string }) => {
+  const encoded = encodeURIComponent(addr);
+  return (
+    <div className="flex gap-2 mt-2">
+      <a href={`https://www.google.com/maps/search/?api=1&query=${encoded}`} target="_blank" rel="noopener noreferrer"
+        className="flex-1 flex items-center justify-center gap-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-bold px-3 py-2.5 rounded-xl active:scale-[0.97] transition-all">
+        <Navigation className="h-3.5 w-3.5" /> Google Maps
+      </a>
+      <a href={`https://waze.com/ul?q=${encoded}&navigate=yes`} target="_blank" rel="noopener noreferrer"
+        className="flex-1 flex items-center justify-center gap-1.5 bg-purple-500/10 text-purple-600 dark:text-purple-400 text-xs font-bold px-3 py-2.5 rounded-xl active:scale-[0.97] transition-all">
+        <Navigation className="h-3.5 w-3.5" /> Waze
+      </a>
+    </div>
+  );
+};
+
+/**
+ * Simple route optimization: group orders by neighborhood, then by street similarity.
+ * This provides "proximity-based" ordering without needing geocoding APIs.
+ */
+function optimizeRoute(orders: any[]): any[] {
+  if (orders.length <= 1) return orders;
+
+  // Group by neighborhood
+  const groups: Record<string, any[]> = {};
+  orders.forEach((o) => {
+    const key = (o.neighborhood || "").toLowerCase().trim();
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(o);
+  });
+
+  // Within each neighborhood group, sort by street similarity
+  const result: any[] = [];
+  Object.values(groups).forEach((group) => {
+    group.sort((a: any, b: any) => {
+      const streetA = (a.address_details || "").toLowerCase();
+      const streetB = (b.address_details || "").toLowerCase();
+      return streetA.localeCompare(streetB);
+    });
+    result.push(...group);
+  });
+
+  return result;
+}
+
+interface StoreDriverViewProps {
+  linkedStoreIds: string[];
+}
+
+const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [pinInputs, setPinInputs] = useState<Record<string, string>>({});
+  const [collectionInputs, setCollectionInputs] = useState<Record<string, string>>({});
+  const [verifyingId, setVerifyingId] = useState<string | null>(null);
+  const [collectingId, setCollectingId] = useState<string | null>(null);
+  const [useOptimized, setUseOptimized] = useState(true);
+  const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+
+  // Fetch all available orders for linked stores
+  const { data: availableOrders, isLoading: loadingAvailable } = useQuery({
+    queryKey: ["store-driver-available", linkedStoreIds],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*, stores(name, address_street, address_number, address_neighborhood, address_city), order_items(*, products(name))")
+        .in("store_id", linkedStoreIds)
+        .eq("status", "pronto_para_entrega" as any)
+        .is("driver_id", null)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: linkedStoreIds.length > 0,
+    refetchInterval: 10000,
+  });
+
+  // Fetch my active deliveries (multiple!)
+  const { data: myDeliveries } = useQuery({
+    queryKey: ["store-driver-my-deliveries", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*, stores(name, owner_id, address_street, address_number, address_neighborhood, address_city), order_items(*, products(name))")
+        .eq("driver_id", user!.id)
+        .in("status", ["pronto_para_entrega", "saiu_entrega", "em_transito"] as any)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user,
+    refetchInterval: 10000,
+  });
+
+  // Fetch contact profiles for active deliveries
+  const clientIds = useMemo(() => {
+    if (!myDeliveries) return [];
+    return [...new Set(myDeliveries.map((o: any) => o.client_id).filter(Boolean))];
+  }, [myDeliveries]);
+
+  const { data: contactProfiles } = useQuery({
+    queryKey: ["store-driver-contacts", clientIds],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profile_contacts")
+        .select("user_id, whatsapp_number, phone, full_name")
+        .in("user_id", clientIds);
+      return data || [];
+    },
+    enabled: clientIds.length > 0,
+  });
+
+  // Fetch delivery history count
+  const { data: deliveryCount } = useQuery({
+    queryKey: ["store-driver-count", user?.id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("orders")
+        .select("id", { count: "exact", head: true })
+        .eq("driver_id", user!.id)
+        .eq("status", "finalizado" as any);
+      return count || 0;
+    },
+    enabled: !!user,
+  });
+
+  const getContact = useCallback((userId: string) => {
+    return contactProfiles?.find((c: any) => c.user_id === userId);
+  }, [contactProfiles]);
+
+  const optimizedDeliveries = useMemo(() => {
+    if (!myDeliveries || myDeliveries.length === 0) return [];
+    return useOptimized ? optimizeRoute(myDeliveries) : myDeliveries;
+  }, [myDeliveries, useOptimized]);
+
+  const optimizedAvailable = useMemo(() => {
+    if (!availableOrders || availableOrders.length === 0) return [];
+    return useOptimized ? optimizeRoute(availableOrders) : availableOrders;
+  }, [availableOrders, useOptimized]);
+
+  const acceptOrder = async (orderId: string) => {
+    const { error } = await supabase.rpc("driver_accept_order", { _order_id: orderId } as any);
+    if (error) {
+      toast.error("Não foi possível aceitar o pedido.");
+    } else {
+      toast.success("Pedido aceito! Adicionado à sua rota.");
+      queryClient.invalidateQueries({ queryKey: ["store-driver-available"] });
+      queryClient.invalidateQueries({ queryKey: ["store-driver-my-deliveries"] });
+    }
+  };
+
+  const acceptAll = async () => {
+    if (!availableOrders?.length) return;
+    let accepted = 0;
+    for (const order of availableOrders) {
+      const { error } = await supabase.rpc("driver_accept_order", { _order_id: order.id } as any);
+      if (!error) accepted++;
+    }
+    toast.success(`${accepted} pedido(s) aceito(s)!`);
+    queryClient.invalidateQueries({ queryKey: ["store-driver-available"] });
+    queryClient.invalidateQueries({ queryKey: ["store-driver-my-deliveries"] });
+  };
+
+  const validateCollection = async (orderId: string) => {
+    const code = collectionInputs[orderId];
+    if (!code || code.length !== 4) { toast.error("Digite o código de 4 dígitos."); return; }
+    setCollectingId(orderId);
+    const { error } = await supabase.rpc("driver_validate_collection" as any, { _order_id: orderId, _code: code });
+    if (error) {
+      toast.error(error.message || "Código inválido.");
+    } else {
+      toast.success("✅ Coleta validada!");
+      setCollectionInputs((prev) => ({ ...prev, [orderId]: "" }));
+      queryClient.invalidateQueries({ queryKey: ["store-driver-my-deliveries"] });
+    }
+    setCollectingId(null);
+  };
+
+  const finishDelivery = async (orderId: string) => {
+    const pin = pinInputs[orderId];
+    if (!pin || pin.length !== 4) { toast.error("Digite o PIN de 4 dígitos."); return; }
+    setVerifyingId(orderId);
+    const { error } = await supabase.rpc("driver_finish_delivery", { _order_id: orderId, _pin: pin } as any);
+    if (error) {
+      toast.error(error.message || "PIN inválido.");
+    } else {
+      confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
+      toast.success("🎉 Entrega confirmada!");
+      setPinInputs((prev) => ({ ...prev, [orderId]: "" }));
+      queryClient.invalidateQueries({ queryKey: ["store-driver-my-deliveries"] });
+      queryClient.invalidateQueries({ queryKey: ["store-driver-count"] });
+    }
+    setVerifyingId(null);
+  };
+
+  const hasActiveDeliveries = (myDeliveries?.length || 0) > 0;
+  const hasAvailable = (availableOrders?.length || 0) > 0;
+
+  return (
+    <div className="px-4 py-4 space-y-5">
+      {/* Stats bar */}
+      <div className="grid grid-cols-3 gap-2">
+        <div className="bg-card border border-border rounded-2xl p-3 text-center">
+          <Package className="h-4 w-4 text-primary mx-auto mb-1" />
+          <p className="text-lg font-black text-foreground">{myDeliveries?.length || 0}</p>
+          <p className="text-[9px] text-muted-foreground font-semibold uppercase">Na Rota</p>
+        </div>
+        <div className="bg-card border border-border rounded-2xl p-3 text-center">
+          <Clock className="h-4 w-4 text-amber-500 mx-auto mb-1" />
+          <p className="text-lg font-black text-foreground">{availableOrders?.length || 0}</p>
+          <p className="text-[9px] text-muted-foreground font-semibold uppercase">Disponíveis</p>
+        </div>
+        <div className="bg-card border border-border rounded-2xl p-3 text-center">
+          <CheckCircle2 className="h-4 w-4 text-emerald-500 mx-auto mb-1" />
+          <p className="text-lg font-black text-foreground">{deliveryCount || 0}</p>
+          <p className="text-[9px] text-muted-foreground font-semibold uppercase">Realizadas</p>
+        </div>
+      </div>
+
+      {/* Route optimization toggle */}
+      {(hasActiveDeliveries || hasAvailable) && (
+        <button
+          onClick={() => setUseOptimized(!useOptimized)}
+          className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl border transition-all ${
+            useOptimized
+              ? "bg-primary/5 border-primary/20"
+              : "bg-muted/50 border-border"
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            <Route className={`h-4 w-4 ${useOptimized ? "text-primary" : "text-muted-foreground"}`} />
+            <div className="text-left">
+              <p className="text-xs font-bold text-foreground">Rota Otimizada</p>
+              <p className="text-[10px] text-muted-foreground">Agrupa entregas por proximidade</p>
+            </div>
+          </div>
+          <div className={`w-10 h-6 rounded-full transition-colors ${useOptimized ? "bg-primary" : "bg-muted"} relative`}>
+            <span className={`absolute top-[3px] w-[18px] h-[18px] rounded-full bg-white shadow transition-transform ${useOptimized ? "left-[19px]" : "left-[3px]"}`} />
+          </div>
+        </button>
+      )}
+
+      {/* ═══ ACTIVE ROUTE ═══ */}
+      {hasActiveDeliveries && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 px-1">
+            <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Route className="h-3.5 w-3.5 text-primary" />
+            </div>
+            <h3 className="text-sm font-bold text-foreground">
+              Sua Rota ({optimizedDeliveries.length} {optimizedDeliveries.length === 1 ? "entrega" : "entregas"})
+            </h3>
+          </div>
+
+          {optimizedDeliveries.map((order: any, index: number) => {
+            const isExpanded = expandedOrder === order.id;
+            const contact = getContact(order.client_id);
+            const contactPhone = (contact as any)?.whatsapp_number || (contact as any)?.phone || "";
+            const contactName = (contact as any)?.full_name || "Cliente";
+            const needsCollection = order.status === "pronto_para_entrega" && !order.collection_validated;
+            const inDelivery = order.collection_validated || order.status === "saiu_entrega" || order.status === "em_transito";
+
+            return (
+              <div key={order.id} className="bg-card border border-border rounded-2xl overflow-hidden">
+                {/* Step header */}
+                <button
+                  onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-left"
+                >
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black ${
+                    inDelivery ? "bg-green-500 text-white" : "bg-primary/10 text-primary"
+                  }`}>
+                    {index + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-foreground truncate">
+                      {order.neighborhood}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground truncate">
+                      {contactName} • #{order.id.slice(0, 6).toUpperCase()}
+                    </p>
+                  </div>
+                  <div className={`px-2 py-1 rounded-lg text-[10px] font-bold ${
+                    needsCollection ? "bg-amber-500/10 text-amber-500" : inDelivery ? "bg-green-500/10 text-green-500" : "bg-muted text-muted-foreground"
+                  }`}>
+                    {needsCollection ? "COLETAR" : inDelivery ? "ENTREGAR" : order.status}
+                  </div>
+                  <ChevronRight className={`h-4 w-4 text-muted-foreground transition-transform ${isExpanded ? "rotate-90" : ""}`} />
+                </button>
+
+                {/* Expanded content */}
+                {isExpanded && (
+                  <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
+                    {/* Address with map */}
+                    <div className="flex items-start gap-3">
+                      <MapPin className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-foreground">{order.neighborhood}</p>
+                        <p className="text-xs text-muted-foreground">{order.address_details}</p>
+                        <NavigationLinks addr={order.address_details} />
+                      </div>
+                    </div>
+
+                    {/* Client contact */}
+                    {contactPhone && (
+                      <WhatsAppButton
+                        number={contactPhone}
+                        message={`Olá ${contactName}! Sou o motoboy, estou a caminho com seu pedido #${order.id.slice(0, 8).toUpperCase()}.`}
+                        label={`Falar com ${contactName}`}
+                        size="sm"
+                      />
+                    )}
+
+                    {/* Order items */}
+                    <div className="bg-muted/50 rounded-xl p-3">
+                      <p className="text-[10px] text-muted-foreground font-bold uppercase mb-2">Itens</p>
+                      <div className="space-y-1">
+                        {order.order_items?.map((item: any) => (
+                          <div key={item.id} className="flex justify-between text-xs">
+                            <span className="text-foreground">{item.quantity}x {getOrderItemDisplayName(item)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Payment info - NO fee shown */}
+                    <div className="flex items-center gap-2 bg-muted/30 rounded-xl px-3 py-2">
+                      <span className="text-xs text-muted-foreground">Pagamento:</span>
+                      <span className="text-xs font-bold text-foreground">
+                        {order.payment_method === "pix" ? "📱 PIX" : order.payment_method === "dinheiro" ? "💵 Dinheiro" : order.payment_method === "cartao" ? "💳 Cartão" : order.payment_method}
+                      </span>
+                      {order.needs_change && order.change_for && (
+                        <span className="text-xs text-amber-500 font-bold ml-auto">
+                          Troco p/ R$ {Number(order.change_for).toFixed(2)}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Collection validation */}
+                    {needsCollection && (
+                      <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-4 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <ShieldCheck className="h-4 w-4 text-amber-500" />
+                          <span className="text-sm font-bold text-foreground">Validar Coleta</span>
+                        </div>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={4}
+                          placeholder="• • • •"
+                          value={collectionInputs[order.id] || ""}
+                          onChange={(e) => setCollectionInputs((prev) => ({ ...prev, [order.id]: e.target.value.replace(/\D/g, "").slice(0, 4) }))}
+                          className="w-full text-center text-2xl font-black tracking-[0.5em] bg-card border-2 border-amber-500/20 rounded-xl py-3 text-foreground placeholder:text-muted-foreground/20 focus:outline-none focus:border-amber-500"
+                        />
+                        <button
+                          onClick={() => validateCollection(order.id)}
+                          disabled={!collectionInputs[order.id] || collectionInputs[order.id].length !== 4 || collectingId === order.id}
+                          className="w-full bg-amber-500 text-white font-bold py-3 rounded-xl text-sm disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                          {collectingId === order.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+                          Confirmar Coleta
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Delivery PIN */}
+                    {inDelivery && (
+                      <div className="bg-green-500/5 border border-green-500/20 rounded-2xl p-4 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <KeyRound className="h-4 w-4 text-green-500" />
+                          <span className="text-sm font-bold text-foreground">Confirmar Entrega</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Peça o PIN de 4 dígitos ao cliente.</p>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={4}
+                          placeholder="• • • •"
+                          value={pinInputs[order.id] || ""}
+                          onChange={(e) => setPinInputs((prev) => ({ ...prev, [order.id]: e.target.value.replace(/\D/g, "").slice(0, 4) }))}
+                          className="w-full text-center text-2xl font-black tracking-[0.5em] bg-card border-2 border-green-500/20 rounded-xl py-3 text-foreground placeholder:text-muted-foreground/20 focus:outline-none focus:border-green-500"
+                        />
+                        <button
+                          onClick={() => finishDelivery(order.id)}
+                          disabled={!pinInputs[order.id] || pinInputs[order.id].length !== 4 || verifyingId === order.id}
+                          className="w-full bg-green-500 text-white font-bold py-3 rounded-xl text-sm disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                          {verifyingId === order.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                          Finalizar Entrega
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Chat */}
+                    <OrderChat
+                      orderId={order.id}
+                      storeName={(order as any).stores?.name || "Loja"}
+                      storeOwnerId={(order as any).stores?.owner_id}
+                      clientId={order.client_id}
+                      driverId={user?.id}
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ═══ AVAILABLE ORDERS ═══ */}
+      {!loadingAvailable && hasAvailable && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between px-1">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                <Package className="h-3.5 w-3.5 text-amber-500" />
+              </div>
+              <h3 className="text-sm font-bold text-foreground">
+                Disponíveis ({optimizedAvailable.length})
+              </h3>
+            </div>
+            {optimizedAvailable.length > 1 && (
+              <button
+                onClick={acceptAll}
+                className="bg-primary text-primary-foreground px-3 py-1.5 rounded-xl text-[11px] font-bold flex items-center gap-1"
+              >
+                <Zap className="h-3 w-3" /> Aceitar Todos
+              </button>
+            )}
+          </div>
+
+          {optimizedAvailable.map((order: any, index: number) => (
+            <div key={order.id} className="bg-card border border-border rounded-2xl p-4 space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center text-xs font-black text-amber-500">
+                  {index + 1}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-foreground">{(order as any).stores?.name || "Loja"}</p>
+                  <p className="text-[10px] text-muted-foreground">#{order.id.slice(0, 6).toUpperCase()}</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2.5 bg-muted/50 rounded-xl p-3">
+                <MapPin className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                <div className="min-w-0">
+                  <span className="text-sm font-semibold text-foreground">{order.neighborhood}</span>
+                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{order.address_details}</p>
+                </div>
+              </div>
+
+              <div className="text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-0.5">
+                {order.order_items?.map((item: any) => (
+                  <span key={item.id}>{item.quantity}x {getOrderItemDisplayName(item)}</span>
+                ))}
+              </div>
+
+              <button
+                onClick={() => acceptOrder(order.id)}
+                className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-xl text-sm active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+              >
+                ACEITAR <ArrowRight className="h-4 w-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {loadingAvailable && (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      )}
+
+      {!loadingAvailable && !hasActiveDeliveries && !hasAvailable && (
+        <div className="flex flex-col items-center justify-center py-16 text-center px-6">
+          <div className="w-16 h-16 rounded-3xl bg-muted/80 flex items-center justify-center mb-4">
+            <Bike className="h-8 w-8 text-muted-foreground/60" />
+          </div>
+          <h2 className="text-base font-bold text-foreground mb-1">Aguardando pedidos</h2>
+          <p className="text-sm text-muted-foreground max-w-[260px]">
+            Quando a loja tiver pedidos prontos, eles aparecerão aqui organizados por rota.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default StoreDriverView;
