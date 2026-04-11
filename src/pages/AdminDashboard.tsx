@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useCallback, useMemo, memo } from "react";
 import { getOrderItemDisplayName } from "@/lib/orderItemName";
+import { formatBRL } from "@/lib/utils";
 import SimulationBanner from "@/components/SimulationBanner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -568,7 +569,7 @@ const AdminDashboard = () => {
       }, { zapiEnabled: !!cancelSettings.zapi_enabled });
 
       if (isPix) {
-        toast.success("Pedido cancelado! Reembolso PIX pendente.", { duration: 8000, description: `R$ ${Number(order.total_price).toFixed(2)} — envie o PIX de volta ao cliente.` });
+        toast.success("Pedido cancelado! Reembolso PIX pendente.", { duration: 8000, description: `${formatBRL(Number(order.total_price))} — envie o PIX de volta ao cliente.` });
       } else {
         toast.success("Pedido cancelado e cliente notificado.");
       }
@@ -783,7 +784,7 @@ const AdminDashboard = () => {
               <span className="text-xs text-muted-foreground">Hoje</span>
             </div>
             <div className="text-right">
-              <p className="text-sm font-bold text-foreground">R$ {todayTotal.toFixed(2)}</p>
+              <p className="text-sm font-bold text-foreground">{formatBRL(todayTotal)}</p>
               <p className="text-[10px] text-muted-foreground">{todayCount} pedidos</p>
             </div>
           </div>
@@ -1022,7 +1023,7 @@ const AdminDashboard = () => {
                   onClick={() => { setDashboardTab("orders"); setActiveTab("pendente"); }}
                 />
                 <GlanceCard
-                  icon={DollarSign} label="Faturamento Hoje" value={`R$ ${todayTotal.toFixed(2)}`}
+                  icon={DollarSign} label="Faturamento Hoje" value={formatBRL(todayTotal)}
                   subValue={`${todayCount} pedido${todayCount !== 1 ? "s" : ""} hoje`}
                   color="text-emerald-500" trend={todayTotal > 0 ? "up" : null}
                   onClick={() => setDashboardTab("finance")}
@@ -1070,13 +1071,13 @@ const AdminDashboard = () => {
                             <div className="flex items-center gap-2 text-xs text-muted-foreground">
                               <span>{getClientName(order.client_id)}</span><span>•</span>
                               <span>{paymentIcons[order.payment_method]} {paymentLabels[order.payment_method] || order.payment_method}</span><span>•</span>
-                              <span className="font-bold text-foreground">R$ {Number(order.total_price).toFixed(2)}</span>
+                              <span className="font-bold text-foreground">{formatBRL(Number(order.total_price))}</span>
                             </div>
                             <div className="bg-muted/50 rounded-lg px-2.5 py-1.5 space-y-0.5">
                               {order.order_items?.slice(0, 4).map((item: any) => (
                                 <div key={item.id} className="flex justify-between text-xs">
                                   <span className="text-foreground"><span className="text-primary font-bold">{item.quantity}x</span> {getOrderItemDisplayName(item)}</span>
-                                  <span className="text-muted-foreground">R$ {(item.unit_price * item.quantity).toFixed(2)}</span>
+                                  <span className="text-muted-foreground">{formatBRL(item.unit_price * item.quantity)}</span>
                                 </div>
                               ))}
                               {(order.order_items?.length || 0) > 4 && <p className="text-[10px] text-muted-foreground">+{order.order_items.length - 4} itens...</p>}
@@ -1128,7 +1129,7 @@ const AdminDashboard = () => {
                               {new Date(order.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                             </span>
                           </div>
-                          <p className="text-xl font-black text-emerald-500">R$ {Number(order.total_price).toFixed(2)}</p>
+                          <p className="text-xl font-black text-emerald-500">{formatBRL(Number(order.total_price))}</p>
                         </div>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3 flex-wrap">
                           <div className="flex items-center gap-1"><User className="h-3 w-3" /><span className="font-medium">{getClientName(order.client_id)}</span></div>
@@ -1141,7 +1142,7 @@ const AdminDashboard = () => {
                           {order.order_items?.map((item: any) => (
                             <div key={item.id} className="text-sm text-foreground flex justify-between">
                               <span><span className="text-primary font-bold">{item.quantity}x</span> {getOrderItemDisplayName(item)}</span>
-                              <span className="text-muted-foreground text-xs">R$ {(item.unit_price * item.quantity).toFixed(2)}</span>
+                              <span className="text-muted-foreground text-xs">{formatBRL(item.unit_price * item.quantity)}</span>
                             </div>
                           ))}
                         </div>
@@ -1223,7 +1224,7 @@ const AdminDashboard = () => {
                             const val = parseFloat(e.target.value.replace(",", ".")) || 0;
                             await supabase.from("stores").update({ own_delivery_fee: val } as any).eq("id", store.id);
                             queryClient.invalidateQueries({ queryKey: ["my-store", user?.id] });
-                            toast.success(`Taxa fixa atualizada para R$ ${val.toFixed(2)}`);
+                            toast.success(`Taxa fixa atualizada para ${formatBRL(val)}`);
                           }}
                           placeholder="Ex: 5.00"
                           className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
@@ -1276,7 +1277,7 @@ const AdminDashboard = () => {
                             <p className="text-[10px] text-muted-foreground">{client.totalOrders} pedidos • {client.neighborhood || "—"}</p>
                           </div>
                         </div>
-                        <p className="text-sm font-black text-emerald-500">R$ {client.totalSpent.toFixed(2)}</p>
+                        <p className="text-sm font-black text-emerald-500">{formatBRL(client.totalSpent)}</p>
                       </div>
                     ))}
                   </div>
@@ -1408,7 +1409,7 @@ const AdminDashboard = () => {
                                   </div>
                                   <div className="flex items-center gap-2">
                                     <span className="text-muted-foreground">{new Date(order.created_at).toLocaleDateString("pt-BR")}</span>
-                                    <span className="font-bold text-foreground">R$ {Number(order.total_price).toFixed(2)}</span>
+                                    <span className="font-bold text-foreground">{formatBRL(Number(order.total_price))}</span>
                                   </div>
                                 </div>
                               );
@@ -1662,7 +1663,7 @@ const AdminDashboard = () => {
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="text-xl font-black text-emerald-500">R$ {Number(order.total_price).toFixed(2)}</p>
+                            <p className="text-xl font-black text-emerald-500">{formatBRL(Number(order.total_price))}</p>
                             {order.payment_method === "pix" && (
                               <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded">PIX PAGO</span>
                             )}
@@ -1683,7 +1684,7 @@ const AdminDashboard = () => {
                             return (
                               <div key={`addons-${item.id}`} className="pl-5 text-[11px] text-muted-foreground">
                                 {addons.map((a: any, idx: number) => (
-                                  <span key={idx}>+ {a.name}{a.price > 0 ? ` (R$${Number(a.price).toFixed(2)})` : ""}{idx < addons.length - 1 ? ", " : ""}</span>
+                                  <span key={idx}>+ {a.name}{a.price > 0 ? ` (${formatBRL(Number(a.price))})` : ""}{idx < addons.length - 1 ? ", " : ""}</span>
                                 ))}
                               </div>
                             );
@@ -1695,7 +1696,7 @@ const AdminDashboard = () => {
                           {order.payment_method === "dinheiro" && (order as any).needs_change && Number((order as any).change_for) > 0 && (
                             <div className="flex items-center gap-1 pt-1 border-t border-border">
                               <Banknote className="h-3 w-3 text-amber-500" />
-                              <span className="text-[10px] text-amber-500 font-bold">Troco: R$ {(Number((order as any).change_for) - Number(order.total_price)).toFixed(2)}</span>
+                              <span className="text-[10px] text-amber-500 font-bold">Troco: {formatBRL(Number((order as any).change_for) - Number(order.total_price))}</span>
                             </div>
                           )}
                         </div>
@@ -1711,7 +1712,7 @@ const AdminDashboard = () => {
                           {isAddressExpanded && (
                             <div className="mt-1.5 bg-muted/30 rounded-lg p-2.5 text-xs text-muted-foreground space-y-0.5 animate-fade-in">
                               <p>{order.address_details}</p>
-                              <p className="text-muted-foreground/70">Taxa entrega: R$ {Number(order.delivery_fee).toFixed(2)}</p>
+                              <p className="text-muted-foreground/70">Taxa entrega: {formatBRL(Number(order.delivery_fee))}</p>
                             </div>
                           )}
                         </div>
@@ -1811,7 +1812,7 @@ const AdminDashboard = () => {
                               </button>
                             </div>
                             <p className="text-3xl font-black text-amber-600 dark:text-amber-400 tracking-[0.3em] text-center">{(order as any).settlement_code}</p>
-                            <p className="text-[10px] text-muted-foreground text-center mt-1">Informe somente após receber R$ {Number(order.total_price).toFixed(2)}</p>
+                            <p className="text-[10px] text-muted-foreground text-center mt-1">Informe somente após receber {formatBRL(Number(order.total_price))}</p>
                           </div>
                         )}
                         {["dinheiro", "cartao"].includes(order.payment_method) && (order as any).return_to_store_confirmed && ["entregue", "finalizado"].includes(order.status) && !isOwnDelivery && (
@@ -1827,7 +1828,7 @@ const AdminDashboard = () => {
                             <>
                               {order.status === "pendente" && (
                                 <button onClick={() => {
-                                  const msg = `Olá ${getClientName(order.client_id)}! *ItaSuper*: Pedido aceito e em produção! 🍔\nPedido: #${order.id.slice(0, 8).toUpperCase()}\nTotal: R$ ${Number(order.total_price).toFixed(2)}`;
+                                  const msg = `Olá ${getClientName(order.client_id)}! *ItaSuper*: Pedido aceito e em produção! 🍔\nPedido: #${order.id.slice(0, 8).toUpperCase()}\nTotal: ${formatBRL(Number(order.total_price))}`;
                                   openWhatsApp(getClientWhatsApp(order.client_id), msg);
                                 }} className="flex items-center gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold px-2 py-1 rounded-lg" title="Avisar cliente">
                                   <MessageCircle className="h-3 w-3" /> <span className="hidden sm:inline">Avisar</span>
@@ -2116,9 +2117,9 @@ const AdminDashboard = () => {
 
                     const exportCSV = () => {
                       const header = "Data,Vendas,Pedidos";
-                      const rows = dailyChart.map(d => `${d.day},${d.vendas.toFixed(2)},${d.pedidos}`);
+                      const rows = dailyChart.map(d => `${d.day},${formatBRL(d.vendas)},${d.pedidos}`);
                       const productHeader = "\n\nProduto,Quantidade,Receita";
-                      const productRows = sortedProducts.map(([name, d]) => `${name},${d.qty},${d.revenue.toFixed(2)}`);
+                      const productRows = sortedProducts.map(([name, d]) => `${name},${d.qty},${formatBRL(d.revenue)}`);
                       const blob = new Blob([[header, ...rows, productHeader, ...productRows].join("\n")], { type: "text/csv" });
                       const url = URL.createObjectURL(blob);
                       const a = document.createElement("a"); a.href = url; a.download = `relatorio-${store?.name || "loja"}-${selectedPeriod}d.csv`; a.click();
@@ -2198,7 +2199,7 @@ const AdminDashboard = () => {
                                   <YAxis hide />
                                   <RechartsTooltip
                                     contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "12px", fontSize: "12px", color: "hsl(var(--foreground))" }}
-                                    formatter={(value: number, name: string) => [name === "vendas" ? `R$ ${value.toFixed(2)}` : `${value}`, name === "vendas" ? "Vendas" : "Pedidos"]}
+                                    formatter={(value: number, name: string) => [name === "vendas" ? formatBRL(value) : `${value}`, name === "vendas" ? "Vendas" : "Pedidos"]}
                                   />
                                   <Area type="monotone" dataKey="vendas" stroke="#10b981" strokeWidth={2} fill="url(#revenueGrad)" />
                                 </AreaChart>
@@ -2237,7 +2238,7 @@ const AdminDashboard = () => {
                                 <YAxis hide />
                                 <RechartsTooltip
                                   contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "12px", fontSize: "12px", color: "hsl(var(--foreground))" }}
-                                  formatter={(value: number, name: string) => [name === "vendas" ? `R$ ${value.toFixed(2)}` : `${value}`, name === "vendas" ? "Vendas" : "Pedidos"]}
+                                  formatter={(value: number, name: string) => [name === "vendas" ? formatBRL(value) : `${value}`, name === "vendas" ? "Vendas" : "Pedidos"]}
                                 />
                                 <Bar dataKey="vendas" fill="#a855f7" radius={[4, 4, 0, 0]} />
                               </BarChart>
