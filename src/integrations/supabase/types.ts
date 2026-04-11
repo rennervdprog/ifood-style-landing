@@ -1995,6 +1995,17 @@ export type Database = {
         Args: { _admin_notes?: string; _request_id: string }
         Returns: undefined
       }
+      search_motoboy_profiles: {
+        Args: { _search: string }
+        Returns: {
+          email: string
+          full_name: string
+          phone: string
+          user_id: string
+          vehicle: string
+          whatsapp_number: string
+        }[]
+      }
       use_coupon: {
         Args: { _coupon_id: string; _order_id: string; _user_id: string }
         Returns: boolean
