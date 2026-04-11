@@ -267,7 +267,7 @@ const StoreDirectory = () => {
         const { data: adminRole } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
         if (cancelled) return;
         if (adminRole) { setPartnerRole(null); setRoleChecked(true); return; }
-        const { data: profile } = await supabase.from("profiles").select("role").eq("user_id", user.id).maybeSingle();
+        const { data: profile } = await supabase.from("profiles").select("role, is_approved").eq("user_id", user.id).maybeSingle();
         if (cancelled) return;
         if (profile?.role === "lojista") { navigate("/admin", { replace: true }); return; }
         if (profile?.role === "motoboy") {
