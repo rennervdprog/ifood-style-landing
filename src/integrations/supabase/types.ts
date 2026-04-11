@@ -1398,6 +1398,42 @@ export type Database = {
         }
         Relationships: []
       }
+      store_drivers: {
+        Row: {
+          created_at: string
+          driver_user_id: string
+          id: string
+          store_id: string
+        }
+        Insert: {
+          created_at?: string
+          driver_user_id: string
+          id?: string
+          store_id: string
+        }
+        Update: {
+          created_at?: string
+          driver_user_id?: string
+          id?: string
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_drivers_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_drivers_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       store_plans: {
         Row: {
           commission_rate: number
@@ -1907,6 +1943,10 @@ export type Database = {
       }
       is_driver: { Args: { _user_id: string }; Returns: boolean }
       is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_store_driver: {
+        Args: { _store_id: string; _user_id: string }
+        Returns: boolean
+      }
       register_as_lojista:
         | {
             Args: {
