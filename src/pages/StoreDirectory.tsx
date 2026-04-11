@@ -409,11 +409,6 @@ const StoreDirectory = () => {
             ))}
           </div>
 
-          {/* location note */}
-          <div className="max-w-3xl mx-auto mt-12 rounded-xl bg-primary/5 border border-primary/10 p-4 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-8 text-sm">
-            <span className="text-muted-foreground"><MapPin className="h-3.5 w-3.5 inline mr-1 text-primary" /><strong className="text-foreground">Itatinga/SP</strong> — entrega disponível na região</span>
-            <span className="text-muted-foreground"><MapPin className="h-3.5 w-3.5 inline mr-1 text-primary" /><strong className="text-foreground">Brasil</strong> — use seu próprio entregador</span>
-          </div>
         </div>
       </section>
 
