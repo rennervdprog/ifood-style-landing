@@ -229,6 +229,17 @@ const CategoryProductFields = ({ category, metadata, onChange, storeId }: Catego
         </FieldBox>
       );
 
+    case "restaurante":
+      return renderBeverageToggle(
+        <FieldBox emoji="🍽️" title="Detalhes do Prato">
+          {renderTextField("Porção / Tamanho", "portion_size", "Ex: Individual, Família, 500g...")}
+          {renderToggle("Marmita?", "is_marmita")}
+          {renderToggle("Serve p/ compartilhar?", "shareable")}
+          {renderToggle("Produto é um combo/kit?", "is_combo")}
+          {metadata.is_combo && renderListField("Itens do Combo", "combo_items", "Ex: Arroz, Feijão, Bife...")}
+        </FieldBox>
+      );
+
     default:
       return null;
   }
