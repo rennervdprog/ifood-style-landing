@@ -924,7 +924,7 @@ const AdminDashboard = () => {
           )}
 
           {/* ══════ DASHBOARD TAB ══════ */}
-          {dashboardTab === "dashboard" && !isApproved && (
+          {dashboardTab === "dashboard" && !isApproved && !profileLoading && (
             <div className="p-4 lg:p-6 max-w-lg mx-auto flex flex-col items-center justify-center text-center min-h-[60vh]">
               <div className="w-20 h-20 bg-amber-500/10 rounded-3xl flex items-center justify-center mb-5">
                 <Shield className="h-10 w-10 text-amber-500" />
