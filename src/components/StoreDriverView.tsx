@@ -30,22 +30,14 @@ const NavigationLinks = ({ addr }: { addr: string }) => {
   );
 };
 
-/**
- * Simple route optimization: group orders by neighborhood, then by street similarity.
- * This provides "proximity-based" ordering without needing geocoding APIs.
- */
 function optimizeRoute(orders: any[]): any[] {
   if (orders.length <= 1) return orders;
-
-  // Group by neighborhood
   const groups: Record<string, any[]> = {};
   orders.forEach((o) => {
     const key = (o.neighborhood || "").toLowerCase().trim();
     if (!groups[key]) groups[key] = [];
     groups[key].push(o);
   });
-
-  // Within each neighborhood group, sort by street similarity
   const result: any[] = [];
   Object.values(groups).forEach((group) => {
     group.sort((a: any, b: any) => {
@@ -55,7 +47,6 @@ function optimizeRoute(orders: any[]): any[] {
     });
     result.push(...group);
   });
-
   return result;
 }
 
@@ -72,6 +63,22 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   const [collectingId, setCollectingId] = useState<string | null>(null);
   const [useOptimized, setUseOptimized] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+  const [activeStoreId, setActiveStoreId] = useState<string | null>(null);
+
+  const multiStore = linkedStoreIds.length > 1;
+
+  // Fetch store names
+  const { data: storeNames } = useQuery({
+    queryKey: ["store-driver-store-names", linkedStoreIds],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("stores")
+        .select("id, name")
+        .in("id", linkedStoreIds);
+      return data || [];
+    },
+    enabled: linkedStoreIds.length > 0,
+  });
 
   // Fetch all available orders for linked stores
   const { data: availableOrders, isLoading: loadingAvailable } = useQuery({
@@ -91,7 +98,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     refetchInterval: 10000,
   });
 
-  // Fetch my active deliveries (multiple!)
+  // Fetch my active deliveries
   const { data: myDeliveries } = useQuery({
     queryKey: ["store-driver-my-deliveries", user?.id],
     queryFn: async () => {
@@ -108,7 +115,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     refetchInterval: 10000,
   });
 
-  // Fetch contact profiles for active deliveries
+  // Fetch contact profiles
   const clientIds = useMemo(() => {
     if (!myDeliveries) return [];
     return [...new Set(myDeliveries.map((o: any) => o.client_id).filter(Boolean))];
@@ -126,7 +133,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     enabled: clientIds.length > 0,
   });
 
-  // Fetch delivery history count
+  // Delivery count
   const { data: deliveryCount } = useQuery({
     queryKey: ["store-driver-count", user?.id],
     queryFn: async () => {
@@ -144,15 +151,37 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     return contactProfiles?.find((c: any) => c.user_id === userId);
   }, [contactProfiles]);
 
-  const optimizedDeliveries = useMemo(() => {
-    if (!myDeliveries || myDeliveries.length === 0) return [];
-    return useOptimized ? optimizeRoute(myDeliveries) : myDeliveries;
-  }, [myDeliveries, useOptimized]);
+  // Auto-select first store if none selected
+  const effectiveStoreId = activeStoreId || linkedStoreIds[0] || null;
 
-  const optimizedAvailable = useMemo(() => {
-    if (!availableOrders || availableOrders.length === 0) return [];
-    return useOptimized ? optimizeRoute(availableOrders) : availableOrders;
-  }, [availableOrders, useOptimized]);
+  // Filter by selected store when multi-store
+  const filteredDeliveries = useMemo(() => {
+    if (!myDeliveries) return [];
+    const list = multiStore && effectiveStoreId
+      ? myDeliveries.filter((o: any) => o.store_id === effectiveStoreId)
+      : myDeliveries;
+    return useOptimized ? optimizeRoute(list) : list;
+  }, [myDeliveries, multiStore, effectiveStoreId, useOptimized]);
+
+  const filteredAvailable = useMemo(() => {
+    if (!availableOrders) return [];
+    const list = multiStore && effectiveStoreId
+      ? availableOrders.filter((o: any) => o.store_id === effectiveStoreId)
+      : availableOrders;
+    return useOptimized ? optimizeRoute(list) : list;
+  }, [availableOrders, multiStore, effectiveStoreId, useOptimized]);
+
+  // Per-store order counts for badges
+  const storeOrderCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    (myDeliveries || []).forEach((o: any) => { counts[o.store_id] = (counts[o.store_id] || 0) + 1; });
+    (availableOrders || []).forEach((o: any) => { counts[o.store_id] = (counts[o.store_id] || 0) + 1; });
+    return counts;
+  }, [myDeliveries, availableOrders]);
+
+  const getStoreName = (storeId: string) => {
+    return storeNames?.find((s: any) => s.id === storeId)?.name || "Loja";
+  };
 
   const acceptOrder = async (orderId: string) => {
     const { error } = await supabase.rpc("driver_accept_order", { _order_id: orderId } as any);
@@ -165,10 +194,10 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     }
   };
 
-  const acceptAll = async () => {
-    if (!availableOrders?.length) return;
+  const acceptAllFiltered = async () => {
+    if (!filteredAvailable.length) return;
     let accepted = 0;
-    for (const order of availableOrders) {
+    for (const order of filteredAvailable) {
       const { error } = await supabase.rpc("driver_accept_order", { _order_id: order.id } as any);
       if (!error) accepted++;
     }
@@ -209,8 +238,10 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     setVerifyingId(null);
   };
 
-  const hasActiveDeliveries = (myDeliveries?.length || 0) > 0;
-  const hasAvailable = (availableOrders?.length || 0) > 0;
+  const hasActiveDeliveries = filteredDeliveries.length > 0;
+  const hasAvailable = filteredAvailable.length > 0;
+  const totalActive = (myDeliveries?.length || 0);
+  const totalAvailable = (availableOrders?.length || 0);
 
   return (
     <div className="px-4 py-4 space-y-5">
@@ -218,12 +249,12 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       <div className="grid grid-cols-3 gap-2">
         <div className="bg-card border border-border rounded-2xl p-3 text-center">
           <Package className="h-4 w-4 text-primary mx-auto mb-1" />
-          <p className="text-lg font-black text-foreground">{myDeliveries?.length || 0}</p>
+          <p className="text-lg font-black text-foreground">{totalActive}</p>
           <p className="text-[9px] text-muted-foreground font-semibold uppercase">Na Rota</p>
         </div>
         <div className="bg-card border border-border rounded-2xl p-3 text-center">
           <Clock className="h-4 w-4 text-amber-500 mx-auto mb-1" />
-          <p className="text-lg font-black text-foreground">{availableOrders?.length || 0}</p>
+          <p className="text-lg font-black text-foreground">{totalAvailable}</p>
           <p className="text-[9px] text-muted-foreground font-semibold uppercase">Disponíveis</p>
         </div>
         <div className="bg-card border border-border rounded-2xl p-3 text-center">
@@ -232,6 +263,40 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
           <p className="text-[9px] text-muted-foreground font-semibold uppercase">Realizadas</p>
         </div>
       </div>
+
+      {/* ═══ STORE TABS (multi-store only) ═══ */}
+      {multiStore && (
+        <div className="space-y-2">
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-1">Suas Lojas</p>
+          <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 scrollbar-none">
+            {linkedStoreIds.map((sid) => {
+              const isActive = effectiveStoreId === sid;
+              const count = storeOrderCounts[sid] || 0;
+              return (
+                <button
+                  key={sid}
+                  onClick={() => setActiveStoreId(sid)}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-bold whitespace-nowrap transition-all flex-shrink-0 ${
+                    isActive
+                      ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
+                      : "bg-card border border-border text-foreground hover:bg-muted/50"
+                  }`}
+                >
+                  <Store className="h-3.5 w-3.5" />
+                  <span className="truncate max-w-[120px]">{getStoreName(sid)}</span>
+                  {count > 0 && (
+                    <span className={`min-w-[20px] h-5 rounded-full text-[10px] font-black flex items-center justify-center ${
+                      isActive ? "bg-primary-foreground/20 text-primary-foreground" : "bg-primary/10 text-primary"
+                    }`}>
+                      {count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Route optimization toggle */}
       {(hasActiveDeliveries || hasAvailable) && (
@@ -264,11 +329,11 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
               <Route className="h-3.5 w-3.5 text-primary" />
             </div>
             <h3 className="text-sm font-bold text-foreground">
-              Sua Rota ({optimizedDeliveries.length} {optimizedDeliveries.length === 1 ? "entrega" : "entregas"})
+              Sua Rota ({filteredDeliveries.length} {filteredDeliveries.length === 1 ? "entrega" : "entregas"})
             </h3>
           </div>
 
-          {optimizedDeliveries.map((order: any, index: number) => {
+          {filteredDeliveries.map((order: any, index: number) => {
             const isExpanded = expandedOrder === order.id;
             const contact = getContact(order.client_id);
             const contactPhone = (contact as any)?.whatsapp_number || (contact as any)?.phone || "";
@@ -278,7 +343,6 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
 
             return (
               <div key={order.id} className="bg-card border border-border rounded-2xl overflow-hidden">
-                {/* Step header */}
                 <button
                   onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
                   className="w-full flex items-center gap-3 px-4 py-3 text-left"
@@ -293,6 +357,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                       {order.neighborhood}
                     </p>
                     <p className="text-[11px] text-muted-foreground truncate">
+                      {!multiStore && <>{(order as any).stores?.name} • </>}
                       {contactName} • #{order.id.slice(0, 6).toUpperCase()}
                     </p>
                   </div>
@@ -304,10 +369,16 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                   <ChevronRight className={`h-4 w-4 text-muted-foreground transition-transform ${isExpanded ? "rotate-90" : ""}`} />
                 </button>
 
-                {/* Expanded content */}
                 {isExpanded && (
                   <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
-                    {/* Address with map */}
+                    {/* Store name badge for multi-store */}
+                    {multiStore && (
+                      <div className="flex items-center gap-2 bg-primary/5 rounded-xl px-3 py-2">
+                        <Store className="h-3.5 w-3.5 text-primary" />
+                        <span className="text-xs font-bold text-primary">{(order as any).stores?.name}</span>
+                      </div>
+                    )}
+
                     <div className="flex items-start gap-3">
                       <MapPin className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
@@ -317,7 +388,6 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                       </div>
                     </div>
 
-                    {/* Client contact */}
                     {contactPhone && (
                       <WhatsAppButton
                         number={contactPhone}
@@ -327,7 +397,6 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                       />
                     )}
 
-                    {/* Order items */}
                     <div className="bg-muted/50 rounded-xl p-3">
                       <p className="text-[10px] text-muted-foreground font-bold uppercase mb-2">Itens</p>
                       <div className="space-y-1">
@@ -339,7 +408,6 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                       </div>
                     </div>
 
-                    {/* Payment info - NO fee shown */}
                     <div className="flex items-center gap-2 bg-muted/30 rounded-xl px-3 py-2">
                       <span className="text-xs text-muted-foreground">Pagamento:</span>
                       <span className="text-xs font-bold text-foreground">
@@ -352,7 +420,6 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                       )}
                     </div>
 
-                    {/* Collection validation */}
                     {needsCollection && (
                       <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-4 space-y-3">
                         <div className="flex items-center gap-2">
@@ -379,7 +446,6 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                       </div>
                     )}
 
-                    {/* Delivery PIN */}
                     {inDelivery && (
                       <div className="bg-green-500/5 border border-green-500/20 rounded-2xl p-4 space-y-3">
                         <div className="flex items-center gap-2">
@@ -407,7 +473,6 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                       </div>
                     )}
 
-                    {/* Chat */}
                     <OrderChat
                       orderId={order.id}
                       storeName={(order as any).stores?.name || "Loja"}
@@ -432,12 +497,12 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                 <Package className="h-3.5 w-3.5 text-amber-500" />
               </div>
               <h3 className="text-sm font-bold text-foreground">
-                Disponíveis ({optimizedAvailable.length})
+                Disponíveis ({filteredAvailable.length})
               </h3>
             </div>
-            {optimizedAvailable.length > 1 && (
+            {filteredAvailable.length > 1 && (
               <button
-                onClick={acceptAll}
+                onClick={acceptAllFiltered}
                 className="bg-primary text-primary-foreground px-3 py-1.5 rounded-xl text-[11px] font-bold flex items-center gap-1"
               >
                 <Zap className="h-3 w-3" /> Aceitar Todos
@@ -445,7 +510,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
             )}
           </div>
 
-          {optimizedAvailable.map((order: any, index: number) => (
+          {filteredAvailable.map((order: any, index: number) => (
             <div key={order.id} className="bg-card border border-border rounded-2xl p-4 space-y-3">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center text-xs font-black text-amber-500">
@@ -493,7 +558,9 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
           <div className="w-16 h-16 rounded-3xl bg-muted/80 flex items-center justify-center mb-4">
             <Bike className="h-8 w-8 text-muted-foreground/60" />
           </div>
-          <h2 className="text-base font-bold text-foreground mb-1">Aguardando pedidos</h2>
+          <h2 className="text-base font-bold text-foreground mb-1">
+            {multiStore ? `Sem pedidos em ${getStoreName(effectiveStoreId!)}` : "Aguardando pedidos"}
+          </h2>
           <p className="text-sm text-muted-foreground max-w-[260px]">
             Quando a loja tiver pedidos prontos, eles aparecerão aqui organizados por rota.
           </p>
