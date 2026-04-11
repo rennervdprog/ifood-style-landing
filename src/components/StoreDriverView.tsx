@@ -252,19 +252,33 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     queryClient.invalidateQueries({ queryKey: ["store-driver-my-deliveries"] });
   };
 
-  const validateCollection = async (orderId: string) => {
-    const code = collectionInputs[orderId];
-    if (!code || code.length !== 4) { toast.error("Digite o código de 4 dígitos."); return; }
-    setCollectingId(orderId);
-    const { error } = await supabase.rpc("driver_validate_collection" as any, { _order_id: orderId, _code: code });
+  const [departingId, setDepartingId] = useState<string | null>(null);
+
+  const departForDelivery = async (orderId: string) => {
+    setDepartingId(orderId);
+    const { error } = await supabase
+      .from("orders")
+      .update({ status: "saiu_entrega" as any })
+      .eq("id", orderId);
     if (error) {
-      toast.error(error.message || "Código inválido.");
+      toast.error("Erro ao atualizar status.");
     } else {
-      toast.success("✅ Coleta validada!");
-      setCollectionInputs((prev) => ({ ...prev, [orderId]: "" }));
+      toast.success("🚀 Saiu para entrega!");
       queryClient.invalidateQueries({ queryKey: ["store-driver-my-deliveries"] });
     }
-    setCollectingId(null);
+    setDepartingId(null);
+  };
+
+  const departAll = async () => {
+    const readyOrders = filteredDeliveries.filter((o: any) => o.status === "pronto_para_entrega");
+    if (!readyOrders.length) return;
+    setDepartingId("all");
+    for (const order of readyOrders) {
+      await supabase.from("orders").update({ status: "saiu_entrega" as any }).eq("id", order.id);
+    }
+    toast.success(`🚀 ${readyOrders.length} pedido(s) saíram para entrega!`);
+    queryClient.invalidateQueries({ queryKey: ["store-driver-my-deliveries"] });
+    setDepartingId(null);
   };
 
   const finishDelivery = async (orderId: string) => {
