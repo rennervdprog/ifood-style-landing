@@ -384,13 +384,24 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       {/* ═══ ACTIVE ROUTE ═══ */}
       {hasActiveDeliveries && (
         <div className="space-y-3">
-          <div className="flex items-center gap-2 px-1">
-            <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Route className="h-3.5 w-3.5 text-primary" />
+          <div className="flex items-center justify-between px-1">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Route className="h-3.5 w-3.5 text-primary" />
+              </div>
+              <h3 className="text-sm font-bold text-foreground">
+                Sua Rota ({filteredDeliveries.length} {filteredDeliveries.length === 1 ? "entrega" : "entregas"})
+              </h3>
             </div>
-            <h3 className="text-sm font-bold text-foreground">
-              Sua Rota ({filteredDeliveries.length} {filteredDeliveries.length === 1 ? "entrega" : "entregas"})
-            </h3>
+            {filteredDeliveries.some((o: any) => o.status === "pronto_para_entrega") && (
+              <button
+                onClick={departAll}
+                disabled={departingId === "all"}
+                className="bg-amber-500 text-white px-3 py-1.5 rounded-xl text-[11px] font-bold flex items-center gap-1 active:scale-[0.98] transition-all disabled:opacity-50"
+              >
+                {departingId === "all" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Navigation className="h-3 w-3" />} Sair p/ Entrega
+              </button>
+            )}
           </div>
 
           {filteredDeliveries.map((order: any, index: number) => {
