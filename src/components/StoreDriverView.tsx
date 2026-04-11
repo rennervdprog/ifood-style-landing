@@ -480,28 +480,20 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                       )}
                     </div>
 
-                    {needsCollection && (
+                    {readyToDepart && (
                       <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-4 space-y-3">
                         <div className="flex items-center gap-2">
-                          <ShieldCheck className="h-4 w-4 text-amber-500" />
-                          <span className="text-sm font-bold text-foreground">Validar Coleta</span>
+                          <Bike className="h-4 w-4 text-amber-500" />
+                          <span className="text-sm font-bold text-foreground">Sair para Entrega</span>
                         </div>
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          maxLength={4}
-                          placeholder="• • • •"
-                          value={collectionInputs[order.id] || ""}
-                          onChange={(e) => setCollectionInputs((prev) => ({ ...prev, [order.id]: e.target.value.replace(/\D/g, "").slice(0, 4) }))}
-                          className="w-full text-center text-2xl font-black tracking-[0.5em] bg-card border-2 border-amber-500/20 rounded-xl py-3 text-foreground placeholder:text-muted-foreground/20 focus:outline-none focus:border-amber-500"
-                        />
+                        <p className="text-xs text-muted-foreground">Clique quando estiver saindo da loja com este pedido.</p>
                         <button
-                          onClick={() => validateCollection(order.id)}
-                          disabled={!collectionInputs[order.id] || collectionInputs[order.id].length !== 4 || collectingId === order.id}
-                          className="w-full bg-amber-500 text-white font-bold py-3 rounded-xl text-sm disabled:opacity-50 flex items-center justify-center gap-2"
+                          onClick={() => departForDelivery(order.id)}
+                          disabled={departingId === order.id || departingId === "all"}
+                          className="w-full bg-amber-500 text-white font-bold py-3 rounded-xl text-sm disabled:opacity-50 flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
                         >
-                          {collectingId === order.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-                          Confirmar Coleta
+                          {departingId === order.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Navigation className="h-4 w-4" />}
+                          Saindo para Entrega
                         </button>
                       </div>
                     )}
