@@ -638,11 +638,13 @@ const DriverDashboard = () => {
   }
 
   const driverFirstName = (driverProfile as any)?.full_name?.split(" ")[0] || "Entregador";
-  const tabs = [
-    { key: "entregas" as TabType, label: "Entregas", icon: Bike },
-    { key: "historico" as TabType, label: "Ganhos", icon: BarChart3 },
-    { key: "config" as TabType, label: "Pix", icon: CreditCard },
-  ];
+  const tabs = isStoreDriver
+    ? [{ key: "entregas" as TabType, label: "Entregas", icon: Bike }]
+    : [
+        { key: "entregas" as TabType, label: "Entregas", icon: Bike },
+        { key: "historico" as TabType, label: "Ganhos", icon: BarChart3 },
+        { key: "config" as TabType, label: "Pix", icon: CreditCard },
+      ];
 
   const NavigationLinks = ({ addr }: { addr: string }) => {
     const encoded = encodeURIComponent(addr);
