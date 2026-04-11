@@ -117,21 +117,20 @@ const TermosDeUso = () => {
 
           <h2 className="text-lg font-bold text-foreground">9. Pagamentos e Comissões</h2>
           <p className="text-sm text-muted-foreground">
-            9.1. No plano Comissão, a Plataforma cobra <strong className="text-foreground">5% sobre o subtotal</strong> de cada pedido.
+            9.1. No plano Comissão, a Plataforma cobra <strong className="text-foreground">5% sobre o subtotal</strong> de cada pedido. No plano Crescimento, a comissão é de <strong className="text-foreground">2,5% sobre o subtotal</strong>. No plano Essencial, não há comissão.
           </p>
           <p className="text-sm text-muted-foreground">
-            9.2. Para pagamentos via PIX online, o split de pagamento é automático via Asaas ou Mercado Pago, onde o Lojista 
-            recebe 95% diretamente e 5% é retido como comissão da Plataforma (quando aplicável ao plano).
+            9.2. Para pagamentos via PIX online, o split de pagamento é automático, onde a comissão da Plataforma (quando aplicável ao plano) é retida automaticamente.
           </p>
           <p className="text-sm text-muted-foreground">
             9.3. Para pagamentos em dinheiro ou cartão na entrega, a comissão (quando aplicável) é registrada como débito pendente 
             do Lojista junto à Plataforma.
           </p>
           <p className="text-sm text-muted-foreground">
-            9.4. A taxa de entrega é repassada integralmente ao Entregador designado.
+            9.4. A taxa de entrega é repassada integralmente ao Entregador designado, exceto no plano Essencial onde R$ 2,00 por entrega realizada pela plataforma é retido como taxa operacional (este valor é cobrado do cliente).
           </p>
           <p className="text-sm text-muted-foreground">
-            9.5. Nos planos Essencial e Crescimento, não há cobrança de comissão por pedido, apenas a mensalidade fixa.
+            9.5. No plano Essencial, é cobrada uma taxa fixa de R$ 1,00 por pedido pago via PIX como taxa operacional de processamento. Pedidos pagos em dinheiro ou cartão não possuem esta taxa.
           </p>
 
           <h2 className="text-lg font-bold text-foreground">10. Programa de Fidelidade</h2>
