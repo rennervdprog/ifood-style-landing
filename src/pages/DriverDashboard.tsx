@@ -24,7 +24,7 @@ import { ptBR } from "date-fns/locale";
 import { requestNotificationPermission, notifyDeliveryAvailable } from "@/lib/notifications";
 import { sumMoney } from "@/lib/utils";
 import ProductTour, { motoboyTourSteps } from "@/components/ProductTour";
-
+import StoreDriverView from "@/components/StoreDriverView";
 type TabType = "entregas" | "historico" | "config";
 type DateFilter = "hoje" | "semana" | "mes" | "custom";
 
