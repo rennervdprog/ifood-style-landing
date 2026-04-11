@@ -80,9 +80,9 @@ const features = [
 ];
 
 const plans = [
-  { name: "Comissão", price: "R$0", sub: "/mês", desc: "5% por pedido", icon: Rocket, tags: ["Sem mensalidade"], subtitle: "Teste grátis, pague só quando vender", popular: false },
-  { name: "Crescimento", price: "R$100", sub: "/mês", desc: "+ 2,5% por pedido", icon: TrendingUp, tags: ["Relatórios avançados", "Destaque na vitrine", "Suporte prioritário"], subtitle: "Menos comissão + ferramentas extras", popular: true },
-  { name: "Essencial", price: "R$180", sub: "/mês", desc: "0% de comissão", icon: Crown, tags: ["Zero comissão", "Suporte VIP", "Prioridade em novidades", "Lucro máximo"], subtitle: "100% do pedido é seu. Lucro total.", popular: false },
+  { name: "Comissão", price: "R$0", sub: "/mês", desc: "5% por pedido", icon: Rocket, tags: ["Sem mensalidade", "Todas as ferramentas"], subtitle: "Todas as ferramentas incluídas. Pague só quando vender.", popular: false },
+  { name: "Crescimento", price: "R$100", sub: "/mês", desc: "2,5% por pedido", icon: TrendingUp, tags: ["Comissão reduzida", "Todas as ferramentas"], subtitle: "Mesmas ferramentas, metade da comissão.", popular: true },
+  { name: "Essencial", price: "R$180", sub: "/mês", desc: "0% comissão", icon: Crown, tags: ["Zero comissão", "Lucro máximo"], subtitle: "Fique com 100% do pedido. Taxa PIX R$1 + entrega R$2.", popular: false },
 ];
 
 const testimonials = [
