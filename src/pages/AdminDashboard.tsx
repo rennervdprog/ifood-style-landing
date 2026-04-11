@@ -1459,8 +1459,8 @@ const AdminDashboard = () => {
                 </div>
               )}
 
-              {/* Batch dispatch bar (own delivery + pronto_para_entrega) */}
-              {isOwnDelivery && activeTab === "pronto_para_entrega" && (filteredOrders.length > 0) && (
+              {/* Batch dispatch bar (own delivery WITHOUT linked drivers + pronto_para_entrega) */}
+              {isOwnDelivery && !hasLinkedDrivers && !driversLoading && activeTab === "pronto_para_entrega" && (filteredOrders.length > 0) && (
                 <div className="px-4 pt-3">
                   <div className="flex items-center gap-2 bg-blue-500/5 border border-blue-500/20 rounded-xl p-3">
                     <Truck className="h-4 w-4 text-blue-500 shrink-0" />
