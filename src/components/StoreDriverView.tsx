@@ -30,22 +30,68 @@ const NavigationLinks = ({ addr }: { addr: string }) => {
   );
 };
 
+/**
+ * Nearest-neighbor route optimization using CEP proximity.
+ * Brazilian CEPs that are numerically close are geographically close.
+ * Falls back to neighborhood grouping when CEP is unavailable.
+ */
+function extractCepDigits(addr: string): number | null {
+  const m = (addr || "").match(/(\d{5})-?(\d{3})/);
+  return m ? parseInt(m[1] + m[2], 10) : null;
+}
+
 function optimizeRoute(orders: any[]): any[] {
   if (orders.length <= 1) return orders;
+
+  // Split into orders with and without CEP
+  const withCep = orders.filter((o) => extractCepDigits(o.address_details) !== null);
+  const withoutCep = orders.filter((o) => extractCepDigits(o.address_details) === null);
+
+  // Nearest-neighbor on CEP-based orders
+  if (withCep.length > 1) {
+    const sorted: any[] = [];
+    const remaining = [...withCep];
+    // Start with the lowest CEP (closest to store area)
+    remaining.sort((a, b) => (extractCepDigits(a.address_details) || 0) - (extractCepDigits(b.address_details) || 0));
+    sorted.push(remaining.shift()!);
+
+    while (remaining.length > 0) {
+      const lastCep = extractCepDigits(sorted[sorted.length - 1].address_details) || 0;
+      let nearestIdx = 0;
+      let nearestDist = Infinity;
+      remaining.forEach((o, i) => {
+        const dist = Math.abs((extractCepDigits(o.address_details) || 0) - lastCep);
+        if (dist < nearestDist) { nearestDist = dist; nearestIdx = i; }
+      });
+      sorted.push(remaining.splice(nearestIdx, 1)[0]);
+    }
+    // Group by neighborhood within CEP-close clusters, then sort by street
+    const result = [...sorted];
+    // Append non-CEP orders grouped by neighborhood
+    const groups: Record<string, any[]> = {};
+    withoutCep.forEach((o) => {
+      const key = (o.neighborhood || "outros").toLowerCase().trim();
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(o);
+    });
+    Object.values(groups).forEach((g) => {
+      g.sort((a, b) => (a.address_details || "").localeCompare(b.address_details || ""));
+      result.push(...g);
+    });
+    return result;
+  }
+
+  // Fallback: group by neighborhood
   const groups: Record<string, any[]> = {};
   orders.forEach((o) => {
-    const key = (o.neighborhood || "").toLowerCase().trim();
+    const key = (o.neighborhood || "outros").toLowerCase().trim();
     if (!groups[key]) groups[key] = [];
     groups[key].push(o);
   });
   const result: any[] = [];
-  Object.values(groups).forEach((group) => {
-    group.sort((a: any, b: any) => {
-      const streetA = (a.address_details || "").toLowerCase();
-      const streetB = (b.address_details || "").toLowerCase();
-      return streetA.localeCompare(streetB);
-    });
-    result.push(...group);
+  Object.values(groups).forEach((g) => {
+    g.sort((a, b) => (a.address_details || "").localeCompare(b.address_details || ""));
+    result.push(...g);
   });
   return result;
 }
