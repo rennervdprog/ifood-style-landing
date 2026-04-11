@@ -71,10 +71,10 @@ const TermosDeUso = () => {
           <p className="text-sm text-muted-foreground">
             5.1. O ItaSuper oferece três planos para lojistas:
           </p>
-          <ul className="text-sm text-muted-foreground list-disc pl-4 space-y-1">
-            <li><strong className="text-foreground">Essencial (R$ 49,90/mês):</strong> Cardápio digital, pedidos ilimitados, até 3 cupons ativos, entrega com motoboy próprio. Sem comissão por pedido. Não inclui PIX online nem motoboy da plataforma.</li>
-            <li><strong className="text-foreground">Crescimento (R$ 179,90/mês):</strong> Todas as funcionalidades do Essencial, mais: PIX online, motoboy da plataforma, cupons ilimitados, programa de fidelidade, banners promocionais, agendamento de pedidos e suporte prioritário. Sem comissão por pedido.</li>
-            <li><strong className="text-foreground">Comissão (0% mensalidade + 5% por pedido):</strong> Todas as funcionalidades do Crescimento. A comissão de 5% é cobrada sobre o subtotal de cada pedido realizado.</li>
+          <ul className="text-sm text-muted-foreground list-disc pl-4 space-y-2">
+            <li><strong className="text-foreground">Essencial (R$ 180/mês):</strong> Todas as funcionalidades da plataforma com <strong className="text-foreground">zero comissão</strong> por pedido. Você fica com 100% do valor de cada venda. Inclui taxa operacional de <strong className="text-foreground">R$ 1,00 por pedido pago via PIX</strong> e <strong className="text-foreground">R$ 2,00 por entrega realizada pela plataforma</strong> (este valor é cobrado do cliente na taxa de entrega, não do lojista).</li>
+            <li><strong className="text-foreground">Crescimento (R$ 100/mês + 2,5% por pedido):</strong> Todas as funcionalidades da plataforma com mensalidade reduzida e comissão de 2,5% sobre o subtotal de cada pedido. Ideal para lojas que já vendem bem e querem equilibrar custo fixo e variável.</li>
+            <li><strong className="text-foreground">Comissão (R$ 0/mês + 5% por pedido):</strong> Sem mensalidade. Comissão de 5% sobre o subtotal de cada pedido realizado. Ideal para quem está começando e quer testar sem investimento inicial.</li>
           </ul>
           <p className="text-sm text-muted-foreground">
             5.2. Os planos pagos (Essencial e Crescimento) incluem <strong className="text-foreground">7 dias de teste grátis</strong>. O plano Comissão não possui mensalidade. Após o período de teste dos planos pagos, a cobrança será realizada automaticamente via Asaas.
