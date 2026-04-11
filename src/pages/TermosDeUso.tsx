@@ -77,7 +77,7 @@ const TermosDeUso = () => {
             <li><strong className="text-foreground">Comissão (R$ 0/mês + 5% por pedido):</strong> Sem mensalidade. Comissão de 5% sobre o subtotal de cada pedido realizado. Ideal para quem está começando e quer testar sem investimento inicial.</li>
           </ul>
           <p className="text-sm text-muted-foreground">
-            5.2. Os planos pagos (Essencial e Crescimento) incluem <strong className="text-foreground">7 dias de teste grátis</strong>. O plano Comissão não possui mensalidade. Após o período de teste dos planos pagos, a cobrança será realizada automaticamente via Asaas.
+            5.2. Os planos Essencial e Crescimento incluem <strong className="text-foreground">7 dias de teste grátis</strong>. O plano Comissão não possui mensalidade e pode ser utilizado imediatamente. Após o período de teste dos planos pagos, a cobrança será realizada automaticamente.
           </p>
           <p className="text-sm text-muted-foreground">
             5.3. O lojista pode solicitar a troca de plano a qualquer momento. Em caso de downgrade de um plano com mensalidade maior para um menor, será calculado um crédito pro-rata proporcional aos dias restantes do período já pago.
