@@ -1648,24 +1648,29 @@ const AdminDashboard = () => {
                             </div>
                           </div>
                         )}
-                        {order.status === "pronto_para_entrega" && isOwnDelivery && (
+                        {order.status === "pronto_para_entrega" && isOwnDelivery && !order.driver_id && (
                           <div className="mx-3 mb-2 bg-blue-500/5 border border-blue-500/20 rounded-xl px-3 py-2">
                             <div className="flex items-center gap-1.5">
-                              <Truck className="h-3.5 w-3.5 text-blue-500" />
-                              <span className="text-xs text-blue-600 dark:text-blue-400 font-semibold">🛵 Pronto — aguardando seu motoboy</span>
+                              <Loader2 className="h-3.5 w-3.5 text-blue-500 animate-spin" />
+                              <span className="text-xs text-blue-600 dark:text-blue-400 font-semibold">🛵 Aguardando motoboy próprio aceitar</span>
                             </div>
+                            {linkedStoreDrivers && linkedStoreDrivers.length > 0 && (
+                              <p className="text-[10px] text-muted-foreground mt-1">
+                                {linkedStoreDrivers.length} motoboy(s) vinculado(s)
+                              </p>
+                            )}
                           </div>
                         )}
-                        {order.driver_id && order.status === "pronto_para_entrega" && !isOwnDelivery && (
+                        {order.status === "pronto_para_entrega" && isOwnDelivery && order.driver_id && (
                           <div className="mx-3 mb-2 flex items-center gap-1.5 bg-emerald-500/5 border border-emerald-500/20 rounded-xl px-3 py-2">
                             <Bike className="h-3.5 w-3.5 text-emerald-500" />
-                            <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">🏍️ {getDriverName(order.driver_id)} a caminho da loja</span>
+                            <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">🏍️ {getDriverName(order.driver_id)} aceitou o pedido</span>
                           </div>
                         )}
                         {order.status === "saiu_entrega" && isOwnDelivery && (
                           <div className="mx-3 mb-2 flex items-center gap-1.5 bg-blue-500/5 border border-blue-500/20 rounded-xl px-3 py-2">
                             <Truck className="h-3.5 w-3.5 text-blue-500" />
-                            <span className="text-xs text-blue-600 dark:text-blue-400 font-semibold">🛵 Seu motoboy está entregando</span>
+                            <span className="text-xs text-blue-600 dark:text-blue-400 font-semibold">🛵 {order.driver_id ? getDriverName(order.driver_id) : "Motoboy"} está entregando</span>
                           </div>
                         )}
                         {order.driver_id && (order.status === "em_transito" || (order.status === "saiu_entrega" && !isOwnDelivery)) && (
