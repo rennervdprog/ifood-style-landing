@@ -146,7 +146,7 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
     isFixedPlan,
     isItatingaFixed: isFixedPlan, // backward compat
     pixOperationalFee: isFixedPlan ? (data?.feeConfig?.pix_operational_fee ?? DEFAULT_DELIVERY_FEE_CONFIG.pix_operational_fee) : 0,
-    platformDeliverySplit: isFixedPlan ? (data?.feeConfig?.platform_split ?? DEFAULT_DELIVERY_FEE_CONFIG.platform_split) : 0,
+    platformDeliverySplit: data?.deliveryMode === "own" ? (data?.feeConfig?.platform_split ?? DEFAULT_DELIVERY_FEE_CONFIG.platform_split) : 0,
     driverDeliverySplit: isFixedPlan ? (data?.feeConfig?.driver_split ?? DEFAULT_DELIVERY_FEE_CONFIG.driver_split) : 0,
     isLoading,
   };
