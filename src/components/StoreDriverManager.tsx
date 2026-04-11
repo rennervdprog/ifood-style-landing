@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Bike, Plus, Trash2, Search, UserCheck, UserX, Loader2 } from "lucide-react";
+import { Bike, Plus, Trash2, Search, UserCheck, UserX, Loader2, Share2, Copy } from "lucide-react";
 
 interface StoreDriverManagerProps {
   storeId: string;
@@ -127,13 +127,39 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
         </div>
       </div>
 
-      {/* Info */}
-      <div className="bg-blue-500/5 border border-blue-500/10 rounded-2xl p-4">
+      {/* Info + Share link */}
+      <div className="bg-blue-500/5 border border-blue-500/10 rounded-2xl p-4 space-y-3">
         <p className="text-xs text-muted-foreground">
-          🏍️ Adicione motoboys que já se cadastraram na plataforma como entregador. 
+          🏍️ Adicione motoboys que já se cadastraram na plataforma. 
           Eles poderão ver e entregar <strong>apenas os pedidos da sua loja</strong>, 
           com confirmação de entrega via código PIN do cliente.
         </p>
+        <div className="flex items-center gap-2">
+          <div className="flex-1 bg-muted/50 border border-border rounded-lg px-3 py-2">
+            <p className="text-[11px] text-muted-foreground truncate">{window.location.origin}/cadastro-motoboy-loja</p>
+          </div>
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(`${window.location.origin}/cadastro-motoboy-loja`);
+              toast.success("Link copiado!");
+            }}
+            className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary hover:bg-primary/20 transition-colors"
+            title="Copiar link de cadastro"
+          >
+            <Copy className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => {
+              const text = `Cadastre-se como motoboy da nossa loja: ${window.location.origin}/cadastro-motoboy-loja`;
+              const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+              window.open(url, "_blank");
+            }}
+            className="w-9 h-9 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 hover:bg-emerald-500/20 transition-colors"
+            title="Compartilhar via WhatsApp"
+          >
+            <Share2 className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
       {/* Search & Add */}

@@ -27,6 +27,7 @@ const SuperAdminDashboard = lazy(() => import("./pages/SuperAdminDashboard"));
 const PartnerOnboarding = lazy(() => import("./pages/PartnerOnboarding"));
 const CadastroEntregador = lazy(() => import("./pages/CadastroEntregador"));
 const CadastroLojista = lazy(() => import("./pages/CadastroLojista"));
+const CadastroMotoboyLoja = lazy(() => import("./pages/CadastroMotoboyLoja"));
 const TermosDeUso = lazy(() => import("./pages/TermosDeUso"));
 const PoliticaPrivacidade = lazy(() => import("./pages/PoliticaPrivacidade"));
 const PlanosPage = lazy(() => import("./pages/PlanosPage"));
@@ -105,6 +106,7 @@ const App = () => (
                 <Route path="/parceiro" element={<PartnerOnboarding />} />
                 <Route path="/cadastro-entregador" element={<CadastroEntregador />} />
                 <Route path="/cadastro-lojista" element={<CadastroLojista />} />
+                <Route path="/cadastro-motoboy-loja" element={<CadastroMotoboyLoja />} />
                 <Route path="/termos-de-uso" element={<TermosDeUso />} />
                 <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
                 <Route path="/planos" element={<PlanosPage />} />
