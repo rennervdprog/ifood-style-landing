@@ -24,7 +24,7 @@ import { ptBR } from "date-fns/locale";
 import { requestNotificationPermission, notifyDeliveryAvailable } from "@/lib/notifications";
 import { sumMoney } from "@/lib/utils";
 import ProductTour, { motoboyTourSteps } from "@/components/ProductTour";
-
+import StoreDriverView from "@/components/StoreDriverView";
 type TabType = "entregas" | "historico" | "config";
 type DateFilter = "hoje" | "semana" | "mes" | "custom";
 
@@ -117,6 +117,23 @@ const DriverDashboard = () => {
     },
     enabled: !!user,
   });
+
+  // Detect if user is a store driver (not platform driver)
+  const { data: storeDriverLinks } = useQuery({
+    queryKey: ["store-driver-links", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("store_drivers")
+        .select("store_id")
+        .eq("driver_user_id", user!.id);
+      return data || [];
+    },
+    enabled: !!user,
+  });
+
+  const isStoreDriver = (storeDriverLinks?.length || 0) > 0;
+  const isPlatformDriver = Boolean((driverProfile as any)?.role === "motoboy" && !isStoreDriver);
+  const linkedStoreIds = useMemo(() => (storeDriverLinks || []).map((l: any) => l.store_id), [storeDriverLinks]);
 
   useEffect(() => {
     if (driverProfile) {
@@ -621,11 +638,13 @@ const DriverDashboard = () => {
   }
 
   const driverFirstName = (driverProfile as any)?.full_name?.split(" ")[0] || "Entregador";
-  const tabs = [
-    { key: "entregas" as TabType, label: "Entregas", icon: Bike },
-    { key: "historico" as TabType, label: "Ganhos", icon: BarChart3 },
-    { key: "config" as TabType, label: "Pix", icon: CreditCard },
-  ];
+  const tabs = isStoreDriver
+    ? [{ key: "entregas" as TabType, label: "Entregas", icon: Bike }]
+    : [
+        { key: "entregas" as TabType, label: "Entregas", icon: Bike },
+        { key: "historico" as TabType, label: "Ganhos", icon: BarChart3 },
+        { key: "config" as TabType, label: "Pix", icon: CreditCard },
+      ];
 
   const NavigationLinks = ({ addr }: { addr: string }) => {
     const encoded = encodeURIComponent(addr);
@@ -660,19 +679,23 @@ const DriverDashboard = () => {
               <div>
                 <h1 className="font-black text-base text-foreground leading-tight">{driverFirstName}</h1>
                 <p className="text-[11px] text-muted-foreground font-medium">
-                  {isOnline ? (realtimeConnected ? "Online • Recebendo pedidos" : "Conectando...") : "Offline"}
+                  {isStoreDriver
+                    ? "Motoboy da Loja"
+                    : isOnline ? (realtimeConnected ? "Online • Recebendo pedidos" : "Conectando...") : "Offline"}
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-2.5">
-              <button
-                onClick={toggleOnline}
-                data-tour="motoboy-status"
-                className={`relative w-[54px] h-[32px] rounded-full transition-all duration-300 ${isOnline ? "bg-green-500 shadow-[0_0_20px_rgba(34,197,94,0.3)]" : "bg-muted"}`}
-              >
-                <span className={`absolute top-[3px] w-[26px] h-[26px] rounded-full bg-white shadow-lg transition-transform duration-300 ${isOnline ? "left-[25px]" : "left-[3px]"}`} />
-              </button>
+              {!isStoreDriver && (
+                <button
+                  onClick={toggleOnline}
+                  data-tour="motoboy-status"
+                  className={`relative w-[54px] h-[32px] rounded-full transition-all duration-300 ${isOnline ? "bg-green-500 shadow-[0_0_20px_rgba(34,197,94,0.3)]" : "bg-muted"}`}
+                >
+                  <span className={`absolute top-[3px] w-[26px] h-[26px] rounded-full bg-white shadow-lg transition-transform duration-300 ${isOnline ? "left-[25px]" : "left-[3px]"}`} />
+                </button>
+              )}
               <button
                 onClick={async () => { await signOut(); toast.success("Você saiu da conta."); navigate("/portal-parceiro"); }}
                 className="w-10 h-10 rounded-2xl bg-muted/50 flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all active:scale-95"
@@ -691,7 +714,9 @@ const DriverDashboard = () => {
       {/* ═══════════ TAB: ENTREGAS ═══════════ */}
       {activeTab === "entregas" && (
         <>
-          {!isOnline ? (
+          {isStoreDriver ? (
+            <StoreDriverView linkedStoreIds={linkedStoreIds} />
+          ) : !isOnline ? (
             <EmptyState
               icon={Bike}
               title="Você está offline"
