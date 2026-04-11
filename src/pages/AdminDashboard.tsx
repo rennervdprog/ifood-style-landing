@@ -296,7 +296,7 @@ const AdminDashboard = () => {
   });
 
   // Fetch store drivers list for own-delivery stores
-  const { data: linkedStoreDrivers } = useQuery({
+  const { data: linkedStoreDrivers, isLoading: driversLoading } = useQuery({
     queryKey: ["store-drivers-list", store?.id],
     queryFn: async () => {
       const { data: sdLinks } = await supabase.from("store_drivers").select("driver_user_id").eq("store_id", store!.id);
@@ -677,14 +677,14 @@ const AdminDashboard = () => {
       case "preparando": return { label: "MARCAR COMO PRONTO", next: "pronto_para_entrega" as OrderStatus, emoji: "🔔" };
       case "pronto_para_entrega":
         if (isOwnDelivery) {
-          // If store has linked drivers OR a driver already accepted, let the driver control
-          if (hasLinkedDrivers || order?.driver_id) return null;
+          // If store has linked drivers, drivers still loading, OR a driver already accepted, let the driver control
+          if (hasLinkedDrivers || driversLoading || order?.driver_id) return null;
           // No linked drivers — lojista controls manually
           return { label: "SAIU PARA ENTREGA", next: "saiu_entrega" as OrderStatus, emoji: "🛵" };
         }
         return null;
       case "saiu_entrega":
-        if (isOwnDelivery && !hasLinkedDrivers) return { label: "MARCAR COMO ENTREGUE", next: "finalizado" as OrderStatus, emoji: "✅" };
+        if (isOwnDelivery && !hasLinkedDrivers && !driversLoading) return { label: "MARCAR COMO ENTREGUE", next: "finalizado" as OrderStatus, emoji: "✅" };
         return null;
       default: return null;
     }
