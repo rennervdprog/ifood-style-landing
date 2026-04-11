@@ -105,7 +105,6 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   const queryClient = useQueryClient();
   const [pinInputs, setPinInputs] = useState<Record<string, string>>({});
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
-  const [collectingId, setCollectingId] = useState<string | null>(null);
   const [useOptimized, setUseOptimized] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [activeStoreId, setActiveStoreId] = useState<string | null>(null);
