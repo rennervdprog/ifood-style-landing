@@ -398,8 +398,8 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
             const contact = getContact(order.client_id);
             const contactPhone = (contact as any)?.whatsapp_number || (contact as any)?.phone || "";
             const contactName = (contact as any)?.full_name || "Cliente";
-            const needsCollection = order.status === "pronto_para_entrega" && !order.collection_validated;
-            const inDelivery = order.collection_validated || order.status === "saiu_entrega" || order.status === "em_transito";
+            const readyToDepart = order.status === "pronto_para_entrega";
+            const inDelivery = order.status === "saiu_entrega" || order.status === "em_transito";
 
             return (
               <div key={order.id} className="bg-card border border-border rounded-2xl overflow-hidden">
@@ -408,7 +408,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                   className="w-full flex items-center gap-3 px-4 py-3 text-left"
                 >
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black ${
-                    inDelivery ? "bg-green-500 text-white" : "bg-primary/10 text-primary"
+                    inDelivery ? "bg-green-500 text-white" : readyToDepart ? "bg-amber-500/10 text-amber-500" : "bg-primary/10 text-primary"
                   }`}>
                     {index + 1}
                   </div>
@@ -422,9 +422,9 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                     </p>
                   </div>
                   <div className={`px-2 py-1 rounded-lg text-[10px] font-bold ${
-                    needsCollection ? "bg-amber-500/10 text-amber-500" : inDelivery ? "bg-green-500/10 text-green-500" : "bg-muted text-muted-foreground"
+                    readyToDepart ? "bg-amber-500/10 text-amber-500" : inDelivery ? "bg-green-500/10 text-green-500" : "bg-muted text-muted-foreground"
                   }`}>
-                    {needsCollection ? "COLETAR" : inDelivery ? "ENTREGAR" : order.status}
+                    {readyToDepart ? "PRONTO" : inDelivery ? "ENTREGAR" : order.status}
                   </div>
                   <ChevronRight className={`h-4 w-4 text-muted-foreground transition-transform ${isExpanded ? "rotate-90" : ""}`} />
                 </button>
