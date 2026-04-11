@@ -1545,7 +1545,7 @@ const AdminDashboard = () => {
                         {/* Status bar with wait timer */}
                         <div className={`px-3 py-1.5 ${sc.bg} flex items-center justify-between`}>
                           <div className="flex items-center gap-2">
-                            {isOwnDelivery && order.status === "pronto_para_entrega" && (
+                            {isOwnDelivery && !hasLinkedDrivers && !driversLoading && order.status === "pronto_para_entrega" && (
                               <button onClick={() => toggleBatchOrder(order.id)}
                                 className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${
                                   batchSelected.has(order.id) ? "bg-blue-500 border-blue-500 text-white" : "border-muted-foreground/40 hover:border-blue-400"
