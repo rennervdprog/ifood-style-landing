@@ -31,6 +31,12 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
+      - name: Verify Java 21
+        run: |
+          echo "JAVA_HOME=$JAVA_HOME"
+          java -version
+          javac -version
+
       - name: Install dependencies
         run: npm install
 
@@ -55,11 +61,15 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
+      - name: Pin Gradle to Java 21
+        run: |
+          echo "org.gradle.java.home=$JAVA_HOME" >> android/gradle.properties
+
       - name: Make gradlew executable
         run: chmod +x android/gradlew
 
       - name: Build APK
-        run: cd android && ./gradlew assembleDebug
+        run: cd android && ./gradlew --version && ./gradlew assembleDebug
 
       - uses: actions/upload-artifact@v4
         with:
@@ -83,6 +93,12 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
+
+      - name: Verify Java 21
+        run: |
+          echo "JAVA_HOME=$JAVA_HOME"
+          java -version
+          javac -version
 
       - name: Install dependencies
         run: npm install
@@ -117,11 +133,15 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
+      - name: Pin Gradle to Java 21
+        run: |
+          echo "org.gradle.java.home=$JAVA_HOME" >> android/gradle.properties
+
       - name: Make gradlew executable
         run: chmod +x android/gradlew
 
       - name: Build APK
-        run: cd android && ./gradlew assembleDebug
+        run: cd android && ./gradlew --version && ./gradlew assembleDebug
 
       - uses: actions/upload-artifact@v4
         with:
