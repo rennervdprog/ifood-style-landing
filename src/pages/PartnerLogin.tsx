@@ -43,6 +43,12 @@ const PartnerLogin = () => {
         .maybeSingle();
 
       if (!profile || (profile as any).role === "cliente") {
+        // On Capacitor, show choose mode instead of navigating to onboarding landing
+        if (isCapacitorNative()) {
+          setMode("choose");
+          setChecking(false);
+          return;
+        }
         navigate("/parceiro", { replace: true });
         return;
       }
