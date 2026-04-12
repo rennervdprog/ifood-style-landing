@@ -522,10 +522,17 @@ const AdminDashboard = () => {
         }, { zapiEnabled: !!storeSettings.zapi_enabled });
       }
 
-      // Notify drivers when order is ready for platform delivery
-      if (newStatus === "pronto_para_entrega" && !isOwnDelivery && onlineDrivers && onlineDrivers.length > 0) {
-        const driverUserIds = onlineDrivers.map((d: any) => d.user_id);
-        pushNotifyDeliveryAvailable(driverUserIds, orderId).catch(console.error);
+      // Notify drivers when order is ready for delivery
+      if (newStatus === "pronto_para_entrega") {
+        if (!isOwnDelivery && onlineDrivers && onlineDrivers.length > 0) {
+          // Platform drivers
+          const driverUserIds = onlineDrivers.map((d: any) => d.user_id);
+          pushNotifyDeliveryAvailable(driverUserIds, orderId).catch(console.error);
+        } else if (isOwnDelivery && linkedStoreDrivers && linkedStoreDrivers.length > 0) {
+          // Store's own linked drivers (motoboy próprio)
+          const storeDriverUserIds = linkedStoreDrivers.map((d: any) => d.user_id);
+          pushNotifyDeliveryAvailable(storeDriverUserIds, orderId).catch(console.error);
+        }
       }
     } catch (e: any) {
       toast.error(`Erro inesperado: ${e?.message}`);
