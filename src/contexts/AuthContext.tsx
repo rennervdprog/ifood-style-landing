@@ -40,7 +40,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (event === "SIGNED_OUT" && previousUserId) {
-        void cleanupPushTokens(previousUserId);
         clearStoredPushState();
         if (isCapacitorNative()) {
           resetPushRegistrationState();
