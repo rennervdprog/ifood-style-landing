@@ -256,7 +256,20 @@ const PedidosPage = () => {
           filter: `client_id=eq.${user.id}`,
         },
         (payload) => {
-          queryClient.invalidateQueries({ queryKey: ["orders", user.id] });
+          // Instant cache update from payload
+          const updated = payload.new as any;
+          if (payload.eventType === "UPDATE" || payload.eventType === "INSERT") {
+            queryClient.setQueryData(["orders", user.id, storeFilter], (old: any[] | undefined) => {
+              if (!old) return old;
+              const exists = old.findIndex((o: any) => o.id === updated.id);
+              if (exists >= 0) {
+                const copy = [...old];
+                copy[exists] = { ...copy[exists], ...updated };
+                return copy;
+              }
+              return [updated, ...old];
+            });
+          }
           queryClient.invalidateQueries({ queryKey: ["store-orders-lojista"] });
           const newStatus = (payload.new as any).status;
           if (newStatus === "pendente" && (payload.old as any)?.status === "aguardando_pagamento") {

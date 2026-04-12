@@ -447,6 +447,18 @@ const AdminDashboard = () => {
     const channel = supabase
       .channel("admin-orders-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `store_id=eq.${store.id}` }, (payload) => {
+        const updated = payload.new as any;
+        // Instant cache patch for active orders
+        ["store-orders", "store-all-orders"].forEach(key => {
+          queryClient.setQueryData([key, store.id], (old: any[] | undefined) => {
+            if (!old) return old;
+            const idx = old.findIndex((o: any) => o.id === updated.id);
+            if (idx >= 0) { const c = [...old]; c[idx] = { ...c[idx], ...updated }; return c; }
+            if (payload.eventType === "INSERT") return [updated, ...old];
+            return old;
+          });
+        });
+        // Still refetch for relations (items, etc.)
         queryClient.invalidateQueries({ queryKey: ["store-orders", store.id] });
         queryClient.invalidateQueries({ queryKey: ["store-all-orders", store.id] });
         if (payload.eventType === "INSERT" && (payload.new as any).status === "pendente") {
