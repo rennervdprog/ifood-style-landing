@@ -1,3 +1,4 @@
+import { formatBRL } from "@/lib/utils";
 /**
  * Dual notification system: WhatsApp + Push + Z-API for order status changes.
  * Used by AdminDashboard (lojista) when updating order statuses.
@@ -30,7 +31,7 @@ const STATUS_MESSAGES: Record<string, {
     whatsApp: (p) =>
       `✅ *${p.storeName}* informa: Seu pedido foi aceito! 🍔\n\n` +
       `${p.items ? p.items + "\n\n" : ""}` +
-      `💰 Total: R$ ${p.totalPrice.toFixed(2)}\n` +
+      `💰 Total: ${formatBRL(p.totalPrice)}\n` +
       `Pedido: #${p.orderId.slice(0, 8).toUpperCase()}`,
   },
   pronto_para_entrega: {
@@ -70,7 +71,7 @@ const STATUS_MESSAGES: Record<string, {
     pushBody: (p) => `Seu pedido #${p.orderId.slice(0, 8).toUpperCase()} foi cancelado.${p.paymentMethod === "pix" ? " O reembolso será processado." : ""}`,
     whatsApp: (p) =>
       p.paymentMethod === "pix"
-        ? `❌ *${p.storeName}* informa: Seu pedido #${p.orderId.slice(0, 8).toUpperCase()} foi cancelado.\n\n💰 O reembolso de R$ ${p.totalPrice.toFixed(2)} via PIX será processado em breve.\n\nDesculpe o transtorno! 🙏`
+        ? `❌ *${p.storeName}* informa: Seu pedido #${p.orderId.slice(0, 8).toUpperCase()} foi cancelado.\n\n💰 O reembolso de ${formatBRL(p.totalPrice)} via PIX será processado em breve.\n\nDesculpe o transtorno! 🙏`
         : `❌ *${p.storeName}* informa: Seu pedido #${p.orderId.slice(0, 8).toUpperCase()} foi cancelado.\n\nDesculpe o transtorno! 🙏`,
   },
 };

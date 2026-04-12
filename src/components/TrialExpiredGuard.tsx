@@ -1,3 +1,4 @@
+import { formatBRL } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
@@ -212,7 +213,7 @@ export default function TrialExpiredGuard({ storePlan, storeId, children }: Tria
             <div className="space-y-4">
               <div className="text-center space-y-2">
                 <p className="text-sm font-bold text-foreground">Escaneie o QR Code ou copie o código:</p>
-                <p className="text-2xl font-black text-primary">R$ {pixData.amount.toFixed(2)}</p>
+                <p className="text-2xl font-black text-primary">{formatBRL(pixData.amount)}</p>
               </div>
 
               {pixData.qr_code_base64 && (

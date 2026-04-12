@@ -22,7 +22,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { format, startOfDay, startOfWeek, subDays, isWithinInterval, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { requestNotificationPermission, notifyDeliveryAvailable } from "@/lib/notifications";
-import { sumMoney } from "@/lib/utils";
+import { sumMoney, formatBRL } from "@/lib/utils";
 import ProductTour, { motoboyTourSteps } from "@/components/ProductTour";
 import StoreDriverView from "@/components/StoreDriverView";
 type TabType = "entregas" | "historico" | "config";
@@ -521,7 +521,7 @@ const DriverDashboard = () => {
         if (clientPhone) {
           const clientName = contactProfiles?.find((c: any) => c.user_id === myDelivery.client_id);
           const name = (clientName as any)?.full_name || "Cliente";
-          const msg = `🏍️ *ItaSuper* informa: Seu lanche saiu para entrega! O motoboy já coletou o pedido e está a caminho de: ${myDelivery.address_details} 💨\n\n--------------------------\n💰 Total: R$ ${Number(myDelivery.total_price).toFixed(2)}\n💳 Pagamento: ${myDelivery.payment_method === "pix" ? "PIX" : myDelivery.payment_method === "cartao" ? "Cartão" : myDelivery.payment_method === "dinheiro" ? "Dinheiro" : myDelivery.payment_method}\nPedido: #${myDelivery.id.slice(0, 8).toUpperCase()}\n--------------------------`;
+          const msg = `🏍️ *ItaSuper* informa: Seu lanche saiu para entrega! O motoboy já coletou o pedido e está a caminho de: ${myDelivery.address_details} 💨\n\n--------------------------\n💰 Total: ${formatBRL(Number(myDelivery.total_price))}\n💳 Pagamento: ${myDelivery.payment_method === "pix" ? "PIX" : myDelivery.payment_method === "cartao" ? "Cartão" : myDelivery.payment_method === "dinheiro" ? "Dinheiro" : myDelivery.payment_method}\nPedido: #${myDelivery.id.slice(0, 8).toUpperCase()}\n--------------------------`;
           setTimeout(() => openWhatsApp(clientPhone, msg), 600);
         }
       }
@@ -541,9 +541,9 @@ const DriverDashboard = () => {
       confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
       const isPhysical = ["dinheiro", "cartao"].includes(orderData?.payment_method || "");
       if (isPhysical) {
-        toast.success(`✅ Entrega confirmada! Retorne à loja para acertar R$ ${deliveryFee.toFixed(2)} em mãos.`, { duration: 8000, icon: "🏪" });
+        toast.success(`✅ Entrega confirmada! Retorne à loja para acertar ${formatBRL(deliveryFee)} em mãos.`, { duration: 8000, icon: "🏪" });
       } else {
-        toast.success(`🎉 Parabéns! R$ ${deliveryFee.toFixed(2)} foi adicionado ao seu saldo Pix!`, { duration: 8000, icon: "💰" });
+        toast.success(`🎉 Parabéns! ${formatBRL(deliveryFee)} foi adicionado ao seu saldo Pix!`, { duration: 8000, icon: "💰" });
       }
       setPinInput("");
       setVerifying(false);
@@ -594,16 +594,16 @@ const DriverDashboard = () => {
       `Período: ${filterLabel}`,
       `Data: ${format(new Date(), "dd/MM/yyyy HH:mm", { locale: ptBR })}`,
       ``,
-      `💰 Total de Ganhos: R$ ${filteredEarnings.toFixed(2)}`,
-      `📱 Via Pix App: R$ ${earningsBreakdown.pixEarnings.toFixed(2)} (${earningsBreakdown.pixCount} entregas)`,
-      `💵 Em Dinheiro: R$ ${earningsBreakdown.cashEarnings.toFixed(2)} (${earningsBreakdown.cashCount} entregas)`,
+      `💰 Total de Ganhos: ${formatBRL(filteredEarnings)}`,
+      `📱 Via Pix App: ${formatBRL(earningsBreakdown.pixEarnings)} (${earningsBreakdown.pixCount} entregas)`,
+      `💵 Em Dinheiro: ${formatBRL(earningsBreakdown.cashEarnings)} (${earningsBreakdown.cashCount} entregas)`,
       `📦 Entregas Realizadas: ${filteredHistory.length}`,
       ``,
       `--- DETALHAMENTO ---`,
       ...filteredHistory.map((o: any) => {
         const date = format(parseISO(o.confirmed_at || o.created_at), "dd/MM HH:mm", { locale: ptBR });
         const payIcon = o.payment_method === "dinheiro" ? "💵" : "📱";
-        return `${date} | ${(o as any).stores?.name || "Loja"} | ${o.neighborhood} | ${payIcon} R$ ${Number(o.delivery_fee).toFixed(2)}`;
+        return `${date} | ${(o as any).stores?.name || "Loja"} | ${o.neighborhood} | ${payIcon} ${formatBRL(Number(o.delivery_fee))}`;
       }),
     ];
     const text = lines.join("\n");
@@ -924,7 +924,7 @@ const DriverDashboard = () => {
                             {(myDelivery as any).order_items?.map((item: any) => (
                               <div key={item.id} className="flex justify-between text-xs">
                                 <span className="text-foreground">{item.quantity}x {getOrderItemDisplayName(item)}</span>
-                                <span className="text-muted-foreground">R$ {(item.quantity * item.unit_price).toFixed(2)}</span>
+                                <span className="text-muted-foreground">{formatBRL((item.quantity * item.unit_price))}</span>
                               </div>
                             ))}
                           </div>
@@ -934,7 +934,7 @@ const DriverDashboard = () => {
                         <div className="flex items-center justify-between bg-green-500/10 rounded-2xl px-4 py-3">
                           <div>
                             <p className="text-[10px] text-muted-foreground font-semibold uppercase">Sua taxa</p>
-                            <p className="text-xl font-black text-green-500">R$ {Number(myDelivery.delivery_fee).toFixed(2)}</p>
+                            <p className="text-xl font-black text-green-500">{formatBRL(Number(myDelivery.delivery_fee))}</p>
                           </div>
                           <div className="text-right">
                             <p className="text-[10px] text-muted-foreground font-semibold uppercase">Pagamento</p>
@@ -986,7 +986,7 @@ const DriverDashboard = () => {
                   </div>
                   <div className="p-4 space-y-4">
                     <p className="text-sm text-muted-foreground">
-                      Entregue <span className="font-bold text-amber-500">R$ {Number(pendingReturn.total_price).toFixed(2)}</span> na loja <span className="font-bold text-foreground">{(pendingReturn as any).stores?.name}</span> e receba sua taxa.
+                      Entregue <span className="font-bold text-amber-500">{formatBRL(Number(pendingReturn.total_price))}</span> na loja <span className="font-bold text-foreground">{(pendingReturn as any).stores?.name}</span> e receba sua taxa.
                     </p>
                     {(() => {
                       const s = (pendingReturn as any).stores;
@@ -1075,7 +1075,7 @@ const DriverDashboard = () => {
                             <div className="flex items-center justify-between pt-3 border-t border-border">
                               <div>
                                 <p className="text-[10px] text-muted-foreground font-semibold uppercase">Ganho</p>
-                                <p className="text-2xl font-black text-green-500">R$ {Number(order.delivery_fee).toFixed(2)}</p>
+                                <p className="text-2xl font-black text-green-500">{formatBRL(Number(order.delivery_fee))}</p>
                               </div>
                               <button
                                 onClick={() => acceptOrder(order.id)}
@@ -1224,15 +1224,15 @@ const DriverDashboard = () => {
                 <div className="grid grid-cols-3 gap-3 mb-4">
                   <div className="text-center bg-muted/50 rounded-xl py-3">
                     <p className="text-[10px] text-muted-foreground font-semibold mb-0.5">Total</p>
-                    <p className="text-base font-black text-foreground">R$ {Number(driverBalance.total_earned || 0).toFixed(2)}</p>
+                    <p className="text-base font-black text-foreground">{formatBRL(Number(driverBalance.total_earned || 0))}</p>
                   </div>
                   <div className="text-center bg-amber-500/5 rounded-xl py-3">
                     <p className="text-[10px] text-amber-500 font-semibold mb-0.5">Pendente</p>
-                    <p className="text-base font-black text-amber-500">R$ {Number(driverBalance.pending_amount || 0).toFixed(2)}</p>
+                    <p className="text-base font-black text-amber-500">{formatBRL(Number(driverBalance.pending_amount || 0))}</p>
                   </div>
                   <div className="text-center bg-green-500/5 rounded-xl py-3">
                     <p className="text-[10px] text-green-500 font-semibold mb-0.5">Pago</p>
-                    <p className="text-base font-black text-green-500">R$ {Number(driverBalance.paid_amount || 0).toFixed(2)}</p>
+                    <p className="text-base font-black text-green-500">{formatBRL(Number(driverBalance.paid_amount || 0))}</p>
                   </div>
                 </div>
 
@@ -1261,12 +1261,12 @@ const DriverDashboard = () => {
                         });
                         if (error) throw error;
                         if (data?.error) {
-                          if (data?.active_request) toast.warning(`Solicitação de R$ ${Number(data.active_request.amount).toFixed(2)} em andamento.`);
+                          if (data?.active_request) toast.warning(`Solicitação de ${formatBRL(Number(data.active_request.amount))} em andamento.`);
                           else if (data?.limit_reached) toast.warning(data.error, { duration: 8000 });
                           else throw new Error(data.error);
                           return;
                         }
-                        toast.success(`✅ Solicitação enviada! ID #${data?.request?.transaction_code} | R$ ${amount.toFixed(2)}.`);
+                        toast.success(`✅ Solicitação enviada! ID #${data?.request?.transaction_code} | ${formatBRL(amount)}.`);
                         queryClient.invalidateQueries({ queryKey: ["driver-balance"] });
                         queryClient.invalidateQueries({ queryKey: ["pending-withdrawal"] });
                         queryClient.invalidateQueries({ queryKey: ["withdrawal-history"] });
@@ -1327,7 +1327,7 @@ const DriverDashboard = () => {
                 </div>
                 <p className="text-xs text-muted-foreground font-semibold">Pix App</p>
               </div>
-              <p className="text-lg font-black text-green-500">R$ {Number(driverBalance?.pending_amount || 0).toFixed(2)}</p>
+              <p className="text-lg font-black text-green-500">{formatBRL(Number(driverBalance?.pending_amount || 0))}</p>
               <p className="text-[10px] text-muted-foreground mt-0.5">{earningsBreakdown.pixCount} entregas</p>
             </div>
             <div className="bg-card border border-border rounded-2xl p-4">
@@ -1337,7 +1337,7 @@ const DriverDashboard = () => {
                 </div>
                 <p className="text-xs text-muted-foreground font-semibold">Dinheiro</p>
               </div>
-              <p className="text-lg font-black text-amber-500">R$ {earningsBreakdown.cashEarnings.toFixed(2)}</p>
+              <p className="text-lg font-black text-amber-500">{formatBRL(earningsBreakdown.cashEarnings)}</p>
               <p className="text-[10px] text-muted-foreground mt-0.5">{earningsBreakdown.cashCount} entregas</p>
             </div>
           </div>
@@ -1346,7 +1346,7 @@ const DriverDashboard = () => {
           <div className="bg-card border border-border rounded-2xl p-4 flex items-center justify-between">
             <div>
               <p className="text-[10px] text-muted-foreground uppercase font-semibold">Total no período</p>
-              <p className="text-2xl font-black text-green-500">R$ {filteredEarnings.toFixed(2)}</p>
+              <p className="text-2xl font-black text-green-500">{formatBRL(filteredEarnings)}</p>
               <p className="text-xs text-muted-foreground mt-0.5">{filteredHistory.length} entregas realizadas</p>
             </div>
             <button
@@ -1371,7 +1371,7 @@ const DriverDashboard = () => {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-black text-foreground">R$ {Number(w.amount).toFixed(2)}</p>
+                      <p className="text-sm font-black text-foreground">{formatBRL(Number(w.amount))}</p>
                       <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg inline-block mt-0.5 ${w.status === "solicitado" ? "bg-amber-500/10 text-amber-500" : "bg-green-500/10 text-green-500"}`}>
                         {w.status === "solicitado" ? "⏳ Pendente" : "✅ Pago"}
                       </span>
@@ -1423,7 +1423,7 @@ const DriverDashboard = () => {
                         </span>
                       </div>
                     </div>
-                    <p className="text-lg font-black text-green-500 ml-2">R$ {Number(order.delivery_fee).toFixed(2)}</p>
+                    <p className="text-lg font-black text-green-500 ml-2">{formatBRL(Number(order.delivery_fee))}</p>
                   </div>
                 );
               })}

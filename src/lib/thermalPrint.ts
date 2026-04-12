@@ -1,3 +1,4 @@
+import { formatBRL } from "@/lib/utils";
 import { getOrderItemDisplayName } from "./orderItemName";
 
 interface PrintOrderItem {
@@ -57,7 +58,7 @@ export function printThermalReceipt(
     itemsHtml += `<div class="tp-item-row"><span><b>${item.quantity}x</b> ${displayName}</span><span>R$ ${lineTotal}</span></div>`;
     if (item.addons && Array.isArray(item.addons) && item.addons.length > 0) {
       item.addons.forEach((a: any) => {
-        itemsHtml += `<div class="tp-addon">- ${a.name}${Number(a.price) > 0 ? ` (+R$ ${Number(a.price).toFixed(2)})` : ""}</div>`;
+        itemsHtml += `<div class="tp-addon">- ${a.name}${Number(a.price) > 0 ? ` (+${formatBRL(Number(a.price))})` : ""}</div>`;
       });
     }
     if (item.observations) {
@@ -67,7 +68,7 @@ export function printThermalReceipt(
 
   let changeHtml = "";
   if (order.payment_method === "dinheiro" && order.needs_change && Number(order.change_for) > 0) {
-    changeHtml = `<div class="tp-change"><b>TROCO PARA: R$ ${Number(order.change_for).toFixed(2)}</b></div>`;
+    changeHtml = `<div class="tp-change"><b>TROCO PARA: ${formatBRL(Number(order.change_for))}</b></div>`;
   }
 
   const container = getOrCreatePrintContainer();
@@ -78,9 +79,9 @@ export function printThermalReceipt(
 <div class="tp-divider"></div>
 ${itemsHtml}
 <div class="tp-divider"></div>
-<div class="tp-total-row"><span>Subtotal:</span><span>R$ ${Number(order.subtotal).toFixed(2)}</span></div>
-<div class="tp-total-row"><span>Entrega:</span><span>R$ ${Number(order.delivery_fee).toFixed(2)}</span></div>
-<div class="tp-total-big"><span>TOTAL:</span><span>R$ ${Number(order.total_price).toFixed(2)}</span></div>
+<div class="tp-total-row"><span>Subtotal:</span><span>${formatBRL(Number(order.subtotal))}</span></div>
+<div class="tp-total-row"><span>Entrega:</span><span>${formatBRL(Number(order.delivery_fee))}</span></div>
+<div class="tp-total-big"><span>TOTAL:</span><span>${formatBRL(Number(order.total_price))}</span></div>
 <div class="tp-divider"></div>
 <div class="tp-info"><b>Pagamento:</b> ${paymentLabels[order.payment_method] || order.payment_method}</div>
 ${changeHtml}

@@ -1,3 +1,4 @@
+import { formatBRL } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -60,7 +61,7 @@ const PopularProducts = () => {
               <p className="text-xs font-bold text-foreground truncate">{product.name}</p>
               <p className="text-[10px] text-muted-foreground truncate">{(product as any).stores?.name}</p>
               <div className="flex items-center justify-between mt-1">
-                <span className="text-xs font-black text-primary">R$ {Number(product.price).toFixed(2)}</span>
+                <span className="text-xs font-black text-primary">{formatBRL(Number(product.price))}</span>
                 <span className="text-[9px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">{totalQty}x</span>
               </div>
             </div>

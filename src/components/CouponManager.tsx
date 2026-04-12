@@ -1,3 +1,4 @@
+import { formatBRL } from "@/lib/utils";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -208,9 +209,9 @@ const CouponManager = ({ storeId, isAdmin }: CouponManagerProps) => {
                     <p className="font-bold text-sm text-foreground">{c.code}</p>
                     <p className="text-[10px] text-muted-foreground">
                       {c.discount_type === "percentage" && `${c.discount_value}% off`}
-                      {c.discount_type === "fixed" && `R$ ${Number(c.discount_value).toFixed(2)} off`}
+                      {c.discount_type === "fixed" && `${formatBRL(Number(c.discount_value))} off`}
                       {c.discount_type === "free_shipping" && "Frete grátis"}
-                      {c.min_order_value > 0 && ` · Min R$ ${Number(c.min_order_value).toFixed(2)}`}
+                      {c.min_order_value > 0 && ` · Min ${formatBRL(Number(c.min_order_value))}`}
                       {` · ${c.used_count} usos`}
                     </p>
                   </div>
