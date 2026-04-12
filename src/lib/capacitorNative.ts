@@ -3,7 +3,7 @@
  * Only activates when running inside a Capacitor native shell.
  */
 import { Capacitor } from "@capacitor/core";
-import { supabase } from "@/integrations/supabase/client";
+import { claimFcmPushToken } from "@/lib/pushRegistration";
 
 export function isCapacitorNative(): boolean {
   return Capacitor.isNativePlatform();
@@ -66,18 +66,8 @@ export async function setupPushListeners() {
 }
 
 async function saveFcmToken(token: string) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
-
-  await supabase.from("fcm_tokens").upsert(
-    {
-      user_id: user.id,
-      token,
-      device_info: `capacitor-${Capacitor.getPlatform()}`,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "user_id,token" }
-  );
+  const deviceInfo = `capacitor-${Capacitor.getPlatform()}`;
+  await claimFcmPushToken(token, deviceInfo);
 }
 
 // ── Status Bar ──

@@ -1894,6 +1894,14 @@ export type Database = {
       }
       auto_finalize_stale_orders: { Args: never; Returns: Json }
       calculate_prorata_credit: { Args: { _store_id: string }; Returns: number }
+      claim_push_device: {
+        Args: {
+          _device_info?: string
+          _fcm_token?: string
+          _player_id?: string
+        }
+        Returns: undefined
+      }
       client_confirm_delivery: {
         Args: { _order_id: string }
         Returns: undefined
