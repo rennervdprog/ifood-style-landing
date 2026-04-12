@@ -61,6 +61,21 @@ Deno.serve(async (req) => {
         .eq("token", fcm_token)
         .neq("user_id", user.id);
 
+      if (device_info) {
+        await supabaseAdmin
+          .from("fcm_tokens")
+          .delete()
+          .eq("device_info", device_info)
+          .neq("user_id", user.id);
+
+        await supabaseAdmin
+          .from("fcm_tokens")
+          .delete()
+          .eq("user_id", user.id)
+          .eq("device_info", device_info)
+          .neq("token", fcm_token);
+      }
+
       const { error } = await supabaseAdmin
         .from("fcm_tokens")
         .upsert(
@@ -85,6 +100,21 @@ Deno.serve(async (req) => {
         .delete()
         .eq("player_id", player_id)
         .neq("user_id", user.id);
+
+      if (device_info) {
+        await supabaseAdmin
+          .from("onesignal_players")
+          .delete()
+          .eq("device_info", device_info)
+          .neq("user_id", user.id);
+
+        await supabaseAdmin
+          .from("onesignal_players")
+          .delete()
+          .eq("user_id", user.id)
+          .eq("device_info", device_info)
+          .neq("player_id", player_id);
+      }
 
       const { error } = await supabaseAdmin
         .from("onesignal_players")

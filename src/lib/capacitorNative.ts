@@ -4,7 +4,7 @@
  */
 import { Capacitor } from "@capacitor/core";
 import { claimFcmPushToken } from "@/lib/pushRegistration";
-import { rememberPushIdentifier, getStoredPushState } from "@/lib/pushSession";
+import { rememberPushIdentifier, getStoredPushState, getCurrentPushDeviceInfo } from "@/lib/pushSession";
 
 let listenersReady = false;
 let registrationPromise: Promise<string | null> | null = null;
@@ -161,7 +161,7 @@ export async function setupPushListeners() {
 }
 
 async function saveFcmToken(token: string) {
-  const deviceInfo = `capacitor-${Capacitor.getPlatform()}`;
+  const deviceInfo = getCurrentPushDeviceInfo("capacitor");
   await claimFcmPushToken(token, deviceInfo);
 }
 
