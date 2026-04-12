@@ -236,7 +236,7 @@ const AdminDashboard = () => {
         console.error("[AdminDashboard] store query error:", error);
         throw error;
       }
-      console.log("[AdminDashboard] store loaded:", data?.name, "is_open:", data?.is_open);
+      
       return data;
     },
     enabled: !!user,
@@ -244,7 +244,7 @@ const AdminDashboard = () => {
 
   const storePlan = useStorePlan(store?.id);
 
-  console.log("[AdminDashboard] store:", store?.name, "storeError:", storeError, "storeLoading:", storeLoading, "isApproved:", isApproved, "user:", user?.id);
+  
 
   const { data: orders, isLoading } = useQuery({
     queryKey: ["store-orders", store?.id],
