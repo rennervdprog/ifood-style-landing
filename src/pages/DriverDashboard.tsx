@@ -433,6 +433,15 @@ const DriverDashboard = () => {
           playAlert();
           toast.info("🏍️ Nova entrega disponível!");
         }
+        // Instant cache update for driver's current delivery
+        if (payload.eventType === "UPDATE" && nextOrder) {
+          queryClient.setQueryData(["driver-my-delivery", user.id], (old: any[] | undefined) => {
+            if (!old) return old;
+            const idx = old.findIndex((o: any) => o.id === nextOrder.id);
+            if (idx >= 0) { const c = [...old]; c[idx] = { ...c[idx], ...nextOrder }; return c; }
+            return old;
+          });
+        }
         queryClient.invalidateQueries({ queryKey: ["driver-available-orders"] });
         queryClient.invalidateQueries({ queryKey: ["driver-my-delivery", user.id] });
         queryClient.invalidateQueries({ queryKey: ["driver-history", user.id] });
