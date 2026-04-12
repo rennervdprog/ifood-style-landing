@@ -1,4 +1,6 @@
+import { formatBRL } from "@/lib/utils";
 import { useState, useEffect } from "react";
+import { formatBRL } from "@/lib/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -180,7 +182,7 @@ const LoyaltyConfigPanel = ({ storeId }: LoyaltyConfigPanelProps) => {
               className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
             <p className="text-[10px] text-muted-foreground">
-              Com {minRedeem} pontos, o cliente ganha até R$ {(minRedeem * discountPerPoint).toFixed(2)} de desconto
+              Com {minRedeem} pontos, o cliente ganha até {formatBRL(R$ {(minRedeem * discountPerPoint).toFixed(2)})} de desconto
             </p>
           </div>
 

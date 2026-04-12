@@ -1,4 +1,6 @@
+import { formatBRL } from "@/lib/utils";
 import { useState } from "react";
+import { formatBRL } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Pizza, ShoppingCart, Check, Minus, Plus, ChevronLeft, Circle, X } from "lucide-react";
@@ -258,7 +260,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
               </div>
               {p1 && p2 && (
                 <span className="text-[10px] text-muted-foreground">
-                  Pizza R$ {pizzaPrice.toFixed(2)}
+                  Pizza {formatBRL(R$ {pizzaPrice.toFixed(2)})}
                   {borderPrice > 0 && ` + Borda R$ ${borderPrice.toFixed(2)}`}
                   {" = R$ " + unitPrice.toFixed(2)}
                 </span>
@@ -318,7 +320,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
                             )}
                           </div>
                           <span className="text-sm font-black text-primary whitespace-nowrap">
-                            R$ {product.price.toFixed(2)}
+                            {formatBRL(R$ {product.price.toFixed(2)})}
                           </span>
                         </button>
                       );
@@ -445,7 +447,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
               }`}
             >
               <ShoppingCart className="h-5 w-5" />
-              Adicionar • R$ {lineTotal.toFixed(2)}
+              Adicionar • {formatBRL(R$ {lineTotal.toFixed(2)})}
             </button>
           </div>
         )}

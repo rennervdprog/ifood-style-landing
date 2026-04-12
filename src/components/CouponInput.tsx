@@ -1,4 +1,6 @@
+import { formatBRL } from "@/lib/utils";
 import { useState } from "react";
+import { formatBRL } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tag, X, Loader2, CheckCircle2 } from "lucide-react";
@@ -128,7 +130,7 @@ const CouponInput = ({ subtotal, storeId, onApply, onRemove, appliedCode, applie
           <CheckCircle2 className="h-4 w-4 text-green-500" />
           <div>
             <span className="text-xs font-bold text-green-600">{appliedCode}</span>
-            <p className="text-[10px] text-green-600/70">-R$ {appliedDiscount.toFixed(2)}</p>
+            <p className="text-[10px] text-green-600/70">-{formatBRL(R$ {appliedDiscount.toFixed(2)})}</p>
           </div>
         </div>
         <button onClick={onRemove} className="text-muted-foreground hover:text-destructive">

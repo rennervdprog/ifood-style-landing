@@ -1,4 +1,6 @@
+import { formatBRL } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
+import { formatBRL } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Star, Gift } from "lucide-react";

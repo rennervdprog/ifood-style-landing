@@ -6,7 +6,7 @@ import {
   Download, Wallet, Receipt, Clock, ArrowUpRight, ArrowDownRight, Target, Percent,
   AlertTriangle, QrCode, Copy, Loader2, CheckCircle2,
 } from "lucide-react";
-import { sumMoney, averageMoney, formatCurrency } from "@/lib/utils";
+import { sumMoney, averageMoney, formatCurrency, formatBRL } from "@/lib/utils";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, endOfDay, subWeeks, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -228,7 +228,7 @@ const StoreFinanceBasic = ({ storeId, storeName }: StoreFinanceBasicProps) => {
               {storePlan.isItatingaFixed && " • Itatinga"}
             </h3>
             <p className="text-xs text-muted-foreground">
-              R$ {storePlan.monthlyFee.toFixed(2)}/mês
+              {formatBRL(R$ {storePlan.monthlyFee.toFixed(2)})}/mês
               {storePlan.isItatingaFixed 
                 ? " • R$1/pedido PIX • Split entrega R$4+R$2"
                 : storePlan.commissionRate > 0 ? ` + ${storePlan.commissionRate}% por pedido` : ""
@@ -282,8 +282,8 @@ const StoreFinanceBasic = ({ storeId, storeName }: StoreFinanceBasicProps) => {
                 />
               </div>
               <p className="text-xs text-muted-foreground text-center">
-                PIX disponível a partir de <strong className="text-foreground">R$ {minPayout.toFixed(2)}</strong>
-                {" "}— faltam <strong className="text-destructive">R$ {(minPayout - pendingFee).toFixed(2)}</strong>
+                PIX disponível a partir de <strong className="text-foreground">{formatBRL(R$ {minPayout.toFixed(2)})}</strong>
+                {" "}— faltam <strong className="text-destructive">{formatBRL(R$ {(minPayout - pendingFee).toFixed(2)})}</strong>
               </p>
             </div>
           ) : (

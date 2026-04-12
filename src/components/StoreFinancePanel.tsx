@@ -17,7 +17,7 @@ import {
   isSafetyModeActive, getSafetyModeRemainingMs, formatCooldownTime,
 } from "@/lib/pixSafeGuard";
 import { SIMULATION_MODE, createSimulatedPixCharge, simulatePaymentDelay } from "@/lib/pixSimulation";
-import { multiplyMoney, subtractMoney, sumMoney, averageMoney } from "@/lib/utils";
+import { multiplyMoney, subtractMoney, sumMoney, averageMoney, formatBRL } from "@/lib/utils";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip,
   ResponsiveContainer, PieChart, Pie, Cell,
@@ -536,7 +536,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
           <div className="relative">
             <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Faturamento</p>
             <p className="text-2xl font-black text-foreground mt-1 tracking-tight">
-              R$ {totalSales.toFixed(2)}
+              {formatBRL(R$ {totalSales.toFixed(2)})}
             </p>
             <p className="text-[10px] text-muted-foreground mt-1">{completedOrders.length} pedidos</p>
           </div>
@@ -548,7 +548,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
           <div className="relative">
             <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Lucro Líquido</p>
             <p className="text-2xl font-black text-emerald-400 mt-1 tracking-tight">
-              R$ {storePart.toFixed(2)}
+              {formatBRL(R$ {storePart.toFixed(2)})}
             </p>
             <p className="text-[10px] text-emerald-400/60 mt-1">85% do faturamento</p>
           </div>
@@ -560,7 +560,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
           <div className="relative">
             <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Ticket Médio</p>
             <p className="text-2xl font-black text-blue-400 mt-1 tracking-tight">
-              R$ {ticketMedio.toFixed(2)}
+              {formatBRL(R$ {ticketMedio.toFixed(2)})}
             </p>
             <p className="text-[10px] text-muted-foreground mt-1">por pedido</p>
           </div>
@@ -673,9 +673,9 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
            <p className="text-sm font-bold text-foreground">Vendas via App (PIX)</p>
             <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-[10px]">Automático</Badge>
           </div>
-          <p className="text-2xl font-black text-emerald-400">R$ {creditFromApp.toFixed(2)}</p>
+          <p className="text-2xl font-black text-emerald-400">{formatBRL(R$ {creditFromApp.toFixed(2)})}</p>
           <p className="text-[10px] text-muted-foreground mt-1">
-            Você recebeu R$ {creditFromApp.toFixed(2)} de R$ {appSales.toFixed(2)} em vendas pelo app. A taxa da plataforma (${commissionPct}% = R$ {multiplyMoney(appSales, commissionRate).toFixed(2)}) já foi descontada automaticamente.
+            Você recebeu {formatBRL(R$ {creditFromApp.toFixed(2)})} de {formatBRL(R$ {appSales.toFixed(2)})} em vendas pelo app. A taxa da plataforma (${commissionPct}% = {formatBRL(R$ {multiplyMoney(appSales, commissionRate).toFixed(2)})}) já foi descontada automaticamente.
           </p>
           <div className="mt-2 rounded-xl bg-emerald-500/5 border border-emerald-500/10 p-2.5">
             <p className="text-[10px] text-emerald-400 font-semibold">✅ Valor já depositado na sua conta — nada a fazer</p>
@@ -695,7 +695,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
           </div>
           <p className="text-xs text-muted-foreground mb-1">Você recebeu o valor na hora (dinheiro/cartão). A taxa de ${commissionPct}% da plataforma precisa ser repassada.</p>
           <p className="text-2xl font-black text-red-400">
-            R$ {(dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue).toFixed(2)}
+            {formatBRL(R$ {(dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue).toFixed(2)})}
           </p>
 
           {safetyModeMs > 0 && (
@@ -784,7 +784,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
           <p className="text-xs text-muted-foreground">
             Fatura: <span className="font-bold text-foreground">{chargeResult.reference_code}</span>
           </p>
-          <p className="text-2xl font-black text-center text-foreground">R$ {chargeResult.amount.toFixed(2)}</p>
+          <p className="text-2xl font-black text-center text-foreground">{formatBRL(R$ {chargeResult.amount.toFixed(2)})}</p>
 
           {!isChargeExpired && !isChargeSettled && (
             <div className="rounded-xl border border-border/50 bg-card/40 p-3 text-center space-y-2">
@@ -846,12 +846,12 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
         <div className="grid grid-cols-2 gap-3 text-center">
           <div>
             <p className="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">App (automático)</p>
-            <p className="text-sm font-black text-emerald-400 mt-1">R$ {multiplyMoney(appSales, commissionRate).toFixed(2)}</p>
+            <p className="text-sm font-black text-emerald-400 mt-1">{formatBRL(R$ {multiplyMoney(appSales, commissionRate).toFixed(2)})}</p>
             <p className="text-[10px] text-muted-foreground">comissão já retida</p>
           </div>
           <div>
             <p className="text-[10px] text-red-400 font-semibold uppercase tracking-wider">Físico (a cobrar)</p>
-            <p className="text-sm font-black text-red-400 mt-1">R$ {(dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue).toFixed(2)}</p>
+            <p className="text-sm font-black text-red-400 mt-1">{formatBRL(R$ {(dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue).toFixed(2)})}</p>
             <p className="text-[10px] text-muted-foreground">comissão pendente</p>
           </div>
         </div>
@@ -873,8 +873,8 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
             </div>
           </div>
           <div className="text-right">
-            <p className="text-sm font-bold text-foreground">R$ {physicalSales.toFixed(2)}</p>
-            <p className="text-[10px] text-red-400">- R$ {commissionDue.toFixed(2)} comissão</p>
+            <p className="text-sm font-bold text-foreground">{formatBRL(R$ {physicalSales.toFixed(2)})}</p>
+            <p className="text-[10px] text-red-400">- {formatBRL(R$ {commissionDue.toFixed(2)})} comissão</p>
           </div>
         </div>
         <div className="p-4 flex items-center justify-between">
@@ -888,7 +888,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
             </div>
           </div>
           <div className="text-right">
-            <p className="text-sm font-bold text-foreground">R$ {appSales.toFixed(2)}</p>
+            <p className="text-sm font-bold text-foreground">{formatBRL(R$ {appSales.toFixed(2)})}</p>
             <p className="text-[10px] text-emerald-400">comissão já retida</p>
           </div>
         </div>
@@ -938,7 +938,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
                       <span className="text-[10px] text-muted-foreground">
                         {tx.transaction_kind === "commission_charge" ? "Cobrança" : "Repasse"}
                       </span>
-                      <span className="text-sm font-bold text-foreground">R$ {Number(tx.amount).toFixed(2)}</span>
+                      <span className="text-sm font-bold text-foreground">{formatBRL(R$ {Number(tx.amount).toFixed(2)})}</span>
                     </div>
                     <div className="flex items-center justify-between mt-1">
                       <p className="text-[10px] text-muted-foreground">
@@ -966,13 +966,13 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
           {activeOrders.filter(o => o.payment_method === "pix").map(order => (
             <div key={order.id} className="flex justify-between text-xs bg-blue-500/5 rounded-xl p-2.5">
               <span className="text-blue-400 font-semibold">#{order.id.substring(0, 6).toUpperCase()}</span>
-              <span className="text-foreground font-medium">R$ {Number(order.subtotal).toFixed(2)}</span>
+              <span className="text-foreground font-medium">{formatBRL(R$ {Number(order.subtotal).toFixed(2)})}</span>
               <span className="text-muted-foreground capitalize">{order.status.replace(/_/g, " ")}</span>
             </div>
           ))}
           <div className="flex justify-between text-xs pt-2 border-t border-border/30">
             <span className="text-muted-foreground">Total em andamento</span>
-            <span className="text-blue-400 font-bold">R$ {activePixSales.toFixed(2)}</span>
+            <span className="text-blue-400 font-bold">{formatBRL(R$ {activePixSales.toFixed(2)})}</span>
           </div>
         </div>
       )}
@@ -1007,11 +1007,11 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
                       <span className="text-[10px] text-muted-foreground">
                         {isPix ? "PIX App" : order.payment_method === "cartao" ? "Cartão" : "Dinheiro"}
                       </span>
-                      <span className="text-sm font-bold text-foreground">R$ {sub.toFixed(2)}</span>
+                      <span className="text-sm font-bold text-foreground">{formatBRL(R$ {sub.toFixed(2)})}</span>
                     </div>
                     <div className="flex items-center justify-between mt-0.5">
-                      <span className="text-[10px] text-muted-foreground">Comissão: R$ {commission.toFixed(2)}</span>
-                      <span className="text-xs font-semibold text-emerald-400">Líquido: R$ {net.toFixed(2)}</span>
+                      <span className="text-[10px] text-muted-foreground">Comissão: {formatBRL(R$ {commission.toFixed(2)})}</span>
+                      <span className="text-xs font-semibold text-emerald-400">Líquido: {formatBRL(R$ {net.toFixed(2)})}</span>
                     </div>
                   </div>
                 </div>

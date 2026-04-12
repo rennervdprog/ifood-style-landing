@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AlertTriangle, QrCode, Copy, Loader2, CheckCircle2, X, ShieldAlert, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatBRL } from "@/lib/utils";
 
 interface CommissionAlertProps {
   storeId: string;
@@ -208,7 +208,7 @@ const CommissionAlert = ({ storeId, storeName, onGoToFinance }: CommissionAlertP
         <div className="text-center py-2">
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Valor a Pagar</p>
           <p className={`text-3xl font-black ${isBlocked ? "text-red-500" : "text-amber-500"}`}>
-            R$ {pendingCommission.toFixed(2)}
+            {formatBRL(R$ {pendingCommission.toFixed(2)})}
           </p>
         </div>
 
@@ -249,7 +249,7 @@ const CommissionAlert = ({ storeId, storeName, onGoToFinance }: CommissionAlertP
             <p className="text-xs text-muted-foreground text-center">
               Fatura: <span className="font-bold text-foreground">{chargeResult.reference_code}</span>
             </p>
-            <p className="text-2xl font-black text-center text-foreground">R$ {chargeResult.amount.toFixed(2)}</p>
+            <p className="text-2xl font-black text-center text-foreground">{formatBRL(R$ {chargeResult.amount.toFixed(2)})}</p>
 
             {chargeResult.qr_code_base64 && (
               <div className="flex justify-center">
@@ -297,8 +297,8 @@ const CommissionAlert = ({ storeId, storeName, onGoToFinance }: CommissionAlertP
               />
             </div>
             <p className="text-xs text-muted-foreground text-center">
-              PIX disponível a partir de <strong className="text-foreground">R$ {minPayout.toFixed(2)}</strong>
-              {" "}— faltam <strong className="text-amber-500">R$ {(minPayout - pendingCommission).toFixed(2)}</strong>
+              PIX disponível a partir de <strong className="text-foreground">{formatBRL(R$ {minPayout.toFixed(2)})}</strong>
+              {" "}— faltam <strong className="text-amber-500">{formatBRL(R$ {(minPayout - pendingCommission).toFixed(2)})}</strong>
             </p>
           </div>
         )}

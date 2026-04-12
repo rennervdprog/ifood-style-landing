@@ -1,4 +1,6 @@
+import { formatBRL } from "@/lib/utils";
 import { useState } from "react";
+import { formatBRL } from "@/lib/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Wallet, QrCode, Copy, Loader2, X, Banknote } from "lucide-react";
@@ -90,7 +92,7 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
                 Repasse Pendente — Taxa Plataforma
               </h3>
               <p className="text-[10px] text-muted-foreground mt-0.5">
-                Taxa de R$ {splitPerOrder.toFixed(2)} por pedido em dinheiro/cartão. Efetue o repasse via PIX.
+                Taxa de {formatBRL(R$ {splitPerOrder.toFixed(2)})} por pedido em dinheiro/cartão. Efetue o repasse via PIX.
               </p>
             </div>
           </div>
@@ -105,7 +107,7 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
         <div className="text-center py-2">
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Valor a Repassar</p>
           <p className="text-3xl font-black text-blue-500">
-            R$ {pendingFee.toFixed(2)}
+            {formatBRL(R$ {pendingFee.toFixed(2)})}
           </p>
         </div>
 
@@ -113,7 +115,7 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
         <div className="rounded-xl p-3 bg-blue-500/10 border border-blue-500/20 flex items-center gap-2">
           <Banknote className="h-4 w-4 text-blue-400" />
           <p className="text-xs font-medium text-blue-400">
-            Cada pedido finalizado com pagamento físico (dinheiro/cartão) gera uma taxa de R$ {splitPerOrder.toFixed(2)} para a plataforma.
+            Cada pedido finalizado com pagamento físico (dinheiro/cartão) gera uma taxa de {formatBRL(R$ {splitPerOrder.toFixed(2)})} para a plataforma.
           </p>
         </div>
 
@@ -126,7 +128,7 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <p className="text-2xl font-black text-center text-foreground">R$ {pixData.amount.toFixed(2)}</p>
+            <p className="text-2xl font-black text-center text-foreground">{formatBRL(R$ {pixData.amount.toFixed(2)})}</p>
 
             {pixData.qr_code_base64 && (
               <div className="flex justify-center">
@@ -168,8 +170,8 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
               />
             </div>
             <p className="text-xs text-muted-foreground text-center">
-              PIX disponível a partir de <strong className="text-foreground">R$ {minPayout.toFixed(2)}</strong>
-              {" "}— faltam <strong className="text-blue-500">R$ {(minPayout - pendingFee).toFixed(2)}</strong>
+              PIX disponível a partir de <strong className="text-foreground">{formatBRL(R$ {minPayout.toFixed(2)})}</strong>
+              {" "}— faltam <strong className="text-blue-500">{formatBRL(R$ {(minPayout - pendingFee).toFixed(2)})}</strong>
             </p>
           </div>
         )}
