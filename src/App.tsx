@@ -68,6 +68,7 @@ const App = () => {
           <NotificationPrompt />
           <DebugOverlay />
           <BrowserRouter>
+            <CapacitorRouteGuard />
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 {/* Public store directory */}
