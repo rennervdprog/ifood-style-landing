@@ -14,47 +14,18 @@ export function isCapacitorNative(): boolean {
 export async function registerCapacitorPush(): Promise<string | null> {
   if (!isCapacitorNative()) return null;
 
-  const { PushNotifications } = await import("@capacitor/push-notifications");
-
-  const permResult = await PushNotifications.requestPermissions();
-  if (permResult.receive !== "granted") {
-    console.warn("[CapPush] Permission denied");
-    return null;
-  }
-
-  await PushNotifications.register();
-
-  return new Promise((resolve) => {
-    PushNotifications.addListener("registration", async (token) => {
-      console.log("[CapPush] Token:", token.value);
-      await saveFcmToken(token.value);
-      resolve(token.value);
-    });
-
-    PushNotifications.addListener("registrationError", (err) => {
-      console.error("[CapPush] Registration error:", err);
-      resolve(null);
-    });
-  });
+  // Native push registration is temporarily disabled until Android Firebase
+  // configuration is added to the generated native project. Calling the plugin
+  // without that config can crash the app right after the notification
+  // permission is granted.
+  console.warn("[CapPush] Native push registration skipped: missing native Firebase configuration");
+  return null;
 }
 
 export async function setupPushListeners() {
   if (!isCapacitorNative()) return;
 
-  const { PushNotifications } = await import("@capacitor/push-notifications");
-
-  PushNotifications.addListener("pushNotificationReceived", (notification) => {
-    console.log("[CapPush] Foreground:", notification);
-    // Could show a toast here
-  });
-
-  PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
-    console.log("[CapPush] Action:", action);
-    const link = action.notification.data?.link;
-    if (link && typeof window !== "undefined") {
-      window.location.href = link;
-    }
-  });
+  // Keep native app startup safe until native Firebase push is configured.
 }
 
 async function saveFcmToken(token: string) {
