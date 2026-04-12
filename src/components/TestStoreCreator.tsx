@@ -102,7 +102,7 @@ const TestStoreCreator = () => {
               }`}
             >
               <span className="text-lg">{cat.emoji}</span>
-              <span>{cat.label.replace(/[^\w\s]/g, "").trim()}</span>
+              <span>{cat.label.replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, "").trim()}</span>
               {exists && <span className="text-[10px] text-primary/70">✓ Criada</span>}
             </button>
           );
