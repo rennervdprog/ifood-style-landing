@@ -4,17 +4,29 @@
  */
 import { Capacitor } from "@capacitor/core";
 import { claimFcmPushToken } from "@/lib/pushRegistration";
+import { rememberPushIdentifier, getStoredPushState } from "@/lib/pushSession";
 
 let listenersReady = false;
 let registrationPromise: Promise<string | null> | null = null;
 let resolveRegistration: ((value: string | null) => void) | null = null;
 let registrationTimeoutId: number | null = null;
+let lastKnownToken: string | null = null;
 
 export function isCapacitorNative(): boolean {
   return Capacitor.isNativePlatform();
 }
 
 // ── Push Notifications ──
+
+/** Reset registration state so next call does a fresh registration */
+export function resetPushRegistrationState() {
+  registrationPromise = null;
+  resolveRegistration = null;
+  if (registrationTimeoutId !== null) {
+    window.clearTimeout(registrationTimeoutId);
+    registrationTimeoutId = null;
+  }
+}
 
 function settleRegistration(token: string | null) {
   if (registrationTimeoutId !== null) {
@@ -34,6 +46,8 @@ async function ensurePushListeners() {
 
   PushNotifications.addListener("registration", async (token) => {
     console.log("[CapPush] Token:", token.value);
+    lastKnownToken = token.value;
+    rememberPushIdentifier("fcm", token.value);
 
     try {
       await saveFcmToken(token.value);
@@ -74,6 +88,23 @@ async function ensurePushListeners() {
   return PushNotifications;
 }
 
+/**
+ * Re-claim the stored FCM token for the currently logged-in user.
+ * This is critical after account switches on the same device.
+ */
+export async function reclaimStoredToken(): Promise<void> {
+  const stored = getStoredPushState();
+  const token = lastKnownToken || stored.fcmToken;
+  if (!token) return;
+
+  console.log("[CapPush] Re-claiming stored FCM token for current user");
+  try {
+    await saveFcmToken(token);
+  } catch (e) {
+    console.warn("[CapPush] Failed to re-claim stored token:", e);
+  }
+}
+
 export async function registerCapacitorPush(options: { requestPermission?: boolean } = {}): Promise<string | null> {
   if (!isCapacitorNative()) return null;
 
@@ -91,13 +122,16 @@ export async function registerCapacitorPush(options: { requestPermission?: boole
       return null;
     }
 
-    if (registrationPromise) return registrationPromise;
+    // Always reset state so we get a fresh registration and re-claim
+    resetPushRegistrationState();
 
     registrationPromise = new Promise<string | null>(async (resolve) => {
       resolveRegistration = resolve;
       registrationTimeoutId = window.setTimeout(() => {
-        console.warn("[CapPush] Registration timeout");
-        settleRegistration(null);
+        console.warn("[CapPush] Registration timeout — trying stored token re-claim");
+        // Even if registration times out, try to re-claim stored token
+        reclaimStoredToken().catch(console.error);
+        settleRegistration(lastKnownToken);
       }, 10000);
 
       try {
