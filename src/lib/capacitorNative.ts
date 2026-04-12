@@ -175,12 +175,28 @@ export async function setupKeyboard() {
 export async function initCapacitorNative() {
   if (!isCapacitorNative()) return;
 
+  console.log("[Capacitor] Platform:", Capacitor.getPlatform());
   console.log("[Capacitor] Initializing native features...");
 
-  await configureStatusBar();
-  setupAppListeners();
-  setupKeyboard();
-  setupPushListeners();
+  try {
+    await configureStatusBar();
+    console.log("[Capacitor] StatusBar done");
+  } catch (e) { console.error("[Capacitor] StatusBar failed:", e); }
+
+  try {
+    setupAppListeners();
+    console.log("[Capacitor] AppListeners done");
+  } catch (e) { console.error("[Capacitor] AppListeners failed:", e); }
+
+  try {
+    setupKeyboard();
+    console.log("[Capacitor] Keyboard done");
+  } catch (e) { console.error("[Capacitor] Keyboard failed:", e); }
+
+  try {
+    setupPushListeners();
+    console.log("[Capacitor] PushListeners done");
+  } catch (e) { console.error("[Capacitor] PushListeners failed:", e); }
 
   // Hide splash after a small delay to let the app render
   setTimeout(() => hideSplash(), 500);
