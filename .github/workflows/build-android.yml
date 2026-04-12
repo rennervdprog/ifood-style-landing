@@ -122,7 +122,7 @@ jobs:
 
       - name: Inject partner redirect
         run: |
-          sed -i 's|<head>|<head><script>if(!window.__CAP_PARTNER_REDIRECTED && window.location.pathname==="/"){window.__CAP_PARTNER_REDIRECTED=true;window.location.replace("/portal-parceiro");}</script>|' index.html
+          sed -i 's|<head>|<head><script>if(!window.__CAP_PARTNER_REDIRECTED){var p=window.location.pathname;if(p==="/"||p==="/index.html"||p===""){window.__CAP_PARTNER_REDIRECTED=true;window.location.replace("/portal-parceiro");}}</script>|' index.html
 
       - name: Build web app
         run: npm run build
