@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Camera, Upload, Save, Store, Phone, Tag, MapPin, Link, Copy, Wallet, Search, Loader2, Bell, CheckCircle2, XCircle, Truck, Bike, MessageSquare, Eye, EyeOff, ExternalLink } from "lucide-react";
 import { requestPushPermissionAndRegister } from "@/lib/firebase";
 import { isGoNative, registerGoNativePlayer } from "@/lib/gonative";
+import { isCapacitorNative, registerCapacitorPush } from "@/lib/capacitorNative";
 import { maskWhatsApp } from "@/lib/whatsapp";
 import { formatCep, fetchCep } from "@/lib/cepLookup";
 
@@ -249,6 +250,7 @@ const NotificationSection = () => {
   const [notifStatus, setNotifStatus] = useState<"checking" | "granted" | "denied" | "default" | "unsupported">("checking");
   const [enabling, setEnabling] = useState(false);
   const native = isGoNative();
+  const capacitorNative = isCapacitorNative();
 
   useEffect(() => {
     if (native) {
@@ -256,12 +258,24 @@ const NotificationSection = () => {
       setNotifStatus("granted");
       return;
     }
+    if (capacitorNative) {
+      import("@capacitor/push-notifications").then(({ PushNotifications }) => {
+        PushNotifications.checkPermissions().then((result) => {
+          if (result.receive === "prompt" || result.receive === "prompt-with-rationale") {
+            setNotifStatus("default");
+            return;
+          }
+          setNotifStatus(result.receive === "granted" ? "granted" : "denied");
+        }).catch(() => setNotifStatus("default"));
+      }).catch(() => setNotifStatus("default"));
+      return;
+    }
     if (!("Notification" in window)) {
       setNotifStatus("unsupported");
       return;
     }
     setNotifStatus(Notification.permission as any);
-  }, [native]);
+  }, [native, capacitorNative]);
 
   const handleEnable = async () => {
     setEnabling(true);
@@ -270,11 +284,20 @@ const NotificationSection = () => {
         await registerGoNativePlayer();
         toast.success("Notificações nativas ativadas!");
         setNotifStatus("granted");
+      } else if (capacitorNative) {
+        const token = await registerCapacitorPush();
+        if (token) {
+          toast.success("Notificações ativadas!");
+          setNotifStatus("granted");
+        } else {
+          setNotifStatus("denied");
+          toast.error("Permissão negada. Ative nas configurações do app.");
+        }
       } else {
-        const result = await Notification.requestPermission();
+        const token = await requestPushPermissionAndRegister();
+        const result = Notification.permission;
         setNotifStatus(result as any);
-        if (result === "granted") {
-          await requestPushPermissionAndRegister();
+        if (result === "granted" && token) {
           toast.success("Notificações ativadas!");
         } else {
           toast.error("Permissão negada. Ative nas configurações do navegador.");
@@ -299,7 +322,7 @@ const NotificationSection = () => {
           <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0" />
           <div>
             <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Notificações ativas</p>
-            <p className="text-[10px] text-muted-foreground">Você receberá alertas de novos pedidos.</p>
+          <p className="text-[10px] text-muted-foreground">Você receberá alertas de novos pedidos.</p>
           </div>
         </div>
       ) : notifStatus === "denied" ? (
@@ -307,7 +330,7 @@ const NotificationSection = () => {
           <XCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
           <div>
             <p className="text-xs font-bold text-red-600 dark:text-red-400">Notificações bloqueadas</p>
-            <p className="text-[10px] text-muted-foreground">Acesse as configurações do navegador/app para desbloquear.</p>
+            <p className="text-[10px] text-muted-foreground">Acesse as configurações do navegador ou do app para desbloquear.</p>
           </div>
         </div>
       ) : notifStatus === "unsupported" ? (
