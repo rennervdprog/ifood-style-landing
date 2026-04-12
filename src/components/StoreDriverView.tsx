@@ -302,6 +302,9 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   const totalActive = (myDeliveries?.length || 0);
   const totalAvailable = (availableOrders?.length || 0);
 
+  // Block accepting new orders while driver has any active (non-finalized) deliveries
+  const hasActiveRoutes = totalActive > 0;
+
   return (
     <div className="px-4 py-4 space-y-5">
       {/* Stats bar */}
