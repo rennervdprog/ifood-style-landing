@@ -260,9 +260,9 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
               </div>
               {p1 && p2 && (
                 <span className="text-[10px] text-muted-foreground">
-                  Pizza {formatBRL({formatBRL(pizzaPrice)})}
+                  Pizza {formatBRL(pizzaPrice)}
                   {borderPrice > 0 && ` + Borda ${formatBRL(borderPrice)}`}
-                  {" = R$ " + unitPrice.toFixed(2)}
+                  {" = " + formatBRL(unitPrice)}
                 </span>
               )}
             </div>
