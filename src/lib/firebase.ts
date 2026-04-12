@@ -1,3 +1,4 @@
+import { supabase } from "@/integrations/supabase/client";
 import { isCapacitorNative } from "@/lib/capacitorNative";
 
 console.log("[Firebase] Module loading, isCapacitorNative:", isCapacitorNative());
