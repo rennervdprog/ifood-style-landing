@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { isCapacitorNative } from "@/lib/capacitorNative";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -42,6 +43,12 @@ const PartnerLogin = () => {
         .maybeSingle();
 
       if (!profile || (profile as any).role === "cliente") {
+        // On Capacitor, show choose mode instead of navigating to onboarding landing
+        if (isCapacitorNative()) {
+          setMode("choose");
+          setChecking(false);
+          return;
+        }
         navigate("/parceiro", { replace: true });
         return;
       }
@@ -52,9 +59,19 @@ const PartnerLogin = () => {
       } else if (role === "motoboy") {
         navigate("/entregador", { replace: true });
       } else {
+        if (isCapacitorNative()) {
+          setMode("choose");
+          setChecking(false);
+          return;
+        }
         navigate("/parceiro", { replace: true });
       }
     } catch {
+      if (isCapacitorNative()) {
+        setMode("choose");
+        setChecking(false);
+        return;
+      }
       navigate("/parceiro", { replace: true });
     } finally {
       setChecking(false);
