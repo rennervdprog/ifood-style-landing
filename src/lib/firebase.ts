@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { isCapacitorNative } from "@/lib/capacitorNative";
+import { claimFcmPushToken } from "@/lib/pushRegistration";
 
 console.log("[Firebase] Module loading, isCapacitorNative:", isCapacitorNative());
 
@@ -116,20 +117,8 @@ export async function requestPushPermissionAndRegister(): Promise<string | null>
 }
 
 async function saveTokenToDatabase(token: string) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
-
   const deviceInfo = navigator.userAgent.slice(0, 200);
-
-  await supabase.from("fcm_tokens").upsert(
-    {
-      user_id: user.id,
-      token,
-      device_info: deviceInfo,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "user_id,token" }
-  );
+  await claimFcmPushToken(token, deviceInfo);
 }
 
 export function onForegroundMessage(callback: (payload: any) => void) {
