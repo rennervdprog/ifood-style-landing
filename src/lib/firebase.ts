@@ -2,6 +2,7 @@ import { initializeApp } from "firebase/app";
 import { getMessaging, getToken, onMessage, isSupported } from "firebase/messaging";
 import { supabase } from "@/integrations/supabase/client";
 import { isGoNative } from "@/lib/gonative";
+import { isCapacitorNative } from "@/lib/capacitorNative";
 
 const firebaseConfig = {
   apiKey: "AIzaSyC7o57Z8Y-F2KLyqSIGtHTSPgTxGRr-JNQ",
