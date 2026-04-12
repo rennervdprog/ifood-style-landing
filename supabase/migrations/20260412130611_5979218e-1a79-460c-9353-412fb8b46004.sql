@@ -1,0 +1,1 @@
+grant execute on function public.claim_push_device(text, text, text) to anon;
