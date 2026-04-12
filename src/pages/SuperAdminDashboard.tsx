@@ -939,6 +939,19 @@ const SuperAdminDashboard = () => {
                     </div>
                   </div>
                 )}
+
+                {/* Empty state when nothing to show */}
+                {!isLoading && metrics.totalOrders === 0 && delayedOrders.length === 0 && (!complianceAlerts || complianceAlerts.length === 0) && (
+                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <div className="w-24 h-24 bg-muted/50 rounded-3xl flex items-center justify-center mb-5">
+                      <ShoppingBag className="h-12 w-12 text-muted-foreground/30" />
+                    </div>
+                    <h3 className="text-lg font-black text-foreground mb-2">Nenhum pedido no período 📭</h3>
+                    <p className="text-sm text-muted-foreground max-w-xs">
+                      Selecione outro período ou aguarde novos pedidos chegarem na plataforma.
+                    </p>
+                  </div>
+                )}
               </>
             )}
           </div>
