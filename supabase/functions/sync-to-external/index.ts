@@ -9,7 +9,7 @@ const ALLOWED_SYNC_TABLES = new Set([
   "addon_groups", "addon_items", "product_addon_groups", "opening_hours",
   "orders", "order_items", "order_messages", "drivers", "driver_balances",
   "driver_earnings", "financial_transactions", "store_balances", "coupons",
-  "banners",
+  "banners", "withdrawal_requests",
 ]);
 
 function jsonRes(data: unknown, status = 200) {
