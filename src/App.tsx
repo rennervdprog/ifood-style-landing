@@ -12,6 +12,7 @@ import InstallPrompt from "@/components/InstallPrompt";
 import NotificationPrompt from "@/components/NotificationPrompt";
 import DebugOverlay from "@/components/DebugOverlay";
 import { initCapacitorNative, isCapacitorNative } from "@/lib/capacitorNative";
+import CapacitorRouteGuard from "@/components/CapacitorRouteGuard";
 
 // Lazy-loaded pages — each becomes its own chunk
 const Index = lazy(() => import("./pages/Index"));
@@ -67,6 +68,7 @@ const App = () => {
           <NotificationPrompt />
           <DebugOverlay />
           <BrowserRouter>
+            <CapacitorRouteGuard />
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 {/* Public store directory */}
