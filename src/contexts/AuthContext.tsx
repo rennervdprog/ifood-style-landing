@@ -37,25 +37,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     if (!session?.user) return;
 
-    const registerNativePush = () => {
+    const syncCurrentPushDevice = () => {
+      if (isCapacitorNative()) {
+        registerCapacitorPush({ requestPermission: false }).catch(console.error);
+        return;
+      }
+
       registerGoNativePlayer().catch(console.error);
     };
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        registerNativePush();
+        syncCurrentPushDevice();
       }
     };
 
       // Small delay to not block initial render
       const timer = setTimeout(() => {
-        // Native apps should only request push permission from explicit user action.
         if (isCapacitorNative()) {
+          syncCurrentPushDevice();
           return;
         }
 
         requestPushPermissionAndRegister().catch(console.error);
-        registerNativePush();
+        syncCurrentPushDevice();
 
         // Firebase web foreground messages — only on web
         onForegroundMessage((payload) => {

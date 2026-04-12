@@ -5,40 +5,113 @@
 import { Capacitor } from "@capacitor/core";
 import { claimFcmPushToken } from "@/lib/pushRegistration";
 
+let listenersReady = false;
+let registrationPromise: Promise<string | null> | null = null;
+let resolveRegistration: ((value: string | null) => void) | null = null;
+let registrationTimeoutId: number | null = null;
+
 export function isCapacitorNative(): boolean {
   return Capacitor.isNativePlatform();
 }
 
 // ── Push Notifications ──
 
-export async function registerCapacitorPush(): Promise<string | null> {
+function settleRegistration(token: string | null) {
+  if (registrationTimeoutId !== null) {
+    window.clearTimeout(registrationTimeoutId);
+    registrationTimeoutId = null;
+  }
+
+  resolveRegistration?.(token);
+  resolveRegistration = null;
+  registrationPromise = null;
+}
+
+async function ensurePushListeners() {
+  const { PushNotifications } = await import("@capacitor/push-notifications");
+
+  if (listenersReady) return PushNotifications;
+
+  PushNotifications.addListener("registration", async (token) => {
+    console.log("[CapPush] Token:", token.value);
+
+    try {
+      await saveFcmToken(token.value);
+      settleRegistration(token.value);
+    } catch (error) {
+      console.error("[CapPush] Failed to claim token:", error);
+      settleRegistration(null);
+    }
+  });
+
+  PushNotifications.addListener("registrationError", (err) => {
+    console.error("[CapPush] Registration error:", err);
+    settleRegistration(null);
+  });
+
+  PushNotifications.addListener("pushNotificationReceived", (notification) => {
+    console.log("[CapPush] Foreground:", notification);
+  });
+
+  PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
+    console.log("[CapPush] Action:", action);
+    const link = action.notification.data?.link;
+    const orderId = action.notification.data?.order_id;
+
+    if (typeof window === "undefined") return;
+
+    if (link === "/pedidos" && orderId) {
+      window.location.href = `/pedidos?chat=${orderId}`;
+      return;
+    }
+
+    if (link) {
+      window.location.href = link;
+    }
+  });
+
+  listenersReady = true;
+  return PushNotifications;
+}
+
+export async function registerCapacitorPush(options: { requestPermission?: boolean } = {}): Promise<string | null> {
   if (!isCapacitorNative()) return null;
 
-  try {
-    const { PushNotifications } = await import("@capacitor/push-notifications");
+  const requestPermission = options.requestPermission ?? true;
 
-    const permResult = await PushNotifications.requestPermissions();
+  try {
+    const PushNotifications = await ensurePushListeners();
+
+    const permResult = requestPermission
+      ? await PushNotifications.requestPermissions()
+      : await PushNotifications.checkPermissions();
+
     if (permResult.receive !== "granted") {
-      console.warn("[CapPush] Permission denied");
+      console.warn(`[CapPush] Permission not granted (${permResult.receive})`);
       return null;
     }
 
-    await PushNotifications.register();
+    if (registrationPromise) return registrationPromise;
 
-    return new Promise((resolve) => {
-      PushNotifications.addListener("registration", async (token) => {
-        console.log("[CapPush] Token:", token.value);
-        await saveFcmToken(token.value);
-        resolve(token.value);
-      });
+    registrationPromise = new Promise<string | null>(async (resolve) => {
+      resolveRegistration = resolve;
+      registrationTimeoutId = window.setTimeout(() => {
+        console.warn("[CapPush] Registration timeout");
+        settleRegistration(null);
+      }, 10000);
 
-      PushNotifications.addListener("registrationError", (err) => {
-        console.error("[CapPush] Registration error:", err);
-        resolve(null);
-      });
+      try {
+        await PushNotifications.register();
+      } catch (error) {
+        console.error("[CapPush] Fatal error during registration:", error);
+        settleRegistration(null);
+      }
     });
+
+    return await registrationPromise;
   } catch (err) {
     console.error("[CapPush] Fatal error during registration:", err);
+    settleRegistration(null);
     return null;
   }
 }
@@ -47,19 +120,7 @@ export async function setupPushListeners() {
   if (!isCapacitorNative()) return;
 
   try {
-    const { PushNotifications } = await import("@capacitor/push-notifications");
-
-    PushNotifications.addListener("pushNotificationReceived", (notification) => {
-      console.log("[CapPush] Foreground:", notification);
-    });
-
-    PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
-      console.log("[CapPush] Action:", action);
-      const link = action.notification.data?.link;
-      if (link && typeof window !== "undefined") {
-        window.location.href = link;
-      }
-    });
+    await ensurePushListeners();
   } catch (err) {
     console.error("[CapPush] Error setting up listeners:", err);
   }
