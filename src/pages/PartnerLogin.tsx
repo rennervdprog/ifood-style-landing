@@ -59,9 +59,19 @@ const PartnerLogin = () => {
       } else if (role === "motoboy") {
         navigate("/entregador", { replace: true });
       } else {
+        if (isCapacitorNative()) {
+          setMode("choose");
+          setChecking(false);
+          return;
+        }
         navigate("/parceiro", { replace: true });
       }
     } catch {
+      if (isCapacitorNative()) {
+        setMode("choose");
+        setChecking(false);
+        return;
+      }
       navigate("/parceiro", { replace: true });
     } finally {
       setChecking(false);
