@@ -30,14 +30,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(session);
       setLoading(false);
 
-      // Account switch on same device — cleanup old user's push tokens
+      // Account switch on same device — the new session must immediately re-claim this device.
+      // Do not try to delete the previous user's rows client-side here because the session
+      // has already changed and RLS may block deleting another user's registrations.
       if (previousUserId && previousUserId !== nextUserId) {
-        void cleanupPushTokens(previousUserId);
-        // Reset Capacitor push state so the new user gets fresh registration
         if (isCapacitorNative()) {
           resetPushRegistrationState();
         }
-        return;
       }
 
       if (event === "SIGNED_OUT" && previousUserId) {
@@ -64,7 +63,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const syncCurrentPushDevice = () => {
       if (isCapacitorNative()) {
-        // Always re-claim stored token first (instant), then re-register
+        // Re-bind this physical device to the current user immediately after login/account switch.
         reclaimStoredToken().catch(console.error);
         registerCapacitorPush({ requestPermission: false }).catch(console.error);
         return;
@@ -79,42 +78,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
-      // Small delay to not block initial render
-      const timer = setTimeout(() => {
-        if (isCapacitorNative()) {
-          // On Capacitor, request permission on first login and always re-claim
-          registerCapacitorPush({ requestPermission: true }).catch(console.error);
-          return;
-        }
+    // Immediate sync removes any old account binding as fast as possible.
+    syncCurrentPushDevice();
 
-        requestPushPermissionAndRegister().catch(console.error);
-        syncCurrentPushDevice();
+    // Small delay only for permission prompts so we don't block initial render.
+    const timer = setTimeout(() => {
+      if (isCapacitorNative()) {
+        registerCapacitorPush({ requestPermission: true }).catch(console.error);
+        return;
+      }
 
-        // Firebase web foreground messages — only on web
-        onForegroundMessage((payload) => {
-          const title = payload.notification?.title || "ItaSuper";
-          const body = payload.notification?.body || "";
-          const orderId = payload.data?.order_id;
-          
-          toast(title, {
-            description: body,
-            action: orderId
-              ? {
-                  label: "Abrir Chat",
-                  onClick: () => {
-                    window.location.href = `/pedidos?chat=${orderId}`;
-                  },
-                }
-              : undefined,
-          });
+      requestPushPermissionAndRegister().catch(console.error);
+      syncCurrentPushDevice();
 
-          if ("vibrate" in navigator) {
-            navigator.vibrate([200, 100, 200]);
-          }
+      // Firebase web foreground messages — only on web
+      onForegroundMessage((payload) => {
+        const title = payload.notification?.title || "ItaSuper";
+        const body = payload.notification?.body || "";
+        const orderId = payload.data?.order_id;
+        
+        toast(title, {
+          description: body,
+          action: orderId
+            ? {
+                label: "Abrir Chat",
+                onClick: () => {
+                  window.location.href = `/pedidos?chat=${orderId}`;
+                },
+              }
+            : undefined,
         });
-      }, 2000);
 
-    // Only retry on visibility change, no polling interval
+        if ("vibrate" in navigator) {
+          navigator.vibrate([200, 100, 200]);
+        }
+      });
+    }, isCapacitorNative() ? 300 : 2000);
+
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
