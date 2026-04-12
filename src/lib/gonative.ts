@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { claimOneSignalPlayer } from "@/lib/pushRegistration";
 
 declare global {
   interface Window {
@@ -240,21 +241,8 @@ export async function registerGoNativePlayer(): Promise<string | null> {
       appVersion: info?.appVersion ?? null,
     }).slice(0, 200);
 
-    const { error } = await (supabase.from("onesignal_players") as any).upsert(
-      {
-        user_id: user.id,
-        player_id: playerId,
-        device_info: deviceInfo,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "user_id,player_id" }
-    );
-
-    if (error) {
-      nativeLog(`❌ DB upsert error: ${JSON.stringify(error)}`);
-    } else {
-      nativeLog(`✅ Player saved to DB: ${playerId}`);
-    }
+    await claimOneSignalPlayer(playerId, deviceInfo);
+    nativeLog(`✅ Player claimed for current user: ${playerId}`);
     return playerId;
   } catch (error) {
     nativeLog(`❌ Error saving player: ${error}`);
