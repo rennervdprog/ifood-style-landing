@@ -31,7 +31,7 @@ export const pushNotifyNewOrder = (storeOwnerIds: string[], orderId: string) =>
   sendPushNotification(storeOwnerIds, "🍕 Novo Pedido!", "Abra para aceitar o pedido.", { link: "/admin", order_id: orderId });
 
 export const pushNotifyDeliveryAvailable = (driverIds: string[], orderId: string) =>
-  sendPushNotification(driverIds, "🏍️ Nova Entrega Disponível!", "Veja os detalhes e aceite a corrida.", { link: "/entregas", order_id: orderId });
+  sendPushNotification(driverIds, "🏍️ Nova Entrega Disponível!", "Veja os detalhes e aceite a corrida.", { link: "/entregador", order_id: orderId });
 
 export const pushNotifyOrderPreparing = (clientId: string) =>
   sendPushNotification([clientId], "👨‍🍳 Seu pedido está sendo preparado!", "O restaurante começou a preparar sua comida.", { link: "/pedidos" });
