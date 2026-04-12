@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Bell, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { isCapacitorNative, registerCapacitorPush } from "@/lib/capacitorNative";
 
 const NotificationPrompt = () => {
   const { user } = useAuth();
@@ -8,6 +9,22 @@ const NotificationPrompt = () => {
 
   useEffect(() => {
     if (!user) return;
+
+    // For Capacitor native, check push permission status
+    if (isCapacitorNative()) {
+      import("@capacitor/push-notifications").then(({ PushNotifications }) => {
+        PushNotifications.checkPermissions().then((result) => {
+          if (result.receive === "prompt" || result.receive === "prompt-with-rationale") {
+            const dismissed = localStorage.getItem("notif-prompt-dismissed");
+            if (dismissed && Date.now() - Number(dismissed) < 3 * 24 * 60 * 60 * 1000) return;
+            setTimeout(() => setShow(true), 3000);
+          }
+        });
+      });
+      return;
+    }
+
+    // Web: check browser Notification API
     if (!("Notification" in window)) return;
     if (Notification.permission === "granted") return;
     if (Notification.permission === "denied") return;
@@ -27,10 +44,14 @@ const NotificationPrompt = () => {
   }, [user]);
 
   const handleEnable = async () => {
-    const result = await Notification.requestPermission();
-    if (result === "granted") {
-      const { requestPushPermissionAndRegister } = await import("@/lib/firebase");
-      await requestPushPermissionAndRegister();
+    if (isCapacitorNative()) {
+      await registerCapacitorPush();
+    } else {
+      const result = await Notification.requestPermission();
+      if (result === "granted") {
+        const { requestPushPermissionAndRegister } = await import("@/lib/firebase");
+        await requestPushPermissionAndRegister();
+      }
     }
     setShow(false);
   };
