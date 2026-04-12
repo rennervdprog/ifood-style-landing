@@ -1,4 +1,6 @@
+import { formatBRL } from "@/lib/utils";
 import { useState } from "react";
+import { formatBRL } from "@/lib/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -181,7 +183,7 @@ const PizzaBorderManager = ({ storeId }: PizzaBorderManagerProps) => {
                   <div className="flex-1">
                     <p className="text-sm font-bold text-foreground">{border.name}</p>
                     <p className="text-xs text-primary font-black">
-                      {border.price > 0 ? `+ R$ ${border.price.toFixed(2)}` : "Grátis"}
+                      {border.price > 0 ? `+ ${formatBRL(border.price)}` : "Grátis"}
                     </p>
                   </div>
                   <button

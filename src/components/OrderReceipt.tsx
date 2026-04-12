@@ -1,3 +1,4 @@
+import { formatBRL } from "@/lib/utils";
 import { forwardRef } from "react";
 import { getOrderItemDisplayName } from "@/lib/orderItemName";
 
@@ -85,7 +86,7 @@ const OrderReceipt = forwardRef<HTMLDivElement, OrderReceiptProps>(
                 <span style={{ fontWeight: "bold" }}>
                   {item.quantity}x {getOrderItemDisplayName(item)}
                 </span>
-                <span>R$ {(item.unit_price * item.quantity).toFixed(2)}</span>
+                <span>{formatBRL((item.unit_price * item.quantity))}</span>
               </div>
               {/* Addons */}
               {item.addons && Array.isArray(item.addons) && item.addons.length > 0 && (
@@ -99,13 +100,13 @@ const OrderReceipt = forwardRef<HTMLDivElement, OrderReceiptProps>(
                         {halfAddons.map((addon: any, i: number) => (
                           <p key={`half-${i}`} style={{ margin: "1px 0" }}>
                             + 1½/ {addon.name.replace("½ ", "")}
-                            {addon.price > 0 ? ` (R$ ${Number(addon.price).toFixed(2)})` : ""}
+                            {addon.price > 0 ? ` (${formatBRL(Number(addon.price))})` : ""}
                           </p>
                         ))}
                         {otherAddons.map((addon: any, i: number) => (
                           <p key={`addon-${i}`} style={{ margin: "1px 0" }}>
                             + {addon.name}
-                            {addon.price > 0 ? ` (R$ ${Number(addon.price).toFixed(2)})` : ""}
+                            {addon.price > 0 ? ` (${formatBRL(Number(addon.price))})` : ""}
                           </p>
                         ))}
                       </>
@@ -137,11 +138,11 @@ const OrderReceipt = forwardRef<HTMLDivElement, OrderReceiptProps>(
         <div style={{ marginBottom: "6px" }}>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
             <span>Subtotal:</span>
-            <span>R$ {Number(order.subtotal).toFixed(2)}</span>
+            <span>{formatBRL(Number(order.subtotal))}</span>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
             <span>Entrega:</span>
-            <span>R$ {Number(order.delivery_fee).toFixed(2)}</span>
+            <span>{formatBRL(Number(order.delivery_fee))}</span>
           </div>
           <div
             style={{
@@ -153,7 +154,7 @@ const OrderReceipt = forwardRef<HTMLDivElement, OrderReceiptProps>(
             }}
           >
             <span>TOTAL:</span>
-            <span>R$ {Number(order.total_price).toFixed(2)}</span>
+            <span>{formatBRL(Number(order.total_price))}</span>
           </div>
         </div>
 
@@ -166,7 +167,7 @@ const OrderReceipt = forwardRef<HTMLDivElement, OrderReceiptProps>(
           </p>
           {order.payment_method === "dinheiro" && order.needs_change && Number(order.change_for) > 0 && (
             <p style={{ margin: "2px 0", fontWeight: "bold" }}>
-              TROCO PARA: R$ {Number(order.change_for).toFixed(2)}
+              TROCO PARA: {formatBRL(Number(order.change_for))}
             </p>
           )}
           <p style={{ margin: "2px 0" }}>

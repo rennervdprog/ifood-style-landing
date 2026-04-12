@@ -1,3 +1,4 @@
+import { formatBRL } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -92,7 +93,7 @@ const ReorderSection = () => {
               )}
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-foreground">R$ {Number(order.total_price).toFixed(2)}</span>
+              <span className="text-xs font-bold text-foreground">{formatBRL(Number(order.total_price))}</span>
               <button
                 onClick={() => handleReorder(order)}
                 className="bg-primary text-primary-foreground text-[10px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1"

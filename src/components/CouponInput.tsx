@@ -1,4 +1,6 @@
+import { formatBRL } from "@/lib/utils";
 import { useState } from "react";
+import { formatBRL } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tag, X, Loader2, CheckCircle2 } from "lucide-react";
@@ -57,7 +59,7 @@ const CouponInput = ({ subtotal, storeId, onApply, onRemove, appliedCode, applie
 
       // Check min order value
       if (subtotal < c.min_order_value) {
-        toast.error(`Pedido mínimo de R$ ${Number(c.min_order_value).toFixed(2)} para este cupom.`);
+        toast.error(`Pedido mínimo de ${formatBRL(Number(c.min_order_value))} para este cupom.`);
         return;
       }
 
@@ -101,7 +103,7 @@ const CouponInput = ({ subtotal, storeId, onApply, onRemove, appliedCode, applie
         discountLabel = `${Number(c.discount_value)}%`;
       } else if (c.discount_type === "fixed") {
         discount = Math.min(Number(c.discount_value), subtotal);
-        discountLabel = `R$ ${Number(c.discount_value).toFixed(2)}`;
+        discountLabel = `${formatBRL(Number(c.discount_value))}`;
       } else if (c.discount_type === "free_shipping") {
         discount = 0;
         discountLabel = "Frete grátis";
@@ -112,7 +114,7 @@ const CouponInput = ({ subtotal, storeId, onApply, onRemove, appliedCode, applie
       if (c.discount_type === "free_shipping") {
         toast.success(`Cupom "${c.code}" aplicado! Frete grátis!`);
       } else {
-        toast.success(`Cupom "${c.code}" aplicado! Desconto de ${discountLabel} = -R$ ${discount.toFixed(2)}`);
+        toast.success(`Cupom "${c.code}" aplicado! Desconto de ${discountLabel} = -${formatBRL(discount)}`);
       }
     } catch (err: any) {
       toast.error("Erro ao validar cupom.");
@@ -128,7 +130,7 @@ const CouponInput = ({ subtotal, storeId, onApply, onRemove, appliedCode, applie
           <CheckCircle2 className="h-4 w-4 text-green-500" />
           <div>
             <span className="text-xs font-bold text-green-600">{appliedCode}</span>
-            <p className="text-[10px] text-green-600/70">-R$ {appliedDiscount.toFixed(2)}</p>
+            <p className="text-[10px] text-green-600/70">-{formatBRL(appliedDiscount)}</p>
           </div>
         </div>
         <button onClick={onRemove} className="text-muted-foreground hover:text-destructive">

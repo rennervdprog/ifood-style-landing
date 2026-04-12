@@ -1,3 +1,4 @@
+import { formatBRL } from "@/lib/utils";
 import { fetchCep } from "./cepLookup";
 
 export interface DeliveryFeeConfig {
@@ -136,7 +137,7 @@ export async function calculateDeliveryFee(
       fee: config.city_fee,
       isRural: false,
       distanceKm: null,
-      breakdown: `Taxa fixa: R$ ${config.city_fee.toFixed(2)}`,
+      breakdown: `Taxa fixa: ${formatBRL(config.city_fee)}`,
     };
   }
 
@@ -159,7 +160,7 @@ export async function calculateDeliveryFee(
       fee: config.city_fee,
       isRural: false,
       distanceKm: distFromCenter ? Math.round(distFromCenter * 10) / 10 : null,
-      breakdown: `Centro ${config.city_name}: R$ ${config.city_fee.toFixed(2)}`,
+      breakdown: `Centro ${config.city_name}: ${formatBRL(config.city_fee)}`,
     };
   }
 
@@ -178,7 +179,7 @@ export async function calculateDeliveryFee(
         fee: config.city_fee,
         isRural: false,
         distanceKm: Math.round(distFromCenter * 10) / 10,
-        breakdown: `Centro ${config.city_name} (${distFromCenter.toFixed(1)}km): R$ ${config.city_fee.toFixed(2)}`,
+        breakdown: `Centro ${config.city_name} (${distFromCenter.toFixed(1)}km): ${formatBRL(config.city_fee)}`,
       };
     }
 
@@ -204,7 +205,7 @@ export async function calculateDeliveryFee(
       fee: roundedFee,
       isRural: true,
       distanceKm: roundedDistance,
-      breakdown: `${label} (${roundedDistance}km da ${referenceLabel}): R$ ${config.rural_base_fee.toFixed(2)} + ${roundedDistance}km × R$ ${config.rural_per_km.toFixed(2)} = R$ ${roundedFee.toFixed(2)}`,
+      breakdown: `${label} (${roundedDistance}km da ${referenceLabel}): ${formatBRL(config.rural_base_fee)} + ${roundedDistance}km × ${formatBRL(config.rural_per_km)} = ${formatBRL(roundedFee)}`,
     };
   }
 
@@ -214,7 +215,7 @@ export async function calculateDeliveryFee(
       fee: config.city_fee,
       isRural: false,
       distanceKm: null,
-      breakdown: `Taxa cidade (${config.city_name}): R$ ${config.city_fee.toFixed(2)}`,
+      breakdown: `Taxa cidade (${config.city_name}): ${formatBRL(config.city_fee)}`,
     };
   }
 
@@ -225,6 +226,6 @@ export async function calculateDeliveryFee(
     fee: Math.round(estimatedFee * 100) / 100,
     isRural: true,
     distanceKm: null,
-    breakdown: `Taxa rural: R$ ${config.rural_base_fee.toFixed(2)} + ~${estimatedKm}km estimado`,
+    breakdown: `Taxa rural: ${formatBRL(config.rural_base_fee)} + ~${estimatedKm}km estimado`,
   };
 }

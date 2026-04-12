@@ -1,4 +1,6 @@
+import { formatBRL } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
+import { formatBRL } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Star, Gift } from "lucide-react";
@@ -47,7 +49,7 @@ const LoyaltyBanner = ({ storeId, storeName }: LoyaltyBannerProps) => {
   const discountPerPoint = config.discount_per_point || 0.10;
   const progress = Math.min(100, (points / minRedeem) * 100);
   const canRedeem = points >= minRedeem;
-  const maxDiscount = canRedeem ? (points * discountPerPoint).toFixed(2) : "0.00";
+  const maxDiscount = canRedeem ? formatBRL(points * discountPerPoint) : "R$ 0,00";
 
   return (
     <div className="mt-3 pt-3 border-t border-border">

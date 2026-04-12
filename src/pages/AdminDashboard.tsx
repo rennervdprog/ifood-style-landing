@@ -333,12 +333,12 @@ const AdminDashboard = () => {
 
   const clientIds = [...new Set(orders?.map(o => o.client_id) || [])];
   const { data: clientProfiles } = useQuery({
-    queryKey: ["client-profiles", clientIds],
+    queryKey: ["client-profiles", store?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("user_id, whatsapp_number, phone, full_name, neighborhood").in("user_id", clientIds);
+      const { data } = await supabase.rpc("get_delivery_contacts");
       return data || [];
     },
-    enabled: clientIds.length > 0,
+    enabled: !!store,
   });
 
   const getClientWhatsApp = (clientId: string) => {

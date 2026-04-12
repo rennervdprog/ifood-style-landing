@@ -1,3 +1,4 @@
+import { formatBRL } from "@/lib/utils";
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -441,7 +442,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
 
             {/* Price - hidden for pizza with sizes */}
             {!hasSizes && (
-              <p className="text-lg font-black text-primary mt-2">R$ {product.price.toFixed(2)}</p>
+              <p className="text-lg font-black text-primary mt-2">{formatBRL(product.price)}</p>
             )}
           </DialogHeader>
 
@@ -478,7 +479,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
                       </div>
                       <span className={`flex-1 text-sm ${isSelected ? "font-bold" : ""} text-foreground`}>{size.name}</span>
                       <span className={`text-sm font-black ${isSelected ? "text-primary" : "text-muted-foreground"}`}>
-                        R$ {size.price.toFixed(2)}
+                        {formatBRL(size.price)}
                       </span>
                     </button>
                   );
@@ -599,7 +600,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
                             </div>
                             <span className={`flex-1 text-sm ${isChecked ? "font-bold text-foreground" : "text-foreground"}`}>{item.name}</span>
                             {item.price > 0 && (
-                              <span className={`text-sm font-bold ${isChecked ? "text-primary" : "text-muted-foreground"}`}>+ R$ {item.price.toFixed(2)}</span>
+                              <span className={`text-sm font-bold ${isChecked ? "text-primary" : "text-muted-foreground"}`}>+ {formatBRL(item.price)}</span>
                             )}
                           </div>
                         );
@@ -659,7 +660,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
               <ShoppingCart className="h-4 w-4" />
               {!allRequiredMet
                 ? "Complete as opções"
-                : `Adicionar • R$ ${lineTotal.toFixed(2)}`
+                : `Adicionar • ${formatBRL(lineTotal)}`
               }
             </button>
           </div>

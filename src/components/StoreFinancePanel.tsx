@@ -17,7 +17,7 @@ import {
   isSafetyModeActive, getSafetyModeRemainingMs, formatCooldownTime,
 } from "@/lib/pixSafeGuard";
 import { SIMULATION_MODE, createSimulatedPixCharge, simulatePaymentDelay } from "@/lib/pixSimulation";
-import { multiplyMoney, subtractMoney, sumMoney, averageMoney } from "@/lib/utils";
+import { multiplyMoney, subtractMoney, sumMoney, averageMoney, formatBRL } from "@/lib/utils";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip,
   ResponsiveContainer, PieChart, Pie, Cell,
@@ -453,15 +453,15 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
   const copyToClipboard = () => {
     const text = `📊 Resumo Financeiro ItaSuper - ${storeName}\n` +
       `Período: ${format(dateRange.start, "dd/MM", { locale: ptBR })} a ${format(dateRange.end, "dd/MM/yyyy", { locale: ptBR })}\n\n` +
-      `💰 Vendas Totais: R$ ${totalSales.toFixed(2)}\n` +
-      `📱 Comissão Total (${commissionPct}%): R$ ${totalCommission.toFixed(2)}\n\n` +
+      `💰 Vendas Totais: ${formatBRL(totalSales)}\n` +
+      `📱 Comissão Total (${commissionPct}%): ${formatBRL(totalCommission)}\n\n` +
       `--- Vendas via App (Split Automático ✅) ---\n` +
-      `Vendas PIX App: R$ ${appSales.toFixed(2)}\n` +
-      `Comissão retida: R$ ${multiplyMoney(appSales, commissionRate).toFixed(2)}\n` +
-      `Lojista recebeu: R$ ${creditFromApp.toFixed(2)}\n\n` +
+      `Vendas PIX App: ${formatBRL(appSales)}\n` +
+      `Comissão retida: ${formatBRL(multiplyMoney(appSales, commissionRate))}\n` +
+      `Lojista recebeu: ${formatBRL(creditFromApp)}\n\n` +
       `--- Vendas Físicas (Cobrança Manual) ---\n` +
-      `Vendas Dinheiro/Cartão: R$ ${physicalSales.toFixed(2)}\n` +
-      `Comissão a cobrar: R$ ${commissionDue.toFixed(2)}`;
+      `Vendas Dinheiro/Cartão: ${formatBRL(physicalSales)}\n` +
+      `Comissão a cobrar: ${formatBRL(commissionDue)}`;
     navigator.clipboard.writeText(text);
     toast.success("Resumo copiado!");
   };
@@ -471,21 +471,21 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
       `EXTRATO FINANCEIRO ITASUPER - ${storeName.toUpperCase()}`,
       `Período: ${format(dateRange.start, "dd/MM/yyyy")} a ${format(dateRange.end, "dd/MM/yyyy")}`,
       ``,
-      `VENDAS TOTAIS: R$ ${totalSales.toFixed(2)}`,
-      `COMISSÃO TOTAL (${commissionPct}%): R$ ${totalCommission.toFixed(2)}`,
+      `VENDAS TOTAIS: ${formatBRL(totalSales)}`,
+      `COMISSÃO TOTAL (${commissionPct}%): ${formatBRL(totalCommission)}`,
       ``,
       `--- VENDAS VIA APP (SPLIT AUTOMÁTICO) ---`,
-      `VENDAS PIX APP: R$ ${appSales.toFixed(2)}`,
-      `COMISSÃO RETIDA: R$ ${multiplyMoney(appSales, commissionRate).toFixed(2)}`,
-      `LOJISTA RECEBEU: R$ ${creditFromApp.toFixed(2)}`,
+      `VENDAS PIX APP: ${formatBRL(appSales)}`,
+      `COMISSÃO RETIDA: ${formatBRL(multiplyMoney(appSales, commissionRate))}`,
+      `LOJISTA RECEBEU: ${formatBRL(creditFromApp)}`,
       ``,
       `--- VENDAS FÍSICAS (COBRANÇA MANUAL) ---`,
-      `VENDAS DINHEIRO/CARTÃO: R$ ${physicalSales.toFixed(2)}`,
-      `COMISSÃO A COBRAR: R$ ${commissionDue.toFixed(2)}`,
+      `VENDAS DINHEIRO/CARTÃO: ${formatBRL(physicalSales)}`,
+      `COMISSÃO A COBRAR: ${formatBRL(commissionDue)}`,
       ``,
       `--- PEDIDOS ---`,
       ...(orders || []).map(o =>
-        `#${o.id.substring(0, 6).toUpperCase()} | ${format(new Date(o.created_at), "dd/MM HH:mm")} | ${o.payment_method === "pix" ? "PIX App" : o.payment_method === "cartao" ? "Cartão" : "Dinheiro"} | R$ ${Number(o.subtotal).toFixed(2)} | Comissão: R$ ${(Number(o.subtotal) * commissionRate).toFixed(2)}`
+        `#${o.id.substring(0, 6).toUpperCase()} | ${format(new Date(o.created_at), "dd/MM HH:mm")} | ${o.payment_method === "pix" ? "PIX App" : o.payment_method === "cartao" ? "Cartão" : "Dinheiro"} | ${formatBRL(Number(o.subtotal))} | Comissão: ${formatBRL((Number(o.subtotal) * commissionRate))}`
       ),
     ];
     const blob = new Blob([lines.join("\n")], { type: "text/plain" });
@@ -536,7 +536,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
           <div className="relative">
             <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Faturamento</p>
             <p className="text-2xl font-black text-foreground mt-1 tracking-tight">
-              R$ {totalSales.toFixed(2)}
+              {formatBRL(totalSales)}
             </p>
             <p className="text-[10px] text-muted-foreground mt-1">{completedOrders.length} pedidos</p>
           </div>
@@ -548,7 +548,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
           <div className="relative">
             <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Lucro Líquido</p>
             <p className="text-2xl font-black text-emerald-400 mt-1 tracking-tight">
-              R$ {storePart.toFixed(2)}
+              {formatBRL(storePart)}
             </p>
             <p className="text-[10px] text-emerald-400/60 mt-1">85% do faturamento</p>
           </div>
@@ -560,7 +560,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
           <div className="relative">
             <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Ticket Médio</p>
             <p className="text-2xl font-black text-blue-400 mt-1 tracking-tight">
-              R$ {ticketMedio.toFixed(2)}
+              {formatBRL(ticketMedio)}
             </p>
             <p className="text-[10px] text-muted-foreground mt-1">por pedido</p>
           </div>
@@ -609,7 +609,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
                     fontSize: "12px",
                     color: "hsl(var(--foreground))",
                   }}
-                  formatter={(value: number) => [`R$ ${value.toFixed(2)}`, "Vendas"]}
+                  formatter={(value: number) => [`${formatBRL(value)}`, "Vendas"]}
                 />
                 <Area
                   type="monotone"
@@ -673,9 +673,9 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
            <p className="text-sm font-bold text-foreground">Vendas via App (PIX)</p>
             <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-[10px]">Automático</Badge>
           </div>
-          <p className="text-2xl font-black text-emerald-400">R$ {creditFromApp.toFixed(2)}</p>
+          <p className="text-2xl font-black text-emerald-400">{formatBRL(creditFromApp)}</p>
           <p className="text-[10px] text-muted-foreground mt-1">
-            Você recebeu R$ {creditFromApp.toFixed(2)} de R$ {appSales.toFixed(2)} em vendas pelo app. A taxa da plataforma (${commissionPct}% = R$ {multiplyMoney(appSales, commissionRate).toFixed(2)}) já foi descontada automaticamente.
+            Você recebeu {formatBRL(creditFromApp)} de {formatBRL(appSales)} em vendas pelo app. A taxa da plataforma (${commissionPct}% = {formatBRL(multiplyMoney(appSales, commissionRate))}) já foi descontada automaticamente.
           </p>
           <div className="mt-2 rounded-xl bg-emerald-500/5 border border-emerald-500/10 p-2.5">
             <p className="text-[10px] text-emerald-400 font-semibold">✅ Valor já depositado na sua conta — nada a fazer</p>
@@ -695,7 +695,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
           </div>
           <p className="text-xs text-muted-foreground mb-1">Você recebeu o valor na hora (dinheiro/cartão). A taxa de ${commissionPct}% da plataforma precisa ser repassada.</p>
           <p className="text-2xl font-black text-red-400">
-            R$ {(dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue).toFixed(2)}
+            {formatBRL((dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue))}
           </p>
 
           {safetyModeMs > 0 && (
@@ -784,7 +784,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
           <p className="text-xs text-muted-foreground">
             Fatura: <span className="font-bold text-foreground">{chargeResult.reference_code}</span>
           </p>
-          <p className="text-2xl font-black text-center text-foreground">R$ {chargeResult.amount.toFixed(2)}</p>
+          <p className="text-2xl font-black text-center text-foreground">{formatBRL(chargeResult.amount)}</p>
 
           {!isChargeExpired && !isChargeSettled && (
             <div className="rounded-xl border border-border/50 bg-card/40 p-3 text-center space-y-2">
@@ -846,12 +846,12 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
         <div className="grid grid-cols-2 gap-3 text-center">
           <div>
             <p className="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">App (automático)</p>
-            <p className="text-sm font-black text-emerald-400 mt-1">R$ {multiplyMoney(appSales, commissionRate).toFixed(2)}</p>
+            <p className="text-sm font-black text-emerald-400 mt-1">{formatBRL(multiplyMoney(appSales, commissionRate))}</p>
             <p className="text-[10px] text-muted-foreground">comissão já retida</p>
           </div>
           <div>
             <p className="text-[10px] text-red-400 font-semibold uppercase tracking-wider">Físico (a cobrar)</p>
-            <p className="text-sm font-black text-red-400 mt-1">R$ {(dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue).toFixed(2)}</p>
+            <p className="text-sm font-black text-red-400 mt-1">{formatBRL((dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue))}</p>
             <p className="text-[10px] text-muted-foreground">comissão pendente</p>
           </div>
         </div>
@@ -873,8 +873,8 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
             </div>
           </div>
           <div className="text-right">
-            <p className="text-sm font-bold text-foreground">R$ {physicalSales.toFixed(2)}</p>
-            <p className="text-[10px] text-red-400">- R$ {commissionDue.toFixed(2)} comissão</p>
+            <p className="text-sm font-bold text-foreground">{formatBRL(physicalSales)}</p>
+            <p className="text-[10px] text-red-400">- {formatBRL(commissionDue)} comissão</p>
           </div>
         </div>
         <div className="p-4 flex items-center justify-between">
@@ -888,7 +888,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
             </div>
           </div>
           <div className="text-right">
-            <p className="text-sm font-bold text-foreground">R$ {appSales.toFixed(2)}</p>
+            <p className="text-sm font-bold text-foreground">{formatBRL(appSales)}</p>
             <p className="text-[10px] text-emerald-400">comissão já retida</p>
           </div>
         </div>
@@ -938,7 +938,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
                       <span className="text-[10px] text-muted-foreground">
                         {tx.transaction_kind === "commission_charge" ? "Cobrança" : "Repasse"}
                       </span>
-                      <span className="text-sm font-bold text-foreground">R$ {Number(tx.amount).toFixed(2)}</span>
+                      <span className="text-sm font-bold text-foreground">{formatBRL(Number(tx.amount))}</span>
                     </div>
                     <div className="flex items-center justify-between mt-1">
                       <p className="text-[10px] text-muted-foreground">
@@ -966,13 +966,13 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
           {activeOrders.filter(o => o.payment_method === "pix").map(order => (
             <div key={order.id} className="flex justify-between text-xs bg-blue-500/5 rounded-xl p-2.5">
               <span className="text-blue-400 font-semibold">#{order.id.substring(0, 6).toUpperCase()}</span>
-              <span className="text-foreground font-medium">R$ {Number(order.subtotal).toFixed(2)}</span>
+              <span className="text-foreground font-medium">{formatBRL(Number(order.subtotal))}</span>
               <span className="text-muted-foreground capitalize">{order.status.replace(/_/g, " ")}</span>
             </div>
           ))}
           <div className="flex justify-between text-xs pt-2 border-t border-border/30">
             <span className="text-muted-foreground">Total em andamento</span>
-            <span className="text-blue-400 font-bold">R$ {activePixSales.toFixed(2)}</span>
+            <span className="text-blue-400 font-bold">{formatBRL(activePixSales)}</span>
           </div>
         </div>
       )}
@@ -1007,11 +1007,11 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
                       <span className="text-[10px] text-muted-foreground">
                         {isPix ? "PIX App" : order.payment_method === "cartao" ? "Cartão" : "Dinheiro"}
                       </span>
-                      <span className="text-sm font-bold text-foreground">R$ {sub.toFixed(2)}</span>
+                      <span className="text-sm font-bold text-foreground">{formatBRL(sub)}</span>
                     </div>
                     <div className="flex items-center justify-between mt-0.5">
-                      <span className="text-[10px] text-muted-foreground">Comissão: R$ {commission.toFixed(2)}</span>
-                      <span className="text-xs font-semibold text-emerald-400">Líquido: R$ {net.toFixed(2)}</span>
+                      <span className="text-[10px] text-muted-foreground">Comissão: {formatBRL(commission)}</span>
+                      <span className="text-xs font-semibold text-emerald-400">Líquido: {formatBRL(net)}</span>
                     </div>
                   </div>
                 </div>

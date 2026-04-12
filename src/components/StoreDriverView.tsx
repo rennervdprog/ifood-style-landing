@@ -1,3 +1,4 @@
+import { formatBRL } from "@/lib/utils";
 import { useState, useCallback, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -484,7 +485,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                       </span>
                       {order.needs_change && order.change_for && (
                         <span className="text-xs text-amber-500 font-bold ml-auto">
-                          Troco p/ R$ {Number(order.change_for).toFixed(2)}
+                          Troco p/ {formatBRL(Number(order.change_for))}
                         </span>
                       )}
                     </div>

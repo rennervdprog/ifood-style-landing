@@ -1,4 +1,6 @@
+import { formatBRL } from "@/lib/utils";
 import { useState, useEffect } from "react";
+import { formatBRL } from "@/lib/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -228,14 +230,14 @@ const DeliveryFeeConfigPanel = () => {
         <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-1">
           <p className="text-xs font-bold text-primary">📊 Simulação</p>
           <p className="text-xs text-muted-foreground">
-            Dentro de {cityName || "cidade"}: <span className="text-foreground font-bold">R$ {(parseFloat(cityFee) || 0).toFixed(2)}</span>
+            Dentro de {cityName || "cidade"}: <span className="text-foreground font-bold">{formatBRL((parseFloat(cityFee) || 0))}</span>
           </p>
           <p className="text-xs text-muted-foreground">
-            Zona rural (ex: 15km): <span className="text-foreground font-bold">R$ {exampleRuralFee.toFixed(2)}</span>
-            <span className="text-[10px] ml-1">(R$ {(parseFloat(ruralBaseFee) || 0).toFixed(2)} + 15 × R$ {(parseFloat(ruralPerKm) || 0).toFixed(2)})</span>
+            Zona rural (ex: 15km): <span className="text-foreground font-bold">{formatBRL(exampleRuralFee)}</span>
+            <span className="text-[10px] ml-1">({formatBRL((parseFloat(ruralBaseFee) || 0))} + 15 × {formatBRL((parseFloat(ruralPerKm) || 0))})</span>
           </p>
           <p className="text-xs text-muted-foreground">
-            Plano fixo — motoboy recebe: <span className="text-foreground font-bold">R$ {(parseFloat(driverSplit) || 0).toFixed(2)}</span> + plataforma: <span className="text-foreground font-bold">R$ {(parseFloat(platformSplit) || 0).toFixed(2)}</span> = total <span className="text-foreground font-bold">R$ {totalDeliveryFee.toFixed(2)}</span>
+            Plano fixo — motoboy recebe: <span className="text-foreground font-bold">{formatBRL((parseFloat(driverSplit) || 0))}</span> + plataforma: <span className="text-foreground font-bold">{formatBRL((parseFloat(platformSplit) || 0))}</span> = total <span className="text-foreground font-bold">{formatBRL(totalDeliveryFee)}</span>
           </p>
         </div>
 

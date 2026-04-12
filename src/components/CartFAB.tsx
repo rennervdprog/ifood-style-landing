@@ -1,4 +1,6 @@
+import { formatBRL } from "@/lib/utils";
 import { ShoppingBag } from "lucide-react";
+import { formatBRL } from "@/lib/utils";
 import { useCart } from "@/contexts/CartContext";
 import { useNavigate } from "react-router-dom";
 
@@ -22,7 +24,7 @@ const CartFAB = () => {
         </div>
         <span className="font-bold text-sm">Ver carrinho</span>
       </div>
-      <span className="font-black text-sm">R$ {total.toFixed(2)}</span>
+      <span className="font-black text-sm">{formatBRL(total)}</span>
     </button>
   );
 };
