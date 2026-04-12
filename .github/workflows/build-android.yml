@@ -35,6 +35,7 @@ jobs:
         run: |
           echo "JAVA_HOME=$JAVA_HOME"
           java -version
+          javac -version
 
       - name: Install dependencies
         run: npm install
@@ -68,8 +69,6 @@ jobs:
         run: chmod +x android/gradlew
 
       - name: Build APK
-        env:
-          JAVA_HOME: ${{ env.JAVA_HOME }}
         run: cd android && ./gradlew --version && ./gradlew assembleDebug
 
       - uses: actions/upload-artifact@v4
@@ -99,6 +98,7 @@ jobs:
         run: |
           echo "JAVA_HOME=$JAVA_HOME"
           java -version
+          javac -version
 
       - name: Install dependencies
         run: npm install
@@ -141,8 +141,6 @@ jobs:
         run: chmod +x android/gradlew
 
       - name: Build APK
-        env:
-          JAVA_HOME: ${{ env.JAVA_HOME }}
         run: cd android && ./gradlew --version && ./gradlew assembleDebug
 
       - uses: actions/upload-artifact@v4
