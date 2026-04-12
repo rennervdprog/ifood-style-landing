@@ -30,6 +30,8 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
+
+      - name: Install dependencies
         run: npm install
 
       - name: Configure Capacitor for Cliente
@@ -52,8 +54,6 @@ jobs:
 
       - name: Sync Capacitor
         run: npx cap sync android
-
-      - uses: android-actions/setup-android@v3
 
       - name: Make gradlew executable
         run: chmod +x android/gradlew
@@ -83,6 +83,8 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
+
+      - name: Install dependencies
         run: npm install
 
       - name: Configure Capacitor for Parceiro
@@ -104,7 +106,6 @@ jobs:
 
       - name: Inject partner redirect
         run: |
-          # Add a redirect script that sends partner app users to /portal-parceiro
           sed -i 's|<head>|<head><script>if(!window.__CAP_PARTNER_REDIRECTED && window.location.pathname==="/"){window.__CAP_PARTNER_REDIRECTED=true;window.location.replace("/portal-parceiro");}</script>|' index.html
 
       - name: Build web app
@@ -115,8 +116,6 @@ jobs:
 
       - name: Sync Capacitor
         run: npx cap sync android
-
-      - uses: android-actions/setup-android@v3
 
       - name: Make gradlew executable
         run: chmod +x android/gradlew
