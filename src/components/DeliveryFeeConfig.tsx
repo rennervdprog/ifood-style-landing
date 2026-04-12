@@ -230,14 +230,14 @@ const DeliveryFeeConfigPanel = () => {
         <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-1">
           <p className="text-xs font-bold text-primary">📊 Simulação</p>
           <p className="text-xs text-muted-foreground">
-            Dentro de {cityName || "cidade"}: <span className="text-foreground font-bold">{formatBRL({formatBRL((parseFloat(cityFee) || 0))})}</span>
+            Dentro de {cityName || "cidade"}: <span className="text-foreground font-bold">{formatBRL((parseFloat(cityFee) || 0))}</span>
           </p>
           <p className="text-xs text-muted-foreground">
             Zona rural (ex: 15km): <span className="text-foreground font-bold">{formatBRL(exampleRuralFee)}</span>
-            <span className="text-[10px] ml-1">({formatBRL({formatBRL((parseFloat(ruralBaseFee) || 0))})} + 15 × {formatBRL({formatBRL((parseFloat(ruralPerKm) || 0))})})</span>
+            <span className="text-[10px] ml-1">({formatBRL((parseFloat(ruralBaseFee) || 0))} + 15 × {formatBRL((parseFloat(ruralPerKm) || 0))})</span>
           </p>
           <p className="text-xs text-muted-foreground">
-            Plano fixo — motoboy recebe: <span className="text-foreground font-bold">{formatBRL({formatBRL((parseFloat(driverSplit) || 0))})}</span> + plataforma: <span className="text-foreground font-bold">{formatBRL({formatBRL((parseFloat(platformSplit) || 0))})}</span> = total <span className="text-foreground font-bold">{formatBRL(totalDeliveryFee)}</span>
+            Plano fixo — motoboy recebe: <span className="text-foreground font-bold">{formatBRL((parseFloat(driverSplit) || 0))}</span> + plataforma: <span className="text-foreground font-bold">{formatBRL((parseFloat(platformSplit) || 0))}</span> = total <span className="text-foreground font-bold">{formatBRL(totalDeliveryFee)}</span>
           </p>
         </div>
 

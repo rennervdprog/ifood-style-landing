@@ -171,7 +171,7 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
             </div>
             <p className="text-xs text-muted-foreground text-center">
               PIX disponível a partir de <strong className="text-foreground">{formatBRL(minPayout)}</strong>
-              {" "}— faltam <strong className="text-blue-500">{formatBRL({formatBRL((minPayout - pendingFee))})}</strong>
+              {" "}— faltam <strong className="text-blue-500">{formatBRL((minPayout - pendingFee))}</strong>
             </p>
           </div>
         )}

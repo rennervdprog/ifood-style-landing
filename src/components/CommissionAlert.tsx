@@ -298,7 +298,7 @@ const CommissionAlert = ({ storeId, storeName, onGoToFinance }: CommissionAlertP
             </div>
             <p className="text-xs text-muted-foreground text-center">
               PIX disponível a partir de <strong className="text-foreground">{formatBRL(minPayout)}</strong>
-              {" "}— faltam <strong className="text-amber-500">{formatBRL({formatBRL((minPayout - pendingCommission))})}</strong>
+              {" "}— faltam <strong className="text-amber-500">{formatBRL((minPayout - pendingCommission))}</strong>
             </p>
           </div>
         )}

@@ -543,7 +543,7 @@ function PlanChangeRequestCard({ request, storeName, onProcessed }: {
       {request.prorata_credit > 0 && (
         <div className="flex items-center justify-between bg-emerald-500/10 rounded-xl px-3 py-2">
           <span className="text-xs text-emerald-600 font-semibold">Crédito prorata</span>
-          <span className="text-sm font-bold text-emerald-600">{formatBRL({formatBRL(Number(request.prorata_credit))})}</span>
+          <span className="text-sm font-bold text-emerald-600">{formatBRL(Number(request.prorata_credit))}</span>
         </div>
       )}
 

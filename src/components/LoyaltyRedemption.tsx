@@ -113,7 +113,7 @@ const LoyaltyRedemption = ({ storeId, subtotal, onApply, onRemove, appliedPoints
           />
           <p className="text-sm font-black text-foreground mt-1">{pointsToUse || minRedeem} pontos</p>
           <p className="text-xs text-amber-600 font-semibold">
-            = {formatBRL({formatBRL(((pointsToUse || minRedeem) * discountPerPoint))})} de desconto
+            = {formatBRL(((pointsToUse || minRedeem) * discountPerPoint))} de desconto
           </p>
         </div>
 
@@ -135,7 +135,7 @@ const LoyaltyRedemption = ({ storeId, subtotal, onApply, onRemove, appliedPoints
         className="w-full bg-amber-500 text-white font-bold py-2.5 rounded-xl text-sm active:scale-[0.98] transition-transform flex items-center justify-center gap-2"
       >
         <Gift className="h-4 w-4" />
-        Aplicar {pointsToUse || minRedeem} pontos (-{formatBRL({formatBRL(((pointsToUse || minRedeem) * discountPerPoint))})})
+        Aplicar {pointsToUse || minRedeem} pontos (-{formatBRL(((pointsToUse || minRedeem) * discountPerPoint))})
       </button>
     </div>
   );
