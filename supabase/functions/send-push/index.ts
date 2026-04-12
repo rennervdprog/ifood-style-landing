@@ -364,6 +364,15 @@ Deno.serve(async (req) => {
                     },
                     fcm_options: { link: data?.link || "/" },
                   },
+                  android: {
+                    priority: "high",
+                    notification: {
+                      icon: "ic_notification",
+                      sound: "default",
+                      channel_id: "default",
+                      click_action: "FCM_PLUGIN_ACTIVITY",
+                    },
+                  },
                   data: data || {},
                 },
               }),
