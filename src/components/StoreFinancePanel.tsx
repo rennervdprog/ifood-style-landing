@@ -675,7 +675,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
           </div>
           <p className="text-2xl font-black text-emerald-400">{formatBRL(creditFromApp)}</p>
           <p className="text-[10px] text-muted-foreground mt-1">
-            Você recebeu {formatBRL(creditFromApp)} de {formatBRL(appSales)} em vendas pelo app. A taxa da plataforma (${commissionPct}% = {formatBRL(multiplyMoney(appSales, commissionRate))}) já foi descontada automaticamente.
+            Você recebeu {formatBRL(creditFromApp)} de {formatBRL(appSales)} em vendas pelo app. A taxa da plataforma ({commissionPct}% = {formatBRL(multiplyMoney(appSales, commissionRate))}) já foi descontada automaticamente.
           </p>
           <div className="mt-2 rounded-xl bg-emerald-500/5 border border-emerald-500/10 p-2.5">
             <p className="text-[10px] text-emerald-400 font-semibold">✅ Valor já depositado na sua conta — nada a fazer</p>
@@ -693,7 +693,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
             </div>
             <p className="text-sm font-bold text-foreground">Taxa Pendente — Vendas Físicas</p>
           </div>
-          <p className="text-xs text-muted-foreground mb-1">Você recebeu o valor na hora (dinheiro/cartão). A taxa de ${commissionPct}% da plataforma precisa ser repassada.</p>
+          <p className="text-xs text-muted-foreground mb-1">Você recebeu o valor na hora (dinheiro/cartão). A taxa de {commissionPct}% da plataforma precisa ser repassada.</p>
           <p className="text-2xl font-black text-red-400">
             {formatBRL((dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue))}
           </p>
