@@ -183,7 +183,7 @@ const PizzaBorderManager = ({ storeId }: PizzaBorderManagerProps) => {
                   <div className="flex-1">
                     <p className="text-sm font-bold text-foreground">{border.name}</p>
                     <p className="text-xs text-primary font-black">
-                      {border.price > 0 ? `+ R$ ${border.price.toFixed(2)}` : "Grátis"}
+                      {border.price > 0 ? `+ ${formatBRL(border.price)}` : "Grátis"}
                     </p>
                   </div>
                   <button

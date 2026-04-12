@@ -1,3 +1,4 @@
+import { formatBRL } from "@/lib/utils";
 import { useCart } from "@/contexts/CartContext";
 import { ArrowLeft, Minus, Plus, Trash2, MapPin, ShoppingBag, ChevronRight, Truck, Store, Clock, AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -143,7 +144,7 @@ const CartPage = () => {
                       </p>
                     )}
                     <span className="text-sm font-black text-primary block pt-0.5">
-                      R$ {(item.price * item.quantity).toFixed(2)}
+                      {formatBRL((item.price * item.quantity))}
                     </span>
                   </div>
 
@@ -179,19 +180,19 @@ const CartPage = () => {
         <div className="px-4 pt-3 pb-1 space-y-1.5">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Subtotal</span>
-            <span className="font-semibold text-foreground">R$ {subtotal.toFixed(2)}</span>
+            <span className="font-semibold text-foreground">{formatBRL(subtotal)}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground flex items-center gap-1">
               <Truck className="h-3 w-3" /> Entrega
             </span>
             <span className="font-semibold text-foreground">
-              {neighborhood ? `R$ ${neighborhoodFee.toFixed(2)}` : "Calculado no checkout"}
+              {neighborhood ? `${formatBRL(neighborhoodFee)}` : "Calculado no checkout"}
             </span>
           </div>
           <div className="flex justify-between items-center pt-1.5 border-t border-border/50">
             <span className="text-base font-bold text-foreground">Total</span>
-            <span className="text-xl font-black text-primary">R$ {total.toFixed(2)}</span>
+            <span className="text-xl font-black text-primary">{formatBRL(total)}</span>
           </div>
         </div>
         <div className="px-4 pb-4 pt-2">

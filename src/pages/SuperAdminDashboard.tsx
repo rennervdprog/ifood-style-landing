@@ -19,7 +19,7 @@ import { Switch } from "@/components/ui/switch";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
 } from "recharts";
-import { addMoney, multiplyMoney, subtractMoney, sumMoney } from "@/lib/utils";
+import { addMoney, multiplyMoney, subtractMoney, sumMoney, formatBRL } from "@/lib/utils";
 
 type DateFilter = "today" | "yesterday" | "week";
 type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamentos" | "saques" | "sync" | "coupons" | "entrega" | "cidades" | "juridico" | "planos";
@@ -335,12 +335,12 @@ const SuperAdminDashboard = () => {
   const generateReport = () => {
     const dateLabel = dateFilter === "today" ? "Hoje" : dateFilter === "yesterday" ? "Ontem" : "Últimos 7 dias";
     let report = `📊 *Relatório ${dateLabel} - ItaSuper*\n\n`;
-    report += `💰 Vendas: R$ ${metrics.totalSales.toFixed(2)}\n`;
+    report += `💰 Vendas: ${formatBRL(metrics.totalSales)}\n`;
     report += `📦 Pedidos: ${metrics.totalOrders}\n`;
-    report += `🏷️ Comissão Plataforma: R$ ${metrics.commission.toFixed(2)}\n\n`;
+    report += `🏷️ Comissão Plataforma: ${formatBRL(metrics.commission)}\n\n`;
     report += `🏪 *Por Loja:*\n`;
     storeConciliation.forEach(s => {
-      report += `• ${s.name}: R$ ${s.totalSold.toFixed(2)} (${s.orders} pedidos) — Comissão: R$ ${s.commission.toFixed(2)}\n`;
+      report += `• ${s.name}: ${formatBRL(s.totalSold)} (${s.orders} pedidos) — Comissão: ${formatBRL(s.commission)}\n`;
     });
     navigator.clipboard.writeText(report);
     toast.success("Relatório copiado! Cole no WhatsApp.");
@@ -355,22 +355,22 @@ const SuperAdminDashboard = () => {
     let msg: string;
     if (isFixed) {
       msg = `💰 *Resumo ItaSuper (${period})*\n\nOlá *${entry.name}*!\n\n` +
-        `📋 Plano: Fixo Mensal — R$ ${Number(storePlan?.monthly_fee || 180).toFixed(2)}/mês\n\n` +
+        `📋 Plano: Fixo Mensal — ${formatBRL(Number(storePlan?.monthly_fee || 180))}/mês\n\n` +
         `📦 Total de Pedidos: ${entry.orderCount}\n` +
-        `💵 Vendas Totais: R$ ${entry.totalSales.toFixed(2)}\n\n` +
+        `💵 Vendas Totais: ${formatBRL(entry.totalSales)}\n\n` +
         `✅ Sem taxas por pedido. Toda receita é sua!\n` +
         `📌 Assinatura mensal cobrada à parte.`;
     } else {
       const balanceText = entry.finalBalance >= 0
-        ? `✅ O ItaSuper deve transferir R$ ${entry.finalBalance.toFixed(2)} para você.`
-        : `⚠️ Valor a acertar com o ItaSuper: R$ ${Math.abs(entry.finalBalance).toFixed(2)}.`;
+        ? `✅ O ItaSuper deve transferir ${formatBRL(entry.finalBalance)} para você.`
+        : `⚠️ Valor a acertar com o ItaSuper: ${formatBRL(Math.abs(entry.finalBalance))}.`;
       msg = `💰 *Fechamento ItaSuper (${period})*\n\nOlá *${entry.name}*!\n\n` +
         `📋 Plano: ${storePlan?.plan_type === "hybrid" ? "Assinatura + Taxa" : "Comissão"}\n\n` +
         `📦 Total de Pedidos: ${entry.orderCount}\n` +
-        `💵 Vendas Físicas (Dinheiro/Cartão): R$ ${entry.physicalSales.toFixed(2)}\n` +
-        `📱 Vendas App (Pix): R$ ${entry.appSales.toFixed(2)}\n\n` +
-        `🏷️ Comissão ${storeRate}% sobre Físicas: R$ ${entry.commissionDue.toFixed(2)}\n` +
-        `💸 Repasse Líquido (App - ${storeRate}%): R$ ${entry.netTransfer.toFixed(2)}\n\n` +
+        `💵 Vendas Físicas (Dinheiro/Cartão): ${formatBRL(entry.physicalSales)}\n` +
+        `📱 Vendas App (Pix): ${formatBRL(entry.appSales)}\n\n` +
+        `🏷️ Comissão ${storeRate}% sobre Físicas: ${formatBRL(entry.commissionDue)}\n` +
+        `💸 Repasse Líquido (App - ${storeRate}%): ${formatBRL(entry.netTransfer)}\n\n` +
         `---\n${balanceText}\n---`;
     }
     navigator.clipboard.writeText(msg);
@@ -535,7 +535,7 @@ const SuperAdminDashboard = () => {
                 <TrendingUp className="h-3.5 w-3.5 text-green-500" />
                 <span className="text-[10px] text-muted-foreground">Vendas</span>
               </div>
-              <span className="text-sm font-black text-foreground">R$ {metrics.totalSales.toFixed(2)}</span>
+              <span className="text-sm font-black text-foreground">{formatBRL(metrics.totalSales)}</span>
             </div>
           </div>
         </div>
@@ -633,7 +633,7 @@ const SuperAdminDashboard = () => {
               <div className="min-w-0">
                 <h2 className="font-bold text-foreground text-sm truncate">{currentTab?.label || "Dashboard"}</h2>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-muted-foreground">R$ {metrics.totalSales.toFixed(2)}</span>
+                  <span className="text-[10px] text-muted-foreground">{formatBRL(metrics.totalSales)}</span>
                   {metrics.activeOrders > 0 && (
                     <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-md">{metrics.activeOrders} ativos</span>
                   )}
@@ -752,8 +752,8 @@ const SuperAdminDashboard = () => {
                     ))
                   ) : (
                     <>
-                      <MetricCard icon={ShoppingBag} label="Vendas" value={`R$ ${metrics.totalSales.toFixed(2)}`} sublabel={`${metrics.totalOrders} pedidos`} />
-                      <MetricCard icon={TrendingUp} label="Comissão" value={`R$ ${metrics.commission.toFixed(2)}`} sublabel="taxa por loja" highlight />
+                      <MetricCard icon={ShoppingBag} label="Vendas" value={`${formatBRL(metrics.totalSales)}`} sublabel={`${metrics.totalOrders} pedidos`} />
+                      <MetricCard icon={TrendingUp} label="Comissão" value={`${formatBRL(metrics.commission)}`} sublabel="taxa por loja" highlight />
                       <MetricCard icon={Clock} label="Ativos" value={String(metrics.activeOrders)} sublabel="em andamento" />
                       <MetricCard icon={AlertTriangle} label="Atraso" value={String(delayedOrders.length)} sublabel="> 60 min" alert={delayedOrders.length > 0} />
                     </>
@@ -780,7 +780,7 @@ const SuperAdminDashboard = () => {
                             contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 12, fontSize: 12 }}
                             labelStyle={{ color: "hsl(var(--muted-foreground))" }}
                             formatter={(value: number, name: string) => [
-                              name === "count" ? `${value} pedidos` : `R$ ${value.toFixed(2)}`,
+                              name === "count" ? `${value} pedidos` : `${formatBRL(value)}`,
                               name === "count" ? "Pedidos" : "Receita"
                             ]}
                           />
@@ -819,9 +819,9 @@ const SuperAdminDashboard = () => {
                               </p>
                             </div>
                             <div className="text-right ml-3">
-                              <p className="text-sm font-bold text-foreground">R$ {s.totalSold.toFixed(2)}</p>
+                              <p className="text-sm font-bold text-foreground">{formatBRL(s.totalSold)}</p>
                               <p className={`text-xs font-bold ${isFixed ? "text-muted-foreground" : "text-primary"}`}>
-                                {isFixed ? "Sem comissão" : `R$ ${s.commission.toFixed(2)}`}
+                                {isFixed ? "Sem comissão" : `${formatBRL(s.commission)}`}
                               </p>
                             </div>
                           </div>
@@ -1181,7 +1181,7 @@ const FinanceTab = ({
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      if (data?.success) toast.success(`✅ R$ ${amount.toFixed(2)} transferido para ${driverName}!`, { duration: 8000 });
+      if (data?.success) toast.success(`✅ ${formatBRL(amount)} transferido para ${driverName}!`, { duration: 8000 });
       else toast.warning(`⚠️ ${data?.message || "Transferência falhou."}`, { duration: 10000 });
       queryClient.invalidateQueries({ queryKey: ["driver-balances-finance"] });
       queryClient.invalidateQueries({ queryKey: ["withdrawal-requests"] });
@@ -1254,10 +1254,10 @@ const FinanceTab = ({
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      if (data?.status === "manual_required") toast.info(`${data.reference_code}: PIX manual: ${data.pix_key} - R$ ${data.amount.toFixed(2)}`, { duration: 15000 });
+      if (data?.status === "manual_required") toast.info(`${data.reference_code}: PIX manual: ${data.pix_key} - ${formatBRL(data.amount)}`, { duration: 15000 });
       else {
         const providerLabel = data?.provider === "efi_bank" ? "Efí Bank" : data?.provider === "asaas" ? "Asaas" : data?.provider === "simulated" ? "Simulação" : "Mercado Pago";
-        toast.success(`${data.reference_code}: R$ ${data.amount.toFixed(2)} enviado via ${providerLabel}!`);
+        toast.success(`${data.reference_code}: ${formatBRL(data.amount)} enviado via ${providerLabel}!`);
       }
       queryClient.invalidateQueries({ queryKey: ["store-balances"] });
       queryClient.invalidateQueries({ queryKey: ["finance-orders"] });
@@ -1279,8 +1279,8 @@ const FinanceTab = ({
       const pixCode = data?.pix_code || data?.qr_code;
       if (pixCode) {
         navigator.clipboard.writeText(pixCode);
-        toast.success(`${data.reference_code}: Cobrança PIX gerada! R$ ${Number(data.amount || chargeAmount).toFixed(2)}`, { duration: 10000 });
-      } else toast.success(`${data.reference_code}: Cobrança registrada. R$ ${Number(data.amount || chargeAmount).toFixed(2)}`);
+        toast.success(`${data.reference_code}: Cobrança PIX gerada! ${formatBRL(Number(data.amount || chargeAmount))}`, { duration: 10000 });
+      } else toast.success(`${data.reference_code}: Cobrança registrada. ${formatBRL(Number(data.amount || chargeAmount))}`);
       queryClient.invalidateQueries({ queryKey: ["store-balances"] });
     } catch (err: any) { toast.error(err.message || "Erro ao gerar cobrança."); }
     finally { setChargingStore(null); }
@@ -1321,7 +1321,7 @@ const FinanceTab = ({
               </div>
             </div>
             <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Volume Total</p>
-            <p className="text-xl font-black text-foreground mt-0.5">R$ {financeTotals.totalVolume.toFixed(2)}</p>
+            <p className="text-xl font-black text-foreground mt-0.5">{formatBRL(financeTotals.totalVolume)}</p>
           </div>
         </div>
 
@@ -1334,7 +1334,7 @@ const FinanceTab = ({
               </div>
             </div>
             <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Lucro Comissões</p>
-            <p className="text-xl font-black text-primary mt-0.5">R$ {financeTotals.grossProfit.toFixed(2)}</p>
+            <p className="text-xl font-black text-primary mt-0.5">{formatBRL(financeTotals.grossProfit)}</p>
           </div>
         </div>
 
@@ -1347,7 +1347,7 @@ const FinanceTab = ({
               </div>
             </div>
             <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Comissão Pendente</p>
-            <p className="text-xl font-black text-amber-500 mt-0.5">R$ {totalDbComissao.toFixed(2)}</p>
+            <p className="text-xl font-black text-amber-500 mt-0.5">{formatBRL(totalDbComissao)}</p>
           </div>
         </div>
 
@@ -1360,7 +1360,7 @@ const FinanceTab = ({
               </div>
             </div>
             <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Assinaturas/Mês</p>
-            <p className="text-xl font-black text-emerald-500 mt-0.5">R$ {subscriptionRevenue.toFixed(2)}</p>
+            <p className="text-xl font-black text-emerald-500 mt-0.5">{formatBRL(subscriptionRevenue)}</p>
           </div>
         </div>
       </div>
@@ -1483,7 +1483,7 @@ const FinanceTab = ({
                     <Store className="h-4 w-4 text-amber-500" />
                     <span className="text-sm font-bold text-foreground">{entry.name}</span>
                   </div>
-                  <span className="text-lg font-black text-amber-500">R$ {dbComissao.toFixed(2)}</span>
+                  <span className="text-lg font-black text-amber-500">{formatBRL(dbComissao)}</span>
                 </div>
                 <div className="p-3 flex gap-2">
                   <button onClick={() => handleChargeCommission(entry)} disabled={chargingStore === entry.storeId}
@@ -1510,7 +1510,7 @@ const FinanceTab = ({
                     <Bike className="h-4 w-4 text-emerald-500" />
                     <span className="text-sm font-bold text-foreground">{entry.name}</span>
                   </div>
-                  <span className="text-lg font-black text-emerald-500">R$ {pendingAmt.toFixed(2)}</span>
+                  <span className="text-lg font-black text-emerald-500">{formatBRL(pendingAmt)}</span>
                 </div>
                 <div className="p-3 flex gap-2">
                   <button onClick={() => handleAutoPayDriver(entry.driverId, entry.name, pendingAmt, driverPix?.pix_key || "", driverPix?.pix_type || "cpf")}
@@ -1546,7 +1546,7 @@ const FinanceTab = ({
                         <p className="text-[10px] text-muted-foreground">{new Date(h.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</p>
                       </div>
                     </div>
-                    <p className="text-xs font-black text-emerald-500">R$ {Number(h.amount).toFixed(2)}</p>
+                    <p className="text-xs font-black text-emerald-500">{formatBRL(Number(h.amount))}</p>
                   </div>
                 ))}
               </div>
@@ -1613,7 +1613,7 @@ const FinanceTab = ({
                           </span>
                         </div>
                         <p className="text-[10px] text-muted-foreground">
-                          {entry.orderCount} pedidos • R$ {entry.totalSales.toFixed(2)}
+                          {entry.orderCount} pedidos • {formatBRL(entry.totalSales)}
                           {!isFixedPlan && ` • ${Math.round(getStoreRate(entry.storeId) * 100)}%`}
                         </p>
                       </div>
@@ -1621,7 +1621,7 @@ const FinanceTab = ({
                     <div className="flex items-center gap-3">
                       {dbComissao > 0 && (
                         <span className="text-xs font-black text-amber-500 bg-amber-500/10 px-2 py-1 rounded-lg">
-                          R$ {dbComissao.toFixed(2)}
+                          {formatBRL(dbComissao)}
                         </span>
                       )}
                       {dbComissao === 0 && (
@@ -1644,7 +1644,7 @@ const FinanceTab = ({
                             <div className="flex-1">
                               <p className="text-xs font-bold">Plano {planLabel(storePlanType)}</p>
                               <p className="text-[10px] opacity-80">
-                                R$ {Number(plan.monthly_fee).toFixed(2)}/mês
+                                {formatBRL(Number(plan.monthly_fee))}/mês
                                 {Number(plan.commission_rate) > 0 && ` + ${Number(plan.commission_rate)}% por pedido`}
                               </p>
                             </div>
@@ -1655,12 +1655,12 @@ const FinanceTab = ({
                         <div className="grid grid-cols-2 gap-2">
                           <div className="bg-muted/30 rounded-xl p-3">
                             <p className="text-[10px] text-muted-foreground font-semibold uppercase">Vendas Físicas</p>
-                            <p className="text-base font-black text-foreground mt-0.5">R$ {entry.physicalSales.toFixed(2)}</p>
+                            <p className="text-base font-black text-foreground mt-0.5">{formatBRL(entry.physicalSales)}</p>
                             <p className="text-[10px] text-muted-foreground">Dinheiro + Cartão</p>
                           </div>
                           <div className="bg-muted/30 rounded-xl p-3">
                             <p className="text-[10px] text-muted-foreground font-semibold uppercase">Vendas App</p>
-                            <p className="text-base font-black text-foreground mt-0.5">R$ {entry.appSales.toFixed(2)}</p>
+                            <p className="text-base font-black text-foreground mt-0.5">{formatBRL(entry.appSales)}</p>
                             <p className="text-[10px] text-muted-foreground">{isFixedPlan ? "Somente dinheiro/cartão" : "PIX Online"}</p>
                           </div>
                         </div>
@@ -1674,7 +1674,7 @@ const FinanceTab = ({
                                 <div>
                                   <p className="text-xs font-bold text-emerald-600">Split automático liquidado</p>
                                   <p className="text-[10px] text-muted-foreground mt-0.5">
-                                    R$ {splitPaid.toFixed(2)} retido de R$ {entry.appSales.toFixed(2)} em vendas PIX
+                                    {formatBRL(splitPaid)} retido de {formatBRL(entry.appSales)} em vendas PIX
                                   </p>
                                 </div>
                               </div>
@@ -1684,7 +1684,7 @@ const FinanceTab = ({
                                 <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
                                 <div className="flex-1">
                                   <p className="text-xs font-bold text-amber-600">Comissão pendente (vendas físicas)</p>
-                                  <p className="text-lg font-black text-amber-500 mt-1">R$ {dbComissao.toFixed(2)}</p>
+                                  <p className="text-lg font-black text-amber-500 mt-1">{formatBRL(dbComissao)}</p>
                                   <p className="text-[10px] text-muted-foreground mt-0.5">
                                     {Math.round(getStoreRate(entry.storeId) * 100)}% sobre vendas em dinheiro/cartão
                                   </p>
@@ -1709,7 +1709,7 @@ const FinanceTab = ({
                             <div>
                               <p className="text-xs font-bold text-blue-600">Plano Fixo — Sem comissão por pedido</p>
                               <p className="text-[10px] text-muted-foreground mt-0.5">
-                                Cobrança mensal de R$ {Number(plan?.monthly_fee || 180).toFixed(2)}. Sem taxas sobre vendas.
+                                Cobrança mensal de {formatBRL(Number(plan?.monthly_fee || 180))}. Sem taxas sobre vendas.
                               </p>
                             </div>
                           </div>
@@ -1786,7 +1786,7 @@ const FinanceTab = ({
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-base font-black text-foreground">R$ {entry.totalFees.toFixed(2)}</p>
+                      <p className="text-base font-black text-foreground">{formatBRL(entry.totalFees)}</p>
                       <p className="text-[10px] text-muted-foreground">total ganho</p>
                     </div>
                   </div>
@@ -1811,7 +1811,7 @@ const FinanceTab = ({
                           disabled={payingDriver === entry.driverId || !driverPix?.pix_key}
                           className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-30 text-white py-2.5 rounded-xl text-xs font-bold transition-all">
                           {payingDriver === entry.driverId ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ArrowUpRight className="h-3.5 w-3.5" />}
-                          Transferir R$ {pendingAmt.toFixed(2)}
+                          Transferir {formatBRL(pendingAmt)}
                         </button>
                         <button onClick={() => handleMarkDriverPaidManually(entry)} disabled={markingPaid === entry.driverId}
                           className="flex items-center justify-center gap-1.5 bg-muted hover:bg-muted/80 text-foreground px-4 py-2.5 rounded-xl text-xs font-bold transition-all">
@@ -1889,7 +1889,7 @@ const SaquesTab = ({ withdrawalRequests, pendingWithdrawals, drivers, queryClien
     if (balanceError) console.error("Balance update error:", balanceError);
     await supabase.from("driver_earnings" as any).update({ status: "pago" } as any)
       .eq("driver_user_id", req.driver_user_id).eq("status", "pendente");
-    toast.success(`✅ R$ ${Number(req.amount).toFixed(2)} para ${driverName} confirmada!`);
+    toast.success(`✅ ${formatBRL(Number(req.amount))} para ${driverName} confirmada!`);
     queryClient.invalidateQueries({ queryKey: ["withdrawal-requests"] });
   };
 
@@ -1909,7 +1909,7 @@ const SaquesTab = ({ withdrawalRequests, pendingWithdrawals, drivers, queryClien
               <p className="text-sm font-bold text-foreground">{driverName}</p>
               <p className="text-xs text-muted-foreground font-bold">
                 {req.transaction_code && <span className="text-primary mr-1">{req.transaction_code}</span>}
-                R$ {Number(req.amount).toFixed(2)}
+                {formatBRL(Number(req.amount))}
               </p>
               <p className="text-[10px] text-muted-foreground">
                 {new Date(req.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
@@ -1934,7 +1934,7 @@ const SaquesTab = ({ withdrawalRequests, pendingWithdrawals, drivers, queryClien
         )}
         <div className="bg-muted rounded-xl p-3 space-y-1 mb-3">
           <p className="text-xs text-muted-foreground">Entregador: <span className="text-foreground font-medium">{driverName}</span></p>
-          <p className="text-xs text-muted-foreground">Valor: <span className="text-foreground font-bold">R$ {Number(req.amount).toFixed(2)}</span></p>
+          <p className="text-xs text-muted-foreground">Valor: <span className="text-foreground font-bold">{formatBRL(Number(req.amount))}</span></p>
           <p className="text-xs text-muted-foreground">PIX: <span className="text-foreground font-medium">{req.pix_key}</span></p>
           <p className="text-xs text-muted-foreground">Tipo: <span className="text-foreground font-medium">{req.pix_type?.toUpperCase()}</span></p>
           {req.processed_at && (
@@ -2443,7 +2443,7 @@ const JuridicoTab = () => {
                   <div><span className="text-muted-foreground">Motivo:</span> <span className="font-bold text-foreground">{selectedUser.deletion_reason}</span></div>
                   <div><span className="text-muted-foreground">Reter até:</span> <span className="font-bold text-foreground">{new Date(selectedUser.retain_until).toLocaleDateString("pt-BR")}</span></div>
                   <div><span className="text-muted-foreground">Total pedidos:</span> <span className="font-bold text-foreground">{selectedUser.order_count}</span></div>
-                  <div><span className="text-muted-foreground">Total gasto:</span> <span className="font-bold text-foreground">R$ {Number(selectedUser.total_spent || 0).toFixed(2)}</span></div>
+                  <div><span className="text-muted-foreground">Total gasto:</span> <span className="font-bold text-foreground">{formatBRL(Number(selectedUser.total_spent || 0))}</span></div>
                 </div>
               </div>
             )}
@@ -2489,7 +2489,7 @@ const JuridicoTab = () => {
                     {userOrders.map((o: any) => (
                       <div key={o.id} className="px-4 py-3 flex items-center justify-between text-xs">
                         <div>
-                          <p className="font-bold text-foreground">R$ {Number(o.total_price).toFixed(2)}</p>
+                          <p className="font-bold text-foreground">{formatBRL(Number(o.total_price))}</p>
                           <p className="text-muted-foreground">{new Date(o.created_at).toLocaleString("pt-BR")} • {o.neighborhood}</p>
                         </div>
                         <div className="text-right">
@@ -2710,7 +2710,7 @@ const PagamentosSplitTab = ({ stores }: { stores: any[] }) => {
     
     let receipt = `📄 *Comprovante de Pagamento*\n\n`;
     receipt += `Tipo: ${kindLabels[record.transaction_kind] || record.transaction_kind}\n`;
-    receipt += `Valor: R$ ${Number(record.amount).toFixed(2)}\n`;
+    receipt += `Valor: ${formatBRL(Number(record.amount))}\n`;
     receipt += `Status: ${statusLabels[record.status] || record.status}\n`;
     receipt += `Referência: ${record.reference_code || record.transaction_code || "N/A"}\n`;
     receipt += `Data: ${new Date(record.created_at).toLocaleString("pt-BR")}\n`;
@@ -2774,7 +2774,7 @@ const PagamentosSplitTab = ({ stores }: { stores: any[] }) => {
             <span className="text-xs text-muted-foreground">Total Pago</span>
           </div>
           <p className="text-lg font-black text-emerald-500">
-            R$ {storeGroups.reduce((acc, g) => acc + g.totalPaid, 0).toFixed(2)}
+            {formatBRL(storeGroups.reduce((acc, g) => acc + g.totalPaid, 0))}
           </p>
         </div>
       </div>
@@ -2810,10 +2810,10 @@ const PagamentosSplitTab = ({ stores }: { stores: any[] }) => {
                   <div className="flex items-center gap-3">
                     <div className="text-right">
                       {group.totalPaid > 0 && (
-                        <p className="text-sm font-bold text-emerald-500">R$ {group.totalPaid.toFixed(2)}</p>
+                        <p className="text-sm font-bold text-emerald-500">{formatBRL(group.totalPaid)}</p>
                       )}
                       {group.totalPending > 0 && (
-                        <p className="text-xs text-amber-500 font-bold">R$ {group.totalPending.toFixed(2)} pend.</p>
+                        <p className="text-xs text-amber-500 font-bold">{formatBRL(group.totalPending)} pend.</p>
                       )}
                     </div>
                     {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
@@ -2834,7 +2834,7 @@ const PagamentosSplitTab = ({ stores }: { stores: any[] }) => {
                               {kindLabels[record.transaction_kind] || record.transaction_kind}
                             </span>
                           </div>
-                          <span className="text-sm font-black text-foreground">R$ {Number(record.amount).toFixed(2)}</span>
+                          <span className="text-sm font-black text-foreground">{formatBRL(Number(record.amount))}</span>
                         </div>
 
                         <div className="grid grid-cols-2 gap-2 text-xs">

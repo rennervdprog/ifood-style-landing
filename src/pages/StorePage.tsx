@@ -1,3 +1,4 @@
+import { formatBRL } from "@/lib/utils";
 import { useParams, useNavigate } from "react-router-dom";
 import PizzaHalfHalfModal from "@/components/PizzaHalfHalfModal";
 import { useQuery } from "@tanstack/react-query";
@@ -586,7 +587,7 @@ const StorePage = () => {
                       <span className="text-muted-foreground font-medium"> · {(product as any).metadata.drink_volume}</span>
                     )}
                   </p>
-                  <p className="text-xs font-black text-primary mt-0.5">R$ {product.price.toFixed(2)}</p>
+                  <p className="text-xs font-black text-primary mt-0.5">{formatBRL(product.price)}</p>
                 </div>
               </button>
             ))}
@@ -628,7 +629,7 @@ const StorePage = () => {
                       <span className="text-muted-foreground font-medium"> · {(product as any).metadata.drink_volume}</span>
                     )}
                   </p>
-                  <p className="text-xs font-black text-primary mt-0.5">R$ {product.price.toFixed(2)}</p>
+                  <p className="text-xs font-black text-primary mt-0.5">{formatBRL(product.price)}</p>
                 </div>
               </button>
             ))}
@@ -862,7 +863,7 @@ const ProductCard = ({ product, disabled, onClick, storeCategory }: ProductCardP
   const isPharmacy = cat === "farmacias";
 
   // Price display logic
-  const priceDisplay = `R$ ${product.price.toFixed(2)}`;
+  const priceDisplay = `${formatBRL(product.price)}`;
 
   // CTA label
   const ctaLabel = (() => {

@@ -182,7 +182,7 @@ const LoyaltyConfigPanel = ({ storeId }: LoyaltyConfigPanelProps) => {
               className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
             <p className="text-[10px] text-muted-foreground">
-              Com {minRedeem} pontos, o cliente ganha até {formatBRL(R$ {(minRedeem * discountPerPoint).toFixed(2)})} de desconto
+              Com {minRedeem} pontos, o cliente ganha até {formatBRL({formatBRL((minRedeem * discountPerPoint))})} de desconto
             </p>
           </div>
 

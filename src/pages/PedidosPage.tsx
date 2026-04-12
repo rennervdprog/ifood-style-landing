@@ -1,3 +1,4 @@
+import { formatBRL } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { getOrderItemDisplayName } from "@/lib/orderItemName";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -584,7 +585,7 @@ const PedidosPage = () => {
                   <div className="text-xs text-muted-foreground space-y-1">
                     {order.order_items?.map((item: any) => (
                       <div key={item.id}>
-                        {item.quantity}x {getOrderItemDisplayName(item)} — R$ {(item.unit_price * item.quantity).toFixed(2)}
+                        {item.quantity}x {getOrderItemDisplayName(item)} — {formatBRL((item.unit_price * item.quantity))}
                       </div>
                     ))}
                   </div>
@@ -606,7 +607,7 @@ const PedidosPage = () => {
                       {new Date(order.created_at).toLocaleDateString("pt-BR")} {new Date(order.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                     </span>
                     <span className="font-bold text-sm text-foreground">
-                      R$ {Number(order.total_price).toFixed(2)}
+                      {formatBRL(Number(order.total_price))}
                     </span>
                   </div>
                 </div>
@@ -744,7 +745,7 @@ const PedidosPage = () => {
                         <div className="flex items-center justify-between">
                           <h3 className="font-bold text-foreground text-sm">{order.stores?.name || "Loja"}</h3>
                           <span className="text-sm font-black text-primary">
-                            R$ {Number(order.total_price).toFixed(2)}
+                            {formatBRL(Number(order.total_price))}
                           </span>
                         </div>
 
@@ -905,7 +906,7 @@ const PedidosPage = () => {
                             {order.order_items?.map((item: any) => (
                               <div key={item.id} className="flex justify-between">
                                 <span>{item.quantity}x {getOrderItemDisplayName(item)}</span>
-                                <span className="font-medium text-foreground">R$ {(item.unit_price * item.quantity).toFixed(2)}</span>
+                                <span className="font-medium text-foreground">{formatBRL((item.unit_price * item.quantity))}</span>
                               </div>
                             ))}
                           </div>
@@ -969,7 +970,7 @@ const PedidosPage = () => {
                           </div>
                         </div>
                         <span className="text-sm font-bold text-foreground">
-                          R$ {Number(order.total_price).toFixed(2)}
+                          {formatBRL(Number(order.total_price))}
                         </span>
                       </div>
 

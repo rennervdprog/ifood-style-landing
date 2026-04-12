@@ -1,3 +1,4 @@
+import { formatBRL } from "@/lib/utils";
 import { useState, useRef, useEffect } from "react";
 import MenuImportCSV from "@/components/MenuImportCSV";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -779,7 +780,7 @@ const ProductCard = ({
           <h4 className="text-sm font-bold text-foreground truncate">{product.name}</h4>
           {product.description && <p className="text-xs text-muted-foreground line-clamp-1">{product.description}</p>}
           <div className="flex items-center justify-between mt-1">
-            <span className="text-sm font-black text-primary">R$ {Number(product.price).toFixed(2)}</span>
+            <span className="text-sm font-black text-primary">{formatBRL(Number(product.price))}</span>
             <div className="flex items-center gap-0.5 flex-shrink-0">
               <button onClick={() => setMovingProductId(isMoving ? null : product.id)} className="p-1.5 rounded-lg hover:bg-muted transition-colors" title="Mover para outra seção">
                 <ArrowRightLeft className={`h-3.5 w-3.5 ${isMoving ? "text-primary" : "text-muted-foreground"}`} />
@@ -845,7 +846,7 @@ const ProductCard = ({
               {group.addon_items?.map((item: any) => (
                 <div key={item.id} className="flex items-center justify-between pl-2 py-0.5">
                   <span className="text-muted-foreground">{item.name}</span>
-                  <span className="text-muted-foreground/70">+R$ {Number(item.price).toFixed(2)}</span>
+                  <span className="text-muted-foreground/70">+{formatBRL(Number(item.price))}</span>
                 </div>
               ))}
             </div>
@@ -869,7 +870,7 @@ const ProductCard = ({
                 <div key={item.id} className="flex items-center justify-between pl-2 py-0.5">
                   <span className="text-muted-foreground">{item.name}</span>
                   <div className="flex items-center gap-1">
-                    <span className="text-muted-foreground/70">+R$ {Number(item.price).toFixed(2)}</span>
+                    <span className="text-muted-foreground/70">+{formatBRL(Number(item.price))}</span>
                     <button onClick={() => onDeleteAddonItem?.(item.id)} className="text-destructive/70 p-0.5"><X className="h-2.5 w-2.5" /></button>
                   </div>
                 </div>

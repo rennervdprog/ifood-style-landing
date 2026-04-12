@@ -13,7 +13,7 @@ import SavedAddressPicker from "@/components/SavedAddressPicker";
 import CouponInput from "@/components/CouponInput";
 import { calculateDeliveryFee, DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig } from "@/lib/deliveryFee";
 import { formatCep, fetchCep } from "@/lib/cepLookup";
-import { addMoney, multiplyMoney, sumMoney } from "@/lib/utils";
+import { addMoney, multiplyMoney, sumMoney, formatBRL } from "@/lib/utils";
 import { useStorePlan } from "@/hooks/useStorePlan";
 import LoyaltyRedemption from "@/components/LoyaltyRedemption";
 
@@ -139,9 +139,9 @@ const CheckoutPage = () => {
       setCalculatedDeliveryFee(null);
       const totalOwnFee = ownDeliveryFeeWithSplit;
       if (storePlan.platformDeliverySplit > 0) {
-        setFeeBreakdown(`Entrega loja: R$ ${storeOwnFee.toFixed(2)} + Taxa plataforma: R$ ${storePlan.platformDeliverySplit.toFixed(2)}`);
+        setFeeBreakdown(`Entrega loja: ${formatBRL(storeOwnFee)} + Taxa plataforma: ${formatBRL(storePlan.platformDeliverySplit)}`);
       } else {
-        setFeeBreakdown(`Taxa fixa da loja: R$ ${storeOwnFee.toFixed(2)}`);
+        setFeeBreakdown(`Taxa fixa da loja: ${formatBRL(storeOwnFee)}`);
       }
       if (activeNeighborhood) setNeighborhood(activeNeighborhood, totalOwnFee);
       return;
@@ -400,7 +400,7 @@ const CheckoutPage = () => {
                     <div className="flex items-center gap-1.5">
                       <Truck className="h-3.5 w-3.5 text-primary" />
                       <span className="text-xs font-bold text-primary">
-                        R$ {activeDeliveryFee.toFixed(2)}
+                        {formatBRL(activeDeliveryFee)}
                       </span>
                     </div>
                   )}
@@ -433,7 +433,7 @@ const CheckoutPage = () => {
                     <div className="flex items-center gap-1.5">
                       <Truck className="h-3.5 w-3.5 text-primary" />
                       <span className="text-xs font-bold text-primary">
-                        R$ {activeDeliveryFee.toFixed(2)}
+                        {formatBRL(activeDeliveryFee)}
                       </span>
                     </div>
                   )}
@@ -539,7 +539,7 @@ const CheckoutPage = () => {
                     />
                     {changeFor && parseFloat(changeFor) >= finalTotal && (
                       <p className="text-xs text-muted-foreground mt-1.5">
-                        Seu troco: <span className="font-bold text-foreground">R$ {(parseFloat(changeFor) - finalTotal).toFixed(2)}</span>
+                        Seu troco: <span className="font-bold text-foreground">{formatBRL((parseFloat(changeFor) - finalTotal))}</span>
                       </p>
                     )}
                   </div>
@@ -624,7 +624,7 @@ const CheckoutPage = () => {
                   <span className="text-sm text-foreground truncate">{item.name}</span>
                 </div>
                 <span className="text-sm font-bold text-foreground shrink-0">
-                  R$ {(item.price * item.quantity).toFixed(2)}
+                  {formatBRL((item.price * item.quantity))}
                 </span>
               </div>
             ))}
@@ -632,7 +632,7 @@ const CheckoutPage = () => {
             <div className="border-t border-border/50 pt-3 mt-3 space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Subtotal</span>
-                <span className="font-semibold text-foreground">R$ {subtotal.toFixed(2)}</span>
+                <span className="font-semibold text-foreground">{formatBRL(subtotal)}</span>
               </div>
 
               {couponDiscount > 0 && (
@@ -640,7 +640,7 @@ const CheckoutPage = () => {
                   <span className="text-green-600 flex items-center gap-1">
                     <Tag className="h-3 w-3" /> {couponCode}
                   </span>
-                  <span className="font-bold text-green-600">-R$ {couponDiscount.toFixed(2)}</span>
+                  <span className="font-bold text-green-600">-{formatBRL(couponDiscount)}</span>
                 </div>
               )}
 
@@ -649,7 +649,7 @@ const CheckoutPage = () => {
                   <span className="text-amber-600 flex items-center gap-1">
                     <Star className="h-3 w-3 fill-amber-500" /> {loyaltyPointsUsed} pontos
                   </span>
-                  <span className="font-bold text-amber-600">-R$ {loyaltyDiscount.toFixed(2)}</span>
+                  <span className="font-bold text-amber-600">-{formatBRL(loyaltyDiscount)}</span>
                 </div>
               )}
 
@@ -658,7 +658,7 @@ const CheckoutPage = () => {
                   <Truck className="h-3 w-3" /> Entrega
                 </span>
                 <span className={`font-semibold ${couponType === "free_shipping" ? "text-green-600 line-through" : "text-foreground"}`}>
-                  {calculatingFee ? "..." : `R$ ${activeDeliveryFee.toFixed(2)}`}
+                  {calculatingFee ? "..." : `${formatBRL(activeDeliveryFee)}`}
                 </span>
               </div>
 
@@ -673,7 +673,7 @@ const CheckoutPage = () => {
             <div className="border-t-2 border-border pt-3">
               <div className="flex justify-between items-center">
                 <span className="text-base font-bold text-foreground">Total</span>
-                <span className="text-xl font-black text-primary">R$ {finalTotal.toFixed(2)}</span>
+                <span className="text-xl font-black text-primary">{formatBRL(finalTotal)}</span>
               </div>
             </div>
           </div>
@@ -684,7 +684,7 @@ const CheckoutPage = () => {
       <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border p-4 space-y-2">
         <div className="flex items-center justify-between px-1">
           <span className="text-sm text-muted-foreground">Total</span>
-          <span className="text-lg font-black text-primary">R$ {finalTotal.toFixed(2)}</span>
+          <span className="text-lg font-black text-primary">{formatBRL(finalTotal)}</span>
         </div>
         {isStoreClosed ? (
           <button

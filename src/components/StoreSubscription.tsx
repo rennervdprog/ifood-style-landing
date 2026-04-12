@@ -1,3 +1,4 @@
+import { formatBRL } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -340,7 +341,7 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
                   <p className="text-xs text-red-600 mt-1">Motivo: {pendingRequest.admin_notes}</p>
                 )}
                 {pendingRequest.prorata_credit > 0 && (
-                  <p className="text-xs font-semibold mt-1">Crédito: R$ {Number(pendingRequest.prorata_credit).toFixed(2)}</p>
+                  <p className="text-xs font-semibold mt-1">Crédito: {formatBRL(Number(pendingRequest.prorata_credit))}</p>
                 )}
               </div>
               <Badge variant="outline" className={`text-[10px] ${statusConfig[pendingRequest.status]?.bg}`}>
@@ -440,7 +441,7 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
             <div className="flex justify-between items-center py-2 border-b border-border/50">
               <span className="text-sm text-muted-foreground">Mensalidade</span>
               <span className="text-sm font-bold text-foreground">
-                {plan.monthlyFee > 0 ? `R$ ${plan.monthlyFee.toFixed(2)}` : "Isento"}
+                {plan.monthlyFee > 0 ? `${formatBRL(plan.monthlyFee)}` : "Isento"}
               </span>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-border/50">
@@ -524,7 +525,7 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
                   <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">Crédito Prorata</span>
                 </div>
                 <p className="text-xs text-emerald-600/80">
-                  Você tem <strong>R$ {(prorataCredit ?? 0).toFixed(2)}</strong> de crédito do plano atual que será considerado.
+                  Você tem <strong>{formatBRL((prorataCredit ?? 0))}</strong> de crédito do plano atual que será considerado.
                 </p>
               </div>
             )}
@@ -596,7 +597,7 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
                   {(prorataCredit ?? 0) > 0 && (
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Crédito</span>
-                      <span className="font-semibold text-emerald-600">R$ {(prorataCredit ?? 0).toFixed(2)}</span>
+                      <span className="font-semibold text-emerald-600">{formatBRL((prorataCredit ?? 0))}</span>
                     </div>
                   )}
                 </div>

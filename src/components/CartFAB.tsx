@@ -24,7 +24,7 @@ const CartFAB = () => {
         </div>
         <span className="font-bold text-sm">Ver carrinho</span>
       </div>
-      <span className="font-black text-sm">{formatBRL(R$ {total.toFixed(2)})}</span>
+      <span className="font-black text-sm">{formatBRL({formatBRL(total)})}</span>
     </button>
   );
 };

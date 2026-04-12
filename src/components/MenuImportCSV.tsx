@@ -1,3 +1,4 @@
+import { formatBRL } from "@/lib/utils";
 import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -513,7 +514,7 @@ export default function MenuImportCSV({ storeId }: MenuImportCSVProps) {
                           className="hover:bg-primary/10 px-1.5 py-0.5 rounded transition-colors group inline-flex items-center gap-1"
                           title="Clique para editar preço"
                         >
-                          R$ {p.price.toFixed(2)}
+                          {formatBRL(p.price)}
                           <Edit2 className="h-2.5 w-2.5 text-muted-foreground opacity-0 group-hover:opacity-100" />
                         </button>
                       )}

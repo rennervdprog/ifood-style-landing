@@ -326,7 +326,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                           <span className="text-sm text-foreground">{item.name}</span>
                           <div className="flex items-center gap-2">
                             <span className="text-sm text-primary font-bold">
-                              {item.price > 0 ? `+R$ ${Number(item.price).toFixed(2)}` : "Grátis"}
+                              {item.price > 0 ? `+${formatBRL(Number(item.price))}` : "Grátis"}
                             </span>
                             <button
                               onClick={() => {
