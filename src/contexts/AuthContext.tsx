@@ -52,32 +52,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Capacitor native push (takes priority)
       if (isCapacitorNative()) {
         registerCapacitorPush().catch(console.error);
+        // Do NOT initialize Firebase web messaging on native — it crashes the app
       } else {
         requestPushPermissionAndRegister().catch(console.error);
-      }
-      registerNativePush();
+        registerNativePush();
 
-      onForegroundMessage((payload) => {
-        const title = payload.notification?.title || "ItaSuper";
-        const body = payload.notification?.body || "";
-        const orderId = payload.data?.order_id;
-        
-        toast(title, {
-          description: body,
-          action: orderId
-            ? {
-                label: "Abrir Chat",
-                onClick: () => {
-                  window.location.href = `/pedidos?chat=${orderId}`;
-                },
-              }
-            : undefined,
+        // Firebase web foreground messages — only on web
+        onForegroundMessage((payload) => {
+          const title = payload.notification?.title || "ItaSuper";
+          const body = payload.notification?.body || "";
+          const orderId = payload.data?.order_id;
+          
+          toast(title, {
+            description: body,
+            action: orderId
+              ? {
+                  label: "Abrir Chat",
+                  onClick: () => {
+                    window.location.href = `/pedidos?chat=${orderId}`;
+                  },
+                }
+              : undefined,
+          });
+
+          if ("vibrate" in navigator) {
+            navigator.vibrate([200, 100, 200]);
+          }
         });
-
-        if ("vibrate" in navigator) {
-          navigator.vibrate([200, 100, 200]);
-        }
-      });
+      }
     }, 2000);
 
     // Only retry on visibility change, no polling interval

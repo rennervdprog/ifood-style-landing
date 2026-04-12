@@ -2,6 +2,7 @@ import { initializeApp } from "firebase/app";
 import { getMessaging, getToken, onMessage, isSupported } from "firebase/messaging";
 import { supabase } from "@/integrations/supabase/client";
 import { isGoNative } from "@/lib/gonative";
+import { isCapacitorNative } from "@/lib/capacitorNative";
 
 const firebaseConfig = {
   apiKey: "AIzaSyC7o57Z8Y-F2KLyqSIGtHTSPgTxGRr-JNQ",
@@ -20,6 +21,8 @@ let messagingInstance: ReturnType<typeof getMessaging> | null = null;
 
 async function getMessagingInstance() {
   if (messagingInstance) return messagingInstance;
+  // Firebase web messaging is not supported in Capacitor native — it will crash
+  if (isCapacitorNative()) return null;
   const supported = await isSupported();
   if (!supported) return null;
   messagingInstance = getMessaging(app);
