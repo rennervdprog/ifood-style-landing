@@ -1,3 +1,4 @@
+console.log("[Main] App starting...", { platform: navigator.userAgent?.slice(0, 80) });
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";

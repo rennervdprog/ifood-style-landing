@@ -44,16 +44,20 @@ const NotificationPrompt = () => {
   }, [user]);
 
   const handleEnable = async () => {
+    console.log("[NotifPrompt] handleEnable called, isCapacitorNative:", isCapacitorNative());
     try {
       if (isCapacitorNative()) {
-        await registerCapacitorPush();
+        console.log("[NotifPrompt] Calling registerCapacitorPush...");
+        const token = await registerCapacitorPush();
+        console.log("[NotifPrompt] registerCapacitorPush result:", token ? "got token" : "no token");
       } else {
+        console.log("[NotifPrompt] Calling web requestPushPermissionAndRegister...");
         const { requestPushPermissionAndRegister } = await import("@/lib/firebase");
         await requestPushPermissionAndRegister();
       }
       setShow(false);
     } catch (error) {
-      console.error("Notification prompt enable error:", error);
+      console.error("[NotifPrompt] handleEnable CRASHED:", error);
     }
   };
 
