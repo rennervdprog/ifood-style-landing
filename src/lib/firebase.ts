@@ -21,6 +21,8 @@ let messagingInstance: ReturnType<typeof getMessaging> | null = null;
 
 async function getMessagingInstance() {
   if (messagingInstance) return messagingInstance;
+  // Firebase web messaging is not supported in Capacitor native — it will crash
+  if (isCapacitorNative()) return null;
   const supported = await isSupported();
   if (!supported) return null;
   messagingInstance = getMessaging(app);
