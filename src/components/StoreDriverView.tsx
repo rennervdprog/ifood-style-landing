@@ -302,6 +302,9 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   const totalActive = (myDeliveries?.length || 0);
   const totalAvailable = (availableOrders?.length || 0);
 
+  // Block accepting new orders while driver has any active (non-finalized) deliveries
+  const hasActiveRoutes = totalActive > 0;
+
   return (
     <div className="px-4 py-4 space-y-5">
       {/* Stats bar */}
@@ -562,7 +565,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                 Disponíveis ({filteredAvailable.length})
               </h3>
             </div>
-            {filteredAvailable.length > 1 && (
+            {filteredAvailable.length > 1 && !hasActiveRoutes && (
               <button
                 onClick={acceptAllFiltered}
                 className="bg-primary text-primary-foreground px-3 py-1.5 rounded-xl text-[11px] font-bold flex items-center gap-1"
@@ -572,8 +575,17 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
             )}
           </div>
 
+          {hasActiveRoutes && (
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3 flex items-center gap-2.5">
+              <Clock className="h-4 w-4 text-amber-500 flex-shrink-0" />
+              <p className="text-xs text-amber-700 dark:text-amber-400 font-semibold">
+                Finalize suas entregas atuais antes de aceitar novos pedidos.
+              </p>
+            </div>
+          )}
+
           {filteredAvailable.map((order: any, index: number) => (
-            <div key={order.id} className="bg-card border border-border rounded-2xl p-4 space-y-3">
+            <div key={order.id} className={`bg-card border border-border rounded-2xl p-4 space-y-3 ${hasActiveRoutes ? "opacity-60" : ""}`}>
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center text-xs font-black text-amber-500">
                   {index + 1}
@@ -600,9 +612,14 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
 
               <button
                 onClick={() => acceptOrder(order.id)}
-                className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-xl text-sm active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                disabled={hasActiveRoutes}
+                className={`w-full font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-all ${
+                  hasActiveRoutes
+                    ? "bg-muted text-muted-foreground cursor-not-allowed"
+                    : "bg-primary text-primary-foreground active:scale-[0.98]"
+                }`}
               >
-                ACEITAR <ArrowRight className="h-4 w-4" />
+                {hasActiveRoutes ? "FINALIZE A ROTA ATUAL" : "ACEITAR"} <ArrowRight className="h-4 w-4" />
               </button>
             </div>
           ))}
