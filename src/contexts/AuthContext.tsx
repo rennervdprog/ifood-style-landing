@@ -47,13 +47,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
-    // Small delay to not block initial render
-    const timer = setTimeout(() => {
-      // Capacitor native push (takes priority)
-      if (isCapacitorNative()) {
-        registerCapacitorPush().catch(console.error);
-        // Do NOT initialize Firebase web messaging on native — it crashes the app
-      } else {
+      // Small delay to not block initial render
+      const timer = setTimeout(() => {
+        // Native apps should only request push permission from explicit user action.
+        if (isCapacitorNative()) {
+          return;
+        }
+
         requestPushPermissionAndRegister().catch(console.error);
         registerNativePush();
 
@@ -79,8 +79,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             navigator.vibrate([200, 100, 200]);
           }
         });
-      }
-    }, 2000);
+      }, 2000);
 
     // Only retry on visibility change, no polling interval
     document.addEventListener("visibilitychange", handleVisibilityChange);
