@@ -20,9 +20,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setLoading(false);
+
+      // On sign-out, clean up push tokens for the old session
+      if (event === "SIGNED_OUT") {
+        cleanupPushTokens();
+      }
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -95,9 +100,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [session?.user?.id]);
 
-  const signOut = async () => {
+  const cleanupPushTokens = async () => {
     try {
-      const userId = session?.user?.id;
+      // Remove all push tokens for the current device via RPC
+      // This ensures the device won't receive notifications for the old user
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      const userId = currentSession?.user?.id || session?.user?.id;
       if (userId) {
         await Promise.all([
           supabase.from("fcm_tokens").delete().eq("user_id", userId),
@@ -105,8 +113,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         ]);
       }
     } catch (e) {
-      console.warn("[Auth] Failed to clean push registrations on logout:", e);
+      console.warn("[Auth] Failed to clean push registrations:", e);
     }
+  };
+
+  const signOut = async () => {
+    await cleanupPushTokens();
     await supabase.auth.signOut();
   };
 
