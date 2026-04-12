@@ -536,7 +536,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
           <div className="relative">
             <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Faturamento</p>
             <p className="text-2xl font-black text-foreground mt-1 tracking-tight">
-              {formatBRL({formatBRL(totalSales)})}
+              {formatBRL(totalSales)}
             </p>
             <p className="text-[10px] text-muted-foreground mt-1">{completedOrders.length} pedidos</p>
           </div>
@@ -548,7 +548,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
           <div className="relative">
             <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Lucro Líquido</p>
             <p className="text-2xl font-black text-emerald-400 mt-1 tracking-tight">
-              {formatBRL({formatBRL(storePart)})}
+              {formatBRL(storePart)}
             </p>
             <p className="text-[10px] text-emerald-400/60 mt-1">85% do faturamento</p>
           </div>
@@ -560,7 +560,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
           <div className="relative">
             <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Ticket Médio</p>
             <p className="text-2xl font-black text-blue-400 mt-1 tracking-tight">
-              {formatBRL({formatBRL(ticketMedio)})}
+              {formatBRL(ticketMedio)}
             </p>
             <p className="text-[10px] text-muted-foreground mt-1">por pedido</p>
           </div>
@@ -673,9 +673,9 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
            <p className="text-sm font-bold text-foreground">Vendas via App (PIX)</p>
             <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-[10px]">Automático</Badge>
           </div>
-          <p className="text-2xl font-black text-emerald-400">{formatBRL({formatBRL(creditFromApp)})}</p>
+          <p className="text-2xl font-black text-emerald-400">{formatBRL(creditFromApp)}</p>
           <p className="text-[10px] text-muted-foreground mt-1">
-            Você recebeu {formatBRL({formatBRL(creditFromApp)})} de {formatBRL({formatBRL(appSales)})} em vendas pelo app. A taxa da plataforma (${commissionPct}% = {formatBRL({formatBRL(multiplyMoney(appSales, commissionRate))})}) já foi descontada automaticamente.
+            Você recebeu {formatBRL(creditFromApp)} de {formatBRL(appSales)} em vendas pelo app. A taxa da plataforma (${commissionPct}% = {formatBRL({formatBRL(multiplyMoney(appSales, commissionRate))})}) já foi descontada automaticamente.
           </p>
           <div className="mt-2 rounded-xl bg-emerald-500/5 border border-emerald-500/10 p-2.5">
             <p className="text-[10px] text-emerald-400 font-semibold">✅ Valor já depositado na sua conta — nada a fazer</p>
@@ -784,7 +784,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
           <p className="text-xs text-muted-foreground">
             Fatura: <span className="font-bold text-foreground">{chargeResult.reference_code}</span>
           </p>
-          <p className="text-2xl font-black text-center text-foreground">{formatBRL({formatBRL(chargeResult.amount)})}</p>
+          <p className="text-2xl font-black text-center text-foreground">{formatBRL(chargeResult.amount)}</p>
 
           {!isChargeExpired && !isChargeSettled && (
             <div className="rounded-xl border border-border/50 bg-card/40 p-3 text-center space-y-2">
@@ -873,8 +873,8 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
             </div>
           </div>
           <div className="text-right">
-            <p className="text-sm font-bold text-foreground">{formatBRL({formatBRL(physicalSales)})}</p>
-            <p className="text-[10px] text-red-400">- {formatBRL({formatBRL(commissionDue)})} comissão</p>
+            <p className="text-sm font-bold text-foreground">{formatBRL(physicalSales)}</p>
+            <p className="text-[10px] text-red-400">- {formatBRL(commissionDue)} comissão</p>
           </div>
         </div>
         <div className="p-4 flex items-center justify-between">
@@ -888,7 +888,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
             </div>
           </div>
           <div className="text-right">
-            <p className="text-sm font-bold text-foreground">{formatBRL({formatBRL(appSales)})}</p>
+            <p className="text-sm font-bold text-foreground">{formatBRL(appSales)}</p>
             <p className="text-[10px] text-emerald-400">comissão já retida</p>
           </div>
         </div>
@@ -972,7 +972,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
           ))}
           <div className="flex justify-between text-xs pt-2 border-t border-border/30">
             <span className="text-muted-foreground">Total em andamento</span>
-            <span className="text-blue-400 font-bold">{formatBRL({formatBRL(activePixSales)})}</span>
+            <span className="text-blue-400 font-bold">{formatBRL(activePixSales)}</span>
           </div>
         </div>
       )}
@@ -1007,11 +1007,11 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
                       <span className="text-[10px] text-muted-foreground">
                         {isPix ? "PIX App" : order.payment_method === "cartao" ? "Cartão" : "Dinheiro"}
                       </span>
-                      <span className="text-sm font-bold text-foreground">{formatBRL({formatBRL(sub)})}</span>
+                      <span className="text-sm font-bold text-foreground">{formatBRL(sub)}</span>
                     </div>
                     <div className="flex items-center justify-between mt-0.5">
-                      <span className="text-[10px] text-muted-foreground">Comissão: {formatBRL({formatBRL(commission)})}</span>
-                      <span className="text-xs font-semibold text-emerald-400">Líquido: {formatBRL({formatBRL(net)})}</span>
+                      <span className="text-[10px] text-muted-foreground">Comissão: {formatBRL(commission)}</span>
+                      <span className="text-xs font-semibold text-emerald-400">Líquido: {formatBRL(net)}</span>
                     </div>
                   </div>
                 </div>

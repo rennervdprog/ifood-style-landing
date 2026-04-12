@@ -208,7 +208,7 @@ const CommissionAlert = ({ storeId, storeName, onGoToFinance }: CommissionAlertP
         <div className="text-center py-2">
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Valor a Pagar</p>
           <p className={`text-3xl font-black ${isBlocked ? "text-red-500" : "text-amber-500"}`}>
-            {formatBRL({formatBRL(pendingCommission)})}
+            {formatBRL(pendingCommission)}
           </p>
         </div>
 
@@ -249,7 +249,7 @@ const CommissionAlert = ({ storeId, storeName, onGoToFinance }: CommissionAlertP
             <p className="text-xs text-muted-foreground text-center">
               Fatura: <span className="font-bold text-foreground">{chargeResult.reference_code}</span>
             </p>
-            <p className="text-2xl font-black text-center text-foreground">{formatBRL({formatBRL(chargeResult.amount)})}</p>
+            <p className="text-2xl font-black text-center text-foreground">{formatBRL(chargeResult.amount)}</p>
 
             {chargeResult.qr_code_base64 && (
               <div className="flex justify-center">
@@ -297,7 +297,7 @@ const CommissionAlert = ({ storeId, storeName, onGoToFinance }: CommissionAlertP
               />
             </div>
             <p className="text-xs text-muted-foreground text-center">
-              PIX disponível a partir de <strong className="text-foreground">{formatBRL({formatBRL(minPayout)})}</strong>
+              PIX disponível a partir de <strong className="text-foreground">{formatBRL(minPayout)}</strong>
               {" "}— faltam <strong className="text-amber-500">{formatBRL({formatBRL((minPayout - pendingCommission))})}</strong>
             </p>
           </div>

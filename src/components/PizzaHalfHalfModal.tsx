@@ -320,7 +320,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
                             )}
                           </div>
                           <span className="text-sm font-black text-primary whitespace-nowrap">
-                            {formatBRL({formatBRL(product.price)})}
+                            {formatBRL(product.price)}
                           </span>
                         </button>
                       );
@@ -447,7 +447,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
               }`}
             >
               <ShoppingCart className="h-5 w-5" />
-              Adicionar • {formatBRL({formatBRL(lineTotal)})}
+              Adicionar • {formatBRL(lineTotal)}
             </button>
           </div>
         )}

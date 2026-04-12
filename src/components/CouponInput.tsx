@@ -130,7 +130,7 @@ const CouponInput = ({ subtotal, storeId, onApply, onRemove, appliedCode, applie
           <CheckCircle2 className="h-4 w-4 text-green-500" />
           <div>
             <span className="text-xs font-bold text-green-600">{appliedCode}</span>
-            <p className="text-[10px] text-green-600/70">-{formatBRL({formatBRL(appliedDiscount)})}</p>
+            <p className="text-[10px] text-green-600/70">-{formatBRL(appliedDiscount)}</p>
           </div>
         </div>
         <button onClick={onRemove} className="text-muted-foreground hover:text-destructive">
