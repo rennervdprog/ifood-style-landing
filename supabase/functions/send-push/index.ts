@@ -242,18 +242,35 @@ Deno.serve(async (req) => {
       let allowedUserIds: Set<string>;
 
       if (callerRole === "lojista") {
-        // Store owner can only notify clients/drivers from their store orders
-        const { data: storeOrders } = await supabaseAdmin
-          .from("orders")
-          .select("client_id, driver_id")
-          .in("store_id", (
-            await supabaseAdmin.from("stores").select("id").eq("owner_id", callerUserId)
-          ).data?.map((s: any) => s.id) || []);
+        // Store owner can notify clients, already-assigned drivers, and linked store drivers from their own stores
+        const { data: ownedStores } = await supabaseAdmin
+          .from("stores")
+          .select("id")
+          .eq("owner_id", callerUserId);
+
+        const ownedStoreIds = (ownedStores || []).map((s: any) => s.id).filter(Boolean);
+
+        const { data: storeOrders } = ownedStoreIds.length > 0
+          ? await supabaseAdmin
+              .from("orders")
+              .select("client_id, driver_id")
+              .in("store_id", ownedStoreIds)
+          : { data: [] as Array<{ client_id: string | null; driver_id: string | null }> };
+
+        const { data: linkedDrivers } = ownedStoreIds.length > 0
+          ? await supabaseAdmin
+              .from("store_drivers")
+              .select("driver_user_id")
+              .in("store_id", ownedStoreIds)
+          : { data: [] as Array<{ driver_user_id: string | null }> };
 
         allowedUserIds = new Set<string>();
         for (const o of storeOrders || []) {
           if (o.client_id) allowedUserIds.add(o.client_id);
           if (o.driver_id) allowedUserIds.add(o.driver_id);
+        }
+        for (const d of linkedDrivers || []) {
+          if (d.driver_user_id) allowedUserIds.add(d.driver_user_id);
         }
       } else {
         // Driver can only notify clients/store owners from their assigned orders
