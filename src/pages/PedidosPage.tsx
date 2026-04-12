@@ -257,6 +257,7 @@ const PedidosPage = () => {
         },
         (payload) => {
           queryClient.invalidateQueries({ queryKey: ["orders", user.id] });
+          queryClient.invalidateQueries({ queryKey: ["store-orders-lojista"] });
           const newStatus = (payload.new as any).status;
           if (newStatus === "pendente" && (payload.old as any)?.status === "aguardando_pagamento") {
             const orderId = (payload.new as any).id;
