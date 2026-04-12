@@ -1938,6 +1938,7 @@ export type Database = {
         Args: { _store_id: string }
         Returns: number
       }
+      get_owned_store_ids: { Args: { _user_id: string }; Returns: string[] }
       get_store_commission_rate: {
         Args: { _store_id: string }
         Returns: number
@@ -1952,6 +1953,14 @@ export type Database = {
       is_driver: { Args: { _user_id: string }; Returns: boolean }
       is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
       is_store_driver: {
+        Args: { _store_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_store_driver_member: {
+        Args: { _store_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_store_owner: {
         Args: { _store_id: string; _user_id: string }
         Returns: boolean
       }
