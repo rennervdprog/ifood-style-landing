@@ -1,4 +1,10 @@
 const PUSH_DEVICE_ID_KEY = "itasuper_push_device_id";
+const PUSH_STATE_KEY = "itasuper_push_state";
+
+interface StoredPushState {
+  fcmToken?: string;
+  playerId?: string;
+}
 
 function getRuntime(runtimeHint?: string) {
   if (runtimeHint) return runtimeHint;
@@ -37,4 +43,29 @@ export function getCurrentPushDeviceInfo(runtimeHint?: string) {
   const deviceId = getStoredDeviceId();
 
   return `itasuper:${runtime}:${platform}:${deviceId}`.slice(0, 200);
+}
+
+export function getStoredPushState(): StoredPushState {
+  if (typeof window === "undefined") return {};
+
+  try {
+    const raw = window.localStorage.getItem(PUSH_STATE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function rememberPushIdentifier(kind: "fcm" | "onesignal", value: string) {
+  if (!value || typeof window === "undefined") return;
+
+  const next = getStoredPushState();
+  if (kind === "fcm") next.fcmToken = value;
+  if (kind === "onesignal") next.playerId = value;
+  window.localStorage.setItem(PUSH_STATE_KEY, JSON.stringify(next));
+}
+
+export function clearStoredPushState() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(PUSH_STATE_KEY);
 }
