@@ -10,6 +10,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import RoleGuard from "@/components/RoleGuard";
 import InstallPrompt from "@/components/InstallPrompt";
 import NotificationPrompt from "@/components/NotificationPrompt";
+import DebugOverlay from "@/components/DebugOverlay";
 import { initCapacitorNative, isCapacitorNative } from "@/lib/capacitorNative";
 
 // Lazy-loaded pages — each becomes its own chunk
@@ -64,6 +65,7 @@ const App = () => {
           <Toaster />
           <InstallPrompt />
           <NotificationPrompt />
+          <DebugOverlay />
           <BrowserRouter>
             <Suspense fallback={<PageLoader />}>
               <Routes>
