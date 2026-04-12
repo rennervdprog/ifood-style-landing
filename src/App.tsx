@@ -128,6 +128,7 @@ const App = () => {
       </ThemeProvider>
     </TooltipProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;
