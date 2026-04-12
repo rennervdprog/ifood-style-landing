@@ -91,6 +91,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [session?.user?.id]);
 
   const signOut = async () => {
+    // Remove FCM tokens for this user/device so the next user doesn't get their notifications
+    try {
+      const userId = session?.user?.id;
+      if (userId) {
+        await supabase.from("fcm_tokens").delete().eq("user_id", userId);
+      }
+    } catch (e) {
+      console.warn("[Auth] Failed to clean FCM tokens on logout:", e);
+    }
     await supabase.auth.signOut();
   };
 
