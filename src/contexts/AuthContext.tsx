@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { requestPushPermissionAndRegister, onForegroundMessage } from "@/lib/firebase";
@@ -18,19 +18,29 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const currentUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const previousUserId = currentUserIdRef.current;
+      const nextUserId = session?.user?.id ?? null;
+
+      currentUserIdRef.current = nextUserId;
       setSession(session);
       setLoading(false);
 
-      // On sign-out, clean up push tokens for the old session
-      if (event === "SIGNED_OUT") {
-        cleanupPushTokens();
+      if (previousUserId && previousUserId !== nextUserId) {
+        void cleanupPushTokens(previousUserId);
+        return;
+      }
+
+      if (event === "SIGNED_OUT" && previousUserId) {
+        void cleanupPushTokens(previousUserId);
       }
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
+      currentUserIdRef.current = session?.user?.id ?? null;
       setSession(session);
       setLoading(false);
     });
@@ -100,12 +110,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [session?.user?.id]);
 
-  const cleanupPushTokens = async () => {
+  const cleanupPushTokens = async (userIdOverride?: string) => {
     try {
-      // Remove all push tokens for the current device via RPC
-      // This ensures the device won't receive notifications for the old user
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      const userId = currentSession?.user?.id || session?.user?.id;
+      const userId = userIdOverride || currentUserIdRef.current || session?.user?.id;
       if (userId) {
         await Promise.all([
           supabase.from("fcm_tokens").delete().eq("user_id", userId),
@@ -118,7 +125,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
-    await cleanupPushTokens();
+    await cleanupPushTokens(currentUserIdRef.current || session?.user?.id || undefined);
     await supabase.auth.signOut();
   };
 
