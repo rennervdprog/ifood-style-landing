@@ -1,23 +1,30 @@
-name: Build Android APK (Signed Release)
+name: Build Android APKs (Cliente + Parceiro)
 
 on:
   workflow_dispatch:
+    inputs:
+      app_type:
+        description: 'Qual app gerar?'
+        required: true
+        default: 'both'
+        type: choice
+        options:
+          - cliente
+          - parceiro
+          - both
 
 jobs:
-  build:
+  build-cliente:
+    if: ${{ github.event.inputs.app_type == 'cliente' || github.event.inputs.app_type == 'both' }}
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
@@ -25,70 +32,100 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Configure Capacitor for Cliente
+        run: |
+          cat > capacitor.config.ts << 'EOF'
+          import type { CapacitorConfig } from '@capacitor/cli';
+          const config: CapacitorConfig = {
+            appId: 'app.itasuper.cliente',
+            appName: 'ItaSuper',
+            webDir: 'dist',
+          };
+          export default config;
+          EOF
+
       - name: Build web app
         run: npm run build
 
       - name: Add Android platform
         run: npx cap add android || true
 
-      - name: Remove server URL for production
-        run: |
-          sed -i 's|url:.*|// removed for production|' capacitor.config.ts
-          sed -i 's|cleartext:.*|// removed for production|' capacitor.config.ts
-
       - name: Sync Capacitor
         run: npx cap sync android
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Generate keystore (if not provided as secret)
-        run: |
-          if [ -z "${{ secrets.KEYSTORE_BASE64 }}" ]; then
-            keytool -genkeypair \
-              -v \
-              -storetype PKCS12 \
-              -keystore android/app/itasuper-release.keystore \
-              -alias itasuper \
-              -keyalg RSA \
-              -keysize 2048 \
-              -validity 10000 \
-              -storepass itasuper123 \
-              -keypass itasuper123 \
-              -dname "CN=ItaSuper, OU=App, O=ItaSuper, L=Itatinga, ST=SP, C=BR"
-            echo "STORE_PASSWORD=itasuper123" >> $GITHUB_ENV
-            echo "KEY_PASSWORD=itasuper123" >> $GITHUB_ENV
-            echo "KEY_ALIAS=itasuper" >> $GITHUB_ENV
-          else
-            echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/itasuper-release.keystore
-            echo "STORE_PASSWORD=${{ secrets.KEYSTORE_PASSWORD }}" >> $GITHUB_ENV
-            echo "KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}" >> $GITHUB_ENV
-            echo "KEY_ALIAS=${{ secrets.KEY_ALIAS }}" >> $GITHUB_ENV
-          fi
-
-      - name: Configure signing in build.gradle
-        run: |
-          cd android/app
-          sed -i '/android {/a \
-              signingConfigs {\
-                  release {\
-                      storeFile file("itasuper-release.keystore")\
-                      storePassword System.getenv("STORE_PASSWORD") ?: "itasuper123"\
-                      keyAlias System.getenv("KEY_ALIAS") ?: "itasuper"\
-                      keyPassword System.getenv("KEY_PASSWORD") ?: "itasuper123"\
-                  }\
-              }' build.gradle
-          sed -i 's/signingConfig signingConfigs.debug/signingConfig signingConfigs.release/' build.gradle
+      - uses: android-actions/setup-android@v3
 
       - name: Make gradlew executable
         run: chmod +x android/gradlew
 
-      - name: Build signed release APK
-        run: cd android && ./gradlew assembleRelease
+      - name: Build APK
+        run: cd android && ./gradlew assembleDebug
 
-      - name: Upload signed APK
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: itasuper-release-signed
-          path: android/app/build/outputs/apk/release/app-release.apk
-          retention-days: 90
+          name: itasuper-cliente-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
+
+  build-parceiro:
+    if: ${{ github.event.inputs.app_type == 'parceiro' || github.event.inputs.app_type == 'both' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Configure Capacitor for Parceiro
+        run: |
+          cat > capacitor.config.ts << 'EOF'
+          import type { CapacitorConfig } from '@capacitor/cli';
+          const config: CapacitorConfig = {
+            appId: 'app.itasuper.parceiro',
+            appName: 'ItaSuper Parceiro',
+            webDir: 'dist',
+            plugins: {
+              SplashScreen: {
+                launchAutoHide: false,
+              },
+            },
+          };
+          export default config;
+          EOF
+
+      - name: Inject partner redirect
+        run: |
+          # Add a redirect script that sends partner app users to /portal-parceiro
+          sed -i 's|<head>|<head><script>if(!window.__CAP_PARTNER_REDIRECTED && window.location.pathname==="/"){window.__CAP_PARTNER_REDIRECTED=true;window.location.replace("/portal-parceiro");}</script>|' index.html
+
+      - name: Build web app
+        run: npm run build
+
+      - name: Add Android platform
+        run: npx cap add android || true
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+
+      - name: Build APK
+        run: cd android && ./gradlew assembleDebug
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: itasuper-parceiro-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
