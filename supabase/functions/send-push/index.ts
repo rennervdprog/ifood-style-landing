@@ -302,7 +302,7 @@ Deno.serve(async (req) => {
     const oneSignalUserIds = [...new Set((osPlayers || []).map((player: any) => player.user_id).filter(Boolean))];
     const oneSignalUserSet = new Set(oneSignalUserIds);
 
-    // ── Firebase Web Push ──
+    // ── Firebase Web Push (send to ALL users with FCM tokens, including Capacitor native) ──
     let fcmSent = 0;
     let fcmFailed = 0;
     const staleTokens: string[] = [];
@@ -310,9 +310,8 @@ Deno.serve(async (req) => {
     const serviceAccountJson = Deno.env.get("FCM_SERVICE_ACCOUNT_JSON");
     const onesignalAppId = Deno.env.get("ONESIGNAL_APP_ID");
     const onesignalApiKey = Deno.env.get("ONESIGNAL_REST_API_KEY");
-    const fcmTargetUserIds = onesignalAppId && onesignalApiKey
-      ? requestedUserIds.filter((id) => !oneSignalUserSet.has(id))
-      : requestedUserIds;
+    // Send FCM to ALL target users (don't skip users with OneSignal — they may also have Capacitor FCM tokens)
+    const fcmTargetUserIds = requestedUserIds;
 
     const { data: fcmTokens } = fcmTargetUserIds.length > 0
       ? await supabaseAdmin
