@@ -1,6 +1,5 @@
 import { formatBRL } from "@/lib/utils";
 import { useState } from "react";
-import { formatBRL } from "@/lib/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Wallet, QrCode, Copy, Loader2, X, Banknote } from "lucide-react";

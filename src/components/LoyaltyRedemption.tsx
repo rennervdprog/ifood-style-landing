@@ -1,6 +1,5 @@
 import { formatBRL } from "@/lib/utils";
 import { useState } from "react";
-import { formatBRL } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";

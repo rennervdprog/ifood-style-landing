@@ -1,6 +1,5 @@
 import { formatBRL } from "@/lib/utils";
 import { useState } from "react";
-import { formatBRL } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tag, X, Loader2, CheckCircle2 } from "lucide-react";
