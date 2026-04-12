@@ -1,9 +1,14 @@
 // Browser + Push Notification helpers for ItaSuper
 import { sendPushNotification } from "@/lib/firebase";
+import { isCapacitorNative, registerCapacitorPush } from "@/lib/capacitorNative";
 
 // ── Local browser notifications ──
 
 export const requestNotificationPermission = async (): Promise<boolean> => {
+  if (isCapacitorNative()) {
+    const token = await registerCapacitorPush();
+    return Boolean(token);
+  }
   if (!("Notification" in window)) return false;
   if (Notification.permission === "granted") return true;
   if (Notification.permission === "denied") return false;
@@ -12,6 +17,7 @@ export const requestNotificationPermission = async (): Promise<boolean> => {
 };
 
 export const sendNotification = (title: string, options?: NotificationOptions) => {
+  if (isCapacitorNative()) return;
   if (!("Notification" in window) || Notification.permission !== "granted") return;
   if ("vibrate" in navigator) navigator.vibrate([200, 100, 200]);
   try {

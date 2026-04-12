@@ -12,6 +12,7 @@ import { notifyOrderPreparing, notifyOrderOnTheWay, notifyOrderDelivered } from 
 import OrderRating from "@/components/OrderRating";
 import OrderChat from "@/components/OrderChat";
 import DeliveryTimeEstimate from "@/components/DeliveryTimeEstimate";
+import { Capacitor } from "@capacitor/core";
 
 import {
   recordPixAttempt,
@@ -151,7 +152,9 @@ const PedidosPage = () => {
       setSearchParams({}, { replace: true });
       
       // Prompt notifications if not granted
-      if ("Notification" in window && Notification.permission === "default") {
+      if (Capacitor.isNativePlatform()) {
+        setTimeout(() => setShowNewOrderNotifPrompt(true), 1500);
+      } else if ("Notification" in window && Notification.permission === "default") {
         setTimeout(() => setShowNewOrderNotifPrompt(true), 1500);
       }
     }
@@ -652,13 +655,22 @@ const PedidosPage = () => {
           <div className="flex gap-2 mt-3">
             <button
               onClick={async () => {
-                const result = await Notification.requestPermission();
-                if (result === "granted") {
-                  const { requestPushPermissionAndRegister } = await import("@/lib/firebase");
-                  await requestPushPermissionAndRegister();
+                try {
+                  if (Capacitor.isNativePlatform()) {
+                    const { registerCapacitorPush } = await import("@/lib/capacitorNative");
+                    await registerCapacitorPush();
+                  } else {
+                    const { requestPushPermissionAndRegister } = await import("@/lib/firebase");
+                    const token = await requestPushPermissionAndRegister();
+                    if (!token) return;
+                  }
                   toast.success("Notificações ativadas! 🎉");
+                } catch (error) {
+                  console.error("New order notification enable error:", error);
+                  toast.error("Erro ao ativar notificações.");
+                } finally {
+                  setShowNewOrderNotifPrompt(false);
                 }
-                setShowNewOrderNotifPrompt(false);
               }}
               className="flex-1 bg-primary text-primary-foreground font-bold py-2.5 rounded-xl text-sm active:scale-95 transition-transform"
             >

@@ -44,16 +44,17 @@ const NotificationPrompt = () => {
   }, [user]);
 
   const handleEnable = async () => {
-    if (isCapacitorNative()) {
-      await registerCapacitorPush();
-    } else {
-      const result = await Notification.requestPermission();
-      if (result === "granted") {
+    try {
+      if (isCapacitorNative()) {
+        await registerCapacitorPush();
+      } else {
         const { requestPushPermissionAndRegister } = await import("@/lib/firebase");
         await requestPushPermissionAndRegister();
       }
+      setShow(false);
+    } catch (error) {
+      console.error("Notification prompt enable error:", error);
     }
-    setShow(false);
   };
 
   const handleDismiss = () => {
