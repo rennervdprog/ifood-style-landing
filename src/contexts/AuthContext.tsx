@@ -3,7 +3,8 @@ import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { requestPushPermissionAndRegister, onForegroundMessage } from "@/lib/firebase";
 import { registerGoNativePlayer } from "@/lib/gonative";
-import { registerCapacitorPush, isCapacitorNative } from "@/lib/capacitorNative";
+import { registerCapacitorPush, isCapacitorNative, reclaimStoredToken, resetPushRegistrationState } from "@/lib/capacitorNative";
+import { clearStoredPushState } from "@/lib/pushSession";
 import { toast } from "sonner";
 
 interface AuthContextType {
@@ -29,13 +30,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(session);
       setLoading(false);
 
+      // Account switch on same device — cleanup old user's push tokens
       if (previousUserId && previousUserId !== nextUserId) {
         void cleanupPushTokens(previousUserId);
+        // Reset Capacitor push state so the new user gets fresh registration
+        if (isCapacitorNative()) {
+          resetPushRegistrationState();
+        }
         return;
       }
 
       if (event === "SIGNED_OUT" && previousUserId) {
         void cleanupPushTokens(previousUserId);
+        clearStoredPushState();
+        if (isCapacitorNative()) {
+          resetPushRegistrationState();
+        }
       }
     });
 
@@ -54,6 +64,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const syncCurrentPushDevice = () => {
       if (isCapacitorNative()) {
+        // Always re-claim stored token first (instant), then re-register
+        reclaimStoredToken().catch(console.error);
         registerCapacitorPush({ requestPermission: false }).catch(console.error);
         return;
       }
@@ -70,7 +82,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Small delay to not block initial render
       const timer = setTimeout(() => {
         if (isCapacitorNative()) {
-          syncCurrentPushDevice();
+          // On Capacitor, request permission on first login and always re-claim
+          registerCapacitorPush({ requestPermission: true }).catch(console.error);
           return;
         }
 
@@ -125,7 +138,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
-    await cleanupPushTokens(currentUserIdRef.current || session?.user?.id || undefined);
+    const userId = currentUserIdRef.current || session?.user?.id || undefined;
+    await cleanupPushTokens(userId);
+    clearStoredPushState();
+    if (isCapacitorNative()) {
+      resetPushRegistrationState();
+    }
     await supabase.auth.signOut();
   };
 
