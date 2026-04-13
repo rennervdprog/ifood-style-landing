@@ -41,6 +41,7 @@ const AdminStoreManager = () => {
     plan_type: "commission_only", monthly_fee: 0, commission_rate: 5,
   });
   const [savingPlan, setSavingPlan] = useState(false);
+  const [togglingApp, setTogglingApp] = useState<string | null>(null);
 
   const { data: stores, isLoading } = useQuery({
     queryKey: ["admin-stores-list"],
