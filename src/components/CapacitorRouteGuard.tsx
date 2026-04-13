@@ -62,13 +62,18 @@ const CapacitorRouteGuard = () => {
         navigate("/portal-parceiro", { replace: true });
       }
     } else {
-      // CLIENTE app: block partner-only routes, send to home
+      // CLIENTE app: block partner-only routes, send to /cliente
       const isPartnerRoute = PARTNER_ROUTES.some(
         (route) => path === route || path.startsWith(route + "/")
       );
 
       if (isPartnerRoute) {
-        navigate("/", { replace: true });
+        navigate("/cliente", { replace: true });
+      }
+
+      // Also redirect landing page "/" to /cliente in client app
+      if (path === "/") {
+        navigate("/cliente", { replace: true });
       }
     }
   }, [location.pathname, navigate]);
