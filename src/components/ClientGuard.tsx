@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { getStoreAppSlug } from "@/components/StoreAppGuard";
 
 interface ClientGuardProps {
   children: React.ReactNode;
@@ -25,6 +26,13 @@ const ClientGuard = ({ children }: ClientGuardProps) => {
     }
 
     const checkRole = async () => {
+      // If inside a white-label store app, don't redirect to partner dashboards
+      const isStoreApp = !!getStoreAppSlug();
+      if (isStoreApp) {
+        setChecked(true);
+        return;
+      }
+
       // Admin can access any page, skip redirect
       const { data: adminRole } = await supabase
         .from("user_roles")
