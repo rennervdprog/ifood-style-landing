@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Mail, Lock, Eye, EyeOff, Store, Shield } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, Store, Shield, Bike } from "lucide-react";
 
 const PartnerLogin = () => {
   const { user, loading: authLoading } = useAuth();
