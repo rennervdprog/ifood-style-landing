@@ -113,7 +113,7 @@ const AuthPage = () => {
             return;
           }
         }
-        navigate(from, { replace: true });
+        navigate("/cliente", { replace: true });
       } else if (mode === "signup") {
         const { data: signUpData, error } = await supabase.auth.signUp({
           email: email.trim(),
@@ -134,7 +134,7 @@ const AuthPage = () => {
           }).eq("user_id", signUpData.user.id);
         }
         toast.success("Conta criada com sucesso!");
-        navigate(from, { replace: true });
+        navigate("/cliente", { replace: true });
       } else if (mode === "reset") {
         const { error } = await supabase.auth.updateUser({ password });
         if (error) throw error;
