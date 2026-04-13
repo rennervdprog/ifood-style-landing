@@ -29,6 +29,17 @@ on:
         required: false
         type: string
 
+      icon_url:
+        description: 'URL do ícone da loja (PNG 512x512, só white_label)'
+        required: false
+        type: string
+
+      splash_color:
+        description: 'Cor de fundo da splash (hex ex: #FF4B2B, só white_label)'
+        required: false
+        default: '#FF4B2B'
+        type: string
+
 jobs:
   build-cliente:
     if: ${{ github.event.inputs.app_type == 'cliente' || github.event.inputs.app_type == 'both' }}
@@ -233,6 +244,7 @@ jobs:
           STORE_SLUG: ${{ github.event.inputs.store_slug }}
           STORE_APP_NAME: ${{ github.event.inputs.store_app_name }}
           STORE_APP_ID: ${{ github.event.inputs.store_app_id }}
+          SPLASH_COLOR: ${{ github.event.inputs.splash_color || '#FF4B2B' }}
         run: |
           cat > capacitor.config.ts << EOF
           import type { CapacitorConfig } from '@capacitor/cli';
@@ -243,10 +255,96 @@ jobs:
             server: {
               url: 'https://itasuper.com.br/${STORE_SLUG}?storeApp=true',
               cleartext: false
-            }
+            },
+            plugins: {
+              SplashScreen: {
+                launchAutoHide: false,
+                backgroundColor: '${SPLASH_COLOR}',
+                showSpinner: true,
+                spinnerColor: '#FFFFFF',
+                launchFadeOutDuration: 500,
+              },
+            },
           };
           export default config;
           EOF
+
+      - name: Download and inject custom icon
+        if: ${{ github.event.inputs.icon_url != '' }}
+        env:
+          ICON_URL: ${{ github.event.inputs.icon_url }}
+        run: |
+          echo "📥 Downloading store icon from $ICON_URL"
+          curl -L -o /tmp/store-icon.png "$ICON_URL"
+
+          npm install -g @nicepkg/icon-gen 2>/dev/null || true
+
+          node -e "
+          const sharp = require('sharp') || null;
+          const fs = require('fs');
+          const path = require('path');
+
+          const sizes = [
+            { name: 'mipmap-mdpi', size: 48 },
+            { name: 'mipmap-hdpi', size: 72 },
+            { name: 'mipmap-xhdpi', size: 96 },
+            { name: 'mipmap-xxhdpi', size: 144 },
+            { name: 'mipmap-xxxhdpi', size: 192 },
+          ];
+
+          async function resize() {
+            for (const s of sizes) {
+              const dir = 'android/app/src/main/res/' + s.name;
+              if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+              
+              const { execSync } = require('child_process');
+              // Use ImageMagick convert (available on ubuntu-latest)
+              execSync('convert /tmp/store-icon.png -resize ' + s.size + 'x' + s.size + ' ' + dir + '/ic_launcher.png');
+              execSync('convert /tmp/store-icon.png -resize ' + s.size + 'x' + s.size + ' ' + dir + '/ic_launcher_round.png');
+              execSync('convert /tmp/store-icon.png -resize ' + s.size + 'x' + s.size + ' ' + dir + '/ic_launcher_foreground.png');
+              console.log('✅ ' + s.name + ': ' + s.size + 'x' + s.size);
+            }
+          }
+          resize();
+          " 2>/dev/null || {
+            echo "⚠️ Node resize failed, using ImageMagick directly"
+            for res in "mipmap-mdpi:48" "mipmap-hdpi:72" "mipmap-xhdpi:96" "mipmap-xxhdpi:144" "mipmap-xxxhdpi:192"; do
+              DIR="android/app/src/main/res/${res%%:*}"
+              SIZE="${res##*:}"
+              mkdir -p "$DIR"
+              convert /tmp/store-icon.png -resize "${SIZE}x${SIZE}" "$DIR/ic_launcher.png"
+              cp "$DIR/ic_launcher.png" "$DIR/ic_launcher_round.png"
+              cp "$DIR/ic_launcher.png" "$DIR/ic_launcher_foreground.png"
+              echo "✅ ${res%%:*}: ${SIZE}x${SIZE}"
+            done
+          }
+
+          echo "🎨 Custom icon injected for all densities"
+
+      - name: Configure splash screen color
+        env:
+          SPLASH_COLOR: ${{ github.event.inputs.splash_color || '#FF4B2B' }}
+        run: |
+          STYLES_FILE="android/app/src/main/res/values/styles.xml"
+          COLORS_FILE="android/app/src/main/res/values/colors.xml"
+
+          if [ -f "$COLORS_FILE" ]; then
+            if grep -q "splash_color" "$COLORS_FILE"; then
+              sed -i "s|<color name=\"splash_color\">.*</color>|<color name=\"splash_color\">${SPLASH_COLOR}</color>|" "$COLORS_FILE"
+            else
+              sed -i "s|</resources>|    <color name=\"splash_color\">${SPLASH_COLOR}</color>\n</resources>|" "$COLORS_FILE"
+            fi
+          else
+            mkdir -p "$(dirname "$COLORS_FILE")"
+            cat > "$COLORS_FILE" << COLEOF
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <color name="splash_color">${SPLASH_COLOR}</color>
+          </resources>
+          COLEOF
+          fi
+
+          echo "🎨 Splash color set to ${SPLASH_COLOR}"
 
       - name: Build web app
         run: npm run build
@@ -256,6 +354,42 @@ jobs:
 
       - name: Sync Capacitor
         run: npx cap sync android
+
+      - name: Inject icons after sync
+        if: ${{ github.event.inputs.icon_url != '' }}
+        env:
+          ICON_URL: ${{ github.event.inputs.icon_url }}
+        run: |
+          echo "📥 Re-injecting icons after cap sync..."
+          for res in "mipmap-mdpi:48" "mipmap-hdpi:72" "mipmap-xhdpi:96" "mipmap-xxhdpi:144" "mipmap-xxxhdpi:192"; do
+            DIR="android/app/src/main/res/${res%%:*}"
+            SIZE="${res##*:}"
+            mkdir -p "$DIR"
+            convert /tmp/store-icon.png -resize "${SIZE}x${SIZE}" "$DIR/ic_launcher.png"
+            cp "$DIR/ic_launcher.png" "$DIR/ic_launcher_round.png"
+            cp "$DIR/ic_launcher.png" "$DIR/ic_launcher_foreground.png"
+          done
+          echo "✅ Icons re-injected after sync"
+
+      - name: Apply splash color after sync
+        env:
+          SPLASH_COLOR: ${{ github.event.inputs.splash_color || '#FF4B2B' }}
+        run: |
+          COLORS_FILE="android/app/src/main/res/values/colors.xml"
+          if [ -f "$COLORS_FILE" ]; then
+            if grep -q "splash_color" "$COLORS_FILE"; then
+              sed -i "s|<color name=\"splash_color\">.*</color>|<color name=\"splash_color\">${SPLASH_COLOR}</color>|" "$COLORS_FILE"
+            else
+              sed -i "s|</resources>|    <color name=\"splash_color\">${SPLASH_COLOR}</color>\n</resources>|" "$COLORS_FILE"
+            fi
+          else
+            cat > "$COLORS_FILE" << COLEOF
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <color name="splash_color">${SPLASH_COLOR}</color>
+          </resources>
+          COLEOF
+          fi
 
       - name: Inject google-services.json (White Label)
         run: echo '${{ secrets.GOOGLE_SERVICES_JSON_CLIENTE }}' > android/app/google-services.json
