@@ -12,15 +12,19 @@ const NotificationPrompt = () => {
 
     // For Capacitor native, check push permission status
     if (isCapacitorNative()) {
-      import("@capacitor/push-notifications").then(({ PushNotifications }) => {
-        PushNotifications.checkPermissions().then((result) => {
+      (async () => {
+        try {
+          const { PushNotifications } = await import("@capacitor/push-notifications");
+          const result = await PushNotifications.checkPermissions();
           if (result.receive === "prompt" || result.receive === "prompt-with-rationale") {
             const dismissed = localStorage.getItem("notif-prompt-dismissed");
             if (dismissed && Date.now() - Number(dismissed) < 3 * 24 * 60 * 60 * 1000) return;
             setTimeout(() => setShow(true), 3000);
           }
-        });
-      });
+        } catch (err) {
+          console.warn("[NotifPrompt] PushNotifications check failed:", err);
+        }
+      })();
       return;
     }
 
