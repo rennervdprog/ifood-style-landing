@@ -271,13 +271,18 @@ const StoreDirectory = () => {
         if (cancelled) return;
         if (profile?.role === "lojista") { navigate("/admin", { replace: true }); return; }
         if (profile?.role === "motoboy") {
-          // If unapproved, redirect to /entregador (approval screen)
           if (!profile?.is_approved) {
-            // Check if store driver (auto-approved)
             const { data: sd } = await supabase.from("store_drivers").select("id").eq("driver_user_id", user.id).limit(1).maybeSingle();
             if (!sd) { navigate("/entregador", { replace: true }); return; }
           }
           setPartnerRole(profile.role);
+          if (!cancelled) setRoleChecked(true);
+          return;
+        }
+        // Cliente role or no special role → redirect to client home
+        if (!profile?.role || profile.role === "cliente") {
+          navigate("/cliente", { replace: true });
+          return;
         }
       } catch (e) { console.error("StoreDirectory role check error:", e); }
       if (!cancelled) setRoleChecked(true);
