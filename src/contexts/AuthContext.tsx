@@ -5,6 +5,7 @@ import { requestPushPermissionAndRegister, onForegroundMessage } from "@/lib/fir
 import { registerGoNativePlayer } from "@/lib/gonative";
 import { registerCapacitorPush, isCapacitorNative, reclaimStoredToken, resetPushRegistrationState } from "@/lib/capacitorNative";
 import { clearStoredPushState } from "@/lib/pushSession";
+import { getDeviceId } from "@/lib/deviceSession";
 import { toast } from "sonner";
 
 interface AuthContextType {
@@ -16,16 +17,63 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const DEVICE_CHECK_INTERVAL = 30_000; // 30s
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const currentUserIdRef = useRef<string | null>(null);
+  const deviceCheckRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Register this device as the active one for the user
+  const registerDevice = async () => {
+    const deviceId = getDeviceId();
+    try {
+      await supabase.rpc("register_device_login", { _device_id: deviceId });
+      console.log("[Auth] 📱 Device registered:", deviceId.slice(0, 8));
+    } catch (e) {
+      console.warn("[Auth] Failed to register device:", e);
+    }
+  };
+
+  // Check if this device is still the active one; if not, sign out
+  const checkDeviceStillActive = async () => {
+    const deviceId = getDeviceId();
+    try {
+      const { data: isActive, error } = await supabase.rpc("check_device_active", {
+        _device_id: deviceId,
+      });
+      if (error) {
+        console.warn("[Auth] Device check error:", error);
+        return;
+      }
+      if (isActive === false) {
+        console.log("[Auth] 🚫 Device no longer active, signing out...");
+        toast.error("Sua conta foi acessada em outro dispositivo. Você foi desconectado.");
+        stopDeviceCheck();
+        await supabase.auth.signOut();
+      }
+    } catch (e) {
+      console.warn("[Auth] Device check failed:", e);
+    }
+  };
+
+  const startDeviceCheck = () => {
+    stopDeviceCheck();
+    deviceCheckRef.current = setInterval(checkDeviceStillActive, DEVICE_CHECK_INTERVAL);
+  };
+
+  const stopDeviceCheck = () => {
+    if (deviceCheckRef.current) {
+      clearInterval(deviceCheckRef.current);
+      deviceCheckRef.current = null;
+    }
+  };
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       const previousUserId = currentUserIdRef.current;
       const nextUserId = session?.user?.id ?? null;
-      const previousEmail = previousUserId ? "(prev)" : "";
       const nextEmail = session?.user?.email ?? "null";
 
       console.log(`[Auth] 🔍 onAuthStateChange: event=${event}, prev=${previousUserId?.slice(0,8) || "null"}, next=${nextUserId?.slice(0,8) || "null"} (${nextEmail})`);
@@ -34,9 +82,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(session);
       setLoading(false);
 
-      // Account switch on same device — the new session must immediately re-claim this device.
-      // Do not try to delete the previous user's rows client-side here because the session
-      // has already changed and RLS may block deleting another user's registrations.
       if (previousUserId && previousUserId !== nextUserId) {
         if (isCapacitorNative()) {
           resetPushRegistrationState();
@@ -44,9 +89,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (event === "SIGNED_OUT" && previousUserId) {
-        // On Capacitor, do NOT clear the stored FCM token — the token belongs
-        // to the physical device and must survive logout so the NEXT user can
-        // re-claim it via the edge function (which deletes the old binding).
+        stopDeviceCheck();
         if (!isCapacitorNative()) {
           clearStoredPushState();
         }
@@ -54,16 +97,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           resetPushRegistrationState();
         }
       }
+
+      // Register device on sign in
+      if (event === "SIGNED_IN" && nextUserId) {
+        registerDevice().then(() => startDeviceCheck());
+      }
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       currentUserIdRef.current = session?.user?.id ?? null;
       setSession(session);
       setLoading(false);
+
+      // If already logged in, register device and start checking
+      if (session?.user) {
+        registerDevice().then(() => startDeviceCheck());
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      stopDeviceCheck();
+    };
   }, []);
+
+  // Also check on visibility change (tab focus)
+  useEffect(() => {
+    if (!session?.user) return;
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible" && session?.user) {
+        checkDeviceStillActive();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, [session?.user?.id]);
 
   // Register push notifications when user logs in
   useEffect(() => {
@@ -71,12 +141,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const syncCurrentPushDevice = () => {
       if (isCapacitorNative()) {
-        // Re-bind this physical device to the current user immediately after login/account switch.
         reclaimStoredToken().catch(console.error);
         registerCapacitorPush({ requestPermission: false }).catch(console.error);
         return;
       }
-
       registerGoNativePlayer().catch(console.error);
     };
 
@@ -86,10 +154,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
-    // Immediate sync removes any old account binding as fast as possible.
     syncCurrentPushDevice();
 
-    // Small delay only for permission prompts so we don't block initial render.
     const timer = setTimeout(() => {
       if (isCapacitorNative()) {
         registerCapacitorPush({ requestPermission: true }).catch(console.error);
@@ -99,7 +165,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       requestPushPermissionAndRegister().catch(console.error);
       syncCurrentPushDevice();
 
-      // Firebase web foreground messages — only on web
       onForegroundMessage((payload) => {
         const title = payload.notification?.title || "ItaSuper";
         const body = payload.notification?.body || "";
@@ -147,8 +212,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     const userId = currentUserIdRef.current || session?.user?.id || undefined;
-    // On Capacitor, skip client-side token deletion — the edge function
-    // handles reassignment when the next user logs in.
+    stopDeviceCheck();
     if (!isCapacitorNative()) {
       await cleanupPushTokens(userId);
       clearStoredPushState();
