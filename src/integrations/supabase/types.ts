@@ -970,6 +970,8 @@ export type Database = {
           app_fee: number
           change_for: number | null
           client_id: string
+          client_lat: number | null
+          client_lng: number | null
           collection_code: string | null
           collection_validated: boolean
           confirmed_at: string | null
@@ -996,6 +998,8 @@ export type Database = {
           app_fee?: number
           change_for?: number | null
           client_id: string
+          client_lat?: number | null
+          client_lng?: number | null
           collection_code?: string | null
           collection_validated?: boolean
           confirmed_at?: string | null
@@ -1022,6 +1026,8 @@ export type Database = {
           app_fee?: number
           change_for?: number | null
           client_id?: string
+          client_lat?: number | null
+          client_lng?: number | null
           collection_code?: string | null
           collection_validated?: boolean
           confirmed_at?: string | null
@@ -1702,6 +1708,8 @@ export type Database = {
           id: string
           image_url: string | null
           is_open: boolean
+          latitude: number | null
+          longitude: number | null
           name: string
           own_delivery_fee: number
           owner_id: string | null
@@ -1731,6 +1739,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_open?: boolean
+          latitude?: number | null
+          longitude?: number | null
           name: string
           own_delivery_fee?: number
           owner_id?: string | null
@@ -1760,6 +1770,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_open?: boolean
+          latitude?: number | null
+          longitude?: number | null
           name?: string
           own_delivery_fee?: number
           owner_id?: string | null

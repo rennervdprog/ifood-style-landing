@@ -922,6 +922,8 @@ const PedidosPage = () => {
                             driverId={order.driver_id}
                             storeId={order.store_id}
                             clientAddress={order.address_details || ""}
+                            clientLat={(order as any).client_lat}
+                            clientLng={(order as any).client_lng}
                           />
                         )}
 

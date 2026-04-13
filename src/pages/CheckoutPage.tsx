@@ -244,6 +244,30 @@ const CheckoutPage = () => {
 
     setLoading(true);
     try {
+      // Geocode client address for precise tracking
+      let clientLat: number | null = null;
+      let clientLng: number | null = null;
+      try {
+        const geoCep = useSavedAddr ? savedAddressData?.cep : profileCep;
+        const geoStreet = useSavedAddr
+          ? [savedAddressData.street, savedAddressData.number].filter(Boolean).join(" ")
+          : [profileStreet, profileNumber].filter(Boolean).join(" ");
+        const geoCity = finalNeighborhood || "";
+        
+        const geoParams = new URLSearchParams({ format: "json", limit: "1", country: "Brazil" });
+        if (geoStreet) geoParams.set("street", geoStreet);
+        if (geoCity) geoParams.set("city", geoCity);
+        if (geoCep) geoParams.set("postalcode", geoCep.replace(/\D/g, ""));
+        geoParams.set("state", "São Paulo");
+        
+        const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?${geoParams.toString()}`);
+        const geoResults = await geoRes.json();
+        if (geoResults?.[0]) {
+          clientLat = parseFloat(geoResults[0].lat);
+          clientLng = parseFloat(geoResults[0].lon);
+        }
+      } catch { /* geocoding is best-effort */ }
+
       const storeGroups = items.reduce((acc, item) => {
         if (!acc[item.store_id]) acc[item.store_id] = [];
         acc[item.store_id].push(item);
@@ -273,6 +297,7 @@ const CheckoutPage = () => {
             change_for: changeValue,
             status: orderStatus,
             scheduled_for: scheduledFor ? new Date(scheduledFor).toISOString() : null,
+            ...(clientLat && clientLng ? { client_lat: clientLat, client_lng: clientLng } : {}),
           } as any)
           .select("id")
           .single();
