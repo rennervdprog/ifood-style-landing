@@ -915,6 +915,16 @@ const PedidosPage = () => {
                           </div>
                         )}
 
+                        {/* Live Tracking Map */}
+                        {["saiu_entrega", "em_transito"].includes(order.status) && (
+                          <LiveTrackingMap
+                            orderId={order.id}
+                            driverId={order.driver_id}
+                            storeId={order.store_id}
+                            clientAddress={order.address_details || ""}
+                          />
+                        )}
+
                         {/* Confirm Delivery */}
                         {["saiu_entrega", "em_transito"].includes(order.status) && !(order as any).delivery_confirmed_by_client && (
                           <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3">
