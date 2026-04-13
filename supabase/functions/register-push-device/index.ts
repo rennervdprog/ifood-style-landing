@@ -55,12 +55,15 @@ Deno.serve(async (req) => {
     const { fcm_token, player_id, device_info } = parsed.data;
 
     if (fcm_token) {
+      // 1. Remove this exact token from ANY other user
       await supabaseAdmin
         .from("fcm_tokens")
         .delete()
         .eq("token", fcm_token)
         .neq("user_id", user.id);
 
+      // 2. If device_info provided, remove ALL tokens from other users on same device
+      //    This handles the case where FCM assigns a NEW token after account switch
       if (device_info) {
         await supabaseAdmin
           .from("fcm_tokens")
@@ -68,6 +71,7 @@ Deno.serve(async (req) => {
           .eq("device_info", device_info)
           .neq("user_id", user.id);
 
+        // 3. Also clean stale tokens for THIS user on THIS device (old token values)
         await supabaseAdmin
           .from("fcm_tokens")
           .delete()
