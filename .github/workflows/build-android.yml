@@ -1,4 +1,4 @@
-name: Build Android APKs (Cliente + Parceiro)
+name: Build Android APKs
 
 on:
   workflow_dispatch:
@@ -12,6 +12,22 @@ on:
           - cliente
           - parceiro
           - both
+          - white_label
+
+      store_slug:
+        description: 'Slug da loja (só para white_label)'
+        required: false
+        type: string
+
+      store_app_name:
+        description: 'Nome do app da loja (só para white_label)'
+        required: false
+        type: string
+
+      store_app_id:
+        description: 'App ID ex: app.itasuper.nomedaoja (só para white_label)'
+        required: false
+        type: string
 
 jobs:
   build-cliente:
@@ -168,5 +184,94 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: itasuper-parceiro-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
+
+  build-white-label:
+    if: ${{ github.event.inputs.app_type == 'white_label' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate inputs
+        run: |
+          if [ -z "${{ github.event.inputs.store_slug }}" ]; then
+            echo "::error::store_slug é obrigatório para white_label"
+            exit 1
+          fi
+          if [ -z "${{ github.event.inputs.store_app_name }}" ]; then
+            echo "::error::store_app_name é obrigatório para white_label"
+            exit 1
+          fi
+          if [ -z "${{ github.event.inputs.store_app_id }}" ]; then
+            echo "::error::store_app_id é obrigatório para white_label"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v5
+
+      - uses: android-actions/setup-android@v3
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Verify Java 21
+        run: |
+          echo "JAVA_HOME=$JAVA_HOME"
+          java -version
+          javac -version
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Configure Capacitor for Store
+        env:
+          STORE_SLUG: ${{ github.event.inputs.store_slug }}
+          STORE_APP_NAME: ${{ github.event.inputs.store_app_name }}
+          STORE_APP_ID: ${{ github.event.inputs.store_app_id }}
+        run: |
+          cat > capacitor.config.ts << EOF
+          import type { CapacitorConfig } from '@capacitor/cli';
+          const config: CapacitorConfig = {
+            appId: '${STORE_APP_ID}',
+            appName: '${STORE_APP_NAME}',
+            webDir: 'dist',
+            server: {
+              url: 'https://itasuper.com.br/${STORE_SLUG}?storeApp=true',
+              cleartext: false
+            }
+          };
+          export default config;
+          EOF
+
+      - name: Build web app
+        run: npm run build
+
+      - name: Add Android platform
+        run: npx cap add android || true
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Inject google-services.json (White Label)
+        run: echo '${{ secrets.GOOGLE_SERVICES_JSON_CLIENTE }}' > android/app/google-services.json
+
+      - name: Pin Gradle to Java 21
+        run: |
+          echo "org.gradle.java.home=$JAVA_HOME" >> android/gradle.properties
+
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+
+      - name: Build Debug APK
+        run: cd android && ./gradlew --version && ./gradlew assembleDebug
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.event.inputs.store_slug }}-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
