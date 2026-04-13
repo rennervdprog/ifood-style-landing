@@ -40,6 +40,14 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Decode Android signing keystore (Cliente)
+        run: |
+          if [ -z "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
+            echo "Missing ANDROID_KEYSTORE_BASE64 secret" >&2
+            exit 1
+          fi
+          echo '${{ secrets.ANDROID_KEYSTORE_BASE64 }}' | base64 --decode > $RUNNER_TEMP/release.keystore
+
       - name: Configure Capacitor for Cliente
         run: |
           cat > capacitor.config.ts << 'EOF'
@@ -73,6 +81,47 @@ jobs:
         run: |
           echo "org.gradle.java.home=$JAVA_HOME" >> android/gradle.properties
 
+      - name: Configure Android signing (Cliente)
+        run: |
+          cat >> android/gradle.properties <<EOF
+          ITASUPER_UPLOAD_STORE_FILE=$RUNNER_TEMP/release.keystore
+          ITASUPER_UPLOAD_STORE_PASSWORD=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ITASUPER_UPLOAD_KEY_ALIAS=${{ secrets.ANDROID_KEY_ALIAS }}
+          ITASUPER_UPLOAD_KEY_PASSWORD=${{ secrets.ANDROID_KEY_PASSWORD }}
+          EOF
+
+      - name: Harden Android defaults for modern Samsung devices (Cliente)
+        run: |
+          cat > android/variables.gradle <<'EOF'
+          ext {
+              minSdkVersion = 26
+              compileSdkVersion = 36
+              targetSdkVersion = 36
+              androidxActivityVersion = '1.11.0'
+              androidxAppCompatVersion = '1.7.1'
+              androidxCoordinatorLayoutVersion = '1.3.0'
+              androidxCoreVersion = '1.17.0'
+              androidxFragmentVersion = '1.8.9'
+              androidxWebkitVersion = '1.14.0'
+              junitVersion = '4.13.2'
+              androidxJunitVersion = '1.3.0'
+              androidxEspressoCoreVersion = '3.7.0'
+              cordovaAndroidVersion = '14.0.1'
+          }
+          EOF
+
+      - name: Add release signing config (Cliente)
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('android/app/build.gradle')
+          text = path.read_text()
+          if 'signingConfigs {' not in text:
+              text = text.replace('android {\n', 'android {\n    signingConfigs {\n        release {\n            storeFile file(ITASUPER_UPLOAD_STORE_FILE)\n            storePassword ITASUPER_UPLOAD_STORE_PASSWORD\n            keyAlias ITASUPER_UPLOAD_KEY_ALIAS\n            keyPassword ITASUPER_UPLOAD_KEY_PASSWORD\n        }\n    }\n')
+          text = text.replace('        release {\n            minifyEnabled false\n            proguardFiles getDefaultProguardFile(\'proguard-android-optimize.txt\'), \'proguard-rules.pro\'\n        }', '        release {\n            minifyEnabled false\n            shrinkResources false\n            signingConfig signingConfigs.release\n            proguardFiles getDefaultProguardFile(\'proguard-android-optimize.txt\'), \'proguard-rules.pro\'\n        }')
+          path.write_text(text)
+          PY
+
       - name: Make gradlew executable
         run: chmod +x android/gradlew
 
@@ -82,7 +131,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: itasuper-cliente-release
-          path: android/app/build/outputs/apk/release/app-release-unsigned.apk
+          path: android/app/build/outputs/apk/release/app-release.apk
           retention-days: 30
 
   build-parceiro:
@@ -110,6 +159,14 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+
+      - name: Decode Android signing keystore (Parceiro)
+        run: |
+          if [ -z "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
+            echo "Missing ANDROID_KEYSTORE_BASE64 secret" >&2
+            exit 1
+          fi
+          echo '${{ secrets.ANDROID_KEYSTORE_BASE64 }}' | base64 --decode > $RUNNER_TEMP/release.keystore
 
       - name: Configure Capacitor for Parceiro
         run: |
@@ -159,6 +216,47 @@ jobs:
         run: |
           echo "org.gradle.java.home=$JAVA_HOME" >> android/gradle.properties
 
+      - name: Configure Android signing (Parceiro)
+        run: |
+          cat >> android/gradle.properties <<EOF
+          ITASUPER_UPLOAD_STORE_FILE=$RUNNER_TEMP/release.keystore
+          ITASUPER_UPLOAD_STORE_PASSWORD=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ITASUPER_UPLOAD_KEY_ALIAS=${{ secrets.ANDROID_KEY_ALIAS }}
+          ITASUPER_UPLOAD_KEY_PASSWORD=${{ secrets.ANDROID_KEY_PASSWORD }}
+          EOF
+
+      - name: Harden Android defaults for modern Samsung devices (Parceiro)
+        run: |
+          cat > android/variables.gradle <<'EOF'
+          ext {
+              minSdkVersion = 26
+              compileSdkVersion = 36
+              targetSdkVersion = 36
+              androidxActivityVersion = '1.11.0'
+              androidxAppCompatVersion = '1.7.1'
+              androidxCoordinatorLayoutVersion = '1.3.0'
+              androidxCoreVersion = '1.17.0'
+              androidxFragmentVersion = '1.8.9'
+              androidxWebkitVersion = '1.14.0'
+              junitVersion = '4.13.2'
+              androidxJunitVersion = '1.3.0'
+              androidxEspressoCoreVersion = '3.7.0'
+              cordovaAndroidVersion = '14.0.1'
+          }
+          EOF
+
+      - name: Add release signing config (Parceiro)
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('android/app/build.gradle')
+          text = path.read_text()
+          if 'signingConfigs {' not in text:
+              text = text.replace('android {\n', 'android {\n    signingConfigs {\n        release {\n            storeFile file(ITASUPER_UPLOAD_STORE_FILE)\n            storePassword ITASUPER_UPLOAD_STORE_PASSWORD\n            keyAlias ITASUPER_UPLOAD_KEY_ALIAS\n            keyPassword ITASUPER_UPLOAD_KEY_PASSWORD\n        }\n    }\n')
+          text = text.replace('        release {\n            minifyEnabled false\n            proguardFiles getDefaultProguardFile(\'proguard-android-optimize.txt\'), \'proguard-rules.pro\'\n        }', '        release {\n            minifyEnabled false\n            shrinkResources false\n            signingConfig signingConfigs.release\n            proguardFiles getDefaultProguardFile(\'proguard-android-optimize.txt\'), \'proguard-rules.pro\'\n        }')
+          path.write_text(text)
+          PY
+
       - name: Make gradlew executable
         run: chmod +x android/gradlew
 
@@ -168,5 +266,5 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: itasuper-parceiro-release
-          path: android/app/build/outputs/apk/release/app-release-unsigned.apk
+          path: android/app/build/outputs/apk/release/app-release.apk
           retention-days: 30
