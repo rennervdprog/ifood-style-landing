@@ -1653,6 +1653,30 @@ export type Database = {
         }
         Relationships: []
       }
+      user_active_devices: {
+        Row: {
+          created_at: string
+          device_id: string
+          id: string
+          last_seen_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_id: string
+          id?: string
+          last_seen_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_id?: string
+          id?: string
+          last_seen_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -1894,6 +1918,7 @@ export type Database = {
       }
       auto_finalize_stale_orders: { Args: never; Returns: Json }
       calculate_prorata_credit: { Args: { _store_id: string }; Returns: number }
+      check_device_active: { Args: { _device_id: string }; Returns: boolean }
       claim_push_device: {
         Args: {
           _device_info?: string
@@ -2008,6 +2033,7 @@ export type Database = {
             }
             Returns: undefined
           }
+      register_device_login: { Args: { _device_id: string }; Returns: Json }
       reject_plan_change: {
         Args: { _admin_notes?: string; _request_id: string }
         Returns: undefined
