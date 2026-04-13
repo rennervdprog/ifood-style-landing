@@ -4,10 +4,10 @@ import { isCapacitorNative } from "@/lib/capacitorNative";
 
 /**
  * On Capacitor Android PARCEIRO app, restrict navigation to partner-only routes.
- * The parceiro app injects a redirect script to /portal-parceiro in index.html,
- * so we detect it by checking if the initial entry was /portal-parceiro.
+ * On Capacitor Android CLIENTE app, block access to partner routes.
  * 
- * For the CLIENTE app (and white-label store apps), this guard does nothing.
+ * Detection: The parceiro app injects __CAP_PARTNER_REDIRECTED flag in index.html.
+ * If that flag is absent and we're in Capacitor, it's the cliente app.
  */
 const PARTNER_ROUTES = [
   "/portal-parceiro",
@@ -19,18 +19,26 @@ const PARTNER_ROUTES = [
   "/parceiro",
   "/painel",
   "/super-admin",
+  "/planos",
+];
+
+const CLIENT_ALLOWED_ROUTES = [
+  "/",
+  "/cliente",
+  "/loja",
+  "/carrinho",
+  "/checkout",
+  "/pedidos",
+  "/perfil",
+  "/auth",
   "/termos-de-uso",
   "/politica-de-privacidade",
-  "/planos",
-  "/auth",
 ];
 
 let isPartnerApp: boolean | null = null;
 
 function detectPartnerApp(): boolean {
   if (isPartnerApp !== null) return isPartnerApp;
-
-  // Partner app has __CAP_PARTNER_REDIRECTED flag injected in index.html
   isPartnerApp = !!(window as any).__CAP_PARTNER_REDIRECTED;
   return isPartnerApp;
 }
@@ -41,15 +49,27 @@ const CapacitorRouteGuard = () => {
 
   useEffect(() => {
     if (!isCapacitorNative()) return;
-    if (!detectPartnerApp()) return; // Cliente/white-label app — no restrictions
 
     const path = location.pathname;
-    const isAllowed = PARTNER_ROUTES.some(
-      (route) => path === route || path.startsWith(route + "/")
-    );
 
-    if (!isAllowed) {
-      navigate("/portal-parceiro", { replace: true });
+    if (detectPartnerApp()) {
+      // PARCEIRO app: only allow partner routes
+      const isAllowed = PARTNER_ROUTES.some(
+        (route) => path === route || path.startsWith(route + "/")
+      ) || path === "/auth" || path === "/termos-de-uso" || path === "/politica-de-privacidade";
+
+      if (!isAllowed) {
+        navigate("/portal-parceiro", { replace: true });
+      }
+    } else {
+      // CLIENTE app: block partner-only routes, send to home
+      const isPartnerRoute = PARTNER_ROUTES.some(
+        (route) => path === route || path.startsWith(route + "/")
+      );
+
+      if (isPartnerRoute) {
+        navigate("/", { replace: true });
+      }
     }
   }, [location.pathname, navigate]);
 
