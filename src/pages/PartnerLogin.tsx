@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Mail, Lock, Eye, EyeOff, Store, Shield } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, Store, Shield, Bike } from "lucide-react";
 
 const PartnerLogin = () => {
   const { user, loading: authLoading } = useAuth();
@@ -217,6 +217,19 @@ const PartnerLogin = () => {
                   <div className="text-left">
                     <span className="text-base font-bold text-foreground block">Cadastrar Loja</span>
                     <span className="text-xs text-muted-foreground">Quero vender meus produtos</span>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => navigate("/cadastro-entregador")}
+                  className="w-full p-5 rounded-xl border-2 border-border bg-card hover:border-primary/50 transition-all flex items-center gap-4 active:scale-[0.98]"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center flex-shrink-0">
+                    <Bike className="h-6 w-6 text-green-500" />
+                  </div>
+                  <div className="text-left">
+                    <span className="text-base font-bold text-foreground block">Cadastrar Motoboy</span>
+                    <span className="text-xs text-muted-foreground">Quero fazer entregas</span>
                   </div>
                 </button>
               </div>
