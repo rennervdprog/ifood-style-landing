@@ -700,6 +700,15 @@ const CheckoutPage = () => {
                 </div>
               )}
 
+              {walletDiscount > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-emerald-600 flex items-center gap-1">
+                    <Wallet className="h-3 w-3" /> Crédito
+                  </span>
+                  <span className="font-bold text-emerald-600">-{formatBRL(walletDiscount)}</span>
+                </div>
+              )}
+
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground flex items-center gap-1">
                   <Truck className="h-3 w-3" /> Entrega
