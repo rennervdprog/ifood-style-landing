@@ -286,6 +286,11 @@ const AdminStoreManager = () => {
                         <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded-full ${planColors[planType]}`}>
                           {planLabels[planType]}
                         </span>
+                        {(store as any).app_subscribed && (
+                          <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-primary/20 text-primary flex items-center gap-0.5">
+                            <Smartphone className="h-2.5 w-2.5" /> App
+                          </span>
+                        )}
                       </div>
                       {plan && (
                         <p className="text-[10px] text-muted-foreground mt-0.5">
