@@ -43,8 +43,22 @@ const CheckoutPage = () => {
   const [feeBreakdown, setFeeBreakdown] = useState<string | null>(null);
   const [loyaltyDiscount, setLoyaltyDiscount] = useState(0);
   const [loyaltyPointsUsed, setLoyaltyPointsUsed] = useState(0);
+  const [useWallet, setUseWallet] = useState(false);
 
-  const { data: userProfile, refetch: refetchProfile } = useQuery({
+  const { data: walletData } = useQuery({
+    queryKey: ["user-wallet-checkout", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("user_wallet")
+        .select("balance")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+    staleTime: 30_000,
+  });
+  const walletBalance = Number(walletData?.balance || 0);
     queryKey: ["my-profile-checkout", user?.id],
     queryFn: async () => {
       const { data } = await supabase
