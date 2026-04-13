@@ -337,6 +337,15 @@ Deno.serve(async (req) => {
           .in("user_id", fcmTargetUserIds)
       : { data: [] as Array<{ token: string; user_id: string }> };
 
+    console.log(`[send-push] 🔍 DEBUG: All FCM tokens from DB for target users:`, JSON.stringify(
+      (fcmTokens || []).map((t: any) => ({
+        user_id: t.user_id,
+        token_prefix: t.token?.slice(0, 12) + "...",
+        device_info: t.device_info,
+        updated_at: t.updated_at,
+      }))
+    ));
+
     const latestFcmTokens = Object.values(
       (fcmTokens || []).reduce((acc, row: any) => {
         const key = row.device_info || `token:${row.token}`;
@@ -347,6 +356,16 @@ Deno.serve(async (req) => {
         return acc;
       }, {} as Record<string, any>)
     ) as Array<{ token: string; user_id: string; device_info?: string | null; updated_at?: string | null }>;
+
+    console.log(`[send-push] 🔍 DEBUG: After dedup (latest per device):`, JSON.stringify(
+      latestFcmTokens.map((t: any) => ({
+        user_id: t.user_id,
+        token_prefix: t.token?.slice(0, 12) + "...",
+        device_info: t.device_info,
+        updated_at: t.updated_at,
+      }))
+    ));
+    console.log(`[send-push] 🔍 DEBUG: Target user_ids=${JSON.stringify(requestedUserIds)}, FCM tokens selected=${latestFcmTokens.length}`);
 
     if (latestFcmTokens.length > 0 && serviceAccountJson) {
       const serviceAccount = JSON.parse(serviceAccountJson);

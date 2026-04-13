@@ -95,13 +95,25 @@ async function ensurePushListeners() {
 export async function reclaimStoredToken(): Promise<void> {
   const stored = getStoredPushState();
   const token = lastKnownToken || stored.fcmToken;
-  if (!token) return;
+  if (!token) {
+    console.log("[CapPush] 🔍 reclaimStoredToken: no token available (lastKnown=null, stored=null)");
+    return;
+  }
 
-  console.log("[CapPush] Re-claiming stored FCM token for current user");
+  // Get current auth user for debug
+  const { supabase } = await import("@/integrations/supabase/client");
+  const { data: { session } } = await supabase.auth.getSession();
+  const currentUserId = session?.user?.id || "NO_SESSION";
+  const currentEmail = session?.user?.email || "NO_EMAIL";
+  const deviceInfo = getCurrentPushDeviceInfo("capacitor");
+
+  console.log(`[CapPush] 🔍 reclaimStoredToken: user=${currentEmail} (${currentUserId}), token=${token.slice(0, 12)}..., device=${deviceInfo}`);
+  
   try {
     await saveFcmToken(token);
+    console.log(`[CapPush] ✅ Token claimed successfully for ${currentEmail}`);
   } catch (e) {
-    console.warn("[CapPush] Failed to re-claim stored token:", e);
+    console.warn("[CapPush] ❌ Failed to re-claim stored token:", e);
   }
 }
 

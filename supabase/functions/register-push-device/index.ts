@@ -54,6 +54,8 @@ Deno.serve(async (req) => {
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
     const { fcm_token, player_id, device_info } = parsed.data;
 
+    console.log(`[register-push-device] 🔍 user=${user.email} (${user.id}), token_prefix=${fcm_token?.slice(0,12) || "none"}..., device=${device_info || "none"}`);
+
     if (fcm_token) {
       // 1. Remove this exact token from ANY other user
       await supabaseAdmin
