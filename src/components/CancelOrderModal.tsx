@@ -52,6 +52,8 @@ const CancelOrderModal = ({ order, onClose, onCancelled }: Props) => {
     };
   }, [order.confirmed_at, order.created_at, order.status, feeInfo.percent]);
 
+  if (!feeInfo) return null;
+
   const subtotal = Number(order.subtotal) || 0;
   const feeAmount = Math.round(subtotal * (effectiveFeePercent / 100) * 100) / 100;
   const refundAmount = Math.max(0, subtotal - feeAmount);
