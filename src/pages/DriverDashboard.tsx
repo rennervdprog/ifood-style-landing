@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { startDriverTracking, stopDriverTracking, updateTrackingOrderId, clearDriverLocation } from "@/lib/driverGeolocation";
 import {
   Bike, MapPin, Store, DollarSign, Package, CheckCircle2,
   ArrowLeft, Navigation, KeyRound, Smartphone, ShieldCheck,
@@ -486,6 +487,31 @@ const DriverDashboard = () => {
       }
     });
   }, [availableOrders]);
+
+  // ─── GPS Tracking ───
+  useEffect(() => {
+    if (!user) return;
+    const hasActiveDelivery = !!myDelivery;
+    
+    if (hasActiveDelivery && isOnline) {
+      const orderId = (myDelivery as any)?.id || null;
+      startDriverTracking(orderId);
+    } else {
+      stopDriverTracking();
+      if (!isOnline) clearDriverLocation();
+    }
+
+    return () => {
+      // Don't stop on unmount if delivery is active
+    };
+  }, [user, !!myDelivery, isOnline, (myDelivery as any)?.id]);
+
+  // Keep tracking order ID in sync
+  useEffect(() => {
+    if (myDelivery) {
+      updateTrackingOrderId((myDelivery as any)?.id || null);
+    }
+  }, [(myDelivery as any)?.id]);
 
   // ─── Handlers (unchanged) ───
   const toggleOnline = async () => {
