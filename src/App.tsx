@@ -13,6 +13,7 @@ import NotificationPrompt from "@/components/NotificationPrompt";
 import DebugOverlay from "@/components/DebugOverlay";
 import { initCapacitorNative, isCapacitorNative } from "@/lib/capacitorNative";
 import CapacitorRouteGuard from "@/components/CapacitorRouteGuard";
+import StoreAppGuard from "@/components/StoreAppGuard";
 
 // Lazy-loaded pages — each becomes its own chunk
 const Index = lazy(() => import("./pages/Index"));
