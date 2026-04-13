@@ -621,6 +621,36 @@ const CheckoutPage = () => {
           </div>
         </section>
 
+        {/* SECTION: Wallet Credit */}
+        {walletBalance > 0 && (
+          <section className="bg-card rounded-2xl border border-border overflow-hidden">
+            <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50">
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                <Wallet className="h-4 w-4 text-emerald-500" />
+              </div>
+              <h2 className="text-sm font-bold text-foreground flex-1">Crédito na plataforma</h2>
+              <span className="text-xs font-bold text-emerald-600">{formatBRL(walletBalance)}</span>
+            </div>
+            <div className="p-4">
+              <button
+                onClick={() => setUseWallet(!useWallet)}
+                className={`w-full flex items-center justify-between p-3.5 rounded-xl border-2 transition-all ${
+                  useWallet ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30" : "border-transparent bg-muted/50"
+                }`}
+              >
+                <span className="text-sm font-medium text-foreground">
+                  {useWallet ? `Usando ${formatBRL(walletDiscount)} de crédito` : "Usar crédito neste pedido"}
+                </span>
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                  useWallet ? "border-emerald-500 bg-emerald-500" : "border-muted-foreground"
+                }`}>
+                  {useWallet && <CheckCircle2 className="h-3 w-3 text-white" />}
+                </div>
+              </button>
+            </div>
+          </section>
+        )}
+
         {/* SECTION: Summary */}
         <section className="bg-card rounded-2xl border border-border overflow-hidden">
           <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50">
