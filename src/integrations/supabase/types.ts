@@ -523,6 +523,7 @@ export type Database = {
           created_at: string
           device_info: string | null
           id: string
+          store_id: string | null
           token: string
           updated_at: string
           user_id: string
@@ -531,6 +532,7 @@ export type Database = {
           created_at?: string
           device_info?: string | null
           id?: string
+          store_id?: string | null
           token: string
           updated_at?: string
           user_id: string
@@ -539,11 +541,27 @@ export type Database = {
           created_at?: string
           device_info?: string | null
           id?: string
+          store_id?: string | null
           token?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fcm_tokens_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fcm_tokens_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores_public"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       financial_transactions: {
         Row: {
@@ -1480,6 +1498,7 @@ export type Database = {
       }
       store_plans: {
         Row: {
+          app_addon_fee: number
           commission_rate: number
           created_at: string
           id: string
@@ -1494,6 +1513,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          app_addon_fee?: number
           commission_rate?: number
           created_at?: string
           id?: string
@@ -1508,6 +1528,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          app_addon_fee?: number
           commission_rate?: number
           created_at?: string
           id?: string
@@ -1593,6 +1614,8 @@ export type Database = {
           address_reference: string | null
           address_state: string | null
           address_street: string | null
+          app_enabled: boolean
+          app_subscribed: boolean
           asaas_account_id: string | null
           asaas_wallet_id: string | null
           category: Database["public"]["Enums"]["store_category"]
@@ -1620,6 +1643,8 @@ export type Database = {
           address_reference?: string | null
           address_state?: string | null
           address_street?: string | null
+          app_enabled?: boolean
+          app_subscribed?: boolean
           asaas_account_id?: string | null
           asaas_wallet_id?: string | null
           category: Database["public"]["Enums"]["store_category"]
@@ -1647,6 +1672,8 @@ export type Database = {
           address_reference?: string | null
           address_state?: string | null
           address_street?: string | null
+          app_enabled?: boolean
+          app_subscribed?: boolean
           asaas_account_id?: string | null
           asaas_wallet_id?: string | null
           category?: Database["public"]["Enums"]["store_category"]

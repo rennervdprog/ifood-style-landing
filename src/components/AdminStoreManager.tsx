@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Store, Trash2, CheckCircle2, Clock, XCircle, Filter, Wallet, Loader2, Percent, DollarSign, ChevronDown, ChevronUp } from "lucide-react";
+import { Store, Trash2, CheckCircle2, Clock, XCircle, Filter, Wallet, Loader2, Percent, DollarSign, ChevronDown, ChevronUp, Smartphone } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -41,6 +41,7 @@ const AdminStoreManager = () => {
     plan_type: "commission_only", monthly_fee: 0, commission_rate: 5,
   });
   const [savingPlan, setSavingPlan] = useState(false);
+  const [togglingApp, setTogglingApp] = useState<string | null>(null);
 
   const { data: stores, isLoading } = useQuery({
     queryKey: ["admin-stores-list"],
@@ -131,6 +132,23 @@ const AdminStoreManager = () => {
       toast.error(err.message || "Erro ao salvar plano.");
     } finally {
       setSavingPlan(false);
+    }
+  };
+
+  const handleToggleApp = async (storeId: string, currentEnabled: boolean) => {
+    setTogglingApp(storeId);
+    try {
+      const { error } = await supabase
+        .from("stores")
+        .update({ app_enabled: !currentEnabled, ...(!currentEnabled ? {} : { app_subscribed: false }) })
+        .eq("id", storeId);
+      if (error) throw error;
+      toast.success(!currentEnabled ? "App liberado para esta loja!" : "App desativado para esta loja.");
+      queryClient.invalidateQueries({ queryKey: ["admin-stores-list"] });
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao alterar app.");
+    } finally {
+      setTogglingApp(null);
     }
   };
 
@@ -268,6 +286,11 @@ const AdminStoreManager = () => {
                         <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded-full ${planColors[planType]}`}>
                           {planLabels[planType]}
                         </span>
+                        {(store as any).app_subscribed && (
+                          <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-primary/20 text-primary flex items-center gap-0.5">
+                            <Smartphone className="h-2.5 w-2.5" /> App
+                          </span>
+                        )}
                       </div>
                       {plan && (
                         <p className="text-[10px] text-muted-foreground mt-0.5">
@@ -280,6 +303,19 @@ const AdminStoreManager = () => {
                   </div>
                   <div className="flex items-center gap-1.5 ml-2 shrink-0">
                     {statusBadge(store.status)}
+                    {/* App toggle */}
+                    <button
+                      onClick={() => handleToggleApp(store.id, !!(store as any).app_enabled)}
+                      disabled={togglingApp === store.id}
+                      className={`p-2 rounded-lg active:scale-95 transition-all min-h-[44px] min-w-[44px] flex items-center justify-center ${
+                        (store as any).app_enabled
+                          ? "bg-primary/10 text-primary"
+                          : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                      }`}
+                      title={(store as any).app_enabled ? "App liberado — clique para desativar" : "Liberar App"}
+                    >
+                      {togglingApp === store.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Smartphone className="h-4 w-4" />}
+                    </button>
                     {/* Plan edit button */}
                     <button
                       onClick={() => editingPlan === store.id ? setEditingPlan(null) : handleEditPlan(store.id)}
