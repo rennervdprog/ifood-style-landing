@@ -92,6 +92,7 @@ const baseSidebarItems: { key: DashboardTab; label: string; icon: React.ElementT
   { key: "subscription", label: "Assinatura", icon: CreditCard },
   { key: "loyalty", label: "Fidelidade", icon: Star },
   { key: "drivers", label: "Motoboys", icon: Bike },
+  { key: "refunds", label: "Reembolsos", icon: AlertTriangle },
   { key: "settings", label: "Configurações", icon: Settings },
 ];
 
