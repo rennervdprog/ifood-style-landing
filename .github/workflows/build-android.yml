@@ -55,6 +55,7 @@ jobs:
           };
           export default config;
           EOF
+          sed -i 's/^          //' capacitor.config.ts
 
       - name: Build web app
         run: npm run build
@@ -130,6 +131,7 @@ jobs:
           };
           export default config;
           EOF
+          sed -i 's/^          //' capacitor.config.ts
 
       - name: Inject partner redirect
         run: |
