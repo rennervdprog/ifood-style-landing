@@ -59,6 +59,8 @@ const CheckoutPage = () => {
     staleTime: 30_000,
   });
   const walletBalance = Number(walletData?.balance || 0);
+
+  const { data: userProfile, refetch: refetchProfile } = useQuery({
     queryKey: ["my-profile-checkout", user?.id],
     queryFn: async () => {
       const { data } = await supabase
