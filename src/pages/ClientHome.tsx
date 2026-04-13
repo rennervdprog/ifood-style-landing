@@ -11,6 +11,7 @@ import {
 import { formatBRL } from "@/lib/utils";
 import { toast } from "sonner";
 import BottomNav from "@/components/BottomNav";
+import ProductTour, { clienteTourSteps } from "@/components/ProductTour";
 
 /* ─── Auth Section (shown when not logged in) ─── */
 type AuthMode = "login" | "signup" | "forgot" | "reset";
@@ -347,7 +348,7 @@ const ClientHomeContent = () => {
         </div>
         <h1 className="text-primary-foreground text-xl font-bold">Olá, {firstName}! 👋</h1>
         <p className="text-primary-foreground/70 text-sm mt-0.5">O que vai pedir hoje?</p>
-        <form onSubmit={(e) => e.preventDefault()} className="mt-4">
+        <form onSubmit={(e) => e.preventDefault()} className="mt-4" data-tour="search">
           <div className="relative">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
@@ -519,6 +520,7 @@ const ClientHomeContent = () => {
       </div>
 
       <BottomNav />
+      <ProductTour steps={clienteTourSteps} tourKey="cliente_home" />
     </div>
   );
 };

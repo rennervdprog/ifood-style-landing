@@ -5,7 +5,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Edit3, Loader2, Truck, CheckCircle2, ShoppingBag, Tag, ChevronRight, Clock, AlertTriangle, Star, Wallet } from "lucide-react";
+import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Edit3, Loader2, Truck, CheckCircle2, ShoppingBag, Tag, ChevronRight, Clock, AlertTriangle, Star, Wallet, Calendar } from "lucide-react";
 import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 import confetti from "canvas-confetti";
 import AddressModal from "@/components/AddressModal";
@@ -16,6 +16,7 @@ import { formatCep, fetchCep } from "@/lib/cepLookup";
 import { addMoney, multiplyMoney, sumMoney, formatBRL } from "@/lib/utils";
 import { useStorePlan } from "@/hooks/useStorePlan";
 import LoyaltyRedemption from "@/components/LoyaltyRedemption";
+import DeliveryTimeEstimate from "@/components/DeliveryTimeEstimate";
 
 const allPaymentMethods = [
   { id: "pix", label: "PIX Online", desc: "Pagamento instantâneo", icon: QrCode },
@@ -44,6 +45,8 @@ const CheckoutPage = () => {
   const [loyaltyDiscount, setLoyaltyDiscount] = useState(0);
   const [loyaltyPointsUsed, setLoyaltyPointsUsed] = useState(0);
   const [useWallet, setUseWallet] = useState(false);
+  const [scheduledFor, setScheduledFor] = useState<string>("");
+  const [showSchedule, setShowSchedule] = useState(false);
 
   const { data: walletData } = useQuery({
     queryKey: ["user-wallet-checkout", user?.id],
@@ -269,6 +272,7 @@ const CheckoutPage = () => {
             needs_change: paymentMethod === "dinheiro" && needsChange,
             change_for: changeValue,
             status: orderStatus,
+            scheduled_for: scheduledFor ? new Date(scheduledFor).toISOString() : null,
           } as any)
           .select("id")
           .single();
@@ -650,6 +654,61 @@ const CheckoutPage = () => {
             </div>
           </section>
         )}
+
+        {/* SECTION: Schedule Delivery */}
+        <section className="bg-card rounded-2xl border border-border overflow-hidden">
+          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50">
+            <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center">
+              <Calendar className="h-4 w-4 text-blue-500" />
+            </div>
+            <h2 className="text-sm font-bold text-foreground flex-1">Agendar entrega</h2>
+            {scheduledFor && <CheckCircle2 className="h-4 w-4 text-primary" />}
+          </div>
+          <div className="p-4 space-y-3">
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setShowSchedule(false); setScheduledFor(""); }}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all border-2 ${
+                  !showSchedule ? "border-primary bg-primary/5 text-primary" : "border-transparent bg-muted/50 text-foreground"
+                }`}
+              >
+                🚀 Agora
+              </button>
+              <button
+                onClick={() => setShowSchedule(true)}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all border-2 ${
+                  showSchedule ? "border-primary bg-primary/5 text-primary" : "border-transparent bg-muted/50 text-foreground"
+                }`}
+              >
+                📅 Agendar
+              </button>
+            </div>
+            {showSchedule && (
+              <div className="space-y-2">
+                <label className="text-xs text-muted-foreground font-medium">Data e horário da entrega</label>
+                <input
+                  type="datetime-local"
+                  value={scheduledFor}
+                  onChange={(e) => setScheduledFor(e.target.value)}
+                  min={new Date(Date.now() + 30 * 60000).toISOString().slice(0, 16)}
+                  className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                />
+                {scheduledFor && (
+                  <p className="text-xs text-primary font-medium flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    Agendado para {new Date(scheduledFor).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
+                  </p>
+                )}
+              </div>
+            )}
+            {!showSchedule && !isStoreClosed && (
+              <div className="flex items-center gap-2">
+                <DeliveryTimeEstimate status="pendente" createdAt={new Date().toISOString()} />
+                <span className="text-xs text-muted-foreground">Estimativa de entrega</span>
+              </div>
+            )}
+          </div>
+        </section>
 
         {/* SECTION: Summary */}
         <section className="bg-card rounded-2xl border border-border overflow-hidden">
