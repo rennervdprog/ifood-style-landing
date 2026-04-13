@@ -3,10 +3,13 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { isCapacitorNative } from "@/lib/capacitorNative";
 
 /**
- * On Capacitor Android, restrict navigation to partner-only routes.
- * Any other route redirects to /portal-parceiro.
+ * On Capacitor Android PARCEIRO app, restrict navigation to partner-only routes.
+ * The parceiro app injects a redirect script to /portal-parceiro in index.html,
+ * so we detect it by checking if the initial entry was /portal-parceiro.
+ * 
+ * For the CLIENTE app (and white-label store apps), this guard does nothing.
  */
-const ALLOWED_ROUTES = [
+const PARTNER_ROUTES = [
   "/portal-parceiro",
   "/admin",
   "/entregador",
@@ -19,7 +22,18 @@ const ALLOWED_ROUTES = [
   "/termos-de-uso",
   "/politica-de-privacidade",
   "/planos",
+  "/auth",
 ];
+
+let isPartnerApp: boolean | null = null;
+
+function detectPartnerApp(): boolean {
+  if (isPartnerApp !== null) return isPartnerApp;
+
+  // Partner app has __CAP_PARTNER_REDIRECTED flag injected in index.html
+  isPartnerApp = !!(window as any).__CAP_PARTNER_REDIRECTED;
+  return isPartnerApp;
+}
 
 const CapacitorRouteGuard = () => {
   const location = useLocation();
@@ -27,9 +41,10 @@ const CapacitorRouteGuard = () => {
 
   useEffect(() => {
     if (!isCapacitorNative()) return;
+    if (!detectPartnerApp()) return; // Cliente/white-label app — no restrictions
 
     const path = location.pathname;
-    const isAllowed = ALLOWED_ROUTES.some(
+    const isAllowed = PARTNER_ROUTES.some(
       (route) => path === route || path.startsWith(route + "/")
     );
 
