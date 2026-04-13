@@ -12,6 +12,7 @@ import { notifyOrderPreparing, notifyOrderOnTheWay, notifyOrderDelivered } from 
 import OrderRating from "@/components/OrderRating";
 import OrderChat from "@/components/OrderChat";
 import DeliveryTimeEstimate from "@/components/DeliveryTimeEstimate";
+import LiveTrackingMap from "@/components/LiveTrackingMap";
 import { Capacitor } from "@capacitor/core";
 
 import {
