@@ -269,55 +269,56 @@ jobs:
           export default config;
           EOF
 
-      - name: Download and inject custom icon
-        if: ${{ github.event.inputs.icon_url != '' }}
+      - name: Resolve store icon URL
+        id: resolve_icon
         env:
           ICON_URL: ${{ github.event.inputs.icon_url }}
+          STORE_SLUG: ${{ github.event.inputs.store_slug }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -n "$ICON_URL" ]; then
+            echo "📌 Using manual icon URL"
+            echo "icon_url=$ICON_URL" >> "$GITHUB_OUTPUT"
+          else
+            echo "🔍 Fetching store image_url from database (slug=$STORE_SLUG)..."
+            RESPONSE=$(curl -s \
+              "${SUPABASE_URL}/rest/v1/stores?slug=eq.${STORE_SLUG}&select=image_url&limit=1" \
+              -H "apikey: ${SUPABASE_ANON_KEY}" \
+              -H "Authorization: Bearer ${SUPABASE_ANON_KEY}")
+            
+            STORE_IMAGE=$(echo "$RESPONSE" | node -e "
+              const d = JSON.parse(require('fs').readFileSync(0,'utf8'));
+              const url = d?.[0]?.image_url || '';
+              process.stdout.write(url);
+            " 2>/dev/null || echo "")
+            
+            if [ -n "$STORE_IMAGE" ]; then
+              echo "✅ Found store image: ${STORE_IMAGE:0:60}..."
+              echo "icon_url=$STORE_IMAGE" >> "$GITHUB_OUTPUT"
+            else
+              echo "⚠️ No store image found, using default icon"
+              echo "icon_url=" >> "$GITHUB_OUTPUT"
+            fi
+          fi
+
+      - name: Download and inject custom icon
+        if: ${{ steps.resolve_icon.outputs.icon_url != '' }}
+        env:
+          ICON_URL: ${{ steps.resolve_icon.outputs.icon_url }}
         run: |
           echo "📥 Downloading store icon from $ICON_URL"
           curl -L -o /tmp/store-icon.png "$ICON_URL"
 
-          npm install -g @nicepkg/icon-gen 2>/dev/null || true
-
-          node -e "
-          const sharp = require('sharp') || null;
-          const fs = require('fs');
-          const path = require('path');
-
-          const sizes = [
-            { name: 'mipmap-mdpi', size: 48 },
-            { name: 'mipmap-hdpi', size: 72 },
-            { name: 'mipmap-xhdpi', size: 96 },
-            { name: 'mipmap-xxhdpi', size: 144 },
-            { name: 'mipmap-xxxhdpi', size: 192 },
-          ];
-
-          async function resize() {
-            for (const s of sizes) {
-              const dir = 'android/app/src/main/res/' + s.name;
-              if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-              
-              const { execSync } = require('child_process');
-              // Use ImageMagick convert (available on ubuntu-latest)
-              execSync('convert /tmp/store-icon.png -resize ' + s.size + 'x' + s.size + ' ' + dir + '/ic_launcher.png');
-              execSync('convert /tmp/store-icon.png -resize ' + s.size + 'x' + s.size + ' ' + dir + '/ic_launcher_round.png');
-              execSync('convert /tmp/store-icon.png -resize ' + s.size + 'x' + s.size + ' ' + dir + '/ic_launcher_foreground.png');
-              console.log('✅ ' + s.name + ': ' + s.size + 'x' + s.size);
-            }
-          }
-          resize();
-          " 2>/dev/null || {
-            echo "⚠️ Node resize failed, using ImageMagick directly"
-            for res in "mipmap-mdpi:48" "mipmap-hdpi:72" "mipmap-xhdpi:96" "mipmap-xxhdpi:144" "mipmap-xxxhdpi:192"; do
-              DIR="android/app/src/main/res/${res%%:*}"
-              SIZE="${res##*:}"
-              mkdir -p "$DIR"
-              convert /tmp/store-icon.png -resize "${SIZE}x${SIZE}" "$DIR/ic_launcher.png"
-              cp "$DIR/ic_launcher.png" "$DIR/ic_launcher_round.png"
-              cp "$DIR/ic_launcher.png" "$DIR/ic_launcher_foreground.png"
-              echo "✅ ${res%%:*}: ${SIZE}x${SIZE}"
-            done
-          }
+          for res in "mipmap-mdpi:48" "mipmap-hdpi:72" "mipmap-xhdpi:96" "mipmap-xxhdpi:144" "mipmap-xxxhdpi:192"; do
+            DIR="android/app/src/main/res/${res%%:*}"
+            SIZE="${res##*:}"
+            mkdir -p "$DIR"
+            convert /tmp/store-icon.png -resize "${SIZE}x${SIZE}" "$DIR/ic_launcher.png"
+            cp "$DIR/ic_launcher.png" "$DIR/ic_launcher_round.png"
+            cp "$DIR/ic_launcher.png" "$DIR/ic_launcher_foreground.png"
+            echo "✅ ${res%%:*}: ${SIZE}x${SIZE}"
+          done
 
           echo "🎨 Custom icon injected for all densities"
 
@@ -356,9 +357,7 @@ jobs:
         run: npx cap sync android
 
       - name: Inject icons after sync
-        if: ${{ github.event.inputs.icon_url != '' }}
-        env:
-          ICON_URL: ${{ github.event.inputs.icon_url }}
+        if: ${{ steps.resolve_icon.outputs.icon_url != '' }}
         run: |
           echo "📥 Re-injecting icons after cap sync..."
           for res in "mipmap-mdpi:48" "mipmap-hdpi:72" "mipmap-xhdpi:96" "mipmap-xxhdpi:144" "mipmap-xxxhdpi:192"; do
