@@ -26,6 +26,13 @@ const ClientGuard = ({ children }: ClientGuardProps) => {
     }
 
     const checkRole = async () => {
+      // If inside a white-label store app, don't redirect to partner dashboards
+      const isStoreApp = !!getStoreAppSlug();
+      if (isStoreApp) {
+        setChecked(true);
+        return;
+      }
+
       // Admin can access any page, skip redirect
       const { data: adminRole } = await supabase
         .from("user_roles")
