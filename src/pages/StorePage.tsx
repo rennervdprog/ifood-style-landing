@@ -343,7 +343,7 @@ const StorePage = () => {
           <div>
             {!getStoreAppSlug() && (
               <button
-                onClick={() => navigate("/")}
+                onClick={() => navigate("/cliente")}
                 className="w-10 h-10 bg-card/90 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg border border-border/50"
               >
                 <ArrowLeft className="h-5 w-5 text-foreground" />
