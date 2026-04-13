@@ -57,7 +57,7 @@ const BottomNav = () => {
         { icon: User, label: "Perfil", path: "/perfil" },
       ]
     : [
-        { icon: Home, label: "Home", path: "/" },
+        { icon: Home, label: "Home", path: "/cliente" },
         { icon: ClipboardList, label: "Pedidos", path: "/pedidos" },
         { icon: User, label: "Perfil", path: "/perfil" },
       ];
@@ -65,6 +65,7 @@ const BottomNav = () => {
   const isActive = (tabPath: string) => {
     const [path] = tabPath.split("?");
     if (path === "/" && location.pathname === "/") return true;
+    if (path === "/cliente" && location.pathname === "/cliente") return true;
     if (path === "/pedidos" && location.pathname === "/pedidos") return true;
     if (path === "/perfil" && location.pathname === "/perfil") return true;
     if (path.startsWith("/loja/") && location.pathname === path) return true;
