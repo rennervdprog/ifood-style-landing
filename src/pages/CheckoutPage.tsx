@@ -45,6 +45,8 @@ const CheckoutPage = () => {
   const [loyaltyDiscount, setLoyaltyDiscount] = useState(0);
   const [loyaltyPointsUsed, setLoyaltyPointsUsed] = useState(0);
   const [useWallet, setUseWallet] = useState(false);
+  const [scheduledFor, setScheduledFor] = useState<string>("");
+  const [showSchedule, setShowSchedule] = useState(false);
 
   const { data: walletData } = useQuery({
     queryKey: ["user-wallet-checkout", user?.id],
