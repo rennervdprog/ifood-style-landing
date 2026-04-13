@@ -135,6 +135,23 @@ const AdminStoreManager = () => {
     }
   };
 
+  const handleToggleApp = async (storeId: string, currentEnabled: boolean) => {
+    setTogglingApp(storeId);
+    try {
+      const { error } = await supabase
+        .from("stores")
+        .update({ app_enabled: !currentEnabled, ...(!currentEnabled ? {} : { app_subscribed: false }) })
+        .eq("id", storeId);
+      if (error) throw error;
+      toast.success(!currentEnabled ? "App liberado para esta loja!" : "App desativado para esta loja.");
+      queryClient.invalidateQueries({ queryKey: ["admin-stores-list"] });
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao alterar app.");
+    } finally {
+      setTogglingApp(null);
+    }
+  };
+
   const handlePlanTypeChange = (type: PlanType) => {
     switch (type) {
       case "commission_only":
