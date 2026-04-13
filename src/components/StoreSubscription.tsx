@@ -492,6 +492,9 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
         </CardContent>
       </Card>
 
+      {/* App Addon */}
+      <AppAddonCard storeId={storeId} />
+
       {/* Change Plan */}
       {!showChangePlan && !hasPendingRequest && (
         <Button
