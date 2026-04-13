@@ -313,6 +313,7 @@ const PedidosPage = () => {
 
   const [payingOrderId, setPayingOrderId] = useState<string | null>(null);
   const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
+  const [simulatingPayment, setSimulatingPayment] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState<any>(null);
   const [showRefundModal, setShowRefundModal] = useState<any>(null);
   const [pixModal, setPixModal] = useState<{
