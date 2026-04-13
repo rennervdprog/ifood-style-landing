@@ -714,6 +714,12 @@ const DriverDashboard = () => {
 
   return (
     <>
+    <DriverPersistentAlert
+      availableCount={availableOrders?.length || 0}
+      hasActiveDelivery={!!myDelivery || !!pendingReturn}
+      isOnline={isOnline}
+      onReview={() => setActiveTab("entregas")}
+    />
     <div className="min-h-screen bg-background text-foreground pb-[5.5rem] native-app">
       {/* ═══════════ Premium Header ═══════════ */}
       <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-xl border-b border-border pt-safe">
