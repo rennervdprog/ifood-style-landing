@@ -204,18 +204,33 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
+      - name: Inject ItaSuper Parceiro icon
+        run: |
+          echo "📥 Injecting ItaSuper icon from public/icon-512x512.png"
+          for res in "mipmap-mdpi:48" "mipmap-hdpi:72" "mipmap-xhdpi:96" "mipmap-xxhdpi:144" "mipmap-xxxhdpi:192"; do
+            DIR="android/app/src/main/res/${res%%:*}"
+            SIZE="${res##*:}"
+            mkdir -p "$DIR"
+            npx --yes sharp-cli -i public/icon-512x512.png -o "$DIR/ic_launcher.png" resize "$SIZE" "$SIZE" 2>/dev/null || \
+              convert public/icon-512x512.png -resize "${SIZE}x${SIZE}" "$DIR/ic_launcher.png" 2>/dev/null || \
+              cp public/icon-512x512.png "$DIR/ic_launcher.png"
+            cp "$DIR/ic_launcher.png" "$DIR/ic_launcher_round.png"
+            cp "$DIR/ic_launcher.png" "$DIR/ic_launcher_foreground.png"
+          done
+          echo "✅ ItaSuper Parceiro icon injected"
+
+      - name: Set splash color
+        run: |
+          COLORS_FILE="android/app/src/main/res/values/colors.xml"
+          if [ -f "$COLORS_FILE" ]; then
+            sed -i 's|</resources>|    <color name="splash_color">#FF4B2B</color>\n</resources>|' "$COLORS_FILE"
+          else
+            mkdir -p "$(dirname "$COLORS_FILE")"
+            echo '<?xml version="1.0" encoding="utf-8"?><resources><color name="splash_color">#FF4B2B</color></resources>' > "$COLORS_FILE"
+          fi
+
       - name: Inject google-services.json (Parceiro)
         run: echo '${{ secrets.GOOGLE_SERVICES_JSON_PARCEIRO }}' > android/app/google-services.json
-
-      - name: Pin Gradle to Java 21
-        run: |
-          echo "org.gradle.java.home=$JAVA_HOME" >> android/gradle.properties
-
-      - name: Make gradlew executable
-        run: chmod +x android/gradlew
-
-      - name: Build Debug APK
-        run: cd android && ./gradlew --version && ./gradlew assembleDebug
 
       - uses: actions/upload-artifact@v4
         with:
