@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Store, Trash2, CheckCircle2, Clock, XCircle, Filter, Wallet, Loader2, Percent, DollarSign, ChevronDown, ChevronUp } from "lucide-react";
+import { Store, Trash2, CheckCircle2, Clock, XCircle, Filter, Wallet, Loader2, Percent, DollarSign, ChevronDown, ChevronUp, Smartphone } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
