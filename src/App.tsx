@@ -71,6 +71,7 @@ const App = () => {
           <DebugOverlay />
           <BrowserRouter>
             <CapacitorRouteGuard />
+            <StoreAppGuard />
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 {/* Public landing / Client home */}
