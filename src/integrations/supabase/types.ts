@@ -1391,6 +1391,82 @@ export type Database = {
         }
         Relationships: []
       }
+      refund_requests: {
+        Row: {
+          admin_notes: string | null
+          approved_amount: number | null
+          created_at: string
+          description: string | null
+          evidence_urls: string[] | null
+          id: string
+          order_id: string
+          reason: Database["public"]["Enums"]["refund_reason"]
+          refund_type: Database["public"]["Enums"]["refund_type"]
+          requested_amount: number
+          requester_id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          status: Database["public"]["Enums"]["refund_status"]
+          store_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          approved_amount?: number | null
+          created_at?: string
+          description?: string | null
+          evidence_urls?: string[] | null
+          id?: string
+          order_id: string
+          reason?: Database["public"]["Enums"]["refund_reason"]
+          refund_type?: Database["public"]["Enums"]["refund_type"]
+          requested_amount?: number
+          requester_id: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: Database["public"]["Enums"]["refund_status"]
+          store_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          approved_amount?: number | null
+          created_at?: string
+          description?: string | null
+          evidence_urls?: string[] | null
+          id?: string
+          order_id?: string
+          reason?: Database["public"]["Enums"]["refund_reason"]
+          refund_type?: Database["public"]["Enums"]["refund_type"]
+          requested_amount?: number
+          requester_id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: Database["public"]["Enums"]["refund_status"]
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refund_requests_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refund_requests_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refund_requests_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saved_addresses: {
         Row: {
           cep: string | null
@@ -1766,6 +1842,60 @@ export type Database = {
         }
         Relationships: []
       }
+      user_wallet: {
+        Row: {
+          balance: number
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wallet_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          reference_id: string | null
+          reference_type: string
+          transaction_type: Database["public"]["Enums"]["wallet_transaction_type"]
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          reference_id?: string | null
+          reference_type?: string
+          transaction_type: Database["public"]["Enums"]["wallet_transaction_type"]
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          reference_id?: string | null
+          reference_type?: string
+          transaction_type?: Database["public"]["Enums"]["wallet_transaction_type"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       withdrawal_requests: {
         Row: {
           admin_notes: string | null
@@ -1983,6 +2113,10 @@ export type Database = {
         Returns: undefined
       }
       admin_delete_store: { Args: { _store_id: string }; Returns: undefined }
+      apply_cancellation_policy: {
+        Args: { _order_id: string; _reason?: string }
+        Returns: Json
+      }
       approve_plan_change: {
         Args: { _admin_notes?: string; _request_id: string }
         Returns: undefined
@@ -2060,6 +2194,14 @@ export type Database = {
         Args: { _store_id: string; _user_id: string }
         Returns: boolean
       }
+      process_refund: {
+        Args: {
+          _admin_notes?: string
+          _approved_amount: number
+          _refund_id: string
+        }
+        Returns: undefined
+      }
       register_as_lojista:
         | {
             Args: {
@@ -2124,6 +2266,10 @@ export type Database = {
         Args: { _coupon_id: string; _order_id: string; _user_id: string }
         Returns: boolean
       }
+      use_wallet_balance: {
+        Args: { _amount: number; _order_id: string; _user_id: string }
+        Returns: number
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
@@ -2149,6 +2295,15 @@ export type Database = {
         | "cancelado"
       partner_role: "cliente" | "lojista" | "motoboy"
       pix_type: "cpf" | "cnpj" | "email" | "phone" | "random"
+      refund_reason:
+        | "wrong_product"
+        | "missing_items"
+        | "damaged"
+        | "late_delivery"
+        | "poor_quality"
+        | "other"
+      refund_status: "pending" | "approved" | "processed" | "rejected"
+      refund_type: "full" | "partial" | "wallet_credit"
       store_category:
         | "lanches"
         | "pizzas"
@@ -2163,6 +2318,7 @@ export type Database = {
         | "restaurante"
       store_plan_type: "fixed" | "hybrid" | "commission_only"
       store_status: "analise" | "ativo" | "bloqueado"
+      wallet_transaction_type: "credit" | "debit"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2316,6 +2472,16 @@ export const Constants = {
       ],
       partner_role: ["cliente", "lojista", "motoboy"],
       pix_type: ["cpf", "cnpj", "email", "phone", "random"],
+      refund_reason: [
+        "wrong_product",
+        "missing_items",
+        "damaged",
+        "late_delivery",
+        "poor_quality",
+        "other",
+      ],
+      refund_status: ["pending", "approved", "processed", "rejected"],
+      refund_type: ["full", "partial", "wallet_credit"],
       store_category: [
         "lanches",
         "pizzas",
@@ -2331,6 +2497,7 @@ export const Constants = {
       ],
       store_plan_type: ["fixed", "hybrid", "commission_only"],
       store_status: ["analise", "ativo", "bloqueado"],
+      wallet_transaction_type: ["credit", "debit"],
     },
   },
 } as const
