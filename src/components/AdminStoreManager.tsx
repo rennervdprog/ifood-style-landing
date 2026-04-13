@@ -298,6 +298,19 @@ const AdminStoreManager = () => {
                   </div>
                   <div className="flex items-center gap-1.5 ml-2 shrink-0">
                     {statusBadge(store.status)}
+                    {/* App toggle */}
+                    <button
+                      onClick={() => handleToggleApp(store.id, !!(store as any).app_enabled)}
+                      disabled={togglingApp === store.id}
+                      className={`p-2 rounded-lg active:scale-95 transition-all min-h-[44px] min-w-[44px] flex items-center justify-center ${
+                        (store as any).app_enabled
+                          ? "bg-primary/10 text-primary"
+                          : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                      }`}
+                      title={(store as any).app_enabled ? "App liberado — clique para desativar" : "Liberar App"}
+                    >
+                      {togglingApp === store.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Smartphone className="h-4 w-4" />}
+                    </button>
                     {/* Plan edit button */}
                     <button
                       onClick={() => editingPlan === store.id ? setEditingPlan(null) : handleEditPlan(store.id)}
