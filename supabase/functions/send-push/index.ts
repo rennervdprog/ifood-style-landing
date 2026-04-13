@@ -313,7 +313,7 @@ Deno.serve(async (req) => {
 
     const { data: osPlayers } = await supabaseAdmin
       .from("onesignal_players")
-      .select("user_id, player_id")
+      .select("user_id, player_id, device_info")
       .in("user_id", requestedUserIds);
 
     const oneSignalUserIds = [...new Set((osPlayers || []).map((player: any) => player.user_id).filter(Boolean))];
@@ -333,16 +333,27 @@ Deno.serve(async (req) => {
     const { data: fcmTokens } = fcmTargetUserIds.length > 0
       ? await supabaseAdmin
           .from("fcm_tokens")
-          .select("token, user_id")
+          .select("token, user_id, device_info, updated_at")
           .in("user_id", fcmTargetUserIds)
       : { data: [] as Array<{ token: string; user_id: string }> };
 
-    if (fcmTokens && fcmTokens.length > 0 && serviceAccountJson) {
+    const latestFcmTokens = Object.values(
+      (fcmTokens || []).reduce((acc, row: any) => {
+        const key = row.device_info || `token:${row.token}`;
+        const current = acc[key];
+        if (!current || new Date(row.updated_at || 0).getTime() >= new Date(current.updated_at || 0).getTime()) {
+          acc[key] = row;
+        }
+        return acc;
+      }, {} as Record<string, any>)
+    ) as Array<{ token: string; user_id: string; device_info?: string | null; updated_at?: string | null }>;
+
+    if (latestFcmTokens.length > 0 && serviceAccountJson) {
       const serviceAccount = JSON.parse(serviceAccountJson);
       const accessToken = await getAccessToken(serviceAccount);
       const projectId = serviceAccount.project_id;
 
-      for (const { token: fcmToken } of fcmTokens) {
+      for (const { token: fcmToken } of latestFcmTokens) {
         try {
           const res = await fetch(
             `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
@@ -409,7 +420,14 @@ Deno.serve(async (req) => {
 
     if (onesignalAppId && onesignalApiKey && oneSignalUserIds.length > 0) {
       if (osPlayers && osPlayers.length > 0) {
-        const playerIds = [...new Set(osPlayers.map((p: any) => p.player_id).filter(Boolean))];
+        const latestPlayers = Object.values(
+          osPlayers.reduce((acc: Record<string, any>, row: any) => {
+            const key = row.device_info || `player:${row.player_id}`;
+            if (!acc[key]) acc[key] = row;
+            return acc;
+          }, {})
+        );
+        const playerIds = [...new Set(latestPlayers.map((p: any) => p.player_id).filter(Boolean))];
         console.log(`[OneSignal] Sending only via player_ids for ${playerIds.length} target(s)`);
         const pidResult = await sendOneSignalByPlayerIds(
           playerIds, title, msgBody || "", data, onesignalAppId, onesignalApiKey

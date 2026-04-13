@@ -256,33 +256,43 @@ const PedidosPage = () => {
           filter: `client_id=eq.${user.id}`,
         },
         (payload) => {
-           const updated = payload.new as any;
-           if (payload.eventType === "INSERT") {
-             // New order: refetch to get full joins (stores, order_items)
-             queryClient.invalidateQueries({ queryKey: ["orders", user.id] });
-           } else if (payload.eventType === "UPDATE") {
-             queryClient.setQueryData(["orders", user.id, storeFilter], (old: any[] | undefined) => {
-               if (!old) return old;
-               const exists = old.findIndex((o: any) => o.id === updated.id);
-               if (exists >= 0) {
-                 const copy = [...old];
-                 copy[exists] = { ...copy[exists], ...updated };
-                 return copy;
-               }
-               return old;
-             });
-           }
+          const updated = payload.new as any;
+          const previous = payload.old as any;
+
+          if (payload.eventType === "INSERT") {
+            queryClient.invalidateQueries({ queryKey: ["orders", user.id] });
+          } else if (payload.eventType === "UPDATE") {
+            queryClient.setQueryData(["orders", user.id, storeFilter], (old: any[] | undefined) => {
+              if (!old) return old;
+              const exists = old.findIndex((o: any) => o.id === updated.id);
+              if (exists >= 0) {
+                const copy = [...old];
+                copy[exists] = { ...copy[exists], ...updated };
+                return copy;
+              }
+              return old;
+            });
+          }
+
           queryClient.invalidateQueries({ queryKey: ["store-orders-lojista"] });
-          const newStatus = (payload.new as any).status;
-          if (newStatus === "pendente" && (payload.old as any)?.status === "aguardando_pagamento") {
-            const orderId = (payload.new as any).id;
+
+          if (payload.eventType !== "UPDATE") return;
+
+          const newStatus = updated?.status;
+          const oldStatus = previous?.status;
+
+          if (!newStatus || newStatus === oldStatus) return;
+
+          if (newStatus === "pendente" && oldStatus === "aguardando_pagamento") {
+            const orderId = updated.id;
             clearPixForOrder(orderId);
             setPixModal(null);
             toast.success("✅ Pagamento confirmado! Seu pedido foi enviado à loja.");
           }
-          if (newStatus === "preparando") notifyOrderPreparing();
-          if (newStatus === "em_transito" || newStatus === "saiu_entrega") notifyOrderOnTheWay();
-          if (newStatus === "finalizado") notifyOrderDelivered();
+
+          if (newStatus === "preparando" && oldStatus !== "preparando") notifyOrderPreparing();
+          if ((newStatus === "em_transito" || newStatus === "saiu_entrega") && oldStatus !== newStatus) notifyOrderOnTheWay();
+          if ((newStatus === "finalizado" || newStatus === "entregue") && oldStatus !== newStatus) notifyOrderDelivered();
         }
       )
       .subscribe();
