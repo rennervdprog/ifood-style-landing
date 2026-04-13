@@ -8,7 +8,7 @@ import {
   Crown, Check, X, Zap, ShieldCheck, ArrowUpRight,
   CreditCard, TrendingUp, Star, Truck, BarChart3,
   Ticket, Heart, Image, Clock, Loader2, AlertCircle, CheckCircle2, XCircle,
-  Sparkles, Shield, Rocket, Calendar, Info, ChevronRight, Gift, Award
+  Sparkles, Shield, Rocket, Calendar, Info, ChevronRight, Gift, Award, Smartphone
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
