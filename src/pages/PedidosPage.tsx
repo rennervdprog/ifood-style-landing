@@ -1064,6 +1064,15 @@ const PedidosPage = () => {
                             Pedir novamente
                           </button>
                         )}
+                        {["entregue", "finalizado"].includes(order.status) && (
+                          <button
+                            onClick={() => setShowRefundModal(order)}
+                            className="flex items-center gap-1.5 text-xs font-bold text-amber-600 bg-amber-50 dark:bg-amber-950/30 px-3 py-1.5 rounded-full hover:bg-amber-100 dark:hover:bg-amber-950/50 transition-colors"
+                          >
+                            <AlertTriangle className="h-3 w-3" />
+                            Reembolso
+                          </button>
+                        )}
                       </div>
 
                       {/* Rating */}
