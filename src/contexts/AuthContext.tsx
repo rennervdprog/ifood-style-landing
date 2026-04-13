@@ -40,7 +40,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (event === "SIGNED_OUT" && previousUserId) {
-        clearStoredPushState();
+        // On Capacitor, do NOT clear the stored FCM token — the token belongs
+        // to the physical device and must survive logout so the NEXT user can
+        // re-claim it via the edge function (which deletes the old binding).
+        if (!isCapacitorNative()) {
+          clearStoredPushState();
+        }
         if (isCapacitorNative()) {
           resetPushRegistrationState();
         }
@@ -138,8 +143,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     const userId = currentUserIdRef.current || session?.user?.id || undefined;
-    await cleanupPushTokens(userId);
-    clearStoredPushState();
+    // On Capacitor, skip client-side token deletion — the edge function
+    // handles reassignment when the next user logs in.
+    if (!isCapacitorNative()) {
+      await cleanupPushTokens(userId);
+      clearStoredPushState();
+    }
     if (isCapacitorNative()) {
       resetPushRegistrationState();
     }
