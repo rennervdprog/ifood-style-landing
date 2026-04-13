@@ -732,6 +732,8 @@ const PedidosPage = () => {
       </header>
 
       <div className="px-4 py-4 space-y-4">
+        {/* Wallet Banner */}
+        <WalletBanner />
         {isLoading ? (
           <div className="space-y-3">
             {Array.from({ length: 3 }).map((_, i) => (
