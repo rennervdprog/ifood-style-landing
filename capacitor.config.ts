@@ -5,8 +5,8 @@ const config: CapacitorConfig = {
   appName: 'itasuper',
   webDir: 'dist',
   server: {
-    url: 'https://e8d28ade-d633-4d74-be21-61c8dbe24765.lovableproject.com?forceHideBadge=true',
-    cleartext: true
+    url: 'https://itasuper.com.br',
+    cleartext: false
   }
 };
 
