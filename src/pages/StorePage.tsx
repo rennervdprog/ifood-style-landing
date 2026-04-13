@@ -16,6 +16,7 @@ import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStoreContext } from "@/contexts/StoreContext";
 import { useStorePlan } from "@/hooks/useStorePlan";
+import { getStoreAppSlug } from "@/components/StoreAppGuard";
 
 interface Product {
   id: string;
