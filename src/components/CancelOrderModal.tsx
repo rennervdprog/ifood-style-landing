@@ -34,9 +34,9 @@ const CancelOrderModal = ({ order, onClose, onCancelled }: Props) => {
   const [loading, setLoading] = useState(false);
 
   const feeInfo = FEE_TABLE[order.status];
-  if (!feeInfo) return null;
 
   const { isTimeOverride, minutesElapsed, effectiveFeePercent } = useMemo(() => {
+    if (!feeInfo) return { isTimeOverride: false, minutesElapsed: 0, effectiveFeePercent: 0 };
     const referenceTime = order.confirmed_at || order.created_at;
     if (!referenceTime) return { isTimeOverride: false, minutesElapsed: 0, effectiveFeePercent: feeInfo.percent };
 
