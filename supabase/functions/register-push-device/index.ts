@@ -56,32 +56,37 @@ Deno.serve(async (req) => {
 
     console.log(`[register-push-device] 🔍 user=${user.email} (${user.id}), token_prefix=${fcm_token?.slice(0,12) || "none"}..., device=${device_info || "none"}`);
 
+    // ── SINGLE-DEVICE ENFORCEMENT ──
+    // When a user registers on a new device, remove ALL their tokens from
+    // other devices so notifications only go to the latest active device.
+
     if (fcm_token) {
-      // 1. Remove this exact token from ANY other user
-      await supabaseAdmin
+      // 1. Remove this exact token from ANY other user (device changed hands)
+      const { data: stolenRows } = await supabaseAdmin
         .from("fcm_tokens")
         .delete()
         .eq("token", fcm_token)
-        .neq("user_id", user.id);
+        .neq("user_id", user.id)
+        .select("user_id");
 
-      // 2. If device_info provided, remove ALL tokens from other users on same device
-      //    This handles the case where FCM assigns a NEW token after account switch
-      if (device_info) {
-        await supabaseAdmin
-          .from("fcm_tokens")
-          .delete()
-          .eq("device_info", device_info)
-          .neq("user_id", user.id);
-
-        // 3. Also clean stale tokens for THIS user on THIS device (old token values)
-        await supabaseAdmin
-          .from("fcm_tokens")
-          .delete()
-          .eq("user_id", user.id)
-          .eq("device_info", device_info)
-          .neq("token", fcm_token);
+      if (stolenRows?.length) {
+        console.log(`[register-push-device] 🔄 Reclaimed FCM token from ${stolenRows.length} other user(s)`);
       }
 
+      // 2. Remove ALL other FCM tokens for THIS user (other devices)
+      //    This ensures notifications only go to the current device.
+      const { data: oldDeviceRows } = await supabaseAdmin
+        .from("fcm_tokens")
+        .delete()
+        .eq("user_id", user.id)
+        .neq("token", fcm_token)
+        .select("device_info");
+
+      if (oldDeviceRows?.length) {
+        console.log(`[register-push-device] 🧹 Removed ${oldDeviceRows.length} old FCM token(s) from other devices for user ${user.email}`);
+      }
+
+      // 3. Upsert the current token
       const { error } = await supabaseAdmin
         .from("fcm_tokens")
         .upsert(
@@ -98,30 +103,31 @@ Deno.serve(async (req) => {
         console.error("[register-push-device] fcm upsert error:", error);
         throw error;
       }
+
+      console.log(`[register-push-device] ✅ FCM token registered for ${user.email} on device ${device_info || "unknown"}`);
     }
 
     if (player_id) {
+      // 1. Remove this player_id from any other user
       await supabaseAdmin
         .from("onesignal_players")
         .delete()
         .eq("player_id", player_id)
         .neq("user_id", user.id);
 
-      if (device_info) {
-        await supabaseAdmin
-          .from("onesignal_players")
-          .delete()
-          .eq("device_info", device_info)
-          .neq("user_id", user.id);
+      // 2. Remove ALL other OneSignal players for THIS user (other devices)
+      const { data: oldPlayerRows } = await supabaseAdmin
+        .from("onesignal_players")
+        .delete()
+        .eq("user_id", user.id)
+        .neq("player_id", player_id)
+        .select("device_info");
 
-        await supabaseAdmin
-          .from("onesignal_players")
-          .delete()
-          .eq("user_id", user.id)
-          .eq("device_info", device_info)
-          .neq("player_id", player_id);
+      if (oldPlayerRows?.length) {
+        console.log(`[register-push-device] 🧹 Removed ${oldPlayerRows.length} old OneSignal player(s) from other devices for user ${user.email}`);
       }
 
+      // 3. Upsert the current player
       const { error } = await supabaseAdmin
         .from("onesignal_players")
         .upsert(
@@ -138,6 +144,8 @@ Deno.serve(async (req) => {
         console.error("[register-push-device] onesignal upsert error:", error);
         throw error;
       }
+
+      console.log(`[register-push-device] ✅ OneSignal player registered for ${user.email} on device ${device_info || "unknown"}`);
     }
 
     return new Response(JSON.stringify({
