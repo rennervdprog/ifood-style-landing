@@ -270,26 +270,34 @@ const AdminStoreManager = () => {
 
             return (
               <div key={store.id} className="bg-card rounded-xl border border-border overflow-hidden">
-                <div className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                {/* Store info row */}
+                <div className="p-4 pb-2">
+                  <div className="flex items-center gap-3">
                     {store.image_url ? (
-                      <img src={store.image_url} alt={store.name} className="w-10 h-10 rounded-lg object-cover shrink-0" />
+                      <img src={store.image_url} alt={store.name} className="w-11 h-11 rounded-xl object-cover shrink-0" />
                     ) : (
-                      <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                      <div className="w-11 h-11 rounded-xl bg-muted flex items-center justify-center shrink-0">
                         <Store className="h-5 w-5 text-muted-foreground" />
                       </div>
                     )}
-                    <div className="min-w-0">
-                      <p className="text-sm font-bold text-foreground truncate">{store.name}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <p className="text-xs text-muted-foreground capitalize">{store.category}</p>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-bold text-foreground truncate">{store.name}</p>
+                        {statusBadge(store.status)}
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                        <span className="text-[11px] text-muted-foreground capitalize">{store.category}</span>
+                        <span className="text-muted-foreground/30">•</span>
                         <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded-full ${planColors[planType]}`}>
                           {planLabels[planType]}
                         </span>
-                        {(store as any).app_subscribed && (
-                          <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-primary/20 text-primary flex items-center gap-0.5">
-                            <Smartphone className="h-2.5 w-2.5" /> App
-                          </span>
+                        {(store as any).app_enabled && (
+                          <>
+                            <span className="text-muted-foreground/30">•</span>
+                            <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-primary/20 text-primary flex items-center gap-0.5">
+                              <Smartphone className="h-2.5 w-2.5" /> App
+                            </span>
+                          </>
                         )}
                       </div>
                       {plan && (
@@ -301,37 +309,40 @@ const AdminStoreManager = () => {
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5 ml-2 shrink-0">
-                    {statusBadge(store.status)}
-                    {/* App toggle */}
-                    <button
-                      onClick={() => handleToggleApp(store.id, !!(store as any).app_enabled)}
-                      disabled={togglingApp === store.id}
-                      className={`p-2 rounded-lg active:scale-95 transition-all min-h-[44px] min-w-[44px] flex items-center justify-center ${
-                        (store as any).app_enabled
-                          ? "bg-primary/10 text-primary"
-                          : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary"
-                      }`}
-                      title={(store as any).app_enabled ? "App liberado — clique para desativar" : "Liberar App"}
-                    >
-                      {togglingApp === store.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Smartphone className="h-4 w-4" />}
-                    </button>
-                    {/* Plan edit button */}
-                    <button
-                      onClick={() => editingPlan === store.id ? setEditingPlan(null) : handleEditPlan(store.id)}
-                      className="p-2 rounded-lg bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary active:scale-95 transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
-                      title="Gerenciar plano"
-                    >
-                      {editingPlan === store.id ? <ChevronUp className="h-4 w-4" /> : <Percent className="h-4 w-4" />}
-                    </button>
-                    <button
-                      onClick={() => setDeleteTarget({ id: store.id, name: store.name })}
-                      className="p-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 active:scale-95 transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
-                      title="Excluir loja"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
+                </div>
+
+                {/* Action buttons row */}
+                <div className="px-4 pb-3 pt-1 flex items-center gap-2">
+                  <button
+                    onClick={() => handleToggleApp(store.id, !!(store as any).app_enabled)}
+                    disabled={togglingApp === store.id}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all active:scale-[0.97] ${
+                      (store as any).app_enabled
+                        ? "bg-primary/10 text-primary border border-primary/20"
+                        : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                    }`}
+                  >
+                    {togglingApp === store.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Smartphone className="h-3.5 w-3.5" />}
+                    {(store as any).app_enabled ? "App ✓" : "Liberar App"}
+                  </button>
+                  <button
+                    onClick={() => editingPlan === store.id ? setEditingPlan(null) : handleEditPlan(store.id)}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-all active:scale-[0.97] ${
+                      editingPlan === store.id
+                        ? "bg-primary/10 text-primary border border-primary/20"
+                        : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                    }`}
+                  >
+                    {editingPlan === store.id ? <ChevronUp className="h-3.5 w-3.5" /> : <Percent className="h-3.5 w-3.5" />}
+                    Plano
+                  </button>
+                  <button
+                    onClick={() => setDeleteTarget({ id: store.id, name: store.name })}
+                    className="py-2 px-3 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 active:scale-[0.97] transition-all flex items-center justify-center"
+                    title="Excluir loja"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
                 </div>
 
                 {/* Expandable plan editor */}
