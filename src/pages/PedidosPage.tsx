@@ -6,13 +6,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
-import { ClipboardList, Clock, ChefHat, Truck, CheckCircle2, Lock, Copy, QrCode, XCircle, X, Loader2, Trash2, ShieldAlert, AlertCircle, TimerReset, RefreshCw, MessageCircle, Bell } from "lucide-react";
+import { ClipboardList, Clock, ChefHat, Truck, CheckCircle2, Lock, Copy, QrCode, XCircle, X, Loader2, Trash2, ShieldAlert, AlertCircle, TimerReset, RefreshCw, MessageCircle, Bell, AlertTriangle, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { notifyOrderPreparing, notifyOrderOnTheWay, notifyOrderDelivered } from "@/lib/notifications";
 import OrderRating from "@/components/OrderRating";
 import OrderChat from "@/components/OrderChat";
 import DeliveryTimeEstimate from "@/components/DeliveryTimeEstimate";
 import LiveTrackingMap from "@/components/LiveTrackingMap";
+import CancelOrderModal from "@/components/CancelOrderModal";
+import RefundRequestModal from "@/components/RefundRequestModal";
+import WalletBanner from "@/components/WalletBanner";
 import { Capacitor } from "@capacitor/core";
 
 import {
@@ -311,6 +314,8 @@ const PedidosPage = () => {
   const [payingOrderId, setPayingOrderId] = useState<string | null>(null);
   const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
   const [simulatingPayment, setSimulatingPayment] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState<any>(null);
+  const [showRefundModal, setShowRefundModal] = useState<any>(null);
   const [pixModal, setPixModal] = useState<{
     orderId: string;
     qrCode: string | null;
@@ -515,39 +520,32 @@ const PedidosPage = () => {
   };
 
   const cancelOrder = async (orderId: string) => {
-    if (!confirm("Tem certeza que deseja cancelar este pedido?")) return;
-    setCancellingOrderId(orderId);
-    try {
-      // Find the order to check if it's awaiting payment (PIX)
-      const order = orders?.find((o: any) => o.id === orderId);
-      
-      if (order?.status === "aguardando_pagamento" && order?.payment_method === "pix") {
-        // Cancel payment on provider (Asaas/MP) via payment-router
-        const { error: cancelPaymentError } = await supabase.functions.invoke("payment-router", {
+    const order = orders?.find((o: any) => o.id === orderId);
+    if (!order) return;
+
+    // For PIX awaiting payment, cancel directly (no fee)
+    if (order.status === "aguardando_pagamento" && order.payment_method === "pix") {
+      if (!confirm("Cancelar pagamento PIX?")) return;
+      setCancellingOrderId(orderId);
+      try {
+        await supabase.functions.invoke("payment-router", {
           body: { action: "cancel_payment", order_id: orderId },
         });
-        if (cancelPaymentError) {
-          console.error("Error cancelling payment on provider:", cancelPaymentError);
-          // Still cancel the order even if provider cancel fails
-        }
         clearPixForOrder(orderId);
+        // Use RPC for policy-based cancellation
+        await supabase.rpc("apply_cancellation_policy", { _order_id: orderId });
         toast.success("Pedido e pagamento PIX cancelados.");
-      } else {
-        // Regular cancel (non-PIX or already paid)
-        const { error } = await supabase
-          .from("orders")
-          .update({ status: "cancelado" as any })
-          .eq("id", orderId)
-          .eq("client_id", user!.id);
-        if (error) throw error;
-        toast.success("Pedido cancelado.");
+        queryClient.invalidateQueries({ queryKey: ["orders", user!.id] });
+      } catch {
+        toast.error("Erro ao cancelar pedido.");
+      } finally {
+        setCancellingOrderId(null);
       }
-      queryClient.invalidateQueries({ queryKey: ["orders", user!.id] });
-    } catch (err) {
-      toast.error("Erro ao cancelar pedido.");
-    } finally {
-      setCancellingOrderId(null);
+      return;
     }
+
+    // For all other statuses, show the cancel modal with fee info
+    setShowCancelModal(order);
   };
 
   if (!authLoading && !user) {
@@ -734,6 +732,8 @@ const PedidosPage = () => {
       </header>
 
       <div className="px-4 py-4 space-y-4">
+        {/* Wallet Banner */}
+        <WalletBanner />
         {isLoading ? (
           <div className="space-y-3">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -975,6 +975,17 @@ const PedidosPage = () => {
                           </div>
                         )}
 
+                        {/* Cancel button for active orders (not aguardando_pagamento which has its own cancel) */}
+                        {["pendente", "preparando", "pronto_para_entrega"].includes(order.status) && (
+                          <button
+                            onClick={() => cancelOrder(order.id)}
+                            className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-red-500 bg-red-50 dark:bg-red-950/30 py-2.5 rounded-xl hover:bg-red-100 dark:hover:bg-red-950/50 transition-colors"
+                          >
+                            <XCircle className="h-3.5 w-3.5" />
+                            Cancelar Pedido
+                          </button>
+                        )}
+
                         {/* Footer: date */}
                         <div className="flex items-center justify-between pt-1">
                           <span className="text-[10px] text-muted-foreground">
@@ -1051,6 +1062,15 @@ const PedidosPage = () => {
                           >
                             <RefreshCw className="h-3 w-3" />
                             Pedir novamente
+                          </button>
+                        )}
+                        {["entregue", "finalizado"].includes(order.status) && (
+                          <button
+                            onClick={() => setShowRefundModal(order)}
+                            className="flex items-center gap-1.5 text-xs font-bold text-amber-600 bg-amber-50 dark:bg-amber-950/30 px-3 py-1.5 rounded-full hover:bg-amber-100 dark:hover:bg-amber-950/50 transition-colors"
+                          >
+                            <AlertTriangle className="h-3 w-3" />
+                            Reembolso
                           </button>
                         )}
                       </div>
@@ -1164,6 +1184,30 @@ const PedidosPage = () => {
             )}
           </div>
         </div>
+      )}
+
+      {/* Cancel Order Modal */}
+      {showCancelModal && (
+        <CancelOrderModal
+          order={showCancelModal}
+          onClose={() => setShowCancelModal(null)}
+          onCancelled={() => {
+            setShowCancelModal(null);
+            queryClient.invalidateQueries({ queryKey: ["orders", user?.id] });
+            queryClient.invalidateQueries({ queryKey: ["user-wallet", user?.id] });
+          }}
+        />
+      )}
+
+      {/* Refund Request Modal */}
+      {showRefundModal && (
+        <RefundRequestModal
+          order={showRefundModal}
+          onClose={() => setShowRefundModal(null)}
+          onSubmitted={() => {
+            setShowRefundModal(null);
+          }}
+        />
       )}
 
       <BottomNav />

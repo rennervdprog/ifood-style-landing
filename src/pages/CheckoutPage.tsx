@@ -5,7 +5,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Edit3, Loader2, Truck, CheckCircle2, ShoppingBag, Tag, ChevronRight, Clock, AlertTriangle, Star } from "lucide-react";
+import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Edit3, Loader2, Truck, CheckCircle2, ShoppingBag, Tag, ChevronRight, Clock, AlertTriangle, Star, Wallet } from "lucide-react";
 import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 import confetti from "canvas-confetti";
 import AddressModal from "@/components/AddressModal";
@@ -43,6 +43,22 @@ const CheckoutPage = () => {
   const [feeBreakdown, setFeeBreakdown] = useState<string | null>(null);
   const [loyaltyDiscount, setLoyaltyDiscount] = useState(0);
   const [loyaltyPointsUsed, setLoyaltyPointsUsed] = useState(0);
+  const [useWallet, setUseWallet] = useState(false);
+
+  const { data: walletData } = useQuery({
+    queryKey: ["user-wallet-checkout", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("user_wallet")
+        .select("balance")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+    staleTime: 30_000,
+  });
+  const walletBalance = Number(walletData?.balance || 0);
 
   const { data: userProfile, refetch: refetchProfile } = useQuery({
     queryKey: ["my-profile-checkout", user?.id],
@@ -129,7 +145,8 @@ const CheckoutPage = () => {
     : storeOwnFee;
   const activeDeliveryFee = isOwnDelivery ? ownDeliveryFeeWithSplit : (calculatedDeliveryFee !== null ? calculatedDeliveryFee : config.city_fee);
   const effectiveDeliveryFee = couponType === "free_shipping" ? 0 : activeDeliveryFee;
-  const finalTotal = Math.max(0, addMoney(subtotal, effectiveDeliveryFee, -couponDiscount, -loyaltyDiscount));
+  const walletDiscount = useWallet ? Math.min(walletBalance, Math.max(0, addMoney(subtotal, effectiveDeliveryFee, -couponDiscount, -loyaltyDiscount))) : 0;
+  const finalTotal = Math.max(0, addMoney(subtotal, effectiveDeliveryFee, -couponDiscount, -loyaltyDiscount, -walletDiscount));
 
   useEffect(() => {
     const customerCep = selectedSavedAddressId && savedAddressData?.cep ? savedAddressData.cep : profileCep;
@@ -604,6 +621,36 @@ const CheckoutPage = () => {
           </div>
         </section>
 
+        {/* SECTION: Wallet Credit */}
+        {walletBalance > 0 && (
+          <section className="bg-card rounded-2xl border border-border overflow-hidden">
+            <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50">
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                <Wallet className="h-4 w-4 text-emerald-500" />
+              </div>
+              <h2 className="text-sm font-bold text-foreground flex-1">Crédito na plataforma</h2>
+              <span className="text-xs font-bold text-emerald-600">{formatBRL(walletBalance)}</span>
+            </div>
+            <div className="p-4">
+              <button
+                onClick={() => setUseWallet(!useWallet)}
+                className={`w-full flex items-center justify-between p-3.5 rounded-xl border-2 transition-all ${
+                  useWallet ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30" : "border-transparent bg-muted/50"
+                }`}
+              >
+                <span className="text-sm font-medium text-foreground">
+                  {useWallet ? `Usando ${formatBRL(walletDiscount)} de crédito` : "Usar crédito neste pedido"}
+                </span>
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                  useWallet ? "border-emerald-500 bg-emerald-500" : "border-muted-foreground"
+                }`}>
+                  {useWallet && <CheckCircle2 className="h-3 w-3 text-white" />}
+                </div>
+              </button>
+            </div>
+          </section>
+        )}
+
         {/* SECTION: Summary */}
         <section className="bg-card rounded-2xl border border-border overflow-hidden">
           <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50">
@@ -650,6 +697,15 @@ const CheckoutPage = () => {
                     <Star className="h-3 w-3 fill-amber-500" /> {loyaltyPointsUsed} pontos
                   </span>
                   <span className="font-bold text-amber-600">-{formatBRL(loyaltyDiscount)}</span>
+                </div>
+              )}
+
+              {walletDiscount > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-emerald-600 flex items-center gap-1">
+                    <Wallet className="h-3 w-3" /> Crédito
+                  </span>
+                  <span className="font-bold text-emerald-600">-{formatBRL(walletDiscount)}</span>
                 </div>
               )}
 
