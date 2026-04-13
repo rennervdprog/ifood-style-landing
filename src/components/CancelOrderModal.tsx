@@ -87,8 +87,8 @@ const CancelOrderModal = ({ order, onClose, onCancelled }: Props) => {
       <div className="bg-card rounded-t-3xl sm:rounded-2xl w-full max-w-md border border-border" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="px-4 py-4 flex items-center gap-3 border-b border-border">
-          <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
-            <AlertTriangle className="h-5 w-5 text-red-500" />
+          <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center">
+            <AlertTriangle className="h-5 w-5 text-destructive" />
           </div>
           <div className="flex-1">
             <h2 className="font-bold text-foreground">Cancelar Pedido</h2>
@@ -175,7 +175,7 @@ const CancelOrderModal = ({ order, onClose, onCancelled }: Props) => {
             <button
               onClick={handleCancel}
               disabled={loading}
-              className="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-2xl text-sm flex items-center justify-center gap-2 disabled:opacity-50 transition-colors"
+              className="flex-1 bg-destructive hover:bg-destructive/90 text-destructive-foreground font-bold py-3 rounded-2xl text-sm flex items-center justify-center gap-2 disabled:opacity-50 transition-colors"
             >
               {loading ? (
                 <>
