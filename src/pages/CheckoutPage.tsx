@@ -655,6 +655,61 @@ const CheckoutPage = () => {
           </section>
         )}
 
+        {/* SECTION: Schedule Delivery */}
+        <section className="bg-card rounded-2xl border border-border overflow-hidden">
+          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50">
+            <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center">
+              <Calendar className="h-4 w-4 text-blue-500" />
+            </div>
+            <h2 className="text-sm font-bold text-foreground flex-1">Agendar entrega</h2>
+            {scheduledFor && <CheckCircle2 className="h-4 w-4 text-primary" />}
+          </div>
+          <div className="p-4 space-y-3">
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setShowSchedule(false); setScheduledFor(""); }}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all border-2 ${
+                  !showSchedule ? "border-primary bg-primary/5 text-primary" : "border-transparent bg-muted/50 text-foreground"
+                }`}
+              >
+                🚀 Agora
+              </button>
+              <button
+                onClick={() => setShowSchedule(true)}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all border-2 ${
+                  showSchedule ? "border-primary bg-primary/5 text-primary" : "border-transparent bg-muted/50 text-foreground"
+                }`}
+              >
+                📅 Agendar
+              </button>
+            </div>
+            {showSchedule && (
+              <div className="space-y-2">
+                <label className="text-xs text-muted-foreground font-medium">Data e horário da entrega</label>
+                <input
+                  type="datetime-local"
+                  value={scheduledFor}
+                  onChange={(e) => setScheduledFor(e.target.value)}
+                  min={new Date(Date.now() + 30 * 60000).toISOString().slice(0, 16)}
+                  className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                />
+                {scheduledFor && (
+                  <p className="text-xs text-primary font-medium flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    Agendado para {new Date(scheduledFor).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
+                  </p>
+                )}
+              </div>
+            )}
+            {!showSchedule && !isStoreClosed && (
+              <div className="flex items-center gap-2">
+                <DeliveryTimeEstimate status="pendente" createdAt={new Date().toISOString()} />
+                <span className="text-xs text-muted-foreground">Estimativa de entrega</span>
+              </div>
+            )}
+          </div>
+        </section>
+
         {/* SECTION: Summary */}
         <section className="bg-card rounded-2xl border border-border overflow-hidden">
           <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50">
