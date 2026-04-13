@@ -17,6 +17,7 @@ import CapacitorRouteGuard from "@/components/CapacitorRouteGuard";
 // Lazy-loaded pages — each becomes its own chunk
 const Index = lazy(() => import("./pages/Index"));
 const StoreDirectory = lazy(() => import("./pages/StoreDirectory"));
+const ClientHome = lazy(() => import("./pages/ClientHome"));
 const StorePage = lazy(() => import("./pages/StorePage"));
 const CartPage = lazy(() => import("./pages/CartPage"));
 const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
@@ -71,8 +72,9 @@ const App = () => {
             <CapacitorRouteGuard />
             <Suspense fallback={<PageLoader />}>
               <Routes>
-                {/* Public store directory */}
+                {/* Public landing / Client home */}
                 <Route path="/" element={<StoreDirectory />} />
+                <Route path="/cliente" element={<ClientHome />} />
                 {/* Admin dashboard at /index */}
                 <Route
                   path="/painel"
