@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { MapPin, Bike, Navigation, Home, Store } from "lucide-react";
+import { Bike, Navigation } from "lucide-react";
 
 let leafletCSSLoaded = false;
 function ensureLeafletCSS() {
@@ -49,6 +49,31 @@ function makeDriverIcon(L: any) {
   });
 }
 
+/** Geocode using structured Nominatim params for better accuracy */
+async function geocodeStructured(params: {
+  street?: string;
+  city?: string;
+  state?: string;
+  postalcode?: string;
+  country?: string;
+}): Promise<{ lat: number; lng: number } | null> {
+  try {
+    const searchParams = new URLSearchParams({ format: "json", limit: "1" });
+    if (params.street) searchParams.set("street", params.street);
+    if (params.city) searchParams.set("city", params.city);
+    if (params.state) searchParams.set("state", params.state);
+    if (params.postalcode) searchParams.set("postalcode", params.postalcode);
+    searchParams.set("country", params.country || "Brazil");
+
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?${searchParams.toString()}`);
+    const results = await res.json();
+    if (results?.[0]) {
+      return { lat: parseFloat(results[0].lat), lng: parseFloat(results[0].lon) };
+    }
+  } catch { /* fallback */ }
+  return null;
+}
+
 interface LiveTrackingMapProps {
   orderId: string;
   driverId: string | null;
@@ -69,7 +94,6 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
   const [L, setL] = useState<any>(null);
   const [now, setNow] = useState(Date.now());
 
-  // Tick every 5s for live time display
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 5000);
     return () => clearInterval(t);
@@ -93,48 +117,91 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
     refetchInterval: 5000,
   });
 
-  // Fetch store coordinates via geocoding (address → lat/lng)
+  // Fetch store coordinates - prefer stored lat/lng, fallback to structured geocoding
   const { data: storeData } = useQuery({
     queryKey: ["store-geo", storeId],
     queryFn: async () => {
       const { data } = await supabase
         .from("stores")
-        .select("name, address_street, address_number, address_neighborhood, address_city, address_cep")
+        .select("name, latitude, longitude, address_street, address_number, address_neighborhood, address_city, address_state, address_cep")
         .eq("id", storeId)
         .maybeSingle();
       if (!data) return null;
-      // Try to geocode
-      const q = `${data.address_street || ""} ${data.address_number || ""}, ${data.address_neighborhood || ""}, ${data.address_city || ""}, Brazil`;
-      try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`);
-        const results = await res.json();
-        if (results?.[0]) {
-          return { name: data.name, lat: parseFloat(results[0].lat), lng: parseFloat(results[0].lon) };
-        }
-      } catch { /* fallback */ }
+
+      // Use stored coordinates if available
+      if (data.latitude && data.longitude) {
+        return { name: data.name, lat: data.latitude, lng: data.longitude };
+      }
+
+      // Structured geocoding for better accuracy
+      const streetFull = [data.address_street, data.address_number].filter(Boolean).join(" ");
+      const geo = await geocodeStructured({
+        street: streetFull || undefined,
+        city: data.address_city || undefined,
+        state: data.address_state || undefined,
+        postalcode: data.address_cep?.replace(/\D/g, "") || undefined,
+      });
+
+      if (geo) {
+        // Save coordinates for future use (fire-and-forget)
+        supabase
+          .from("stores")
+          .update({ latitude: geo.lat, longitude: geo.lng } as any)
+          .eq("id", storeId)
+          .then();
+        return { name: data.name, lat: geo.lat, lng: geo.lng };
+      }
+
       return { name: data.name, lat: null as number | null, lng: null as number | null };
     },
     staleTime: 1000 * 60 * 60,
   });
 
-  // Geocode client address
+  // Client coordinates - prefer stored lat/lng from order, fallback to structured geocoding
   const { data: clientGeo } = useQuery({
-    queryKey: ["client-geo", clientAddress, clientLat, clientLng],
+    queryKey: ["client-geo", orderId, clientLat, clientLng, clientAddress],
     queryFn: async () => {
+      // Use coordinates passed from order record
       if (clientLat && clientLng) return { lat: clientLat, lng: clientLng };
-      if (!clientAddress) return null;
-      try {
-        const q = `${clientAddress}, Brazil`;
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`);
-        const results = await res.json();
-        if (results?.[0]) {
-          return { lat: parseFloat(results[0].lat), lng: parseFloat(results[0].lon) };
-        }
-      } catch { /* fallback */ }
+
+      // Try to get stored coords from order
+      const { data: orderData } = await supabase
+        .from("orders")
+        .select("client_lat, client_lng, neighborhood, address_details")
+        .eq("id", orderId)
+        .maybeSingle();
+
+      if ((orderData as any)?.client_lat && (orderData as any)?.client_lng) {
+        return { lat: (orderData as any).client_lat, lng: (orderData as any).client_lng };
+      }
+
+      // Structured geocoding fallback using neighborhood + address
+      if (!clientAddress && !orderData?.neighborhood) return null;
+
+      const addr = clientAddress || orderData?.address_details || "";
+      const neighborhood = orderData?.neighborhood || "";
+
+      // Try structured geocoding with neighborhood as city context
+      const geo = await geocodeStructured({
+        street: addr.split(",")[0]?.trim() || undefined,
+        city: neighborhood || undefined,
+        state: "São Paulo",
+      });
+
+      if (geo) {
+        // Save to order for future (fire-and-forget)
+        supabase
+          .from("orders")
+          .update({ client_lat: geo.lat, client_lng: geo.lng } as any)
+          .eq("id", orderId)
+          .then();
+        return geo;
+      }
+
       return null;
     },
     staleTime: 1000 * 60 * 60,
-    enabled: !!(clientAddress || (clientLat && clientLng)),
+    enabled: !!(clientAddress || clientLat || orderId),
   });
 
   // Load Leaflet
@@ -189,7 +256,9 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
     if (storeData?.lat && storeData?.lng) {
       const sPos: [number, number] = [storeData.lat, storeData.lng];
       points.push(sPos);
-      if (!storeMarkerRef.current) {
+      if (storeMarkerRef.current) {
+        storeMarkerRef.current.setLatLng(sPos);
+      } else {
         storeMarkerRef.current = L.marker(sPos, { icon: makeDivIcon(L, "🏪", "#f59e0b", "#d97706") })
           .addTo(map)
           .bindPopup(`🏪 ${storeData.name || "Loja"}`);
@@ -200,19 +269,24 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
     if (clientGeo) {
       const cPos: [number, number] = [clientGeo.lat, clientGeo.lng];
       points.push(cPos);
-      if (!clientMarkerRef.current) {
+      if (clientMarkerRef.current) {
+        clientMarkerRef.current.setLatLng(cPos);
+      } else {
         clientMarkerRef.current = L.marker(cPos, { icon: makeDivIcon(L, "🏠", "#10b981", "#059669") })
           .addTo(map)
           .bindPopup("🏠 Seu endereço");
       }
     }
 
-    // Draw route line (driver → client)
+    // Draw route line (store → driver → client)
     if (driverLocation && clientGeo) {
-      const routePoints: [number, number][] = [
-        [driverLocation.latitude, driverLocation.longitude],
-        [clientGeo.lat, clientGeo.lng],
-      ];
+      const routePoints: [number, number][] = [];
+      if (storeData?.lat && storeData?.lng) {
+        routePoints.push([storeData.lat, storeData.lng]);
+      }
+      routePoints.push([driverLocation.latitude, driverLocation.longitude]);
+      routePoints.push([clientGeo.lat, clientGeo.lng]);
+
       if (routeLineRef.current) {
         routeLineRef.current.setLatLngs(routePoints);
       } else {
