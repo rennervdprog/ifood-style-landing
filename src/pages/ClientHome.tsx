@@ -11,6 +11,7 @@ import {
 import { formatBRL } from "@/lib/utils";
 import { toast } from "sonner";
 import BottomNav from "@/components/BottomNav";
+import ProductTour, { clienteTourSteps } from "@/components/ProductTour";
 
 /* ─── Auth Section (shown when not logged in) ─── */
 type AuthMode = "login" | "signup" | "forgot" | "reset";
@@ -519,6 +520,7 @@ const ClientHomeContent = () => {
       </div>
 
       <BottomNav />
+      <ProductTour steps={clienteTourSteps} tourKey="cliente_home" />
     </div>
   );
 };
