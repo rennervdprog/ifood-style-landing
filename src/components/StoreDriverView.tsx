@@ -1,5 +1,6 @@
 import { formatBRL } from "@/lib/utils";
-import { useState, useCallback, useMemo } from "react";
+import { startDriverTracking, stopDriverTracking, updateTrackingOrderId } from "@/lib/driverGeolocation";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -304,6 +305,23 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
 
   // Block accepting new orders while driver has any active (non-finalized) deliveries
   const hasActiveRoutes = totalActive > 0;
+
+  // GPS tracking for store drivers
+  useEffect(() => {
+    if (!user) return;
+    if (totalActive > 0) {
+      const firstOrderId = myDeliveries?.[0]?.id || null;
+      startDriverTracking(firstOrderId);
+    } else {
+      stopDriverTracking();
+    }
+  }, [user, totalActive, myDeliveries?.[0]?.id]);
+
+  useEffect(() => {
+    if (myDeliveries?.length) {
+      updateTrackingOrderId(myDeliveries[0]?.id || null);
+    }
+  }, [myDeliveries?.[0]?.id]);
 
   return (
     <div className="px-4 py-4 space-y-5">
