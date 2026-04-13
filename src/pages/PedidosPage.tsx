@@ -6,13 +6,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
-import { ClipboardList, Clock, ChefHat, Truck, CheckCircle2, Lock, Copy, QrCode, XCircle, X, Loader2, Trash2, ShieldAlert, AlertCircle, TimerReset, RefreshCw, MessageCircle, Bell } from "lucide-react";
+import { ClipboardList, Clock, ChefHat, Truck, CheckCircle2, Lock, Copy, QrCode, XCircle, X, Loader2, Trash2, ShieldAlert, AlertCircle, TimerReset, RefreshCw, MessageCircle, Bell, AlertTriangle, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { notifyOrderPreparing, notifyOrderOnTheWay, notifyOrderDelivered } from "@/lib/notifications";
 import OrderRating from "@/components/OrderRating";
 import OrderChat from "@/components/OrderChat";
 import DeliveryTimeEstimate from "@/components/DeliveryTimeEstimate";
 import LiveTrackingMap from "@/components/LiveTrackingMap";
+import CancelOrderModal from "@/components/CancelOrderModal";
+import RefundRequestModal from "@/components/RefundRequestModal";
+import WalletBanner from "@/components/WalletBanner";
 import { Capacitor } from "@capacitor/core";
 
 import {
