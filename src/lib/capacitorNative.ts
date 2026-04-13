@@ -127,11 +127,11 @@ export async function registerCapacitorPush(options: { requestPermission?: boole
   const requestPermission = options.requestPermission ?? true;
 
   try {
-    const PushNotifications = await ensurePushListeners();
+    await ensurePushListeners();
 
     const permResult = requestPermission
-      ? await PushNotifications.requestPermissions()
-      : await PushNotifications.checkPermissions();
+      ? await pushPlugin.requestPermissions()
+      : await pushPlugin.checkPermissions();
 
     if (permResult.receive !== "granted") {
       console.warn(`[CapPush] Permission not granted (${permResult.receive})`);
@@ -151,7 +151,7 @@ export async function registerCapacitorPush(options: { requestPermission?: boole
       }, 10000);
 
       try {
-        await PushNotifications.register();
+        await pushPlugin.register();
       } catch (error) {
         console.error("[CapPush] Fatal error during registration:", error);
         settleRegistration(null);
