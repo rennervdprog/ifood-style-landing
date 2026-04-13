@@ -630,3 +630,126 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
     </div>
   );
 }
+
+/* ─── App Addon Card ─── */
+function AppAddonCard({ storeId }: { storeId: string }) {
+  const [subscribing, setSubscribing] = useState(false);
+  const queryClient = useQueryClient();
+
+  const { data: store } = useQuery({
+    queryKey: ["store-app-status", storeId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("stores")
+        .select("app_enabled, app_subscribed")
+        .eq("id", storeId)
+        .single();
+      if (error) throw error;
+      return data as { app_enabled: boolean; app_subscribed: boolean };
+    },
+    enabled: !!storeId,
+  });
+
+  if (!store?.app_enabled) return null;
+
+  const handleToggleSubscription = async () => {
+    setSubscribing(true);
+    try {
+      const { error } = await supabase
+        .from("stores")
+        .update({ app_subscribed: !store.app_subscribed })
+        .eq("id", storeId);
+      if (error) throw error;
+
+      if (!store.app_subscribed) {
+        // Also update the app_addon_fee on store_plans
+        await supabase
+          .from("store_plans")
+          .update({ app_addon_fee: 99 })
+          .eq("store_id", storeId);
+      } else {
+        await supabase
+          .from("store_plans")
+          .update({ app_addon_fee: 0 })
+          .eq("store_id", storeId);
+      }
+
+      toast.success(store.app_subscribed ? "App cancelado." : "App ativado com sucesso! 🚀");
+      queryClient.invalidateQueries({ queryKey: ["store-app-status", storeId] });
+      queryClient.invalidateQueries({ queryKey: ["store-plan", storeId] });
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao alterar assinatura do app.");
+    } finally {
+      setSubscribing(false);
+    }
+  };
+
+  return (
+    <Card className="overflow-hidden border-2 border-primary/20">
+      <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-5">
+        <div className="flex items-start gap-3">
+          <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
+            <Smartphone className="h-6 w-6 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-lg font-bold text-foreground">App Próprio</h3>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Tenha seu app exclusivo na Play Store com notificações push ilimitadas
+            </p>
+          </div>
+        </div>
+      </div>
+      <CardContent className="p-5 space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-muted/40 rounded-xl p-3 text-center border border-border/50">
+            <p className="text-xl font-bold text-foreground">R$ 99</p>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">/mês</p>
+          </div>
+          <div className="bg-muted/40 rounded-xl p-3 text-center border border-border/50">
+            <p className="text-xl font-bold text-primary">∞</p>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Push grátis</p>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          {[
+            "App com sua marca na Play Store",
+            "Notificações push ilimitadas",
+            "Clientes acessam só sua loja",
+            "Sem custo de WhatsApp API",
+          ].map((item) => (
+            <div key={item} className="flex items-center gap-2">
+              <Check className="h-4 w-4 text-primary shrink-0" />
+              <span className="text-sm text-foreground">{item}</span>
+            </div>
+          ))}
+        </div>
+
+        <Button
+          className="w-full h-12 text-base font-bold"
+          variant={store.app_subscribed ? "outline" : "default"}
+          onClick={handleToggleSubscription}
+          disabled={subscribing}
+        >
+          {subscribing ? (
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+          ) : store.app_subscribed ? (
+            <XCircle className="h-4 w-4 mr-2" />
+          ) : (
+            <Rocket className="h-4 w-4 mr-2" />
+          )}
+          {store.app_subscribed ? "Cancelar App" : "Assinar App — R$ 99/mês"}
+        </Button>
+
+        {store.app_subscribed && (
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-primary/5 border border-primary/20">
+            <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+            <p className="text-xs text-muted-foreground">
+              Seu app está ativo! O administrador gerará o APK com a identidade da sua loja.
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
