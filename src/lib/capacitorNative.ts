@@ -39,10 +39,15 @@ function settleRegistration(token: string | null) {
   registrationPromise = null;
 }
 
+// We store the plugin reference here to avoid returning it from an async function
+// (Capacitor plugins have a .then() method that confuses JS await)
+let pushPlugin: any = null;
+
 async function ensurePushListeners() {
   const { PushNotifications } = await import("@capacitor/push-notifications");
+  pushPlugin = PushNotifications;
 
-  if (listenersReady) return PushNotifications;
+  if (listenersReady) return;
 
   PushNotifications.addListener("registration", async (token) => {
     console.log("[CapPush] Token:", token.value);
@@ -85,7 +90,6 @@ async function ensurePushListeners() {
   });
 
   listenersReady = true;
-  return PushNotifications;
 }
 
 /**
