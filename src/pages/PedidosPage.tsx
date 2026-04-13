@@ -975,6 +975,17 @@ const PedidosPage = () => {
                           </div>
                         )}
 
+                        {/* Cancel button for active orders (not aguardando_pagamento which has its own cancel) */}
+                        {["pendente", "preparando", "pronto_para_entrega"].includes(order.status) && (
+                          <button
+                            onClick={() => cancelOrder(order.id)}
+                            className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-red-500 bg-red-50 dark:bg-red-950/30 py-2.5 rounded-xl hover:bg-red-100 dark:hover:bg-red-950/50 transition-colors"
+                          >
+                            <XCircle className="h-3.5 w-3.5" />
+                            Cancelar Pedido
+                          </button>
+                        )}
+
                         {/* Footer: date */}
                         <div className="flex items-center justify-between pt-1">
                           <span className="text-[10px] text-muted-foreground">
