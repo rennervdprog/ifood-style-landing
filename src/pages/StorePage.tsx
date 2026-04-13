@@ -4,7 +4,7 @@ import PizzaHalfHalfModal from "@/components/PizzaHalfHalfModal";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart, type CartAddon } from "@/contexts/CartContext";
-import { Star, Clock, ChevronRight, ChevronDown, ChevronUp, MapPin, Search, X, Navigation, CreditCard, Banknote, Smartphone, QrCode, RotateCcw, TrendingUp } from "lucide-react";
+import { Star, Clock, ChevronRight, ChevronDown, ChevronUp, MapPin, Search, X, Navigation, CreditCard, Banknote, Smartphone, QrCode, RotateCcw, TrendingUp, ArrowLeft } from "lucide-react";
 import LoyaltyBanner from "@/components/LoyaltyBanner";
 import { toast } from "sonner";
 import { useRef, useState, useEffect } from "react";
