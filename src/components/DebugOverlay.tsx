@@ -165,7 +165,8 @@ const DebugOverlay = () => {
   const [logs, setLogs] = useState<string[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const shouldShow = isCapacitorNative() || new URLSearchParams(window.location.search).has("debug");
+  // Always show in dev/preview, Capacitor native, or ?debug=1
+  const shouldShow = true;
 
   useEffect(() => {
     if (!shouldShow) return;
