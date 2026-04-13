@@ -12,6 +12,7 @@ import { notifyOrderPreparing, notifyOrderOnTheWay, notifyOrderDelivered } from 
 import OrderRating from "@/components/OrderRating";
 import OrderChat from "@/components/OrderChat";
 import DeliveryTimeEstimate from "@/components/DeliveryTimeEstimate";
+import LiveTrackingMap from "@/components/LiveTrackingMap";
 import { Capacitor } from "@capacitor/core";
 
 import {
@@ -912,6 +913,16 @@ const PedidosPage = () => {
                               Informe ao motoboy apenas quando receber seu pedido.
                             </p>
                           </div>
+                        )}
+
+                        {/* Live Tracking Map */}
+                        {["saiu_entrega", "em_transito"].includes(order.status) && (
+                          <LiveTrackingMap
+                            orderId={order.id}
+                            driverId={order.driver_id}
+                            storeId={order.store_id}
+                            clientAddress={order.address_details || ""}
+                          />
                         )}
 
                         {/* Confirm Delivery */}
