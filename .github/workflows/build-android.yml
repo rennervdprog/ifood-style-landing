@@ -48,6 +48,10 @@ jobs:
             appId: 'app.itasuper.cliente',
             appName: 'ItaSuper',
             webDir: 'dist',
+            server: {
+              url: 'https://itasuper.com.br',
+              cleartext: false
+            }
           };
           export default config;
           EOF
@@ -72,12 +76,12 @@ jobs:
         run: chmod +x android/gradlew
 
       - name: Build APK
-        run: cd android && ./gradlew --version && ./gradlew assembleDebug
+        run: cd android && ./gradlew --version && ./gradlew assembleRelease
 
       - uses: actions/upload-artifact@v4
         with:
-          name: itasuper-cliente-debug
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: itasuper-cliente-release
+          path: android/app/build/outputs/apk/release/app-release-unsigned.apk
           retention-days: 30
 
   build-parceiro:
@@ -114,6 +118,10 @@ jobs:
             appId: 'app.itasuper.parceiro',
             appName: 'ItaSuper Parceiro',
             webDir: 'dist',
+            server: {
+              url: 'https://itasuper.com.br',
+              cleartext: false
+            },
             plugins: {
               SplashScreen: {
                 launchAutoHide: false,
@@ -153,10 +161,10 @@ jobs:
         run: chmod +x android/gradlew
 
       - name: Build APK
-        run: cd android && ./gradlew --version && ./gradlew assembleDebug
+        run: cd android && ./gradlew --version && ./gradlew assembleRelease
 
       - uses: actions/upload-artifact@v4
         with:
-          name: itasuper-parceiro-debug
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: itasuper-parceiro-release
+          path: android/app/build/outputs/apk/release/app-release-unsigned.apk
           retention-days: 30
