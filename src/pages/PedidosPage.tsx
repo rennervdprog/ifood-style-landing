@@ -1186,6 +1186,30 @@ const PedidosPage = () => {
         </div>
       )}
 
+      {/* Cancel Order Modal */}
+      {showCancelModal && (
+        <CancelOrderModal
+          order={showCancelModal}
+          onClose={() => setShowCancelModal(null)}
+          onCancelled={() => {
+            setShowCancelModal(null);
+            queryClient.invalidateQueries({ queryKey: ["orders", user?.id] });
+            queryClient.invalidateQueries({ queryKey: ["user-wallet", user?.id] });
+          }}
+        />
+      )}
+
+      {/* Refund Request Modal */}
+      {showRefundModal && (
+        <RefundRequestModal
+          order={showRefundModal}
+          onClose={() => setShowRefundModal(null)}
+          onSubmitted={() => {
+            setShowRefundModal(null);
+          }}
+        />
+      )}
+
       <BottomNav />
     </div>
   );
