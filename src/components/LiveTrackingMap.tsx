@@ -37,6 +37,8 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress }: LiveTrac
         .from("driver_locations")
         .select("latitude, longitude, speed, heading, updated_at")
         .eq("driver_user_id", driverId)
+        .order("updated_at", { ascending: false })
+        .limit(1)
         .maybeSingle();
       return data;
     },
