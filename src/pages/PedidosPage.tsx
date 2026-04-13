@@ -520,39 +520,32 @@ const PedidosPage = () => {
   };
 
   const cancelOrder = async (orderId: string) => {
-    if (!confirm("Tem certeza que deseja cancelar este pedido?")) return;
-    setCancellingOrderId(orderId);
-    try {
-      // Find the order to check if it's awaiting payment (PIX)
-      const order = orders?.find((o: any) => o.id === orderId);
-      
-      if (order?.status === "aguardando_pagamento" && order?.payment_method === "pix") {
-        // Cancel payment on provider (Asaas/MP) via payment-router
-        const { error: cancelPaymentError } = await supabase.functions.invoke("payment-router", {
+    const order = orders?.find((o: any) => o.id === orderId);
+    if (!order) return;
+
+    // For PIX awaiting payment, cancel directly (no fee)
+    if (order.status === "aguardando_pagamento" && order.payment_method === "pix") {
+      if (!confirm("Cancelar pagamento PIX?")) return;
+      setCancellingOrderId(orderId);
+      try {
+        await supabase.functions.invoke("payment-router", {
           body: { action: "cancel_payment", order_id: orderId },
         });
-        if (cancelPaymentError) {
-          console.error("Error cancelling payment on provider:", cancelPaymentError);
-          // Still cancel the order even if provider cancel fails
-        }
         clearPixForOrder(orderId);
+        // Use RPC for policy-based cancellation
+        await supabase.rpc("apply_cancellation_policy", { _order_id: orderId });
         toast.success("Pedido e pagamento PIX cancelados.");
-      } else {
-        // Regular cancel (non-PIX or already paid)
-        const { error } = await supabase
-          .from("orders")
-          .update({ status: "cancelado" as any })
-          .eq("id", orderId)
-          .eq("client_id", user!.id);
-        if (error) throw error;
-        toast.success("Pedido cancelado.");
+        queryClient.invalidateQueries({ queryKey: ["orders", user!.id] });
+      } catch {
+        toast.error("Erro ao cancelar pedido.");
+      } finally {
+        setCancellingOrderId(null);
       }
-      queryClient.invalidateQueries({ queryKey: ["orders", user!.id] });
-    } catch (err) {
-      toast.error("Erro ao cancelar pedido.");
-    } finally {
-      setCancellingOrderId(null);
+      return;
     }
+
+    // For all other statuses, show the cancel modal with fee info
+    setShowCancelModal(order);
   };
 
   if (!authLoading && !user) {
