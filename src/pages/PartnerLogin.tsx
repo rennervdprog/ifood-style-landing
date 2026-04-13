@@ -221,7 +221,7 @@ const PartnerLogin = () => {
                 </button>
 
                 <button
-                  onClick={() => navigate("/cadastro-entregador")}
+                  onClick={() => navigate("/cadastro-motoboy-loja")}
                   className="w-full p-5 rounded-xl border-2 border-border bg-card hover:border-primary/50 transition-all flex items-center gap-4 active:scale-[0.98]"
                 >
                   <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center flex-shrink-0">
