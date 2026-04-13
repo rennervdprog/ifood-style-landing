@@ -25,6 +25,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       const previousUserId = currentUserIdRef.current;
       const nextUserId = session?.user?.id ?? null;
+      const previousEmail = previousUserId ? "(prev)" : "";
+      const nextEmail = session?.user?.email ?? "null";
+
+      console.log(`[Auth] 🔍 onAuthStateChange: event=${event}, prev=${previousUserId?.slice(0,8) || "null"}, next=${nextUserId?.slice(0,8) || "null"} (${nextEmail})`);
 
       currentUserIdRef.current = nextUserId;
       setSession(session);
