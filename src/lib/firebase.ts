@@ -7,33 +7,50 @@ console.log("[Firebase] Module loading, isCapacitorNative:", isCapacitorNative()
 
 let app: any = null;
 let messagingInstance: any = null;
+let initPromise: Promise<any> | null = null;
 
-// Defer Firebase init — do NOT run at module load on Capacitor native
-function getFirebaseApp() {
+// Defer Firebase init using dynamic import (not require)
+async function getFirebaseApp() {
   if (app) return app;
-  try {
-    console.log("[Firebase] Initializing Firebase app...");
-    const { initializeApp } = require("firebase/app");
-    const firebaseConfig = {
-      apiKey: "AIzaSyC7o57Z8Y-F2KLyqSIGtHTSPgTxGRr-JNQ",
-      authDomain: "itasuper-c71a1.firebaseapp.com",
-      projectId: "itasuper-c71a1",
-      storageBucket: "itasuper-c71a1.firebasestorage.app",
-      messagingSenderId: "344752263518",
-      appId: "1:344752263518:web:abcb197795dbd262d37fcf",
-    };
-    app = initializeApp(firebaseConfig);
-    console.log("[Firebase] App initialized successfully");
-    return app;
-  } catch (e) {
-    console.error("[Firebase] initializeApp CRASHED:", e);
-    return null;
-  }
+  if (initPromise) return initPromise;
+
+  initPromise = (async () => {
+    try {
+      console.log("[Firebase] Initializing Firebase app via dynamic import...");
+      const { initializeApp, getApps, getApp } = await import("firebase/app");
+
+      // Avoid duplicate initialization
+      if (getApps().length > 0) {
+        app = getApp();
+        console.log("[Firebase] Reusing existing Firebase app");
+        return app;
+      }
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyC7o57Z8Y-F2KLyqSIGtHTSPgTxGRr-JNQ",
+        authDomain: "itasuper-c71a1.firebaseapp.com",
+        projectId: "itasuper-c71a1",
+        storageBucket: "itasuper-c71a1.firebasestorage.app",
+        messagingSenderId: "344752263518",
+        appId: "1:344752263518:web:abcb197795dbd262d37fcf",
+      };
+
+      app = initializeApp(firebaseConfig);
+      console.log("[Firebase] App initialized successfully");
+      return app;
+    } catch (e: any) {
+      console.error("[Firebase] initializeApp CRASHED:", e?.message || e?.code || "unknown error", e);
+      initPromise = null; // Allow retry
+      return null;
+    }
+  })();
+
+  return initPromise;
 }
 
-// Only init Firebase on web — skip entirely on Capacitor native
+// Kick off init on web (non-blocking)
 if (!isCapacitorNative()) {
-  getFirebaseApp();
+  getFirebaseApp().catch(() => {});
 } else {
   console.log("[Firebase] Skipping Firebase Web SDK init on Capacitor native");
 }
@@ -51,12 +68,15 @@ async function getMessagingInstance() {
     const supported = await isSupported();
     console.log("[Firebase] Messaging supported:", supported);
     if (!supported) return null;
-    const firebaseApp = getFirebaseApp();
-    if (!firebaseApp) return null;
+    const firebaseApp = await getFirebaseApp();
+    if (!firebaseApp) {
+      console.warn("[Firebase] getMessagingInstance: no Firebase app available");
+      return null;
+    }
     messagingInstance = getMessaging(firebaseApp);
     return messagingInstance;
-  } catch (e) {
-    console.error("[Firebase] getMessagingInstance CRASHED:", e);
+  } catch (e: any) {
+    console.error("[Firebase] getMessagingInstance CRASHED:", e?.message || e);
     return null;
   }
 }
@@ -111,8 +131,8 @@ export async function requestPushPermissionAndRegister(): Promise<string | null>
     }
 
     return token;
-  } catch (error) {
-    console.error("[Firebase] Push registration error:", error);
+  } catch (error: any) {
+    console.error("[Firebase] Push registration error:", error?.message || error);
     return null;
   }
 }
