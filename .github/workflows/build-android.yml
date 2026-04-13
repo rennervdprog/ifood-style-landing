@@ -76,9 +76,18 @@ jobs:
             appName: 'ItaSuper',
             webDir: 'dist',
             server: {
-              url: 'https://itasuper.com.br',
+              url: 'https://itasuper.com.br/cliente',
               cleartext: false
-            }
+            },
+            plugins: {
+              SplashScreen: {
+                launchAutoHide: false,
+                backgroundColor: '#FF4B2B',
+                showSpinner: true,
+                spinnerColor: '#FFFFFF',
+                launchFadeOutDuration: 500,
+              },
+            },
           };
           export default config;
           EOF
