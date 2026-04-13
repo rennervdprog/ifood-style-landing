@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatBRL } from "@/lib/utils";
-import { X, AlertTriangle, Loader2, Wallet } from "lucide-react";
+import { X, AlertTriangle, Loader2, Wallet, Clock, CheckCircle2 } from "lucide-react";
 
 const FEE_TABLE: Record<string, { percent: number; label: string }> = {
   aguardando_pagamento: { percent: 0, label: "Sem taxa" },
@@ -13,6 +13,8 @@ const FEE_TABLE: Record<string, { percent: number; label: string }> = {
   em_transito: { percent: 60, label: "60% de taxa (em rota)" },
 };
 
+const TIME_LIMIT_MINUTES = 20;
+
 interface Props {
   order: {
     id: string;
@@ -20,6 +22,8 @@ interface Props {
     subtotal: number;
     total_price: number;
     payment_method: string;
+    confirmed_at?: string | null;
+    created_at?: string;
     stores?: { name?: string };
   };
   onClose: () => void;
@@ -30,10 +34,28 @@ const CancelOrderModal = ({ order, onClose, onCancelled }: Props) => {
   const [loading, setLoading] = useState(false);
 
   const feeInfo = FEE_TABLE[order.status];
+
+  const { isTimeOverride, minutesElapsed, effectiveFeePercent } = useMemo(() => {
+    if (!feeInfo) return { isTimeOverride: false, minutesElapsed: 0, effectiveFeePercent: 0 };
+    const referenceTime = order.confirmed_at || order.created_at;
+    if (!referenceTime) return { isTimeOverride: false, minutesElapsed: 0, effectiveFeePercent: feeInfo.percent };
+
+    const elapsed = (Date.now() - new Date(referenceTime).getTime()) / 60000;
+    const hasTimePassed = elapsed >= TIME_LIMIT_MINUTES;
+    const statusesWithTimeOverride = ["preparando", "pronto_para_entrega", "saiu_entrega", "em_transito"];
+    const override = hasTimePassed && statusesWithTimeOverride.includes(order.status);
+
+    return {
+      isTimeOverride: override,
+      minutesElapsed: Math.floor(elapsed),
+      effectiveFeePercent: override ? 0 : feeInfo.percent,
+    };
+  }, [order.confirmed_at, order.created_at, order.status, feeInfo.percent]);
+
   if (!feeInfo) return null;
 
   const subtotal = Number(order.subtotal) || 0;
-  const feeAmount = Math.round(subtotal * (feeInfo.percent / 100) * 100) / 100;
+  const feeAmount = Math.round(subtotal * (effectiveFeePercent / 100) * 100) / 100;
   const refundAmount = Math.max(0, subtotal - feeAmount);
 
   const handleCancel = async () => {
@@ -78,18 +100,45 @@ const CancelOrderModal = ({ order, onClose, onCancelled }: Props) => {
         </div>
 
         <div className="p-4 space-y-4">
+          {/* Time override banner */}
+          {isTimeOverride && (
+            <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl p-3 flex items-start gap-2">
+              <CheckCircle2 className="h-5 w-5 text-emerald-600 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                  Reembolso total garantido!
+                </p>
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">
+                  O pedido está neste status há {minutesElapsed} minutos (limite de {TIME_LIMIT_MINUTES} min excedido). Você tem direito a 100% de reembolso sem taxa.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Fee breakdown */}
           <div className="bg-muted/30 rounded-xl p-4 space-y-3">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Subtotal do pedido</span>
               <span className="font-semibold text-foreground">{formatBRL(subtotal)}</span>
             </div>
-            {feeInfo.percent > 0 && (
+
+            {!isTimeOverride && effectiveFeePercent > 0 && (
               <div className="flex justify-between text-sm">
                 <span className="text-red-500">{feeInfo.label}</span>
                 <span className="font-semibold text-red-500">-{formatBRL(feeAmount)}</span>
               </div>
             )}
+
+            {isTimeOverride && feeInfo.percent > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground line-through">{feeInfo.label}</span>
+                <span className="text-emerald-600 font-semibold flex items-center gap-1">
+                  <Clock className="h-3.5 w-3.5" />
+                  Isento (tempo excedido)
+                </span>
+              </div>
+            )}
+
             <div className="border-t border-border pt-3 flex justify-between">
               <span className="text-sm font-bold text-foreground flex items-center gap-1.5">
                 <Wallet className="h-4 w-4 text-emerald-500" />
@@ -99,7 +148,7 @@ const CancelOrderModal = ({ order, onClose, onCancelled }: Props) => {
             </div>
           </div>
 
-          {feeInfo.percent === 0 && (
+          {effectiveFeePercent === 0 && !isTimeOverride && (
             <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl p-3">
               <p className="text-xs text-emerald-700 dark:text-emerald-300">
                 ✅ Cancelamento sem custo! O valor total será creditado na sua carteira.
@@ -107,10 +156,10 @@ const CancelOrderModal = ({ order, onClose, onCancelled }: Props) => {
             </div>
           )}
 
-          {feeInfo.percent > 0 && (
+          {effectiveFeePercent > 0 && (
             <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-3">
               <p className="text-xs text-amber-700 dark:text-amber-300">
-                ⚠️ Como o pedido já está em {order.status === "preparando" ? "preparo" : order.status === "pronto_para_entrega" ? "estado pronto" : "rota de entrega"}, será cobrada uma taxa de {feeInfo.percent}%.
+                ⚠️ Como o pedido já está em {order.status === "preparando" ? "preparo" : order.status === "pronto_para_entrega" ? "estado pronto" : "rota de entrega"}, será cobrada uma taxa de {effectiveFeePercent}%. Após {TIME_LIMIT_MINUTES} minutos sem entrega, a taxa é removida.
               </p>
             </div>
           )}
