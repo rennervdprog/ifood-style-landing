@@ -87,8 +87,8 @@ const CancelOrderModal = ({ order, onClose, onCancelled }: Props) => {
       <div className="bg-card rounded-t-3xl sm:rounded-2xl w-full max-w-md border border-border" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="px-4 py-4 flex items-center gap-3 border-b border-border">
-          <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
-            <AlertTriangle className="h-5 w-5 text-red-500" />
+          <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center">
+            <AlertTriangle className="h-5 w-5 text-destructive" />
           </div>
           <div className="flex-1">
             <h2 className="font-bold text-foreground">Cancelar Pedido</h2>
@@ -102,13 +102,13 @@ const CancelOrderModal = ({ order, onClose, onCancelled }: Props) => {
         <div className="p-4 space-y-4">
           {/* Time override banner */}
           {isTimeOverride && (
-            <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl p-3 flex items-start gap-2">
-              <CheckCircle2 className="h-5 w-5 text-emerald-600 mt-0.5 shrink-0" />
+            <div className="bg-primary/10 border border-primary/30 rounded-xl p-3 flex items-start gap-2">
+              <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 shrink-0" />
               <div>
-                <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                <p className="text-sm font-semibold text-foreground">
                   Reembolso total garantido!
                 </p>
-                <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   O pedido está neste status há {minutesElapsed} minutos (limite de {TIME_LIMIT_MINUTES} min excedido). Você tem direito a 100% de reembolso sem taxa.
                 </p>
               </div>
@@ -124,15 +124,15 @@ const CancelOrderModal = ({ order, onClose, onCancelled }: Props) => {
 
             {!isTimeOverride && effectiveFeePercent > 0 && (
               <div className="flex justify-between text-sm">
-                <span className="text-red-500">{feeInfo.label}</span>
-                <span className="font-semibold text-red-500">-{formatBRL(feeAmount)}</span>
+                <span className="text-destructive">{feeInfo.label}</span>
+                <span className="font-semibold text-destructive">-{formatBRL(feeAmount)}</span>
               </div>
             )}
 
             {isTimeOverride && feeInfo.percent > 0 && (
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground line-through">{feeInfo.label}</span>
-                <span className="text-emerald-600 font-semibold flex items-center gap-1">
+                <span className="text-primary font-semibold flex items-center gap-1">
                   <Clock className="h-3.5 w-3.5" />
                   Isento (tempo excedido)
                 </span>
@@ -141,24 +141,24 @@ const CancelOrderModal = ({ order, onClose, onCancelled }: Props) => {
 
             <div className="border-t border-border pt-3 flex justify-between">
               <span className="text-sm font-bold text-foreground flex items-center gap-1.5">
-                <Wallet className="h-4 w-4 text-emerald-500" />
+                <Wallet className="h-4 w-4 text-primary" />
                 Crédito na carteira
               </span>
-              <span className="text-lg font-black text-emerald-600">{formatBRL(refundAmount)}</span>
+              <span className="text-lg font-black text-primary">{formatBRL(refundAmount)}</span>
             </div>
           </div>
 
           {effectiveFeePercent === 0 && !isTimeOverride && (
-            <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl p-3">
-              <p className="text-xs text-emerald-700 dark:text-emerald-300">
+            <div className="bg-primary/10 border border-primary/30 rounded-xl p-3">
+              <p className="text-xs text-foreground">
                 ✅ Cancelamento sem custo! O valor total será creditado na sua carteira.
               </p>
             </div>
           )}
 
           {effectiveFeePercent > 0 && (
-            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-3">
-              <p className="text-xs text-amber-700 dark:text-amber-300">
+            <div className="bg-accent border border-border rounded-xl p-3">
+              <p className="text-xs text-foreground">
                 ⚠️ Como o pedido já está em {order.status === "preparando" ? "preparo" : order.status === "pronto_para_entrega" ? "estado pronto" : "rota de entrega"}, será cobrada uma taxa de {effectiveFeePercent}%. Após {TIME_LIMIT_MINUTES} minutos sem entrega, a taxa é removida.
               </p>
             </div>
@@ -175,7 +175,7 @@ const CancelOrderModal = ({ order, onClose, onCancelled }: Props) => {
             <button
               onClick={handleCancel}
               disabled={loading}
-              className="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-2xl text-sm flex items-center justify-center gap-2 disabled:opacity-50 transition-colors"
+              className="flex-1 bg-destructive hover:bg-destructive/90 text-destructive-foreground font-bold py-3 rounded-2xl text-sm flex items-center justify-center gap-2 disabled:opacity-50 transition-colors"
             >
               {loading ? (
                 <>
