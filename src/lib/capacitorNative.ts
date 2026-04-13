@@ -39,10 +39,15 @@ function settleRegistration(token: string | null) {
   registrationPromise = null;
 }
 
+// We store the plugin reference here to avoid returning it from an async function
+// (Capacitor plugins have a .then() method that confuses JS await)
+let pushPlugin: any = null;
+
 async function ensurePushListeners() {
   const { PushNotifications } = await import("@capacitor/push-notifications");
+  pushPlugin = PushNotifications;
 
-  if (listenersReady) return PushNotifications;
+  if (listenersReady) return;
 
   PushNotifications.addListener("registration", async (token) => {
     console.log("[CapPush] Token:", token.value);
@@ -85,7 +90,6 @@ async function ensurePushListeners() {
   });
 
   listenersReady = true;
-  return PushNotifications;
 }
 
 /**
@@ -123,11 +127,11 @@ export async function registerCapacitorPush(options: { requestPermission?: boole
   const requestPermission = options.requestPermission ?? true;
 
   try {
-    const PushNotifications = await ensurePushListeners();
+    await ensurePushListeners();
 
     const permResult = requestPermission
-      ? await PushNotifications.requestPermissions()
-      : await PushNotifications.checkPermissions();
+      ? await pushPlugin.requestPermissions()
+      : await pushPlugin.checkPermissions();
 
     if (permResult.receive !== "granted") {
       console.warn(`[CapPush] Permission not granted (${permResult.receive})`);
@@ -147,7 +151,7 @@ export async function registerCapacitorPush(options: { requestPermission?: boole
       }, 10000);
 
       try {
-        await PushNotifications.register();
+        await pushPlugin.register();
       } catch (error) {
         console.error("[CapPush] Fatal error during registration:", error);
         settleRegistration(null);
