@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { isCapacitorNative } from "@/lib/capacitorNative";
+import { supabase } from "@/integrations/supabase/client";
 
 // In-memory log buffer
 const logBuffer: string[] = [];
@@ -27,7 +28,6 @@ if (typeof window !== "undefined" && !(window as any).__debugPatched) {
   console.warn = (...args) => { origWarn(...args); addLog("WARN", ...args); };
   console.error = (...args) => { origError(...args); addLog("ERR", ...args); };
 
-  // Catch unhandled errors
   window.addEventListener("error", (e) => {
     addLog("CRASH", e.message, e.filename, e.lineno);
   });
@@ -36,12 +36,135 @@ if (typeof window !== "undefined" && !(window as any).__debugPatched) {
   });
 }
 
+// ── Test notification helpers ──
+
+const sendTestPush = async (targetEmail: string, title: string, body: string) => {
+  try {
+    console.log(`[DebugTest] 🔔 Sending test push to ${targetEmail}: "${title}"`);
+
+    // Look up user_id from profiles by email
+    const { data: profile, error: profileErr } = await supabase
+      .from("profiles")
+      .select("user_id, full_name, email")
+      .eq("email", targetEmail)
+      .maybeSingle();
+
+    if (profileErr || !profile) {
+      console.error(`[DebugTest] ❌ Profile not found for ${targetEmail}:`, profileErr?.message);
+      return;
+    }
+
+    console.log(`[DebugTest] 📋 Found profile: ${profile.full_name} (${profile.user_id})`);
+
+    // Check FCM tokens for this user
+    const { data: tokens } = await supabase
+      .from("fcm_tokens")
+      .select("token, device_info, updated_at, user_id")
+      .eq("user_id", profile.user_id);
+
+    console.log(`[DebugTest] 📱 FCM tokens for ${targetEmail}:`, JSON.stringify(tokens?.map(t => ({
+      user_id: t.user_id,
+      device: t.device_info,
+      token_prefix: t.token?.slice(0, 20) + "...",
+      updated: t.updated_at
+    }))));
+
+    // Send push via edge function
+    const { data, error } = await supabase.functions.invoke("send-push", {
+      body: {
+        user_ids: [profile.user_id],
+        title,
+        body,
+        data: { link: "/pedidos", test: "true" }
+      }
+    });
+
+    if (error) {
+      console.error(`[DebugTest] ❌ send-push error:`, error);
+    } else {
+      console.log(`[DebugTest] ✅ send-push response:`, JSON.stringify(data));
+    }
+  } catch (e: any) {
+    console.error(`[DebugTest] ❌ Exception:`, e.message);
+  }
+};
+
+const sendTestToMotoboys = async () => {
+  try {
+    console.log(`[DebugTest] 🏍️ Sending test push to all active motoboys...`);
+
+    const { data: drivers } = await supabase
+      .from("drivers")
+      .select("user_id, name, is_active")
+      .eq("is_active", true);
+
+    if (!drivers || drivers.length === 0) {
+      console.warn(`[DebugTest] ⚠️ No active motoboys found`);
+      return;
+    }
+
+    const userIds = drivers.map(d => d.user_id);
+    console.log(`[DebugTest] 📋 Active motoboys (${drivers.length}):`, drivers.map(d => d.name).join(", "));
+
+    const { data, error } = await supabase.functions.invoke("send-push", {
+      body: {
+        user_ids: userIds,
+        title: "🏍️ Teste — Nova Entrega!",
+        body: "Esta é uma notificação de TESTE para motoboys.",
+        data: { link: "/entregador", test: "true" }
+      }
+    });
+
+    if (error) {
+      console.error(`[DebugTest] ❌ send-push error:`, error);
+    } else {
+      console.log(`[DebugTest] ✅ send-push response:`, JSON.stringify(data));
+    }
+  } catch (e: any) {
+    console.error(`[DebugTest] ❌ Exception:`, e.message);
+  }
+};
+
+const checkCurrentDeviceTokens = async () => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.warn("[DebugTest] ⚠️ No user logged in");
+      return;
+    }
+    console.log(`[DebugTest] 👤 Current user: ${user.email} (${user.id})`);
+
+    const { data: allTokens } = await supabase
+      .from("fcm_tokens")
+      .select("token, device_info, updated_at, user_id")
+      .order("updated_at", { ascending: false })
+      .limit(20);
+
+    console.log(`[DebugTest] 📱 All recent FCM tokens in DB:`);
+    allTokens?.forEach((t, i) => {
+      console.log(`  [${i}] user=${t.user_id?.slice(0, 8)} device=${t.device_info} token=${t.token?.slice(0, 15)}... updated=${t.updated_at}`);
+    });
+
+    // Highlight tokens for current user
+    const myTokens = allTokens?.filter(t => t.user_id === user.id);
+    console.log(`[DebugTest] 🔑 Tokens for current user (${user.email}): ${myTokens?.length || 0}`);
+  } catch (e: any) {
+    console.error(`[DebugTest] ❌ Exception:`, e.message);
+  }
+};
+
+// ── Component ──
+
+const btnStyle: React.CSSProperties = {
+  background: "#2563eb", color: "#fff", border: "none", borderRadius: 4,
+  padding: "6px 10px", fontSize: 11, cursor: "pointer", whiteSpace: "nowrap"
+};
+
 const DebugOverlay = () => {
   const [open, setOpen] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Only show on Capacitor native or if ?debug=1
   const shouldShow = isCapacitorNative() || new URLSearchParams(window.location.search).has("debug");
 
   useEffect(() => {
@@ -82,19 +205,46 @@ const DebugOverlay = () => {
       background: "rgba(0,0,0,0.95)", color: "#0f0",
       fontFamily: "monospace", fontSize: 11, display: "flex", flexDirection: "column"
     }}>
-      <div style={{ display: "flex", justifyContent: "space-between", padding: 8, borderBottom: "1px solid #333" }}>
-        <span style={{ fontWeight: "bold", color: "#fff" }}>🐛 Debug Logs ({logs.length})</span>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={() => { logBuffer.length = 0; setLogs([]); }}
-            style={{ background: "#333", color: "#fff", border: "none", borderRadius: 4, padding: "4px 8px", fontSize: 11 }}>
-            Limpar
+      <div style={{ padding: 8, borderBottom: "1px solid #333" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+          <span style={{ fontWeight: "bold", color: "#fff" }}>🐛 Debug Logs ({logs.length})</span>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={() => { logBuffer.length = 0; setLogs([]); }}
+              style={{ background: "#333", color: "#fff", border: "none", borderRadius: 4, padding: "4px 8px", fontSize: 11 }}>
+              Limpar
+            </button>
+            <button onClick={() => setOpen(false)}
+              style={{ background: "#333", color: "#fff", border: "none", borderRadius: 4, padding: "4px 8px", fontSize: 11 }}>
+              ✕ Fechar
+            </button>
+          </div>
+        </div>
+
+        {/* Test notification buttons */}
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          <button style={btnStyle} onClick={() => sendTestPush(
+            "vinivias13@gmail.com",
+            "🧪 Teste — Pedido Preparando",
+            "Notificação de TESTE para vinivias13."
+          )}>
+            📩 Push vinivias13
           </button>
-          <button onClick={() => setOpen(false)}
-            style={{ background: "#333", color: "#fff", border: "none", borderRadius: 4, padding: "4px 8px", fontSize: 11 }}>
-            ✕ Fechar
+          <button style={btnStyle} onClick={() => sendTestPush(
+            "vinivias13@gmail.com",
+            "🛵 Teste — Saiu para entrega!",
+            "TESTE: Seu pedido saiu para entrega."
+          )}>
+            🛵 Entrega vinivias13
+          </button>
+          <button style={{ ...btnStyle, background: "#16a34a" }} onClick={sendTestToMotoboys}>
+            🏍️ Push Motoboys
+          </button>
+          <button style={{ ...btnStyle, background: "#9333ea" }} onClick={checkCurrentDeviceTokens}>
+            🔍 Ver Tokens
           </button>
         </div>
       </div>
+
       <div ref={scrollRef} style={{ flex: 1, overflow: "auto", padding: 8 }}>
         {logs.length === 0 && <div style={{ color: "#666" }}>Nenhum log ainda...</div>}
         {logs.map((log, i) => (
