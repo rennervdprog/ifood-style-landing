@@ -4,7 +4,7 @@ import PizzaHalfHalfModal from "@/components/PizzaHalfHalfModal";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart, type CartAddon } from "@/contexts/CartContext";
-import { Star, Clock, ChevronRight, ChevronDown, ChevronUp, MapPin, Search, X, Navigation, CreditCard, Banknote, Smartphone, QrCode, RotateCcw, TrendingUp } from "lucide-react";
+import { Star, Clock, ChevronRight, ChevronDown, ChevronUp, MapPin, Search, X, Navigation, CreditCard, Banknote, Smartphone, QrCode, RotateCcw, TrendingUp, ArrowLeft } from "lucide-react";
 import LoyaltyBanner from "@/components/LoyaltyBanner";
 import { toast } from "sonner";
 import { useRef, useState, useEffect } from "react";
@@ -16,6 +16,7 @@ import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStoreContext } from "@/contexts/StoreContext";
 import { useStorePlan } from "@/hooks/useStorePlan";
+import { getStoreAppSlug } from "@/components/StoreAppGuard";
 
 interface Product {
   id: string;
@@ -338,7 +339,17 @@ const StorePage = () => {
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
 
         {/* Top bar */}
-        <div className="absolute top-0 left-0 right-0 flex items-center justify-end p-4 z-10">
+        <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 z-10">
+          <div>
+            {!getStoreAppSlug() && (
+              <button
+                onClick={() => navigate("/")}
+                className="w-10 h-10 bg-card/90 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg border border-border/50"
+              >
+                <ArrowLeft className="h-5 w-5 text-foreground" />
+              </button>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowSearch(!showSearch)}
