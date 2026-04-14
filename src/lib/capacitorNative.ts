@@ -299,6 +299,12 @@ export async function initCapacitorNative() {
     console.log("[Capacitor] PushListeners done");
   } catch (e) { console.error("[Capacitor] PushListeners failed:", e); }
 
+  // Request location permission early so GPS is available for maps/tracking
+  try {
+    await requestLocationPermission();
+    console.log("[Capacitor] Location permission done");
+  } catch (e) { console.error("[Capacitor] Location permission failed:", e); }
+
   // Hide splash after a small delay to let the app render
   setTimeout(() => hideSplash(), 500);
 
