@@ -423,13 +423,22 @@ const CadastroLojista = () => {
                   {errors.password && <p className="text-xs text-destructive mt-1">{errors.password}</p>}
                 </div>
 
-                <button
-                  type="button"
-                  onClick={nextStep}
-                  className="w-full bg-primary text-primary-foreground font-bold py-3.5 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-                >
-                  Próximo <ChevronRight className="h-4 w-4" />
-                </button>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setStep(0)}
+                    className="flex-1 bg-muted text-foreground font-bold py-3.5 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                  >
+                    <ArrowLeft className="h-4 w-4" /> Voltar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={nextStep}
+                    className="flex-1 bg-primary text-primary-foreground font-bold py-3.5 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                  >
+                    Próximo <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             )}
 
@@ -509,13 +518,22 @@ const CadastroLojista = () => {
                   )}
                 </div>
 
-                <button
-                  type="button"
-                  onClick={nextStep}
-                  className="w-full bg-primary text-primary-foreground font-bold py-3.5 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-                >
-                  Próximo <ChevronRight className="h-4 w-4" />
-                </button>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setStep(1)}
+                    className="flex-1 bg-muted text-foreground font-bold py-3.5 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                  >
+                    <ArrowLeft className="h-4 w-4" /> Voltar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={nextStep}
+                    className="flex-1 bg-primary text-primary-foreground font-bold py-3.5 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                  >
+                    Próximo <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             )}
 
@@ -587,18 +605,27 @@ const CadastroLojista = () => {
                   </span>
                 </label>
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-primary text-primary-foreground font-bold py-3.5 rounded-2xl active:scale-[0.98] transition-all disabled:opacity-50"
-                >
-                  {loading ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                      Cadastrando...
-                    </span>
-                  ) : "Cadastrar Minha Loja"}
-                </button>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setStep(2)}
+                    className="flex-1 bg-muted text-foreground font-bold py-3.5 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                  >
+                    <ArrowLeft className="h-4 w-4" /> Voltar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="flex-1 bg-primary text-primary-foreground font-bold py-3.5 rounded-2xl active:scale-[0.98] transition-all disabled:opacity-50"
+                  >
+                    {loading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                        Cadastrando...
+                      </span>
+                    ) : "Cadastrar"}
+                  </button>
+                </div>
               </div>
             )}
           </form>

@@ -284,9 +284,9 @@ const CadastroEntregador = () => {
             const isActive = i === step;
             const isDone = i < step;
             return (
-              <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
+              <div key={i} className="flex-1 flex flex-col items-center gap-1.5 cursor-pointer" onClick={() => { if (isDone) setStep(i); }}>
                 <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all ${
-                  isDone ? "bg-green-500/10" : isActive ? "bg-primary/10" : "bg-muted/50"
+                  isDone ? "bg-green-500/10 hover:bg-green-500/20" : isActive ? "bg-primary/10" : "bg-muted/50"
                 }`}>
                   {isDone ? (
                     <CheckCircle className="h-5 w-5 text-green-500" />
@@ -407,13 +407,22 @@ const CadastroEntregador = () => {
                   {errors.city && <p className="text-xs text-destructive mt-1">{errors.city}</p>}
                 </div>
 
-                <button
-                  type="button"
-                  onClick={nextStep}
-                  className="w-full bg-primary text-primary-foreground font-bold py-3.5 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-                >
-                  Próximo <ChevronRight className="h-4 w-4" />
-                </button>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setStep(0)}
+                    className="flex-1 bg-muted text-foreground font-bold py-3.5 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                  >
+                    <ArrowLeft className="h-4 w-4" /> Voltar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={nextStep}
+                    className="flex-1 bg-primary text-primary-foreground font-bold py-3.5 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                  >
+                    Próximo <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             )}
 
@@ -517,18 +526,27 @@ const CadastroEntregador = () => {
                   </span>
                 </label>
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-primary text-primary-foreground font-bold py-3.5 rounded-2xl active:scale-[0.98] transition-all disabled:opacity-50"
-                >
-                  {loading ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                      Cadastrando...
-                    </span>
-                  ) : "Cadastrar como Entregador"}
-                </button>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setStep(1)}
+                    className="flex-1 bg-muted text-foreground font-bold py-3.5 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                  >
+                    <ArrowLeft className="h-4 w-4" /> Voltar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="flex-1 bg-primary text-primary-foreground font-bold py-3.5 rounded-2xl active:scale-[0.98] transition-all disabled:opacity-50"
+                  >
+                    {loading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                        Cadastrando...
+                      </span>
+                    ) : "Cadastrar"}
+                  </button>
+                </div>
               </div>
             )}
           </form>
