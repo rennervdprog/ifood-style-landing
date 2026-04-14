@@ -15,12 +15,16 @@ const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
   const notificationTitle = payload.notification?.title || "ItaSuper";
+  const orderId = payload.data?.order_id;
   const notificationOptions = {
     body: payload.notification?.body || "",
     icon: "/icon-192x192.png",
     badge: "/icon-192x192.png",
-    vibrate: [200, 100, 200],
+    vibrate: [200, 100, 200, 100, 200, 100, 200],
     data: payload.data,
+    tag: orderId ? "order-" + orderId : "itasuper-" + Date.now(),
+    renotify: true,
+    requireInteraction: true,
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);
