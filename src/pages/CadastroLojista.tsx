@@ -518,7 +518,7 @@ const CadastroLojista = () => {
                           <span className="text-xs bg-amber-500/10 text-amber-600 px-2 py-0.5 rounded-full">📱 Cardápio Digital</span>
                         )}
                       </p>
-                      {street && <p className="text-xs text-muted-foreground mt-1">{street}{neighborhood ? ` - ${neighborhood}` : ""}</p>}
+                      {street && <p className="text-xs text-muted-foreground mt-1">{street}{addressNumber ? `, ${addressNumber}` : ""}{neighborhood ? ` - ${neighborhood}` : ""}</p>}
                       {!isPlatformCity && (
                         <p className="text-xs text-amber-600 mt-1">
                           Motoboys da plataforma ainda não disponíveis. Sua loja funcionará como cardápio digital com motoboy próprio.
@@ -526,6 +526,43 @@ const CadastroLojista = () => {
                       )}
                     </div>
                   )}
+
+                  {/* Street + Number fields */}
+                  <div className="grid grid-cols-3 gap-2 mt-2">
+                    <div className="col-span-2">
+                      <input
+                        type="text"
+                        placeholder="Rua / Avenida *"
+                        value={street}
+                        onChange={(e) => setStreet(e.target.value)}
+                        className="w-full h-12 px-4 rounded-2xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                      />
+                      {errors.street && <p className="text-xs text-destructive mt-1 px-1">{errors.street}</p>}
+                    </div>
+                    <div>
+                      <input
+                        type="text"
+                        placeholder="Nº *"
+                        value={addressNumber}
+                        onChange={(e) => setAddressNumber(e.target.value)}
+                        inputMode="numeric"
+                        className="w-full h-12 px-4 rounded-2xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                      />
+                      {errors.addressNumber && <p className="text-xs text-destructive mt-1 px-1">{errors.addressNumber}</p>}
+                    </div>
+                  </div>
+
+                  {/* Neighborhood */}
+                  <div className="mt-2">
+                    <input
+                      type="text"
+                      placeholder="Bairro *"
+                      value={neighborhood}
+                      onChange={(e) => setNeighborhood(e.target.value)}
+                      className="w-full h-12 px-4 rounded-2xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                    />
+                    {errors.neighborhood && <p className="text-xs text-destructive mt-1 px-1">{errors.neighborhood}</p>}
+                  </div>
                 </div>
 
                 <div className="flex gap-3">
