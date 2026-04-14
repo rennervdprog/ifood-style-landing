@@ -17,6 +17,7 @@ import { addMoney, multiplyMoney, sumMoney, formatBRL } from "@/lib/utils";
 import { useStorePlan } from "@/hooks/useStorePlan";
 import LoyaltyRedemption from "@/components/LoyaltyRedemption";
 import DeliveryTimeEstimate from "@/components/DeliveryTimeEstimate";
+import { geocodeAddressPrecise, resolveAddressContext } from "@/lib/addressGeocoding";
 
 const allPaymentMethods = [
   { id: "pix", label: "PIX Online", desc: "Pagamento instantâneo", icon: QrCode },
@@ -252,19 +253,19 @@ const CheckoutPage = () => {
         const geoStreet = useSavedAddr
           ? [savedAddressData.street, savedAddressData.number].filter(Boolean).join(" ")
           : [profileStreet, profileNumber].filter(Boolean).join(" ");
-        const geoCity = finalNeighborhood || "";
-        
-        const geoParams = new URLSearchParams({ format: "json", limit: "1", country: "Brazil" });
-        if (geoStreet) geoParams.set("street", geoStreet);
-        if (geoCity) geoParams.set("city", geoCity);
-        if (geoCep) geoParams.set("postalcode", geoCep.replace(/\D/g, ""));
-        geoParams.set("state", "São Paulo");
-        
-        const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?${geoParams.toString()}`);
-        const geoResults = await geoRes.json();
-        if (geoResults?.[0]) {
-          clientLat = parseFloat(geoResults[0].lat);
-          clientLng = parseFloat(geoResults[0].lon);
+
+        const context = await resolveAddressContext({
+          street: geoStreet,
+          neighborhood: useSavedAddr ? savedAddressData?.neighborhood : profileNeighborhood,
+          city: undefined,
+          state: undefined,
+          postalcode: geoCep,
+        });
+
+        const preciseGeo = await geocodeAddressPrecise(context);
+        if (preciseGeo) {
+          clientLat = preciseGeo.lat;
+          clientLng = preciseGeo.lng;
         }
       } catch { /* geocoding is best-effort */ }
 
