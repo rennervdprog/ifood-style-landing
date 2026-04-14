@@ -1728,24 +1728,33 @@ const AdminDashboard = () => {
                           )}
                         </div>
 
-                        {/* Address */}
+                        {/* Address / Pickup badge */}
                         <div className="mx-3 mb-2">
-                          <button onClick={() => toggleAddress(order.id)}
-                            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground w-full">
-                            <MapPin className="h-3 w-3" />
-                            <span className="truncate flex-1 text-left">{order.neighborhood}</span>
-                            {isAddressExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                          </button>
-                          {isAddressExpanded && (
-                            <div className="mt-1.5 bg-muted/30 rounded-lg p-2.5 text-xs text-muted-foreground space-y-0.5 animate-fade-in">
-                              <p>{order.address_details}</p>
-                              <p className="text-muted-foreground/70">Taxa entrega: {formatBRL(Number(order.delivery_fee))}</p>
+                          {order.neighborhood === "RETIRADA" ? (
+                            <div className="flex items-center gap-1.5 bg-violet-500/10 border border-violet-500/20 rounded-xl px-3 py-2">
+                              <Store className="h-3.5 w-3.5 text-violet-500" />
+                              <span className="text-xs font-bold text-violet-600 dark:text-violet-400">🏪 Retirada na loja</span>
                             </div>
+                          ) : (
+                            <>
+                              <button onClick={() => toggleAddress(order.id)}
+                                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground w-full">
+                                <MapPin className="h-3 w-3" />
+                                <span className="truncate flex-1 text-left">{order.neighborhood}</span>
+                                {isAddressExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                              </button>
+                              {isAddressExpanded && (
+                                <div className="mt-1.5 bg-muted/30 rounded-lg p-2.5 text-xs text-muted-foreground space-y-0.5 animate-fade-in">
+                                  <p>{order.address_details}</p>
+                                  <p className="text-muted-foreground/70">Taxa entrega: {formatBRL(Number(order.delivery_fee))}</p>
+                                </div>
+                              )}
+                            </>
                           )}
                         </div>
 
-                        {/* Driver status - Platform mode */}
-                        {order.status === "pronto_para_entrega" && !order.driver_id && !isOwnDelivery && (
+                        {/* Driver status - Platform mode (not for pickup orders) */}
+                        {order.neighborhood !== "RETIRADA" && order.status === "pronto_para_entrega" && !order.driver_id && !isOwnDelivery && (
                           <div className="mx-3 mb-2 bg-amber-500/5 border border-amber-500/20 rounded-xl px-3 py-2">
                             <div className="flex items-center gap-1.5 mb-1">
                               <Loader2 className="h-3.5 w-3.5 text-amber-500 animate-spin" />
@@ -1759,7 +1768,7 @@ const AdminDashboard = () => {
                             </div>
                           </div>
                         )}
-                        {order.status === "pronto_para_entrega" && isOwnDelivery && !order.driver_id && (
+                        {order.neighborhood !== "RETIRADA" && order.status === "pronto_para_entrega" && isOwnDelivery && !order.driver_id && (
                           <div className="mx-3 mb-2 bg-blue-500/5 border border-blue-500/20 rounded-xl px-3 py-2">
                             <div className="flex items-center gap-1.5">
                               <Loader2 className="h-3.5 w-3.5 text-blue-500 animate-spin" />
@@ -1772,7 +1781,7 @@ const AdminDashboard = () => {
                             )}
                           </div>
                         )}
-                        {order.status === "pronto_para_entrega" && isOwnDelivery && order.driver_id && (
+                        {order.neighborhood !== "RETIRADA" && order.status === "pronto_para_entrega" && isOwnDelivery && order.driver_id && (
                           <div className="mx-3 mb-2 flex items-center gap-1.5 bg-emerald-500/5 border border-emerald-500/20 rounded-xl px-3 py-2">
                             <Bike className="h-3.5 w-3.5 text-emerald-500" />
                             <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">🏍️ {getDriverName(order.driver_id)} aceitou o pedido</span>
