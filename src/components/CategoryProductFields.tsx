@@ -152,6 +152,7 @@ const CategoryProductFields = ({ category, metadata, onChange, storeId }: Catego
     case "lanches":
       return renderBeverageToggle(
         <FieldBox emoji="🍔" title="Detalhes do Lanche">
+          {renderListField("Tipos de pão disponíveis", "bread_types", "Ex: Brioche, Tradicional, Australiano, Ciabatta...")}
           {renderToggle("Produto é um combo?", "is_combo")}
           {metadata.is_combo && renderListField("Itens do Combo", "combo_items", "Ex: Hambúrguer, Batata M, Refri 500ml...")}
           {renderTextField("Peso (opcional)", "patty_weight", "Ex: 150g, 200g...")}
