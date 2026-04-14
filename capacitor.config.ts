@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'itasuper',
   webDir: 'dist',
   server: {
-    url: 'https://itasuper.com.br',
+    url: 'https://itasuper.com.br/portal-parceiro?capApp=partner',
     cleartext: false
   }
 };

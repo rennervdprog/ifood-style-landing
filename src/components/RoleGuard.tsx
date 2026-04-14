@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Shield } from "lucide-react";
+import { isPartnerCapacitorApp } from "@/lib/capacitorAppMode";
 
 interface RoleGuardProps {
   allowedRoles: string[];
@@ -22,7 +23,7 @@ const RoleGuard = ({ allowedRoles, redirectTo, children, requireApproval = false
     if (authLoading) return;
 
     if (!user) {
-      navigate("/auth", { replace: true });
+      navigate(isPartnerCapacitorApp() ? "/portal-parceiro" : "/auth", { replace: true });
       return;
     }
 

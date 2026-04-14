@@ -3,6 +3,7 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Mail, Lock, Eye, EyeOff, KeyRound, FileText, ShoppingBag, CheckCircle2, Zap } from "lucide-react";
+import { isPartnerCapacitorApp } from "@/lib/capacitorAppMode";
 
 type AuthMode = "login" | "signup" | "forgot" | "reset";
 
@@ -21,7 +22,6 @@ const AuthPage = () => {
   const [resetSent, setResetSent] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const from = (location.state as { from?: string })?.from || "/";
 
   useEffect(() => {
     const until = localStorage.getItem(REMEMBER_KEY);
@@ -30,6 +30,12 @@ const AuthPage = () => {
       localStorage.removeItem(REMEMBER_KEY);
     }
   }, []);
+
+  useEffect(() => {
+    if (isPartnerCapacitorApp()) {
+      navigate("/portal-parceiro", { replace: true });
+    }
+  }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
