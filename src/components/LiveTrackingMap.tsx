@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Bike, Navigation } from "lucide-react";
+import { geocodeAddressPrecise, haversineDistanceMeters, isValidCoordinate, resolveAddressContext } from "@/lib/addressGeocoding";
 
 let leafletCSSLoaded = false;
 function ensureLeafletCSS() {
@@ -49,31 +50,6 @@ function makeDriverIcon(L: any) {
   });
 }
 
-/** Geocode using structured Nominatim params for better accuracy */
-async function geocodeStructured(params: {
-  street?: string;
-  city?: string;
-  state?: string;
-  postalcode?: string;
-  country?: string;
-}): Promise<{ lat: number; lng: number } | null> {
-  try {
-    const searchParams = new URLSearchParams({ format: "json", limit: "1" });
-    if (params.street) searchParams.set("street", params.street);
-    if (params.city) searchParams.set("city", params.city);
-    if (params.state) searchParams.set("state", params.state);
-    if (params.postalcode) searchParams.set("postalcode", params.postalcode);
-    searchParams.set("country", params.country || "Brazil");
-
-    const res = await fetch(`https://nominatim.openstreetmap.org/search?${searchParams.toString()}`);
-    const results = await res.json();
-    if (results?.[0]) {
-      return { lat: parseFloat(results[0].lat), lng: parseFloat(results[0].lon) };
-    }
-  } catch { /* fallback */ }
-  return null;
-}
-
 interface LiveTrackingMapProps {
   orderId: string;
   driverId: string | null;
@@ -94,6 +70,11 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
   const [L, setL] = useState<any>(null);
   const [now, setNow] = useState(Date.now());
 
+  const isRecentDriverLocation = useMemo(() => {
+    if (!driverLocation?.updated_at) return false;
+    return now - new Date(driverLocation.updated_at).getTime() <= 60_000;
+  }, [driverLocation?.updated_at, now]);
+
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 5000);
     return () => clearInterval(t);
@@ -108,9 +89,11 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
         .from("driver_locations")
         .select("latitude, longitude, speed, heading, updated_at")
         .eq("driver_user_id", driverId)
+        .eq("order_id", orderId)
         .order("updated_at", { ascending: false })
         .limit(1)
         .maybeSingle();
+      if (!isValidCoordinate(data?.latitude, data?.longitude)) return null;
       return data;
     },
     enabled: !!driverId,
@@ -129,18 +112,18 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
       if (!data) return null;
 
       // Use stored coordinates if available
-      if (data.latitude && data.longitude) {
+      if (isValidCoordinate(data.latitude, data.longitude)) {
         return { name: data.name, lat: data.latitude, lng: data.longitude };
       }
 
-      // Structured geocoding for better accuracy
-      const streetFull = [data.address_street, data.address_number].filter(Boolean).join(" ");
-      const geo = await geocodeStructured({
-        street: streetFull || undefined,
+      const context = await resolveAddressContext({
+        street: [data.address_street, data.address_number].filter(Boolean).join(" "),
+        neighborhood: data.address_neighborhood || undefined,
         city: data.address_city || undefined,
         state: data.address_state || undefined,
-        postalcode: data.address_cep?.replace(/\D/g, "") || undefined,
+        postalcode: data.address_cep || undefined,
       });
+      const geo = await geocodeAddressPrecise(context);
 
       if (geo) {
         // Save coordinates for future use (fire-and-forget)
@@ -171,22 +154,18 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
         .eq("id", orderId)
         .maybeSingle();
 
-      if ((orderData as any)?.client_lat && (orderData as any)?.client_lng) {
+        if (isValidCoordinate((orderData as any)?.client_lat, (orderData as any)?.client_lng)) {
         return { lat: (orderData as any).client_lat, lng: (orderData as any).client_lng };
       }
 
-      // Structured geocoding fallback using neighborhood + address
-      if (!clientAddress && !orderData?.neighborhood) return null;
+       if (!clientAddress && !orderData?.address_details) return null;
 
-      const addr = clientAddress || orderData?.address_details || "";
-      const neighborhood = orderData?.neighborhood || "";
-
-      // Try structured geocoding with neighborhood as city context
-      const geo = await geocodeStructured({
-        street: addr.split(",")[0]?.trim() || undefined,
-        city: neighborhood || undefined,
-        state: "São Paulo",
-      });
+       const context = await resolveAddressContext({
+         street: (clientAddress || orderData?.address_details || "").split(",").slice(0, 2).join(",").trim(),
+         neighborhood: orderData?.neighborhood || undefined,
+         postalcode: undefined,
+       });
+       const geo = await geocodeAddressPrecise(context);
 
       if (geo) {
         // Save to order for future (fire-and-forget)
@@ -240,7 +219,7 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
     const points: [number, number][] = [];
 
     // Driver marker
-    if (driverLocation) {
+    if (driverLocation && isRecentDriverLocation) {
       const dPos: [number, number] = [driverLocation.latitude, driverLocation.longitude];
       points.push(dPos);
       if (driverMarkerRef.current) {
@@ -279,7 +258,7 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
     }
 
     // Draw route line (store → driver → client)
-    if (driverLocation && clientGeo) {
+    if (driverLocation && clientGeo && isRecentDriverLocation) {
       const routePoints: [number, number][] = [];
       if (storeData?.lat && storeData?.lng) {
         routePoints.push([storeData.lat, storeData.lng]);
@@ -297,6 +276,9 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
           dashArray: "10, 8",
         }).addTo(map);
       }
+    } else if (routeLineRef.current) {
+      map.removeLayer(routeLineRef.current);
+      routeLineRef.current = null;
     }
 
     // Fit bounds to show all points
@@ -306,7 +288,7 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
     } else if (points.length === 1) {
       map.setView(points[0], 16);
     }
-  }, [driverLocation, storeData, clientGeo, mapReady, L]);
+  }, [driverLocation, storeData, clientGeo, mapReady, L, isRecentDriverLocation]);
 
   // Computed values
   const lastUpdateSec = useMemo(() => {
@@ -315,6 +297,15 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
   }, [driverLocation?.updated_at, now]);
 
   const speedKmh = driverLocation?.speed ? Math.round(driverLocation.speed * 3.6) : null;
+
+  const routeDistanceKm = useMemo(() => {
+    if (!isRecentDriverLocation || !driverLocation || !clientGeo) return null;
+    const meters = haversineDistanceMeters(
+      { lat: driverLocation.latitude, lng: driverLocation.longitude },
+      { lat: clientGeo.lat, lng: clientGeo.lng },
+    );
+    return Math.round((meters / 1000) * 10) / 10;
+  }, [driverLocation, clientGeo, isRecentDriverLocation]);
 
   const lastUpdateLabel = useMemo(() => {
     if (lastUpdateSec === null) return "";
@@ -366,10 +357,13 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
           <span className="text-xs">🏠</span>
           <span className="text-[10px] text-muted-foreground">Você</span>
         </div>
-        {driverLocation && (
+        {driverLocation && isRecentDriverLocation && (
           <div className="ml-auto flex items-center gap-2">
             {speedKmh !== null && speedKmh > 0 && (
               <span className="text-[10px] font-bold text-foreground">🚀 {speedKmh} km/h</span>
+            )}
+            {routeDistanceKm !== null && (
+              <span className="text-[10px] font-bold text-foreground">📍 {routeDistanceKm} km</span>
             )}
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
@@ -379,9 +373,9 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
         )}
       </div>
 
-      {!driverLocation && (
+      {(!driverLocation || !isRecentDriverLocation) && (
         <div className="px-3 py-3 text-center">
-          <span className="text-xs text-muted-foreground">📡 Aguardando localização do motoboy...</span>
+          <span className="text-xs text-muted-foreground">📡 Aguardando localização real e atualizada do motoboy...</span>
         </div>
       )}
     </div>
