@@ -152,7 +152,7 @@ const AdminApprovals = () => {
           const roleLabel = profile.role === "lojista" ? "lojista" : "entregador";
           const message = `🎉 Parabéns, ${partnerName}! Seu cadastro como ${roleLabel} no *ItaSuper* foi aprovado com sucesso!\n\n` +
             `✅ Você já pode acessar a plataforma e começar a usar todos os recursos disponíveis.\n\n` +
-            `📱 Acesse: ${window.location.origin}/auth\n\n` +
+            `📱 Acesse: https://itasuper.com.br/auth\n\n` +
             `Qualquer dúvida, estamos à disposição. Boas vendas! 🚀`;
           openWhatsApp(whatsappNumber, message);
           toast.info("WhatsApp aberto com mensagem de aprovação!");
