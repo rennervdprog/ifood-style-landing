@@ -16,6 +16,7 @@ export interface Coordinates {
 
 const NOMINATIM_BASE_URL = "https://nominatim.openstreetmap.org/search";
 const DEFAULT_COUNTRY = "Brazil";
+const COUNTRY_CODE = "br";
 
 function toNumber(value: unknown): number | null {
   const num = typeof value === "string" ? Number.parseFloat(value) : typeof value === "number" ? value : NaN;
@@ -117,6 +118,7 @@ export async function geocodeAddressPrecise(address: AddressContext): Promise<Co
     format: "jsonv2",
     limit: "1",
     addressdetails: "0",
+    countrycodes: COUNTRY_CODE,
   });
 
   // Nominatim structured search expects street as "<housenumber> <streetname>"
@@ -138,6 +140,7 @@ export async function geocodeAddressPrecise(address: AddressContext): Promise<Co
       format: "jsonv2",
       limit: "1",
       addressdetails: "0",
+      countrycodes: COUNTRY_CODE,
     });
     const result = await requestNominatim(freeform);
     if (result) return result;
