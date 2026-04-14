@@ -395,7 +395,7 @@ const CheckoutPage = () => {
       {/* Progress steps */}
       <div className="px-4 pt-4 pb-2">
         <div className="flex items-center gap-2">
-          {["Endereço", "Pagamento", "Confirmar"].map((step, i) => (
+          {[isPickup ? "Retirada" : "Endereço", "Pagamento", "Confirmar"].map((step, i) => (
             <div key={step} className="flex-1 flex items-center gap-2">
               <div className="flex-1">
                 <div className={`h-1.5 rounded-full transition-all ${
@@ -412,7 +412,57 @@ const CheckoutPage = () => {
       </div>
 
       <div className="px-4 py-2 space-y-4">
-        {/* SECTION: Address */}
+        {/* SECTION: Delivery Mode Toggle */}
+        <section className="bg-card rounded-2xl border border-border overflow-hidden">
+          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50">
+            <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Truck className="h-4 w-4 text-primary" />
+            </div>
+            <h2 className="text-sm font-bold text-foreground">Tipo de pedido</h2>
+          </div>
+          <div className="p-4">
+            <div className="flex gap-2">
+              <button
+                onClick={() => setIsPickup(false)}
+                className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                  !isPickup ? "border-primary bg-primary/5" : "border-transparent bg-muted/50"
+                }`}
+              >
+                <Truck className={`h-6 w-6 ${!isPickup ? "text-primary" : "text-muted-foreground"}`} />
+                <div className="text-center">
+                  <span className={`text-sm font-bold block ${!isPickup ? "text-primary" : "text-foreground"}`}>Entrega</span>
+                  <span className="text-[10px] text-muted-foreground">Receba em casa</span>
+                </div>
+              </button>
+              <button
+                onClick={() => setIsPickup(true)}
+                className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                  isPickup ? "border-primary bg-primary/5" : "border-transparent bg-muted/50"
+                }`}
+              >
+                <Store className={`h-6 w-6 ${isPickup ? "text-primary" : "text-muted-foreground"}`} />
+                <div className="text-center">
+                  <span className={`text-sm font-bold block ${isPickup ? "text-primary" : "text-foreground"}`}>Retirada</span>
+                  <span className="text-[10px] text-muted-foreground">Retire na loja</span>
+                </div>
+              </button>
+            </div>
+            {isPickup && (
+              <div className="mt-3 bg-primary/5 border border-primary/10 rounded-xl p-3 flex items-start gap-2">
+                <Store className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-xs font-bold text-foreground">Retirada na loja</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    Seu pedido ficará pronto para retirada. Sem taxa de entrega! 🎉
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* SECTION: Address (hidden for pickup) */}
+        {!isPickup && (
         <section className="bg-card rounded-2xl border border-border overflow-hidden">
           <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50">
             <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${hasValidAddress ? "bg-primary/10" : "bg-muted"}`}>
