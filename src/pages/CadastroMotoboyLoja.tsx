@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, User, Phone, Bike, CheckCircle, Store } from "lucide-react";
+import { PasswordStrengthIndicator, usePasswordStrength } from "@/components/PasswordStrengthIndicator";
 
 const schema = z.object({
   email: z.string().trim().email("E-mail inválido").max(255),
@@ -197,6 +198,7 @@ const CadastroMotoboyLoja = () => {
             </div>
             {errors.password && <p className="text-[11px] text-red-500 font-medium">{errors.password}</p>}
           </div>
+          <PasswordStrengthIndicator password={password} />
 
           <InputField label="WhatsApp / Telefone" icon={Phone} value={phone} onChange={(e: any) => setPhone(e.target.value)} error={errors.phone} placeholder="(00) 00000-0000" type="tel" />
           <InputField label="Veículo (ex: Moto Honda CG 160)" icon={Bike} value={vehicle} onChange={(e: any) => setVehicle(e.target.value)} error={errors.vehicle} placeholder="Tipo e modelo do veículo" />

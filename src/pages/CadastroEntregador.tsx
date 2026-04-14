@@ -1,9 +1,10 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, User, Phone, Bike, CheckCircle, MapPin, Camera, Upload, FileText, Shield, X, ChevronRight } from "lucide-react";
+import { PasswordStrengthIndicator, usePasswordStrength } from "@/components/PasswordStrengthIndicator";
 
 const CITIES = [
   { value: "itatinga", label: "Itatinga", available: true },
@@ -344,6 +345,7 @@ const CadastroEntregador = () => {
                   </button>
                   {errors.password && <p className="text-xs text-destructive mt-1">{errors.password}</p>}
                 </div>
+                <PasswordStrengthIndicator password={password} />
 
                 <button
                   type="button"
