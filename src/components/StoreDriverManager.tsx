@@ -138,7 +138,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
           </div>
           <button
             onClick={() => {
-              navigator.clipboard.writeText(`${window.location.origin}/cadastro-motoboy-loja`);
+              navigator.clipboard.writeText("https://itasuper.com.br/cadastro-motoboy-loja");
               toast.success("Link copiado!");
             }}
             className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary hover:bg-primary/20 transition-colors"
@@ -148,7 +148,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
           </button>
           <button
             onClick={() => {
-              const text = `Cadastre-se como motoboy da nossa loja: ${window.location.origin}/cadastro-motoboy-loja`;
+              const text = "Cadastre-se como motoboy da nossa loja: https://itasuper.com.br/cadastro-motoboy-loja";
               const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
               window.open(url, "_blank");
             }}
