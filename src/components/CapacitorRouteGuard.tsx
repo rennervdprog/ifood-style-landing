@@ -5,9 +5,11 @@ import { isCapacitorNative } from "@/lib/capacitorNative";
 /**
  * On Capacitor Android PARCEIRO app, restrict navigation to partner-only routes.
  * On Capacitor Android CLIENTE app, block access to partner routes.
- * 
- * Detection: The parceiro app injects __CAP_PARTNER_REDIRECTED flag in index.html.
- * If that flag is absent and we're in Capacitor, it's the cliente app.
+ *
+ * Detection priority:
+ * 1) explicit `?capApp=partner|client` in the initial native URL
+ * 2) persisted app mode in storage
+ * 3) legacy partner flag for backward compatibility
  */
 const PARTNER_ROUTES = [
   "/portal-parceiro",
@@ -35,24 +37,59 @@ const CLIENT_ALLOWED_ROUTES = [
   "/politica-de-privacidade",
 ];
 
+const APP_MODE_KEY = "cap_app_mode";
+const LEGACY_PARTNER_KEY = "cap_partner";
+
 let isPartnerApp: boolean | null = null;
+
+function persistAppMode(mode: "partner" | "client") {
+  isPartnerApp = mode === "partner";
+
+  try {
+    sessionStorage.setItem(APP_MODE_KEY, mode);
+    localStorage.setItem(APP_MODE_KEY, mode);
+
+    if (mode === "partner") {
+      sessionStorage.setItem(LEGACY_PARTNER_KEY, "1");
+      localStorage.setItem(LEGACY_PARTNER_KEY, "1");
+    } else {
+      sessionStorage.removeItem(LEGACY_PARTNER_KEY);
+      localStorage.removeItem(LEGACY_PARTNER_KEY);
+    }
+  } catch {}
+}
 
 function detectPartnerApp(): boolean {
   if (isPartnerApp !== null) return isPartnerApp;
-  // Check window flag (set by injected script before redirect)
+
+  const params = new URLSearchParams(window.location.search);
+  const explicitMode = params.get("capApp");
+
+  if (explicitMode === "partner" || explicitMode === "client") {
+    persistAppMode(explicitMode);
+    return explicitMode === "partner";
+  }
+
   if ((window as any).__CAP_PARTNER_REDIRECTED) {
-    try { sessionStorage.setItem("cap_partner", "1"); } catch {}
-    isPartnerApp = true;
+    persistAppMode("partner");
     return true;
   }
-  // Check persisted flag (survives the full-page redirect)
+
   try {
-    if (sessionStorage.getItem("cap_partner") === "1") {
-      isPartnerApp = true;
+    const storedMode = sessionStorage.getItem(APP_MODE_KEY) || localStorage.getItem(APP_MODE_KEY);
+    if (storedMode === "partner" || storedMode === "client") {
+      isPartnerApp = storedMode === "partner";
+      return isPartnerApp;
+    }
+
+    const legacyPartner = sessionStorage.getItem(LEGACY_PARTNER_KEY) === "1" || localStorage.getItem(LEGACY_PARTNER_KEY) === "1";
+    if (legacyPartner) {
+      persistAppMode("partner");
       return true;
     }
   } catch {}
-  isPartnerApp = false;
+
+  persistAppMode("client");
   return false;
 }
 

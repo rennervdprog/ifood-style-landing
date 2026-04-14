@@ -76,7 +76,7 @@ jobs:
             appName: 'ItaSuper',
             webDir: 'dist',
             server: {
-              url: 'https://itasuper.com.br/cliente',
+              url: 'https://itasuper.com.br/cliente?capApp=client',
               cleartext: false
             },
             plugins: {
@@ -181,7 +181,7 @@ jobs:
             appName: 'ItaSuper Parceiro',
             webDir: 'dist',
             server: {
-              url: 'https://itasuper.com.br',
+              url: 'https://itasuper.com.br/portal-parceiro?capApp=partner',
               cleartext: false
             },
             plugins: {
@@ -193,16 +193,6 @@ jobs:
           export default config;
           EOF
           sed -i 's/^          //' capacitor.config.ts
-
-      - name: Inject partner redirect
-        run: |
-          node -e "
-          const fs = require('fs');
-          let html = fs.readFileSync('index.html','utf8');
-          const tag = '<script>window.__CAP_PARTNER_REDIRECTED=true;try{sessionStorage.setItem(\"cap_partner\",\"1\")}catch(e){}if(window.location.pathname===\"/\"||window.location.pathname===\"/index.html\"||window.location.pathname===\"\"){window.location.replace(\"/portal-parceiro\");}</script>';
-          html = html.replace('<head>','<head>'+tag);
-          fs.writeFileSync('index.html',html);
-          "
 
       - name: Build web app
         run: npm run build
