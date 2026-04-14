@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useState, useMemo } from "react";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import { openWhatsApp } from "@/lib/whatsapp";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
@@ -141,11 +142,21 @@ const AdminApprovals = () => {
           await supabase.functions.invoke("sync-to-external", {
             body: { action: "sync_profile", data: { profile: { ...(freshProfile || profile), status: "approved" } } },
           });
-
-          toast.success("Parceiro aprovado e sincronizado!");
-
           toast.success("Parceiro aprovado e sincronizado!");
         } catch { toast.success("Parceiro aprovado!"); }
+
+        // Send automatic WhatsApp congratulations message
+        const whatsappNumber = profile.whatsapp_number || profile.phone;
+        if (whatsappNumber) {
+          const partnerName = profile.full_name || "Parceiro";
+          const roleLabel = profile.role === "lojista" ? "lojista" : "entregador";
+          const message = `🎉 Parabéns, ${partnerName}! Seu cadastro como ${roleLabel} no *ItaSuper* foi aprovado com sucesso!\n\n` +
+            `✅ Você já pode acessar a plataforma e começar a usar todos os recursos disponíveis.\n\n` +
+            `📱 Acesse: ${window.location.origin}/auth\n\n` +
+            `Qualquer dúvida, estamos à disposição. Boas vendas! 🚀`;
+          openWhatsApp(whatsappNumber, message);
+          toast.info("WhatsApp aberto com mensagem de aprovação!");
+        }
       } else {
         toast.success("Parceiro recusado.");
       }
