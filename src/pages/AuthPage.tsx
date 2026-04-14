@@ -267,30 +267,29 @@ const AuthPage = () => {
                   )}
                 </button>
               </div>
-             </div>
-
-             {/* Password strength indicator */}
-             {(mode === "signup" || mode === "reset") && password.length > 0 && (
-               <div className="space-y-2 mt-1">
-                 <div className="flex gap-1 h-1.5 rounded-full overflow-hidden bg-slate-100">
-                   {PASSWORD_RULES.map((_, i) => (
-                     <div
-                       key={i}
-                       className={`flex-1 rounded-full transition-all duration-300 ${i < passedCount ? strengthColor : "bg-slate-200"}`}
-                     />
-                   ))}
-                 </div>
-                 <div className="grid grid-cols-1 gap-1">
-                   {PASSWORD_RULES.map((rule, i) => (
-                     <div key={i} className={`flex items-center gap-1.5 text-xs transition-colors ${ruleResults[i] ? "text-green-600" : "text-slate-400"}`}>
-                       {ruleResults[i] ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
-                       {rule.label}
-                     </div>
-                   ))}
-                 </div>
-               </div>
-             )}
             </div>
+
+            {/* Password strength indicator */}
+            {(mode === "signup" || mode === "reset") && password.length > 0 && (
+              <div className="space-y-2 mt-1">
+                <div className="flex gap-1 h-1.5 rounded-full overflow-hidden bg-slate-100">
+                  {PASSWORD_RULES.map((_, i) => (
+                    <div
+                      key={i}
+                      className={`flex-1 rounded-full transition-all duration-300 ${i < passedCount ? strengthColor : "bg-slate-200"}`}
+                    />
+                  ))}
+                </div>
+                <div className="grid grid-cols-1 gap-1">
+                  {PASSWORD_RULES.map((rule, i) => (
+                    <div key={i} className={`flex items-center gap-1.5 text-xs transition-colors ${ruleResults[i] ? "text-green-600" : "text-slate-400"}`}>
+                      {ruleResults[i] ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                      {rule.label}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           )}
 
           {mode === "signup" && (
