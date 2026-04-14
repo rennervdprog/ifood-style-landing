@@ -148,8 +148,9 @@ Deno.serve(async (req) => {
             const isFixedPlan = storePlan?.plan_type === "fixed";
             const isOwnDelivery = store.delivery_mode === "own";
 
-            // Read delivery fee config for PIX operational fee
+            // Read delivery fee config for PIX operational fee and platform split
             let pixOpFee = 1;
+            let platformSplit = 2;
             try {
               const { data: feeConfigRow } = await supabase
                 .from("admin_settings")
@@ -159,6 +160,7 @@ Deno.serve(async (req) => {
               if (feeConfigRow?.value) {
                 const fc = feeConfigRow.value as any;
                 pixOpFee = fc.pix_operational_fee ?? 1;
+                platformSplit = fc.platform_split ?? 2;
               }
             } catch (e) {
               console.warn("Could not load delivery_fee_config, using defaults", e);
@@ -168,9 +170,12 @@ Deno.serve(async (req) => {
             let commissionAmount = 0;
 
             if (isFixedPlan) {
-              // Fixed plan: 0% commission, only PIX operational fee
+              // Fixed plan: 0% commission, PIX operational fee + platform split on delivery
               if (isOwnDelivery) {
-                storeShare = Math.round((subtotal - pixOpFee + deliveryFee) * 100) / 100;
+                // Deduct R$1 pix fee from subtotal + deduct R$2 platform split from delivery fee
+                const deliveryAfterSplit = Math.max(0, deliveryFee - platformSplit);
+                storeShare = Math.round((subtotal - pixOpFee + deliveryAfterSplit) * 100) / 100;
+                console.log(`[Asaas] Fixed+OwnDelivery: subtotal=${subtotal}, pixOpFee=${pixOpFee}, deliveryFee=${deliveryFee}, platformSplit=${platformSplit}, storeShare=${storeShare}`);
               } else {
                 storeShare = Math.round((subtotal - pixOpFee) * 100) / 100;
               }
