@@ -36,6 +36,9 @@ const schema = z.object({
   storeCategory: z.enum(storeCategories as unknown as [string, ...string[]], { errorMap: () => ({ message: "Selecione uma categoria" }) }),
   cep: z.string().min(8, "CEP inválido"),
   city: z.string().min(1, "Busque o CEP para identificar a cidade"),
+  street: z.string().trim().min(2, "Rua é obrigatória"),
+  addressNumber: z.string().trim().min(1, "Número é obrigatório"),
+  neighborhood: z.string().trim().min(2, "Bairro é obrigatório"),
   selectedPlan: z.enum(["fixed", "hybrid", "commission_only"], { errorMap: () => ({ message: "Selecione um plano" }) }),
 }).refine((data) => data.email === data.confirmEmail, {
   message: "Os e-mails não coincidem",
@@ -65,6 +68,7 @@ const CadastroLojista = () => {
   const [cep, setCep] = useState("");
   const [city, setCity] = useState("");
   const [street, setStreet] = useState("");
+  const [addressNumber, setAddressNumber] = useState("");
   const [neighborhood, setNeighborhood] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
