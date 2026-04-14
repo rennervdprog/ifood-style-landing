@@ -5,7 +5,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Edit3, Loader2, Truck, CheckCircle2, ShoppingBag, Tag, ChevronRight, Clock, AlertTriangle, Star, Wallet, Calendar } from "lucide-react";
+import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Edit3, Loader2, Truck, CheckCircle2, ShoppingBag, Tag, ChevronRight, Clock, AlertTriangle, Star, Wallet, Calendar, Store } from "lucide-react";
 import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 import confetti from "canvas-confetti";
 import AddressModal from "@/components/AddressModal";
@@ -31,6 +31,7 @@ const CheckoutPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [paymentMethod, setPaymentMethod] = useState("");
+  const [isPickup, setIsPickup] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [needsChange, setNeedsChange] = useState(false);
@@ -148,8 +149,8 @@ const CheckoutPage = () => {
   const ownDeliveryFeeWithSplit = isOwnDelivery && storePlan.platformDeliverySplit > 0
     ? storeOwnFee + storePlan.platformDeliverySplit
     : storeOwnFee;
-  const activeDeliveryFee = isOwnDelivery ? ownDeliveryFeeWithSplit : (calculatedDeliveryFee !== null ? calculatedDeliveryFee : config.city_fee);
-  const effectiveDeliveryFee = couponType === "free_shipping" ? 0 : activeDeliveryFee;
+  const activeDeliveryFee = isPickup ? 0 : (isOwnDelivery ? ownDeliveryFeeWithSplit : (calculatedDeliveryFee !== null ? calculatedDeliveryFee : config.city_fee));
+  const effectiveDeliveryFee = isPickup ? 0 : (couponType === "free_shipping" ? 0 : activeDeliveryFee);
   const walletDiscount = useWallet ? Math.min(walletBalance, Math.max(0, addMoney(subtotal, effectiveDeliveryFee, -couponDiscount, -loyaltyDiscount))) : 0;
   const finalTotal = Math.max(0, addMoney(subtotal, effectiveDeliveryFee, -couponDiscount, -loyaltyDiscount, -walletDiscount));
 
@@ -218,17 +219,19 @@ const CheckoutPage = () => {
       return;
     }
     const useSavedAddr = selectedSavedAddressId && savedAddressData;
-    const finalHasAddress = useSavedAddr || hasAddress;
-    const finalNeighborhood = useSavedAddr ? savedAddressData.neighborhood : (profileNeighborhood || neighborhood);
-    const finalAddress = useSavedAddr
-      ? [savedAddressData.street, savedAddressData.number, savedAddressData.complement, savedAddressData.reference_point ? `Ref: ${savedAddressData.reference_point}` : ""].filter(Boolean).join(", ")
-      : addressString;
+    const finalHasAddress = isPickup || useSavedAddr || hasAddress;
+    const finalNeighborhood = isPickup ? "RETIRADA" : (useSavedAddr ? savedAddressData.neighborhood : (profileNeighborhood || neighborhood));
+    const finalAddress = isPickup
+      ? "Retirada na loja"
+      : (useSavedAddr
+        ? [savedAddressData.street, savedAddressData.number, savedAddressData.complement, savedAddressData.reference_point ? `Ref: ${savedAddressData.reference_point}` : ""].filter(Boolean).join(", ")
+        : addressString);
 
-    if (!finalHasAddress) {
+    if (!isPickup && !finalHasAddress) {
       setShowAddressModal(true);
       return;
     }
-    if (!finalNeighborhood) {
+    if (!isPickup && !finalNeighborhood) {
       toast.error("Selecione um bairro antes de finalizar.");
       return;
     }
@@ -352,8 +355,8 @@ const CheckoutPage = () => {
     }
   };
 
-  const hasValidAddress = selectedSavedAddressId ? !!savedAddressData : hasAddress;
-  const stepsDone = [hasValidAddress, !!paymentMethod];
+  const hasValidAddress = isPickup || (selectedSavedAddressId ? !!savedAddressData : hasAddress);
+  const stepsDone = [isPickup || hasValidAddress, !!paymentMethod];
 
   return (
     <div className="min-h-screen bg-background pb-36 overflow-y-auto">
@@ -392,7 +395,7 @@ const CheckoutPage = () => {
       {/* Progress steps */}
       <div className="px-4 pt-4 pb-2">
         <div className="flex items-center gap-2">
-          {["Endereço", "Pagamento", "Confirmar"].map((step, i) => (
+          {[isPickup ? "Retirada" : "Endereço", "Pagamento", "Confirmar"].map((step, i) => (
             <div key={step} className="flex-1 flex items-center gap-2">
               <div className="flex-1">
                 <div className={`h-1.5 rounded-full transition-all ${
@@ -409,7 +412,57 @@ const CheckoutPage = () => {
       </div>
 
       <div className="px-4 py-2 space-y-4">
-        {/* SECTION: Address */}
+        {/* SECTION: Delivery Mode Toggle */}
+        <section className="bg-card rounded-2xl border border-border overflow-hidden">
+          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50">
+            <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Truck className="h-4 w-4 text-primary" />
+            </div>
+            <h2 className="text-sm font-bold text-foreground">Tipo de pedido</h2>
+          </div>
+          <div className="p-4">
+            <div className="flex gap-2">
+              <button
+                onClick={() => setIsPickup(false)}
+                className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                  !isPickup ? "border-primary bg-primary/5" : "border-transparent bg-muted/50"
+                }`}
+              >
+                <Truck className={`h-6 w-6 ${!isPickup ? "text-primary" : "text-muted-foreground"}`} />
+                <div className="text-center">
+                  <span className={`text-sm font-bold block ${!isPickup ? "text-primary" : "text-foreground"}`}>Entrega</span>
+                  <span className="text-[10px] text-muted-foreground">Receba em casa</span>
+                </div>
+              </button>
+              <button
+                onClick={() => setIsPickup(true)}
+                className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                  isPickup ? "border-primary bg-primary/5" : "border-transparent bg-muted/50"
+                }`}
+              >
+                <Store className={`h-6 w-6 ${isPickup ? "text-primary" : "text-muted-foreground"}`} />
+                <div className="text-center">
+                  <span className={`text-sm font-bold block ${isPickup ? "text-primary" : "text-foreground"}`}>Retirada</span>
+                  <span className="text-[10px] text-muted-foreground">Retire na loja</span>
+                </div>
+              </button>
+            </div>
+            {isPickup && (
+              <div className="mt-3 bg-primary/5 border border-primary/10 rounded-xl p-3 flex items-start gap-2">
+                <Store className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-xs font-bold text-foreground">Retirada na loja</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    Seu pedido ficará pronto para retirada. Sem taxa de entrega! 🎉
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* SECTION: Address (hidden for pickup) */}
+        {!isPickup && (
         <section className="bg-card rounded-2xl border border-border overflow-hidden">
           <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50">
             <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${hasValidAddress ? "bg-primary/10" : "bg-muted"}`}>
@@ -512,6 +565,7 @@ const CheckoutPage = () => {
             )}
           </div>
         </section>
+        )}
 
         {/* SECTION: Payment */}
         <section className="bg-card rounded-2xl border border-border overflow-hidden">
@@ -683,13 +737,13 @@ const CheckoutPage = () => {
           </section>
         )}
 
-        {/* SECTION: Schedule Delivery */}
+        {/* SECTION: Schedule */}
         <section className="bg-card rounded-2xl border border-border overflow-hidden">
           <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50">
             <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center">
               <Calendar className="h-4 w-4 text-blue-500" />
             </div>
-            <h2 className="text-sm font-bold text-foreground flex-1">Agendar entrega</h2>
+            <h2 className="text-sm font-bold text-foreground flex-1">{isPickup ? "Agendar retirada" : "Agendar entrega"}</h2>
             {scheduledFor && <CheckCircle2 className="h-4 w-4 text-primary" />}
           </div>
           <div className="p-4 space-y-3">
@@ -796,6 +850,7 @@ const CheckoutPage = () => {
                 </div>
               )}
 
+              {!isPickup && (
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground flex items-center gap-1">
                   <Truck className="h-3 w-3" /> Entrega
@@ -804,11 +859,21 @@ const CheckoutPage = () => {
                   {calculatingFee ? "..." : `${formatBRL(activeDeliveryFee)}`}
                 </span>
               </div>
+              )}
 
-              {couponType === "free_shipping" && (
+              {!isPickup && couponType === "free_shipping" && (
                 <div className="flex justify-between text-sm">
                   <span className="text-green-600 font-medium">Frete grátis 🎉</span>
                   <span className="font-bold text-green-600">R$ 0,00</span>
+                </div>
+              )}
+
+              {isPickup && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground flex items-center gap-1">
+                    <Store className="h-3 w-3" /> Retirada
+                  </span>
+                  <span className="font-bold text-green-600">Grátis ✨</span>
                 </div>
               )}
             </div>

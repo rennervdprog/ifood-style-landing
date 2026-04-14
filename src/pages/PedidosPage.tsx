@@ -46,20 +46,25 @@ const statusConfig: Record<string, { label: string; icon: React.ElementType; col
 
 /* Status timeline steps for visual progress */
 const statusSteps = ["pendente", "preparando", "pronto_para_entrega", "saiu_entrega", "entregue"];
+const pickupStatusSteps = ["pendente", "preparando", "pronto_para_entrega", "finalizado"];
 
-const getStepIndex = (status: string) => {
+const getStepIndex = (status: string, isPickup = false) => {
   if (status === "aguardando_pagamento") return -1;
-  if (status === "em_transito") return 3; // same visual as saiu_entrega
-  if (status === "finalizado") return 4; // same as entregue
+  if (isPickup) {
+    if (status === "finalizado") return 3;
+    return pickupStatusSteps.indexOf(status);
+  }
+  if (status === "em_transito") return 3;
+  if (status === "finalizado") return 4;
   return statusSteps.indexOf(status);
 };
 
-const StatusTimeline = ({ status }: { status: string }) => {
-  const currentIdx = getStepIndex(status);
+const StatusTimeline = ({ status, isPickup = false }: { status: string; isPickup?: boolean }) => {
+  const currentIdx = getStepIndex(status, isPickup);
   if (currentIdx < 0 || status === "cancelado") return null;
   
-  const labels = ["Recebido", "Preparando", "Pronto", "A caminho", "Entregue"];
-  const icons = [Clock, ChefHat, CheckCircle2, Truck, CheckCircle2];
+  const labels = isPickup ? ["Recebido", "Preparando", "Pronto", "Retirado"] : ["Recebido", "Preparando", "Pronto", "A caminho", "Entregue"];
+  const icons = isPickup ? [Clock, ChefHat, CheckCircle2, CheckCircle2] : [Clock, ChefHat, CheckCircle2, Truck, CheckCircle2];
   
   return (
     <div className="flex items-center justify-between mt-3 mb-1 px-1">
@@ -769,7 +774,9 @@ const PedidosPage = () => {
                       <div className={`px-4 py-2.5 flex items-center justify-between ${config.bg} border-b ${config.border}`}>
                         <div className="flex items-center gap-2">
                           <StatusIcon className={`h-4 w-4 ${config.color}`} />
-                          <span className={`text-xs font-bold ${config.color}`}>{config.label}</span>
+                          <span className={`text-xs font-bold ${config.color}`}>
+                            {order.neighborhood === "RETIRADA" && order.status === "pronto_para_entrega" ? "Pronto p/ Retirada 🏪" : config.label}
+                          </span>
                         </div>
                         <div className="flex items-center gap-2">
                           <DeliveryTimeEstimate status={order.status} createdAt={order.created_at} confirmedAt={order.confirmed_at} />
@@ -789,7 +796,7 @@ const PedidosPage = () => {
                         </div>
 
                         {/* Timeline */}
-                        {!isWaitingPayment && <StatusTimeline status={order.status} />}
+                        {!isWaitingPayment && <StatusTimeline status={order.status} isPickup={order.neighborhood === "RETIRADA"} />}
 
                         {/* Waiting Payment */}
                         {isWaitingPayment && (() => {
@@ -890,8 +897,19 @@ const PedidosPage = () => {
                           );
                         })()}
 
-                        {/* Delivery PIN */}
-                        {showPin && (
+                        {/* Pickup badge */}
+                        {order.neighborhood === "RETIRADA" && order.status === "pronto_para_entrega" && (
+                          <div className="bg-violet-50 border border-violet-200 rounded-xl p-3 flex items-center gap-2">
+                            <span className="text-lg">🏪</span>
+                            <div>
+                              <span className="text-xs font-bold text-violet-600">Pronto para retirada!</span>
+                              <p className="text-[10px] text-violet-500 mt-0.5">Dirija-se à loja para retirar seu pedido.</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Delivery PIN (not for pickup) */}
+                        {order.neighborhood !== "RETIRADA" && showPin && (
                           <div className="bg-primary/5 border border-primary/20 rounded-xl p-3">
                             <div className="flex items-center gap-2 mb-1">
                               <Lock className="h-4 w-4 text-primary" />
@@ -915,8 +933,8 @@ const PedidosPage = () => {
                           </div>
                         )}
 
-                        {/* Live Tracking Map - show when driver is assigned (heading to store or delivering) */}
-                        {(["saiu_entrega", "em_transito"].includes(order.status) || (order.status === "pronto_para_entrega" && order.driver_id)) && (
+                        {/* Live Tracking Map - not for pickup orders */}
+                        {order.neighborhood !== "RETIRADA" && (["saiu_entrega", "em_transito"].includes(order.status) || (order.status === "pronto_para_entrega" && order.driver_id)) && (
                           <LiveTrackingMap
                             orderId={order.id}
                             driverId={order.driver_id}
@@ -927,8 +945,8 @@ const PedidosPage = () => {
                           />
                         )}
 
-                        {/* Confirm Delivery */}
-                        {["saiu_entrega", "em_transito"].includes(order.status) && !(order as any).delivery_confirmed_by_client && (
+                        {/* Confirm Delivery (not for pickup orders) */}
+                        {order.neighborhood !== "RETIRADA" && ["saiu_entrega", "em_transito"].includes(order.status) && !(order as any).delivery_confirmed_by_client && (
                           <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3">
                             <div className="flex items-center gap-2 mb-2">
                               <CheckCircle2 className="h-4 w-4 text-emerald-500" />

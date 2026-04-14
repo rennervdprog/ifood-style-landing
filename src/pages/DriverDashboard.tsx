@@ -176,6 +176,7 @@ const DriverDashboard = () => {
         .select("*, stores(name), order_items(*, products(name))")
         .eq("status", "pronto_para_entrega" as any)
         .is("driver_id", null)
+        .neq("neighborhood", "RETIRADA")
         .order("created_at", { ascending: true });
       if (error) throw error;
       return data;
