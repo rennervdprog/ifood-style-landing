@@ -134,7 +134,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
         </p>
         <div className="flex items-center gap-2">
           <div className="flex-1 bg-muted/50 border border-border rounded-lg px-3 py-2">
-            <p className="text-[11px] text-muted-foreground truncate">{window.location.origin}/cadastro-motoboy-loja</p>
+            <p className="text-[11px] text-muted-foreground truncate">https://itasuper.com.br/cadastro-motoboy-loja</p>
           </div>
           <button
             onClick={() => {
