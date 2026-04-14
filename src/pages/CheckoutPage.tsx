@@ -565,6 +565,7 @@ const CheckoutPage = () => {
             )}
           </div>
         </section>
+        )}
 
         {/* SECTION: Payment */}
         <section className="bg-card rounded-2xl border border-border overflow-hidden">
