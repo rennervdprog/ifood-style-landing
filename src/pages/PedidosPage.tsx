@@ -938,8 +938,8 @@ const PedidosPage = () => {
                           />
                         )}
 
-                        {/* Confirm Delivery */}
-                        {["saiu_entrega", "em_transito"].includes(order.status) && !(order as any).delivery_confirmed_by_client && (
+                        {/* Confirm Delivery (not for pickup orders) */}
+                        {order.neighborhood !== "RETIRADA" && ["saiu_entrega", "em_transito"].includes(order.status) && !(order as any).delivery_confirmed_by_client && (
                           <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3">
                             <div className="flex items-center gap-2 mb-2">
                               <CheckCircle2 className="h-4 w-4 text-emerald-500" />
