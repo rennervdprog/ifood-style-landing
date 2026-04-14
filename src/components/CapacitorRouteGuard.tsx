@@ -39,8 +39,21 @@ let isPartnerApp: boolean | null = null;
 
 function detectPartnerApp(): boolean {
   if (isPartnerApp !== null) return isPartnerApp;
-  isPartnerApp = !!(window as any).__CAP_PARTNER_REDIRECTED;
-  return isPartnerApp;
+  // Check window flag (set by injected script before redirect)
+  if ((window as any).__CAP_PARTNER_REDIRECTED) {
+    try { sessionStorage.setItem("cap_partner", "1"); } catch {}
+    isPartnerApp = true;
+    return true;
+  }
+  // Check persisted flag (survives the full-page redirect)
+  try {
+    if (sessionStorage.getItem("cap_partner") === "1") {
+      isPartnerApp = true;
+      return true;
+    }
+  } catch {}
+  isPartnerApp = false;
+  return false;
 }
 
 const CapacitorRouteGuard = () => {
