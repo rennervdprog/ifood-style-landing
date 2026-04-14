@@ -144,7 +144,7 @@ const AuthPage = () => {
         const { data: signUpData, error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
-          options: { emailRedirectTo: window.location.origin },
+          options: { emailRedirectTo: 'https://itasuper.com.br/auth' },
         });
         if (error) throw error;
         if (signUpData?.user?.id) {
