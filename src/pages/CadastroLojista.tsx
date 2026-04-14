@@ -138,6 +138,9 @@ const CadastroLojista = () => {
       if (!storeCategory) fieldErrors.storeCategory = "Selecione uma categoria";
       if (cep.replace(/\D/g, "").length < 8) fieldErrors.cep = "CEP inválido";
       if (!city) fieldErrors.city = "Busque o CEP para identificar a cidade";
+      if (!street.trim()) fieldErrors.street = "Rua é obrigatória";
+      if (!addressNumber.trim()) fieldErrors.addressNumber = "Número é obrigatório";
+      if (!neighborhood.trim()) fieldErrors.neighborhood = "Bairro é obrigatório";
       if (Object.keys(fieldErrors).length > 0) { setErrors(fieldErrors); return false; }
     }
     return true;
