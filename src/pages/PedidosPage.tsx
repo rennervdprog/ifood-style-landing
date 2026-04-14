@@ -915,8 +915,8 @@ const PedidosPage = () => {
                           </div>
                         )}
 
-                        {/* Live Tracking Map */}
-                        {["saiu_entrega", "em_transito"].includes(order.status) && (
+                        {/* Live Tracking Map - show when driver is assigned (heading to store or delivering) */}
+                        {(["saiu_entrega", "em_transito"].includes(order.status) || (order.status === "pronto_para_entrega" && order.driver_id)) && (
                           <LiveTrackingMap
                             orderId={order.id}
                             driverId={order.driver_id}
