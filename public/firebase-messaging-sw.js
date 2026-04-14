@@ -15,12 +15,16 @@ const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
   const notificationTitle = payload.notification?.title || "ItaSuper";
+  const orderId = payload.data?.order_id;
   const notificationOptions = {
     body: payload.notification?.body || "",
     icon: "/icon-192x192.png",
     badge: "/icon-192x192.png",
-    vibrate: [200, 100, 200],
+    vibrate: [200, 100, 200, 100, 200, 100, 200],
     data: payload.data,
+    tag: orderId ? "order-" + orderId : "itasuper-" + Date.now(),
+    renotify: true,
+    requireInteraction: true,
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);
@@ -29,15 +33,23 @@ messaging.onBackgroundMessage((payload) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const data = event.notification.data || {};
-  // If notification has an order_id, open the chat for that order
-  let link = data.link || "/";
-  if (data.order_id) {
-    link = "/pedidos?chat=" + data.order_id;
+  var link = data.link || "/";
+  var orderId = data.order_id;
+
+  if (orderId) {
+    if (link === "/pedidos") {
+      link = "/pedidos?chat=" + orderId;
+    } else if (link === "/admin") {
+      link = "/admin?order=" + orderId;
+    } else if (link === "/entregador") {
+      link = "/entregador?order=" + orderId;
+    }
   }
+
   event.waitUntil(
-    clients.matchAll({ type: "window", includeUncontrolled: true }).then((windowClients) => {
-      // Try to focus an existing window and navigate it
-      for (const client of windowClients) {
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then(function(windowClients) {
+      for (var i = 0; i < windowClients.length; i++) {
+        var client = windowClients[i];
         if ("focus" in client) {
           client.focus();
           client.navigate(link);

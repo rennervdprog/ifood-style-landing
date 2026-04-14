@@ -69,24 +69,48 @@ async function ensurePushListeners() {
   });
 
   PushNotifications.addListener("pushNotificationReceived", (notification) => {
-    console.log("[CapPush] Foreground:", notification);
+    console.log("[CapPush] Foreground:", JSON.stringify(notification));
+    // Show in-app toast for foreground notifications
+    try {
+      const title = notification.title || "ItaSuper";
+      const body = notification.body || "";
+      import("sonner").then(({ toast }) => {
+        toast(title, { description: body });
+      }).catch(() => {});
+      // Haptic feedback
+      import("@capacitor/haptics").then(({ Haptics, NotificationType }) => {
+        Haptics.notification({ type: NotificationType.Warning });
+      }).catch(() => {});
+    } catch {}
   });
 
   PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
-    console.log("[CapPush] Action:", action);
-    const link = action.notification.data?.link;
-    const orderId = action.notification.data?.order_id;
+    console.log("[CapPush] Action:", JSON.stringify(action));
+    const data = action.notification.data || {};
+    const link = data.link;
+    const orderId = data.order_id;
 
     if (typeof window === "undefined") return;
 
-    if (link === "/pedidos" && orderId) {
-      window.location.href = `/pedidos?chat=${orderId}`;
-      return;
+    // Build the target URL based on the notification link and order context
+    let targetUrl = link || "/";
+
+    if (orderId) {
+      if (link === "/pedidos") {
+        targetUrl = `/pedidos?chat=${orderId}`;
+      } else if (link === "/admin") {
+        targetUrl = `/admin?order=${orderId}`;
+      } else if (link === "/entregador") {
+        targetUrl = `/entregador?order=${orderId}`;
+      }
     }
 
-    if (link) {
-      window.location.href = link;
-    }
+    console.log("[CapPush] Navigating to:", targetUrl);
+
+    // Use setTimeout to ensure the app is fully foregrounded before navigating
+    setTimeout(() => {
+      window.location.href = targetUrl;
+    }, 300);
   });
 
   listenersReady = true;

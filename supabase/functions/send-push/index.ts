@@ -390,7 +390,10 @@ Deno.serve(async (req) => {
                     notification: {
                       icon: "/icon-192x192.png",
                       badge: "/icon-192x192.png",
-                      vibrate: [200, 100, 200],
+                      vibrate: [200, 100, 200, 100, 200, 100, 200],
+                      tag: data?.order_id ? `order-${data.order_id}` : undefined,
+                      renotify: true,
+                      requireInteraction: true,
                     },
                     fcm_options: { link: data?.link || "/" },
                   },
@@ -399,8 +402,29 @@ Deno.serve(async (req) => {
                     notification: {
                       icon: "ic_notification",
                       sound: "default",
-                      channel_id: "default",
+                      channel_id: "itasuper_orders",
                       click_action: "FCM_PLUGIN_ACTIVITY",
+                      default_vibrate_timings: false,
+                      vibrate_timings: ["0s", "0.3s", "0.2s", "0.3s", "0.2s", "0.3s", "0.2s", "0.3s"],
+                      default_sound: true,
+                      notification_priority: "PRIORITY_MAX",
+                      visibility: "PUBLIC",
+                    },
+                  },
+                  apns: {
+                    payload: {
+                      aps: {
+                        sound: {
+                          critical: 1,
+                          name: "default",
+                          volume: 1.0,
+                        },
+                        "interruption-level": "time-sensitive",
+                        badge: 1,
+                      },
+                    },
+                    headers: {
+                      "apns-priority": "10",
                     },
                   },
                   data: data || {},
