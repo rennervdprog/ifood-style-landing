@@ -128,6 +128,13 @@ jobs:
           done
           echo "✅ ItaSuper icon injected"
 
+      - name: Inject notification sound
+        run: |
+          RAW_DIR="android/app/src/main/res/raw"
+          mkdir -p "$RAW_DIR"
+          cp public/sounds/order-bell.mp3 "$RAW_DIR/order_bell.mp3"
+          echo "✅ Notification sound injected"
+
       - name: Set splash color
         run: |
           COLORS_FILE="android/app/src/main/res/values/colors.xml"
@@ -238,6 +245,13 @@ jobs:
             cp "$DIR/ic_launcher.png" "$DIR/ic_launcher_foreground.png"
           done
           echo "✅ ItaSuper Parceiro icon injected"
+
+      - name: Inject notification sound
+        run: |
+          RAW_DIR="android/app/src/main/res/raw"
+          mkdir -p "$RAW_DIR"
+          cp public/sounds/order-bell.mp3 "$RAW_DIR/order_bell.mp3"
+          echo "✅ Notification sound injected"
 
       - name: Set splash color
         run: |
