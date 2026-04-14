@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Bike, Navigation } from "lucide-react";
 import { geocodeAddressPrecise, haversineDistanceMeters, isValidCoordinate, resolveAddressContext } from "@/lib/addressGeocoding";
@@ -69,24 +69,23 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
   const [mapReady, setMapReady] = useState(false);
   const [L, setL] = useState<any>(null);
   const [now, setNow] = useState(Date.now());
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 5000);
     return () => clearInterval(t);
   }, []);
 
-  // Fetch driver location (poll every 5s)
+  // Fetch driver location by driver_user_id only (NOT filtered by order_id)
+  // There is only ONE row per driver in driver_locations (upsert on driver_user_id)
   const { data: driverLocation } = useQuery({
-    queryKey: ["driver-location", orderId, driverId],
+    queryKey: ["driver-location", driverId],
     queryFn: async () => {
       if (!driverId) return null;
       const { data } = await supabase
         .from("driver_locations")
         .select("latitude, longitude, speed, heading, updated_at")
         .eq("driver_user_id", driverId)
-        .eq("order_id", orderId)
-        .order("updated_at", { ascending: false })
-        .limit(1)
         .maybeSingle();
       if (!isValidCoordinate(data?.latitude, data?.longitude)) return null;
       return data;
@@ -95,12 +94,47 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
     refetchInterval: 5000,
   });
 
+  // Subscribe to Realtime changes on driver_locations for instant updates
+  useEffect(() => {
+    if (!driverId) return;
+
+    const channel = supabase
+      .channel(`driver-location-${driverId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "driver_locations",
+          filter: `driver_user_id=eq.${driverId}`,
+        },
+        (payload) => {
+          const newData = payload.new as any;
+          if (newData && isValidCoordinate(newData.latitude, newData.longitude)) {
+            queryClient.setQueryData(["driver-location", driverId], {
+              latitude: newData.latitude,
+              longitude: newData.longitude,
+              speed: newData.speed,
+              heading: newData.heading,
+              updated_at: newData.updated_at,
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [driverId, queryClient]);
+
   const isRecentDriverLocation = useMemo(() => {
     if (!driverLocation?.updated_at) return false;
-    return now - new Date(driverLocation.updated_at).getTime() <= 60_000;
+    // Consider location valid if updated within last 2 minutes
+    return now - new Date(driverLocation.updated_at).getTime() <= 120_000;
   }, [driverLocation?.updated_at, now]);
 
-  // Fetch store coordinates - prefer stored lat/lng, fallback to structured geocoding
+  // Fetch store coordinates
   const { data: storeData } = useQuery({
     queryKey: ["store-geo", storeId],
     queryFn: async () => {
@@ -111,7 +145,6 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
         .maybeSingle();
       if (!data) return null;
 
-      // Use stored coordinates if available
       if (isValidCoordinate(data.latitude, data.longitude)) {
         return { name: data.name, lat: data.latitude, lng: data.longitude };
       }
@@ -126,7 +159,6 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
       const geo = await geocodeAddressPrecise(context);
 
       if (geo) {
-        // Save coordinates for future use (fire-and-forget)
         supabase
           .from("stores")
           .update({ latitude: geo.lat, longitude: geo.lng } as any)
@@ -140,35 +172,32 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
     staleTime: 1000 * 60 * 60,
   });
 
-  // Client coordinates - prefer stored lat/lng from order, fallback to structured geocoding
+  // Client coordinates
   const { data: clientGeo } = useQuery({
     queryKey: ["client-geo", orderId, clientLat, clientLng, clientAddress],
     queryFn: async () => {
-      // Use coordinates passed from order record
       if (clientLat && clientLng) return { lat: clientLat, lng: clientLng };
 
-      // Try to get stored coords from order
       const { data: orderData } = await supabase
         .from("orders")
         .select("client_lat, client_lng, neighborhood, address_details")
         .eq("id", orderId)
         .maybeSingle();
 
-        if (isValidCoordinate((orderData as any)?.client_lat, (orderData as any)?.client_lng)) {
+      if (isValidCoordinate((orderData as any)?.client_lat, (orderData as any)?.client_lng)) {
         return { lat: (orderData as any).client_lat, lng: (orderData as any).client_lng };
       }
 
-       if (!clientAddress && !orderData?.address_details) return null;
+      if (!clientAddress && !orderData?.address_details) return null;
 
-       const context = await resolveAddressContext({
-         street: (clientAddress || orderData?.address_details || "").split(",").slice(0, 2).join(",").trim(),
-         neighborhood: orderData?.neighborhood || undefined,
-         postalcode: undefined,
-       });
-       const geo = await geocodeAddressPrecise(context);
+      const context = await resolveAddressContext({
+        street: (clientAddress || orderData?.address_details || "").split(",").slice(0, 2).join(",").trim(),
+        neighborhood: orderData?.neighborhood || undefined,
+        postalcode: undefined,
+      });
+      const geo = await geocodeAddressPrecise(context);
 
       if (geo) {
-        // Save to order for future (fire-and-forget)
         supabase
           .from("orders")
           .update({ client_lat: geo.lat, client_lng: geo.lng } as any)
@@ -218,17 +247,37 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
     const map = mapInstanceRef.current;
     const points: [number, number][] = [];
 
-    // Driver marker
+    // Driver marker - smooth move
     if (driverLocation && isRecentDriverLocation) {
       const dPos: [number, number] = [driverLocation.latitude, driverLocation.longitude];
       points.push(dPos);
       if (driverMarkerRef.current) {
-        driverMarkerRef.current.setLatLng(dPos);
+        // Smooth animation to new position
+        const currentLatLng = driverMarkerRef.current.getLatLng();
+        const startLat = currentLatLng.lat;
+        const startLng = currentLatLng.lng;
+        const endLat = dPos[0];
+        const endLng = dPos[1];
+        const steps = 20;
+        let step = 0;
+        const animate = () => {
+          step++;
+          const t = step / steps;
+          const lat = startLat + (endLat - startLat) * t;
+          const lng = startLng + (endLng - startLng) * t;
+          driverMarkerRef.current.setLatLng([lat, lng]);
+          if (step < steps) requestAnimationFrame(animate);
+        };
+        requestAnimationFrame(animate);
       } else {
         driverMarkerRef.current = L.marker(dPos, { icon: makeDriverIcon(L) })
           .addTo(map)
           .bindPopup("🏍️ Motoboy a caminho");
       }
+    } else if (driverMarkerRef.current && !isRecentDriverLocation) {
+      // Remove stale driver marker
+      map.removeLayer(driverMarkerRef.current);
+      driverMarkerRef.current = null;
     }
 
     // Store marker
@@ -281,7 +330,7 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
       routeLineRef.current = null;
     }
 
-    // Fit bounds to show all points
+    // Fit bounds
     if (points.length >= 2) {
       const bounds = L.latLngBounds(points);
       map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
@@ -306,6 +355,13 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
     );
     return Math.round((meters / 1000) * 10) / 10;
   }, [driverLocation, clientGeo, isRecentDriverLocation]);
+
+  // ETA calculation based on speed and distance
+  const etaMinutes = useMemo(() => {
+    if (!routeDistanceKm || !speedKmh || speedKmh < 5) return null;
+    const eta = Math.round((routeDistanceKm / speedKmh) * 60);
+    return eta > 0 && eta < 120 ? eta : null;
+  }, [routeDistanceKm, speedKmh]);
 
   const lastUpdateLabel = useMemo(() => {
     if (lastUpdateSec === null) return "";
@@ -335,9 +391,16 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
           <Bike className="h-4 w-4 text-primary-foreground" />
           <span className="text-xs font-bold text-primary-foreground">Rastreamento ao vivo</span>
         </div>
-        {lastUpdateLabel && (
-          <span className="text-[10px] text-primary-foreground/80">{lastUpdateLabel}</span>
-        )}
+        <div className="flex items-center gap-2">
+          {etaMinutes && (
+            <span className="text-[10px] font-bold text-primary-foreground bg-white/20 px-2 py-0.5 rounded-full">
+              ~{etaMinutes} min
+            </span>
+          )}
+          {lastUpdateLabel && (
+            <span className="text-[10px] text-primary-foreground/80">{lastUpdateLabel}</span>
+          )}
+        </div>
       </div>
 
       {/* Map */}
@@ -375,7 +438,7 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
 
       {(!driverLocation || !isRecentDriverLocation) && (
         <div className="px-3 py-3 text-center">
-          <span className="text-xs text-muted-foreground">📡 Aguardando localização real e atualizada do motoboy...</span>
+          <span className="text-xs text-muted-foreground">📡 Aguardando localização do motoboy...</span>
         </div>
       )}
     </div>
