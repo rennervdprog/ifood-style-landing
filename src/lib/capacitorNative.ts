@@ -257,7 +257,24 @@ export async function setupAppListeners() {
   }
 }
 
-// ── Keyboard ──
+// ── Location Permission ──
+
+export async function requestLocationPermission(): Promise<boolean> {
+  if (!isCapacitorNative()) return false;
+
+  try {
+    const { Geolocation } = await import("@capacitor/geolocation");
+    const perm = await Geolocation.requestPermissions();
+    const granted = perm.location === "granted" || perm.coarseLocation === "granted";
+    console.log(`[Location] Permission: ${granted ? "granted" : perm.location}`);
+    return granted;
+  } catch (e) {
+    console.warn("[Location] Permission request failed:", e);
+    return false;
+  }
+}
+
+
 
 export async function setupKeyboard() {
   if (!isCapacitorNative()) return;
@@ -298,6 +315,12 @@ export async function initCapacitorNative() {
     setupPushListeners();
     console.log("[Capacitor] PushListeners done");
   } catch (e) { console.error("[Capacitor] PushListeners failed:", e); }
+
+  // Request location permission early so GPS is available for maps/tracking
+  try {
+    await requestLocationPermission();
+    console.log("[Capacitor] Location permission done");
+  } catch (e) { console.error("[Capacitor] Location permission failed:", e); }
 
   // Hide splash after a small delay to let the app render
   setTimeout(() => hideSplash(), 500);
