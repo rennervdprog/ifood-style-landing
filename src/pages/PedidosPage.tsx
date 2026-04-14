@@ -769,7 +769,9 @@ const PedidosPage = () => {
                       <div className={`px-4 py-2.5 flex items-center justify-between ${config.bg} border-b ${config.border}`}>
                         <div className="flex items-center gap-2">
                           <StatusIcon className={`h-4 w-4 ${config.color}`} />
-                          <span className={`text-xs font-bold ${config.color}`}>{config.label}</span>
+                          <span className={`text-xs font-bold ${config.color}`}>
+                            {order.neighborhood === "RETIRADA" && order.status === "pronto_para_entrega" ? "Pronto p/ Retirada 🏪" : config.label}
+                          </span>
                         </div>
                         <div className="flex items-center gap-2">
                           <DeliveryTimeEstimate status={order.status} createdAt={order.created_at} confirmedAt={order.confirmed_at} />
