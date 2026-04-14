@@ -17,7 +17,8 @@ import { addMoney, multiplyMoney, sumMoney, formatBRL } from "@/lib/utils";
 import { useStorePlan } from "@/hooks/useStorePlan";
 import LoyaltyRedemption from "@/components/LoyaltyRedemption";
 import DeliveryTimeEstimate from "@/components/DeliveryTimeEstimate";
-import { geocodeAddressPrecise, resolveAddressContext } from "@/lib/addressGeocoding";
+import { resolveAddressContext } from "@/lib/addressGeocoding";
+import { getBestClientCoordinates } from "@/lib/deviceLocation";
 
 const allPaymentMethods = [
   { id: "pix", label: "PIX Online", desc: "Pagamento instantâneo", icon: QrCode },
