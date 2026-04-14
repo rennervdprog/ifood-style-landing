@@ -526,7 +526,7 @@ const StoreFinanceBasic = ({ storeId, storeName }: StoreFinanceBasicProps) => {
                 <span className="text-sm font-black text-emerald-500">
                   {formatCurrency(
                     storePlan.isItatingaFixed
-                      ? totalRevenue - paymentBreakdown.pix.count - completedOrders.length * 2
+                      ? totalRevenue - paymentBreakdown.pix.count - completedOrders.filter(o => Number(o.delivery_fee) > 0).length * 2
                       : totalRevenue
                   )}
                 </span>
