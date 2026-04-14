@@ -10,23 +10,8 @@ const NotificationPrompt = () => {
   useEffect(() => {
     if (!user) return;
 
-    // For Capacitor native, check push permission status
-    if (isCapacitorNative()) {
-      (async () => {
-        try {
-          const { PushNotifications } = await import("@capacitor/push-notifications");
-          const result = await PushNotifications.checkPermissions();
-          if (result.receive === "prompt" || result.receive === "prompt-with-rationale") {
-            const dismissed = localStorage.getItem("notif-prompt-dismissed");
-            if (dismissed && Date.now() - Number(dismissed) < 3 * 24 * 60 * 60 * 1000) return;
-            setTimeout(() => setShow(true), 3000);
-          }
-        } catch (err) {
-          console.warn("[NotifPrompt] PushNotifications check failed:", err);
-        }
-      })();
-      return;
-    }
+    // On Capacitor native, the OS handles permission prompts natively — skip the banner entirely
+    if (isCapacitorNative()) return;
 
     // Web: check browser Notification API
     if (!("Notification" in window)) return;
