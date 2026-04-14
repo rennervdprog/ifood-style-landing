@@ -172,9 +172,9 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
     staleTime: 1000 * 60 * 60,
   });
 
-  // Client coordinates
+  // Client coordinates — use store city/state as context when client has no CEP
   const { data: clientGeo } = useQuery({
-    queryKey: ["client-geo", orderId, clientLat, clientLng, clientAddress],
+    queryKey: ["client-geo", orderId, clientLat, clientLng, clientAddress, storeData?.lat],
     queryFn: async () => {
       if (clientLat && clientLng) return { lat: clientLat, lng: clientLng };
 
@@ -190,12 +190,16 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
 
       if (!clientAddress && !orderData?.address_details) return null;
 
+      // Fetch store address to use city/state as context for geocoding
+      const { data: storeAddr } = await supabase
+        .from("stores")
+        .select("address_city, address_state, address_cep")
+        .eq("id", storeId)
+        .maybeSingle();
+
       // Parse address_details which is formatted as "Rua X, 123, Complemento, Ref: ..."
-      // Extract street + number (first two comma-separated parts) for precise geocoding
       const rawAddress = clientAddress || orderData?.address_details || "";
       const parts = rawAddress.split(",").map((p: string) => p.trim());
-      // parts[0] = street name, parts[1] = number (usually)
-      // Combine street + number so geocoder can place pin at exact house
       const streetWithNumber = parts.length >= 2 && /^\d+/.test(parts[1])
         ? `${parts[0]} ${parts[1]}`
         : parts[0];
@@ -203,6 +207,8 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
       const context = await resolveAddressContext({
         street: streetWithNumber,
         neighborhood: orderData?.neighborhood || undefined,
+        city: storeAddr?.address_city || undefined,
+        state: storeAddr?.address_state || undefined,
         postalcode: undefined,
       });
       const geo = await geocodeAddressPrecise(context);

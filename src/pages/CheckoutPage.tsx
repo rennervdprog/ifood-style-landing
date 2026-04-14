@@ -257,10 +257,12 @@ const CheckoutPage = () => {
         const geoStreet = useSavedAddr
           ? [savedAddressData.street, savedAddressData.number].filter(Boolean).join(" ")
           : [profileStreet, profileNumber].filter(Boolean).join(" ");
+        const geoNeighborhood = useSavedAddr ? savedAddressData?.neighborhood : profileNeighborhood;
 
+        // Resolve CEP first to get city/state — critical for precise geocoding
         const context = await resolveAddressContext({
           street: geoStreet,
-          neighborhood: useSavedAddr ? savedAddressData?.neighborhood : profileNeighborhood,
+          neighborhood: geoNeighborhood,
           city: undefined,
           state: undefined,
           postalcode: geoCep,
