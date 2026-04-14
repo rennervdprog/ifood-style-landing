@@ -83,7 +83,11 @@ const AuthPage = () => {
       toast.error("Você precisa aceitar os Termos de Uso e Política de Privacidade.");
       return;
     }
-    if (password.length < 6) {
+    if ((mode === "signup" || mode === "reset") && passedCount < PASSWORD_RULES.length) {
+      toast.error("Sua senha não atende todos os requisitos. Verifique abaixo.");
+      return;
+    }
+    if (mode === "login" && password.length < 6) {
       toast.error("A senha deve ter pelo menos 6 caracteres.");
       return;
     }
