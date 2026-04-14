@@ -205,12 +205,13 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
     queryFn: async () => {
       const [storeResult, planResult] = await Promise.all([
         supabase.from("stores").select("owner_id, commission_rate").eq("id", storeId).single(),
-        supabase.from("store_plans").select("commission_rate").eq("store_id", storeId).eq("is_active", true).maybeSingle(),
+        supabase.from("store_plans").select("commission_rate, plan_type").eq("store_id", storeId).eq("is_active", true).maybeSingle(),
       ]);
       if (storeResult.error) throw storeResult.error;
       return {
         ...storeResult.data,
         plan_commission_rate: planResult.data?.commission_rate,
+        plan_type: planResult.data?.plan_type,
       };
     },
     enabled: !!storeId,
@@ -550,7 +551,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
             <p className="text-2xl font-black text-emerald-400 mt-1 tracking-tight">
               {formatBRL(storePart)}
             </p>
-            <p className="text-[10px] text-emerald-400/60 mt-1">85% do faturamento</p>
+            <p className="text-[10px] text-emerald-400/60 mt-1">{(storeData as any)?.plan_type === 'fixed' ? '100% do subtotal (- R$1 PIX)' : `${100 - commissionPct}% do faturamento`}</p>
           </div>
         </div>
 
