@@ -102,6 +102,17 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
+      - name: Inject location & camera permissions
+        run: |
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          # Add permissions before <application> tag if not already present
+          if ! grep -q "ACCESS_FINE_LOCATION" "$MANIFEST"; then
+            sed -i 's|<application|<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n    <application|' "$MANIFEST"
+            echo "✅ Location permissions injected"
+          else
+            echo "ℹ️ Location permissions already present"
+          fi
+
       - name: Inject ItaSuper icon
         run: |
           echo "📥 Injecting ItaSuper icon from public/icon-512x512.png"
@@ -202,6 +213,16 @@ jobs:
 
       - name: Sync Capacitor
         run: npx cap sync android
+
+      - name: Inject location & camera permissions
+        run: |
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          if ! grep -q "ACCESS_FINE_LOCATION" "$MANIFEST"; then
+            sed -i 's|<application|<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n    <application|' "$MANIFEST"
+            echo "✅ Location permissions injected"
+          else
+            echo "ℹ️ Location permissions already present"
+          fi
 
       - name: Inject ItaSuper Parceiro icon
         run: |
@@ -404,6 +425,16 @@ jobs:
 
       - name: Sync Capacitor
         run: npx cap sync android
+
+      - name: Inject location & camera permissions
+        run: |
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          if ! grep -q "ACCESS_FINE_LOCATION" "$MANIFEST"; then
+            sed -i 's|<application|<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n    <application|' "$MANIFEST"
+            echo "✅ Location permissions injected"
+          else
+            echo "ℹ️ Location permissions already present"
+          fi
 
       - name: Inject icons after sync
         if: ${{ steps.resolve_icon.outputs.icon_url != '' }}
