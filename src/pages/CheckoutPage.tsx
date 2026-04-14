@@ -31,6 +31,7 @@ const CheckoutPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [paymentMethod, setPaymentMethod] = useState("");
+  const [isPickup, setIsPickup] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [needsChange, setNeedsChange] = useState(false);
