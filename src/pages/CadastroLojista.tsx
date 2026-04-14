@@ -208,6 +208,22 @@ const CadastroLojista = () => {
         await supabase.from("profiles").update({
           terms_accepted_at: new Date().toISOString(),
         }).eq("user_id", signUpData.user.id);
+
+        // Ensure store address fields are set (trigger may not map all fields)
+        const { data: storeRow } = await supabase
+          .from("stores")
+          .select("id")
+          .eq("owner_id", signUpData.user.id)
+          .maybeSingle();
+        if (storeRow?.id) {
+          await supabase.from("stores").update({
+            address_street: street.trim(),
+            address_number: addressNumber.trim(),
+            address_neighborhood: neighborhood.trim(),
+            address_cep: cep.replace(/\D/g, ""),
+            address_city: city,
+          } as any).eq("id", storeRow.id);
+        }
       }
 
       toast.success("Cadastro realizado com sucesso!");
