@@ -34,6 +34,11 @@ const AuthPage = () => {
   const [loading, setLoading] = useState(false);
   const [resetSent, setResetSent] = useState(false);
   const navigate = useNavigate();
+
+  const ruleResults = useMemo(() => PASSWORD_RULES.map(r => r.test(password)), [password]);
+  const passedCount = ruleResults.filter(Boolean).length;
+  const strengthPercent = (passedCount / PASSWORD_RULES.length) * 100;
+  const strengthColor = strengthPercent <= 20 ? "bg-red-500" : strengthPercent <= 60 ? "bg-yellow-500" : strengthPercent < 100 ? "bg-blue-500" : "bg-green-500";
   const location = useLocation();
 
   useEffect(() => {
@@ -262,7 +267,29 @@ const AuthPage = () => {
                   )}
                 </button>
               </div>
-            </div>
+             </div>
+
+             {/* Password strength indicator */}
+             {(mode === "signup" || mode === "reset") && password.length > 0 && (
+               <div className="space-y-2 mt-1">
+                 <div className="flex gap-1 h-1.5 rounded-full overflow-hidden bg-slate-100">
+                   {PASSWORD_RULES.map((_, i) => (
+                     <div
+                       key={i}
+                       className={`flex-1 rounded-full transition-all duration-300 ${i < passedCount ? strengthColor : "bg-slate-200"}`}
+                     />
+                   ))}
+                 </div>
+                 <div className="grid grid-cols-1 gap-1">
+                   {PASSWORD_RULES.map((rule, i) => (
+                     <div key={i} className={`flex items-center gap-1.5 text-xs transition-colors ${ruleResults[i] ? "text-green-600" : "text-slate-400"}`}>
+                       {ruleResults[i] ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                       {rule.label}
+                     </div>
+                   ))}
+                 </div>
+               </div>
+             )}
           )}
 
           {mode === "signup" && (
