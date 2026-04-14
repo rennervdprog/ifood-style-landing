@@ -190,8 +190,18 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
 
       if (!clientAddress && !orderData?.address_details) return null;
 
+      // Parse address_details which is formatted as "Rua X, 123, Complemento, Ref: ..."
+      // Extract street + number (first two comma-separated parts) for precise geocoding
+      const rawAddress = clientAddress || orderData?.address_details || "";
+      const parts = rawAddress.split(",").map((p: string) => p.trim());
+      // parts[0] = street name, parts[1] = number (usually)
+      // Combine street + number so geocoder can place pin at exact house
+      const streetWithNumber = parts.length >= 2 && /^\d+/.test(parts[1])
+        ? `${parts[0]} ${parts[1]}`
+        : parts[0];
+
       const context = await resolveAddressContext({
-        street: (clientAddress || orderData?.address_details || "").split(",").slice(0, 2).join(",").trim(),
+        street: streetWithNumber,
         neighborhood: orderData?.neighborhood || undefined,
         postalcode: undefined,
       });

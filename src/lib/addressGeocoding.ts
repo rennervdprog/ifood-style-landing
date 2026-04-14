@@ -91,6 +91,25 @@ export async function resolveAddressContext(address: AddressContext): Promise<Ad
   return context;
 }
 
+/**
+ * Extract house number from a street string.
+ * Handles both "Rua X, 123" and "Rua X 123" patterns common in Brazilian addresses.
+ * Nominatim expects format: "<housenumber> <streetname>" in the street param.
+ */
+function extractHouseNumber(street: string): { name: string; number: string | null } {
+  // Pattern: "Rua Das Flores, 123" or "Rua Das Flores 123" (number at end)
+  const trailingMatch = street.match(/^(.+?)[,\s]+(\d{1,6})\s*$/);
+  if (trailingMatch) {
+    return { name: trailingMatch[1].trim(), number: trailingMatch[2] };
+  }
+  // Pattern: "123 Rua Das Flores" (number at start, already correct for Nominatim)
+  const leadingMatch = street.match(/^(\d{1,6})\s+(.+)$/);
+  if (leadingMatch) {
+    return { name: leadingMatch[2].trim(), number: leadingMatch[1] };
+  }
+  return { name: street, number: null };
+}
+
 export async function geocodeAddressPrecise(address: AddressContext): Promise<Coordinates | null> {
   const context = await resolveAddressContext(address);
 
@@ -100,7 +119,11 @@ export async function geocodeAddressPrecise(address: AddressContext): Promise<Co
     addressdetails: "0",
   });
 
-  if (context.street) structured.set("street", context.street);
+  // Nominatim structured search expects street as "<housenumber> <streetname>"
+  if (context.street) {
+    const { name, number } = extractHouseNumber(context.street);
+    structured.set("street", number ? `${number} ${name}` : name);
+  }
   if (context.city) structured.set("city", context.city);
   if (context.state) structured.set("state", context.state);
   if (context.postalcode) structured.set("postalcode", context.postalcode);
