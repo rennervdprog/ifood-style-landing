@@ -306,6 +306,26 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   // Block accepting new orders while driver has any active (non-finalized) deliveries
   const hasActiveRoutes = totalActive > 0;
 
+  // Realtime subscription for instant order updates
+  useEffect(() => {
+    if (!user || linkedStoreIds.length === 0) return;
+
+    const channel = supabase
+      .channel("store-driver-orders-rt")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "orders" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["store-driver-available"] });
+          queryClient.invalidateQueries({ queryKey: ["store-driver-my-deliveries"] });
+          queryClient.invalidateQueries({ queryKey: ["store-driver-count"] });
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user, linkedStoreIds, queryClient]);
+
   // GPS tracking for store drivers
   useEffect(() => {
     if (!user) return;
@@ -322,6 +342,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       updateTrackingOrderId(myDeliveries[0]?.id || null);
     }
   }, [myDeliveries?.[0]?.id]);
+
 
   return (
     <div className="px-4 py-4 space-y-5">
