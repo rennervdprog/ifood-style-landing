@@ -230,7 +230,7 @@ const StoreFinanceBasic = ({ storeId, storeName }: StoreFinanceBasicProps) => {
             <p className="text-xs text-muted-foreground">
               {formatBRL(storePlan.monthlyFee)}/mês
               {storePlan.isItatingaFixed 
-                ? " • R$1/pedido PIX • Split entrega R$4+R$2"
+                ? " • R$1/pedido PIX • R$2/entrega para plataforma"
                 : storePlan.commissionRate > 0 ? ` + ${storePlan.commissionRate}% por pedido` : ""
               }
             </p>
@@ -253,7 +253,7 @@ const StoreFinanceBasic = ({ storeId, storeName }: StoreFinanceBasicProps) => {
             <div className="flex-1">
               <h3 className="font-bold text-foreground text-sm">Taxa plataforma pendente</h3>
               <p className="text-xs text-muted-foreground">
-                R$2 por entrega • Acumulado de pedidos finalizados
+                R$2 por entrega com taxa • Acumulado de pedidos finalizados
               </p>
             </div>
             <span className="text-lg font-black text-destructive">
