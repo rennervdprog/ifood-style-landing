@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useState, useMemo } from "react";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import { openWhatsApp } from "@/lib/whatsapp";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
