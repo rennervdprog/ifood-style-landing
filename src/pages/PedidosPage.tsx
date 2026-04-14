@@ -796,7 +796,7 @@ const PedidosPage = () => {
                         </div>
 
                         {/* Timeline */}
-                        {!isWaitingPayment && <StatusTimeline status={order.status} />}
+                        {!isWaitingPayment && <StatusTimeline status={order.status} isPickup={order.neighborhood === "RETIRADA"} />}
 
                         {/* Waiting Payment */}
                         {isWaitingPayment && (() => {
