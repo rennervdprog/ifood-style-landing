@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatBRL } from "@/lib/utils";
-import { X, AlertTriangle, Loader2, Wallet, Clock, CheckCircle2 } from "lucide-react";
+import { X, AlertTriangle, Loader2, Wallet, Clock, CheckCircle2, Banknote } from "lucide-react";
 
 const FEE_TABLE: Record<string, { percent: number; label: string }> = {
   aguardando_pagamento: { percent: 0, label: "Sem taxa" },
@@ -34,6 +34,7 @@ const CancelOrderModal = ({ order, onClose, onCancelled }: Props) => {
   const [loading, setLoading] = useState(false);
 
   const feeInfo = FEE_TABLE[order.status];
+  const isPrepaid = ["pix", "wallet", "saldo"].includes(order.payment_method || "");
 
   const { isTimeOverride, minutesElapsed, effectiveFeePercent } = useMemo(() => {
     if (!feeInfo) return { isTimeOverride: false, minutesElapsed: 0, effectiveFeePercent: 0 };
@@ -50,7 +51,7 @@ const CancelOrderModal = ({ order, onClose, onCancelled }: Props) => {
       minutesElapsed: Math.floor(elapsed),
       effectiveFeePercent: override ? 0 : feeInfo.percent,
     };
-  }, [order.confirmed_at, order.created_at, order.status, feeInfo.percent]);
+  }, [order.confirmed_at, order.created_at, order.status, feeInfo?.percent]);
 
   if (!feeInfo) return null;
 
@@ -71,6 +72,8 @@ const CancelOrderModal = ({ order, onClose, onCancelled }: Props) => {
       const result = data as any;
       if (result?.refund_amount > 0) {
         toast.success(`Pedido cancelado! ${formatBRL(result.refund_amount)} creditado na sua carteira.`);
+      } else if (result?.is_prepaid === false) {
+        toast.success("Pedido cancelado com sucesso!");
       } else {
         toast.success("Pedido cancelado.");
       }
@@ -100,68 +103,88 @@ const CancelOrderModal = ({ order, onClose, onCancelled }: Props) => {
         </div>
 
         <div className="p-4 space-y-4">
-          {/* Time override banner */}
-          {isTimeOverride && (
+          {/* Cash/card: no refund needed */}
+          {!isPrepaid && (
             <div className="bg-primary/10 border border-primary/30 rounded-xl p-3 flex items-start gap-2">
-              <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+              <Banknote className="h-5 w-5 text-primary mt-0.5 shrink-0" />
               <div>
                 <p className="text-sm font-semibold text-foreground">
-                  Reembolso total garantido!
+                  Pagamento na entrega
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  O pedido está neste status há {minutesElapsed} minutos (limite de {TIME_LIMIT_MINUTES} min excedido). Você tem direito a 100% de reembolso sem taxa.
+                  Como o pagamento é em {order.payment_method === "cartao" ? "cartão" : "dinheiro"} na entrega, você ainda não pagou. O pedido será cancelado sem cobrança.
                 </p>
               </div>
             </div>
           )}
 
-          {/* Fee breakdown */}
-          <div className="bg-muted/30 rounded-xl p-4 space-y-3">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Subtotal do pedido</span>
-              <span className="font-semibold text-foreground">{formatBRL(subtotal)}</span>
-            </div>
+          {/* PIX/wallet: show refund details */}
+          {isPrepaid && (
+            <>
+              {/* Time override banner */}
+              {isTimeOverride && (
+                <div className="bg-primary/10 border border-primary/30 rounded-xl p-3 flex items-start gap-2">
+                  <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">
+                      Reembolso total garantido!
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      O pedido está neste status há {minutesElapsed} minutos (limite de {TIME_LIMIT_MINUTES} min excedido). Você tem direito a 100% de reembolso sem taxa.
+                    </p>
+                  </div>
+                </div>
+              )}
 
-            {!isTimeOverride && effectiveFeePercent > 0 && (
-              <div className="flex justify-between text-sm">
-                <span className="text-destructive">{feeInfo.label}</span>
-                <span className="font-semibold text-destructive">-{formatBRL(feeAmount)}</span>
+              {/* Fee breakdown */}
+              <div className="bg-muted/30 rounded-xl p-4 space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Subtotal do pedido</span>
+                  <span className="font-semibold text-foreground">{formatBRL(subtotal)}</span>
+                </div>
+
+                {!isTimeOverride && effectiveFeePercent > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-destructive">{feeInfo.label}</span>
+                    <span className="font-semibold text-destructive">-{formatBRL(feeAmount)}</span>
+                  </div>
+                )}
+
+                {isTimeOverride && feeInfo.percent > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground line-through">{feeInfo.label}</span>
+                    <span className="text-primary font-semibold flex items-center gap-1">
+                      <Clock className="h-3.5 w-3.5" />
+                      Isento (tempo excedido)
+                    </span>
+                  </div>
+                )}
+
+                <div className="border-t border-border pt-3 flex justify-between">
+                  <span className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                    <Wallet className="h-4 w-4 text-primary" />
+                    Crédito na carteira
+                  </span>
+                  <span className="text-lg font-black text-primary">{formatBRL(refundAmount)}</span>
+                </div>
               </div>
-            )}
 
-            {isTimeOverride && feeInfo.percent > 0 && (
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground line-through">{feeInfo.label}</span>
-                <span className="text-primary font-semibold flex items-center gap-1">
-                  <Clock className="h-3.5 w-3.5" />
-                  Isento (tempo excedido)
-                </span>
-              </div>
-            )}
+              {effectiveFeePercent === 0 && !isTimeOverride && (
+                <div className="bg-primary/10 border border-primary/30 rounded-xl p-3">
+                  <p className="text-xs text-foreground">
+                    ✅ Cancelamento sem custo! O valor total será creditado na sua carteira.
+                  </p>
+                </div>
+              )}
 
-            <div className="border-t border-border pt-3 flex justify-between">
-              <span className="text-sm font-bold text-foreground flex items-center gap-1.5">
-                <Wallet className="h-4 w-4 text-primary" />
-                Crédito na carteira
-              </span>
-              <span className="text-lg font-black text-primary">{formatBRL(refundAmount)}</span>
-            </div>
-          </div>
-
-          {effectiveFeePercent === 0 && !isTimeOverride && (
-            <div className="bg-primary/10 border border-primary/30 rounded-xl p-3">
-              <p className="text-xs text-foreground">
-                ✅ Cancelamento sem custo! O valor total será creditado na sua carteira.
-              </p>
-            </div>
-          )}
-
-          {effectiveFeePercent > 0 && (
-            <div className="bg-accent border border-border rounded-xl p-3">
-              <p className="text-xs text-foreground">
-                ⚠️ Como o pedido já está em {order.status === "preparando" ? "preparo" : order.status === "pronto_para_entrega" ? "estado pronto" : "rota de entrega"}, será cobrada uma taxa de {effectiveFeePercent}%. Após {TIME_LIMIT_MINUTES} minutos sem entrega, a taxa é removida.
-              </p>
-            </div>
+              {effectiveFeePercent > 0 && (
+                <div className="bg-accent border border-border rounded-xl p-3">
+                  <p className="text-xs text-foreground">
+                    ⚠️ Como o pedido já está em {order.status === "preparando" ? "preparo" : order.status === "pronto_para_entrega" ? "estado pronto" : "rota de entrega"}, será cobrada uma taxa de {effectiveFeePercent}%. Após {TIME_LIMIT_MINUTES} minutos sem entrega, a taxa é removida.
+                  </p>
+                </div>
+              )}
+            </>
           )}
 
           {/* Actions */}
