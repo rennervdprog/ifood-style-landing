@@ -63,7 +63,7 @@ const AuthPage = () => {
       setLoading(true);
       try {
         const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-          redirectTo: `${window.location.origin}/auth?mode=reset`,
+          redirectTo: `https://itasuper.com.br/auth?mode=reset`,
         });
         if (error) throw error;
         setResetSent(true);
