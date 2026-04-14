@@ -737,13 +737,13 @@ const CheckoutPage = () => {
           </section>
         )}
 
-        {/* SECTION: Schedule Delivery */}
+        {/* SECTION: Schedule */}
         <section className="bg-card rounded-2xl border border-border overflow-hidden">
           <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50">
             <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center">
               <Calendar className="h-4 w-4 text-blue-500" />
             </div>
-            <h2 className="text-sm font-bold text-foreground flex-1">Agendar entrega</h2>
+            <h2 className="text-sm font-bold text-foreground flex-1">{isPickup ? "Agendar retirada" : "Agendar entrega"}</h2>
             {scheduledFor && <CheckCircle2 className="h-4 w-4 text-primary" />}
           </div>
           <div className="p-4 space-y-3">
