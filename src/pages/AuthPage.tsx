@@ -290,6 +290,7 @@ const AuthPage = () => {
                  </div>
                </div>
              )}
+            </div>
           )}
 
           {mode === "signup" && (
