@@ -126,9 +126,7 @@ const PartnerLogin = () => {
         <div className="w-full max-w-sm">
           <div className="text-center mb-8">
             <div className="flex items-center justify-center gap-3 mb-4">
-              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
-                <Store className="h-7 w-7 text-primary" />
-              </div>
+              <img src="/itasuper-logo-parceiro.jpg" alt="ItaSuper Parceiro" className="w-14 h-14 rounded-2xl" />
             </div>
             <h2 className="text-xl font-black text-foreground">
               {mode === "login" ? "Acesso Parceiro" : "Como deseja se cadastrar?"}
