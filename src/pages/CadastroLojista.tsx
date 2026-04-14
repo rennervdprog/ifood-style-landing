@@ -154,7 +154,7 @@ const CadastroLojista = () => {
     e.preventDefault();
     setErrors({});
 
-    const result = schema.safeParse({ email, confirmEmail, password, storeName, document, birthDate, whatsapp, pixType, pixKey, storeCategory, cep, city, selectedPlan });
+    const result = schema.safeParse({ email, confirmEmail, password, storeName, document, birthDate, whatsapp, pixType, pixKey, storeCategory, cep, city, street, addressNumber, neighborhood, selectedPlan });
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
       result.error.errors.forEach((err) => {
@@ -190,6 +190,7 @@ const CadastroLojista = () => {
               city: normalizedCity,
               cep: cep.replace(/\D/g, ""),
               street: street,
+              address_number: addressNumber.trim(),
               neighborhood: neighborhood,
               selected_plan: selectedPlan,
             },
