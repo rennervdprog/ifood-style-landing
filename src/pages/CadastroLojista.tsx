@@ -36,6 +36,9 @@ const schema = z.object({
   storeCategory: z.enum(storeCategories as unknown as [string, ...string[]], { errorMap: () => ({ message: "Selecione uma categoria" }) }),
   cep: z.string().min(8, "CEP inválido"),
   city: z.string().min(1, "Busque o CEP para identificar a cidade"),
+  street: z.string().trim().min(2, "Rua é obrigatória"),
+  addressNumber: z.string().trim().min(1, "Número é obrigatório"),
+  neighborhood: z.string().trim().min(2, "Bairro é obrigatório"),
   selectedPlan: z.enum(["fixed", "hybrid", "commission_only"], { errorMap: () => ({ message: "Selecione um plano" }) }),
 }).refine((data) => data.email === data.confirmEmail, {
   message: "Os e-mails não coincidem",
@@ -65,6 +68,7 @@ const CadastroLojista = () => {
   const [cep, setCep] = useState("");
   const [city, setCity] = useState("");
   const [street, setStreet] = useState("");
+  const [addressNumber, setAddressNumber] = useState("");
   const [neighborhood, setNeighborhood] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -134,6 +138,9 @@ const CadastroLojista = () => {
       if (!storeCategory) fieldErrors.storeCategory = "Selecione uma categoria";
       if (cep.replace(/\D/g, "").length < 8) fieldErrors.cep = "CEP inválido";
       if (!city) fieldErrors.city = "Busque o CEP para identificar a cidade";
+      if (!street.trim()) fieldErrors.street = "Rua é obrigatória";
+      if (!addressNumber.trim()) fieldErrors.addressNumber = "Número é obrigatório";
+      if (!neighborhood.trim()) fieldErrors.neighborhood = "Bairro é obrigatório";
       if (Object.keys(fieldErrors).length > 0) { setErrors(fieldErrors); return false; }
     }
     return true;
@@ -147,7 +154,7 @@ const CadastroLojista = () => {
     e.preventDefault();
     setErrors({});
 
-    const result = schema.safeParse({ email, confirmEmail, password, storeName, document, birthDate, whatsapp, pixType, pixKey, storeCategory, cep, city, selectedPlan });
+    const result = schema.safeParse({ email, confirmEmail, password, storeName, document, birthDate, whatsapp, pixType, pixKey, storeCategory, cep, city, street, addressNumber, neighborhood, selectedPlan });
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
       result.error.errors.forEach((err) => {
@@ -183,6 +190,7 @@ const CadastroLojista = () => {
               city: normalizedCity,
               cep: cep.replace(/\D/g, ""),
               street: street,
+              address_number: addressNumber.trim(),
               neighborhood: neighborhood,
               selected_plan: selectedPlan,
             },
@@ -200,6 +208,22 @@ const CadastroLojista = () => {
         await supabase.from("profiles").update({
           terms_accepted_at: new Date().toISOString(),
         }).eq("user_id", signUpData.user.id);
+
+        // Ensure store address fields are set (trigger may not map all fields)
+        const { data: storeRow } = await supabase
+          .from("stores")
+          .select("id")
+          .eq("owner_id", signUpData.user.id)
+          .maybeSingle();
+        if (storeRow?.id) {
+          await supabase.from("stores").update({
+            address_street: street.trim(),
+            address_number: addressNumber.trim(),
+            address_neighborhood: neighborhood.trim(),
+            address_cep: cep.replace(/\D/g, ""),
+            address_city: city,
+          } as any).eq("id", storeRow.id);
+        }
       }
 
       toast.success("Cadastro realizado com sucesso!");
@@ -510,7 +534,7 @@ const CadastroLojista = () => {
                           <span className="text-xs bg-amber-500/10 text-amber-600 px-2 py-0.5 rounded-full">📱 Cardápio Digital</span>
                         )}
                       </p>
-                      {street && <p className="text-xs text-muted-foreground mt-1">{street}{neighborhood ? ` - ${neighborhood}` : ""}</p>}
+                      {street && <p className="text-xs text-muted-foreground mt-1">{street}{addressNumber ? `, ${addressNumber}` : ""}{neighborhood ? ` - ${neighborhood}` : ""}</p>}
                       {!isPlatformCity && (
                         <p className="text-xs text-amber-600 mt-1">
                           Motoboys da plataforma ainda não disponíveis. Sua loja funcionará como cardápio digital com motoboy próprio.
@@ -518,6 +542,43 @@ const CadastroLojista = () => {
                       )}
                     </div>
                   )}
+
+                  {/* Street + Number fields */}
+                  <div className="grid grid-cols-3 gap-2 mt-2">
+                    <div className="col-span-2">
+                      <input
+                        type="text"
+                        placeholder="Rua / Avenida *"
+                        value={street}
+                        onChange={(e) => setStreet(e.target.value)}
+                        className="w-full h-12 px-4 rounded-2xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                      />
+                      {errors.street && <p className="text-xs text-destructive mt-1 px-1">{errors.street}</p>}
+                    </div>
+                    <div>
+                      <input
+                        type="text"
+                        placeholder="Nº *"
+                        value={addressNumber}
+                        onChange={(e) => setAddressNumber(e.target.value)}
+                        inputMode="numeric"
+                        className="w-full h-12 px-4 rounded-2xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                      />
+                      {errors.addressNumber && <p className="text-xs text-destructive mt-1 px-1">{errors.addressNumber}</p>}
+                    </div>
+                  </div>
+
+                  {/* Neighborhood */}
+                  <div className="mt-2">
+                    <input
+                      type="text"
+                      placeholder="Bairro *"
+                      value={neighborhood}
+                      onChange={(e) => setNeighborhood(e.target.value)}
+                      className="w-full h-12 px-4 rounded-2xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                    />
+                    {errors.neighborhood && <p className="text-xs text-destructive mt-1 px-1">{errors.neighborhood}</p>}
+                  </div>
                 </div>
 
                 <div className="flex gap-3">
