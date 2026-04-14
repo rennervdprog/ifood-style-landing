@@ -850,6 +850,7 @@ const CheckoutPage = () => {
                 </div>
               )}
 
+              {!isPickup && (
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground flex items-center gap-1">
                   <Truck className="h-3 w-3" /> Entrega
@@ -858,11 +859,21 @@ const CheckoutPage = () => {
                   {calculatingFee ? "..." : `${formatBRL(activeDeliveryFee)}`}
                 </span>
               </div>
+              )}
 
-              {couponType === "free_shipping" && (
+              {!isPickup && couponType === "free_shipping" && (
                 <div className="flex justify-between text-sm">
                   <span className="text-green-600 font-medium">Frete grátis 🎉</span>
                   <span className="font-bold text-green-600">R$ 0,00</span>
+                </div>
+              )}
+
+              {isPickup && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground flex items-center gap-1">
+                    <Store className="h-3 w-3" /> Retirada
+                  </span>
+                  <span className="font-bold text-green-600">Grátis ✨</span>
                 </div>
               )}
             </div>
