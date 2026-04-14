@@ -1,11 +1,24 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Mail, Lock, Eye, EyeOff, KeyRound, FileText, ShoppingBag, CheckCircle2, Zap } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, KeyRound, FileText, ShoppingBag, CheckCircle2, Zap, Check, X } from "lucide-react";
 import { isPartnerCapacitorApp } from "@/lib/capacitorAppMode";
 
 type AuthMode = "login" | "signup" | "forgot" | "reset";
+
+interface PasswordRule {
+  label: string;
+  test: (pw: string) => boolean;
+}
+
+const PASSWORD_RULES: PasswordRule[] = [
+  { label: "Mínimo 8 caracteres", test: (pw) => pw.length >= 8 },
+  { label: "Uma letra maiúscula", test: (pw) => /[A-Z]/.test(pw) },
+  { label: "Uma letra minúscula", test: (pw) => /[a-z]/.test(pw) },
+  { label: "Um número", test: (pw) => /[0-9]/.test(pw) },
+  { label: "Um caractere especial (!@#$...)", test: (pw) => /[^A-Za-z0-9]/.test(pw) },
+];
 
 const REMEMBER_KEY = "itasuper_remember_until";
 const TWO_MONTHS_MS = 60 * 24 * 60 * 60 * 1000;
