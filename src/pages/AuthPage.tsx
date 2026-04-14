@@ -63,7 +63,7 @@ const AuthPage = () => {
       setLoading(true);
       try {
         const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-          redirectTo: `https://itasuper.com.br/auth?mode=reset`,
+          redirectTo: `${window.location.origin}/auth?mode=reset`,
         });
         if (error) throw error;
         setResetSent(true);
@@ -144,7 +144,7 @@ const AuthPage = () => {
         const { data: signUpData, error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
-          options: { emailRedirectTo: 'https://itasuper.com.br/auth' },
+          options: { emailRedirectTo: window.location.origin },
         });
         if (error) throw error;
         if (signUpData?.user?.id) {
