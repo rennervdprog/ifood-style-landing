@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { isCapacitorNative } from "@/lib/capacitorNative";
+import { getCapacitorAppMode, isPartnerCapacitorApp, persistCapacitorAppMode } from "@/lib/capacitorAppMode";
 
 /**
  * On Capacitor Android PARCEIRO app, restrict navigation to partner-only routes.
@@ -24,75 +25,6 @@ const PARTNER_ROUTES = [
   "/planos",
 ];
 
-const CLIENT_ALLOWED_ROUTES = [
-  "/",
-  "/cliente",
-  "/loja",
-  "/carrinho",
-  "/checkout",
-  "/pedidos",
-  "/perfil",
-  "/auth",
-  "/termos-de-uso",
-  "/politica-de-privacidade",
-];
-
-const APP_MODE_KEY = "cap_app_mode";
-const LEGACY_PARTNER_KEY = "cap_partner";
-
-let isPartnerApp: boolean | null = null;
-
-function persistAppMode(mode: "partner" | "client") {
-  isPartnerApp = mode === "partner";
-
-  try {
-    sessionStorage.setItem(APP_MODE_KEY, mode);
-    localStorage.setItem(APP_MODE_KEY, mode);
-
-    if (mode === "partner") {
-      sessionStorage.setItem(LEGACY_PARTNER_KEY, "1");
-      localStorage.setItem(LEGACY_PARTNER_KEY, "1");
-    } else {
-      sessionStorage.removeItem(LEGACY_PARTNER_KEY);
-      localStorage.removeItem(LEGACY_PARTNER_KEY);
-    }
-  } catch {}
-}
-
-function detectPartnerApp(): boolean {
-  if (isPartnerApp !== null) return isPartnerApp;
-
-  const params = new URLSearchParams(window.location.search);
-  const explicitMode = params.get("capApp");
-
-  if (explicitMode === "partner" || explicitMode === "client") {
-    persistAppMode(explicitMode);
-    return explicitMode === "partner";
-  }
-
-  if ((window as any).__CAP_PARTNER_REDIRECTED) {
-    persistAppMode("partner");
-    return true;
-  }
-
-  try {
-    const storedMode = sessionStorage.getItem(APP_MODE_KEY) || localStorage.getItem(APP_MODE_KEY);
-    if (storedMode === "partner" || storedMode === "client") {
-      isPartnerApp = storedMode === "partner";
-      return isPartnerApp;
-    }
-
-    const legacyPartner = sessionStorage.getItem(LEGACY_PARTNER_KEY) === "1" || localStorage.getItem(LEGACY_PARTNER_KEY) === "1";
-    if (legacyPartner) {
-      persistAppMode("partner");
-      return true;
-    }
-  } catch {}
-
-  persistAppMode("client");
-  return false;
-}
-
 const CapacitorRouteGuard = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -101,12 +33,20 @@ const CapacitorRouteGuard = () => {
     if (!isCapacitorNative()) return;
 
     const path = location.pathname;
+    const appMode = getCapacitorAppMode();
 
-    if (detectPartnerApp()) {
+    if (!appMode) {
+      const looksLikePartnerRoute = PARTNER_ROUTES.some(
+        (route) => path === route || path.startsWith(route + "/")
+      );
+      persistCapacitorAppMode(looksLikePartnerRoute ? "partner" : "client");
+    }
+
+    if (isPartnerCapacitorApp()) {
       // PARCEIRO app: only allow partner routes
       const isAllowed = PARTNER_ROUTES.some(
         (route) => path === route || path.startsWith(route + "/")
-      ) || path === "/auth" || path === "/termos-de-uso" || path === "/politica-de-privacidade";
+      ) || path === "/termos-de-uso" || path === "/politica-de-privacidade";
 
       if (!isAllowed) {
         navigate("/portal-parceiro", { replace: true });
