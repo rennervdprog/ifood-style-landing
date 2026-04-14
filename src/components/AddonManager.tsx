@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Trash2, Edit2, Save, X, ChevronDown, ChevronUp, Package } from "lucide-react";
+import { Plus, Trash2, Edit2, Save, X, ChevronDown, ChevronUp, Package, FileText } from "lucide-react";
 
 interface AddonManagerProps {
   storeId: string;
@@ -20,6 +20,9 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
   const [showItemForm, setShowItemForm] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<string | null>(null);
   const [editItemForm, setEditItemForm] = useState({ name: "", price: "0" });
+  const [bulkGroupId, setBulkGroupId] = useState<string | null>(null);
+  const [bulkText, setBulkText] = useState("");
+  const [bulkParsed, setBulkParsed] = useState<{ name: string; price: number }[]>([]);
 
   // Fetch store-level addon groups (product_id IS NULL)
   const { data: groups, isLoading } = useQuery({
