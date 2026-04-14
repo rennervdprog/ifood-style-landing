@@ -46,20 +46,25 @@ const statusConfig: Record<string, { label: string; icon: React.ElementType; col
 
 /* Status timeline steps for visual progress */
 const statusSteps = ["pendente", "preparando", "pronto_para_entrega", "saiu_entrega", "entregue"];
+const pickupStatusSteps = ["pendente", "preparando", "pronto_para_entrega", "finalizado"];
 
-const getStepIndex = (status: string) => {
+const getStepIndex = (status: string, isPickup = false) => {
   if (status === "aguardando_pagamento") return -1;
-  if (status === "em_transito") return 3; // same visual as saiu_entrega
-  if (status === "finalizado") return 4; // same as entregue
+  if (isPickup) {
+    if (status === "finalizado") return 3;
+    return pickupStatusSteps.indexOf(status);
+  }
+  if (status === "em_transito") return 3;
+  if (status === "finalizado") return 4;
   return statusSteps.indexOf(status);
 };
 
-const StatusTimeline = ({ status }: { status: string }) => {
-  const currentIdx = getStepIndex(status);
+const StatusTimeline = ({ status, isPickup = false }: { status: string; isPickup?: boolean }) => {
+  const currentIdx = getStepIndex(status, isPickup);
   if (currentIdx < 0 || status === "cancelado") return null;
   
-  const labels = ["Recebido", "Preparando", "Pronto", "A caminho", "Entregue"];
-  const icons = [Clock, ChefHat, CheckCircle2, Truck, CheckCircle2];
+  const labels = isPickup ? ["Recebido", "Preparando", "Pronto", "Retirado"] : ["Recebido", "Preparando", "Pronto", "A caminho", "Entregue"];
+  const icons = isPickup ? [Clock, ChefHat, CheckCircle2, CheckCircle2] : [Clock, ChefHat, CheckCircle2, Truck, CheckCircle2];
   
   return (
     <div className="flex items-center justify-between mt-3 mb-1 px-1">
