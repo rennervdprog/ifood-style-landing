@@ -464,6 +464,13 @@ jobs:
           done
           echo "✅ Icons re-injected after sync"
 
+      - name: Inject notification sound
+        run: |
+          RAW_DIR="android/app/src/main/res/raw"
+          mkdir -p "$RAW_DIR"
+          cp public/sounds/order-bell.mp3 "$RAW_DIR/order_bell.mp3"
+          echo "✅ Notification sound injected"
+
       - name: Apply splash color after sync
         env:
           SPLASH_COLOR: ${{ github.event.inputs.splash_color || '#FF4B2B' }}
