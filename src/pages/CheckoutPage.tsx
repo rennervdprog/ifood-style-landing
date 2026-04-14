@@ -355,8 +355,8 @@ const CheckoutPage = () => {
     }
   };
 
-  const hasValidAddress = selectedSavedAddressId ? !!savedAddressData : hasAddress;
-  const stepsDone = [hasValidAddress, !!paymentMethod];
+  const hasValidAddress = isPickup || (selectedSavedAddressId ? !!savedAddressData : hasAddress);
+  const stepsDone = [isPickup || hasValidAddress, !!paymentMethod];
 
   return (
     <div className="min-h-screen bg-background pb-36 overflow-y-auto">
