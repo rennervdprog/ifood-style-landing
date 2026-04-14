@@ -70,8 +70,12 @@ async function ensurePushListeners() {
 
   PushNotifications.addListener("pushNotificationReceived", (notification) => {
     console.log("[CapPush] Foreground:", JSON.stringify(notification));
-    // Show in-app toast for foreground notifications
     try {
+      // Play bell sound
+      const audio = new Audio("/sounds/order-bell.mp3");
+      audio.volume = 1.0;
+      audio.play().catch(() => {});
+      // Show toast
       const title = notification.title || "ItaSuper";
       const body = notification.body || "";
       import("sonner").then(({ toast }) => {

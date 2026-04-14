@@ -401,7 +401,7 @@ Deno.serve(async (req) => {
                     priority: "high",
                     notification: {
                       icon: "ic_notification",
-                      sound: "default",
+                      sound: "order_bell",
                       channel_id: "itasuper_orders",
                       click_action: "FCM_PLUGIN_ACTIVITY",
                       default_vibrate_timings: false,
@@ -416,7 +416,7 @@ Deno.serve(async (req) => {
                       aps: {
                         sound: {
                           critical: 1,
-                          name: "default",
+                          name: "order_bell.caf",
                           volume: 1.0,
                         },
                         "interruption-level": "time-sensitive",
