@@ -54,6 +54,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedMeatDoneness, setSelectedMeatDoneness] = useState<string | null>(null);
+  const [selectedBread, setSelectedBread] = useState<string | null>(null);
   const [selectedFlavor, setSelectedFlavor] = useState<string | null>(null);
   const [selectedDrinkSize, setSelectedDrinkSize] = useState<string | null>(null);
   const [selectedMilk, setSelectedMilk] = useState<string | null>(null);
@@ -65,6 +66,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
     setQuantity(1);
     setSelectedSize(null);
     setSelectedMeatDoneness(null);
+    setSelectedBread(null);
     setSelectedFlavor(null);
     setSelectedDrinkSize(null);
     setSelectedMilk(null);
@@ -84,6 +86,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
   // Lanches
   const isLanche = cat === "lanches" && !isBeverage;
   const meatOptions: string[] = meta.meat_doneness || [];
+  const breadTypes: string[] = meta.bread_types || [];
 
   // Farmacia
   const isPharmacy = cat === "farmacias";
@@ -178,6 +181,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
     });
     if (hasSizes && !selectedSize) return false;
     if (isLanche && meatOptions.length > 0 && !selectedMeatDoneness) return false;
+    if (isLanche && breadTypes.length > 0 && !selectedBread) return false;
     if (isBBQ && bbqMeatOptions.length > 0 && !selectedMeatDoneness) return false;
     if (isDessert && flavors.length > 0 && !selectedFlavor) return false;
     if (isCafe && isCakeLike && cafeFlavors.length > 0 && !selectedFlavor) return false;
@@ -204,6 +208,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
     const list = [...selectedAddonsList];
     if (hasSizes && selectedSize) list.unshift({ name: `Tamanho: ${selectedSize}`, price: 0 });
     if (selectedMeatDoneness) list.push({ name: `Ponto: ${selectedMeatDoneness}`, price: 0 });
+    if (selectedBread) list.push({ name: `Pão: ${selectedBread}`, price: 0 });
     if (selectedFlavor) list.push({ name: `Sabor: ${selectedFlavor}`, price: 0 });
     if (selectedDrinkSize) list.push({ name: `Tamanho: ${selectedDrinkSize}`, price: 0 });
     if (selectedMilk) list.push({ name: `Leite: ${selectedMilk}`, price: 0 });
@@ -486,6 +491,12 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
                 })}
               </div>
             </div>
+          )}
+
+          {/* ===== LANCHES: BREAD TYPE ===== */}
+          {isLanche && breadTypes.length > 0 && renderRadioSelector(
+            "Tipo de pão", "🍞", breadTypes, selectedBread,
+            setSelectedBread, true
           )}
 
           {/* ===== LANCHES: MEAT DONENESS ===== */}
