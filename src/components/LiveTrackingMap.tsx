@@ -70,11 +70,6 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
   const [L, setL] = useState<any>(null);
   const [now, setNow] = useState(Date.now());
 
-  const isRecentDriverLocation = useMemo(() => {
-    if (!driverLocation?.updated_at) return false;
-    return now - new Date(driverLocation.updated_at).getTime() <= 60_000;
-  }, [driverLocation?.updated_at, now]);
-
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 5000);
     return () => clearInterval(t);
@@ -99,6 +94,11 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
     enabled: !!driverId,
     refetchInterval: 5000,
   });
+
+  const isRecentDriverLocation = useMemo(() => {
+    if (!driverLocation?.updated_at) return false;
+    return now - new Date(driverLocation.updated_at).getTime() <= 60_000;
+  }, [driverLocation?.updated_at, now]);
 
   // Fetch store coordinates - prefer stored lat/lng, fallback to structured geocoding
   const { data: storeData } = useQuery({
