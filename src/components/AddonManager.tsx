@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Trash2, Edit2, Save, X, ChevronDown, ChevronUp, Package } from "lucide-react";
+import { Plus, Trash2, Edit2, Save, X, ChevronDown, ChevronUp, Package, FileText } from "lucide-react";
 
 interface AddonManagerProps {
   storeId: string;
@@ -20,6 +20,9 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
   const [showItemForm, setShowItemForm] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<string | null>(null);
   const [editItemForm, setEditItemForm] = useState({ name: "", price: "0" });
+  const [bulkGroupId, setBulkGroupId] = useState<string | null>(null);
+  const [bulkText, setBulkText] = useState("");
+  const [bulkParsed, setBulkParsed] = useState<{ name: string; price: number }[]>([]);
 
   // Fetch store-level addon groups (product_id IS NULL)
   const { data: groups, isLoading } = useQuery({
@@ -126,6 +129,46 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
 
   const getLinkedProducts = (groupId: string) =>
     (links as any[])?.filter((l: any) => l.addon_group_id === groupId) || [];
+
+  // Bulk text parser
+  const parseBulkText = (text: string) => {
+    const lines = text.split("\n").filter(l => l.trim());
+    return lines.map(line => {
+      const cleaned = line.trim();
+      // Match patterns: "Mostarda 2 reais", "Mostarda - R$ 2,00", "Mostarda 2.50", "Mostarda R$2", "Mostarda - 2"
+      const priceMatch = cleaned.match(/[–\-]?\s*(?:R\$\s*)?(\d+(?:[.,]\d{1,2})?)\s*(?:reais|real|R\$|rs)?\s*$/i);
+      if (priceMatch) {
+        const priceStr = priceMatch[1].replace(",", ".");
+        const price = parseFloat(priceStr) || 0;
+        const name = cleaned.slice(0, cleaned.indexOf(priceMatch[0])).replace(/[\s\-–]+$/, "").trim();
+        return { name: name || cleaned, price };
+      }
+      return { name: cleaned, price: 0 };
+    }).filter(item => item.name.length > 0);
+  };
+
+  const handleBulkTextChange = (text: string) => {
+    setBulkText(text);
+    setBulkParsed(parseBulkText(text));
+  };
+
+  const saveBulkItems = async (groupId: string) => {
+    if (bulkParsed.length === 0) return;
+    const existingCount = (groups?.find(g => g.id === groupId)?.addon_items as any[])?.length || 0;
+    const inserts = bulkParsed.map((item, i) => ({
+      group_id: groupId,
+      name: item.name.trim(),
+      price: item.price,
+      sort_order: existingCount + i + 1,
+    }));
+    const { error } = await supabase.from("addon_items").insert(inserts as any);
+    if (error) { toast.error("Erro ao importar itens"); return; }
+    toast.success(`${bulkParsed.length} adicionais importados!`);
+    setBulkGroupId(null);
+    setBulkText("");
+    setBulkParsed([]);
+    invalidate();
+  };
 
   return (
     <div className="space-y-4">
@@ -282,7 +325,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); deleteGroup(group.id); }}
-                      className="text-red-400 hover:text-red-300 p-1.5"
+                      className="text-destructive/70 hover:text-destructive p-1.5"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -336,7 +379,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                             >
                               <Edit2 className="h-3 w-3" />
                             </button>
-                            <button onClick={() => deleteItem(item.id)} className="text-red-400 hover:text-red-300 p-1">
+                            <button onClick={() => deleteItem(item.id)} className="text-destructive/70 hover:text-destructive p-1">
                               <Trash2 className="h-3 w-3" />
                             </button>
                           </div>
@@ -372,12 +415,78 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                       </button>
                     </div>
                   ) : (
-                    <button
-                      onClick={() => setShowItemForm(group.id)}
-                      className="w-full flex items-center justify-center gap-2 py-2.5 border-2 border-dashed border-border rounded-xl text-muted-foreground hover:text-foreground hover:border-border transition-colors text-xs"
-                    >
-                      <Plus className="h-3.5 w-3.5" /> Adicionar Item
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setShowItemForm(group.id)}
+                        className="flex-1 flex items-center justify-center gap-2 py-2.5 border-2 border-dashed border-border rounded-xl text-muted-foreground hover:text-foreground hover:border-border transition-colors text-xs"
+                      >
+                        <Plus className="h-3.5 w-3.5" /> Adicionar Item
+                      </button>
+                      <button
+                        onClick={() => { setBulkGroupId(group.id); setBulkText(""); setBulkParsed([]); }}
+                        className="flex items-center gap-1.5 px-3 py-2.5 border-2 border-dashed border-primary/30 rounded-xl text-primary hover:bg-primary/10 transition-colors text-xs font-bold"
+                      >
+                        <FileText className="h-3.5 w-3.5" /> Importar Lista
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Bulk Import */}
+                  {bulkGroupId === group.id && (
+                    <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-primary" />
+                        <span className="text-xs font-bold text-primary">Importar adicionais em lote</span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        Cole uma lista com um item por linha. O sistema detecta o preço automaticamente.
+                      </p>
+                      <div className="bg-muted/50 rounded-lg p-2 text-[10px] text-muted-foreground/80 font-mono space-y-0.5">
+                        <div>Mostarda 2 reais</div>
+                        <div>Molho verde R$ 5,00</div>
+                        <div>Bacon extra - 4</div>
+                        <div>Cebola caramelizada 3.50</div>
+                      </div>
+                      <textarea
+                        value={bulkText}
+                        onChange={(e) => handleBulkTextChange(e.target.value)}
+                        placeholder="Cole sua lista aqui..."
+                        rows={5}
+                        className="w-full bg-muted text-foreground px-3 py-2 rounded-lg text-sm border border-border focus:border-primary focus:outline-none resize-none"
+                      />
+                      {bulkParsed.length > 0 && (
+                        <div className="space-y-1">
+                          <p className="text-xs font-bold text-foreground/70">
+                            ✅ {bulkParsed.length} {bulkParsed.length === 1 ? "item detectado" : "itens detectados"}:
+                          </p>
+                          <div className="max-h-32 overflow-y-auto space-y-1">
+                            {bulkParsed.map((item, i) => (
+                              <div key={i} className="flex justify-between bg-muted/50 rounded-lg px-3 py-1.5 text-xs">
+                                <span className="text-foreground">{item.name}</span>
+                                <span className="text-primary font-bold">
+                                  {item.price > 0 ? `+${formatBRL(item.price)}` : "Grátis"}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => saveBulkItems(group.id)}
+                          disabled={bulkParsed.length === 0}
+                          className="flex-1 bg-primary text-primary-foreground py-2.5 rounded-xl text-sm font-bold disabled:opacity-40"
+                        >
+                          Importar {bulkParsed.length} {bulkParsed.length === 1 ? "item" : "itens"}
+                        </button>
+                        <button
+                          onClick={() => { setBulkGroupId(null); setBulkText(""); setBulkParsed([]); }}
+                          className="px-4 text-muted-foreground text-sm"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
                   )}
 
                   {/* Linked Products */}
