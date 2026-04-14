@@ -34,12 +34,12 @@ const AuthPage = () => {
   const [loading, setLoading] = useState(false);
   const [resetSent, setResetSent] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const ruleResults = useMemo(() => PASSWORD_RULES.map(r => r.test(password)), [password]);
   const passedCount = ruleResults.filter(Boolean).length;
   const strengthPercent = (passedCount / PASSWORD_RULES.length) * 100;
   const strengthColor = strengthPercent <= 20 ? "bg-red-500" : strengthPercent <= 60 ? "bg-yellow-500" : strengthPercent < 100 ? "bg-blue-500" : "bg-green-500";
-  const location = useLocation();
 
   useEffect(() => {
     const until = localStorage.getItem(REMEMBER_KEY);
@@ -109,10 +109,8 @@ const AuthPage = () => {
         }
         toast.success("Login realizado com sucesso!");
         
-        // Check user role and redirect accordingly
         const { data: { user: loggedUser } } = await supabase.auth.getUser();
         if (loggedUser) {
-          // Check admin role first
           const { data: adminRole } = await supabase
             .from("user_roles")
             .select("role")
@@ -241,55 +239,56 @@ const AuthPage = () => {
           )}
 
           {mode !== "forgot" && (
-            <div>
-              <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">
-                {mode === "reset" ? "Nova senha" : "Senha"}
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  placeholder={mode === "reset" ? "Mínimo 6 caracteres" : "••••••"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className={inputClassPassword}
-                  autoComplete={mode === "login" ? "current-password" : "new-password"}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1"
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4 text-slate-400" />
-                  ) : (
-                    <Eye className="h-4 w-4 text-slate-400" />
-                  )}
-                </button>
+            <>
+              <div>
+                <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">
+                  {mode === "reset" ? "Nova senha" : "Senha"}
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder={mode === "reset" ? "Crie uma senha forte" : "••••••"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className={inputClassPassword}
+                    autoComplete={mode === "login" ? "current-password" : "new-password"}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4 text-slate-400" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-slate-400" />
+                    )}
+                  </button>
+                </div>
               </div>
-            </div>
 
-            {/* Password strength indicator */}
-            {(mode === "signup" || mode === "reset") && password.length > 0 && (
-              <div className="space-y-2 mt-1">
-                <div className="flex gap-1 h-1.5 rounded-full overflow-hidden bg-slate-100">
-                  {PASSWORD_RULES.map((_, i) => (
-                    <div
-                      key={i}
-                      className={`flex-1 rounded-full transition-all duration-300 ${i < passedCount ? strengthColor : "bg-slate-200"}`}
-                    />
-                  ))}
+              {(mode === "signup" || mode === "reset") && password.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex gap-1 h-1.5 rounded-full overflow-hidden bg-slate-100">
+                    {PASSWORD_RULES.map((_, i) => (
+                      <div
+                        key={i}
+                        className={`flex-1 rounded-full transition-all duration-300 ${i < passedCount ? strengthColor : "bg-slate-200"}`}
+                      />
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-1 gap-1">
+                    {PASSWORD_RULES.map((rule, i) => (
+                      <div key={i} className={`flex items-center gap-1.5 text-xs transition-colors ${ruleResults[i] ? "text-green-600" : "text-slate-400"}`}>
+                        {ruleResults[i] ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                        {rule.label}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="grid grid-cols-1 gap-1">
-                  {PASSWORD_RULES.map((rule, i) => (
-                    <div key={i} className={`flex items-center gap-1.5 text-xs transition-colors ${ruleResults[i] ? "text-green-600" : "text-slate-400"}`}>
-                      {ruleResults[i] ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
-                      {rule.label}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+              )}
+            </>
           )}
 
           {mode === "signup" && (
@@ -360,7 +359,7 @@ const AuthPage = () => {
           )}
 
           <button
-            disabled={loading}
+            disabled={loading || ((mode === "signup" || mode === "reset") && passedCount < PASSWORD_RULES.length && password.length > 0)}
             className="w-full h-11 bg-primary text-primary-foreground font-bold rounded-xl active:scale-[0.98] transition-all disabled:opacity-50 shadow-md shadow-primary/20 hover:brightness-105"
           >
             {loading ? (
@@ -406,7 +405,6 @@ const AuthPage = () => {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
-      {/* Desktop left panel */}
       <div className="hidden md:flex md:w-[45%] bg-gradient-to-br from-slate-900 via-[#2D1810] to-orange-950 flex-col justify-between p-10 lg:p-14 relative overflow-hidden">
         <div className="absolute -top-20 -right-20 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
         <div className="absolute -bottom-20 -left-20 w-48 h-48 bg-primary/5 rounded-full blur-3xl" />
@@ -439,9 +437,7 @@ const AuthPage = () => {
         </div>
       </div>
 
-      {/* Right side / Mobile full */}
       <div className="flex-1 flex flex-col bg-gradient-to-b from-white to-slate-50 md:bg-white">
-        {/* Mobile brand header */}
         <div className="md:hidden flex items-center justify-center gap-2.5 pt-10 pb-6">
           <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
             <Zap className="h-5 w-5 text-primary-foreground" />
@@ -449,14 +445,10 @@ const AuthPage = () => {
           <span className="text-foreground font-black text-xl">ItaSuper</span>
         </div>
 
-        {/* Form area */}
         <div className="flex-1 flex items-start md:items-center justify-center px-5 pb-8 md:px-10">
           <div className="w-full max-w-sm">
-            {/* Form header */}
             <div className="mb-8 md:text-left text-center">
-              <div className={`w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 ${
-                mode === "forgot" || mode === "reset" ? "" : ""
-              } md:mx-0 mx-auto`}>
+              <div className={`w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 md:mx-0 mx-auto`}>
                 {mode === "forgot" || mode === "reset" ? (
                   <KeyRound className="h-6 w-6 text-primary" />
                 ) : (
@@ -471,12 +463,10 @@ const AuthPage = () => {
               </p>
             </div>
 
-            {/* Card */}
             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:shadow-none md:border-0 md:p-0">
               {formContent}
             </div>
 
-            {/* Mobile footer */}
             <p className="md:hidden text-center text-xs text-slate-400 mt-8">
               © ItaSuper · Itatinga/SP
             </p>
