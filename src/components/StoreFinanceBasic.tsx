@@ -501,18 +501,23 @@ const StoreFinanceBasic = ({ storeId, storeName }: StoreFinanceBasicProps) => {
                 <span className="text-xs text-muted-foreground">Taxas de entrega</span>
                 <span className="text-sm font-bold text-foreground">{formatCurrency(totalDeliveryFees)}</span>
               </div>
-              {storePlan.isItatingaFixed && (
-                <>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">Taxa operacional PIX ({paymentBreakdown.pix.count}x R$1)</span>
-                    <span className="text-sm font-bold text-red-500">-{formatCurrency(paymentBreakdown.pix.count)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">Split entrega plataforma ({completedOrders.length}x R$2)</span>
-                    <span className="text-sm font-bold text-red-500">-{formatCurrency(completedOrders.length * 2)}</span>
-                  </div>
-                </>
-              )}
+              {storePlan.isItatingaFixed && (() => {
+                const ordersWithDelivery = completedOrders.filter(o => Number(o.delivery_fee) > 0);
+                return (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">Taxa operacional PIX ({paymentBreakdown.pix.count}x R$1)</span>
+                      <span className="text-sm font-bold text-red-500">-{formatCurrency(paymentBreakdown.pix.count)}</span>
+                    </div>
+                    {ordersWithDelivery.length > 0 && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">Split entrega plataforma ({ordersWithDelivery.length}x R$2)</span>
+                        <span className="text-sm font-bold text-red-500">-{formatCurrency(ordersWithDelivery.length * 2)}</span>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
               <div className="h-px bg-border" />
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-foreground">
