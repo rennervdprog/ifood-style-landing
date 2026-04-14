@@ -216,7 +216,7 @@ Deno.serve(async (req) => {
     // Record the transaction
     await adminSupabase.from("financial_transactions").insert({
       store_id,
-      transaction_kind: "commission_charge",
+      transaction_kind: "store_payout" as any,
       amount,
       reference_code: referenceCode,
       status: "pending",
