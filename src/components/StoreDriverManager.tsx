@@ -134,11 +134,11 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
         </p>
         <div className="flex items-center gap-2">
           <div className="flex-1 bg-muted/50 border border-border rounded-lg px-3 py-2">
-            <p className="text-[11px] text-muted-foreground truncate">{window.location.origin}/cadastro-motoboy-loja</p>
+            <p className="text-[11px] text-muted-foreground truncate">https://itasuper.com.br/cadastro-motoboy-loja</p>
           </div>
           <button
             onClick={() => {
-              navigator.clipboard.writeText(`${window.location.origin}/cadastro-motoboy-loja`);
+              navigator.clipboard.writeText("https://itasuper.com.br/cadastro-motoboy-loja");
               toast.success("Link copiado!");
             }}
             className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary hover:bg-primary/20 transition-colors"
@@ -148,7 +148,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
           </button>
           <button
             onClick={() => {
-              const text = `Cadastre-se como motoboy da nossa loja: ${window.location.origin}/cadastro-motoboy-loja`;
+              const text = "Cadastre-se como motoboy da nossa loja: https://itasuper.com.br/cadastro-motoboy-loja";
               const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
               window.open(url, "_blank");
             }}
