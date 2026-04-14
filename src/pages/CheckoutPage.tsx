@@ -219,17 +219,19 @@ const CheckoutPage = () => {
       return;
     }
     const useSavedAddr = selectedSavedAddressId && savedAddressData;
-    const finalHasAddress = useSavedAddr || hasAddress;
-    const finalNeighborhood = useSavedAddr ? savedAddressData.neighborhood : (profileNeighborhood || neighborhood);
-    const finalAddress = useSavedAddr
-      ? [savedAddressData.street, savedAddressData.number, savedAddressData.complement, savedAddressData.reference_point ? `Ref: ${savedAddressData.reference_point}` : ""].filter(Boolean).join(", ")
-      : addressString;
+    const finalHasAddress = isPickup || useSavedAddr || hasAddress;
+    const finalNeighborhood = isPickup ? "RETIRADA" : (useSavedAddr ? savedAddressData.neighborhood : (profileNeighborhood || neighborhood));
+    const finalAddress = isPickup
+      ? "Retirada na loja"
+      : (useSavedAddr
+        ? [savedAddressData.street, savedAddressData.number, savedAddressData.complement, savedAddressData.reference_point ? `Ref: ${savedAddressData.reference_point}` : ""].filter(Boolean).join(", ")
+        : addressString);
 
-    if (!finalHasAddress) {
+    if (!isPickup && !finalHasAddress) {
       setShowAddressModal(true);
       return;
     }
-    if (!finalNeighborhood) {
+    if (!isPickup && !finalNeighborhood) {
       toast.error("Selecione um bairro antes de finalizar.");
       return;
     }
