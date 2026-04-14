@@ -263,7 +263,8 @@ const CheckoutPage = () => {
           postalcode: geoCep,
         });
 
-        const preciseGeo = await geocodeAddressPrecise(context);
+        // Try device GPS first, fall back to address geocoding
+        const preciseGeo = await getBestClientCoordinates(context);
         if (preciseGeo) {
           clientLat = preciseGeo.lat;
           clientLng = preciseGeo.lng;
