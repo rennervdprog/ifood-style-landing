@@ -354,11 +354,11 @@ const ClientHomeContent = () => {
         return { ...store, realIsOpen: status.isOpen, statusReason: status.reason };
       }).sort((a: any, b: any) => (a.realIsOpen === b.realIsOpen ? 0 : a.realIsOpen ? -1 : 1));
     },
-    enabled: !hasOrders && !!profile,
+    enabled: !!profile,
     staleTime: 1000 * 60 * 5,
   });
 
-  const showSuggestions = searchFocused && !searchQuery && !hasOrders && suggestedStores && suggestedStores.length > 0;
+  const showSuggestions = searchFocused && !searchQuery && suggestedStores && suggestedStores.length > 0;
 
   const lastStores = recentOrders
     ? Array.from(new Map(recentOrders.map((o: any) => [o.stores?.id, o.stores])).values()).filter(Boolean).slice(0, 5)
