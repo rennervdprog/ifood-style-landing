@@ -141,7 +141,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       return data || [];
     },
     enabled: linkedStoreIds.length > 0,
-    refetchInterval: 10000,
+    refetchInterval: 30000, // Fallback only; realtime handles instant updates
   });
 
   // Fetch my active deliveries
@@ -158,7 +158,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       return data || [];
     },
     enabled: !!user,
-    refetchInterval: 10000,
+    refetchInterval: 30000, // Fallback only; realtime handles instant updates
   });
 
   // Fetch contact profiles
@@ -196,6 +196,82 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   const getContact = useCallback((userId: string) => {
     return contactProfiles?.find((c: any) => c.user_id === userId);
   }, [contactProfiles]);
+
+  // Realtime subscription for store orders (instant updates instead of polling)
+  useEffect(() => {
+    if (!linkedStoreIds.length || !user) return;
+
+    const channels = linkedStoreIds.map((storeId) =>
+      supabase
+        .channel(`store-driver-rt-${storeId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "orders",
+            filter: `store_id=eq.${storeId}`,
+          },
+          (payload) => {
+            const updated = payload.new as any;
+
+            if (payload.eventType === "INSERT") {
+              queryClient.invalidateQueries({ queryKey: ["store-driver-available", linkedStoreIds] });
+              toast.info("🔔 Novo pedido disponível!");
+            } else if (payload.eventType === "UPDATE") {
+              // Instant update for available orders
+              queryClient.setQueryData(["store-driver-available", linkedStoreIds], (old: any[] | undefined) => {
+                if (!old) return old;
+                // If order was assigned to this driver, move it out of available
+                if (updated.driver_id) {
+                  return old.filter((o: any) => o.id !== updated.id);
+                }
+                const idx = old.findIndex((o: any) => o.id === updated.id);
+                if (idx >= 0) {
+                  if (updated.status !== "pronto_para_entrega" || updated.driver_id) {
+                    return old.filter((o: any) => o.id !== updated.id);
+                  }
+                  const copy = [...old];
+                  copy[idx] = { ...copy[idx], ...updated };
+                  return copy;
+                }
+                return old;
+              });
+
+              // Instant update for my deliveries
+              queryClient.setQueryData(["store-driver-my-deliveries", user.id], (old: any[] | undefined) => {
+                if (!old) return old;
+                const idx = old.findIndex((o: any) => o.id === updated.id);
+                if (idx >= 0) {
+                  // If finalized/cancelled, remove from active list
+                  if (["finalizado", "entregue", "cancelado"].includes(updated.status)) {
+                    return old.filter((o: any) => o.id !== updated.id);
+                  }
+                  const copy = [...old];
+                  copy[idx] = { ...copy[idx], ...updated };
+                  return copy;
+                }
+                // If newly assigned to me, refetch to get full joins
+                if (updated.driver_id === user.id && ["pronto_para_entrega", "saiu_entrega", "em_transito"].includes(updated.status)) {
+                  queryClient.invalidateQueries({ queryKey: ["store-driver-my-deliveries", user.id] });
+                }
+                return old;
+              });
+
+              // Update delivery count when finalized
+              if (updated.status === "finalizado" && updated.driver_id === user.id) {
+                queryClient.invalidateQueries({ queryKey: ["store-driver-count", user.id] });
+              }
+            }
+          }
+        )
+        .subscribe()
+    );
+
+    return () => {
+      channels.forEach((ch) => supabase.removeChannel(ch));
+    };
+  }, [linkedStoreIds, user, queryClient]);
 
   // Auto-select first store if none selected
   const effectiveStoreId = activeStoreId || linkedStoreIds[0] || null;
