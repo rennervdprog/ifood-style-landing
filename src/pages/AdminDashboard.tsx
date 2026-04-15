@@ -117,7 +117,7 @@ function parseDashboardDate(dateStr?: string | null): Date | null {
     const hourNum = parseInt(hh, 10);
     const minuteNum = parseInt(mm, 10);
     const secondNum = parseInt(ss, 10);
-    const milliNum = parseInt(ms.padEnd(3, "0"), 10);
+    const milliNum = parseInt((ms || "0").slice(0, 3).padEnd(3, "0"), 10);
 
     if (tz === "Z") {
       return new Date(Date.UTC(yearNum, monthNum - 1, dayNum, hourNum, minuteNum, secondNum, milliNum));
