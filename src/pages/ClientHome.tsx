@@ -396,6 +396,9 @@ const ClientHomeContent = () => {
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-bold text-foreground truncate">{store.name}</p>
                       <p className="text-xs text-muted-foreground capitalize">{store.category?.replace(/_/g, " ")}</p>
+                      {!store.realIsOpen && store.statusReason && (
+                        <p className="text-[10px] text-muted-foreground mt-0.5">{store.statusReason}</p>
+                      )}
                     </div>
                     <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${store.realIsOpen ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}>
                       {store.realIsOpen ? "Aberta" : "Fechada"}
