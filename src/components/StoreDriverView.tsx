@@ -141,7 +141,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       return data || [];
     },
     enabled: linkedStoreIds.length > 0,
-    refetchInterval: 10000,
+    refetchInterval: 30000, // Fallback only; realtime handles instant updates
   });
 
   // Fetch my active deliveries
@@ -158,7 +158,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       return data || [];
     },
     enabled: !!user,
-    refetchInterval: 10000,
+    refetchInterval: 30000, // Fallback only; realtime handles instant updates
   });
 
   // Fetch contact profiles
