@@ -108,7 +108,7 @@ function parseDashboardDate(dateStr?: string | null): Date | null {
     return result;
   }
 
-  const isoDateTime = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?(Z|[+-]\d{2}:?\d{2})?$/);
+  const isoDateTime = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d+))?)?(Z|[+-]\d{2}:?\d{2,4})?$/);
   if (isoDateTime) {
     const [, y, m, d, hh, mm, ss = "0", ms = "0", tz] = isoDateTime;
     const yearNum = parseInt(y, 10);
