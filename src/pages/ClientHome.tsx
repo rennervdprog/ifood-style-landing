@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
@@ -12,6 +12,7 @@ import { formatBRL } from "@/lib/utils";
 import { toast } from "sonner";
 import BottomNav from "@/components/BottomNav";
 import ProductTour, { clienteTourSteps } from "@/components/ProductTour";
+import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 
 /* ─── Auth Section (shown when not logged in) ─── */
 type AuthMode = "login" | "signup" | "forgot" | "reset";
