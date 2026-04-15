@@ -1830,7 +1830,6 @@ const AdminDashboard = () => {
                                </div>
                             );
                           })}
-                        </div>
                           {order.order_items?.map((item: any) => {
                             if (!item.observations) return null;
                             return <div key={`obs-${item.id}`} className="pl-5 text-[11px] text-muted-foreground italic">📝 {item.observations}</div>;
