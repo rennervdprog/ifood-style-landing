@@ -332,6 +332,9 @@ const StorePage = () => {
             src={store.image_url}
             alt={store.name}
             className={`w-full h-full object-cover ${!storeStatus.isOpen ? "grayscale brightness-75" : ""}`}
+            loading="eager"
+            decoding="async"
+            fetchPriority="high"
           />
         ) : (
           <div className={`w-full h-full bg-gradient-to-br from-primary/30 to-primary/5 ${!storeStatus.isOpen ? "grayscale" : ""}`} />
