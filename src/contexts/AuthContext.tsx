@@ -255,7 +255,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     const userId = currentUserIdRef.current || session?.user?.id || undefined;
     stopDeviceCheck();
     if (!isCapacitorNative()) {
@@ -266,7 +266,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       resetPushRegistrationState();
     }
     await supabase.auth.signOut();
-  };
+  }, [session?.user?.id]);
 
   const contextValue = useMemo(() => ({
     session,
