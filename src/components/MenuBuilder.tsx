@@ -33,6 +33,8 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
   const [draggedSectionId, setDraggedSectionId] = useState<string | null>(null);
   const [dragOverSectionId, setDragOverSectionId] = useState<string | null>(null);
   const [movingProductId, setMovingProductId] = useState<string | null>(null);
+  const [showSectionAddonLink, setShowSectionAddonLink] = useState<string | null>(null);
+  const [linkingSectionAddon, setLinkingSectionAddon] = useState(false);
 
   const { data: sections } = useQuery({
     queryKey: ["menu-sections", storeId],
