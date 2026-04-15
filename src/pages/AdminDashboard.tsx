@@ -50,6 +50,23 @@ import AdminRefundPanel from "@/components/AdminRefundPanel";
 type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_entrega" | "em_transito" | "entregue" | "finalizado";
 type OrderTabKey = OrderStatus | "delivery";
 type DashboardTab = "dashboard" | "orders" | "menu" | "addons" | "bordas" | "hours" | "settings" | "finance" | "clients" | "reports" | "subscription" | "loyalty" | "drivers" | "refunds";
+type StoreAddonGroup = {
+  id: string;
+  name: string;
+  min_select: number;
+  product_id: string | null;
+  addon_items?: Array<{ name: string | null }> | null;
+};
+type StoreAddonLink = {
+  addon_group_id: string;
+  product_id: string;
+};
+type RequiredAddonHighlight = {
+  itemId: string;
+  itemName: string;
+  groupName: string;
+  addonName: string;
+};
 
 const ALERT_SOUND_URL = "https://actions.google.com/sounds/v1/alarms/beep_short.ogg";
 const CASH_REGISTER_SOUND_URL = "https://actions.google.com/sounds/v1/office/cash_register.ogg";
@@ -77,6 +94,47 @@ const orderTabs: { status: OrderStatus | "delivery"; label: string; icon: React.
 
 const paymentLabels: Record<string, string> = { pix: "PIX", cartao: "Cartão", dinheiro: "Dinheiro" };
 const paymentIcons: Record<string, string> = { pix: "⚡", cartao: "💳", dinheiro: "💵" };
+
+const parseOrderAddons = (rawAddons: unknown): any[] => {
+  if (Array.isArray(rawAddons)) return rawAddons;
+  if (typeof rawAddons === "string") {
+    try {
+      const parsed = JSON.parse(rawAddons);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
+
+const normalizeAddonName = (name: string) =>
+  name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+
+const RequiredAddonHighlights = ({ highlights }: { highlights: RequiredAddonHighlight[] }) => {
+  if (highlights.length === 0) return null;
+
+  return (
+    <div className="mx-3 mb-2 space-y-1.5">
+      {highlights.map((highlight, index) => (
+        <div key={`${highlight.itemId}-${highlight.groupName}-${highlight.addonName}-${index}`} className="rounded-xl border border-primary/30 bg-primary/10 px-3 py-2">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+            {highlight.itemName}
+          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+            <span className="text-xs font-semibold text-primary">{highlight.groupName}</span>
+            <span className="text-xs text-muted-foreground">→</span>
+            <span className="text-sm font-black uppercase text-foreground">{highlight.addonName}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
 
 const pad2 = (value: number) => String(value).padStart(2, "0");
 
