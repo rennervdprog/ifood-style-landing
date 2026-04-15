@@ -12,6 +12,7 @@ import InstallPrompt from "@/components/InstallPrompt";
 import NotificationPrompt from "@/components/NotificationPrompt";
 import DebugOverlay from "@/components/DebugOverlay";
 import { initCapacitorNative, isCapacitorNative } from "@/lib/capacitorNative";
+import { initCapacitorLifecycle } from "@/lib/capacitorLifecycle";
 import CapacitorRouteGuard from "@/components/CapacitorRouteGuard";
 import StoreAppGuard from "@/components/StoreAppGuard";
 
