@@ -7,7 +7,7 @@ import { useCart, type CartAddon } from "@/contexts/CartContext";
 import { Star, Clock, ChevronRight, ChevronDown, ChevronUp, MapPin, Search, X, Navigation, CreditCard, Banknote, Smartphone, QrCode, RotateCcw, TrendingUp, ArrowLeft } from "lucide-react";
 import LoyaltyBanner from "@/components/LoyaltyBanner";
 import { toast } from "sonner";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, memo, useCallback, useMemo } from "react";
 import CartFAB from "@/components/CartFAB";
 import BottomNav from "@/components/BottomNav";
 import WhatsAppButton from "@/components/WhatsAppButton";
