@@ -2115,9 +2115,10 @@ const AdminDashboard = () => {
 
                     // Daily chart data
                     const dailyChart = periodDays.map(date => {
-                      const dayOrders = completedPeriod.filter((o: any) => new Date(o.created_at).toISOString().split("T")[0] === date);
+                      const dayOrders = completedPeriod.filter((o: any) => toLocalDateStr(new Date(o.created_at)) === date);
+                      const [y, m, d] = date.split("-");
                       return {
-                        day: new Date(date).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
+                        day: `${d}/${m}`,
                         vendas: Math.round(sumMoney(dayOrders.map((o: any) => o.total_price)) * 100) / 100,
                         pedidos: dayOrders.length,
                       };
