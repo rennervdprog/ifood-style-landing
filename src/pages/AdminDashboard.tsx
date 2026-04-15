@@ -1677,7 +1677,7 @@ const AdminDashboard = () => {
               )}
 
               {/* Order cards */}
-              <div className="p-4 space-y-3 max-w-3xl mx-auto">
+              <div className="p-4 space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0 max-w-6xl mx-auto">
                 {isLoading ? (
                   <div className="space-y-3">
                     {Array.from({ length: 4 }).map((_, i) => (
@@ -2096,7 +2096,7 @@ const AdminDashboard = () => {
 
           {/* ══════ OTHER TABS ══════ */}
           {!["dashboard", "orders", "clients"].includes(dashboardTab) && store && (
-            <div className="p-4 lg:p-6 max-w-5xl">
+            <div className="p-4 lg:p-6 max-w-6xl mx-auto">
               {dashboardTab === "menu" && <MenuBuilder storeId={store.id} storeCategory={store.category} />}
               
               {dashboardTab === "addons" && <AddonManager storeId={store.id} />}
