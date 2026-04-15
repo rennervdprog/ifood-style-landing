@@ -772,7 +772,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
                 ) : !hasPixKey || !hasDocument ? (
                   <><AlertCircle className="h-4 w-4" /> Dados incompletos</>
                 ) : (
-                  <><QrCode className="h-4 w-4" /> Cobrar Comissão via PIX</>
+                  <><QrCode className="h-4 w-4" /> Pagar Pendência via PIX</>
                 )}
               </Button>
             ) : (
