@@ -262,11 +262,12 @@ const ClientHomeContent = () => {
   const navigate = useNavigate();
   const { addItem } = useCart();
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
 
   const { data: profile } = useQuery({
     queryKey: ["client-profile", user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("full_name").eq("user_id", user!.id).maybeSingle();
+      const { data } = await supabase.from("profiles").select("full_name, city").eq("user_id", user!.id).maybeSingle();
       return data;
     },
     enabled: !!user,
@@ -319,6 +320,46 @@ const ClientHomeContent = () => {
     staleTime: 1000 * 60,
   });
 
+  const hasOrders = (recentOrders && recentOrders.length > 0);
+
+  // Suggested stores for new users (no orders yet), filtered by city
+  const { data: suggestedStores } = useQuery({
+    queryKey: ["suggested-stores", profile?.city],
+    queryFn: async () => {
+      let query = supabase
+        .from("stores_public")
+        .select("id, name, image_url, slug, category, is_open, force_closed, rating")
+        .eq("status", "ativo")
+        .limit(8);
+
+      // Filter by user's city if available
+      if (profile?.city) {
+        query = query.ilike("address_city", `%${profile.city}%`);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      // Fetch opening hours
+      const storeIds = (data || []).map((s: any) => s.id);
+      if (storeIds.length === 0) return [];
+      const { data: allHours } = await supabase
+        .from("opening_hours")
+        .select("store_id, day_of_week, open_time, close_time, is_closed_all_day")
+        .in("store_id", storeIds);
+
+      return (data || []).map((store: any) => {
+        const hours = (allHours || []).filter((h: any) => h.store_id === store.id) as OpeningHour[];
+        const status = getStoreOpenStatus(hours, store.force_closed || false, store.is_open);
+        return { ...store, realIsOpen: status.isOpen, statusReason: status.reason };
+      }).sort((a: any, b: any) => (a.realIsOpen === b.realIsOpen ? 0 : a.realIsOpen ? -1 : 1));
+    },
+    enabled: !hasOrders && !!profile,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const showSuggestions = searchFocused && !searchQuery && !hasOrders && suggestedStores && suggestedStores.length > 0;
+
   const lastStores = recentOrders
     ? Array.from(new Map(recentOrders.map((o: any) => [o.stores?.id, o.stores])).values()).filter(Boolean).slice(0, 5)
     : [];
@@ -366,8 +407,37 @@ const ClientHomeContent = () => {
           <div className="relative">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
               placeholder="Pesquisar loja pelo nome..."
               className="w-full pl-10 pr-4 py-3 rounded-xl bg-background text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+            {/* Suggestions dropdown for new users */}
+            {showSuggestions && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg z-50 max-h-72 overflow-y-auto">
+                <p className="px-3 pt-3 pb-1 text-xs font-semibold text-muted-foreground">
+                  ✨ Sugestões{profile?.city ? ` em ${profile.city}` : ""}
+                </p>
+                {suggestedStores!.map((store: any) => (
+                  <button key={store.id} onClick={() => goToStore(store)}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-muted/50 transition-colors text-left">
+                    {store.image_url ? (
+                      <img src={store.image_url} className="w-10 h-10 rounded-lg object-cover" alt="" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Store className="h-4 w-4 text-primary" />
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-foreground truncate">{store.name}</p>
+                      <p className="text-xs text-muted-foreground capitalize">{store.category?.replace(/_/g, " ")}</p>
+                    </div>
+                    <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${store.realIsOpen ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"}`}>
+                      {store.realIsOpen ? "Aberta" : "Fechada"}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </form>
       </div>
