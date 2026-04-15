@@ -167,6 +167,7 @@
   .tp-divider { border-top: 1px dashed #000; margin: 6px 0; }
   .tp-order-id { font-size: 26px; font-weight: 900; text-align: center; margin: 6px 0; letter-spacing: 2px; }
   .tp-item-row { display: flex; justify-content: space-between; margin: 4px 0; font-size: 16px; }
+  .tp-required-addon { padding-left: 8px; font-size: 15px; font-weight: 900; margin: 3px 0; border-left: 3px solid #000; padding-left: 8px; }
   .tp-addon { padding-left: 14px; font-size: 14px; margin: 2px 0; }
   .tp-obs { padding-left: 14px; font-size: 14px; font-style: italic; font-weight: 700; margin: 3px 0; }
   .tp-total-row { display: flex; justify-content: space-between; font-size: 16px; margin: 3px 0; }
