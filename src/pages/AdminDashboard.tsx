@@ -78,6 +78,89 @@ const orderTabs: { status: OrderStatus | "delivery"; label: string; icon: React.
 const paymentLabels: Record<string, string> = { pix: "PIX", cartao: "Cartão", dinheiro: "Dinheiro" };
 const paymentIcons: Record<string, string> = { pix: "⚡", cartao: "💳", dinheiro: "💵" };
 
+const pad2 = (value: number) => String(value).padStart(2, "0");
+
+function parseDashboardDate(dateStr?: string | null): Date | null {
+  if (!dateStr) return null;
+
+  const dmy = dateStr.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})$/);
+  if (dmy) {
+    let [, d, m, y] = dmy;
+    let yearNum = parseInt(y, 10);
+    if (yearNum < 100) yearNum += 2000;
+
+    const dayNum = parseInt(d, 10);
+    const monthNum = parseInt(m, 10);
+    if (monthNum < 1 || monthNum > 12 || dayNum < 1 || dayNum > 31) return null;
+
+    const result = new Date(Date.UTC(yearNum, monthNum - 1, dayNum));
+    if (result.getUTCDate() !== dayNum || result.getUTCMonth() !== monthNum - 1) return null;
+    return result;
+  }
+
+  const iso = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (iso) {
+    const yearNum = parseInt(iso[1], 10);
+    const monthNum = parseInt(iso[2], 10);
+    const dayNum = parseInt(iso[3], 10);
+    const result = new Date(Date.UTC(yearNum, monthNum - 1, dayNum));
+    if (result.getUTCDate() !== dayNum || result.getUTCMonth() !== monthNum - 1) return null;
+    return result;
+  }
+
+  const isoDateTime = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?(Z|[+-]\d{2}:?\d{2})?$/);
+  if (isoDateTime) {
+    const [, y, m, d, hh, mm, ss = "0", ms = "0", tz] = isoDateTime;
+    const yearNum = parseInt(y, 10);
+    const monthNum = parseInt(m, 10);
+    const dayNum = parseInt(d, 10);
+    const hourNum = parseInt(hh, 10);
+    const minuteNum = parseInt(mm, 10);
+    const secondNum = parseInt(ss, 10);
+    const milliNum = parseInt(ms.padEnd(3, "0"), 10);
+
+    if (tz === "Z") {
+      return new Date(Date.UTC(yearNum, monthNum - 1, dayNum, hourNum, minuteNum, secondNum, milliNum));
+    }
+
+    if (tz) {
+      const sign = tz.startsWith("-") ? -1 : 1;
+      const clean = tz.slice(1).replace(":", "");
+      const offsetHours = parseInt(clean.slice(0, 2), 10);
+      const offsetMinutes = parseInt(clean.slice(2, 4) || "0", 10);
+      const offsetTotalMinutes = sign * (offsetHours * 60 + offsetMinutes);
+      const utcMillis = Date.UTC(yearNum, monthNum - 1, dayNum, hourNum, minuteNum, secondNum, milliNum) - offsetTotalMinutes * 60 * 1000;
+      return new Date(utcMillis);
+    }
+
+    return new Date(yearNum, monthNum - 1, dayNum, hourNum, minuteNum, secondNum, milliNum);
+  }
+
+  return null;
+}
+
+const toLocalDateKey = (date: Date) => {
+  const y = date.getFullYear();
+  const m = pad2(date.getMonth() + 1);
+  const d = pad2(date.getDate());
+  return `${y}-${m}-${d}`;
+};
+
+const formatDateKeyPtBR = (dateKey: string) => {
+  const iso = dateKey.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return iso ? `${iso[3]}/${iso[2]}/${iso[1]}` : dateKey;
+};
+
+const getPeriodDateKeys = (days: number, offsetDays = 0) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return Array.from({ length: days }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(today.getDate() - (days - 1 - i + offsetDays));
+    return toLocalDateKey(d);
+  });
+};
 const baseSidebarItems: { key: DashboardTab; label: string; icon: React.ElementType; pizzaOnly?: boolean }[] = [
   { key: "dashboard", label: "Visão Geral", icon: LayoutDashboard },
   { key: "orders", label: "Pedidos", icon: ListOrdered },
@@ -2069,32 +2152,33 @@ const AdminDashboard = () => {
                     const selectedPeriod = selectedReportPeriod;
                     const setSelectedPeriod = setSelectedReportPeriod;
 
-                    const toLocalDateStr = (date: Date) => {
-                      const y = date.getFullYear();
-                      const m = String(date.getMonth() + 1).padStart(2, "0");
-                      const d = String(date.getDate()).padStart(2, "0");
-                      return `${y}-${m}-${d}`;
-                    };
+                    const parsedReportOrders = (allOrders || []).flatMap((o: any) => {
+                      const parsedCreatedAt = parseDashboardDate(o.created_at);
+                      if (!parsedCreatedAt) return [];
 
-                    const periodDays = Array.from({ length: selectedPeriod }, (_, i) => {
-                      const d = new Date(); d.setDate(d.getDate() - (selectedPeriod - 1 - i));
-                      return toLocalDateStr(d);
+                      return [{
+                        ...o,
+                        __reportCreatedAt: parsedCreatedAt,
+                        __reportDateKey: toLocalDateKey(parsedCreatedAt),
+                      }];
                     });
-                    // All orders in the period (excluding only aguardando_pagamento)
-                    const allPeriodOrders = (allOrders || []).filter((o: any) => {
-                      const d = toLocalDateStr(new Date(o.created_at));
-                      return periodDays.includes(d) && o.status !== "aguardando_pagamento";
+
+                    const availableDateKeys = Array.from(new Set(parsedReportOrders.map((o: any) => o.__reportDateKey))).sort();
+                    const firstAvailableDateKey = availableDateKeys[0] || null;
+                    const lastAvailableDateKey = availableDateKeys[availableDateKeys.length - 1] || null;
+
+                    const periodDays = getPeriodDateKeys(selectedPeriod);
+                    const periodDaySet = new Set(periodDays);
+
+                    const allPeriodOrders = parsedReportOrders.filter((o: any) => {
+                      return periodDaySet.has(o.__reportDateKey) && o.status !== "aguardando_pagamento";
                     });
                     const periodOrders = allPeriodOrders.filter((o: any) => o.status !== "cancelado");
 
-                    // Previous period for comparison
-                    const prevPeriodDays = Array.from({ length: selectedPeriod }, (_, i) => {
-                      const d = new Date(); d.setDate(d.getDate() - (selectedPeriod * 2 - 1 - i));
-                      return toLocalDateStr(d);
-                    });
-                    const allPrevPeriodOrders = (allOrders || []).filter((o: any) => {
-                      const d = toLocalDateStr(new Date(o.created_at));
-                      return prevPeriodDays.includes(d) && o.status !== "aguardando_pagamento";
+                    const prevPeriodDays = getPeriodDateKeys(selectedPeriod, selectedPeriod);
+                    const prevPeriodDaySet = new Set(prevPeriodDays);
+                    const allPrevPeriodOrders = parsedReportOrders.filter((o: any) => {
+                      return prevPeriodDaySet.has(o.__reportDateKey) && o.status !== "aguardando_pagamento";
                     });
                     const prevPeriodOrders = allPrevPeriodOrders.filter((o: any) => o.status !== "cancelado");
 
@@ -2116,10 +2200,9 @@ const AdminDashboard = () => {
                     const cancelledOrders = allPeriodOrders.filter((o: any) => o.status === "cancelado").length;
                     const cancelRate = allPeriodOrders.length > 0 ? (cancelledOrders / allPeriodOrders.length * 100) : 0;
 
-                    // Daily chart data
                     const dailyChart = periodDays.map(date => {
-                      const dayOrders = completedPeriod.filter((o: any) => toLocalDateStr(new Date(o.created_at)) === date);
-                      const [y, m, d] = date.split("-");
+                      const dayOrders = completedPeriod.filter((o: any) => o.__reportDateKey === date);
+                      const [, m, d] = date.split("-");
                       return {
                         day: `${d}/${m}`,
                         vendas: Math.round(sumMoney(dayOrders.map((o: any) => o.total_price)) * 100) / 100,
@@ -2127,10 +2210,9 @@ const AdminDashboard = () => {
                       };
                     });
 
-                    // Hourly distribution
                     const hourlyMap: Record<number, number> = {};
                     completedPeriod.forEach((o: any) => {
-                      const h = new Date(o.created_at).getHours();
+                      const h = o.__reportCreatedAt.getHours();
                       hourlyMap[h] = (hourlyMap[h] || 0) + 1;
                     });
                     const hourlyChart = Array.from({ length: 24 }, (_, h) => ({
@@ -2139,14 +2221,12 @@ const AdminDashboard = () => {
                     })).filter(h => h.pedidos > 0 || (parseInt(h.hour) >= 8 && parseInt(h.hour) <= 23));
                     const peakHour = Object.entries(hourlyMap).sort(([,a], [,b]) => b - a)[0];
 
-                    // Payment breakdown
                     const paymentPie = [
                       { name: "PIX", value: completedPeriod.filter((o: any) => o.payment_method === "pix").length, total: sumMoney(completedPeriod.filter((o: any) => o.payment_method === "pix").map((o: any) => o.total_price)) },
                       { name: "Cartão", value: completedPeriod.filter((o: any) => o.payment_method === "cartao").length, total: sumMoney(completedPeriod.filter((o: any) => o.payment_method === "cartao").map((o: any) => o.total_price)) },
                       { name: "Dinheiro", value: completedPeriod.filter((o: any) => o.payment_method !== "pix" && o.payment_method !== "cartao").length, total: sumMoney(completedPeriod.filter((o: any) => o.payment_method !== "pix" && o.payment_method !== "cartao").map((o: any) => o.total_price)) },
                     ].filter(d => d.value > 0);
 
-                    // Top products
                     const topProducts = new Map<string, { qty: number; revenue: number }>();
                     completedPeriod.forEach((o: any) => {
                       o.order_items?.forEach((item: any) => {
@@ -2157,11 +2237,10 @@ const AdminDashboard = () => {
                     });
                     const sortedProducts = Array.from(topProducts.entries()).sort((a, b) => b[1].revenue - a[1].revenue).slice(0, 10);
 
-                    // Weekday distribution
                     const weekdayNames = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
                     const weekdayMap: Record<number, { pedidos: number; vendas: number }> = {};
                     completedPeriod.forEach((o: any) => {
-                      const wd = new Date(o.created_at).getDay();
+                      const wd = o.__reportCreatedAt.getDay();
                       if (!weekdayMap[wd]) weekdayMap[wd] = { pedidos: 0, vendas: 0 };
                       weekdayMap[wd].pedidos += 1;
                       weekdayMap[wd].vendas += Number(o.total_price);
@@ -2203,6 +2282,13 @@ const AdminDashboard = () => {
                             </button>
                           ))}
                         </div>
+
+                        {firstAvailableDateKey && lastAvailableDateKey && (
+                          <p className="text-xs text-muted-foreground">
+                            Dados disponíveis: {formatDateKeyPtBR(firstAvailableDateKey)} até {formatDateKeyPtBR(lastAvailableDateKey)}.
+                            {selectedPeriod > availableDateKeys.length ? " Períodos maiores podem mostrar os mesmos totais até existirem mais pedidos." : ""}
+                          </p>
+                        )}
 
                         {/* KPI Cards with comparison */}
                         <div className="grid grid-cols-2 gap-3">
