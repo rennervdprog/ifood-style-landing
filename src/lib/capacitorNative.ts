@@ -101,7 +101,7 @@ async function ensurePushListeners() {
 
     if (orderId) {
       if (link === "/pedidos") {
-        targetUrl = `/pedidos?chat=${orderId}`;
+        targetUrl = `/pedidos`;
       } else if (link === "/admin") {
         targetUrl = `/admin?order=${orderId}`;
       } else if (link === "/entregador") {

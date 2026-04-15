@@ -219,9 +219,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           description: body,
           action: orderId
             ? {
-                label: "Abrir Chat",
+                label: "Ver Pedido",
                 onClick: () => {
-                  window.location.href = `/pedidos?chat=${orderId}`;
+                  window.location.href = `/pedidos`;
                 },
               }
             : undefined,

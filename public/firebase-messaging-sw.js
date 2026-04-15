@@ -39,7 +39,7 @@ self.addEventListener("notificationclick", (event) => {
 
   if (orderId) {
     if (link === "/pedidos") {
-      link = "/pedidos?chat=" + orderId;
+      link = "/pedidos";
     } else if (link === "/admin") {
       link = "/admin?order=" + orderId;
     } else if (link === "/entregador") {
