@@ -199,6 +199,21 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
     enabled: !!storeId,
   });
 
+  const { data: minPayoutSetting } = useQuery({
+    queryKey: ["min-payout-amount"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("admin_settings")
+        .select("value")
+        .eq("key", "min_payout_amount")
+        .maybeSingle();
+      return Number(data?.value || 100);
+    },
+    staleTime: 1000 * 60 * 10,
+  });
+
+  const minPayout = minPayoutSetting ?? 100;
+
   // Fetch store owner profile to check PIX key + use plan commission rate
   const { data: storeData } = useQuery({
     queryKey: ["store-owner", storeId],
