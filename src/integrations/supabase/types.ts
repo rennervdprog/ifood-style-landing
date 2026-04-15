@@ -2030,6 +2030,42 @@ export type Database = {
         }
         Relationships: []
       }
+      store_plans_public: {
+        Row: {
+          is_active: boolean | null
+          plan_type: Database["public"]["Enums"]["store_plan_type"] | null
+          store_id: string | null
+          trial_ends_at: string | null
+        }
+        Insert: {
+          is_active?: boolean | null
+          plan_type?: Database["public"]["Enums"]["store_plan_type"] | null
+          store_id?: string | null
+          trial_ends_at?: string | null
+        }
+        Update: {
+          is_active?: boolean | null
+          plan_type?: Database["public"]["Enums"]["store_plan_type"] | null
+          store_id?: string | null
+          trial_ends_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_plans_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: true
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_plans_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: true
+            referencedRelation: "stores_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stores_public: {
         Row: {
           address_cep: string | null
