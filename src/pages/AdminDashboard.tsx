@@ -1514,7 +1514,11 @@ const AdminDashboard = () => {
               {/* Order status tabs */}
               <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border">
                 <div className="flex overflow-x-auto gap-1 px-3 py-2 no-scrollbar">
-                  {orderTabs.map((tab) => {
+                  {orderTabs.filter((tab) => {
+                    // For own-delivery stores, hide "entregue" tab since orders go straight to "finalizado"
+                    if (tab.status === "entregue" && isOwnDelivery) return false;
+                    return true;
+                  }).map((tab) => {
                     const count = tab.mergedStatuses 
                       ? orders?.filter(o => tab.mergedStatuses!.includes(o.status as OrderStatus)).length || 0
                       : orders?.filter(o => o.status === tab.status).length || 0;
