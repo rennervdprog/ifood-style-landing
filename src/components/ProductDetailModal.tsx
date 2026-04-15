@@ -191,10 +191,19 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
   }, [addonGroups, selectedAddons, hasSizes, selectedSize, isLanche, meatOptions, selectedMeatDoneness, isBBQ, bbqMeatOptions, isDessert, flavors, selectedFlavor]);
 
   const selectedAddonsList: CartAddon[] = useMemo(() => {
-    if (!addonItems) return [];
-    const allSelected = Object.values(selectedAddons).flat();
-    return addonItems.filter(ai => allSelected.includes(ai.id)).map(ai => ({ name: ai.name, price: ai.price }));
-  }, [addonItems, selectedAddons]);
+    if (!addonItems || !addonGroups) return [];
+    return addonGroups.flatMap(group => {
+      const groupSelected = selectedAddons[group.id] || [];
+      return addonItems
+        .filter(ai => ai.group_id === group.id && groupSelected.includes(ai.id))
+        .map(ai => ({
+          name: ai.name,
+          price: ai.price,
+          required: group.min_select > 0,
+          groupName: group.name,
+        }));
+    });
+  }, [addonItems, addonGroups, selectedAddons]);
 
   const addonsTotal = selectedAddonsList.reduce((s, a) => s + a.price, 0);
   const basePrice = hasSizes && selectedSize
