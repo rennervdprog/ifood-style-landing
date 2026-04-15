@@ -262,11 +262,12 @@ const ClientHomeContent = () => {
   const navigate = useNavigate();
   const { addItem } = useCart();
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
 
   const { data: profile } = useQuery({
     queryKey: ["client-profile", user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("full_name").eq("user_id", user!.id).maybeSingle();
+      const { data } = await supabase.from("profiles").select("full_name, city").eq("user_id", user!.id).maybeSingle();
       return data;
     },
     enabled: !!user,
