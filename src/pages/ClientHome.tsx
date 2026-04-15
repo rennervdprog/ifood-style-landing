@@ -407,8 +407,37 @@ const ClientHomeContent = () => {
           <div className="relative">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
               placeholder="Pesquisar loja pelo nome..."
               className="w-full pl-10 pr-4 py-3 rounded-xl bg-background text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+            {/* Suggestions dropdown for new users */}
+            {showSuggestions && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg z-50 max-h-72 overflow-y-auto">
+                <p className="px-3 pt-3 pb-1 text-xs font-semibold text-muted-foreground">
+                  ✨ Sugestões{profile?.city ? ` em ${profile.city}` : ""}
+                </p>
+                {suggestedStores!.map((store: any) => (
+                  <button key={store.id} onClick={() => goToStore(store)}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-muted/50 transition-colors text-left">
+                    {store.image_url ? (
+                      <img src={store.image_url} className="w-10 h-10 rounded-lg object-cover" alt="" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Store className="h-4 w-4 text-primary" />
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-foreground truncate">{store.name}</p>
+                      <p className="text-xs text-muted-foreground capitalize">{store.category?.replace(/_/g, " ")}</p>
+                    </div>
+                    <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${store.realIsOpen ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"}`}>
+                      {store.realIsOpen ? "Aberta" : "Fechada"}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </form>
       </div>
