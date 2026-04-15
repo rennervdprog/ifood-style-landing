@@ -72,6 +72,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
     setSelectedDrinkSize(null);
     setSelectedMilk(null);
     setWantIced(false);
+    setShowRequiredWarning(false);
   };
 
   const meta = product?.metadata || {};
