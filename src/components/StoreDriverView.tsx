@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { getOrderItemDisplayName } from "@/lib/orderItemName";
+import { notifyOrderStatusChange } from "@/lib/orderNotifications";
 import confetti from "canvas-confetti";
 import {
   Bike, MapPin, Navigation, KeyRound, CheckCircle2, Package,
