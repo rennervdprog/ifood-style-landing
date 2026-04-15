@@ -268,8 +268,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await supabase.auth.signOut();
   };
 
+  const contextValue = useMemo(() => ({
+    session,
+    user: session?.user ?? null,
+    loading,
+    signOut,
+  }), [session, loading, signOut]);
+
   return (
-    <AuthContext.Provider value={{ session, user: session?.user ?? null, loading, signOut }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
