@@ -2069,22 +2069,29 @@ const AdminDashboard = () => {
                     const selectedPeriod = selectedReportPeriod;
                     const setSelectedPeriod = setSelectedReportPeriod;
 
+                    const toLocalDateStr = (date: Date) => {
+                      const y = date.getFullYear();
+                      const m = String(date.getMonth() + 1).padStart(2, "0");
+                      const d = String(date.getDate()).padStart(2, "0");
+                      return `${y}-${m}-${d}`;
+                    };
+
                     const periodDays = Array.from({ length: selectedPeriod }, (_, i) => {
                       const d = new Date(); d.setDate(d.getDate() - (selectedPeriod - 1 - i));
-                      return d.toISOString().split("T")[0];
+                      return toLocalDateStr(d);
                     });
                     const periodOrders = (allOrders || []).filter((o: any) => {
-                      const d = new Date(o.created_at).toISOString().split("T")[0];
+                      const d = toLocalDateStr(new Date(o.created_at));
                       return periodDays.includes(d) && !["cancelado", "aguardando_pagamento"].includes(o.status);
                     });
 
                     // Previous period for comparison
                     const prevPeriodDays = Array.from({ length: selectedPeriod }, (_, i) => {
                       const d = new Date(); d.setDate(d.getDate() - (selectedPeriod * 2 - 1 - i));
-                      return d.toISOString().split("T")[0];
+                      return toLocalDateStr(d);
                     });
                     const prevPeriodOrders = (allOrders || []).filter((o: any) => {
-                      const d = new Date(o.created_at).toISOString().split("T")[0];
+                      const d = toLocalDateStr(new Date(o.created_at));
                       return prevPeriodDays.includes(d) && !["cancelado", "aguardando_pagamento"].includes(o.status);
                     });
 
@@ -2108,9 +2115,10 @@ const AdminDashboard = () => {
 
                     // Daily chart data
                     const dailyChart = periodDays.map(date => {
-                      const dayOrders = completedPeriod.filter((o: any) => new Date(o.created_at).toISOString().split("T")[0] === date);
+                      const dayOrders = completedPeriod.filter((o: any) => toLocalDateStr(new Date(o.created_at)) === date);
+                      const [y, m, d] = date.split("-");
                       return {
-                        day: new Date(date).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
+                        day: `${d}/${m}`,
                         vendas: Math.round(sumMoney(dayOrders.map((o: any) => o.total_price)) * 100) / 100,
                         pedidos: dayOrders.length,
                       };
