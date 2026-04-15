@@ -324,34 +324,19 @@ export async function initCapacitorNative() {
   console.log("[Capacitor] Platform:", Capacitor.getPlatform());
   console.log("[Capacitor] Initializing native features...");
 
-  try {
-    await configureStatusBar();
-    console.log("[Capacitor] StatusBar done");
-  } catch (e) { console.error("[Capacitor] StatusBar failed:", e); }
+  // Run independent setup tasks in parallel for faster boot
+  await Promise.allSettled([
+    configureStatusBar().then(() => console.log("[Capacitor] StatusBar done")),
+    setupKeyboard().then(() => console.log("[Capacitor] Keyboard done")),
+    setupPushListeners().then(() => console.log("[Capacitor] PushListeners done")),
+    requestLocationPermission().then(() => console.log("[Capacitor] Location done")),
+  ]);
 
-  try {
-    setupAppListeners();
-    console.log("[Capacitor] AppListeners done");
-  } catch (e) { console.error("[Capacitor] AppListeners failed:", e); }
-
-  try {
-    setupKeyboard();
-    console.log("[Capacitor] Keyboard done");
-  } catch (e) { console.error("[Capacitor] Keyboard failed:", e); }
-
-  try {
-    setupPushListeners();
-    console.log("[Capacitor] PushListeners done");
-  } catch (e) { console.error("[Capacitor] PushListeners failed:", e); }
-
-  // Request location permission early so GPS is available for maps/tracking
-  try {
-    await requestLocationPermission();
-    console.log("[Capacitor] Location permission done");
-  } catch (e) { console.error("[Capacitor] Location permission failed:", e); }
+  // App listeners (back button, deep links) — fire and forget
+  setupAppListeners().then(() => console.log("[Capacitor] AppListeners done")).catch(console.warn);
 
   // Hide splash after a small delay to let the app render
-  setTimeout(() => hideSplash(), 500);
+  setTimeout(() => hideSplash(), 400);
 
   console.log("[Capacitor] Native features initialized");
 }
