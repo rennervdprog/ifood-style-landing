@@ -6,7 +6,7 @@ interface PrintOrderItem {
   quantity: number;
   unit_price: number;
   observations?: string | null;
-  addons?: { name: string; price: number }[] | null;
+  addons?: { name: string; price: number; required?: boolean; groupName?: string }[] | null;
   products?: { name: string } | null;
 }
 
@@ -56,8 +56,19 @@ export function printThermalReceipt(
     const lineTotal = (item.unit_price * item.quantity).toFixed(2);
     const displayName = getOrderItemDisplayName(item);
     itemsHtml += `<div class="tp-item-row"><span><b>${item.quantity}x</b> ${displayName}</span><span>R$ ${lineTotal}</span></div>`;
+
     if (item.addons && Array.isArray(item.addons) && item.addons.length > 0) {
-      item.addons.forEach((a: any) => {
+      // Separate required and optional addons
+      const requiredAddons = item.addons.filter((a: any) => a.required && a.groupName);
+      const optionalAddons = item.addons.filter((a: any) => !(a.required && a.groupName));
+
+      // Show required addons highlighted
+      requiredAddons.forEach((a: any) => {
+        itemsHtml += `<div class="tp-required-addon"><b>★ ${a.groupName}: ${a.name.toUpperCase()}</b>${Number(a.price) > 0 ? ` (+${formatBRL(Number(a.price))})` : ""}</div>`;
+      });
+
+      // Show optional addons normally
+      optionalAddons.forEach((a: any) => {
         itemsHtml += `<div class="tp-addon">- ${a.name}${Number(a.price) > 0 ? ` (+${formatBRL(Number(a.price))})` : ""}</div>`;
       });
     }

@@ -80,56 +80,74 @@ const OrderReceipt = forwardRef<HTMLDivElement, OrderReceiptProps>(
 
         {/* Items */}
         <div style={{ marginBottom: "6px" }}>
-          {order.order_items?.map((item) => (
-            <div key={item.id} style={{ marginBottom: "6px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ fontWeight: "bold" }}>
-                  {item.quantity}x {getOrderItemDisplayName(item)}
-                </span>
-                <span>{formatBRL((item.unit_price * item.quantity))}</span>
-              </div>
-              {/* Addons */}
-              {item.addons && Array.isArray(item.addons) && item.addons.length > 0 && (
-                <div style={{ paddingLeft: "12px", fontSize: "11px" }}>
-                  {(() => {
-                    const addons = item.addons as any[];
-                    const halfAddons = addons.filter((a: any) => typeof a?.name === "string" && a.name.startsWith("½ "));
-                    const otherAddons = addons.filter((a: any) => !(typeof a?.name === "string" && a.name.startsWith("½ ")));
-                    return (
-                      <>
-                        {halfAddons.map((addon: any, i: number) => (
-                          <p key={`half-${i}`} style={{ margin: "1px 0" }}>
-                            + 1½/ {addon.name.replace("½ ", "")}
-                            {addon.price > 0 ? ` (${formatBRL(Number(addon.price))})` : ""}
-                          </p>
-                        ))}
-                        {otherAddons.map((addon: any, i: number) => (
-                          <p key={`addon-${i}`} style={{ margin: "1px 0" }}>
-                            + {addon.name}
-                            {addon.price > 0 ? ` (${formatBRL(Number(addon.price))})` : ""}
-                          </p>
-                        ))}
-                      </>
-                    );
-                  })()}
+          {order.order_items?.map((item) => {
+            const addons = Array.isArray(item.addons) ? item.addons : [];
+            const requiredAddons = addons.filter((a: any) => a?.required && a?.groupName);
+            const optionalAddons = addons.filter((a: any) => !(a?.required && a?.groupName));
+            const halfAddons = optionalAddons.filter((a: any) => typeof a?.name === "string" && a.name.startsWith("½ "));
+            const otherAddons = optionalAddons.filter((a: any) => !(typeof a?.name === "string" && a.name.startsWith("½ ")));
+
+            return (
+              <div key={item.id} style={{ marginBottom: "6px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ fontWeight: "bold" }}>
+                    {item.quantity}x {getOrderItemDisplayName(item)}
+                  </span>
+                  <span>{formatBRL((item.unit_price * item.quantity))}</span>
                 </div>
-              )}
-              {/* Observations */}
-              {item.observations && (
-                <p
-                  style={{
-                    paddingLeft: "12px",
-                    fontSize: "11px",
-                    fontWeight: "bold",
-                    fontStyle: "italic",
-                    margin: "2px 0",
-                  }}
-                >
-                  ⚠ OBS: {item.observations}
-                </p>
-              )}
-            </div>
-          ))}
+
+                {/* Required addons - highlighted */}
+                {requiredAddons.length > 0 && (
+                  <div style={{ paddingLeft: "8px", fontSize: "12px", marginTop: "2px" }}>
+                    {requiredAddons.map((addon: any, i: number) => (
+                      <p key={`req-${i}`} style={{
+                        margin: "2px 0",
+                        fontWeight: "bold",
+                        borderLeft: "3px solid #000",
+                        paddingLeft: "6px",
+                      }}>
+                        ★ {addon.groupName}: {addon.name.toUpperCase()}
+                        {addon.price > 0 ? ` (${formatBRL(Number(addon.price))})` : ""}
+                      </p>
+                    ))}
+                  </div>
+                )}
+
+                {/* Optional addons */}
+                {(halfAddons.length > 0 || otherAddons.length > 0) && (
+                  <div style={{ paddingLeft: "12px", fontSize: "11px" }}>
+                    {halfAddons.map((addon: any, i: number) => (
+                      <p key={`half-${i}`} style={{ margin: "1px 0" }}>
+                        + 1½/ {addon.name.replace("½ ", "")}
+                        {addon.price > 0 ? ` (${formatBRL(Number(addon.price))})` : ""}
+                      </p>
+                    ))}
+                    {otherAddons.map((addon: any, i: number) => (
+                      <p key={`addon-${i}`} style={{ margin: "1px 0" }}>
+                        + {addon.name}
+                        {addon.price > 0 ? ` (${formatBRL(Number(addon.price))})` : ""}
+                      </p>
+                    ))}
+                  </div>
+                )}
+
+                {/* Observations */}
+                {item.observations && (
+                  <p
+                    style={{
+                      paddingLeft: "12px",
+                      fontSize: "11px",
+                      fontWeight: "bold",
+                      fontStyle: "italic",
+                      margin: "2px 0",
+                    }}
+                  >
+                    ⚠ OBS: {item.observations}
+                  </p>
+                )}
+              </div>
+            );
+          })}
         </div>
 
         <div style={{ borderTop: "1px dashed #000", margin: "6px 0" }} />
