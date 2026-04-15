@@ -690,9 +690,9 @@ async function getActiveProviderFromDB(): Promise<Provider> {
 
   const env = (Deno.env.get("ACTIVE_PAYMENT_PROVIDER") || "").toUpperCase().trim();
   if (env === "EFI_BANK") return "EFI_BANK";
-  if (env === "ASAAS") return "ASAAS";
+  if (env === "MERCADO_PAGO") return "MERCADO_PAGO";
   if (env === "SIMULATED") return "SIMULATED";
-  return "MERCADO_PAGO";
+  return "ASAAS";
 }
 
 function hasEfiCredentials(): boolean {
