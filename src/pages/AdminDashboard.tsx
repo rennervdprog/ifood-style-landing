@@ -50,6 +50,23 @@ import AdminRefundPanel from "@/components/AdminRefundPanel";
 type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_entrega" | "em_transito" | "entregue" | "finalizado";
 type OrderTabKey = OrderStatus | "delivery";
 type DashboardTab = "dashboard" | "orders" | "menu" | "addons" | "bordas" | "hours" | "settings" | "finance" | "clients" | "reports" | "subscription" | "loyalty" | "drivers" | "refunds";
+type StoreAddonGroup = {
+  id: string;
+  name: string;
+  min_select: number;
+  product_id: string | null;
+  addon_items?: Array<{ name: string | null }> | null;
+};
+type StoreAddonLink = {
+  addon_group_id: string;
+  product_id: string;
+};
+type RequiredAddonHighlight = {
+  itemId: string;
+  itemName: string;
+  groupName: string;
+  addonName: string;
+};
 
 const ALERT_SOUND_URL = "https://actions.google.com/sounds/v1/alarms/beep_short.ogg";
 const CASH_REGISTER_SOUND_URL = "https://actions.google.com/sounds/v1/office/cash_register.ogg";
@@ -77,6 +94,47 @@ const orderTabs: { status: OrderStatus | "delivery"; label: string; icon: React.
 
 const paymentLabels: Record<string, string> = { pix: "PIX", cartao: "Cartão", dinheiro: "Dinheiro" };
 const paymentIcons: Record<string, string> = { pix: "⚡", cartao: "💳", dinheiro: "💵" };
+
+const parseOrderAddons = (rawAddons: unknown): any[] => {
+  if (Array.isArray(rawAddons)) return rawAddons;
+  if (typeof rawAddons === "string") {
+    try {
+      const parsed = JSON.parse(rawAddons);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
+
+const normalizeAddonName = (name: string) =>
+  name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+
+const RequiredAddonHighlights = ({ highlights }: { highlights: RequiredAddonHighlight[] }) => {
+  if (highlights.length === 0) return null;
+
+  return (
+    <div className="mx-3 mb-2 space-y-1.5">
+      {highlights.map((highlight, index) => (
+        <div key={`${highlight.itemId}-${highlight.groupName}-${highlight.addonName}-${index}`} className="rounded-xl border border-primary/30 bg-primary/10 px-3 py-2">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+            {highlight.itemName}
+          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+            <span className="text-xs font-semibold text-primary">{highlight.groupName}</span>
+            <span className="text-xs text-muted-foreground">→</span>
+            <span className="text-sm font-black uppercase text-foreground">{highlight.addonName}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
 
 const pad2 = (value: number) => String(value).padStart(2, "0");
 
@@ -361,6 +419,32 @@ const AdminDashboard = () => {
     enabled: !!store,
   });
 
+  const { data: storeAddonGroups = [] } = useQuery({
+    queryKey: ["store-order-addon-groups", store?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("addon_groups")
+        .select("id, name, min_select, product_id, addon_items(name)")
+        .eq("store_id", store!.id);
+      if (error) throw error;
+      return (data || []) as StoreAddonGroup[];
+    },
+    enabled: !!store,
+  });
+
+  const { data: storeAddonLinks = [] } = useQuery({
+    queryKey: ["store-order-addon-links", store?.id, storeAddonGroups.length],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("product_addon_groups")
+        .select("addon_group_id, product_id")
+        .in("addon_group_id", storeAddonGroups.map((group) => group.id));
+      if (error) throw error;
+      return (data || []) as StoreAddonLink[];
+    },
+    enabled: !!store && storeAddonGroups.length > 0,
+  });
+
   const { data: onlineDrivers } = useQuery({
     queryKey: ["online-drivers-count"],
     queryFn: async () => {
@@ -431,6 +515,82 @@ const AdminDashboard = () => {
     return (p as any)?.whatsapp_number || (p as any)?.phone || "";
   };
   const getClientName = (clientId: string) => clientProfiles?.find((c: any) => c.user_id === clientId)?.full_name || "Cliente";
+
+  const requiredAddonGroupsByProduct = useMemo(() => {
+    const groupsById = new Map(storeAddonGroups.map((group) => [group.id, group]));
+    const result = new Map<string, StoreAddonGroup[]>();
+
+    storeAddonGroups.forEach((group) => {
+      if (group.min_select <= 0 || !group.product_id) return;
+      const existing = result.get(group.product_id) || [];
+      existing.push(group);
+      result.set(group.product_id, existing);
+    });
+
+    storeAddonLinks.forEach((link) => {
+      const group = groupsById.get(link.addon_group_id);
+      if (!group || group.min_select <= 0) return;
+      const existing = result.get(link.product_id) || [];
+      if (!existing.some((entry) => entry.id === group.id)) {
+        existing.push(group);
+        result.set(link.product_id, existing);
+      }
+    });
+
+    return result;
+  }, [storeAddonGroups, storeAddonLinks]);
+
+  const getRequiredAddonHighlights = useCallback((order: any): RequiredAddonHighlight[] => {
+    const highlights: RequiredAddonHighlight[] = [];
+
+    order.order_items?.forEach((item: any) => {
+      const itemName = item.quantity > 1 ? `${item.quantity}x ${getOrderItemDisplayName(item)}` : getOrderItemDisplayName(item);
+      const addons = parseOrderAddons(item.addons);
+
+      addons
+        .filter((addon: any) => addon?.required && addon?.groupName && addon?.name)
+        .forEach((addon: any) => {
+          highlights.push({
+            itemId: item.id,
+            itemName,
+            groupName: addon.groupName,
+            addonName: addon.name,
+          });
+        });
+
+      const fallbackGroups = requiredAddonGroupsByProduct.get(item.product_id) || [];
+      if (fallbackGroups.length === 0) return;
+
+      const existingKeys = new Set(
+        highlights
+          .filter((highlight) => highlight.itemId === item.id)
+          .map((highlight) => `${highlight.groupName}::${normalizeAddonName(highlight.addonName)}`)
+      );
+
+      fallbackGroups.forEach((group) => {
+        const groupAddonNames = new Set((group.addon_items || []).map((addon) => normalizeAddonName(addon.name || "")));
+
+        addons.forEach((addon: any) => {
+          if (!addon?.name) return;
+
+          const normalizedAddonName = normalizeAddonName(addon.name);
+          const highlightKey = `${group.name}::${normalizedAddonName}`;
+
+          if (!groupAddonNames.has(normalizedAddonName) || existingKeys.has(highlightKey)) return;
+
+          highlights.push({
+            itemId: item.id,
+            itemName,
+            groupName: group.name,
+            addonName: addon.name,
+          });
+          existingKeys.add(highlightKey);
+        });
+      });
+    });
+
+    return highlights;
+  }, [requiredAddonGroupsByProduct]);
 
   // ── CLIENT ANALYTICS ──
   const clientAnalytics = useMemo(() => {
@@ -1783,28 +1943,7 @@ const AdminDashboard = () => {
                           </div>
                         </div>
 
-                        {/* Required addons highlight - outside items box */}
-                        {(() => {
-                          const allRequired: { itemName: string; groupName: string; addonName: string }[] = [];
-                          order.order_items?.forEach((item: any) => {
-                            const rawAddons = item.addons;
-                            const addons: any[] = Array.isArray(rawAddons) ? rawAddons : (typeof rawAddons === 'string' ? (() => { try { return JSON.parse(rawAddons); } catch { return []; } })() : []);
-                            addons.filter((a: any) => a.required && a.groupName).forEach((a: any) => {
-                              allRequired.push({ itemName: item.quantity > 1 ? `${item.quantity}x ${getOrderItemDisplayName(item)}` : getOrderItemDisplayName(item), groupName: a.groupName, addonName: a.name });
-                            });
-                          });
-                          if (allRequired.length === 0) return null;
-                          return (
-                            <div className="mx-3 mb-1.5 flex flex-wrap gap-1.5">
-                              {allRequired.map((r, idx) => (
-                                <div key={idx} className="flex items-center gap-1 bg-amber-100 dark:bg-amber-900/50 border border-amber-400 dark:border-amber-600 rounded-lg px-2.5 py-1">
-                                  <span className="text-amber-600 dark:text-amber-400 font-semibold text-xs">{r.groupName}</span>
-                                  <span className="text-amber-700 dark:text-amber-300 font-black text-xs">→ {r.addonName.toUpperCase()}</span>
-                                </div>
-                              ))}
-                            </div>
-                          );
-                        })()}
+                        <RequiredAddonHighlights highlights={getRequiredAddonHighlights(order)} />
 
                         {/* Items - compact */}
                         <div className="mx-3 mb-2 bg-muted/50 rounded-xl px-3 py-2 space-y-0.5">
@@ -1814,8 +1953,7 @@ const AdminDashboard = () => {
                             </div>
                           ))}
                           {order.order_items?.map((item: any) => {
-                            const rawAddons = item.addons;
-                            const addons: any[] = Array.isArray(rawAddons) ? rawAddons : (typeof rawAddons === 'string' ? (() => { try { return JSON.parse(rawAddons); } catch { return []; } })() : []);
+                            const addons = parseOrderAddons(item.addons);
                             if (!addons || addons.length === 0) return null;
                             const optionalAddons = addons.filter((a: any) => !a.required);
                             return (
