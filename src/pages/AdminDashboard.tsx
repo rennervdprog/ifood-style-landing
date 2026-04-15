@@ -1598,6 +1598,7 @@ const AdminDashboard = () => {
               <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border">
                 <div className="flex overflow-x-auto gap-1 px-3 py-2 no-scrollbar">
                   {orderTabs.filter((tab) => {
+                    if (tab.status === "entregue" && isOwnDelivery) return false;
                     return true;
                   }).map((tab) => {
                     const count = tab.mergedStatuses 
