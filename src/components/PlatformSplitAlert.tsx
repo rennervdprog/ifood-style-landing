@@ -157,7 +157,7 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
             {generating ? (
               <><Loader2 className="h-4 w-4 animate-spin" /> Gerando PIX...</>
             ) : (
-              <><QrCode className="h-4 w-4" /> Pagar Repasse via PIX</>
+              <><QrCode className="h-4 w-4" /> Pagar Pendência via PIX</>
             )}
           </Button>
         ) : (

@@ -285,7 +285,7 @@ const CommissionAlert = ({ storeId, storeName, onGoToFinance }: CommissionAlertP
             ) : !hasPixKey || !hasDocument ? (
               <><AlertTriangle className="h-4 w-4" /> Cadastre PIX e CPF no perfil</>
             ) : (
-              <><QrCode className="h-4 w-4" /> Pagar Comissão via PIX</>
+              <><QrCode className="h-4 w-4" /> Pagar Pendência via PIX</>
             )}
           </Button>
         ) : (
