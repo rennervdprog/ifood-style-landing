@@ -199,6 +199,21 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
     enabled: !!storeId,
   });
 
+  const { data: minPayoutSetting } = useQuery({
+    queryKey: ["min-payout-amount"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("admin_settings")
+        .select("value")
+        .eq("key", "min_payout_amount")
+        .maybeSingle();
+      return Number(data?.value || 100);
+    },
+    staleTime: 1000 * 60 * 10,
+  });
+
+  const minPayout = minPayoutSetting ?? 100;
+
   // Fetch store owner profile to check PIX key + use plan commission rate
   const { data: storeData } = useQuery({
     queryKey: ["store-owner", storeId],
@@ -364,6 +379,10 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
       return;
     }
     const chargeAmount = dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue;
+    if (chargeAmount < minPayout) {
+      toast.error(`Valor mínimo para cobrança é ${formatBRL(minPayout)}. Faltam ${formatBRL(minPayout - chargeAmount)}.`);
+      return;
+    }
     if (!SIMULATION_MODE) {
       recordPixAttempt(pixContextKey);
       if (isPixCooldownActive(pixContextKey)) {
@@ -736,24 +755,41 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
             </div>
           )}
 
-          {(dbComissaoPendente > 0 || commissionDue > 0) && (
-            <Button
-              onClick={handleGenerateCommissionCharge}
-              disabled={generatingCharge || isPixBlocked || !hasPixKey || !hasDocument}
-              className="w-full mt-3 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-bold shadow-lg shadow-red-500/20 disabled:opacity-50"
-              size="lg"
-            >
-              {generatingCharge ? (
-                <><Loader2 className="h-4 w-4 animate-spin" /> Gerando PIX...</>
-              ) : isPixBlocked ? (
-                <><ShieldAlert className="h-4 w-4" /> Aguarde...</>
-              ) : !hasPixKey || !hasDocument ? (
-                <><AlertCircle className="h-4 w-4" /> Dados incompletos</>
-              ) : (
-                <><QrCode className="h-4 w-4" /> Cobrar Comissão via PIX</>
-              )}
-            </Button>
-          )}
+          {(dbComissaoPendente > 0 || commissionDue > 0) && (() => {
+            const pendingTotal = dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue;
+            const canPay = pendingTotal >= minPayout;
+            return canPay ? (
+              <Button
+                onClick={handleGenerateCommissionCharge}
+                disabled={generatingCharge || isPixBlocked || !hasPixKey || !hasDocument}
+                className="w-full mt-3 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-bold shadow-lg shadow-red-500/20 disabled:opacity-50"
+                size="lg"
+              >
+                {generatingCharge ? (
+                  <><Loader2 className="h-4 w-4 animate-spin" /> Gerando PIX...</>
+                ) : isPixBlocked ? (
+                  <><ShieldAlert className="h-4 w-4" /> Aguarde...</>
+                ) : !hasPixKey || !hasDocument ? (
+                  <><AlertCircle className="h-4 w-4" /> Dados incompletos</>
+                ) : (
+                  <><QrCode className="h-4 w-4" /> Cobrar Comissão via PIX</>
+                )}
+              </Button>
+            ) : (
+              <div className="mt-3 space-y-2">
+                <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-red-500 to-pink-500 rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min(100, (pendingTotal / minPayout) * 100)}%` }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground text-center">
+                  Cobrança disponível a partir de <strong className="text-foreground">{formatBRL(minPayout)}</strong>
+                  {" "}— faltam <strong className="text-red-400">{formatBRL(minPayout - pendingTotal)}</strong>
+                </p>
+              </div>
+            );
+          })()}
         </div>
       </div>
 
