@@ -57,6 +57,8 @@ const StoreCard = memo(({ id, name, category, image_url, is_open, rating, status
             className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 ${!is_open ? "grayscale brightness-75" : ""}`}
             loading="lazy"
             decoding="async"
+            width={200}
+            height={144}
           />
         ) : (
           <div className={`w-full h-full bg-gradient-to-br ${gradient} flex flex-col items-center justify-center gap-2 ${!is_open ? "grayscale" : ""}`}>
