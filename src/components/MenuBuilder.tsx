@@ -188,6 +188,56 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
     invalidateAll();
   };
 
+  // Get addon groups linked to ALL products in a section
+  const getSectionLinkedGroupIds = (sectionId: string) => {
+    const sectionProducts = getProductsBySection(sectionId);
+    if (sectionProducts.length === 0) return [];
+    // A group is "linked to section" if linked to ALL products in it
+    const allGroupIds = (storeAddonGroups || []).map((g: any) => g.id);
+    return allGroupIds.filter((gId: string) =>
+      sectionProducts.every((p: any) => getLinkedGroupIds(p.id).includes(gId))
+    );
+  };
+
+  // Bulk link addon group to all products in section
+  const linkGroupToSection = async (sectionId: string, addonGroupId: string) => {
+    setLinkingSectionAddon(true);
+    try {
+      const sectionProducts = getProductsBySection(sectionId);
+      const inserts = sectionProducts
+        .filter((p: any) => !getLinkedGroupIds(p.id).includes(addonGroupId))
+        .map((p: any) => ({ product_id: p.id, addon_group_id: addonGroupId }));
+      if (inserts.length === 0) { toast.info("Grupo já vinculado a todos"); return; }
+      const { error } = await supabase.from("product_addon_groups").insert(inserts as any);
+      if (error) { toast.error("Erro ao vincular grupo à seção"); return; }
+      toast.success(`Grupo vinculado a ${inserts.length} produto${inserts.length > 1 ? "s" : ""}!`);
+      invalidateAll();
+    } finally {
+      setLinkingSectionAddon(false);
+    }
+  };
+
+  // Bulk unlink addon group from all products in section
+  const unlinkGroupFromSection = async (sectionId: string, addonGroupId: string) => {
+    setLinkingSectionAddon(true);
+    try {
+      const sectionProducts = getProductsBySection(sectionId);
+      const productIdsToUnlink = sectionProducts
+        .filter((p: any) => getLinkedGroupIds(p.id).includes(addonGroupId))
+        .map((p: any) => p.id);
+      if (productIdsToUnlink.length === 0) return;
+      const { error } = await supabase.from("product_addon_groups")
+        .delete()
+        .eq("addon_group_id", addonGroupId)
+        .in("product_id", productIdsToUnlink);
+      if (error) { toast.error("Erro ao desvincular"); return; }
+      toast.success(`Grupo desvinculado de ${productIdsToUnlink.length} produto${productIdsToUnlink.length > 1 ? "s" : ""}!`);
+      invalidateAll();
+    } finally {
+      setLinkingSectionAddon(false);
+    }
+  };
+
   const addProduct = async (sectionId: string | null, formData = productForm) => {
     const finalPrice = parseFloat(formData.price) || 0;
     if (!formData.name.trim()) { toast.error("Preencha o nome do produto"); return; }
