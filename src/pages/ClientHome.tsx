@@ -295,12 +295,25 @@ const ClientHomeContent = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("stores_public")
-        .select("id, name, image_url, slug, category, is_open")
+        .select("id, name, image_url, slug, category, is_open, force_closed")
         .eq("status", "ativo")
         .ilike("name", `%${searchQuery}%`)
         .limit(10);
       if (error) throw error;
-      return data || [];
+      if (!data || data.length === 0) return [];
+
+      // Fetch opening hours for all found stores
+      const storeIds = data.map((s: any) => s.id);
+      const { data: allHours } = await supabase
+        .from("opening_hours")
+        .select("store_id, day_of_week, open_time, close_time, is_closed_all_day")
+        .in("store_id", storeIds);
+
+      return data.map((store: any) => {
+        const hours = (allHours || []).filter((h: any) => h.store_id === store.id) as OpeningHour[];
+        const status = getStoreOpenStatus(hours, store.force_closed || false, store.is_open);
+        return { ...store, realIsOpen: status.isOpen, statusReason: status.reason };
+      });
     },
     enabled: searchQuery.length >= 2,
     staleTime: 1000 * 60,
