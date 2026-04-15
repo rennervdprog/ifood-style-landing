@@ -516,6 +516,82 @@ const AdminDashboard = () => {
   };
   const getClientName = (clientId: string) => clientProfiles?.find((c: any) => c.user_id === clientId)?.full_name || "Cliente";
 
+  const requiredAddonGroupsByProduct = useMemo(() => {
+    const groupsById = new Map(storeAddonGroups.map((group) => [group.id, group]));
+    const result = new Map<string, StoreAddonGroup[]>();
+
+    storeAddonGroups.forEach((group) => {
+      if (group.min_select <= 0 || !group.product_id) return;
+      const existing = result.get(group.product_id) || [];
+      existing.push(group);
+      result.set(group.product_id, existing);
+    });
+
+    storeAddonLinks.forEach((link) => {
+      const group = groupsById.get(link.addon_group_id);
+      if (!group || group.min_select <= 0) return;
+      const existing = result.get(link.product_id) || [];
+      if (!existing.some((entry) => entry.id === group.id)) {
+        existing.push(group);
+        result.set(link.product_id, existing);
+      }
+    });
+
+    return result;
+  }, [storeAddonGroups, storeAddonLinks]);
+
+  const getRequiredAddonHighlights = useCallback((order: any): RequiredAddonHighlight[] => {
+    const highlights: RequiredAddonHighlight[] = [];
+
+    order.order_items?.forEach((item: any) => {
+      const itemName = item.quantity > 1 ? `${item.quantity}x ${getOrderItemDisplayName(item)}` : getOrderItemDisplayName(item);
+      const addons = parseOrderAddons(item.addons);
+
+      addons
+        .filter((addon: any) => addon?.required && addon?.groupName && addon?.name)
+        .forEach((addon: any) => {
+          highlights.push({
+            itemId: item.id,
+            itemName,
+            groupName: addon.groupName,
+            addonName: addon.name,
+          });
+        });
+
+      const fallbackGroups = requiredAddonGroupsByProduct.get(item.product_id) || [];
+      if (fallbackGroups.length === 0) return;
+
+      const existingKeys = new Set(
+        highlights
+          .filter((highlight) => highlight.itemId === item.id)
+          .map((highlight) => `${highlight.groupName}::${normalizeAddonName(highlight.addonName)}`)
+      );
+
+      fallbackGroups.forEach((group) => {
+        const groupAddonNames = new Set((group.addon_items || []).map((addon) => normalizeAddonName(addon.name || "")));
+
+        addons.forEach((addon: any) => {
+          if (!addon?.name) return;
+
+          const normalizedAddonName = normalizeAddonName(addon.name);
+          const highlightKey = `${group.name}::${normalizedAddonName}`;
+
+          if (!groupAddonNames.has(normalizedAddonName) || existingKeys.has(highlightKey)) return;
+
+          highlights.push({
+            itemId: item.id,
+            itemName,
+            groupName: group.name,
+            addonName: addon.name,
+          });
+          existingKeys.add(highlightKey);
+        });
+      });
+    });
+
+    return highlights;
+  }, [requiredAddonGroupsByProduct]);
+
   // ── CLIENT ANALYTICS ──
   const clientAnalytics = useMemo(() => {
     if (!allOrders || !clientProfiles) return [];
