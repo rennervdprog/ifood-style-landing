@@ -379,6 +379,10 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
       return;
     }
     const chargeAmount = dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue;
+    if (chargeAmount < minPayout) {
+      toast.error(`Valor mínimo para cobrança é ${formatBRL(minPayout)}. Faltam ${formatBRL(minPayout - chargeAmount)}.`);
+      return;
+    }
     if (!SIMULATION_MODE) {
       recordPixAttempt(pixContextKey);
       if (isPixCooldownActive(pixContextKey)) {
