@@ -419,6 +419,32 @@ const AdminDashboard = () => {
     enabled: !!store,
   });
 
+  const { data: storeAddonGroups = [] } = useQuery({
+    queryKey: ["store-order-addon-groups", store?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("addon_groups")
+        .select("id, name, min_select, product_id, addon_items(name)")
+        .eq("store_id", store!.id);
+      if (error) throw error;
+      return (data || []) as StoreAddonGroup[];
+    },
+    enabled: !!store,
+  });
+
+  const { data: storeAddonLinks = [] } = useQuery({
+    queryKey: ["store-order-addon-links", store?.id, storeAddonGroups.length],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("product_addon_groups")
+        .select("addon_group_id, product_id")
+        .in("addon_group_id", storeAddonGroups.map((group) => group.id));
+      if (error) throw error;
+      return (data || []) as StoreAddonLink[];
+    },
+    enabled: !!store && storeAddonGroups.length > 0,
+  });
+
   const { data: onlineDrivers } = useQuery({
     queryKey: ["online-drivers-count"],
     queryFn: async () => {
