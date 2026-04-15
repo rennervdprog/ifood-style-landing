@@ -61,17 +61,34 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
 
   const addGroup = async () => {
     if (!groupForm.name.trim()) return;
-    const { error } = await supabase.from("addon_groups").insert({
+    const { data: newGroup, error } = await supabase.from("addon_groups").insert({
       store_id: storeId,
       product_id: null,
       name: groupForm.name.trim(),
       min_select: parseInt(groupForm.min_select) || 0,
       max_select: parseInt(groupForm.max_select) || 1,
       sort_order: (groups?.length || 0) + 1,
-    } as any);
+    } as any).select("id").single();
     if (error) { toast.error("Erro ao criar grupo"); return; }
-    toast.success("Grupo de adicionais criado!");
+
+    // If bulk items were parsed, insert them too
+    if (newGroup && bulkParsed.length > 0) {
+      const inserts = bulkParsed.map((item, i) => ({
+        group_id: newGroup.id,
+        name: item.name.trim(),
+        price: item.price,
+        sort_order: i + 1,
+      }));
+      const { error: itemsErr } = await supabase.from("addon_items").insert(inserts as any);
+      if (itemsErr) { toast.error("Grupo criado, mas erro ao importar itens"); }
+      else { toast.success(`Grupo criado com ${bulkParsed.length} adicionais!`); }
+    } else {
+      toast.success("Grupo de adicionais criado!");
+    }
+
     setGroupForm({ name: "", min_select: "0", max_select: "1" });
+    setBulkText("");
+    setBulkParsed([]);
     setShowGroupForm(false);
     invalidate();
   };
@@ -218,11 +235,52 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
               />
             </div>
           </div>
+
+          {/* Bulk import inside group creation */}
+          <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-primary" />
+              <span className="text-xs font-bold text-primary">Cole sua lista de adicionais (opcional)</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Um item por linha. O preço é detectado automaticamente.
+            </p>
+            <div className="bg-muted/50 rounded-lg p-2 text-[10px] text-muted-foreground/80 font-mono space-y-0.5">
+              <div>Mostarda 2 reais</div>
+              <div>Molho verde R$ 5,00</div>
+              <div>Bacon extra - 4</div>
+            </div>
+            <textarea
+              value={bulkText}
+              onChange={(e) => handleBulkTextChange(e.target.value)}
+              placeholder="Cole sua lista aqui..."
+              rows={4}
+              className="w-full bg-muted text-foreground px-3 py-2 rounded-lg text-sm border border-border focus:border-primary focus:outline-none resize-none"
+            />
+            {bulkParsed.length > 0 && (
+              <div className="space-y-1">
+                <p className="text-xs font-bold text-foreground/70">
+                  ✅ {bulkParsed.length} {bulkParsed.length === 1 ? "item detectado" : "itens detectados"}:
+                </p>
+                <div className="max-h-28 overflow-y-auto space-y-1">
+                  {bulkParsed.map((item, i) => (
+                    <div key={i} className="flex justify-between bg-muted/50 rounded-lg px-3 py-1.5 text-xs">
+                      <span className="text-foreground">{item.name}</span>
+                      <span className="text-primary font-bold">
+                        {item.price > 0 ? `+${formatBRL(item.price)}` : "Grátis"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
           <div className="flex gap-2">
             <button onClick={addGroup} className="flex-1 bg-primary text-primary-foreground py-2.5 rounded-xl text-sm font-bold">
-              Criar Grupo
+              {bulkParsed.length > 0 ? `Criar Grupo com ${bulkParsed.length} itens` : "Criar Grupo"}
             </button>
-            <button onClick={() => { setShowGroupForm(false); setGroupForm({ name: "", min_select: "0", max_select: "1" }); }} className="px-4 text-muted-foreground text-sm">
+            <button onClick={() => { setShowGroupForm(false); setGroupForm({ name: "", min_select: "0", max_select: "1" }); setBulkText(""); setBulkParsed([]); }} className="px-4 text-muted-foreground text-sm">
               Cancelar
             </button>
           </div>
