@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   Plus, Trash2, Edit2, ChevronDown, ChevronUp, GripVertical,
-  Package, Save, X, Link2, Upload, Loader2, Pause, Play, ArrowRightLeft
+  Package, Save, X, Link2, Upload, Loader2, Pause, Play, ArrowRightLeft, Layers
 } from "lucide-react";
 
 import CategoryProductFields from "@/components/CategoryProductFields";
@@ -33,6 +33,8 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
   const [draggedSectionId, setDraggedSectionId] = useState<string | null>(null);
   const [dragOverSectionId, setDragOverSectionId] = useState<string | null>(null);
   const [movingProductId, setMovingProductId] = useState<string | null>(null);
+  const [showSectionAddonLink, setShowSectionAddonLink] = useState<string | null>(null);
+  const [linkingSectionAddon, setLinkingSectionAddon] = useState(false);
 
   const { data: sections } = useQuery({
     queryKey: ["menu-sections", storeId],
@@ -184,6 +186,56 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
     toast.success("Produto movido!");
     setMovingProductId(null);
     invalidateAll();
+  };
+
+  // Get addon groups linked to ALL products in a section
+  const getSectionLinkedGroupIds = (sectionId: string) => {
+    const sectionProducts = getProductsBySection(sectionId);
+    if (sectionProducts.length === 0) return [];
+    // A group is "linked to section" if linked to ALL products in it
+    const allGroupIds = (storeAddonGroups || []).map((g: any) => g.id);
+    return allGroupIds.filter((gId: string) =>
+      sectionProducts.every((p: any) => getLinkedGroupIds(p.id).includes(gId))
+    );
+  };
+
+  // Bulk link addon group to all products in section
+  const linkGroupToSection = async (sectionId: string, addonGroupId: string) => {
+    setLinkingSectionAddon(true);
+    try {
+      const sectionProducts = getProductsBySection(sectionId);
+      const inserts = sectionProducts
+        .filter((p: any) => !getLinkedGroupIds(p.id).includes(addonGroupId))
+        .map((p: any) => ({ product_id: p.id, addon_group_id: addonGroupId }));
+      if (inserts.length === 0) { toast.info("Grupo já vinculado a todos"); return; }
+      const { error } = await supabase.from("product_addon_groups").insert(inserts as any);
+      if (error) { toast.error("Erro ao vincular grupo à seção"); return; }
+      toast.success(`Grupo vinculado a ${inserts.length} produto${inserts.length > 1 ? "s" : ""}!`);
+      invalidateAll();
+    } finally {
+      setLinkingSectionAddon(false);
+    }
+  };
+
+  // Bulk unlink addon group from all products in section
+  const unlinkGroupFromSection = async (sectionId: string, addonGroupId: string) => {
+    setLinkingSectionAddon(true);
+    try {
+      const sectionProducts = getProductsBySection(sectionId);
+      const productIdsToUnlink = sectionProducts
+        .filter((p: any) => getLinkedGroupIds(p.id).includes(addonGroupId))
+        .map((p: any) => p.id);
+      if (productIdsToUnlink.length === 0) return;
+      const { error } = await supabase.from("product_addon_groups")
+        .delete()
+        .eq("addon_group_id", addonGroupId)
+        .in("product_id", productIdsToUnlink);
+      if (error) { toast.error("Erro ao desvincular"); return; }
+      toast.success(`Grupo desvinculado de ${productIdsToUnlink.length} produto${productIdsToUnlink.length > 1 ? "s" : ""}!`);
+      invalidateAll();
+    } finally {
+      setLinkingSectionAddon(false);
+    }
   };
 
   const addProduct = async (sectionId: string | null, formData = productForm) => {
@@ -457,6 +509,86 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
                   }`} />
                 </button>
               </div>
+
+              {/* Section addon group linking */}
+              <div className="flex items-center justify-between bg-primary/5 border border-primary/20 rounded-xl p-3">
+                <div className="flex items-center gap-2">
+                  <Layers className="h-4 w-4 text-primary" />
+                  <span className="text-xs font-bold text-primary">Vincular Grupos à Seção</span>
+                  <span className="text-[10px] text-muted-foreground">(aplica a todos os produtos)</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowSectionAddonLink(showSectionAddonLink === section.id ? null : section.id);
+                  }}
+                  className="text-primary text-xs font-bold px-3 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors"
+                >
+                  {showSectionAddonLink === section.id ? "Fechar" : "Gerenciar"}
+                </button>
+              </div>
+
+              {showSectionAddonLink === section.id && (storeAddonGroups || []).length > 0 && (
+                <div className="bg-muted/30 border border-border rounded-xl p-3 space-y-2">
+                  <p className="text-[11px] text-muted-foreground">
+                    Selecione os grupos para vincular/desvincular de <strong>todos os {getProductsBySection(section.id).length} produtos</strong> desta seção:
+                  </p>
+                  {getProductsBySection(section.id).length === 0 ? (
+                    <p className="text-xs text-muted-foreground text-center py-2">Adicione produtos à seção primeiro</p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {(storeAddonGroups || []).map((group: any) => {
+                        const isLinkedToAll = getSectionLinkedGroupIds(section.id).includes(group.id);
+                        const sectionProducts = getProductsBySection(section.id);
+                        const linkedCount = sectionProducts.filter((p: any) => getLinkedGroupIds(p.id).includes(group.id)).length;
+                        const isPartial = linkedCount > 0 && linkedCount < sectionProducts.length;
+                        return (
+                          <button
+                            key={group.id}
+                            disabled={linkingSectionAddon}
+                            onClick={() => isLinkedToAll ? unlinkGroupFromSection(section.id, group.id) : linkGroupToSection(section.id, group.id)}
+                            className={`w-full flex items-center justify-between py-2.5 px-3 rounded-xl border-2 transition-all text-left ${
+                              isLinkedToAll
+                                ? "bg-primary/10 border-primary"
+                                : isPartial
+                                ? "bg-accent/10 border-accent/50"
+                                : "bg-muted/50 border-transparent hover:border-primary/30"
+                            }`}
+                          >
+                            <div>
+                              <span className="text-sm font-bold text-foreground">{group.name}</span>
+                              <span className="text-[10px] text-muted-foreground ml-2">
+                                {(group.addon_items as any[])?.length || 0} itens • {group.min_select > 0 ? "Obrigatório" : "Opcional"}
+                              </span>
+                              {isPartial && (
+                                <span className="text-[10px] text-accent ml-2 font-bold">
+                                  ({linkedCount}/{sectionProducts.length} produtos)
+                                </span>
+                              )}
+                            </div>
+                            <div className={`w-10 h-5 rounded-full transition-colors relative ${
+                              isLinkedToAll ? "bg-primary" : isPartial ? "bg-accent" : "bg-muted-foreground/30"
+                            }`}>
+                              <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-transform shadow ${
+                                isLinkedToAll ? "translate-x-5" : isPartial ? "translate-x-2.5" : "translate-x-0.5"
+                              }`} />
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {showSectionAddonLink === section.id && (storeAddonGroups || []).length === 0 && (
+                <div className="bg-muted/30 border border-border rounded-xl p-3 text-center">
+                  <p className="text-xs text-muted-foreground">Nenhum grupo de adicionais criado.</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">Crie grupos na aba "Adicionais" primeiro.</p>
+                </div>
+              )}
+
               {getProductsBySection(section.id).length === 0 && (
                 <p className="text-xs text-muted-foreground text-center py-4">Nenhum produto nesta seção</p>
               )}
