@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
@@ -12,6 +12,7 @@ import { formatBRL } from "@/lib/utils";
 import { toast } from "sonner";
 import BottomNav from "@/components/BottomNav";
 import ProductTour, { clienteTourSteps } from "@/components/ProductTour";
+import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 
 /* ─── Auth Section (shown when not logged in) ─── */
 type AuthMode = "login" | "signup" | "forgot" | "reset";
@@ -294,12 +295,25 @@ const ClientHomeContent = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("stores_public")
-        .select("id, name, image_url, slug, category, is_open")
+        .select("id, name, image_url, slug, category, is_open, force_closed")
         .eq("status", "ativo")
         .ilike("name", `%${searchQuery}%`)
         .limit(10);
       if (error) throw error;
-      return data || [];
+      if (!data || data.length === 0) return [];
+
+      // Fetch opening hours for all found stores
+      const storeIds = data.map((s: any) => s.id);
+      const { data: allHours } = await supabase
+        .from("opening_hours")
+        .select("store_id, day_of_week, open_time, close_time, is_closed_all_day")
+        .in("store_id", storeIds);
+
+      return data.map((store: any) => {
+        const hours = (allHours || []).filter((h: any) => h.store_id === store.id) as OpeningHour[];
+        const status = getStoreOpenStatus(hours, store.force_closed || false, store.is_open);
+        return { ...store, realIsOpen: status.isOpen, statusReason: status.reason };
+      });
     },
     enabled: searchQuery.length >= 2,
     staleTime: 1000 * 60,
@@ -382,9 +396,12 @@ const ClientHomeContent = () => {
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-bold text-foreground truncate">{store.name}</p>
                       <p className="text-xs text-muted-foreground capitalize">{store.category?.replace(/_/g, " ")}</p>
+                      {!store.realIsOpen && store.statusReason && (
+                        <p className="text-[10px] text-muted-foreground mt-0.5">{store.statusReason}</p>
+                      )}
                     </div>
-                    <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${store.is_open ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}>
-                      {store.is_open ? "Aberta" : "Fechada"}
+                    <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${store.realIsOpen ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}>
+                      {store.realIsOpen ? "Aberta" : "Fechada"}
                     </div>
                     <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                   </button>
