@@ -7,7 +7,7 @@ import { useCart, type CartAddon } from "@/contexts/CartContext";
 import { Star, Clock, ChevronRight, ChevronDown, ChevronUp, MapPin, Search, X, Navigation, CreditCard, Banknote, Smartphone, QrCode, RotateCcw, TrendingUp, ArrowLeft } from "lucide-react";
 import LoyaltyBanner from "@/components/LoyaltyBanner";
 import { toast } from "sonner";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, memo, useCallback, useMemo } from "react";
 import CartFAB from "@/components/CartFAB";
 import BottomNav from "@/components/BottomNav";
 import WhatsAppButton from "@/components/WhatsAppButton";
@@ -332,6 +332,9 @@ const StorePage = () => {
             src={store.image_url}
             alt={store.name}
             className={`w-full h-full object-cover ${!storeStatus.isOpen ? "grayscale brightness-75" : ""}`}
+            loading="eager"
+            decoding="async"
+            fetchPriority="high"
           />
         ) : (
           <div className={`w-full h-full bg-gradient-to-br from-primary/30 to-primary/5 ${!storeStatus.isOpen ? "grayscale" : ""}`} />
@@ -863,7 +866,7 @@ const categoryEmoji: Record<string, string> = {
   docerias: "🧁", saudavel: "🥗",
 };
 
-const ProductCard = ({ product, disabled, onClick, storeCategory }: ProductCardProps) => {
+const ProductCard = memo(({ product, disabled, onClick, storeCategory }: ProductCardProps) => {
   const meta = product.metadata || {};
   const cat = storeCategory || "";
   const isBeverage = !!meta.is_beverage;
@@ -1083,6 +1086,9 @@ const ProductCard = ({ product, disabled, onClick, storeCategory }: ProductCardP
             alt={product.name}
             className="w-24 h-24 rounded-xl object-cover shadow-sm group-hover:shadow-md transition-shadow"
             loading="lazy"
+            decoding="async"
+            width={96}
+            height={96}
           />
         ) : (
           <div className="w-24 h-24 rounded-xl bg-muted flex items-center justify-center">
@@ -1092,6 +1098,8 @@ const ProductCard = ({ product, disabled, onClick, storeCategory }: ProductCardP
       </div>
     </button>
   );
-};
+});
+
+ProductCard.displayName = "ProductCard";
 
 export default StorePage;

@@ -1,10 +1,10 @@
+import { memo, useRef, useState, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { ChevronRight, Megaphone } from "lucide-react";
-import { useRef, useState, useEffect } from "react";
 
-const PromoBanners = () => {
+const PromoBanners = memo(() => {
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeIdx, setActiveIdx] = useState(0);
@@ -20,6 +20,7 @@ const PromoBanners = () => {
       if (error) throw error;
       return data || [];
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   // Auto-scroll
@@ -39,15 +40,15 @@ const PromoBanners = () => {
     }
   }, [activeIdx, banners]);
 
-  if (!banners || banners.length === 0) return null;
-
-  const handleClick = (banner: any) => {
+  const handleClick = useCallback((banner: any) => {
     if (banner.link_type === "store" && banner.link_value) {
       navigate(`/${banner.link_value}`);
     } else if (banner.link_type === "url" && banner.link_value) {
       window.open(banner.link_value, "_blank");
     }
-  };
+  }, [navigate]);
+
+  if (!banners || banners.length === 0) return null;
 
   return (
     <div className="px-4 pt-3">
@@ -56,7 +57,7 @@ const PromoBanners = () => {
         <h2 className="text-sm font-bold text-foreground">Promoções</h2>
       </div>
       <div ref={scrollRef} className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar gap-3 -mx-1 px-1">
-        {banners.map((banner: any, idx: number) => (
+        {banners.map((banner: any) => (
           <div
             key={banner.id}
             onClick={() => handleClick(banner)}
@@ -64,7 +65,13 @@ const PromoBanners = () => {
           >
             <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-primary/20 to-primary/5 border border-primary/20 h-28">
               {banner.image_url && (
-                <img src={banner.image_url} alt={banner.title} className="absolute inset-0 w-full h-full object-cover" />
+                <img
+                  src={banner.image_url}
+                  alt={banner.title}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                />
               )}
               <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent" />
               <div className="relative z-10 p-4 h-full flex flex-col justify-center">
@@ -82,7 +89,6 @@ const PromoBanners = () => {
           </div>
         ))}
       </div>
-      {/* Dots */}
       {banners.length > 1 && (
         <div className="flex justify-center gap-1.5 mt-2">
           {banners.map((_: any, i: number) => (
@@ -96,6 +102,8 @@ const PromoBanners = () => {
       )}
     </div>
   );
-};
+});
+
+PromoBanners.displayName = "PromoBanners";
 
 export default PromoBanners;

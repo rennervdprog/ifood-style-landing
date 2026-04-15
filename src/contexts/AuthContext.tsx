@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useRef, useState } from "react";
+import React, { createContext, useContext, useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { requestPushPermissionAndRegister, onForegroundMessage } from "@/lib/firebase";
@@ -255,7 +255,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     const userId = currentUserIdRef.current || session?.user?.id || undefined;
     stopDeviceCheck();
     if (!isCapacitorNative()) {
@@ -266,10 +266,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       resetPushRegistrationState();
     }
     await supabase.auth.signOut();
-  };
+  }, [session?.user?.id]);
+
+  const contextValue = useMemo(() => ({
+    session,
+    user: session?.user ?? null,
+    loading,
+    signOut,
+  }), [session, loading, signOut]);
 
   return (
-    <AuthContext.Provider value={{ session, user: session?.user ?? null, loading, signOut }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
