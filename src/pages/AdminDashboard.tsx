@@ -2080,38 +2080,41 @@ const AdminDashboard = () => {
                       const d = new Date(); d.setDate(d.getDate() - (selectedPeriod - 1 - i));
                       return toLocalDateStr(d);
                     });
-                    const periodOrders = (allOrders || []).filter((o: any) => {
+                    // All orders in the period (excluding only aguardando_pagamento)
+                    const allPeriodOrders = (allOrders || []).filter((o: any) => {
                       const d = toLocalDateStr(new Date(o.created_at));
-                      return periodDays.includes(d) && !["cancelado", "aguardando_pagamento"].includes(o.status);
+                      return periodDays.includes(d) && o.status !== "aguardando_pagamento";
                     });
+                    const periodOrders = allPeriodOrders.filter((o: any) => o.status !== "cancelado");
 
                     // Previous period for comparison
                     const prevPeriodDays = Array.from({ length: selectedPeriod }, (_, i) => {
                       const d = new Date(); d.setDate(d.getDate() - (selectedPeriod * 2 - 1 - i));
                       return toLocalDateStr(d);
                     });
-                    const prevPeriodOrders = (allOrders || []).filter((o: any) => {
+                    const allPrevPeriodOrders = (allOrders || []).filter((o: any) => {
                       const d = toLocalDateStr(new Date(o.created_at));
-                      return prevPeriodDays.includes(d) && !["cancelado", "aguardando_pagamento"].includes(o.status);
+                      return prevPeriodDays.includes(d) && o.status !== "aguardando_pagamento";
                     });
+                    const prevPeriodOrders = allPrevPeriodOrders.filter((o: any) => o.status !== "cancelado");
 
                     const completedPeriod = periodOrders.filter((o: any) => ["entregue", "finalizado"].includes(o.status));
                     const completedPrev = prevPeriodOrders.filter((o: any) => ["entregue", "finalizado"].includes(o.status));
 
                     const totalRevenue = sumMoney(completedPeriod.map((o: any) => o.total_price));
                     const prevRevenue = sumMoney(completedPrev.map((o: any) => o.total_price));
-                    const revenueGrowth = prevRevenue > 0 ? ((totalRevenue - prevRevenue) / prevRevenue * 100) : 0;
+                    const revenueGrowth = prevRevenue > 0 ? ((totalRevenue - prevRevenue) / prevRevenue * 100) : (totalRevenue > 0 ? 100 : 0);
 
                     const totalOrders = completedPeriod.length;
                     const prevOrderCount = completedPrev.length;
-                    const orderGrowth = prevOrderCount > 0 ? ((totalOrders - prevOrderCount) / prevOrderCount * 100) : 0;
+                    const orderGrowth = prevOrderCount > 0 ? ((totalOrders - prevOrderCount) / prevOrderCount * 100) : (totalOrders > 0 ? 100 : 0);
 
                     const avgTicket = averageMoney(totalRevenue, totalOrders);
                     const prevAvgTicket = averageMoney(prevRevenue, prevOrderCount);
-                    const ticketGrowth = prevAvgTicket > 0 ? ((avgTicket - prevAvgTicket) / prevAvgTicket * 100) : 0;
+                    const ticketGrowth = prevAvgTicket > 0 ? ((avgTicket - prevAvgTicket) / prevAvgTicket * 100) : (avgTicket > 0 ? 100 : 0);
 
-                    const cancelledOrders = periodOrders.filter((o: any) => o.status === "cancelado").length;
-                    const cancelRate = periodOrders.length > 0 ? (cancelledOrders / periodOrders.length * 100) : 0;
+                    const cancelledOrders = allPeriodOrders.filter((o: any) => o.status === "cancelado").length;
+                    const cancelRate = allPeriodOrders.length > 0 ? (cancelledOrders / allPeriodOrders.length * 100) : 0;
 
                     // Daily chart data
                     const dailyChart = periodDays.map(date => {
