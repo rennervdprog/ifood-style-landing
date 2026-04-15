@@ -7,6 +7,12 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
 const BodySchema = z.object({
   store_id: z.string().uuid(),
   amount: z.number().positive().max(100000),
@@ -22,10 +28,7 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: "Unauthorized" }, 401);
     }
 
     const supabase = createClient(
@@ -37,13 +40,10 @@ Deno.serve(async (req) => {
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabase.auth.getUser(token);
     if (userError || !userData?.user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: "Unauthorized" }, 401);
     }
 
-    // Only admin can do payouts - check user_roles table
+    // Only admin can do payouts
     const serviceClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
@@ -54,20 +54,14 @@ Deno.serve(async (req) => {
       .eq("user_id", userData.user.id)
       .eq("role", "admin")
       .maybeSingle();
-    const isAdmin = !!adminRole;
-    if (!isAdmin) {
-      return new Response(JSON.stringify({ error: "Apenas o administrador pode realizar repasses." }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+
+    if (!adminRole) {
+      return json({ error: "Apenas o administrador pode realizar repasses." }, 403);
     }
 
     const parsed = BodySchema.safeParse(await req.json());
     if (!parsed.success) {
-      return new Response(
-        JSON.stringify({ error: "Dados inválidos", details: parsed.error.flatten().fieldErrors }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return json({ error: "Dados inválidos", details: parsed.error.flatten().fieldErrors }, 400);
     }
 
     const { store_id, amount, pix_key, pix_type } = parsed.data;
@@ -80,129 +74,117 @@ Deno.serve(async (req) => {
       .single();
 
     if (storeError || !store) {
-      return new Response(JSON.stringify({ error: "Loja não encontrada" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: "Loja não encontrada" }, 404);
     }
 
-    const ACCESS_TOKEN = Deno.env.get("MERCADO_PAGO_ACCESS_TOKEN");
-    if (!ACCESS_TOKEN) {
-      return new Response(
-        JSON.stringify({ error: "MERCADO_PAGO_ACCESS_TOKEN não configurado." }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    const ASAAS_API_KEY = Deno.env.get("ASAAS_API_KEY");
+    if (!ASAAS_API_KEY) {
+      return json({ error: "Chave de pagamento não configurada." }, 500);
     }
 
-    // serviceClient already created above for admin check
+    const isSandbox = !ASAAS_API_KEY.startsWith("$aact_");
+    const baseUrl = isSandbox
+      ? "https://sandbox.asaas.com/api/v3"
+      : "https://api.asaas.com/v3";
 
-    const { data: refData } = await serviceClient.rpc("generate_financial_reference", {
-      _prefix: "REP",
-    });
+    const { data: refData } = await serviceClient.rpc("generate_financial_reference", { _prefix: "REP" });
     const referenceCode = refData || `#REP-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
-
-    // Create Mercado Pago PIX payment to the store owner
     const desc = `Repasse ItaSuper - ${store.name} - ${referenceCode}`;
 
-    const paymentBody = {
-      transaction_amount: Number(amount.toFixed(2)),
-      description: desc.substring(0, 256),
-      payment_method_id: "pix",
-      payer: {
-        email: userData.user.email || "admin@itasuper.com",
-        first_name: "ItaSuper",
-        last_name: "Admin",
-        identification: { type: "CPF", number: "00000000000" },
-      },
-      external_reference: referenceCode,
+    // Map pix_type to Asaas format
+    const pixTypeMap: Record<string, string> = {
+      cpf: "CPF", cnpj: "CNPJ", email: "EMAIL", phone: "PHONE", random: "EVP",
     };
 
-    // Note: Mercado Pago v1/payments creates a payment TO the account owner.
-    // For a true payout/transfer to another account you'd use the Payouts API
-    // or Marketplace split payments. This creates a PIX QR for the admin to
-    // pay the store via the store owner's PIX key manually, with tracking.
-    const mpResponse = await fetch("https://api.mercadopago.com/v1/payments", {
+    // Create Asaas Transfer (direct PIX transfer to store owner)
+    const transferBody = {
+      value: Number(amount.toFixed(2)),
+      operationType: "PIX",
+      pixAddressKey: pix_key,
+      pixAddressKeyType: pixTypeMap[pix_type] || "CPF",
+      description: desc.substring(0, 140),
+    };
+
+    console.log(`[Asaas] Creating transfer: R$${amount.toFixed(2)} to ${pix_key} (${pix_type})`);
+
+    const transferRes = await fetch(`${baseUrl}/transfers`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${ACCESS_TOKEN}`,
-        "X-Idempotency-Key": `payout-${store_id}-${Date.now()}`,
+        "access_token": ASAAS_API_KEY,
       },
-      body: JSON.stringify(paymentBody),
+      body: JSON.stringify(transferBody),
     });
 
-    const mpData = await mpResponse.json();
+    const transferData = await transferRes.json();
 
-    // Save transaction regardless of MP result
+    // Save transaction
     const txRecord: Record<string, unknown> = {
       store_id,
       transaction_kind: "store_payout",
       reference_code: referenceCode,
       amount: Number(amount.toFixed(2)),
-      status: "pending",
-      provider: "mercado_pago",
+      status: transferRes.ok ? "approved" : "failed",
+      provider: "asaas",
       metadata: {
         store_name: store.name,
         pix_key,
         pix_type,
         description: desc,
+        transfer_type: "asaas_transfer",
       },
     };
 
-    if (mpResponse.ok) {
-      txRecord.mercado_pago_payment_id = String(mpData.id);
-      const pixInfo = mpData.point_of_interaction?.transaction_data;
-      txRecord.pix_qr_code = pixInfo?.qr_code || null;
-      txRecord.pix_qr_code_base64 = pixInfo?.qr_code_base64 || null;
-      txRecord.pix_copy_paste = pixInfo?.qr_code || null;
+    if (transferRes.ok) {
+      txRecord.mercado_pago_payment_id = String(transferData.id || "");
+      txRecord.settled_at = new Date().toISOString();
     }
 
     await serviceClient.from("financial_transactions").insert(txRecord);
 
-    if (!mpResponse.ok) {
-      console.error("MP Payout Error:", JSON.stringify(mpData));
-      // Even if MP fails, we record it and let admin do manual transfer
-      return new Response(
-        JSON.stringify({
-          reference_code: referenceCode,
-          status: "manual_required",
-          message: `Não foi possível gerar PIX automático. Realize a transferência manual de R$ ${amount.toFixed(2)} para a chave PIX: ${pix_key} (${pix_type})`,
-          pix_key,
-          pix_type,
-          amount: Number(amount.toFixed(2)),
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    if (!transferRes.ok) {
+      console.error("Asaas Transfer Error:", JSON.stringify(transferData));
+      const errorMsg = transferData?.errors?.[0]?.description || transferData?.message || "Erro na transferência";
+      return json({
+        reference_code: referenceCode,
+        status: "manual_required",
+        message: `Não foi possível realizar a transferência automática: ${errorMsg}. Realize manualmente R$ ${amount.toFixed(2)} para a chave PIX: ${pix_key} (${pix_type})`,
+        pix_key,
+        pix_type,
+        amount: Number(amount.toFixed(2)),
+      });
     }
 
-    const pixInfo = mpData.point_of_interaction?.transaction_data;
+    // Log to payout_history
+    await serviceClient.from("payout_history").insert({
+      entity_type: "store",
+      entity_id: store_id,
+      entity_name: store.name,
+      amount: Number(amount.toFixed(2)),
+      payout_type: "auto_asaas",
+      notes: `Transferência automática Asaas: ${referenceCode} | PIX: ${pix_key} (${pix_type})`,
+      admin_user_id: userData.user.id,
+    });
 
     // Deduct from repasse_pendente
     await serviceClient
       .from("store_balances")
-      .update({
-        repasse_pendente: 0,
-      })
+      .update({ repasse_pendente: 0, comissao_pendente: 0, pending_commission: 0 })
       .eq("store_id", store_id);
 
-    return new Response(
-      JSON.stringify({
-        reference_code: referenceCode,
-        payment_id: mpData.id,
-        status: mpData.status,
-        qr_code: pixInfo?.qr_code || null,
-        qr_code_base64: pixInfo?.qr_code_base64 || null,
-        amount: Number(amount.toFixed(2)),
-        pix_key,
-        pix_type,
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return json({
+      success: true,
+      reference_code: referenceCode,
+      transfer_id: transferData.id,
+      status: "approved",
+      amount: Number(amount.toFixed(2)),
+      pix_key,
+      pix_type,
+      provider: "asaas",
+      message: `Transferência de R$ ${amount.toFixed(2)} enviada para ${store.name} via Asaas!`,
+    });
   } catch (err) {
     console.error("Error:", err);
-    return new Response(JSON.stringify({ error: "Erro interno" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ error: "Erro interno" }, 500);
   }
 });

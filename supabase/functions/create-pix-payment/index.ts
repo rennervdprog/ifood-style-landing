@@ -1,9 +1,57 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://esm.sh/zod@3.25.76";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
+const BodySchema = z.object({
+  order_id: z.string().uuid(),
+  amount: z.number().positive().max(100000),
+  description: z.string().max(256).optional(),
+  payer_first_name: z.string().max(100).optional(),
+  payer_last_name: z.string().max(100).optional(),
+  payer_cpf: z.string().min(11).max(14),
+});
+
+function isValidCpf(cpf: string): boolean {
+  const clean = cpf.replace(/\D/g, "");
+  if (clean.length !== 11 || /^(\d)\1+$/.test(clean)) return false;
+  let sum = 0;
+  for (let i = 0; i < 9; i++) sum += parseInt(clean[i]) * (10 - i);
+  let d1 = 11 - (sum % 11);
+  if (d1 >= 10) d1 = 0;
+  if (parseInt(clean[9]) !== d1) return false;
+  sum = 0;
+  for (let i = 0; i < 10; i++) sum += parseInt(clean[i]) * (11 - i);
+  let d2 = 11 - (sum % 11);
+  if (d2 >= 10) d2 = 0;
+  return parseInt(clean[10]) === d2;
+}
+
+function generateValidSandboxCpf(): string {
+  const digits = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+  for (let i = 0; i < 9; i++) digits[i] = Math.floor(Math.random() * 9);
+  let sum = 0;
+  for (let i = 0; i < 9; i++) sum += digits[i] * (10 - i);
+  let d1 = 11 - (sum % 11);
+  if (d1 >= 10) d1 = 0;
+  digits.push(d1);
+  sum = 0;
+  for (let i = 0; i < 10; i++) sum += digits[i] * (11 - i);
+  let d2 = 11 - (sum % 11);
+  if (d2 >= 10) d2 = 0;
+  digits.push(d2);
+  return digits.join("");
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -13,10 +61,7 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: corsHeaders,
-      });
+      return json({ error: "Unauthorized" }, 401);
     }
 
     const supabase = createClient(
@@ -28,31 +73,17 @@ Deno.serve(async (req) => {
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabase.auth.getUser(token);
     if (userError || !userData?.user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: corsHeaders,
-      });
+      return json({ error: "Unauthorized" }, 401);
     }
 
     const userId = userData.user.id;
-    const userEmail = userData.user.email;
 
-    const body = await req.json();
-    const { order_id, amount, description, payer_first_name, payer_last_name, payer_cpf } = body;
-
-    if (!order_id || !amount) {
-      return new Response(JSON.stringify({ error: "Missing required fields: order_id, amount" }), {
-        status: 400,
-        headers: corsHeaders,
-      });
+    const parsed = BodySchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return json({ error: "Dados inválidos", details: parsed.error.flatten().fieldErrors }, 400);
     }
 
-    if (typeof amount !== "number" || amount <= 0 || amount > 100000) {
-      return new Response(JSON.stringify({ error: "Invalid amount" }), {
-        status: 400,
-        headers: corsHeaders,
-      });
-    }
+    const { order_id, amount, description, payer_first_name, payer_last_name, payer_cpf } = parsed.data;
 
     // Verify the order belongs to this user and is awaiting payment
     const { data: order, error: orderError } = await supabase
@@ -63,115 +94,113 @@ Deno.serve(async (req) => {
       .single();
 
     if (orderError || !order) {
-      return new Response(JSON.stringify({ error: "Order not found or access denied" }), {
-        status: 404,
-        headers: corsHeaders,
-      });
+      return json({ error: "Pedido não encontrado" }, 404);
     }
 
     if (order.status !== "aguardando_pagamento") {
-      return new Response(JSON.stringify({ error: "Order is not awaiting payment" }), {
-        status: 400,
-        headers: corsHeaders,
-      });
+      return json({ error: "Pedido não está aguardando pagamento" }, 400);
     }
 
-    const ACCESS_TOKEN = Deno.env.get("MERCADO_PAGO_ACCESS_TOKEN");
-    if (!ACCESS_TOKEN) {
-      return new Response(JSON.stringify({ error: "Chave do Mercado Pago não configurada. Peça ao administrador para inserir o MERCADO_PAGO_ACCESS_TOKEN." }), {
-        status: 500,
-        headers: corsHeaders,
-      });
+    const ASAAS_API_KEY = Deno.env.get("ASAAS_API_KEY");
+    if (!ASAAS_API_KEY) {
+      return json({ error: "Chave de pagamento não configurada." }, 500);
     }
 
-    // Clean CPF - remove non-digits
-    const cleanCpf = String(payer_cpf || "").replace(/\D/g, "");
-    if (!cleanCpf || cleanCpf.length !== 11) {
-      return new Response(JSON.stringify({ error: "CPF inválido. Informe um CPF com 11 dígitos." }), {
-        status: 400,
-        headers: corsHeaders,
-      });
+    const isSandbox = !ASAAS_API_KEY.startsWith("$aact_");
+    const baseUrl = isSandbox
+      ? "https://sandbox.asaas.com/api/v3"
+      : "https://api.asaas.com/v3";
+
+    let cleanCpf = String(payer_cpf).replace(/\D/g, "");
+    if (isSandbox && !isValidCpf(cleanCpf)) {
+      cleanCpf = generateValidSandboxCpf();
+      console.log("[Asaas Sandbox] Using generated valid CPF");
     }
 
-    // Set expiration to 5 minutes from now
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+    if (!isSandbox && cleanCpf.length !== 11) {
+      return json({ error: "CPF inválido. Informe um CPF com 11 dígitos." }, 400);
+    }
+
+    // Step 1: Find or create customer
+    let customerId: string | null = null;
+
+    const searchRes = await fetch(`${baseUrl}/customers?cpfCnpj=${cleanCpf}`, {
+      headers: { "access_token": ASAAS_API_KEY },
+    });
+    if (searchRes.ok) {
+      const searchData = await searchRes.json();
+      if (searchData.data?.length > 0) {
+        customerId = searchData.data[0].id;
+      }
+    }
+
+    if (!customerId) {
+      const customerBody: Record<string, unknown> = {
+        name: `${payer_first_name || "Cliente"} ${payer_last_name || ""}`.trim(),
+        cpfCnpj: cleanCpf,
+      };
+      if (isSandbox) {
+        customerBody.email = `cliente-${cleanCpf}@sandbox.itasuper.com`;
+      }
+
+      const createRes = await fetch(`${baseUrl}/customers`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "access_token": ASAAS_API_KEY },
+        body: JSON.stringify(customerBody),
+      });
+      if (!createRes.ok) {
+        const errData = await createRes.json();
+        const errMsg = errData?.errors?.[0]?.description || "Erro ao criar cliente.";
+        return json({ error: errMsg }, 500);
+      }
+      const customerData = await createRes.json();
+      customerId = customerData.id;
+    }
+
+    // Step 2: Create PIX payment
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 1);
 
     const paymentBody = {
-      transaction_amount: Number(amount),
-      description: String(description || `Pedido ItaSuper #${order_id.substring(0, 6).toUpperCase()}`).substring(0, 256),
-      payment_method_id: "pix",
-      date_of_expiration: expiresAt,
-      payer: {
-        email: userEmail || "cliente@itasuper.com",
-        first_name: String(payer_first_name || "Cliente").substring(0, 100),
-        last_name: String(payer_last_name || "ItaSuper").substring(0, 100),
-        identification: {
-          type: "CPF",
-          number: cleanCpf,
-        },
-      },
-      external_reference: order_id,
+      customer: customerId,
+      billingType: "PIX",
+      value: Number(amount),
+      dueDate: dueDate.toISOString().split("T")[0],
+      description: String(description || `Pedido ItaSuper #${order_id.substring(0, 6).toUpperCase()}`).substring(0, 140),
+      externalReference: order_id,
     };
 
-    const mpResponse = await fetch("https://api.mercadopago.com/v1/payments", {
+    const paymentRes = await fetch(`${baseUrl}/payments`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${ACCESS_TOKEN}`,
-        "X-Idempotency-Key": `pix-${order_id}-${Date.now()}`,
-      },
+      headers: { "Content-Type": "application/json", "access_token": ASAAS_API_KEY },
       body: JSON.stringify(paymentBody),
     });
 
-    const mpData = await mpResponse.json();
-
-    if (!mpResponse.ok) {
-      console.error("MP PIX Error:", JSON.stringify(mpData));
-
-      // Handle rate limiting (429)
-      if (mpResponse.status === 429) {
-        return new Response(JSON.stringify({
-          error: "Sistema de pagamentos temporariamente indisponível. Tente novamente em alguns minutos.",
-          rate_limited: true,
-        }), {
-          status: 429,
-          headers: corsHeaders,
-        });
-      }
-
-      let userMessage = "Erro ao gerar PIX. Tente novamente.";
-      const mpMsg = mpData?.message || "";
-      if (mpMsg.includes("access_token")) {
-        userMessage = "Chave do Mercado Pago inválida. Contate o administrador.";
-      } else if (mpMsg.includes("identification") || mpMsg.includes("payer")) {
-        userMessage = "Erro ao gerar Pix: verifique se seu e-mail e CPF estão corretos.";
-      } else if (mpMsg.includes("QR render") || mpMsg.includes("without key enabled")) {
-        userMessage = "Erro: Chave Pix não configurada na conta recebedora. Verifique o painel do administrador.";
-      }
-      return new Response(JSON.stringify({ error: userMessage }), {
-        status: 500,
-        headers: corsHeaders,
-      });
+    const paymentData = await paymentRes.json();
+    if (!paymentRes.ok) {
+      console.error("Asaas PIX Error:", JSON.stringify(paymentData));
+      return json({ error: "Erro ao gerar PIX. Tente novamente." }, 500);
     }
 
-    const pixInfo = mpData.point_of_interaction?.transaction_data;
-    
-    return new Response(
-      JSON.stringify({
-        payment_id: mpData.id,
-        status: mpData.status,
-        qr_code: pixInfo?.qr_code || null,
-        qr_code_base64: pixInfo?.qr_code_base64 || null,
-        ticket_url: pixInfo?.ticket_url || null,
-        expires_at: expiresAt,
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    // Step 3: Get QR code
+    const pixRes = await fetch(`${baseUrl}/payments/${paymentData.id}/pixQrCode`, {
+      headers: { "access_token": ASAAS_API_KEY },
+    });
+    const pixInfo = await pixRes.json();
+
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+
+    return json({
+      payment_id: paymentData.id,
+      status: paymentData.status || "PENDING",
+      qr_code: pixInfo?.payload || null,
+      qr_code_base64: pixInfo?.encodedImage ? `data:image/png;base64,${pixInfo.encodedImage}` : null,
+      ticket_url: null,
+      expires_at: expiresAt,
+      provider: "asaas",
+    });
   } catch (err) {
     console.error("Error:", err);
-    return new Response(JSON.stringify({ error: "Internal server error" }), {
-      status: 500,
-      headers: corsHeaders,
-    });
+    return json({ error: "Erro interno" }, 500);
   }
 });
