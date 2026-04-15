@@ -1794,11 +1794,26 @@ const AdminDashboard = () => {
                             const rawAddons = item.addons;
                             const addons: any[] = Array.isArray(rawAddons) ? rawAddons : (typeof rawAddons === 'string' ? (() => { try { return JSON.parse(rawAddons); } catch { return []; } })() : []);
                             if (!addons || addons.length === 0) return null;
+                            const requiredAddons = addons.filter((a: any) => a.required);
+                            const optionalAddons = addons.filter((a: any) => !a.required);
                             return (
-                              <div key={`addons-${item.id}`} className="pl-5 text-[11px] text-muted-foreground">
-                                {addons.map((a: any, idx: number) => (
-                                  <span key={idx}>+ {a.name}{a.price > 0 ? ` (${formatBRL(Number(a.price))})` : ""}{idx < addons.length - 1 ? ", " : ""}</span>
-                                ))}
+                              <div key={`addons-${item.id}`} className="pl-5 space-y-0.5">
+                                {requiredAddons.length > 0 && (
+                                  <div className="flex flex-wrap gap-1">
+                                    {requiredAddons.map((a: any, idx: number) => (
+                                      <span key={idx} className="inline-flex items-center gap-0.5 bg-primary/15 text-primary font-semibold text-[11px] px-2 py-0.5 rounded-full border border-primary/30">
+                                        ⭐ {a.groupName ? `${a.groupName}: ` : ""}{a.name}{a.price > 0 ? ` (${formatBRL(Number(a.price))})` : ""}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                                {optionalAddons.length > 0 && (
+                                  <div className="text-[11px] text-muted-foreground">
+                                    {optionalAddons.map((a: any, idx: number) => (
+                                      <span key={idx}>+ {a.name}{a.price > 0 ? ` (${formatBRL(Number(a.price))})` : ""}{idx < optionalAddons.length - 1 ? ", " : ""}</span>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                             );
                           })}

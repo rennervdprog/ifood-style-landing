@@ -4,6 +4,8 @@ import { addMoney, sumMoney } from "@/lib/utils";
 export interface CartAddon {
   name: string;
   price: number;
+  required?: boolean;
+  groupName?: string;
 }
 
 export interface CartItem {
