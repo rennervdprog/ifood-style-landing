@@ -56,7 +56,7 @@ const queryClient = new QueryClient({
 
 const App = () => {
   useEffect(() => {
-    initCapacitorNative();
+    initCapacitorNative().then(() => initCapacitorLifecycle());
   }, []);
 
   return (
