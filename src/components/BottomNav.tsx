@@ -1,3 +1,4 @@
+import { memo, useMemo } from "react";
 import { Home, ClipboardList, User, Store } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useStoreContext } from "@/contexts/StoreContext";
@@ -5,13 +6,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-const BottomNav = () => {
+const BottomNav = memo(() => {
   const location = useLocation();
   const navigate = useNavigate();
   const { currentStoreSlug, currentStoreId } = useStoreContext();
   const { user } = useAuth();
 
-  // Check if logged-in user is a lojista
   const { data: profile } = useQuery({
     queryKey: ["bottom-nav-profile", user?.id],
     queryFn: async () => {
@@ -26,7 +26,6 @@ const BottomNav = () => {
     staleTime: 1000 * 60 * 5,
   });
 
-  // Get lojista's own store
   const { data: ownStore } = useQuery({
     queryKey: ["own-store", user?.id],
     queryFn: async () => {
@@ -44,23 +43,27 @@ const BottomNav = () => {
   const isLojista = profile?.role === "lojista";
   const isStoreContext = !!currentStoreSlug;
 
-  const tabs = isStoreContext
-    ? [
+  const tabs = useMemo(() => {
+    if (isStoreContext) {
+      return [
         { icon: Store, label: "Loja", path: `/${currentStoreSlug}` },
         { icon: ClipboardList, label: "Pedidos", path: `/pedidos?store=${currentStoreId}` },
         { icon: User, label: "Perfil", path: "/perfil" },
-      ]
-    : isLojista && ownStore
-    ? [
+      ];
+    }
+    if (isLojista && ownStore) {
+      return [
         { icon: Store, label: "Minha Loja", path: ownStore.slug ? `/${ownStore.slug}` : `/loja/${ownStore.id}` },
         { icon: ClipboardList, label: "Pedidos", path: "/pedidos" },
         { icon: User, label: "Perfil", path: "/perfil" },
-      ]
-    : [
-        { icon: Home, label: "Home", path: "/cliente" },
-        { icon: ClipboardList, label: "Pedidos", path: "/pedidos" },
-        { icon: User, label: "Perfil", path: "/perfil" },
       ];
+    }
+    return [
+      { icon: Home, label: "Home", path: "/cliente" },
+      { icon: ClipboardList, label: "Pedidos", path: "/pedidos" },
+      { icon: User, label: "Perfil", path: "/perfil" },
+    ];
+  }, [isStoreContext, currentStoreSlug, currentStoreId, isLojista, ownStore]);
 
   const isActive = (tabPath: string) => {
     const [path] = tabPath.split("?");
@@ -96,6 +99,8 @@ const BottomNav = () => {
       </div>
     </nav>
   );
-};
+});
+
+BottomNav.displayName = "BottomNav";
 
 export default BottomNav;

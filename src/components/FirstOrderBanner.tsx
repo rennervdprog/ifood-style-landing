@@ -1,10 +1,11 @@
+import { memo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Gift, Copy } from "lucide-react";
 import { toast } from "sonner";
 
-const FirstOrderBanner = () => {
+const FirstOrderBanner = memo(() => {
   const { user } = useAuth();
 
   const { data: config } = useQuery({
@@ -17,9 +18,9 @@ const FirstOrderBanner = () => {
         .maybeSingle();
       return (data?.value as any) || null;
     },
+    staleTime: 5 * 60 * 1000,
   });
 
-  // Check if user has any orders
   const { data: hasOrders } = useQuery({
     queryKey: ["user-has-orders", user?.id],
     queryFn: async () => {
@@ -30,6 +31,7 @@ const FirstOrderBanner = () => {
       return (count || 0) > 0;
     },
     enabled: !!user,
+    staleTime: 5 * 60 * 1000,
   });
 
   if (!config?.enabled || !user || hasOrders) return null;
@@ -63,6 +65,8 @@ const FirstOrderBanner = () => {
       </div>
     </div>
   );
-};
+});
+
+FirstOrderBanner.displayName = "FirstOrderBanner";
 
 export default FirstOrderBanner;

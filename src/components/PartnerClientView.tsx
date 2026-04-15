@@ -1,3 +1,4 @@
+import { memo, useState, useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -13,14 +14,21 @@ import CartFAB from "@/components/CartFAB";
 import PopularProducts from "@/components/PopularProducts";
 import PromoBanners from "@/components/PromoBanners";
 import FirstOrderBanner from "@/components/FirstOrderBanner";
-import { useState } from "react";
 import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 
-const PartnerClientView = () => {
+const PartnerClientView = memo(() => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const handleCategorySelect = useCallback((value: string) => {
+    setSelectedCategory(value === "all" ? null : value);
+  }, []);
+
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchQuery(value);
+  }, []);
 
   const { data: profile } = useQuery({
     queryKey: ["partner-role-banner", user?.id],
@@ -46,6 +54,7 @@ const PartnerClientView = () => {
       if (error) throw error;
       return data || [];
     },
+    staleTime: 1000 * 60 * 2,
   });
 
   const { data: allHours } = useQuery({
@@ -54,27 +63,29 @@ const PartnerClientView = () => {
       const { data } = await supabase.from("opening_hours").select("*");
       return data || [];
     },
+    staleTime: 1000 * 60 * 5,
   });
 
-  const filteredStores = (stores || [])
-    .filter((s: any) => {
-      if (selectedCategory && s.category !== selectedCategory) return false;
-      if (searchQuery && !s.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-      return true;
-    })
-    .map((s: any) => {
-      const storeHours = (allHours || []).filter((h: any) => h.store_id === s.id);
-      const status = getStoreOpenStatus(storeHours as OpeningHour[], s.force_closed, s.is_open);
-      const isSuspended = s.status === "bloqueado";
-      return { ...s, is_open: isSuspended ? false : status.isOpen, statusReason: isSuspended ? "Loja temporariamente fechada" : status.reason };
-    })
-    .sort((a: any, b: any) => (a.is_open === b.is_open ? 0 : a.is_open ? -1 : 1));
+  const filteredStores = useMemo(() => {
+    return (stores || [])
+      .filter((s: any) => {
+        if (selectedCategory && s.category !== selectedCategory) return false;
+        if (searchQuery && !s.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+        return true;
+      })
+      .map((s: any) => {
+        const storeHours = (allHours || []).filter((h: any) => h.store_id === s.id);
+        const status = getStoreOpenStatus(storeHours as OpeningHour[], s.force_closed, s.is_open);
+        const isSuspended = s.status === "bloqueado";
+        return { ...s, is_open: isSuspended ? false : status.isOpen, statusReason: isSuspended ? "Loja temporariamente fechada" : status.reason };
+      })
+      .sort((a: any, b: any) => (a.is_open === b.is_open ? 0 : a.is_open ? -1 : 1));
+  }, [stores, allHours, selectedCategory, searchQuery]);
 
   return (
     <div className="min-h-screen bg-background pb-20">
       <AppHeader />
 
-      {/* Banner "Acessar Painel" para lojista/motoboy */}
       {profile?.role === "lojista" && (
         <button
           onClick={() => navigate("/admin")}
@@ -110,10 +121,10 @@ const PartnerClientView = () => {
       <PromoBanners />
       
       <div className="px-4 py-3">
-        <SearchBar value={searchQuery} onChange={setSearchQuery} />
+        <SearchBar value={searchQuery} onChange={handleSearchChange} />
       </div>
 
-      <CategoryScroll selected={selectedCategory} onSelect={setSelectedCategory} />
+      <CategoryScroll selected={selectedCategory || "all"} onSelect={handleCategorySelect} />
 
       <PopularProducts />
 
@@ -151,6 +162,8 @@ const PartnerClientView = () => {
       <BottomNav />
     </div>
   );
-};
+});
+
+PartnerClientView.displayName = "PartnerClientView";
 
 export default PartnerClientView;

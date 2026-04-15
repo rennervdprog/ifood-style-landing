@@ -1,9 +1,10 @@
+import { memo } from "react";
 import { formatBRL } from "@/lib/utils";
 import { ShoppingBag } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useNavigate } from "react-router-dom";
 
-const CartFAB = () => {
+const CartFAB = memo(() => {
   const { totalItems, total } = useCart();
   const navigate = useNavigate();
 
@@ -26,6 +27,8 @@ const CartFAB = () => {
       <span className="font-black text-sm">{formatBRL(total)}</span>
     </button>
   );
-};
+});
+
+CartFAB.displayName = "CartFAB";
 
 export default CartFAB;

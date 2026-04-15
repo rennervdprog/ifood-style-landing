@@ -1,22 +1,22 @@
+import { memo } from "react";
 import { formatBRL } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { TrendingUp, Star } from "lucide-react";
 
-const PopularProducts = () => {
+const PopularProducts = memo(() => {
   const navigate = useNavigate();
 
-  // Get top ordered products across all stores
   const { data: topProducts } = useQuery({
     queryKey: ["popular-products"],
     queryFn: async () => {
       const { data: orderItems, error } = await supabase
         .from("order_items")
-        .select("product_id, quantity, products(id, name, price, image_url, store_id, is_available, stores:store_id(name, id, slug))");
+        .select("product_id, quantity, products(id, name, price, image_url, store_id, is_available, stores:store_id(name, id, slug))")
+        .limit(200);
       if (error) throw error;
 
-      // Aggregate quantities by product
       const productMap = new Map<string, { product: any; totalQty: number }>();
       (orderItems || []).forEach((item: any) => {
         if (!item.products || !item.products.is_available) return;
@@ -51,7 +51,15 @@ const PopularProducts = () => {
             className="flex-shrink-0 w-32 bg-card border border-border rounded-2xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
           >
             {product.image_url ? (
-              <img src={product.image_url} className="w-full h-20 object-cover" alt={product.name} />
+              <img
+                src={product.image_url}
+                className="w-full h-20 object-cover"
+                alt={product.name}
+                loading="lazy"
+                decoding="async"
+                width={128}
+                height={80}
+              />
             ) : (
               <div className="w-full h-20 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
                 <Star className="h-6 w-6 text-primary/40" />
@@ -70,6 +78,8 @@ const PopularProducts = () => {
       </div>
     </div>
   );
-};
+});
+
+PopularProducts.displayName = "PopularProducts";
 
 export default PopularProducts;
