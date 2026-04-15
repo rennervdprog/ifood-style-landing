@@ -306,6 +306,42 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     return storeNames?.find((s: any) => s.id === storeId)?.name || "Loja";
   };
 
+  /** Helper to send push notification from driver to client */
+  const notifyClientFromDriver = (order: any, status: string) => {
+    if (!order) return;
+    const storeName = order.stores?.name || getStoreName(order.store_id) || "Loja";
+    const contact = contactProfiles?.find((c: any) => c.user_id === order.client_id);
+    const clientPhone = (contact as any)?.whatsapp_number || (contact as any)?.phone || "";
+    const clientName = (contact as any)?.full_name || "Cliente";
+    const items = order.order_items?.map((i: any) => `${i.quantity}x ${getOrderItemDisplayName(i)}`).join("\n") || "";
+
+    notifyOrderStatusChange(status, {
+      orderId: order.id,
+      storeName,
+      storeId: order.store_id,
+      clientId: order.client_id,
+      clientPhone,
+      clientName,
+      totalPrice: Number(order.total_price),
+      addressDetails: order.address_details,
+      items,
+      paymentMethod: order.payment_method,
+    }, { skipWhatsApp: true }); // Driver side: skip manual WhatsApp, only push
+  };
+
+  /** Also notify the store owner */
+  const notifyStoreOwner = (order: any, title: string, body: string) => {
+    if (!order?.stores?.owner_id) return;
+    import("@/lib/firebase").then(({ sendPushNotification }) => {
+      sendPushNotification(
+        [order.stores.owner_id],
+        title,
+        body,
+        { link: "/admin", order_id: order.id }
+      ).catch(console.error);
+    });
+  };
+
   const acceptOrder = async (orderId: string) => {
     const { error } = await supabase.rpc("driver_accept_order", { _order_id: orderId } as any);
     if (error) {
@@ -314,6 +350,13 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       toast.success("Pedido aceito! Adicionado à sua rota.");
       queryClient.invalidateQueries({ queryKey: ["store-driver-available"] });
       queryClient.invalidateQueries({ queryKey: ["store-driver-my-deliveries"] });
+
+      // Notify store owner that driver accepted
+      const order = availableOrders?.find((o: any) => o.id === orderId);
+      if (order) {
+        const driverName = user?.user_metadata?.full_name || "Entregador";
+        notifyStoreOwner(order, "🛵 Entregador aceitou!", `${driverName} aceitou o pedido #${orderId.slice(0, 8).toUpperCase()}`);
+      }
     }
   };
 
@@ -322,7 +365,11 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     let accepted = 0;
     for (const order of filteredAvailable) {
       const { error } = await supabase.rpc("driver_accept_order", { _order_id: order.id } as any);
-      if (!error) accepted++;
+      if (!error) {
+        accepted++;
+        const driverName = user?.user_metadata?.full_name || "Entregador";
+        notifyStoreOwner(order, "🛵 Entregador aceitou!", `${driverName} aceitou o pedido #${order.id.slice(0, 8).toUpperCase()}`);
+      }
     }
     toast.success(`${accepted} pedido(s) aceito(s)!`);
     queryClient.invalidateQueries({ queryKey: ["store-driver-available"] });
@@ -342,6 +389,10 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     } else {
       toast.success("🚀 Saiu para entrega!");
       queryClient.invalidateQueries({ queryKey: ["store-driver-my-deliveries"] });
+
+      // Notify client that order is out for delivery
+      const order = myDeliveries?.find((o: any) => o.id === orderId);
+      notifyClientFromDriver(order, "saiu_entrega");
     }
     setDepartingId(null);
   };
@@ -352,6 +403,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     setDepartingId("all");
     for (const order of readyOrders) {
       await supabase.from("orders").update({ status: "saiu_entrega" as any }).eq("id", order.id);
+      notifyClientFromDriver(order, "saiu_entrega");
     }
     toast.success(`🚀 ${readyOrders.length} pedido(s) saíram para entrega!`);
     queryClient.invalidateQueries({ queryKey: ["store-driver-my-deliveries"] });
@@ -371,6 +423,10 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       setPinInputs((prev) => ({ ...prev, [orderId]: "" }));
       queryClient.invalidateQueries({ queryKey: ["store-driver-my-deliveries"] });
       queryClient.invalidateQueries({ queryKey: ["store-driver-count"] });
+
+      // Notify client that order was delivered
+      const order = myDeliveries?.find((o: any) => o.id === orderId);
+      notifyClientFromDriver(order, "entregue");
     }
     setVerifyingId(null);
   };
