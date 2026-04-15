@@ -7,6 +7,12 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
 const BodySchema = z.object({
   store_id: z.string().uuid(),
   amount: z.number().positive().max(100000),
@@ -19,13 +25,9 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Auth: only platform admin or store owner
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: "Unauthorized" }, 401);
     }
 
     const supabase = createClient(
@@ -37,23 +39,17 @@ Deno.serve(async (req) => {
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabase.auth.getUser(token);
     if (userError || !userData?.user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: "Unauthorized" }, 401);
     }
 
     const parsed = BodySchema.safeParse(await req.json());
     if (!parsed.success) {
-      return new Response(
-        JSON.stringify({ error: "Dados inválidos", details: parsed.error.flatten().fieldErrors }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return json({ error: "Dados inválidos", details: parsed.error.flatten().fieldErrors }, 400);
     }
 
     const { store_id, amount, description } = parsed.data;
 
-    // Verify store exists and user is owner
+    // Verify store exists and user is owner or admin
     const { data: store, error: storeError } = await supabase
       .from("stores")
       .select("id, name, owner_id")
@@ -61,46 +57,33 @@ Deno.serve(async (req) => {
       .single();
 
     if (storeError || !store) {
-      return new Response(JSON.stringify({ error: "Loja não encontrada" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: "Loja não encontrada" }, 404);
     }
 
-    // Allow store owner or admin
     const userId = userData.user.id;
-    const serviceAdminClient = createClient(
+    const serviceClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
-    const { data: adminRole } = await serviceAdminClient
+
+    const { data: adminRole } = await serviceClient
       .from("user_roles")
       .select("role")
       .eq("user_id", userId)
       .eq("role", "admin")
       .maybeSingle();
     const isAdmin = !!adminRole;
+
     if (store.owner_id !== userId && !isAdmin) {
-      return new Response(JSON.stringify({ error: "Sem permissão" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: "Sem permissão" }, 403);
     }
 
-    const ACCESS_TOKEN = Deno.env.get("MERCADO_PAGO_ACCESS_TOKEN");
-    if (!ACCESS_TOKEN) {
-      return new Response(
-        JSON.stringify({ error: "MERCADO_PAGO_ACCESS_TOKEN não configurado." }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    const ASAAS_API_KEY = Deno.env.get("ASAAS_API_KEY");
+    if (!ASAAS_API_KEY) {
+      return json({ error: "Chave de pagamento não configurada." }, 500);
     }
 
-    const serviceClient = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-
-    // IDEMPOTENCY: Check for existing pending charge for this store (created within last 5 min)
+    // Check for existing pending charge (idempotency)
     const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
     const { data: existingCharge } = await serviceClient
       .from("financial_transactions")
@@ -114,132 +97,147 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (existingCharge && existingCharge.pix_qr_code) {
-      // Return existing charge instead of creating a new one
-      return new Response(
-        JSON.stringify({
-          reference_code: existingCharge.reference_code,
-          payment_id: existingCharge.mercado_pago_payment_id,
-          status: "pending",
-          qr_code: existingCharge.pix_qr_code || existingCharge.pix_copy_paste || null,
-          qr_code_base64: existingCharge.pix_qr_code_base64 || null,
-          amount: Number(existingCharge.amount),
-          created_at: existingCharge.created_at,
-          reused: true,
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return json({
+        reference_code: existingCharge.reference_code,
+        payment_id: existingCharge.mercado_pago_payment_id,
+        status: "pending",
+        qr_code: existingCharge.pix_qr_code || existingCharge.pix_copy_paste || null,
+        qr_code_base64: existingCharge.pix_qr_code_base64 || null,
+        amount: Number(existingCharge.amount),
+        created_at: existingCharge.created_at,
+        reused: true,
+        provider: "asaas",
+      });
     }
 
     // Generate reference code
-    const { data: refData } = await serviceClient.rpc("generate_financial_reference", {
-      _prefix: "FAT",
-    });
+    const { data: refData } = await serviceClient.rpc("generate_financial_reference", { _prefix: "FAT" });
     const referenceCode = refData || `#FAT-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
     const createdAt = new Date().toISOString();
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
 
     // Cancel old pending charges
     await serviceClient
       .from("financial_transactions")
-      .update({
-        status: "cancelled",
-        settled_at: createdAt,
-        updated_at: createdAt,
-      })
+      .update({ status: "cancelled", settled_at: createdAt, updated_at: createdAt })
       .eq("store_id", store_id)
       .eq("transaction_kind", "commission_charge")
       .eq("status", "pending")
       .lt("created_at", fiveMinAgo);
 
-    // Create Mercado Pago PIX charge with expiration
-    const desc = String(
-      description || `Comissão ItaSuper - ${store.name} - ${referenceCode}`
-    ).substring(0, 256);
+    const isSandbox = !ASAAS_API_KEY.startsWith("$aact_");
+    const baseUrl = isSandbox
+      ? "https://sandbox.asaas.com/api/v3"
+      : "https://api.asaas.com/v3";
+
+    // Get store owner profile for customer info
+    const { data: ownerProfile } = await serviceClient
+      .from("profiles")
+      .select("full_name, email, document")
+      .eq("user_id", store.owner_id)
+      .single();
+
+    let cleanCpf = String(ownerProfile?.document || "").replace(/\D/g, "");
+    if (isSandbox && cleanCpf.length < 11) {
+      cleanCpf = "52998224725";
+    }
+
+    // Find or create customer
+    let customerId: string | null = null;
+    const customerEmail = ownerProfile?.email || userData.user.email || `lojista-${store.owner_id?.substring(0, 8)}@itasuper.com`;
+
+    if (cleanCpf.length >= 11) {
+      const searchRes = await fetch(`${baseUrl}/customers?cpfCnpj=${cleanCpf}`, {
+        headers: { "access_token": ASAAS_API_KEY },
+      });
+      if (searchRes.ok) {
+        const searchData = await searchRes.json();
+        if (searchData.data?.length > 0) {
+          customerId = searchData.data[0].id;
+        }
+      }
+    }
+
+    if (!customerId) {
+      const customerBody: Record<string, unknown> = {
+        name: ownerProfile?.full_name || "Lojista",
+        email: customerEmail,
+      };
+      if (cleanCpf.length >= 11) customerBody.cpfCnpj = cleanCpf;
+
+      const createRes = await fetch(`${baseUrl}/customers`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "access_token": ASAAS_API_KEY },
+        body: JSON.stringify(customerBody),
+      });
+      if (!createRes.ok) {
+        const errData = await createRes.json();
+        return json({ error: errData?.errors?.[0]?.description || "Erro ao criar cliente." }, 500);
+      }
+      const customerData = await createRes.json();
+      customerId = customerData.id;
+    }
+
+    // Create PIX payment
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 1);
+    const desc = String(description || `Comissão ItaSuper - ${store.name} - ${referenceCode}`).substring(0, 140);
 
     const paymentBody = {
-      transaction_amount: Number(amount.toFixed(2)),
+      customer: customerId,
+      billingType: "PIX",
+      value: Number(amount.toFixed(2)),
+      dueDate: dueDate.toISOString().split("T")[0],
       description: desc,
-      payment_method_id: "pix",
-      date_of_expiration: expiresAt,
-      payer: {
-        email: userData.user.email || "lojista@itasuper.com",
-        first_name: store.name.substring(0, 100),
-        last_name: "ItaSuper",
-        identification: { type: "CPF", number: "00000000000" },
-      },
-      external_reference: referenceCode,
+      externalReference: referenceCode,
     };
 
-    const mpResponse = await fetch("https://api.mercadopago.com/v1/payments", {
+    const paymentRes = await fetch(`${baseUrl}/payments`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${ACCESS_TOKEN}`,
-        "X-Idempotency-Key": `commission-${store_id}-${referenceCode}`,
-      },
+      headers: { "Content-Type": "application/json", "access_token": ASAAS_API_KEY },
       body: JSON.stringify(paymentBody),
     });
 
-    const mpData = await mpResponse.json();
-
-    if (!mpResponse.ok) {
-      console.error("MP Commission Charge Error:", JSON.stringify(mpData));
-
-      // Handle rate limiting (429)
-      if (mpResponse.status === 429) {
-        return new Response(
-          JSON.stringify({
-            error: "Sistema de pagamentos temporariamente indisponível. Tente novamente em alguns minutos.",
-            rate_limited: true,
-          }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      return new Response(
-        JSON.stringify({
-          error: "Erro ao gerar cobrança PIX. Tente novamente.",
-        }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    const paymentData = await paymentRes.json();
+    if (!paymentRes.ok) {
+      console.error("Asaas Commission Charge Error:", JSON.stringify(paymentData));
+      return json({ error: "Erro ao gerar cobrança PIX. Tente novamente." }, 500);
     }
 
-    const pixInfo = mpData.point_of_interaction?.transaction_data;
+    // Get QR code
+    const pixRes = await fetch(`${baseUrl}/payments/${paymentData.id}/pixQrCode`, {
+      headers: { "access_token": ASAAS_API_KEY },
+    });
+    const pixInfo = await pixRes.json();
 
-    // Save transaction record
+    // Save transaction
     await serviceClient.from("financial_transactions").insert({
       store_id,
       transaction_kind: "commission_charge",
       reference_code: referenceCode,
       amount: Number(amount.toFixed(2)),
       status: "pending",
-      provider: "mercado_pago",
-      mercado_pago_payment_id: String(mpData.id),
-      pix_qr_code: pixInfo?.qr_code || null,
-      pix_qr_code_base64: pixInfo?.qr_code_base64 || null,
-      pix_copy_paste: pixInfo?.qr_code || null,
+      provider: "asaas",
+      mercado_pago_payment_id: paymentData.id,
+      pix_qr_code: pixInfo?.payload || null,
+      pix_qr_code_base64: pixInfo?.encodedImage || null,
+      pix_copy_paste: pixInfo?.payload || null,
       created_at: createdAt,
       updated_at: createdAt,
-      metadata: { store_name: store.name, description: desc, expires_at: expiresAt },
+      metadata: { store_name: store.name, description: desc },
     });
 
-    return new Response(
-      JSON.stringify({
-        reference_code: referenceCode,
-        payment_id: mpData.id,
-        status: "pending",
-        qr_code: pixInfo?.qr_code || null,
-        qr_code_base64: pixInfo?.qr_code_base64 || null,
-        amount: Number(amount.toFixed(2)),
-        created_at: createdAt,
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return json({
+      reference_code: referenceCode,
+      payment_id: paymentData.id,
+      status: "pending",
+      qr_code: pixInfo?.payload || null,
+      qr_code_base64: pixInfo?.encodedImage || null,
+      amount: Number(amount.toFixed(2)),
+      created_at: createdAt,
+      provider: "asaas",
+    });
   } catch (err) {
     console.error("Error:", err);
-    return new Response(JSON.stringify({ error: "Erro interno" }), {
-      status: 500,
-      headers: corsHeaders,
-    });
+    return json({ error: "Erro interno" }, 500);
   }
 });
