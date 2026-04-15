@@ -14,7 +14,7 @@ import {
   Loader2, Zap
 } from "lucide-react";
 import WhatsAppButton from "@/components/WhatsAppButton";
-import OrderChat from "@/components/OrderChat";
+
 
 /* ── Helpers ── */
 const NavigationLinks = ({ addr }: { addr: string }) => {
@@ -710,13 +710,6 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                       </div>
                     )}
 
-                    <OrderChat
-                      orderId={order.id}
-                      storeName={(order as any).stores?.name || "Loja"}
-                      storeOwnerId={(order as any).stores?.owner_id}
-                      clientId={order.client_id}
-                      driverId={user?.id}
-                    />
                   </div>
                 )}
               </div>

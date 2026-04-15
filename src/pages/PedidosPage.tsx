@@ -10,7 +10,7 @@ import { ClipboardList, Clock, ChefHat, Truck, CheckCircle2, Lock, Copy, QrCode,
 import { toast } from "sonner";
 import { notifyOrderPreparing, notifyOrderOnTheWay, notifyOrderDelivered } from "@/lib/notifications";
 import OrderRating from "@/components/OrderRating";
-import OrderChat from "@/components/OrderChat";
+
 import DeliveryTimeEstimate from "@/components/DeliveryTimeEstimate";
 import LiveTrackingMap from "@/components/LiveTrackingMap";
 import CancelOrderModal from "@/components/CancelOrderModal";
@@ -660,19 +660,6 @@ const PedidosPage = () => {
                       </div>
                     ))}
                   </div>
-                  {/* Chat for active orders */}
-                  {!["aguardando_pagamento", "cancelado", "finalizado", "entregue"].includes(order.status) && (
-                    <div className="pt-1">
-                      <OrderChat
-                        orderId={order.id}
-                        storeName={ownStore.name}
-                        storeOwnerId={user?.id}
-                        clientId={order.client_id}
-                        driverId={order.driver_id}
-                        defaultOpen={searchParams.get("chat") === order.id}
-                      />
-                    </div>
-                  )}
                   <div className="flex items-center justify-between mt-3 pt-2 border-t border-border">
                     <span className="text-xs text-muted-foreground">
                       {new Date(order.created_at).toLocaleDateString("pt-BR")} {new Date(order.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
@@ -1019,19 +1006,6 @@ const PedidosPage = () => {
                           </div>
                         </div>
 
-                        {/* Chat */}
-                        {!["aguardando_pagamento", "cancelado", "finalizado", "entregue"].includes(order.status) && (
-                          <div className="pt-1">
-                          <OrderChat
-                              orderId={order.id}
-                              storeName={order.stores?.name || "Loja"}
-                              storeOwnerId={order.stores?.owner_id}
-                              clientId={order.client_id}
-                              driverId={order.driver_id}
-                              defaultOpen={(isNewOrder && orderIdx === 0) || searchParams.get("chat") === order.id}
-                            />
-                          </div>
-                        )}
 
                         {/* Cancel button for active orders (not aguardando_pagamento which has its own cancel) */}
                         {["pendente", "preparando", "pronto_para_entrega"].includes(order.status) && (
@@ -1101,15 +1075,6 @@ const PedidosPage = () => {
 
                       {/* Actions */}
                       <div className="px-4 pb-3 flex items-center gap-2">
-                        {!["cancelado"].includes(order.status) && (
-                          <OrderChat
-                            orderId={order.id}
-                            storeName={order.stores?.name || "Loja"}
-                            storeOwnerId={order.stores?.owner_id}
-                            clientId={order.client_id}
-                            driverId={order.driver_id}
-                          />
-                        )}
                         {["entregue", "finalizado"].includes(order.status) && (
                           <button
                             onClick={() => {
