@@ -1098,6 +1098,8 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory }: Product
       </div>
     </button>
   );
-};
+});
+
+ProductCard.displayName = "ProductCard";
 
 export default StorePage;
