@@ -397,8 +397,8 @@ const ClientHomeContent = () => {
                       <p className="text-sm font-bold text-foreground truncate">{store.name}</p>
                       <p className="text-xs text-muted-foreground capitalize">{store.category?.replace(/_/g, " ")}</p>
                     </div>
-                    <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${store.is_open ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}>
-                      {store.is_open ? "Aberta" : "Fechada"}
+                    <div className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${store.realIsOpen ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}>
+                      {store.realIsOpen ? "Aberta" : "Fechada"}
                     </div>
                     <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                   </button>
