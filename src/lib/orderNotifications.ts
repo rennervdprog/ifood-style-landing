@@ -127,6 +127,8 @@ export const notifyOrderStatusChange = (
   }
 
   // Manual WhatsApp only if Z-API is NOT enabled
+  // NOTE: openWhatsApp must be called synchronously (no setTimeout)
+  // to avoid browser popup blockers on mobile devices
   if (
     !options?.zapiEnabled &&
     params.clientPhone &&
@@ -134,7 +136,6 @@ export const notifyOrderStatusChange = (
     WHATSAPP_STATUSES.has(newStatus)
   ) {
     const msg = config.whatsApp(params);
-    const delay = options?.delayWhatsApp ?? 600;
-    setTimeout(() => openWhatsApp(params.clientPhone, msg), delay);
+    openWhatsApp(params.clientPhone, msg);
   }
 };
