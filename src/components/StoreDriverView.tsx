@@ -115,14 +115,14 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   const multiStore = linkedStoreIds.length > 1;
 
   // Fetch store names
-  const { data: storeNames } = useQuery({
+  const { data: storeNames } = useQuery<{id: string; name: string}[]>({
     queryKey: ["store-driver-store-names", linkedStoreIds],
     queryFn: async () => {
       const { data } = await supabase
-        .from("stores")
+        .from("stores_driver_view" as any)
         .select("id, name")
         .in("id", linkedStoreIds);
-      return data || [];
+      return (data as any) || [];
     },
     enabled: linkedStoreIds.length > 0,
   });
