@@ -320,6 +320,46 @@ const ClientHomeContent = () => {
     staleTime: 1000 * 60,
   });
 
+  const hasOrders = (recentOrders && recentOrders.length > 0);
+
+  // Suggested stores for new users (no orders yet), filtered by city
+  const { data: suggestedStores } = useQuery({
+    queryKey: ["suggested-stores", profile?.city],
+    queryFn: async () => {
+      let query = supabase
+        .from("stores_public")
+        .select("id, name, image_url, slug, category, is_open, force_closed, rating")
+        .eq("status", "ativo")
+        .limit(8);
+
+      // Filter by user's city if available
+      if (profile?.city) {
+        query = query.ilike("address_city", `%${profile.city}%`);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      // Fetch opening hours
+      const storeIds = (data || []).map((s: any) => s.id);
+      if (storeIds.length === 0) return [];
+      const { data: allHours } = await supabase
+        .from("opening_hours")
+        .select("store_id, day_of_week, open_time, close_time, is_closed_all_day")
+        .in("store_id", storeIds);
+
+      return (data || []).map((store: any) => {
+        const hours = (allHours || []).filter((h: any) => h.store_id === store.id) as OpeningHour[];
+        const status = getStoreOpenStatus(hours, store.force_closed || false, store.is_open);
+        return { ...store, realIsOpen: status.isOpen, statusReason: status.reason };
+      }).sort((a: any, b: any) => (a.realIsOpen === b.realIsOpen ? 0 : a.realIsOpen ? -1 : 1));
+    },
+    enabled: !hasOrders && !!profile,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const showSuggestions = searchFocused && !searchQuery && !hasOrders && suggestedStores && suggestedStores.length > 0;
+
   const lastStores = recentOrders
     ? Array.from(new Map(recentOrders.map((o: any) => [o.stores?.id, o.stores])).values()).filter(Boolean).slice(0, 5)
     : [];
