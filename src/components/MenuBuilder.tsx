@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   Plus, Trash2, Edit2, ChevronDown, ChevronUp, GripVertical,
-  Package, Save, X, Link2, Upload, Loader2, Pause, Play, ArrowRightLeft
+  Package, Save, X, Link2, Upload, Loader2, Pause, Play, ArrowRightLeft, Layers
 } from "lucide-react";
 
 import CategoryProductFields from "@/components/CategoryProductFields";
