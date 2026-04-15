@@ -1943,28 +1943,7 @@ const AdminDashboard = () => {
                           </div>
                         </div>
 
-                        {/* Required addons highlight - outside items box */}
-                        {(() => {
-                          const allRequired: { itemName: string; groupName: string; addonName: string }[] = [];
-                          order.order_items?.forEach((item: any) => {
-                            const rawAddons = item.addons;
-                            const addons: any[] = Array.isArray(rawAddons) ? rawAddons : (typeof rawAddons === 'string' ? (() => { try { return JSON.parse(rawAddons); } catch { return []; } })() : []);
-                            addons.filter((a: any) => a.required && a.groupName).forEach((a: any) => {
-                              allRequired.push({ itemName: item.quantity > 1 ? `${item.quantity}x ${getOrderItemDisplayName(item)}` : getOrderItemDisplayName(item), groupName: a.groupName, addonName: a.name });
-                            });
-                          });
-                          if (allRequired.length === 0) return null;
-                          return (
-                            <div className="mx-3 mb-1.5 flex flex-wrap gap-1.5">
-                              {allRequired.map((r, idx) => (
-                                <div key={idx} className="flex items-center gap-1 bg-amber-100 dark:bg-amber-900/50 border border-amber-400 dark:border-amber-600 rounded-lg px-2.5 py-1">
-                                  <span className="text-amber-600 dark:text-amber-400 font-semibold text-xs">{r.groupName}</span>
-                                  <span className="text-amber-700 dark:text-amber-300 font-black text-xs">→ {r.addonName.toUpperCase()}</span>
-                                </div>
-                              ))}
-                            </div>
-                          );
-                        })()}
+                        <RequiredAddonHighlights highlights={getRequiredAddonHighlights(order)} />
 
                         {/* Items - compact */}
                         <div className="mx-3 mb-2 bg-muted/50 rounded-xl px-3 py-2 space-y-0.5">
@@ -1974,8 +1953,7 @@ const AdminDashboard = () => {
                             </div>
                           ))}
                           {order.order_items?.map((item: any) => {
-                            const rawAddons = item.addons;
-                            const addons: any[] = Array.isArray(rawAddons) ? rawAddons : (typeof rawAddons === 'string' ? (() => { try { return JSON.parse(rawAddons); } catch { return []; } })() : []);
+                            const addons = parseOrderAddons(item.addons);
                             if (!addons || addons.length === 0) return null;
                             const optionalAddons = addons.filter((a: any) => !a.required);
                             return (
