@@ -866,7 +866,7 @@ const categoryEmoji: Record<string, string> = {
   docerias: "🧁", saudavel: "🥗",
 };
 
-const ProductCard = ({ product, disabled, onClick, storeCategory }: ProductCardProps) => {
+const ProductCard = memo(({ product, disabled, onClick, storeCategory }: ProductCardProps) => {
   const meta = product.metadata || {};
   const cat = storeCategory || "";
   const isBeverage = !!meta.is_beverage;
@@ -1086,6 +1086,9 @@ const ProductCard = ({ product, disabled, onClick, storeCategory }: ProductCardP
             alt={product.name}
             className="w-24 h-24 rounded-xl object-cover shadow-sm group-hover:shadow-md transition-shadow"
             loading="lazy"
+            decoding="async"
+            width={96}
+            height={96}
           />
         ) : (
           <div className="w-24 h-24 rounded-xl bg-muted flex items-center justify-center">
