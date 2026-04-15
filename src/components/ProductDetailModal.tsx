@@ -59,6 +59,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
   const [selectedDrinkSize, setSelectedDrinkSize] = useState<string | null>(null);
   const [selectedMilk, setSelectedMilk] = useState<string | null>(null);
   const [wantIced, setWantIced] = useState(false);
+  const [showRequiredWarning, setShowRequiredWarning] = useState(false);
 
   const resetState = () => {
     setSelectedAddons({});
@@ -623,6 +624,16 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
             </div>
           )}
 
+          {/* Required warning */}
+          {showRequiredWarning && !allRequiredMet && (
+            <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-3 flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
+              <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0" />
+              <span className="text-xs font-bold text-destructive">
+                Selecione os adicionais obrigatórios antes de adicionar ao carrinho
+              </span>
+            </div>
+          )}
+
           {/* Observations */}
           <div>
             <label className="text-sm font-bold text-foreground mb-1.5 block">Observações</label>
@@ -656,8 +667,12 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
             </div>
 
             <button
-              disabled={!allRequiredMet}
               onClick={() => {
+                if (!allRequiredMet) {
+                  setShowRequiredWarning(true);
+                  setTimeout(() => setShowRequiredWarning(false), 3000);
+                  return;
+                }
                 onAdd(product, buildCartAddons(), observations, quantity, unitPrice);
                 onClose();
                 resetState();
@@ -665,7 +680,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
               className={`flex-1 py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95 ${
                 allRequiredMet
                   ? "bg-primary text-primary-foreground shadow-lg"
-                  : "bg-muted text-muted-foreground cursor-not-allowed"
+                  : "bg-muted text-muted-foreground"
               }`}
             >
               <ShoppingCart className="h-4 w-4" />

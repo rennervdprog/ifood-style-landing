@@ -213,27 +213,38 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
             className="w-full bg-secondary text-foreground px-3 py-2.5 rounded-lg text-sm border border-border focus:border-primary focus:outline-none"
             autoFocus
           />
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <label className="text-xs text-muted-foreground/70 mb-1 block">Mínimo de seleções</label>
-              <input
-                type="number"
-                value={groupForm.min_select}
-                onChange={(e) => setGroupForm({ ...groupForm, min_select: e.target.value })}
-                className="w-full bg-secondary text-foreground px-3 py-2 rounded-lg text-sm border border-border focus:outline-none"
-                min="0"
-              />
+          {/* Toggle obrigatório */}
+          <button
+            type="button"
+            onClick={() => setGroupForm({ ...groupForm, min_select: groupForm.min_select === "0" ? "1" : "0" })}
+            className={`w-full flex items-center justify-between py-3 px-4 rounded-xl border-2 transition-all ${
+              groupForm.min_select !== "0"
+                ? "bg-primary/10 border-primary"
+                : "bg-muted/50 border-transparent"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold text-foreground">
+                {groupForm.min_select !== "0" ? "Obrigatório" : "Opcional"}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {groupForm.min_select !== "0" ? "Cliente precisa selecionar" : "Cliente pode pular"}
+              </span>
             </div>
-            <div className="flex-1">
-              <label className="text-xs text-muted-foreground/70 mb-1 block">Máximo de seleções</label>
-              <input
-                type="number"
-                value={groupForm.max_select}
-                onChange={(e) => setGroupForm({ ...groupForm, max_select: e.target.value })}
-                className="w-full bg-secondary text-foreground px-3 py-2 rounded-lg text-sm border border-border focus:outline-none"
-                min="1"
-              />
+            <div className={`w-11 h-6 rounded-full transition-colors relative ${groupForm.min_select !== "0" ? "bg-primary" : "bg-muted-foreground/30"}`}>
+              <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform shadow ${groupForm.min_select !== "0" ? "translate-x-5" : "translate-x-0.5"}`} />
             </div>
+          </button>
+
+          <div className="flex-1">
+            <label className="text-xs text-muted-foreground/70 mb-1 block">Máximo de seleções</label>
+            <input
+              type="number"
+              value={groupForm.max_select}
+              onChange={(e) => setGroupForm({ ...groupForm, max_select: e.target.value })}
+              className="w-full bg-secondary text-foreground px-3 py-2 rounded-lg text-sm border border-border focus:outline-none"
+              min="1"
+            />
           </div>
 
           {/* Bulk import inside group creation */}
@@ -319,25 +330,28 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                         className="w-full bg-secondary text-foreground px-3 py-2 rounded-lg text-sm border border-primary focus:outline-none"
                         autoFocus
                       />
-                      <div className="flex gap-2">
-                        <div className="flex-1">
-                          <label className="text-[10px] text-muted-foreground/70">Mín</label>
-                          <input
-                            type="number"
-                            value={editGroupForm.min_select}
-                            onChange={(e) => setEditGroupForm({ ...editGroupForm, min_select: e.target.value })}
-                            className="w-full bg-secondary text-foreground px-2 py-1 rounded text-xs border border-border"
-                          />
+                      <button
+                        type="button"
+                        onClick={() => setEditGroupForm({ ...editGroupForm, min_select: editGroupForm.min_select === "0" ? "1" : "0" })}
+                        className={`w-full flex items-center justify-between py-2 px-3 rounded-lg border transition-all text-left ${
+                          editGroupForm.min_select !== "0" ? "bg-primary/10 border-primary" : "bg-muted/50 border-transparent"
+                        }`}
+                      >
+                        <span className="text-xs font-bold text-foreground">
+                          {editGroupForm.min_select !== "0" ? "Obrigatório" : "Opcional"}
+                        </span>
+                        <div className={`w-9 h-5 rounded-full transition-colors relative ${editGroupForm.min_select !== "0" ? "bg-primary" : "bg-muted-foreground/30"}`}>
+                          <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-transform shadow ${editGroupForm.min_select !== "0" ? "translate-x-4" : "translate-x-0.5"}`} />
                         </div>
-                        <div className="flex-1">
-                          <label className="text-[10px] text-muted-foreground/70">Máx</label>
-                          <input
-                            type="number"
-                            value={editGroupForm.max_select}
-                            onChange={(e) => setEditGroupForm({ ...editGroupForm, max_select: e.target.value })}
-                            className="w-full bg-secondary text-foreground px-2 py-1 rounded text-xs border border-border"
-                          />
-                        </div>
+                      </button>
+                      <div className="flex-1">
+                        <label className="text-[10px] text-muted-foreground/70">Máx seleções</label>
+                        <input
+                          type="number"
+                          value={editGroupForm.max_select}
+                          onChange={(e) => setEditGroupForm({ ...editGroupForm, max_select: e.target.value })}
+                          className="w-full bg-secondary text-foreground px-2 py-1 rounded text-xs border border-border"
+                        />
                       </div>
                       <div className="flex gap-1">
                         <button onClick={() => updateGroup(group.id)} className="bg-primary text-primary-foreground px-3 py-1.5 rounded-lg text-xs font-bold">
