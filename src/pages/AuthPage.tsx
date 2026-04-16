@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Mail, Lock, Eye, EyeOff, KeyRound, FileText, ShoppingBag, CheckCircle2, Zap, Check, X } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, KeyRound, FileText, ShoppingBag, CheckCircle2, Zap, Check, X, Phone } from "lucide-react";
+import { maskWhatsApp } from "@/lib/whatsapp";
 import { isPartnerCapacitorApp } from "@/lib/capacitorAppMode";
 
 type AuthMode = "login" | "signup" | "forgot" | "reset";
