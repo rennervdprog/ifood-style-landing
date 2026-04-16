@@ -86,6 +86,8 @@ const OrderReceipt = forwardRef<HTMLDivElement, OrderReceiptProps>(
               try { rawAddons = JSON.parse(rawAddons); } catch { rawAddons = []; }
             }
             const addons = Array.isArray(rawAddons) ? rawAddons : [];
+            const addonsTotal = addons.reduce((s: number, a: any) => s + (Number(a?.price) || 0), 0);
+            const baseUnitPrice = item.unit_price - addonsTotal;
             const requiredAddons = addons.filter((a: any) => a?.required && a?.groupName);
             const optionalAddons = addons.filter((a: any) => !(a?.required && a?.groupName));
             const halfAddons = optionalAddons.filter((a: any) => typeof a?.name === "string" && a.name.startsWith("½ "));
@@ -97,7 +99,7 @@ const OrderReceipt = forwardRef<HTMLDivElement, OrderReceiptProps>(
                   <span style={{ fontWeight: "bold" }}>
                     {item.quantity}x {getOrderItemDisplayName(item)}
                   </span>
-                  <span>{formatBRL((item.unit_price * item.quantity))}</span>
+                  <span>{formatBRL(baseUnitPrice * item.quantity)}</span>
                 </div>
 
                 {/* Required addons - highlighted, name and value side by side */}

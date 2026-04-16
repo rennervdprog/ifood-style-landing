@@ -53,15 +53,17 @@ export function printThermalReceipt(
 
   let itemsHtml = "";
   order.order_items?.forEach((item) => {
-    const lineTotal = (item.unit_price * item.quantity).toFixed(2);
     const displayName = getOrderItemDisplayName(item);
-    itemsHtml += `<div class="tp-item-row"><span><b>${item.quantity}x</b> ${displayName}</span><span>R$ ${lineTotal}</span></div>`;
 
     let rawAddons = item.addons as any;
     if (typeof rawAddons === "string") {
       try { rawAddons = JSON.parse(rawAddons); } catch { rawAddons = []; }
     }
     const addons = Array.isArray(rawAddons) ? rawAddons : [];
+    const addonsTotal = addons.reduce((s: number, a: any) => s + (Number(a?.price) || 0), 0);
+    const baseUnitPrice = item.unit_price - addonsTotal;
+    const lineTotal = (baseUnitPrice * item.quantity).toFixed(2);
+    itemsHtml += `<div class="tp-item-row"><span><b>${item.quantity}x</b> ${displayName}</span><span>R$ ${lineTotal}</span></div>`;
 
     if (addons.length > 0) {
       const requiredAddons = addons.filter((a: any) => a.required && a.groupName);
