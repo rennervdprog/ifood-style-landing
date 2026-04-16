@@ -203,25 +203,56 @@ const ModeratorManager = () => {
             <input placeholder="E-mail" value={email} onChange={e => setEmail(e.target.value)} className="bg-muted border border-border rounded-xl px-3 py-2 text-sm text-foreground" />
             <input placeholder="Telefone" value={phone} onChange={e => setPhone(e.target.value)} className="bg-muted border border-border rounded-xl px-3 py-2 text-sm text-foreground" />
           </div>
-          <div className="grid grid-cols-3 gap-2">
-            <div>
-              <label className="text-xs text-muted-foreground">% Mensalidade</label>
-              <input type="number" value={planFeePercent} onChange={e => setPlanFeePercent(Number(e.target.value))} className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-sm text-foreground" />
+          {/* Per-plan config */}
+          <div className="space-y-3">
+            {/* Essencial */}
+            <div className="bg-muted/50 border border-border rounded-xl p-3 space-y-2">
+              <p className="text-xs font-bold text-foreground">📋 Plano Essencial (R$180/mês)</p>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] text-muted-foreground">% da Mensalidade</label>
+                  <input type="number" value={essencialPlanFee} onChange={e => setEssencialPlanFee(Number(e.target.value))} className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-sm text-foreground" />
+                  <p className="text-[10px] text-muted-foreground mt-0.5">= {formatBRL(180 * essencialPlanFee / 100)}</p>
+                </div>
+                <div>
+                  <label className="text-[10px] text-muted-foreground">R$ por Entrega</label>
+                  <input type="number" step="0.5" value={essencialDelivery} onChange={e => setEssencialDelivery(Number(e.target.value))} className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-sm text-foreground" />
+                </div>
+              </div>
+              <p className="text-[10px] text-muted-foreground">Comissão: ❌ (não tem)</p>
             </div>
-            <div>
-              <label className="text-xs text-muted-foreground">R$ Entrega</label>
-              <input type="number" step="0.5" value={deliverySplit} onChange={e => setDeliverySplit(Number(e.target.value))} className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-sm text-foreground" />
+
+            {/* Crescimento */}
+            <div className="bg-muted/50 border border-border rounded-xl p-3 space-y-2">
+              <p className="text-xs font-bold text-foreground">📈 Plano Crescimento (R$100/mês + 2.5%)</p>
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="text-[10px] text-muted-foreground">% da Mensalidade</label>
+                  <input type="number" value={crescimentoPlanFee} onChange={e => setCrescimentoPlanFee(Number(e.target.value))} className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-sm text-foreground" />
+                  <p className="text-[10px] text-muted-foreground mt-0.5">= {formatBRL(100 * crescimentoPlanFee / 100)}</p>
+                </div>
+                <div>
+                  <label className="text-[10px] text-muted-foreground">% do Pedido</label>
+                  <input type="number" step="0.5" value={crescimentoCommission} onChange={e => setCrescimentoCommission(Number(e.target.value))} className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-sm text-foreground" />
+                </div>
+                <div>
+                  <label className="text-[10px] text-muted-foreground">R$ por Entrega</label>
+                  <input type="number" step="0.5" value={crescimentoDelivery} onChange={e => setCrescimentoDelivery(Number(e.target.value))} className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-sm text-foreground" />
+                </div>
+              </div>
             </div>
-            <div>
-              <label className="text-xs text-muted-foreground">% Comissão</label>
-              <input type="number" step="0.5" value={commissionSplitPercent} onChange={e => setCommissionSplitPercent(Number(e.target.value))} className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-sm text-foreground" />
+
+            {/* Comissão */}
+            <div className="bg-muted/50 border border-border rounded-xl p-3 space-y-2">
+              <p className="text-xs font-bold text-foreground">💰 Plano Comissão (5%)</p>
+              <div className="grid grid-cols-1 gap-2">
+                <div>
+                  <label className="text-[10px] text-muted-foreground">% do Pedido</label>
+                  <input type="number" step="0.5" value={comissaoCommission} onChange={e => setComissaoCommission(Number(e.target.value))} className="w-full bg-muted border border-border rounded-xl px-3 py-2 text-sm text-foreground" />
+                </div>
+              </div>
+              <p className="text-[10px] text-muted-foreground">Mensalidade: ❌ | Entrega: ❌</p>
             </div>
-          </div>
-          <div className="text-xs text-muted-foreground space-y-1">
-            <p className="font-semibold text-foreground">Exemplos por plano:</p>
-            <p>📋 <strong>Essencial</strong> R$180/mês → moderador recebe {planFeePercent}% = {formatBRL(180 * planFeePercent / 100)} + R${deliverySplit.toFixed(2)}/entrega</p>
-            <p>📈 <strong>Crescimento</strong> R$100/mês + 2.5% → moderador recebe {planFeePercent}% = {formatBRL(100 * planFeePercent / 100)} + {commissionSplitPercent}% do pedido</p>
-            <p>💰 <strong>Comissão</strong> 5% → moderador recebe {commissionSplitPercent}% do pedido</p>
           </div>
           <button onClick={handleAdd} disabled={saving} className="bg-primary text-primary-foreground px-6 py-2 rounded-xl text-sm font-bold w-full">
             {saving ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "Criar Moderador"}
