@@ -207,6 +207,27 @@ const ClientAuth = ({ onSuccess }: { onSuccess: () => void }) => {
                     </div>
                   </div>
                 )}
+                {mode === "signup" && (
+                  <div>
+                    <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">WhatsApp</label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      <input
+                        type="tel"
+                        inputMode="numeric"
+                        placeholder="+55 15 99999-9999"
+                        value={whatsapp ? maskWhatsApp(whatsapp) : ""}
+                        onChange={(e) => {
+                          const digits = e.target.value.replace(/\D/g, "");
+                          const local = digits.startsWith("55") && digits.length > 11 ? digits.slice(2) : digits;
+                          setWhatsapp(local.slice(0, 11));
+                        }}
+                        maxLength={19}
+                        className={inputClass}
+                      />
+                    </div>
+                  </div>
+                )}
                 {mode === "login" && (
                   <div className="flex items-center justify-between">
                     <label className="flex items-center gap-2 cursor-pointer select-none">
