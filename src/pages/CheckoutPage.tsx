@@ -5,6 +5,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { pushNotifyNewOrder } from "@/lib/notifications";
 import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Edit3, Loader2, Truck, CheckCircle2, ShoppingBag, Tag, ChevronRight, Clock, AlertTriangle, Star, Wallet, Calendar, Store } from "lucide-react";
 import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 import confetti from "canvas-confetti";
@@ -335,6 +336,21 @@ const CheckoutPage = () => {
           });
           if (couponError) {
             console.warn("Coupon usage error:", couponError.message);
+          }
+        }
+      }
+
+      // Send push notification to store owner(s) for non-PIX orders (pendente)
+      // For PIX, notification will be sent when payment is confirmed
+      if (paymentMethod !== "pix") {
+        for (const [storeId] of Object.entries(storeGroups)) {
+          const { data: storeData } = await supabase
+            .from("stores")
+            .select("owner_id")
+            .eq("id", storeId)
+            .single();
+          if (storeData?.owner_id) {
+            pushNotifyNewOrder([storeData.owner_id], storeId).catch(console.error);
           }
         }
       }
