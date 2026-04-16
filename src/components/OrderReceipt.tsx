@@ -81,7 +81,11 @@ const OrderReceipt = forwardRef<HTMLDivElement, OrderReceiptProps>(
         {/* Items */}
         <div style={{ marginBottom: "6px" }}>
           {order.order_items?.map((item) => {
-            const addons = Array.isArray(item.addons) ? item.addons : [];
+            let rawAddons = item.addons;
+            if (typeof rawAddons === "string") {
+              try { rawAddons = JSON.parse(rawAddons); } catch { rawAddons = []; }
+            }
+            const addons = Array.isArray(rawAddons) ? rawAddons : [];
             const requiredAddons = addons.filter((a: any) => a?.required && a?.groupName);
             const optionalAddons = addons.filter((a: any) => !(a?.required && a?.groupName));
             const halfAddons = optionalAddons.filter((a: any) => typeof a?.name === "string" && a.name.startsWith("½ "));
@@ -96,37 +100,39 @@ const OrderReceipt = forwardRef<HTMLDivElement, OrderReceiptProps>(
                   <span>{formatBRL((item.unit_price * item.quantity))}</span>
                 </div>
 
-                {/* Required addons - highlighted */}
+                {/* Required addons - highlighted, name and value side by side */}
                 {requiredAddons.length > 0 && (
                   <div style={{ paddingLeft: "8px", fontSize: "12px", marginTop: "2px" }}>
                     {requiredAddons.map((addon: any, i: number) => (
-                      <p key={`req-${i}`} style={{
+                      <div key={`req-${i}`} style={{
+                        display: "flex",
+                        justifyContent: "space-between",
                         margin: "2px 0",
                         fontWeight: "bold",
                         borderLeft: "3px solid #000",
                         paddingLeft: "6px",
                       }}>
-                        ★ {addon.groupName}: {addon.name.toUpperCase()}
-                        {addon.price > 0 ? ` (${formatBRL(Number(addon.price))})` : ""}
-                      </p>
+                        <span>★ {addon.groupName}: {addon.name.toUpperCase()}</span>
+                        <span>{Number(addon.price) > 0 ? formatBRL(Number(addon.price)) : ""}</span>
+                      </div>
                     ))}
                   </div>
                 )}
 
-                {/* Optional addons */}
+                {/* Optional addons - name and value side by side */}
                 {(halfAddons.length > 0 || otherAddons.length > 0) && (
                   <div style={{ paddingLeft: "12px", fontSize: "11px" }}>
                     {halfAddons.map((addon: any, i: number) => (
-                      <p key={`half-${i}`} style={{ margin: "1px 0" }}>
-                        + 1½/ {addon.name.replace("½ ", "")}
-                        {addon.price > 0 ? ` (${formatBRL(Number(addon.price))})` : ""}
-                      </p>
+                      <div key={`half-${i}`} style={{ display: "flex", justifyContent: "space-between", margin: "1px 0" }}>
+                        <span>+ ½ {addon.name.replace("½ ", "")}</span>
+                        <span>{Number(addon.price) > 0 ? formatBRL(Number(addon.price)) : ""}</span>
+                      </div>
                     ))}
                     {otherAddons.map((addon: any, i: number) => (
-                      <p key={`addon-${i}`} style={{ margin: "1px 0" }}>
-                        + {addon.name}
-                        {addon.price > 0 ? ` (${formatBRL(Number(addon.price))})` : ""}
-                      </p>
+                      <div key={`addon-${i}`} style={{ display: "flex", justifyContent: "space-between", margin: "1px 0" }}>
+                        <span>+ {addon.name}</span>
+                        <span>{Number(addon.price) > 0 ? formatBRL(Number(addon.price)) : ""}</span>
+                      </div>
                     ))}
                   </div>
                 )}
