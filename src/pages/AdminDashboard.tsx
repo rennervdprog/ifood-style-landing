@@ -324,20 +324,6 @@ const AdminDashboard = () => {
 
   const prevPendingCountRef = useRef(0);
 
-  const refreshDashboardOrders = useCallback(async () => {
-    if (!store?.id) return;
-
-    await Promise.allSettled([
-      queryClient.invalidateQueries({ queryKey: ["my-store", user?.id, activeSimulateStoreId] }),
-      queryClient.invalidateQueries({ queryKey: ["store-orders", store.id] }),
-      queryClient.invalidateQueries({ queryKey: ["store-all-orders", store.id] }),
-      queryClient.invalidateQueries({ queryKey: ["store-hours-check", store.id] }),
-      queryClient.invalidateQueries({ queryKey: ["store-drivers-list", store.id] }),
-      queryClient.invalidateQueries({ queryKey: ["client-profiles", store.id] }),
-      queryClient.invalidateQueries({ queryKey: ["online-drivers-count"] }),
-    ]);
-  }, [activeSimulateStoreId, queryClient, store?.id, user?.id]);
-
   const toggleAddress = (orderId: string) => {
     setExpandedAddresses(prev => {
       const next = new Set(prev);
@@ -401,6 +387,20 @@ const AdminDashboard = () => {
   });
 
   const storePlan = useStorePlan(store?.id);
+
+  const refreshDashboardOrders = useCallback(async () => {
+    if (!store?.id) return;
+
+    await Promise.allSettled([
+      queryClient.invalidateQueries({ queryKey: ["my-store", user?.id, activeSimulateStoreId] }),
+      queryClient.invalidateQueries({ queryKey: ["store-orders", store.id] }),
+      queryClient.invalidateQueries({ queryKey: ["store-all-orders", store.id] }),
+      queryClient.invalidateQueries({ queryKey: ["store-hours-check", store.id] }),
+      queryClient.invalidateQueries({ queryKey: ["store-drivers-list", store.id] }),
+      queryClient.invalidateQueries({ queryKey: ["client-profiles", store.id] }),
+      queryClient.invalidateQueries({ queryKey: ["online-drivers-count"] }),
+    ]);
+  }, [activeSimulateStoreId, queryClient, store?.id, user?.id]);
 
   
 
