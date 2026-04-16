@@ -1,0 +1,22 @@
+CREATE OR REPLACE VIEW public.stores_driver_view AS
+SELECT id,
+    name,
+    slug,
+    image_url,
+    category,
+    is_open,
+    force_closed,
+    status,
+    delivery_mode,
+    own_delivery_fee,
+    address_cep,
+    address_city,
+    address_neighborhood,
+    address_street,
+    address_number,
+    address_complement,
+    address_reference,
+    address_state,
+    latitude,
+    longitude
+   FROM stores;

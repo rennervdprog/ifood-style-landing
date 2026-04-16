@@ -2521,6 +2521,8 @@ export type Database = {
           id: string | null
           image_url: string | null
           is_open: boolean | null
+          latitude: number | null
+          longitude: number | null
           name: string | null
           own_delivery_fee: number | null
           slug: string | null
@@ -2541,6 +2543,8 @@ export type Database = {
           id?: string | null
           image_url?: string | null
           is_open?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
           name?: string | null
           own_delivery_fee?: number | null
           slug?: string | null
@@ -2561,6 +2565,8 @@ export type Database = {
           id?: string | null
           image_url?: string | null
           is_open?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
           name?: string | null
           own_delivery_fee?: number | null
           slug?: string | null
