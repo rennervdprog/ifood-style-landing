@@ -487,7 +487,9 @@ const CadastroLojista = () => {
 
                 {selectedPlan && (
                   <div className="rounded-xl bg-muted/50 p-3 text-xs text-muted-foreground">
-                    {selectedPlan === "fixed" ? (
+                    {selectedPlan === "supporter" ? (
+                      <p><strong className="text-foreground">Apoiadores (Lançamento):</strong> R$130/mês com as <strong className="text-foreground">mesmas regras do Essencial</strong> (zero comissão, todas as ferramentas, R$1 por pedido PIX, R$2 na entrega paga pelo cliente). Preço de lançamento limitado às primeiras 10 lojas — congelado para sempre enquanto a assinatura estiver ativa.</p>
+                    ) : selectedPlan === "fixed" ? (
                       <p><strong className="text-foreground">Essencial:</strong> R$180/mês sem comissão por pedido. Inclui uma pequena taxa operacional de <strong className="text-foreground">R$1 por pedido pago via PIX</strong> (pedidos em dinheiro/cartão não pagam) e <strong className="text-foreground">R$2 na taxa de entrega (pago pelo cliente)</strong>. Valores acumulam no painel para repasse semanal. Todas as ferramentas inclusas.</p>
                     ) : selectedPlan === "hybrid" ? (
                       <p><strong className="text-foreground">Crescimento:</strong> Mensalidade de R$100 + 2,5% por pedido. PIX integrado com split automático e painel financeiro completo com CRM.</p>
