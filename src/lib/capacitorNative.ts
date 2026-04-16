@@ -12,6 +12,24 @@ let resolveRegistration: ((value: string | null) => void) | null = null;
 let registrationTimeoutId: number | null = null;
 let lastKnownToken: string | null = null;
 
+/**
+ * Global queue for notification tap navigation.
+ * Stores the target path so PushNavigator can replay it once React Router is ready.
+ */
+let pendingPushNavigation: string | null = null;
+
+/** Get and clear the pending push navigation path */
+export function consumePendingPushNavigation(): string | null {
+  const path = pendingPushNavigation;
+  pendingPushNavigation = null;
+  return path;
+}
+
+/** Check if there's a pending push navigation */
+export function hasPendingPushNavigation(): boolean {
+  return pendingPushNavigation !== null;
+}
+
 export function isCapacitorNative(): boolean {
   return Capacitor.isNativePlatform();
 }
