@@ -270,6 +270,14 @@ const CadastroLojista = () => {
         </div>
       </header>
 
+      {/* Referral Banner */}
+      {referralCode && (
+        <div className="mx-4 mt-2 bg-accent/20 border border-accent rounded-xl px-4 py-2 text-xs text-accent-foreground flex items-center gap-2">
+          <Users className="h-4 w-4" />
+          <span>Cadastro via indicação: <span className="font-bold font-mono">{referralCode}</span></span>
+        </div>
+      )}
+
       {/* Stepper */}
       <div className="px-6 pt-5 pb-2">
         <div className="flex items-center justify-between gap-2">
