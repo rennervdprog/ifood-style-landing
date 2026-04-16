@@ -171,6 +171,27 @@ const PedidosPage = () => {
 
   const storeFilter = searchParams.get("store");
 
+  // Refetch orders when Capacitor app resumes from background
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    const handler = (state: { isActive: boolean }) => {
+      if (state.isActive && user) {
+        queryClient.invalidateQueries({ queryKey: ["orders", user.id] });
+        if (ownStore?.id && isLojista) {
+          queryClient.invalidateQueries({ queryKey: ["store-orders-lojista", ownStore.id] });
+        }
+      }
+    };
+    import("@capacitor/app").then(({ App }) => {
+      App.addListener("appStateChange", handler);
+    });
+    return () => {
+      import("@capacitor/app").then(({ App }) => {
+        App.removeAllListeners();
+      });
+    };
+  }, [user, ownStore?.id, isLojista, queryClient]);
+
   // Client orders (for clients and lojistas viewing as client)
   const { data: orders, isLoading } = useQuery({
     queryKey: ["orders", user?.id, storeFilter],
@@ -189,6 +210,7 @@ const PedidosPage = () => {
       return data;
     },
     enabled: !!user && !isLojista,
+    refetchOnMount: "always",
     refetchInterval: (query) => {
       const data = query.state.data as any[] | undefined;
       return data?.some((o: any) => o.status === "aguardando_pagamento") ? 5000 : false;
