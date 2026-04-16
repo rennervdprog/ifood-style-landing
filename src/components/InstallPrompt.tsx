@@ -15,8 +15,8 @@ const InstallPrompt = () => {
   const [showIOSGuide, setShowIOSGuide] = useState(false);
 
   useEffect(() => {
-    // Don't show inside GoNative native app
-    if (isGoNative()) return;
+    // Don't show inside GoNative or Capacitor native app
+    if (isGoNative() || isCapacitorNative()) return;
 
     // Don't show in iframe/preview
     try {
