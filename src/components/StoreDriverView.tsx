@@ -200,13 +200,13 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
 
   const multiStore = linkedStoreIds.length > 1;
 
-  // Fetch store names
-  const { data: storeNames } = useQuery<{id: string; name: string}[]>({
+  // Fetch store names and coordinates
+  const { data: storeNames } = useQuery<{id: string; name: string; latitude: number | null; longitude: number | null}[]>({
     queryKey: ["store-driver-store-names", linkedStoreIds],
     queryFn: async () => {
       const { data } = await supabase
         .from("stores_driver_view" as any)
-        .select("id, name")
+        .select("id, name, latitude, longitude")
         .in("id", linkedStoreIds);
       return (data as any) || [];
     },
