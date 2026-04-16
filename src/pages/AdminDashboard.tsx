@@ -1242,7 +1242,7 @@ const AdminDashboard = () => {
             </div>
           </div>
           <div className="flex items-center gap-1.5">
-            {showSoundPrompt && !soundEnabled && (
+            {showSoundPrompt && !soundEnabled && !Capacitor.isNativePlatform() && (
               <button onClick={activateSound}
                 className="flex items-center gap-1 bg-amber-400/10 border border-amber-400/30 text-amber-500 px-2.5 py-1.5 rounded-xl text-[11px] font-bold animate-pulse">
                 <Bell className="h-3.5 w-3.5" /> Alertas
