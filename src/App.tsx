@@ -56,6 +56,36 @@ const queryClient = new QueryClient({
   },
 });
 
+/** Listens for push notification taps and navigates via React Router */
+const PushNavigator = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const path = (e as CustomEvent).detail?.path;
+      if (!path) return;
+      console.log("[PushNav] Navigating to:", path);
+      // Parse path and query
+      const [pathname, search] = path.split("?");
+      const currentFull = location.pathname + (location.search || "");
+      const targetFull = pathname + (search ? `?${search}` : "");
+      if (currentFull === targetFull) {
+        // Already on the page — force refresh by navigating away and back
+        navigate("/", { replace: true });
+        setTimeout(() => navigate(path, { replace: true }), 50);
+      } else {
+        navigate(path, { replace: true });
+      }
+    };
+
+    window.addEventListener("capacitor-push-navigate", handler);
+    return () => window.removeEventListener("capacitor-push-navigate", handler);
+  }, [navigate, location]);
+
+  return null;
+};
+
 const App = () => {
   useEffect(() => {
     initCapacitorNative()
