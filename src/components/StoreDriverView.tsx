@@ -667,9 +667,16 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
               <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
                 <Route className="h-3.5 w-3.5 text-primary" />
               </div>
-              <h3 className="text-sm font-bold text-foreground">
-                Sua Rota ({filteredDeliveries.length} {filteredDeliveries.length === 1 ? "entrega" : "entregas"})
-              </h3>
+              <div>
+                <h3 className="text-sm font-bold text-foreground">
+                  Sua Rota ({filteredDeliveries.length} {filteredDeliveries.length === 1 ? "entrega" : "entregas"})
+                </h3>
+                {useOptimized && routeDistanceKm > 0 && (
+                  <p className="text-[10px] text-muted-foreground">
+                    📍 ~{routeDistanceKm.toFixed(1)} km · ⏱ ~{Math.ceil(routeDistanceKm * 3)} min
+                  </p>
+                )}
+              </div>
             </div>
             {filteredDeliveries.some((o: any) => o.status === "pronto_para_entrega") && (
               <button
