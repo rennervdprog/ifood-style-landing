@@ -26,7 +26,7 @@ const ClientAuth = ({ onSuccess }: { onSuccess: () => void }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [cpf, setCpf] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const [whatsapp, setWhatsapp] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -55,6 +55,13 @@ const ClientAuth = ({ onSuccess }: { onSuccess: () => void }) => {
 
     if (!email.trim() || !password.trim()) { toast.error("Preencha todos os campos."); return; }
     if (mode === "signup" && cpf.replace(/\D/g, "").length !== 11) { toast.error("CPF deve ter 11 dígitos."); return; }
+    if (mode === "signup") {
+      const whatsDigits = whatsapp.replace(/\D/g, "");
+      if (whatsDigits.length < 10 || whatsDigits.length > 11) {
+        toast.error("Informe um WhatsApp válido com DDD.");
+        return;
+      }
+    }
     if (mode === "signup" && !acceptedTerms) { toast.error("Aceite os Termos de Uso."); return; }
     if (password.length < 6) { toast.error("Senha: mínimo 6 caracteres."); return; }
 
@@ -84,6 +91,7 @@ const ClientAuth = ({ onSuccess }: { onSuccess: () => void }) => {
           await supabase.from("profiles").update({
             terms_accepted_at: new Date().toISOString(),
             document: cpf.replace(/\D/g, ""),
+            whatsapp_number: `55${whatsapp.replace(/\D/g, "")}`,
           }).eq("user_id", signUpData.user.id);
         }
         toast.success("Conta criada!");
