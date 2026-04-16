@@ -24,15 +24,14 @@ function reconnectRealtime() {
 
     console.log(`[CapLifecycle] ♻️ Reconnecting ${channels.length} Realtime channel(s)…`);
 
-    // Remove and re-subscribe each channel to force a fresh WebSocket
-    channels.forEach((ch) => {
-      supabase.removeChannel(ch);
-    });
+    supabase.realtime.disconnect();
+    supabase.realtime.connect();
 
-    // The channels will be re-created by the components that use them
-    // (useEffect will re-run because the subscription was removed).
-    // For a more aggressive approach we could re-subscribe here, but
-    // component-level hooks handle this naturally on re-mount/re-focus.
+    channels.forEach((channel) => {
+      const state = (channel as any).state;
+      if (state === "joined" || state === "joining") return;
+      channel.subscribe();
+    });
   } catch (e) {
     console.warn("[CapLifecycle] Realtime reconnect error:", e);
   }

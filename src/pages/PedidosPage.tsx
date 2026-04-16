@@ -174,23 +174,34 @@ const PedidosPage = () => {
   // Refetch orders when Capacitor app resumes from background
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
-    const handler = (state: { isActive: boolean }) => {
-      if (state.isActive && user) {
-        queryClient.invalidateQueries({ queryKey: ["orders", user.id] });
-        if (ownStore?.id && isLojista) {
-          queryClient.invalidateQueries({ queryKey: ["store-orders-lojista", ownStore.id] });
-        }
-      }
-    };
-    import("@capacitor/app").then(({ App }) => {
-      App.addListener("appStateChange", handler);
-    });
-    return () => {
-      import("@capacitor/app").then(({ App }) => {
-        App.removeAllListeners();
+
+    let cleanup: (() => void) | undefined;
+
+    import("@capacitor/app")
+      .then(async ({ App }) => {
+        const listener = await App.addListener("appStateChange", (state: { isActive: boolean }) => {
+          if (!state.isActive || !user) return;
+
+          queryClient.invalidateQueries({ queryKey: ["orders", user.id] });
+          queryClient.invalidateQueries({ queryKey: ["orders", user.id, storeFilter] });
+
+          if (ownStore?.id && isLojista) {
+            queryClient.invalidateQueries({ queryKey: ["store-orders-lojista", ownStore.id] });
+          }
+        });
+
+        cleanup = () => {
+          listener.remove();
+        };
+      })
+      .catch(() => {
+        cleanup = undefined;
       });
+
+    return () => {
+      cleanup?.();
     };
-  }, [user, ownStore?.id, isLojista, queryClient]);
+  }, [user, ownStore?.id, isLojista, queryClient, storeFilter]);
 
   // Client orders (for clients and lojistas viewing as client)
   const { data: orders, isLoading } = useQuery({
