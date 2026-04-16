@@ -103,9 +103,10 @@
 
   <body>
     <div id="root">
-      <!-- Static LCP shell — matches React's initial loading spinner exactly to avoid CLS. Replaced by React on hydration. -->
-      <div id="lcp-shell" style="min-height:100vh;background:#fff;display:flex;align-items:center;justify-content:center">
+      <!-- Static LCP shell — paints text instantly for FCP/LCP, matches React loading dimensions to avoid CLS. -->
+      <div id="lcp-shell" style="min-height:100vh;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;gap:1rem">
         <div style="width:32px;height:32px;border:4px solid #FF6B00;border-top-color:transparent;border-radius:50%;animation:lcp-spin 1s linear infinite" role="status" aria-label="Carregando"></div>
+        <p style="margin:0;font-size:0.875rem;color:#64748b;font-weight:500">Carregando ItaSuper…</p>
       </div>
       <style>@keyframes lcp-spin{to{transform:rotate(360deg)}}</style>
     </div>
