@@ -225,6 +225,26 @@ const CadastroLojista = () => {
             address_cep: cep.replace(/\D/g, ""),
             address_city: city,
           } as any).eq("id", storeRow.id);
+
+          // Link store to moderator if referral code present
+          if (referralCode && storeRow.id) {
+            try {
+              const { data: mod } = await supabase
+                .from("moderators" as any)
+                .select("id")
+                .eq("referral_code", referralCode)
+                .eq("is_active", true)
+                .maybeSingle();
+              if (mod?.id) {
+                await supabase.from("moderator_referrals" as any).insert({
+                  moderator_id: mod.id,
+                  store_id: storeRow.id,
+                });
+              }
+            } catch {
+              // Non-critical: don't block signup
+            }
+          }
         }
       }
 
