@@ -50,6 +50,7 @@
         "@tanstack/react-query": "^5.83.0",
         "@types/leaflet": "^1.9.21",
         "canvas-confetti": "^1.9.3",
+        "capacitor-native-settings": "^8.1.0",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "cmdk": "^1.1.1",
@@ -952,6 +953,8 @@
     "caniuse-lite": ["caniuse-lite@1.0.30001787", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/caniuse-lite/-/caniuse-lite-1.0.30001787.tgz", {}, "sha512-mNcrMN9KeI68u7muanUpEejSLghOKlVhRqS/Za2IeyGllJ9I9otGpR9g3nsw7n4W378TE/LyIteA0+/FOZm4Kg=="],
 
     "canvas-confetti": ["canvas-confetti@1.9.4", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/canvas-confetti/-/canvas-confetti-1.9.4.tgz", {}, "sha512-yxQbJkAVrFXWNbTUjPqjF7G+g6pDotOUHGbkZq2NELZUMDpiJ85rIEazVb8GTaAptNW2miJAXbs1BtioA251Pw=="],
+
+    "capacitor-native-settings": ["capacitor-native-settings@8.1.0", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/capacitor-native-settings/-/capacitor-native-settings-8.1.0.tgz", { "peerDependencies": { "@capacitor/core": ">=8.0.2" } }, "sha512-bcIsKO0EBChdiG2l7RAt70cKxz0Vygfx7quN6tSoNlwziCct8f5EgT8xmwNit+7F712ojl54xNaEddu87EpkjQ=="],
 
     "chai": ["chai@5.3.3", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/chai/-/chai-5.3.3.tgz", { "dependencies": { "assertion-error": "^2.0.1", "check-error": "^2.1.1", "deep-eql": "^5.0.1", "loupe": "^3.1.0", "pathval": "^2.0.0" } }, "sha512-4zNhdJD/iOjSH0A05ea+Ke6MU5mmpQcbQsSOkgdaUMJ9zTlDTD/GYlwohmIE2u0gaxHYiVHEn1Fw9mZ/ktJWgw=="],
 
