@@ -646,7 +646,11 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
             <Route className={`h-4 w-4 ${useOptimized ? "text-primary" : "text-muted-foreground"}`} />
             <div className="text-left">
               <p className="text-xs font-bold text-foreground">Rota Otimizada</p>
-              <p className="text-[10px] text-muted-foreground">Agrupa entregas por proximidade</p>
+              <p className="text-[10px] text-muted-foreground">
+                {useOptimized && routeDistanceKm > 0
+                  ? `~${routeDistanceKm.toFixed(1)} km · ${Math.ceil(routeDistanceKm * 3)} min estimado`
+                  : "Ordena entregas pela melhor rota"}
+              </p>
             </div>
           </div>
           <div className={`w-10 h-6 rounded-full transition-colors ${useOptimized ? "bg-primary" : "bg-muted"} relative`}>
