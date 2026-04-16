@@ -6,8 +6,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/contexts/CartContext";
 import {
   Search, Store, Repeat, ShoppingBag, Clock, ChevronRight, Zap,
-  Mail, Lock, Eye, EyeOff, KeyRound, FileText, CheckCircle2,
+  Mail, Lock, Eye, EyeOff, KeyRound, FileText, CheckCircle2, Phone,
 } from "lucide-react";
+import { maskWhatsApp } from "@/lib/whatsapp";
 import { formatBRL } from "@/lib/utils";
 import { toast } from "sonner";
 import BottomNav from "@/components/BottomNav";
