@@ -18,6 +18,7 @@ const CATEGORIES = [
   { value: "churrasco", label: "🥩 Churrasco", emoji: "🥩" },
   { value: "farmacias", label: "💊 Farmácias", emoji: "💊" },
   { value: "docerias", label: "🍰 Docerias", emoji: "🍰" },
+  { value: "esfihas", label: "🥟 Esfihas", emoji: "🥟" },
 ];
 
 const TestStoreCreator = () => {
