@@ -6,8 +6,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/contexts/CartContext";
 import {
   Search, Store, Repeat, ShoppingBag, Clock, ChevronRight, Zap,
-  Mail, Lock, Eye, EyeOff, KeyRound, FileText, CheckCircle2,
+  Mail, Lock, Eye, EyeOff, KeyRound, FileText, CheckCircle2, Phone,
 } from "lucide-react";
+import { maskWhatsApp } from "@/lib/whatsapp";
 import { formatBRL } from "@/lib/utils";
 import { toast } from "sonner";
 import BottomNav from "@/components/BottomNav";
@@ -25,6 +26,7 @@ const ClientAuth = ({ onSuccess }: { onSuccess: () => void }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [cpf, setCpf] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -54,6 +56,13 @@ const ClientAuth = ({ onSuccess }: { onSuccess: () => void }) => {
 
     if (!email.trim() || !password.trim()) { toast.error("Preencha todos os campos."); return; }
     if (mode === "signup" && cpf.replace(/\D/g, "").length !== 11) { toast.error("CPF deve ter 11 dígitos."); return; }
+    if (mode === "signup") {
+      const whatsDigits = whatsapp.replace(/\D/g, "");
+      if (whatsDigits.length < 10 || whatsDigits.length > 11) {
+        toast.error("Informe um WhatsApp válido com DDD.");
+        return;
+      }
+    }
     if (mode === "signup" && !acceptedTerms) { toast.error("Aceite os Termos de Uso."); return; }
     if (password.length < 6) { toast.error("Senha: mínimo 6 caracteres."); return; }
 
@@ -83,6 +92,7 @@ const ClientAuth = ({ onSuccess }: { onSuccess: () => void }) => {
           await supabase.from("profiles").update({
             terms_accepted_at: new Date().toISOString(),
             document: cpf.replace(/\D/g, ""),
+            whatsapp_number: `55${whatsapp.replace(/\D/g, "")}`,
           }).eq("user_id", signUpData.user.id);
         }
         toast.success("Conta criada!");
@@ -194,6 +204,27 @@ const ClientAuth = ({ onSuccess }: { onSuccess: () => void }) => {
                           setCpf(f);
                         }}
                         maxLength={14} className={inputClass} />
+                    </div>
+                  </div>
+                )}
+                {mode === "signup" && (
+                  <div>
+                    <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">WhatsApp</label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      <input
+                        type="tel"
+                        inputMode="numeric"
+                        placeholder="+55 15 99999-9999"
+                        value={whatsapp ? maskWhatsApp(whatsapp) : ""}
+                        onChange={(e) => {
+                          const digits = e.target.value.replace(/\D/g, "");
+                          const local = digits.startsWith("55") && digits.length > 11 ? digits.slice(2) : digits;
+                          setWhatsapp(local.slice(0, 11));
+                        }}
+                        maxLength={19}
+                        className={inputClass}
+                      />
                     </div>
                   </div>
                 )}
