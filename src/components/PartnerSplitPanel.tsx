@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import PartnerSettlement from "@/components/PartnerSettlement";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -389,6 +390,9 @@ const PartnerSplitPanel = () => {
         pendingRepasse={pendingBalances.repasse}
         partners={partners}
       />
+
+      {/* Settlement / Fechamento */}
+      {partners.length >= 2 && <PartnerSettlement partners={partners} />}
 
       {/* Partners List */}
       <Card>
