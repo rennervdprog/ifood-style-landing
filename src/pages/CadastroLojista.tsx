@@ -39,7 +39,7 @@ const schema = z.object({
   street: z.string().trim().min(2, "Rua é obrigatória"),
   addressNumber: z.string().trim().min(1, "Número é obrigatório"),
   neighborhood: z.string().trim().min(2, "Bairro é obrigatório"),
-  selectedPlan: z.enum(["fixed", "hybrid", "commission_only"], { errorMap: () => ({ message: "Selecione um plano" }) }),
+  selectedPlan: z.enum(["supporter", "fixed", "hybrid", "commission_only"], { errorMap: () => ({ message: "Selecione um plano" }) }),
 }).refine((data) => data.email === data.confirmEmail, {
   message: "Os e-mails não coincidem",
   path: ["confirmEmail"],
@@ -77,7 +77,28 @@ const CadastroLojista = () => {
   const [loadingCep, setLoadingCep] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [selectedPlan, setSelectedPlan] = useState<"fixed" | "hybrid" | "commission_only" | "">("");
+  const [selectedPlan, setSelectedPlan] = useState<"supporter" | "fixed" | "hybrid" | "commission_only" | "">("");
+  const [supporterCount, setSupporterCount] = useState<number>(0);
+  const [supporterLoading, setSupporterLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        const { data, error } = await supabase.rpc("count_supporter_plans" as any);
+        if (!isMounted) return;
+        if (!error && typeof data === "number") setSupporterCount(data);
+      } catch {
+        /* ignore */
+      } finally {
+        if (isMounted) setSupporterLoading(false);
+      }
+    })();
+    return () => { isMounted = false; };
+  }, []);
+
+  const supporterAvailable = !supporterLoading && supporterCount < 10;
+  const supporterRemaining = Math.max(0, 10 - supporterCount);
 
   const handleCepChange = (value: string) => {
     const formatted = formatCep(value);
@@ -326,6 +347,46 @@ const CadastroLojista = () => {
                   </div>
                 </div>
 
+                {/* Plano Apoiadores - Lançamento (10 vagas) */}
+                {supporterAvailable && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPlan("supporter")}
+                    className={`w-full text-left rounded-2xl border-2 p-4 transition-all relative ${
+                      selectedPlan === "supporter" ? "border-primary bg-primary/5" : "border-amber-500/40 bg-amber-500/5 hover:border-amber-500/70"
+                    }`}
+                  >
+                    <span className="absolute -top-2.5 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500 text-white">
+                      🚀 Lançamento • {supporterRemaining} vagas
+                    </span>
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center">
+                        <Crown className="h-5 w-5 text-amber-600" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-bold text-sm text-foreground">Plano Apoiadores</h3>
+                        <p className="text-xs text-muted-foreground">Mesmas regras do Essencial</p>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-lg font-black text-foreground">R$130</span>
+                        <span className="text-xs text-muted-foreground">/mês</span>
+                      </div>
+                    </div>
+                    <p className="text-[10px] font-bold text-emerald-500 mb-1">🎁 7 dias grátis • Preço congelado para sempre</p>
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {(isPlatformCity
+                        ? ["Zero comissão", "Motoboy plataforma", "Fidelidade", "PIX integrado"]
+                        : ["Zero comissão", "PIX integrado", "Painel completo", "Todas as ferramentas"]
+                      ).map(tag => (
+                        <span key={tag} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400">{tag}</span>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-1.5">
+                      💡 Mesma taxa operacional do Essencial: R$1 por pedido via PIX • R$2 na entrega (pago pelo cliente)
+                    </p>
+                  </button>
+                )}
+
                 {/* Plano Essencial */}
                 <button
                   type="button"
@@ -426,7 +487,9 @@ const CadastroLojista = () => {
 
                 {selectedPlan && (
                   <div className="rounded-xl bg-muted/50 p-3 text-xs text-muted-foreground">
-                    {selectedPlan === "fixed" ? (
+                    {selectedPlan === "supporter" ? (
+                      <p><strong className="text-foreground">Apoiadores (Lançamento):</strong> R$130/mês com as <strong className="text-foreground">mesmas regras do Essencial</strong> (zero comissão, todas as ferramentas, R$1 por pedido PIX, R$2 na entrega paga pelo cliente). Preço de lançamento limitado às primeiras 10 lojas — congelado para sempre enquanto a assinatura estiver ativa.</p>
+                    ) : selectedPlan === "fixed" ? (
                       <p><strong className="text-foreground">Essencial:</strong> R$180/mês sem comissão por pedido. Inclui uma pequena taxa operacional de <strong className="text-foreground">R$1 por pedido pago via PIX</strong> (pedidos em dinheiro/cartão não pagam) e <strong className="text-foreground">R$2 na taxa de entrega (pago pelo cliente)</strong>. Valores acumulam no painel para repasse semanal. Todas as ferramentas inclusas.</p>
                     ) : selectedPlan === "hybrid" ? (
                       <p><strong className="text-foreground">Crescimento:</strong> Mensalidade de R$100 + 2,5% por pedido. PIX integrado com split automático e painel financeiro completo com CRM.</p>

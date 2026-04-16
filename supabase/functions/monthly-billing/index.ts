@@ -78,7 +78,12 @@ Deno.serve(async (req) => {
         const dueDate = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000); // 3 days to pay
         const dueDateStr = dueDate.toISOString().split("T")[0];
 
-        const planLabel = plan.plan_type === "fixed" ? "Plano Fixo" : "Plano Híbrido";
+        const isSupporter = plan.plan_type === "fixed" && Number(plan.monthly_fee) === 130;
+        const planLabel = isSupporter
+          ? "Plano Apoiadores"
+          : plan.plan_type === "fixed"
+            ? "Plano Essencial"
+            : "Plano Crescimento";
         const description = `${planLabel} - ${store.name} - ${referenceCode}`;
 
         // Create Asaas charge
