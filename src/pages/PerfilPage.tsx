@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   User, LogOut, Store, Shield, UserPlus, MapPin, Save, Bike, Wallet, Copy,
   AlertTriangle, MessageCircle, Truck, Download, Smartphone, X, Share2,
-  Search, Loader2, ChevronRight, Phone, Mail, CreditCard, Package, Settings, HelpCircle, Trash2, CheckCircle2
+  Search, Loader2, ChevronRight, Phone, Mail, CreditCard, Package, Settings, HelpCircle, Trash2, CheckCircle2, Users
 } from "lucide-react";
 import { toast } from "sonner";
 import { maskWhatsApp, formatWhatsAppNumber, isValidWhatsApp } from "@/lib/whatsapp";
@@ -96,6 +96,23 @@ const PerfilPage = () => {
     queryFn: async () => {
       const { data } = await supabase.from("drivers").select("*").eq("user_id", user!.id).maybeSingle();
       return data;
+    },
+    enabled: !!user,
+  });
+
+  const { data: isModerator } = useQuery({
+    queryKey: ["is-moderator", user?.id],
+    queryFn: async () => {
+      if (!user) return false;
+      // Check by user_id first
+      const { data: byId } = await (supabase as any).from("moderators").select("id").eq("user_id", user.id).eq("is_active", true).maybeSingle();
+      if (byId) return true;
+      // Check by email
+      if (user.email) {
+        const { data: byEmail } = await (supabase as any).from("moderators").select("id").eq("email", user.email).eq("is_active", true).maybeSingle();
+        if (byEmail) return true;
+      }
+      return false;
     },
     enabled: !!user,
   });
@@ -445,6 +462,7 @@ const PerfilPage = () => {
             <MenuRow icon={Package} title="Meus Pedidos" subtitle="Acompanhe seus pedidos" onClick={() => navigate("/pedidos")} />
             {myStore && <MenuRow icon={Store} title="Painel da Loja" subtitle={myStore.name} onClick={() => navigate("/admin")} />}
             {myDriver && <MenuRow icon={Bike} title="Painel do Entregador" subtitle="Gerenciar entregas" onClick={() => navigate("/entregador")} />}
+            {isModerator && <MenuRow icon={Users} iconBg="bg-purple-500/10" iconColor="text-purple-600" title="Painel do Moderador" subtitle="Indicações e ganhos" onClick={() => navigate("/moderador")} />}
             {isAdminUser && <MenuRow icon={Shield} iconBg="bg-amber-500/10" iconColor="text-amber-600" title="Painel Administrativo" subtitle="Gerenciar plataforma" onClick={() => navigate("/super-admin")} />}
           </div>
         </Card>
