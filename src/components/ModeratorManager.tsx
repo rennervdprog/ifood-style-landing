@@ -11,9 +11,13 @@ const ModeratorManager = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [planFeePercent, setPlanFeePercent] = useState(40);
-  const [deliverySplit, setDeliverySplit] = useState(1);
-  const [commissionSplitPercent, setCommissionSplitPercent] = useState(2);
+  // Per-plan config
+  const [essencialPlanFee, setEssencialPlanFee] = useState(40); // % da mensalidade R$180
+  const [essencialDelivery, setEssencialDelivery] = useState(1); // R$ por entrega
+  const [crescimentoPlanFee, setCrescimentoPlanFee] = useState(40); // % da mensalidade R$100
+  const [crescimentoCommission, setCrescimentoCommission] = useState(1); // % do pedido
+  const [crescimentoDelivery, setCrescimentoDelivery] = useState(1); // R$ por entrega
+  const [comissaoCommission, setComissaoCommission] = useState(2); // % do pedido
   const [saving, setSaving] = useState(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [expandedMod, setExpandedMod] = useState<string | null>(null);
