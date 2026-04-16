@@ -117,6 +117,7 @@ jobs:
         run: |
           ICON="public/icon-cliente.png"
           echo "📥 Injecting Cliente icon from $ICON"
+          rm -rf android/app/src/main/res/mipmap-anydpi-v26
           for res in "mipmap-mdpi:48" "mipmap-hdpi:72" "mipmap-xhdpi:96" "mipmap-xxhdpi:144" "mipmap-xxxhdpi:192"; do
             DIR="android/app/src/main/res/${res%%:*}"
             SIZE="${res##*:}"
@@ -236,6 +237,7 @@ jobs:
         run: |
           ICON="public/icon-parceiro.png"
           echo "📥 Injecting Parceiro icon from $ICON"
+          rm -rf android/app/src/main/res/mipmap-anydpi-v26
           for res in "mipmap-mdpi:48" "mipmap-hdpi:72" "mipmap-xhdpi:96" "mipmap-xxhdpi:144" "mipmap-xxxhdpi:192"; do
             DIR="android/app/src/main/res/${res%%:*}"
             SIZE="${res##*:}"
