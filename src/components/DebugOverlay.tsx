@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { isCapacitorNative } from "@/lib/capacitorNative";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
 // In-memory log buffer
@@ -164,9 +165,24 @@ const DebugOverlay = () => {
   const [open, setOpen] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
 
-  // Always show in dev/preview, Capacitor native, or ?debug=1
-  const shouldShow = true;
+  // Check if user is admin via user_roles table
+  useEffect(() => {
+    if (!user) { setIsAdmin(false); return; }
+    supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .maybeSingle()
+      .then(({ data }) => {
+        setIsAdmin(!!data);
+      });
+  }, [user]);
+
+  const shouldShow = isAdmin;
 
   useEffect(() => {
     if (!shouldShow) return;
