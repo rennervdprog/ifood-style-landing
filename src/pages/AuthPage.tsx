@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Mail, Lock, Eye, EyeOff, KeyRound, FileText, ShoppingBag, CheckCircle2, Zap, Check, X } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, KeyRound, FileText, ShoppingBag, CheckCircle2, Zap, Check, X, Phone } from "lucide-react";
+import { maskWhatsApp } from "@/lib/whatsapp";
 import { isPartnerCapacitorApp } from "@/lib/capacitorAppMode";
 
 type AuthMode = "login" | "signup" | "forgot" | "reset";
@@ -28,6 +29,7 @@ const AuthPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [cpf, setCpf] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -83,6 +85,13 @@ const AuthPage = () => {
     if (mode === "signup" && cpf.replace(/\D/g, "").length !== 11) {
       toast.error("CPF deve ter 11 dígitos.");
       return;
+    }
+    if (mode === "signup") {
+      const whatsDigits = whatsapp.replace(/\D/g, "");
+      if (whatsDigits.length < 10 || whatsDigits.length > 11) {
+        toast.error("Informe um WhatsApp válido com DDD.");
+        return;
+      }
     }
     if (mode === "signup" && !acceptedTerms) {
       toast.error("Você precisa aceitar os Termos de Uso e Política de Privacidade.");
@@ -157,6 +166,7 @@ const AuthPage = () => {
           await supabase.from("profiles").update({
             terms_accepted_at: new Date().toISOString(),
             document: cpf.replace(/\D/g, ""),
+            whatsapp_number: `55${whatsapp.replace(/\D/g, "")}`,
           }).eq("user_id", signUpData.user.id);
         }
         toast.success("Conta criada com sucesso!");
@@ -310,6 +320,29 @@ const AuthPage = () => {
                     setCpf(formatted);
                   }}
                   maxLength={14}
+                  className={inputClass}
+                />
+              </div>
+            </div>
+          )}
+
+          {mode === "signup" && (
+            <div>
+              <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">WhatsApp</label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <input
+                  type="tel"
+                  inputMode="numeric"
+                  placeholder="+55 15 99999-9999"
+                  value={whatsapp ? maskWhatsApp(whatsapp) : ""}
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/\D/g, "");
+                    // Strip country code if user types it
+                    const local = digits.startsWith("55") && digits.length > 11 ? digits.slice(2) : digits;
+                    setWhatsapp(local.slice(0, 11));
+                  }}
+                  maxLength={19}
                   className={inputClass}
                 />
               </div>
