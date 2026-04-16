@@ -11,7 +11,7 @@ import RoleGuard from "@/components/RoleGuard";
 import InstallPrompt from "@/components/InstallPrompt";
 import NotificationPrompt from "@/components/NotificationPrompt";
 import DebugOverlay from "@/components/DebugOverlay";
-import { initCapacitorNative, isCapacitorNative } from "@/lib/capacitorNative";
+import { initCapacitorNative, isCapacitorNative, consumePendingPushNavigation } from "@/lib/capacitorNative";
 import { initCapacitorLifecycle } from "@/lib/capacitorLifecycle";
 import { initAutoUpdate } from "@/lib/capacitorAutoUpdate";
 import CapacitorRouteGuard from "@/components/CapacitorRouteGuard";
