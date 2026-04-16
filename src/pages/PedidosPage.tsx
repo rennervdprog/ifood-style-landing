@@ -362,7 +362,7 @@ const PedidosPage = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, queryClient, storeFilter]);
+  }, [refreshPedidosData, storeFilter, user, queryClient]);
 
   // Realtime subscription for LOJISTA store orders
   useEffect(() => {
