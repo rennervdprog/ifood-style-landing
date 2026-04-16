@@ -334,15 +334,20 @@ const AuthPage = () => {
                 <input
                   type="tel"
                   inputMode="numeric"
-                  placeholder="+55 15 99999-9999"
-                  value={whatsapp ? maskWhatsApp(whatsapp) : ""}
+                  placeholder="(15) 99999-9999"
+                  value={(() => {
+                    const d = whatsapp;
+                    if (!d) return "";
+                    if (d.length <= 2) return `(${d}`;
+                    if (d.length <= 7) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+                    return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7, 11)}`;
+                  })()}
                   onChange={(e) => {
-                    const digits = e.target.value.replace(/\D/g, "");
-                    // Strip country code if user types it
-                    const local = digits.startsWith("55") && digits.length > 11 ? digits.slice(2) : digits;
-                    setWhatsapp(local.slice(0, 11));
+                    let digits = e.target.value.replace(/\D/g, "");
+                    if (digits.startsWith("55") && digits.length > 11) digits = digits.slice(2);
+                    setWhatsapp(digits.slice(0, 11));
                   }}
-                  maxLength={19}
+                  maxLength={16}
                   className={inputClass}
                 />
               </div>
