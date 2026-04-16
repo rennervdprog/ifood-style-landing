@@ -340,6 +340,7 @@ const AdminDashboard = () => {
       return data;
     },
     enabled: !!user,
+    staleTime: 1000 * 60 * 5,
   });
 
   const isApproved = myProfile?.is_approved ?? false;
@@ -356,6 +357,7 @@ const AdminDashboard = () => {
       return data;
     },
     enabled: !!user,
+    staleTime: 1000 * 60 * 10,
   });
 
   const isPlatformAdmin = Boolean(adminRole);
@@ -384,6 +386,7 @@ const AdminDashboard = () => {
       return data;
     },
     enabled: !!user,
+    staleTime: 1000 * 60 * 3,
   });
 
   const storePlan = useStorePlan(store?.id);
@@ -413,11 +416,13 @@ const AdminDashboard = () => {
         .eq("store_id", store!.id)
         .neq("status", "aguardando_pagamento" as any)
         .neq("status", "cancelado" as any)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(200);
       if (error) throw error;
       return data;
     },
     enabled: !!store,
+    staleTime: 1000 * 30,
     refetchOnReconnect: true,
     refetchOnWindowFocus: true,
   });
@@ -429,11 +434,13 @@ const AdminDashboard = () => {
         .from("orders")
         .select("*, order_items(*, products(name))")
         .eq("store_id", store!.id)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(500);
       if (error) throw error;
       return data;
     },
     enabled: !!store,
+    staleTime: 1000 * 60,
     refetchOnReconnect: true,
     refetchOnWindowFocus: true,
   });
@@ -491,6 +498,7 @@ const AdminDashboard = () => {
       return (data || []) as StoreAddonGroup[];
     },
     enabled: !!store,
+    staleTime: 1000 * 60 * 5,
   });
 
   const { data: storeAddonLinks = [] } = useQuery({
@@ -515,6 +523,7 @@ const AdminDashboard = () => {
       const busySet = new Set((busyDriverIds || []).map((o: any) => o.driver_id));
       return (allOnline || []).filter((d: any) => !busySet.has(d.user_id));
     },
+    staleTime: 1000 * 30,
   });
 
   // Realtime drivers
@@ -530,6 +539,7 @@ const AdminDashboard = () => {
     queryKey: ["driver-profiles", driverIds],
     queryFn: async () => { const { data } = await supabase.from("drivers").select("user_id, name").in("user_id", driverIds); return data || []; },
     enabled: driverIds.length > 0,
+    staleTime: 1000 * 60 * 3,
   });
 
   // Fetch store drivers list for own-delivery stores
@@ -569,6 +579,7 @@ const AdminDashboard = () => {
       return data || [];
     },
     enabled: !!store,
+    staleTime: 1000 * 60 * 3,
   });
 
   const getClientWhatsApp = (clientId: string) => {

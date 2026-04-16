@@ -63,6 +63,7 @@ const StorePage = () => {
       return data;
     },
     enabled: !!(id || slug),
+    staleTime: 1000 * 60 * 3,
   });
 
   // Set store context when accessed via slug (client mode)
@@ -116,6 +117,7 @@ const StorePage = () => {
       return data || [];
     },
     enabled: !!storeId,
+    staleTime: 1000 * 60 * 5,
   });
 
   const { data: ownerProfile } = useQuery({
@@ -130,6 +132,7 @@ const StorePage = () => {
       return data;
     },
     enabled: !!store?.owner_id,
+    staleTime: 1000 * 60 * 10,
   });
 
   const { data: sections } = useQuery({
@@ -144,6 +147,7 @@ const StorePage = () => {
       return (data || []) as MenuSection[];
     },
     enabled: !!storeId,
+    staleTime: 1000 * 60 * 5,
   });
 
   const { data: products, isLoading } = useQuery({
@@ -159,6 +163,7 @@ const StorePage = () => {
       return (data || []) as Product[];
     },
     enabled: !!storeId,
+    staleTime: 1000 * 60 * 3,
   });
 
   // "Peça de novo" - products user has ordered before from this store
@@ -169,20 +174,20 @@ const StorePage = () => {
         .from("order_items")
         .select("product_id, quantity, orders!inner(store_id, client_id)")
         .eq("orders.store_id", storeId!)
-        .eq("orders.client_id", user!.id);
+        .eq("orders.client_id", user!.id)
+        .limit(50);
       if (error) throw error;
-      // Count how many times each product was ordered
       const countMap: Record<string, number> = {};
       (orderItems || []).forEach((item: any) => {
         countMap[item.product_id] = (countMap[item.product_id] || 0) + item.quantity;
       });
-      // Sort by frequency, return top 10 product IDs
       return Object.entries(countMap)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 10)
         .map(([pid]) => pid);
     },
     enabled: !!storeId && !!user?.id,
+    staleTime: 1000 * 60 * 5,
   });
 
   // "Mais pedidos" - most popular products in this store (all users)
@@ -192,7 +197,8 @@ const StorePage = () => {
       const { data: orderItems, error } = await supabase
         .from("order_items")
         .select("product_id, quantity, orders!inner(store_id)")
-        .eq("orders.store_id", storeId!);
+        .eq("orders.store_id", storeId!)
+        .limit(100);
       if (error) throw error;
       const countMap: Record<string, number> = {};
       (orderItems || []).forEach((item: any) => {
@@ -204,6 +210,7 @@ const StorePage = () => {
         .map(([pid, count]) => ({ productId: pid, count }));
     },
     enabled: !!storeId,
+    staleTime: 1000 * 60 * 10,
   });
 
   const isSuspended = store?.status === "bloqueado";

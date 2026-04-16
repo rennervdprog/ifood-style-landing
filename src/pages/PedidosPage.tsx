@@ -257,6 +257,7 @@ const PedidosPage = () => {
       return data;
     },
     enabled: !!ownStore?.id && isLojista,
+    staleTime: 1000 * 30,
     refetchOnMount: "always",
     refetchOnReconnect: true,
     refetchOnWindowFocus: true,
@@ -274,6 +275,7 @@ const PedidosPage = () => {
       return new Set((data || []).map((r: any) => r.order_id));
     },
     enabled: !!user,
+    staleTime: 1000 * 60 * 5,
   });
 
   const [clearingHistory, setClearingHistory] = useState(false);
