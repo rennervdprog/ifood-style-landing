@@ -214,7 +214,7 @@ const ModeratorManager = () => {
           <div className="text-xs text-muted-foreground space-y-1">
             <p className="font-semibold text-foreground">Exemplos por plano:</p>
             <p>📋 <strong>Essencial</strong> R$180/mês → moderador recebe {planFeePercent}% = {formatBRL(180 * planFeePercent / 100)} + R${deliverySplit.toFixed(2)}/entrega</p>
-            <p>📈 <strong>Crescimento</strong> R$100/mês + 2.5% → moderador recebe {planFeePercent}% = {formatBRL(100 * planFeePercent / 100)} + {commissionSplitPercent}% do pedido + R${deliverySplit.toFixed(2)}/entrega</p>
+            <p>📈 <strong>Crescimento</strong> R$100/mês + 2.5% → moderador recebe {planFeePercent}% = {formatBRL(100 * planFeePercent / 100)} + {commissionSplitPercent}% do pedido</p>
             <p>💰 <strong>Comissão</strong> 5% → moderador recebe {commissionSplitPercent}% do pedido</p>
           </div>
           <button onClick={handleAdd} disabled={saving} className="bg-primary text-primary-foreground px-6 py-2 rounded-xl text-sm font-bold w-full">
