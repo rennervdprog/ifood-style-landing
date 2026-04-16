@@ -6,6 +6,7 @@ import AdminStoreManager from "@/components/AdminStoreManager";
 import DeliveryFeeConfigPanel from "@/components/DeliveryFeeConfig";
 import TestStoreCreator from "@/components/TestStoreCreator";
 import AdminPlanManager from "@/components/AdminPlanManager";
+import ModeratorManager from "@/components/ModeratorManager";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -655,6 +656,7 @@ const SuperAdminDashboard = () => {
                 {activeTab === "pagamentos" && "Histórico de pagamentos por loja"}
                 {activeTab === "coupons" && "Gerenciar cupons de desconto"}
                 {activeTab === "juridico" && "Consulta jurídica e dados arquivados"}
+                {activeTab === "moderadores" && "Moderadores e sistema de afiliados"}
                 {activeTab === "sync" && "Sincronização com banco externo"}
                 {activeTab === "planos" && "Gerenciar planos e assinaturas das lojas"}
               </p>
@@ -701,6 +703,7 @@ const SuperAdminDashboard = () => {
             {activeTab === "planos" && <AdminPlanManager />}
             {activeTab === "pagamentos" && <PagamentosSplitTab stores={stores || []} />}
             {activeTab === "juridico" && <JuridicoTab />}
+            {activeTab === "moderadores" && <ModeratorManager />}
             {activeTab === "saques" && (
               <SaquesTab
                 withdrawalRequests={withdrawalRequests}
