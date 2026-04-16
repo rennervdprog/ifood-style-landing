@@ -363,22 +363,36 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   // Auto-select first store if none selected
   const effectiveStoreId = activeStoreId || linkedStoreIds[0] || null;
 
+  // Get active store coordinates for route optimization
+  const activeStoreCoords = useMemo((): [number, number] | undefined => {
+    const store = storeNames?.find((s: any) => s.id === effectiveStoreId);
+    if (store?.latitude && store?.longitude) return [store.latitude, store.longitude];
+    return undefined;
+  }, [storeNames, effectiveStoreId]);
+
   // Filter by selected store when multi-store
   const filteredDeliveries = useMemo(() => {
     if (!myDeliveries) return [];
     const list = multiStore && effectiveStoreId
       ? myDeliveries.filter((o: any) => o.store_id === effectiveStoreId)
       : myDeliveries;
-    return useOptimized ? optimizeRoute(list) : list;
-  }, [myDeliveries, multiStore, effectiveStoreId, useOptimized]);
+    return useOptimized ? optimizeRoute(list, activeStoreCoords) : list;
+  }, [myDeliveries, multiStore, effectiveStoreId, useOptimized, activeStoreCoords]);
 
   const filteredAvailable = useMemo(() => {
     if (!availableOrders) return [];
     const list = multiStore && effectiveStoreId
       ? availableOrders.filter((o: any) => o.store_id === effectiveStoreId)
       : availableOrders;
-    return useOptimized ? optimizeRoute(list) : list;
-  }, [availableOrders, multiStore, effectiveStoreId, useOptimized]);
+    return useOptimized ? optimizeRoute(list, activeStoreCoords) : list;
+  }, [availableOrders, multiStore, effectiveStoreId, useOptimized, activeStoreCoords]);
+
+  // Calculate total route distance
+  const routeDistanceKm = useMemo(() => {
+    const orders = filteredDeliveries.length > 0 ? filteredDeliveries : filteredAvailable;
+    if (!useOptimized || orders.length < 2) return 0;
+    return calculateRouteDistance(orders, activeStoreCoords);
+  }, [filteredDeliveries, filteredAvailable, useOptimized, activeStoreCoords]);
 
   // Per-store order counts for badges
   const storeOrderCounts = useMemo(() => {
