@@ -16,7 +16,7 @@ async function openLocationSettings() {
       "capacitor-native-settings"
     );
     await NativeSettings.open({
-      optionAndroid: AndroidSettings.LocationSource,
+      optionAndroid: AndroidSettings.Location,
       optionIOS: IOSSettings.LocationServices,
     });
   } catch {
