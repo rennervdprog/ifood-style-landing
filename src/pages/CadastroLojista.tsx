@@ -347,6 +347,46 @@ const CadastroLojista = () => {
                   </div>
                 </div>
 
+                {/* Plano Apoiadores - Lançamento (10 vagas) */}
+                {supporterAvailable && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPlan("supporter")}
+                    className={`w-full text-left rounded-2xl border-2 p-4 transition-all relative ${
+                      selectedPlan === "supporter" ? "border-primary bg-primary/5" : "border-amber-500/40 bg-amber-500/5 hover:border-amber-500/70"
+                    }`}
+                  >
+                    <span className="absolute -top-2.5 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500 text-white">
+                      🚀 Lançamento • {supporterRemaining} vagas
+                    </span>
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center">
+                        <Crown className="h-5 w-5 text-amber-600" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-bold text-sm text-foreground">Plano Apoiadores</h3>
+                        <p className="text-xs text-muted-foreground">Mesmas regras do Essencial</p>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-lg font-black text-foreground">R$130</span>
+                        <span className="text-xs text-muted-foreground">/mês</span>
+                      </div>
+                    </div>
+                    <p className="text-[10px] font-bold text-emerald-500 mb-1">🎁 7 dias grátis • Preço congelado para sempre</p>
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {(isPlatformCity
+                        ? ["Zero comissão", "Motoboy plataforma", "Fidelidade", "PIX integrado"]
+                        : ["Zero comissão", "PIX integrado", "Painel completo", "Todas as ferramentas"]
+                      ).map(tag => (
+                        <span key={tag} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400">{tag}</span>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-1.5">
+                      💡 Mesma taxa operacional do Essencial: R$1 por pedido via PIX • R$2 na entrega (pago pelo cliente)
+                    </p>
+                  </button>
+                )}
+
                 {/* Plano Essencial */}
                 <button
                   type="button"
