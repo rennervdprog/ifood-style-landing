@@ -101,13 +101,43 @@ const plans = [
     extraFees: [],
   },
   {
+    id: "supporter",
+    name: "Apoiadores",
+    tagline: "Edição de lançamento • Vagas limitadas",
+    price: "130",
+    period: "/mês",
+    icon: Award,
+    highlight: true,
+    badge: "🚀 Lançamento • 10 vagas",
+    commission: "0%",
+    commissionLabel: "comissão",
+    color: "from-primary to-orange-600",
+    lightBg: "bg-accent",
+    textColor: "text-primary",
+    borderColor: "border-primary/30",
+    description: "Mesmos benefícios do Essencial, com preço especial para os 10 primeiros apoiadores.",
+    features: [
+      "Tudo do plano Essencial",
+      "Zero comissão por pedido",
+      "Preço travado para sempre",
+      "Selo de Apoiador na loja",
+      "Suporte VIP prioritário",
+      "Acesso antecipado a novidades",
+      "Apenas 10 vagas disponíveis",
+    ],
+    extraFees: [
+      { label: "Taxa PIX fixa", value: "R$ 1,00/transação" },
+      { label: "Taxa entrega plataforma", value: "R$ 2,00/pedido" },
+    ],
+  },
+  {
     id: "fixed",
     name: "Essencial",
     tagline: "Lucro máximo em cada pedido",
     price: "180",
     period: "/mês",
     icon: Crown,
-    highlight: true,
+    highlight: false,
     badge: "⭐ Mais escolhido",
     commission: "0%",
     commissionLabel: "comissão",
@@ -477,7 +507,7 @@ const StoreDirectory = () => {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 items-start">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
             {plans.map((plan) => {
               const Icon = plan.icon;
               return (
