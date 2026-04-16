@@ -76,14 +76,16 @@ const ModeratorManager = () => {
         email: email.trim() || null,
         phone: phone.trim() || null,
         referral_code: code,
-        plan_fee_percent: planFeePercent,
-        delivery_split: deliverySplit,
-        commission_split_percent: commissionSplitPercent,
+        plan_fee_percent: essencialPlanFee, // stored as the main plan_fee for fixed plan
+        delivery_split: essencialDelivery,
+        commission_split_percent: comissaoCommission,
       });
       if (error) throw error;
       toast.success(`Moderador "${name}" criado! Código: ${code}`);
       setName(""); setEmail(""); setPhone("");
-      setPlanFeePercent(40); setDeliverySplit(1); setCommissionSplitPercent(2);
+      setEssencialPlanFee(40); setEssencialDelivery(1);
+      setCrescimentoPlanFee(40); setCrescimentoCommission(1); setCrescimentoDelivery(1);
+      setComissaoCommission(2);
       setShowAdd(false);
       queryClient.invalidateQueries({ queryKey: ["moderators"] });
     } catch (err: any) {
