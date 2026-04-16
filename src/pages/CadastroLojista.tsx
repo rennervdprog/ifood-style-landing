@@ -54,6 +54,8 @@ const STEPS = [
 
 const CadastroLojista = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const referralCode = searchParams.get("ref") || "";
   const [step, setStep] = useState(0);
   const [email, setEmail] = useState("");
   const [confirmEmail, setConfirmEmail] = useState("");
