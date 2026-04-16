@@ -166,6 +166,7 @@ const AuthPage = () => {
           await supabase.from("profiles").update({
             terms_accepted_at: new Date().toISOString(),
             document: cpf.replace(/\D/g, ""),
+            whatsapp_number: `55${whatsapp.replace(/\D/g, "")}`,
           }).eq("user_id", signUpData.user.id);
         }
         toast.success("Conta criada com sucesso!");
