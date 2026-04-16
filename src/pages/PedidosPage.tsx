@@ -1,5 +1,5 @@
 import { formatBRL } from "@/lib/utils";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getOrderItemDisplayName } from "@/lib/orderItemName";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -171,6 +171,17 @@ const PedidosPage = () => {
 
   const storeFilter = searchParams.get("store");
 
+  const refreshPedidosData = useCallback(async () => {
+    if (!user) return;
+
+    await Promise.allSettled([
+      queryClient.refetchQueries({ queryKey: ["orders", user.id], type: "active" }),
+      queryClient.refetchQueries({ queryKey: ["orders", user.id, storeFilter], type: "active" }),
+      queryClient.refetchQueries({ queryKey: ["own-store-pedidos", user.id], type: "active" }),
+      queryClient.refetchQueries({ queryKey: ["store-orders-lojista", ownStore?.id], type: "active" }),
+    ]);
+  }, [ownStore?.id, queryClient, storeFilter, user]);
+
   // Refetch orders when Capacitor app resumes from background
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
@@ -182,12 +193,7 @@ const PedidosPage = () => {
         const listener = await App.addListener("appStateChange", (state: { isActive: boolean }) => {
           if (!state.isActive || !user) return;
 
-          queryClient.invalidateQueries({ queryKey: ["orders", user.id] });
-          queryClient.invalidateQueries({ queryKey: ["orders", user.id, storeFilter] });
-
-          if (ownStore?.id && isLojista) {
-            queryClient.invalidateQueries({ queryKey: ["store-orders-lojista", ownStore.id] });
-          }
+          refreshPedidosData().catch(console.error);
         });
 
         cleanup = () => {
@@ -198,10 +204,19 @@ const PedidosPage = () => {
         cleanup = undefined;
       });
 
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        refreshPedidosData().catch(console.error);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+
     return () => {
       cleanup?.();
+      document.removeEventListener("visibilitychange", handleVisibility);
     };
-  }, [user, ownStore?.id, isLojista, queryClient, storeFilter]);
+  }, [refreshPedidosData, user]);
 
   // Client orders (for clients and lojistas viewing as client)
   const { data: orders, isLoading } = useQuery({
@@ -243,6 +258,8 @@ const PedidosPage = () => {
     },
     enabled: !!ownStore?.id && isLojista,
     refetchOnMount: "always",
+    refetchOnReconnect: true,
+    refetchOnWindowFocus: true,
   });
 
   // Fetch existing ratings to know which orders are already rated
@@ -336,12 +353,16 @@ const PedidosPage = () => {
           if ((newStatus === "finalizado" || newStatus === "entregue") && oldStatus !== newStatus) notifyOrderDelivered();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          refreshPedidosData().catch(console.error);
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, queryClient, storeFilter]);
+  }, [refreshPedidosData, storeFilter, user, queryClient]);
 
   // Realtime subscription for LOJISTA store orders
   useEffect(() => {
@@ -371,7 +392,7 @@ const PedidosPage = () => {
                 copy[idx] = { ...copy[idx], ...updated };
                 return copy;
               }
-              return old;
+              return [updated, ...old];
             });
           }
         }
@@ -381,7 +402,7 @@ const PedidosPage = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [ownStore?.id, isLojista, queryClient]);
+  }, [ownStore?.id, isLojista, queryClient, refreshPedidosData]);
 
   const copyPin = (pin: string) => {
     navigator.clipboard.writeText(pin);
