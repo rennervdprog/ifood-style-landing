@@ -231,6 +231,7 @@ const PedidosPage = () => {
       return data;
     },
     enabled: !!ownStore?.id && isLojista,
+    refetchOnMount: "always",
   });
 
   // Fetch existing ratings to know which orders are already rated
