@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Download, X, Smartphone } from "lucide-react";
 import { isGoNative } from "@/lib/gonative";
+import { isCapacitorNative } from "@/lib/capacitorNative";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
