@@ -57,19 +57,24 @@ export function printThermalReceipt(
     const displayName = getOrderItemDisplayName(item);
     itemsHtml += `<div class="tp-item-row"><span><b>${item.quantity}x</b> ${displayName}</span><span>R$ ${lineTotal}</span></div>`;
 
-    if (item.addons && Array.isArray(item.addons) && item.addons.length > 0) {
-      // Separate required and optional addons
-      const requiredAddons = item.addons.filter((a: any) => a.required && a.groupName);
-      const optionalAddons = item.addons.filter((a: any) => !(a.required && a.groupName));
+    let rawAddons = item.addons as any;
+    if (typeof rawAddons === "string") {
+      try { rawAddons = JSON.parse(rawAddons); } catch { rawAddons = []; }
+    }
+    const addons = Array.isArray(rawAddons) ? rawAddons : [];
 
-      // Show required addons highlighted
+    if (addons.length > 0) {
+      const requiredAddons = addons.filter((a: any) => a.required && a.groupName);
+      const optionalAddons = addons.filter((a: any) => !(a.required && a.groupName));
+
       requiredAddons.forEach((a: any) => {
-        itemsHtml += `<div class="tp-required-addon"><b>★ ${a.groupName}: ${a.name.toUpperCase()}</b>${Number(a.price) > 0 ? ` (+${formatBRL(Number(a.price))})` : ""}</div>`;
+        const priceStr = Number(a.price) > 0 ? formatBRL(Number(a.price)) : "";
+        itemsHtml += `<div class="tp-required-addon" style="display:flex;justify-content:space-between"><span><b>★ ${a.groupName}: ${a.name.toUpperCase()}</b></span><span>${priceStr}</span></div>`;
       });
 
-      // Show optional addons normally
       optionalAddons.forEach((a: any) => {
-        itemsHtml += `<div class="tp-addon">- ${a.name}${Number(a.price) > 0 ? ` (+${formatBRL(Number(a.price))})` : ""}</div>`;
+        const priceStr = Number(a.price) > 0 ? formatBRL(Number(a.price)) : "";
+        itemsHtml += `<div class="tp-addon" style="display:flex;justify-content:space-between"><span>+ ${a.name}</span><span>${priceStr}</span></div>`;
       });
     }
     if (item.observations) {
