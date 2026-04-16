@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   User, LogOut, Store, Shield, UserPlus, MapPin, Save, Bike, Wallet, Copy,
   AlertTriangle, MessageCircle, Truck, Download, Smartphone, X, Share2,
-  Search, Loader2, ChevronRight, Phone, Mail, CreditCard, Package, Settings, HelpCircle, Trash2, CheckCircle2
+  Search, Loader2, ChevronRight, Phone, Mail, CreditCard, Package, Settings, HelpCircle, Trash2, CheckCircle2, Users
 } from "lucide-react";
 import { toast } from "sonner";
 import { maskWhatsApp, formatWhatsAppNumber, isValidWhatsApp } from "@/lib/whatsapp";
