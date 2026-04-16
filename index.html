@@ -5,8 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, interactive-widget=resizes-content" />
 
     <!-- Preconnect to critical origins -->
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://lktzrqjvqoojlrhqnxuz.supabase.co" crossorigin />
     <link rel="dns-prefetch" href="https://lktzrqjvqoojlrhqnxuz.supabase.co" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- Preload main entry to shorten critical chain -->
+    <link rel="modulepreload" href="/src/main.tsx" />
 
     <!-- Google Fonts — fully deferred to not block FCP. Loaded after first paint via JS. -->
     <script>
