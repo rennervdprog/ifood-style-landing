@@ -2697,6 +2697,7 @@ export type Database = {
         Returns: undefined
       }
       confirm_order_payment: { Args: { _order_id: string }; Returns: undefined }
+      count_supporter_plans: { Args: never; Returns: number }
       driver_accept_order: { Args: { _order_id: string }; Returns: undefined }
       driver_confirm_store_return: {
         Args: { _order_id: string; _settlement_code?: string }
