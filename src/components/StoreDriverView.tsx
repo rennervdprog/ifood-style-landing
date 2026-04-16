@@ -34,69 +34,155 @@ const NavigationLinks = ({ addr }: { addr: string }) => {
 };
 
 /**
- * Nearest-neighbor route optimization using CEP proximity.
- * Brazilian CEPs that are numerically close are geographically close.
- * Falls back to neighborhood grouping when CEP is unavailable.
+ * Coordinate-based nearest-neighbor route optimization for Itatinga.
+ * Uses client lat/lng when available, falls back to neighborhood centroids.
+ * Haversine distance for accurate proximity sorting.
  */
-function extractCepDigits(addr: string): number | null {
-  const m = (addr || "").match(/(\d{5})-?(\d{3})/);
-  return m ? parseInt(m[1] + m[2], 10) : null;
+
+// Approximate centroids for Itatinga neighborhoods (lat, lng)
+const NEIGHBORHOOD_COORDS: Record<string, [number, number]> = {
+  "centro": [-23.1019, -48.6158],
+  "vila são joão": [-23.1045, -48.6205],
+  "jardim pedra branca": [-23.0975, -48.6230],
+  "vila claro": [-23.1060, -48.6130],
+  "vila são domingos": [-23.1080, -48.6180],
+  "jardim cidade serrana": [-23.0950, -48.6100],
+  "jardim parenti": [-23.1035, -48.6095],
+  "vila canaã": [-23.1100, -48.6220],
+  "jardim do éden": [-23.0990, -48.6070],
+  "villa di alberi": [-23.0960, -48.6145],
+  "residencial nunes": [-23.1070, -48.6105],
+  "jardim marajoara": [-23.1120, -48.6150],
+  "vila previsul": [-23.1005, -48.6190],
+  "distrito do lobo": [-23.0650, -48.5800],
+  "recanto dos cambarás": [-23.0930, -48.6060],
+  "engenheiro serra": [-23.0700, -48.5900],
+  "vila dos lavradores": [-23.1040, -48.6250],
+  "entorno do cdp": [-23.1090, -48.6080],
+  "fazendas/sítios (geral)": [-23.0800, -48.5950],
+};
+
+// Store default location (ItaSuper Pizzaria approximate)
+const STORE_DEFAULT: [number, number] = [-23.1019, -48.6158];
+
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-function optimizeRoute(orders: any[]): any[] {
+function getOrderCoords(order: any): [number, number] | null {
+  // Prefer actual client coordinates
+  if (order.client_lat && order.client_lng) {
+    return [order.client_lat, order.client_lng];
+  }
+  // Fall back to neighborhood centroid
+  const hood = (order.neighborhood || "").toLowerCase().trim();
+  return NEIGHBORHOOD_COORDS[hood] || null;
+}
+
+function optimizeRoute(orders: any[], storeCoords?: [number, number]): any[] {
   if (orders.length <= 1) return orders;
 
-  // Split into orders with and without CEP
-  const withCep = orders.filter((o) => extractCepDigits(o.address_details) !== null);
-  const withoutCep = orders.filter((o) => extractCepDigits(o.address_details) === null);
+  const start = storeCoords || STORE_DEFAULT;
 
-  // Nearest-neighbor on CEP-based orders
-  if (withCep.length > 1) {
-    const sorted: any[] = [];
-    const remaining = [...withCep];
-    // Start with the lowest CEP (closest to store area)
-    remaining.sort((a, b) => (extractCepDigits(a.address_details) || 0) - (extractCepDigits(b.address_details) || 0));
-    sorted.push(remaining.shift()!);
+  // Separate orders with and without coordinates
+  const withCoords: { order: any; coords: [number, number] }[] = [];
+  const withoutCoords: any[] = [];
 
-    while (remaining.length > 0) {
-      const lastCep = extractCepDigits(sorted[sorted.length - 1].address_details) || 0;
-      let nearestIdx = 0;
-      let nearestDist = Infinity;
-      remaining.forEach((o, i) => {
-        const dist = Math.abs((extractCepDigits(o.address_details) || 0) - lastCep);
-        if (dist < nearestDist) { nearestDist = dist; nearestIdx = i; }
-      });
-      sorted.push(remaining.splice(nearestIdx, 1)[0]);
+  orders.forEach((o) => {
+    const coords = getOrderCoords(o);
+    if (coords) {
+      withCoords.push({ order: o, coords });
+    } else {
+      withoutCoords.push(o);
     }
-    // Group by neighborhood within CEP-close clusters, then sort by street
-    const result = [...sorted];
-    // Append non-CEP orders grouped by neighborhood
+  });
+
+  if (withCoords.length === 0) {
+    // Pure fallback: group by neighborhood alphabetically
     const groups: Record<string, any[]> = {};
-    withoutCep.forEach((o) => {
+    orders.forEach((o) => {
       const key = (o.neighborhood || "outros").toLowerCase().trim();
       if (!groups[key]) groups[key] = [];
       groups[key].push(o);
     });
-    Object.values(groups).forEach((g) => {
-      g.sort((a, b) => (a.address_details || "").localeCompare(b.address_details || ""));
-      result.push(...g);
-    });
-    return result;
+    return Object.values(groups).flat();
   }
 
-  // Fallback: group by neighborhood
-  const groups: Record<string, any[]> = {};
-  orders.forEach((o) => {
-    const key = (o.neighborhood || "outros").toLowerCase().trim();
-    if (!groups[key]) groups[key] = [];
-    groups[key].push(o);
-  });
-  const result: any[] = [];
-  Object.values(groups).forEach((g) => {
-    g.sort((a, b) => (a.address_details || "").localeCompare(b.address_details || ""));
-    result.push(...g);
-  });
+  // Nearest-neighbor TSP starting from store location
+  const sorted: { order: any; coords: [number, number] }[] = [];
+  const remaining = [...withCoords];
+
+  // Start from the store: find nearest order to store
+  let currentPos = start;
+
+  while (remaining.length > 0) {
+    let nearestIdx = 0;
+    let nearestDist = Infinity;
+    remaining.forEach((item, i) => {
+      const dist = haversineKm(currentPos[0], currentPos[1], item.coords[0], item.coords[1]);
+      if (dist < nearestDist) {
+        nearestDist = dist;
+        nearestIdx = i;
+      }
+    });
+    const nearest = remaining.splice(nearestIdx, 1)[0];
+    sorted.push(nearest);
+    currentPos = nearest.coords;
+  }
+
+  // 2-opt improvement pass for small sets
+  if (sorted.length >= 4 && sorted.length <= 20) {
+    let improved = true;
+    let iterations = 0;
+    while (improved && iterations < 50) {
+      improved = false;
+      iterations++;
+      for (let i = 0; i < sorted.length - 1; i++) {
+        for (let j = i + 2; j < sorted.length; j++) {
+          const a = i === 0 ? start : sorted[i - 1].coords;
+          const b = sorted[i].coords;
+          const c = sorted[j].coords;
+          const d = j + 1 < sorted.length ? sorted[j + 1].coords : sorted[j].coords;
+
+          const currentDist = haversineKm(a[0], a[1], b[0], b[1]) + haversineKm(c[0], c[1], d[0], d[1]);
+          const newDist = haversineKm(a[0], a[1], c[0], c[1]) + haversineKm(b[0], b[1], d[0], d[1]);
+
+          if (newDist < currentDist - 0.01) {
+            // Reverse the segment between i and j
+            const segment = sorted.slice(i, j + 1).reverse();
+            sorted.splice(i, j - i + 1, ...segment);
+            improved = true;
+          }
+        }
+      }
+    }
+  }
+
+  const result = sorted.map((s) => s.order);
+  // Append orders without coordinates at the end
+  result.push(...withoutCoords);
   return result;
+}
+
+/** Calculate total route distance in km */
+function calculateRouteDistance(orders: any[], storeCoords?: [number, number]): number {
+  const start = storeCoords || STORE_DEFAULT;
+  let total = 0;
+  let current = start;
+  orders.forEach((o) => {
+    const coords = getOrderCoords(o);
+    if (coords) {
+      total += haversineKm(current[0], current[1], coords[0], coords[1]);
+      current = coords;
+    }
+  });
+  return total;
 }
 
 interface StoreDriverViewProps {
