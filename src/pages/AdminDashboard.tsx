@@ -392,13 +392,13 @@ const AdminDashboard = () => {
     if (!store?.id) return;
 
     await Promise.allSettled([
-      queryClient.invalidateQueries({ queryKey: ["my-store", user?.id, activeSimulateStoreId] }),
-      queryClient.invalidateQueries({ queryKey: ["store-orders", store.id] }),
-      queryClient.invalidateQueries({ queryKey: ["store-all-orders", store.id] }),
-      queryClient.invalidateQueries({ queryKey: ["store-hours-check", store.id] }),
-      queryClient.invalidateQueries({ queryKey: ["store-drivers-list", store.id] }),
-      queryClient.invalidateQueries({ queryKey: ["client-profiles", store.id] }),
-      queryClient.invalidateQueries({ queryKey: ["online-drivers-count"] }),
+      queryClient.refetchQueries({ queryKey: ["my-store", user?.id, activeSimulateStoreId], type: "active" }),
+      queryClient.refetchQueries({ queryKey: ["store-orders", store.id], type: "active" }),
+      queryClient.refetchQueries({ queryKey: ["store-all-orders", store.id], type: "active" }),
+      queryClient.refetchQueries({ queryKey: ["store-hours-check", store.id], type: "active" }),
+      queryClient.refetchQueries({ queryKey: ["store-drivers-list", store.id], type: "active" }),
+      queryClient.refetchQueries({ queryKey: ["client-profiles", store.id], type: "active" }),
+      queryClient.refetchQueries({ queryKey: ["online-drivers-count"], type: "active" }),
     ]);
   }, [activeSimulateStoreId, queryClient, store?.id, user?.id]);
 
@@ -465,6 +465,19 @@ const AdminDashboard = () => {
       active = false;
       cleanup?.();
     };
+  }, [refreshDashboardOrders, store?.id]);
+
+  useEffect(() => {
+    if (!store?.id) return;
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        refreshDashboardOrders().catch(console.error);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
   }, [refreshDashboardOrders, store?.id]);
 
   const { data: storeAddonGroups = [] } = useQuery({

@@ -81,8 +81,16 @@ async function setupAppStateListener() {
       focusManager.setFocused(isActive);
 
       if (isActive) {
-        // Give the WebSocket a moment to wake up, then force reconnect
-        setTimeout(reconnectRealtime, 500);
+        // Force the online/focus state back on and reconnect immediately,
+        // then once more after a short delay for WebViews that wake slowly.
+        onlineManager.setOnline(true);
+        reconnectRealtime();
+        setTimeout(() => {
+          onlineManager.setOnline(true);
+          reconnectRealtime();
+        }, 1200);
+      } else {
+        focusManager.setFocused(false);
       }
     });
   } catch (e) {
