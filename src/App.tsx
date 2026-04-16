@@ -61,11 +61,24 @@ const PushNavigator = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // On mount: check if there's a pending push navigation from cold start
+  useEffect(() => {
+    const pending = consumePendingPushNavigation();
+    if (pending) {
+      console.log("[PushNav] Replaying pending push navigation:", pending);
+      setTimeout(() => navigate(pending, { replace: true }), 100);
+    }
+  }, []);
+
   useEffect(() => {
     const handler = (e: Event) => {
       const path = (e as CustomEvent).detail?.path;
       if (!path) return;
       console.log("[PushNav] Navigating to:", path);
+
+      // Clear pending since we're handling it now
+      consumePendingPushNavigation();
+
       // Parse path and query
       const [pathname, search] = path.split("?");
       const currentFull = location.pathname + (location.search || "");
