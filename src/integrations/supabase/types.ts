@@ -2870,6 +2870,7 @@ export type Database = {
         | "farmacias"
         | "docerias"
         | "restaurante"
+        | "esfihas"
       store_plan_type: "fixed" | "hybrid" | "commission_only"
       store_status: "analise" | "ativo" | "bloqueado"
       wallet_transaction_type: "credit" | "debit"
@@ -3048,6 +3049,7 @@ export const Constants = {
         "farmacias",
         "docerias",
         "restaurante",
+        "esfihas",
       ],
       store_plan_type: ["fixed", "hybrid", "commission_only"],
       store_status: ["analise", "ativo", "bloqueado"],
