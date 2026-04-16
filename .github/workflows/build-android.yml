@@ -113,20 +113,21 @@ jobs:
             echo "ℹ️ Location permissions already present"
           fi
 
-      - name: Inject ItaSuper icon
+      - name: Inject ItaSuper Cliente icon
         run: |
-          echo "📥 Injecting ItaSuper icon from public/icon-512x512.png"
+          ICON="public/icon-cliente.png"
+          echo "📥 Injecting Cliente icon from $ICON"
           for res in "mipmap-mdpi:48" "mipmap-hdpi:72" "mipmap-xhdpi:96" "mipmap-xxhdpi:144" "mipmap-xxxhdpi:192"; do
             DIR="android/app/src/main/res/${res%%:*}"
             SIZE="${res##*:}"
             mkdir -p "$DIR"
-            npx --yes sharp-cli -i public/icon-512x512.png -o "$DIR/ic_launcher.png" resize "$SIZE" "$SIZE" 2>/dev/null || \
-              convert public/icon-512x512.png -resize "${SIZE}x${SIZE}" "$DIR/ic_launcher.png" 2>/dev/null || \
-              cp public/icon-512x512.png "$DIR/ic_launcher.png"
+            npx --yes sharp-cli -i "$ICON" -o "$DIR/ic_launcher.png" resize "$SIZE" "$SIZE" 2>/dev/null || \
+              convert "$ICON" -resize "${SIZE}x${SIZE}" "$DIR/ic_launcher.png" 2>/dev/null || \
+              cp "$ICON" "$DIR/ic_launcher.png"
             cp "$DIR/ic_launcher.png" "$DIR/ic_launcher_round.png"
             cp "$DIR/ic_launcher.png" "$DIR/ic_launcher_foreground.png"
           done
-          echo "✅ ItaSuper icon injected"
+          echo "✅ ItaSuper Cliente icon injected"
 
       - name: Inject notification sound
         run: |
@@ -233,14 +234,15 @@ jobs:
 
       - name: Inject ItaSuper Parceiro icon
         run: |
-          echo "📥 Injecting ItaSuper icon from public/icon-512x512.png"
+          ICON="public/icon-parceiro.png"
+          echo "📥 Injecting Parceiro icon from $ICON"
           for res in "mipmap-mdpi:48" "mipmap-hdpi:72" "mipmap-xhdpi:96" "mipmap-xxhdpi:144" "mipmap-xxxhdpi:192"; do
             DIR="android/app/src/main/res/${res%%:*}"
             SIZE="${res##*:}"
             mkdir -p "$DIR"
-            npx --yes sharp-cli -i public/icon-512x512.png -o "$DIR/ic_launcher.png" resize "$SIZE" "$SIZE" 2>/dev/null || \
-              convert public/icon-512x512.png -resize "${SIZE}x${SIZE}" "$DIR/ic_launcher.png" 2>/dev/null || \
-              cp public/icon-512x512.png "$DIR/ic_launcher.png"
+            npx --yes sharp-cli -i "$ICON" -o "$DIR/ic_launcher.png" resize "$SIZE" "$SIZE" 2>/dev/null || \
+              convert "$ICON" -resize "${SIZE}x${SIZE}" "$DIR/ic_launcher.png" 2>/dev/null || \
+              cp "$ICON" "$DIR/ic_launcher.png"
             cp "$DIR/ic_launcher.png" "$DIR/ic_launcher_round.png"
             cp "$DIR/ic_launcher.png" "$DIR/ic_launcher_foreground.png"
           done
