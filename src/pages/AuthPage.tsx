@@ -29,6 +29,7 @@ const AuthPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [cpf, setCpf] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
