@@ -8,27 +8,59 @@ import { geocodeAddressPrecise, type AddressContext, type Coordinates } from "@/
 
 /**
  * Try to get the device's current GPS position.
- * Returns null if permission denied or unavailable.
+ * Returns null if permission denied, location services disabled, or unavailable.
  */
 export async function getDeviceGPS(): Promise<Coordinates | null> {
   try {
     if (isCapacitorNative()) {
       const { Geolocation } = await import("@capacitor/geolocation");
 
+      // Check if location services are enabled first
+      try {
+        const perm = await Geolocation.checkPermissions();
+        // If denied, try requesting
+        if (perm.location === "denied") {
+          console.info("[DeviceGPS] Location permission denied by user");
+          return null;
+        }
+      } catch {
+        // checkPermissions may fail if services disabled — that's OK
+      }
+
       // Request permission (will show native dialog)
-      const perm = await Geolocation.requestPermissions();
-      if (perm.location !== "granted" && perm.coarseLocation !== "granted") {
-        console.warn("[DeviceGPS] Permission denied");
+      try {
+        const perm = await Geolocation.requestPermissions();
+        if (perm.location !== "granted" && perm.coarseLocation !== "granted") {
+          console.info("[DeviceGPS] Permission not granted");
+          return null;
+        }
+      } catch (permErr: any) {
+        // OS-PLUG-GLOC-0007 = Location services disabled on device
+        const code = permErr?.code || permErr?.message || "";
+        if (String(code).includes("0007") || String(permErr?.message).includes("not enabled")) {
+          console.info("[DeviceGPS] Location services disabled on device — using address fallback");
+        } else {
+          console.info("[DeviceGPS] Permission request failed:", code);
+        }
         return null;
       }
 
-      const pos = await Geolocation.getCurrentPosition({
-        enableHighAccuracy: true,
-        timeout: 10_000,
-      });
-
-      console.log(`[DeviceGPS] Capacitor GPS: ${pos.coords.latitude}, ${pos.coords.longitude} (±${pos.coords.accuracy}m)`);
-      return { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      try {
+        const pos = await Geolocation.getCurrentPosition({
+          enableHighAccuracy: true,
+          timeout: 10_000,
+        });
+        console.log(`[DeviceGPS] Capacitor GPS: ${pos.coords.latitude}, ${pos.coords.longitude} (±${pos.coords.accuracy}m)`);
+        return { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      } catch (posErr: any) {
+        const code = String(posErr?.code || posErr?.message || "");
+        if (code.includes("0007") || code.includes("not enabled")) {
+          console.info("[DeviceGPS] Location services disabled — using address fallback");
+        } else {
+          console.info("[DeviceGPS] Could not get position:", code);
+        }
+        return null;
+      }
     }
 
     // Web fallback
@@ -40,7 +72,7 @@ export async function getDeviceGPS(): Promise<Coordinates | null> {
             resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude });
           },
           (err) => {
-            console.warn("[DeviceGPS] Browser GPS error:", err.message);
+            console.info("[DeviceGPS] Browser GPS unavailable:", err.message);
             resolve(null);
           },
           { enableHighAccuracy: true, timeout: 10_000, maximumAge: 60_000 }
@@ -50,7 +82,7 @@ export async function getDeviceGPS(): Promise<Coordinates | null> {
 
     return null;
   } catch (e) {
-    console.warn("[DeviceGPS] Failed:", e);
+    console.info("[DeviceGPS] GPS unavailable, will use address fallback");
     return null;
   }
 }
