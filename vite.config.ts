@@ -85,6 +85,10 @@ export default defineConfig(({ mode }) => ({
     }),
   ].filter(Boolean),
   build: {
+    cssCodeSplit: true,
+    minify: "esbuild",
+    target: "es2020",
+    reportCompressedSize: false,
     rollupOptions: {
       output: {
         manualChunks: {
@@ -92,6 +96,7 @@ export default defineConfig(({ mode }) => ({
           query: ["@tanstack/react-query"],
           supabase: ["@supabase/supabase-js"],
           charts: ["recharts"],
+          icons: ["lucide-react"],
           ui: [
             "@radix-ui/react-dialog",
             "@radix-ui/react-popover",
