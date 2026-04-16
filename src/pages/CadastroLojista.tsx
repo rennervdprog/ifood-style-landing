@@ -229,14 +229,14 @@ const CadastroLojista = () => {
           // Link store to moderator if referral code present
           if (referralCode && storeRow.id) {
             try {
-              const { data: mod } = await supabase
-                .from("moderators" as any)
+              const { data: mod } = await (supabase as any)
+                .from("moderators")
                 .select("id")
                 .eq("referral_code", referralCode)
                 .eq("is_active", true)
                 .maybeSingle();
               if (mod?.id) {
-                await supabase.from("moderator_referrals" as any).insert({
+                await (supabase as any).from("moderator_referrals").insert({
                   moderator_id: mod.id,
                   store_id: storeRow.id,
                 });
