@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import {
-  Users, Percent, PiggyBank, DollarSign, Send, Plus, Trash2, Edit2, Check, X, Wallet, TrendingUp, Shield, Calendar, ArrowRight
+  Users, Percent, PiggyBank, DollarSign, Send, Plus, Trash2, Edit2, Check, X, Wallet, TrendingUp, Shield, Calendar, ArrowRight, CreditCard, BarChart3, Building2
 } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 
@@ -35,6 +35,184 @@ const PIX_TYPES = [
   { value: "phone", label: "Telefone" },
   { value: "random", label: "Chave aleatória" },
 ];
+
+// --- Sub-components ---
+
+const PartnerForm = ({ form, setForm, onSave, onCancel, isPending, isNew, partnerId }: any) => (
+  <Card className="border-2 border-primary/20">
+    <CardContent className="pt-4 space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <Label>Nome</Label>
+          <Input value={form.name} onChange={e => setForm((f: any) => ({ ...f, name: e.target.value }))} placeholder="Nome do sócio" />
+        </div>
+        <div>
+          <Label>E-mail</Label>
+          <Input value={form.email} onChange={e => setForm((f: any) => ({ ...f, email: e.target.value }))} placeholder="email@exemplo.com" />
+        </div>
+        <div>
+          <Label>% do Lucro</Label>
+          <Input type="number" min={0} max={100} value={form.profit_percent} onChange={e => setForm((f: any) => ({ ...f, profit_percent: Number(e.target.value) }))} />
+        </div>
+        <div>
+          <Label>% Fundo de Emergência (da sua parte)</Label>
+          <Input type="number" min={0} max={50} value={form.emergency_fund_percent} onChange={e => setForm((f: any) => ({ ...f, emergency_fund_percent: Number(e.target.value) }))} />
+        </div>
+        <div>
+          <Label>Tipo de Chave PIX</Label>
+          <Select value={form.pix_type} onValueChange={(v: string) => setForm((f: any) => ({ ...f, pix_type: v }))}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {PIX_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label>Chave PIX</Label>
+          <Input value={form.pix_key} onChange={e => setForm((f: any) => ({ ...f, pix_key: e.target.value }))} placeholder="Chave PIX para recebimento" />
+        </div>
+      </div>
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          <Switch checked={form.is_owner} onCheckedChange={(v: boolean) => setForm((f: any) => ({ ...f, is_owner: v }))} />
+          <Label>É o dono (você)</Label>
+        </div>
+        <div className="flex items-center gap-2">
+          <Switch checked={form.auto_transfer} onCheckedChange={(v: boolean) => setForm((f: any) => ({ ...f, auto_transfer: v }))} />
+          <Label>Transferência automática</Label>
+        </div>
+      </div>
+      <div className="flex gap-2">
+        <Button onClick={() => onSave(isNew ? form : { ...form, id: partnerId })} disabled={isPending || !form.name || form.profit_percent <= 0}>
+          <Check className="w-4 h-4 mr-1" /> Salvar
+        </Button>
+        <Button variant="ghost" onClick={onCancel}>
+          <X className="w-4 h-4 mr-1" /> Cancelar
+        </Button>
+      </div>
+    </CardContent>
+  </Card>
+);
+
+const RevenueBreakdownCard = ({ planBreakdown, pendingCommission, pendingRepasse, partners }: {
+  planBreakdown: { plan_type: string; qty: number; total_fee: number; avg_commission: number }[];
+  pendingCommission: number;
+  pendingRepasse: number;
+  partners: Partner[];
+}) => {
+  const totalMonthlyFees = planBreakdown.reduce((s, p) => s + Number(p.total_fee), 0);
+  const totalRecurring = totalMonthlyFees;
+  const totalPendingReceivables = pendingCommission + pendingRepasse;
+  const totalRevenue = totalRecurring + totalPendingReceivables;
+
+  const planLabels: Record<string, string> = {
+    fixed: "Essencial",
+    hybrid: "Híbrido",
+    commission_only: "Comissão",
+  };
+
+  return (
+    <Card className="border-primary/20">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base flex items-center gap-2">
+          <BarChart3 className="w-5 h-5 text-primary" /> Receita Detalhada da Plataforma
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Assinaturas */}
+        <div>
+          <h4 className="text-sm font-semibold flex items-center gap-2 mb-2">
+            <CreditCard className="w-4 h-4 text-blue-500" /> Assinaturas Ativas
+          </h4>
+          <div className="space-y-1">
+            {planBreakdown.map(p => (
+              <div key={p.plan_type} className="flex justify-between text-sm bg-muted/50 rounded px-3 py-2">
+                <span>
+                  <Badge variant="outline" className="mr-2 text-xs">{p.qty}</Badge>
+                  {planLabels[p.plan_type] || p.plan_type}
+                  {Number(p.avg_commission) > 0 && (
+                    <span className="text-muted-foreground ml-1">(+{Number(p.avg_commission).toFixed(1)}% comissão)</span>
+                  )}
+                </span>
+                <span className="font-medium">{formatBRL(p.total_fee)}/mês</span>
+              </div>
+            ))}
+          </div>
+          <div className="flex justify-between text-sm font-semibold mt-2 px-3">
+            <span>Total Assinaturas</span>
+            <span className="text-blue-600">{formatBRL(totalMonthlyFees)}/mês</span>
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Comissões a Receber */}
+        <div>
+          <h4 className="text-sm font-semibold flex items-center gap-2 mb-2">
+            <TrendingUp className="w-4 h-4 text-green-500" /> Comissões & Repasses Pendentes
+          </h4>
+          <div className="space-y-1">
+            <div className="flex justify-between text-sm bg-muted/50 rounded px-3 py-2">
+              <span>Comissões pendentes</span>
+              <span className="font-medium">{formatBRL(pendingCommission)}</span>
+            </div>
+            <div className="flex justify-between text-sm bg-muted/50 rounded px-3 py-2">
+              <span>Repasses pendentes (entrega própria)</span>
+              <span className="font-medium">{formatBRL(pendingRepasse)}</span>
+            </div>
+          </div>
+          <div className="flex justify-between text-sm font-semibold mt-2 px-3">
+            <span>Total a Receber</span>
+            <span className="text-green-600">{formatBRL(totalPendingReceivables)}</span>
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Divisão por Sócio */}
+        <div>
+          <h4 className="text-sm font-semibold flex items-center gap-2 mb-2">
+            <Users className="w-4 h-4 text-purple-500" /> Divisão por Sócio (Receita Mensal Estimada)
+          </h4>
+          <div className="space-y-2">
+            {partners.filter(p => p.is_active).map(p => {
+              const grossMonthly = totalRecurring * (p.profit_percent / 100);
+              const grossPending = totalPendingReceivables * (p.profit_percent / 100);
+              const emergencyMonthly = grossMonthly * (p.emergency_fund_percent / 100);
+              const emergencyPending = grossPending * (p.emergency_fund_percent / 100);
+              const netMonthly = grossMonthly - emergencyMonthly;
+              const netPending = grossPending - emergencyPending;
+
+              return (
+                <div key={p.id} className="bg-muted/50 rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="font-medium">{p.name}</span>
+                    {p.is_owner && <Badge variant="secondary" className="text-xs">Dono</Badge>}
+                    <Badge className="text-xs">{p.profit_percent}%</Badge>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="bg-background rounded p-2">
+                      <p className="text-muted-foreground">Assinaturas/mês</p>
+                      <p className="font-semibold text-blue-600">{formatBRL(grossMonthly)}</p>
+                      <p className="text-muted-foreground">- Fundo: {formatBRL(emergencyMonthly)}</p>
+                      <p className="font-bold text-green-600">Líq: {formatBRL(netMonthly)}</p>
+                    </div>
+                    <div className="bg-background rounded p-2">
+                      <p className="text-muted-foreground">Pendente a receber</p>
+                      <p className="font-semibold text-green-600">{formatBRL(grossPending)}</p>
+                      <p className="text-muted-foreground">- Fundo: {formatBRL(emergencyPending)}</p>
+                      <p className="font-bold text-green-600">Líq: {formatBRL(netPending)}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 const PartnerSplitPanel = () => {
   const queryClient = useQueryClient();
@@ -64,7 +242,7 @@ const PartnerSplitPanel = () => {
         .from("emergency_fund")
         .select("amount, transaction_type");
       if (error) throw error;
-      return (data || []).reduce((acc, t) => 
+      return (data || []).reduce((acc, t) =>
         t.transaction_type === "deposit" ? acc + Number(t.amount) : acc - Number(t.amount), 0
       );
     },
@@ -83,17 +261,39 @@ const PartnerSplitPanel = () => {
     },
   });
 
-  // Platform revenue query (commissions + plan fees from payout_history + store_balances)
-  const { data: platformRevenue = 0 } = useQuery({
-    queryKey: ["platform-revenue-total"],
+  // Plan breakdown by type
+  const { data: planBreakdown = [] } = useQuery({
+    queryKey: ["plan-breakdown"],
     queryFn: async () => {
-      const { data: balances } = await supabase.from("store_balances").select("comissao_pendente, repasse_pendente");
-      const totalPending = (balances || []).reduce((s, b) => s + Number(b.comissao_pendente || 0) + Number(b.repasse_pendente || 0), 0);
-      
-      const { data: payoutHist } = await supabase.from("payout_history").select("amount").eq("entity_type", "platform");
-      const totalPaid = (payoutHist || []).reduce((s, p) => s + Number(p.amount || 0), 0);
-      
-      return totalPending + totalPaid;
+      const { data, error } = await supabase
+        .from("store_plans")
+        .select("plan_type, monthly_fee, commission_rate")
+        .eq("is_active", true);
+      if (error) throw error;
+      const grouped: Record<string, { plan_type: string; qty: number; total_fee: number; avg_commission: number; commissions: number[] }> = {};
+      (data || []).forEach(p => {
+        if (!grouped[p.plan_type]) grouped[p.plan_type] = { plan_type: p.plan_type, qty: 0, total_fee: 0, avg_commission: 0, commissions: [] };
+        grouped[p.plan_type].qty++;
+        grouped[p.plan_type].total_fee += Number(p.monthly_fee);
+        grouped[p.plan_type].commissions.push(Number(p.commission_rate));
+      });
+      return Object.values(grouped).map(g => ({
+        ...g,
+        avg_commission: g.commissions.length ? g.commissions.reduce((a, b) => a + b, 0) / g.commissions.length : 0,
+      }));
+    },
+  });
+
+  // Pending balances
+  const { data: pendingBalances = { commission: 0, repasse: 0 } } = useQuery({
+    queryKey: ["pending-balances-total"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("store_balances").select("comissao_pendente, repasse_pendente");
+      if (error) throw error;
+      return {
+        commission: (data || []).reduce((s, b) => s + Number(b.comissao_pendente || 0), 0),
+        repasse: (data || []).reduce((s, b) => s + Number(b.repasse_pendente || 0), 0),
+      };
     },
   });
 
@@ -143,67 +343,8 @@ const PartnerSplitPanel = () => {
   };
 
   const totalPercent = partners.reduce((s, p) => s + Number(p.profit_percent), 0);
-  const totalEmergency = partners.reduce((s, p) => s + (Number(p.profit_percent) * Number(p.emergency_fund_percent) / 100), 0);
-
-  const renderForm = (isNew: boolean, partnerId?: string) => (
-    <Card className="border-2 border-primary/20">
-      <CardContent className="pt-4 space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label>Nome</Label>
-            <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Nome do sócio" />
-          </div>
-          <div>
-            <Label>E-mail</Label>
-            <Input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="email@exemplo.com" />
-          </div>
-          <div>
-            <Label>% do Lucro</Label>
-            <Input type="number" min={0} max={100} value={form.profit_percent} onChange={e => setForm(f => ({ ...f, profit_percent: Number(e.target.value) }))} />
-          </div>
-          <div>
-            <Label>% Fundo de Emergência (da sua parte)</Label>
-            <Input type="number" min={0} max={50} value={form.emergency_fund_percent} onChange={e => setForm(f => ({ ...f, emergency_fund_percent: Number(e.target.value) }))} />
-          </div>
-          <div>
-            <Label>Tipo de Chave PIX</Label>
-            <Select value={form.pix_type} onValueChange={v => setForm(f => ({ ...f, pix_type: v }))}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {PIX_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label>Chave PIX</Label>
-            <Input value={form.pix_key} onChange={e => setForm(f => ({ ...f, pix_key: e.target.value }))} placeholder="Chave PIX para recebimento" />
-          </div>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Switch checked={form.is_owner} onCheckedChange={v => setForm(f => ({ ...f, is_owner: v }))} />
-            <Label>É o dono (você)</Label>
-          </div>
-          <div className="flex items-center gap-2">
-            <Switch checked={form.auto_transfer} onCheckedChange={v => setForm(f => ({ ...f, auto_transfer: v }))} />
-            <Label>Transferência automática</Label>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <Button onClick={() => saveMutation.mutate(isNew ? form : { ...form, id: partnerId })} disabled={saveMutation.isPending || !form.name || form.profit_percent <= 0}>
-            <Check className="w-4 h-4 mr-1" /> Salvar
-          </Button>
-          <Button variant="ghost" onClick={() => { setEditing(null); setAdding(false); resetForm(); }}>
-            <X className="w-4 h-4 mr-1" /> Cancelar
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-
-  // Calculate split preview
-  const ownerPartner = partners.find(p => p.is_owner);
-  const otherPartners = partners.filter(p => !p.is_owner);
+  const totalPlans = planBreakdown.reduce((s, p) => s + p.qty, 0);
+  const totalMonthly = planBreakdown.reduce((s, p) => s + p.total_fee, 0);
 
   return (
     <div className="space-y-6">
@@ -211,9 +352,17 @@ const PartnerSplitPanel = () => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-4 text-center">
+            <Building2 className="w-6 h-6 mx-auto text-blue-500 mb-1" />
+            <p className="text-xs text-muted-foreground">Lojas Ativas</p>
+            <p className="text-lg font-bold">{totalPlans}</p>
+            <p className="text-xs text-muted-foreground">{formatBRL(totalMonthly)}/mês</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4 text-center">
             <TrendingUp className="w-6 h-6 mx-auto text-green-500 mb-1" />
-            <p className="text-xs text-muted-foreground">Receita Plataforma</p>
-            <p className="text-lg font-bold">{formatBRL(platformRevenue)}</p>
+            <p className="text-xs text-muted-foreground">A Receber</p>
+            <p className="text-lg font-bold">{formatBRL(pendingBalances.commission + pendingBalances.repasse)}</p>
           </CardContent>
         </Card>
         <Card>
@@ -225,65 +374,21 @@ const PartnerSplitPanel = () => {
         </Card>
         <Card>
           <CardContent className="pt-4 text-center">
-            <Users className="w-6 h-6 mx-auto text-blue-500 mb-1" />
+            <Users className="w-6 h-6 mx-auto text-purple-500 mb-1" />
             <p className="text-xs text-muted-foreground">Sócios Ativos</p>
             <p className="text-lg font-bold">{partners.filter(p => p.is_active).length}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4 text-center">
-            <Calendar className="w-6 h-6 mx-auto text-purple-500 mb-1" />
-            <p className="text-xs text-muted-foreground">Repasses</p>
-            <p className="text-lg font-bold">Dias 5 e 20</p>
+            <p className="text-xs text-muted-foreground">Repasses dias 5 e 20</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Split Preview */}
-      {partners.length >= 2 && (
-        <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Percent className="w-5 h-5" /> Simulação de Divisão
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-3">
-              Para cada <span className="font-bold text-foreground">R$ 1.000</span> de lucro da plataforma:
-            </p>
-            <div className="space-y-3">
-              {partners.map(p => {
-                const gross = 1000 * (p.profit_percent / 100);
-                const emergency = gross * (p.emergency_fund_percent / 100);
-                const net = gross - emergency;
-                return (
-                  <div key={p.id} className="flex items-center gap-3 bg-background rounded-lg p-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{p.name}</span>
-                        {p.is_owner && <Badge variant="secondary" className="text-xs">Dono</Badge>}
-                        <Badge className="text-xs">{p.profit_percent}%</Badge>
-                      </div>
-                      <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-                        <span>Bruto: {formatBRL(gross)}</span>
-                        <ArrowRight className="w-3 h-3" />
-                        <span className="text-amber-600">Fundo: {formatBRL(emergency)}</span>
-                        <ArrowRight className="w-3 h-3" />
-                        <span className="text-green-600 font-medium">Líquido: {formatBRL(net)}</span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-              <Separator />
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Total Fundo Emergência:</span>
-                <span className="font-bold text-amber-600">{formatBRL(1000 * totalEmergency / 100)}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Revenue Breakdown with per-partner split */}
+      <RevenueBreakdownCard
+        planBreakdown={planBreakdown}
+        pendingCommission={pendingBalances.commission}
+        pendingRepasse={pendingBalances.repasse}
+        partners={partners}
+      />
 
       {/* Partners List */}
       <Card>
@@ -305,11 +410,27 @@ const PartnerSplitPanel = () => {
             </div>
           )}
 
-          {adding && renderForm(true)}
+          {adding && (
+            <PartnerForm
+              form={form} setForm={setForm}
+              onSave={(data: any) => saveMutation.mutate(data)}
+              onCancel={() => { setAdding(false); resetForm(); }}
+              isPending={saveMutation.isPending}
+              isNew={true}
+            />
+          )}
 
           {partners.map(p => (
             <div key={p.id}>
-              {editing === p.id ? renderForm(false, p.id) : (
+              {editing === p.id ? (
+                <PartnerForm
+                  form={form} setForm={setForm}
+                  onSave={(data: any) => saveMutation.mutate(data)}
+                  onCancel={() => { setEditing(null); resetForm(); }}
+                  isPending={saveMutation.isPending}
+                  isNew={false} partnerId={p.id}
+                />
+              ) : (
                 <Card className={`${p.is_owner ? 'border-primary/40' : ''}`}>
                   <CardContent className="pt-4">
                     <div className="flex items-center justify-between">
@@ -391,7 +512,7 @@ const PartnerSplitPanel = () => {
         </CardContent>
       </Card>
 
-      {/* Emergency Fund History */}
+      {/* Emergency Fund */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
@@ -399,7 +520,7 @@ const PartnerSplitPanel = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="bg-amber-50 dark:bg-amber-950/30 rounded-lg p-4 mb-4">
+          <div className="bg-amber-50 dark:bg-amber-950/30 rounded-lg p-4">
             <p className="text-sm text-amber-800 dark:text-amber-200">
               Saldo atual: <span className="font-bold text-lg">{formatBRL(fundBalance)}</span>
             </p>
