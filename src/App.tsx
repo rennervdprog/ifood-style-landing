@@ -105,6 +105,7 @@ const App = () => {
           <NotificationPrompt />
           <DebugOverlay />
           <BrowserRouter>
+            <PushNavigator />
             <CapacitorRouteGuard />
             <StoreAppGuard />
             <Suspense fallback={<PageLoader />}>
