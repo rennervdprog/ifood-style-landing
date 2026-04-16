@@ -71,7 +71,7 @@ export function printThermalReceipt(
 
       requiredAddons.forEach((a: any) => {
         const priceStr = Number(a.price) > 0 ? formatBRL(Number(a.price)) : "";
-        itemsHtml += `<div class="tp-required-addon" style="display:flex;justify-content:space-between"><span><b>★ ${a.groupName}: ${a.name.toUpperCase()}</b></span><span>${priceStr}</span></div>`;
+        itemsHtml += `<div class="tp-required-addon" style="display:flex;justify-content:space-between;font-weight:bold;font-size:13px;border:1px solid #000;padding:2px 4px;margin:3px 0;background:#eee"><span>★ ${a.groupName}: ${a.name.toUpperCase()}</span><span>${priceStr}</span></div>`;
       });
 
       optionalAddons.forEach((a: any) => {

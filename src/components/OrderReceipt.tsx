@@ -109,10 +109,12 @@ const OrderReceipt = forwardRef<HTMLDivElement, OrderReceiptProps>(
                       <div key={`req-${i}`} style={{
                         display: "flex",
                         justifyContent: "space-between",
-                        margin: "2px 0",
+                        margin: "3px 0",
                         fontWeight: "bold",
-                        borderLeft: "3px solid #000",
-                        paddingLeft: "6px",
+                        fontSize: "12px",
+                        border: "1px solid #000",
+                        padding: "2px 6px",
+                        background: "#eee",
                       }}>
                         <span>★ {addon.groupName}: {addon.name.toUpperCase()}</span>
                         <span>{Number(addon.price) > 0 ? formatBRL(Number(addon.price)) : ""}</span>
