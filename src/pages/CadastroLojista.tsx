@@ -39,7 +39,7 @@ const schema = z.object({
   street: z.string().trim().min(2, "Rua é obrigatória"),
   addressNumber: z.string().trim().min(1, "Número é obrigatório"),
   neighborhood: z.string().trim().min(2, "Bairro é obrigatório"),
-  selectedPlan: z.enum(["fixed", "hybrid", "commission_only"], { errorMap: () => ({ message: "Selecione um plano" }) }),
+  selectedPlan: z.enum(["supporter", "fixed", "hybrid", "commission_only"], { errorMap: () => ({ message: "Selecione um plano" }) }),
 }).refine((data) => data.email === data.confirmEmail, {
   message: "Os e-mails não coincidem",
   path: ["confirmEmail"],
@@ -77,7 +77,28 @@ const CadastroLojista = () => {
   const [loadingCep, setLoadingCep] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [selectedPlan, setSelectedPlan] = useState<"fixed" | "hybrid" | "commission_only" | "">("");
+  const [selectedPlan, setSelectedPlan] = useState<"supporter" | "fixed" | "hybrid" | "commission_only" | "">("");
+  const [supporterCount, setSupporterCount] = useState<number>(0);
+  const [supporterLoading, setSupporterLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        const { data, error } = await supabase.rpc("count_supporter_plans" as any);
+        if (!isMounted) return;
+        if (!error && typeof data === "number") setSupporterCount(data);
+      } catch {
+        /* ignore */
+      } finally {
+        if (isMounted) setSupporterLoading(false);
+      }
+    })();
+    return () => { isMounted = false; };
+  }, []);
+
+  const supporterAvailable = !supporterLoading && supporterCount < 10;
+  const supporterRemaining = Math.max(0, 10 - supporterCount);
 
   const handleCepChange = (value: string) => {
     const formatted = formatCep(value);
