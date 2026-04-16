@@ -283,6 +283,8 @@ const CheckoutPage = () => {
         return acc;
       }, {} as Record<string, typeof items>);
 
+      const createdOrders: Array<{ storeId: string; orderId: string }> = [];
+
       for (const [storeId, storeItems] of Object.entries(storeGroups)) {
         const storeSubtotal = sumMoney(storeItems.map((item) => item.price * item.quantity));
         const appFee = 0; // Calculated by DB trigger using store's commission_rate
@@ -312,6 +314,8 @@ const CheckoutPage = () => {
           .single();
 
         if (orderError) throw orderError;
+
+        createdOrders.push({ storeId, orderId: order.id });
 
         const orderItems = storeItems.map((item) => ({
           order_id: order.id,
@@ -343,14 +347,14 @@ const CheckoutPage = () => {
       // Send push notification to store owner(s) for non-PIX orders (pendente)
       // For PIX, notification will be sent when payment is confirmed
       if (paymentMethod !== "pix") {
-        for (const [storeId] of Object.entries(storeGroups)) {
+        for (const { storeId, orderId } of createdOrders) {
           const { data: storeData } = await supabase
             .from("stores")
             .select("owner_id")
             .eq("id", storeId)
             .single();
           if (storeData?.owner_id) {
-            pushNotifyNewOrder([storeData.owner_id], order.id).catch(console.error);
+            pushNotifyNewOrder([storeData.owner_id], orderId).catch(console.error);
           }
         }
       }
