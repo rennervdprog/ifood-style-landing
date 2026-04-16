@@ -8,7 +8,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
 import { ClipboardList, Clock, ChefHat, Truck, CheckCircle2, Lock, Copy, QrCode, XCircle, X, Loader2, Trash2, ShieldAlert, AlertCircle, TimerReset, RefreshCw, MessageCircle, Bell, AlertTriangle, Wallet } from "lucide-react";
 import { toast } from "sonner";
-import { notifyOrderPreparing, notifyOrderOnTheWay, notifyOrderDelivered } from "@/lib/notifications";
+import { notifyOrderPreparing, notifyOrderOnTheWay, notifyOrderDelivered, pushNotifyNewOrder } from "@/lib/notifications";
 import OrderRating from "@/components/OrderRating";
 
 import DeliveryTimeEstimate from "@/components/DeliveryTimeEstimate";
@@ -547,6 +547,20 @@ const PedidosPage = () => {
       const { error } = await supabase
         .rpc("confirm_order_payment", { _order_id: pixModal.orderId });
       if (error) throw error;
+
+      // Send push notification to store owner after PIX payment confirmed
+      const order = orders?.find((o: any) => o.id === pixModal.orderId);
+      if (order?.store_id) {
+        const { data: storeData } = await supabase
+          .from("stores")
+          .select("owner_id")
+          .eq("id", order.store_id)
+          .single();
+        if (storeData?.owner_id) {
+          pushNotifyNewOrder([storeData.owner_id], order.id).catch(console.error);
+        }
+      }
+
       toast.success("[SIMULAÇÃO] Pagamento confirmado! Pedido enviado à loja.");
       setPixModal(null);
       queryClient.invalidateQueries({ queryKey: ["orders", user.id] });
