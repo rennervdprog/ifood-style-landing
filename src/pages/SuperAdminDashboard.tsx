@@ -7,6 +7,7 @@ import DeliveryFeeConfigPanel from "@/components/DeliveryFeeConfig";
 import TestStoreCreator from "@/components/TestStoreCreator";
 import AdminPlanManager from "@/components/AdminPlanManager";
 import ModeratorManager from "@/components/ModeratorManager";
+import PartnerSplitPanel from "@/components/PartnerSplitPanel";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -14,7 +15,7 @@ import { toast } from "sonner";
 import {
   ArrowLeft, DollarSign, ShoppingBag, TrendingUp, Clock,
   Store, Copy, AlertTriangle, Users, Bike, Wallet, CheckCircle2, Banknote, XCircle, Bell, Trash2, QrCode, Loader2, ArrowUpRight, ArrowDownRight, Settings,
-  LayoutDashboard, Shield, Ticket, RefreshCw, Truck, Menu, X, MapPin, Eye, Scale, Search, FileText, Mail, Phone, User, Download, Calendar, CreditCard, Receipt, ChevronDown, ChevronUp, Percent, Crown
+  LayoutDashboard, Shield, Ticket, RefreshCw, Truck, Menu, X, MapPin, Eye, Scale, Search, FileText, Mail, Phone, User, Download, Calendar, CreditCard, Receipt, ChevronDown, ChevronUp, Percent, Crown, Handshake
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -23,7 +24,7 @@ import {
 import { addMoney, multiplyMoney, subtractMoney, sumMoney, formatBRL } from "@/lib/utils";
 
 type DateFilter = "today" | "yesterday" | "week";
-type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamentos" | "saques" | "sync" | "coupons" | "entrega" | "cidades" | "juridico" | "planos" | "moderadores";
+type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamentos" | "saques" | "sync" | "coupons" | "entrega" | "cidades" | "juridico" | "planos" | "moderadores" | "socios";
 
 const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; group: string }[] = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, group: "Principal" },
@@ -37,6 +38,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
   { key: "cidades", label: "Cidades", icon: MapPin, group: "Gerenciamento" },
   { key: "coupons", label: "Cupons", icon: Ticket, group: "Gerenciamento" },
   { key: "moderadores", label: "Moderadores", icon: Users, group: "Gerenciamento" },
+  { key: "socios", label: "Sócios", icon: Handshake, group: "Principal" },
   { key: "juridico", label: "Jurídico", icon: Scale, group: "Sistema" },
   { key: "sync", label: "Sincronizar", icon: RefreshCw, group: "Sistema" },
 ];
