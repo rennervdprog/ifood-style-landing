@@ -19,21 +19,11 @@ import {
   Filter, UserCheck, UserX, MapPinned, Repeat, Heart, AlertTriangle, LogOut, User, Shield,
   Calendar, Download
 } from "lucide-react";
-import { lazy, Suspense } from "react";
+import {
+  AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip,
+  ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar,
+} from "recharts";
 import { openWhatsApp } from "@/lib/whatsapp";
-
-// Lazy-load recharts (heavy library) — only rendered on dashboard/reports tabs
-const LazyAreaChart = lazy(() => import("recharts").then(m => ({ default: m.AreaChart })));
-const LazyArea = lazy(() => import("recharts").then(m => ({ default: m.Area })));
-const LazyXAxis = lazy(() => import("recharts").then(m => ({ default: m.XAxis })));
-const LazyYAxis = lazy(() => import("recharts").then(m => ({ default: m.YAxis })));
-const LazyRechartsTooltip = lazy(() => import("recharts").then(m => ({ default: m.Tooltip })));
-const LazyResponsiveContainer = lazy(() => import("recharts").then(m => ({ default: m.ResponsiveContainer })));
-const LazyPieChart = lazy(() => import("recharts").then(m => ({ default: m.PieChart })));
-const LazyPie = lazy(() => import("recharts").then(m => ({ default: m.Pie })));
-const LazyCell = lazy(() => import("recharts").then(m => ({ default: m.Cell })));
-const LazyBarChart = lazy(() => import("recharts").then(m => ({ default: m.BarChart })));
-const LazyBar = lazy(() => import("recharts").then(m => ({ default: m.Bar })));
 import WhatsAppButton from "@/components/WhatsAppButton";
 import { notifyOrderStatusChange } from "@/lib/orderNotifications";
 import MenuBuilder from "@/components/MenuBuilder";
