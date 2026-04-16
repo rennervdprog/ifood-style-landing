@@ -462,6 +462,7 @@ const PerfilPage = () => {
             <MenuRow icon={Package} title="Meus Pedidos" subtitle="Acompanhe seus pedidos" onClick={() => navigate("/pedidos")} />
             {myStore && <MenuRow icon={Store} title="Painel da Loja" subtitle={myStore.name} onClick={() => navigate("/admin")} />}
             {myDriver && <MenuRow icon={Bike} title="Painel do Entregador" subtitle="Gerenciar entregas" onClick={() => navigate("/entregador")} />}
+            {isModerator && <MenuRow icon={Users} iconBg="bg-purple-500/10" iconColor="text-purple-600" title="Painel do Moderador" subtitle="Indicações e ganhos" onClick={() => navigate("/moderador")} />}
             {isAdminUser && <MenuRow icon={Shield} iconBg="bg-amber-500/10" iconColor="text-amber-600" title="Painel Administrativo" subtitle="Gerenciar plataforma" onClick={() => navigate("/super-admin")} />}
           </div>
         </Card>
