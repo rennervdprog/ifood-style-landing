@@ -37,6 +37,7 @@ const CadastroMotoboyLoja = lazy(() => import("./pages/CadastroMotoboyLoja"));
 const TermosDeUso = lazy(() => import("./pages/TermosDeUso"));
 const PoliticaPrivacidade = lazy(() => import("./pages/PoliticaPrivacidade"));
 const PlanosPage = lazy(() => import("./pages/PlanosPage"));
+const ModeradorDashboard = lazy(() => import("./pages/ModeradorDashboard"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const PageLoader = () => (
