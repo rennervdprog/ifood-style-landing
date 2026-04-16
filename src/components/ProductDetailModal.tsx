@@ -112,56 +112,48 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
   const isDessert = (cat === "sobremesas" || cat === "docerias") && !isBeverage;
   const flavors: string[] = meta.flavors || [];
 
-  // Fetch addon groups
-  const { data: directAddonGroups } = useQuery({
-    queryKey: ["addon-groups", product?.id],
+  // Fetch all addon groups + items in a single query to avoid waterfall delay
+  const { data: addonData } = useQuery({
+    queryKey: ["addon-all", product?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("addon_groups").select("*").eq("product_id", product!.id).order("sort_order");
-      if (error) throw error;
-      return (data || []) as AddonGroup[];
+      // Fetch direct groups and linked group IDs in parallel
+      const [directRes, linksRes] = await Promise.all([
+        supabase.from("addon_groups").select("*").eq("product_id", product!.id).order("sort_order"),
+        supabase.from("product_addon_groups").select("addon_group_id").eq("product_id", product!.id),
+      ]);
+      if (directRes.error) throw directRes.error;
+      if (linksRes.error) throw linksRes.error;
+
+      const direct = (directRes.data || []) as AddonGroup[];
+      const linkedIds = (linksRes.data || []).map((l: any) => l.addon_group_id as string);
+      const directIds = new Set(direct.map(g => g.id));
+
+      // Fetch linked groups if any
+      let linked: AddonGroup[] = [];
+      if (linkedIds.length > 0) {
+        const linkedRes = await supabase.from("addon_groups").select("*").in("id", linkedIds).order("sort_order");
+        if (linkedRes.error) throw linkedRes.error;
+        linked = ((linkedRes.data || []) as AddonGroup[]).filter(g => !directIds.has(g.id));
+      }
+
+      const allGroups = [...direct, ...linked];
+      const allIds = allGroups.map(g => g.id);
+
+      // Fetch items
+      let items: AddonItem[] = [];
+      if (allIds.length > 0) {
+        const itemsRes = await supabase.from("addon_items").select("*").in("group_id", allIds).order("sort_order");
+        if (itemsRes.error) throw itemsRes.error;
+        items = (itemsRes.data || []) as AddonItem[];
+      }
+
+      return { groups: allGroups, items };
     },
     enabled: !!product?.id && open,
   });
 
-  const { data: linkedGroupLinks } = useQuery({
-    queryKey: ["product-addon-links", product?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("product_addon_groups").select("addon_group_id").eq("product_id", product!.id);
-      if (error) throw error;
-      return (data || []).map((l: any) => l.addon_group_id as string);
-    },
-    enabled: !!product?.id && open,
-  });
-
-  const { data: linkedAddonGroups } = useQuery({
-    queryKey: ["linked-addon-groups", linkedGroupLinks],
-    queryFn: async () => {
-      if (!linkedGroupLinks || linkedGroupLinks.length === 0) return [];
-      const { data, error } = await supabase.from("addon_groups").select("*").in("id", linkedGroupLinks).order("sort_order");
-      if (error) throw error;
-      return (data || []) as AddonGroup[];
-    },
-    enabled: !!linkedGroupLinks && linkedGroupLinks.length > 0,
-  });
-
-  const addonGroups = useMemo(() => {
-    const direct = directAddonGroups || [];
-    const linked = linkedAddonGroups || [];
-    const seen = new Set(direct.map(g => g.id));
-    return [...direct, ...linked.filter(g => !seen.has(g.id))];
-  }, [directAddonGroups, linkedAddonGroups]);
-
-  const allGroupIds = addonGroups.map(g => g.id);
-  const { data: addonItems } = useQuery({
-    queryKey: ["addon-items", allGroupIds],
-    queryFn: async () => {
-      if (allGroupIds.length === 0) return [];
-      const { data, error } = await supabase.from("addon_items").select("*").in("group_id", allGroupIds).order("sort_order");
-      if (error) throw error;
-      return (data || []) as AddonItem[];
-    },
-    enabled: allGroupIds.length > 0,
-  });
+  const addonGroups = addonData?.groups || [];
+  const addonItems = addonData?.items || [];
 
   const toggleAddon = (groupId: string, itemId: string, maxSelect: number) => {
     setSelectedAddons(prev => {
