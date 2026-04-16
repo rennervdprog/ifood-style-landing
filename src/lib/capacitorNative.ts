@@ -97,23 +97,37 @@ async function ensurePushListeners() {
     if (typeof window === "undefined") return;
 
     // Build the target URL based on the notification link and order context
-    let targetUrl = link || "/";
+    let targetPath = link || "/";
 
     if (orderId) {
       if (link === "/pedidos") {
-        targetUrl = `/pedidos`;
+        targetPath = `/pedidos`;
       } else if (link === "/admin") {
-        targetUrl = `/admin?order=${orderId}`;
+        targetPath = `/admin?order=${orderId}`;
       } else if (link === "/entregador") {
-        targetUrl = `/entregador?order=${orderId}`;
+        targetPath = `/entregador?order=${orderId}`;
       }
     }
 
-    console.log("[CapPush] Navigating to:", targetUrl);
+    console.log("[CapPush] Navigating to:", targetPath);
 
     // Use setTimeout to ensure the app is fully foregrounded before navigating
     setTimeout(() => {
-      window.location.href = targetUrl;
+      // Dispatch a custom event that App.tsx listens to for React Router navigation
+      const navEvent = new CustomEvent("capacitor-push-navigate", {
+        detail: { path: targetPath },
+      });
+      window.dispatchEvent(navEvent);
+
+      // Fallback: if still on the same page after 500ms, force reload
+      setTimeout(() => {
+        const currentPath = window.location.pathname + window.location.search;
+        if (currentPath !== targetPath) {
+          // Build full URL preserving the base URL
+          const url = new URL(targetPath, window.location.origin);
+          window.location.href = url.toString();
+        }
+      }, 500);
     }, 300);
   });
 

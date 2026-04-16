@@ -1,6 +1,6 @@
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, useCallback } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useNavigate, useLocation } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/contexts/CartContext";
@@ -56,6 +56,36 @@ const queryClient = new QueryClient({
   },
 });
 
+/** Listens for push notification taps and navigates via React Router */
+const PushNavigator = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const path = (e as CustomEvent).detail?.path;
+      if (!path) return;
+      console.log("[PushNav] Navigating to:", path);
+      // Parse path and query
+      const [pathname, search] = path.split("?");
+      const currentFull = location.pathname + (location.search || "");
+      const targetFull = pathname + (search ? `?${search}` : "");
+      if (currentFull === targetFull) {
+        // Already on the page — force refresh by navigating away and back
+        navigate("/", { replace: true });
+        setTimeout(() => navigate(path, { replace: true }), 50);
+      } else {
+        navigate(path, { replace: true });
+      }
+    };
+
+    window.addEventListener("capacitor-push-navigate", handler);
+    return () => window.removeEventListener("capacitor-push-navigate", handler);
+  }, [navigate, location]);
+
+  return null;
+};
+
 const App = () => {
   useEffect(() => {
     initCapacitorNative()
@@ -75,6 +105,7 @@ const App = () => {
           <NotificationPrompt />
           <DebugOverlay />
           <BrowserRouter>
+            <PushNavigator />
             <CapacitorRouteGuard />
             <StoreAppGuard />
             <Suspense fallback={<PageLoader />}>
