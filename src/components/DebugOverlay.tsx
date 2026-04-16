@@ -165,9 +165,23 @@ const DebugOverlay = () => {
   const [open, setOpen] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
 
-  // Always show in dev/preview, Capacitor native, or ?debug=1
-  const shouldShow = true;
+  // Check if user is admin
+  useEffect(() => {
+    if (!user) { setIsAdmin(false); return; }
+    supabase
+      .from("profiles")
+      .select("role")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        setIsAdmin(data?.role === "admin");
+      });
+  }, [user]);
+
+  const shouldShow = isAdmin;
 
   useEffect(() => {
     if (!shouldShow) return;
