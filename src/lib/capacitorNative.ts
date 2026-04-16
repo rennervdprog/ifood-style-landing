@@ -12,6 +12,24 @@ let resolveRegistration: ((value: string | null) => void) | null = null;
 let registrationTimeoutId: number | null = null;
 let lastKnownToken: string | null = null;
 
+/**
+ * Global queue for notification tap navigation.
+ * Stores the target path so PushNavigator can replay it once React Router is ready.
+ */
+let pendingPushNavigation: string | null = null;
+
+/** Get and clear the pending push navigation path */
+export function consumePendingPushNavigation(): string | null {
+  const path = pendingPushNavigation;
+  pendingPushNavigation = null;
+  return path;
+}
+
+/** Check if there's a pending push navigation */
+export function hasPendingPushNavigation(): boolean {
+  return pendingPushNavigation !== null;
+}
+
 export function isCapacitorNative(): boolean {
   return Capacitor.isNativePlatform();
 }
@@ -109,26 +127,29 @@ async function ensurePushListeners() {
       }
     }
 
-    console.log("[CapPush] Navigating to:", targetPath);
+    console.log("[CapPush] Target path:", targetPath);
 
-    // Use setTimeout to ensure the app is fully foregrounded before navigating
+    // Store in global queue — PushNavigator will pick this up on mount
+    pendingPushNavigation = targetPath;
+
+    // Also dispatch the custom event for when PushNavigator is already mounted
     setTimeout(() => {
-      // Dispatch a custom event that App.tsx listens to for React Router navigation
       const navEvent = new CustomEvent("capacitor-push-navigate", {
         detail: { path: targetPath },
       });
       window.dispatchEvent(navEvent);
-
-      // Fallback: if still on the same page after 500ms, force reload
-      setTimeout(() => {
-        const currentPath = window.location.pathname + window.location.search;
-        if (currentPath !== targetPath) {
-          // Build full URL preserving the base URL
-          const url = new URL(targetPath, window.location.origin);
-          window.location.href = url.toString();
-        }
-      }, 500);
+      console.log("[CapPush] Dispatched capacitor-push-navigate event");
     }, 300);
+
+    // Final fallback: if nothing navigated after 2s, use window.location
+    setTimeout(() => {
+      if (pendingPushNavigation === targetPath) {
+        console.log("[CapPush] Fallback: forcing navigation via window.location to", targetPath);
+        pendingPushNavigation = null;
+        const url = new URL(targetPath, window.location.origin);
+        window.location.href = url.toString();
+      }
+    }, 2000);
   });
 
   listenersReady = true;

@@ -11,7 +11,7 @@ import RoleGuard from "@/components/RoleGuard";
 import InstallPrompt from "@/components/InstallPrompt";
 import NotificationPrompt from "@/components/NotificationPrompt";
 import DebugOverlay from "@/components/DebugOverlay";
-import { initCapacitorNative, isCapacitorNative } from "@/lib/capacitorNative";
+import { initCapacitorNative, isCapacitorNative, consumePendingPushNavigation } from "@/lib/capacitorNative";
 import { initCapacitorLifecycle } from "@/lib/capacitorLifecycle";
 import { initAutoUpdate } from "@/lib/capacitorAutoUpdate";
 import CapacitorRouteGuard from "@/components/CapacitorRouteGuard";
@@ -61,11 +61,24 @@ const PushNavigator = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // On mount: check if there's a pending push navigation from cold start
+  useEffect(() => {
+    const pending = consumePendingPushNavigation();
+    if (pending) {
+      console.log("[PushNav] Replaying pending push navigation:", pending);
+      setTimeout(() => navigate(pending, { replace: true }), 100);
+    }
+  }, []);
+
   useEffect(() => {
     const handler = (e: Event) => {
       const path = (e as CustomEvent).detail?.path;
       if (!path) return;
       console.log("[PushNav] Navigating to:", path);
+
+      // Clear pending since we're handling it now
+      consumePendingPushNavigation();
+
       // Parse path and query
       const [pathname, search] = path.split("?");
       const currentFull = location.pathname + (location.search || "");
