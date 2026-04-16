@@ -241,6 +241,17 @@ const CategoryProductFields = ({ category, metadata, onChange, storeId }: Catego
         </FieldBox>
       );
 
+    case "esfihas":
+      return renderBeverageToggle(
+        <FieldBox emoji="🥟" title="Detalhes da Esfiha">
+          {renderListField("Sabores disponíveis", "flavors", "Ex: Carne, Queijo, Frango...")}
+          {renderTextField("Tamanho", "size_weight", "Ex: Normal, Grande...")}
+          {renderToggle("Aberta?", "is_open")}
+          {renderToggle("Produto é um combo?", "is_combo")}
+          {metadata.is_combo && renderListField("Itens do Combo", "combo_items", "Ex: 10 Esfihas + Refri...")}
+        </FieldBox>
+      );
+
     default:
       return null;
   }

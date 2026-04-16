@@ -1,5 +1,5 @@
 import { memo, useCallback } from "react";
-import { Pizza, Beef, Beer, Utensils, Fish, IceCream, Coffee, Flame, Pill, Cake, ChefHat } from "lucide-react";
+import { Pizza, Beef, Beer, Utensils, Fish, IceCream, Coffee, Flame, Pill, Cake, ChefHat, Circle } from "lucide-react";
 
 const categories = [
   { icon: Utensils, label: "Todos", value: "all" },
@@ -13,6 +13,7 @@ const categories = [
   { icon: Flame, label: "Churrasco", value: "churrasco" },
   { icon: Pill, label: "Farmácias", value: "farmacias" },
   { icon: Cake, label: "Docerias", value: "docerias" },
+  { icon: Circle, label: "Esfihas", value: "esfihas" },
 ];
 
 interface Props {
