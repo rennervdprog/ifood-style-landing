@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { isCapacitorNative } from "@/lib/capacitorNative";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
 // In-memory log buffer
