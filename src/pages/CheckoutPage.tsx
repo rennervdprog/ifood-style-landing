@@ -350,7 +350,7 @@ const CheckoutPage = () => {
             .eq("id", storeId)
             .single();
           if (storeData?.owner_id) {
-            pushNotifyNewOrder([storeData.owner_id], storeId).catch(console.error);
+            pushNotifyNewOrder([storeData.owner_id], order.id).catch(console.error);
           }
         }
       }
