@@ -168,16 +168,17 @@ const DebugOverlay = () => {
   const { user } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Check if user is admin
+  // Check if user is admin via user_roles table
   useEffect(() => {
     if (!user) { setIsAdmin(false); return; }
     supabase
-      .from("profiles")
+      .from("user_roles")
       .select("role")
       .eq("user_id", user.id)
+      .eq("role", "admin")
       .maybeSingle()
       .then(({ data }) => {
-        setIsAdmin(data?.role === "admin");
+        setIsAdmin(!!data);
       });
   }, [user]);
 
