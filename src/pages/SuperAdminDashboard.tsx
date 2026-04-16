@@ -6,6 +6,7 @@ import AdminStoreManager from "@/components/AdminStoreManager";
 import DeliveryFeeConfigPanel from "@/components/DeliveryFeeConfig";
 import TestStoreCreator from "@/components/TestStoreCreator";
 import AdminPlanManager from "@/components/AdminPlanManager";
+import ModeratorManager from "@/components/ModeratorManager";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -22,7 +23,7 @@ import {
 import { addMoney, multiplyMoney, subtractMoney, sumMoney, formatBRL } from "@/lib/utils";
 
 type DateFilter = "today" | "yesterday" | "week";
-type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamentos" | "saques" | "sync" | "coupons" | "entrega" | "cidades" | "juridico" | "planos";
+type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamentos" | "saques" | "sync" | "coupons" | "entrega" | "cidades" | "juridico" | "planos" | "moderadores";
 
 const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; group: string }[] = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, group: "Principal" },
@@ -35,6 +36,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
   { key: "stores", label: "Lojas", icon: Store, group: "Gerenciamento" },
   { key: "cidades", label: "Cidades", icon: MapPin, group: "Gerenciamento" },
   { key: "coupons", label: "Cupons", icon: Ticket, group: "Gerenciamento" },
+  { key: "moderadores", label: "Moderadores", icon: Users, group: "Gerenciamento" },
   { key: "juridico", label: "Jurídico", icon: Scale, group: "Sistema" },
   { key: "sync", label: "Sincronizar", icon: RefreshCw, group: "Sistema" },
 ];
@@ -654,6 +656,7 @@ const SuperAdminDashboard = () => {
                 {activeTab === "pagamentos" && "Histórico de pagamentos por loja"}
                 {activeTab === "coupons" && "Gerenciar cupons de desconto"}
                 {activeTab === "juridico" && "Consulta jurídica e dados arquivados"}
+                {activeTab === "moderadores" && "Moderadores e sistema de afiliados"}
                 {activeTab === "sync" && "Sincronização com banco externo"}
                 {activeTab === "planos" && "Gerenciar planos e assinaturas das lojas"}
               </p>
@@ -700,6 +703,7 @@ const SuperAdminDashboard = () => {
             {activeTab === "planos" && <AdminPlanManager />}
             {activeTab === "pagamentos" && <PagamentosSplitTab stores={stores || []} />}
             {activeTab === "juridico" && <JuridicoTab />}
+            {activeTab === "moderadores" && <ModeratorManager />}
             {activeTab === "saques" && (
               <SaquesTab
                 withdrawalRequests={withdrawalRequests}

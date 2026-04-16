@@ -826,6 +826,176 @@ export type Database = {
           },
         ]
       }
+      moderator_earnings: {
+        Row: {
+          amount: number
+          created_at: string
+          earning_type: string
+          id: string
+          is_paid: boolean
+          moderator_id: string
+          order_id: string | null
+          paid_at: string | null
+          period: string | null
+          store_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          earning_type: string
+          id?: string
+          is_paid?: boolean
+          moderator_id: string
+          order_id?: string | null
+          paid_at?: string | null
+          period?: string | null
+          store_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          earning_type?: string
+          id?: string
+          is_paid?: boolean
+          moderator_id?: string
+          order_id?: string | null
+          paid_at?: string | null
+          period?: string | null
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moderator_earnings_moderator_id_fkey"
+            columns: ["moderator_id"]
+            isOneToOne: false
+            referencedRelation: "moderators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moderator_earnings_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moderator_earnings_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moderator_earnings_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores_driver_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moderator_earnings_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      moderator_referrals: {
+        Row: {
+          created_at: string
+          id: string
+          moderator_id: string
+          store_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          moderator_id: string
+          store_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          moderator_id?: string
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moderator_referrals_moderator_id_fkey"
+            columns: ["moderator_id"]
+            isOneToOne: false
+            referencedRelation: "moderators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moderator_referrals_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: true
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moderator_referrals_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: true
+            referencedRelation: "stores_driver_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moderator_referrals_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: true
+            referencedRelation: "stores_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      moderators: {
+        Row: {
+          commission_split_percent: number
+          created_at: string
+          delivery_split: number
+          email: string | null
+          id: string
+          is_active: boolean
+          name: string
+          phone: string | null
+          plan_fee_percent: number
+          referral_code: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          commission_split_percent?: number
+          created_at?: string
+          delivery_split?: number
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          phone?: string | null
+          plan_fee_percent?: number
+          referral_code: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          commission_split_percent?: number
+          created_at?: string
+          delivery_split?: number
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          phone?: string | null
+          plan_fee_percent?: number
+          referral_code?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       neighborhood_fees: {
         Row: {
           fee: number
@@ -2339,6 +2509,10 @@ export type Database = {
       }
     }
     Functions: {
+      accrue_moderator_plan_fee: {
+        Args: { _monthly_fee: number; _store_id: string }
+        Returns: undefined
+      }
       admin_approve_partner: {
         Args: { _approved: boolean; _profile_user_id: string }
         Returns: undefined

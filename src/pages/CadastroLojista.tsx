@@ -1,9 +1,9 @@
-import { useState, useMemo } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useMemo, useEffect } from "react";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
-import { ArrowLeft, Mail, Lock, Eye, EyeOff, Store, FileText, CheckCircle, CheckCircle2, MapPin, Search, Loader2, Key, Phone, Shield, ChevronRight, User, Package, TrendingUp, Zap, CreditCard, BarChart3, Crown } from "lucide-react";
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, Store, FileText, CheckCircle, CheckCircle2, MapPin, Search, Loader2, Key, Phone, Shield, ChevronRight, User, Users, Package, TrendingUp, Zap, CreditCard, BarChart3, Crown } from "lucide-react";
 import { PasswordStrengthIndicator, usePasswordStrength } from "@/components/PasswordStrengthIndicator";
 import { Constants } from "@/integrations/supabase/types";
 import { formatCep, fetchCep } from "@/lib/cepLookup";
@@ -54,6 +54,8 @@ const STEPS = [
 
 const CadastroLojista = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const referralCode = searchParams.get("ref") || "";
   const [step, setStep] = useState(0);
   const [email, setEmail] = useState("");
   const [confirmEmail, setConfirmEmail] = useState("");
@@ -223,6 +225,26 @@ const CadastroLojista = () => {
             address_cep: cep.replace(/\D/g, ""),
             address_city: city,
           } as any).eq("id", storeRow.id);
+
+          // Link store to moderator if referral code present
+          if (referralCode && storeRow.id) {
+            try {
+              const { data: mod } = await (supabase as any)
+                .from("moderators")
+                .select("id")
+                .eq("referral_code", referralCode)
+                .eq("is_active", true)
+                .maybeSingle();
+              if (mod?.id) {
+                await (supabase as any).from("moderator_referrals").insert({
+                  moderator_id: mod.id,
+                  store_id: storeRow.id,
+                });
+              }
+            } catch {
+              // Non-critical: don't block signup
+            }
+          }
         }
       }
 
@@ -247,6 +269,14 @@ const CadastroLojista = () => {
           <h1 className="font-bold text-foreground text-sm">Cadastro Lojista</h1>
         </div>
       </header>
+
+      {/* Referral Banner */}
+      {referralCode && (
+        <div className="mx-4 mt-2 bg-accent/20 border border-accent rounded-xl px-4 py-2 text-xs text-accent-foreground flex items-center gap-2">
+          <Users className="h-4 w-4" />
+          <span>Cadastro via indicação: <span className="font-bold font-mono">{referralCode}</span></span>
+        </div>
+      )}
 
       {/* Stepper */}
       <div className="px-6 pt-5 pb-2">
