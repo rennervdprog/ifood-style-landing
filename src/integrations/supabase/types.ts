@@ -539,6 +539,44 @@ export type Database = {
         }
         Relationships: []
       }
+      emergency_fund: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          partner_id: string | null
+          source: string
+          transaction_type: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          partner_id?: string | null
+          source: string
+          transaction_type: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          partner_id?: string | null
+          source?: string
+          transaction_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emergency_fund_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "platform_partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fcm_tokens: {
         Row: {
           created_at: string
@@ -1306,6 +1344,59 @@ export type Database = {
           },
         ]
       }
+      partner_payouts: {
+        Row: {
+          created_at: string
+          emergency_deduction: number
+          gross_amount: number
+          id: string
+          net_amount: number
+          notes: string | null
+          partner_id: string
+          payout_method: string | null
+          period_end: string | null
+          period_start: string | null
+          status: string
+          transfer_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          emergency_deduction?: number
+          gross_amount?: number
+          id?: string
+          net_amount?: number
+          notes?: string | null
+          partner_id: string
+          payout_method?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          status?: string
+          transfer_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          emergency_deduction?: number
+          gross_amount?: number
+          id?: string
+          net_amount?: number
+          notes?: string | null
+          partner_id?: string
+          payout_method?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          status?: string
+          transfer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_payouts_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "platform_partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payout_history: {
         Row: {
           admin_user_id: string
@@ -1460,6 +1551,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      platform_partners: {
+        Row: {
+          auto_transfer: boolean
+          created_at: string
+          email: string | null
+          emergency_fund_percent: number
+          id: string
+          is_active: boolean
+          is_owner: boolean
+          name: string
+          pix_key: string | null
+          pix_type: string | null
+          profit_percent: number
+          updated_at: string
+        }
+        Insert: {
+          auto_transfer?: boolean
+          created_at?: string
+          email?: string | null
+          emergency_fund_percent?: number
+          id?: string
+          is_active?: boolean
+          is_owner?: boolean
+          name: string
+          pix_key?: string | null
+          pix_type?: string | null
+          profit_percent?: number
+          updated_at?: string
+        }
+        Update: {
+          auto_transfer?: boolean
+          created_at?: string
+          email?: string | null
+          emergency_fund_percent?: number
+          id?: string
+          is_active?: boolean
+          is_owner?: boolean
+          name?: string
+          pix_key?: string | null
+          pix_type?: string | null
+          profit_percent?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       product_addon_groups: {
         Row: {
