@@ -14,7 +14,7 @@ const PopularProducts = memo(() => {
       const { data: orderItems, error } = await supabase
         .from("order_items")
         .select("product_id, quantity, products(id, name, price, image_url, store_id, is_available, stores:store_id(name, id, slug))")
-        .limit(200);
+        .limit(100);
       if (error) throw error;
 
       const productMap = new Map<string, { product: any; totalQty: number }>();
@@ -32,7 +32,7 @@ const PopularProducts = memo(() => {
         .sort((a, b) => b.totalQty - a.totalQty)
         .slice(0, 8);
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 10 * 60 * 1000,
   });
 
   if (!topProducts || topProducts.length === 0) return null;
