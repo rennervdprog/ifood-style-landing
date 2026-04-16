@@ -100,6 +100,23 @@ const PerfilPage = () => {
     enabled: !!user,
   });
 
+  const { data: isModerator } = useQuery({
+    queryKey: ["is-moderator", user?.id],
+    queryFn: async () => {
+      if (!user) return false;
+      // Check by user_id first
+      const { data: byId } = await (supabase as any).from("moderators").select("id").eq("user_id", user.id).eq("is_active", true).maybeSingle();
+      if (byId) return true;
+      // Check by email
+      if (user.email) {
+        const { data: byEmail } = await (supabase as any).from("moderators").select("id").eq("email", user.email).eq("is_active", true).maybeSingle();
+        if (byEmail) return true;
+      }
+      return false;
+    },
+    enabled: !!user,
+  });
+
   const { data: deliveryFeeConfig } = useQuery({
     queryKey: ["delivery-fee-config"],
     queryFn: async () => {
