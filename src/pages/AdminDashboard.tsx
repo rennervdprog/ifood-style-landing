@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
+import { Capacitor } from "@capacitor/core";
 import {
   Wifi, WifiOff, Clock, ChefHat, Truck, CheckCircle2, Pizza,
   MapPin, Package, Settings, Banknote, CreditCard,
@@ -323,6 +324,20 @@ const AdminDashboard = () => {
 
   const prevPendingCountRef = useRef(0);
 
+  const refreshDashboardOrders = useCallback(async () => {
+    if (!store?.id) return;
+
+    await Promise.allSettled([
+      queryClient.invalidateQueries({ queryKey: ["my-store", user?.id, activeSimulateStoreId] }),
+      queryClient.invalidateQueries({ queryKey: ["store-orders", store.id] }),
+      queryClient.invalidateQueries({ queryKey: ["store-all-orders", store.id] }),
+      queryClient.invalidateQueries({ queryKey: ["store-hours-check", store.id] }),
+      queryClient.invalidateQueries({ queryKey: ["store-drivers-list", store.id] }),
+      queryClient.invalidateQueries({ queryKey: ["client-profiles", store.id] }),
+      queryClient.invalidateQueries({ queryKey: ["online-drivers-count"] }),
+    ]);
+  }, [activeSimulateStoreId, queryClient, store?.id, user?.id]);
+
   const toggleAddress = (orderId: string) => {
     setExpandedAddresses(prev => {
       const next = new Set(prev);
@@ -403,6 +418,8 @@ const AdminDashboard = () => {
       return data;
     },
     enabled: !!store,
+    refetchOnReconnect: true,
+    refetchOnWindowFocus: true,
   });
 
   const { data: allOrders } = useQuery({
@@ -417,7 +434,38 @@ const AdminDashboard = () => {
       return data;
     },
     enabled: !!store,
+    refetchOnReconnect: true,
+    refetchOnWindowFocus: true,
   });
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform() || !store?.id) return;
+
+    let active = true;
+    let cleanup: (() => void) | undefined;
+
+    import("@capacitor/app")
+      .then(async ({ App }) => {
+        if (!active) return;
+
+        const listener = await App.addListener("appStateChange", ({ isActive }) => {
+          if (!isActive) return;
+          refreshDashboardOrders().catch(console.error);
+        });
+
+        cleanup = () => {
+          listener.remove();
+        };
+      })
+      .catch(() => {
+        cleanup = undefined;
+      });
+
+    return () => {
+      active = false;
+      cleanup?.();
+    };
+  }, [refreshDashboardOrders, store?.id]);
 
   const { data: storeAddonGroups = [] } = useQuery({
     queryKey: ["store-order-addon-groups", store?.id],
@@ -693,25 +741,41 @@ const AdminDashboard = () => {
       .channel("admin-orders-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `store_id=eq.${store.id}` }, (payload) => {
         const updated = payload.new as any;
+        const previous = payload.old as any;
         // Instant cache patch for active orders
         ["store-orders", "store-all-orders"].forEach(key => {
           queryClient.setQueryData([key, store.id], (old: any[] | undefined) => {
             if (!old) return old;
             const idx = old.findIndex((o: any) => o.id === updated.id);
-            if (idx >= 0) { const c = [...old]; c[idx] = { ...c[idx], ...updated }; return c; }
-            if (payload.eventType === "INSERT") return [updated, ...old];
+            const shouldShowInActiveList = key !== "store-orders"
+              ? true
+              : updated && updated.status !== "aguardando_pagamento" && updated.status !== "cancelado";
+
+            if (idx >= 0) {
+              if (!shouldShowInActiveList) {
+                return old.filter((o: any) => o.id !== updated.id);
+              }
+
+              const c = [...old];
+              c[idx] = { ...c[idx], ...updated };
+              return c;
+            }
+
+            if ((payload.eventType === "INSERT" || payload.eventType === "UPDATE") && shouldShowInActiveList) {
+              return [updated, ...old];
+            }
+
             return old;
           });
         });
         // Still refetch for relations (items, etc.)
-        queryClient.invalidateQueries({ queryKey: ["store-orders", store.id] });
-        queryClient.invalidateQueries({ queryKey: ["store-all-orders", store.id] });
+        refreshDashboardOrders().catch(console.error);
         if (payload.eventType === "INSERT" && (payload.new as any).status === "pendente") {
           playAlert();
           notifyNewOrder();
           toast.info("🔔 Novo pedido!", { duration: 8000 });
         }
-        if (payload.eventType === "UPDATE" && (payload.new as any).status === "pendente" && (payload.old as any)?.status === "aguardando_pagamento") {
+        if (payload.eventType === "UPDATE" && (payload.new as any).status === "pendente" && previous?.status === "aguardando_pagamento") {
           const cashSound = new Audio(CASH_REGISTER_SOUND_URL);
           cashSound.volume = 1.0;
           cashSound.play().catch(() => {});
@@ -722,9 +786,16 @@ const AdminDashboard = () => {
           toast.success("✅ Pedido finalizado!", { duration: 5000 });
         }
       })
-      .subscribe((status) => setIsOnline(status === "SUBSCRIBED"));
+      .subscribe((status) => {
+        const connected = status === "SUBSCRIBED";
+        setIsOnline(connected);
+
+        if (connected) {
+          refreshDashboardOrders().catch(console.error);
+        }
+      });
     return () => { supabase.removeChannel(channel); };
-  }, [store, queryClient, playAlert]);
+  }, [store, queryClient, playAlert, refreshDashboardOrders]);
 
   // ── ACTIONS ──
   const handlePrint = useCallback((order: any) => {
