@@ -1,0 +1,504 @@
+import { useState } from "react";
+import {
+  GraduationCap, ChevronDown, ChevronUp, Search,
+  LayoutDashboard, ListOrdered, Users, UtensilsCrossed, Plus, CircleDot,
+  Clock, Coins, BarChart3, CreditCard, Star, Bike, AlertTriangle, Settings,
+  Truck, Wallet, Tag, MessageSquare, Bell, Camera, MapPin, Phone, Lock,
+  CheckCircle2, XCircle, ShoppingBag, DollarSign, Package, Eye,
+} from "lucide-react";
+
+interface TutorialStep {
+  title: string;
+  content: string;
+  tip?: string;
+}
+
+interface TutorialSection {
+  id: string;
+  icon: React.ElementType;
+  title: string;
+  shortDesc: string;
+  color: string;
+  bgColor: string;
+  steps: TutorialStep[];
+}
+
+const TUTORIAIS: TutorialSection[] = [
+  {
+    id: "dashboard",
+    icon: LayoutDashboard,
+    title: "Visão Geral (Início)",
+    shortDesc: "A primeira tela que você vê quando entra no painel",
+    color: "text-blue-500",
+    bgColor: "bg-blue-500/10",
+    steps: [
+      {
+        title: "O que aparece aqui?",
+        content: "Esta é a sua página inicial. Ela mostra um resumo de tudo que está acontecendo na sua loja AGORA: quantos pedidos novos chegaram hoje, quanto dinheiro você já fez no dia, quantos clientes pediram, e o status atual da sua loja (aberta ou fechada).",
+      },
+      {
+        title: "Cartões coloridos no topo",
+        content: "Cada cartão colorido mostra um número importante: pedidos do dia, faturamento do dia, ticket médio (valor médio dos pedidos) e clientes únicos. Você só olha e já sabe como está o dia.",
+        tip: "Toque em cada cartão para ver mais detalhes da informação.",
+      },
+      {
+        title: "Pedidos em andamento",
+        content: "Logo abaixo aparece uma fileira com os pedidos que estão sendo preparados ou já saíram para entrega. Toque em qualquer um para ver os detalhes completos.",
+      },
+      {
+        title: "Modo de Entrega",
+        content: "Aqui você define se quer usar SEU motoboy próprio. Se escolher motoboy próprio, digite quanto cobra de taxa de entrega. O sistema mostra automaticamente quanto o cliente vai pagar (sua taxa + taxa da plataforma).",
+        tip: "Veja sempre o quadro 'Como o cliente vai ver' para entender o valor final.",
+      },
+      {
+        title: "Ações Rápidas",
+        content: "Quatro botões grandes para acessar rapidamente: Cardápio, Finanças, Horários e Configurações. É só tocar para ir direto.",
+      },
+    ],
+  },
+  {
+    id: "orders",
+    icon: ListOrdered,
+    title: "Pedidos",
+    shortDesc: "Onde você gerencia tudo que o cliente pede",
+    color: "text-orange-500",
+    bgColor: "bg-orange-500/10",
+    steps: [
+      {
+        title: "Como funciona?",
+        content: "Quando um cliente faz um pedido, ele aparece aqui automaticamente com um som de alerta. Você precisa ACEITAR o pedido para começar a preparar.",
+      },
+      {
+        title: "Status do pedido (passo a passo)",
+        content: "1) PENDENTE: acabou de chegar, você precisa aceitar. 2) PREPARANDO: você está fazendo. 3) PRONTO PARA ENTREGA: comida pronta, esperando motoboy. 4) SAIU PARA ENTREGA: motoboy pegou. 5) ENTREGUE: cliente recebeu.",
+        tip: "Sempre atualize o status para o cliente acompanhar em tempo real.",
+      },
+      {
+        title: "Aceitar ou recusar pedido",
+        content: "Quando aparecer um pedido novo, leia os itens e o endereço. Se você consegue preparar, toque em ACEITAR. Se não consegue (faltou ingrediente, está muito cheio), toque em RECUSAR e escreva o motivo.",
+      },
+      {
+        title: "Imprimir pedido",
+        content: "Se você tem impressora térmica conectada, aparece um botão IMPRIMIR. Toque para sair o pedido na impressora da cozinha.",
+      },
+      {
+        title: "Conversar com o cliente",
+        content: "Em cada pedido tem um botão de chat. Use para tirar dúvidas: 'Sem cebola mesmo?', 'Posso substituir?'. O cliente recebe a mensagem no app dele.",
+      },
+    ],
+  },
+  {
+    id: "menu",
+    icon: UtensilsCrossed,
+    title: "Cardápio",
+    shortDesc: "Onde você cadastra seus produtos (lanches, pizzas, bebidas...)",
+    color: "text-emerald-500",
+    bgColor: "bg-emerald-500/10",
+    steps: [
+      {
+        title: "Criar uma seção",
+        content: "Primeiro crie SEÇÕES (categorias) tipo 'Lanches', 'Pizzas', 'Bebidas', 'Sobremesas'. Toque em NOVA SEÇÃO, escreva o nome e salve.",
+      },
+      {
+        title: "Adicionar produto",
+        content: "Dentro de cada seção, toque em ADICIONAR PRODUTO. Preencha: nome (ex: X-Burguer), descrição (o que tem), preço e foto. Quanto melhor a foto, mais o cliente compra.",
+        tip: "Use fotos com boa iluminação. Tire de cima do prato. Evite fotos escuras.",
+      },
+      {
+        title: "Produto disponível ou esgotado",
+        content: "Cada produto tem um botão DISPONÍVEL/ESGOTADO. Se acabou um ingrediente, toque para marcar como esgotado. O cliente não consegue mais pedir até você reativar.",
+      },
+      {
+        title: "Editar ou apagar produto",
+        content: "Toque no produto para abrir e editar (mudar preço, foto, descrição). Para apagar, abra o produto e toque na lixeira vermelha.",
+      },
+      {
+        title: "Ordem dos produtos",
+        content: "Você pode arrastar os produtos para mudar a ordem que aparecem para o cliente. Coloque os mais vendidos primeiro.",
+      },
+    ],
+  },
+  {
+    id: "addons",
+    icon: Plus,
+    title: "Adicionais",
+    shortDesc: "Extras que o cliente pode escolher (queijo extra, bacon...)",
+    color: "text-purple-500",
+    bgColor: "bg-purple-500/10",
+    steps: [
+      {
+        title: "O que é um grupo de adicionais?",
+        content: "É um conjunto de opções extras. Por exemplo: 'Adicionais do Lanche' pode ter: queijo extra (+R$3), bacon (+R$5), cebola caramelizada (+R$2).",
+      },
+      {
+        title: "Criar grupo",
+        content: "Toque em NOVO GRUPO. Dê um nome (ex: 'Molhos'), defina mínimo e máximo de escolhas. Mínimo 0 = opcional. Máximo 3 = cliente pode escolher até 3.",
+      },
+      {
+        title: "Adicionar opções no grupo",
+        content: "Dentro do grupo, adicione cada opção com nome e preço. Se for grátis (tipo 'sem cebola'), coloque preço 0.",
+      },
+      {
+        title: "Vincular ao produto",
+        content: "Depois vá no produto (no Cardápio) e ligue o grupo a ele. Aí toda vez que o cliente pedir aquele produto, vai aparecer as opções extras.",
+      },
+    ],
+  },
+  {
+    id: "bordas",
+    icon: CircleDot,
+    title: "Bordas (Pizzaria)",
+    shortDesc: "Tipos de borda para pizza (catupiry, cheddar, comum...)",
+    color: "text-red-500",
+    bgColor: "bg-red-500/10",
+    steps: [
+      {
+        title: "Para que serve?",
+        content: "Se sua loja vende pizza, aqui você cadastra os tipos de borda: tradicional, catupiry, cheddar, chocolate, etc. Cada uma com seu preço.",
+      },
+      {
+        title: "Adicionar borda",
+        content: "Toque em NOVA BORDA, escreva o nome (ex: 'Borda Catupiry'), o preço extra (ex: R$8) e salve. Aparece automaticamente quando o cliente pedir pizza.",
+      },
+    ],
+  },
+  {
+    id: "hours",
+    icon: Clock,
+    title: "Horários",
+    shortDesc: "Quando sua loja está aberta para receber pedidos",
+    color: "text-cyan-500",
+    bgColor: "bg-cyan-500/10",
+    steps: [
+      {
+        title: "Definir horário de cada dia",
+        content: "Para cada dia da semana (segunda, terça...) você define a hora que abre e a hora que fecha. Ex: Segunda 18:00 às 23:00.",
+      },
+      {
+        title: "Dia fechado",
+        content: "Se fecha em algum dia (ex: terça é folga), marque a opção 'Fechado o dia todo'. Os clientes verão que está fechado.",
+      },
+      {
+        title: "Fechar manualmente",
+        content: "Tem um botão FECHAR LOJA AGORA no topo. Use quando quiser fechar fora do horário (lotou, ingrediente acabou). Lembre de reabrir depois!",
+        tip: "Quando a loja está fechada, ninguém consegue fazer pedidos novos.",
+      },
+    ],
+  },
+  {
+    id: "finance",
+    icon: Coins,
+    title: "Finanças",
+    shortDesc: "Quanto dinheiro você já fez e quanto vai receber",
+    color: "text-emerald-500",
+    bgColor: "bg-emerald-500/10",
+    steps: [
+      {
+        title: "Saldo a receber",
+        content: "Mostra quanto a plataforma vai te pagar. Esse valor é referente aos pedidos PIX dos últimos dias (ainda não repassados).",
+      },
+      {
+        title: "Comissão a pagar",
+        content: "Se você está no plano Comissão, aqui mostra quanto você deve pagar para a plataforma referente aos pedidos em dinheiro/cartão.",
+      },
+      {
+        title: "Como pagar a comissão?",
+        content: "Aparece um botão PAGAR AGORA. Toque, gera um PIX, você paga e pronto. Sua loja continua ativa.",
+        tip: "Se não pagar, sua loja pode ser bloqueada até regularizar.",
+      },
+      {
+        title: "Histórico de pedidos",
+        content: "Você vê a lista de todos os pedidos com data, valor, forma de pagamento e quanto você ganhou em cada um.",
+      },
+    ],
+  },
+  {
+    id: "reports",
+    icon: BarChart3,
+    title: "Relatórios",
+    shortDesc: "Gráficos para entender como está indo o negócio",
+    color: "text-indigo-500",
+    bgColor: "bg-indigo-500/10",
+    steps: [
+      {
+        title: "Faturamento por dia",
+        content: "Mostra um gráfico de barras: quanto você faturou cada dia da semana. Você descobre os dias mais fortes e mais fracos.",
+      },
+      {
+        title: "Produtos mais vendidos",
+        content: "Lista os produtos campeões de venda. Você sabe o que tá bombando e pode até subir o preço, ou criar combos.",
+      },
+      {
+        title: "Horários de pico",
+        content: "Mostra os horários que mais entram pedidos. Útil para você reforçar a equipe nos horários de movimento.",
+      },
+    ],
+  },
+  {
+    id: "subscription",
+    icon: CreditCard,
+    title: "Assinatura (Plano)",
+    shortDesc: "Qual plano você está e quando vence",
+    color: "text-amber-500",
+    bgColor: "bg-amber-500/10",
+    steps: [
+      {
+        title: "Tipos de plano",
+        content: "FIXO: paga uma mensalidade e não paga comissão. COMISSÃO: não paga mensalidade, mas paga uma % de cada pedido. HÍBRIDO: paga mensalidade menor + comissão menor.",
+      },
+      {
+        title: "Quando vence?",
+        content: "Aparece a data da próxima cobrança. Pague antes para não bloquear a loja.",
+      },
+      {
+        title: "Mudar de plano",
+        content: "Toque em MUDAR PLANO. A administração analisa e aprova. Pode levar 1-2 dias.",
+      },
+    ],
+  },
+  {
+    id: "loyalty",
+    icon: Star,
+    title: "Fidelidade (Pontos)",
+    shortDesc: "Programa de pontos para clientes voltarem mais",
+    color: "text-yellow-500",
+    bgColor: "bg-yellow-500/10",
+    steps: [
+      {
+        title: "Para que serve?",
+        content: "Cada vez que o cliente pede, ele ganha pontos. Quando junta bastante, troca por desconto. Isso faz ele voltar sempre na sua loja.",
+      },
+      {
+        title: "Configurar pontos",
+        content: "Defina: quantos pontos por real gasto (ex: 1 ponto por R$1), quantos pontos para começar a usar (ex: 50), e quanto vale cada ponto (ex: R$0,10).",
+      },
+      {
+        title: "Limite de desconto",
+        content: "Coloca um teto, tipo 'no máximo 20% de desconto por pedido'. Assim você não corre risco de cliente zerar a conta.",
+      },
+    ],
+  },
+  {
+    id: "drivers",
+    icon: Bike,
+    title: "Motoboys",
+    shortDesc: "Cadastrar e gerenciar seus entregadores próprios",
+    color: "text-blue-500",
+    bgColor: "bg-blue-500/10",
+    steps: [
+      {
+        title: "Cadastrar motoboy",
+        content: "Toque em ADICIONAR MOTOBOY e mande o link de cadastro para o entregador. Ele se cadastra com nome, CPF, foto e PIX.",
+      },
+      {
+        title: "Aprovar motoboy",
+        content: "Depois que o motoboy se cadastra, você recebe e aprova. Aí ele aparece online no painel quando tiver disponível.",
+      },
+      {
+        title: "Pagar motoboy",
+        content: "Aqui você vê quanto deve pagar para cada um. Pode pagar via PIX direto pelo app, ou marcar como pago se pagou em dinheiro.",
+        tip: "Mantenha o pagamento em dia para o motoboy continuar trabalhando.",
+      },
+      {
+        title: "Status online/offline",
+        content: "O motoboy fica VERDE (online) quando está disponível para pegar entrega. Fica CINZA (offline) quando está em casa.",
+      },
+    ],
+  },
+  {
+    id: "refunds",
+    icon: AlertTriangle,
+    title: "Reembolsos",
+    shortDesc: "Pedidos de devolução de dinheiro do cliente",
+    color: "text-red-500",
+    bgColor: "bg-red-500/10",
+    steps: [
+      {
+        title: "Quando aparece?",
+        content: "Quando um cliente pede reembolso (ex: chegou errado, frio, atrasou muito), aparece aqui para você analisar.",
+      },
+      {
+        title: "Aprovar ou negar",
+        content: "Leia o motivo do cliente, veja as fotos (se mandou). Se procede, APROVE e o dinheiro volta para o cliente. Se não, NEGUE explicando o motivo.",
+        tip: "Trate com educação. Cliente bem atendido volta, mesmo no erro.",
+      },
+    ],
+  },
+  {
+    id: "settings",
+    icon: Settings,
+    title: "Configurações",
+    shortDesc: "Dados da loja, foto, endereço, PIX, WhatsApp",
+    color: "text-gray-500",
+    bgColor: "bg-gray-500/10",
+    steps: [
+      {
+        title: "Foto e nome da loja",
+        content: "Coloque uma logo bonita (foto quadrada). Esse é o cartão de visita. Capriche para o cliente confiar.",
+      },
+      {
+        title: "Endereço completo",
+        content: "Preencha CEP, rua, número, bairro. Isso ajuda no cálculo da taxa de entrega correto para cada cliente.",
+      },
+      {
+        title: "Chave PIX",
+        content: "Coloque a chave PIX que você quer receber os repasses. Pode ser CPF, CNPJ, e-mail, telefone ou aleatória.",
+        tip: "Confira BEM a chave. Se errar, o dinheiro vai para outra pessoa.",
+      },
+      {
+        title: "WhatsApp",
+        content: "Coloque seu número com DDD. Os clientes podem chamar você diretamente quando tiver alguma dúvida.",
+      },
+      {
+        title: "Notificações",
+        content: "Ative as notificações no celular. Quando chegar pedido novo, você recebe um aviso na hora, mesmo com o app fechado.",
+      },
+    ],
+  },
+];
+
+const TutoriaisPanel = () => {
+  const [search, setSearch] = useState("");
+  const [openSection, setOpenSection] = useState<string | null>(null);
+  const [openStep, setOpenStep] = useState<string | null>(null);
+
+  const filteredTutoriais = TUTORIAIS.filter((t) => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return (
+      t.title.toLowerCase().includes(q) ||
+      t.shortDesc.toLowerCase().includes(q) ||
+      t.steps.some(
+        (s) =>
+          s.title.toLowerCase().includes(q) ||
+          s.content.toLowerCase().includes(q)
+      )
+    );
+  });
+
+  return (
+    <div className="space-y-4 max-w-3xl mx-auto">
+      {/* Header */}
+      <div className="bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded-2xl p-5 space-y-2">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 bg-primary/15 rounded-2xl flex items-center justify-center">
+            <GraduationCap className="h-6 w-6 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-lg font-black text-foreground">Tutoriais Completos</h2>
+            <p className="text-xs text-muted-foreground">Aprenda cada função do painel passo a passo</p>
+          </div>
+        </div>
+        <p className="text-xs text-foreground/80 leading-relaxed pt-1">
+          📚 Tudo explicado de forma simples, com linguagem do dia a dia. Toque em cada tópico para abrir e ler.
+        </p>
+      </div>
+
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar tutorial (ex: pedidos, pix, motoboy)..."
+          className="w-full pl-10 pr-4 py-3 bg-card border border-border rounded-xl text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+        />
+      </div>
+
+      {/* Sections list */}
+      <div className="space-y-3">
+        {filteredTutoriais.length === 0 && (
+          <div className="text-center py-12 text-muted-foreground text-sm">
+            Nenhum tutorial encontrado para "{search}"
+          </div>
+        )}
+        {filteredTutoriais.map((section) => {
+          const Icon = section.icon;
+          const isOpen = openSection === section.id;
+          return (
+            <div key={section.id} className="bg-card border border-border rounded-2xl overflow-hidden">
+              <button
+                onClick={() => {
+                  setOpenSection(isOpen ? null : section.id);
+                  setOpenStep(null);
+                }}
+                className="w-full flex items-center gap-3 p-4 hover:bg-muted/30 transition-colors text-left"
+              >
+                <div className={`w-11 h-11 ${section.bgColor} rounded-xl flex items-center justify-center flex-shrink-0`}>
+                  <Icon className={`h-5 w-5 ${section.color}`} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-foreground text-sm">{section.title}</h3>
+                  <p className="text-[11px] text-muted-foreground line-clamp-1">{section.shortDesc}</p>
+                </div>
+                {isOpen ? (
+                  <ChevronUp className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                ) : (
+                  <ChevronDown className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                )}
+              </button>
+
+              {isOpen && (
+                <div className="border-t border-border bg-muted/20 p-3 space-y-2">
+                  <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider px-2 pb-1">
+                    {section.steps.length} passos
+                  </p>
+                  {section.steps.map((step, idx) => {
+                    const stepKey = `${section.id}-${idx}`;
+                    const stepOpen = openStep === stepKey;
+                    return (
+                      <div key={stepKey} className="bg-card rounded-xl border border-border overflow-hidden">
+                        <button
+                          onClick={() => setOpenStep(stepOpen ? null : stepKey)}
+                          className="w-full flex items-center gap-3 p-3 text-left hover:bg-muted/20 transition-colors"
+                        >
+                          <div className={`w-7 h-7 rounded-full ${section.bgColor} ${section.color} flex items-center justify-center text-xs font-black flex-shrink-0`}>
+                            {idx + 1}
+                          </div>
+                          <span className="flex-1 text-sm font-bold text-foreground">{step.title}</span>
+                          {stepOpen ? (
+                            <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          )}
+                        </button>
+                        {stepOpen && (
+                          <div className="px-4 pb-4 pt-1 space-y-2 border-t border-border/50">
+                            <p className="text-sm text-foreground/90 leading-relaxed pt-3">
+                              {step.content}
+                            </p>
+                            {step.tip && (
+                              <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-2.5 flex gap-2 mt-2">
+                                <span className="text-base flex-shrink-0">💡</span>
+                                <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
+                                  <strong>Dica:</strong> {step.tip}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Footer help */}
+      <div className="bg-card border border-border rounded-2xl p-4 text-center space-y-2">
+        <p className="text-xs text-muted-foreground">
+          Não encontrou o que procurava?
+        </p>
+        <p className="text-xs text-foreground">
+          📞 Entre em contato com o suporte pelo WhatsApp da plataforma.
+        </p>
+      </div>
+    </div>
+  );
+};
+
+export default TutoriaisPanel;
