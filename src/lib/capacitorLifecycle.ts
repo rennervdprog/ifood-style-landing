@@ -84,10 +84,14 @@ async function setupAppStateListener() {
         // Force the online/focus state back on and reconnect immediately,
         // then once more after a short delay for WebViews that wake slowly.
         onlineManager.setOnline(true);
+        focusManager.setFocused(true);
         reconnectRealtime();
+        window.dispatchEvent(new CustomEvent("capacitor-app-resume"));
         setTimeout(() => {
           onlineManager.setOnline(true);
+          focusManager.setFocused(true);
           reconnectRealtime();
+          window.dispatchEvent(new CustomEvent("capacitor-app-resume"));
         }, 1200);
       } else {
         focusManager.setFocused(false);
