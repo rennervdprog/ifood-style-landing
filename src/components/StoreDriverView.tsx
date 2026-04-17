@@ -932,7 +932,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
             const inDelivery = order.status === "saiu_entrega" || order.status === "em_transito";
 
             return (
-              <div key={order.id} className="bg-card border border-border rounded-2xl overflow-hidden">
+              <div key={order.id} id={`stop-${order.id}`} className="bg-card border border-border rounded-2xl overflow-hidden">
                 <button
                   onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
                   className="w-full flex items-center gap-3 px-4 py-3 text-left"
