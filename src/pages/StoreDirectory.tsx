@@ -274,6 +274,7 @@ const StoreDirectory = () => {
   const [partnerRole, setPartnerRole] = useState<string | null>(null);
   const [roleChecked, setRoleChecked] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [supporterTaken, setSupporterTaken] = useState<number | null>(null);
 
   const storesCount = 127;
   const ordersCount = 48;
@@ -286,6 +287,20 @@ const StoreDirectory = () => {
 
   useEffect(() => {
     document.title = "ItaSuper — Delivery em Itatinga/SP | Peça Agora";
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data, error } = await supabase.rpc("count_supporter_plans");
+        if (cancelled || error) return;
+        setSupporterTaken(typeof data === "number" ? data : 0);
+      } catch {
+        /* silent */
+      }
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
@@ -521,7 +536,9 @@ const StoreDirectory = () => {
                 >
                   {plan.badge && (
                     <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs font-bold px-5 py-1.5 rounded-full shadow-md whitespace-nowrap">
-                      {plan.badge}
+                      {plan.id === "supporter" && supporterTaken !== null
+                        ? `🚀 Lançamento • ${Math.max(0, 10 - supporterTaken)} vagas restantes`
+                        : plan.badge}
                     </div>
                   )}
                   <CardContent className="flex flex-col flex-1 p-6 pt-8">
@@ -540,6 +557,21 @@ const StoreDirectory = () => {
                       <BadgePercent className="h-4 w-4 mr-1.5" />
                       {plan.commission} {plan.commissionLabel}
                     </div>
+
+                    {plan.id === "supporter" && supporterTaken !== null && (
+                      <div className="mb-3">
+                        <div className="flex items-center justify-between text-xs font-semibold mb-1">
+                          <span className="text-primary">{supporterTaken}/10 vagas preenchidas</span>
+                          <span className="text-muted-foreground">{Math.max(0, 10 - supporterTaken)} restantes</span>
+                        </div>
+                        <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-primary to-orange-600 transition-all"
+                            style={{ width: `${Math.min(100, (supporterTaken / 10) * 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
 
                     {plan.extraFees.length > 0 && (
                       <div className="space-y-1 mb-4">
