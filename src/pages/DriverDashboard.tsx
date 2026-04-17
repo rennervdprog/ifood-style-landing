@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { startDriverTracking, stopDriverTracking, updateTrackingOrderId, clearDriverLocation } from "@/lib/driverGeolocation";
+import { buildWazeUrl, buildGoogleMapsUrl, type NavTarget } from "@/lib/navUrls";
 import {
   Bike, MapPin, Store, DollarSign, Package, CheckCircle2,
   ArrowLeft, Navigation, KeyRound, Smartphone, ShieldCheck,
@@ -745,15 +746,14 @@ const DriverDashboard = () => {
         { key: "config" as TabType, label: "Pix", icon: CreditCard },
       ];
 
-  const NavigationLinks = ({ addr }: { addr: string }) => {
-    const encoded = encodeURIComponent(addr);
+  const NavigationLinks = ({ target }: { target: NavTarget }) => {
     return (
       <div className="flex gap-2 mt-2">
-        <a href={`https://www.google.com/maps/search/?api=1&query=${encoded}`} target="_blank" rel="noopener noreferrer"
+        <a href={buildGoogleMapsUrl(target)} target="_blank" rel="noopener noreferrer"
           className="flex-1 flex items-center justify-center gap-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-bold px-3 py-2.5 rounded-xl active:scale-[0.97] transition-all">
           <Navigation className="h-3.5 w-3.5" /> Google Maps
         </a>
-        <a href={`https://waze.com/ul?q=${encoded}&navigate=yes`} target="_blank" rel="noopener noreferrer"
+        <a href={buildWazeUrl(target)} target="_blank" rel="noopener noreferrer"
           className="flex-1 flex items-center justify-center gap-1.5 bg-purple-500/10 text-purple-600 dark:text-purple-400 text-xs font-bold px-3 py-2.5 rounded-xl active:scale-[0.97] transition-all">
           <Navigation className="h-3.5 w-3.5" /> Waze
         </a>
@@ -904,7 +904,15 @@ const DriverDashboard = () => {
                               return (
                                 <>
                                   <p className="text-xs text-muted-foreground mt-0.5">{storeAddr}</p>
-                                  <NavigationLinks addr={storeAddr} />
+                                  <NavigationLinks target={{
+                                    street: s.address_street,
+                                    number: s.address_number,
+                                    neighborhood: s.address_neighborhood,
+                                    city: s.address_city || "Itatinga",
+                                    state: s.address_state || "SP",
+                                    cep: s.address_cep,
+                                    fallbackAddress: storeAddr,
+                                  }} />
                                 </>
                               );
                             })()}
@@ -961,7 +969,14 @@ const DriverDashboard = () => {
                             <p className="text-xs text-muted-foreground font-medium">Endereço de entrega</p>
                             <p className="text-sm text-foreground font-semibold mt-0.5">{myDelivery.neighborhood}</p>
                             <p className="text-xs text-muted-foreground">{myDelivery.address_details}</p>
-                            <NavigationLinks addr={myDelivery.address_details} />
+                            <NavigationLinks target={{
+                              lat: (myDelivery as any).client_lat,
+                              lng: (myDelivery as any).client_lng,
+                              fallbackAddress: myDelivery.address_details,
+                              neighborhood: myDelivery.neighborhood,
+                              city: (myDelivery as any).stores?.address_city || "Itatinga",
+                              state: "SP",
+                            }} />
                           </div>
                         </div>
 
@@ -1055,7 +1070,15 @@ const DriverDashboard = () => {
                       return (
                         <div>
                           <p className="text-xs text-muted-foreground mb-1">{storeAddr}</p>
-                          <NavigationLinks addr={storeAddr} />
+                          <NavigationLinks target={{
+                            street: s.address_street,
+                            number: s.address_number,
+                            neighborhood: s.address_neighborhood,
+                            city: s.address_city || "Itatinga",
+                            state: s.address_state || "SP",
+                            cep: s.address_cep,
+                            fallbackAddress: storeAddr,
+                          }} />
                         </div>
                       );
                     })()}
