@@ -175,7 +175,7 @@ const faqs = [
   { q: "O plano Essencial cobra alguma comissão?", a: "Não! Zero comissão. Você fica com 100% do pedido. Há apenas uma taxa PIX fixa de R$1 por transação e R$2 por entrega via plataforma." },
   { q: "Como recebo os pedidos?", a: "Você recebe notificação sonora e push no celular em tempo real. O painel mostra todos os pedidos organizados para você gerenciar." },
   { q: "Funciona na minha cidade?", a: "Sim! Atendemos lojistas em todo o Brasil — de capitais a cidades pequenas. Use como cardápio digital com entregador próprio em qualquer lugar do país." },
-  { q: "Quanto economizo comparado ao iFood?", a: "Muito. O iFood cobra de 12% a 27% por pedido. Aqui você paga 5% (plano grátis) ou 0% (planos pagos). Em uma loja que fatura R$ 20 mil/mês, isso pode representar mais de R$ 4.000 de economia mensal." },
+  { q: "Quanto economizo comparado aos grandes apps de delivery?", a: "Muito. Os grandes marketplaces costumam cobrar comissões altas por pedido. Aqui você paga 5% (plano grátis) ou 0% (planos pagos), o que pode representar uma economia significativa no fim do mês." },
   { q: "Tem contrato ou multa?", a: "Não. Cancele quando quiser, sem multa e sem fidelidade." },
 ];
 
@@ -360,12 +360,12 @@ const StoreDirectory = () => {
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground leading-[1.1] mb-6 opacity-100">
-            Pare de pagar{" "}
+            Pague menos comissão.{" "}
             <span className="relative inline-block">
-              <span className="relative z-10 text-primary">27% pro iFood.</span>
+              <span className="relative z-10 text-primary">Receba mais pedidos.</span>
               <span className="absolute bottom-1 left-0 w-full h-3 bg-primary/15 -z-0 rounded" />
             </span>
-            <span className="block mt-2">Receba pedidos no seu link.</span>
+            <span className="block mt-2">Tudo no seu link próprio.</span>
           </h1>
 
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
@@ -512,8 +512,8 @@ const StoreDirectory = () => {
             Escolha o plano ideal para sua loja
           </h2>
           <p className="text-center text-muted-foreground mb-4 max-w-2xl mx-auto">
-            iFood cobra <span className="line-through">12% a 27%</span> por pedido. Aqui você paga <span className="font-bold text-primary">5% ou 0%</span>.
-            Todos os planos incluem cardápio completo, PIX online e notificações.
+            Comissão a partir de <span className="font-bold text-primary">5%</span> — ou <span className="font-bold text-primary">zero</span> nos planos pagos.
+            Todos incluem cardápio completo, PIX online e notificações.
           </p>
           <div className="flex justify-center mb-14">
             <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-600 border border-emerald-200">
