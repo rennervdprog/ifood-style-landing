@@ -216,8 +216,24 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [activeStoreId, setActiveStoreId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"routes" | "earnings">("routes");
+  const [declinedMap, setDeclinedMap] = useState<Record<string, number>>(() => user ? loadDeclined(user.id) : {});
 
   const multiStore = linkedStoreIds.length > 1;
+
+  // Count drivers per linked store (to show decline button only when 2+)
+  const { data: storeDriverCounts } = useQuery<Record<string, number>>({
+    queryKey: ["store-driver-counts", linkedStoreIds],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("store_drivers")
+        .select("store_id")
+        .in("store_id", linkedStoreIds);
+      const counts: Record<string, number> = {};
+      (data || []).forEach((r: any) => { counts[r.store_id] = (counts[r.store_id] || 0) + 1; });
+      return counts;
+    },
+    enabled: linkedStoreIds.length > 0,
+  });
 
   // Fetch store names and coordinates
   const { data: storeNames } = useQuery<{id: string; name: string; latitude: number | null; longitude: number | null}[]>({
