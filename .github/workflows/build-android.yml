@@ -402,8 +402,13 @@ jobs:
       - name: Build web app
         run: npm run build
 
-      - name: Add Android platform
-        run: npx cap add android || true
+      - name: Ensure Android platform exists
+        run: |
+          if [ ! -f "android/app/src/main/AndroidManifest.xml" ]; then
+            rm -rf android
+            npx cap add android
+          fi
+          test -f "android/app/src/main/AndroidManifest.xml"
 
       - name: Sync Capacitor
         run: npx cap sync android
@@ -411,6 +416,11 @@ jobs:
       - name: Inject location & camera permissions
         run: |
           MANIFEST="android/app/src/main/AndroidManifest.xml"
+          if [ ! -f "$MANIFEST" ]; then
+            echo "::error::AndroidManifest.xml não foi gerado pelo Capacitor"
+            ls -la android || true
+            exit 1
+          fi
           if ! grep -q "ACCESS_FINE_LOCATION" "$MANIFEST"; then
             sed -i 's|<application|<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n    <application|' "$MANIFEST"
             echo "✅ Location permissions injected"
