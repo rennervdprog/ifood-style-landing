@@ -397,16 +397,10 @@ const StoreDirectory = () => {
             </Button>
           </div>
 
-          {/* social proof */}
-          <div className="mt-10 flex items-center justify-center gap-3 text-sm text-muted-foreground">
-            <div className="flex -space-x-2">
-              {["M", "J", "A", "R"].map((letter, i) => (
-                <div key={i} className="w-8 h-8 rounded-full bg-primary/20 border-2 border-background flex items-center justify-center text-xs font-bold text-primary">
-                  {letter}
-                </div>
-              ))}
-            </div>
-            <span>+{storesCount} lojas no Brasil • +{ordersCount}.000 pedidos processados</span>
+          {/* Honest launch badge instead of fake numbers */}
+          <div className="mt-10 inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-4 py-2 text-sm font-semibold text-primary">
+            <Sparkles className="h-4 w-4" />
+            Plataforma em lançamento • Seja um dos primeiros lojistas
           </div>
 
           {/* Trust badges */}
