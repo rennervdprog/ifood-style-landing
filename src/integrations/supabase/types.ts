@@ -1239,6 +1239,7 @@ export type Database = {
         Row: {
           address_details: string
           app_fee: number
+          assigned_driver_id: string | null
           change_for: number | null
           client_id: string
           client_lat: number | null
@@ -1267,6 +1268,7 @@ export type Database = {
         Insert: {
           address_details: string
           app_fee?: number
+          assigned_driver_id?: string | null
           change_for?: number | null
           client_id: string
           client_lat?: number | null
@@ -1295,6 +1297,7 @@ export type Database = {
         Update: {
           address_details?: string
           app_fee?: number
+          assigned_driver_id?: string | null
           change_for?: number | null
           client_id?: string
           client_lat?: number | null
@@ -2904,6 +2907,10 @@ export type Database = {
           vehicle: string
           whatsapp_number: string
         }[]
+      }
+      store_assign_order_driver: {
+        Args: { _driver_user_id: string; _order_id: string }
+        Returns: undefined
       }
       use_coupon: {
         Args: { _coupon_id: string; _order_id: string; _user_id: string }
