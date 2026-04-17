@@ -904,7 +904,15 @@ const DriverDashboard = () => {
                               return (
                                 <>
                                   <p className="text-xs text-muted-foreground mt-0.5">{storeAddr}</p>
-                                  <NavigationLinks addr={storeAddr} />
+                                  <NavigationLinks target={{
+                                    street: s.address_street,
+                                    number: s.address_number,
+                                    neighborhood: s.address_neighborhood,
+                                    city: s.address_city || "Itatinga",
+                                    state: s.address_state || "SP",
+                                    cep: s.address_cep,
+                                    fallbackAddress: storeAddr,
+                                  }} />
                                 </>
                               );
                             })()}
@@ -961,7 +969,14 @@ const DriverDashboard = () => {
                             <p className="text-xs text-muted-foreground font-medium">Endereço de entrega</p>
                             <p className="text-sm text-foreground font-semibold mt-0.5">{myDelivery.neighborhood}</p>
                             <p className="text-xs text-muted-foreground">{myDelivery.address_details}</p>
-                            <NavigationLinks addr={myDelivery.address_details} />
+                            <NavigationLinks target={{
+                              lat: (myDelivery as any).client_lat,
+                              lng: (myDelivery as any).client_lng,
+                              fallbackAddress: myDelivery.address_details,
+                              neighborhood: myDelivery.neighborhood,
+                              city: (myDelivery as any).stores?.address_city || "Itatinga",
+                              state: "SP",
+                            }} />
                           </div>
                         </div>
 
