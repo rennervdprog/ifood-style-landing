@@ -186,7 +186,7 @@ const Index = () => {
         <div className="absolute -bottom-40 -left-40 w-[400px] h-[400px] rounded-full bg-accent/30 blur-3xl pointer-events-none" />
 
         <div className="relative mx-auto max-w-5xl text-center">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-foreground leading-[1.1] mb-5 animate-fade-in">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-foreground leading-[1.1] mb-5">
             Delivery digital{" "}
             <span className="relative inline-block">
               <span className="relative z-10 text-primary">para sua loja.</span>
@@ -194,11 +194,11 @@ const Index = () => {
             </span>
           </h1>
 
-          <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto mb-8 animate-fade-in leading-relaxed">
+          <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed">
             Cardápio profissional, pedidos organizados e pagamentos automáticos — <strong className="text-foreground">comece grátis</strong> ou escolha um plano a partir de R$100/mês.
           </p>
 
-          <div className="flex flex-col items-center gap-4 animate-fade-in mb-6">
+          <div className="flex flex-col items-center gap-4 mb-6">
             <Button size="lg" onClick={handleCTA} className="text-base px-8 py-6 rounded-full shadow-lg shadow-primary/20 w-full max-w-sm">
               Cadastrar minha loja — É grátis <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
