@@ -1051,17 +1051,33 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                 ))}
               </div>
 
-              <button
-                onClick={() => acceptOrder(order.id)}
-                disabled={hasActiveRoutes}
-                className={`w-full font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-all ${
-                  hasActiveRoutes
-                    ? "bg-muted text-muted-foreground cursor-not-allowed"
-                    : "bg-primary text-primary-foreground active:scale-[0.98]"
-                }`}
-              >
-                {hasActiveRoutes ? "FINALIZE A ROTA ATUAL" : "ACEITAR"} <ArrowRight className="h-4 w-4" />
-              </button>
+              {(() => {
+                const canDecline = (storeDriverCounts?.[order.store_id] || 0) >= 2 && !hasActiveRoutes;
+                return (
+                  <div className="flex gap-2">
+                    {canDecline && (
+                      <button
+                        onClick={() => declineOrder(order.id)}
+                        className="flex-shrink-0 px-4 py-3 rounded-xl text-sm font-bold bg-destructive/10 text-destructive active:scale-[0.98] transition-all flex items-center gap-1.5"
+                        title="Recusar entrega"
+                      >
+                        <X className="h-4 w-4" /> Recusar
+                      </button>
+                    )}
+                    <button
+                      onClick={() => acceptOrder(order.id)}
+                      disabled={hasActiveRoutes}
+                      className={`flex-1 font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-all ${
+                        hasActiveRoutes
+                          ? "bg-muted text-muted-foreground cursor-not-allowed"
+                          : "bg-primary text-primary-foreground active:scale-[0.98]"
+                      }`}
+                    >
+                      {hasActiveRoutes ? "FINALIZE A ROTA ATUAL" : "ACEITAR"} <ArrowRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                );
+              })()}
             </div>
           ))}
         </div>
