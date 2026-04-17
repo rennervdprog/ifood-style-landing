@@ -44,8 +44,8 @@ export function buildFullAddress(t: NavTarget): string {
   const parts = [
     streetLine || null,
     t.neighborhood || null,
-    t.city || "Itatinga",
-    t.state || "SP",
+    t.city || null,
+    t.state || null,
     t.cep ? `CEP ${t.cep}` : null,
     "Brasil",
   ].filter(Boolean);
@@ -54,7 +54,7 @@ export function buildFullAddress(t: NavTarget): string {
   // the pre-formatted address (e.g. legacy `address_details`) plus city/state.
   if (streetLine) return composed;
   if (t.fallbackAddress) {
-    return [t.fallbackAddress, t.neighborhood, t.city || "Itatinga", t.state || "SP", "Brasil"]
+    return [t.fallbackAddress, t.neighborhood, t.city || null, t.state || null, "Brasil"]
       .filter(Boolean)
       .join(", ");
   }
