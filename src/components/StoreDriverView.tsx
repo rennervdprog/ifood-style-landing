@@ -11,8 +11,25 @@ import confetti from "canvas-confetti";
 import {
   Bike, MapPin, Navigation, KeyRound, CheckCircle2, Package,
   Store, ChevronRight, Route, Clock, User, Phone, ArrowRight,
-  Loader2, Zap, Wallet, Power, PowerOff
+  Loader2, Zap, Wallet, Power, PowerOff, X
 } from "lucide-react";
+
+const DECLINED_TTL_MS = 1000 * 60 * 60 * 6; // 6h
+const declinedKey = (uid: string) => `store_driver_declined_${uid}`;
+const loadDeclined = (uid: string): Record<string, number> => {
+  try {
+    const raw = localStorage.getItem(declinedKey(uid));
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as Record<string, number>;
+    const now = Date.now();
+    const cleaned: Record<string, number> = {};
+    Object.entries(parsed).forEach(([k, v]) => { if (now - v < DECLINED_TTL_MS) cleaned[k] = v; });
+    return cleaned;
+  } catch { return {}; }
+};
+const saveDeclined = (uid: string, map: Record<string, number>) => {
+  try { localStorage.setItem(declinedKey(uid), JSON.stringify(map)); } catch {}
+};
 import WhatsAppButton from "@/components/WhatsAppButton";
 import StoreDriverEarnings from "@/components/StoreDriverEarnings";
 
