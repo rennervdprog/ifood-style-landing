@@ -498,23 +498,32 @@ const StoreDirectory = () => {
         </div>
       </section>
 
-      {/* ══════ STATS ══════ */}
-      <section className="py-14 border-y border-border">
-        <div className="mx-auto max-w-5xl grid grid-cols-2 md:grid-cols-4 gap-8 text-center px-4">
-          {[
-            { value: `${storesCount}+`, label: "Lojas cadastradas", icon: Store },
-            { value: `${ordersCount}k+`, label: "Pedidos entregues", icon: Package },
-            { value: `${clientsCount}k+`, label: "Clientes ativos", icon: ShoppingBag },
-            { value: `${satisfactionCount}%`, label: "Satisfação dos lojistas", icon: Star },
-          ].map((s) => (
-            <div key={s.label} className="flex flex-col items-center">
-              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-3">
-                <s.icon className="h-5 w-5 text-primary" />
+      {/* ══════ VALUE GUARANTEES (replaces fake stats) ══════ */}
+      <section className="py-14 border-y border-border bg-muted/20">
+        <div className="mx-auto max-w-5xl px-4">
+          <h2 className="text-2xl md:text-3xl font-bold text-center text-foreground mb-3">
+            Por que confiar na ItaSuper?
+          </h2>
+          <p className="text-center text-muted-foreground mb-10 max-w-xl mx-auto text-sm">
+            Não inventamos números. Mostramos o que realmente entregamos a você.
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+            {[
+              { icon: DollarSign, value: "Até 0%", label: "de comissão por pedido", desc: "Você fica com mais lucro" },
+              { icon: Clock, value: "10 min", label: "para montar seu cardápio", desc: "Pronto pra vender hoje" },
+              { icon: ShieldCheck, value: "Sem fidelidade", label: "cancele quando quiser", desc: "Sem multa, sem pegadinha" },
+              { icon: Globe, value: "Brasil todo", label: "qualquer cidade do país", desc: "Funciona em qualquer lugar" },
+            ].map((s) => (
+              <div key={s.label} className="flex flex-col items-center text-center rounded-2xl bg-card border border-border p-5 hover:shadow-md transition-shadow">
+                <div className="w-11 h-11 rounded-2xl bg-primary/10 flex items-center justify-center mb-3">
+                  <s.icon className="h-5 w-5 text-primary" />
+                </div>
+                <p className="text-2xl md:text-3xl font-extrabold text-primary leading-tight">{s.value}</p>
+                <p className="text-sm font-semibold text-foreground mt-1">{s.label}</p>
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{s.desc}</p>
               </div>
-              <p className="text-3xl md:text-4xl font-extrabold text-primary">{s.value}</p>
-              <p className="text-sm text-muted-foreground mt-1">{s.label}</p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
