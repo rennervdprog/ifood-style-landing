@@ -30,16 +30,24 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
       // Fetch driver profiles
       if (!data?.length) return [];
       const userIds = data.map(d => d.driver_user_id);
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("user_id, full_name, phone, vehicle, whatsapp_number")
-        .in("user_id", userIds);
+      const [{ data: profiles }, { data: driverRows }] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("user_id, full_name, phone, vehicle, whatsapp_number")
+          .in("user_id", userIds),
+        supabase
+          .from("drivers")
+          .select("user_id, is_online")
+          .in("user_id", userIds),
+      ]);
 
       return data.map(sd => ({
         ...sd,
         profile: profiles?.find(p => p.user_id === sd.driver_user_id),
+        is_online: !!driverRows?.find(d => d.user_id === sd.driver_user_id)?.is_online,
       }));
     },
+    refetchInterval: 15000,
   });
 
   const handleSearch = async () => {
@@ -264,11 +272,28 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
         {storeDrivers?.map(sd => (
           <div key={sd.id} className="bg-card border border-border rounded-xl p-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+              <div className="relative w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
                 <Bike className="h-4 w-4 text-primary" />
+                <span
+                  className={`absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-card ${
+                    sd.is_online ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground/40"
+                  }`}
+                  title={sd.is_online ? "Online" : "Offline"}
+                />
               </div>
               <div>
-                <p className="text-sm font-bold text-foreground">{sd.profile?.full_name || "Motoboy"}</p>
+                <p className="text-sm font-bold text-foreground flex items-center gap-2">
+                  {sd.profile?.full_name || "Motoboy"}
+                  <span
+                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                      sd.is_online
+                        ? "bg-emerald-500/15 text-emerald-600"
+                        : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {sd.is_online ? "ONLINE" : "OFFLINE"}
+                  </span>
+                </p>
                 <p className="text-[11px] text-muted-foreground">
                   {sd.profile?.phone || sd.profile?.whatsapp_number || "Sem telefone"} • {sd.profile?.vehicle || "—"}
                 </p>
