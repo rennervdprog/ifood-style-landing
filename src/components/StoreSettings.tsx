@@ -9,6 +9,8 @@ import { isGoNative, registerGoNativePlayer } from "@/lib/gonative";
 import { isCapacitorNative, registerCapacitorPush } from "@/lib/capacitorNative";
 import { maskWhatsApp } from "@/lib/whatsapp";
 import { formatCep, fetchCep } from "@/lib/cepLookup";
+import { formatBRL } from "@/lib/utils";
+import { useStorePlan } from "@/hooks/useStorePlan";
 
 const PIX_TYPE_OPTIONS = [
   { value: "cpf", label: "CPF" },
@@ -78,6 +80,7 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
   const [uploading, setUploading] = useState(false);
   const [deliveryMode, setDeliveryMode] = useState(storeDeliveryMode || "platform");
   const [ownDeliveryFee, setOwnDeliveryFee] = useState(storeOwnDeliveryFee?.toString() || "0");
+  const storePlan = useStorePlan(storeId);
 
   const [pizzaHalfEnabled, setPizzaHalfEnabled] = useState<boolean>(storeSettings?.pizza_half_enabled || false);
   const [pizzaPriceMode, setPizzaPriceMode] = useState<PizzaPriceMode>(storeSettings?.pizza_price_mode || "maior");
@@ -685,8 +688,47 @@ const NotificationSection = () => {
                 placeholder="Ex: 5.00"
                 className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
               />
-              <p className="text-[10px] text-muted-foreground mt-1">Este valor será cobrado fixo para todos os clientes.</p>
+              <p className="text-[10px] text-muted-foreground mt-1">Este valor é o que <strong>você</strong> recebe pela entrega.</p>
             </div>
+
+            {/* Preview: como vai aparecer pro cliente */}
+            {(() => {
+              const lojistaFee = parseFloat(ownDeliveryFee.replace(",", ".")) || 0;
+              const platformFee = storePlan.platformDeliverySplit || 0;
+              const totalCliente = lojistaFee + platformFee;
+              return (
+                <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-2">
+                  <p className="text-xs font-bold text-primary flex items-center gap-1.5">
+                    👁️ Como o cliente vai ver
+                  </p>
+                  <div className="space-y-1 text-xs">
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Sua taxa de entrega:</span>
+                      <span className="font-bold text-foreground">{formatBRL(lojistaFee)}</span>
+                    </div>
+                    {platformFee > 0 && (
+                      <div className="flex justify-between text-muted-foreground">
+                        <span>+ Taxa da plataforma:</span>
+                        <span className="font-bold text-foreground">{formatBRL(platformFee)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between pt-2 border-t border-primary/20">
+                      <span className="font-bold text-foreground">Total cobrado do cliente:</span>
+                      <span className="font-bold text-primary text-sm">{formatBRL(totalCliente)}</span>
+                    </div>
+                  </div>
+                  {platformFee > 0 ? (
+                    <p className="text-[10px] text-muted-foreground/80 leading-relaxed">
+                      ℹ️ A plataforma adiciona automaticamente <strong>{formatBRL(platformFee)}</strong> em cima da sua taxa para custear a operação. Você recebe os <strong>{formatBRL(lojistaFee)}</strong> integrais.
+                    </p>
+                  ) : (
+                    <p className="text-[10px] text-muted-foreground/80 leading-relaxed">
+                      ℹ️ Você recebe a taxa integral. Sem split de plataforma no seu plano.
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         )}
       </div>
