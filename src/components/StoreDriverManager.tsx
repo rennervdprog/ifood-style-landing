@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Bike, Plus, Trash2, Search, UserCheck, UserX, Loader2, Share2, Copy } from "lucide-react";
+import { Bike, Plus, Trash2, Search, UserCheck, UserX, Loader2, Share2, Copy, Users, Wallet } from "lucide-react";
+import StoreDriverFinance from "@/components/StoreDriverFinance";
 
 interface StoreDriverManagerProps {
   storeId: string;
@@ -14,6 +15,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
   const [searching, setSearching] = useState(false);
   const [foundDrivers, setFoundDrivers] = useState<{ user_id: string; full_name: string; phone: string; vehicle: string; email: string }[]>([]);
   const [adding, setAdding] = useState(false);
+  const [activeTab, setActiveTab] = useState<"team" | "finance">("team");
 
   // Fetch linked drivers
   const { data: storeDrivers, isLoading } = useQuery({
@@ -121,11 +123,35 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
         </div>
         <div>
           <h2 className="text-lg font-bold text-foreground">Motoboys da Loja</h2>
-          <p className="text-xs text-muted-foreground">Gerencie seus entregadores próprios</p>
+          <p className="text-xs text-muted-foreground">Gerencie sua equipe e o financeiro</p>
         </div>
       </div>
 
-      {/* Info + Share link */}
+      {/* Tabs */}
+      <div className="flex gap-2 bg-muted/40 p-1 rounded-2xl">
+        <button
+          onClick={() => setActiveTab("team")}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+            activeTab === "team" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+          }`}
+        >
+          <Users className="h-3.5 w-3.5" /> Equipe
+        </button>
+        <button
+          onClick={() => setActiveTab("finance")}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+            activeTab === "finance" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+          }`}
+        >
+          <Wallet className="h-3.5 w-3.5" /> Financeiro
+        </button>
+      </div>
+
+      {activeTab === "finance" ? (
+        <StoreDriverFinance storeId={storeId} />
+      ) : (
+        <>
+
       <div className="bg-blue-500/5 border border-blue-500/10 rounded-2xl p-4 space-y-3">
         <p className="text-xs text-muted-foreground">
           🏍️ Adicione motoboys que já se cadastraram na plataforma. 
@@ -257,6 +283,8 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
           </div>
         ))}
       </div>
+        </>
+      )}
     </div>
   );
 };

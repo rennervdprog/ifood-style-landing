@@ -1946,6 +1946,80 @@ export type Database = {
         }
         Relationships: []
       }
+      store_driver_earnings: {
+        Row: {
+          created_at: string
+          driver_amount: number
+          driver_user_id: string
+          fee_total: number
+          id: string
+          notes: string | null
+          order_id: string
+          paid_at: string | null
+          paid_by: string | null
+          platform_cut: number
+          status: string
+          store_id: string
+        }
+        Insert: {
+          created_at?: string
+          driver_amount?: number
+          driver_user_id: string
+          fee_total?: number
+          id?: string
+          notes?: string | null
+          order_id: string
+          paid_at?: string | null
+          paid_by?: string | null
+          platform_cut?: number
+          status?: string
+          store_id: string
+        }
+        Update: {
+          created_at?: string
+          driver_amount?: number
+          driver_user_id?: string
+          fee_total?: number
+          id?: string
+          notes?: string | null
+          order_id?: string
+          paid_at?: string | null
+          paid_by?: string | null
+          platform_cut?: number
+          status?: string
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_driver_earnings_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_driver_earnings_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_driver_earnings_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores_driver_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_driver_earnings_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       store_drivers: {
         Row: {
           created_at: string
@@ -2754,6 +2828,14 @@ export type Database = {
       is_store_owner: {
         Args: { _store_id: string; _user_id: string }
         Returns: boolean
+      }
+      mark_all_store_driver_earnings_paid: {
+        Args: { _driver_user_id: string; _store_id: string }
+        Returns: number
+      }
+      mark_store_driver_earning_paid: {
+        Args: { _earning_id: string; _notes?: string }
+        Returns: undefined
       }
       process_refund: {
         Args: {

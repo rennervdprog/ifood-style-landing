@@ -11,9 +11,10 @@ import confetti from "canvas-confetti";
 import {
   Bike, MapPin, Navigation, KeyRound, CheckCircle2, Package,
   Store, ChevronRight, Route, Clock, User, Phone, ArrowRight,
-  Loader2, Zap
+  Loader2, Zap, Wallet
 } from "lucide-react";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import StoreDriverEarnings from "@/components/StoreDriverEarnings";
 
 
 /* ── Helpers ── */
@@ -197,6 +198,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   const [useOptimized, setUseOptimized] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [activeStoreId, setActiveStoreId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"routes" | "earnings">("routes");
 
   const multiStore = linkedStoreIds.length > 1;
 
@@ -598,6 +600,35 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
         </div>
       </div>
 
+      {/* Tabs: Routes vs Earnings */}
+      <div className="flex gap-2 bg-muted/40 p-1 rounded-2xl">
+        <button
+          onClick={() => setActiveTab("routes")}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+            activeTab === "routes"
+              ? "bg-card text-foreground shadow-sm"
+              : "text-muted-foreground"
+          }`}
+        >
+          <Route className="h-3.5 w-3.5" /> Entregas
+        </button>
+        <button
+          onClick={() => setActiveTab("earnings")}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+            activeTab === "earnings"
+              ? "bg-card text-foreground shadow-sm"
+              : "text-muted-foreground"
+          }`}
+        >
+          <Wallet className="h-3.5 w-3.5" /> Meus Ganhos
+        </button>
+      </div>
+
+      {activeTab === "earnings" ? (
+        <StoreDriverEarnings storeIds={linkedStoreIds} />
+      ) : (
+        <>
+
       {/* ═══ STORE TABS (multi-store only) ═══ */}
       {multiStore && (
         <div className="space-y-2">
@@ -920,6 +951,8 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
             Quando a loja tiver pedidos prontos, eles aparecerão aqui organizados por rota.
           </p>
         </div>
+      )}
+        </>
       )}
     </div>
   );
