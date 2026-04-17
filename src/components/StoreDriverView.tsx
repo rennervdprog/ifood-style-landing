@@ -1016,14 +1016,22 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
 
       {!loadingAvailable && !hasActiveDeliveries && !hasAvailable && (
         <div className="flex flex-col items-center justify-center py-16 text-center px-6">
-          <div className="w-16 h-16 rounded-3xl bg-muted/80 flex items-center justify-center mb-4">
-            <Bike className="h-8 w-8 text-muted-foreground/60" />
+          <div className={`w-16 h-16 rounded-3xl flex items-center justify-center mb-4 ${
+            isOnline ? "bg-muted/80" : "bg-amber-500/10"
+          }`}>
+            {isOnline
+              ? <Bike className="h-8 w-8 text-muted-foreground/60" />
+              : <PowerOff className="h-8 w-8 text-amber-500" />}
           </div>
           <h2 className="text-base font-bold text-foreground mb-1">
-            {multiStore ? `Sem pedidos em ${getStoreName(effectiveStoreId!)}` : "Aguardando pedidos"}
+            {!isOnline
+              ? "Você está offline"
+              : multiStore ? `Sem pedidos em ${getStoreName(effectiveStoreId!)}` : "Aguardando pedidos"}
           </h2>
           <p className="text-sm text-muted-foreground max-w-[260px]">
-            Quando a loja tiver pedidos prontos, eles aparecerão aqui organizados por rota.
+            {!isOnline
+              ? "Fique online para receber as entregas disponíveis."
+              : "Quando a loja tiver pedidos prontos, eles aparecerão aqui organizados por rota."}
           </p>
         </div>
       )}
