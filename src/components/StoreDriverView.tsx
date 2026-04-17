@@ -215,7 +215,23 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     enabled: linkedStoreIds.length > 0,
   });
 
-  // Fetch all available orders for linked stores
+  // Fetch own driver status (online/offline)
+  const { data: driverStatus } = useQuery({
+    queryKey: ["store-driver-online-status", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("drivers")
+        .select("is_online")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      return (data as any) || { is_online: false };
+    },
+    enabled: !!user,
+  });
+  const isOnline = !!driverStatus?.is_online;
+  const [togglingOnline, setTogglingOnline] = useState(false);
+
+  // Fetch all available orders for linked stores (only when online)
   const { data: availableOrders, isLoading: loadingAvailable } = useQuery({
     queryKey: ["store-driver-available", linkedStoreIds],
     queryFn: async () => {
@@ -229,7 +245,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       if (error) throw error;
       return data || [];
     },
-    enabled: linkedStoreIds.length > 0,
+    enabled: linkedStoreIds.length > 0 && isOnline,
     refetchInterval: 30000, // Fallback only; realtime handles instant updates
   });
 
