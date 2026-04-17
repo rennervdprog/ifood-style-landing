@@ -106,7 +106,9 @@ const App = () => {
     initCapacitorNative().catch(() => {});
     initCapacitorLifecycle().catch(() => {});
     // Defer auto-update check so it doesn't compete with first render
-    setTimeout(() => initAutoUpdate().catch(() => {}), 2000);
+    setTimeout(() => {
+      try { initAutoUpdate(); } catch {}
+    }, 2000);
   }, []);
 
   return (
