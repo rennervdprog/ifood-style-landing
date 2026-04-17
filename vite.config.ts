@@ -33,6 +33,26 @@ export default defineConfig(({ mode }) => ({
         cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
+            // Hashed JS/CSS/font assets — safe to cache for a year (filenames change on deploy)
+            urlPattern: /\/assets\/.*\.(?:js|css|woff2?|ttf|otf)$/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "static-assets",
+              expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            // Images
+            urlPattern: /\.(?:png|jpg|jpeg|svg|webp|avif|gif|ico)$/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "image-assets",
+              expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
             urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
             handler: "NetworkFirst",
             options: {
