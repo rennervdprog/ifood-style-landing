@@ -435,6 +435,18 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
+      - name: Fix package name in build.gradle (White Label)
+        env:
+          STORE_APP_ID: ${{ github.event.inputs.store_app_id }}
+        run: |
+          # Ensure build.gradle uses the correct applicationId from capacitor.config.ts or inputs
+          if [ -f "android/app/build.gradle" ]; then
+            APP_ID="${STORE_APP_ID:-$(grep -oP "appId: '\K[^']+" capacitor.config.ts)}"
+            echo "📱 Setting applicationId to: $APP_ID"
+            sed -i "s/applicationId \"app\.lovable\.e8d28aded6334d74be2161c8dbe24765\"/applicationId \"$APP_ID\"/g" android/app/build.gradle
+            echo "✅ build.gradle updated with correct package name"
+          fi
+
       - name: Inject location & camera permissions
         run: |
           MANIFEST="android/app/src/main/AndroidManifest.xml"
