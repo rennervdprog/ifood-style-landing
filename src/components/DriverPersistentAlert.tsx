@@ -30,15 +30,29 @@ export default function DriverPersistentAlert({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // ⚠️ NEVER alert when driver already has an active delivery or pending return.
+  // This prevents sound/vibration/popup interruptions during ongoing deliveries.
   const shouldAlert = isOnline && availableCount > 0 && !hasActiveDelivery && !dismissed;
 
-  // Reset dismissed when orders change (new order arrives)
+  // Reset dismissed only when a NEW order arrives AND driver is free
   useEffect(() => {
-    if (availableCount > prevAvailableCount && availableCount > 0) {
+    if (availableCount > prevAvailableCount && availableCount > 0 && !hasActiveDelivery) {
       setDismissed(false);
     }
     setPrevAvailableCount(availableCount);
-  }, [availableCount, prevAvailableCount]);
+  }, [availableCount, prevAvailableCount, hasActiveDelivery]);
+
+  // Force-stop ringing immediately if driver picks up a delivery mid-alert
+  useEffect(() => {
+    if (hasActiveDelivery && intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+      if (audioRef.current) {
+        try { audioRef.current.pause(); audioRef.current.currentTime = 0; } catch {}
+      }
+      if ("vibrate" in navigator) navigator.vibrate(0);
+    }
+  }, [hasActiveDelivery]);
 
   // Reset dismissed when delivery finishes
   useEffect(() => {
