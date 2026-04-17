@@ -378,6 +378,23 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     };
   }, [linkedStoreIds, user, queryClient]);
 
+  useEffect(() => {
+    if (!user) return;
+
+    const refreshStoreDriverData = () => {
+      queryClient.invalidateQueries({ queryKey: ["store-driver-online-status", user.id] });
+      queryClient.invalidateQueries({ queryKey: ["store-driver-my-deliveries", user.id] });
+      queryClient.invalidateQueries({ queryKey: ["store-driver-count", user.id] });
+      if (linkedStoreIds.length > 0) {
+        queryClient.invalidateQueries({ queryKey: ["store-driver-store-names", linkedStoreIds] });
+        queryClient.invalidateQueries({ queryKey: ["store-driver-available", linkedStoreIds] });
+      }
+    };
+
+    window.addEventListener("capacitor-app-resume", refreshStoreDriverData);
+    return () => window.removeEventListener("capacitor-app-resume", refreshStoreDriverData);
+  }, [user, linkedStoreIds, queryClient]);
+
   // Auto-select first store if none selected
   const effectiveStoreId = activeStoreId || linkedStoreIds[0] || null;
 
