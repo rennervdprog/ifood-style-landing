@@ -174,7 +174,8 @@ const faqs = [
   { q: "Posso trocar de plano depois?", a: "Sim! Você pode migrar entre planos a qualquer momento. Basta solicitar pelo painel da loja e o admin aprova a troca." },
   { q: "O plano Essencial cobra alguma comissão?", a: "Não! Zero comissão. Você fica com 100% do pedido. Há apenas uma taxa PIX fixa de R$1 por transação e R$2 por entrega via plataforma." },
   { q: "Como recebo os pedidos?", a: "Você recebe notificação sonora e push no celular em tempo real. O painel mostra todos os pedidos organizados para você gerenciar." },
-  { q: "Funciona na minha cidade?", a: "Sim! Em todo o Brasil. Use como cardápio digital com entregador próprio em qualquer lugar." },
+  { q: "Funciona na minha cidade?", a: "Sim! Atendemos lojistas em todo o Brasil — de capitais a cidades pequenas. Use como cardápio digital com entregador próprio em qualquer lugar do país." },
+  { q: "Quanto economizo comparado ao iFood?", a: "Muito. O iFood cobra de 12% a 27% por pedido. Aqui você paga 5% (plano grátis) ou 0% (planos pagos). Em uma loja que fatura R$ 20 mil/mês, isso pode representar mais de R$ 4.000 de economia mensal." },
   { q: "Tem contrato ou multa?", a: "Não. Cancele quando quiser, sem multa e sem fidelidade." },
 ];
 
@@ -286,7 +287,7 @@ const StoreDirectory = () => {
     window.open("https://wa.me/5514991624997?text=Olá! Tenho interesse em cadastrar minha loja na plataforma.", "_blank");
 
   useEffect(() => {
-    document.title = "ItaSuper — Delivery em Itatinga/SP | Peça Agora";
+    document.title = "ItaSuper — Cardápio digital e delivery próprio para lojas em todo o Brasil";
   }, []);
 
   useEffect(() => {
@@ -354,31 +355,32 @@ const StoreDirectory = () => {
 
         <div className="relative mx-auto max-w-5xl text-center">
           <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-semibold text-primary mb-8">
-            <MapPin className="h-4 w-4" />
-            Cardápio digital para todo o Brasil
+            <Globe className="h-4 w-4" />
+            Para lojas em todo o Brasil 🇧🇷
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground leading-[1.1] mb-6 opacity-100">
-            Delivery digital{" "}
+            Pare de pagar{" "}
             <span className="relative inline-block">
-              <span className="relative z-10 text-primary">para sua loja.</span>
+              <span className="relative z-10 text-primary">27% pro iFood.</span>
               <span className="absolute bottom-1 left-0 w-full h-3 bg-primary/15 -z-0 rounded" />
             </span>
+            <span className="block mt-2">Receba pedidos no seu link.</span>
           </h1>
 
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
-            Cardápio profissional, pedidos organizados e pagamentos automáticos.
-            <span className="block mt-2 text-primary font-semibold">A partir de R$ 0/mês. Comece grátis!</span>
+            Cardápio digital próprio, PIX automático e pedidos organizados — sem WhatsApp bagunçado.
+            <span className="block mt-2 text-primary font-semibold">A partir de R$ 0/mês. Sem fidelidade.</span>
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button size="lg" onClick={handleCTA} className="text-base px-8 py-6 rounded-2xl shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all">
               <Store className="mr-2 h-5 w-5" />
-              Cadastrar minha loja — É grátis
+              Criar minha loja grátis
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <Button size="lg" variant="outline" onClick={handleWhatsApp} className="text-base px-8 py-6 rounded-2xl">
-              <MessageCircle className="mr-2 h-5 w-5" /> Tirar dúvidas
+              <MessageCircle className="mr-2 h-5 w-5" /> Falar no WhatsApp
             </Button>
           </div>
 
@@ -391,7 +393,7 @@ const StoreDirectory = () => {
                 </div>
               ))}
             </div>
-            <span>+127 lojas já usam • 48.000+ pedidos recebidos</span>
+            <span>+{storesCount} lojas no Brasil • +{ordersCount}.000 pedidos processados</span>
           </div>
 
           {/* Trust badges */}
@@ -510,8 +512,8 @@ const StoreDirectory = () => {
             Escolha o plano ideal para sua loja
           </h2>
           <p className="text-center text-muted-foreground mb-4 max-w-2xl mx-auto">
-            Todos os planos incluem cardápio digital completo, PIX online e notificações.
-            Comece grátis e migre quando quiser.
+            iFood cobra <span className="line-through">12% a 27%</span> por pedido. Aqui você paga <span className="font-bold text-primary">5% ou 0%</span>.
+            Todos os planos incluem cardápio completo, PIX online e notificações.
           </p>
           <div className="flex justify-center mb-14">
             <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-600 border border-emerald-200">
@@ -658,13 +660,15 @@ const StoreDirectory = () => {
               <div key={i} className="rounded-2xl border border-border bg-card overflow-hidden">
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  aria-expanded={openFaq === i}
+                  aria-controls={`faq-panel-${i}`}
                   className="w-full flex items-center justify-between p-5 text-left"
                 >
                   <span className="font-semibold text-foreground text-sm pr-4">{faq.q}</span>
                   <ChevronDown className={`h-5 w-5 text-muted-foreground shrink-0 transition-transform ${openFaq === i ? "rotate-180" : ""}`} />
                 </button>
                 {openFaq === i && (
-                  <div className="px-5 pb-5 text-sm text-muted-foreground leading-relaxed animate-fade-in">
+                  <div id={`faq-panel-${i}`} role="region" className="px-5 pb-5 text-sm text-muted-foreground leading-relaxed animate-fade-in">
                     {faq.a}
                   </div>
                 )}
