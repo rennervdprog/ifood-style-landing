@@ -952,6 +952,8 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
           </p>
         </div>
       )}
+        </>
+      )}
     </div>
   );
 };
