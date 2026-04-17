@@ -1070,7 +1070,15 @@ const DriverDashboard = () => {
                       return (
                         <div>
                           <p className="text-xs text-muted-foreground mb-1">{storeAddr}</p>
-                          <NavigationLinks addr={storeAddr} />
+                          <NavigationLinks target={{
+                            street: s.address_street,
+                            number: s.address_number,
+                            neighborhood: s.address_neighborhood,
+                            city: s.address_city || "Itatinga",
+                            state: s.address_state || "SP",
+                            cep: s.address_cep,
+                            fallbackAddress: storeAddr,
+                          }} />
                         </div>
                       );
                     })()}
