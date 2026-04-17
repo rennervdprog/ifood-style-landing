@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { startDriverTracking, stopDriverTracking, updateTrackingOrderId, clearDriverLocation } from "@/lib/driverGeolocation";
+import { buildWazeUrl, buildGoogleMapsUrl, type NavTarget } from "@/lib/navUrls";
 import {
   Bike, MapPin, Store, DollarSign, Package, CheckCircle2,
   ArrowLeft, Navigation, KeyRound, Smartphone, ShieldCheck,
