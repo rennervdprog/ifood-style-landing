@@ -2174,13 +2174,44 @@ const AdminDashboard = () => {
                           </div>
                         )}
                         {order.neighborhood !== "RETIRADA" && order.status === "pronto_para_entrega" && isOwnDelivery && !order.driver_id && (
-                          <div className="mx-3 mb-2 bg-blue-500/5 border border-blue-500/20 rounded-xl px-3 py-2">
+                          <div className="mx-3 mb-2 bg-blue-500/5 border border-blue-500/20 rounded-xl px-3 py-2 space-y-2">
                             <div className="flex items-center gap-1.5">
                               <Loader2 className="h-3.5 w-3.5 text-blue-500 animate-spin" />
-                              <span className="text-xs text-blue-600 dark:text-blue-400 font-semibold">🛵 Aguardando motoboy próprio aceitar</span>
+                              <span className="text-xs text-blue-600 dark:text-blue-400 font-semibold">
+                                {(order as any).assigned_driver_id
+                                  ? `🎯 Designado para ${getDriverName((order as any).assigned_driver_id)}`
+                                  : "🛵 Aberto — qualquer motoboy pode aceitar"}
+                              </span>
                             </div>
+                            {linkedStoreDrivers && linkedStoreDrivers.length > 1 && (
+                              <select
+                                value={(order as any).assigned_driver_id || ""}
+                                onChange={async (e) => {
+                                  const target = e.target.value || null;
+                                  try {
+                                    const { error } = await supabase.rpc("store_assign_order_driver" as any, {
+                                      _order_id: order.id,
+                                      _driver_user_id: target,
+                                    });
+                                    if (error) throw error;
+                                    toast.success(target ? "Pedido designado!" : "Pedido liberado para todos.");
+                                    queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+                                  } catch (err: any) {
+                                    toast.error(err.message || "Erro ao designar motoboy");
+                                  }
+                                }}
+                                className="w-full text-xs px-2 py-1.5 rounded-lg bg-background border border-border focus:ring-2 focus:ring-primary"
+                              >
+                                <option value="">🌐 Liberar para todos</option>
+                                {linkedStoreDrivers.map((d: any) => (
+                                  <option key={d.user_id} value={d.user_id}>
+                                    🎯 Enviar para {d.full_name}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
                             {linkedStoreDrivers && linkedStoreDrivers.length > 0 && (
-                              <p className="text-[10px] text-muted-foreground mt-1">
+                              <p className="text-[10px] text-muted-foreground">
                                 {linkedStoreDrivers.length} motoboy(s) vinculado(s)
                               </p>
                             )}

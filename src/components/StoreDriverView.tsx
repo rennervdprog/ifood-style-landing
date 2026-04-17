@@ -266,8 +266,9 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   const [togglingOnline, setTogglingOnline] = useState(false);
 
   // Fetch all available orders for linked stores (only when online)
+  // Includes: open orders (no assignment) + orders specifically assigned to me
   const { data: availableOrders, isLoading: loadingAvailable } = useQuery({
-    queryKey: ["store-driver-available", linkedStoreIds],
+    queryKey: ["store-driver-available", linkedStoreIds, user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
@@ -275,11 +276,12 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
         .in("store_id", linkedStoreIds)
         .eq("status", "pronto_para_entrega" as any)
         .is("driver_id", null)
+        .or(`assigned_driver_id.is.null,assigned_driver_id.eq.${user!.id}`)
         .order("created_at", { ascending: true });
       if (error) throw error;
       return data || [];
     },
-    enabled: linkedStoreIds.length > 0 && isOnline,
+    enabled: linkedStoreIds.length > 0 && isOnline && !!user,
     refetchInterval: 30000, // Fallback only; realtime handles instant updates
   });
 
