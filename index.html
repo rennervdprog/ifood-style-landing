@@ -107,10 +107,27 @@
 
   <body>
     <div id="root">
-      <!-- Static LCP shell — paints text instantly for FCP/LCP, matches React loading dimensions to avoid CLS. -->
-      <div id="lcp-shell" style="min-height:100vh;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;gap:1rem">
-        <div style="width:32px;height:32px;border:4px solid #FF6B00;border-top-color:transparent;border-radius:50%;animation:lcp-spin 1s linear infinite" role="status" aria-label="Carregando"></div>
-        <p style="margin:0;font-size:0.875rem;color:#64748b;font-weight:500">Carregando ItaSuper…</p>
+      <!--
+        Static LCP shell — paints meaningful hero content instantly without JS.
+        Matches the real hero layout so Lighthouse picks it as LCP and there's no CLS.
+      -->
+      <div id="lcp-shell" style="min-height:100vh;background:#fff;color:#0f172a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;display:flex;flex-direction:column">
+        <header style="height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 1rem;border-bottom:1px solid #f1f5f9">
+          <div style="display:flex;align-items:center;gap:.5rem;font-weight:800;font-size:1.125rem;color:#FF6B00">ItaSuper</div>
+          <div style="width:80px;height:32px;background:#FF6B00;border-radius:8px"></div>
+        </header>
+        <main style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1rem;text-align:center;gap:1rem">
+          <h1 style="margin:0;font-size:clamp(1.75rem,5vw,2.75rem);font-weight:800;line-height:1.1;max-width:48rem;color:#0f172a">
+            Cardápio profissional, pedidos organizados e pagamentos automáticos.
+          </h1>
+          <p style="margin:0;font-size:1rem;color:#64748b;max-width:36rem;line-height:1.5">
+            A partir de R$ 0/mês. Cadastre sua loja em poucos minutos.
+          </p>
+          <div style="display:flex;align-items:center;gap:.5rem;margin-top:.5rem;color:#94a3b8;font-size:.875rem">
+            <span style="display:inline-block;width:14px;height:14px;border:2px solid #FF6B00;border-top-color:transparent;border-radius:50%;animation:lcp-spin .8s linear infinite" role="status" aria-label="Carregando"></span>
+            <span>Carregando…</span>
+          </div>
+        </main>
       </div>
       <style>@keyframes lcp-spin{to{transform:rotate(360deg)}}</style>
     </div>
