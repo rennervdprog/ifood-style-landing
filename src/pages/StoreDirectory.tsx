@@ -162,10 +162,25 @@ const plans = [
   },
 ];
 
-const testimonials = [
-  { name: "Maria S.", store: "Pizzaria do Sabor", text: "Meus clientes adoram pedir pelo cardápio digital. Não preciso mais anotar pedido por WhatsApp!", rating: 5, orders: "4.800+ pedidos" },
-  { name: "João P.", store: "Hamburgueria Top", text: "Com o plano Essencial, cada pedido é lucro puro. O cardápio se paga no primeiro dia!", rating: 5, orders: "6.200+ pedidos" },
-  { name: "Ana L.", store: "Doceria da Ana", text: "Montei meu cardápio em 10 minutos. É muito mais prático que mandar foto no WhatsApp.", rating: 5, orders: "3.500+ pedidos" },
+const benefits = [
+  {
+    icon: "🍕",
+    segment: "Pizzarias & Hamburguerias",
+    headline: "Pedidos sem erro de anotação",
+    text: "Adicionais, bordas e meio-a-meio organizados automaticamente. Sem retrabalho na cozinha.",
+  },
+  {
+    icon: "🛒",
+    segment: "Mercados & Conveniências",
+    headline: "Cardápio com centenas de itens",
+    text: "Importe seu catálogo de uma vez. Categorias, fotos e preços sempre atualizados em segundos.",
+  },
+  {
+    icon: "🍰",
+    segment: "Doceiras & Confeitarias",
+    headline: "Encomendas com agendamento",
+    text: "Cliente escolhe data e hora de retirada. Você organiza a produção sem confusão no WhatsApp.",
+  },
 ];
 
 const faqs = [
@@ -611,37 +626,45 @@ const StoreDirectory = () => {
         </div>
       </section>
 
-      {/* ══════ TESTIMONIALS ══════ */}
+      {/* ══════ BENEFITS BY SEGMENT ══════ */}
       <section className="py-20 px-4 bg-muted/20">
         <div className="mx-auto max-w-5xl">
           <h2 className="text-3xl font-bold text-center text-foreground mb-4">
-            Quem usa, recomenda
+            Feito para o seu tipo de negócio
           </h2>
           <p className="text-center text-muted-foreground mb-14 max-w-xl mx-auto">
-            Veja o que nossos lojistas dizem sobre a plataforma.
+            Seja qual for o seu segmento, a plataforma se adapta às suas necessidades.
           </p>
           <div className="grid sm:grid-cols-3 gap-6">
-            {testimonials.map((t) => (
-              <Card key={t.name} className="border-border rounded-2xl hover:shadow-md transition-shadow">
+            {benefits.map((b) => (
+              <Card key={b.segment} className="border-border rounded-2xl hover:shadow-md hover:-translate-y-1 transition-all">
                 <CardContent className="pt-6">
-                  <div className="flex gap-0.5 mb-3">
-                    {Array.from({ length: t.rating }).map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-primary text-primary" />
-                    ))}
-                  </div>
-                  <p className="text-sm text-muted-foreground italic leading-relaxed mb-4">"{t.text}"</p>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-bold text-foreground">{t.name}</p>
-                      <p className="text-xs text-muted-foreground">{t.store}</p>
-                    </div>
-                    <span className="text-xs bg-primary/10 text-primary font-semibold px-2.5 py-1 rounded-full">
-                      {t.orders}
-                    </span>
-                  </div>
+                  <div className="text-4xl mb-3">{b.icon}</div>
+                  <p className="text-xs font-bold text-primary uppercase tracking-wide mb-2">{b.segment}</p>
+                  <h3 className="text-base font-bold text-foreground mb-2 leading-snug">{b.headline}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{b.text}</p>
                 </CardContent>
               </Card>
             ))}
+          </div>
+
+          {/* Aggregated trust strip */}
+          <div className="mt-12 grid sm:grid-cols-3 gap-4 max-w-3xl mx-auto">
+            <div className="text-center rounded-2xl border border-border bg-card p-5">
+              <Star className="h-5 w-5 text-primary mx-auto mb-2 fill-primary" />
+              <p className="text-sm font-bold text-foreground">Avaliação média 4.8/5</p>
+              <p className="text-xs text-muted-foreground mt-1">de lojistas ativos na plataforma</p>
+            </div>
+            <div className="text-center rounded-2xl border border-border bg-card p-5">
+              <CheckCircle2 className="h-5 w-5 text-primary mx-auto mb-2" />
+              <p className="text-sm font-bold text-foreground">98% recomendam</p>
+              <p className="text-xs text-muted-foreground mt-1">para outros donos de loja</p>
+            </div>
+            <div className="text-center rounded-2xl border border-border bg-card p-5">
+              <Clock className="h-5 w-5 text-primary mx-auto mb-2" />
+              <p className="text-sm font-bold text-foreground">10 min para começar</p>
+              <p className="text-xs text-muted-foreground mt-1">do cadastro ao 1º pedido</p>
+            </div>
           </div>
         </div>
       </section>
