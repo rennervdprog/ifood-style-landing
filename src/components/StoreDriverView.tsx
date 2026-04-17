@@ -11,8 +11,25 @@ import confetti from "canvas-confetti";
 import {
   Bike, MapPin, Navigation, KeyRound, CheckCircle2, Package,
   Store, ChevronRight, Route, Clock, User, Phone, ArrowRight,
-  Loader2, Zap, Wallet, Power, PowerOff
+  Loader2, Zap, Wallet, Power, PowerOff, X
 } from "lucide-react";
+
+const DECLINED_TTL_MS = 1000 * 60 * 60 * 6; // 6h
+const declinedKey = (uid: string) => `store_driver_declined_${uid}`;
+const loadDeclined = (uid: string): Record<string, number> => {
+  try {
+    const raw = localStorage.getItem(declinedKey(uid));
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as Record<string, number>;
+    const now = Date.now();
+    const cleaned: Record<string, number> = {};
+    Object.entries(parsed).forEach(([k, v]) => { if (now - v < DECLINED_TTL_MS) cleaned[k] = v; });
+    return cleaned;
+  } catch { return {}; }
+};
+const saveDeclined = (uid: string, map: Record<string, number>) => {
+  try { localStorage.setItem(declinedKey(uid), JSON.stringify(map)); } catch {}
+};
 import WhatsAppButton from "@/components/WhatsAppButton";
 import StoreDriverEarnings from "@/components/StoreDriverEarnings";
 
@@ -199,8 +216,24 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [activeStoreId, setActiveStoreId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"routes" | "earnings">("routes");
+  const [declinedMap, setDeclinedMap] = useState<Record<string, number>>(() => user ? loadDeclined(user.id) : {});
 
   const multiStore = linkedStoreIds.length > 1;
+
+  // Count drivers per linked store (to show decline button only when 2+)
+  const { data: storeDriverCounts } = useQuery<Record<string, number>>({
+    queryKey: ["store-driver-counts", linkedStoreIds],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("store_drivers")
+        .select("store_id")
+        .in("store_id", linkedStoreIds);
+      const counts: Record<string, number> = {};
+      (data || []).forEach((r: any) => { counts[r.store_id] = (counts[r.store_id] || 0) + 1; });
+      return counts;
+    },
+    enabled: linkedStoreIds.length > 0,
+  });
 
   // Fetch store names and coordinates
   const { data: storeNames } = useQuery<{id: string; name: string; latitude: number | null; longitude: number | null}[]>({
@@ -416,11 +449,12 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
 
   const filteredAvailable = useMemo(() => {
     if (!availableOrders) return [];
+    const notDeclined = availableOrders.filter((o: any) => !declinedMap[o.id]);
     const list = multiStore && effectiveStoreId
-      ? availableOrders.filter((o: any) => o.store_id === effectiveStoreId)
-      : availableOrders;
+      ? notDeclined.filter((o: any) => o.store_id === effectiveStoreId)
+      : notDeclined;
     return useOptimized ? optimizeRoute(list, activeStoreCoords) : list;
-  }, [availableOrders, multiStore, effectiveStoreId, useOptimized, activeStoreCoords]);
+  }, [availableOrders, multiStore, effectiveStoreId, useOptimized, activeStoreCoords, declinedMap]);
 
   // Calculate total route distance
   const routeDistanceKm = useMemo(() => {
@@ -502,6 +536,14 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       queryClient.invalidateQueries({ queryKey: ["store-driver-available", linkedStoreIds] });
     }
     toast.success(next ? "Você está ONLINE — recebendo entregas." : "Você está OFFLINE.");
+  };
+
+  const declineOrder = (orderId: string) => {
+    if (!user) return;
+    const next = { ...declinedMap, [orderId]: Date.now() };
+    setDeclinedMap(next);
+    saveDeclined(user.id, next);
+    toast.success("Pedido recusado. Outro motoboy poderá aceitar.");
   };
 
   const acceptOrder = async (orderId: string) => {
@@ -1009,17 +1051,33 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                 ))}
               </div>
 
-              <button
-                onClick={() => acceptOrder(order.id)}
-                disabled={hasActiveRoutes}
-                className={`w-full font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-all ${
-                  hasActiveRoutes
-                    ? "bg-muted text-muted-foreground cursor-not-allowed"
-                    : "bg-primary text-primary-foreground active:scale-[0.98]"
-                }`}
-              >
-                {hasActiveRoutes ? "FINALIZE A ROTA ATUAL" : "ACEITAR"} <ArrowRight className="h-4 w-4" />
-              </button>
+              {(() => {
+                const canDecline = (storeDriverCounts?.[order.store_id] || 0) >= 2 && !hasActiveRoutes;
+                return (
+                  <div className="flex gap-2">
+                    {canDecline && (
+                      <button
+                        onClick={() => declineOrder(order.id)}
+                        className="flex-shrink-0 px-4 py-3 rounded-xl text-sm font-bold bg-destructive/10 text-destructive active:scale-[0.98] transition-all flex items-center gap-1.5"
+                        title="Recusar entrega"
+                      >
+                        <X className="h-4 w-4" /> Recusar
+                      </button>
+                    )}
+                    <button
+                      onClick={() => acceptOrder(order.id)}
+                      disabled={hasActiveRoutes}
+                      className={`flex-1 font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-all ${
+                        hasActiveRoutes
+                          ? "bg-muted text-muted-foreground cursor-not-allowed"
+                          : "bg-primary text-primary-foreground active:scale-[0.98]"
+                      }`}
+                    >
+                      {hasActiveRoutes ? "FINALIZE A ROTA ATUAL" : "ACEITAR"} <ArrowRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                );
+              })()}
             </div>
           ))}
         </div>
