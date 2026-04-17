@@ -624,6 +624,38 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
 
   return (
     <div className="px-4 py-4 space-y-5">
+      {/* Online/Offline toggle */}
+      <button
+        onClick={toggleOnline}
+        disabled={togglingOnline}
+        className={`w-full flex items-center justify-between gap-3 px-4 py-3.5 rounded-2xl border-2 transition-all active:scale-[0.99] disabled:opacity-60 ${
+          isOnline
+            ? "bg-emerald-500/10 border-emerald-500/40"
+            : "bg-muted/40 border-border"
+        }`}
+      >
+        <div className="flex items-center gap-3">
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+            isOnline ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"
+          }`}>
+            {togglingOnline
+              ? <Loader2 className="h-5 w-5 animate-spin" />
+              : isOnline ? <Power className="h-5 w-5" /> : <PowerOff className="h-5 w-5" />}
+          </div>
+          <div className="text-left">
+            <p className={`text-sm font-black ${isOnline ? "text-emerald-700 dark:text-emerald-400" : "text-foreground"}`}>
+              {isOnline ? "VOCÊ ESTÁ ONLINE" : "VOCÊ ESTÁ OFFLINE"}
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              {isOnline ? "Recebendo entregas disponíveis" : "Toque para receber entregas"}
+            </p>
+          </div>
+        </div>
+        <div className={`relative w-12 h-7 rounded-full transition-colors ${isOnline ? "bg-emerald-500" : "bg-muted"}`}>
+          <span className={`absolute top-[3px] w-[22px] h-[22px] rounded-full bg-white shadow-md transition-transform ${isOnline ? "left-[23px]" : "left-[3px]"}`} />
+        </div>
+      </button>
+
       {/* Stats bar */}
       <div className="grid grid-cols-3 gap-2">
         <div className="bg-card border border-border rounded-2xl p-3 text-center">
