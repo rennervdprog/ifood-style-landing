@@ -538,6 +538,14 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     toast.success(next ? "Você está ONLINE — recebendo entregas." : "Você está OFFLINE.");
   };
 
+  const declineOrder = (orderId: string) => {
+    if (!user) return;
+    const next = { ...declinedMap, [orderId]: Date.now() };
+    setDeclinedMap(next);
+    saveDeclined(user.id, next);
+    toast.success("Pedido recusado. Outro motoboy poderá aceitar.");
+  };
+
   const acceptOrder = async (orderId: string) => {
     const { error } = await supabase.rpc("driver_accept_order", { _order_id: orderId } as any);
     if (error) {
