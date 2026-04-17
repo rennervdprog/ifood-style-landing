@@ -745,15 +745,14 @@ const DriverDashboard = () => {
         { key: "config" as TabType, label: "Pix", icon: CreditCard },
       ];
 
-  const NavigationLinks = ({ addr }: { addr: string }) => {
-    const encoded = encodeURIComponent(addr);
+  const NavigationLinks = ({ target }: { target: NavTarget }) => {
     return (
       <div className="flex gap-2 mt-2">
-        <a href={`https://www.google.com/maps/search/?api=1&query=${encoded}`} target="_blank" rel="noopener noreferrer"
+        <a href={buildGoogleMapsUrl(target)} target="_blank" rel="noopener noreferrer"
           className="flex-1 flex items-center justify-center gap-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-bold px-3 py-2.5 rounded-xl active:scale-[0.97] transition-all">
           <Navigation className="h-3.5 w-3.5" /> Google Maps
         </a>
-        <a href={`https://waze.com/ul?q=${encoded}&navigate=yes`} target="_blank" rel="noopener noreferrer"
+        <a href={buildWazeUrl(target)} target="_blank" rel="noopener noreferrer"
           className="flex-1 flex items-center justify-center gap-1.5 bg-purple-500/10 text-purple-600 dark:text-purple-400 text-xs font-bold px-3 py-2.5 rounded-xl active:scale-[0.97] transition-all">
           <Navigation className="h-3.5 w-3.5" /> Waze
         </a>
