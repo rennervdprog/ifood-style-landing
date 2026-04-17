@@ -1,1 +1,7 @@
 project_id = "lktzrqjvqoojlrhqnxuz"
+
+[functions.zapi-webhook]
+verify_jwt = false
+
+[functions.zapi-send-internal]
+verify_jwt = false
