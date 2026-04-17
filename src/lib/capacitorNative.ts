@@ -357,21 +357,22 @@ export async function initCapacitorNative() {
   if (!isCapacitorNative()) return;
 
   console.log("[Capacitor] Platform:", Capacitor.getPlatform());
-  console.log("[Capacitor] Initializing native features...");
 
-  // Run independent setup tasks in parallel for faster boot
-  await Promise.allSettled([
-    configureStatusBar().then(() => console.log("[Capacitor] StatusBar done")),
-    setupKeyboard().then(() => console.log("[Capacitor] Keyboard done")),
-    setupPushListeners().then(() => console.log("[Capacitor] PushListeners done")),
-    requestLocationPermission().then(() => console.log("[Capacitor] Location done")),
-  ]);
+  // ⚡ Hide splash IMMEDIATELY — React is already mounted at this point.
+  // Don't wait for permissions/listeners; they're not visual.
+  hideSplash().catch(() => {});
 
-  // App listeners (back button, deep links) — fire and forget
-  setupAppListeners().then(() => console.log("[Capacitor] AppListeners done")).catch(console.warn);
+  // Visual setup runs in parallel but doesn't block anything else
+  configureStatusBar().catch(() => {});
+  setupKeyboard().catch(() => {});
 
-  // Hide splash after a small delay to let the app render
-  setTimeout(() => hideSplash(), 400);
+  // Listeners run in background — required for runtime, not for first paint
+  setupPushListeners().catch(() => {});
+  setupAppListeners().catch(() => {});
 
-  console.log("[Capacitor] Native features initialized");
+  // Location permission: defer significantly so it doesn't slow boot.
+  // It's only needed when user actually opens a screen that uses location.
+  setTimeout(() => {
+    requestLocationPermission().catch(() => {});
+  }, 3000);
 }

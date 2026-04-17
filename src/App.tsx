@@ -101,9 +101,12 @@ const PushNavigator = () => {
 
 const App = () => {
   useEffect(() => {
-    initCapacitorNative()
-      .then(() => initCapacitorLifecycle())
-      .then(() => initAutoUpdate());
+    // ⚡ Fire-and-forget: don't chain these, run in parallel so first paint
+    // is never blocked by native setup or auto-update checks.
+    initCapacitorNative().catch(() => {});
+    initCapacitorLifecycle().catch(() => {});
+    // Defer auto-update check so it doesn't compete with first render
+    setTimeout(() => initAutoUpdate().catch(() => {}), 2000);
   }, []);
 
   return (

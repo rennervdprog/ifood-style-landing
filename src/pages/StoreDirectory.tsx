@@ -337,12 +337,10 @@ const StoreDirectory = () => {
     return () => { cancelled = true; };
   }, [user?.id, authLoading]);
 
-  if (!authLoading && roleChecked && partnerRole) return <PartnerClientView />;
-  if (authLoading || !roleChecked) return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
-    </div>
-  );
+  // ⚡ Render landing immediately. Role check happens in the background and
+  // only switches view if the user is actually a logged-in partner.
+  // Anonymous visitors (vast majority) see the page instantly with no spinner.
+  if (roleChecked && partnerRole) return <PartnerClientView />;
 
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
