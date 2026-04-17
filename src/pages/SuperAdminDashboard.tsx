@@ -1735,18 +1735,75 @@ const FinanceTab = ({
                           </div>
                         )}
 
-                        {/* Fixed plan: show subscription info instead of commission */}
-                        {isFixedPlan && (
-                          <div className="bg-blue-500/5 border border-blue-500/15 rounded-xl p-3 flex items-start gap-2.5">
-                            <CreditCard className="h-4 w-4 text-blue-500 mt-0.5 shrink-0" />
-                            <div>
-                              <p className="text-xs font-bold text-blue-600">Plano Fixo — Sem comissão por pedido</p>
-                              <p className="text-[10px] text-muted-foreground mt-0.5">
-                                Cobrança mensal de {formatBRL(Number(plan?.monthly_fee || 180))}. Sem taxas sobre vendas.
-                              </p>
+                        {/* Fixed plan: show subscription info + monthly payment status */}
+                        {isFixedPlan && (() => {
+                          const monthlyFee = Number(plan?.monthly_fee || 180);
+                          const lastBilled = plan?.last_billed_at ? new Date(plan.last_billed_at) : null;
+                          const nextBilling = plan?.next_billing_date ? new Date(plan.next_billing_date) : null;
+                          const now = new Date();
+                          const isOverdue = nextBilling ? nextBilling < now : false;
+                          // Considera "pago no mês corrente" se foi cobrado nos últimos 30 dias
+                          const paidThisCycle = lastBilled
+                            ? (now.getTime() - lastBilled.getTime()) < 1000 * 60 * 60 * 24 * 30
+                            : false;
+                          const daysUntilDue = nextBilling
+                            ? Math.ceil((nextBilling.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+                            : null;
+
+                          return (
+                            <div className="space-y-2">
+                              <div className="bg-blue-500/5 border border-blue-500/15 rounded-xl p-3 flex items-start gap-2.5">
+                                <CreditCard className="h-4 w-4 text-blue-500 mt-0.5 shrink-0" />
+                                <div className="flex-1">
+                                  <p className="text-xs font-bold text-blue-600">Plano Fixo — Sem comissão por pedido</p>
+                                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                                    Mensalidade de {formatBRL(monthlyFee)}. Sem taxas sobre vendas.
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Status do repasse mensal (mensalidade do plano fixo) */}
+                              {isOverdue ? (
+                                <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-3 flex items-start gap-2.5">
+                                  <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
+                                  <div className="flex-1">
+                                    <p className="text-xs font-bold text-red-600">Mensalidade VENCIDA</p>
+                                    <p className="text-lg font-black text-red-500 mt-1">{formatBRL(monthlyFee)}</p>
+                                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                                      Venceu em {nextBilling?.toLocaleDateString("pt-BR")}
+                                      {lastBilled && ` • Último pagamento: ${lastBilled.toLocaleDateString("pt-BR")}`}
+                                    </p>
+                                  </div>
+                                </div>
+                              ) : paidThisCycle ? (
+                                <div className="bg-emerald-500/5 border border-emerald-500/15 rounded-xl p-3 flex items-start gap-2.5">
+                                  <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
+                                  <div className="flex-1">
+                                    <p className="text-xs font-bold text-emerald-600">Mensalidade quitada</p>
+                                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                                      Pago em {lastBilled?.toLocaleDateString("pt-BR")}
+                                      {nextBilling && ` • Próxima cobrança: ${nextBilling.toLocaleDateString("pt-BR")}${daysUntilDue !== null ? ` (em ${daysUntilDue}d)` : ""}`}
+                                    </p>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="bg-amber-500/5 border border-amber-500/15 rounded-xl p-3 flex items-start gap-2.5">
+                                  <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                                  <div className="flex-1">
+                                    <p className="text-xs font-bold text-amber-600">Mensalidade pendente</p>
+                                    <p className="text-lg font-black text-amber-500 mt-1">{formatBRL(monthlyFee)}</p>
+                                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                                      {nextBilling
+                                        ? `Vence em ${nextBilling.toLocaleDateString("pt-BR")}${daysUntilDue !== null && daysUntilDue >= 0 ? ` (em ${daysUntilDue}d)` : ""}`
+                                        : "Aguardando primeira cobrança"}
+                                      {lastBilled && ` • Último: ${lastBilled.toLocaleDateString("pt-BR")}`}
+                                    </p>
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                          </div>
-                        )}
+                          );
+                        })()}
 
                         {pixInfo?.pixKey ? (
                           <div className="bg-muted/30 rounded-xl p-2.5 flex items-center gap-2">
