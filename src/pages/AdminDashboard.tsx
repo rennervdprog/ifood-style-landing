@@ -17,7 +17,7 @@ import {
   Menu, X, LayoutDashboard, CircleDot, TrendingUp, BarChart3,
   Users, Timer, Star, ShoppingBag, ArrowUpRight, ArrowDownRight,
   Filter, UserCheck, UserX, MapPinned, Repeat, Heart, AlertTriangle, LogOut, User, Shield,
-  Calendar, Download
+  Calendar, Download, GraduationCap
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip,
@@ -50,7 +50,7 @@ import AdminRefundPanel from "@/components/AdminRefundPanel";
 
 type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_entrega" | "em_transito" | "entregue" | "finalizado";
 type OrderTabKey = OrderStatus | "delivery";
-type DashboardTab = "dashboard" | "orders" | "menu" | "addons" | "bordas" | "hours" | "settings" | "finance" | "clients" | "reports" | "subscription" | "loyalty" | "drivers" | "refunds";
+type DashboardTab = "dashboard" | "orders" | "menu" | "addons" | "bordas" | "hours" | "settings" | "finance" | "clients" | "reports" | "subscription" | "loyalty" | "drivers" | "refunds" | "tutoriais";
 type StoreAddonGroup = {
   id: string;
   name: string;
@@ -235,6 +235,7 @@ const baseSidebarItems: { key: DashboardTab; label: string; icon: React.ElementT
   { key: "loyalty", label: "Fidelidade", icon: Star },
   { key: "drivers", label: "Motoboys", icon: Bike },
   { key: "refunds", label: "Reembolsos", icon: AlertTriangle },
+  { key: "tutoriais", label: "Tutoriais", icon: GraduationCap },
   { key: "settings", label: "Configurações", icon: Settings },
 ];
 
@@ -256,6 +257,7 @@ const moreSheetItems: { key: DashboardTab; label: string; icon: React.ElementTyp
   { key: "subscription", label: "Assinatura", icon: CreditCard },
   { key: "loyalty", label: "Fidelidade", icon: Star },
   { key: "drivers", label: "Motoboys", icon: Bike },
+  { key: "tutoriais", label: "Tutoriais", icon: GraduationCap },
   { key: "settings", label: "Configurações", icon: Settings },
 ];
 
