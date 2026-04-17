@@ -12,23 +12,15 @@
     <!-- Preload main entry to shorten critical chain -->
     <link rel="modulepreload" href="/src/main.tsx" />
 
-    <!-- Google Fonts — fully deferred to not block FCP. Loaded after first paint via JS. -->
+    <!-- Google Fonts — loaded after page load to not block FCP -->
     <script>
-      (function () {
-        function loadFont() {
-          var l = document.createElement('link');
-          l.rel = 'stylesheet';
-          l.href = 'https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap';
-          document.head.appendChild(l);
-        }
-        if ('requestIdleCallback' in window) {
-          requestIdleCallback(loadFont, { timeout: 2000 });
-        } else {
-          window.addEventListener('load', function () { setTimeout(loadFont, 0); });
-        }
-      })();
+      window.addEventListener('load', function() {
+        var l = document.createElement('link');
+        l.rel = 'stylesheet';
+        l.href = 'https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap';
+        document.head.appendChild(l);
+      });
     </script>
-    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" /></noscript>
 
     <!-- Primary Meta Tags -->
     <title>ItaSuper — Log | Peça Agora</title>
