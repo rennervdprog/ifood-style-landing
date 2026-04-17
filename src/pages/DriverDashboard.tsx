@@ -475,6 +475,28 @@ const DriverDashboard = () => {
   }, [user, queryClient]);
 
   useEffect(() => {
+    if (!user) return;
+
+    const refreshDriverDashboard = () => {
+      queryClient.invalidateQueries({ queryKey: ["my-profile-approval", user.id] });
+      queryClient.invalidateQueries({ queryKey: ["store-driver-links", user.id] });
+      queryClient.invalidateQueries({ queryKey: ["platform-driver-entry", user.id] });
+      queryClient.invalidateQueries({ queryKey: ["driver-available-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["driver-my-delivery", user.id] });
+      queryClient.invalidateQueries({ queryKey: ["driver-history", user.id] });
+      queryClient.invalidateQueries({ queryKey: ["driver-pending-return", user.id] });
+      queryClient.invalidateQueries({ queryKey: ["open-platform-stores"] });
+      queryClient.invalidateQueries({ queryKey: ["driver-balance", user.id] });
+      queryClient.invalidateQueries({ queryKey: ["driver-earnings", user.id] });
+      queryClient.invalidateQueries({ queryKey: ["pending-withdrawal", user.id] });
+      queryClient.invalidateQueries({ queryKey: ["withdrawal-history", user.id] });
+    };
+
+    window.addEventListener("capacitor-app-resume", refreshDriverDashboard);
+    return () => window.removeEventListener("capacitor-app-resume", refreshDriverDashboard);
+  }, [user, queryClient]);
+
+  useEffect(() => {
     const count = availableOrders?.length || 0;
     if (count > prevCountRef.current && prevCountRef.current >= 0) playAlert();
     prevCountRef.current = count;
