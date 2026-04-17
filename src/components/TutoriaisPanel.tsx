@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
-  GraduationCap, ChevronDown, ChevronUp, Search,
-  LayoutDashboard, ListOrdered, Users, UtensilsCrossed, Plus, CircleDot,
+  GraduationCap, ChevronDown, ChevronUp, Search, X,
+  LayoutDashboard, ListOrdered, UtensilsCrossed, Plus, CircleDot,
   Clock, Coins, BarChart3, CreditCard, Star, Bike, AlertTriangle, Settings,
-  Truck, Wallet, Tag, MessageSquare, Bell, Camera, MapPin, Phone, Lock,
-  CheckCircle2, XCircle, ShoppingBag, DollarSign, Package, Eye,
+  CheckCircle2, Rocket, HelpCircle, MessageCircle, Sparkles, BookOpen,
+  PlayCircle, ArrowRight, Zap, Trophy,
 } from "lucide-react";
 
 interface TutorialStep {
@@ -13,6 +13,8 @@ interface TutorialStep {
   tip?: string;
 }
 
+type TutorialCategory = "essencial" | "vendas" | "financeiro" | "operacao";
+
 interface TutorialSection {
   id: string;
   icon: React.ElementType;
@@ -20,8 +22,18 @@ interface TutorialSection {
   shortDesc: string;
   color: string;
   bgColor: string;
+  category: TutorialCategory;
+  estimatedMinutes: number;
   steps: TutorialStep[];
 }
+
+const CATEGORIES: { id: TutorialCategory | "all"; label: string; icon: React.ElementType }[] = [
+  { id: "all", label: "Todos", icon: BookOpen },
+  { id: "essencial", label: "Essencial", icon: Sparkles },
+  { id: "vendas", label: "Vendas", icon: UtensilsCrossed },
+  { id: "financeiro", label: "Financeiro", icon: Coins },
+  { id: "operacao", label: "Operação", icon: Settings },
+];
 
 const TUTORIAIS: TutorialSection[] = [
   {
@@ -31,6 +43,8 @@ const TUTORIAIS: TutorialSection[] = [
     shortDesc: "A primeira tela que você vê quando entra no painel",
     color: "text-blue-500",
     bgColor: "bg-blue-500/10",
+    category: "essencial",
+    estimatedMinutes: 3,
     steps: [
       {
         title: "O que aparece aqui?",
@@ -63,6 +77,8 @@ const TUTORIAIS: TutorialSection[] = [
     shortDesc: "Onde você gerencia tudo que o cliente pede",
     color: "text-orange-500",
     bgColor: "bg-orange-500/10",
+    category: "essencial",
+    estimatedMinutes: 4,
     steps: [
       {
         title: "Como funciona?",
@@ -94,6 +110,8 @@ const TUTORIAIS: TutorialSection[] = [
     shortDesc: "Onde você cadastra seus produtos (lanches, pizzas, bebidas...)",
     color: "text-emerald-500",
     bgColor: "bg-emerald-500/10",
+    category: "vendas",
+    estimatedMinutes: 5,
     steps: [
       {
         title: "Criar uma seção",
@@ -125,6 +143,8 @@ const TUTORIAIS: TutorialSection[] = [
     shortDesc: "Extras que o cliente pode escolher (queijo extra, bacon...)",
     color: "text-purple-500",
     bgColor: "bg-purple-500/10",
+    category: "vendas",
+    estimatedMinutes: 3,
     steps: [
       {
         title: "O que é um grupo de adicionais?",
@@ -151,6 +171,8 @@ const TUTORIAIS: TutorialSection[] = [
     shortDesc: "Tipos de borda para pizza (catupiry, cheddar, comum...)",
     color: "text-red-500",
     bgColor: "bg-red-500/10",
+    category: "vendas",
+    estimatedMinutes: 2,
     steps: [
       {
         title: "Para que serve?",
@@ -169,6 +191,8 @@ const TUTORIAIS: TutorialSection[] = [
     shortDesc: "Quando sua loja está aberta para receber pedidos",
     color: "text-cyan-500",
     bgColor: "bg-cyan-500/10",
+    category: "operacao",
+    estimatedMinutes: 2,
     steps: [
       {
         title: "Definir horário de cada dia",
@@ -192,6 +216,8 @@ const TUTORIAIS: TutorialSection[] = [
     shortDesc: "Quanto dinheiro você já fez e quanto vai receber",
     color: "text-emerald-500",
     bgColor: "bg-emerald-500/10",
+    category: "financeiro",
+    estimatedMinutes: 4,
     steps: [
       {
         title: "Saldo a receber",
@@ -219,6 +245,8 @@ const TUTORIAIS: TutorialSection[] = [
     shortDesc: "Gráficos para entender como está indo o negócio",
     color: "text-indigo-500",
     bgColor: "bg-indigo-500/10",
+    category: "financeiro",
+    estimatedMinutes: 3,
     steps: [
       {
         title: "Faturamento por dia",
@@ -241,6 +269,8 @@ const TUTORIAIS: TutorialSection[] = [
     shortDesc: "Qual plano você está e quando vence",
     color: "text-amber-500",
     bgColor: "bg-amber-500/10",
+    category: "financeiro",
+    estimatedMinutes: 2,
     steps: [
       {
         title: "Tipos de plano",
@@ -263,6 +293,8 @@ const TUTORIAIS: TutorialSection[] = [
     shortDesc: "Programa de pontos para clientes voltarem mais",
     color: "text-yellow-500",
     bgColor: "bg-yellow-500/10",
+    category: "vendas",
+    estimatedMinutes: 3,
     steps: [
       {
         title: "Para que serve?",
@@ -285,6 +317,8 @@ const TUTORIAIS: TutorialSection[] = [
     shortDesc: "Cadastrar e gerenciar seus entregadores próprios",
     color: "text-blue-500",
     bgColor: "bg-blue-500/10",
+    category: "operacao",
+    estimatedMinutes: 4,
     steps: [
       {
         title: "Cadastrar motoboy",
@@ -312,6 +346,8 @@ const TUTORIAIS: TutorialSection[] = [
     shortDesc: "Pedidos de devolução de dinheiro do cliente",
     color: "text-red-500",
     bgColor: "bg-red-500/10",
+    category: "operacao",
+    estimatedMinutes: 2,
     steps: [
       {
         title: "Quando aparece?",
@@ -331,6 +367,8 @@ const TUTORIAIS: TutorialSection[] = [
     shortDesc: "Dados da loja, foto, endereço, PIX, WhatsApp",
     color: "text-gray-500",
     bgColor: "bg-gray-500/10",
+    category: "essencial",
+    estimatedMinutes: 4,
     steps: [
       {
         title: "Foto e nome da loja",
@@ -357,67 +395,234 @@ const TUTORIAIS: TutorialSection[] = [
   },
 ];
 
+// Início Rápido — passos para um lojista novo
+const QUICK_START = [
+  { id: "settings", label: "Cadastre os dados da loja", icon: Settings },
+  { id: "hours", label: "Defina seus horários", icon: Clock },
+  { id: "menu", label: "Monte seu cardápio", icon: UtensilsCrossed },
+  { id: "addons", label: "Crie adicionais (opcional)", icon: Plus },
+  { id: "drivers", label: "Cadastre motoboys (opcional)", icon: Bike },
+  { id: "orders", label: "Aceite seu primeiro pedido!", icon: Trophy },
+];
+
+// FAQ — perguntas mais comuns
+const FAQ = [
+  {
+    q: "Como recebo o dinheiro dos pedidos?",
+    a: "Pedidos no PIX são repassados pela plataforma direto na sua chave PIX cadastrada. Pedidos em dinheiro/cartão você recebe na hora da entrega.",
+  },
+  {
+    q: "Por que minha loja aparece como fechada?",
+    a: "Verifique se está dentro do horário cadastrado em Horários. Confira também se você não fechou manualmente o botão FECHAR LOJA AGORA.",
+  },
+  {
+    q: "O cliente reclama que não recebe notificações.",
+    a: "Peça para ele abrir o app, ir em Perfil → Notificações e ativar. No iPhone, também precisa permitir nas configurações do celular.",
+  },
+  {
+    q: "Posso ter mais de um motoboy?",
+    a: "Sim! Em Motoboys você cadastra quantos quiser. Cada um recebe seu próprio acesso e fica online de forma independente.",
+  },
+  {
+    q: "Esqueci de aceitar um pedido. O que acontece?",
+    a: "Se demorar muito, o cliente pode cancelar. O sistema também avisa você com som e notificação. Sempre fique de olho no painel.",
+  },
+];
+
+const STORAGE_KEY = "tutorials_completed";
+
 const TutoriaisPanel = () => {
   const [search, setSearch] = useState("");
   const [openSection, setOpenSection] = useState<string | null>(null);
   const [openStep, setOpenStep] = useState<string | null>(null);
+  const [activeCategory, setActiveCategory] = useState<TutorialCategory | "all">("all");
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [completed, setCompleted] = useState<Set<string>>(new Set());
 
-  const filteredTutoriais = TUTORIAIS.filter((t) => {
-    if (!search.trim()) return true;
-    const q = search.toLowerCase();
-    return (
-      t.title.toLowerCase().includes(q) ||
-      t.shortDesc.toLowerCase().includes(q) ||
-      t.steps.some(
-        (s) =>
-          s.title.toLowerCase().includes(q) ||
-          s.content.toLowerCase().includes(q)
-      )
-    );
-  });
+  // Load completed tutorials from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) setCompleted(new Set(JSON.parse(saved)));
+    } catch {}
+  }, []);
+
+  const toggleCompleted = (id: string) => {
+    setCompleted((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(next)));
+      } catch {}
+      return next;
+    });
+  };
+
+  const filteredTutoriais = useMemo(() => {
+    return TUTORIAIS.filter((t) => {
+      if (activeCategory !== "all" && t.category !== activeCategory) return false;
+      if (!search.trim()) return true;
+      const q = search.toLowerCase();
+      return (
+        t.title.toLowerCase().includes(q) ||
+        t.shortDesc.toLowerCase().includes(q) ||
+        t.steps.some(
+          (s) =>
+            s.title.toLowerCase().includes(q) ||
+            s.content.toLowerCase().includes(q)
+        )
+      );
+    });
+  }, [search, activeCategory]);
+
+  const progressPercent = Math.round((completed.size / TUTORIAIS.length) * 100);
+
+  const openSectionById = (id: string) => {
+    setOpenSection(id);
+    setOpenStep(null);
+    // scroll to section
+    setTimeout(() => {
+      const el = document.getElementById(`tutorial-section-${id}`);
+      el?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
+  };
 
   return (
-    <div className="space-y-4 max-w-3xl mx-auto">
-      {/* Header */}
-      <div className="bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded-2xl p-5 space-y-2">
+    <div className="space-y-4 max-w-3xl mx-auto pb-8">
+      {/* Header com progresso */}
+      <div className="bg-gradient-to-br from-primary/15 via-primary/5 to-background border border-primary/20 rounded-2xl p-5 space-y-3">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-primary/15 rounded-2xl flex items-center justify-center">
+          <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center">
             <GraduationCap className="h-6 w-6 text-primary" />
           </div>
-          <div>
+          <div className="flex-1 min-w-0">
             <h2 className="text-lg font-black text-foreground">Tutoriais Completos</h2>
             <p className="text-xs text-muted-foreground">Aprenda cada função do painel passo a passo</p>
           </div>
         </div>
-        <p className="text-xs text-foreground/80 leading-relaxed pt-1">
-          📚 Tudo explicado de forma simples, com linguagem do dia a dia. Toque em cada tópico para abrir e ler.
-        </p>
+
+        {/* Barra de progresso */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground font-semibold">
+              Seu progresso: {completed.size} de {TUTORIAIS.length} tutoriais
+            </span>
+            <span className="text-primary font-black">{progressPercent}%</span>
+          </div>
+          <div className="h-2 bg-muted rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-500 rounded-full"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+          {progressPercent === 100 && (
+            <p className="text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1 pt-1">
+              <Trophy className="h-3.5 w-3.5" /> Parabéns! Você completou todos os tutoriais!
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Início Rápido */}
+      <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-amber-500/15 rounded-xl flex items-center justify-center">
+            <Rocket className="h-4 w-4 text-amber-500" />
+          </div>
+          <div>
+            <h3 className="text-sm font-black text-foreground">Início Rápido</h3>
+            <p className="text-[11px] text-muted-foreground">Sequência ideal para começar agora</p>
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          {QUICK_START.map((q, idx) => {
+            const Icon = q.icon;
+            const isDone = completed.has(q.id);
+            return (
+              <button
+                key={q.id}
+                onClick={() => openSectionById(q.id)}
+                className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-muted/40 transition-colors text-left group"
+              >
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0 ${
+                  isDone ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"
+                }`}>
+                  {isDone ? <CheckCircle2 className="h-4 w-4" /> : idx + 1}
+                </div>
+                <Icon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <span className={`flex-1 text-sm font-semibold ${isDone ? "text-muted-foreground line-through" : "text-foreground"}`}>
+                  {q.label}
+                </span>
+                <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar tutorial (ex: pedidos, pix, motoboy)..."
-          className="w-full pl-10 pr-4 py-3 bg-card border border-border rounded-xl text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+          className="w-full pl-10 pr-10 py-3 bg-card border border-border rounded-xl text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
         />
+        {search && (
+          <button
+            onClick={() => setSearch("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-muted"
+          >
+            <X className="h-3.5 w-3.5 text-muted-foreground" />
+          </button>
+        )}
+      </div>
+
+      {/* Filtros por categoria */}
+      <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
+        {CATEGORIES.map((cat) => {
+          const Icon = cat.icon;
+          const isActive = activeCategory === cat.id;
+          return (
+            <button
+              key={cat.id}
+              onClick={() => setActiveCategory(cat.id)}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex-shrink-0 ${
+                isActive
+                  ? "bg-primary text-primary-foreground shadow-md"
+                  : "bg-card border border-border text-foreground hover:bg-muted/40"
+              }`}
+            >
+              <Icon className="h-3.5 w-3.5" />
+              {cat.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* Sections list */}
       <div className="space-y-3">
         {filteredTutoriais.length === 0 && (
-          <div className="text-center py-12 text-muted-foreground text-sm">
-            Nenhum tutorial encontrado para "{search}"
+          <div className="text-center py-12 text-muted-foreground text-sm bg-card border border-border rounded-2xl">
+            <Search className="h-8 w-8 mx-auto mb-2 opacity-40" />
+            Nenhum tutorial encontrado{search && ` para "${search}"`}
           </div>
         )}
         {filteredTutoriais.map((section) => {
           const Icon = section.icon;
           const isOpen = openSection === section.id;
+          const isDone = completed.has(section.id);
           return (
-            <div key={section.id} className="bg-card border border-border rounded-2xl overflow-hidden">
+            <div
+              key={section.id}
+              id={`tutorial-section-${section.id}`}
+              className={`bg-card border rounded-2xl overflow-hidden transition-all ${
+                isDone ? "border-emerald-500/30" : "border-border"
+              } ${isOpen ? "ring-2 ring-primary/20 shadow-lg" : ""}`}
+            >
               <button
                 onClick={() => {
                   setOpenSection(isOpen ? null : section.id);
@@ -425,12 +630,29 @@ const TutoriaisPanel = () => {
                 }}
                 className="w-full flex items-center gap-3 p-4 hover:bg-muted/30 transition-colors text-left"
               >
-                <div className={`w-11 h-11 ${section.bgColor} rounded-xl flex items-center justify-center flex-shrink-0`}>
+                <div className={`w-11 h-11 ${section.bgColor} rounded-xl flex items-center justify-center flex-shrink-0 relative`}>
                   <Icon className={`h-5 w-5 ${section.color}`} />
+                  {isDone && (
+                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center border-2 border-card">
+                      <CheckCircle2 className="h-3 w-3 text-white" />
+                    </div>
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-foreground text-sm">{section.title}</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-foreground text-sm truncate">{section.title}</h3>
+                  </div>
                   <p className="text-[11px] text-muted-foreground line-clamp-1">{section.shortDesc}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                      <PlayCircle className="h-3 w-3" />
+                      {section.steps.length} passos
+                    </span>
+                    <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {section.estimatedMinutes} min
+                    </span>
+                  </div>
                 </div>
                 {isOpen ? (
                   <ChevronUp className="h-5 w-5 text-muted-foreground flex-shrink-0" />
@@ -441,9 +663,6 @@ const TutoriaisPanel = () => {
 
               {isOpen && (
                 <div className="border-t border-border bg-muted/20 p-3 space-y-2">
-                  <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider px-2 pb-1">
-                    {section.steps.length} passos
-                  </p>
                   {section.steps.map((step, idx) => {
                     const stepKey = `${section.id}-${idx}`;
                     const stepOpen = openStep === stepKey;
@@ -481,6 +700,26 @@ const TutoriaisPanel = () => {
                       </div>
                     );
                   })}
+
+                  {/* Botão marcar como concluído */}
+                  <button
+                    onClick={() => toggleCompleted(section.id)}
+                    className={`w-full mt-2 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all ${
+                      isDone
+                        ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                        : "bg-primary text-primary-foreground hover:bg-primary/90"
+                    }`}
+                  >
+                    {isDone ? (
+                      <>
+                        <CheckCircle2 className="h-4 w-4" /> Tutorial concluído
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="h-4 w-4" /> Marcar como concluído
+                      </>
+                    )}
+                  </button>
                 </div>
               )}
             </div>
@@ -488,14 +727,67 @@ const TutoriaisPanel = () => {
         })}
       </div>
 
-      {/* Footer help */}
-      <div className="bg-card border border-border rounded-2xl p-4 text-center space-y-2">
-        <p className="text-xs text-muted-foreground">
-          Não encontrou o que procurava?
-        </p>
-        <p className="text-xs text-foreground">
-          📞 Entre em contato com o suporte pelo WhatsApp da plataforma.
-        </p>
+      {/* FAQ */}
+      <div className="bg-card border border-border rounded-2xl overflow-hidden">
+        <div className="p-4 border-b border-border bg-muted/20 flex items-center gap-2">
+          <div className="w-8 h-8 bg-indigo-500/15 rounded-xl flex items-center justify-center">
+            <HelpCircle className="h-4 w-4 text-indigo-500" />
+          </div>
+          <div>
+            <h3 className="text-sm font-black text-foreground">Perguntas Frequentes</h3>
+            <p className="text-[11px] text-muted-foreground">As dúvidas mais comuns dos lojistas</p>
+          </div>
+        </div>
+        <div className="divide-y divide-border">
+          {FAQ.map((item, idx) => {
+            const isOpen = openFaq === idx;
+            return (
+              <div key={idx}>
+                <button
+                  onClick={() => setOpenFaq(isOpen ? null : idx)}
+                  className="w-full flex items-center gap-3 p-3.5 text-left hover:bg-muted/20 transition-colors"
+                >
+                  <span className="text-indigo-500 font-black text-xs flex-shrink-0">
+                    Q{idx + 1}
+                  </span>
+                  <span className="flex-1 text-sm font-bold text-foreground">{item.q}</span>
+                  {isOpen ? (
+                    <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  )}
+                </button>
+                {isOpen && (
+                  <div className="px-4 pb-4 pt-0">
+                    <p className="text-sm text-foreground/85 leading-relaxed pl-7">{item.a}</p>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Footer help / contato suporte */}
+      <div className="bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded-2xl p-5 text-center space-y-3">
+        <div className="w-12 h-12 bg-primary/15 rounded-2xl flex items-center justify-center mx-auto">
+          <MessageCircle className="h-6 w-6 text-primary" />
+        </div>
+        <div>
+          <p className="text-sm font-black text-foreground">Ainda com dúvida?</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Nosso suporte está pronto para te ajudar.
+          </p>
+        </div>
+        <a
+          href="https://wa.me/5511999999999?text=Olá!%20Preciso%20de%20ajuda%20com%20o%20painel%20do%20lojista."
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center justify-center gap-2 bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-sm font-black hover:bg-emerald-600 transition-colors w-full"
+        >
+          <MessageCircle className="h-4 w-4" />
+          Falar com Suporte
+        </a>
       </div>
     </div>
   );
