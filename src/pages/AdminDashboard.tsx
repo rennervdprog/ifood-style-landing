@@ -30,6 +30,7 @@ import MenuBuilder from "@/components/MenuBuilder";
 import StoreHoursManager from "@/components/StoreHoursManager";
 import AddonManager from "@/components/AddonManager";
 import StoreSettings from "@/components/StoreSettings";
+import TutoriaisPanel from "@/components/TutoriaisPanel";
 import StoreFinancePanel from "@/components/StoreFinancePanel";
 import StoreFinanceBasic from "@/components/StoreFinanceBasic";
 import StoreSubscription from "@/components/StoreSubscription";
@@ -1406,7 +1407,24 @@ const AdminDashboard = () => {
                 />
               </div>
 
-              {/* ── Delayed Alert ── */}
+              {/* ── Tutorial Quick Access ── */}
+              <button
+                onClick={() => setDashboardTab("tutoriais")}
+                className="w-full bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border-2 border-primary/30 rounded-2xl p-4 flex items-center gap-3 hover:shadow-lg hover:border-primary/50 active:scale-[0.99] transition-all text-left"
+              >
+                <div className="w-12 h-12 bg-primary/15 rounded-2xl flex items-center justify-center flex-shrink-0">
+                  <GraduationCap className="h-6 w-6 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-black text-foreground text-sm flex items-center gap-2">
+                    📚 Tutoriais Completos
+                    <span className="text-[10px] font-bold bg-primary text-primary-foreground px-2 py-0.5 rounded-full">NOVO</span>
+                  </h3>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Aprenda cada função do painel passo a passo, em linguagem simples</p>
+                </div>
+                <ArrowUpRight className="h-5 w-5 text-primary flex-shrink-0" />
+              </button>
+
               {delayedOrders.length > 0 && (
                 <div className="bg-red-500/5 border-2 border-red-500/20 rounded-2xl overflow-hidden">
                   <button onClick={() => setShowDelayedPanel(!showDelayedPanel)} className="w-full flex items-center justify-between p-4">
@@ -2391,6 +2409,7 @@ const AdminDashboard = () => {
           {!["dashboard", "orders", "clients"].includes(dashboardTab) && store && (
             <div className="p-4 lg:p-6 max-w-6xl mx-auto">
               {dashboardTab === "menu" && <MenuBuilder storeId={store.id} storeCategory={store.category} />}
+              {dashboardTab === "tutoriais" && <TutoriaisPanel />}
               
               {dashboardTab === "addons" && <AddonManager storeId={store.id} />}
               {dashboardTab === "bordas" && store.category === "pizzas" && <PizzaBorderManager storeId={store.id} />}
