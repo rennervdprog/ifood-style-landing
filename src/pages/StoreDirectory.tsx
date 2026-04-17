@@ -292,10 +292,8 @@ const StoreDirectory = () => {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [supporterTaken, setSupporterTaken] = useState<number | null>(null);
 
-  const storesCount = 127;
-  const ordersCount = 48;
-  const clientsCount = 12;
-  const satisfactionCount = 98;
+  // No fake stats — we use honest value props instead
+
 
   const handleCTA = () => navigate("/cadastro-lojista");
   const handleWhatsApp = () =>
@@ -399,16 +397,10 @@ const StoreDirectory = () => {
             </Button>
           </div>
 
-          {/* social proof */}
-          <div className="mt-10 flex items-center justify-center gap-3 text-sm text-muted-foreground">
-            <div className="flex -space-x-2">
-              {["M", "J", "A", "R"].map((letter, i) => (
-                <div key={i} className="w-8 h-8 rounded-full bg-primary/20 border-2 border-background flex items-center justify-center text-xs font-bold text-primary">
-                  {letter}
-                </div>
-              ))}
-            </div>
-            <span>+{storesCount} lojas no Brasil • +{ordersCount}.000 pedidos processados</span>
+          {/* Honest launch badge instead of fake numbers */}
+          <div className="mt-10 inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-4 py-2 text-sm font-semibold text-primary">
+            <Sparkles className="h-4 w-4" />
+            Plataforma em lançamento • Seja um dos primeiros lojistas
           </div>
 
           {/* Trust badges */}
@@ -500,23 +492,32 @@ const StoreDirectory = () => {
         </div>
       </section>
 
-      {/* ══════ STATS ══════ */}
-      <section className="py-14 border-y border-border">
-        <div className="mx-auto max-w-5xl grid grid-cols-2 md:grid-cols-4 gap-8 text-center px-4">
-          {[
-            { value: `${storesCount}+`, label: "Lojas cadastradas", icon: Store },
-            { value: `${ordersCount}k+`, label: "Pedidos entregues", icon: Package },
-            { value: `${clientsCount}k+`, label: "Clientes ativos", icon: ShoppingBag },
-            { value: `${satisfactionCount}%`, label: "Satisfação dos lojistas", icon: Star },
-          ].map((s) => (
-            <div key={s.label} className="flex flex-col items-center">
-              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-3">
-                <s.icon className="h-5 w-5 text-primary" />
+      {/* ══════ VALUE GUARANTEES (replaces fake stats) ══════ */}
+      <section className="py-14 border-y border-border bg-muted/20">
+        <div className="mx-auto max-w-5xl px-4">
+          <h2 className="text-2xl md:text-3xl font-bold text-center text-foreground mb-3">
+            Por que confiar na ItaSuper?
+          </h2>
+          <p className="text-center text-muted-foreground mb-10 max-w-xl mx-auto text-sm">
+            Não inventamos números. Mostramos o que realmente entregamos a você.
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+            {[
+              { icon: DollarSign, value: "Até 0%", label: "de comissão por pedido", desc: "Você fica com mais lucro" },
+              { icon: Clock, value: "10 min", label: "para montar seu cardápio", desc: "Pronto pra vender hoje" },
+              { icon: ShieldCheck, value: "Sem fidelidade", label: "cancele quando quiser", desc: "Sem multa, sem pegadinha" },
+              { icon: Globe, value: "Brasil todo", label: "qualquer cidade do país", desc: "Funciona em qualquer lugar" },
+            ].map((s) => (
+              <div key={s.label} className="flex flex-col items-center text-center rounded-2xl bg-card border border-border p-5 hover:shadow-md transition-shadow">
+                <div className="w-11 h-11 rounded-2xl bg-primary/10 flex items-center justify-center mb-3">
+                  <s.icon className="h-5 w-5 text-primary" />
+                </div>
+                <p className="text-2xl md:text-3xl font-extrabold text-primary leading-tight">{s.value}</p>
+                <p className="text-sm font-semibold text-foreground mt-1">{s.label}</p>
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{s.desc}</p>
               </div>
-              <p className="text-3xl md:text-4xl font-extrabold text-primary">{s.value}</p>
-              <p className="text-sm text-muted-foreground mt-1">{s.label}</p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
