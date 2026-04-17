@@ -23,7 +23,11 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
         navigateFallbackDenylist: [/^\/~oauth/],
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp,woff,woff2}"],
+        // Precache only the critical app shell; lazy chunks are fetched on demand and
+        // cached via runtimeCaching. This avoids downloading admin/charts code on first visit.
+        globPatterns: ["index.html", "manifest.webmanifest", "icon-*.png", "robots.txt"],
+        // Keep total precache budget tight
+        maximumFileSizeToCacheInBytes: 3_000_000,
         skipWaiting: false,
         clientsClaim: false,
         cleanupOutdatedCaches: true,
