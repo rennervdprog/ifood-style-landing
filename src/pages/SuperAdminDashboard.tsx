@@ -528,8 +528,10 @@ const SuperAdminDashboard = () => {
                       <Icon className="h-4 w-4" />
                     </div>
                     <span>{item.label}</span>
-                    {item.key === "approvals" && (
-                      <span className="ml-auto text-[10px] bg-amber-500/20 text-amber-600 px-2 py-0.5 rounded-full font-bold">Pendentes</span>
+                    {item.key === "approvals" && pendingApprovalsCount > 0 && (
+                      <span className="ml-auto bg-destructive text-destructive-foreground text-[10px] font-black min-w-[20px] h-5 flex items-center justify-center px-1.5 rounded-full animate-pulse">
+                        {pendingApprovalsCount}
+                      </span>
                     )}
                   </button>
                 );
@@ -625,6 +627,11 @@ const SuperAdminDashboard = () => {
                         {item.key === "saques" && pendingWithdrawals.length > 0 && (
                           <span className="bg-destructive text-destructive-foreground text-[10px] font-black min-w-[20px] h-5 flex items-center justify-center px-1.5 rounded-full animate-pulse">
                             {pendingWithdrawals.length}
+                          </span>
+                        )}
+                        {item.key === "approvals" && pendingApprovalsCount > 0 && (
+                          <span className="bg-destructive text-destructive-foreground text-[10px] font-black min-w-[20px] h-5 flex items-center justify-center px-1.5 rounded-full animate-pulse">
+                            {pendingApprovalsCount}
                           </span>
                         )}
                         {item.key === "dashboard" && delayedOrders.length > 0 && (
@@ -733,6 +740,18 @@ const SuperAdminDashboard = () => {
                 <Bell className="h-4 w-4 text-destructive" />
                 <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[8px] font-black w-4 h-4 flex items-center justify-center rounded-full animate-pulse">
                   {pendingWithdrawals.length}
+                </span>
+              </button>
+            )}
+            {pendingApprovalsCount > 0 && activeTab !== "approvals" && (
+              <button
+                onClick={() => handleTabChange("approvals")}
+                className="relative p-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 transition-colors lg:hidden"
+                aria-label="Cadastros pendentes"
+              >
+                <Shield className="h-4 w-4 text-amber-600" />
+                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[8px] font-black w-4 h-4 flex items-center justify-center rounded-full animate-pulse">
+                  {pendingApprovalsCount}
                 </span>
               </button>
             )}
