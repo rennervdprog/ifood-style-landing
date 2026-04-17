@@ -449,11 +449,12 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
 
   const filteredAvailable = useMemo(() => {
     if (!availableOrders) return [];
+    const notDeclined = availableOrders.filter((o: any) => !declinedMap[o.id]);
     const list = multiStore && effectiveStoreId
-      ? availableOrders.filter((o: any) => o.store_id === effectiveStoreId)
-      : availableOrders;
+      ? notDeclined.filter((o: any) => o.store_id === effectiveStoreId)
+      : notDeclined;
     return useOptimized ? optimizeRoute(list, activeStoreCoords) : list;
-  }, [availableOrders, multiStore, effectiveStoreId, useOptimized, activeStoreCoords]);
+  }, [availableOrders, multiStore, effectiveStoreId, useOptimized, activeStoreCoords, declinedMap]);
 
   // Calculate total route distance
   const routeDistanceKm = useMemo(() => {
