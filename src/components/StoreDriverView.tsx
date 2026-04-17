@@ -11,7 +11,7 @@ import confetti from "canvas-confetti";
 import {
   Bike, MapPin, Navigation, KeyRound, CheckCircle2, Package,
   Store, ChevronRight, Route, Clock, User, Phone, ArrowRight,
-  Loader2, Zap, Wallet
+  Loader2, Zap, Wallet, Power, PowerOff
 } from "lucide-react";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import StoreDriverEarnings from "@/components/StoreDriverEarnings";
@@ -215,7 +215,23 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     enabled: linkedStoreIds.length > 0,
   });
 
-  // Fetch all available orders for linked stores
+  // Fetch own driver status (online/offline)
+  const { data: driverStatus } = useQuery({
+    queryKey: ["store-driver-online-status", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("drivers")
+        .select("is_online")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      return (data as any) || { is_online: false };
+    },
+    enabled: !!user,
+  });
+  const isOnline = !!driverStatus?.is_online;
+  const [togglingOnline, setTogglingOnline] = useState(false);
+
+  // Fetch all available orders for linked stores (only when online)
   const { data: availableOrders, isLoading: loadingAvailable } = useQuery({
     queryKey: ["store-driver-available", linkedStoreIds],
     queryFn: async () => {
@@ -229,7 +245,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       if (error) throw error;
       return data || [];
     },
-    enabled: linkedStoreIds.length > 0,
+    enabled: linkedStoreIds.length > 0 && isOnline,
     refetchInterval: 30000, // Fallback only; realtime handles instant updates
   });
 
@@ -444,7 +460,34 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     });
   };
 
-  const acceptOrder = async (orderId: string) => {
+  const toggleOnline = async () => {
+    if (!user || togglingOnline) return;
+    const next = !isOnline;
+    if (!next && (myDeliveries?.length || 0) > 0) {
+      toast.error("Você tem entregas ativas! Finalize antes de ficar offline.");
+      return;
+    }
+    setTogglingOnline(true);
+    const { error } = await supabase
+      .from("drivers")
+      .update({ is_online: next } as any)
+      .eq("user_id", user.id);
+    setTogglingOnline(false);
+    if (error) {
+      toast.error("Não foi possível atualizar status.");
+      return;
+    }
+    queryClient.setQueryData(["store-driver-online-status", user.id], { is_online: next });
+    if (!next) {
+      // Clear available orders cache so list disappears immediately
+      queryClient.setQueryData(["store-driver-available", linkedStoreIds], []);
+    } else {
+      queryClient.invalidateQueries({ queryKey: ["store-driver-available", linkedStoreIds] });
+    }
+    toast.success(next ? "Você está ONLINE — recebendo entregas." : "Você está OFFLINE.");
+  };
+
+
     const { error } = await supabase.rpc("driver_accept_order", { _order_id: orderId } as any);
     if (error) {
       toast.error("Não foi possível aceitar o pedido.");
@@ -581,6 +624,38 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
 
   return (
     <div className="px-4 py-4 space-y-5">
+      {/* Online/Offline toggle */}
+      <button
+        onClick={toggleOnline}
+        disabled={togglingOnline}
+        className={`w-full flex items-center justify-between gap-3 px-4 py-3.5 rounded-2xl border-2 transition-all active:scale-[0.99] disabled:opacity-60 ${
+          isOnline
+            ? "bg-emerald-500/10 border-emerald-500/40"
+            : "bg-muted/40 border-border"
+        }`}
+      >
+        <div className="flex items-center gap-3">
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+            isOnline ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"
+          }`}>
+            {togglingOnline
+              ? <Loader2 className="h-5 w-5 animate-spin" />
+              : isOnline ? <Power className="h-5 w-5" /> : <PowerOff className="h-5 w-5" />}
+          </div>
+          <div className="text-left">
+            <p className={`text-sm font-black ${isOnline ? "text-emerald-700 dark:text-emerald-400" : "text-foreground"}`}>
+              {isOnline ? "VOCÊ ESTÁ ONLINE" : "VOCÊ ESTÁ OFFLINE"}
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              {isOnline ? "Recebendo entregas disponíveis" : "Toque para receber entregas"}
+            </p>
+          </div>
+        </div>
+        <div className={`relative w-12 h-7 rounded-full transition-colors ${isOnline ? "bg-emerald-500" : "bg-muted"}`}>
+          <span className={`absolute top-[3px] w-[22px] h-[22px] rounded-full bg-white shadow-md transition-transform ${isOnline ? "left-[23px]" : "left-[3px]"}`} />
+        </div>
+      </button>
+
       {/* Stats bar */}
       <div className="grid grid-cols-3 gap-2">
         <div className="bg-card border border-border rounded-2xl p-3 text-center">
@@ -941,14 +1016,22 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
 
       {!loadingAvailable && !hasActiveDeliveries && !hasAvailable && (
         <div className="flex flex-col items-center justify-center py-16 text-center px-6">
-          <div className="w-16 h-16 rounded-3xl bg-muted/80 flex items-center justify-center mb-4">
-            <Bike className="h-8 w-8 text-muted-foreground/60" />
+          <div className={`w-16 h-16 rounded-3xl flex items-center justify-center mb-4 ${
+            isOnline ? "bg-muted/80" : "bg-amber-500/10"
+          }`}>
+            {isOnline
+              ? <Bike className="h-8 w-8 text-muted-foreground/60" />
+              : <PowerOff className="h-8 w-8 text-amber-500" />}
           </div>
           <h2 className="text-base font-bold text-foreground mb-1">
-            {multiStore ? `Sem pedidos em ${getStoreName(effectiveStoreId!)}` : "Aguardando pedidos"}
+            {!isOnline
+              ? "Você está offline"
+              : multiStore ? `Sem pedidos em ${getStoreName(effectiveStoreId!)}` : "Aguardando pedidos"}
           </h2>
           <p className="text-sm text-muted-foreground max-w-[260px]">
-            Quando a loja tiver pedidos prontos, eles aparecerão aqui organizados por rota.
+            {!isOnline
+              ? "Fique online para receber as entregas disponíveis."
+              : "Quando a loja tiver pedidos prontos, eles aparecerão aqui organizados por rota."}
           </p>
         </div>
       )}
