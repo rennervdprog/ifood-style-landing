@@ -23,11 +23,35 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
         navigateFallbackDenylist: [/^\/~oauth/],
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp,woff,woff2}"],
+        // Precache only the critical app shell; lazy chunks are fetched on demand and
+        // cached via runtimeCaching. This avoids downloading admin/charts code on first visit.
+        globPatterns: ["index.html", "manifest.webmanifest", "icon-*.png", "robots.txt"],
+        // Keep total precache budget tight
+        maximumFileSizeToCacheInBytes: 3_000_000,
         skipWaiting: false,
         clientsClaim: false,
         cleanupOutdatedCaches: true,
         runtimeCaching: [
+          {
+            // Hashed JS/CSS/font assets — safe to cache for a year (filenames change on deploy)
+            urlPattern: /\/assets\/.*\.(?:js|css|woff2?|ttf|otf)$/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "static-assets",
+              expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            // Images
+            urlPattern: /\.(?:png|jpg|jpeg|svg|webp|avif|gif|ico)$/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "image-assets",
+              expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
           {
             urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
             handler: "NetworkFirst",
