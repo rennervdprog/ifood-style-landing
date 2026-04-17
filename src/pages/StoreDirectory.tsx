@@ -292,10 +292,8 @@ const StoreDirectory = () => {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [supporterTaken, setSupporterTaken] = useState<number | null>(null);
 
-  const storesCount = 127;
-  const ordersCount = 48;
-  const clientsCount = 12;
-  const satisfactionCount = 98;
+  // No fake stats — we use honest value props instead
+
 
   const handleCTA = () => navigate("/cadastro-lojista");
   const handleWhatsApp = () =>
