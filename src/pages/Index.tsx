@@ -205,7 +205,7 @@ const Index = () => {
           </div>
 
           {/* Trust badges */}
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground animate-fade-in">
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
             <span className="flex items-center gap-1.5">
               <CheckCircle2 className="h-4 w-4 text-primary" /> Sem cartão de crédito
             </span>
