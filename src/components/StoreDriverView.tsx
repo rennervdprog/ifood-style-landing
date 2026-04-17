@@ -460,7 +460,34 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     });
   };
 
-  const acceptOrder = async (orderId: string) => {
+  const toggleOnline = async () => {
+    if (!user || togglingOnline) return;
+    const next = !isOnline;
+    if (!next && (myDeliveries?.length || 0) > 0) {
+      toast.error("Você tem entregas ativas! Finalize antes de ficar offline.");
+      return;
+    }
+    setTogglingOnline(true);
+    const { error } = await supabase
+      .from("drivers")
+      .update({ is_online: next } as any)
+      .eq("user_id", user.id);
+    setTogglingOnline(false);
+    if (error) {
+      toast.error("Não foi possível atualizar status.");
+      return;
+    }
+    queryClient.setQueryData(["store-driver-online-status", user.id], { is_online: next });
+    if (!next) {
+      // Clear available orders cache so list disappears immediately
+      queryClient.setQueryData(["store-driver-available", linkedStoreIds], []);
+    } else {
+      queryClient.invalidateQueries({ queryKey: ["store-driver-available", linkedStoreIds] });
+    }
+    toast.success(next ? "Você está ONLINE — recebendo entregas." : "Você está OFFLINE.");
+  };
+
+
     const { error } = await supabase.rpc("driver_accept_order", { _order_id: orderId } as any);
     if (error) {
       toast.error("Não foi possível aceitar o pedido.");
