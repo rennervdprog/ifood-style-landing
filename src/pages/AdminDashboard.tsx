@@ -1594,6 +1594,44 @@ const AdminDashboard = () => {
                           placeholder="Ex: 5.00"
                           className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                         />
+                        {/* Preview: como vai aparecer pro cliente */}
+                        {(() => {
+                          const lojistaFee = (store as any).own_delivery_fee || 0;
+                          const platformFee = storePlan.platformDeliverySplit || 0;
+                          const totalCliente = lojistaFee + platformFee;
+                          return (
+                            <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-2 mt-2">
+                              <p className="text-xs font-bold text-primary flex items-center gap-1.5">
+                                👁️ Como o cliente vai ver
+                              </p>
+                              <div className="space-y-1 text-xs">
+                                <div className="flex justify-between text-muted-foreground">
+                                  <span>Sua taxa de entrega:</span>
+                                  <span className="font-bold text-foreground">{formatBRL(lojistaFee)}</span>
+                                </div>
+                                {platformFee > 0 && (
+                                  <div className="flex justify-between text-muted-foreground">
+                                    <span>+ Taxa da plataforma:</span>
+                                    <span className="font-bold text-foreground">{formatBRL(platformFee)}</span>
+                                  </div>
+                                )}
+                                <div className="flex justify-between pt-2 border-t border-primary/20">
+                                  <span className="font-bold text-foreground">Total cobrado do cliente:</span>
+                                  <span className="font-bold text-primary text-sm">{formatBRL(totalCliente)}</span>
+                                </div>
+                              </div>
+                              {platformFee > 0 ? (
+                                <p className="text-[10px] text-muted-foreground/80 leading-relaxed">
+                                  ℹ️ A plataforma adiciona <strong>{formatBRL(platformFee)}</strong> em cima da sua taxa para custear a operação. Você recebe os <strong>{formatBRL(lojistaFee)}</strong> integrais.
+                                </p>
+                              ) : (
+                                <p className="text-[10px] text-muted-foreground/80 leading-relaxed">
+                                  ℹ️ Você recebe a taxa integral. Sem split de plataforma no seu plano.
+                                </p>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </div>
                     )}
                   </div>
