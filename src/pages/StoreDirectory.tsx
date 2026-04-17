@@ -106,12 +106,12 @@ const plans = [
     tagline: "Edição de lançamento • Vagas limitadas",
     price: "130",
     period: "/mês",
-    icon: Award,
+    icon: Sparkles,
     highlight: true,
     badge: "🚀 Lançamento • 10 vagas",
     commission: "0%",
     commissionLabel: "comissão",
-    color: "from-primary to-orange-600",
+    color: "from-violet-500 to-purple-600",
     lightBg: "bg-accent",
     textColor: "text-primary",
     borderColor: "border-primary/30",
@@ -353,12 +353,12 @@ const StoreDirectory = () => {
         <div className="absolute -bottom-40 -left-40 w-[400px] h-[400px] rounded-full bg-accent/30 blur-3xl pointer-events-none" />
 
         <div className="relative mx-auto max-w-5xl text-center">
-          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-semibold text-primary mb-8 animate-fade-in">
+          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-semibold text-primary mb-8">
             <MapPin className="h-4 w-4" />
             Cardápio digital para todo o Brasil
           </div>
 
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground leading-[1.1] mb-6 animate-fade-in">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground leading-[1.1] mb-6 opacity-100">
             Delivery digital{" "}
             <span className="relative inline-block">
               <span className="relative z-10 text-primary">para sua loja.</span>
@@ -366,12 +366,12 @@ const StoreDirectory = () => {
             </span>
           </h1>
 
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 animate-fade-in leading-relaxed">
+          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
             Cardápio profissional, pedidos organizados e pagamentos automáticos.
             <span className="block mt-2 text-primary font-semibold">A partir de R$ 0/mês. Comece grátis!</span>
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button size="lg" onClick={handleCTA} className="text-base px-8 py-6 rounded-2xl shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all">
               <Store className="mr-2 h-5 w-5" />
               Cadastrar minha loja — É grátis
@@ -383,7 +383,7 @@ const StoreDirectory = () => {
           </div>
 
           {/* social proof */}
-          <div className="mt-10 flex items-center justify-center gap-3 text-sm text-muted-foreground animate-fade-in">
+          <div className="mt-10 flex items-center justify-center gap-3 text-sm text-muted-foreground">
             <div className="flex -space-x-2">
               {["M", "J", "A", "R"].map((letter, i) => (
                 <div key={i} className="w-8 h-8 rounded-full bg-primary/20 border-2 border-background flex items-center justify-center text-xs font-bold text-primary">
@@ -526,7 +526,7 @@ const StoreDirectory = () => {
               return (
                 <Card
                   key={plan.id}
-                  className={`relative flex flex-col rounded-3xl transition-all hover:shadow-xl ${
+                  className={`relative flex flex-col rounded-3xl overflow-visible transition-all hover:shadow-xl ${
                     plan.highlight
                       ? "border-2 border-primary shadow-lg shadow-primary/10 ring-2 ring-primary/10 scale-[1.02]"
                       : "border-border hover:border-primary/30"
