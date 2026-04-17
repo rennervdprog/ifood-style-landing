@@ -600,6 +600,35 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
         </div>
       </div>
 
+      {/* Tabs: Routes vs Earnings */}
+      <div className="flex gap-2 bg-muted/40 p-1 rounded-2xl">
+        <button
+          onClick={() => setActiveTab("routes")}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+            activeTab === "routes"
+              ? "bg-card text-foreground shadow-sm"
+              : "text-muted-foreground"
+          }`}
+        >
+          <Route className="h-3.5 w-3.5" /> Entregas
+        </button>
+        <button
+          onClick={() => setActiveTab("earnings")}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+            activeTab === "earnings"
+              ? "bg-card text-foreground shadow-sm"
+              : "text-muted-foreground"
+          }`}
+        >
+          <Wallet className="h-3.5 w-3.5" /> Meus Ganhos
+        </button>
+      </div>
+
+      {activeTab === "earnings" ? (
+        <StoreDriverEarnings storeIds={linkedStoreIds} />
+      ) : (
+        <>
+
       {/* ═══ STORE TABS (multi-store only) ═══ */}
       {multiStore && (
         <div className="space-y-2">
