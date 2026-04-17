@@ -824,6 +824,75 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
         </button>
       )}
 
+      {/* ═══ NEXT STOP CARD (Circuit/Spoke style) ═══ */}
+      {useOptimized && hasActiveDeliveries && filteredDeliveries.length > 1 && (() => {
+        // Pick the next stop: first in-transit, otherwise first ready-to-depart
+        const inTransit = filteredDeliveries.find((o: any) => o.status === "saiu_entrega" || o.status === "em_transito");
+        const nextStop = inTransit || filteredDeliveries[0];
+        if (!nextStop) return null;
+        const stopIndex = filteredDeliveries.findIndex((o: any) => o.id === nextStop.id) + 1;
+        const totalStops = filteredDeliveries.length;
+        const remainingStops = filteredDeliveries.filter((o: any, i: number) => i >= stopIndex - 1).length;
+        const fullAddr = [
+          nextStop.address_details,
+          nextStop.neighborhood,
+          (nextStop.stores as any)?.address_city || "Itatinga",
+        ].filter(Boolean).join(", ");
+        const wazeUrl = `https://waze.com/ul?q=${encodeURIComponent(fullAddr)}&navigate=yes`;
+        const contactName = (getContact(nextStop.client_id) as any)?.full_name || "Cliente";
+
+        return (
+          <div className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground rounded-2xl p-4 shadow-lg">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center font-black text-sm">
+                  {stopIndex}
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider opacity-90">Próxima Parada</p>
+                  <p className="text-[10px] opacity-75">{stopIndex} de {totalStops} · faltam {remainingStops}</p>
+                </div>
+              </div>
+              <Zap className="h-5 w-5 opacity-80" />
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 mb-3">
+              <div className="flex items-start gap-2 mb-1">
+                <User className="h-3.5 w-3.5 mt-0.5 opacity-80 flex-shrink-0" />
+                <p className="text-sm font-bold leading-tight">{contactName}</p>
+              </div>
+              <div className="flex items-start gap-2">
+                <MapPin className="h-3.5 w-3.5 mt-0.5 opacity-80 flex-shrink-0" />
+                <p className="text-xs leading-snug opacity-95">{fullAddr}</p>
+              </div>
+            </div>
+
+            <a
+              href={wazeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center justify-center gap-2 bg-white text-primary font-black text-sm px-4 py-3 rounded-xl active:scale-[0.97] transition-all shadow-md"
+            >
+              <Navigation className="h-4 w-4" />
+              Iniciar no Waze
+              <ArrowRight className="h-4 w-4" />
+            </a>
+
+            <button
+              onClick={() => {
+                setExpandedOrder(nextStop.id);
+                setTimeout(() => {
+                  document.getElementById(`stop-${nextStop.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+                }, 100);
+              }}
+              className="w-full mt-2 text-[11px] font-bold opacity-80 hover:opacity-100 underline"
+            >
+              Ver detalhes da entrega ↓
+            </button>
+          </div>
+        );
+      })()}
+
       {/* ═══ ACTIVE ROUTE ═══ */}
       {hasActiveDeliveries && (
         <div className="space-y-3">
