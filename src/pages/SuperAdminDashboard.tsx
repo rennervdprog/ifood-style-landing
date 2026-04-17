@@ -709,7 +709,7 @@ const SuperAdminDashboard = () => {
                 {activeTab === "financeiro" && "Gestão financeira e repasses"}
                 {activeTab === "saques" && `${pendingWithdrawals.length} solicitações pendentes`}
                 {activeTab === "entrega" && "Configurações de taxa de entrega"}
-                {activeTab === "approvals" && "Aprovar parceiros e entregadores"}
+                {activeTab === "approvals" && `${pendingApprovalsCount} cadastro${pendingApprovalsCount === 1 ? "" : "s"} pendente${pendingApprovalsCount === 1 ? "" : "s"}`}
                 {activeTab === "stores" && `${stores?.length || 0} lojas cadastradas`}
                 {activeTab === "cidades" && "Lojas por cidade"}
                 {activeTab === "pagamentos" && "Histórico de pagamentos por loja"}
