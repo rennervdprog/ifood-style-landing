@@ -271,7 +271,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*, stores(name, address_street, address_number, address_neighborhood, address_city), order_items(*, products(name))")
+        .select("*, stores(name, address_street, address_number, address_neighborhood, address_city, address_state), order_items(*, products(name))")
         .in("store_id", linkedStoreIds)
         .eq("status", "pronto_para_entrega" as any)
         .is("driver_id", null)
@@ -289,7 +289,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*, stores(name, owner_id, address_street, address_number, address_neighborhood, address_city), order_items(*, products(name))")
+        .select("*, stores(name, owner_id, address_street, address_number, address_neighborhood, address_city, address_state), order_items(*, products(name))")
         .eq("driver_id", user!.id)
         .in("status", ["pronto_para_entrega", "saiu_entrega", "em_transito"] as any)
         .order("created_at", { ascending: true });
@@ -837,15 +837,15 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
         const fullAddr = [
           nextStop.address_details,
           nextStop.neighborhood,
-          (nextStop.stores as any)?.address_city || "Itatinga",
+          (nextStop.stores as any)?.address_city,
         ].filter(Boolean).join(", ");
         const wazeUrl = buildWazeUrl({
           lat: nextStop.client_lat,
           lng: nextStop.client_lng,
           fallbackAddress: nextStop.address_details,
           neighborhood: nextStop.neighborhood,
-          city: (nextStop.stores as any)?.address_city || "Itatinga",
-          state: "SP",
+          city: (nextStop.stores as any)?.address_city,
+          state: (nextStop.stores as any)?.address_state,
         });
         const contactName = (getContact(nextStop.client_id) as any)?.full_name || "Cliente";
 
@@ -987,8 +987,8 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                           lng: (order as any).client_lng,
                           fallbackAddress: order.address_details,
                           neighborhood: order.neighborhood,
-                          city: (order as any).stores?.address_city || "Itatinga",
-                          state: "SP",
+                          city: (order as any).stores?.address_city,
+                          state: (order as any).stores?.address_state,
                         }} />
                       </div>
                     </div>

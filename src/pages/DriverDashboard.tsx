@@ -974,8 +974,8 @@ const DriverDashboard = () => {
                               lng: (myDelivery as any).client_lng,
                               fallbackAddress: myDelivery.address_details,
                               neighborhood: myDelivery.neighborhood,
-                              city: (myDelivery as any).stores?.address_city || "Itatinga",
-                              state: "SP",
+                              city: (myDelivery as any).stores?.address_city,
+                              state: (myDelivery as any).stores?.address_state,
                             }} />
                           </div>
                         </div>
