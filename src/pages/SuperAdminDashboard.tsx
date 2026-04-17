@@ -197,6 +197,23 @@ const SuperAdminDashboard = () => {
 
   const pendingWithdrawals = withdrawalRequests?.filter((w: any) => w.status === "solicitado") || [];
 
+  // Pending approvals (lojistas / motoboys awaiting admin approval)
+  const { data: pendingApprovals } = useQuery({
+    queryKey: ["admin-pending-approvals"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, role, is_approved, created_at")
+        .in("role", ["lojista", "motoboy"])
+        .eq("is_approved", false);
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: isAdmin,
+    refetchInterval: 60000,
+  });
+  const pendingApprovalsCount = pendingApprovals?.length ?? 0;
+
   useEffect(() => {
     if (!isAdmin) return;
     const channel = supabase
@@ -209,6 +226,39 @@ const SuperAdminDashboard = () => {
           if (payload.eventType === "INSERT") {
             toast.info("🔔 Nova solicitação de saque recebida!", { duration: 8000 });
           }
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [isAdmin, queryClient]);
+
+  // Realtime: notify admin when a new lojista/motoboy registers (pending approval)
+  useEffect(() => {
+    if (!isAdmin) return;
+    const channel = supabase
+      .channel("admin-approvals-realtime")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "profiles" },
+        (payload: any) => {
+          const role = payload?.new?.role;
+          const approved = payload?.new?.is_approved;
+          if ((role === "lojista" || role === "motoboy") && approved === false) {
+            queryClient.invalidateQueries({ queryKey: ["admin-pending-approvals"] });
+            const name = payload?.new?.full_name || "Novo cadastro";
+            const label = role === "lojista" ? "lojista" : "entregador";
+            toast.info(`🔔 Novo ${label} aguardando aprovação: ${name}`, {
+              duration: 10000,
+              action: { label: "Ver", onClick: () => setActiveTab("approvals") },
+            });
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "profiles" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["admin-pending-approvals"] });
         }
       )
       .subscribe();
