@@ -274,6 +274,7 @@ const StoreDirectory = () => {
   const [partnerRole, setPartnerRole] = useState<string | null>(null);
   const [roleChecked, setRoleChecked] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [supporterTaken, setSupporterTaken] = useState<number | null>(null);
 
   const storesCount = 127;
   const ordersCount = 48;
@@ -286,6 +287,20 @@ const StoreDirectory = () => {
 
   useEffect(() => {
     document.title = "ItaSuper — Delivery em Itatinga/SP | Peça Agora";
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data, error } = await supabase.rpc("count_supporter_plans");
+        if (cancelled || error) return;
+        setSupporterTaken(typeof data === "number" ? data : 0);
+      } catch {
+        /* silent */
+      }
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
