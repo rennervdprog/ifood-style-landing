@@ -417,6 +417,12 @@ jobs:
         run: |
           MANIFEST="android/app/src/main/AndroidManifest.xml"
           if [ ! -f "$MANIFEST" ]; then
+            echo "⚠️ AndroidManifest.xml ausente após o sync, recriando plataforma Android..."
+            rm -rf android
+            npx cap add android
+            npx cap sync android
+          fi
+          if [ ! -f "$MANIFEST" ]; then
             echo "::error::AndroidManifest.xml não foi gerado pelo Capacitor"
             ls -la android || true
             exit 1
