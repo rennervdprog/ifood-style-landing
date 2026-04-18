@@ -90,13 +90,27 @@ const CapacitorPermissionsOnboarding = () => {
             <div className="w-28 h-28 rounded-3xl bg-primary/10 flex items-center justify-center mb-8 animate-in zoom-in duration-500">
               <Bell className="h-14 w-14 text-primary" />
             </div>
-            <h1 className="text-2xl font-bold text-foreground mb-3">Receba avisos do seu pedido</h1>
-            <p className="text-base text-muted-foreground leading-relaxed max-w-sm">
-              Ative as notificações para saber quando seu pedido for <strong className="text-foreground">confirmado</strong>, estiver <strong className="text-foreground">pronto</strong> ou <strong className="text-foreground">a caminho</strong>.
-            </p>
-            <p className="text-sm text-muted-foreground mt-4 max-w-sm">
-              Sem isso, você pode perder atualizações importantes da sua entrega.
-            </p>
+            {isPartnerCapacitorApp() ? (
+              <>
+                <h1 className="text-2xl font-bold text-foreground mb-3">Não perca nenhum pedido</h1>
+                <p className="text-base text-muted-foreground leading-relaxed max-w-sm">
+                  Ative as notificações para receber alertas de <strong className="text-foreground">novos pedidos</strong>, <strong className="text-foreground">pagamentos confirmados</strong> e <strong className="text-foreground">mensagens dos clientes</strong> em tempo real.
+                </p>
+                <p className="text-sm text-muted-foreground mt-4 max-w-sm">
+                  Essencial para você gerenciar sua loja de forma eficiente.
+                </p>
+              </>
+            ) : (
+              <>
+                <h1 className="text-2xl font-bold text-foreground mb-3">Receba avisos do seu pedido</h1>
+                <p className="text-base text-muted-foreground leading-relaxed max-w-sm">
+                  Ative as notificações para saber quando seu pedido for <strong className="text-foreground">confirmado</strong>, estiver <strong className="text-foreground">pronto</strong> ou <strong className="text-foreground">a caminho</strong>.
+                </p>
+                <p className="text-sm text-muted-foreground mt-4 max-w-sm">
+                  Sem isso, você pode perder atualizações importantes da sua entrega.
+                </p>
+              </>
+            )}
           </>
         )}
 
@@ -105,13 +119,27 @@ const CapacitorPermissionsOnboarding = () => {
             <div className="w-28 h-28 rounded-3xl bg-primary/10 flex items-center justify-center mb-8 animate-in zoom-in duration-500">
               <MapPin className="h-14 w-14 text-primary" />
             </div>
-            <h1 className="text-2xl font-bold text-foreground mb-3">Entrega no endereço certo</h1>
-            <p className="text-base text-muted-foreground leading-relaxed max-w-sm">
-              Usamos sua localização para <strong className="text-foreground">calcular a taxa de entrega</strong> e ajudar o entregador a chegar no <strong className="text-foreground">local exato</strong>.
-            </p>
-            <p className="text-sm text-muted-foreground mt-4 max-w-sm">
-              Sua localização é usada apenas durante o pedido.
-            </p>
+            {isPartnerCapacitorApp() ? (
+              <>
+                <h1 className="text-2xl font-bold text-foreground mb-3">Entregas mais eficientes</h1>
+                <p className="text-base text-muted-foreground leading-relaxed max-w-sm">
+                  A localização ajuda seus <strong className="text-foreground">entregadores a encontrarem os endereços</strong> e permite calcular rotas mais rápidas.
+                </p>
+                <p className="text-sm text-muted-foreground mt-4 max-w-sm">
+                  Também usamos para calcular taxas de entrega precisas por distância.
+                </p>
+              </>
+            ) : (
+              <>
+                <h1 className="text-2xl font-bold text-foreground mb-3">Entrega no endereço certo</h1>
+                <p className="text-base text-muted-foreground leading-relaxed max-w-sm">
+                  Usamos sua localização para <strong className="text-foreground">calcular a taxa de entrega</strong> e ajudar o entregador a chegar no <strong className="text-foreground">local exato</strong>.
+                </p>
+                <p className="text-sm text-muted-foreground mt-4 max-w-sm">
+                  Sua localização é usada apenas durante o pedido.
+                </p>
+              </>
+            )}
           </>
         )}
 
