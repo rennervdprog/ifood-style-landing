@@ -1389,6 +1389,30 @@ export type Database = {
           },
         ]
       }
+      page_views: {
+        Row: {
+          created_at: string
+          id: string
+          page: string
+          user_id: string | null
+          visitor_hash: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          page: string
+          user_id?: string | null
+          visitor_hash?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          page?: string
+          user_id?: string | null
+          visitor_hash?: string | null
+        }
+        Relationships: []
+      }
       partner_payouts: {
         Row: {
           created_at: string
@@ -2852,6 +2876,7 @@ export type Database = {
         Returns: number
       }
       get_owned_store_ids: { Args: { _user_id: string }; Returns: string[] }
+      get_page_view_stats: { Args: { _page?: string }; Returns: Json }
       get_store_commission_rate: {
         Args: { _store_id: string }
         Returns: number
@@ -2864,6 +2889,7 @@ export type Database = {
         Returns: boolean
       }
       is_driver: { Args: { _user_id: string }; Returns: boolean }
+      is_internal_account: { Args: { _user_id: string }; Returns: boolean }
       is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
       is_store_driver: {
         Args: { _store_id: string; _user_id: string }
@@ -2892,6 +2918,10 @@ export type Database = {
           _approved_amount: number
           _refund_id: string
         }
+        Returns: undefined
+      }
+      record_page_view: {
+        Args: { _page: string; _visitor_hash?: string }
         Returns: undefined
       }
       register_as_lojista:

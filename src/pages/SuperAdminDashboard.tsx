@@ -11,6 +11,7 @@ import PartnerSplitPanel from "@/components/PartnerSplitPanel";
 import FixedPlanBillingHistory from "@/components/FixedPlanBillingHistory";
 import TestStoreFinancePanel from "@/components/TestStoreFinancePanel";
 import AppLinksManager from "@/components/AppLinksManager";
+import PageViewsCard from "@/components/PageViewsCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -862,6 +863,11 @@ const SuperAdminDashboard = () => {
                       <MetricCard icon={AlertTriangle} label="Atraso" value={String(delayedOrders.length)} sublabel="> 60 min" alert={delayedOrders.length > 0} />
                     </>
                   )}
+                </div>
+
+                {/* Visitas da página inicial */}
+                <div className="mb-6">
+                  <PageViewsCard />
                 </div>
 
                 {/* Two-column layout for desktop */}
