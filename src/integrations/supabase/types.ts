@@ -2019,6 +2019,7 @@ export type Database = {
         Row: {
           created_at: string
           driver_amount: number
+          driver_confirmed_at: string | null
           driver_user_id: string
           fee_total: number
           id: string
@@ -2026,13 +2027,16 @@ export type Database = {
           order_id: string
           paid_at: string | null
           paid_by: string | null
+          payment_mode: string | null
           platform_cut: number
           status: string
           store_id: string
+          store_marked_paid_at: string | null
         }
         Insert: {
           created_at?: string
           driver_amount?: number
+          driver_confirmed_at?: string | null
           driver_user_id: string
           fee_total?: number
           id?: string
@@ -2040,13 +2044,16 @@ export type Database = {
           order_id: string
           paid_at?: string | null
           paid_by?: string | null
+          payment_mode?: string | null
           platform_cut?: number
           status?: string
           store_id: string
+          store_marked_paid_at?: string | null
         }
         Update: {
           created_at?: string
           driver_amount?: number
+          driver_confirmed_at?: string | null
           driver_user_id?: string
           fee_total?: number
           id?: string
@@ -2054,9 +2061,11 @@ export type Database = {
           order_id?: string
           paid_at?: string | null
           paid_by?: string | null
+          payment_mode?: string | null
           platform_cut?: number
           status?: string
           store_id?: string
+          store_marked_paid_at?: string | null
         }
         Relationships: [
           {
@@ -2094,18 +2103,21 @@ export type Database = {
           created_at: string
           driver_user_id: string
           id: string
+          payment_mode: string
           store_id: string
         }
         Insert: {
           created_at?: string
           driver_user_id: string
           id?: string
+          payment_mode?: string
           store_id: string
         }
         Update: {
           created_at?: string
           driver_user_id?: string
           id?: string
+          payment_mode?: string
           store_id?: string
         }
         Relationships: [
@@ -2851,6 +2863,10 @@ export type Database = {
       confirm_order_payment: { Args: { _order_id: string }; Returns: undefined }
       count_supporter_plans: { Args: never; Returns: number }
       driver_accept_order: { Args: { _order_id: string }; Returns: undefined }
+      driver_confirm_earning_received: {
+        Args: { _earning_id: string }
+        Returns: undefined
+      }
       driver_confirm_store_return: {
         Args: { _order_id: string; _settlement_code?: string }
         Returns: undefined
@@ -2992,6 +3008,14 @@ export type Database = {
       }
       store_assign_order_driver: {
         Args: { _driver_user_id: string; _order_id: string }
+        Returns: undefined
+      }
+      store_mark_all_driver_earnings_paid: {
+        Args: { _driver_user_id: string; _store_id: string }
+        Returns: number
+      }
+      store_mark_driver_earning_paid: {
+        Args: { _earning_id: string; _notes?: string }
         Returns: undefined
       }
       use_coupon: {
