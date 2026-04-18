@@ -472,6 +472,22 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
             </div>
             <div className="flex items-center gap-1">
               <button
+                onClick={(e) => { e.stopPropagation(); moveSectionBy(section.id, -1); }}
+                disabled={sections?.[0]?.id === section.id}
+                className="text-muted-foreground hover:text-foreground p-1.5 rounded-lg hover:bg-muted transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
+                title="Mover para cima"
+              >
+                <ArrowUp className="h-3.5 w-3.5" />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); moveSectionBy(section.id, 1); }}
+                disabled={sections?.[sections.length - 1]?.id === section.id}
+                className="text-muted-foreground hover:text-foreground p-1.5 rounded-lg hover:bg-muted transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
+                title="Mover para baixo"
+              >
+                <ArrowDown className="h-3.5 w-3.5" />
+              </button>
+              <button
                 onClick={(e) => { e.stopPropagation(); setEditingSection(section.id); }}
                 className="text-muted-foreground hover:text-foreground p-1.5 rounded-lg hover:bg-muted transition-colors"
                 title="Renomear"
