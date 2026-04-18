@@ -608,19 +608,27 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
 
   const departForDelivery = async (orderId: string) => {
     setDepartingId(orderId);
+    // Optimistic UI: update status in cache immediately
+    const previousMy = queryClient.getQueryData<any[]>(["store-driver-my-deliveries"]);
+    if (previousMy) {
+      queryClient.setQueryData(
+        ["store-driver-my-deliveries"],
+        previousMy.map((o: any) => (o.id === orderId ? { ...o, status: "saiu_entrega" } : o)),
+      );
+    }
+    toast.success("🚀 Saiu para entrega!");
+
     const { error } = await supabase
       .from("orders")
       .update({ status: "saiu_entrega" as any })
       .eq("id", orderId);
     if (error) {
+      if (previousMy) queryClient.setQueryData(["store-driver-my-deliveries"], previousMy);
       toast.error("Erro ao atualizar status.");
     } else {
-      toast.success("🚀 Saiu para entrega!");
-      queryClient.invalidateQueries({ queryKey: ["store-driver-my-deliveries"] });
-
-      // Notify client that order is out for delivery
-      const order = myDeliveries?.find((o: any) => o.id === orderId);
-      notifyClientFromDriver(order, "saiu_entrega");
+      // Notify client in background
+      const order = (previousMy || []).find((o: any) => o.id === orderId);
+      if (order) notifyClientFromDriver(order, "saiu_entrega");
     }
     setDepartingId(null);
   };
