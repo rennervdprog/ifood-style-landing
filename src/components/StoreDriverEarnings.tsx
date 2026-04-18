@@ -163,7 +163,7 @@ const StoreDriverEarnings = ({ storeIds }: Props) => {
               <p className="text-[10px] text-muted-foreground">
                 {new Date(e.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
                 {" • "}
-                Taxa: {formatBRL(Number(e.fee_total))} · Plataforma: {formatBRL(Number(e.platform_cut))}
+                Taxa: {formatBRL(Number(e.fee_total))}
               </p>
             </div>
             <div className="text-right">
