@@ -59,7 +59,7 @@ const planOptions: { type: StorePlanType; label: string; fee: number; rate: numb
     fee: 180,
     rate: 0,
     tagline: "Para lojas com volume estável",
-    bullets: ["Sem taxa por pedido", "PIX integrado (R$1/PIX)", "Motoboy próprio", "Cupons ilimitados"],
+    bullets: ["Sem comissão por pedido", "PIX integrado (R$1/PIX)", "Taxa de R$2 por entrega (paga pelo cliente)", "Motoboy próprio", "Cupons ilimitados"],
   },
   {
     type: "hybrid",
@@ -264,6 +264,23 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
               </p>
             </div>
           </div>
+
+          {/* Essencial: delivery fee disclosure (paid by client) */}
+          {plan.isFixedPlan && (
+            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3">
+              <div className="flex items-start gap-3">
+                <div className="h-9 w-9 rounded-xl bg-emerald-500/15 flex items-center justify-center shrink-0">
+                  <Truck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold text-foreground">Taxa de entrega: R$ 2,00 por pedido</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+                    Cobrada do <strong>cliente</strong> no checkout (não sai do seu caixa). Repassada à plataforma para custear infraestrutura e suporte ao motoboy.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Next billing callout */}
           {plan.monthlyFee > 0 && plan.nextBillingDate && (
