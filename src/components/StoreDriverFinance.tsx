@@ -60,12 +60,12 @@ const StoreDriverFinance = ({ storeId }: Props) => {
   const markPaid = async (earningId: string) => {
     setPayingId(earningId);
     try {
-      const { error } = await supabase.rpc("mark_store_driver_earning_paid" as any, {
+      const { error } = await supabase.rpc("store_mark_driver_earning_paid" as any, {
         _earning_id: earningId,
         _notes: null,
       });
       if (error) throw error;
-      toast.success("Pagamento registrado!");
+      toast.success("Pagamento enviado! Aguardando confirmação do motoboy.");
       queryClient.invalidateQueries({ queryKey: ["store-driver-finance", storeId] });
     } catch (err: any) {
       toast.error(err.message || "Erro ao registrar pagamento.");
@@ -75,15 +75,15 @@ const StoreDriverFinance = ({ storeId }: Props) => {
   };
 
   const payAllForDriver = async (driverId: string, name: string) => {
-    if (!confirm(`Marcar TODAS as entregas pendentes de ${name} como pagas?`)) return;
+    if (!confirm(`Marcar TODAS as entregas pendentes de ${name} como pagas? O motoboy precisará confirmar o recebimento.`)) return;
     setBulkDriverId(driverId);
     try {
-      const { data, error } = await supabase.rpc("mark_all_store_driver_earnings_paid" as any, {
+      const { data, error } = await supabase.rpc("store_mark_all_driver_earnings_paid" as any, {
         _driver_user_id: driverId,
         _store_id: storeId,
       });
       if (error) throw error;
-      toast.success(`${data || 0} entregas marcadas como pagas.`);
+      toast.success(`${data || 0} entregas enviadas para confirmação.`);
       queryClient.invalidateQueries({ queryKey: ["store-driver-finance", storeId] });
     } catch (err: any) {
       toast.error(err.message || "Erro ao registrar pagamentos.");
@@ -102,9 +102,11 @@ const StoreDriverFinance = ({ storeId }: Props) => {
 
   const list = earnings || [];
   const pending = list.filter((e) => e.status === "pendente");
+  const awaiting = list.filter((e) => e.status === "aguardando_confirmacao");
   const paid = list.filter((e) => e.status === "pago");
 
   const pendingTotal = pending.reduce((s, e) => s + Number(e.driver_amount), 0);
+  const awaitingTotal = awaiting.reduce((s, e) => s + Number(e.driver_amount), 0);
   const paidTotal = paid.reduce((s, e) => s + Number(e.driver_amount), 0);
 
   // Group pending by driver
@@ -135,20 +137,53 @@ const StoreDriverFinance = ({ storeId }: Props) => {
       </div>
 
       {/* Summary */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-4">
+      <div className="grid grid-cols-3 gap-2">
+        <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-3">
           <DollarSign className="h-4 w-4 text-amber-500 mb-1" />
           <p className="text-[10px] font-bold text-muted-foreground uppercase">A Pagar</p>
-          <p className="text-xl font-black text-foreground mt-1">{formatBRL(pendingTotal)}</p>
-          <p className="text-[10px] text-muted-foreground mt-0.5">{pending.length} entregas pendentes</p>
+          <p className="text-base font-black text-foreground mt-1">{formatBRL(pendingTotal)}</p>
+          <p className="text-[10px] text-muted-foreground mt-0.5">{pending.length} entregas</p>
         </div>
-        <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-4">
+        <div className="bg-blue-500/5 border border-blue-500/20 rounded-2xl p-3">
+          <Loader2 className="h-4 w-4 text-blue-500 mb-1" />
+          <p className="text-[10px] font-bold text-muted-foreground uppercase">Aguardando</p>
+          <p className="text-base font-black text-foreground mt-1">{formatBRL(awaitingTotal)}</p>
+          <p className="text-[10px] text-muted-foreground mt-0.5">{awaiting.length} a confirmar</p>
+        </div>
+        <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-3">
           <CheckCircle2 className="h-4 w-4 text-emerald-500 mb-1" />
-          <p className="text-[10px] font-bold text-muted-foreground uppercase">Já Pago</p>
-          <p className="text-xl font-black text-foreground mt-1">{formatBRL(paidTotal)}</p>
+          <p className="text-[10px] font-bold text-muted-foreground uppercase">Pago</p>
+          <p className="text-base font-black text-foreground mt-1">{formatBRL(paidTotal)}</p>
           <p className="text-[10px] text-muted-foreground mt-0.5">{paid.length} entregas</p>
         </div>
       </div>
+
+      {/* Awaiting confirmation list */}
+      {awaiting.length > 0 && (
+        <div className="bg-blue-500/5 border border-blue-500/20 rounded-2xl p-4 space-y-2">
+          <p className="text-xs font-bold text-blue-600 dark:text-blue-400 flex items-center gap-2">
+            <Loader2 className="h-3.5 w-3.5" /> Aguardando confirmação do motoboy ({awaiting.length})
+          </p>
+          <p className="text-[11px] text-muted-foreground">
+            Você marcou estas entregas como pagas. O motoboy precisa confirmar o recebimento no app dele.
+          </p>
+          <div className="space-y-1.5 mt-2">
+            {awaiting.slice(0, 8).map((e) => {
+              const profile = getProfile(e.driver_user_id);
+              return (
+                <div key={e.id} className="flex items-center justify-between text-[11px]">
+                  <span className="text-foreground font-medium">
+                    {profile?.full_name || "Motoboy"} · #{e.order_id.slice(0, 6).toUpperCase()}
+                  </span>
+                  <span className="font-bold text-blue-600 dark:text-blue-400">
+                    {formatBRL(Number(e.driver_amount))}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Pending grouped by driver */}
       {Object.keys(byDriver).length === 0 ? (
