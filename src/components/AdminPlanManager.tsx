@@ -299,7 +299,7 @@ export default function AdminPlanManager() {
         {filteredStores.map(store => {
           const plan = getStorePlan(store.id);
           const isExpanded = expandedStore === store.id;
-          const currentPlan = (plan?.plan_type as PlanType) || null;
+          const currentDisplay = resolveDisplayPlan(plan);
 
           return (
             <div key={store.id} className="bg-card rounded-2xl border border-border overflow-hidden">
@@ -309,7 +309,9 @@ export default function AdminPlanManager() {
               >
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <Store className="h-4 w-4 text-primary" />
+                    {currentDisplay === "supporter"
+                      ? <Heart className="h-4 w-4 text-pink-500" />
+                      : <Store className="h-4 w-4 text-primary" />}
                   </div>
                   <div className="text-left">
                     <p className="text-sm font-bold text-foreground">{store.name}</p>
@@ -319,9 +321,9 @@ export default function AdminPlanManager() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  {currentPlan ? (
-                    <Badge className={`border text-[10px] ${planColors[currentPlan]}`}>
-                      {planLabels[currentPlan]}
+                  {currentDisplay ? (
+                    <Badge className={`border text-[10px] ${planColors[currentDisplay]}`}>
+                      {planLabels[currentDisplay]}
                       {plan?.monthly_fee ? ` • R$ ${plan.monthly_fee}/mês` : ""}
                       {plan?.commission_rate ? ` + ${plan.commission_rate}%` : ""}
                     </Badge>
@@ -337,11 +339,11 @@ export default function AdminPlanManager() {
               {isExpanded && (
                 <div className="border-t border-border p-4 space-y-4">
                   {/* Current plan info */}
-                  {plan && (
+                  {plan && currentDisplay && (
                     <div className="bg-muted/30 rounded-xl p-3 space-y-1">
                       <p className="text-xs text-muted-foreground font-semibold">Plano atual</p>
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-bold text-foreground">{planLabels[currentPlan!]}</span>
+                        <span className="text-sm font-bold text-foreground">{planLabels[currentDisplay]}</span>
                         <span className="text-xs text-muted-foreground">
                           Desde {new Date(plan.started_at).toLocaleDateString("pt-BR")}
                         </span>
@@ -349,6 +351,11 @@ export default function AdminPlanManager() {
                       {plan.next_billing_date && (
                         <p className="text-[10px] text-muted-foreground">
                           Próxima cobrança: {new Date(plan.next_billing_date).toLocaleDateString("pt-BR")}
+                        </p>
+                      )}
+                      {currentDisplay === "supporter" && (
+                        <p className="text-[10px] text-pink-600 font-semibold">
+                          ⭐ Plano vitalício • Preço travado em R$ {SUPPORTER_FEE}
                         </p>
                       )}
                     </div>
@@ -359,26 +366,34 @@ export default function AdminPlanManager() {
                     <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
                       {plan ? "Alterar plano" : "Definir plano"}
                     </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                      {(["fixed", "hybrid", "commission_only"] as PlanType[]).map(pt => {
-                        const isCurrentPlan = currentPlan === pt;
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {(["supporter", "fixed", "hybrid", "commission_only"] as DisplayPlan[]).map(pt => {
+                        const isCurrentPlan = currentDisplay === pt;
                         const defaults = planDefaults[pt];
+                        const isSupporterFull = pt === "supporter" && !isCurrentPlan && supporterAvailable <= 0;
                         return (
                           <button
                             key={pt}
                             onClick={() => {
-                              if (isCurrentPlan) return;
-                              handleSetPlan(store.id, pt, defaults.monthly_fee, defaults.commission_rate);
+                              if (isCurrentPlan || isSupporterFull) return;
+                              // Supporter is stored as fixed plan with fee=130
+                              const dbPlanType: PlanType = pt === "supporter" ? "fixed" : pt;
+                              handleSetPlan(store.id, dbPlanType, defaults.monthly_fee, defaults.commission_rate);
                             }}
-                            disabled={saving === store.id || isCurrentPlan}
+                            disabled={saving === store.id || isCurrentPlan || isSupporterFull}
                             className={`p-3 rounded-xl border-2 text-left transition-all ${
                               isCurrentPlan
                                 ? "border-primary bg-primary/5 opacity-80"
-                                : "border-border hover:border-primary/50 hover:bg-primary/5"
+                                : pt === "supporter"
+                                  ? "border-pink-500/30 hover:border-pink-500 hover:bg-pink-500/5"
+                                  : "border-border hover:border-primary/50 hover:bg-primary/5"
                             } disabled:opacity-50`}
                           >
                             <div className="flex items-center justify-between mb-1">
-                              <span className="text-xs font-bold text-foreground">{planLabels[pt]}</span>
+                              <span className="text-xs font-bold text-foreground flex items-center gap-1">
+                                {pt === "supporter" && <Heart className="h-3 w-3 text-pink-500" />}
+                                {planLabels[pt]}
+                              </span>
                               {isCurrentPlan && <Check className="h-3.5 w-3.5 text-primary" />}
                             </div>
                             <p className="text-lg font-black text-foreground">
@@ -387,6 +402,11 @@ export default function AdminPlanManager() {
                             </p>
                             {defaults.commission_rate > 0 && (
                               <p className="text-[10px] text-muted-foreground">+ {defaults.commission_rate}% por pedido</p>
+                            )}
+                            {pt === "supporter" && (
+                              <p className="text-[10px] text-pink-600 font-semibold mt-0.5">
+                                {isSupporterFull ? "Esgotado" : `${supporterAvailable}/${SUPPORTER_LIMIT} vagas`}
+                              </p>
                             )}
                             {saving === store.id && (
                               <Loader2 className="h-3.5 w-3.5 animate-spin text-primary mt-1" />
