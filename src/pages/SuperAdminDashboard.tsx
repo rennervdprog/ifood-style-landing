@@ -864,6 +864,11 @@ const SuperAdminDashboard = () => {
                   )}
                 </div>
 
+                {/* Visitas da página inicial */}
+                <div className="mb-6">
+                  <PageViewsCard />
+                </div>
+
                 {/* Two-column layout for desktop */}
                 <div className="grid lg:grid-cols-2 gap-4 mb-6">
                   {/* Hourly chart */}
