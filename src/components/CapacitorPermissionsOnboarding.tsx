@@ -18,8 +18,6 @@ const CapacitorPermissionsOnboarding = () => {
 
   useEffect(() => {
     if (!isCapacitorNative()) return;
-    // Skip onboarding entirely on PARTNER app — no notifications/location prompt makes sense there
-    if (isPartnerCapacitorApp()) return;
     try {
       const seen = localStorage.getItem(STORAGE_KEY);
       if (seen) return;
