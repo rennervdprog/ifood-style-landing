@@ -15,13 +15,36 @@ let lastKnownToken: string | null = null;
 /**
  * Global queue for notification tap navigation.
  * Stores the target path so PushNavigator can replay it once React Router is ready.
+ * Persists in localStorage to survive cold starts and full page reloads.
  */
+const PENDING_PUSH_KEY = "pending_push_nav_v2";
 let pendingPushNavigation: string | null = null;
+
+// Restore from localStorage on module load (cold start)
+try {
+  const stored = typeof localStorage !== "undefined" ? localStorage.getItem(PENDING_PUSH_KEY) : null;
+  if (stored) {
+    pendingPushNavigation = stored;
+    console.log("[CapPush] 📥 Restored pending push from localStorage:", stored);
+  }
+} catch {}
+
+function setPendingPushNavigation(path: string | null) {
+  pendingPushNavigation = path;
+  try {
+    if (typeof localStorage === "undefined") return;
+    if (path) {
+      localStorage.setItem(PENDING_PUSH_KEY, path);
+    } else {
+      localStorage.removeItem(PENDING_PUSH_KEY);
+    }
+  } catch {}
+}
 
 /** Get and clear the pending push navigation path */
 export function consumePendingPushNavigation(): string | null {
   const path = pendingPushNavigation;
-  pendingPushNavigation = null;
+  setPendingPushNavigation(null);
   return path;
 }
 
@@ -107,52 +130,58 @@ async function ensurePushListeners() {
   });
 
   PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
-    console.log("[CapPush] Action:", JSON.stringify(action));
+    console.log("[CapPush] 🔔 Action received:", JSON.stringify(action));
     const data = action.notification.data || {};
-    const link = data.link;
+    // FCM passes data as strings; Capacitor sometimes nests under .notification
+    const link = data.link || data.click_action || "/";
     const orderId = data.order_id;
 
     if (typeof window === "undefined") return;
 
     // Build the target URL based on the notification link and order context
-    let targetPath = link || "/";
+    let targetPath = link;
 
     if (orderId) {
-      if (link === "/pedidos") {
+      if (link === "/pedidos" || link.startsWith("/pedidos")) {
         targetPath = `/pedidos`;
-      } else if (link === "/admin") {
+      } else if (link === "/admin" || link.startsWith("/admin")) {
         targetPath = `/admin?order=${orderId}`;
-      } else if (link === "/entregador") {
+      } else if (link === "/entregador" || link.startsWith("/entregador")) {
         targetPath = `/entregador?order=${orderId}`;
       }
     }
 
-    console.log("[CapPush] Target path:", targetPath);
+    console.log("[CapPush] 🎯 Target path:", targetPath);
 
-    // Store in global queue — PushNavigator will pick this up on mount
-    pendingPushNavigation = targetPath;
+    // Store in global queue (also persisted to localStorage) — survives cold start
+    setPendingPushNavigation(targetPath);
 
-    // Also dispatch the custom event for when PushNavigator is already mounted
-    setTimeout(() => {
+    // Dispatch the custom event for when PushNavigator is already mounted
+    // Try multiple times because React Router may still be mounting
+    const dispatch = () => {
       const navEvent = new CustomEvent("capacitor-push-navigate", {
         detail: { path: targetPath },
       });
       window.dispatchEvent(navEvent);
-      console.log("[CapPush] Dispatched capacitor-push-navigate event");
-    }, 300);
+      console.log("[CapPush] 📤 Dispatched capacitor-push-navigate event");
+    };
+    setTimeout(dispatch, 100);
+    setTimeout(dispatch, 500);
+    setTimeout(dispatch, 1500);
 
-    // Final fallback: if nothing navigated after 2s, use window.location
+    // Final fallback: if nothing navigated after 3s, use window.location
     setTimeout(() => {
       if (pendingPushNavigation === targetPath) {
-        console.log("[CapPush] Fallback: forcing navigation via window.location to", targetPath);
-        pendingPushNavigation = null;
+        console.log("[CapPush] ⚠️ Fallback: forcing navigation via window.location to", targetPath);
+        setPendingPushNavigation(null);
         const url = new URL(targetPath, window.location.origin);
         window.location.href = url.toString();
       }
-    }, 2000);
+    }, 3000);
   });
 
   listenersReady = true;
+  console.log("[CapPush] ✅ All listeners registered");
 }
 
 /**
@@ -310,9 +339,19 @@ export async function setupAppListeners() {
     });
 
     App.addListener("appUrlOpen", (event) => {
-      const url = new URL(event.url);
-      if (url.pathname) {
-        window.location.href = url.pathname;
+      try {
+        const url = new URL(event.url);
+        const targetPath = url.pathname + (url.search || "");
+        if (!url.pathname) return;
+        console.log("[App] 🔗 Deep link opened:", targetPath);
+        // Use the same notification navigation queue so we don't full-reload
+        setPendingPushNavigation(targetPath);
+        const navEvent = new CustomEvent("capacitor-push-navigate", {
+          detail: { path: targetPath },
+        });
+        window.dispatchEvent(navEvent);
+      } catch (e) {
+        console.warn("[App] appUrlOpen parse error:", e);
       }
     });
   } catch (e) {
