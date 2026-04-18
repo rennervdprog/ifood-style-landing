@@ -1,20 +1,21 @@
 import { formatBRL } from "@/lib/utils";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useStorePlan, StorePlanType } from "@/hooks/useStorePlan";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Crown, Check, X, Zap, ShieldCheck, ArrowUpRight,
-  CreditCard, TrendingUp, Star, Truck, BarChart3,
-  Ticket, Heart, Image, Clock, Loader2, AlertCircle, CheckCircle2, XCircle,
-  Sparkles, Shield, Rocket, Calendar, Info, ChevronRight, Gift, Award, Smartphone
+  Check, X, Zap, ArrowUpRight, CreditCard, Ticket, Image as ImageIcon,
+  Calendar, Loader2, AlertCircle, CheckCircle2, XCircle,
+  Sparkles, Shield, Rocket, Info, Gift, Smartphone, BarChart3,
+  Heart, Truck, Clock, ArrowRight, Wallet, AlertTriangle, ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
 import { Progress } from "@/components/ui/progress";
+import FixedPlanBillingHistory from "@/components/FixedPlanBillingHistory";
 
 interface Props {
   storeId: string;
@@ -28,9 +29,9 @@ const planLabels: Record<StorePlanType, string> = {
 };
 
 const planSubtitles: Record<StorePlanType, string> = {
-  fixed: "Ideal para quem está começando",
-  hybrid: "Perfeito para negócios em expansão",
-  commission_only: "Sem custos fixos, pague só quando vender",
+  fixed: "Mensalidade fixa, sem surpresas",
+  hybrid: "Mensalidade reduzida + taxa por venda",
+  commission_only: "Sem mensalidade, paga só quando vende",
 };
 
 const planIcons: Record<StorePlanType, React.ElementType> = {
@@ -39,85 +40,62 @@ const planIcons: Record<StorePlanType, React.ElementType> = {
   commission_only: Sparkles,
 };
 
-const planGradients: Record<StorePlanType, string> = {
-  fixed: "from-amber-500/20 via-amber-400/10 to-transparent",
-  hybrid: "from-blue-500/20 via-blue-400/10 to-transparent",
-  commission_only: "from-emerald-500/20 via-emerald-400/10 to-transparent",
-};
-
-const planAccents: Record<StorePlanType, string> = {
+const planAccent: Record<StorePlanType, string> = {
   fixed: "text-amber-600 dark:text-amber-400",
   hybrid: "text-blue-600 dark:text-blue-400",
   commission_only: "text-emerald-600 dark:text-emerald-400",
 };
 
-const planBadgeColors: Record<StorePlanType, string> = {
-  fixed: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30",
-  hybrid: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/30",
-  commission_only: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30",
+const planAccentBg: Record<StorePlanType, string> = {
+  fixed: "bg-amber-500/10",
+  hybrid: "bg-blue-500/10",
+  commission_only: "bg-emerald-500/10",
 };
 
-const planOptions: { type: StorePlanType; label: string; fee: number; rate: number; desc: string; highlights: string[] }[] = [
+const planOptions: { type: StorePlanType; label: string; fee: number; rate: number; tagline: string; bullets: string[] }[] = [
   {
-    type: "fixed", label: "Essencial", fee: 180, rate: 0,
-    desc: "R$ 180/mês • Sem taxa por pedido",
-    highlights: ["Sem taxa por pedido", "Motoboy próprio", "Até 3 cupons"],
+    type: "fixed",
+    label: "Essencial",
+    fee: 180,
+    rate: 0,
+    tagline: "Para lojas com volume estável",
+    bullets: ["Sem taxa por pedido", "PIX integrado (R$1/PIX)", "Motoboy próprio", "Cupons ilimitados"],
   },
   {
-    type: "hybrid", label: "Crescimento", fee: 100, rate: 2.5,
-    desc: "R$ 100/mês + 2,5% por pedido",
-    highlights: ["Entregador próprio", "Relatórios completos", "Cupons ilimitados"],
+    type: "hybrid",
+    label: "Crescimento",
+    fee: 100,
+    rate: 2.5,
+    tagline: "Equilíbrio entre fixo e variável",
+    bullets: ["Mensalidade reduzida", "2,5% por pedido", "Relatórios completos", "Cupons ilimitados"],
   },
   {
-    type: "commission_only", label: "Comissão", fee: 0, rate: 5,
-    desc: "Sem mensalidade • 5% por pedido",
-    highlights: ["Sem investimento inicial", "Todos os recursos", "Suporte completo"],
+    type: "commission_only",
+    label: "Comissão Pura",
+    fee: 0,
+    rate: 5,
+    tagline: "Para começar sem investimento",
+    bullets: ["Zero mensalidade", "5% por pedido", "Todos recursos", "Suporte completo"],
   },
 ];
 
-// Itatinga-specific plan highlights
-const itatingaFixedHighlights = ["PIX integrado", "Entregador próprio", "R$1/pedido PIX", "Cupons ilimitados"];
-
-const featureCategories = [
-  {
-    title: "Pagamentos",
-    icon: CreditCard,
-    features: [
-      { key: "allowPix", label: "Pagamento PIX Online", desc: "Receba via PIX com QR Code automático" },
-    ],
-  },
-  /* Logística — motoboy plataforma oculto */
-  /*{
-    title: "Logística",
-    icon: Truck,
-    features: [
-      { key: "allowPlatformDelivery", label: "Motoboys da Plataforma", desc: "Entregadores disponíveis na sua região" },
-    ],
-  },*/
-  {
-    title: "Marketing",
-    icon: Heart,
-    features: [
-      { key: "allowLoyalty", label: "Programa de Fidelidade", desc: "Fidelize clientes com pontos e recompensas" },
-      { key: "allowBanners", label: "Banners Promocionais", desc: "Destaque promoções na sua loja" },
-    ],
-  },
-  {
-    title: "Gestão",
-    icon: BarChart3,
-    features: [
-      { key: "allowScheduling", label: "Agendamento de Pedidos", desc: "Permita pedidos programados" },
-      { key: "allowFullReports", label: "Relatórios Completos", desc: "Gráficos e analytics detalhados" },
-      { key: "hasCommission", label: "Sistema de Comissão", desc: "Gestão automática de comissões" },
-    ],
-  },
+const features = [
+  { key: "allowPix", label: "Pagamento PIX online", icon: CreditCard },
+  { key: "allowLoyalty", label: "Programa de fidelidade", icon: Heart },
+  { key: "allowBanners", label: "Banners promocionais", icon: ImageIcon },
+  { key: "allowScheduling", label: "Agendamento de pedidos", icon: Clock },
+  { key: "allowFullReports", label: "Relatórios completos", icon: BarChart3 },
+  { key: "allowPlatformDelivery", label: "Motoboys próprios", icon: Truck },
 ];
 
-const statusConfig: Record<string, { label: string; color: string; icon: React.ElementType; bg: string }> = {
-  pending: { label: "Aguardando aprovação", color: "text-amber-600", icon: AlertCircle, bg: "bg-amber-500/10 border-amber-500/30" },
-  approved: { label: "Aprovado", color: "text-emerald-600", icon: CheckCircle2, bg: "bg-emerald-500/10 border-emerald-500/30" },
-  rejected: { label: "Recusado", color: "text-red-600", icon: XCircle, bg: "bg-red-500/10 border-red-500/30" },
+const statusMeta: Record<string, { label: string; color: string; icon: React.ElementType; bg: string }> = {
+  pending: { label: "Aguardando", color: "text-amber-600 dark:text-amber-400", icon: AlertCircle, bg: "bg-amber-500/10 border-amber-500/30" },
+  approved: { label: "Aprovado", color: "text-emerald-600 dark:text-emerald-400", icon: CheckCircle2, bg: "bg-emerald-500/10 border-emerald-500/30" },
+  rejected: { label: "Recusado", color: "text-red-600 dark:text-red-400", icon: XCircle, bg: "bg-red-500/10 border-red-500/30" },
 };
+
+const formatDateBR = (d: string | null | undefined) =>
+  d ? new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 
 export default function StoreSubscription({ storeId, storeName }: Props) {
   const plan = useStorePlan(storeId);
@@ -153,6 +131,25 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
     enabled: !!storeId,
   });
 
+  // Pending unpaid charge for current plan
+  const { data: pendingCharge } = useQuery({
+    queryKey: ["pending-plan-charge", storeId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("financial_transactions")
+        .select("id, reference_code, amount, status, created_at, pix_copy_paste, pix_qr_code_base64")
+        .eq("store_id", storeId)
+        .eq("transaction_kind", "commission_charge")
+        .eq("status", "pending")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!storeId,
+    refetchInterval: 30000,
+  });
+
   const hasPendingRequest = pendingRequest?.status === "pending";
 
   const handleRequestChange = async () => {
@@ -174,7 +171,7 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
           prorata_credit: prorataCredit || 0,
         });
       if (error) throw error;
-      toast.success("Solicitação enviada! Aguarde aprovação.");
+      toast.success("Solicitação enviada! Aguarde aprovação do administrador.");
       setShowChangePlan(false);
       setSelectedPlan(null);
       queryClient.invalidateQueries({ queryKey: ["plan-change-request", storeId] });
@@ -183,6 +180,11 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
     } finally {
       setRequesting(false);
     }
+  };
+
+  const handleCopyPix = (code: string) => {
+    navigator.clipboard.writeText(code);
+    toast.success("Código PIX copiado!");
   };
 
   if (plan.isLoading) {
@@ -198,343 +200,294 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
 
   const PlanIcon = planIcons[plan.planType];
   const availablePlans = planOptions.filter(p => p.type !== plan.planType);
-
-  // Calculate enabled feature count
-  const allFeatureKeys = featureCategories.flatMap(c => c.features.map(f => f.key));
-  const enabledCount = allFeatureKeys.filter(k => (plan as any)[k]).length;
-  const totalCount = allFeatureKeys.length;
-  const featurePercent = Math.round((enabledCount / totalCount) * 100);
+  const enabledFeatures = features.filter(f => (plan as any)[f.key]);
+  const disabledFeatures = features.filter(f => !(plan as any)[f.key]);
 
   return (
-    <div className="space-y-6 max-w-2xl mx-auto">
-      {/* Hero Plan Card */}
-      <Card className="overflow-hidden border-0 shadow-lg">
-        <div className={`bg-gradient-to-br ${planGradients[plan.planType]} p-6 pb-0`}>
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="h-14 w-14 rounded-2xl bg-background/80 backdrop-blur flex items-center justify-center shadow-sm">
-                <PlanIcon className={`h-7 w-7 ${planAccents[plan.planType]}`} />
+    <div className="space-y-4 max-w-2xl mx-auto pb-6">
+      {/* ───────── HERO: Current plan ───────── */}
+      <Card className="overflow-hidden border-0 shadow-md">
+        <div className={`${planAccentBg[plan.planType]} p-5`}>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="h-12 w-12 rounded-2xl bg-background shadow-sm flex items-center justify-center shrink-0">
+                <PlanIcon className={`h-6 w-6 ${planAccent[plan.planType]}`} />
               </div>
-              <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Plano Atual</p>
-                <h2 className="text-2xl font-bold text-foreground">{planLabels[plan.planType]}</h2>
-                <p className="text-sm text-muted-foreground">{planSubtitles[plan.planType]}</p>
+              <div className="min-w-0">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Plano Atual</p>
+                <h2 className="text-xl font-bold text-foreground truncate">{planLabels[plan.planType]}</h2>
+                <p className="text-xs text-muted-foreground truncate">{planSubtitles[plan.planType]}</p>
               </div>
             </div>
-            <Badge className={`text-xs px-3 py-1.5 border ${planBadgeColors[plan.planType]}`}>
-              Ativo
+            <Badge className="bg-background text-foreground border border-border/60 shrink-0">
+              {plan.isInTrial ? `Trial · ${plan.trialDaysLeft}d` : "Ativo"}
             </Badge>
           </div>
-
-          {/* Trial Banner */}
-          {plan.isInTrial && (
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 mb-4">
-              <div className="h-10 w-10 rounded-xl bg-emerald-500/20 flex items-center justify-center shrink-0">
-                <Gift className="h-5 w-5 text-emerald-500" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400">
-                  Período de teste grátis
-                </p>
-                <div className="flex items-center gap-2 mt-1">
-                  <Progress value={((7 - plan.trialDaysLeft) / 7) * 100} className="h-1.5 flex-1 bg-emerald-200/30" />
-                  <span className="text-xs font-semibold text-emerald-600 shrink-0">{plan.trialDaysLeft} dias</span>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
-        <CardContent className="p-6 space-y-5">
-          {/* Itatinga Fixed Plan Info Banner */}
-          {plan.isItatingaFixed && (
-            <div className="flex items-start gap-3 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
-              <div className="h-10 w-10 rounded-xl bg-blue-500/20 flex items-center justify-center shrink-0">
-                <Zap className="h-5 w-5 text-blue-500" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-blue-700 dark:text-blue-400">
-                  Plano Especial Itatinga
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  PIX integrado incluso. Taxa operacional de R$ 1 por pedido PIX. 
-                  Use seu próprio entregador.
+        <CardContent className="p-5 space-y-4">
+          {/* Trial progress */}
+          {plan.isInTrial && (
+            <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Gift className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                  Período grátis · {plan.trialDaysLeft} {plan.trialDaysLeft === 1 ? "dia restante" : "dias restantes"}
                 </p>
               </div>
+              <Progress value={((7 - plan.trialDaysLeft) / 7) * 100} className="h-1.5" />
             </div>
           )}
 
-          {/* Price Grid */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="bg-muted/40 rounded-xl p-4 text-center border border-border/50">
-              <CreditCard className="h-4 w-4 mx-auto mb-2 text-muted-foreground" />
-              <p className="text-2xl font-bold text-foreground">
-                {plan.monthlyFee > 0 ? `R$${plan.monthlyFee}` : "—"}
+          {/* Price summary — 2 big metrics */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Mensalidade</p>
+              <p className="text-2xl font-bold text-foreground mt-1">
+                {plan.monthlyFee > 0 ? formatBRL(plan.monthlyFee) : "Grátis"}
               </p>
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mt-1">Mensal</p>
-            </div>
-            <div className="bg-muted/40 rounded-xl p-4 text-center border border-border/50">
-              <TrendingUp className="h-4 w-4 mx-auto mb-2 text-muted-foreground" />
-              <p className="text-2xl font-bold text-foreground">
-                {plan.isItatingaFixed ? "R$1" : plan.commissionRate > 0 ? `${plan.commissionRate}%` : "—"}
-              </p>
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mt-1">
-                {plan.isItatingaFixed ? "Taxa/PIX" : "Taxa/Pedido"}
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                {plan.monthlyFee > 0 ? "cobrada todo mês" : "sem mensalidade"}
               </p>
             </div>
-            <div className="bg-muted/40 rounded-xl p-4 text-center border border-border/50">
-              <Ticket className="h-4 w-4 mx-auto mb-2 text-muted-foreground" />
-              <p className="text-2xl font-bold text-foreground">
-                {plan.maxCoupons === null ? "∞" : plan.maxCoupons}
+            <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                {plan.isFixedPlan ? "Taxa por PIX" : "Taxa por pedido"}
               </p>
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mt-1">Cupons</p>
+              <p className="text-2xl font-bold text-foreground mt-1">
+                {plan.isFixedPlan
+                  ? formatBRL(plan.pixOperationalFee)
+                  : plan.commissionRate > 0 ? `${plan.commissionRate}%` : "Grátis"}
+              </p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                {plan.isFixedPlan ? "operacional PIX" : "sobre o subtotal"}
+              </p>
             </div>
           </div>
 
-          {/* Feature Usage */}
-          <div className="bg-muted/30 rounded-xl p-4 border border-border/50">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <Award className="h-4 w-4 text-primary" />
-                <span className="text-sm font-semibold text-foreground">Recursos incluídos</span>
+          {/* Next billing callout */}
+          {plan.monthlyFee > 0 && plan.nextBillingDate && (
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-card p-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <Calendar className="h-4 w-4 text-primary" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-foreground">Próxima cobrança</p>
+                  <p className="text-[11px] text-muted-foreground truncate">{formatDateBR(plan.nextBillingDate)}</p>
+                </div>
               </div>
-              <span className="text-sm font-bold text-primary">{enabledCount}/{totalCount}</span>
+              <p className="text-base font-bold text-foreground shrink-0">{formatBRL(plan.monthlyFee)}</p>
             </div>
-            <Progress value={featurePercent} className="h-2" />
-            <p className="text-xs text-muted-foreground mt-2">
-              {featurePercent === 100
-                ? "Todos os recursos estão desbloqueados!"
-                : `Faça upgrade para desbloquear ${totalCount - enabledCount} recursos adicionais`}
-            </p>
-          </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Pending Request */}
+      {/* ───────── PENDÊNCIAS: Unpaid PIX charge ───────── */}
+      {pendingCharge && (
+        <Card className="border-2 border-amber-500/40 bg-amber-500/5 overflow-hidden">
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 rounded-xl bg-amber-500/15 flex items-center justify-center shrink-0">
+                <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-foreground">Cobrança em aberto</p>
+                <p className="text-xs text-muted-foreground">
+                  {(pendingCharge as any).reference_code} · {formatBRL(Number((pendingCharge as any).amount))}
+                </p>
+              </div>
+            </div>
+            {(pendingCharge as any).pix_copy_paste && (
+              <div className="space-y-2">
+                <div className="rounded-lg bg-background border border-border p-2 max-h-20 overflow-auto">
+                  <p className="text-[10px] font-mono break-all text-muted-foreground">
+                    {(pendingCharge as any).pix_copy_paste}
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="default"
+                  className="w-full"
+                  onClick={() => handleCopyPix((pendingCharge as any).pix_copy_paste)}
+                >
+                  Copiar código PIX
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ───────── PLAN CHANGE REQUEST STATUS ───────── */}
       {pendingRequest && (
-        <Card className={`border ${statusConfig[pendingRequest.status]?.bg || ""}`}>
+        <Card className={`border ${statusMeta[pendingRequest.status]?.bg || ""}`}>
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
               {(() => {
-                const cfg = statusConfig[pendingRequest.status];
+                const cfg = statusMeta[pendingRequest.status];
                 const StatusIcon = cfg?.icon || AlertCircle;
                 return (
-                  <div className={`h-10 w-10 rounded-xl ${cfg?.bg} flex items-center justify-center shrink-0`}>
+                  <div className={`h-10 w-10 rounded-xl ${cfg?.bg} flex items-center justify-center shrink-0 border-0`}>
                     <StatusIcon className={`h-5 w-5 ${cfg?.color}`} />
                   </div>
                 );
               })()}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-foreground">
-                  Solicitação de troca de plano
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {planLabels[pendingRequest.current_plan_type as StorePlanType]} → {planLabels[pendingRequest.requested_plan_type as StorePlanType]}
-                </p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-sm font-bold text-foreground">Troca de plano</p>
+                  <Badge variant="outline" className={`text-[10px] ${statusMeta[pendingRequest.status]?.color}`}>
+                    {statusMeta[pendingRequest.status]?.label}
+                  </Badge>
+                </div>
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
+                  <span>{planLabels[pendingRequest.current_plan_type as StorePlanType]}</span>
+                  <ArrowRight className="h-3 w-3" />
+                  <span className="font-semibold text-foreground">{planLabels[pendingRequest.requested_plan_type as StorePlanType]}</span>
+                </div>
                 {pendingRequest.status === "pending" && (
-                  <p className="text-xs text-amber-600 mt-1">Aguardando aprovação do administrador</p>
+                  <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1">Aguardando aprovação do administrador</p>
                 )}
-                {pendingRequest.status === "approved" && pendingRequest.admin_notes && (
-                  <p className="text-xs text-emerald-600 mt-1">Nota: {pendingRequest.admin_notes}</p>
-                )}
-                {pendingRequest.status === "rejected" && pendingRequest.admin_notes && (
-                  <p className="text-xs text-red-600 mt-1">Motivo: {pendingRequest.admin_notes}</p>
+                {pendingRequest.admin_notes && pendingRequest.status !== "pending" && (
+                  <p className={`text-[11px] mt-1 ${statusMeta[pendingRequest.status]?.color}`}>
+                    Nota: {pendingRequest.admin_notes}
+                  </p>
                 )}
                 {pendingRequest.prorata_credit > 0 && (
-                  <p className="text-xs font-semibold mt-1">Crédito: {formatBRL(Number(pendingRequest.prorata_credit))}</p>
+                  <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 mt-1">
+                    Crédito aplicado: {formatBRL(Number(pendingRequest.prorata_credit))}
+                  </p>
                 )}
               </div>
-              <Badge variant="outline" className={`text-[10px] ${statusConfig[pendingRequest.status]?.bg}`}>
-                {statusConfig[pendingRequest.status]?.label}
-              </Badge>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Features by Category */}
+      {/* ───────── FEATURES INCLUDED ───────── */}
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base flex items-center gap-2">
-            <ShieldCheck className="h-5 w-5 text-primary" />
-            Detalhes do plano
-          </CardTitle>
-          <CardDescription>Funcionalidades incluídas no plano {planLabels[plan.planType]}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {featureCategories.map(cat => {
-            const CatIcon = cat.icon;
-            return (
-              <div key={cat.title} className="space-y-2">
-                <div className="flex items-center gap-2 mb-1">
-                  <CatIcon className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{cat.title}</span>
-                </div>
-                {cat.features.map(feat => {
-                  const enabled = (plan as any)[feat.key];
-                  return (
-                    <div
-                      key={feat.key}
-                      className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${
-                        enabled
-                          ? "bg-primary/5 border-primary/20"
-                          : "bg-muted/20 border-border/50 opacity-60"
-                      }`}
-                    >
-                      <div className={`h-8 w-8 rounded-lg flex items-center justify-center shrink-0 ${
-                        enabled ? "bg-primary/10" : "bg-muted/50"
-                      }`}>
-                        {enabled
-                          ? <Check className="h-4 w-4 text-primary" />
-                          : <X className="h-4 w-4 text-muted-foreground/50" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-medium ${enabled ? "text-foreground" : "text-muted-foreground line-through"}`}>
-                          {feat.label}
-                        </p>
-                        <p className="text-xs text-muted-foreground">{feat.desc}</p>
-                      </div>
-                      {!enabled && (
-                        <Badge variant="outline" className="text-[10px] shrink-0 border-dashed">
-                          Upgrade
-                        </Badge>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })}
-
-          {/* Coupons note */}
-          <div className="flex items-start gap-2 p-3 rounded-xl bg-muted/30 border border-border/50">
-            <Info className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+        <CardContent className="p-5 space-y-4">
+          <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-muted-foreground">
-                <strong>Cupons:</strong> {plan.maxCoupons === null
-                  ? "Você pode criar cupons ilimitados no seu plano."
-                  : `Seu plano permite até ${plan.maxCoupons} cupons ativos simultaneamente.`}
-              </p>
+              <h3 className="text-base font-bold text-foreground">O que está incluso</h3>
+              <p className="text-xs text-muted-foreground">Recursos do plano {planLabels[plan.planType]}</p>
             </div>
+            <Badge variant="secondary" className="shrink-0">
+              {enabledFeatures.length}/{features.length}
+            </Badge>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            {enabledFeatures.map(f => {
+              const Icon = f.icon;
+              return (
+                <div key={f.key} className="flex items-center gap-2 rounded-lg bg-primary/5 border border-primary/15 p-2.5">
+                  <Icon className="h-4 w-4 text-primary shrink-0" />
+                  <span className="text-xs font-medium text-foreground truncate">{f.label}</span>
+                  <Check className="h-3.5 w-3.5 text-primary ml-auto shrink-0" />
+                </div>
+              );
+            })}
+            {disabledFeatures.map(f => {
+              const Icon = f.icon;
+              return (
+                <div key={f.key} className="flex items-center gap-2 rounded-lg bg-muted/30 border border-border/40 p-2.5 opacity-50">
+                  <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span className="text-xs text-muted-foreground line-through truncate">{f.label}</span>
+                  <X className="h-3.5 w-3.5 text-muted-foreground/50 ml-auto shrink-0" />
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Coupons row */}
+          <div className="flex items-center justify-between rounded-lg bg-muted/30 border border-border/40 p-3">
+            <div className="flex items-center gap-2">
+              <Ticket className="h-4 w-4 text-primary" />
+              <span className="text-xs font-medium text-foreground">Cupons ativos</span>
+            </div>
+            <span className="text-sm font-bold text-foreground">
+              {plan.maxCoupons === null ? "Ilimitados" : `Até ${plan.maxCoupons}`}
+            </span>
           </div>
         </CardContent>
       </Card>
 
-      {/* Billing Info */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-primary" />
-            Informações de cobrança
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center py-2 border-b border-border/50">
-              <span className="text-sm text-muted-foreground">Loja</span>
-              <span className="text-sm font-medium text-foreground">{storeName}</span>
+      {/* ───────── BILLING DETAILS (compact, only for paid plans) ───────── */}
+      {plan.monthlyFee > 0 && (
+        <Card>
+          <CardContent className="p-5 space-y-3">
+            <div className="flex items-center gap-2 mb-1">
+              <Wallet className="h-4 w-4 text-primary" />
+              <h3 className="text-sm font-bold text-foreground">Detalhes da cobrança</h3>
             </div>
-            <div className="flex justify-between items-center py-2 border-b border-border/50">
-              <span className="text-sm text-muted-foreground">Plano</span>
-              <span className="text-sm font-medium text-foreground">{planLabels[plan.planType]}</span>
-            </div>
-            <div className="flex justify-between items-center py-2 border-b border-border/50">
-              <span className="text-sm text-muted-foreground">Mensalidade</span>
-              <span className="text-sm font-bold text-foreground">
-                {plan.monthlyFee > 0 ? `${formatBRL(plan.monthlyFee)}` : "Isento"}
-              </span>
-            </div>
-            <div className="flex justify-between items-center py-2 border-b border-border/50">
-              <span className="text-sm text-muted-foreground">Taxa por pedido</span>
-              <span className="text-sm font-bold text-foreground">
-                {plan.commissionRate > 0 ? `${plan.commissionRate}%` : "Sem taxa"}
-              </span>
-            </div>
-            {plan.isInTrial && plan.trialEndsAt && (
-              <div className="flex justify-between items-center py-2 border-b border-border/50">
-                <span className="text-sm text-muted-foreground">Trial expira em</span>
-                <span className="text-sm font-bold text-orange-600 dark:text-orange-400">
-                  {new Date(plan.trialEndsAt).toLocaleDateString("pt-BR")} ({plan.trialDaysLeft} dias)
-                </span>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+              <div className="flex flex-col">
+                <span className="text-muted-foreground">Loja</span>
+                <span className="font-medium text-foreground truncate">{storeName}</span>
               </div>
-            )}
-            {plan.startedAt && (
-              <div className="flex justify-between items-center py-2 border-b border-border/50">
-                <span className="text-sm text-muted-foreground">Início do plano</span>
-                <span className="text-sm text-foreground">
-                  {new Date(plan.startedAt).toLocaleDateString("pt-BR")}
-                </span>
+              <div className="flex flex-col">
+                <span className="text-muted-foreground">Início do plano</span>
+                <span className="font-medium text-foreground">{formatDateBR(plan.startedAt)}</span>
               </div>
-            )}
-            {plan.lastBilledAt && (
-              <div className="flex justify-between items-center py-2 border-b border-border/50">
-                <span className="text-sm text-muted-foreground">Última cobrança</span>
-                <span className="text-sm text-foreground">
-                  {new Date(plan.lastBilledAt).toLocaleDateString("pt-BR")}
-                </span>
+              <div className="flex flex-col">
+                <span className="text-muted-foreground">Última cobrança</span>
+                <span className="font-medium text-foreground">{formatDateBR(plan.lastBilledAt)}</span>
               </div>
-            )}
-            {plan.nextBillingDate && (
-              <div className="flex justify-between items-center py-2 border-b border-border/50">
-                <span className="text-sm text-muted-foreground">Próxima cobrança</span>
-                <span className="text-sm font-bold text-foreground">
-                  {new Date(plan.nextBillingDate).toLocaleDateString("pt-BR")}
-                </span>
+              <div className="flex flex-col">
+                <span className="text-muted-foreground">Próxima cobrança</span>
+                <span className="font-medium text-foreground">{formatDateBR(plan.nextBillingDate)}</span>
               </div>
-            )}
-            <div className="flex justify-between items-center py-2">
-              <span className="text-sm text-muted-foreground">Status</span>
-              <Badge className={`${planBadgeColors[plan.planType]} border`}>
-                {plan.isInTrial ? `Trial (${plan.trialDaysLeft}d)` : "Ativo"}
-              </Badge>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
-      {/* App Addon */}
+      {/* ───────── BILLING HISTORY ───────── */}
+      {plan.isFixedPlan && <FixedPlanBillingHistory storeId={storeId} storeName={storeName} />}
+
+      {/* ───────── APP ADDON ───────── */}
       <AppAddonCard storeId={storeId} />
 
-      {/* Change Plan */}
+      {/* ───────── CHANGE PLAN CTA ───────── */}
       {!showChangePlan && !hasPendingRequest && (
         <Button
           variant="outline"
-          className="w-full h-14 text-base gap-3 border-dashed border-2"
+          className="w-full h-12 gap-2 border-dashed border-2"
           onClick={() => setShowChangePlan(true)}
         >
-          <ArrowUpRight className="h-5 w-5" />
-          Solicitar Troca de Plano
-          <ChevronRight className="h-4 w-4 ml-auto" />
+          <ArrowUpRight className="h-4 w-4" />
+          <span className="font-semibold">Trocar de plano</span>
+          <ChevronRight className="h-4 w-4 ml-auto opacity-50" />
         </Button>
       )}
 
+      {/* ───────── CHANGE PLAN PANEL ───────── */}
       {showChangePlan && (
         <Card className="border-2 border-primary/30 overflow-hidden">
-          <div className="bg-gradient-to-r from-primary/10 to-transparent p-5 pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
+          <div className="bg-primary/5 p-4 border-b border-primary/10">
+            <div className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary" />
-              Trocar de Plano
-            </CardTitle>
-            <CardDescription className="mt-1">
-              Selecione o novo plano. A mudança será aplicada após aprovação do administrador.
-            </CardDescription>
+              <h3 className="text-base font-bold text-foreground">Escolher novo plano</h3>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              A mudança será aplicada após aprovação do administrador.
+            </p>
           </div>
-          <CardContent className="p-5 space-y-4">
-            {/* Prorata */}
-            {plan.monthlyFee > 0 && (
-              <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-1">
-                  <CreditCard className="h-4 w-4 text-emerald-600" />
-                  <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">Crédito Prorata</span>
-                </div>
-                <p className="text-xs text-emerald-600/80">
-                  Você tem <strong>{formatBRL((prorataCredit ?? 0))}</strong> de crédito do plano atual que será considerado.
+
+          <CardContent className="p-4 space-y-3">
+            {/* Prorata credit info */}
+            {plan.monthlyFee > 0 && (prorataCredit ?? 0) > 0 && (
+              <div className="flex items-center gap-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 p-3">
+                <Gift className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <p className="text-xs text-emerald-700 dark:text-emerald-400">
+                  Você tem <strong>{formatBRL(prorataCredit ?? 0)}</strong> de crédito não utilizado do plano atual.
                 </p>
               </div>
             )}
 
-            {/* Plan Cards */}
-            <div className="space-y-3">
+            {/* Plan options */}
+            <div className="space-y-2">
               {availablePlans.map(opt => {
                 const OptIcon = planIcons[opt.type];
                 const isSelected = selectedPlan === opt.type;
@@ -542,38 +495,38 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
                   <button
                     key={opt.type}
                     onClick={() => setSelectedPlan(opt.type)}
-                    className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+                    className={`w-full text-left p-3 rounded-xl border-2 transition-all ${
                       isSelected
-                        ? "border-primary bg-primary/5 shadow-md"
+                        ? "border-primary bg-primary/5"
                         : "border-border hover:border-primary/30 hover:bg-muted/30"
                     }`}
                   >
                     <div className="flex items-start gap-3">
-                      <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${
-                        isSelected ? "bg-primary/10" : "bg-muted/50"
+                      <div className={`h-9 w-9 rounded-lg flex items-center justify-center shrink-0 ${
+                        isSelected ? "bg-primary/15" : planAccentBg[opt.type]
                       }`}>
-                        <OptIcon className={`h-5 w-5 ${isSelected ? "text-primary" : "text-muted-foreground"}`} />
+                        <OptIcon className={`h-4 w-4 ${isSelected ? "text-primary" : planAccent[opt.type]}`} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="font-bold text-foreground">{opt.label}</p>
-                          {opt.fee === 0 && (
-                            <Badge variant="outline" className="text-[10px] border-emerald-500/30 text-emerald-600">Sem mensalidade</Badge>
-                          )}
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-sm font-bold text-foreground">{opt.label}</p>
+                          <p className="text-sm font-bold text-foreground shrink-0">
+                            {opt.fee > 0 ? `${formatBRL(opt.fee)}/mês` : "Grátis"}
+                          </p>
                         </div>
-                        <p className="text-sm text-muted-foreground mt-0.5">{opt.desc}</p>
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          {opt.highlights.map(h => (
-                            <span key={h} className="text-[10px] bg-muted/60 text-muted-foreground px-2 py-0.5 rounded-full">
-                              {h}
+                        <p className="text-[11px] text-muted-foreground">{opt.tagline}</p>
+                        <div className="flex flex-wrap gap-1 mt-1.5">
+                          {opt.bullets.slice(0, 3).map(b => (
+                            <span key={b} className="text-[10px] bg-muted/60 text-muted-foreground px-1.5 py-0.5 rounded">
+                              {b}
                             </span>
                           ))}
                         </div>
                       </div>
-                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-1 ${
+                      <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 mt-1 ${
                         isSelected ? "border-primary bg-primary" : "border-muted-foreground/30"
                       }`}>
-                        {isSelected && <Check className="h-3 w-3 text-primary-foreground" />}
+                        {isSelected && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
                       </div>
                     </div>
                   </button>
@@ -583,31 +536,27 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
 
             {/* Summary */}
             {selectedPlan && (
-              <div className="bg-muted/40 rounded-xl p-4 space-y-2 border border-border/50">
-                <p className="text-sm font-bold text-foreground flex items-center gap-2">
-                  <Info className="h-4 w-4 text-primary" />
-                  Resumo da troca
-                </p>
-                <div className="space-y-1.5">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">De</span>
-                    <span className="text-foreground">{planLabels[plan.planType]}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Para</span>
-                    <span className="font-semibold text-primary">{planLabels[selectedPlan]}</span>
-                  </div>
-                  {(prorataCredit ?? 0) > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Crédito</span>
-                      <span className="font-semibold text-emerald-600">{formatBRL((prorataCredit ?? 0))}</span>
-                    </div>
-                  )}
+              <div className="rounded-lg bg-muted/40 border border-border/50 p-3 space-y-1.5">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Plano atual</span>
+                  <span className="text-foreground">{planLabels[plan.planType]}</span>
                 </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Novo plano</span>
+                  <span className="font-bold text-primary">{planLabels[selectedPlan]}</span>
+                </div>
+                {(prorataCredit ?? 0) > 0 && (
+                  <div className="flex items-center justify-between text-xs pt-1.5 border-t border-border/50">
+                    <span className="text-muted-foreground">Crédito a aplicar</span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                      {formatBRL(prorataCredit ?? 0)}
+                    </span>
+                  </div>
+                )}
               </div>
             )}
 
-            <div className="flex gap-3 pt-1">
+            <div className="flex gap-2 pt-1">
               <Button
                 variant="outline"
                 className="flex-1"
@@ -621,12 +570,21 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
                 onClick={handleRequestChange}
               >
                 {requesting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <ArrowUpRight className="h-4 w-4 mr-2" />}
-                Solicitar Troca
+                Solicitar
               </Button>
             </div>
           </CardContent>
         </Card>
       )}
+
+      {/* ───────── HELP NOTE ───────── */}
+      <div className="flex items-start gap-2 p-3 rounded-lg bg-muted/30 border border-border/40">
+        <Info className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+        <p className="text-[11px] text-muted-foreground leading-relaxed">
+          Dúvidas sobre seu plano? Entre em contato com o suporte. Trocas e cancelamentos são processados
+          após aprovação do administrador.
+        </p>
+      </div>
     </div>
   );
 }
@@ -661,18 +619,10 @@ function AppAddonCard({ storeId }: { storeId: string }) {
         .eq("id", storeId);
       if (error) throw error;
 
-      if (!store.app_subscribed) {
-        // Also update the app_addon_fee on store_plans
-        await supabase
-          .from("store_plans")
-          .update({ app_addon_fee: 99 })
-          .eq("store_id", storeId);
-      } else {
-        await supabase
-          .from("store_plans")
-          .update({ app_addon_fee: 0 })
-          .eq("store_id", storeId);
-      }
+      await supabase
+        .from("store_plans")
+        .update({ app_addon_fee: !store.app_subscribed ? 99 : 0 })
+        .eq("store_id", storeId);
 
       toast.success(store.app_subscribed ? "App cancelado." : "App ativado com sucesso! 🚀");
       queryClient.invalidateQueries({ queryKey: ["store-app-status", storeId] });
@@ -686,47 +636,40 @@ function AppAddonCard({ storeId }: { storeId: string }) {
 
   return (
     <Card className="overflow-hidden border-2 border-primary/20">
-      <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-5">
-        <div className="flex items-start gap-3">
-          <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
-            <Smartphone className="h-6 w-6 text-primary" />
+      <div className="bg-primary/5 p-4">
+        <div className="flex items-center gap-3">
+          <div className="h-11 w-11 rounded-2xl bg-primary/15 flex items-center justify-center shrink-0">
+            <Smartphone className="h-5 w-5 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-bold text-foreground">App Próprio</h3>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              Tenha seu app exclusivo na Play Store com notificações push ilimitadas
-            </p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="text-base font-bold text-foreground">App próprio</h3>
+              {store.app_subscribed && (
+                <Badge className="text-[10px] bg-primary/15 text-primary border-primary/20">Ativo</Badge>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">Seu app exclusivo na Play Store</p>
           </div>
+          <p className="text-base font-bold text-foreground shrink-0">R$ 99<span className="text-[10px] text-muted-foreground">/mês</span></p>
         </div>
       </div>
-      <CardContent className="p-5 space-y-4">
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-muted/40 rounded-xl p-3 text-center border border-border/50">
-            <p className="text-xl font-bold text-foreground">R$ 99</p>
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">/mês</p>
-          </div>
-          <div className="bg-muted/40 rounded-xl p-3 text-center border border-border/50">
-            <p className="text-xl font-bold text-primary">∞</p>
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Push grátis</p>
-          </div>
-        </div>
-
-        <div className="space-y-2">
+      <CardContent className="p-4 space-y-3">
+        <div className="grid grid-cols-2 gap-1.5">
           {[
-            "App com sua marca na Play Store",
-            "Notificações push ilimitadas",
-            "Clientes acessam só sua loja",
-            "Sem custo de WhatsApp API",
+            "App com sua marca",
+            "Push ilimitadas",
+            "Só sua loja",
+            "Sem WhatsApp API",
           ].map((item) => (
-            <div key={item} className="flex items-center gap-2">
-              <Check className="h-4 w-4 text-primary shrink-0" />
-              <span className="text-sm text-foreground">{item}</span>
+            <div key={item} className="flex items-center gap-1.5">
+              <Check className="h-3 w-3 text-primary shrink-0" />
+              <span className="text-[11px] text-foreground">{item}</span>
             </div>
           ))}
         </div>
 
         <Button
-          className="w-full h-12 text-base font-bold"
+          className="w-full"
           variant={store.app_subscribed ? "outline" : "default"}
           onClick={handleToggleSubscription}
           disabled={subscribing}
@@ -738,14 +681,14 @@ function AppAddonCard({ storeId }: { storeId: string }) {
           ) : (
             <Rocket className="h-4 w-4 mr-2" />
           )}
-          {store.app_subscribed ? "Cancelar App" : "Assinar App — R$ 99/mês"}
+          {store.app_subscribed ? "Cancelar app" : "Assinar — R$ 99/mês"}
         </Button>
 
         {store.app_subscribed && (
-          <div className="flex items-center gap-2 p-3 rounded-xl bg-primary/5 border border-primary/20">
-            <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
-            <p className="text-xs text-muted-foreground">
-              Seu app está ativo! O administrador gerará o APK com a identidade da sua loja.
+          <div className="flex items-start gap-2 p-2.5 rounded-lg bg-primary/5 border border-primary/15">
+            <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              App ativo! O administrador gerará o APK com a identidade da sua loja.
             </p>
           </div>
         )}
