@@ -173,7 +173,8 @@ const App = () => {
                   }
                 />
                 <Route path="/parceiro" element={<PartnerOnboarding />} />
-                <Route path="/cadastro-entregador" element={<CadastroEntregador />} />
+                {/* Cadastro de motoboy de plataforma descontinuado — redireciona para motoboy de loja */}
+                <Route path="/cadastro-entregador" element={<Navigate to="/cadastro-motoboy-loja" replace />} />
                 <Route path="/cadastro-lojista" element={<CadastroLojista />} />
                 <Route path="/cadastro-motoboy-loja" element={<CadastroMotoboyLoja />} />
                 <Route path="/termos-de-uso" element={<TermosDeUso />} />
