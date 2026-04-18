@@ -401,6 +401,10 @@ const DriverDashboard = () => {
   // ─── Side effects (unchanged) ───
   useEffect(() => {
     if (!user) return;
+    // Store drivers manage their own online state via StoreDriverView.
+    // Do NOT overwrite their is_online flag here, otherwise reopening the
+    // app would always reset them to offline.
+    if (isStoreDriver) return;
     supabase.from("drivers").update({ is_online: isOnline } as any).eq("user_id", user.id).then(() => {});
     const handleUnload = () => {
       const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/drivers?user_id=eq.${user.id}`;
@@ -418,7 +422,7 @@ const DriverDashboard = () => {
     };
     window.addEventListener("beforeunload", handleUnload);
     return () => { window.removeEventListener("beforeunload", handleUnload); };
-  }, [user]);
+  }, [user, isStoreDriver]);
 
   useEffect(() => {
     if (!user || !isOnline) return;
