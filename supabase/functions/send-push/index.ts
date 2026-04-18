@@ -191,19 +191,25 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabaseAnon = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    // Verify the caller
-    const supabaseAuth = createClient(supabaseUrl, supabaseAnon);
     const token = authHeader.replace("Bearer ", "").trim();
-    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser(token);
-    if (authError || !user) {
-      console.error("[send-push] Auth failed:", authError?.message || "no user");
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+
+    // Internal calls (DB triggers, cron) use the service-role key directly — bypass user check.
+    const isServiceRole = token === supabaseServiceKey;
+    let callerUserId = "service_role";
+
+    if (!isServiceRole) {
+      const supabaseAuth = createClient(supabaseUrl, supabaseAnon);
+      const { data: { user }, error: authError } = await supabaseAuth.auth.getUser(token);
+      if (authError || !user) {
+        console.error("[send-push] Auth failed:", authError?.message || "no user");
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      callerUserId = user.id;
     }
-    const callerUserId = user.id;
-    console.log(`[send-push] Authenticated user: ${callerUserId}`);
+    console.log(`[send-push] Authenticated: ${isServiceRole ? "service_role" : callerUserId}`);
 
     const body = await req.json();
     const { user_ids, title, body: msgBody, data } = body;
@@ -218,7 +224,10 @@ Deno.serve(async (req) => {
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     // ── ROLE CHECK: Only admin, store owners, or drivers can send push ──
-    const { data: isAdmin } = await supabaseAdmin.rpc("is_platform_admin", { _user_id: callerUserId });
+    // Service-role internal calls bypass the role check.
+    const { data: isAdmin } = isServiceRole
+      ? { data: true }
+      : await supabaseAdmin.rpc("is_platform_admin", { _user_id: callerUserId });
 
     if (!isAdmin) {
       // Check if caller is a store owner or driver
