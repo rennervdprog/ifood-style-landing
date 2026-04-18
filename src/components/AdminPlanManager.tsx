@@ -205,7 +205,7 @@ export default function AdminPlanManager() {
       )}
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <div className="bg-card rounded-2xl p-4 border border-border">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -215,6 +215,16 @@ export default function AdminPlanManager() {
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Receita Mensal</p>
           <p className="text-xl font-black text-primary mt-0.5">R$ {totalRevenue.toFixed(0)}</p>
           <p className="text-[10px] text-muted-foreground">assinaturas ativas</p>
+        </div>
+        <div className="bg-card rounded-2xl p-4 border-2 border-pink-500/30">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-8 h-8 rounded-xl bg-pink-500/10 flex items-center justify-center">
+              <Heart className="h-4 w-4 text-pink-500" />
+            </div>
+          </div>
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Apoiador</p>
+          <p className="text-xl font-black text-foreground mt-0.5">{supporterUsed}/{SUPPORTER_LIMIT}</p>
+          <p className="text-[10px] text-muted-foreground">{supporterAvailable} vagas restantes</p>
         </div>
         {(["fixed", "hybrid", "commission_only"] as PlanType[]).map(pt => (
           <div key={pt} className="bg-card rounded-2xl p-4 border border-border">
@@ -235,14 +245,21 @@ export default function AdminPlanManager() {
       </div>
 
       {/* Plan Overview Cards */}
-      <div className="grid lg:grid-cols-3 gap-3">
-        {(["fixed", "hybrid", "commission_only"] as PlanType[]).map(pt => (
+      <div className="grid lg:grid-cols-4 gap-3">
+        {(["supporter", "fixed", "hybrid", "commission_only"] as DisplayPlan[]).map(pt => (
           <div key={pt} className={`bg-card rounded-2xl border-2 p-4 space-y-3 ${
-            pt === "fixed" ? "border-amber-500/20" : pt === "hybrid" ? "border-blue-500/20" : "border-emerald-500/20"
+            pt === "supporter" ? "border-pink-500/30" :
+            pt === "fixed" ? "border-amber-500/20" :
+            pt === "hybrid" ? "border-blue-500/20" : "border-emerald-500/20"
           }`}>
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-foreground text-sm">{planLabels[pt]}</h3>
-              <Badge className={`border text-xs ${planColors[pt]}`}>{planLabels[pt]}</Badge>
+              <h3 className="font-bold text-foreground text-sm flex items-center gap-1">
+                {pt === "supporter" && <Heart className="h-3.5 w-3.5 text-pink-500" />}
+                {planLabels[pt]}
+              </h3>
+              <Badge className={`border text-xs ${planColors[pt]}`}>
+                {pt === "supporter" ? `${supporterAvailable} vagas` : planLabels[pt]}
+              </Badge>
             </div>
             <p className="text-xs text-muted-foreground">{planDescriptions[pt]}</p>
             <div className="flex items-baseline gap-1">
