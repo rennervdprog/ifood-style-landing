@@ -10,7 +10,7 @@
  */
 import { isCapacitorNative } from "@/lib/capacitorNative";
 
-const CHECK_INTERVAL_MS = 60_000; // Check every 60s
+const CHECK_INTERVAL_MS = 30_000; // Check every 30s
 const BUILD_HASH_KEY = "itasuper_build_hash";
 let checking = false;
 let intervalId: ReturnType<typeof setInterval> | null = null;
@@ -53,13 +53,25 @@ async function checkForUpdate() {
     }
 
     if (currentHash !== storedHash) {
-      console.log("[AutoUpdate] 🚀 New version detected, reloading...");
+      console.log("[AutoUpdate] 🚀 New version detected, clearing caches and reloading...");
       localStorage.setItem(BUILD_HASH_KEY, currentHash);
 
-      // Small delay to let any pending operations complete
+      // Clear caches so the WebView fetches fresh assets
+      try {
+        if ("caches" in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map((k) => caches.delete(k)));
+        }
+        const regs = await navigator.serviceWorker?.getRegistrations();
+        if (regs) await Promise.all(regs.map((r) => r.unregister()));
+      } catch (e) {
+        console.warn("[AutoUpdate] Cache clear failed:", e);
+      }
+
       setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+        // Force reload bypassing cache
+        window.location.href = window.location.pathname + "?_v=" + Date.now();
+      }, 500);
     }
   } catch (e) {
     console.warn("[AutoUpdate] Check failed:", e);
@@ -79,7 +91,7 @@ export function initAutoUpdate() {
   console.log("[AutoUpdate] ✅ Auto-update checker started (every 60s)");
 
   // Check immediately on start
-  setTimeout(checkForUpdate, 5000);
+  setTimeout(checkForUpdate, 2000);
 
   // Then check periodically
   intervalId = setInterval(checkForUpdate, CHECK_INTERVAL_MS);
