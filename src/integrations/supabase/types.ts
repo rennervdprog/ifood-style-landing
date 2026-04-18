@@ -2210,6 +2210,7 @@ export type Database = {
           id: string
           image_url: string | null
           is_open: boolean
+          is_test: boolean
           latitude: number | null
           longitude: number | null
           name: string
@@ -2241,6 +2242,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_open?: boolean
+          is_test?: boolean
           latitude?: number | null
           longitude?: number | null
           name: string
@@ -2272,6 +2274,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_open?: boolean
+          is_test?: boolean
           latitude?: number | null
           longitude?: number | null
           name?: string
@@ -2832,6 +2835,7 @@ export type Database = {
         Args: { _store_id: string; _user_id: string }
         Returns: boolean
       }
+      is_test_store: { Args: { _store_id: string }; Returns: boolean }
       mark_all_store_driver_earnings_paid: {
         Args: { _driver_user_id: string; _store_id: string }
         Returns: number

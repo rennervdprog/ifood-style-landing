@@ -210,12 +210,16 @@ Deno.serve(async (req) => {
     if (modes.store_payout === "auto") {
       const { data: storeBalances } = await supabase
         .from("store_balances")
-        .select("*, stores:store_id(name, owner_id)")
+        .select("*, stores:store_id(name, owner_id, is_test)")
         .gt("repasse_pendente", 0);
 
       for (const sb of storeBalances || []) {
         const store = (sb as any).stores;
         if (!store?.owner_id) continue;
+        if (store?.is_test) {
+          results.push({ type: "store", id: sb.store_id, status: "skipped", reason: "Loja de teste" });
+          continue;
+        }
 
         const { data: ownerProfile } = await supabase
           .from("profiles")

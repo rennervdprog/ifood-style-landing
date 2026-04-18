@@ -20,12 +20,18 @@ Deno.serve(async (req) => {
     const end = new Date();
     const start = new Date(end.getTime() - 7 * 24 * 60 * 60 * 1000);
 
+    // Exclude test stores from all metrics
+    const { data: testStoresList } = await supabase.from("stores").select("id").eq("is_test", true);
+    const testIds = (testStoresList || []).map((s: any) => s.id as string);
+
     // ── Aggregate metrics ──
-    const { data: orders } = await supabase
+    let ordersQuery = supabase
       .from("orders")
-      .select("id, total_price, app_fee, status, created_at")
+      .select("id, total_price, app_fee, status, created_at, store_id")
       .gte("created_at", start.toISOString())
       .lte("created_at", end.toISOString());
+    if (testIds.length > 0) ordersQuery = ordersQuery.not("store_id", "in", `(${testIds.join(",")})`);
+    const { data: orders } = await ordersQuery;
 
     const totalOrders = orders?.length || 0;
     const delivered = orders?.filter((o: any) => o.status === "entregue").length || 0;

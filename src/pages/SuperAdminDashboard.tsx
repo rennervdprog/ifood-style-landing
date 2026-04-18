@@ -9,6 +9,7 @@ import AdminPlanManager from "@/components/AdminPlanManager";
 import ModeratorManager from "@/components/ModeratorManager";
 import PartnerSplitPanel from "@/components/PartnerSplitPanel";
 import FixedPlanBillingHistory from "@/components/FixedPlanBillingHistory";
+import TestStoreFinancePanel from "@/components/TestStoreFinancePanel";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -16,7 +17,7 @@ import { toast } from "sonner";
 import {
   ArrowLeft, DollarSign, ShoppingBag, TrendingUp, Clock,
   Store, Copy, AlertTriangle, Users, Bike, Wallet, CheckCircle2, Banknote, XCircle, Bell, Trash2, QrCode, Loader2, ArrowUpRight, ArrowDownRight, Settings,
-  LayoutDashboard, Shield, Ticket, RefreshCw, Truck, Menu, X, MapPin, Eye, Scale, Search, FileText, Mail, Phone, User, Download, Calendar, CreditCard, Receipt, ChevronDown, ChevronUp, Percent, Crown, Handshake
+  LayoutDashboard, Shield, Ticket, RefreshCw, Truck, Menu, X, MapPin, Eye, Scale, Search, FileText, Mail, Phone, User, Download, Calendar, CreditCard, Receipt, ChevronDown, ChevronUp, Percent, Crown, Handshake, FlaskConical
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -25,7 +26,7 @@ import {
 import { addMoney, multiplyMoney, subtractMoney, sumMoney, formatBRL } from "@/lib/utils";
 
 type DateFilter = "today" | "yesterday" | "week";
-type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamentos" | "saques" | "sync" | "coupons" | "entrega" | "cidades" | "juridico" | "planos" | "moderadores" | "socios";
+type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamentos" | "saques" | "sync" | "coupons" | "entrega" | "cidades" | "juridico" | "planos" | "moderadores" | "socios" | "test_finance";
 
 const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; group: string }[] = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, group: "Principal" },
@@ -41,6 +42,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
   { key: "moderadores", label: "Moderadores", icon: Users, group: "Gerenciamento" },
   { key: "socios", label: "Sócios", icon: Handshake, group: "Principal" },
   { key: "juridico", label: "Jurídico", icon: Scale, group: "Sistema" },
+  { key: "test_finance", label: "Finanças Teste", icon: FlaskConical, group: "Sistema" },
   { key: "sync", label: "Sincronizar", icon: RefreshCw, group: "Sistema" },
 ];
 
@@ -95,16 +97,30 @@ const SuperAdminDashboard = () => {
     enabled: !!user,
   });
 
+  // First: get IDs of test stores so we can filter them out everywhere
+  const { data: testStoreIds = [] } = useQuery({
+    queryKey: ["admin-test-store-ids"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("stores").select("id").eq("is_test", true);
+      if (error) throw error;
+      return (data || []).map((s: any) => s.id as string);
+    },
+    enabled: isAdmin,
+    staleTime: 60_000,
+  });
+
   const { data: orders, isLoading } = useQuery({
-    queryKey: ["admin-all-orders", dateFilter],
+    queryKey: ["admin-all-orders", dateFilter, testStoreIds.join(",")],
     queryFn: async () => {
       const { start, end } = getDateRange(dateFilter);
-      const { data, error } = await supabase
+      let query = supabase
         .from("orders")
         .select("*, stores(name, id)")
         .gte("created_at", start)
         .lte("created_at", end)
         .order("created_at", { ascending: false });
+      if (testStoreIds.length > 0) query = query.not("store_id", "in", `(${testStoreIds.join(",")})`);
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
@@ -112,16 +128,18 @@ const SuperAdminDashboard = () => {
   });
 
   const { data: financeOrders, isLoading: financeLoading } = useQuery({
-    queryKey: ["finance-orders", financeFilter],
+    queryKey: ["finance-orders", financeFilter, testStoreIds.join(",")],
     queryFn: async () => {
       const { start, end } = getFinanceDateRange();
-      const { data, error } = await supabase
+      let query = supabase
         .from("orders")
         .select("*, stores(name, id), order_items(quantity, unit_price)")
         .gte("created_at", start)
         .lte("created_at", end)
         .in("status", ["finalizado", "entregue"])
         .order("created_at", { ascending: false });
+      if (testStoreIds.length > 0) query = query.not("store_id", "in", `(${testStoreIds.join(",")})`);
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
@@ -149,9 +167,11 @@ const SuperAdminDashboard = () => {
   });
 
   const { data: storeBalances } = useQuery({
-    queryKey: ["store-balances"],
+    queryKey: ["store-balances", testStoreIds.join(",")],
     queryFn: async () => {
-      const { data, error } = await supabase.from("store_balances").select("*");
+      let query = supabase.from("store_balances").select("*");
+      if (testStoreIds.length > 0) query = query.not("store_id", "in", `(${testStoreIds.join(",")})`);
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
@@ -719,6 +739,7 @@ const SuperAdminDashboard = () => {
                 {activeTab === "moderadores" && "Moderadores e sistema de afiliados"}
                 {activeTab === "socios" && "Divisão de lucros entre sócios"}
                 {activeTab === "sync" && "Sincronização com banco externo"}
+                {activeTab === "test_finance" && "Lojas de teste — finanças fictícias isoladas"}
                 {activeTab === "planos" && "Gerenciar planos e assinaturas das lojas"}
               </p>
             </div>
@@ -778,6 +799,7 @@ const SuperAdminDashboard = () => {
             {activeTab === "juridico" && <JuridicoTab />}
             {activeTab === "moderadores" && <ModeratorManager />}
             {activeTab === "socios" && <PartnerSplitPanel />}
+            {activeTab === "test_finance" && <TestStoreFinancePanel />}
             {activeTab === "saques" && (
               <SaquesTab
                 withdrawalRequests={withdrawalRequests}
