@@ -22,6 +22,7 @@ import {
   AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip,
   ResponsiveContainer, PieChart, Pie, Cell,
 } from "recharts";
+import PaymentStatement from "@/components/PaymentStatement";
 
 interface StoreFinancePanelProps {
   storeId: string;
