@@ -275,7 +275,7 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-semibold text-foreground">Taxa de entrega: R$ 2,00 por pedido</p>
                   <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
-                    Cobrada do <strong>cliente</strong> no checkout (não sai do seu caixa). Essa taxa é exclusiva da plataforma.
+                    Cobrada do <strong>cliente</strong> no checkout (não sai do seu caixa). Destinada à manutenção da infraestrutura, tecnologia e suporte da plataforma.
                   </p>
                 </div>
               </div>
