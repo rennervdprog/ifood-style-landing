@@ -74,6 +74,7 @@ async function setupAppStateListener() {
   try {
     const { App } = await import("@capacitor/app");
 
+    let lastBackgroundedAt = 0;
     App.addListener("appStateChange", ({ isActive }) => {
       console.log("[CapLifecycle]", isActive ? "▶️ Resumed" : "⏸️ Backgrounded");
 
@@ -81,19 +82,24 @@ async function setupAppStateListener() {
       focusManager.setFocused(isActive);
 
       if (isActive) {
-        // Force the online/focus state back on and reconnect immediately,
-        // then once more after a short delay for WebViews that wake slowly.
+        const sinceBackgrounded = lastBackgroundedAt ? Date.now() - lastBackgroundedAt : Infinity;
         onlineManager.setOnline(true);
         focusManager.setFocused(true);
         reconnectRealtime();
         window.dispatchEvent(new CustomEvent("capacitor-app-resume"));
-        setTimeout(() => {
-          onlineManager.setOnline(true);
-          focusManager.setFocused(true);
-          reconnectRealtime();
-          window.dispatchEvent(new CustomEvent("capacitor-app-resume"));
-        }, 1200);
+
+        // Only run the late reconnect if the app was actually backgrounded a while
+        // (>10s). Quick taps away/back don't need a second reconnect — saves work.
+        if (sinceBackgrounded > 10_000) {
+          setTimeout(() => {
+            onlineManager.setOnline(true);
+            focusManager.setFocused(true);
+            reconnectRealtime();
+            window.dispatchEvent(new CustomEvent("capacitor-app-resume"));
+          }, 1200);
+        }
       } else {
+        lastBackgroundedAt = Date.now();
         focusManager.setFocused(false);
       }
     });

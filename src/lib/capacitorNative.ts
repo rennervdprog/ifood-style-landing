@@ -156,28 +156,32 @@ async function ensurePushListeners() {
     // Store in global queue (also persisted to localStorage) — survives cold start
     setPendingPushNavigation(targetPath);
 
-    // Dispatch the custom event for when PushNavigator is already mounted
-    // Try multiple times because React Router may still be mounting
+    // Dispatch the custom event for when PushNavigator is already mounted.
+    // Retry a few times because React Router may still be mounting, but stop
+    // as soon as the navigation has been consumed (no wasted dispatches).
+    const timers: number[] = [];
     const dispatch = () => {
-      const navEvent = new CustomEvent("capacitor-push-navigate", {
-        detail: { path: targetPath },
-      });
-      window.dispatchEvent(navEvent);
-      console.log("[CapPush] 📤 Dispatched capacitor-push-navigate event");
+      if (pendingPushNavigation !== targetPath) {
+        timers.forEach((t) => window.clearTimeout(t));
+        return;
+      }
+      window.dispatchEvent(
+        new CustomEvent("capacitor-push-navigate", { detail: { path: targetPath } })
+      );
     };
-    setTimeout(dispatch, 100);
-    setTimeout(dispatch, 500);
-    setTimeout(dispatch, 1500);
+    timers.push(window.setTimeout(dispatch, 100));
+    timers.push(window.setTimeout(dispatch, 500));
+    timers.push(window.setTimeout(dispatch, 1500));
 
     // Final fallback: if nothing navigated after 3s, use window.location
-    setTimeout(() => {
+    timers.push(window.setTimeout(() => {
       if (pendingPushNavigation === targetPath) {
         console.log("[CapPush] ⚠️ Fallback: forcing navigation via window.location to", targetPath);
         setPendingPushNavigation(null);
         const url = new URL(targetPath, window.location.origin);
         window.location.href = url.toString();
       }
-    }, 3000);
+    }, 3000));
   });
 
   listenersReady = true;

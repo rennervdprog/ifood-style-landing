@@ -10,7 +10,7 @@
  */
 import { isCapacitorNative } from "@/lib/capacitorNative";
 
-const CHECK_INTERVAL_MS = 30_000; // Check every 30s
+const CHECK_INTERVAL_MS = 5 * 60_000; // Check every 5 min (was 30s — much less battery/data)
 const BUILD_HASH_KEY = "itasuper_build_hash";
 let checking = false;
 let intervalId: ReturnType<typeof setInterval> | null = null;
@@ -41,6 +41,11 @@ async function checkForUpdate() {
   checking = true;
 
   try {
+    // Skip if offline — saves a doomed network round-trip
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      return;
+    }
+
     const currentHash = await fetchBuildHash();
     if (!currentHash) return;
 
@@ -88,24 +93,26 @@ export function initAutoUpdate() {
   // Only run in Capacitor native or if explicitly enabled
   if (!isCapacitorNative()) return;
 
-  console.log("[AutoUpdate] ✅ Auto-update checker started (every 60s)");
+  console.log("[AutoUpdate] ✅ Auto-update checker started (every 5min)");
 
-  // Check immediately on start
-  setTimeout(checkForUpdate, 2000);
+  // Check after 5s on start (don't compete with first paint)
+  setTimeout(checkForUpdate, 5000);
 
   // Then check periodically
   intervalId = setInterval(checkForUpdate, CHECK_INTERVAL_MS);
 
-  // Also check when app resumes from background
-  if (isCapacitorNative()) {
-    import("@capacitor/app").then(({ App }) => {
-      App.addListener("appStateChange", ({ isActive }) => {
-        if (isActive) {
-          setTimeout(checkForUpdate, 2000);
-        }
-      });
-    }).catch(() => {});
-  }
+  // Also check when app resumes from background — but only if it's been a while
+  let lastResumeCheck = Date.now();
+  import("@capacitor/app").then(({ App }) => {
+    App.addListener("appStateChange", ({ isActive }) => {
+      if (!isActive) return;
+      const now = Date.now();
+      // Throttle: only check on resume if >2min since last check
+      if (now - lastResumeCheck < 2 * 60_000) return;
+      lastResumeCheck = now;
+      setTimeout(checkForUpdate, 2000);
+    });
+  }).catch(() => {});
 }
 
 export function stopAutoUpdate() {

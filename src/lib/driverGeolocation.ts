@@ -111,19 +111,12 @@ async function requestAndWatch() {
 
     watchId = id;
 
-    // Heartbeat: send periodic updates even if standing still
-    intervalId = window.setInterval(async () => {
-      try {
-        const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 8000 });
-        await sendLocation({
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-          accuracy: pos.coords.accuracy,
-          speed: pos.coords.speed ?? undefined,
-          heading: pos.coords.heading ?? undefined,
-        }, true); // Force send on heartbeat
-      } catch {
-        // Silent fail for periodic updates
+    // Heartbeat: send periodic updates even if standing still.
+    // Use the cached lastPosition from watchPosition instead of asking GPS again —
+    // saves significant battery (no extra GPS fix per heartbeat).
+    intervalId = window.setInterval(() => {
+      if (lastPosition) {
+        sendLocation(lastPosition, true).catch(() => {});
       }
     }, UPDATE_INTERVAL_MS);
 
