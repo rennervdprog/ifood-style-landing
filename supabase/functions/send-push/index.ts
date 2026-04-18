@@ -381,6 +381,17 @@ Deno.serve(async (req) => {
       const accessToken = await getAccessToken(serviceAccount);
       const projectId = serviceAccount.project_id;
 
+      // FCM data must be Record<string, string>
+      const stringifiedData: Record<string, string> = {};
+      if (data && typeof data === "object") {
+        for (const [k, v] of Object.entries(data)) {
+          if (v === null || v === undefined) continue;
+          stringifiedData[k] = typeof v === "string" ? v : String(v);
+        }
+      }
+      // Ensure link is always present so tap handler knows where to go
+      if (!stringifiedData.link) stringifiedData.link = "/";
+
       for (const { token: fcmToken } of latestFcmTokens) {
         try {
           const res = await fetch(
@@ -400,11 +411,11 @@ Deno.serve(async (req) => {
                       icon: "/icon-192x192.png",
                       badge: "/icon-192x192.png",
                       vibrate: [200, 100, 200, 100, 200, 100, 200],
-                      tag: data?.order_id ? `order-${data.order_id}` : undefined,
+                      tag: stringifiedData.order_id ? `order-${stringifiedData.order_id}` : undefined,
                       renotify: true,
                       requireInteraction: true,
                     },
-                    fcm_options: { link: data?.link || "/" },
+                    fcm_options: { link: stringifiedData.link || "/" },
                   },
                   android: {
                     priority: "high",
@@ -412,7 +423,10 @@ Deno.serve(async (req) => {
                       icon: "ic_notification",
                       sound: "order_bell",
                       channel_id: "itasuper_orders",
-                      click_action: "FCM_PLUGIN_ACTIVITY",
+                      // NOTE: Removed click_action "FCM_PLUGIN_ACTIVITY" — that was
+                      // a Cordova FCM plugin constant. Capacitor uses the default
+                      // launcher activity, and the tap is captured by the
+                      // pushNotificationActionPerformed listener.
                       default_vibrate_timings: false,
                       vibrate_timings: ["0s", "0.3s", "0.2s", "0.3s", "0.2s", "0.3s", "0.2s", "0.3s"],
                       default_sound: true,
@@ -436,7 +450,9 @@ Deno.serve(async (req) => {
                       "apns-priority": "10",
                     },
                   },
-                  data: data || {},
+                  // CRITICAL: data must be flat Record<string,string> for Capacitor
+                  // pushNotificationActionPerformed listener to receive it correctly
+                  data: stringifiedData,
                 },
               }),
             }
