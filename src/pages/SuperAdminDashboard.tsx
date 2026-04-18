@@ -97,16 +97,30 @@ const SuperAdminDashboard = () => {
     enabled: !!user,
   });
 
+  // First: get IDs of test stores so we can filter them out everywhere
+  const { data: testStoreIds = [] } = useQuery({
+    queryKey: ["admin-test-store-ids"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("stores").select("id").eq("is_test", true);
+      if (error) throw error;
+      return (data || []).map((s: any) => s.id as string);
+    },
+    enabled: isAdmin,
+    staleTime: 60_000,
+  });
+
   const { data: orders, isLoading } = useQuery({
-    queryKey: ["admin-all-orders", dateFilter],
+    queryKey: ["admin-all-orders", dateFilter, testStoreIds.join(",")],
     queryFn: async () => {
       const { start, end } = getDateRange(dateFilter);
-      const { data, error } = await supabase
+      let query = supabase
         .from("orders")
         .select("*, stores(name, id)")
         .gte("created_at", start)
         .lte("created_at", end)
         .order("created_at", { ascending: false });
+      if (testStoreIds.length > 0) query = query.not("store_id", "in", `(${testStoreIds.join(",")})`);
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
@@ -114,16 +128,18 @@ const SuperAdminDashboard = () => {
   });
 
   const { data: financeOrders, isLoading: financeLoading } = useQuery({
-    queryKey: ["finance-orders", financeFilter],
+    queryKey: ["finance-orders", financeFilter, testStoreIds.join(",")],
     queryFn: async () => {
       const { start, end } = getFinanceDateRange();
-      const { data, error } = await supabase
+      let query = supabase
         .from("orders")
         .select("*, stores(name, id), order_items(quantity, unit_price)")
         .gte("created_at", start)
         .lte("created_at", end)
         .in("status", ["finalizado", "entregue"])
         .order("created_at", { ascending: false });
+      if (testStoreIds.length > 0) query = query.not("store_id", "in", `(${testStoreIds.join(",")})`);
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
@@ -151,9 +167,11 @@ const SuperAdminDashboard = () => {
   });
 
   const { data: storeBalances } = useQuery({
-    queryKey: ["store-balances"],
+    queryKey: ["store-balances", testStoreIds.join(",")],
     queryFn: async () => {
-      const { data, error } = await supabase.from("store_balances").select("*");
+      let query = supabase.from("store_balances").select("*");
+      if (testStoreIds.length > 0) query = query.not("store_id", "in", `(${testStoreIds.join(",")})`);
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
