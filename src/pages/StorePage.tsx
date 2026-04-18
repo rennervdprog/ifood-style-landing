@@ -248,6 +248,48 @@ const StorePage = () => {
     }
   }, [sections, activeSection]);
 
+  // Auto-update active section based on scroll position
+  useEffect(() => {
+    if (!sections || sections.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // Pick the entry closest to the top of the viewport that's intersecting
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+
+        if (visible.length > 0) {
+          const id = visible[0].target.getAttribute("data-section-id");
+          if (id) setActiveSection(id);
+        }
+      },
+      {
+        // Trigger when section crosses the area just below the sticky nav
+        rootMargin: "-120px 0px -60% 0px",
+        threshold: 0,
+      }
+    );
+
+    sections.forEach((s) => {
+      const el = sectionRefs.current[s.id];
+      if (el) observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, [sections, products]);
+
+  // Scroll active category chip into view in the sticky nav
+  useEffect(() => {
+    if (!activeSection || !navRef.current) return;
+    const chip = navRef.current.querySelector<HTMLElement>(
+      `[data-chip-id="${activeSection}"]`
+    );
+    if (chip) {
+      chip.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    }
+  }, [activeSection]);
+
   const scrollToSection = (sectionId: string) => {
     setActiveSection(sectionId);
 
@@ -697,6 +739,7 @@ const StorePage = () => {
             {sections.map(s => (
               <button
                 key={s.id}
+                data-chip-id={s.id}
                 onClick={() => scrollToSection(s.id)}
                 className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all ${
                   activeSection === s.id
