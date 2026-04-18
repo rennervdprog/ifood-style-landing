@@ -691,7 +691,7 @@ const StorePage = () => {
       {sections && sections.length > 0 && !filteredProducts && (
         <div
           ref={navRef}
-          className="sticky top-14 z-30 bg-background/95 backdrop-blur-md border-b border-border mt-4 shadow-sm"
+          className="sticky top-0 z-30 bg-background/95 backdrop-blur-md border-b border-border mt-4 shadow-sm"
         >
           <div className="flex overflow-x-auto gap-1.5 px-4 py-2.5 no-scrollbar">
             {sections.map(s => (
