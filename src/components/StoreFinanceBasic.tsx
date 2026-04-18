@@ -24,6 +24,7 @@ import {
   AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip,
   ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar,
 } from "recharts";
+import PaymentStatement from "@/components/PaymentStatement";
 
 interface StoreFinanceBasicProps {
   storeId: string;
@@ -497,6 +498,9 @@ const StoreFinanceBasic = ({ storeId, storeName }: StoreFinanceBasicProps) => {
 
   return (
     <div className="space-y-5">
+      {/* Extrato financeiro completo */}
+      <PaymentStatement storeId={storeId} storeName={storeName} />
+
       {/* Plan Info */}
       <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4">
         <div className="flex items-center gap-3">

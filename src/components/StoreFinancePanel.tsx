@@ -22,6 +22,7 @@ import {
   AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip,
   ResponsiveContainer, PieChart, Pie, Cell,
 } from "recharts";
+import PaymentStatement from "@/components/PaymentStatement";
 
 interface StoreFinancePanelProps {
   storeId: string;
@@ -527,6 +528,9 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
 
   return (
     <div className="space-y-6">
+      {/* Extrato financeiro completo */}
+      <PaymentStatement storeId={storeId} storeName={storeName} />
+
       {/* Date filter bar */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1">
         <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
