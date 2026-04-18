@@ -552,13 +552,31 @@ const DriverDashboard = () => {
   };
 
   const acceptOrder = async (orderId: string) => {
+    // Optimistic UI: remove order from available list immediately so it disappears instantly
+    const previousAvailable = queryClient.getQueryData<any[]>(["driver-available-orders"]);
+    const acceptedOrder = (availableOrders || []).find((o: any) => o.id === orderId);
+    if (previousAvailable) {
+      queryClient.setQueryData(
+        ["driver-available-orders"],
+        previousAvailable.filter((o: any) => o.id !== orderId),
+      );
+    }
+    // Pre-populate myDelivery cache so the driver sees the active card immediately
+    if (acceptedOrder && user) {
+      queryClient.setQueryData(["driver-my-delivery", user.id], { ...acceptedOrder, driver_id: user.id });
+    }
+    setPinInput("");
+    setCollectionCodeInput("");
+
     const { error } = await supabase.rpc("driver_accept_order", { _order_id: orderId } as any);
     if (error) {
+      // Revert
+      if (previousAvailable) queryClient.setQueryData(["driver-available-orders"], previousAvailable);
+      if (user) queryClient.setQueryData(["driver-my-delivery", user.id], null);
       toast.error("Ops! Outro entregador já aceitou esta corrida.");
     } else {
       toast.success("Corrida aceita! Vá buscar o pedido na loja.");
-      setPinInput("");
-      setCollectionCodeInput("");
+      // Refresh in background to sync with server truth
       queryClient.invalidateQueries({ queryKey: ["driver-available-orders"] });
       queryClient.invalidateQueries({ queryKey: ["driver-my-delivery", user!.id] });
     }
