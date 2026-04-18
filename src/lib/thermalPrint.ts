@@ -21,6 +21,7 @@ interface PrintOrder {
   address_details: string;
   needs_change?: boolean;
   change_for?: number | null;
+  scheduled_for?: string | null;
   order_items?: PrintOrderItem[];
 }
 
@@ -89,11 +90,30 @@ export function printThermalReceipt(
     changeHtml = `<div class="tp-change"><b>TROCO PARA: ${formatBRL(Number(order.change_for))}</b></div>`;
   }
 
+  let scheduledHtml = "";
+  if (order.scheduled_for) {
+    const scheduledDate = new Date(order.scheduled_for);
+    const scheduledStr = scheduledDate.toLocaleString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    scheduledHtml = `
+<div class="tp-scheduled" style="border:3px solid #000;padding:8px;margin:8px 0;text-align:center;background:#000;color:#fff;font-size:16px;font-weight:bold;letter-spacing:1px">
+  ⏰ PEDIDO AGENDADO ⏰<br/>
+  <span style="font-size:18px">${scheduledStr}</span><br/>
+  <span style="font-size:12px">⚠ NÃO PREPARAR AGORA ⚠</span>
+</div>`;
+  }
+
   const container = getOrCreatePrintContainer();
   container.innerHTML = `
 <div class="tp-center"><div class="tp-title">ITASUPER</div><div class="tp-store">${storeName}</div><div class="tp-date">${date}</div></div>
 <div class="tp-divider"></div>
 <div class="tp-order-id">PEDIDO #${orderId}</div>
+${scheduledHtml}
 <div class="tp-divider"></div>
 ${itemsHtml}
 <div class="tp-divider"></div>
