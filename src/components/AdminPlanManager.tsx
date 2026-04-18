@@ -14,36 +14,51 @@ import {
 } from "lucide-react";
 
 type PlanType = "fixed" | "hybrid" | "commission_only";
+type DisplayPlan = PlanType | "supporter";
 
-const planLabels: Record<PlanType, string> = {
+const SUPPORTER_FEE = 130;
+const SUPPORTER_LIMIT = 10;
+
+const planLabels: Record<DisplayPlan, string> = {
+  supporter: "Apoiador (Vitalício)",
   fixed: "Plano Fixo",
   hybrid: "Assinatura + Taxa",
   commission_only: "Comissão",
 };
 
-const planColors: Record<PlanType, string> = {
+const planColors: Record<DisplayPlan, string> = {
+  supporter: "bg-pink-500/10 text-pink-700 dark:text-pink-400 border-pink-500/30",
   fixed: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30",
   hybrid: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/30",
   commission_only: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30",
 };
 
-const planDescriptions: Record<PlanType, string> = {
+const planDescriptions: Record<DisplayPlan, string> = {
+  supporter: "R$ 130/mês vitalício • Apenas 10 vagas • Todas as funcionalidades",
   fixed: "Mensalidade fixa, sem comissão, funcionalidades básicas",
   hybrid: "Mensalidade + taxa por pedido, todas funcionalidades",
   commission_only: "Apenas comissão por pedido, todas funcionalidades",
 };
 
-const planDefaults: Record<PlanType, { monthly_fee: number; commission_rate: number }> = {
+const planDefaults: Record<DisplayPlan, { monthly_fee: number; commission_rate: number }> = {
+  supporter: { monthly_fee: SUPPORTER_FEE, commission_rate: 0 },
   fixed: { monthly_fee: 180, commission_rate: 0 },
   hybrid: { monthly_fee: 100, commission_rate: 2.5 },
   commission_only: { monthly_fee: 0, commission_rate: 5 },
 };
 
-const featuresByPlan: Record<PlanType, string[]> = {
+const featuresByPlan: Record<DisplayPlan, string[]> = {
+  supporter: ["Preço vitalício R$130", "Sem comissão", "Tudo incluso", "PIX, Fidelidade, Banners", "Apenas 10 vagas"],
   fixed: ["Cardápio digital", "Pedidos online", "Dinheiro/Cartão", "Até 3 cupons"],
   hybrid: ["Tudo do Fixo +", "PIX Online", "Entrega plataforma*", "Fidelidade", "Banners", "Relatórios completos", "Cupons ilimitados"],
   commission_only: ["Tudo do Híbrido", "Sem mensalidade"],
 };
+
+function resolveDisplayPlan(plan: { plan_type: string; monthly_fee: number } | null | undefined): DisplayPlan | null {
+  if (!plan) return null;
+  if (plan.plan_type === "fixed" && Number(plan.monthly_fee) === SUPPORTER_FEE) return "supporter";
+  return plan.plan_type as PlanType;
+}
 
 export default function AdminPlanManager() {
   const queryClient = useQueryClient();
