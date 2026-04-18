@@ -150,7 +150,9 @@ const CapacitorPermissionsOnboarding = () => {
             </div>
             <h1 className="text-2xl font-bold text-foreground mb-3">Tudo pronto!</h1>
             <p className="text-base text-muted-foreground leading-relaxed max-w-sm">
-              Você já pode começar a fazer seus pedidos.
+              {isPartnerCapacitorApp() 
+                ? "Você já pode começar a gerenciar sua loja e receber pedidos."
+                : "Você já pode começar a fazer seus pedidos."}
             </p>
           </>
         )}
