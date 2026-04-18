@@ -92,7 +92,7 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
       const [planResult, storeResult, configResult] = await Promise.all([
         supabase
           .from("store_plans")
-          .select("plan_type, monthly_fee, commission_rate, trial_ends_at, next_billing_date, last_billed_at, started_at")
+          .select("plan_type, monthly_fee, commission_rate, trial_ends_at, next_billing_date, last_billed_at, started_at, pix_operational_fee_override, platform_delivery_split_override")
           .eq("store_id", storeId!)
           .eq("is_active", true)
           .maybeSingle(),
@@ -145,8 +145,12 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
     startedAt: (data?.plan as any)?.started_at ?? null,
     isFixedPlan,
     isItatingaFixed: isFixedPlan, // backward compat
-    pixOperationalFee: isFixedPlan ? (data?.feeConfig?.pix_operational_fee ?? DEFAULT_DELIVERY_FEE_CONFIG.pix_operational_fee) : 0,
-    platformDeliverySplit: isFixedPlan && data?.deliveryMode === "own" ? (data?.feeConfig?.platform_split ?? DEFAULT_DELIVERY_FEE_CONFIG.platform_split) : 0,
+    pixOperationalFee: isFixedPlan
+      ? ((data?.plan as any)?.pix_operational_fee_override ?? data?.feeConfig?.pix_operational_fee ?? DEFAULT_DELIVERY_FEE_CONFIG.pix_operational_fee)
+      : 0,
+    platformDeliverySplit: isFixedPlan && data?.deliveryMode === "own"
+      ? ((data?.plan as any)?.platform_delivery_split_override ?? data?.feeConfig?.platform_split ?? DEFAULT_DELIVERY_FEE_CONFIG.platform_split)
+      : 0,
     driverDeliverySplit: isFixedPlan ? (data?.feeConfig?.driver_split ?? DEFAULT_DELIVERY_FEE_CONFIG.driver_split) : 0,
     isLoading,
   };

@@ -2142,7 +2142,9 @@ export type Database = {
           last_billed_at: string | null
           monthly_fee: number
           next_billing_date: string | null
+          pix_operational_fee_override: number | null
           plan_type: Database["public"]["Enums"]["store_plan_type"]
+          platform_delivery_split_override: number | null
           started_at: string
           store_id: string
           trial_ends_at: string | null
@@ -2157,7 +2159,9 @@ export type Database = {
           last_billed_at?: string | null
           monthly_fee?: number
           next_billing_date?: string | null
+          pix_operational_fee_override?: number | null
           plan_type?: Database["public"]["Enums"]["store_plan_type"]
+          platform_delivery_split_override?: number | null
           started_at?: string
           store_id: string
           trial_ends_at?: string | null
@@ -2172,7 +2176,9 @@ export type Database = {
           last_billed_at?: string | null
           monthly_fee?: number
           next_billing_date?: string | null
+          pix_operational_fee_override?: number | null
           plan_type?: Database["public"]["Enums"]["store_plan_type"]
+          platform_delivery_split_override?: number | null
           started_at?: string
           store_id?: string
           trial_ends_at?: string | null

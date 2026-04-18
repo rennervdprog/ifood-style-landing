@@ -423,6 +423,8 @@ export default function AdminPlanManager() {
                       storeId={store.id}
                       currentFee={plan.monthly_fee}
                       currentRate={plan.commission_rate}
+                      currentPixOverride={(plan as any).pix_operational_fee_override}
+                      currentDeliveryOverride={(plan as any).platform_delivery_split_override}
                       planType={(plan.plan_type as PlanType)}
                       onSave={() => {
                         queryClient.invalidateQueries({ queryKey: ["admin-store-plans"] });
@@ -440,20 +442,42 @@ export default function AdminPlanManager() {
   );
 }
 
-function CustomPlanEditor({ storeId, currentFee, currentRate, planType, onSave }: {
-  storeId: string; currentFee: number; currentRate: number; planType: PlanType; onSave: () => void;
+function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride, currentDeliveryOverride, planType, onSave }: {
+  storeId: string;
+  currentFee: number;
+  currentRate: number;
+  currentPixOverride: number | null | undefined;
+  currentDeliveryOverride: number | null | undefined;
+  planType: PlanType;
+  onSave: () => void;
 }) {
   const [fee, setFee] = useState(currentFee);
   const [rate, setRate] = useState(currentRate);
+  const [pixOverrideEnabled, setPixOverrideEnabled] = useState(currentPixOverride !== null && currentPixOverride !== undefined);
+  const [pixOverride, setPixOverride] = useState(currentPixOverride ?? 1);
+  const [deliveryOverrideEnabled, setDeliveryOverrideEnabled] = useState(currentDeliveryOverride !== null && currentDeliveryOverride !== undefined);
+  const [deliveryOverride, setDeliveryOverride] = useState(currentDeliveryOverride ?? 2);
   const [saving, setSaving] = useState(false);
-  const changed = fee !== currentFee || rate !== currentRate;
+
+  const finalPixOverride = pixOverrideEnabled ? pixOverride : null;
+  const finalDeliveryOverride = deliveryOverrideEnabled ? deliveryOverride : null;
+  const changed =
+    fee !== currentFee ||
+    rate !== currentRate ||
+    finalPixOverride !== (currentPixOverride ?? null) ||
+    finalDeliveryOverride !== (currentDeliveryOverride ?? null);
 
   const handleSave = async () => {
     setSaving(true);
     try {
       const { error } = await supabase
         .from("store_plans")
-        .update({ monthly_fee: fee, commission_rate: rate } as any)
+        .update({
+          monthly_fee: fee,
+          commission_rate: rate,
+          pix_operational_fee_override: finalPixOverride,
+          platform_delivery_split_override: finalDeliveryOverride,
+        } as any)
         .eq("store_id", storeId)
         .eq("is_active", true);
       if (error) throw error;
@@ -473,8 +497,9 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, planType, onSave }
   };
 
   return (
-    <div className="bg-muted/30 rounded-xl p-3 space-y-2">
-      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Valores personalizados</p>
+    <div className="bg-muted/30 rounded-xl p-3 space-y-3">
+      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">⚙️ Valores Personalizados (VIP)</p>
+
       <div className="grid grid-cols-2 gap-2">
         <div>
           <label className="text-[10px] text-muted-foreground font-semibold">Mensalidade (R$)</label>
@@ -500,13 +525,68 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, planType, onSave }
           />
         </div>
       </div>
+
+      {/* PIX Override */}
+      <div className="border-t border-border pt-3 space-y-2">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={pixOverrideEnabled}
+            onChange={e => setPixOverrideEnabled(e.target.checked)}
+            className="rounded"
+          />
+          <span className="text-xs font-bold text-foreground">Customizar taxa PIX desta loja</span>
+        </label>
+        {pixOverrideEnabled && (
+          <div>
+            <label className="text-[10px] text-muted-foreground font-semibold">Taxa PIX por transação (R$)</label>
+            <input
+              type="number"
+              min="0"
+              step="0.10"
+              value={pixOverride}
+              onChange={e => setPixOverride(Number(e.target.value))}
+              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground mt-1"
+            />
+            <p className="text-[10px] text-muted-foreground mt-1">Use 0 para isentar a loja da taxa PIX.</p>
+          </div>
+        )}
+      </div>
+
+      {/* Delivery Split Override */}
+      <div className="border-t border-border pt-3 space-y-2">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={deliveryOverrideEnabled}
+            onChange={e => setDeliveryOverrideEnabled(e.target.checked)}
+            className="rounded"
+          />
+          <span className="text-xs font-bold text-foreground">Customizar split de entrega da plataforma</span>
+        </label>
+        {deliveryOverrideEnabled && (
+          <div>
+            <label className="text-[10px] text-muted-foreground font-semibold">Plataforma por corrida (R$)</label>
+            <input
+              type="number"
+              min="0"
+              step="0.50"
+              value={deliveryOverride}
+              onChange={e => setDeliveryOverride(Number(e.target.value))}
+              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground mt-1"
+            />
+            <p className="text-[10px] text-muted-foreground mt-1">Use 0 para remover a taxa de R$2 da plataforma por entrega.</p>
+          </div>
+        )}
+      </div>
+
       {changed && (
         <button
           onClick={handleSave}
           disabled={saving}
           className="w-full py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold disabled:opacity-50"
         >
-          {saving ? "Salvando..." : "Salvar Valores"}
+          {saving ? "Salvando..." : "Salvar Valores Personalizados"}
         </button>
       )}
     </div>
