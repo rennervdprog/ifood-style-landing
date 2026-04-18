@@ -132,7 +132,7 @@ Deno.serve(async (req) => {
 
           const { data: storePlan } = await supabase
             .from("store_plans")
-            .select("plan_type, commission_rate")
+            .select("plan_type, commission_rate, pix_operational_fee_override, platform_delivery_split_override")
             .eq("store_id", order.store_id)
             .eq("is_active", true)
             .limit(1)
@@ -164,6 +164,18 @@ Deno.serve(async (req) => {
               }
             } catch (e) {
               console.warn("Could not load delivery_fee_config, using defaults", e);
+            }
+
+            // VIP overrides per store (null = use global; numeric = use override, including 0)
+            const pixOverride = (storePlan as any)?.pix_operational_fee_override;
+            const splitOverride = (storePlan as any)?.platform_delivery_split_override;
+            if (pixOverride !== null && pixOverride !== undefined) {
+              pixOpFee = Number(pixOverride);
+              console.log(`[Asaas VIP] Store ${order.store_id} pix_operational_fee override: R$${pixOpFee}`);
+            }
+            if (splitOverride !== null && splitOverride !== undefined) {
+              platformSplit = Number(splitOverride);
+              console.log(`[Asaas VIP] Store ${order.store_id} platform_split override: R$${platformSplit}`);
             }
 
             let storeShare = 0;
