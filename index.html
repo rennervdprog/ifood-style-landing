@@ -97,13 +97,14 @@
   <meta name="twitter:description" content="Peça comida, bebidas e muito mais dos melhores restaurantes de Todo O Brasil, Entrega rápida!! Cadastre sua loja grátis.">
 </head>
 
-  <body>
+  <body style="margin:0;background:#FF6B00">
     <div id="root">
       <!--
         Static LCP shell — paints meaningful hero content instantly without JS.
-        Matches the real hero layout so Lighthouse picks it as LCP and there's no CLS.
+        Background usa a cor da marca para casar com o splash nativo do
+        Capacitor e nunca exibir tela preta/branca durante o cold start.
       -->
-      <div id="lcp-shell" style="min-height:100vh;background:#fff;color:#0f172a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;display:flex;flex-direction:column">
+      <div id="lcp-shell" style="min-height:100vh;background:#FF6B00;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1rem;text-align:center;gap:1rem">
         <header style="height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 1rem;border-bottom:1px solid #f1f5f9">
           <div style="display:flex;align-items:center;gap:.5rem;font-weight:800;font-size:1.125rem;color:#FF6B00">ItaSuper</div>
           <div style="width:80px;height:32px;background:#FF6B00;border-radius:8px"></div>
