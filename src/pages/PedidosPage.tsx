@@ -34,14 +34,14 @@ import SimulationBanner from "@/components/SimulationBanner";
 
 const statusConfig: Record<string, { label: string; icon: React.ElementType; color: string; bg: string; border: string }> = {
   aguardando_pagamento: { label: "Aguardando Pagamento", icon: Clock, color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-200" },
-  pendente: { label: "Pedido Recebido", icon: Clock, color: "text-yellow-600", bg: "bg-yellow-50", border: "border-yellow-200" },
-  preparando: { label: "Preparando", icon: ChefHat, color: "text-orange-600", bg: "bg-orange-50", border: "border-orange-200" },
-  pronto_para_entrega: { label: "Pronto p/ Entrega", icon: CheckCircle2, color: "text-purple-600", bg: "bg-purple-50", border: "border-purple-200" },
-  saiu_entrega: { label: "Saiu p/ Entrega", icon: Truck, color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-200" },
-  em_transito: { label: "Em Trânsito", icon: Truck, color: "text-cyan-600", bg: "bg-cyan-50", border: "border-cyan-200" },
-  entregue: { label: "Entregue", icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-200" },
-  finalizado: { label: "Finalizado", icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-200" },
-  cancelado: { label: "Cancelado", icon: XCircle, color: "text-red-500", bg: "bg-red-50", border: "border-red-200" },
+  pendente: { label: "Pedido Recebido", icon: Clock, color: "text-amber-700 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950/30", border: "border-amber-200 dark:border-amber-900/50" },
+  preparando: { label: "Preparando", icon: ChefHat, color: "text-primary", bg: "bg-primary/5", border: "border-primary/20" },
+  pronto_para_entrega: { label: "Pronto p/ Entrega", icon: CheckCircle2, color: "text-primary", bg: "bg-primary/10", border: "border-primary/30" },
+  saiu_entrega: { label: "Saiu p/ Entrega", icon: Truck, color: "text-primary", bg: "bg-primary/5", border: "border-primary/20" },
+  em_transito: { label: "Em Trânsito", icon: Truck, color: "text-primary", bg: "bg-primary/5", border: "border-primary/20" },
+  entregue: { label: "Entregue", icon: CheckCircle2, color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/30", border: "border-emerald-200 dark:border-emerald-900/50" },
+  finalizado: { label: "Finalizado", icon: CheckCircle2, color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/30", border: "border-emerald-200 dark:border-emerald-900/50" },
+  cancelado: { label: "Cancelado", icon: XCircle, color: "text-destructive", bg: "bg-destructive/5", border: "border-destructive/20" },
 };
 
 /* Status timeline steps for visual progress */
@@ -826,7 +826,7 @@ const PedidosPage = () => {
               className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50 bg-muted/50 px-3 py-1.5 rounded-full"
             >
               <Trash2 className="h-3.5 w-3.5" />
-              Limpar
+              Limpar histórico
             </button>
           )}
         </div>
@@ -995,11 +995,11 @@ const PedidosPage = () => {
 
                         {/* Pickup badge */}
                         {order.neighborhood === "RETIRADA" && order.status === "pronto_para_entrega" && (
-                          <div className="bg-violet-50 border border-violet-200 rounded-xl p-3 flex items-center gap-2">
+                          <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 flex items-center gap-2">
                             <span className="text-lg">🏪</span>
                             <div>
-                              <span className="text-xs font-bold text-violet-600">Pronto para retirada!</span>
-                              <p className="text-[10px] text-violet-500 mt-0.5">Dirija-se à loja para retirar seu pedido.</p>
+                              <span className="text-xs font-bold text-primary">Pronto para retirada!</span>
+                              <p className="text-[10px] text-muted-foreground mt-0.5">Dirija-se à loja para retirar seu pedido.</p>
                             </div>
                           </div>
                         )}
@@ -1065,9 +1065,9 @@ const PedidosPage = () => {
                           </div>
                         )}
 
-                        {/* Items */}
-                        <div className="bg-muted/30 rounded-xl p-3">
-                          <div className="text-xs text-muted-foreground space-y-1">
+                        {/* Items + financial breakdown */}
+                        <div className="bg-muted/40 rounded-xl p-3 space-y-2">
+                          <div className="text-xs text-foreground/80 space-y-1">
                             {order.order_items?.map((item: any) => (
                               <div key={item.id} className="flex justify-between">
                                 <span>{item.quantity}x {getOrderItemDisplayName(item)}</span>
@@ -1075,27 +1075,40 @@ const PedidosPage = () => {
                               </div>
                             ))}
                           </div>
+                          <div className="border-t border-border/60 pt-2 space-y-1 text-[11px]">
+                            <div className="flex justify-between text-muted-foreground">
+                              <span>Subtotal</span>
+                              <span>{formatBRL(Number(order.subtotal))}</span>
+                            </div>
+                            {Number(order.delivery_fee) > 0 && (
+                              <div className="flex justify-between text-muted-foreground">
+                                <span>Taxa de entrega</span>
+                                <span>{formatBRL(Number(order.delivery_fee))}</span>
+                              </div>
+                            )}
+                            <div className="flex justify-between font-bold text-foreground pt-1">
+                              <span>Total</span>
+                              <span className="text-primary">{formatBRL(Number(order.total_price))}</span>
+                            </div>
+                          </div>
                         </div>
 
-
-                        {/* Cancel button for active orders (not aguardando_pagamento which has its own cancel) */}
-                        {["pendente", "preparando", "pronto_para_entrega"].includes(order.status) && (
-                          <button
-                            onClick={() => cancelOrder(order.id)}
-                            className="w-full flex items-center justify-center gap-2 text-xs font-semibold text-destructive bg-destructive/5 border border-destructive/20 py-2.5 rounded-xl hover:bg-destructive/10 hover:border-destructive/30 active:scale-[0.99] transition-all"
-                          >
-                            <XCircle className="h-3.5 w-3.5" />
-                            Cancelar Pedido
-                          </button>
-                        )}
-
-                        {/* Footer: date */}
+                        {/* Footer: date + cancel as subtle link */}
                         <div className="flex items-center justify-between pt-1">
                           <span className="text-[10px] text-muted-foreground">
                             {new Date(order.created_at).toLocaleDateString("pt-BR", {
                               day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
                             })}
                           </span>
+                          {["pendente", "preparando", "pronto_para_entrega"].includes(order.status) && (
+                            <button
+                              onClick={() => cancelOrder(order.id)}
+                              className="text-[10px] font-semibold text-muted-foreground hover:text-destructive transition-colors flex items-center gap-1"
+                            >
+                              <X className="h-3 w-3" />
+                              Cancelar pedido
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
