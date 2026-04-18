@@ -739,6 +739,7 @@ const StorePage = () => {
             {sections.map(s => (
               <button
                 key={s.id}
+                data-chip-id={s.id}
                 onClick={() => scrollToSection(s.id)}
                 className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all ${
                   activeSection === s.id
