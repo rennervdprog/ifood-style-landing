@@ -307,7 +307,11 @@ const AdminDashboard = () => {
   const [realtimeDriversConnected, setRealtimeDriversConnected] = useState(false);
   const [activeTab, setActiveTab] = useState<OrderTabKey>("pendente");
   const [dashboardTab, setDashboardTab] = useState<DashboardTab>("dashboard");
-  const [autoPrint, setAutoPrint] = useState(() => localStorage.getItem("autoPrint") === "true");
+  const [autoPrint, setAutoPrint] = useState(() => {
+    const stored = localStorage.getItem("autoPrint");
+    // Default ON: only false if the user explicitly disabled it
+    return stored === null ? true : stored === "true";
+  });
   const [soundEnabled, setSoundEnabled] = useState(false);
   
   const [soundMuted, setSoundMuted] = useState(false);
