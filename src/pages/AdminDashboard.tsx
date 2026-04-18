@@ -841,6 +841,23 @@ const AdminDashboard = () => {
   };
 
   const updateOrderStatus = async (orderId: string, newStatus: OrderStatus) => {
+    // Optimistic UI: update cache immediately so the order moves between tabs instantly
+    const previousOrders = queryClient.getQueryData<any[]>(["store-orders", store?.id]);
+    const order = orders?.find((o: any) => o.id === orderId);
+    if (previousOrders) {
+      queryClient.setQueryData(
+        ["store-orders", store?.id],
+        previousOrders.map((o: any) => (o.id === orderId ? { ...o, status: newStatus } : o)),
+      );
+    }
+    // Show toast immediately
+    toast.success("Pedido atualizado!");
+
+    // Auto-print synchronously (user gesture preserves printer prompt on web)
+    if (newStatus === "preparando" && autoPrint && order) {
+      try { handlePrint(order); } catch (e) { console.warn("print error", e); }
+    }
+
     try {
       const { error, data } = await supabase
         .from("orders")
@@ -848,52 +865,52 @@ const AdminDashboard = () => {
         .eq("id", orderId)
         .select();
       if (error) {
+        // Revert optimistic update
+        if (previousOrders) queryClient.setQueryData(["store-orders", store?.id], previousOrders);
         toast.error(`Erro ao atualizar pedido: ${error.message}`);
         return;
       }
       if (!data || data.length === 0) {
+        if (previousOrders) queryClient.setQueryData(["store-orders", store?.id], previousOrders);
         toast.error("Pedido não atualizado — verifique permissões");
         return;
       }
-      toast.success("Pedido atualizado!");
-      queryClient.invalidateQueries({ queryKey: ["store-orders", store?.id] });
-      const order = orders?.find((o: any) => o.id === orderId);
-      if (newStatus === "preparando" && autoPrint && order) handlePrint(order);
 
-      // Send dual notifications (Push + WhatsApp) for all status changes
+      // Background: send notifications without blocking UI
       if (order) {
         const clientPhone = getClientWhatsApp(order.client_id);
         const clientName = getClientName(order.client_id);
         const items = order.order_items?.map((i: any) => `${i.quantity}x ${getOrderItemDisplayName(i)}`).join("\n") || "";
-        
         const storeSettings = (store?.settings || {}) as Record<string, any>;
-        notifyOrderStatusChange(newStatus, {
-          orderId: order.id,
-          storeName: store?.name || "Loja",
-          storeId: store?.id || "",
-          clientId: order.client_id,
-          clientPhone,
-          clientName,
-          totalPrice: Number(order.total_price),
-          addressDetails: order.address_details,
-          items,
-          paymentMethod: order.payment_method,
-        }, { zapiEnabled: !!storeSettings.zapi_enabled });
+        // Fire-and-forget — never await notification dispatch
+        try {
+          notifyOrderStatusChange(newStatus, {
+            orderId: order.id,
+            storeName: store?.name || "Loja",
+            storeId: store?.id || "",
+            clientId: order.client_id,
+            clientPhone,
+            clientName,
+            totalPrice: Number(order.total_price),
+            addressDetails: order.address_details,
+            items,
+            paymentMethod: order.payment_method,
+          }, { zapiEnabled: !!storeSettings.zapi_enabled });
+        } catch (e) { console.warn("notify error", e); }
       }
 
-      // Notify drivers when order is ready for delivery
+      // Notify drivers in background
       if (newStatus === "pronto_para_entrega") {
         if (!isOwnDelivery && onlineDrivers && onlineDrivers.length > 0) {
-          // Platform drivers
           const driverUserIds = onlineDrivers.map((d: any) => d.user_id);
           pushNotifyDeliveryAvailable(driverUserIds, orderId).catch(console.error);
         } else if (isOwnDelivery && linkedStoreDrivers && linkedStoreDrivers.length > 0) {
-          // Store's own linked drivers (motoboy próprio)
           const storeDriverUserIds = linkedStoreDrivers.map((d: any) => d.user_id);
           pushNotifyDeliveryAvailable(storeDriverUserIds, orderId).catch(console.error);
         }
       }
     } catch (e: any) {
+      if (previousOrders) queryClient.setQueryData(["store-orders", store?.id], previousOrders);
       toast.error(`Erro inesperado: ${e?.message}`);
     }
   };
