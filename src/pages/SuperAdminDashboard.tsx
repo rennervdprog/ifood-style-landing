@@ -739,6 +739,7 @@ const SuperAdminDashboard = () => {
                 {activeTab === "moderadores" && "Moderadores e sistema de afiliados"}
                 {activeTab === "socios" && "Divisão de lucros entre sócios"}
                 {activeTab === "sync" && "Sincronização com banco externo"}
+                {activeTab === "test_finance" && "Lojas de teste — finanças fictícias isoladas"}
                 {activeTab === "planos" && "Gerenciar planos e assinaturas das lojas"}
               </p>
             </div>
@@ -798,6 +799,7 @@ const SuperAdminDashboard = () => {
             {activeTab === "juridico" && <JuridicoTab />}
             {activeTab === "moderadores" && <ModeratorManager />}
             {activeTab === "socios" && <PartnerSplitPanel />}
+            {activeTab === "test_finance" && <TestStoreFinancePanel />}
             {activeTab === "saques" && (
               <SaquesTab
                 withdrawalRequests={withdrawalRequests}
