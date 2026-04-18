@@ -224,7 +224,10 @@ Deno.serve(async (req) => {
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     // ── ROLE CHECK: Only admin, store owners, or drivers can send push ──
-    const { data: isAdmin } = await supabaseAdmin.rpc("is_platform_admin", { _user_id: callerUserId });
+    // Service-role internal calls bypass the role check.
+    const { data: isAdmin } = isServiceRole
+      ? { data: true }
+      : await supabaseAdmin.rpc("is_platform_admin", { _user_id: callerUserId });
 
     if (!isAdmin) {
       // Check if caller is a store owner or driver
