@@ -746,6 +746,7 @@ const SuperAdminDashboard = () => {
                 {activeTab === "sync" && "Sincronização com banco externo"}
                 {activeTab === "test_finance" && "Lojas de teste — finanças fictícias isoladas"}
                 {activeTab === "links" && "Gerenciar botões da página pública /links"}
+                {activeTab === "broadcast" && "Enviar push notifications em massa"}
                 {activeTab === "planos" && "Gerenciar planos e assinaturas das lojas"}
               </p>
             </div>
@@ -807,6 +808,7 @@ const SuperAdminDashboard = () => {
             {activeTab === "socios" && <PartnerSplitPanel />}
             {activeTab === "test_finance" && <TestStoreFinancePanel />}
             {activeTab === "links" && <AppLinksManager />}
+            {activeTab === "broadcast" && <AdminBroadcastPush />}
             {activeTab === "saques" && (
               <SaquesTab
                 withdrawalRequests={withdrawalRequests}
