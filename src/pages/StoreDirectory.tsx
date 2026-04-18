@@ -220,9 +220,11 @@ const Navbar = ({ onNavigate, isLoggedIn }: { onNavigate: (path: string) => void
     <nav className={`sticky top-0 z-50 border-b border-border backdrop-blur-md transition-all duration-300 bg-background/95 ${scrolled ? "shadow-md" : ""}`}>
       <div className="max-w-6xl mx-auto flex items-center justify-between px-4 h-16">
         <button onClick={() => scrollTo("#hero")} className="flex items-center gap-2" aria-label="Ir para o início">
-          <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center">
-            <Zap className="h-5 w-5 text-primary-foreground" />
-          </div>
+          <img
+            src="/logo-itasuper.png"
+            alt="ItaSuper"
+            className="h-9 w-9 rounded-xl object-contain"
+          />
           <span className="text-xl font-extrabold tracking-tight text-foreground">
             Ita<span className="text-primary">Super</span>
           </span>
