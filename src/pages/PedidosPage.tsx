@@ -160,10 +160,8 @@ const PedidosPage = () => {
       setIsNewOrder(true);
       setSearchParams({}, { replace: true });
       
-      // Prompt notifications if not granted
-      if (Capacitor.isNativePlatform()) {
-        setTimeout(() => setShowNewOrderNotifPrompt(true), 1500);
-      } else if ("Notification" in window && Notification.permission === "default") {
+      // Prompt notifications only on web (Capacitor handles permissions natively via onboarding)
+      if (!Capacitor.isNativePlatform() && "Notification" in window && Notification.permission === "default") {
         setTimeout(() => setShowNewOrderNotifPrompt(true), 1500);
       }
     }
