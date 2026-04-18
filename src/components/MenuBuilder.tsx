@@ -6,7 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   Plus, Trash2, Edit2, ChevronDown, ChevronUp, GripVertical,
-  Package, Save, X, Link2, Upload, Loader2, Pause, Play, ArrowRightLeft, Layers
+  Package, Save, X, Link2, Upload, Loader2, Pause, Play, ArrowRightLeft, Layers,
+  ArrowUp, ArrowDown
 } from "lucide-react";
 
 import CategoryProductFields from "@/components/CategoryProductFields";
@@ -359,6 +360,26 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
     await Promise.all(updates);
   };
 
+  // Mobile-friendly reorder via arrow buttons
+  const moveSectionBy = async (sectionId: string, delta: -1 | 1) => {
+    if (!sections) return;
+    const items = [...sections];
+    const fromIdx = items.findIndex((s: any) => s.id === sectionId);
+    const toIdx = fromIdx + delta;
+    if (fromIdx === -1 || toIdx < 0 || toIdx >= items.length) return;
+    const [moved] = items.splice(fromIdx, 1);
+    items.splice(toIdx, 0, moved);
+    queryClient.setQueryData(["menu-sections", storeId], items.map((s: any, i: number) => ({ ...s, sort_order: i })));
+    const updates = items.map((s: any, i: number) =>
+      supabase.from("menu_sections").update({ sort_order: i } as any).eq("id", s.id)
+    );
+    const results = await Promise.all(updates);
+    if (results.some(r => r.error)) {
+      toast.error("Erro ao reordenar");
+      invalidateAll();
+    }
+  };
+
   const totalProducts = products?.length || 0;
 
   return (
@@ -450,6 +471,22 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
               )}
             </div>
             <div className="flex items-center gap-1">
+              <button
+                onClick={(e) => { e.stopPropagation(); moveSectionBy(section.id, -1); }}
+                disabled={sections?.[0]?.id === section.id}
+                className="text-muted-foreground hover:text-foreground p-1.5 rounded-lg hover:bg-muted transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
+                title="Mover para cima"
+              >
+                <ArrowUp className="h-3.5 w-3.5" />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); moveSectionBy(section.id, 1); }}
+                disabled={sections?.[sections.length - 1]?.id === section.id}
+                className="text-muted-foreground hover:text-foreground p-1.5 rounded-lg hover:bg-muted transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
+                title="Mover para baixo"
+              >
+                <ArrowDown className="h-3.5 w-3.5" />
+              </button>
               <button
                 onClick={(e) => { e.stopPropagation(); setEditingSection(section.id); }}
                 className="text-muted-foreground hover:text-foreground p-1.5 rounded-lg hover:bg-muted transition-colors"
