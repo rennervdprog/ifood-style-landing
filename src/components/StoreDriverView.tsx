@@ -16,6 +16,7 @@ import {
 
 const DECLINED_TTL_MS = 1000 * 60 * 60 * 6; // 6h
 const declinedKey = (uid: string) => `store_driver_declined_${uid}`;
+const createFallbackDriverStatus = (isOnline = false) => ({ user_id: "", is_online: isOnline });
 const loadDeclined = (uid: string): Record<string, number> => {
   try {
     const raw = localStorage.getItem(declinedKey(uid));
@@ -255,10 +256,10 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     queryFn: async () => {
       const { data } = await supabase
         .from("drivers")
-        .select("is_online")
+        .select("user_id, is_online")
         .eq("user_id", user!.id)
         .maybeSingle();
-      return (data as any) || { is_online: false };
+      return (data as any) || createFallbackDriverStatus();
     },
     enabled: !!user,
   });
@@ -522,16 +523,18 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       return;
     }
     setTogglingOnline(true);
+    const previousStatus = (driverStatus as any) || createFallbackDriverStatus(isOnline);
     const { error } = await supabase
       .from("drivers")
       .update({ is_online: next } as any)
       .eq("user_id", user.id);
     setTogglingOnline(false);
     if (error) {
+      queryClient.setQueryData(["store-driver-online-status", user.id], previousStatus);
       toast.error("Não foi possível atualizar status.");
       return;
     }
-    queryClient.setQueryData(["store-driver-online-status", user.id], { is_online: next });
+    queryClient.setQueryData(["store-driver-online-status", user.id], { ...previousStatus, user_id: user.id, is_online: next });
     if (!next) {
       // Clear available orders cache so list disappears immediately
       queryClient.setQueryData(["store-driver-available", linkedStoreIds], []);
