@@ -221,8 +221,12 @@ const Navbar = ({ onNavigate, isLoggedIn }: { onNavigate: (path: string) => void
       <div className="max-w-6xl mx-auto flex items-center justify-between px-4 h-16">
         <button onClick={() => scrollTo("#hero")} className="flex items-center gap-2" aria-label="Ir para o início">
           <img
-            src="/logo-itasuper.png"
+            src="/logo-itasuper-128.webp"
             alt="ItaSuper"
+            width={36}
+            height={36}
+            decoding="async"
+            fetchPriority="high"
             className="h-9 w-9 rounded-xl object-contain"
           />
           <span className="text-xl font-extrabold tracking-tight text-foreground">
