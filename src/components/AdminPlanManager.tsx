@@ -150,7 +150,8 @@ export default function AdminPlanManager() {
   );
 
   // Plan distribution stats
-  const planStats = {
+  const planStats: Record<DisplayPlan | "no_plan", number> = {
+    supporter: 0,
     fixed: 0,
     hybrid: 0,
     commission_only: 0,
@@ -158,10 +159,13 @@ export default function AdminPlanManager() {
   };
   (stores || []).forEach(s => {
     const plan = getStorePlan(s.id);
-    if (plan) planStats[plan.plan_type as PlanType]++;
+    const display = resolveDisplayPlan(plan);
+    if (display) planStats[display]++;
     else planStats.no_plan++;
   });
 
+  const supporterUsed = planStats.supporter;
+  const supporterAvailable = Math.max(0, SUPPORTER_LIMIT - supporterUsed);
   const totalRevenue = (storePlans || []).reduce((acc, p) => acc + (p.monthly_fee || 0), 0);
 
   if (isLoading) {
