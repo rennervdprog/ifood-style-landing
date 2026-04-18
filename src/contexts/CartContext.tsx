@@ -58,7 +58,19 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   useEffect(() => {
-    localStorage.setItem("cart_items", JSON.stringify(items));
+    // Defer JSON.stringify off the critical path to avoid jank on quick qty taps
+    const idle = (cb: () => void) =>
+      typeof (window as any).requestIdleCallback === "function"
+        ? (window as any).requestIdleCallback(cb, { timeout: 500 })
+        : setTimeout(cb, 0);
+    const cancel = (id: any) =>
+      typeof (window as any).cancelIdleCallback === "function"
+        ? (window as any).cancelIdleCallback(id)
+        : clearTimeout(id);
+    const id = idle(() => {
+      try { localStorage.setItem("cart_items", JSON.stringify(items)); } catch {}
+    });
+    return () => cancel(id);
   }, [items]);
 
   useEffect(() => {
