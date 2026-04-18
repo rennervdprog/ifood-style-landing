@@ -8,6 +8,7 @@ import TestStoreCreator from "@/components/TestStoreCreator";
 import AdminPlanManager from "@/components/AdminPlanManager";
 import ModeratorManager from "@/components/ModeratorManager";
 import PartnerSplitPanel from "@/components/PartnerSplitPanel";
+import FixedPlanBillingHistory from "@/components/FixedPlanBillingHistory";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -1870,6 +1871,9 @@ const FinanceTab = ({
                                   </div>
                                 </div>
                               )}
+
+                              {/* Histórico das cobranças mensais */}
+                              <FixedPlanBillingHistory storeId={entry.storeId} storeName={entry.name} />
                             </div>
                           );
                         })()}
