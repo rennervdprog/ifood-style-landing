@@ -331,7 +331,7 @@ const StorePage = () => {
   }
 
   return (
-    <div ref={pageRef} className="min-h-screen bg-background pb-24 overflow-y-auto">
+    <div ref={pageRef} className="min-h-screen bg-background pb-24">
       {/* ===== HERO ===== */}
       <div className="relative h-56 md:h-64">
         {store?.image_url ? (
