@@ -162,16 +162,23 @@ export default function AppLinksManager() {
     }
     setSaving(true);
     try {
+      const d = parsed.data;
       const payload = {
-        ...parsed.data,
-        description: parsed.data.description || null,
+        label: d.label,
+        url: d.url,
+        icon: d.icon,
+        is_external: d.is_external,
+        is_highlight: d.is_highlight,
+        is_active: d.is_active,
+        sort_order: d.sort_order,
+        description: d.description ? d.description : null,
       };
       if (editingId) {
         const { error } = await supabase.from("app_links").update(payload).eq("id", editingId);
         if (error) throw error;
         toast.success("Link atualizado");
       } else {
-        const { error } = await supabase.from("app_links").insert([payload]);
+        const { error } = await supabase.from("app_links").insert(payload);
         if (error) throw error;
         toast.success("Link criado");
       }
