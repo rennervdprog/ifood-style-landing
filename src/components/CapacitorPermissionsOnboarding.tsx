@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import { Bell, MapPin, Check } from "lucide-react";
 import { isCapacitorNative, registerCapacitorPush, requestLocationPermission } from "@/lib/capacitorNative";
-import { isPartnerCapacitorApp } from "@/lib/capacitorAppMode";
 
-const STORAGE_KEY = "cap-permissions-onboarding-v2";
+const STORAGE_KEY = "cap-permissions-onboarding-v3";
 
 type Step = "notifications" | "location" | "done";
 
@@ -19,8 +18,6 @@ const CapacitorPermissionsOnboarding = () => {
 
   useEffect(() => {
     if (!isCapacitorNative()) return;
-    // Skip onboarding entirely on PARTNER app — no notifications/location prompt makes sense there
-    if (isPartnerCapacitorApp()) return;
     try {
       const seen = localStorage.getItem(STORAGE_KEY);
       if (seen) return;
