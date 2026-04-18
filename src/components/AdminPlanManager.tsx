@@ -423,7 +423,7 @@ export default function AdminPlanManager() {
                       storeId={store.id}
                       currentFee={plan.monthly_fee}
                       currentRate={plan.commission_rate}
-                      planType={currentPlan!}
+                      planType={(plan.plan_type as PlanType)}
                       onSave={() => {
                         queryClient.invalidateQueries({ queryKey: ["admin-store-plans"] });
                         queryClient.invalidateQueries({ queryKey: ["admin-all-stores"] });
