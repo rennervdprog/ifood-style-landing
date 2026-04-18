@@ -171,7 +171,7 @@ export default function AppLinksManager() {
         if (error) throw error;
         toast.success("Link atualizado");
       } else {
-        const { error } = await supabase.from("app_links").insert(payload);
+        const { error } = await supabase.from("app_links").insert([payload]);
         if (error) throw error;
         toast.success("Link criado");
       }
