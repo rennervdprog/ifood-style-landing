@@ -415,8 +415,7 @@ export async function initCapacitorNative() {
   setupKeyboard().catch(() => {});
   setupAppListeners().catch(() => {});
 
-  // Location permission: defer significantly so it doesn't slow boot.
-  setTimeout(() => {
-    requestLocationPermission().catch(() => {});
-  }, 3000);
+  // Location/notification permissions are now handled by the
+  // CapacitorPermissionsOnboarding component (first-launch flow), so we no
+  // longer auto-request here to avoid showing the OS dialog without context.
 }

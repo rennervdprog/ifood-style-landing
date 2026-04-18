@@ -10,6 +10,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import RoleGuard from "@/components/RoleGuard";
 import InstallPrompt from "@/components/InstallPrompt";
 import NotificationPrompt from "@/components/NotificationPrompt";
+import CapacitorPermissionsOnboarding from "@/components/CapacitorPermissionsOnboarding";
 import DebugOverlay from "@/components/DebugOverlay";
 import { initCapacitorNative, isCapacitorNative, consumePendingPushNavigation } from "@/lib/capacitorNative";
 import { initCapacitorLifecycle } from "@/lib/capacitorLifecycle";
@@ -136,6 +137,7 @@ const App = () => {
         <StoreProvider>
         <CartProvider>
           <Toaster />
+          <CapacitorPermissionsOnboarding />
           <InstallPrompt />
           <NotificationPrompt />
           <DebugOverlay />
