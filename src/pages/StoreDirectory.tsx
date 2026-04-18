@@ -303,6 +303,21 @@ const StoreDirectory = () => {
     document.title = "ItaSuper — Cardápio digital e delivery próprio para lojas em todo o Brasil";
   }, []);
 
+  // Registra visualização da landing (RPC ignora admin/moderador/contas internas)
+  useEffect(() => {
+    const KEY = "pv_store_directory_at";
+    const last = Number(sessionStorage.getItem(KEY) || 0);
+    if (Date.now() - last < 30 * 60 * 1000) return; // 1x a cada 30min/sessão
+    let visitorHash = localStorage.getItem("visitor_hash");
+    if (!visitorHash) {
+      visitorHash = crypto.randomUUID();
+      localStorage.setItem("visitor_hash", visitorHash);
+    }
+    supabase.rpc("record_page_view", { _page: "store_directory", _visitor_hash: visitorHash })
+      .then(() => sessionStorage.setItem(KEY, String(Date.now())))
+      .catch(() => {});
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
