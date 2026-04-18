@@ -203,17 +203,19 @@ const TestStoreFinancePanel = () => {
           <CardHeader>
             <CardTitle className="text-base">Últimos pedidos fictícios</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-1">
+          <CardContent className="space-y-2">
             {testOrders.slice(0, 20).map((o) => (
-              <div key={o.id} className="flex items-center justify-between text-xs p-2 hover:bg-muted/40 rounded">
-                <div className="flex items-center gap-2">
-                  <span className="font-mono">#{o.id.slice(0, 8)}</span>
-                  <Badge variant="outline" className="text-[10px]">{o.status}</Badge>
-                  <span className="text-muted-foreground">{o.payment_method}</span>
+              <div key={o.id} className="flex flex-col gap-1 text-xs p-2 hover:bg-muted/40 rounded border border-border/40">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="font-mono truncate">#{o.id.slice(0, 8)}</span>
+                    <Badge variant="outline" className="text-[10px] shrink-0">{o.status}</Badge>
+                  </div>
+                  <span className="font-bold shrink-0">{formatBRL(Number(o.total_price || 0))}</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-muted-foreground">{new Date(o.created_at).toLocaleDateString("pt-BR")}</span>
-                  <span className="font-bold">{formatBRL(Number(o.total_price || 0))}</span>
+                <div className="flex items-center justify-between gap-2 text-[10px] text-muted-foreground">
+                  <span className="capitalize">{o.payment_method}</span>
+                  <span>{new Date(o.created_at).toLocaleDateString("pt-BR")}</span>
                 </div>
               </div>
             ))}
