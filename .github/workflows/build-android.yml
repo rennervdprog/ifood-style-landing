@@ -118,17 +118,17 @@ jobs:
           APP_NAME=$(grep -oP "appName: '\K[^']+" capacitor.config.ts || echo "ItaSuper")
           STRINGS_FILE="android/app/src/main/res/values/strings.xml"
           python3 - <<PY
-from pathlib import Path
-import re
-
-path = Path("${STRINGS_FILE}")
-text = path.read_text()
-app_name = "${APP_NAME}"
-text = re.sub(r'(<string name="app_name">).*?(</string>)', rf'\1{app_name}\2', text)
-text = re.sub(r'(<string name="title_activity_main">).*?(</string>)', rf'\1{app_name}\2', text)
-path.write_text(text)
-print(f"✅ Android labels updated to: {app_name}")
-PY
+          from pathlib import Path
+          import re
+          
+          path = Path("${STRINGS_FILE}")
+          text = path.read_text()
+          app_name = "${APP_NAME}"
+          text = re.sub(r'(<string name="app_name">).*?(</string>)', rf'\1{app_name}\2', text)
+          text = re.sub(r'(<string name="title_activity_main">).*?(</string>)', rf'\1{app_name}\2', text)
+          path.write_text(text)
+          print(f"✅ Android labels updated to: {app_name}")
+          PY
 
       - name: Inject location & camera permissions
         run: |
