@@ -122,7 +122,7 @@ const DriverDashboard = () => {
   });
 
   // Detect if user is a store driver (not platform driver)
-  const { data: storeDriverLinks } = useQuery({
+  const { data: storeDriverLinks, isFetched: hasResolvedStoreDriverLinks } = useQuery({
     queryKey: ["store-driver-links", user?.id],
     queryFn: async () => {
       const { data } = await supabase
@@ -135,7 +135,7 @@ const DriverDashboard = () => {
   });
 
   // Check if user has a platform drivers entry
-  const { data: platformDriverEntry } = useQuery({
+  const { data: platformDriverEntry, isFetched: hasResolvedPlatformDriverEntry } = useQuery({
     queryKey: ["platform-driver-entry", user?.id],
     queryFn: async () => {
       const { data } = await supabase
@@ -148,6 +148,7 @@ const DriverDashboard = () => {
     enabled: !!user,
   });
 
+  const hasResolvedDriverMode = hasResolvedStoreDriverLinks && hasResolvedPlatformDriverEntry;
   const isStoreDriver = (storeDriverLinks?.length || 0) > 0;
   const hasPlatformDriverEntry = !!platformDriverEntry;
   // Store motoboy = has role motoboy, no platform drivers entry, and no store link yet
@@ -401,6 +402,7 @@ const DriverDashboard = () => {
   // ─── Side effects (unchanged) ───
   useEffect(() => {
     if (!user) return;
+    if (!hasResolvedDriverMode) return;
     // Store drivers manage their own online state via StoreDriverView.
     // Do NOT overwrite their is_online flag here, otherwise reopening the
     // app would always reset them to offline.
@@ -422,7 +424,7 @@ const DriverDashboard = () => {
     };
     window.addEventListener("beforeunload", handleUnload);
     return () => { window.removeEventListener("beforeunload", handleUnload); };
-  }, [user, isStoreDriver]);
+  }, [user, hasResolvedDriverMode, isStoreDriver, isOnline]);
 
   useEffect(() => {
     if (!user || !isOnline) return;
