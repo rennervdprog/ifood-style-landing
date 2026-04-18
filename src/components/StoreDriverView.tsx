@@ -550,19 +550,40 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   };
 
   const acceptOrder = async (orderId: string) => {
+    // Optimistic UI: remove from available list immediately
+    const previousAvailable = queryClient.getQueryData<any[]>(["store-driver-available", linkedStoreIds]);
+    const acceptedOrder = (availableOrders || []).find((o: any) => o.id === orderId);
+    if (previousAvailable) {
+      queryClient.setQueryData(
+        ["store-driver-available", linkedStoreIds],
+        previousAvailable.filter((o: any) => o.id !== orderId),
+      );
+    }
+    // Add to my deliveries cache
+    if (acceptedOrder) {
+      const previousMy = queryClient.getQueryData<any[]>(["store-driver-my-deliveries"]) || [];
+      queryClient.setQueryData(
+        ["store-driver-my-deliveries"],
+        [{ ...acceptedOrder, driver_id: user?.id }, ...previousMy],
+      );
+    }
+
     const { error } = await supabase.rpc("driver_accept_order", { _order_id: orderId } as any);
     if (error) {
+      // Revert
+      if (previousAvailable) queryClient.setQueryData(["store-driver-available", linkedStoreIds], previousAvailable);
+      queryClient.invalidateQueries({ queryKey: ["store-driver-my-deliveries"] });
       toast.error("Não foi possível aceitar o pedido.");
     } else {
       toast.success("Pedido aceito! Adicionado à sua rota.");
+      // Sync with server in background
       queryClient.invalidateQueries({ queryKey: ["store-driver-available"] });
       queryClient.invalidateQueries({ queryKey: ["store-driver-my-deliveries"] });
 
-      // Notify store owner that driver accepted
-      const order = availableOrders?.find((o: any) => o.id === orderId);
-      if (order) {
+      // Notify store owner in background
+      if (acceptedOrder) {
         const driverName = user?.user_metadata?.full_name || "Entregador";
-        notifyStoreOwner(order, "🛵 Entregador aceitou!", `${driverName} aceitou o pedido #${orderId.slice(0, 8).toUpperCase()}`);
+        notifyStoreOwner(acceptedOrder, "🛵 Entregador aceitou!", `${driverName} aceitou o pedido #${orderId.slice(0, 8).toUpperCase()}`);
       }
     }
   };
