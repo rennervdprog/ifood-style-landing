@@ -63,11 +63,27 @@ const PushNavigator = () => {
   const location = useLocation();
 
   // On mount: check if there's a pending push navigation from cold start
+  // Try multiple times because Capacitor's push event may fire after mount
   useEffect(() => {
-    const pending = consumePendingPushNavigation();
-    if (pending) {
-      console.log("[PushNav] Replaying pending push navigation:", pending);
-      setTimeout(() => navigate(pending, { replace: true }), 100);
+    const tryConsume = () => {
+      const pending = consumePendingPushNavigation();
+      if (pending) {
+        console.log("[PushNav] 🚀 Replaying pending push navigation:", pending);
+        navigate(pending, { replace: true });
+        return true;
+      }
+      return false;
+    };
+    // Try immediately, then again after short delays to catch late events
+    if (!tryConsume()) {
+      const t1 = setTimeout(tryConsume, 200);
+      const t2 = setTimeout(tryConsume, 800);
+      const t3 = setTimeout(tryConsume, 2000);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+        clearTimeout(t3);
+      };
     }
   }, []);
 
@@ -75,7 +91,7 @@ const PushNavigator = () => {
     const handler = (e: Event) => {
       const path = (e as CustomEvent).detail?.path;
       if (!path) return;
-      console.log("[PushNav] Navigating to:", path);
+      console.log("[PushNav] 🎯 Navigating to:", path);
 
       // Clear pending since we're handling it now
       consumePendingPushNavigation();
