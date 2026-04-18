@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { Bell, MapPin, Check } from "lucide-react";
 import { isCapacitorNative, registerCapacitorPush, requestLocationPermission } from "@/lib/capacitorNative";
+import { isPartnerCapacitorApp } from "@/lib/capacitorAppMode";
 
-const STORAGE_KEY = "cap-permissions-onboarding-v1";
+const STORAGE_KEY = "cap-permissions-onboarding-v2";
 
 type Step = "notifications" | "location" | "done";
 
