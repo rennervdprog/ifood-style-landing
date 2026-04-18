@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useCallback } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, useNavigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/contexts/CartContext";
@@ -173,7 +173,8 @@ const App = () => {
                   }
                 />
                 <Route path="/parceiro" element={<PartnerOnboarding />} />
-                <Route path="/cadastro-entregador" element={<CadastroEntregador />} />
+                {/* Cadastro de motoboy de plataforma descontinuado — redireciona para motoboy de loja */}
+                <Route path="/cadastro-entregador" element={<Navigate to="/cadastro-motoboy-loja" replace />} />
                 <Route path="/cadastro-lojista" element={<CadastroLojista />} />
                 <Route path="/cadastro-motoboy-loja" element={<CadastroMotoboyLoja />} />
                 <Route path="/termos-de-uso" element={<TermosDeUso />} />
