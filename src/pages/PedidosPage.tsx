@@ -1082,7 +1082,7 @@ const PedidosPage = () => {
                         {["pendente", "preparando", "pronto_para_entrega"].includes(order.status) && (
                           <button
                             onClick={() => cancelOrder(order.id)}
-                            className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-red-500 bg-red-50 dark:bg-red-950/30 py-2.5 rounded-xl hover:bg-red-100 dark:hover:bg-red-950/50 transition-colors"
+                            className="w-full flex items-center justify-center gap-2 text-xs font-semibold text-destructive bg-destructive/5 border border-destructive/20 py-2.5 rounded-xl hover:bg-destructive/10 hover:border-destructive/30 active:scale-[0.99] transition-all"
                           >
                             <XCircle className="h-3.5 w-3.5" />
                             Cancelar Pedido
