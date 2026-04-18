@@ -1,5 +1,7 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Store,
   Bike,
@@ -11,81 +13,34 @@ import {
   Shield,
   Smartphone,
   Heart,
+  Link as LinkIcon,
 } from "lucide-react";
 
-interface LinkItem {
-  label: string;
-  description?: string;
-  icon: React.ElementType;
-  href: string;
-  external?: boolean;
-  highlight?: boolean;
-}
+const ICON_MAP: Record<string, React.ElementType> = {
+  ShoppingBag,
+  Store,
+  Bike,
+  Heart,
+  UserPlus,
+  Smartphone,
+  Instagram,
+  MessageCircle,
+  FileText,
+  Shield,
+  Link: LinkIcon,
+};
 
-const links: LinkItem[] = [
-  {
-    label: "Fazer um Pedido",
-    description: "Veja todas as lojas disponíveis",
-    icon: ShoppingBag,
-    href: "/",
-    highlight: true,
-  },
-  {
-    label: "Cadastrar minha Loja",
-    description: "Cadastro 100% grátis • Sem mensalidade",
-    icon: Store,
-    href: "/cadastro-lojista",
-    highlight: true,
-  },
-  {
-    label: "Quero ser Entregador",
-    description: "Faça entregas e ganhe por corrida",
-    icon: Bike,
-    href: "/cadastro-entregador",
-  },
-  {
-    label: "Plano Apoiador (Vitalício)",
-    description: "Apoie o app por R$ 130 — apenas 10 vagas",
-    icon: Heart,
-    href: "/planos",
-  },
-  {
-    label: "Criar minha Conta",
-    description: "Acesse promoções e cupons exclusivos",
-    icon: UserPlus,
-    href: "/auth",
-  },
-  {
-    label: "Baixar o App",
-    description: "Disponível para Android",
-    icon: Smartphone,
-    href: "https://play.google.com/store/apps/details?id=app.lovable.e8d28aded6334d74be2161c8dbe24765",
-    external: true,
-  },
-  {
-    label: "Instagram @itasuper",
-    icon: Instagram,
-    href: "https://instagram.com/itasuper",
-    external: true,
-  },
-  {
-    label: "Falar no WhatsApp",
-    description: "Suporte e dúvidas",
-    icon: MessageCircle,
-    href: "https://wa.me/5514998765432",
-    external: true,
-  },
-  {
-    label: "Termos de Uso",
-    icon: FileText,
-    href: "/termos-de-uso",
-  },
-  {
-    label: "Política de Privacidade",
-    icon: Shield,
-    href: "/politica-de-privacidade",
-  },
-];
+interface AppLink {
+  id: string;
+  label: string;
+  description: string | null;
+  url: string;
+  icon: string;
+  is_external: boolean;
+  is_highlight: boolean;
+  is_active: boolean;
+  sort_order: number;
+}
 
 const LinksPage = () => {
   useEffect(() => {
@@ -98,6 +53,23 @@ const LinksPage = () => {
       );
     }
   }, []);
+
+  const { data: links, isLoading } = useQuery({
+    queryKey: ["app-links-public"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("app_links")
+        .select("*")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as AppLink[];
+    },
+    staleTime: 1000 * 60, // 1 min
+  });
+
+  const isSafeUrl = (url: string) =>
+    url.startsWith("/") || /^https?:\/\//i.test(url);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-accent via-background to-background">
@@ -115,60 +87,65 @@ const LinksPage = () => {
 
         {/* Links */}
         <nav className="flex flex-col gap-3">
-          {links.map((item) => {
-            const Icon = item.icon;
-            const baseClasses = `group flex items-center gap-3 w-full rounded-2xl px-4 py-3.5 border transition-all active:scale-[0.98] ${
-              item.highlight
-                ? "bg-primary text-primary-foreground border-primary shadow-md hover:shadow-lg"
-                : "bg-card text-card-foreground border-border hover:border-primary/40 hover:bg-accent"
-            }`;
+          {isLoading && (
+            <div className="text-center text-sm text-muted-foreground py-8">Carregando...</div>
+          )}
 
-            const content = (
-              <>
-                <div
-                  className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${
-                    item.highlight
-                      ? "bg-primary-foreground/20"
-                      : "bg-accent text-accent-foreground"
-                  }`}
-                >
-                  <Icon className="w-5 h-5" />
-                </div>
-                <div className="flex-1 text-left min-w-0">
-                  <div className="font-semibold text-sm leading-tight truncate">
-                    {item.label}
+          {!isLoading &&
+            links?.filter((l) => isSafeUrl(l.url)).map((item) => {
+              const Icon = ICON_MAP[item.icon] || LinkIcon;
+              const baseClasses = `group flex items-center gap-3 w-full rounded-2xl px-4 py-3.5 border transition-all active:scale-[0.98] ${
+                item.is_highlight
+                  ? "bg-primary text-primary-foreground border-primary shadow-md hover:shadow-lg"
+                  : "bg-card text-card-foreground border-border hover:border-primary/40 hover:bg-accent"
+              }`;
+
+              const content = (
+                <>
+                  <div
+                    className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${
+                      item.is_highlight
+                        ? "bg-primary-foreground/20"
+                        : "bg-accent text-accent-foreground"
+                    }`}
+                  >
+                    <Icon className="w-5 h-5" />
                   </div>
-                  {item.description && (
-                    <div
-                      className={`text-xs mt-0.5 truncate ${
-                        item.highlight
-                          ? "text-primary-foreground/80"
-                          : "text-muted-foreground"
-                      }`}
-                    >
-                      {item.description}
+                  <div className="flex-1 text-left min-w-0">
+                    <div className="font-semibold text-sm leading-tight truncate">
+                      {item.label}
                     </div>
-                  )}
-                </div>
-              </>
-            );
+                    {item.description && (
+                      <div
+                        className={`text-xs mt-0.5 truncate ${
+                          item.is_highlight
+                            ? "text-primary-foreground/80"
+                            : "text-muted-foreground"
+                        }`}
+                      >
+                        {item.description}
+                      </div>
+                    )}
+                  </div>
+                </>
+              );
 
-            return item.external ? (
-              <a
-                key={item.label}
-                href={item.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={baseClasses}
-              >
-                {content}
-              </a>
-            ) : (
-              <Link key={item.label} to={item.href} className={baseClasses}>
-                {content}
-              </Link>
-            );
-          })}
+              return item.is_external ? (
+                <a
+                  key={item.id}
+                  href={item.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={baseClasses}
+                >
+                  {content}
+                </a>
+              ) : (
+                <Link key={item.id} to={item.url} className={baseClasses}>
+                  {content}
+                </Link>
+              );
+            })}
         </nav>
 
         {/* Footer */}
