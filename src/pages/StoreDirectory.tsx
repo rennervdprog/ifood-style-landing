@@ -314,8 +314,7 @@ const StoreDirectory = () => {
       localStorage.setItem("visitor_hash", visitorHash);
     }
     supabase.rpc("record_page_view", { _page: "store_directory", _visitor_hash: visitorHash })
-      .then(() => sessionStorage.setItem(KEY, String(Date.now())))
-      .catch(() => {});
+      .then(({ error }) => { if (!error) sessionStorage.setItem(KEY, String(Date.now())); });
   }, []);
 
   useEffect(() => {
