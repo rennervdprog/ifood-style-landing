@@ -360,6 +360,26 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
     await Promise.all(updates);
   };
 
+  // Mobile-friendly reorder via arrow buttons
+  const moveSectionBy = async (sectionId: string, delta: -1 | 1) => {
+    if (!sections) return;
+    const items = [...sections];
+    const fromIdx = items.findIndex((s: any) => s.id === sectionId);
+    const toIdx = fromIdx + delta;
+    if (fromIdx === -1 || toIdx < 0 || toIdx >= items.length) return;
+    const [moved] = items.splice(fromIdx, 1);
+    items.splice(toIdx, 0, moved);
+    queryClient.setQueryData(["menu-sections", storeId], items.map((s: any, i: number) => ({ ...s, sort_order: i })));
+    const updates = items.map((s: any, i: number) =>
+      supabase.from("menu_sections").update({ sort_order: i } as any).eq("id", s.id)
+    );
+    const results = await Promise.all(updates);
+    if (results.some(r => r.error)) {
+      toast.error("Erro ao reordenar");
+      invalidateAll();
+    }
+  };
+
   const totalProducts = products?.length || 0;
 
   return (
