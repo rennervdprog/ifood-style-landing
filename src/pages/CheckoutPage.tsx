@@ -250,32 +250,28 @@ const CheckoutPage = () => {
 
     setLoading(true);
     try {
-      // Geocode client address for precise tracking
-      let clientLat: number | null = null;
-      let clientLng: number | null = null;
-      try {
-        const geoCep = useSavedAddr ? savedAddressData?.cep : profileCep;
-        const geoStreet = useSavedAddr
-          ? [savedAddressData.street, savedAddressData.number].filter(Boolean).join(" ")
-          : [profileStreet, profileNumber].filter(Boolean).join(" ");
-        const geoNeighborhood = useSavedAddr ? savedAddressData?.neighborhood : profileNeighborhood;
+      // Geocode in PARALLEL — don't block order creation. We'll patch coords later.
+      const geocodePromise: Promise<{ lat: number; lng: number } | null> = (async () => {
+        try {
+          const geoCep = useSavedAddr ? savedAddressData?.cep : profileCep;
+          const geoStreet = useSavedAddr
+            ? [savedAddressData.street, savedAddressData.number].filter(Boolean).join(" ")
+            : [profileStreet, profileNumber].filter(Boolean).join(" ");
+          const geoNeighborhood = useSavedAddr ? savedAddressData?.neighborhood : profileNeighborhood;
 
-        // Resolve CEP first to get city/state — critical for precise geocoding
-        const context = await resolveAddressContext({
-          street: geoStreet,
-          neighborhood: geoNeighborhood,
-          city: undefined,
-          state: undefined,
-          postalcode: geoCep,
-        });
-
-        // Try device GPS first, fall back to address geocoding
-        const preciseGeo = await getBestClientCoordinates(context);
-        if (preciseGeo) {
-          clientLat = preciseGeo.lat;
-          clientLng = preciseGeo.lng;
+          const context = await resolveAddressContext({
+            street: geoStreet,
+            neighborhood: geoNeighborhood,
+            city: undefined,
+            state: undefined,
+            postalcode: geoCep,
+          });
+          const preciseGeo = await getBestClientCoordinates(context);
+          return preciseGeo ? { lat: preciseGeo.lat, lng: preciseGeo.lng } : null;
+        } catch {
+          return null;
         }
-      } catch { /* geocoding is best-effort */ }
+      })();
 
       const storeGroups = items.reduce((acc, item) => {
         if (!acc[item.store_id]) acc[item.store_id] = [];
@@ -308,7 +304,6 @@ const CheckoutPage = () => {
             change_for: changeValue,
             status: orderStatus,
             scheduled_for: scheduledFor ? new Date(scheduledFor).toISOString() : null,
-            ...(clientLat && clientLng ? { client_lat: clientLat, client_lng: clientLng } : {}),
           } as any)
           .select("id")
           .single();
@@ -333,43 +328,60 @@ const CheckoutPage = () => {
         if (itemsError) throw itemsError;
 
         if (couponId && user) {
-          const { error: couponError } = await supabase.rpc("use_coupon", {
+          // Fire-and-forget: don't block UI on coupon registration
+          supabase.rpc("use_coupon", {
             _coupon_id: couponId,
             _user_id: user.id,
             _order_id: order.id,
+          }).then(({ error: couponError }) => {
+            if (couponError) console.warn("Coupon usage error:", couponError.message);
           });
-          if (couponError) {
-            console.warn("Coupon usage error:", couponError.message);
-          }
         }
       }
 
-      // Send push notification to store owner(s) for non-PIX orders (pendente)
-      // For PIX, notification will be sent when payment is confirmed
-      if (paymentMethod !== "pix") {
-        for (const { storeId, orderId } of createdOrders) {
-          const { data: storeData } = await supabase
-            .from("stores")
-            .select("owner_id")
-            .eq("id", storeId)
-            .single();
-          if (storeData?.owner_id) {
-            pushNotifyNewOrder([storeData.owner_id], orderId).catch(console.error);
-          }
-        }
-      }
-
+      // Clear cart + navigate IMMEDIATELY — push notifications and geocoding patching happen in background
+      clearCart();
       if (paymentMethod === "pix") {
-        clearCart();
         toast.success("Pedido criado! Acesse 'Meus Pedidos' para pagar com PIX.", { duration: 5000 });
         navigate("/pedidos?new_order=1");
-        return;
+      } else {
+        confetti({ particleCount: 120, spread: 80, origin: { y: 0.7 } });
+        toast.success("Pedido enviado com sucesso! Acompanhe pelo chat.");
+        navigate("/pedidos?new_order=1", { replace: true });
       }
 
-      clearCart();
-      confetti({ particleCount: 120, spread: 80, origin: { y: 0.7 } });
-      toast.success("Pedido enviado com sucesso! Acompanhe pelo chat.");
-      navigate("/pedidos?new_order=1", { replace: true });
+      // Background tasks (non-blocking): patch coords + notify store owners
+      (async () => {
+        try {
+          const coords = await geocodePromise;
+          if (coords) {
+            for (const { orderId } of createdOrders) {
+              supabase.from("orders")
+                .update({ client_lat: coords.lat, client_lng: coords.lng } as any)
+                .eq("id", orderId)
+                .then(() => {});
+            }
+          }
+        } catch {}
+
+        if (paymentMethod !== "pix") {
+          for (const { storeId, orderId } of createdOrders) {
+            try {
+              const { data: storeData } = await supabase
+                .from("stores")
+                .select("owner_id")
+                .eq("id", storeId)
+                .single();
+              if (storeData?.owner_id) {
+                pushNotifyNewOrder([storeData.owner_id], orderId).catch(console.error);
+              }
+            } catch (e) {
+              console.warn("notify store owner error:", e);
+            }
+          }
+        }
+      })();
+
     } catch (err: any) {
       toast.error(err.message || "Erro ao enviar pedido.");
     } finally {
