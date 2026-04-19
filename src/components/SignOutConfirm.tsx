@@ -24,6 +24,12 @@ interface SignOutConfirmProps {
   triggerClassName?: string;
   /** Optional title attribute for the default trigger. */
   triggerTitle?: string;
+  /** Controlled open state (for triggering from elsewhere). */
+  open?: boolean;
+  /** Called when the open state changes (controlled mode). */
+  onOpenChange?: (open: boolean) => void;
+  /** If true, hides the default trigger (useful with controlled mode). */
+  hideTrigger?: boolean;
 }
 
 /**
@@ -35,11 +41,21 @@ const SignOutConfirm = ({
   redirectTo = "/",
   triggerClassName,
   triggerTitle = "Sair da conta",
+  open: openProp,
+  onOpenChange,
+  hideTrigger = false,
 }: SignOutConfirmProps) => {
   const { signOut } = useAuth();
   const navigate = useNavigate();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const [leaving, setLeaving] = useState(false);
+
+  const isControlled = openProp !== undefined;
+  const open = isControlled ? openProp! : internalOpen;
+  const setOpen = (v: boolean) => {
+    if (!isControlled) setInternalOpen(v);
+    onOpenChange?.(v);
+  };
 
   const handleConfirm = async () => {
     setLeaving(true);
