@@ -250,6 +250,9 @@ const Navbar = ({ onNavigate, isLoggedIn }: { onNavigate: (path: string) => void
               <button onClick={() => onNavigate("/portal-parceiro")} className="text-sm font-semibold text-muted-foreground hover:text-primary transition-colors">
                 Já sou parceiro
               </button>
+              <Button variant="outline" className="rounded-full font-bold text-sm px-5" onClick={() => onNavigate("/auth")}>
+                Entrar
+              </Button>
               <Button className="rounded-full font-bold text-sm px-6" onClick={() => onNavigate("/cadastro-lojista")}>
                 Cadastrar grátis
               </Button>
@@ -257,9 +260,21 @@ const Navbar = ({ onNavigate, isLoggedIn }: { onNavigate: (path: string) => void
           )}
         </div>
 
-        <button className="md:hidden" onClick={() => setOpen(!open)} aria-label={open ? "Fechar menu" : "Abrir menu"}>
-          {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </button>
+        <div className="md:hidden flex items-center gap-2">
+          {!isLoggedIn && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="rounded-full font-bold text-xs px-4 h-9"
+              onClick={() => onNavigate("/auth")}
+            >
+              Entrar
+            </Button>
+          )}
+          <button onClick={() => setOpen(!open)} aria-label={open ? "Fechar menu" : "Abrir menu"}>
+            {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+        </div>
       </div>
 
       {open && (
