@@ -184,13 +184,13 @@ const PerfilPage = () => {
     const onResume = () => refreshVersion();
     window.addEventListener("capacitor-app-resume", onResume);
     window.addEventListener("focus", onResume);
-    document.addEventListener("visibilitychange", onResume);
+    window.document.addEventListener("visibilitychange", onResume);
 
     return () => {
       cancelled = true;
       window.removeEventListener("capacitor-app-resume", onResume);
       window.removeEventListener("focus", onResume);
-      document.removeEventListener("visibilitychange", onResume);
+      window.document.removeEventListener("visibilitychange", onResume);
     };
   }, []);
 
