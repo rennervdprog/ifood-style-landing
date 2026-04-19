@@ -28,6 +28,7 @@ import { sumMoney, formatBRL } from "@/lib/utils";
 import ProductTour, { motoboyTourSteps } from "@/components/ProductTour";
 import StoreDriverView from "@/components/StoreDriverView";
 import DriverPersistentAlert from "@/components/DriverPersistentAlert";
+import SignOutConfirm from "@/components/SignOutConfirm";
 type TabType = "entregas" | "historico" | "config";
 type DateFilter = "hoje" | "semana" | "mes" | "custom";
 
@@ -825,13 +826,11 @@ const DriverDashboard = () => {
                   <span className={`absolute top-[3px] w-[26px] h-[26px] rounded-full bg-white shadow-lg transition-transform duration-300 ${isOnline ? "left-[25px]" : "left-[3px]"}`} />
                 </button>
               )}
-              <button
-                onClick={async () => { await signOut(); toast.success("Você saiu da conta."); navigate("/portal-parceiro"); }}
-                className="w-10 h-10 rounded-2xl bg-muted/50 flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all active:scale-95"
-                title="Sair"
-              >
-                <LogOut className="h-4 w-4" />
-              </button>
+              <SignOutConfirm
+                redirectTo="/portal-parceiro"
+                triggerClassName="w-10 h-10 rounded-2xl bg-muted/50 flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all active:scale-95"
+                triggerTitle="Sair"
+              />
             </div>
           </div>
         </div>

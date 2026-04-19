@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { maskWhatsApp, formatWhatsAppNumber, isValidWhatsApp } from "@/lib/whatsapp";
 import { formatCep, fetchCep } from "@/lib/cepLookup";
 import { calculateDeliveryFee, DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig } from "@/lib/deliveryFee";
+import SignOutConfirm from "@/components/SignOutConfirm";
 
 /* ── Reusable UI atoms ─────────────────────────────────── */
 
@@ -263,7 +264,7 @@ const PerfilPage = () => {
     return () => { cancelled = true; };
   }, [cep, deliveryFeeConfig]);
 
-  const handleSignOut = async () => { await signOut(); toast.success("Você saiu da conta."); navigate("/"); };
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
 
   const handleSaveAddress = async () => {
     if (!street.trim() || !number.trim() || !neighborhood) { toast.error("Preencha rua, número e bairro."); return; }
@@ -673,10 +674,16 @@ const PerfilPage = () => {
 
         <Card>
           <div className="divide-y divide-border/50">
-            <MenuRow icon={LogOut} iconBg="bg-destructive/5" iconColor="text-destructive" title="Sair da conta" subtitle="Fazer logout do ItaSuper" onClick={handleSignOut} danger />
+            <MenuRow icon={LogOut} iconBg="bg-destructive/5" iconColor="text-destructive" title="Sair da conta" subtitle="Fazer logout do ItaSuper" onClick={() => setShowSignOutConfirm(true)} danger />
             <MenuRow icon={Trash2} iconBg="bg-destructive/5" iconColor="text-destructive" title="Excluir minha conta" subtitle="Seus dados serão mantidos conforme a lei" onClick={() => setShowDeleteConfirm(true)} danger />
           </div>
         </Card>
+
+        <SignOutConfirm
+          hideTrigger
+          open={showSignOutConfirm}
+          onOpenChange={setShowSignOutConfirm}
+        />
 
         {/* Delete account confirmation modal */}
         {showDeleteConfirm && (
