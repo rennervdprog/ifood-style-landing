@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { maskWhatsApp, formatWhatsAppNumber, isValidWhatsApp } from "@/lib/whatsapp";
 import { formatCep, fetchCep } from "@/lib/cepLookup";
 import { calculateDeliveryFee, DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig } from "@/lib/deliveryFee";
+import SignOutConfirm from "@/components/SignOutConfirm";
 
 /* ── Reusable UI atoms ─────────────────────────────────── */
 
@@ -677,6 +678,12 @@ const PerfilPage = () => {
             <MenuRow icon={Trash2} iconBg="bg-destructive/5" iconColor="text-destructive" title="Excluir minha conta" subtitle="Seus dados serão mantidos conforme a lei" onClick={() => setShowDeleteConfirm(true)} danger />
           </div>
         </Card>
+
+        <SignOutConfirm
+          hideTrigger
+          open={showSignOutConfirm}
+          onOpenChange={setShowSignOutConfirm}
+        />
 
         {/* Delete account confirmation modal */}
         {showDeleteConfirm && (

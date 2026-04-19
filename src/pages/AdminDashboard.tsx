@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback, useMemo, memo } from "react";
 import { getOrderItemDisplayName } from "@/lib/orderItemName";
 import { formatBRL } from "@/lib/utils";
 import SimulationBanner from "@/components/SimulationBanner";
+import SignOutConfirm from "@/components/SignOutConfirm";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";

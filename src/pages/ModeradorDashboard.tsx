@@ -7,6 +7,7 @@ import { formatBRL } from "@/lib/utils";
 import { DollarSign, Store, TrendingUp, Clock, CheckCircle2, Copy, Loader2, LogOut, Users } from "lucide-react";
 import { toast } from "sonner";
 import AppHeader from "@/components/AppHeader";
+import SignOutConfirm from "@/components/SignOutConfirm";
 
 const ModeradorDashboard = () => {
   const { user, loading: authLoading, signOut } = useAuth();
