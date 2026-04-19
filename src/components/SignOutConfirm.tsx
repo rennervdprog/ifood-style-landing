@@ -76,20 +76,22 @@ const SignOutConfirm = ({
   return (
     <>
       <AlertDialog open={open} onOpenChange={setOpen}>
-        <AlertDialogTrigger asChild>
-          {children ?? (
-            <button
-              type="button"
-              title={triggerTitle}
-              className={
-                triggerClassName ??
-                "p-2 rounded-xl hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
-              }
-            >
-              <LogOut className="h-4 w-4" />
-            </button>
-          )}
-        </AlertDialogTrigger>
+        {!hideTrigger && (
+          <AlertDialogTrigger asChild>
+            {children ?? (
+              <button
+                type="button"
+                title={triggerTitle}
+                className={
+                  triggerClassName ??
+                  "p-2 rounded-xl hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                }
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            )}
+          </AlertDialogTrigger>
+        )}
         <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
             <div className="mx-auto sm:mx-0 w-12 h-12 rounded-2xl bg-destructive/10 flex items-center justify-center mb-2">
