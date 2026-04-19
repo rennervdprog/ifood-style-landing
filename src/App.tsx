@@ -126,10 +126,8 @@ const App = () => {
     // is never blocked by native setup or auto-update checks.
     initCapacitorNative().catch(() => {});
     initCapacitorLifecycle().catch(() => {});
-    // Defer auto-update check so it doesn't compete with first render
-    setTimeout(() => {
-      try { initAutoUpdate(); } catch {}
-    }, 2000);
+    // Auto-update inicia imediatamente — agenda interno usa 1s antes do 1º check
+    try { initAutoUpdate(); } catch {}
   }, []);
 
   return (
