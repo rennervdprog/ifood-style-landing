@@ -145,108 +145,90 @@ const CategoryProductFields = ({ category, metadata, onChange, storeId }: Catego
     </div>
   );
 
-  switch (category) {
-    case "pizzas":
-      return renderBeverageToggle(<></>);
+  const categoryFieldsMap: Record<string, React.ReactNode> = {
+    pizzas: <></>,
+    esfihas: null,
+    lanches: (
+      <FieldBox emoji="🍔" title="Detalhes do Lanche">
+        {renderListField("Tipos de pão disponíveis", "bread_types", "Ex: Brioche, Tradicional, Australiano, Ciabatta...")}
+        {renderToggle("Produto é um combo?", "is_combo")}
+        {metadata.is_combo && renderListField("Itens do Combo", "combo_items", "Ex: Hambúrguer, Batata M, Refri 500ml...")}
+        {renderTextField("Peso (opcional)", "patty_weight", "Ex: 150g, 200g...")}
+      </FieldBox>
+    ),
+    farmacias: (
+      <FieldBox emoji="💊" title="Detalhes do Produto">
+        {renderToggle("Receita obrigatória?", "requires_prescription")}
+        {renderTextField("Dosagem / Volume", "dosage", "Ex: 500mg, 200ml...")}
+        {renderTextField("Fabricante / Marca", "manufacturer", "Ex: EMS, Medley, Nivea...")}
+        {renderTextField("Qtd na embalagem", "pack_quantity", "Ex: 20 comprimidos, 100ml...")}
+        {renderToggle("Produto genérico?", "is_generic")}
+      </FieldBox>
+    ),
+    sobremesas: (
+      <FieldBox emoji="🍰" title="Detalhes do Doce">
+        {renderListField("Sabores disponíveis", "flavors", "Ex: Chocolate, Morango, Baunilha...")}
+        {renderTextField("Tamanho / Peso", "size_weight", "Ex: 300g, 500ml, fatia...")}
+        {renderToggle("Vende por unidade?", "sells_unit")}
+      </FieldBox>
+    ),
+    japonesa: (
+      <FieldBox emoji="🍣" title="Detalhes do Prato">
+        {renderTextField("Quantidade de peças", "pieces_count", "Ex: 4, 8, 10, 20...")}
+        {renderListField("Proteínas", "proteins", "Ex: Salmão, Atum, Camarão...")}
+        {renderToggle("Serve p/ compartilhar?", "shareable")}
+      </FieldBox>
+    ),
+    cafeteria: (
+      <FieldBox emoji="☕" title="Detalhes do Produto">
+        {renderListField("Sabores disponíveis", "flavors", "Ex: Chocolate, Red Velvet...")}
+        {renderToggle("Pode aquecer?", "can_heat")}
+      </FieldBox>
+    ),
+    churrasco: (
+      <FieldBox emoji="🥩" title="Detalhes do Churrasco">
+        {renderTextField("Peso / Porção", "portion_weight", "Ex: 300g, 500g, 1kg...")}
+        {renderListField("Ponto da carne", "meat_doneness", "Ex: Mal passado, Ao ponto...")}
+        {metadata.is_combo && renderListField("Itens do Kit", "combo_items", "Ex: 500g Picanha, Farofa...")}
+        {renderToggle("Produto é um combo/kit?", "is_combo")}
+        {renderToggle("Serve p/ compartilhar?", "shareable")}
+      </FieldBox>
+    ),
+    adegas: (
+      <FieldBox emoji="🍷" title="Detalhes do Produto">
+        {renderTextField("Volume", "volume", "Ex: 350ml, 750ml, 1L...")}
+        {renderTextField("Marca", "brand", "Ex: Heineken, Absolut...")}
+        {renderTextField("Teor alcoólico", "alcohol_content", "Ex: 4.5%, 13%, 40%...")}
+        {renderToggle("Servir gelado?", "serve_cold")}
+      </FieldBox>
+    ),
+    saudavel: (
+      <FieldBox emoji="🥗" title="Detalhes do Produto">
+        {renderTextField("Calorias", "calories", "Ex: 350 kcal")}
+        {renderTextField("Proteína (g)", "protein_grams", "Ex: 35g")}
+        {renderTextField("Peso / Tamanho", "size_weight", "Ex: 400g, 500ml...")}
+        {renderToggle("Vegano?", "is_vegan")}
+        {renderToggle("Sem glúten?", "is_gluten_free")}
+        {renderToggle("Sem lactose?", "is_lactose_free")}
+      </FieldBox>
+    ),
+    restaurante: (
+      <FieldBox emoji="🍽️" title="Detalhes do Prato">
+        {renderTextField("Porção / Tamanho", "portion_size", "Ex: Individual, Família, 500g...")}
+        {renderToggle("Marmita?", "is_marmita")}
+        {renderToggle("Serve p/ compartilhar?", "shareable")}
+        {renderToggle("Produto é um combo/kit?", "is_combo")}
+        {metadata.is_combo && renderListField("Itens do Combo", "combo_items", "Ex: Arroz, Feijão, Bife...")}
+      </FieldBox>
+    ),
+  };
 
-    case "lanches":
-      return renderBeverageToggle(
-        <FieldBox emoji="🍔" title="Detalhes do Lanche">
-          {renderListField("Tipos de pão disponíveis", "bread_types", "Ex: Brioche, Tradicional, Australiano, Ciabatta...")}
-          {renderToggle("Produto é um combo?", "is_combo")}
-          {metadata.is_combo && renderListField("Itens do Combo", "combo_items", "Ex: Hambúrguer, Batata M, Refri 500ml...")}
-          {renderTextField("Peso (opcional)", "patty_weight", "Ex: 150g, 200g...")}
-        </FieldBox>
-      );
+  // docerias usa os mesmos campos de sobremesas
+  const normalizedCategory = category === "docerias" ? "sobremesas" : category;
+  const categoryFields = categoryFieldsMap[normalizedCategory];
 
-    case "farmacias":
-      return (
-        <FieldBox emoji="💊" title="Detalhes do Produto">
-          {renderToggle("Receita obrigatória?", "requires_prescription")}
-          {renderTextField("Dosagem / Volume", "dosage", "Ex: 500mg, 200ml...")}
-          {renderTextField("Fabricante / Marca", "manufacturer", "Ex: EMS, Medley, Nivea...")}
-          {renderTextField("Qtd na embalagem", "pack_quantity", "Ex: 20 comprimidos, 100ml...")}
-          {renderToggle("Produto genérico?", "is_generic")}
-        </FieldBox>
-      );
-
-    case "sobremesas":
-    case "docerias":
-      return renderBeverageToggle(
-        <FieldBox emoji="🍰" title="Detalhes do Doce">
-          {renderListField("Sabores disponíveis", "flavors", "Ex: Chocolate, Morango, Baunilha...")}
-          {renderTextField("Tamanho / Peso", "size_weight", "Ex: 300g, 500ml, fatia...")}
-          {renderToggle("Vende por unidade?", "sells_unit")}
-        </FieldBox>
-      );
-
-    case "japonesa":
-      return renderBeverageToggle(
-        <FieldBox emoji="🍣" title="Detalhes do Prato">
-          {renderTextField("Quantidade de peças", "pieces_count", "Ex: 4, 8, 10, 20...")}
-          {renderListField("Proteínas", "proteins", "Ex: Salmão, Atum, Camarão...")}
-          {renderToggle("Serve p/ compartilhar?", "shareable")}
-        </FieldBox>
-      );
-
-    case "cafeteria":
-      return renderBeverageToggle(
-        <FieldBox emoji="☕" title="Detalhes do Produto">
-          {renderListField("Sabores disponíveis", "flavors", "Ex: Chocolate, Red Velvet...")}
-          {renderToggle("Pode aquecer?", "can_heat")}
-        </FieldBox>
-      );
-
-    case "churrasco":
-      return renderBeverageToggle(
-        <FieldBox emoji="🥩" title="Detalhes do Churrasco">
-          {renderTextField("Peso / Porção", "portion_weight", "Ex: 300g, 500g, 1kg...")}
-          {renderListField("Ponto da carne", "meat_doneness", "Ex: Mal passado, Ao ponto...")}
-          {metadata.is_combo && renderListField("Itens do Kit", "combo_items", "Ex: 500g Picanha, Farofa...")}
-          {renderToggle("Produto é um combo/kit?", "is_combo")}
-          {renderToggle("Serve p/ compartilhar?", "shareable")}
-        </FieldBox>
-      );
-
-    case "adegas":
-      return (
-        <FieldBox emoji="🍷" title="Detalhes do Produto">
-          {renderTextField("Volume", "volume", "Ex: 350ml, 750ml, 1L...")}
-          {renderTextField("Marca", "brand", "Ex: Heineken, Absolut...")}
-          {renderTextField("Teor alcoólico", "alcohol_content", "Ex: 4.5%, 13%, 40%...")}
-          {renderToggle("Servir gelado?", "serve_cold")}
-        </FieldBox>
-      );
-
-    case "saudavel":
-      return renderBeverageToggle(
-        <FieldBox emoji="🥗" title="Detalhes do Produto">
-          {renderTextField("Calorias", "calories", "Ex: 350 kcal")}
-          {renderTextField("Proteína (g)", "protein_grams", "Ex: 35g")}
-          {renderTextField("Peso / Tamanho", "size_weight", "Ex: 400g, 500ml...")}
-          {renderToggle("Vegano?", "is_vegan")}
-          {renderToggle("Sem glúten?", "is_gluten_free")}
-          {renderToggle("Sem lactose?", "is_lactose_free")}
-        </FieldBox>
-      );
-
-    case "restaurante":
-      return renderBeverageToggle(
-        <FieldBox emoji="🍽️" title="Detalhes do Prato">
-          {renderTextField("Porção / Tamanho", "portion_size", "Ex: Individual, Família, 500g...")}
-          {renderToggle("Marmita?", "is_marmita")}
-          {renderToggle("Serve p/ compartilhar?", "shareable")}
-          {renderToggle("Produto é um combo/kit?", "is_combo")}
-          {metadata.is_combo && renderListField("Itens do Combo", "combo_items", "Ex: Arroz, Feijão, Bife...")}
-        </FieldBox>
-      );
-
-    case "esfihas":
-      return renderBeverageToggle(null);
-
-    default:
-      return null;
-  }
+  // Se a categoria não estiver mapeada, ainda assim mostramos o toggle de bebida
+  return renderBeverageToggle(categoryFields ?? null);
 };
 
 export default CategoryProductFields;
