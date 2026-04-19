@@ -143,9 +143,10 @@ const ModeradorDashboard = () => {
             <h1 className="text-xl font-black text-foreground">Olá, {moderator.name} 👋</h1>
             <p className="text-xs text-muted-foreground">Painel do Moderador</p>
           </div>
-          <button onClick={signOut} className="bg-muted text-muted-foreground p-2 rounded-xl">
-            <LogOut className="h-4 w-4" />
-          </button>
+          <SignOutConfirm
+            triggerClassName="bg-muted text-muted-foreground p-2 rounded-xl hover:bg-destructive/10 hover:text-destructive transition-colors"
+            triggerTitle="Sair"
+          />
         </div>
 
         {/* Referral Link */}

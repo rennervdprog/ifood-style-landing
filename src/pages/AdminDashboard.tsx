@@ -1284,13 +1284,7 @@ const AdminDashboard = () => {
                 {soundMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
               </button>
             )}
-            <button
-              onClick={async () => { await signOut(); toast.success("Você saiu da conta."); navigate("/portal-parceiro"); }}
-              className="p-2 rounded-xl hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
-              title="Sair da conta"
-            >
-              <LogOut className="h-4 w-4" />
-            </button>
+            <SignOutConfirm redirectTo="/portal-parceiro" />
           </div>
         </header>
 
