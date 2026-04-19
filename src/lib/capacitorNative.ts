@@ -284,8 +284,9 @@ export async function configureStatusBar() {
 
   try {
     const { StatusBar, Style } = await import("@capacitor/status-bar");
-    await StatusBar.setStyle({ style: Style.Dark });
-    await StatusBar.setBackgroundColor({ color: "#FF4B2B" });
+    // Style.Light = ícones brancos (combina com fundo laranja da marca)
+    await StatusBar.setStyle({ style: Style.Light });
+    await StatusBar.setBackgroundColor({ color: "#FF6B00" });
     await StatusBar.setOverlaysWebView({ overlay: false });
   } catch (e) {
     console.warn("[StatusBar] Error:", e);
