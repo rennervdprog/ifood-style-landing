@@ -163,17 +163,35 @@ const PerfilPage = () => {
   const [document, setDocument] = useState("");
   const [savingPersonal, setSavingPersonal] = useState(false);
   const [personalLoaded, setPersonalLoaded] = useState(false);
-  const [appVersion, setAppVersion] = useState("1.1.8");
+  const [appVersion, setAppVersion] = useState("1.1.9");
 
   /* ── Effects ── */
   useEffect(() => {
     if (!isCapacitorNative()) return;
-    import("@capacitor/app")
-      .then(async ({ App }) => {
+
+    let cancelled = false;
+    const refreshVersion = async () => {
+      try {
+        const { App } = await import("@capacitor/app");
         const info = await App.getInfo();
-        if (info.version) setAppVersion(info.version);
-      })
-      .catch(() => {});
+        if (!cancelled && info.version) setAppVersion(info.version);
+      } catch {}
+    };
+
+    refreshVersion();
+
+    // Re-check whenever the app comes back to foreground or window regains focus
+    const onResume = () => refreshVersion();
+    window.addEventListener("capacitor-app-resume", onResume);
+    window.addEventListener("focus", onResume);
+    window.document.addEventListener("visibilitychange", onResume);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("capacitor-app-resume", onResume);
+      window.removeEventListener("focus", onResume);
+      window.document.removeEventListener("visibilitychange", onResume);
+    };
   }, []);
 
   useEffect(() => {
