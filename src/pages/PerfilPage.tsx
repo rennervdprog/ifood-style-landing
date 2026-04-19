@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
+import { isCapacitorNative } from "@/lib/capacitorNative";
 import BottomNav from "@/components/BottomNav";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -162,8 +163,19 @@ const PerfilPage = () => {
   const [document, setDocument] = useState("");
   const [savingPersonal, setSavingPersonal] = useState(false);
   const [personalLoaded, setPersonalLoaded] = useState(false);
+  const [appVersion, setAppVersion] = useState("1.1.8");
 
   /* ── Effects ── */
+  useEffect(() => {
+    if (!isCapacitorNative()) return;
+    import("@capacitor/app")
+      .then(async ({ App }) => {
+        const info = await App.getInfo();
+        if (info.version) setAppVersion(info.version);
+      })
+      .catch(() => {});
+  }, []);
+
   useEffect(() => {
     if (profile && !addressLoaded) {
       setCep((profile as any).cep ? formatCep((profile as any).cep) : "");
@@ -759,7 +771,7 @@ const PerfilPage = () => {
           <a href="/politica-de-privacidade" className="hover:underline">Política de Privacidade</a>
         </div>
 
-        <p className="text-center text-[10px] text-muted-foreground/50 pb-4">ItaSuper v1.1.7</p>
+        <p className="text-center text-[10px] text-muted-foreground/50 pb-4">ItaSuper v{appVersion}</p>
       </div>
       <BottomNav />
     </div>
