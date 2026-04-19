@@ -18,6 +18,7 @@ import { isCapacitorNative } from "@/lib/capacitorNative";
 const CHECK_INTERVAL_MS = 90_000; // 90s — bom equilíbrio entre rapidez e bateria
 const RESUME_THROTTLE_MS = 30_000;
 const BUILD_HASH_KEY = "itasuper_build_hash";
+const NATIVE_APP_VERSION_KEY = "itasuper_native_app_version";
 let checking = false;
 let intervalId: ReturnType<typeof setInterval> | null = null;
 
@@ -69,6 +70,18 @@ async function checkForUpdate(opts: { silent?: boolean } = {}) {
 
   try {
     if (typeof navigator !== "undefined" && navigator.onLine === false) return;
+
+    try {
+      const { App } = await import("@capacitor/app");
+      const info = await App.getInfo();
+      const nativeVersion = info.version || null;
+      const storedNativeVersion = localStorage.getItem(NATIVE_APP_VERSION_KEY);
+      if (nativeVersion && nativeVersion !== storedNativeVersion) {
+        localStorage.setItem(NATIVE_APP_VERSION_KEY, nativeVersion);
+        localStorage.removeItem(BUILD_HASH_KEY);
+        await clearAllCaches();
+      }
+    } catch {}
 
     const currentHash = await fetchBuildHash();
     if (!currentHash) return;
