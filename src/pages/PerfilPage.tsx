@@ -789,8 +789,7 @@ const PerfilPage = () => {
           <a href="/politica-de-privacidade" className="hover:underline">Política de Privacidade</a>
         </div>
 
-        <p className="text-center text-[10px] text-muted-foreground/50">ItaSuper v{appVersion}</p>
-        <p className="text-center text-[10px] text-primary font-semibold pb-4">teste web real time</p>
+        <p className="text-center text-[10px] text-muted-foreground/50 pb-4">ItaSuper v{appVersion}</p>
       </div>
       <BottomNav />
     </div>
