@@ -12,9 +12,9 @@ interface AddonManagerProps {
 const AddonManager = ({ storeId }: AddonManagerProps) => {
   const queryClient = useQueryClient();
   const [showGroupForm, setShowGroupForm] = useState(false);
-  const [groupForm, setGroupForm] = useState({ name: "", min_select: "0", max_select: "1" });
+  const [groupForm, setGroupForm] = useState({ name: "", min_select: "0", max_select: "1", price_replaces_base: false });
   const [editingGroup, setEditingGroup] = useState<string | null>(null);
-  const [editGroupForm, setEditGroupForm] = useState({ name: "", min_select: "0", max_select: "1" });
+  const [editGroupForm, setEditGroupForm] = useState({ name: "", min_select: "0", max_select: "1", price_replaces_base: false });
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
   const [itemForm, setItemForm] = useState({ name: "", price: "0" });
   const [showItemForm, setShowItemForm] = useState<string | null>(null);
@@ -67,6 +67,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
       name: groupForm.name.trim(),
       min_select: parseInt(groupForm.min_select) || 0,
       max_select: parseInt(groupForm.max_select) || 1,
+      price_replaces_base: groupForm.price_replaces_base,
       sort_order: (groups?.length || 0) + 1,
     } as any).select("id").single();
     if (error) { toast.error("Erro ao criar grupo"); return; }
@@ -86,7 +87,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
       toast.success("Grupo de adicionais criado!");
     }
 
-    setGroupForm({ name: "", min_select: "0", max_select: "1" });
+    setGroupForm({ name: "", min_select: "0", max_select: "1", price_replaces_base: false });
     setBulkText("");
     setBulkParsed([]);
     setShowGroupForm(false);
@@ -98,7 +99,8 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
       name: editGroupForm.name.trim(),
       min_select: parseInt(editGroupForm.min_select) || 0,
       max_select: parseInt(editGroupForm.max_select) || 1,
-    }).eq("id", id);
+      price_replaces_base: editGroupForm.price_replaces_base,
+    } as any).eq("id", id);
     if (error) { toast.error("Erro ao atualizar grupo"); return; }
     toast.success("Grupo atualizado! Alterações refletem em todos os produtos vinculados.");
     setEditingGroup(null);
@@ -247,6 +249,27 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
             />
           </div>
 
+          {/* Toggle: Define preço final */}
+          <button
+            type="button"
+            onClick={() => setGroupForm({ ...groupForm, price_replaces_base: !groupForm.price_replaces_base, min_select: !groupForm.price_replaces_base ? "1" : groupForm.min_select, max_select: !groupForm.price_replaces_base ? "1" : groupForm.max_select })}
+            className={`w-full flex items-start justify-between gap-3 py-3 px-4 rounded-xl border-2 transition-all text-left ${
+              groupForm.price_replaces_base ? "bg-amber-500/10 border-amber-500" : "bg-muted/50 border-transparent"
+            }`}
+          >
+            <div className="flex-1">
+              <div className="text-sm font-bold text-foreground">
+                💰 Define o preço final?
+              </div>
+              <div className="text-[11px] text-muted-foreground mt-0.5">
+                Use para tamanhos (200ml, 300ml). O preço escolhido <b>substitui</b> o preço base do produto. Vira obrigatório e seleção única.
+              </div>
+            </div>
+            <div className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 mt-0.5 ${groupForm.price_replaces_base ? "bg-amber-500" : "bg-muted-foreground/30"}`}>
+              <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform shadow ${groupForm.price_replaces_base ? "translate-x-5" : "translate-x-0.5"}`} />
+            </div>
+          </button>
+
           {/* Bulk import inside group creation */}
           <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-2">
             <div className="flex items-center gap-2">
@@ -291,7 +314,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
             <button onClick={addGroup} className="flex-1 bg-primary text-primary-foreground py-2.5 rounded-xl text-sm font-bold">
               {bulkParsed.length > 0 ? `Criar Grupo com ${bulkParsed.length} itens` : "Criar Grupo"}
             </button>
-            <button onClick={() => { setShowGroupForm(false); setGroupForm({ name: "", min_select: "0", max_select: "1" }); setBulkText(""); setBulkParsed([]); }} className="px-4 text-muted-foreground text-sm">
+            <button onClick={() => { setShowGroupForm(false); setGroupForm({ name: "", min_select: "0", max_select: "1", price_replaces_base: false }); setBulkText(""); setBulkParsed([]); }} className="px-4 text-muted-foreground text-sm">
               Cancelar
             </button>
           </div>
@@ -353,6 +376,20 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                           className="w-full bg-secondary text-foreground px-2 py-1 rounded text-xs border border-border"
                         />
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => setEditGroupForm({ ...editGroupForm, price_replaces_base: !editGroupForm.price_replaces_base, min_select: !editGroupForm.price_replaces_base ? "1" : editGroupForm.min_select, max_select: !editGroupForm.price_replaces_base ? "1" : editGroupForm.max_select })}
+                        className={`w-full flex items-center justify-between py-2 px-3 rounded-lg border transition-all text-left ${
+                          editGroupForm.price_replaces_base ? "bg-amber-500/10 border-amber-500" : "bg-muted/50 border-transparent"
+                        }`}
+                      >
+                        <span className="text-xs font-bold text-foreground">
+                          💰 Define preço final
+                        </span>
+                        <div className={`w-9 h-5 rounded-full transition-colors relative ${editGroupForm.price_replaces_base ? "bg-amber-500" : "bg-muted-foreground/30"}`}>
+                          <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-transform shadow ${editGroupForm.price_replaces_base ? "translate-x-4" : "translate-x-0.5"}`} />
+                        </div>
+                      </button>
                       <div className="flex gap-1">
                         <button onClick={() => updateGroup(group.id)} className="bg-primary text-primary-foreground px-3 py-1.5 rounded-lg text-xs font-bold">
                           <Save className="h-3 w-3" />
@@ -370,6 +407,11 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                         <span className="text-xs text-primary font-bold">
                           {(group.addon_items as any[])?.length || 0} itens
                         </span>
+                        {group.price_replaces_base && (
+                          <span className="text-[10px] bg-amber-500/20 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full font-bold">
+                            💰 Define preço
+                          </span>
+                        )}
                         {linkedProducts.length > 0 && (
                           <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full font-bold">
                             🔗 {linkedProducts.length} produto{linkedProducts.length > 1 ? "s" : ""}
@@ -389,6 +431,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                           name: group.name,
                           min_select: String(group.min_select),
                           max_select: String(group.max_select),
+                          price_replaces_base: !!group.price_replaces_base,
                         });
                       }}
                       className="text-muted-foreground hover:text-foreground p-1.5"

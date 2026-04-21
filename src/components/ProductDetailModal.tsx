@@ -23,6 +23,7 @@ interface AddonGroup {
   min_select: number;
   max_select: number;
   sort_order: number;
+  price_replaces_base?: boolean;
 }
 
 interface AddonItem {
@@ -197,10 +198,28 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
     });
   }, [addonItems, addonGroups, selectedAddons]);
 
-  const addonsTotal = selectedAddonsList.reduce((s, a) => s + a.price, 0);
-  const basePrice = hasSizes && selectedSize
-    ? (sizes.find(s => s.name === selectedSize)?.price || product?.price || 0)
-    : (product?.price || 0);
+  // Identify groups that REPLACE the base price (e.g. size variations: 200ml, 300ml)
+  const priceReplacingGroups = addonGroups.filter(g => g.price_replaces_base);
+  const hasPriceReplacingGroup = priceReplacingGroups.length > 0;
+  const priceReplacingSelected = priceReplacingGroups.flatMap(g =>
+    addonItems.filter(ai => ai.group_id === g.id && (selectedAddons[g.id] || []).includes(ai.id))
+  );
+  const replacementPrice = priceReplacingSelected.reduce((s, a) => s + Number(a.price || 0), 0);
+
+  // Sum only addons NOT in price-replacing groups
+  const replacingGroupIds = new Set(priceReplacingGroups.map(g => g.id));
+  const addonsTotal = selectedAddonsList
+    .filter(a => {
+      const grp = addonGroups.find(g => g.name === a.groupName);
+      return !grp || !replacingGroupIds.has(grp.id);
+    })
+    .reduce((s, a) => s + a.price, 0);
+
+  const basePrice = hasPriceReplacingGroup
+    ? (priceReplacingSelected.length > 0 ? replacementPrice : 0)
+    : (hasSizes && selectedSize
+        ? (sizes.find(s => s.name === selectedSize)?.price || product?.price || 0)
+        : (product?.price || 0));
   const unitPrice = basePrice + addonsTotal;
   const lineTotal = unitPrice * quantity;
 
