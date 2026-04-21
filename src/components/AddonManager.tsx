@@ -67,6 +67,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
       name: groupForm.name.trim(),
       min_select: parseInt(groupForm.min_select) || 0,
       max_select: parseInt(groupForm.max_select) || 1,
+      price_replaces_base: groupForm.price_replaces_base,
       sort_order: (groups?.length || 0) + 1,
     } as any).select("id").single();
     if (error) { toast.error("Erro ao criar grupo"); return; }
@@ -86,7 +87,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
       toast.success("Grupo de adicionais criado!");
     }
 
-    setGroupForm({ name: "", min_select: "0", max_select: "1" });
+    setGroupForm({ name: "", min_select: "0", max_select: "1", price_replaces_base: false });
     setBulkText("");
     setBulkParsed([]);
     setShowGroupForm(false);
@@ -98,7 +99,8 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
       name: editGroupForm.name.trim(),
       min_select: parseInt(editGroupForm.min_select) || 0,
       max_select: parseInt(editGroupForm.max_select) || 1,
-    }).eq("id", id);
+      price_replaces_base: editGroupForm.price_replaces_base,
+    } as any).eq("id", id);
     if (error) { toast.error("Erro ao atualizar grupo"); return; }
     toast.success("Grupo atualizado! Alterações refletem em todos os produtos vinculados.");
     setEditingGroup(null);
