@@ -293,7 +293,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
             <button onClick={addGroup} className="flex-1 bg-primary text-primary-foreground py-2.5 rounded-xl text-sm font-bold">
               {bulkParsed.length > 0 ? `Criar Grupo com ${bulkParsed.length} itens` : "Criar Grupo"}
             </button>
-            <button onClick={() => { setShowGroupForm(false); setGroupForm({ name: "", min_select: "0", max_select: "1" }); setBulkText(""); setBulkParsed([]); }} className="px-4 text-muted-foreground text-sm">
+            <button onClick={() => { setShowGroupForm(false); setGroupForm({ name: "", min_select: "0", max_select: "1", price_replaces_base: false }); setBulkText(""); setBulkParsed([]); }} className="px-4 text-muted-foreground text-sm">
               Cancelar
             </button>
           </div>
