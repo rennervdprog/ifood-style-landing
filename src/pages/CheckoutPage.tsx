@@ -146,9 +146,15 @@ const CheckoutPage = () => {
   const storeOwnFee = (storeData as any)?.own_delivery_fee || 0;
   const isOwnDelivery = storeDeliveryMode === "own";
   const config = deliveryFeeConfig || DEFAULT_DELIVERY_FEE_CONFIG;
-  // For own delivery stores: always add platform split (R$2) on top of store's own fee
-  const ownDeliveryFeeWithSplit = isOwnDelivery && storePlan.platformDeliverySplit > 0
-    ? storeOwnFee + storePlan.platformDeliverySplit
+  // For own delivery stores on FIXED plan: always add platform split on top of store's own fee.
+  // Fallback to admin_settings.platform_split (default R$2) if useStorePlan is still loading
+  // or hasn't computed the split yet, so the customer always sees the correct total.
+  const platformSplitFallback = config.platform_split ?? DEFAULT_DELIVERY_FEE_CONFIG.platform_split;
+  const effectivePlatformSplit = isOwnDelivery && storePlan.isFixedPlan
+    ? (storePlan.platformDeliverySplit > 0 ? storePlan.platformDeliverySplit : platformSplitFallback)
+    : 0;
+  const ownDeliveryFeeWithSplit = isOwnDelivery
+    ? storeOwnFee + effectivePlatformSplit
     : storeOwnFee;
   const activeDeliveryFee = isPickup ? 0 : (isOwnDelivery ? ownDeliveryFeeWithSplit : (calculatedDeliveryFee !== null ? calculatedDeliveryFee : config.city_fee));
   const effectiveDeliveryFee = isPickup ? 0 : (couponType === "free_shipping" ? 0 : activeDeliveryFee);
