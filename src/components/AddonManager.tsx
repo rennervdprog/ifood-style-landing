@@ -249,6 +249,27 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
             />
           </div>
 
+          {/* Toggle: Define preço final */}
+          <button
+            type="button"
+            onClick={() => setGroupForm({ ...groupForm, price_replaces_base: !groupForm.price_replaces_base, min_select: !groupForm.price_replaces_base ? "1" : groupForm.min_select, max_select: !groupForm.price_replaces_base ? "1" : groupForm.max_select })}
+            className={`w-full flex items-start justify-between gap-3 py-3 px-4 rounded-xl border-2 transition-all text-left ${
+              groupForm.price_replaces_base ? "bg-amber-500/10 border-amber-500" : "bg-muted/50 border-transparent"
+            }`}
+          >
+            <div className="flex-1">
+              <div className="text-sm font-bold text-foreground">
+                💰 Define o preço final?
+              </div>
+              <div className="text-[11px] text-muted-foreground mt-0.5">
+                Use para tamanhos (200ml, 300ml). O preço escolhido <b>substitui</b> o preço base do produto. Vira obrigatório e seleção única.
+              </div>
+            </div>
+            <div className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 mt-0.5 ${groupForm.price_replaces_base ? "bg-amber-500" : "bg-muted-foreground/30"}`}>
+              <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform shadow ${groupForm.price_replaces_base ? "translate-x-5" : "translate-x-0.5"}`} />
+            </div>
+          </button>
+
           {/* Bulk import inside group creation */}
           <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-2">
             <div className="flex items-center gap-2">
