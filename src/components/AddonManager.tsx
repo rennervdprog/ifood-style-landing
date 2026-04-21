@@ -12,9 +12,9 @@ interface AddonManagerProps {
 const AddonManager = ({ storeId }: AddonManagerProps) => {
   const queryClient = useQueryClient();
   const [showGroupForm, setShowGroupForm] = useState(false);
-  const [groupForm, setGroupForm] = useState({ name: "", min_select: "0", max_select: "1" });
+  const [groupForm, setGroupForm] = useState({ name: "", min_select: "0", max_select: "1", price_replaces_base: false });
   const [editingGroup, setEditingGroup] = useState<string | null>(null);
-  const [editGroupForm, setEditGroupForm] = useState({ name: "", min_select: "0", max_select: "1" });
+  const [editGroupForm, setEditGroupForm] = useState({ name: "", min_select: "0", max_select: "1", price_replaces_base: false });
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
   const [itemForm, setItemForm] = useState({ name: "", price: "0" });
   const [showItemForm, setShowItemForm] = useState<string | null>(null);
