@@ -407,6 +407,11 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                         <span className="text-xs text-primary font-bold">
                           {(group.addon_items as any[])?.length || 0} itens
                         </span>
+                        {group.price_replaces_base && (
+                          <span className="text-[10px] bg-amber-500/20 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full font-bold">
+                            💰 Define preço
+                          </span>
+                        )}
                         {linkedProducts.length > 0 && (
                           <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full font-bold">
                             🔗 {linkedProducts.length} produto{linkedProducts.length > 1 ? "s" : ""}
