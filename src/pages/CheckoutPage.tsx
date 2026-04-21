@@ -168,8 +168,8 @@ const CheckoutPage = () => {
     if (isOwnDelivery) {
       setCalculatedDeliveryFee(null);
       const totalOwnFee = ownDeliveryFeeWithSplit;
-      if (storePlan.platformDeliverySplit > 0) {
-        setFeeBreakdown(`Entrega loja: ${formatBRL(storeOwnFee)} + Taxa plataforma: ${formatBRL(storePlan.platformDeliverySplit)}`);
+      if (effectivePlatformSplit > 0) {
+        setFeeBreakdown(`Entrega loja: ${formatBRL(storeOwnFee)} + Taxa plataforma: ${formatBRL(effectivePlatformSplit)}`);
       } else {
         setFeeBreakdown(`Taxa fixa da loja: ${formatBRL(storeOwnFee)}`);
       }
