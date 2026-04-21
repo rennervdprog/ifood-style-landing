@@ -901,6 +901,12 @@ const CheckoutPage = () => {
               </div>
               )}
 
+              {!isPickup && feeBreakdown && couponType !== "free_shipping" && (
+                <p className="text-[11px] text-muted-foreground/80 -mt-1 pl-4">
+                  {feeBreakdown}
+                </p>
+              )}
+
               {!isPickup && couponType === "free_shipping" && (
                 <div className="flex justify-between text-sm">
                   <span className="text-green-600 font-medium">Frete grátis 🎉</span>
