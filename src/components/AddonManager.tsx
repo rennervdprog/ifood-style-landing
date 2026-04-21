@@ -376,6 +376,20 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                           className="w-full bg-secondary text-foreground px-2 py-1 rounded text-xs border border-border"
                         />
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => setEditGroupForm({ ...editGroupForm, price_replaces_base: !editGroupForm.price_replaces_base, min_select: !editGroupForm.price_replaces_base ? "1" : editGroupForm.min_select, max_select: !editGroupForm.price_replaces_base ? "1" : editGroupForm.max_select })}
+                        className={`w-full flex items-center justify-between py-2 px-3 rounded-lg border transition-all text-left ${
+                          editGroupForm.price_replaces_base ? "bg-amber-500/10 border-amber-500" : "bg-muted/50 border-transparent"
+                        }`}
+                      >
+                        <span className="text-xs font-bold text-foreground">
+                          💰 Define preço final
+                        </span>
+                        <div className={`w-9 h-5 rounded-full transition-colors relative ${editGroupForm.price_replaces_base ? "bg-amber-500" : "bg-muted-foreground/30"}`}>
+                          <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-transform shadow ${editGroupForm.price_replaces_base ? "translate-x-4" : "translate-x-0.5"}`} />
+                        </div>
+                      </button>
                       <div className="flex gap-1">
                         <button onClick={() => updateGroup(group.id)} className="bg-primary text-primary-foreground px-3 py-1.5 rounded-lg text-xs font-bold">
                           <Save className="h-3 w-3" />
