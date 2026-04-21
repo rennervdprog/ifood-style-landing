@@ -21,6 +21,7 @@ export type Database = {
           max_select: number
           min_select: number
           name: string
+          price_replaces_base: boolean
           product_id: string | null
           sort_order: number
           store_id: string
@@ -31,6 +32,7 @@ export type Database = {
           max_select?: number
           min_select?: number
           name: string
+          price_replaces_base?: boolean
           product_id?: string | null
           sort_order?: number
           store_id: string
@@ -41,6 +43,7 @@ export type Database = {
           max_select?: number
           min_select?: number
           name?: string
+          price_replaces_base?: boolean
           product_id?: string | null
           sort_order?: number
           store_id?: string
