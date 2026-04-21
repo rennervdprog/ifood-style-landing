@@ -198,7 +198,7 @@ const CheckoutPage = () => {
     });
 
     return () => { cancelled = true; };
-  }, [profileCep, storeCep, config, savedAddressData, selectedSavedAddressId, profileNeighborhood, isOwnDelivery, storeOwnFee, ownDeliveryFeeWithSplit, storePlan.isItatingaFixed, storePlan.platformDeliverySplit]);
+  }, [profileCep, storeCep, config, savedAddressData, selectedSavedAddressId, profileNeighborhood, isOwnDelivery, storeOwnFee, ownDeliveryFeeWithSplit, storePlan.isFixedPlan, storePlan.platformDeliverySplit, effectivePlatformSplit]);
 
   const buildAddressString = () => {
     if (!hasAddress) return "";
