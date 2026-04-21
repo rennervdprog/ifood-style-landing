@@ -1390,6 +1390,23 @@ const AdminDashboard = () => {
                 </div>
               )}
 
+              {isOwnDelivery && !driversLoading && !hasLinkedDrivers && (
+                <div className="bg-red-500/10 border-2 border-red-500/30 rounded-2xl p-4 flex items-start gap-3 animate-pulse-subtle">
+                  <AlertTriangle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <h3 className="font-bold text-red-600 dark:text-red-400 text-sm">🛵 Cadastre um motoboy para receber pedidos</h3>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Sua loja está configurada como <strong>Entrega Própria</strong>, mas você ainda não vinculou nenhum motoboy.
+                      Sem um entregador cadastrado, <strong>você não conseguirá despachar pedidos</strong> e os clientes podem não conseguir finalizar a compra.
+                    </p>
+                    <button onClick={() => setDashboardTab("drivers")}
+                      className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-white bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded-lg transition-colors">
+                      <Bike className="inline h-3 w-3 mr-1" /> Cadastrar Motoboy Agora
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {storePlan.hasCommission && (
                 <CommissionAlert storeId={store.id} storeName={store.name} onGoToFinance={() => setDashboardTab("finance")} />
               )}
