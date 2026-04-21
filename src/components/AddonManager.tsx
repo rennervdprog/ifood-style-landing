@@ -391,6 +391,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                           name: group.name,
                           min_select: String(group.min_select),
                           max_select: String(group.max_select),
+                          price_replaces_base: !!group.price_replaces_base,
                         });
                       }}
                       className="text-muted-foreground hover:text-foreground p-1.5"
