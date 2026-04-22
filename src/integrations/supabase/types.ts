@@ -2289,6 +2289,7 @@ export type Database = {
           app_subscribed: boolean
           asaas_account_id: string | null
           asaas_wallet_id: string | null
+          categories: Database["public"]["Enums"]["store_category"][]
           category: Database["public"]["Enums"]["store_category"]
           commission_rate: number
           created_at: string
@@ -2321,6 +2322,7 @@ export type Database = {
           app_subscribed?: boolean
           asaas_account_id?: string | null
           asaas_wallet_id?: string | null
+          categories?: Database["public"]["Enums"]["store_category"][]
           category: Database["public"]["Enums"]["store_category"]
           commission_rate?: number
           created_at?: string
@@ -2353,6 +2355,7 @@ export type Database = {
           app_subscribed?: boolean
           asaas_account_id?: string | null
           asaas_wallet_id?: string | null
+          categories?: Database["public"]["Enums"]["store_category"][]
           category?: Database["public"]["Enums"]["store_category"]
           commission_rate?: number
           created_at?: string
@@ -2751,6 +2754,7 @@ export type Database = {
           address_reference: string | null
           address_state: string | null
           address_street: string | null
+          categories: Database["public"]["Enums"]["store_category"][] | null
           category: Database["public"]["Enums"]["store_category"] | null
           created_at: string | null
           delivery_mode: string | null
@@ -2775,6 +2779,7 @@ export type Database = {
           address_reference?: string | null
           address_state?: string | null
           address_street?: string | null
+          categories?: Database["public"]["Enums"]["store_category"][] | null
           category?: Database["public"]["Enums"]["store_category"] | null
           created_at?: string | null
           delivery_mode?: string | null
@@ -2799,6 +2804,7 @@ export type Database = {
           address_reference?: string | null
           address_state?: string | null
           address_street?: string | null
+          categories?: Database["public"]["Enums"]["store_category"][] | null
           category?: Database["public"]["Enums"]["store_category"] | null
           created_at?: string | null
           delivery_mode?: string | null
