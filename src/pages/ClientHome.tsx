@@ -381,39 +381,51 @@ const ClientHomeContent = () => {
 
   const hasOrders = (recentOrders && recentOrders.length > 0);
 
-  // Suggested stores for new users (no orders yet), filtered by city
-  const { data: suggestedStores } = useQuery({
-    queryKey: ["suggested-stores", profile?.city],
+  // All available stores for the city — always loaded so every client sees options
+  const { data: suggestedStores, isLoading: loadingStores } = useQuery({
+    queryKey: ["available-stores", profile?.city || "all"],
     queryFn: async () => {
       let query = supabase
         .from("stores_public")
-        .select("id, name, image_url, slug, category, categories, is_open, force_closed, rating")
+        .select("id, name, image_url, slug, category, categories, is_open, force_closed, rating, address_city")
         .eq("status", "ativo")
-        .limit(8);
+        .limit(50);
 
-      // Filter by user's city if available
-      if (profile?.city) {
-        query = query.ilike("address_city", `%${profile.city}%`);
+      // Filter by user's city if available; otherwise show all active stores
+      if (profile?.city && profile.city.trim().length > 0) {
+        query = query.ilike("address_city", `%${profile.city.trim()}%`);
       }
 
       const { data, error } = await query;
       if (error) throw error;
 
+      // Fallback: if filtering by city returned 0, retry without filter so the user always sees stores
+      let rows = data || [];
+      if (rows.length === 0 && profile?.city) {
+        const { data: fallback } = await supabase
+          .from("stores_public")
+          .select("id, name, image_url, slug, category, categories, is_open, force_closed, rating, address_city")
+          .eq("status", "ativo")
+          .limit(50);
+        rows = fallback || [];
+      }
+
       // Fetch opening hours
-      const storeIds = (data || []).map((s: any) => s.id);
+      const storeIds = rows.map((s: any) => s.id);
       if (storeIds.length === 0) return [];
       const { data: allHours } = await supabase
         .from("opening_hours")
         .select("store_id, day_of_week, open_time, close_time, is_closed_all_day")
         .in("store_id", storeIds);
 
-      return (data || []).map((store: any) => {
+      return rows.map((store: any) => {
         const hours = (allHours || []).filter((h: any) => h.store_id === store.id) as OpeningHour[];
         const status = getStoreOpenStatus(hours, store.force_closed || false, store.is_open);
         return { ...store, realIsOpen: status.isOpen, statusReason: status.reason };
       }).sort((a: any, b: any) => (a.realIsOpen === b.realIsOpen ? 0 : a.realIsOpen ? -1 : 1));
     },
-    enabled: !!profile,
+    // Run as soon as user is logged in — do not wait for profile so it always loads
+    enabled: !!user,
     staleTime: 1000 * 60 * 5,
   });
 
