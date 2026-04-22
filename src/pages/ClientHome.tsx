@@ -333,7 +333,7 @@ const ClientHomeContent = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("stores_public")
-        .select("id, name, image_url, slug, category, is_open, force_closed")
+        .select("id, name, image_url, slug, category, categories, is_open, force_closed")
         .eq("status", "ativo")
         .ilike("name", `%${searchQuery}%`)
         .limit(10);
