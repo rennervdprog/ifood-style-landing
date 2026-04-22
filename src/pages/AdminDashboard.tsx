@@ -1182,7 +1182,7 @@ const AdminDashboard = () => {
 
         {/* Navigation */}
         <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
-          {baseSidebarItems.filter(i => (!i.pizzaOnly || store?.category === "pizzas") && (i.key !== "reports" || storePlan.allowFullReports) && (i.key !== "clients" || storePlan.allowFullReports)).map(item => {
+          {baseSidebarItems.filter(i => (!i.pizzaOnly || store?.category === "pizzas" || ((store as any)?.categories || []).includes("pizzas")) && (i.key !== "reports" || storePlan.allowFullReports) && (i.key !== "clients" || storePlan.allowFullReports)).map(item => {
             const isActive = dashboardTab === item.key;
             const Icon = item.icon;
             return (
