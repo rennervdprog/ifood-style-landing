@@ -675,6 +675,60 @@ const ClientHomeContent = () => {
             </p>
           </div>
         )}
+
+        {/* Always-visible: All available stores in the city */}
+        {!searchQuery && (
+          <div>
+            <h2 className="text-sm font-bold text-foreground mb-3 flex items-center gap-1.5">
+              <Store className="h-4 w-4 text-primary" />
+              Lojas disponíveis{profile?.city ? ` em ${profile.city}` : ""}
+            </h2>
+            {loadingStores ? (
+              <div className="grid grid-cols-2 gap-3">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="h-32 rounded-2xl bg-muted animate-pulse" />
+                ))}
+              </div>
+            ) : suggestedStores && suggestedStores.length > 0 ? (
+              <div className="grid grid-cols-2 gap-3">
+                {suggestedStores.map((store: any) => (
+                  <button
+                    key={store.id}
+                    onClick={() => goToStore(store)}
+                    className="bg-card border border-border rounded-2xl p-3 flex flex-col gap-2 text-left hover:bg-muted/50 transition-colors"
+                  >
+                    {store.image_url ? (
+                      <img src={store.image_url} className="w-full h-20 rounded-xl object-cover" alt={store.name} loading="lazy" />
+                    ) : (
+                      <div className="w-full h-20 rounded-xl bg-primary/10 flex items-center justify-center">
+                        <Store className="h-7 w-7 text-primary" />
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-foreground truncate">{store.name}</p>
+                      <p className="text-[11px] text-muted-foreground capitalize truncate">
+                        {store.category?.replace(/_/g, " ")}
+                      </p>
+                    </div>
+                    <span
+                      className={`self-start text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        store.realIsOpen
+                          ? "bg-green-100 text-green-700"
+                          : "bg-red-100 text-red-600"
+                      }`}
+                    >
+                      {store.realIsOpen ? "Aberta" : "Fechada"}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-6">
+                Nenhuma loja disponível no momento.
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       <BottomNav />
