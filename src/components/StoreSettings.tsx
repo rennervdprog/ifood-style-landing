@@ -31,6 +31,8 @@ const CATEGORY_OPTIONS = [
   { value: "churrasco", label: "Churrasco" },
   { value: "farmacias", label: "Farmácias" },
   { value: "docerias", label: "Docerias" },
+  { value: "restaurante", label: "Restaurante" },
+  { value: "esfihas", label: "Esfihas" },
 ];
 
 type PizzaPriceMode = "maior" | "media" | "soma";
@@ -39,6 +41,7 @@ interface StoreSettingsProps {
   storeId: string;
   storeName: string;
   storeCategory: string;
+  storeCategories?: string[] | null;
   storeImageUrl: string | null;
   storeIsOpen: boolean;
   forceClosed: boolean;
@@ -56,12 +59,16 @@ interface StoreSettingsProps {
   storeSettings?: Record<string, any> | null;
 }
 
-const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, storeIsOpen, forceClosed, storeSlug, storeAddressStreet, storeAddressNumber, storeAddressComplement, storeAddressNeighborhood, storeAddressReference, storeAddressCity, storeAddressState, storeAddressCep, storeDeliveryMode, storeOwnDeliveryFee, storeSettings }: StoreSettingsProps) => {
+const StoreSettings = ({ storeId, storeName, storeCategory, storeCategories, storeImageUrl, storeIsOpen, forceClosed, storeSlug, storeAddressStreet, storeAddressNumber, storeAddressComplement, storeAddressNeighborhood, storeAddressReference, storeAddressCity, storeAddressState, storeAddressCep, storeDeliveryMode, storeOwnDeliveryFee, storeSettings }: StoreSettingsProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const [name, setName] = useState(storeName);
   const [category, setCategory] = useState(storeCategory);
+  const [categories, setCategories] = useState<string[]>(() => {
+    const initial = (storeCategories && storeCategories.length > 0) ? storeCategories : [storeCategory];
+    return Array.from(new Set(initial.filter(Boolean)));
+  });
   const [slug, setSlug] = useState(storeSlug || storeName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""));
   const [whatsapp, setWhatsapp] = useState("");
   const [imageUrl, setImageUrl] = useState(storeImageUrl || "");
@@ -181,11 +188,15 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, store
 
     // Update store
     const cleanSlug = slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, "").replace(/--+/g, "-");
+    // Ensure primary category is always present in the list, and primary equals first selected
+    const finalCategories = Array.from(new Set([category, ...categories].filter(Boolean)));
+    const primaryCategory = finalCategories[0] || category;
     const { error: storeError } = await supabase
       .from("stores")
       .update({
         name: name.trim(),
-        category: category as any,
+        category: primaryCategory as any,
+        categories: finalCategories as any,
         image_url: imageUrl || null,
         slug: cleanSlug || null,
         settings: {
@@ -401,19 +412,70 @@ const NotificationSection = () => {
       <div className="space-y-2">
         <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
           <Tag className="h-4 w-4 text-primary" />
-          Categoria
+          Categorias da Loja
         </label>
-        <select
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary appearance-none"
-        >
-          {CATEGORY_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
+        <p className="text-[11px] text-muted-foreground">
+          Selecione todas as categorias que sua loja atende. A <strong>categoria principal</strong> é usada como destaque.
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {CATEGORY_OPTIONS.map((opt) => {
+            const checked = categories.includes(opt.value);
+            const isPrimary = category === opt.value;
+            return (
+              <button
+                type="button"
+                key={opt.value}
+                onClick={() => {
+                  if (checked) {
+                    // Don't allow removing the last category
+                    if (categories.length === 1) {
+                      toast.error("Selecione pelo menos uma categoria.");
+                      return;
+                    }
+                    const next = categories.filter((c) => c !== opt.value);
+                    setCategories(next);
+                    if (isPrimary) setCategory(next[0]);
+                  } else {
+                    setCategories([...categories, opt.value]);
+                    if (categories.length === 0) setCategory(opt.value);
+                  }
+                }}
+                className={`relative flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-xs font-bold transition-all active:scale-95 ${
+                  checked
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border bg-secondary text-muted-foreground hover:border-primary/40"
+                }`}
+              >
+                <span className={`w-4 h-4 rounded-md border-2 flex items-center justify-center flex-shrink-0 ${checked ? "bg-primary border-primary" : "border-muted-foreground/40"}`}>
+                  {checked && <span className="text-primary-foreground text-[10px] leading-none">✓</span>}
+                </span>
+                <span className="truncate">{opt.label}</span>
+                {isPrimary && checked && (
+                  <span className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[8px] px-1.5 py-0.5 rounded-full font-black uppercase tracking-wide">
+                    Principal
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+        {categories.length > 1 && (
+          <div className="space-y-1.5 pt-2">
+            <label className="text-[11px] font-bold text-foreground/70">Categoria principal (destaque):</label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full bg-secondary border border-border rounded-xl px-3 py-2 text-foreground text-xs focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary appearance-none"
+            >
+              {categories.map((c) => {
+                const opt = CATEGORY_OPTIONS.find((o) => o.value === c);
+                return (
+                  <option key={c} value={c}>{opt?.label || c}</option>
+                );
+              })}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* WhatsApp */}

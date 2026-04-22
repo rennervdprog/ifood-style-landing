@@ -1118,7 +1118,7 @@ const AdminDashboard = () => {
               <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
             </div>
             <div className="px-4 pb-4 grid grid-cols-3 gap-3">
-              {moreSheetItems.filter(item => (!item.pizzaOnly || store?.category === "pizzas") && (item.key !== "reports" || storePlan.allowFullReports) && (item.key !== "clients" || storePlan.allowFullReports)).map(item => {
+              {moreSheetItems.filter(item => (!item.pizzaOnly || store?.category === "pizzas" || ((store as any)?.categories || []).includes("pizzas")) && (item.key !== "reports" || storePlan.allowFullReports) && (item.key !== "clients" || storePlan.allowFullReports)).map(item => {
                 const Icon = item.icon;
                 const isActive = dashboardTab === item.key;
                 return (
@@ -1182,7 +1182,7 @@ const AdminDashboard = () => {
 
         {/* Navigation */}
         <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
-          {baseSidebarItems.filter(i => (!i.pizzaOnly || store?.category === "pizzas") && (i.key !== "reports" || storePlan.allowFullReports) && (i.key !== "clients" || storePlan.allowFullReports)).map(item => {
+          {baseSidebarItems.filter(i => (!i.pizzaOnly || store?.category === "pizzas" || ((store as any)?.categories || []).includes("pizzas")) && (i.key !== "reports" || storePlan.allowFullReports) && (i.key !== "clients" || storePlan.allowFullReports)).map(item => {
             const isActive = dashboardTab === item.key;
             const Icon = item.icon;
             return (
@@ -2481,6 +2481,7 @@ const AdminDashboard = () => {
               {dashboardTab === "settings" && (
                 <div className="space-y-6">
                   <StoreSettings storeId={store.id} storeName={store.name} storeCategory={store.category}
+                    storeCategories={(store as any).categories || null}
                     storeImageUrl={store.image_url} storeIsOpen={store.is_open}
                     forceClosed={(store as any).force_closed || false} storeSlug={(store as any).slug || null}
                     storeAddressStreet={(store as any).address_street || null}
