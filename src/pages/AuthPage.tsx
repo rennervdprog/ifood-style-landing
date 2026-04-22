@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Mail, Lock, Eye, EyeOff, KeyRound, FileText, ShoppingBag, CheckCircle2, Zap, Check, X, Phone } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, KeyRound, FileText, ShoppingBag, CheckCircle2, Zap, Check, X, Phone, User } from "lucide-react";
 import { maskWhatsApp } from "@/lib/whatsapp";
 import { isPartnerCapacitorApp } from "@/lib/capacitorAppMode";
 
@@ -28,6 +28,7 @@ const AuthPage = () => {
   const [mode, setMode] = useState<AuthMode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
   const [cpf, setCpf] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [showPassword, setShowPassword] = useState(false);
