@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
@@ -14,6 +14,16 @@ import { toast } from "sonner";
 import BottomNav from "@/components/BottomNav";
 import ProductTour, { clienteTourSteps } from "@/components/ProductTour";
 import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
+
+const mapStoresWithHours = (stores: any[], allHours: any[] | null | undefined) => {
+  return stores
+    .map((store: any) => {
+      const hours = (allHours || []).filter((h: any) => h.store_id === store.id) as OpeningHour[];
+      const status = getStoreOpenStatus(hours, store.force_closed || false, store.is_open);
+      return { ...store, realIsOpen: status.isOpen, statusReason: status.reason };
+    })
+    .sort((a: any, b: any) => (a.realIsOpen === b.realIsOpen ? 0 : a.realIsOpen ? -1 : 1));
+};
 
 /* ─── Auth Section (shown when not logged in) ─── */
 type AuthMode = "login" | "signup" | "forgot" | "reset";
@@ -354,7 +364,7 @@ const ClientHomeContent = () => {
     queryKey: ["client-store-search", searchQuery],
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke("public-store-catalog", {
-        body: { query: searchQuery, limit: 10 },
+        body: { query: searchQuery, limit: 50, fallback_to_all: true },
       });
       if (error) throw error;
       const stores = Array.isArray(data?.stores) ? data.stores : [];
@@ -367,11 +377,7 @@ const ClientHomeContent = () => {
         .select("store_id, day_of_week, open_time, close_time, is_closed_all_day")
         .in("store_id", storeIds);
 
-      return stores.map((store: any) => {
-        const hours = (allHours || []).filter((h: any) => h.store_id === store.id) as OpeningHour[];
-        const status = getStoreOpenStatus(hours, store.force_closed || false, store.is_open);
-        return { ...store, realIsOpen: status.isOpen, statusReason: status.reason };
-      });
+      return mapStoresWithHours(stores, allHours);
     },
     enabled: searchQuery.length >= 2,
     staleTime: 1000 * 60,
@@ -391,7 +397,15 @@ const ClientHomeContent = () => {
         },
       });
       if (error) throw error;
-      const rows = Array.isArray(data?.stores) ? data.stores : [];
+      let rows = Array.isArray(data?.stores) ? data.stores : [];
+
+      if (rows.length === 0) {
+        const { data: fallbackData, error: fallbackError } = await supabase.functions.invoke("public-store-catalog", {
+          body: { limit: 50, fallback_to_all: true },
+        });
+        if (fallbackError) throw fallbackError;
+        rows = Array.isArray(fallbackData?.stores) ? fallbackData.stores : [];
+      }
 
       // Fetch opening hours
       const storeIds = rows.map((s: any) => s.id);
@@ -401,14 +415,9 @@ const ClientHomeContent = () => {
         .select("store_id, day_of_week, open_time, close_time, is_closed_all_day")
         .in("store_id", storeIds);
 
-      return rows.map((store: any) => {
-        const hours = (allHours || []).filter((h: any) => h.store_id === store.id) as OpeningHour[];
-        const status = getStoreOpenStatus(hours, store.force_closed || false, store.is_open);
-        return { ...store, realIsOpen: status.isOpen, statusReason: status.reason };
-      }).sort((a: any, b: any) => (a.realIsOpen === b.realIsOpen ? 0 : a.realIsOpen ? -1 : 1));
+      return mapStoresWithHours(rows, allHours);
     },
-    // Run as soon as user is logged in — do not wait for profile so it always loads
-    enabled: !!user,
+    enabled: true,
     staleTime: 1000 * 60 * 5,
   });
 
@@ -442,6 +451,7 @@ const ClientHomeContent = () => {
   };
 
   const firstName = profile?.full_name?.split(" ")[0] || "Cliente";
+  const visibleStores = searchQuery.length >= 2 ? searchResults || [] : suggestedStores || [];
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -466,12 +476,12 @@ const ClientHomeContent = () => {
               placeholder="Pesquisar loja pelo nome..."
               className="w-full pl-10 pr-4 py-3 rounded-xl bg-background text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
             {/* Suggestions dropdown for new users */}
-            {showSuggestions && (
+            {showSuggestions && visibleStores.length > 0 && (
               <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg z-50 max-h-72 overflow-y-auto">
                 <p className="px-3 pt-3 pb-1 text-xs font-semibold text-muted-foreground">
                   ✨ Sugestões{profile?.city ? ` em ${profile.city}` : ""}
                 </p>
-                {suggestedStores!.map((store: any) => (
+                {visibleStores.map((store: any) => (
                   <button key={store.id} onClick={() => goToStore(store)}
                     className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-muted/50 transition-colors text-left">
                     {store.image_url ? (
@@ -672,9 +682,9 @@ const ClientHomeContent = () => {
                   <div key={i} className="h-32 rounded-2xl bg-muted animate-pulse" />
                 ))}
               </div>
-            ) : suggestedStores && suggestedStores.length > 0 ? (
+            ) : visibleStores.length > 0 ? (
               <div className="grid grid-cols-2 gap-3">
-                {suggestedStores.map((store: any) => (
+                {visibleStores.map((store: any) => (
                   <button
                     key={store.id}
                     onClick={() => goToStore(store)}
