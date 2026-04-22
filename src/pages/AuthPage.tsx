@@ -83,6 +83,10 @@ const AuthPage = () => {
       toast.error("Preencha todos os campos.");
       return;
     }
+    if (mode === "signup" && fullName.trim().length < 3) {
+      toast.error("Informe seu nome completo.");
+      return;
+    }
     if (mode === "signup" && cpf.replace(/\D/g, "").length !== 11) {
       toast.error("CPF deve ter 11 dígitos.");
       return;
@@ -154,7 +158,15 @@ const AuthPage = () => {
         const { data: signUpData, error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
-          options: { emailRedirectTo: window.location.origin },
+          options: {
+            emailRedirectTo: window.location.origin,
+            data: {
+              full_name: fullName.trim(),
+              role: "cliente",
+              document: cpf.replace(/\D/g, ""),
+              whatsapp: `55${whatsapp.replace(/\D/g, "")}`,
+            },
+          },
         });
         if (error) throw error;
         if (signUpData?.user?.id) {
@@ -166,6 +178,7 @@ const AuthPage = () => {
           });
           await supabase.from("profiles").update({
             terms_accepted_at: new Date().toISOString(),
+            full_name: fullName.trim(),
             document: cpf.replace(/\D/g, ""),
             whatsapp_number: `55${whatsapp.replace(/\D/g, "")}`,
           }).eq("user_id", signUpData.user.id);
