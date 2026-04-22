@@ -6,6 +6,7 @@ import AdminStoreManager from "@/components/AdminStoreManager";
 import DeliveryFeeConfigPanel from "@/components/DeliveryFeeConfig";
 import TestStoreCreator from "@/components/TestStoreCreator";
 import AdminPlanManager from "@/components/AdminPlanManager";
+import AdminFixedPlanReceivables from "@/components/AdminFixedPlanReceivables";
 import ModeratorManager from "@/components/ModeratorManager";
 import PartnerSplitPanel from "@/components/PartnerSplitPanel";
 import FixedPlanBillingHistory from "@/components/FixedPlanBillingHistory";
@@ -801,7 +802,12 @@ const SuperAdminDashboard = () => {
               </div>
             )}
             {activeTab === "cidades" && <CidadesTab stores={stores} />}
-            {activeTab === "planos" && <AdminPlanManager />}
+            {activeTab === "planos" && (
+              <div className="space-y-6">
+                <AdminFixedPlanReceivables />
+                <AdminPlanManager />
+              </div>
+            )}
             {activeTab === "pagamentos" && <PagamentosSplitTab stores={stores || []} />}
             {activeTab === "juridico" && <JuridicoTab />}
             {activeTab === "moderadores" && <ModeratorManager />}
