@@ -188,11 +188,15 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeCategories, sto
 
     // Update store
     const cleanSlug = slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, "").replace(/--+/g, "-");
+    // Ensure primary category is always present in the list, and primary equals first selected
+    const finalCategories = Array.from(new Set([category, ...categories].filter(Boolean)));
+    const primaryCategory = finalCategories[0] || category;
     const { error: storeError } = await supabase
       .from("stores")
       .update({
         name: name.trim(),
-        category: category as any,
+        category: primaryCategory as any,
+        categories: finalCategories as any,
         image_url: imageUrl || null,
         slug: cleanSlug || null,
         settings: {
