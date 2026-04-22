@@ -234,7 +234,10 @@ const PedidosPage = () => {
       return data;
     },
     enabled: !!user && !isLojista,
-    refetchOnMount: "always",
+    // Mostra cache imediatamente; revalida em background — evita "tela laranja"
+    // ao reentrar na página em apps Capacitor.
+    staleTime: 1000 * 30,
+    refetchOnMount: true,
     refetchInterval: (query) => {
       const data = query.state.data as any[] | undefined;
       return data?.some((o: any) => o.status === "aguardando_pagamento") ? 5000 : false;
@@ -256,7 +259,7 @@ const PedidosPage = () => {
     },
     enabled: !!ownStore?.id && isLojista,
     staleTime: 1000 * 30,
-    refetchOnMount: "always",
+    refetchOnMount: true,
     refetchOnReconnect: true,
     refetchOnWindowFocus: true,
   });

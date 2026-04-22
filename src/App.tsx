@@ -128,6 +128,25 @@ const App = () => {
     initCapacitorLifecycle().catch(() => {});
     // Auto-update inicia imediatamente — agenda interno usa 1s antes do 1º check
     try { initAutoUpdate(); } catch {}
+
+    // 🚀 Prefetch das rotas mais usadas em apps Capacitor durante o tempo ocioso.
+    // Evita "tela laranja de carregamento" quando o usuário entra em /pedidos
+    // pela primeira vez — o chunk já está em cache.
+    if (isCapacitorNative()) {
+      const prefetch = () => {
+        import("./pages/PedidosPage").catch(() => {});
+        import("./pages/StorePage").catch(() => {});
+        import("./pages/CartPage").catch(() => {});
+        import("./pages/PerfilPage").catch(() => {});
+      };
+      // requestIdleCallback se disponível, senão setTimeout
+      const w = window as any;
+      if (typeof w.requestIdleCallback === "function") {
+        w.requestIdleCallback(prefetch, { timeout: 3000 });
+      } else {
+        setTimeout(prefetch, 1500);
+      }
+    }
   }, []);
 
   return (
