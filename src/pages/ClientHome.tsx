@@ -81,7 +81,15 @@ const ClientAuth = ({ onSuccess }: { onSuccess: () => void }) => {
         const { data: signUpData, error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
-          options: { emailRedirectTo: window.location.origin },
+          options: {
+            emailRedirectTo: window.location.origin,
+            data: {
+              full_name: fullName.trim(),
+              role: "cliente",
+              document: cpf.replace(/\D/g, ""),
+              whatsapp: `55${whatsapp.replace(/\D/g, "")}`,
+            },
+          },
         });
         if (error) throw error;
         if (signUpData?.user?.id) {
@@ -93,6 +101,7 @@ const ClientAuth = ({ onSuccess }: { onSuccess: () => void }) => {
           });
           await supabase.from("profiles").update({
             terms_accepted_at: new Date().toISOString(),
+            full_name: fullName.trim(),
             document: cpf.replace(/\D/g, ""),
             whatsapp_number: `55${whatsapp.replace(/\D/g, "")}`,
           }).eq("user_id", signUpData.user.id);
