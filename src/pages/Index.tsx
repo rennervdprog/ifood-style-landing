@@ -118,7 +118,7 @@ const Index = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("stores")
-        .select("id, name, slug, image_url, category, rating, is_open, force_closed, status, delivery_mode, own_delivery_fee")
+        .select("id, name, slug, image_url, category, categories, rating, is_open, force_closed, status, delivery_mode, own_delivery_fee")
         .order("rating", { ascending: false });
       if (error) throw error;
       return (data || []).filter((s: any) => !s.status || s.status === "ativo");
@@ -162,7 +162,11 @@ const Index = () => {
   }, [stores, allHours]);
 
   const filtered = useMemo(() => {
-    let result = sorted?.filter((s) => category === "all" || s.category === category);
+    let result = sorted?.filter((s: any) => {
+      if (category === "all") return true;
+      const cats = (s.categories && s.categories.length > 0) ? s.categories : [s.category];
+      return cats.includes(category);
+    });
     if (search.length >= 2 && result) {
       const searchLower = search.toLowerCase();
       const matchingStoreIds = new Set<string>();
