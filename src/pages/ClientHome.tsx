@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
@@ -14,6 +14,16 @@ import { toast } from "sonner";
 import BottomNav from "@/components/BottomNav";
 import ProductTour, { clienteTourSteps } from "@/components/ProductTour";
 import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
+
+const mapStoresWithHours = (stores: any[], allHours: any[] | null | undefined) => {
+  return stores
+    .map((store: any) => {
+      const hours = (allHours || []).filter((h: any) => h.store_id === store.id) as OpeningHour[];
+      const status = getStoreOpenStatus(hours, store.force_closed || false, store.is_open);
+      return { ...store, realIsOpen: status.isOpen, statusReason: status.reason };
+    })
+    .sort((a: any, b: any) => (a.realIsOpen === b.realIsOpen ? 0 : a.realIsOpen ? -1 : 1));
+};
 
 /* ─── Auth Section (shown when not logged in) ─── */
 type AuthMode = "login" | "signup" | "forgot" | "reset";
