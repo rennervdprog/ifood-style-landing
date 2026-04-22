@@ -31,6 +31,8 @@ const CATEGORY_OPTIONS = [
   { value: "churrasco", label: "Churrasco" },
   { value: "farmacias", label: "Farmácias" },
   { value: "docerias", label: "Docerias" },
+  { value: "restaurante", label: "Restaurante" },
+  { value: "esfihas", label: "Esfihas" },
 ];
 
 type PizzaPriceMode = "maior" | "media" | "soma";
@@ -39,6 +41,7 @@ interface StoreSettingsProps {
   storeId: string;
   storeName: string;
   storeCategory: string;
+  storeCategories?: string[] | null;
   storeImageUrl: string | null;
   storeIsOpen: boolean;
   forceClosed: boolean;
