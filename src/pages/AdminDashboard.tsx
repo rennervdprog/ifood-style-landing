@@ -1118,7 +1118,7 @@ const AdminDashboard = () => {
               <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
             </div>
             <div className="px-4 pb-4 grid grid-cols-3 gap-3">
-              {moreSheetItems.filter(item => (!item.pizzaOnly || store?.category === "pizzas") && (item.key !== "reports" || storePlan.allowFullReports) && (item.key !== "clients" || storePlan.allowFullReports)).map(item => {
+              {moreSheetItems.filter(item => (!item.pizzaOnly || store?.category === "pizzas" || ((store as any)?.categories || []).includes("pizzas")) && (item.key !== "reports" || storePlan.allowFullReports) && (item.key !== "clients" || storePlan.allowFullReports)).map(item => {
                 const Icon = item.icon;
                 const isActive = dashboardTab === item.key;
                 return (
