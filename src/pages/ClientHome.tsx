@@ -476,12 +476,12 @@ const ClientHomeContent = () => {
               placeholder="Pesquisar loja pelo nome..."
               className="w-full pl-10 pr-4 py-3 rounded-xl bg-background text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
             {/* Suggestions dropdown for new users */}
-            {showSuggestions && (
+            {showSuggestions && visibleStores.length > 0 && (
               <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg z-50 max-h-72 overflow-y-auto">
                 <p className="px-3 pt-3 pb-1 text-xs font-semibold text-muted-foreground">
                   ✨ Sugestões{profile?.city ? ` em ${profile.city}` : ""}
                 </p>
-                {suggestedStores!.map((store: any) => (
+                {visibleStores.map((store: any) => (
                   <button key={store.id} onClick={() => goToStore(store)}
                     className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-muted/50 transition-colors text-left">
                     {store.image_url ? (
@@ -682,9 +682,9 @@ const ClientHomeContent = () => {
                   <div key={i} className="h-32 rounded-2xl bg-muted animate-pulse" />
                 ))}
               </div>
-            ) : suggestedStores && suggestedStores.length > 0 ? (
+            ) : visibleStores.length > 0 ? (
               <div className="grid grid-cols-2 gap-3">
-                {suggestedStores.map((store: any) => (
+                {visibleStores.map((store: any) => (
                   <button
                     key={store.id}
                     onClick={() => goToStore(store)}
