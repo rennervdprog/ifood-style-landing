@@ -802,7 +802,12 @@ const SuperAdminDashboard = () => {
               </div>
             )}
             {activeTab === "cidades" && <CidadesTab stores={stores} />}
-            {activeTab === "planos" && <AdminPlanManager />}
+            {activeTab === "planos" && (
+              <div className="space-y-6">
+                <AdminFixedPlanReceivables />
+                <AdminPlanManager />
+              </div>
+            )}
             {activeTab === "pagamentos" && <PagamentosSplitTab stores={stores || []} />}
             {activeTab === "juridico" && <JuridicoTab />}
             {activeTab === "moderadores" && <ModeratorManager />}
