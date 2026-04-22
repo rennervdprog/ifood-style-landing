@@ -97,21 +97,24 @@
   <meta name="twitter:description" content="Peça comida, bebidas e muito mais dos melhores restaurantes de Todo O Brasil, Entrega rápida!! Cadastre sua loja grátis.">
 </head>
 
-  <body style="margin:0;background:#FF6B00">
+  <body style="margin:0;background:#0a0a0a">
     <div id="root">
       <!--
-        Static LCP shell — paints meaningful hero content instantly without JS.
-        Background usa a cor da marca para casar com o splash nativo do
-        Capacitor e nunca exibir tela preta/branca durante o cold start.
+        LCP shell — pinta um placeholder discreto até o React montar.
+        Usa fundo neutro escuro/claro (acompanha tema do SO via prefers-color-scheme)
+        para não "piscar" laranja em telas internas como /pedidos onde o conteúdo
+        usa bg-background. Removido pelo main.tsx assim que o React monta.
       -->
-      <div id="lcp-shell" style="min-height:100vh;background:#FF6B00;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1rem;text-align:center;gap:1rem">
-        <div style="font-weight:900;font-size:2rem;letter-spacing:-0.02em;margin-bottom:0.5rem">ItaSuper</div>
-        <div style="display:flex;align-items:center;gap:.5rem;color:rgba(255,255,255,.9);font-size:.95rem">
-          <span style="display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:lcp-spin .8s linear infinite" role="status" aria-label="Carregando"></span>
-          <span>Carregando…</span>
-        </div>
+      <div id="lcp-shell" style="min-height:100vh;background:#0a0a0a;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1rem;text-align:center;gap:1rem">
+        <div style="display:inline-block;width:28px;height:28px;border:3px solid rgba(255,107,0,.25);border-top-color:#FF6B00;border-radius:50%;animation:lcp-spin .8s linear infinite" role="status" aria-label="Carregando"></div>
       </div>
-      <style>@keyframes lcp-spin{to{transform:rotate(360deg)}}</style>
+      <style>
+        @keyframes lcp-spin{to{transform:rotate(360deg)}}
+        @media (prefers-color-scheme: light){
+          body{background:#ffffff !important}
+          #lcp-shell{background:#ffffff !important;color:#0a0a0a !important}
+        }
+      </style>
     </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

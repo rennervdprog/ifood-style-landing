@@ -41,3 +41,19 @@ if (window.gonative || window.median || Capacitor.isNativePlatform()) {
 }
 
 createRoot(document.getElementById("root")!).render(<App />);
+
+// Remove o shell estático assim que o React montar.
+// requestAnimationFrame garante que rodamos depois do primeiro paint do React,
+// evitando "flash branco" entre a remoção do shell e o primeiro frame da SPA.
+requestAnimationFrame(() => {
+  requestAnimationFrame(() => {
+    const shell = document.getElementById("lcp-shell");
+    if (shell) {
+      shell.style.transition = "opacity .15s ease-out";
+      shell.style.opacity = "0";
+      setTimeout(() => shell.remove(), 180);
+    }
+    // Tira o background fixo do body para herdar o tema do app
+    document.body.style.background = "";
+  });
+});
