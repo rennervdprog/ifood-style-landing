@@ -365,7 +365,7 @@ const ClientHomeContent = () => {
     queryFn: async () => {
       let query = supabase
         .from("stores_public")
-        .select("id, name, image_url, slug, category, is_open, force_closed, rating")
+        .select("id, name, image_url, slug, category, categories, is_open, force_closed, rating")
         .eq("status", "ativo")
         .limit(8);
 
