@@ -1,5 +1,4 @@
 import { useState, useMemo } from "react";
-import { createClient } from "@supabase/supabase-js";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
@@ -21,18 +20,6 @@ type AuthMode = "login" | "signup" | "forgot" | "reset";
 
 const REMEMBER_KEY = "itasuper_remember_until";
 const TWO_MONTHS_MS = 60 * 24 * 60 * 60 * 1000;
-
-const publicCatalogClient = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-  {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
-    },
-  },
-);
 
 const ClientAuth = ({ onSuccess }: { onSuccess: () => void }) => {
   const [mode, setMode] = useState<AuthMode>("login");
@@ -366,23 +353,21 @@ const ClientHomeContent = () => {
   const { data: searchResults } = useQuery({
     queryKey: ["client-store-search", searchQuery],
     queryFn: async () => {
-      const { data, error } = await publicCatalogClient
-        .from("stores_public")
-        .select("id, name, image_url, slug, category, categories, is_open, force_closed")
-        .eq("status", "ativo")
-        .ilike("name", `%${searchQuery}%`)
-        .limit(10);
+      const { data, error } = await supabase.functions.invoke("public-store-catalog", {
+        body: { query: searchQuery, limit: 10 },
+      });
       if (error) throw error;
-      if (!data || data.length === 0) return [];
+      const stores = Array.isArray(data?.stores) ? data.stores : [];
+      if (stores.length === 0) return [];
 
       // Fetch opening hours for all found stores
-      const storeIds = data.map((s: any) => s.id);
-      const { data: allHours } = await publicCatalogClient
+      const storeIds = stores.map((s: any) => s.id);
+      const { data: allHours } = await supabase
         .from("opening_hours")
         .select("store_id, day_of_week, open_time, close_time, is_closed_all_day")
         .in("store_id", storeIds);
 
-      return data.map((store: any) => {
+      return stores.map((store: any) => {
         const hours = (allHours || []).filter((h: any) => h.store_id === store.id) as OpeningHour[];
         const status = getStoreOpenStatus(hours, store.force_closed || false, store.is_open);
         return { ...store, realIsOpen: status.isOpen, statusReason: status.reason };
@@ -398,35 +383,20 @@ const ClientHomeContent = () => {
   const { data: suggestedStores, isLoading: loadingStores } = useQuery({
     queryKey: ["available-stores", profile?.city || "all"],
     queryFn: async () => {
-      let query = publicCatalogClient
-        .from("stores_public")
-        .select("id, name, image_url, slug, category, categories, is_open, force_closed, rating, address_city")
-        .eq("status", "ativo")
-        .limit(50);
-
-      // Filter by user's city if available; otherwise show all active stores
-      if (profile?.city && profile.city.trim().length > 0) {
-        query = query.ilike("address_city", `%${profile.city.trim()}%`);
-      }
-
-      const { data, error } = await query;
+      const { data, error } = await supabase.functions.invoke("public-store-catalog", {
+        body: {
+          city: profile?.city?.trim() || null,
+          limit: 50,
+          fallback_to_all: true,
+        },
+      });
       if (error) throw error;
-
-      // Fallback: if filtering by city returned 0, retry without filter so the user always sees stores
-      let rows = data || [];
-      if (rows.length === 0 && profile?.city) {
-        const { data: fallback } = await publicCatalogClient
-          .from("stores_public")
-          .select("id, name, image_url, slug, category, categories, is_open, force_closed, rating, address_city")
-          .eq("status", "ativo")
-          .limit(50);
-        rows = fallback || [];
-      }
+      const rows = Array.isArray(data?.stores) ? data.stores : [];
 
       // Fetch opening hours
       const storeIds = rows.map((s: any) => s.id);
       if (storeIds.length === 0) return [];
-      const { data: allHours } = await publicCatalogClient
+      const { data: allHours } = await supabase
         .from("opening_hours")
         .select("store_id, day_of_week, open_time, close_time, is_closed_all_day")
         .in("store_id", storeIds);
