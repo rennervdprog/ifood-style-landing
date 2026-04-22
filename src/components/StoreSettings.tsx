@@ -59,12 +59,16 @@ interface StoreSettingsProps {
   storeSettings?: Record<string, any> | null;
 }
 
-const StoreSettings = ({ storeId, storeName, storeCategory, storeImageUrl, storeIsOpen, forceClosed, storeSlug, storeAddressStreet, storeAddressNumber, storeAddressComplement, storeAddressNeighborhood, storeAddressReference, storeAddressCity, storeAddressState, storeAddressCep, storeDeliveryMode, storeOwnDeliveryFee, storeSettings }: StoreSettingsProps) => {
+const StoreSettings = ({ storeId, storeName, storeCategory, storeCategories, storeImageUrl, storeIsOpen, forceClosed, storeSlug, storeAddressStreet, storeAddressNumber, storeAddressComplement, storeAddressNeighborhood, storeAddressReference, storeAddressCity, storeAddressState, storeAddressCep, storeDeliveryMode, storeOwnDeliveryFee, storeSettings }: StoreSettingsProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const [name, setName] = useState(storeName);
   const [category, setCategory] = useState(storeCategory);
+  const [categories, setCategories] = useState<string[]>(() => {
+    const initial = (storeCategories && storeCategories.length > 0) ? storeCategories : [storeCategory];
+    return Array.from(new Set(initial.filter(Boolean)));
+  });
   const [slug, setSlug] = useState(storeSlug || storeName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""));
   const [whatsapp, setWhatsapp] = useState("");
   const [imageUrl, setImageUrl] = useState(storeImageUrl || "");
