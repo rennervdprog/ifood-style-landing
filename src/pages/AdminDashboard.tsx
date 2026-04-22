@@ -2481,6 +2481,7 @@ const AdminDashboard = () => {
               {dashboardTab === "settings" && (
                 <div className="space-y-6">
                   <StoreSettings storeId={store.id} storeName={store.name} storeCategory={store.category}
+                    storeCategories={(store as any).categories || null}
                     storeImageUrl={store.image_url} storeIsOpen={store.is_open}
                     forceClosed={(store as any).force_closed || false} storeSlug={(store as any).slug || null}
                     storeAddressStreet={(store as any).address_street || null}
