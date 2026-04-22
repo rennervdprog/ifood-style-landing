@@ -317,6 +317,24 @@ const AuthPage = () => {
 
           {mode === "signup" && (
             <div>
+              <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">Nome completo</label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Seu nome"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  autoComplete="name"
+                  maxLength={80}
+                  className={inputClass}
+                />
+              </div>
+            </div>
+          )}
+
+          {mode === "signup" && (
+            <div>
               <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">CPF</label>
               <div className="relative">
                 <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
