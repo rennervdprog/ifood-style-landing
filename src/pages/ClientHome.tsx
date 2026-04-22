@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/contexts/CartContext";
 import {
   Search, Store, Repeat, ShoppingBag, Clock, ChevronRight, Zap,
-  Mail, Lock, Eye, EyeOff, KeyRound, FileText, CheckCircle2, Phone,
+  Mail, Lock, Eye, EyeOff, KeyRound, FileText, CheckCircle2, Phone, User,
 } from "lucide-react";
 import { maskWhatsApp } from "@/lib/whatsapp";
 import { formatBRL } from "@/lib/utils";
@@ -25,6 +25,7 @@ const ClientAuth = ({ onSuccess }: { onSuccess: () => void }) => {
   const [mode, setMode] = useState<AuthMode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
   const [cpf, setCpf] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -55,6 +56,7 @@ const ClientAuth = ({ onSuccess }: { onSuccess: () => void }) => {
     }
 
     if (!email.trim() || !password.trim()) { toast.error("Preencha todos os campos."); return; }
+    if (mode === "signup" && fullName.trim().length < 3) { toast.error("Informe seu nome completo."); return; }
     if (mode === "signup" && cpf.replace(/\D/g, "").length !== 11) { toast.error("CPF deve ter 11 dígitos."); return; }
     if (mode === "signup") {
       const whatsDigits = whatsapp.replace(/\D/g, "");
