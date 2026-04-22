@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Mail, Lock, Eye, EyeOff, KeyRound, FileText, ShoppingBag, CheckCircle2, Zap, Check, X, Phone } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, KeyRound, FileText, ShoppingBag, CheckCircle2, Zap, Check, X, Phone, User } from "lucide-react";
 import { maskWhatsApp } from "@/lib/whatsapp";
 import { isPartnerCapacitorApp } from "@/lib/capacitorAppMode";
 
@@ -28,6 +28,7 @@ const AuthPage = () => {
   const [mode, setMode] = useState<AuthMode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
   const [cpf, setCpf] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -80,6 +81,10 @@ const AuthPage = () => {
 
     if (!email.trim() || !password.trim()) {
       toast.error("Preencha todos os campos.");
+      return;
+    }
+    if (mode === "signup" && fullName.trim().length < 3) {
+      toast.error("Informe seu nome completo.");
       return;
     }
     if (mode === "signup" && cpf.replace(/\D/g, "").length !== 11) {
@@ -153,7 +158,15 @@ const AuthPage = () => {
         const { data: signUpData, error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
-          options: { emailRedirectTo: window.location.origin },
+          options: {
+            emailRedirectTo: window.location.origin,
+            data: {
+              full_name: fullName.trim(),
+              role: "cliente",
+              document: cpf.replace(/\D/g, ""),
+              whatsapp: `55${whatsapp.replace(/\D/g, "")}`,
+            },
+          },
         });
         if (error) throw error;
         if (signUpData?.user?.id) {
@@ -165,6 +178,7 @@ const AuthPage = () => {
           });
           await supabase.from("profiles").update({
             terms_accepted_at: new Date().toISOString(),
+            full_name: fullName.trim(),
             document: cpf.replace(/\D/g, ""),
             whatsapp_number: `55${whatsapp.replace(/\D/g, "")}`,
           }).eq("user_id", signUpData.user.id);
@@ -299,6 +313,24 @@ const AuthPage = () => {
                 </div>
               )}
             </>
+          )}
+
+          {mode === "signup" && (
+            <div>
+              <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">Nome completo</label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Seu nome"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  autoComplete="name"
+                  maxLength={80}
+                  className={inputClass}
+                />
+              </div>
+            </div>
           )}
 
           {mode === "signup" && (
