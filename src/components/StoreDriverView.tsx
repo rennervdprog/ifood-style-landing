@@ -717,7 +717,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
 
 
   return (
-    <div className="px-4 py-4 space-y-5">
+    <div className="px-4 py-4 pb-32 space-y-5">
       {/* Online/Offline toggle */}
       <button
         onClick={toggleOnline}
