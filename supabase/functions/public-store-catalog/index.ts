@@ -1,0 +1,61 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+const normalizeCity = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const admin = createClient(supabaseUrl, serviceRoleKey);
+
+    const body = req.method === "POST" ? await req.json().catch(() => ({})) : {};
+    const rawCity = typeof body.city === "string" ? body.city : "";
+    const rawQuery = typeof body.query === "string" ? body.query : "";
+    const fallbackToAll = body.fallback_to_all !== false;
+    const limit = Math.min(Math.max(Number(body.limit) || 20, 1), 50);
+
+    const baseSelect = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, address_city";
+
+    let query = admin
+      .from("stores_public")
+      .select(baseSelect)
+      .eq("status", "ativo")
+      .limit(limit);
+
+    if (rawQuery.trim()) {
+      query = query.ilike("name", `%${rawQuery.trim()}%`);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    let stores = data || [];
+
+    if (rawCity.trim()) {
+      const targetCity = normalizeCity(rawCity);
+      const filtered = stores.filter((store) => normalizeCity(store.address_city || "") === targetCity);
+      if (filtered.length > 0 || !fallbackToAll) {
+        stores = filtered;
+      }
+    }
+
+    return new Response(JSON.stringify({ stores }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200,
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: "Failed to load stores" }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500,
+    });
+  }
+});
