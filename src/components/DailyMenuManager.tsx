@@ -18,7 +18,11 @@
    // Initialize selected IDs based on metadata
    useEffect(() => {
      const initialSelected = products
-       .filter(p => p.metadata?.is_daily_menu === true || p.metadata?.is_marmita === true)
+       .filter(p => 
+         p.metadata?.is_daily_menu === true || 
+         p.metadata?.is_marmita === true ||
+         p.name.toLowerCase().includes("marmita")
+       )
        .map(p => p.id);
      setSelectedIds(initialSelected);
      
