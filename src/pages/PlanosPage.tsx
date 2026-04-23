@@ -182,9 +182,9 @@ const painPoints = [
 ];
 
 const features = [
-  { icon: Package, title: "Gestão de Pedidos", desc: "Emissão de nota simplificada e mensagens de atualização para WhatsApp (envio manual)." },
-  { icon: BarChart3, title: "Finanças & Relatórios", desc: "Relatórios 100% detalhados: saiba qual produto mais vende, qual dia vende mais e relatórios diários." },
-  { icon: Truck, title: "Motoboy Integrado", desc: "Ao marcar pedido como pronto, apita instantaneamente a entrega para o motoboy no aplicativo." },
+  { icon: Package, title: "Gestão De Pedidos", desc: "Emissão de nota e mensagem de atualização sobre os pedidos pro WhatsApp (abre o WhatsApp para envio manual)." },
+  { icon: BarChart3, title: "Finanças e Relatórios", desc: "Tudo 100% detalhado: saiba qual produto mais vende, qual dia vendeu mais e tenha relatórios de todos os dias." },
+  { icon: Truck, title: "Motoboy Integrado", desc: "Ao marcar pedido como pronto, um alerta sonoro avisa instantaneamente o motoboy no aplicativo." },
   { icon: CreditCard, title: "PIX Automático", desc: "Pagamento confirmado na hora, sem necessidade de conferência manual de extrato bancário." },
   { icon: Smartphone, title: "Cardápio no Celular", desc: "Link profissional com fotos em HD. O cliente abre e já pede, sem baixar nenhum app." },
   { icon: QrCode, title: "QR Code Exclusivo", desc: "Imprima e cole no balcão ou nas mesas. O cliente aponta a câmera e faz o pedido sozinho." },
