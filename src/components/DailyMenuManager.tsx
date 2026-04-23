@@ -177,38 +177,6 @@
            <p className="text-[10px] text-center text-muted-foreground mt-2 font-medium">
              Isso substituirá a descrição dos produtos selecionados.
            </p>
-                 >
-                   <div className="flex flex-col">
-                     <span className="text-xs font-bold truncate max-w-[120px]">{product.name}</span>
-                     <span className="text-[10px] opacity-70">R$ {product.price.toFixed(2)}</span>
-                   </div>
-                   {selectedIds.includes(product.id) ? (
-                     <CheckCircle2 className="h-4 w-4 text-orange-600" />
-                   ) : (
-                     <Circle className="h-4 w-4 text-orange-200" />
-                   )}
-                 </button>
-               ))
-             )}
-           </div>
-         </div>
- 
-         <div className="pt-2 border-top border-orange-200">
-           <button
-             disabled={isSaving || selectedIds.length === 0}
-             onClick={handleUpdateDailyMenu}
-             className="w-full flex items-center justify-center gap-2 bg-orange-600 text-white py-3 rounded-xl font-bold hover:bg-orange-700 transition-all disabled:opacity-50 shadow-md shadow-orange-600/20"
-           >
-             {isSaving ? (
-               <Loader2 className="h-4 w-4 animate-spin" />
-             ) : (
-               <Save className="h-4 w-4" />
-             )}
-             Atualizar {selectedIds.length} Produto{selectedIds.length !== 1 ? "s" : ""}
-           </button>
-           <p className="text-[10px] text-center text-orange-400 mt-2 font-medium">
-             Isso substituirá a descrição dos produtos selecionados.
-           </p>
          </div>
        </div>
      </div>
