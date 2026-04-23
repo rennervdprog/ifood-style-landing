@@ -127,9 +127,10 @@ const plans = [
       "Apenas 10 vagas disponíveis",
     ],
     extraFees: [
-       { label: "Taxa PIX", value: "R$ 1,00" },
+       { label: "Taxa PIX", value: "R$ 1,00/transação" },
        { label: "Taxa Entrega", value: "R$ 2,00 (pago pelo cliente)" },
     ],
+    extraNote: "A taxa de entrega é somada à definida por você. Ex: Você define R$ 3,00, o cliente paga R$ 5,00 (R$ 3 seu + R$ 2 plataforma).",
   },
   {
     id: "fixed",
@@ -157,9 +158,10 @@ const plans = [
        "ROI escalável e garantido",
     ],
     extraFees: [
-       { label: "Taxa PIX", value: "R$ 1,00" },
+       { label: "Taxa PIX", value: "R$ 1,00/transação" },
        { label: "Taxa Entrega", value: "R$ 2,00 (pago pelo cliente)" },
     ],
+    extraNote: "A taxa de entrega é somada à definida por você. Ex: Você define R$ 3,00, o cliente paga R$ 5,00 (R$ 3 seu + R$ 2 plataforma).",
   },
 ];
 
@@ -664,6 +666,11 @@ const StoreDirectory = () => {
                             {fee.label}: <span className="font-semibold">{fee.value}</span>
                           </p>
                         ))}
+                        {(plan as any).extraNote && (
+                          <p className="text-[10px] italic text-muted-foreground/80 mt-1 leading-tight">
+                            {(plan as any).extraNote}
+                          </p>
+                        )}
                       </div>
                     )}
 
