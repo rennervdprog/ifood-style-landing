@@ -142,8 +142,9 @@ const plans = [
     ],
     extraFees: [
       { label: "Taxa PIX", value: "R$ 1,00/transação" },
-      { label: "Taxa entrega plataforma", value: "R$ 2,00 (paga pelo cliente)" },
+      { label: "Taxa entrega plataforma", value: "R$ 2,00 (pago pelo cliente)" },
     ],
+    extraNote: "A taxa de entrega é somada à definida por você. Ex: Lojista define R$ 3, no cliente aparece R$ 5 (R$ 3 seu + R$ 2 plataforma).",
   },
   {
     id: "supporter",
@@ -169,8 +170,9 @@ const plans = [
     ],
     extraFees: [
       { label: "Taxa PIX", value: "R$ 1,00/transação" },
-      { label: "Taxa entrega plataforma", value: "R$ 2,00 (paga pelo cliente)" },
+      { label: "Taxa entrega plataforma", value: "R$ 2,00 (pago pelo cliente)" },
     ],
+    extraNote: "A taxa de entrega é somada à definida por você. Ex: Lojista define R$ 3, no cliente aparece R$ 5 (R$ 3 seu + R$ 2 plataforma).",
   },
 ];
 
@@ -442,6 +444,11 @@ export default function PlanosPage() {
                             {fee.label}: <span className="font-semibold">{fee.value}</span>
                           </p>
                         ))}
+                        {(plan as any).extraNote && (
+                          <p className="text-[10px] italic text-muted-foreground/80 mt-1 leading-tight">
+                            {(plan as any).extraNote}
+                          </p>
+                        )}
                       </div>
                     )}
 
