@@ -33,9 +33,9 @@ const steps = [
 ];
 
 const features = [
-   { icon: Package, title: "Gestão de Pedidos", desc: "Emissão de nota simplificada e mensagens automáticas para WhatsApp (envio manual)." },
-   { icon: BarChart3, title: "Finanças & Relatórios", desc: "Relatórios diários 100% detalhados: saiba qual produto mais vende e qual dia você fatura mais." },
-   { icon: Truck, title: "Logística Integrada", desc: "Ao marcar o pedido como pronto, o motoboy recebe um alerta instantâneo no aplicativo." },
+   { icon: Package, title: "Gestão De Pedidos", desc: "Emissão de nota e mensagem de atualização sobre os pedidos pro WhatsApp (abre o WhatsApp para envio manual)." },
+   { icon: BarChart3, title: "Finanças e Relatórios", desc: "Tudo 100% detalhado: qual produto mais vende, qual dia vendeu mais e relatórios de todos os dias." },
+   { icon: Truck, title: "Motoboy Integrado", desc: "Ao marcar pedido como pronto, apita instantaneamente a entrega para o motoboy no aplicativo." },
    { icon: CreditCard, title: "PIX Automático", desc: "Pagamento confirmado na hora, sem necessidade de conferência manual de extrato." },
    { icon: Smartphone, title: "Cardápio Digital", desc: "Link profissional com fotos em alta definição, sem necessidade do cliente baixar aplicativo." },
    { icon: QrCode, title: "QR Code para Balcão", desc: "Facilite o autoatendimento. O cliente aponta a câmera, escolhe e paga direto na mesa." },
