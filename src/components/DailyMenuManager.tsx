@@ -81,18 +81,18 @@
      return (
        <button
          onClick={() => setShowManager(true)}
-         className="w-full flex items-center justify-between bg-orange-500/10 border border-orange-500/30 rounded-2xl p-4 hover:bg-orange-500/20 transition-all group"
+         className="w-full flex items-center justify-between bg-primary/10 border border-primary/30 rounded-2xl p-4 hover:bg-primary/20 transition-all group"
        >
          <div className="flex items-center gap-3">
-           <div className="bg-orange-500 p-2 rounded-xl text-white shadow-sm group-hover:scale-110 transition-transform">
+           <div className="bg-primary p-2 rounded-xl text-primary-foreground shadow-sm group-hover:scale-110 transition-transform">
              <Utensils className="h-5 w-5" />
            </div>
            <div className="text-left">
-             <h3 className="text-sm font-bold text-orange-600">Gestor de Cardápio do Dia</h3>
-             <p className="text-xs text-orange-600/70">Atualize rapidamente Marmitas e Pratos do Dia</p>
+             <h3 className="text-sm font-bold text-primary">Gestor de Cardápio do Dia</h3>
+             <p className="text-xs text-primary/70">Atualize rapidamente Marmitas e Pratos do Dia</p>
            </div>
          </div>
-         <div className="bg-orange-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold">
+         <div className="bg-primary text-primary-foreground px-3 py-1.5 rounded-lg text-xs font-bold">
            Abrir
          </div>
        </button>
@@ -100,11 +100,11 @@
    }
  
    return (
-     <div className="bg-orange-50 border border-orange-200 rounded-2xl overflow-hidden shadow-sm animate-in fade-in slide-in-from-top-4 duration-300">
-       <div className="p-4 bg-orange-500 text-white flex items-center justify-between">
+     <div className="bg-accent/30 border border-primary/20 rounded-2xl overflow-hidden shadow-sm animate-in fade-in slide-in-from-top-4 duration-300">
+       <div className="p-4 bg-primary text-primary-foreground flex items-center justify-between">
          <div className="flex items-center gap-2">
            <Utensils className="h-5 w-5" />
-           <h3 className="font-bold text-sm">Atualizar Cardápio do Dia</h3>
+           <h3 className="font-bold text-sm text-primary-foreground">Atualizar Cardápio do Dia</h3>
          </div>
          <button 
            onClick={() => setShowManager(false)}
@@ -116,7 +116,7 @@
  
        <div className="p-4 space-y-4">
          <div className="space-y-2">
-           <label className="text-xs font-bold text-orange-800 flex items-center gap-1">
+           <label className="text-xs font-bold text-primary flex items-center gap-1">
              <Info className="h-3 w-3" />
              O que será servido hoje?
            </label>
@@ -124,17 +124,17 @@
              value={description}
              onChange={(e) => setDescription(e.target.value)}
              placeholder="Ex: Arroz, feijão, bife acebolado, batata frita e salada"
-             className="w-full bg-white border border-orange-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-orange-500 focus:outline-none min-h-[80px]"
+             className="w-full bg-card border border-primary/20 rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary focus:outline-none min-h-[80px] text-foreground"
            />
          </div>
  
          <div className="space-y-2">
-           <label className="text-xs font-bold text-orange-800">
+           <label className="text-xs font-bold text-primary">
              Selecione os produtos para atualizar:
            </label>
            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
              {products.length === 0 ? (
-               <p className="text-xs text-orange-400 italic">Nenhum produto cadastrado</p>
+               <p className="text-xs text-muted-foreground italic">Nenhum produto cadastrado</p>
              ) : (
                products.map(product => (
                  <button
@@ -142,9 +142,41 @@
                    onClick={() => toggleProduct(product.id)}
                    className={`flex items-center justify-between p-2.5 rounded-xl border transition-all text-left ${
                      selectedIds.includes(product.id)
-                       ? "bg-orange-100 border-orange-300 text-orange-800"
-                       : "bg-white border-orange-100 text-orange-400 hover:border-orange-200"
+                       ? "bg-primary/10 border-primary text-primary-foreground"
+                       : "bg-card border-border text-muted-foreground hover:border-primary/50"
                    }`}
+                 >
+                   <div className="flex flex-col">
+                     <span className={`text-xs font-bold truncate max-w-[120px] ${selectedIds.includes(product.id) ? "text-primary" : "text-foreground"}`}>{product.name}</span>
+                     <span className="text-[10px] opacity-70">R$ {product.price.toFixed(2)}</span>
+                   </div>
+                   {selectedIds.includes(product.id) ? (
+                     <CheckCircle2 className="h-4 w-4 text-primary" />
+                   ) : (
+                     <Circle className="h-4 w-4 text-muted-foreground/30" />
+                   )}
+                 </button>
+               ))
+             )}
+           </div>
+         </div>
+ 
+         <div className="pt-2 border-t border-primary/10">
+           <button
+             disabled={isSaving || selectedIds.length === 0}
+             onClick={handleUpdateDailyMenu}
+             className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground py-3 rounded-xl font-bold hover:bg-primary/90 transition-all disabled:opacity-50 shadow-md shadow-primary/20"
+           >
+             {isSaving ? (
+               <Loader2 className="h-4 w-4 animate-spin" />
+             ) : (
+               <Save className="h-4 w-4" />
+             )}
+             Atualizar {selectedIds.length} Produto{selectedIds.length !== 1 ? "s" : ""}
+           </button>
+           <p className="text-[10px] text-center text-muted-foreground mt-2 font-medium">
+             Isso substituirá a descrição dos produtos selecionados.
+           </p>
                  >
                    <div className="flex flex-col">
                      <span className="text-xs font-bold truncate max-w-[120px]">{product.name}</span>
