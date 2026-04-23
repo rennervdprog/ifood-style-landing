@@ -1,3 +1,4 @@
+ import DailyMenuManager from "@/components/DailyMenuManager";
 import { formatBRL } from "@/lib/utils";
 import { useState, useRef, useEffect } from "react";
 import MenuImportCSV from "@/components/MenuImportCSV";
@@ -384,7 +385,14 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
+       {/* Daily Menu Quick Update - Helpful for Marmitarias */}
+       <DailyMenuManager 
+         storeId={storeId} 
+         products={products || []} 
+         onUpdate={invalidateAll} 
+       />
+ 
+       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h2 className="text-lg font-bold text-foreground">Cardápio</h2>
