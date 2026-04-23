@@ -189,7 +189,7 @@ const features = [
   { icon: Truck, title: "Motoboy Integrado", desc: "Ao marcar pedido como pronto, um alerta sonoro avisa instantaneamente o motoboy no aplicativo." },
   { icon: CreditCard, title: "PIX Automático", desc: "Pagamento confirmado na hora, sem necessidade de conferência manual de extrato bancário." },
   { icon: Smartphone, title: "Cardápio no Celular", desc: "Link profissional com fotos em HD. O cliente abre e já pede, sem baixar nenhum app." },
-  { icon: QrCode, title: "QR Code Exclusivo", desc: "Imprima e cole no balcão ou nas mesas. O cliente aponta a câmera e faz o pedido sozinho." },
+  { icon: QrCode, title: "QR Code Exclusivo", desc: "O cliente aponta a câmera para o QR Code e faz o pedido digital sozinho." },
   { icon: Bell, title: "Alerta Instantâneo", desc: "Notificação push e alerta sonoro no celular para você nunca perder um pedido novo." },
   { icon: Globe, title: "Brasil Inteiro", desc: "Plataforma robusta pronta para atender lojistas e motoboys em qualquer cidade do país." },
 ];

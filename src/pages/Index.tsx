@@ -70,7 +70,7 @@ const steps = [
 
 const features = [
   { icon: Smartphone, title: "Cardápio no celular", desc: "Cliente abre o link e já faz o pedido. Sem baixar nenhum app." },
-  { icon: QrCode, title: "QR Code exclusivo", desc: "Imprima e cole no balcão. Cliente aponta a câmera e pede." },
+  { icon: QrCode, title: "QR Code exclusivo", desc: "Divulgue seu QR Code. O cliente aponta a câmera e faz o pedido digital." },
   { icon: CreditCard, title: "PIX automático", desc: "Pagamento confirmado na hora. Sem conferir extrato." },
   { icon: Bell, title: "Alerta instantâneo", desc: "Novo pedido? Alerta sonoro e push notification no celular." },
   { icon: Utensils, title: "Cardápio profissional", desc: "Categorias, fotos HD, descrições e adicionais personalizáveis." },
