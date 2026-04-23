@@ -33,14 +33,14 @@ const steps = [
 ];
 
 const features = [
-  { icon: Smartphone, title: "Cardápio no celular", desc: "Cliente abre o link e já faz o pedido. Sem baixar nenhum app." },
-  { icon: QrCode, title: "QR Code exclusivo", desc: "Imprima e cole no balcão. Cliente aponta a câmera e pede." },
-  { icon: CreditCard, title: "PIX automático", desc: "Pagamento confirmado na hora. Sem conferir extrato." },
-  { icon: Bell, title: "Alerta instantâneo", desc: "Novo pedido? Alerta sonoro e push notification no celular." },
-  { icon: Utensils, title: "Cardápio profissional", desc: "Categorias, fotos HD, descrições e adicionais personalizáveis." },
-  { icon: BarChart3, title: "Relatórios completos", desc: "Saiba quanto vendeu, produtos mais pedidos e horários de pico." },
-  { icon: Gift, title: "Fidelidade & Cupons", desc: "Programa de pontos e cupons de desconto para fidelizar clientes." },
-  { icon: Truck, title: "Entrega integrada", desc: "Gerencie entregas, taxas por bairro e motoboys na plataforma." },
+   { icon: Package, title: "Gestão De Pedidos", desc: "Emissão de nota e mensagem de atualização sobre os pedidos pro WhatsApp (abre o WhatsApp para envio manual)." },
+   { icon: BarChart3, title: "Finanças e Relatórios", desc: "Tudo 100% detalhado: qual produto mais vende, qual dia vendeu mais e relatórios de todos os dias." },
+   { icon: Truck, title: "Motoboy Integrado", desc: "Ao marcar pedido como pronto, apita instantaneamente a entrega para o motoboy no aplicativo." },
+   { icon: CreditCard, title: "PIX Automático", desc: "Pagamento confirmado na hora, sem necessidade de conferência manual de extrato." },
+   { icon: Smartphone, title: "Cardápio Digital", desc: "Link profissional com fotos em alta definição, sem necessidade do cliente baixar aplicativo." },
+   { icon: QrCode, title: "QR Code para Balcão", desc: "Facilite o autoatendimento. O cliente aponta a câmera, escolhe e paga direto na mesa." },
+   { icon: Bell, title: "Alertas em Tempo Real", desc: "Notificações push e alertas sonoros garantem que você nunca perca um pedido." },
+   { icon: Globe, title: "Abrangência Nacional", desc: "Plataforma robusta pronta para operar em qualquer cidade do Brasil." },
 ];
 
 const plans = [
@@ -59,16 +59,16 @@ const plans = [
     lightBg: "bg-emerald-50",
     textColor: "text-emerald-600",
     borderColor: "border-emerald-200",
-    description: "Ideal para quem está começando e quer testar sem risco.",
+     description: "Ideal para quem está começando e quer testar sem risco. Pague apenas uma comissão sobre o que vender.",
     features: [
       "Cardápio digital ilimitado",
       "QR Code exclusivo",
       "PIX automático",
       "Notificações em tempo real",
-      "Programa de fidelidade",
-      "Cupons e promoções",
-      "Relatórios de vendas",
-      "Suporte por WhatsApp",
+       "Gestão básica de pedidos",
+       "Relatórios simplificados",
+       "Sem taxas fixas de entrega",
+       "Suporte via comunidade",
     ],
     extraFees: [],
   },
@@ -87,10 +87,11 @@ const plans = [
     lightBg: "bg-blue-50",
     textColor: "text-blue-600",
     borderColor: "border-blue-200",
-    description: "Para lojas que já vendem bem e querem pagar menos comissão.",
+     description: "Para lojas em expansão que buscam reduzir custos de comissão e ter mais controle profissional.",
     features: [
       "Tudo do plano Comissão",
-      "Comissão reduzida (2,5%)",
+       "Comissão reduzida para 2,5%",
+       "Sem taxa PIX ou entrega",
       "Suporte prioritário",
       "Relatórios avançados",
       "Banners ilimitados",
@@ -115,19 +116,19 @@ const plans = [
     lightBg: "bg-accent",
     textColor: "text-primary",
     borderColor: "border-primary/30",
-    description: "Mesmos benefícios do Essencial, com preço especial para os 10 primeiros apoiadores.",
+     description: "Edição histórica de lançamento. Mesmos benefícios do Essencial com valor reduzido vitalício.",
     features: [
       "Tudo do plano Essencial",
-      "Zero comissão por pedido",
-      "Preço travado para sempre",
+       "Zero comissão fixa (0%)",
+       "Preço congelado para sempre",
       "Selo de Apoiador na loja",
       "Suporte VIP prioritário",
       "Acesso antecipado a novidades",
       "Apenas 10 vagas disponíveis",
     ],
     extraFees: [
-      { label: "Taxa PIX fixa", value: "R$ 1,00/transação" },
-      { label: "Taxa entrega plataforma", value: "R$ 2,00/pedido" },
+       { label: "Taxa PIX", value: "R$ 1,00" },
+       { label: "Taxa Entrega", value: "R$ 2,00 (pago pelo cliente)" },
     ],
   },
   {
@@ -145,19 +146,19 @@ const plans = [
     lightBg: "bg-accent",
     textColor: "text-primary",
     borderColor: "border-primary/30",
-    description: "Zero comissão. Você fica com 100% do valor de cada pedido.",
+     description: "Lucro total para sua loja. Fique com 100% do valor dos produtos e tenha ferramentas completas.",
     features: [
-      "Tudo do plano Crescimento",
-      "Zero comissão por pedido",
-      "Suporte VIP prioritário",
-      "Relatórios premium",
-      "Prioridade em novidades",
-      "Todas as ferramentas",
-      "ROI garantido",
+       "Todas as ferramentas inclusas",
+       "Zero comissão por venda (0%)",
+       "Emissão de Notas Fiscais",
+       "Relatórios financeiros detalhados",
+       "Integração total com motoboys",
+       "Suporte VIP em 15 minutos",
+       "ROI escalável e garantido",
     ],
     extraFees: [
-      { label: "Taxa PIX fixa", value: "R$ 1,00/transação" },
-      { label: "Taxa entrega plataforma", value: "R$ 2,00/pedido" },
+       { label: "Taxa PIX", value: "R$ 1,00" },
+       { label: "Taxa Entrega", value: "R$ 2,00 (pago pelo cliente)" },
     ],
   },
 ];
@@ -407,18 +408,12 @@ const StoreDirectory = () => {
             Para lojas em todo o Brasil 🇧🇷
           </div>
 
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground leading-[1.1] mb-6 opacity-100">
-            Pague menos comissão.{" "}
-            <span className="relative inline-block">
-              <span className="relative z-10 text-primary">Receba mais pedidos.</span>
-              <span className="absolute bottom-1 left-0 w-full h-3 bg-primary/15 -z-0 rounded" />
-            </span>
-            <span className="block mt-2">Tudo no seu link próprio.</span>
+          <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black tracking-tighter text-foreground leading-[0.95] mb-8 opacity-100 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+            O sistema de delivery mais <span className="text-primary italic">rentável</span> do Brasil.
           </h1>
 
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
-            Cardápio digital próprio, PIX automático e pedidos organizados — sem WhatsApp bagunçado.
-            <span className="block mt-2 text-primary font-semibold">A partir de R$ 0/mês. Sem fidelidade.</span>
+          <p className="text-lg md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-12 leading-tight font-medium animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-200">
+            Gestão de pedidos com <span className="text-foreground font-bold">emissão de nota</span>, sistema de motoboys integrado e <span className="text-foreground font-bold">relatórios 100% detalhados</span>. Escala seu negócio com lucro real.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -473,6 +468,42 @@ const StoreDirectory = () => {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ══════ BRASIL SECTION ══════ */}
+      <section className="py-20 px-4 bg-primary/5 border-y border-primary/10">
+        <div className="mx-auto max-w-5xl flex flex-col md:flex-row items-center gap-12">
+          <div className="flex-1 text-center md:text-left">
+            <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary mb-4">
+              <Globe className="h-3 w-3" /> PRESENÇA NACIONAL
+            </div>
+            <h2 className="text-3xl md:text-5xl font-black text-foreground mb-6 leading-tight tracking-tighter">
+              Do Oiapoque ao Chuí. <br />
+              Para <span className="text-primary italic">todo</span> o Brasil.
+            </h2>
+            <p className="text-muted-foreground text-lg leading-relaxed mb-8 font-medium">
+              Não importa o tamanho da sua cidade. Nossa infraestrutura está pronta para processar seus pedidos, confirmar seus pagamentos via PIX e gerenciar sua logística com segurança e rapidez em qualquer lugar do país.
+            </p>
+            <div className="flex flex-wrap justify-center md:justify-start gap-6">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5 text-primary" />
+                <span className="font-bold text-foreground">Suporte 24/7</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5 text-primary" />
+                <span className="font-bold text-foreground">100% Online</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5 text-primary" />
+                <span className="font-bold text-foreground">Escalabilidade</span>
+              </div>
+            </div>
+          </div>
+          <div className="flex-1 relative flex justify-center">
+            <div className="w-64 h-64 md:w-80 md:h-80 bg-primary/20 rounded-full blur-3xl absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -z-10" />
+            <Globe className="w-48 h-48 md:w-64 md:h-64 text-primary opacity-30 animate-pulse" />
           </div>
         </div>
       </section>
