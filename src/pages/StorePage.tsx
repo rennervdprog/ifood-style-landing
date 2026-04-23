@@ -58,9 +58,25 @@ const StorePage = () => {
       let query = supabase.from("stores_public").select("id, name, slug, image_url, category, rating, is_open, force_closed, status, delivery_mode, own_delivery_fee, owner_id, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, settings").in("status", ["ativo", "bloqueado"]);
       if (id) query = query.eq("id", id);
       else if (slug) query = query.eq("slug", slug);
-      const { data, error } = await query.single();
+      const { data, error } = await query.maybeSingle();
+      if (data) return data;
+
+      const { data: publicData, error: publicError } = await supabase.functions.invoke("public-store-catalog", {
+        body: {
+          store_id: id,
+          slug,
+          limit: 1,
+          fallback_to_all: false,
+          include_blocked: true,
+        },
+      });
+
+      if (publicError) throw publicError;
+
+      const publicStore = Array.isArray(publicData?.stores) ? publicData.stores[0] : null;
+      if (publicStore) return publicStore;
       if (error) throw error;
-      return data;
+      return null;
     },
     enabled: !!(id || slug),
     staleTime: 1000 * 60 * 3,

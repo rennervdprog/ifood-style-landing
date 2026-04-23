@@ -20,19 +20,30 @@ Deno.serve(async (req) => {
     const body = req.method === "POST" ? await req.json().catch(() => ({})) : {};
     const rawCity = typeof body.city === "string" ? body.city : "";
     const rawQuery = typeof body.query === "string" ? body.query : "";
+    const rawSlug = typeof body.slug === "string" ? body.slug.trim() : "";
+    const rawStoreId = typeof body.store_id === "string" ? body.store_id.trim() : "";
     const fallbackToAll = body.fallback_to_all !== false;
+    const includeBlocked = body.include_blocked === true;
     const limit = Math.min(Math.max(Number(body.limit) || 20, 1), 50);
 
-    const baseSelect = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, address_city";
+    const baseSelect = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, settings";
 
     let query = admin
       .from("stores_public")
       .select(baseSelect)
-      .eq("status", "ativo")
+      .in("status", includeBlocked ? ["ativo", "bloqueado"] : ["ativo"])
       .limit(limit);
 
     if (rawQuery.trim()) {
       query = query.ilike("name", `%${rawQuery.trim()}%`);
+    }
+
+    if (rawSlug) {
+      query = query.eq("slug", rawSlug);
+    }
+
+    if (rawStoreId) {
+      query = query.eq("id", rawStoreId);
     }
 
     const { data, error } = await query;
