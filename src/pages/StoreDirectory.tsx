@@ -33,9 +33,9 @@ const steps = [
 ];
 
 const features = [
-   { icon: Package, title: "Gestão De Pedidos", desc: "Emissão de nota e mensagem de atualização sobre os pedidos pro WhatsApp (abre o WhatsApp para envio manual)." },
-   { icon: BarChart3, title: "Finanças e Relatórios", desc: "Tudo 100% detalhado: qual produto mais vende, qual dia vendeu mais e relatórios de todos os dias." },
-   { icon: Truck, title: "Motoboy Integrado", desc: "Ao marcar pedido como pronto, apita instantaneamente a entrega para o motoboy no aplicativo." },
+    { icon: Package, title: "Gestão De Pedidos", desc: "Emissão de nota e mensagem de atualização sobre os pedidos pro WhatsApp (abre o WhatsApp para envio manual)." },
+    { icon: BarChart3, title: "Finanças e Relatórios", desc: "Tudo 100% detalhado: saiba qual produto mais vende, qual dia vendeu mais e tenha relatórios de todos os dias." },
+    { icon: Truck, title: "Motoboy Integrado", desc: "Ao marcar pedido como pronto, um alerta sonoro avisa instantaneamente o motoboy no aplicativo." },
    { icon: CreditCard, title: "PIX Automático", desc: "Pagamento confirmado na hora, sem necessidade de conferência manual de extrato." },
    { icon: Smartphone, title: "Cardápio Digital", desc: "Link profissional com fotos em alta definição, sem necessidade do cliente baixar aplicativo." },
    { icon: QrCode, title: "QR Code para Balcão", desc: "Facilite o autoatendimento. O cliente aponta a câmera, escolhe e paga direto na mesa." },
@@ -116,11 +116,11 @@ const plans = [
     lightBg: "bg-accent",
     textColor: "text-primary",
     borderColor: "border-primary/30",
-     description: "Edição histórica de lançamento. Mesmos benefícios do Essencial com valor reduzido vitalício.",
+     description: "Edição histórica de lançamento. Mesmos benefícios do Essencial com valor reduzido vitalício para os primeiros.",
     features: [
       "Tudo do plano Essencial",
        "Zero comissão fixa (0%)",
-       "Preço congelado para sempre",
+        "Valor mensal fixo vitalício",
       "Selo de Apoiador na loja",
       "Suporte VIP prioritário",
       "Acesso antecipado a novidades",
@@ -146,13 +146,13 @@ const plans = [
     lightBg: "bg-accent",
     textColor: "text-primary",
     borderColor: "border-primary/30",
-     description: "Lucro total para sua loja. Fique com 100% do valor dos produtos e tenha ferramentas completas.",
+     description: "Fique com 100% do valor dos seus produtos. Gestão total e integração logística inteligente.",
     features: [
        "Todas as ferramentas inclusas",
        "Zero comissão por venda (0%)",
-       "Emissão de Notas Fiscais",
-       "Relatórios financeiros detalhados",
-       "Integração total com motoboys",
+        "Emissão de Notas Fiscais inclusa",
+        "Relatórios 100% detalhados",
+        "Integração com alerta para Motoboy",
        "Suporte VIP em 15 minutos",
        "ROI escalável e garantido",
     ],
@@ -403,17 +403,18 @@ const StoreDirectory = () => {
         <div className="absolute -bottom-40 -left-40 w-[400px] h-[400px] rounded-full bg-accent/30 blur-3xl pointer-events-none" />
 
         <div className="relative mx-auto max-w-5xl text-center">
-          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-semibold text-primary mb-8">
+          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-semibold text-primary mb-8 animate-fade-in">
             <Globe className="h-4 w-4" />
-            Para lojas em todo o Brasil 🇧🇷
+            Plataforma disponível para todo o Brasil 🇧🇷
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black tracking-tighter text-foreground leading-[0.95] mb-8 opacity-100 animate-in fade-in slide-in-from-bottom-4 duration-1000">
-            O sistema de delivery mais <span className="text-primary italic">rentável</span> do Brasil.
+            O sistema de delivery <br className="hidden md:block" />
+            mais <span className="text-primary italic underline decoration-primary/20">profissional</span> do Brasil.
           </h1>
 
           <p className="text-lg md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-12 leading-tight font-medium animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-200">
-            Gestão de pedidos com <span className="text-foreground font-bold">emissão de nota</span>, sistema de motoboys integrado e <span className="text-foreground font-bold">relatórios 100% detalhados</span>. Escala seu negócio com lucro real.
+            Gestão de pedidos com <span className="text-foreground font-bold underline decoration-primary/30">emissão de nota</span>, sistema de motoboys integrado e <span className="text-foreground font-bold underline decoration-primary/30">relatórios 100% detalhados</span>. Escala seu negócio com lucro real.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
