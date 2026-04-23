@@ -472,6 +472,42 @@ const StoreDirectory = () => {
         </div>
       </section>
 
+      {/* ══════ BRASIL SECTION ══════ */}
+      <section className="py-20 px-4 bg-primary/5 border-y border-primary/10">
+        <div className="mx-auto max-w-5xl flex flex-col md:flex-row items-center gap-12">
+          <div className="flex-1 text-center md:text-left">
+            <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary mb-4">
+              <Globe className="h-3 w-3" /> PRESENÇA NACIONAL
+            </div>
+            <h2 className="text-3xl md:text-5xl font-black text-foreground mb-6 leading-tight tracking-tighter">
+              Do Oiapoque ao Chuí. <br />
+              Para <span className="text-primary italic">todo</span> o Brasil.
+            </h2>
+            <p className="text-muted-foreground text-lg leading-relaxed mb-8 font-medium">
+              Não importa o tamanho da sua cidade. Nossa infraestrutura está pronta para processar seus pedidos, confirmar seus pagamentos via PIX e gerenciar sua logística com segurança e rapidez em qualquer lugar do país.
+            </p>
+            <div className="flex flex-wrap justify-center md:justify-start gap-6">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5 text-primary" />
+                <span className="font-bold text-foreground">Suporte 24/7</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5 text-primary" />
+                <span className="font-bold text-foreground">100% Online</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5 text-primary" />
+                <span className="font-bold text-foreground">Escalabilidade</span>
+              </div>
+            </div>
+          </div>
+          <div className="flex-1 relative flex justify-center">
+            <div className="w-64 h-64 md:w-80 md:h-80 bg-primary/20 rounded-full blur-3xl absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -z-10" />
+            <Globe className="w-48 h-48 md:w-64 md:h-64 text-primary opacity-30 animate-pulse" />
+          </div>
+        </div>
+      </section>
+
       {/* ══════ HOW IT WORKS ══════ */}
       <section id="como-funciona" className="py-20 px-4">
         <div className="mx-auto max-w-5xl">
