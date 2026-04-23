@@ -408,18 +408,12 @@ const StoreDirectory = () => {
             Para lojas em todo o Brasil 🇧🇷
           </div>
 
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground leading-[1.1] mb-6 opacity-100">
-            Pague menos comissão.{" "}
-            <span className="relative inline-block">
-              <span className="relative z-10 text-primary">Receba mais pedidos.</span>
-              <span className="absolute bottom-1 left-0 w-full h-3 bg-primary/15 -z-0 rounded" />
-            </span>
-            <span className="block mt-2">Tudo no seu link próprio.</span>
+          <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black tracking-tighter text-foreground leading-[0.95] mb-8 opacity-100 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+            O sistema de delivery mais <span className="text-primary italic">rentável</span> do Brasil.
           </h1>
 
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
-            Cardápio digital próprio, PIX automático e pedidos organizados — sem WhatsApp bagunçado.
-            <span className="block mt-2 text-primary font-semibold">A partir de R$ 0/mês. Sem fidelidade.</span>
+          <p className="text-lg md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-12 leading-tight font-medium animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-200">
+            Gestão de pedidos com <span className="text-foreground font-bold">emissão de nota</span>, sistema de motoboys integrado e <span className="text-foreground font-bold">relatórios 100% detalhados</span>. Escala seu negócio com lucro real.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
