@@ -22,6 +22,8 @@ import {
   BadgePercent,
   Crown,
   Rocket,
+  Sparkles,
+  Package,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -179,14 +181,14 @@ const painPoints = [
 ];
 
 const features = [
-  { icon: Smartphone, title: "Cardápio no celular", desc: "Cliente abre o link e já faz o pedido. Sem baixar nenhum app." },
-  { icon: QrCode, title: "QR Code exclusivo", desc: "Imprima e cole no balcão. Cliente aponta a câmera e pede." },
-  { icon: CreditCard, title: "PIX automático", desc: "Pagamento confirmado na hora. Sem conferir extrato." },
-  { icon: Bell, title: "Alerta instantâneo", desc: "Novo pedido? Alerta sonoro e push notification no celular." },
-  { icon: Utensils, title: "Cardápio profissional", desc: "Categorias, fotos HD, descrições e adicionais personalizáveis." },
-  { icon: BarChart3, title: "Relatórios completos", desc: "Saiba quanto vendeu, produtos mais pedidos e horários de pico." },
-  { icon: Gift, title: "Fidelidade & Cupons", desc: "Programa de pontos e cupons de desconto para fidelizar clientes." },
-  { icon: Truck, title: "Entrega integrada", desc: "Gerencie entregas, taxas por bairro e motoboys na plataforma." },
+  { icon: Package, title: "Gestão de Pedidos", desc: "Emissão de nota simplificada e mensagens de atualização para WhatsApp (envio manual)." },
+  { icon: BarChart3, title: "Finanças & Relatórios", desc: "Relatórios 100% detalhados: saiba qual produto mais vende, qual dia vende mais e relatórios diários." },
+  { icon: Truck, title: "Motoboy Integrado", desc: "Ao marcar pedido como pronto, apita instantaneamente a entrega para o motoboy no aplicativo." },
+  { icon: CreditCard, title: "PIX Automático", desc: "Pagamento confirmado na hora, sem necessidade de conferência manual de extrato bancário." },
+  { icon: Smartphone, title: "Cardápio no Celular", desc: "Link profissional com fotos em HD. O cliente abre e já pede, sem baixar nenhum app." },
+  { icon: QrCode, title: "QR Code Exclusivo", desc: "Imprima e cole no balcão ou nas mesas. O cliente aponta a câmera e faz o pedido sozinho." },
+  { icon: Bell, title: "Alerta Instantâneo", desc: "Notificação push e alerta sonoro no celular para você nunca perder um pedido novo." },
+  { icon: Globe, title: "Brasil Inteiro", desc: "Plataforma robusta pronta para atender lojistas e motoboys em qualquer cidade do país." },
 ];
 
 const steps = [
