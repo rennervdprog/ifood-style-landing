@@ -23,6 +23,7 @@ Deno.serve(async (req) => {
     const rawSlug = typeof body.slug === "string" ? body.slug.trim() : "";
     const rawStoreId = typeof body.store_id === "string" ? body.store_id.trim() : "";
     const fallbackToAll = body.fallback_to_all !== false;
+    const includeBlocked = body.include_blocked === true;
     const limit = Math.min(Math.max(Number(body.limit) || 20, 1), 50);
 
     const baseSelect = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, address_city";
@@ -30,7 +31,7 @@ Deno.serve(async (req) => {
     let query = admin
       .from("stores_public")
       .select(baseSelect)
-      .eq("status", "ativo")
+      .in("status", includeBlocked ? ["ativo", "bloqueado"] : ["ativo"])
       .limit(limit);
 
     if (rawQuery.trim()) {
