@@ -149,10 +149,14 @@ const LinksPage = () => {
         </nav>
 
         {/* Footer */}
-        <footer className="text-center mt-10 pb-4">
+        <footer className="text-center mt-10 pb-4 space-y-2">
           <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} ItaSuper · Itatinga/SP
+            © {new Date().getFullYear()} Itasuper — Todos os direitos reservados
           </p>
+          <div className="flex items-center justify-center gap-4 text-[10px] text-muted-foreground">
+            <Link to="/termos-de-uso" className="hover:text-primary transition-colors">Termos</Link>
+            <Link to="/politica-de-privacidade" className="hover:text-primary transition-colors">Política</Link>
+          </div>
         </footer>
       </div>
     </div>

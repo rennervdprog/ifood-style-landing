@@ -280,7 +280,7 @@ const TermosDeUso = () => {
 
           <div className="border-t border-border pt-4 mt-6">
             <p className="text-xs text-muted-foreground text-center">
-              © {new Date().getFullYear()} ItaSuper — Todos os direitos reservados.
+              © {new Date().getFullYear()} Itasuper — Todos os direitos reservados
             </p>
           </div>
         </div>

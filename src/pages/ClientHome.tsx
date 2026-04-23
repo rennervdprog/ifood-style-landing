@@ -317,7 +317,15 @@ const ClientAuth = ({ onSuccess }: { onSuccess: () => void }) => {
             )}
           </div>
 
-          <p className="text-center text-xs text-slate-400 mt-8">© ItaSuper · Itatinga/SP</p>
+          <div className="text-center space-y-2 mt-8 pb-4">
+            <p className="text-xs text-slate-400">
+              © {new Date().getFullYear()} Itasuper — Todos os direitos reservados
+            </p>
+            <div className="flex items-center justify-center gap-4 text-[10px] text-slate-400">
+              <Link to="/termos-de-uso" className="hover:text-primary underline">Termos</Link>
+              <Link to="/politica-de-privacidade" className="hover:text-primary underline">Política</Link>
+            </div>
+          </div>
         </div>
       </div>
     </div>

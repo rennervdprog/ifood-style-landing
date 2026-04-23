@@ -816,16 +816,16 @@ const StoreDirectory = () => {
 
       {/* ══════ FOOTER ══════ */}
       <footer className="py-8 text-center text-sm text-muted-foreground border-t border-border px-4">
-        <p className="font-semibold text-foreground mb-1">ItaSuper</p>
-        <p>© {new Date().getFullYear()} — Todos os direitos reservados.</p>
+        <p className="font-semibold text-foreground mb-1">Itasuper</p>
+        <p>© {new Date().getFullYear()} — Todos os direitos reservados</p>
         <div className="mt-3 flex flex-wrap items-center justify-center gap-4 text-xs">
           <button onClick={() => navigate("/portal-parceiro")} className="hover:text-primary transition-colors">Login Parceiro</button>
           <span>•</span>
           <button onClick={() => navigate("/cadastro-lojista")} className="hover:text-primary transition-colors">Cadastro Lojista</button>
           <span>•</span>
-          <a href="/termos-de-uso" className="hover:text-primary transition-colors">Termos de Uso</a>
+          <a href="/termos-de-uso" className="hover:text-primary transition-colors">Termos</a>
           <span>•</span>
-          <a href="/politica-de-privacidade" className="hover:text-primary transition-colors">Política de Privacidade</a>
+          <a href="/politica-de-privacidade" className="hover:text-primary transition-colors">Política</a>
         </div>
       </footer>
     </div>
