@@ -477,7 +477,7 @@ const CadastroLojista = () => {
                     </div>
                   </div>
                   <p className="text-[10px] font-bold text-emerald-500 mb-1">✅ Comece agora — sem mensalidade!</p>
-                  <p className="text-[10px] font-semibold text-primary mb-2">+ 5% por pedido entregue</p>
+                   <p className="text-[10px] font-semibold text-primary mb-2">+ 6% por pedido entregue</p>
                   <div className="flex flex-wrap gap-1.5">
                     {["Sem mensalidade", "Todos os recursos", "PIX integrado"].map(tag => (
                       <span key={tag} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{tag}</span>
@@ -494,7 +494,7 @@ const CadastroLojista = () => {
                     ) : selectedPlan === "hybrid" ? (
                       <p><strong className="text-foreground">Crescimento:</strong> Mensalidade de R$100 + 2,5% por pedido. PIX integrado com split automático e painel financeiro completo com CRM.</p>
                     ) : (
-                      <p><strong className="text-foreground">Comissão:</strong> R$0/mês + 5% por pedido. Sem custo fixo, ideal para quem está começando. Todas as ferramentas inclusas.</p>
+                       <p><strong className="text-foreground">Comissão:</strong> R$0/mês + 6% por pedido. Sem custo fixo, ideal para quem está começando. Todas as ferramentas inclusas.</p>
                     )}
                   </div>
                 )}
