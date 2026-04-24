@@ -111,7 +111,7 @@ const TermosDeUso = () => {
           <ul className="text-sm text-muted-foreground list-disc pl-4 space-y-2">
              <li><strong className="text-foreground">Essencial (R$ 180/mês):</strong> Todas as funcionalidades da plataforma com <strong className="text-foreground">zero comissão</strong> por pedido. Inclui: relatórios detalhados, suporte VIP e prioridade em novidades. Taxas operacionais: <strong className="text-foreground">R$ 1,00 por pedido pago via PIX</strong> (taxa de processamento) e <strong className="text-foreground">R$ 2,00 por entrega realizada pela plataforma</strong> (esta taxa é somada à taxa de entrega definida pelo lojista e cobrada do cliente final).</li>
              <li><strong className="text-foreground">Crescimento (R$ 100/mês + 2,5% por pedido):</strong> Todas as funcionalidades incluindo relatórios avançados, sem taxas adicionais de PIX ou entrega por parte da plataforma. Comissão de 2,5% sobre o valor total de cada pedido.</li>
-             <li><strong className="text-foreground">Comissão (5% por pedido):</strong> Sem mensalidade e sem taxas adicionais. Inclui cardápio digital ilimitado, notificações em tempo real e relatórios básicos. Comissão de 5% sobre o valor total de cada pedido.</li>
+             <li><strong className="text-foreground">Comissão (6% por pedido):</strong> Sem mensalidade e sem taxas adicionais. Inclui cardápio digital ilimitado, notificações em tempo real e relatórios básicos. Comissão de 6% sobre o valor total de cada pedido.</li>
              <li><strong className="text-foreground">Apoiador:</strong> Plano especial destinado a parceiros estratégicos com condições diferenciadas de suporte e visibilidade.</li>
           </ul>
           <p className="text-sm text-muted-foreground">
@@ -174,7 +174,7 @@ const TermosDeUso = () => {
 
           <h2 className="text-lg font-bold text-foreground">9. Pagamentos e Comissões</h2>
           <p className="text-sm text-muted-foreground">
-            9.1. No plano Comissão, a Plataforma cobra <strong className="text-foreground">5% sobre o subtotal</strong> de cada pedido. No plano Crescimento, a comissão é de <strong className="text-foreground">2,5% sobre o subtotal</strong>. No plano Essencial, não há comissão sobre o subtotal.
+             9.1. No plano Comissão, a Plataforma cobra <strong className="text-foreground">6% sobre o subtotal</strong> de cada pedido. No plano Crescimento, a comissão é de <strong className="text-foreground">2,5% sobre o subtotal</strong>. No plano Essencial, não há comissão sobre o subtotal.
           </p>
           <p className="text-sm text-muted-foreground">
             9.2. Para pagamentos via PIX online, o processamento é feito pelos gateways Asaas e/ou Mercado Pago. A comissão da Plataforma (quando aplicável ao plano) é calculada e registrada automaticamente.
