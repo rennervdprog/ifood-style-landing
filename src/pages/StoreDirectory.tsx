@@ -29,10 +29,42 @@ const steps = [
   { step: "01", title: "Cadastre sua loja", desc: "Preencha os dados básicos e escolha seu plano." },
   { step: "02", title: "Monte seu cardápio", desc: "Adicione categorias, produtos, fotos e preços." },
   { step: "03", title: "Compartilhe o link", desc: "Envie pelo WhatsApp, redes sociais ou imprima o QR Code." },
-  { step: "04", title: "Receba pedidos!", desc: "Clientes pedem pelo celular e você recebe tudo organizado." },
-];
-
-const features = [
+   { step: "04", title: "Receba pedidos!", desc: "Clientes pedem pelo celular e você recebe tudo organizado." },
+ ];
+ 
+ /* ─── Motoboy Data ─── */
+ const motoboyWorkflow = [
+   { 
+     icon: Bell, 
+     title: "Notificação Sonora", 
+     desc: "Assim que você marca o pedido como pronto, o app do motoboy apita instantaneamente avisando que há uma entrega disponível.",
+     color: "bg-blue-500/10",
+     iconColor: "text-blue-500"
+   },
+   { 
+     icon: MapPin, 
+     title: "Rastreamento GPS", 
+     desc: "O cliente acompanha o motoboy em tempo real no mapa. Menos ansiedade para o cliente, menos mensagens no seu WhatsApp.",
+     color: "bg-green-500/10",
+     iconColor: "text-green-500"
+   },
+   { 
+     icon: SmartphoneNfc, 
+     title: "Confirmação por PIN", 
+     desc: "Segurança total: a entrega só é finalizada quando o motoboy digita o código PIN que está no celular do cliente.",
+     color: "bg-orange-500/10",
+     iconColor: "text-orange-500"
+   },
+   { 
+     icon: BarChart3, 
+     title: "Acerto Financeiro", 
+     desc: "Relatórios automáticos de quanto cada motoboy entregou e quanto ele deve prestar contas no final do turno.",
+     color: "bg-purple-500/10",
+     iconColor: "text-purple-500"
+   },
+ ];
+ 
+ const features = [
     { icon: Package, title: "Gestão De Pedidos", desc: "Emissão de nota e mensagem de atualização sobre os pedidos pro WhatsApp (abre o WhatsApp para envio manual)." },
     { icon: BarChart3, title: "Finanças e Relatórios", desc: "Tudo 100% detalhado: saiba qual produto mais vende, qual dia vendeu mais e tenha relatórios de todos os dias." },
     { icon: Truck, title: "Motoboy Integrado", desc: "Ao marcar pedido como pronto, um alerta sonoro avisa instantaneamente o motoboy no aplicativo." },
@@ -494,24 +526,120 @@ const StoreDirectory = () => {
                 <CheckCircle2 className="h-5 w-5 text-primary" />
                 <span className="font-bold text-foreground">Suporte 24/7</span>
               </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-primary" />
-                <span className="font-bold text-foreground">100% Online</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-primary" />
-                <span className="font-bold text-foreground">Escalabilidade</span>
-              </div>
-            </div>
-          </div>
-          <div className="flex-1 relative flex justify-center">
-            <div className="w-64 h-64 md:w-80 md:h-80 bg-primary/20 rounded-full blur-3xl absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -z-10" />
-            <Globe className="w-48 h-48 md:w-64 md:h-64 text-primary opacity-30 animate-pulse" />
-          </div>
-        </div>
-      </section>
-
-      {/* ══════ HOW IT WORKS ══════ */}
+               <div className="flex items-center gap-2">
+                 <CheckCircle2 className="h-5 w-5 text-primary" />
+                 <span className="font-bold text-foreground">100% Online</span>
+               </div>
+               <div className="flex items-center gap-2">
+                 <CheckCircle2 className="h-5 w-5 text-primary" />
+                 <span className="font-bold text-foreground">Escalabilidade</span>
+               </div>
+             </div>
+           </div>
+           <div className="flex-1 relative flex justify-center">
+             <div className="w-64 h-64 md:w-80 md:h-80 bg-primary/20 rounded-full blur-3xl absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -z-10" />
+             <Globe className="w-48 h-48 md:w-64 md:h-64 text-primary opacity-30 animate-pulse" />
+           </div>
+         </div>
+       </section>
+ 
+       {/* ══════ MOTOBOY SYSTEM SECTION ══════ */}
+       <section className="py-20 px-4 bg-slate-900 text-white overflow-hidden relative">
+         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-[100px] rounded-full -translate-y-1/2 translate-x-1/2" />
+         <div className="absolute bottom-0 left-0 w-64 h-64 bg-orange-600/10 blur-[100px] rounded-full translate-y-1/2 -translate-x-1/2" />
+         
+         <div className="mx-auto max-w-6xl relative z-10">
+           <div className="text-center mb-16">
+             <div className="inline-flex items-center gap-2 rounded-full bg-primary/20 border border-primary/30 px-4 py-1.5 text-xs font-bold text-primary mb-4">
+               <Truck className="h-4 w-4" /> LOGÍSTICA INTEGRADA
+             </div>
+             <h2 className="text-3xl md:text-5xl font-black mb-6 tracking-tighter">
+               Sistema de Motoboy <span className="text-primary italic">Integrado</span> 🛵
+             </h2>
+             <p className="text-slate-400 max-w-2xl mx-auto text-lg">
+               Sua logística sob controle absoluto. Da cozinha à porta do cliente, tudo conectado em tempo real para uma operação sem falhas.
+             </p>
+           </div>
+ 
+           <div className="grid lg:grid-cols-2 gap-16 items-center">
+             <div className="space-y-6">
+               {motoboyWorkflow.map((item, i) => (
+                 <div key={i} className="flex gap-5 p-6 rounded-[2rem] bg-white/5 border border-white/10 hover:bg-white/10 transition-all group">
+                   <div className={`w-14 h-14 rounded-2xl ${item.color} flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform`}>
+                     <item.icon className={`h-7 w-7 ${item.iconColor}`} />
+                   </div>
+                   <div>
+                     <h3 className="font-bold text-xl mb-2">{item.title}</h3>
+                     <p className="text-slate-400 leading-relaxed">{item.desc}</p>
+                   </div>
+                 </div>
+               ))}
+             </div>
+ 
+             <div className="relative">
+               <div className="aspect-[4/5] bg-gradient-to-br from-primary/20 to-orange-600/20 rounded-[3rem] border border-white/10 p-5 relative shadow-2xl">
+                 {/* Mock UI for Driver App */}
+                 <div className="w-full h-full bg-slate-950 rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col border border-white/5">
+                   <div className="p-5 border-b border-white/10 bg-slate-900 flex items-center justify-between">
+                     <div className="flex items-center gap-3">
+                       <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                         <Truck className="h-5 w-5 text-primary" />
+                       </div>
+                       <div>
+                         <span className="font-bold text-sm block">App do Motoboy</span>
+                         <span className="text-[10px] text-green-500 font-bold flex items-center gap-1">
+                           <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" /> ONLINE
+                         </span>
+                       </div>
+                     </div>
+                     <Bell className="h-5 w-5 text-slate-500" />
+                   </div>
+                   <div className="flex-1 p-6 space-y-6">
+                     <div className="p-5 rounded-2xl bg-primary/10 border border-primary/20 animate-bounce-slow shadow-lg shadow-primary/5">
+                       <div className="flex items-center justify-between mb-3">
+                         <span className="text-[10px] uppercase font-black text-primary tracking-wider">Novo Pedido Disponível!</span>
+                         <Zap className="h-4 w-4 text-primary fill-primary" />
+                       </div>
+                       <p className="font-black text-xl mb-1">#1024 - R$ 45,90</p>
+                       <p className="text-xs text-slate-400 font-medium">Rua das Flores, 123 • 1.2km</p>
+                     </div>
+                     <div className="h-40 w-full bg-slate-800 rounded-2xl relative overflow-hidden group/map">
+                       {/* Mini Map representation */}
+                       <div className="absolute inset-0 flex items-center justify-center opacity-20 group-hover/map:scale-110 transition-transform duration-1000">
+                         <Navigation className="h-16 w-16 text-primary rotate-45" />
+                       </div>
+                       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-5 bg-primary rounded-full shadow-[0_0_20px_rgba(255,107,0,0.6)] border-2 border-white z-10" />
+                       <div className="absolute top-1/3 left-1/4 w-3 h-3 bg-blue-500 rounded-full border-2 border-white opacity-60" />
+                     </div>
+                     <div className="space-y-3">
+                       <div className="h-2.5 w-3/4 bg-slate-800 rounded-full" />
+                       <div className="h-2.5 w-1/2 bg-slate-800 rounded-full opacity-50" />
+                     </div>
+                   </div>
+                   <div className="p-6 mt-auto">
+                     <div className="w-full py-4 bg-primary rounded-2xl text-center font-black text-sm text-black shadow-lg shadow-primary/20">
+                       ACEITAR ENTREGA
+                     </div>
+                   </div>
+                 </div>
+                 
+                 {/* Floating badge */}
+                 <div className="absolute -bottom-8 -right-8 bg-white text-slate-950 p-5 rounded-[2rem] shadow-2xl flex items-center gap-4 animate-float border border-slate-100 max-w-[240px]">
+                   <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                     <UserCheck className="h-6 w-6 text-green-600" />
+                   </div>
+                   <div>
+                     <p className="text-[11px] font-black leading-tight text-slate-900">Motoboy acaba de aceitar o pedido!</p>
+                     <p className="text-[9px] font-bold text-green-600 mt-0.5">RASTREAMENTO ATIVO</p>
+                   </div>
+                 </div>
+               </div>
+             </div>
+           </div>
+         </div>
+       </section>
+ 
+       {/* ══════ HOW IT WORKS ══════ */}
       <section id="como-funciona" className="py-20 px-4">
         <div className="mx-auto max-w-5xl">
           <h2 className="text-3xl font-bold text-center text-foreground mb-4">
