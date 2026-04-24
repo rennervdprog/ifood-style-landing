@@ -50,7 +50,7 @@ const steps = [
      iconColor: "text-green-500"
    },
    { 
-     icon: SmartphoneNfc, 
+     icon: Smartphone, 
      title: "Confirmação por PIN", 
      desc: "Segurança total: a entrega só é finalizada quando o motoboy digita o código PIN que está no celular do cliente.",
      color: "bg-orange-500/10",
