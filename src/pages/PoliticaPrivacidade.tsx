@@ -15,7 +15,7 @@ const PoliticaPrivacidade = () => {
 
       <div className="flex-1 px-4 py-6 max-w-2xl mx-auto">
         <div className="prose prose-sm dark:prose-invert max-w-none space-y-6">
-          <p className="text-xs text-muted-foreground">Última atualização: 15 de Abril de 2026 — Versão 3.0</p>
+           <p className="text-xs text-muted-foreground">Última atualização: 24 de Abril de 2026 — Versão 3.1</p>
 
           <p className="text-sm text-muted-foreground">
             Esta Política de Privacidade descreve como o <strong className="text-foreground">ItaSuper</strong> coleta, utiliza, armazena e protege 
@@ -59,7 +59,7 @@ const PoliticaPrivacidade = () => {
             <li>Dados financeiros: tipo de chave PIX (CPF, CNPJ, e-mail, telefone ou chave aleatória) e chave PIX para recebimento</li>
             <li>Nome, categoria e logotipo (imagem) da loja</li>
             <li>Slug personalizado para URL da loja</li>
-            <li>Plano contratado e dados de assinatura (Essencial R$180/mês, Crescimento R$100/mês + 2,5%, ou Comissão 5%)</li>
+             <li>Plano contratado e dados de assinatura (Essencial R$180/mês, Crescimento R$100/mês + 2,5%, Comissão 5% ou Apoiador)</li>
             <li>Dados de subconta nos gateways de pagamento (Asaas e/ou Mercado Pago) para processamento de transações PIX</li>
             <li>Configurações operacionais: horários de funcionamento por dia da semana, modo de entrega (plataforma/próprio), taxa de entrega própria, configurações de fidelidade</li>
             <li>Credenciais de integração WhatsApp (Z-API) quando ativada: instance ID, token e client token — armazenados em tabela protegida com acesso restrito ao próprio lojista</li>
@@ -92,7 +92,7 @@ const PoliticaPrivacidade = () => {
           <h2 className="text-lg font-bold text-foreground">3. Base Legal para o Tratamento (Art. 7º LGPD)</h2>
           <ul className="text-sm text-muted-foreground list-disc pl-4 space-y-1">
             <li><strong className="text-foreground">Execução de contrato</strong> (Art. 7º, V): processamento de pedidos, entregas, pagamentos, cálculo de comissões e mensalidades.</li>
-            <li><strong className="text-foreground">Consentimento</strong> (Art. 7º, I): para comunicações de marketing, notificações push e compartilhamento de localização em tempo real.</li>
+             <li><strong className="text-foreground">Consentimento</strong> (Art. 7º, I): para notificações push, comunicações sobre pedidos e compartilhamento de localização em tempo real para fins de entrega.</li>
             <li><strong className="text-foreground">Cumprimento de obrigação legal</strong> (Art. 7º, II): retenção de dados fiscais, financeiros e registros de aceite de termos conforme legislação tributária e Marco Civil da Internet.</li>
             <li><strong className="text-foreground">Legítimo interesse</strong> (Art. 7º, IX): prevenção de fraudes, análise de conformidade, controle de sessão única (single-device login) e melhoria dos serviços.</li>
           </ul>
