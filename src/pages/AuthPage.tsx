@@ -492,9 +492,9 @@ const AuthPage = () => {
           <h2 className="text-3xl lg:text-4xl font-black text-white leading-tight">
             Peça online.<br />Receba em casa.
           </h2>
-          <p className="text-white/60 text-sm max-w-xs">
-            O delivery oficial de Itatinga — e cardápio digital para todo o Brasil.
-          </p>
+             <p className="text-white/60 text-sm max-w-xs">
+               Cardápio digital e delivery profissional para todo o Brasil.
+             </p>
         </div>
 
         <div className="relative z-10 space-y-3">
@@ -537,15 +537,15 @@ const AuthPage = () => {
               {formContent}
             </div>
 
-            <div className="md:hidden text-center space-y-2 mt-8">
-              <p className="text-xs text-slate-400">
-                © {new Date().getFullYear()} Itasuper — Todos os direitos reservados
-              </p>
-              <div className="flex items-center justify-center gap-3 text-[10px] text-slate-400">
-                <Link to="/termos-de-uso" className="hover:text-primary underline">Termos</Link>
-                <Link to="/politica-de-privacidade" className="hover:text-primary underline">Política</Link>
-              </div>
-            </div>
+             <div className="md:hidden text-center space-y-2 mt-8">
+               <p className="text-xs text-slate-400">
+                 Itasuper todos os direitos reservado
+               </p>
+               <div className="flex items-center justify-center gap-3 text-[10px] text-slate-400">
+                 <Link to="/termos-de-uso" className="hover:text-primary underline">termos</Link>
+                 <Link to="/politica-de-privacidade" className="hover:text-primary underline">politica</Link>
+               </div>
+             </div>
           </div>
         </div>
       </div>
