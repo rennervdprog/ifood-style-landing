@@ -367,7 +367,7 @@ const PartnerOnboarding = () => {
             <p className="text-center text-muted-foreground mb-10 max-w-xl mx-auto">Sem contrato de fidelidade. Troque quando quiser.</p>
             <div className="grid sm:grid-cols-3 gap-5">
               {[
-                { name: "Comissão", price: "R$0", sub: "/mês", desc: "5% por pedido", icon: Rocket, tags: ["Sem mensalidade", "PIX integrado", "Ideal para testar"], popular: false },
+                { name: "Comissão", price: "R$0", sub: "/mês", desc: "6% por pedido", icon: Rocket, tags: ["Sem mensalidade", "PIX integrado", "Ideal para testar"], popular: false },
                 { name: "Crescimento", price: "R$100", sub: "/mês", desc: "+ 2,5% por pedido", icon: TrendingUp, tags: ["PIX integrado", "CRM completo", "Menor comissão"], popular: true },
                 { name: "Essencial", price: "R$180", sub: "/mês", desc: "0% de comissão", icon: Crown, tags: ["Zero comissão", "Lucro máximo", "Alto volume"], popular: false },
               ].map((plan) => (

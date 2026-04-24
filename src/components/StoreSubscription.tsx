@@ -75,7 +75,7 @@ const planOptions: { type: StorePlanType; label: string; fee: number; rate: numb
     fee: 0,
     rate: 5,
     tagline: "Para começar sem investimento",
-    bullets: ["Zero mensalidade", "5% por pedido", "Todos recursos", "Suporte completo"],
+    bullets: ["Zero mensalidade", "6% por pedido", "Todos recursos", "Suporte completo"],
   },
 ];
 

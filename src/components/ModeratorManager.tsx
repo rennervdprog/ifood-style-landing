@@ -358,7 +358,7 @@ const ModeratorManager = () => {
                     <Input label="R$ / Entrega" type="number" step="0.5" value={crescimentoDelivery} onChange={e => setCrescimentoDelivery(Number(e.target.value))} />
                   </PlanCard>
 
-                  <PlanCard icon="💰" title="Plano Comissão" subtitle="5% por pedido · Sem mensalidade">
+                  <PlanCard icon="💰" title="Plano Comissão" subtitle="6% por pedido · Sem mensalidade">
                     <div className="flex items-center justify-center">
                       <span className="text-[10px] text-muted-foreground bg-muted rounded-lg px-2 py-1">Mensalidade: ❌</span>
                     </div>
