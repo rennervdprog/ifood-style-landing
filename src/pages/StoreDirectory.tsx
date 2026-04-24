@@ -53,13 +53,13 @@ const plans = [
     icon: Rocket,
     highlight: false,
     badge: null,
-    commission: "5%",
+     commission: "6%",
     commissionLabel: "por pedido",
     color: "from-emerald-500 to-emerald-600",
     lightBg: "bg-emerald-50",
     textColor: "text-emerald-600",
     borderColor: "border-emerald-200",
-     description: "Ideal para quem está começando e quer testar sem risco. Pague apenas uma comissão sobre o que vender.",
+      description: "Ideal para quem está começando e quer testar sem risco. Pague apenas uma comissão de 6% sobre o que vender.",
     features: [
       "Cardápio digital ilimitado",
       "QR Code exclusivo",
@@ -193,7 +193,7 @@ const faqs = [
   { q: "O plano Essencial cobra alguma comissão?", a: "Não! Zero comissão. Você fica com 100% do pedido. Há apenas uma taxa PIX fixa de R$1 por transação e R$2 por entrega via plataforma." },
   { q: "Como recebo os pedidos?", a: "Você recebe notificação sonora e push no celular em tempo real. O painel mostra todos os pedidos organizados para você gerenciar." },
   { q: "Funciona na minha cidade?", a: "Sim! Atendemos lojistas em todo o Brasil — de capitais a cidades pequenas. Use como cardápio digital com entregador próprio em qualquer lugar do país." },
-  { q: "Quanto economizo comparado aos grandes apps de delivery?", a: "Muito. Os grandes marketplaces costumam cobrar comissões altas por pedido. Aqui você paga 5% (plano grátis) ou 0% (planos pagos), o que pode representar uma economia significativa no fim do mês." },
+   { q: "Quanto economizo comparado aos grandes apps de delivery?", a: "Muito. Os grandes marketplaces costumam cobrar comissões altas por pedido. Aqui você paga 6% (plano grátis) ou 0% (planos pagos), o que pode representar uma economia significativa no fim do mês." },
   { q: "Tem contrato ou multa?", a: "Não. Cancele quando quiser, sem multa e sem fidelidade." },
 ];
 
@@ -597,7 +597,7 @@ const StoreDirectory = () => {
             Escolha o plano ideal para sua loja
           </h2>
           <p className="text-center text-muted-foreground mb-4 max-w-2xl mx-auto">
-            Comissão a partir de <span className="font-bold text-primary">5%</span> — ou <span className="font-bold text-primary">zero</span> nos planos pagos.
+             Comissão a partir de <span className="font-bold text-primary">6%</span> — ou <span className="font-bold text-primary">zero</span> nos planos pagos.
             Todos incluem cardápio completo, PIX online e notificações.
           </p>
           <div className="flex justify-center mb-14">
