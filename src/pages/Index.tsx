@@ -514,12 +514,11 @@ const Index = () => {
 
       {/* ══════ FOOTER ══════ */}
       <footer className="py-8 text-center text-sm text-muted-foreground border-t border-border px-4 mb-16">
-        <p className="font-semibold text-foreground mb-1">Itasuper</p>
-        <p>© {new Date().getFullYear()} — Todos os direitos reservados</p>
-        <div className="mt-3 flex items-center justify-center gap-4 text-xs">
-          <a href="/termos-de-uso" className="hover:text-primary transition-colors">Termos</a>
-          <a href="/politica-de-privacidade" className="hover:text-primary transition-colors">Política</a>
-        </div>
+         <p className="font-semibold text-foreground mb-1">Itasuper todos os direitos reservado</p>
+         <div className="flex items-center justify-center gap-4 text-xs mt-1">
+           <a href="/termos-de-uso" className="hover:text-primary transition-colors">termos</a>
+           <a href="/politica-de-privacidade" className="hover:text-primary transition-colors">politica</a>
+         </div>
       </footer>
 
       <div data-tour="cart-fab"><CartFAB /></div>

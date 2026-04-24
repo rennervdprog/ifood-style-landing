@@ -15,15 +15,15 @@ const TermosDeUso = () => {
 
       <div className="flex-1 px-4 py-6 max-w-2xl mx-auto">
         <div className="prose prose-sm dark:prose-invert max-w-none space-y-6">
-          <p className="text-xs text-muted-foreground">Última atualização: 15 de Abril de 2026 — Versão 3.0</p>
+           <p className="text-xs text-muted-foreground">Última atualização: 24 de Abril de 2026 — Versão 3.1</p>
 
           <h2 className="text-lg font-bold text-foreground">1. Identificação da Plataforma</h2>
-          <p className="text-sm text-muted-foreground">
-            A plataforma <strong className="text-foreground">ItaSuper</strong> é um serviço de intermediação digital que conecta consumidores, 
-            estabelecimentos comerciais (lojistas) e entregadores (motoboys), operada por meio de aplicativo web progressivo (PWA) 
-            e aplicativo nativo para Android (via Capacitor). Ao utilizar o ItaSuper, o Usuário declara que leu, compreendeu 
-            e concorda integralmente com estes Termos de Uso.
-          </p>
+           <p className="text-sm text-muted-foreground">
+             A plataforma <strong className="text-foreground">ItaSuper</strong> é um serviço de intermediação digital que conecta consumidores, 
+             estabelecimentos comerciais (lojistas) e entregadores (motoboys), operada por meio de aplicativo web progressivo (PWA). 
+             O ItaSuper atua exclusivamente no modelo digital, não oferecendo suporte ou gestão para mesas físicas ou atendimento presencial (balcão). 
+             Ao utilizar o ItaSuper, o Usuário declara que leu, compreendeu e concorda integralmente com estes Termos de Uso.
+           </p>
 
           <h2 className="text-lg font-bold text-foreground">2. Definições</h2>
           <ul className="text-sm text-muted-foreground list-disc pl-4 space-y-1">
@@ -109,9 +109,10 @@ const TermosDeUso = () => {
             5.1. O ItaSuper oferece três planos para lojistas:
           </p>
           <ul className="text-sm text-muted-foreground list-disc pl-4 space-y-2">
-            <li><strong className="text-foreground">Essencial (R$ 180/mês):</strong> Todas as funcionalidades da plataforma com <strong className="text-foreground">zero comissão</strong> por pedido. Inclui: relatórios premium, suporte VIP prioritário e prioridade em novidades. Taxas operacionais: <strong className="text-foreground">R$ 1,00 por pedido pago via PIX</strong> (taxa de processamento) e <strong className="text-foreground">R$ 2,00 por entrega realizada pela plataforma</strong> (cobrado do cliente na taxa de entrega, não do lojista).</li>
-            <li><strong className="text-foreground">Crescimento (R$ 100/mês + 2,5% por pedido):</strong> Todas as funcionalidades incluindo relatórios avançados, suporte prioritário, banners ilimitados, destaque na vitrine e agendamento de pedidos. Comissão de 2,5% sobre o subtotal de cada pedido.</li>
-            <li><strong className="text-foreground">Comissão (R$ 0/mês + 5% por pedido):</strong> Sem mensalidade. Inclui: cardápio digital ilimitado, QR Code exclusivo, PIX automático, notificações em tempo real, cupons, fidelidade, relatórios básicos e suporte por WhatsApp. Comissão de 5% sobre o subtotal de cada pedido.</li>
+             <li><strong className="text-foreground">Essencial (R$ 180/mês):</strong> Todas as funcionalidades da plataforma com <strong className="text-foreground">zero comissão</strong> por pedido. Inclui: relatórios detalhados, suporte VIP e prioridade em novidades. Taxas operacionais: <strong className="text-foreground">R$ 1,00 por pedido pago via PIX</strong> (taxa de processamento) e <strong className="text-foreground">R$ 2,00 por entrega realizada pela plataforma</strong> (esta taxa é somada à taxa de entrega definida pelo lojista e cobrada do cliente final).</li>
+             <li><strong className="text-foreground">Crescimento (R$ 100/mês + 2,5% por pedido):</strong> Todas as funcionalidades incluindo relatórios avançados, sem taxas adicionais de PIX ou entrega por parte da plataforma. Comissão de 2,5% sobre o valor total de cada pedido.</li>
+             <li><strong className="text-foreground">Comissão (5% por pedido):</strong> Sem mensalidade e sem taxas adicionais. Inclui cardápio digital ilimitado, notificações em tempo real e relatórios básicos. Comissão de 5% sobre o valor total de cada pedido.</li>
+             <li><strong className="text-foreground">Apoiador:</strong> Plano especial destinado a parceiros estratégicos com condições diferenciadas de suporte e visibilidade.</li>
           </ul>
           <p className="text-sm text-muted-foreground">
             5.2. Os planos Essencial e Crescimento incluem <strong className="text-foreground">7 dias de teste grátis</strong>. O plano Comissão não possui mensalidade e pode ser utilizado imediatamente. Após o período de teste, a cobrança será realizada automaticamente.
@@ -183,10 +184,10 @@ const TermosDeUso = () => {
             do Lojista junto à Plataforma.
           </p>
           <p className="text-sm text-muted-foreground">
-            9.4. A taxa de entrega é calculada automaticamente com base no bairro/distância do cliente em relação ao estabelecimento. Para entregas dentro do perímetro urbano de Itatinga, a taxa padrão é de R$ 5,00. Para entregas em zona rural, o cálculo considera a distância em quilômetros.
+             9.4. A taxa de entrega é calculada automaticamente com base no bairro ou distância do cliente em relação ao estabelecimento. A plataforma opera em todo o território nacional, permitindo que cada lojista configure suas próprias regras de cobrança.
           </p>
           <p className="text-sm text-muted-foreground">
-            9.5. Da taxa de entrega cobrada do cliente, R$ 4,00 são repassados ao entregador e R$ 2,00 são retidos pela plataforma como taxa operacional (no plano Essencial, esta taxa de R$ 2,00 é explicitamente informada; nos demais planos, está incluída na comissão).
+             9.5. No plano Essencial, à taxa de entrega definida pelo lojista, a plataforma soma automaticamente R$ 2,00 (dois reais) referentes à taxa operacional de intermediação da entrega, valor este pago pelo cliente final.
           </p>
           <p className="text-sm text-muted-foreground">
             9.6. No plano Essencial, é cobrada uma taxa fixa de R$ 1,00 por pedido pago via PIX como taxa operacional de processamento. Pedidos pagos em dinheiro ou cartão não possuem esta taxa.
