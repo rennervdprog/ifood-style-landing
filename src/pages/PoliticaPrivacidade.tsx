@@ -59,7 +59,7 @@ const PoliticaPrivacidade = () => {
             <li>Dados financeiros: tipo de chave PIX (CPF, CNPJ, e-mail, telefone ou chave aleatória) e chave PIX para recebimento</li>
             <li>Nome, categoria e logotipo (imagem) da loja</li>
             <li>Slug personalizado para URL da loja</li>
-             <li>Plano contratado e dados de assinatura (Essencial R$180/mês, Crescimento R$100/mês + 2,5%, Comissão 5% ou Apoiador)</li>
+             <li>Plano contratado e dados de assinatura (Essencial R$180/mês, Crescimento R$100/mês + 2,5%, Comissão 6% ou Apoiador)</li>
             <li>Dados de subconta nos gateways de pagamento (Asaas e/ou Mercado Pago) para processamento de transações PIX</li>
             <li>Configurações operacionais: horários de funcionamento por dia da semana, modo de entrega (plataforma/próprio), taxa de entrega própria, configurações de fidelidade</li>
             <li>Credenciais de integração WhatsApp (Z-API) quando ativada: instance ID, token e client token — armazenados em tabela protegida com acesso restrito ao próprio lojista</li>
