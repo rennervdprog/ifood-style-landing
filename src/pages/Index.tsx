@@ -6,6 +6,8 @@ import {
   ShoppingBag, CreditCard, Bell, Utensils, Truck, Gift, ChevronDown,
   Search, Shield, MessageCircle, BarChart3, TrendingUp, Crown, Rocket,
    CheckCircle2, X, Check, MapPin, Navigation, UserCheck, SmartphoneNfc,
+ } from "lucide-react";
+ 
  /* ─── Motoboy Data ─── */
  const motoboyWorkflow = [
    { 
@@ -37,8 +39,6 @@ import {
      iconColor: "text-purple-500"
    },
  ];
- 
-} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import AppHeader from "@/components/AppHeader";
