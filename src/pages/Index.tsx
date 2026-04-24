@@ -5,7 +5,39 @@ import {
   PackageOpen, ArrowRight, Smartphone, QrCode, Clock, Zap, Star,
   ShoppingBag, CreditCard, Bell, Utensils, Truck, Gift, ChevronDown,
   Search, Shield, MessageCircle, BarChart3, TrendingUp, Crown, Rocket,
-  CheckCircle2, X, Check,
+   CheckCircle2, X, Check, MapPin, Navigation, UserCheck, SmartphoneNfc,
+ /* ─── Motoboy Data ─── */
+ const motoboyWorkflow = [
+   { 
+     icon: Bell, 
+     title: "Notificação Sonora", 
+     desc: "Assim que você marca o pedido como pronto, o app do motoboy apita instantaneamente avisando que há uma entrega disponível.",
+     color: "bg-blue-500/10",
+     iconColor: "text-blue-500"
+   },
+   { 
+     icon: MapPin, 
+     title: "Rastreamento GPS", 
+     desc: "O cliente acompanha o motoboy em tempo real no mapa. Menos ansiedade para o cliente, menos mensagens no seu WhatsApp.",
+     color: "bg-green-500/10",
+     iconColor: "text-green-500"
+   },
+   { 
+     icon: SmartphoneNfc, 
+     title: "Confirmação por PIN", 
+     desc: "Segurança total: a entrega só é finalizada quando o motoboy digita o código PIN que está no celular do cliente.",
+     color: "bg-orange-500/10",
+     iconColor: "text-orange-500"
+   },
+   { 
+     icon: BarChart3, 
+     title: "Acerto Financeiro", 
+     desc: "Relatórios automáticos de quanto cada motoboy entregou e quanto ele deve prestar contas no final do turno.",
+     color: "bg-purple-500/10",
+     iconColor: "text-purple-500"
+   },
+ ];
+ 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -262,7 +294,91 @@ const Index = () => {
         </div>
       </section>
 
-      {/* ══════ HOW IT WORKS ══════ */}
+       {/* ══════ MOTOBOY SYSTEM SECTION ══════ */}
+       <section className="py-16 px-4 bg-slate-900 text-white overflow-hidden relative">
+         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-[100px] rounded-full -translate-y-1/2 translate-x-1/2" />
+         <div className="absolute bottom-0 left-0 w-64 h-64 bg-orange-600/10 blur-[100px] rounded-full translate-y-1/2 -translate-x-1/2" />
+         
+         <div className="mx-auto max-w-5xl relative z-10">
+           <div className="text-center mb-12">
+             <h2 className="text-2xl md:text-4xl font-black mb-4">
+               Sistema de Motoboy <span className="text-primary">Integrado</span> 🛵
+             </h2>
+             <p className="text-slate-400 max-w-2xl mx-auto">
+               Sua logística sob controle. Da cozinha à porta do cliente, tudo conectado em tempo real.
+             </p>
+           </div>
+ 
+           <div className="grid md:grid-cols-2 gap-12 items-center">
+             <div className="space-y-6">
+               {motoboyWorkflow.map((item, i) => (
+                 <div key={i} className="flex gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors group">
+                   <div className={`w-12 h-12 rounded-xl ${item.color} flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform`}>
+                     <item.icon className={`h-6 w-6 ${item.iconColor}`} />
+                   </div>
+                   <div>
+                     <h3 className="font-bold text-lg mb-1">{item.title}</h3>
+                     <p className="text-sm text-slate-400 leading-relaxed">{item.desc}</p>
+                   </div>
+                 </div>
+               ))}
+             </div>
+ 
+             <div className="relative">
+               <div className="aspect-[4/5] bg-gradient-to-br from-primary/20 to-orange-600/20 rounded-[2.5rem] border border-white/10 p-4 relative">
+                 {/* Mock UI for Driver App */}
+                 <div className="w-full h-full bg-slate-950 rounded-[2rem] overflow-hidden shadow-2xl flex flex-col border border-white/5">
+                   <div className="p-4 border-b border-white/10 bg-slate-900 flex items-center justify-between">
+                     <div className="flex items-center gap-2">
+                       <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                         <Truck className="h-4 w-4 text-primary" />
+                       </div>
+                       <span className="font-bold text-xs">App do Motoboy</span>
+                     </div>
+                     <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                   </div>
+                   <div className="flex-1 p-4 space-y-4">
+                     <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 animate-bounce-slow">
+                       <div className="flex items-center justify-between mb-2">
+                         <span className="text-[10px] uppercase font-bold text-primary">Novo Pedido Disponível!</span>
+                         <Bell className="h-3 w-3 text-primary" />
+                       </div>
+                       <p className="font-bold text-sm">#1024 - R$ 45,90</p>
+                       <p className="text-[10px] text-slate-400">Rua das Flores, 123 • 1.2km</p>
+                     </div>
+                     <div className="h-32 w-full bg-slate-800 rounded-xl relative overflow-hidden">
+                       {/* Mini Map representation */}
+                       <div className="absolute inset-0 flex items-center justify-center opacity-30">
+                         <Navigation className="h-10 w-10 text-primary rotate-45" />
+                       </div>
+                       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-primary rounded-full shadow-[0_0_15px_rgba(255,107,0,0.5)] border-2 border-white" />
+                     </div>
+                     <div className="space-y-2">
+                       <div className="h-2 w-3/4 bg-slate-800 rounded" />
+                       <div className="h-2 w-1/2 bg-slate-800 rounded opacity-50" />
+                     </div>
+                   </div>
+                   <div className="p-4 mt-auto">
+                     <div className="w-full py-3 bg-primary rounded-xl text-center font-bold text-sm text-black">
+                       ACEITAR ENTREGA
+                     </div>
+                   </div>
+                 </div>
+                 
+                 {/* Floating badge */}
+                 <div className="absolute -bottom-6 -right-6 bg-white text-slate-950 p-4 rounded-2xl shadow-xl flex items-center gap-3 animate-float max-w-[200px]">
+                   <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                     <UserCheck className="h-5 w-5 text-green-600" />
+                   </div>
+                   <p className="text-[10px] font-bold leading-tight">Motoboy acaba de aceitar o pedido!</p>
+                 </div>
+               </div>
+             </div>
+           </div>
+         </div>
+       </section>
+ 
+       {/* ══════ HOW IT WORKS ══════ */}
       <section className="py-16 px-4 bg-muted/20">
         <div className="mx-auto max-w-5xl">
           <h2 className="text-2xl md:text-3xl font-bold text-center text-foreground mb-4">
