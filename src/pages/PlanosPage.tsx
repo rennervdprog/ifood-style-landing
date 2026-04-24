@@ -72,13 +72,13 @@ const plans = [
     icon: Rocket,
     highlight: false,
     badge: null,
-    commission: "5%",
+    commission: "6%",
     commissionLabel: "por pedido",
     color: "from-emerald-500 to-emerald-600",
     lightBg: "bg-emerald-50",
     textColor: "text-emerald-600",
     borderColor: "border-emerald-200",
-    description: "Ideal para testar sem risco. Pague 5% apenas sobre as vendas realizadas.",
+    description: "Ideal para testar sem risco. Pague 6% apenas sobre as vendas realizadas.",
     features: [
       { text: "Cardápio digital ilimitado", included: true },
       { text: "WhatsApp de atualização", included: true },
@@ -509,7 +509,7 @@ export default function PlanosPage() {
                 </tr>
                 <tr className="border-b border-border">
                   <td className="p-4 font-semibold text-foreground">Comissão</td>
-                  <td className="p-4 text-center text-foreground">5%</td>
+                  <td className="p-4 text-center text-foreground">6%</td>
                   <td className="p-4 text-center text-foreground">2,5%</td>
                   <td className="p-4 text-center font-bold text-primary">0%</td>
                 </tr>
@@ -675,7 +675,7 @@ function ROICalculator() {
   const [ticket, setTicket] = useState(40);
 
   const revenue = orders * ticket;
-  const commissionCost = revenue * 0.05;
+  const commissionCost = revenue * 0.06;
   const fixedCost = 180 + orders * 2 + orders * 1; // R$180 + R$2 delivery + R$1 PIX per order
   const savings = commissionCost - fixedCost;
 
@@ -720,7 +720,7 @@ function ROICalculator() {
           <p className="text-xl font-bold text-foreground">R$ {revenue.toLocaleString("pt-BR")}</p>
         </div>
         <div className="rounded-2xl bg-destructive/5 p-4 text-center">
-          <p className="text-xs text-muted-foreground mb-1">Custo Comissão (5%)</p>
+          <p className="text-xs text-muted-foreground mb-1">Custo Comissão (6%)</p>
           <p className="text-xl font-bold text-destructive">- R$ {commissionCost.toLocaleString("pt-BR")}</p>
         </div>
         <div className="rounded-2xl bg-primary/5 p-4 text-center">
