@@ -10,7 +10,8 @@ import {
   Menu, X, DollarSign, Globe, Rocket,
   Award, Sparkles, ChevronDown,
   ShoppingBag, Truck, Crown, BadgePercent,
-  Bell, QrCode, Utensils, Gift, MessageCircle, Shield, Check,
+   Bell, QrCode, Utensils, Gift, MessageCircle, Shield, Check,
+   Navigation, UserCheck, SmartphoneNfc,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
