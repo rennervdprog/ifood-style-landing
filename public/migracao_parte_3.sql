@@ -6,7 +6,7 @@
 
 -- Name: products; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.products (
+CREATE TABLE -- IF NOT EXISTS -- IF NOT EXISTS -- IF NOT EXISTS public.products (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     store_id uuid NOT NULL,
     name text NOT NULL,
@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.products (
 
 -- Name: profiles; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.profiles (
+CREATE TABLE -- IF NOT EXISTS -- IF NOT EXISTS -- IF NOT EXISTS public.profiles (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     user_id uuid NOT NULL,
     full_name text DEFAULT ''::text NOT NULL,
@@ -69,7 +69,7 @@ CREATE VIEW public.profile_contacts WITH (security_invoker='true') AS
 
 -- Name: refund_requests; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.refund_requests (
+CREATE TABLE -- IF NOT EXISTS -- IF NOT EXISTS -- IF NOT EXISTS public.refund_requests (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     order_id uuid NOT NULL,
     store_id uuid NOT NULL,
@@ -90,7 +90,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.refund_requests (
 
 -- Name: saved_addresses; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.saved_addresses (
+CREATE TABLE -- IF NOT EXISTS -- IF NOT EXISTS -- IF NOT EXISTS public.saved_addresses (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     user_id uuid NOT NULL,
     label text DEFAULT 'Casa'::text NOT NULL,
@@ -107,7 +107,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.saved_addresses (
 
 -- Name: store_balances; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.store_balances (
+CREATE TABLE -- IF NOT EXISTS -- IF NOT EXISTS -- IF NOT EXISTS public.store_balances (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     store_id uuid NOT NULL,
     pending_commission numeric DEFAULT 0 NOT NULL,
@@ -119,7 +119,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.store_balances (
 
 -- Name: store_driver_earnings; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.store_driver_earnings (
+CREATE TABLE -- IF NOT EXISTS -- IF NOT EXISTS -- IF NOT EXISTS public.store_driver_earnings (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     store_id uuid NOT NULL,
     driver_user_id uuid NOT NULL,
@@ -140,7 +140,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.store_driver_earni
 
 -- Name: store_drivers; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.store_drivers (
+CREATE TABLE -- IF NOT EXISTS -- IF NOT EXISTS -- IF NOT EXISTS public.store_drivers (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     store_id uuid NOT NULL,
     driver_user_id uuid NOT NULL,
@@ -152,7 +152,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.store_drivers (
 
 -- Name: store_plans; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.store_plans (
+CREATE TABLE -- IF NOT EXISTS -- IF NOT EXISTS -- IF NOT EXISTS public.store_plans (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     store_id uuid NOT NULL,
     plan_type public.store_plan_type DEFAULT 'commission_only'::public.store_plan_type NOT NULL,
@@ -193,7 +193,7 @@ CREATE VIEW public.store_plans_public WITH (security_invoker='true') AS
 
 -- Name: store_secrets; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.store_secrets (
+CREATE TABLE -- IF NOT EXISTS -- IF NOT EXISTS -- IF NOT EXISTS public.store_secrets (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     store_id uuid NOT NULL,
     zapi_enabled boolean DEFAULT false NOT NULL,
@@ -206,7 +206,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.store_secrets (
 
 -- Name: stores; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.stores (
+CREATE TABLE -- IF NOT EXISTS -- IF NOT EXISTS -- IF NOT EXISTS public.stores (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     name text NOT NULL,
     category public.store_category NOT NULL,
@@ -310,7 +310,7 @@ CREATE VIEW public.stores_public WITH (security_invoker='true') AS
 
 -- Name: terms_acceptance; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.terms_acceptance (
+CREATE TABLE -- IF NOT EXISTS -- IF NOT EXISTS -- IF NOT EXISTS public.terms_acceptance (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     user_id uuid NOT NULL,
     terms_version text DEFAULT '1.0'::text NOT NULL,
@@ -323,7 +323,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.terms_acceptance (
 
 -- Name: user_active_devices; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.user_active_devices (
+CREATE TABLE -- IF NOT EXISTS -- IF NOT EXISTS -- IF NOT EXISTS public.user_active_devices (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     user_id uuid NOT NULL,
     device_id text NOT NULL,
@@ -334,7 +334,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.user_active_device
 
 -- Name: user_roles; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.user_roles (
+CREATE TABLE -- IF NOT EXISTS -- IF NOT EXISTS -- IF NOT EXISTS public.user_roles (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     user_id uuid NOT NULL,
     role public.app_role NOT NULL
@@ -343,7 +343,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.user_roles (
 
 -- Name: user_wallet; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.user_wallet (
+CREATE TABLE -- IF NOT EXISTS -- IF NOT EXISTS -- IF NOT EXISTS public.user_wallet (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     user_id uuid NOT NULL,
     balance numeric DEFAULT 0 NOT NULL,
@@ -353,7 +353,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.user_wallet (
 
 -- Name: wallet_transactions; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.wallet_transactions (
+CREATE TABLE -- IF NOT EXISTS -- IF NOT EXISTS -- IF NOT EXISTS public.wallet_transactions (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     user_id uuid NOT NULL,
     amount numeric NOT NULL,
@@ -377,7 +377,7 @@ CREATE SEQUENCE public.withdrawal_code_seq
 
 -- Name: withdrawal_requests; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.withdrawal_requests (
+CREATE TABLE -- IF NOT EXISTS -- IF NOT EXISTS -- IF NOT EXISTS public.withdrawal_requests (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     driver_user_id uuid NOT NULL,
     amount numeric NOT NULL,
@@ -867,117 +867,117 @@ ALTER TABLE ONLY public.withdrawal_requests
 
 -- Name: idx_driver_locations_driver; Type: INDEX; Schema: public; Owner: -
 
-CREATE INDEX IF NOT EXISTS idx_driver_locations_driver ON public.driver_locations USING btree (driver_user_id);
+CREATE INDEX -- IF NOT EXISTS idx_driver_locations_driver ON public.driver_locations USING btree (driver_user_id);
 
 
 -- Name: idx_driver_locations_order; Type: INDEX; Schema: public; Owner: -
 
-CREATE INDEX IF NOT EXISTS idx_driver_locations_order ON public.driver_locations USING btree (order_id);
+CREATE INDEX -- IF NOT EXISTS idx_driver_locations_order ON public.driver_locations USING btree (order_id);
 
 
 -- Name: idx_driver_locations_unique_driver; Type: INDEX; Schema: public; Owner: -
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_driver_locations_unique_driver ON public.driver_locations USING btree (driver_user_id);
+CREATE UNIQUE INDEX -- IF NOT EXISTS idx_driver_locations_unique_driver ON public.driver_locations USING btree (driver_user_id);
 
 
 -- Name: idx_driver_locations_updated; Type: INDEX; Schema: public; Owner: -
 
-CREATE INDEX IF NOT EXISTS idx_driver_locations_updated ON public.driver_locations USING btree (updated_at DESC);
+CREATE INDEX -- IF NOT EXISTS idx_driver_locations_updated ON public.driver_locations USING btree (updated_at DESC);
 
 
 -- Name: idx_fcm_tokens_store_id; Type: INDEX; Schema: public; Owner: -
 
-CREATE INDEX IF NOT EXISTS idx_fcm_tokens_store_id ON public.fcm_tokens USING btree (store_id) WHERE (store_id IS NOT NULL);
+CREATE INDEX -- IF NOT EXISTS idx_fcm_tokens_store_id ON public.fcm_tokens USING btree (store_id) WHERE (store_id IS NOT NULL);
 
 
 -- Name: idx_financial_transactions_kind_status; Type: INDEX; Schema: public; Owner: -
 
-CREATE INDEX IF NOT EXISTS idx_financial_transactions_kind_status ON public.financial_transactions USING btree (transaction_kind, status);
+CREATE INDEX -- IF NOT EXISTS idx_financial_transactions_kind_status ON public.financial_transactions USING btree (transaction_kind, status);
 
 
 -- Name: idx_financial_transactions_mp_payment_id; Type: INDEX; Schema: public; Owner: -
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_financial_transactions_mp_payment_id ON public.financial_transactions USING btree (mercado_pago_payment_id) WHERE (mercado_pago_payment_id IS NOT NULL);
+CREATE UNIQUE INDEX -- IF NOT EXISTS idx_financial_transactions_mp_payment_id ON public.financial_transactions USING btree (mercado_pago_payment_id) WHERE (mercado_pago_payment_id IS NOT NULL);
 
 
 -- Name: idx_financial_transactions_mp_transfer_id; Type: INDEX; Schema: public; Owner: -
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_financial_transactions_mp_transfer_id ON public.financial_transactions USING btree (mercado_pago_transfer_id) WHERE (mercado_pago_transfer_id IS NOT NULL);
+CREATE UNIQUE INDEX -- IF NOT EXISTS idx_financial_transactions_mp_transfer_id ON public.financial_transactions USING btree (mercado_pago_transfer_id) WHERE (mercado_pago_transfer_id IS NOT NULL);
 
 
 -- Name: idx_financial_transactions_store_id; Type: INDEX; Schema: public; Owner: -
 
-CREATE INDEX IF NOT EXISTS idx_financial_transactions_store_id ON public.financial_transactions USING btree (store_id);
+CREATE INDEX -- IF NOT EXISTS idx_financial_transactions_store_id ON public.financial_transactions USING btree (store_id);
 
 
 -- Name: idx_orders_assigned_driver; Type: INDEX; Schema: public; Owner: -
 
-CREATE INDEX IF NOT EXISTS idx_orders_assigned_driver ON public.orders USING btree (assigned_driver_id) WHERE (assigned_driver_id IS NOT NULL);
+CREATE INDEX -- IF NOT EXISTS idx_orders_assigned_driver ON public.orders USING btree (assigned_driver_id) WHERE (assigned_driver_id IS NOT NULL);
 
 
 -- Name: idx_page_views_created; Type: INDEX; Schema: public; Owner: -
 
-CREATE INDEX IF NOT EXISTS idx_page_views_created ON public.page_views USING btree (created_at DESC);
+CREATE INDEX -- IF NOT EXISTS idx_page_views_created ON public.page_views USING btree (created_at DESC);
 
 
 -- Name: idx_page_views_page_created; Type: INDEX; Schema: public; Owner: -
 
-CREATE INDEX IF NOT EXISTS idx_page_views_page_created ON public.page_views USING btree (page, created_at DESC);
+CREATE INDEX -- IF NOT EXISTS idx_page_views_page_created ON public.page_views USING btree (page, created_at DESC);
 
 
 -- Name: idx_products_store_id; Type: INDEX; Schema: public; Owner: -
 
-CREATE INDEX IF NOT EXISTS idx_products_store_id ON public.products USING btree (store_id);
+CREATE INDEX -- IF NOT EXISTS idx_products_store_id ON public.products USING btree (store_id);
 
 
 -- Name: idx_store_driver_earnings_driver; Type: INDEX; Schema: public; Owner: -
 
-CREATE INDEX IF NOT EXISTS idx_store_driver_earnings_driver ON public.store_driver_earnings USING btree (driver_user_id, status);
+CREATE INDEX -- IF NOT EXISTS idx_store_driver_earnings_driver ON public.store_driver_earnings USING btree (driver_user_id, status);
 
 
 -- Name: idx_store_driver_earnings_store; Type: INDEX; Schema: public; Owner: -
 
-CREATE INDEX IF NOT EXISTS idx_store_driver_earnings_store ON public.store_driver_earnings USING btree (store_id, status);
+CREATE INDEX -- IF NOT EXISTS idx_store_driver_earnings_store ON public.store_driver_earnings USING btree (store_id, status);
 
 
 -- Name: idx_stores_categories_gin; Type: INDEX; Schema: public; Owner: -
 
-CREATE INDEX IF NOT EXISTS idx_stores_categories_gin ON public.stores USING gin (categories);
+CREATE INDEX -- IF NOT EXISTS idx_stores_categories_gin ON public.stores USING gin (categories);
 
 
 -- Name: idx_stores_category; Type: INDEX; Schema: public; Owner: -
 
-CREATE INDEX IF NOT EXISTS idx_stores_category ON public.stores USING btree (category);
+CREATE INDEX -- IF NOT EXISTS idx_stores_category ON public.stores USING btree (category);
 
 
 -- Name: idx_stores_is_open; Type: INDEX; Schema: public; Owner: -
 
-CREATE INDEX IF NOT EXISTS idx_stores_is_open ON public.stores USING btree (is_open);
+CREATE INDEX -- IF NOT EXISTS idx_stores_is_open ON public.stores USING btree (is_open);
 
 
 -- Name: idx_stores_is_test; Type: INDEX; Schema: public; Owner: -
 
-CREATE INDEX IF NOT EXISTS idx_stores_is_test ON public.stores USING btree (is_test) WHERE (is_test = true);
+CREATE INDEX -- IF NOT EXISTS idx_stores_is_test ON public.stores USING btree (is_test) WHERE (is_test = true);
 
 
 -- Name: idx_stores_slug; Type: INDEX; Schema: public; Owner: -
 
-CREATE INDEX IF NOT EXISTS idx_stores_slug ON public.stores USING btree (slug);
+CREATE INDEX -- IF NOT EXISTS idx_stores_slug ON public.stores USING btree (slug);
 
 
 -- Name: idx_terms_acceptance_user; Type: INDEX; Schema: public; Owner: -
 
-CREATE INDEX IF NOT EXISTS idx_terms_acceptance_user ON public.terms_acceptance USING btree (user_id);
+CREATE INDEX -- IF NOT EXISTS idx_terms_acceptance_user ON public.terms_acceptance USING btree (user_id);
 
 
 -- Name: ux_withdrawal_requests_one_active_per_driver; Type: INDEX; Schema: public; Owner: -
 
-CREATE UNIQUE INDEX IF NOT EXISTS ux_withdrawal_requests_one_active_per_driver ON public.withdrawal_requests USING btree (driver_user_id) WHERE (status = 'solicitado'::text);
+CREATE UNIQUE INDEX -- IF NOT EXISTS ux_withdrawal_requests_one_active_per_driver ON public.withdrawal_requests USING btree (driver_user_id) WHERE (status = 'solicitado'::text);
 
 
 -- Name: ux_withdrawal_requests_transaction_code; Type: INDEX; Schema: public; Owner: -
 
-CREATE UNIQUE INDEX IF NOT EXISTS ux_withdrawal_requests_transaction_code ON public.withdrawal_requests USING btree (transaction_code) WHERE (transaction_code IS NOT NULL);
+CREATE UNIQUE INDEX -- IF NOT EXISTS ux_withdrawal_requests_transaction_code ON public.withdrawal_requests USING btree (transaction_code) WHERE (transaction_code IS NOT NULL);
 
 
 -- Name: orders award_loyalty_on_order_finalized; Type: TRIGGER; Schema: public; Owner: -
@@ -1547,252 +1547,252 @@ ALTER TABLE ONLY public.user_roles
 
 -- Name: admin_settings Admin can delete settings; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can delete settings' AND tablename = 'admin_settings') THEN
+-- DO BEGIN
+    -- IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can delete settings' AND tablename = 'admin_settings') THEN
         CREATE POLICY "Admin can delete settings" ON public.admin_settings FOR DELETE TO authenticated USING (public.is_platform_admin(auth.uid()));
-    END IF;
-END $$;
+    -- END IF
+-- END
 
 
 -- Name: withdrawal_requests Admin can delete withdrawal requests; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can delete withdrawal requests' AND tablename = 'withdrawal_requests') THEN
+-- DO BEGIN
+    -- IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can delete withdrawal requests' AND tablename = 'withdrawal_requests') THEN
         CREATE POLICY "Admin can delete withdrawal requests" ON public.withdrawal_requests FOR DELETE TO authenticated USING (public.is_platform_admin(auth.uid()));
-    END IF;
-END $$;
+    -- END IF
+-- END
 
 
 -- Name: archived_accounts Admin can insert archived accounts; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can insert archived accounts' AND tablename = 'archived_accounts') THEN
+-- DO BEGIN
+    -- IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can insert archived accounts' AND tablename = 'archived_accounts') THEN
         CREATE POLICY "Admin can insert archived accounts" ON public.archived_accounts FOR INSERT TO authenticated WITH CHECK (public.is_platform_admin(auth.uid()));
-    END IF;
-END $$;
+    -- END IF
+-- END
 
 
 -- Name: admin_settings Admin can insert settings; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can insert settings' AND tablename = 'admin_settings') THEN
+-- DO BEGIN
+    -- IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can insert settings' AND tablename = 'admin_settings') THEN
         CREATE POLICY "Admin can insert settings" ON public.admin_settings FOR INSERT TO authenticated WITH CHECK (public.is_platform_admin(auth.uid()));
-    END IF;
-END $$;
+    -- END IF
+-- END
 
 
 -- Name: loyalty_config Admin can manage all config; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can manage all config' AND tablename = 'loyalty_config') THEN
+-- DO BEGIN
+    -- IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can manage all config' AND tablename = 'loyalty_config') THEN
         CREATE POLICY "Admin can manage all config" ON public.loyalty_config TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
-    END IF;
-END $$;
+    -- END IF
+-- END
 
 
 -- Name: coupons Admin can manage all coupons; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can manage all coupons' AND tablename = 'coupons') THEN
+-- DO BEGIN
+    -- IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can manage all coupons' AND tablename = 'coupons') THEN
         CREATE POLICY "Admin can manage all coupons" ON public.coupons TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
-    END IF;
-END $$;
+    -- END IF
+-- END
 
 
 -- Name: plan_change_requests Admin can manage all plan requests; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can manage all plan requests' AND tablename = 'plan_change_requests') THEN
+-- DO BEGIN
+    -- IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can manage all plan requests' AND tablename = 'plan_change_requests') THEN
         CREATE POLICY "Admin can manage all plan requests" ON public.plan_change_requests TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
-    END IF;
-END $$;
+    -- END IF
+-- END
 
 
 -- Name: store_plans Admin can manage all store plans; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can manage all store plans' AND tablename = 'store_plans') THEN
+-- DO BEGIN
+    -- IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can manage all store plans' AND tablename = 'store_plans') THEN
         CREATE POLICY "Admin can manage all store plans" ON public.store_plans TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
-    END IF;
-END $$;
+    -- END IF
+-- END
 
 
 -- Name: compliance_alerts Admin can manage compliance alerts; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can manage compliance alerts' AND tablename = 'compliance_alerts') THEN
+-- DO BEGIN
+    -- IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can manage compliance alerts' AND tablename = 'compliance_alerts') THEN
         CREATE POLICY "Admin can manage compliance alerts" ON public.compliance_alerts TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
-    END IF;
-END $$;
+    -- END IF
+-- END
 
 
 -- Name: payout_history Admin can manage payout history; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can manage payout history' AND tablename = 'payout_history') THEN
+-- DO BEGIN
+    -- IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can manage payout history' AND tablename = 'payout_history') THEN
         CREATE POLICY "Admin can manage payout history" ON public.payout_history TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
-    END IF;
-END $$;
+    -- END IF
+-- END
 
 
 -- Name: coupon_uses Admin can read all coupon uses; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can read all coupon uses' AND tablename = 'coupon_uses') THEN
+-- DO BEGIN
+    -- IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can read all coupon uses' AND tablename = 'coupon_uses') THEN
         CREATE POLICY "Admin can read all coupon uses" ON public.coupon_uses FOR SELECT TO authenticated USING (public.is_platform_admin(auth.uid()));
-    END IF;
-END $$;
+    -- END IF
+-- END
 
 
 -- Name: driver_balances Admin can read all driver balances; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can read all driver balances' AND tablename = 'driver_balances') THEN
+-- DO BEGIN
+    -- IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can read all driver balances' AND tablename = 'driver_balances') THEN
         CREATE POLICY "Admin can read all driver balances" ON public.driver_balances FOR SELECT TO authenticated USING (public.is_platform_admin(auth.uid()));
-    END IF;
-END $$;
+    -- END IF
+-- END
 
 
 -- Name: driver_earnings Admin can read all driver earnings; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can read all driver earnings' AND tablename = 'driver_earnings') THEN
+-- DO BEGIN
+    -- IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can read all driver earnings' AND tablename = 'driver_earnings') THEN
         CREATE POLICY "Admin can read all driver earnings" ON public.driver_earnings FOR SELECT TO authenticated USING (public.is_platform_admin(auth.uid()));
-    END IF;
-END $$;
+    -- END IF
+-- END
 
 
 -- Name: fcm_tokens Admin can read all fcm tokens; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can read all fcm tokens' AND tablename = 'fcm_tokens') THEN
+-- DO BEGIN
+    -- IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can read all fcm tokens' AND tablename = 'fcm_tokens') THEN
         CREATE POLICY "Admin can read all fcm tokens" ON public.fcm_tokens FOR SELECT TO authenticated USING (public.is_platform_admin(auth.uid()));
-    END IF;
-END $$;
+    -- END IF
+-- END
 
 
 -- Name: order_ratings Admin can read all ratings; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can read all ratings' AND tablename = 'order_ratings') THEN
+-- DO BEGIN
+    -- IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can read all ratings' AND tablename = 'order_ratings') THEN
         CREATE POLICY "Admin can read all ratings" ON public.order_ratings FOR SELECT TO authenticated USING (public.is_platform_admin(auth.uid()));
-    END IF;
-END $$;
+    -- END IF
+-- END
 
 
 -- Name: terms_acceptance Admin can read all terms acceptance; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can read all terms acceptance' AND tablename = 'terms_acceptance') THEN
+-- DO BEGIN
+    -- IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can read all terms acceptance' AND tablename = 'terms_acceptance') THEN
         CREATE POLICY "Admin can read all terms acceptance" ON public.terms_acceptance FOR SELECT TO authenticated USING (public.is_platform_admin(auth.uid()));
-    END IF;
-END $$;
+    -- END IF
+-- END
 
 
 -- Name: withdrawal_requests Admin can read all withdrawal requests; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can read all withdrawal requests' AND tablename = 'withdrawal_requests') THEN
+-- DO BEGIN
+    -- IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can read all withdrawal requests' AND tablename = 'withdrawal_requests') THEN
         CREATE POLICY "Admin can read all withdrawal requests" ON public.withdrawal_requests FOR SELECT TO authenticated USING (public.is_platform_admin(auth.uid()));
-    END IF;
-END $$;
+    -- END IF
+-- END
 
 
 -- Name: archived_accounts Admin can read archived accounts; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can read archived accounts' AND tablename = 'archived_accounts') THEN
+-- DO BEGIN
+    -- IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can read archived accounts' AND tablename = 'archived_accounts') THEN
         CREATE POLICY "Admin can read archived accounts" ON public.archived_accounts FOR SELECT TO authenticated USING (public.is_platform_admin(auth.uid()));
-    END IF;
-END $$;
+    -- END IF
+-- END
 
 
 -- Name: admin_settings Admin can read settings; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can read settings' AND tablename = 'admin_settings') THEN
+-- DO BEGIN
+    -- IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can read settings' AND tablename = 'admin_settings') THEN
         CREATE POLICY "Admin can read settings" ON public.admin_settings FOR SELECT TO authenticated USING (public.is_platform_admin(auth.uid()));
-    END IF;
-END $$;
+    -- END IF
+-- END
 
 
 -- Name: driver_balances Admin can update driver balances; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can update driver balances' AND tablename = 'driver_balances') THEN
+-- DO BEGIN
+    -- IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can update driver balances' AND tablename = 'driver_balances') THEN
         CREATE POLICY "Admin can update driver balances" ON public.driver_balances FOR UPDATE TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
-    END IF;
-END $$;
+    -- END IF
+-- END
 
 
 -- Name: driver_earnings Admin can update driver earnings; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can update driver earnings' AND tablename = 'driver_earnings') THEN
+-- DO BEGIN
+    -- IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can update driver earnings' AND tablename = 'driver_earnings') THEN
         CREATE POLICY "Admin can update driver earnings" ON public.driver_earnings FOR UPDATE TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
-    END IF;
-END $$;
+    -- END IF
+-- END
 
 
 -- Name: admin_settings Admin can update settings; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can update settings' AND tablename = 'admin_settings') THEN
+-- DO BEGIN
+    -- IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can update settings' AND tablename = 'admin_settings') THEN
         CREATE POLICY "Admin can update settings" ON public.admin_settings FOR UPDATE TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
-    END IF;
-END $$;
+    -- END IF
+-- END
 
 
 -- Name: withdrawal_requests Admin can update withdrawal requests; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can update withdrawal requests' AND tablename = 'withdrawal_requests') THEN
+-- DO BEGIN
+    -- IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can update withdrawal requests' AND tablename = 'withdrawal_requests') THEN
         CREATE POLICY "Admin can update withdrawal requests" ON public.withdrawal_requests FOR UPDATE TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
-    END IF;
-END $$;
+    -- END IF
+-- END
 
 
 -- Name: store_drivers Admin full access store drivers; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin full access store drivers' AND tablename = 'store_drivers') THEN
+-- DO BEGIN
+    -- IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin full access store drivers' AND tablename = 'store_drivers') THEN
         CREATE POLICY "Admin full access store drivers" ON public.store_drivers TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
-    END IF;
-END $$;
+    -- END IF
+-- END
 
 
 -- Name: store_driver_earnings Admin manage store driver earnings; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin manage store driver earnings' AND tablename = 'store_driver_earnings') THEN
+-- DO BEGIN
+    -- IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin manage store driver earnings' AND tablename = 'store_driver_earnings') THEN
         CREATE POLICY "Admin manage store driver earnings" ON public.store_driver_earnings TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
-    END IF;
-END $$;
+    -- END IF
+-- END
 
 
 -- Name: drivers Admins and store owners can read online drivers; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins and store owners can read online drivers' AND tablename = 'drivers') THEN
+-- DO BEGIN
+    -- IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins and store owners can read online drivers' AND tablename = 'drivers') THEN
         CREATE POLICY "Admins and store owners can read online drivers" ON public.drivers FOR SELECT TO authenticated USING ((public.is_platform_admin(auth.uid()) OR (EXISTS ( SELECT 1
    FROM public.stores
   WHERE (stores.owner_id = auth.uid())))));
-    END IF;
-END $$;
+    -- END IF
+-- END
 
 
 -- Name: moderator_earnings Admins can manage earnings; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can manage earnings' AND tablename = 'moderator_earnings') THEN
+-- DO BEGIN
+    -- IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can manage earnings' AND tablename = 'moderator_earnings') THEN
         CREATE POLICY "Admins can manage earnings" ON public.moderator_earnings TO authenticated USING (public.has_role(auth.uid(), 'admin'::public.app_role)) WITH CHECK (public.has_role(auth.uid(), 'admin'::public.app_role));
-    END IF;
-END $$;
+    -- END IF
+-- END
 
 
 -- Name: emergency_fund Admins can manage emergency fund; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can manage emergency fund' AND tablename = 'emergency_fund') THEN
+-- DO BEGIN
+    -- IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can manage emergency fund' AND tablename = 'emergency_fund') THEN
         CREATE POLICY "Admins can manage emergency fund" ON public.emergency_fund TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
-    END IF;
+    -- END IF
