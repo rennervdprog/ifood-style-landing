@@ -29,27 +29,19 @@ SET row_security = off;
 
 -- Name: app_role; Type: TYPE; Schema: public; Owner: -
 
--- DO BEGIN
-    -- IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'app_role') THEN
-        -- DO BEGIN
-    -- IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'app_role') THEN
+
+
         CREATE TYPE IF NOT EXISTS public.app_role AS ENUM (
     'admin',
     'moderator',
     'user'
 );
-    -- END IF
--- END
-    -- END IF
--- END
 
 
 -- Name: financial_transaction_status; Type: TYPE; Schema: public; Owner: -
 
--- DO BEGIN
-    -- IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'financial_transaction_status') THEN
-        -- DO BEGIN
-    -- IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'financial_transaction_status') THEN
+
+
         CREATE TYPE IF NOT EXISTS public.financial_transaction_status AS ENUM (
     'pending',
     'approved',
@@ -57,35 +49,23 @@ SET row_security = off;
     'failed',
     'cancelled'
 );
-    -- END IF
--- END
-    -- END IF
--- END
 
 
 -- Name: financial_transaction_type; Type: TYPE; Schema: public; Owner: -
 
--- DO BEGIN
-    -- IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'financial_transaction_type') THEN
-        -- DO BEGIN
-    -- IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'financial_transaction_type') THEN
+
+
         CREATE TYPE IF NOT EXISTS public.financial_transaction_type AS ENUM (
     'commission_charge',
     'store_payout',
     'driver_payout'
 );
-    -- END IF
--- END
-    -- END IF
--- END
 
 
 -- Name: order_status; Type: TYPE; Schema: public; Owner: -
 
--- DO BEGIN
-    -- IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'order_status') THEN
-        -- DO BEGIN
-    -- IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'order_status') THEN
+
+
         CREATE TYPE IF NOT EXISTS public.order_status AS ENUM (
     'aguardando_pagamento',
     'pendente',
@@ -97,35 +77,19 @@ SET row_security = off;
     'finalizado',
     'cancelado'
 );
-    -- END IF
--- END
-    -- END IF
--- END
 
 
 -- Name: partner_role; Type: TYPE; Schema: public; Owner: -
 
--- DO BEGIN
-    -- IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'partner_role') THEN
-        -- DO BEGIN
-    -- IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'partner_role') THEN
         CREATE TYPE IF NOT EXISTS public.partner_role AS ENUM (
     'cliente',
     'lojista',
     'motoboy'
 );
-    -- END IF
--- END
-    -- END IF
--- END
 
 
 -- Name: pix_type; Type: TYPE; Schema: public; Owner: -
 
--- DO BEGIN
-    -- IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'pix_type') THEN
-        -- DO BEGIN
-    -- IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'pix_type') THEN
         CREATE TYPE IF NOT EXISTS public.pix_type AS ENUM (
     'cpf',
     'cnpj',
@@ -133,18 +97,10 @@ SET row_security = off;
     'phone',
     'random'
 );
-    -- END IF
--- END
-    -- END IF
--- END
 
 
 -- Name: refund_reason; Type: TYPE; Schema: public; Owner: -
 
--- DO BEGIN
-    -- IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'refund_reason') THEN
-        -- DO BEGIN
-    -- IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'refund_reason') THEN
         CREATE TYPE IF NOT EXISTS public.refund_reason AS ENUM (
     'wrong_product',
     'missing_items',
@@ -153,53 +109,29 @@ SET row_security = off;
     'poor_quality',
     'other'
 );
-    -- END IF
--- END
-    -- END IF
--- END
 
 
 -- Name: refund_status; Type: TYPE; Schema: public; Owner: -
 
--- DO BEGIN
-    -- IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'refund_status') THEN
-        -- DO BEGIN
-    -- IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'refund_status') THEN
         CREATE TYPE IF NOT EXISTS public.refund_status AS ENUM (
     'pending',
     'approved',
     'processed',
     'rejected'
 );
-    -- END IF
--- END
-    -- END IF
--- END
 
 
 -- Name: refund_type; Type: TYPE; Schema: public; Owner: -
 
--- DO BEGIN
-    -- IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'refund_type') THEN
-        -- DO BEGIN
-    -- IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'refund_type') THEN
         CREATE TYPE IF NOT EXISTS public.refund_type AS ENUM (
     'full',
     'partial',
     'wallet_credit'
 );
-    -- END IF
--- END
-    -- END IF
--- END
 
 
 -- Name: store_category; Type: TYPE; Schema: public; Owner: -
 
--- DO BEGIN
-    -- IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'store_category') THEN
-        -- DO BEGIN
-    -- IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'store_category') THEN
         CREATE TYPE IF NOT EXISTS public.store_category AS ENUM (
     'lanches',
     'pizzas',
@@ -214,60 +146,32 @@ SET row_security = off;
     'restaurante',
     'esfihas'
 );
-    -- END IF
--- END
-    -- END IF
--- END
 
 
 -- Name: store_plan_type; Type: TYPE; Schema: public; Owner: -
 
--- DO BEGIN
-    -- IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'store_plan_type') THEN
-        -- DO BEGIN
-    -- IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'store_plan_type') THEN
         CREATE TYPE IF NOT EXISTS public.store_plan_type AS ENUM (
     'fixed',
     'hybrid',
     'commission_only'
 );
-    -- END IF
--- END
-    -- END IF
--- END
 
 
 -- Name: store_status; Type: TYPE; Schema: public; Owner: -
 
--- DO BEGIN
-    -- IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'store_status') THEN
-        -- DO BEGIN
-    -- IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'store_status') THEN
         CREATE TYPE IF NOT EXISTS public.store_status AS ENUM (
     'analise',
     'ativo',
     'bloqueado'
 );
-    -- END IF
--- END
-    -- END IF
--- END
 
 
 -- Name: wallet_transaction_type; Type: TYPE; Schema: public; Owner: -
 
--- DO BEGIN
-    -- IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'wallet_transaction_type') THEN
-        -- DO BEGIN
-    -- IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'wallet_transaction_type') THEN
         CREATE TYPE IF NOT EXISTS public.wallet_transaction_type AS ENUM (
     'credit',
     'debit'
 );
-    -- END IF
--- END
-    -- END IF
--- END
 
 
 -- Name: accrue_fixed_plan_split(); Type: FUNCTION; Schema: public; Owner: -
@@ -284,16 +188,10 @@ DECLARE
 BEGIN
   IF NEW.status != 'finalizado' OR OLD.status IS NOT DISTINCT FROM 'finalizado' THEN
     RETURN NEW;
-  -- END IF
   SELECT is_test, delivery_mode INTO _is_test, _delivery_mode
   FROM public.stores WHERE id = NEW.store_id;
-  IF COALESCE(_is_test, false) THEN RETURN NEW; -- END IF
   _is_physical := COALESCE(NEW.payment_method, '') IN ('dinheiro', 'cartao', 'money', 'card_delivery');
-  IF NOT _is_physical THEN RETURN NEW; -- END IF
-  IF COALESCE(NEW.delivery_fee, 0) <= 0 THEN RETURN NEW; -- END IF
-  IF _delivery_mode != 'own' THEN RETURN NEW; -- END IF
   _platform_split := public.get_fixed_plan_platform_split(NEW.store_id);
-  IF _platform_split <= 0 THEN RETURN NEW; -- END IF
   INSERT INTO public.store_balances (store_id, comissao_pendente, pending_commission, repasse_pendente, updated_at)
   VALUES (NEW.store_id, 0, 0, _platform_split, now())
   ON CONFLICT (store_id) DO UPDATE SET
@@ -319,13 +217,9 @@ DECLARE
   _plan_type TEXT;
   _is_test boolean;
 BEGIN
-  IF NEW.status != 'finalizado' OR OLD.status IS NOT DISTINCT FROM 'finalizado' THEN RETURN NEW; -- END IF
   SELECT is_test INTO _is_test FROM public.stores WHERE id = NEW.store_id;
-  IF COALESCE(_is_test, false) THEN RETURN NEW; -- END IF
   SELECT mr.moderator_id INTO _mod_ref FROM public.moderator_referrals mr WHERE mr.store_id = NEW.store_id;
-  IF NOT FOUND THEN RETURN NEW; -- END IF
   SELECT * INTO _mod FROM public.moderators WHERE id = _mod_ref.moderator_id AND is_active = true;
-  IF NOT FOUND THEN RETURN NEW; -- END IF
   SELECT sp.plan_type INTO _plan_type FROM public.store_plans sp
   WHERE sp.store_id = NEW.store_id AND sp.is_active = true LIMIT 1;
   _plan_type := COALESCE(_plan_type, 'commission_only');
@@ -335,15 +229,11 @@ BEGIN
     IF _mod_commission_amount > 0 THEN
       INSERT INTO public.moderator_earnings (moderator_id, store_id, order_id, earning_type, amount)
       VALUES (_mod_ref.moderator_id, NEW.store_id, NEW.id, 'commission_split', _mod_commission_amount);
-    -- END IF
-  -- END IF
   IF _plan_type = 'fixed' THEN
     SELECT delivery_mode INTO _delivery_mode FROM public.stores WHERE id = NEW.store_id;
     IF _delivery_mode = 'platform' AND COALESCE(NEW.delivery_fee, 0) > 0 AND _mod.delivery_split > 0 THEN
       INSERT INTO public.moderator_earnings (moderator_id, store_id, order_id, earning_type, amount)
       VALUES (_mod_ref.moderator_id, NEW.store_id, NEW.id, 'delivery_split', _mod.delivery_split);
-    -- END IF
-  -- END IF
   RETURN NEW;
 END;
 $$;
@@ -364,16 +254,13 @@ BEGIN
   FROM public.moderator_referrals mr
   WHERE mr.store_id = _store_id;
 
-  IF NOT FOUND THEN RETURN; -- END IF
 
   SELECT * INTO _mod FROM public.moderators WHERE id = _mod_ref.moderator_id AND is_active = true;
-  IF NOT FOUND THEN RETURN; -- END IF
 
   _amount := ROUND(_monthly_fee * (_mod.plan_fee_percent / 100.0), 2);
   IF _amount > 0 THEN
     INSERT INTO public.moderator_earnings (moderator_id, store_id, earning_type, amount, period)
     VALUES (_mod_ref.moderator_id, _store_id, 'plan_fee', _amount, to_char(now(), 'YYYY-MM'));
-  -- END IF
 END;
 $$;
 
@@ -387,7 +274,6 @@ CREATE OR REPLACE FUNCTION public.admin_approve_partner(_profile_user_id uuid, _
 BEGIN
   IF NOT public.is_platform_admin(auth.uid()) THEN
     RAISE EXCEPTION 'Apenas o administrador pode aprovar parceiros.';
-  -- END IF
 
   UPDATE profiles SET is_approved = _approved WHERE user_id = _profile_user_id;
 
@@ -406,7 +292,6 @@ BEGIN
       );
   ELSE
     UPDATE stores SET status = 'bloqueado' WHERE owner_id = _profile_user_id;
-  -- END IF
 
   -- If motoboy, activate/deactivate driver
   UPDATE drivers SET is_active = _approved WHERE user_id = _profile_user_id;
@@ -423,13 +308,11 @@ CREATE OR REPLACE FUNCTION public.admin_cancel_order(_order_id uuid) RETURNS voi
 BEGIN
   IF NOT public.is_platform_admin(auth.uid()) THEN
     RAISE EXCEPTION 'Apenas o administrador pode cancelar pedidos.';
-  -- END IF
 
   UPDATE public.orders SET status = 'cancelado' WHERE id = _order_id;
   
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Pedido não encontrado.';
-  -- END IF
 END;
 $$;
 
@@ -445,7 +328,6 @@ DECLARE
 BEGIN
   IF NOT public.is_platform_admin(auth.uid()) THEN
     RAISE EXCEPTION 'Apenas o administrador pode limpar duplicatas.';
-  -- END IF
 
   WITH ranked AS (
     SELECT
@@ -481,7 +363,6 @@ DECLARE
 BEGIN
   IF NOT public.is_platform_admin(auth.uid()) THEN
     RAISE EXCEPTION 'Apenas administradores podem criar lojas de teste.';
-  -- END IF
 
   INSERT INTO public.stores (name, category, owner_id, status, slug)
   VALUES (
@@ -520,18 +401,15 @@ BEGIN
   -- Only platform admin can delete partners
   IF NOT public.is_platform_admin(auth.uid()) THEN
     RAISE EXCEPTION 'Apenas o administrador pode excluir parceiros.';
-  -- END IF
 
   -- Get the partner's role
   SELECT role INTO _role FROM public.profiles WHERE user_id = _profile_user_id;
   
   IF _role IS NULL THEN
     RAISE EXCEPTION 'Perfil não encontrado.';
-  -- END IF
 
   IF _role NOT IN ('lojista', 'motoboy') THEN
     RAISE EXCEPTION 'Só é possível excluir lojistas ou motoboys.';
-  -- END IF
 
   -- Check for active orders
   IF _role = 'motoboy' THEN
@@ -541,8 +419,6 @@ BEGIN
       AND status NOT IN ('finalizado', 'entregue', 'cancelado')
     ) THEN
       RAISE EXCEPTION 'Este entregador possui pedidos ativos. Finalize-os antes de excluir.';
-    -- END IF
-  -- END IF
 
   IF _role = 'lojista' THEN
     -- Get all store IDs for this owner
@@ -556,7 +432,6 @@ BEGIN
         AND status NOT IN ('finalizado', 'entregue', 'cancelado')
       ) THEN
         RAISE EXCEPTION 'Este lojista possui pedidos ativos em suas lojas. Finalize-os antes de excluir.';
-      -- END IF
 
       -- Delete store-related data
       DELETE FROM public.addon_items WHERE group_id IN (
@@ -584,8 +459,6 @@ BEGIN
       DELETE FROM public.store_balances WHERE store_id = ANY(_store_ids);
       DELETE FROM public.orders WHERE store_id = ANY(_store_ids);
       DELETE FROM public.stores WHERE id = ANY(_store_ids);
-    -- END IF
-  -- END IF
 
   IF _role = 'motoboy' THEN
     -- Delete driver-related data
@@ -599,7 +472,6 @@ BEGIN
     -- Remove driver assignment from old orders
     UPDATE public.orders SET driver_id = NULL WHERE driver_id = _profile_user_id;
     DELETE FROM public.drivers WHERE user_id = _profile_user_id;
-  -- END IF
 
   -- Delete profile
   DELETE FROM public.profiles WHERE user_id = _profile_user_id;
@@ -616,7 +488,6 @@ CREATE OR REPLACE FUNCTION public.admin_delete_store(_store_id uuid) RETURNS voi
 BEGIN
   IF NOT public.is_platform_admin(auth.uid()) THEN
     RAISE EXCEPTION 'Apenas o administrador pode excluir lojas.';
-  -- END IF
 
   -- Check for active orders
   IF EXISTS (
@@ -625,7 +496,6 @@ BEGIN
     AND status NOT IN ('finalizado', 'entregue')
   ) THEN
     RAISE EXCEPTION 'Não é possível excluir uma loja com pedidos ativos.';
-  -- END IF
 
   -- Delete addon items linked to store's addon groups
   DELETE FROM public.addon_items WHERE group_id IN (
@@ -670,7 +540,6 @@ DECLARE
   _minutes_in_status NUMERIC;
 BEGIN
   SELECT * INTO _order FROM public.orders WHERE id = _order_id;
-  IF NOT FOUND THEN RAISE EXCEPTION 'Pedido não encontrado.'; -- END IF
 
   -- Only the client, store owner or admin can cancel
   IF _order.client_id != auth.uid()
@@ -678,15 +547,12 @@ BEGIN
      AND NOT EXISTS (SELECT 1 FROM public.stores WHERE id = _order.store_id AND owner_id = auth.uid())
   THEN
     RAISE EXCEPTION 'Sem permissão para cancelar este pedido.';
-  -- END IF
 
   IF _order.status IN ('entregue', 'finalizado') THEN
     RAISE EXCEPTION 'Pedidos entregues/finalizados não podem ser cancelados. Abra uma solicitação de reembolso.';
-  -- END IF
 
   IF _order.status = 'cancelado' THEN
     RAISE EXCEPTION 'Pedido já está cancelado.';
-  -- END IF
 
   -- Determine if payment was prepaid (PIX or wallet) vs pay-on-delivery (dinheiro/cartao)
   _is_prepaid := COALESCE(_order.payment_method, '') IN ('pix', 'wallet', 'saldo');
@@ -700,16 +566,12 @@ BEGIN
     WHEN 'pendente' THEN _fee_percent := 0;
     WHEN 'preparando' THEN
       IF _minutes_in_status >= 20 THEN _fee_percent := 0;
-      ELSE _fee_percent := 20; -- END IF
     WHEN 'pronto_para_entrega' THEN
       IF _minutes_in_status >= 20 THEN _fee_percent := 0;
-      ELSE _fee_percent := 40; -- END IF
     WHEN 'saiu_entrega' THEN
       IF _minutes_in_status >= 20 THEN _fee_percent := 0;
-      ELSE _fee_percent := 60; -- END IF
     WHEN 'em_transito' THEN
       IF _minutes_in_status >= 20 THEN _fee_percent := 0;
-      ELSE _fee_percent := 60; -- END IF
     ELSE _fee_percent := 0;
   END CASE;
 
@@ -740,7 +602,6 @@ BEGIN
         ELSE 'Reembolso parcial (' || (100 - _fee_percent) || '%) - cancelamento pedido #' || substr(_order_id::text, 1, 8)
       END
     );
-  -- END IF
 
   _result := jsonb_build_object(
     'cancelled', true,
@@ -769,11 +630,8 @@ DECLARE
 BEGIN
   IF NOT is_platform_admin(auth.uid()) THEN
     RAISE EXCEPTION 'Apenas administradores podem aprovar mudanças de plano.';
-  -- END IF
 
   SELECT * INTO _req FROM plan_change_requests WHERE id = _request_id;
-  IF NOT FOUND THEN RAISE EXCEPTION 'Solicitação não encontrada.'; -- END IF
-  IF _req.status != 'pending' THEN RAISE EXCEPTION 'Solicitação já processada.'; -- END IF
 
   -- Update the store plan
   UPDATE store_plans SET
@@ -839,7 +697,7 @@ BEGIN
     GROUP BY s.id, s.name
     HAVING count(*) >= 10
   LOOP
-    -- IF NOT EXISTS (
+--     IF NOT EXISTS (
       SELECT 1 FROM compliance_alerts
       WHERE store_id = _store.store_id
         AND alert_type = 'unfinalized_orders'
@@ -852,7 +710,6 @@ BEGIN
         'Loja "' || _store.name || '" possui ' || _store.unfinalized_count || ' pedidos não finalizados. Possível evasão de comissão.'
       );
       _alert_count := _alert_count + 1;
-    -- END IF
   END LOOP;
 
   RETURN jsonb_build_object(
@@ -888,8 +745,6 @@ BEGIN
         total_orders = loyalty_points.total_orders + 1,
         last_order_at = now(),
         updated_at = now();
-    -- END IF
-  -- END IF
   
   RETURN NEW;
 END;
@@ -914,7 +769,6 @@ BEGIN
 
   IF NOT FOUND OR _plan.monthly_fee <= 0 THEN
     RETURN 0;
-  -- END IF
 
   -- Calculate days used since last billing or start
   _days_used := LEAST(
@@ -955,11 +809,11 @@ declare
 begin
   if _current_user is null then
     raise exception 'Unauthorized';
-  end if;
+--   end if;
 
   if coalesce(nullif(_fcm_token, ''), nullif(_player_id, '')) is null then
     raise exception 'Device identifier is required';
-  end if;
+--   end if;
 
   if nullif(_fcm_token, '') is not null then
     delete from public.fcm_tokens
@@ -972,7 +826,7 @@ begin
     do update set
       device_info = excluded.device_info,
       updated_at = now();
-  end if;
+--   end if;
 
   if nullif(_player_id, '') is not null then
     delete from public.onesignal_players
@@ -985,7 +839,7 @@ begin
     do update set
       device_info = excluded.device_info,
       updated_at = now();
-  end if;
+--   end if;
 end;
 $$;
 
@@ -1010,19 +864,15 @@ BEGIN
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Pedido não encontrado.';
-  -- END IF
 
   IF _order.client_id != auth.uid() THEN
     RAISE EXCEPTION 'Você não é o dono deste pedido.';
-  -- END IF
 
   IF _order.delivery_confirmed_by_client THEN
     RAISE EXCEPTION 'Entrega já confirmada.';
-  -- END IF
 
   IF _order.status NOT IN ('saiu_entrega', 'entregue', 'em_transito') THEN
     RAISE EXCEPTION 'Pedido não está em status de entrega.';
-  -- END IF
 
   UPDATE orders
   SET delivery_confirmed_by_client = true,
@@ -1056,9 +906,6 @@ BEGIN
         ON CONFLICT (store_id) DO UPDATE SET
           repasse_pendente = store_balances.repasse_pendente + _platform_split,
           updated_at = now();
-      -- END IF
-    -- END IF
-  -- END IF
 END;
 $$;
 
@@ -1078,7 +925,6 @@ BEGIN
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Pedido não encontrado ou não está aguardando pagamento.';
-  -- END IF
 END;
 $$;
 
@@ -1111,15 +957,12 @@ BEGIN
   -- Only fire on transition into 'entregue' or 'finalizado'
   IF NEW.status NOT IN ('entregue', 'finalizado') THEN
     RETURN NEW;
-  -- END IF
 
   IF OLD.status = NEW.status THEN
     RETURN NEW;
-  -- END IF
 
   IF NEW.driver_id IS NULL THEN
     RETURN NEW;
-  -- END IF
 
   -- Driver must be a store-linked driver for this store
   SELECT EXISTS (
@@ -1129,7 +972,6 @@ BEGIN
 
   IF NOT v_is_store_driver THEN
     RETURN NEW;
-  -- END IF
 
   -- Read store's own_delivery_fee
   SELECT COALESCE(own_delivery_fee, 0) INTO v_fee
@@ -1145,7 +987,6 @@ BEGIN
 
   IF v_fee <= 0 THEN
     RETURN NEW;
-  -- END IF
 
   INSERT INTO public.store_driver_earnings (
     store_id, driver_user_id, order_id, fee_total, platform_cut, driver_amount, status
@@ -1183,7 +1024,6 @@ BEGIN
   
   IF _store_id IS NULL THEN
     RAISE EXCEPTION 'Pedido não encontrado.';
-  -- END IF
 
   -- Check if user is a platform driver
   _is_platform_driver := public.is_driver(auth.uid());
@@ -1193,7 +1033,6 @@ BEGIN
 
   IF NOT _is_platform_driver AND NOT _is_store_driver THEN
     RAISE EXCEPTION 'Você não é um entregador autorizado para este pedido.';
-  -- END IF
 
   -- City check only for platform drivers (store drivers are already linked to the store)
   IF _is_platform_driver AND NOT _is_store_driver THEN
@@ -1204,8 +1043,6 @@ BEGIN
 
     IF _driver_city IS DISTINCT FROM _store_city THEN
       RAISE EXCEPTION 'Este pedido é de outra cidade. Você só pode aceitar pedidos da sua cidade.';
-    -- END IF
-  -- END IF
 
   UPDATE public.orders
   SET driver_id = auth.uid()
@@ -1215,7 +1052,6 @@ BEGIN
   
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Não foi possível aceitar este pedido. Outro entregador pode ter aceitado primeiro.';
-  -- END IF
 END;
 $$;
 
@@ -1235,7 +1071,6 @@ BEGIN
 
   IF v_driver IS NULL OR v_driver <> auth.uid() THEN
     RAISE EXCEPTION 'Acesso negado';
-  -- END IF
 
   UPDATE store_driver_earnings
      SET status = 'pago',
@@ -1269,19 +1104,15 @@ BEGIN
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Pedido não encontrado.';
-  -- END IF
 
   IF _order.driver_id != auth.uid() THEN
     RAISE EXCEPTION 'Você não é o entregador deste pedido.';
-  -- END IF
 
   IF _order.status NOT IN ('entregue', 'finalizado') THEN
     RAISE EXCEPTION 'Pedido precisa estar com status entregue ou finalizado.';
-  -- END IF
 
   IF _order.return_to_store_confirmed THEN
     RAISE EXCEPTION 'Retorno já confirmado.';
-  -- END IF
 
   _is_physical_payment := COALESCE(_order.payment_method, '') IN ('dinheiro', 'cartao', 'money', 'card_delivery');
   _delivery_fee := COALESCE(_order.delivery_fee, 0);
@@ -1290,13 +1121,10 @@ BEGIN
 
   IF NOT _is_physical_payment THEN
     RAISE EXCEPTION 'Este pedido não exige acerto físico com a loja.';
-  -- END IF
 
   IF _order.settlement_code IS NOT NULL THEN
     IF _settlement_code IS NULL OR _settlement_code != _order.settlement_code THEN
       RAISE EXCEPTION 'Código de acerto inválido. Solicite o código ao lojista.';
-    -- END IF
-  -- END IF
 
   UPDATE public.orders
   SET return_to_store_confirmed = true,
@@ -1312,7 +1140,6 @@ BEGIN
     SET comissao_pendente = public.store_balances.comissao_pendente + _commission,
         pending_commission = public.store_balances.comissao_pendente + _commission,
         updated_at = now();
-  -- END IF
 
   UPDATE public.driver_earnings
   SET status = 'pago_loja'
@@ -1350,24 +1177,19 @@ BEGIN
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Pedido não encontrado.';
-  -- END IF
 
   IF _order.status NOT IN ('em_transito', 'saiu_entrega') THEN
     RAISE EXCEPTION 'Este pedido não está em rota de entrega.';
-  -- END IF
 
   IF _order.driver_id != auth.uid() THEN
     RAISE EXCEPTION 'Você não é o entregador deste pedido.';
-  -- END IF
 
   _is_authorized := public.is_driver(auth.uid()) OR public.is_store_driver(auth.uid(), _order.store_id);
   IF NOT _is_authorized THEN
     RAISE EXCEPTION 'Você não é um entregador ativo.';
-  -- END IF
 
   IF _order.delivery_pin IS NOT NULL AND (_pin IS NULL OR _pin != _order.delivery_pin) THEN
     RAISE EXCEPTION 'Código inválido. Verifique com o cliente.';
-  -- END IF
 
   _is_physical_payment := COALESCE(_order.payment_method, '') IN ('dinheiro', 'cartao', 'money', 'card_delivery');
   _is_store_drv := public.is_store_driver_member(auth.uid(), _order.store_id);
@@ -1379,7 +1201,6 @@ BEGIN
   ELSE
     _earning_status := CASE WHEN _is_physical_payment THEN 'waiting_store_settlement' ELSE 'pendente' END;
     _next_order_status := CASE WHEN _is_physical_payment THEN 'entregue'::public.order_status ELSE 'finalizado'::public.order_status END;
-  -- END IF
 
   _platform_split := public.get_fixed_plan_platform_split(_order.store_id);
 
@@ -1429,28 +1250,22 @@ BEGIN
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Pedido não encontrado.';
-  -- END IF
 
   IF _order.driver_id != auth.uid() THEN
     RAISE EXCEPTION 'Você não é o entregador deste pedido.';
-  -- END IF
 
   _is_authorized := public.is_driver(auth.uid()) OR public.is_store_driver(auth.uid(), _order.store_id);
   IF NOT _is_authorized THEN
     RAISE EXCEPTION 'Você não é um entregador ativo.';
-  -- END IF
 
   IF _order.status != 'pronto_para_entrega' THEN
     RAISE EXCEPTION 'Pedido não está no status correto para validação de coleta.';
-  -- END IF
 
   IF _order.collection_code IS NULL THEN
     RAISE EXCEPTION 'Este pedido não possui código de coleta.';
-  -- END IF
 
   IF _code IS NULL OR _code != _order.collection_code THEN
     RAISE EXCEPTION 'Código inválido. Verifique com o lojista.';
-  -- END IF
 
   UPDATE public.orders 
   SET collection_validated = true, status = 'em_transito'
@@ -1474,8 +1289,6 @@ BEGIN
     
     IF _delivery_mode = 'platform' THEN
       NEW.collection_code := lpad(floor(random() * 10000)::text, 4, '0');
-    -- END IF
-  -- END IF
   RETURN NEW;
 END;
 $$;
@@ -1490,7 +1303,6 @@ CREATE OR REPLACE FUNCTION public.generate_delivery_pin() RETURNS trigger
 BEGIN
   IF NEW.status = 'pendente' AND NEW.delivery_pin IS NULL THEN
     NEW.delivery_pin := lpad(floor(random() * 10000)::text, 4, '0');
-  -- END IF
   RETURN NEW;
 END;
 $$;
@@ -1532,10 +1344,8 @@ BEGIN
 
     IF _delivery_mode = 'own' THEN
       RETURN NEW;
-    -- END IF
 
     NEW.settlement_code := lpad(floor(random() * 10000)::text, 4, '0');
-  -- END IF
   RETURN NEW;
 END;
 $$;
@@ -1567,7 +1377,6 @@ BEGIN
       SELECT p.user_id, p.full_name, p.phone, p.whatsapp_number, p.neighborhood
       FROM public.profiles p;
     RETURN;
-  -- END IF
 
   -- Drivers: only contacts for their assigned orders
   IF public.is_driver(auth.uid()) THEN
@@ -1578,7 +1387,6 @@ BEGIN
         SELECT o.client_id FROM public.orders o WHERE o.driver_id = auth.uid()
       );
     RETURN;
-  -- END IF
 
   -- Store owners: contacts for their store orders
   RETURN QUERY
@@ -1612,12 +1420,10 @@ BEGIN
 
   IF _plan.plan_type IS NULL OR _plan.plan_type != 'fixed' THEN
     RETURN 0;
-  -- END IF
 
   -- VIP override takes precedence (including 0)
   IF _plan.platform_delivery_split_override IS NOT NULL THEN
     RETURN _plan.platform_delivery_split_override;
-  -- END IF
 
   -- Read platform_split from admin_settings delivery_fee_config
   SELECT value INTO _config_value
@@ -1628,7 +1434,6 @@ BEGIN
   IF _config_value IS NOT NULL AND _config_value ? 'platform_split' THEN
     _platform_split := (_config_value->>'platform_split')::numeric;
     RETURN COALESCE(_platform_split, 2);
-  -- END IF
 
   RETURN 2;
 END;
@@ -1660,7 +1465,6 @@ DECLARE
 BEGIN
   IF NOT public.is_platform_admin(auth.uid()) THEN
     RAISE EXCEPTION 'Apenas administradores podem ver estatísticas.';
-  -- END IF
 
   SELECT COUNT(*) INTO _today FROM public.page_views
     WHERE page = _page AND created_at >= date_trunc('day', now());
@@ -1749,8 +1553,6 @@ BEGIN
     WHERE plan_type = 'fixed' AND monthly_fee = 130 AND is_active = true;
     IF _supporter_count >= 10 THEN
       _selected_plan := 'fixed';
-    -- END IF
-  -- END IF
 
   INSERT INTO public.profiles (user_id, full_name, role, document, vehicle, whatsapp_number, phone, email, city, cep, street, neighborhood, pix_type, pix_key)
   VALUES (NEW.id, _full_name, _role, _document, _vehicle, _whatsapp, _phone, NEW.email, _city, _cep, _street, _neighborhood,
@@ -1775,7 +1577,6 @@ BEGIN
     INSERT INTO public.drivers (user_id, name, is_active, city)
     VALUES (NEW.id, _full_name, false, _city)
     ON CONFLICT (user_id) DO NOTHING;
-  -- END IF
 
   IF _role = 'lojista' AND _store_name IS NOT NULL THEN
     INSERT INTO public.stores (name, category, owner_id, status, address_city, delivery_mode, address_cep, address_street, address_neighborhood)
