@@ -35,7 +35,7 @@ DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'app_role') THEN
         DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'app_role') THEN
-        CREATE TYPE IF NOT EXISTS IF NOT EXISTS public.app_role AS ENUM (
+        CREATE TYPE IF NOT EXISTS   public.app_role AS ENUM (
     'admin',
     'moderator',
     'user'
@@ -54,7 +54,7 @@ DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'financial_transaction_status') THEN
         DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'financial_transaction_status') THEN
-        CREATE TYPE IF NOT EXISTS IF NOT EXISTS public.financial_transaction_status AS ENUM (
+        CREATE TYPE IF NOT EXISTS   public.financial_transaction_status AS ENUM (
     'pending',
     'approved',
     'paid',
@@ -75,7 +75,7 @@ DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'financial_transaction_type') THEN
         DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'financial_transaction_type') THEN
-        CREATE TYPE IF NOT EXISTS IF NOT EXISTS public.financial_transaction_type AS ENUM (
+        CREATE TYPE IF NOT EXISTS   public.financial_transaction_type AS ENUM (
     'commission_charge',
     'store_payout',
     'driver_payout'
@@ -94,7 +94,7 @@ DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'order_status') THEN
         DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'order_status') THEN
-        CREATE TYPE IF NOT EXISTS IF NOT EXISTS public.order_status AS ENUM (
+        CREATE TYPE IF NOT EXISTS   public.order_status AS ENUM (
     'aguardando_pagamento',
     'pendente',
     'preparando',
@@ -117,7 +117,7 @@ DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'partner_role') THEN
         DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'partner_role') THEN
-        CREATE TYPE IF NOT EXISTS IF NOT EXISTS public.partner_role AS ENUM (
+        CREATE TYPE IF NOT EXISTS   public.partner_role AS ENUM (
     'cliente',
     'lojista',
     'motoboy'
@@ -134,7 +134,7 @@ DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'pix_type') THEN
         DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'pix_type') THEN
-        CREATE TYPE IF NOT EXISTS IF NOT EXISTS public.pix_type AS ENUM (
+        CREATE TYPE IF NOT EXISTS   public.pix_type AS ENUM (
     'cpf',
     'cnpj',
     'email',
@@ -153,7 +153,7 @@ DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'refund_reason') THEN
         DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'refund_reason') THEN
-        CREATE TYPE IF NOT EXISTS IF NOT EXISTS public.refund_reason AS ENUM (
+        CREATE TYPE IF NOT EXISTS   public.refund_reason AS ENUM (
     'wrong_product',
     'missing_items',
     'damaged',
@@ -173,7 +173,7 @@ DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'refund_status') THEN
         DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'refund_status') THEN
-        CREATE TYPE IF NOT EXISTS IF NOT EXISTS public.refund_status AS ENUM (
+        CREATE TYPE IF NOT EXISTS   public.refund_status AS ENUM (
     'pending',
     'approved',
     'processed',
@@ -191,7 +191,7 @@ DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'refund_type') THEN
         DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'refund_type') THEN
-        CREATE TYPE IF NOT EXISTS IF NOT EXISTS public.refund_type AS ENUM (
+        CREATE TYPE IF NOT EXISTS   public.refund_type AS ENUM (
     'full',
     'partial',
     'wallet_credit'
@@ -208,7 +208,7 @@ DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'store_category') THEN
         DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'store_category') THEN
-        CREATE TYPE IF NOT EXISTS IF NOT EXISTS public.store_category AS ENUM (
+        CREATE TYPE IF NOT EXISTS   public.store_category AS ENUM (
     'lanches',
     'pizzas',
     'adegas',
@@ -234,7 +234,7 @@ DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'store_plan_type') THEN
         DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'store_plan_type') THEN
-        CREATE TYPE IF NOT EXISTS IF NOT EXISTS public.store_plan_type AS ENUM (
+        CREATE TYPE IF NOT EXISTS   public.store_plan_type AS ENUM (
     'fixed',
     'hybrid',
     'commission_only'
@@ -251,7 +251,7 @@ DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'store_status') THEN
         DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'store_status') THEN
-        CREATE TYPE IF NOT EXISTS IF NOT EXISTS public.store_status AS ENUM (
+        CREATE TYPE IF NOT EXISTS   public.store_status AS ENUM (
     'analise',
     'ativo',
     'bloqueado'
@@ -268,7 +268,7 @@ DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'wallet_transaction_type') THEN
         DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'wallet_transaction_type') THEN
-        CREATE TYPE IF NOT EXISTS IF NOT EXISTS public.wallet_transaction_type AS ENUM (
+        CREATE TYPE IF NOT EXISTS   public.wallet_transaction_type AS ENUM (
     'credit',
     'debit'
 );
