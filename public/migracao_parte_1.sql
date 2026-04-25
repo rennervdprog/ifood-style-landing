@@ -29,7 +29,7 @@ SET row_security = off;
 
 -- Name: app_role; Type: TYPE; Schema: public; Owner: -
 
-DO 1606 BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'app_role') THEN CREATE TYPE public.app_role AS ENUM ('admin', 'moderator', 'user'); END IF; END 1606;
+
 
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'app_role') THEN
@@ -48,7 +48,7 @@ END $$;
 
 -- Name: financial_transaction_status; Type: TYPE; Schema: public; Owner: -
 
-DO 1606 BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'financial_transaction_status') THEN CREATE TYPE public.financial_transaction_status AS ENUM ('pending', 'approved', 'paid', 'failed', 'cancelled'); END IF; END 1606;
+
 
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'financial_transaction_status') THEN
@@ -69,7 +69,7 @@ END $$;
 
 -- Name: financial_transaction_type; Type: TYPE; Schema: public; Owner: -
 
-DO 1606 BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'financial_transaction_type') THEN CREATE TYPE public.financial_transaction_type AS ENUM ('commission_charge', 'store_payout', 'driver_payout'); END IF; END 1606;
+
 
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'financial_transaction_type') THEN
@@ -88,7 +88,7 @@ END $$;
 
 -- Name: order_status; Type: TYPE; Schema: public; Owner: -
 
-DO 1606 BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'order_status') THEN CREATE TYPE public.order_status AS ENUM ('aguardando_pagamento', 'pendente', 'preparando', 'pronto_para_entrega', 'em_transito', 'entregue', 'saiu_entrega', 'finalizado', 'cancelado'); END IF; END 1606;
+
 
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'order_status') THEN
