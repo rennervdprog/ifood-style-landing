@@ -1,3 +1,66 @@
+    product_id uuid NOT NULL,
+    addon_group_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now()
+);
+
+
+-- Name: products; Type: TABLE; Schema: public; Owner: -
+
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.products (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    store_id uuid NOT NULL,
+    name text NOT NULL,
+    price numeric(10,2) NOT NULL,
+    description text,
+    image_url text,
+    is_available boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    section_id uuid,
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL
+);
+
+
+-- Name: profiles; Type: TABLE; Schema: public; Owner: -
+
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.profiles (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    full_name text DEFAULT ''::text NOT NULL,
+    role public.partner_role DEFAULT 'cliente'::public.partner_role NOT NULL,
+    document text,
+    vehicle text,
+    avatar_url text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    is_approved boolean DEFAULT false NOT NULL,
+    street text,
+    number text,
+    complement text,
+    reference_point text,
+    neighborhood text,
+    phone text,
+    pix_key text,
+    pix_type public.pix_type,
+    whatsapp_number text,
+    email text,
+    cep text,
+    has_seen_onboarding boolean DEFAULT false NOT NULL,
+    city text DEFAULT 'itatinga'::text,
+    cnh_number text,
+    cnh_front_url text,
+    cnh_back_url text,
+    selfie_url text,
+    terms_accepted_at timestamp with time zone,
+    deleted_at timestamp with time zone
+);
+
+
+-- Name: profile_contacts; Type: VIEW; Schema: public; Owner: -
+
+CREATE VIEW public.profile_contacts WITH (security_invoker='true') AS
+ SELECT user_id,
+    full_name,
+    phone,
+    whatsapp_number,
     neighborhood,
     email
    FROM public.profiles
@@ -1487,6 +1550,7 @@ ALTER TABLE ONLY public.user_roles
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can delete settings' AND tablename = 'admin_settings') THEN
         CREATE POLICY "Admin can delete settings" ON public.admin_settings FOR DELETE TO authenticated USING (public.is_platform_admin(auth.uid()));
+    END IF;
 END $$;
 
 
@@ -1495,6 +1559,7 @@ END $$;
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can delete withdrawal requests' AND tablename = 'withdrawal_requests') THEN
         CREATE POLICY "Admin can delete withdrawal requests" ON public.withdrawal_requests FOR DELETE TO authenticated USING (public.is_platform_admin(auth.uid()));
+    END IF;
 END $$;
 
 
@@ -1503,6 +1568,7 @@ END $$;
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can insert archived accounts' AND tablename = 'archived_accounts') THEN
         CREATE POLICY "Admin can insert archived accounts" ON public.archived_accounts FOR INSERT TO authenticated WITH CHECK (public.is_platform_admin(auth.uid()));
+    END IF;
 END $$;
 
 
@@ -1511,6 +1577,7 @@ END $$;
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can insert settings' AND tablename = 'admin_settings') THEN
         CREATE POLICY "Admin can insert settings" ON public.admin_settings FOR INSERT TO authenticated WITH CHECK (public.is_platform_admin(auth.uid()));
+    END IF;
 END $$;
 
 
@@ -1519,6 +1586,7 @@ END $$;
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can manage all config' AND tablename = 'loyalty_config') THEN
         CREATE POLICY "Admin can manage all config" ON public.loyalty_config TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
+    END IF;
 END $$;
 
 
@@ -1527,6 +1595,7 @@ END $$;
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can manage all coupons' AND tablename = 'coupons') THEN
         CREATE POLICY "Admin can manage all coupons" ON public.coupons TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
+    END IF;
 END $$;
 
 
@@ -1535,6 +1604,7 @@ END $$;
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can manage all plan requests' AND tablename = 'plan_change_requests') THEN
         CREATE POLICY "Admin can manage all plan requests" ON public.plan_change_requests TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
+    END IF;
 END $$;
 
 
@@ -1543,6 +1613,7 @@ END $$;
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can manage all store plans' AND tablename = 'store_plans') THEN
         CREATE POLICY "Admin can manage all store plans" ON public.store_plans TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
+    END IF;
 END $$;
 
 
@@ -1551,6 +1622,7 @@ END $$;
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can manage compliance alerts' AND tablename = 'compliance_alerts') THEN
         CREATE POLICY "Admin can manage compliance alerts" ON public.compliance_alerts TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
+    END IF;
 END $$;
 
 
@@ -1559,6 +1631,7 @@ END $$;
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can manage payout history' AND tablename = 'payout_history') THEN
         CREATE POLICY "Admin can manage payout history" ON public.payout_history TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
+    END IF;
 END $$;
 
 
@@ -1567,6 +1640,7 @@ END $$;
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can read all coupon uses' AND tablename = 'coupon_uses') THEN
         CREATE POLICY "Admin can read all coupon uses" ON public.coupon_uses FOR SELECT TO authenticated USING (public.is_platform_admin(auth.uid()));
+    END IF;
 END $$;
 
 
@@ -1575,6 +1649,7 @@ END $$;
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can read all driver balances' AND tablename = 'driver_balances') THEN
         CREATE POLICY "Admin can read all driver balances" ON public.driver_balances FOR SELECT TO authenticated USING (public.is_platform_admin(auth.uid()));
+    END IF;
 END $$;
 
 
@@ -1583,6 +1658,7 @@ END $$;
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can read all driver earnings' AND tablename = 'driver_earnings') THEN
         CREATE POLICY "Admin can read all driver earnings" ON public.driver_earnings FOR SELECT TO authenticated USING (public.is_platform_admin(auth.uid()));
+    END IF;
 END $$;
 
 
@@ -1591,6 +1667,7 @@ END $$;
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can read all fcm tokens' AND tablename = 'fcm_tokens') THEN
         CREATE POLICY "Admin can read all fcm tokens" ON public.fcm_tokens FOR SELECT TO authenticated USING (public.is_platform_admin(auth.uid()));
+    END IF;
 END $$;
 
 
@@ -1599,6 +1676,7 @@ END $$;
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can read all ratings' AND tablename = 'order_ratings') THEN
         CREATE POLICY "Admin can read all ratings" ON public.order_ratings FOR SELECT TO authenticated USING (public.is_platform_admin(auth.uid()));
+    END IF;
 END $$;
 
 
@@ -1607,6 +1685,7 @@ END $$;
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can read all terms acceptance' AND tablename = 'terms_acceptance') THEN
         CREATE POLICY "Admin can read all terms acceptance" ON public.terms_acceptance FOR SELECT TO authenticated USING (public.is_platform_admin(auth.uid()));
+    END IF;
 END $$;
 
 
@@ -1615,6 +1694,7 @@ END $$;
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can read all withdrawal requests' AND tablename = 'withdrawal_requests') THEN
         CREATE POLICY "Admin can read all withdrawal requests" ON public.withdrawal_requests FOR SELECT TO authenticated USING (public.is_platform_admin(auth.uid()));
+    END IF;
 END $$;
 
 
@@ -1623,6 +1703,7 @@ END $$;
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can read archived accounts' AND tablename = 'archived_accounts') THEN
         CREATE POLICY "Admin can read archived accounts" ON public.archived_accounts FOR SELECT TO authenticated USING (public.is_platform_admin(auth.uid()));
+    END IF;
 END $$;
 
 
@@ -1631,6 +1712,7 @@ END $$;
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can read settings' AND tablename = 'admin_settings') THEN
         CREATE POLICY "Admin can read settings" ON public.admin_settings FOR SELECT TO authenticated USING (public.is_platform_admin(auth.uid()));
+    END IF;
 END $$;
 
 
@@ -1639,6 +1721,7 @@ END $$;
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can update driver balances' AND tablename = 'driver_balances') THEN
         CREATE POLICY "Admin can update driver balances" ON public.driver_balances FOR UPDATE TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
+    END IF;
 END $$;
 
 
@@ -1647,6 +1730,7 @@ END $$;
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can update driver earnings' AND tablename = 'driver_earnings') THEN
         CREATE POLICY "Admin can update driver earnings" ON public.driver_earnings FOR UPDATE TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
+    END IF;
 END $$;
 
 
@@ -1655,6 +1739,7 @@ END $$;
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can update settings' AND tablename = 'admin_settings') THEN
         CREATE POLICY "Admin can update settings" ON public.admin_settings FOR UPDATE TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
+    END IF;
 END $$;
 
 
@@ -1663,6 +1748,7 @@ END $$;
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can update withdrawal requests' AND tablename = 'withdrawal_requests') THEN
         CREATE POLICY "Admin can update withdrawal requests" ON public.withdrawal_requests FOR UPDATE TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
+    END IF;
 END $$;
 
 
@@ -1671,6 +1757,7 @@ END $$;
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin full access store drivers' AND tablename = 'store_drivers') THEN
         CREATE POLICY "Admin full access store drivers" ON public.store_drivers TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
+    END IF;
 END $$;
 
 
@@ -1679,6 +1766,7 @@ END $$;
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin manage store driver earnings' AND tablename = 'store_driver_earnings') THEN
         CREATE POLICY "Admin manage store driver earnings" ON public.store_driver_earnings TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
+    END IF;
 END $$;
 
 
@@ -1689,6 +1777,7 @@ DO $$ BEGIN
         CREATE POLICY "Admins and store owners can read online drivers" ON public.drivers FOR SELECT TO authenticated USING ((public.is_platform_admin(auth.uid()) OR (EXISTS ( SELECT 1
    FROM public.stores
   WHERE (stores.owner_id = auth.uid())))));
+    END IF;
 END $$;
 
 
@@ -1697,6 +1786,7 @@ END $$;
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can manage earnings' AND tablename = 'moderator_earnings') THEN
         CREATE POLICY "Admins can manage earnings" ON public.moderator_earnings TO authenticated USING (public.has_role(auth.uid(), 'admin'::public.app_role)) WITH CHECK (public.has_role(auth.uid(), 'admin'::public.app_role));
+    END IF;
 END $$;
 
 
@@ -1705,28 +1795,4 @@ END $$;
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can manage emergency fund' AND tablename = 'emergency_fund') THEN
         CREATE POLICY "Admins can manage emergency fund" ON public.emergency_fund TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
-END $$;
-
-
--- Name: moderators Admins can manage moderators; Type: POLICY; Schema: public; Owner: -
-
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can manage moderators' AND tablename = 'moderators') THEN
-        CREATE POLICY "Admins can manage moderators" ON public.moderators TO authenticated USING (public.has_role(auth.uid(), 'admin'::public.app_role)) WITH CHECK (public.has_role(auth.uid(), 'admin'::public.app_role));
-END $$;
-
-
--- Name: partner_payouts Admins can manage partner payouts; Type: POLICY; Schema: public; Owner: -
-
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can manage partner payouts' AND tablename = 'partner_payouts') THEN
-        CREATE POLICY "Admins can manage partner payouts" ON public.partner_payouts TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
-END $$;
-
-
--- Name: platform_partners Admins can manage partners; Type: POLICY; Schema: public; Owner: -
-
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can manage partners' AND tablename = 'platform_partners') THEN
-        CREATE POLICY "Admins can manage partners" ON public.platform_partners TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
-END $$;
+    END IF;

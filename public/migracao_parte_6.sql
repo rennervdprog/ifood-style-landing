@@ -1,3 +1,66 @@
+-- Data for Name: terms_acceptance; Type: TABLE DATA; Schema: public; Owner: -
+
+INSERT INTO public.terms_acceptance VALUES ('0d5c250d-a008-4873-a0ad-e36039301b04', '6becbb34-0fd2-4f6b-ba60-46bc058c15e6', '1.0', '1.0', NULL, 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Mobile Safari/537.36', '2026-04-09 13:45:14.865154+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.terms_acceptance VALUES ('8a7c4198-8e98-411b-8d39-d5e33af1a8d5', '137c9a05-75db-4077-acff-17d9ed508c29', '1.0', '1.0', NULL, 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Mobile Safari/537.36', '2026-04-09 18:52:58.159783+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.terms_acceptance VALUES ('ccc69e09-8c66-4a6d-8fb7-39cfc58cdae0', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '1.0', '1.0', NULL, 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Mobile Safari/537.36', '2026-04-11 15:13:51.886295+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.terms_acceptance VALUES ('df19b588-a7ac-4542-acdc-e868bcd81e98', '5e53b885-05f3-4cfd-9a52-d5c1f4457f3b', '1.0', '1.0', NULL, 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Mobile/15E148 Safari/604.1', '2026-04-14 14:46:25.211725+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.terms_acceptance VALUES ('fd7b65c5-c1cd-4914-9ea0-16241db7e214', '37909bb0-03b4-46dc-917d-c17fadaca33c', '1.0', '1.0', NULL, 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Mobile Safari/537.36', '2026-04-16 21:16:21.67077+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.terms_acceptance VALUES ('238b04eb-57ac-4deb-9a8e-224bf06a0674', '1d33caaf-2aaf-4ac4-a41e-b94508e0ed50', '1.0', '1.0', NULL, 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Mobile/15E148 Safari/604.1', '2026-04-18 16:59:24.681441+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.terms_acceptance VALUES ('05ffd6c5-2311-4b7d-902c-ecd3c8ed45fb', 'ed862e03-693d-4b7c-8342-400527be9c42', '1.0', '1.0', NULL, 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Mobile Safari/537.36', '2026-04-22 16:03:29.754369+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.terms_acceptance VALUES ('9e5f5903-318a-4300-b013-8ca1b17066b5', 'acefbf75-9e70-473e-b8ae-c6fb170c886e', '1.0', '1.0', NULL, 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Mobile Safari/537.36', '2026-04-24 17:16:37.891305+00') ON CONFLICT DO NOTHING;
+
+
+-- Data for Name: user_active_devices; Type: TABLE DATA; Schema: public; Owner: -
+
+INSERT INTO public.user_active_devices VALUES ('0c1d451c-bcc5-427b-b0f2-a6611fef8ad7', '1d33caaf-2aaf-4ac4-a41e-b94508e0ed50', '24c61a71-2c4a-4359-8086-ad5f77a0f0a3', '2026-04-18 17:00:10.019769+00', '2026-04-18 16:59:24.673655+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.user_active_devices VALUES ('65bd32de-a7b8-4802-a803-fc9d8827f5ab', '6becbb34-0fd2-4f6b-ba60-46bc058c15e6', 'a21b05aa-dfd1-4eb3-90fe-e55f4b552a23', '2026-04-25 17:59:17.040741+00', '2026-04-13 10:59:55.148488+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.user_active_devices VALUES ('d2b62cd3-33a1-48ba-b832-77a05d5fc476', '5e53b885-05f3-4cfd-9a52-d5c1f4457f3b', '3d7d816c-f5e7-44d8-b563-8e91fe9f8a8c', '2026-04-22 19:20:33.916295+00', '2026-04-14 14:46:25.211377+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.user_active_devices VALUES ('b2e3dfc9-6a46-4544-862c-f8da0764ea39', 'acefbf75-9e70-473e-b8ae-c6fb170c886e', 'bbff4c26-ae2e-4f19-8188-4f5b6b5ba89d', '2026-04-25 18:29:23.158147+00', '2026-04-24 17:16:37.794973+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.user_active_devices VALUES ('4fa4aaa4-36f6-4931-9a20-60538796536f', '927289c1-9e81-463a-b950-9b83d4d505e5', '2d7646ce-7be8-4593-a96c-08768aacc5e0', '2026-04-15 00:26:53.94909+00', '2026-04-14 23:59:08.540137+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.user_active_devices VALUES ('a3a2020b-a2f0-4ee0-b7fe-c21c1dda3ca8', '37909bb0-03b4-46dc-917d-c17fadaca33c', '5b011366-18ac-4f4e-bcd6-1f625df3b251', '2026-04-16 21:31:37.158797+00', '2026-04-16 21:16:21.664599+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.user_active_devices VALUES ('b92fd6a6-70b4-4422-aebd-e6ccacafe487', 'ed862e03-693d-4b7c-8342-400527be9c42', 'bbff4c26-ae2e-4f19-8188-4f5b6b5ba89d', '2026-04-23 15:04:18.452841+00', '2026-04-22 16:03:29.89604+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.user_active_devices VALUES ('9ce1684b-b0ce-4026-b3fe-f22a5c2bf4a2', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'a5ffff67-48e9-4412-a763-cea63812b8c0', '2026-04-25 17:08:00.756482+00', '2026-04-13 12:52:56.47428+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.user_active_devices VALUES ('074d2ee5-b6f0-4a71-a56e-cbbc29cb5227', 'ba9ce4c7-7133-45d5-8c2f-454914b7da38', 'a21b05aa-dfd1-4eb3-90fe-e55f4b552a23', '2026-04-21 23:46:40.572692+00', '2026-04-14 00:32:33.73079+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.user_active_devices VALUES ('c11592c9-9923-41ba-b98e-dc78c85a93fa', '137c9a05-75db-4077-acff-17d9ed508c29', 'bbff4c26-ae2e-4f19-8188-4f5b6b5ba89d', '2026-04-15 02:43:38.737822+00', '2026-04-15 00:15:09.041825+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.user_active_devices VALUES ('6707e0ce-beec-4bfb-a1d9-de8518182de0', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 'b48a1708-ca7a-40ef-84e8-25a1b2a5e5ea', '2026-04-25 17:18:40.242688+00', '2026-04-13 12:49:55.102755+00') ON CONFLICT DO NOTHING;
+
+
+-- Data for Name: user_roles; Type: TABLE DATA; Schema: public; Owner: -
+
+INSERT INTO public.user_roles VALUES ('4aeb16d3-0d73-4e49-bf6c-0a5a8b97081b', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'admin') ON CONFLICT DO NOTHING;
+
+
+-- Data for Name: user_wallet; Type: TABLE DATA; Schema: public; Owner: -
+
+
+
+-- Data for Name: wallet_transactions; Type: TABLE DATA; Schema: public; Owner: -
+
+
+
+-- Data for Name: withdrawal_requests; Type: TABLE DATA; Schema: public; Owner: -
+
+INSERT INTO public.withdrawal_requests VALUES ('ac114293-a525-4290-9c3e-a0de4520dbcf', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 8, '17508039769', 'cpf', 'pago', '2026-03-31 16:08:21.103924+00', '2026-03-31 16:11:46.653+00', NULL, 'SK-1009') ON CONFLICT DO NOTHING;
+INSERT INTO public.withdrawal_requests VALUES ('6f653f5d-d2bb-46c8-91d7-b68465137f9b', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 16, '17508039769', 'cpf', 'pago', '2026-03-31 17:06:40.373857+00', '2026-03-31 17:06:53.978+00', NULL, 'SK-1010') ON CONFLICT DO NOTHING;
+INSERT INTO public.withdrawal_requests VALUES ('60786c05-2971-4a9b-b28d-2d870fb90857', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 4, '17508039769', 'cpf', 'pago', '2026-03-31 17:17:04.674088+00', '2026-03-31 17:17:14.58+00', NULL, 'SK-1011') ON CONFLICT DO NOTHING;
+
+
+-- Name: withdrawal_code_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+
+SELECT pg_catalog.setval('public.withdrawal_code_seq', 1011, true);
+
+
+
+
+-- PostgreSQL database dump
+
+
+-- Dumped from database version 17.6
+-- Dumped by pg_dump version 17.9
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
 SET transaction_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
