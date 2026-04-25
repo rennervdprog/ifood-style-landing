@@ -29,36 +29,50 @@ COMMENT ON SCHEMA public IS 'standard public schema';
 
 -- Name: app_role; Type: TYPE; Schema: public; Owner: -
 
-DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'app_role') THEN CREATE TYPE public.app_role AS ENUM (
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'app_role') THEN DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'app_role') THEN
+        CREATE TYPE public.app_role AS ENUM (
     'admin',
     'moderator',
     'user'
-); END IF; END $$;
+);
+    END IF;
+END $$; END IF; END $$;
 
 
 -- Name: financial_transaction_status; Type: TYPE; Schema: public; Owner: -
 
-DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'financial_transaction_status') THEN CREATE TYPE public.financial_transaction_status AS ENUM (
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'financial_transaction_status') THEN DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'financial_transaction_status') THEN
+        CREATE TYPE public.financial_transaction_status AS ENUM (
     'pending',
     'approved',
     'paid',
     'failed',
     'cancelled'
-); END IF; END $$;
+);
+    END IF;
+END $$; END IF; END $$;
 
 
 -- Name: financial_transaction_type; Type: TYPE; Schema: public; Owner: -
 
-DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'financial_transaction_type') THEN CREATE TYPE public.financial_transaction_type AS ENUM (
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'financial_transaction_type') THEN DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'financial_transaction_type') THEN
+        CREATE TYPE public.financial_transaction_type AS ENUM (
     'commission_charge',
     'store_payout',
     'driver_payout'
-); END IF; END $$;
+);
+    END IF;
+END $$; END IF; END $$;
 
 
 -- Name: order_status; Type: TYPE; Schema: public; Owner: -
 
-DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'order_status') THEN CREATE TYPE public.order_status AS ENUM (
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'order_status') THEN DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'order_status') THEN
+        CREATE TYPE public.order_status AS ENUM (
     'aguardando_pagamento',
     'pendente',
     'preparando',
@@ -68,63 +82,87 @@ DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'order_status')
     'saiu_entrega',
     'finalizado',
     'cancelado'
-); END IF; END $$;
+);
+    END IF;
+END $$; END IF; END $$;
 
 
 -- Name: partner_role; Type: TYPE; Schema: public; Owner: -
 
-DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'partner_role') THEN CREATE TYPE public.partner_role AS ENUM (
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'partner_role') THEN DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'partner_role') THEN
+        CREATE TYPE public.partner_role AS ENUM (
     'cliente',
     'lojista',
     'motoboy'
-); END IF; END $$;
+);
+    END IF;
+END $$; END IF; END $$;
 
 
 -- Name: pix_type; Type: TYPE; Schema: public; Owner: -
 
-DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'pix_type') THEN CREATE TYPE public.pix_type AS ENUM (
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'pix_type') THEN DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'pix_type') THEN
+        CREATE TYPE public.pix_type AS ENUM (
     'cpf',
     'cnpj',
     'email',
     'phone',
     'random'
-); END IF; END $$;
+);
+    END IF;
+END $$; END IF; END $$;
 
 
 -- Name: refund_reason; Type: TYPE; Schema: public; Owner: -
 
-DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'refund_reason') THEN CREATE TYPE public.refund_reason AS ENUM (
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'refund_reason') THEN DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'refund_reason') THEN
+        CREATE TYPE public.refund_reason AS ENUM (
     'wrong_product',
     'missing_items',
     'damaged',
     'late_delivery',
     'poor_quality',
     'other'
-); END IF; END $$;
+);
+    END IF;
+END $$; END IF; END $$;
 
 
 -- Name: refund_status; Type: TYPE; Schema: public; Owner: -
 
-DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'refund_status') THEN CREATE TYPE public.refund_status AS ENUM (
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'refund_status') THEN DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'refund_status') THEN
+        CREATE TYPE public.refund_status AS ENUM (
     'pending',
     'approved',
     'processed',
     'rejected'
-); END IF; END $$;
+);
+    END IF;
+END $$; END IF; END $$;
 
 
 -- Name: refund_type; Type: TYPE; Schema: public; Owner: -
 
-DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'refund_type') THEN CREATE TYPE public.refund_type AS ENUM (
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'refund_type') THEN DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'refund_type') THEN
+        CREATE TYPE public.refund_type AS ENUM (
     'full',
     'partial',
     'wallet_credit'
-); END IF; END $$;
+);
+    END IF;
+END $$; END IF; END $$;
 
 
 -- Name: store_category; Type: TYPE; Schema: public; Owner: -
 
-DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'store_category') THEN CREATE TYPE public.store_category AS ENUM (
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'store_category') THEN DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'store_category') THEN
+        CREATE TYPE public.store_category AS ENUM (
     'lanches',
     'pizzas',
     'adegas',
@@ -137,33 +175,47 @@ DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'store_category
     'docerias',
     'restaurante',
     'esfihas'
-); END IF; END $$;
+);
+    END IF;
+END $$; END IF; END $$;
 
 
 -- Name: store_plan_type; Type: TYPE; Schema: public; Owner: -
 
-DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'store_plan_type') THEN CREATE TYPE public.store_plan_type AS ENUM (
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'store_plan_type') THEN DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'store_plan_type') THEN
+        CREATE TYPE public.store_plan_type AS ENUM (
     'fixed',
     'hybrid',
     'commission_only'
-); END IF; END $$;
+);
+    END IF;
+END $$; END IF; END $$;
 
 
 -- Name: store_status; Type: TYPE; Schema: public; Owner: -
 
-DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'store_status') THEN CREATE TYPE public.store_status AS ENUM (
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'store_status') THEN DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'store_status') THEN
+        CREATE TYPE public.store_status AS ENUM (
     'analise',
     'ativo',
     'bloqueado'
-); END IF; END $$;
+);
+    END IF;
+END $$; END IF; END $$;
 
 
 -- Name: wallet_transaction_type; Type: TYPE; Schema: public; Owner: -
 
-DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'wallet_transaction_type') THEN CREATE TYPE public.wallet_transaction_type AS ENUM (
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'wallet_transaction_type') THEN DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'wallet_transaction_type') THEN
+        CREATE TYPE public.wallet_transaction_type AS ENUM (
     'credit',
     'debit'
-); END IF; END $$;
+);
+    END IF;
+END $$; END IF; END $$;
 
 
 -- Name: accrue_fixed_plan_split(); Type: FUNCTION; Schema: public; Owner: -
@@ -4359,412 +4411,412 @@ ALTER TABLE ONLY public.withdrawal_requests
 
 -- Name: idx_driver_locations_driver; Type: INDEX; Schema: public; Owner: -
 
-CREATE INDEX idx_driver_locations_driver ON public.driver_locations USING btree (driver_user_id);
+CREATE INDEX IF NOT EXISTS idx_driver_locations_driver ON public.driver_locations USING btree (driver_user_id);
 
 
 -- Name: idx_driver_locations_order; Type: INDEX; Schema: public; Owner: -
 
-CREATE INDEX idx_driver_locations_order ON public.driver_locations USING btree (order_id);
+CREATE INDEX IF NOT EXISTS idx_driver_locations_order ON public.driver_locations USING btree (order_id);
 
 
 -- Name: idx_driver_locations_unique_driver; Type: INDEX; Schema: public; Owner: -
 
-CREATE UNIQUE INDEX idx_driver_locations_unique_driver ON public.driver_locations USING btree (driver_user_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_driver_locations_unique_driver ON public.driver_locations USING btree (driver_user_id);
 
 
 -- Name: idx_driver_locations_updated; Type: INDEX; Schema: public; Owner: -
 
-CREATE INDEX idx_driver_locations_updated ON public.driver_locations USING btree (updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_driver_locations_updated ON public.driver_locations USING btree (updated_at DESC);
 
 
 -- Name: idx_fcm_tokens_store_id; Type: INDEX; Schema: public; Owner: -
 
-CREATE INDEX idx_fcm_tokens_store_id ON public.fcm_tokens USING btree (store_id) WHERE (store_id IS NOT NULL);
+CREATE INDEX IF NOT EXISTS idx_fcm_tokens_store_id ON public.fcm_tokens USING btree (store_id) WHERE (store_id IS NOT NULL);
 
 
 -- Name: idx_financial_transactions_kind_status; Type: INDEX; Schema: public; Owner: -
 
-CREATE INDEX idx_financial_transactions_kind_status ON public.financial_transactions USING btree (transaction_kind, status);
+CREATE INDEX IF NOT EXISTS idx_financial_transactions_kind_status ON public.financial_transactions USING btree (transaction_kind, status);
 
 
 -- Name: idx_financial_transactions_mp_payment_id; Type: INDEX; Schema: public; Owner: -
 
-CREATE UNIQUE INDEX idx_financial_transactions_mp_payment_id ON public.financial_transactions USING btree (mercado_pago_payment_id) WHERE (mercado_pago_payment_id IS NOT NULL);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_financial_transactions_mp_payment_id ON public.financial_transactions USING btree (mercado_pago_payment_id) WHERE (mercado_pago_payment_id IS NOT NULL);
 
 
 -- Name: idx_financial_transactions_mp_transfer_id; Type: INDEX; Schema: public; Owner: -
 
-CREATE UNIQUE INDEX idx_financial_transactions_mp_transfer_id ON public.financial_transactions USING btree (mercado_pago_transfer_id) WHERE (mercado_pago_transfer_id IS NOT NULL);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_financial_transactions_mp_transfer_id ON public.financial_transactions USING btree (mercado_pago_transfer_id) WHERE (mercado_pago_transfer_id IS NOT NULL);
 
 
 -- Name: idx_financial_transactions_store_id; Type: INDEX; Schema: public; Owner: -
 
-CREATE INDEX idx_financial_transactions_store_id ON public.financial_transactions USING btree (store_id);
+CREATE INDEX IF NOT EXISTS idx_financial_transactions_store_id ON public.financial_transactions USING btree (store_id);
 
 
 -- Name: idx_orders_assigned_driver; Type: INDEX; Schema: public; Owner: -
 
-CREATE INDEX idx_orders_assigned_driver ON public.orders USING btree (assigned_driver_id) WHERE (assigned_driver_id IS NOT NULL);
+CREATE INDEX IF NOT EXISTS idx_orders_assigned_driver ON public.orders USING btree (assigned_driver_id) WHERE (assigned_driver_id IS NOT NULL);
 
 
 -- Name: idx_page_views_created; Type: INDEX; Schema: public; Owner: -
 
-CREATE INDEX idx_page_views_created ON public.page_views USING btree (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_page_views_created ON public.page_views USING btree (created_at DESC);
 
 
 -- Name: idx_page_views_page_created; Type: INDEX; Schema: public; Owner: -
 
-CREATE INDEX idx_page_views_page_created ON public.page_views USING btree (page, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_page_views_page_created ON public.page_views USING btree (page, created_at DESC);
 
 
 -- Name: idx_products_store_id; Type: INDEX; Schema: public; Owner: -
 
-CREATE INDEX idx_products_store_id ON public.products USING btree (store_id);
+CREATE INDEX IF NOT EXISTS idx_products_store_id ON public.products USING btree (store_id);
 
 
 -- Name: idx_store_driver_earnings_driver; Type: INDEX; Schema: public; Owner: -
 
-CREATE INDEX idx_store_driver_earnings_driver ON public.store_driver_earnings USING btree (driver_user_id, status);
+CREATE INDEX IF NOT EXISTS idx_store_driver_earnings_driver ON public.store_driver_earnings USING btree (driver_user_id, status);
 
 
 -- Name: idx_store_driver_earnings_store; Type: INDEX; Schema: public; Owner: -
 
-CREATE INDEX idx_store_driver_earnings_store ON public.store_driver_earnings USING btree (store_id, status);
+CREATE INDEX IF NOT EXISTS idx_store_driver_earnings_store ON public.store_driver_earnings USING btree (store_id, status);
 
 
 -- Name: idx_stores_categories_gin; Type: INDEX; Schema: public; Owner: -
 
-CREATE INDEX idx_stores_categories_gin ON public.stores USING gin (categories);
+CREATE INDEX IF NOT EXISTS idx_stores_categories_gin ON public.stores USING gin (categories);
 
 
 -- Name: idx_stores_category; Type: INDEX; Schema: public; Owner: -
 
-CREATE INDEX idx_stores_category ON public.stores USING btree (category);
+CREATE INDEX IF NOT EXISTS idx_stores_category ON public.stores USING btree (category);
 
 
 -- Name: idx_stores_is_open; Type: INDEX; Schema: public; Owner: -
 
-CREATE INDEX idx_stores_is_open ON public.stores USING btree (is_open);
+CREATE INDEX IF NOT EXISTS idx_stores_is_open ON public.stores USING btree (is_open);
 
 
 -- Name: idx_stores_is_test; Type: INDEX; Schema: public; Owner: -
 
-CREATE INDEX idx_stores_is_test ON public.stores USING btree (is_test) WHERE (is_test = true);
+CREATE INDEX IF NOT EXISTS idx_stores_is_test ON public.stores USING btree (is_test) WHERE (is_test = true);
 
 
 -- Name: idx_stores_slug; Type: INDEX; Schema: public; Owner: -
 
-CREATE INDEX idx_stores_slug ON public.stores USING btree (slug);
+CREATE INDEX IF NOT EXISTS idx_stores_slug ON public.stores USING btree (slug);
 
 
 -- Name: idx_terms_acceptance_user; Type: INDEX; Schema: public; Owner: -
 
-CREATE INDEX idx_terms_acceptance_user ON public.terms_acceptance USING btree (user_id);
+CREATE INDEX IF NOT EXISTS idx_terms_acceptance_user ON public.terms_acceptance USING btree (user_id);
 
 
 -- Name: ux_withdrawal_requests_one_active_per_driver; Type: INDEX; Schema: public; Owner: -
 
-CREATE UNIQUE INDEX ux_withdrawal_requests_one_active_per_driver ON public.withdrawal_requests USING btree (driver_user_id) WHERE (status = 'solicitado'::text);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_withdrawal_requests_one_active_per_driver ON public.withdrawal_requests USING btree (driver_user_id) WHERE (status = 'solicitado'::text);
 
 
 -- Name: ux_withdrawal_requests_transaction_code; Type: INDEX; Schema: public; Owner: -
 
-CREATE UNIQUE INDEX ux_withdrawal_requests_transaction_code ON public.withdrawal_requests USING btree (transaction_code) WHERE (transaction_code IS NOT NULL);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_withdrawal_requests_transaction_code ON public.withdrawal_requests USING btree (transaction_code) WHERE (transaction_code IS NOT NULL);
 
 
 -- Name: orders award_loyalty_on_order_finalized; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER award_loyalty_on_order_finalized AFTER UPDATE ON public.orders FOR EACH ROW EXECUTE FUNCTION public.award_loyalty_points();
+DROP TRIGGER IF EXISTS award_loyalty_on_order_finalized ON public.orders; CREATE TRIGGER award_loyalty_on_order_finalized AFTER UPDATE ON public.orders FOR EACH ROW EXECUTE FUNCTION public.award_loyalty_points();
 
 
 -- Name: order_ratings on_rating_insert; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER on_rating_insert AFTER INSERT ON public.order_ratings FOR EACH ROW EXECUTE FUNCTION public.update_store_rating();
+DROP TRIGGER IF EXISTS on_rating_insert ON public.order_ratings; CREATE TRIGGER on_rating_insert AFTER INSERT ON public.order_ratings FOR EACH ROW EXECUTE FUNCTION public.update_store_rating();
 
 
 -- Name: profiles prevent_role_change; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER prevent_role_change BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION public.prevent_role_self_change();
+DROP TRIGGER IF EXISTS prevent_role_change ON public.profiles; CREATE TRIGGER prevent_role_change BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION public.prevent_role_self_change();
 
 
 -- Name: orders set_delivery_pin; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER set_delivery_pin BEFORE INSERT OR UPDATE ON public.orders FOR EACH ROW EXECUTE FUNCTION public.generate_delivery_pin();
+DROP TRIGGER IF EXISTS set_delivery_pin ON public.orders; CREATE TRIGGER set_delivery_pin BEFORE INSERT OR UPDATE ON public.orders FOR EACH ROW EXECUTE FUNCTION public.generate_delivery_pin();
 
 
 -- Name: withdrawal_requests set_withdrawal_code; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER set_withdrawal_code BEFORE INSERT ON public.withdrawal_requests FOR EACH ROW EXECUTE FUNCTION public.generate_withdrawal_code();
+DROP TRIGGER IF EXISTS set_withdrawal_code ON public.withdrawal_requests; CREATE TRIGGER set_withdrawal_code BEFORE INSERT ON public.withdrawal_requests FOR EACH ROW EXECUTE FUNCTION public.generate_withdrawal_code();
 
 
 -- Name: driver_balances sync_driver_balances_to_external; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER sync_driver_balances_to_external AFTER INSERT OR UPDATE ON public.driver_balances FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
+DROP TRIGGER IF EXISTS sync_driver_balances_to_external ON public.driver_balances; CREATE TRIGGER sync_driver_balances_to_external AFTER INSERT OR UPDATE ON public.driver_balances FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
 
 
 -- Name: driver_earnings sync_driver_earnings_to_external; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER sync_driver_earnings_to_external AFTER INSERT OR UPDATE ON public.driver_earnings FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
+DROP TRIGGER IF EXISTS sync_driver_earnings_to_external ON public.driver_earnings; CREATE TRIGGER sync_driver_earnings_to_external AFTER INSERT OR UPDATE ON public.driver_earnings FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
 
 
 -- Name: drivers sync_drivers_to_external; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER sync_drivers_to_external AFTER INSERT OR UPDATE ON public.drivers FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
+DROP TRIGGER IF EXISTS sync_drivers_to_external ON public.drivers; CREATE TRIGGER sync_drivers_to_external AFTER INSERT OR UPDATE ON public.drivers FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
 
 
 -- Name: financial_transactions sync_financial_transactions_to_external; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER sync_financial_transactions_to_external AFTER INSERT OR UPDATE ON public.financial_transactions FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
+DROP TRIGGER IF EXISTS sync_financial_transactions_to_external ON public.financial_transactions; CREATE TRIGGER sync_financial_transactions_to_external AFTER INSERT OR UPDATE ON public.financial_transactions FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
 
 
 -- Name: order_items sync_order_items_to_external; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER sync_order_items_to_external AFTER INSERT OR UPDATE ON public.order_items FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
+DROP TRIGGER IF EXISTS sync_order_items_to_external ON public.order_items; CREATE TRIGGER sync_order_items_to_external AFTER INSERT OR UPDATE ON public.order_items FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
 
 
 -- Name: order_messages sync_order_messages_to_external; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER sync_order_messages_to_external AFTER INSERT OR UPDATE ON public.order_messages FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
+DROP TRIGGER IF EXISTS sync_order_messages_to_external ON public.order_messages; CREATE TRIGGER sync_order_messages_to_external AFTER INSERT OR UPDATE ON public.order_messages FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
 
 
 -- Name: store_balances sync_store_balances_to_external; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER sync_store_balances_to_external AFTER INSERT OR UPDATE ON public.store_balances FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
+DROP TRIGGER IF EXISTS sync_store_balances_to_external ON public.store_balances; CREATE TRIGGER sync_store_balances_to_external AFTER INSERT OR UPDATE ON public.store_balances FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
 
 
 -- Name: stores sync_store_categories_trg; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER sync_store_categories_trg BEFORE INSERT OR UPDATE OF category, categories ON public.stores FOR EACH ROW EXECUTE FUNCTION public.sync_store_categories();
+DROP TRIGGER IF EXISTS sync_store_categories_trg ON public.stores; CREATE TRIGGER sync_store_categories_trg BEFORE INSERT OR UPDATE OF category, categories ON public.stores FOR EACH ROW EXECUTE FUNCTION public.sync_store_categories();
 
 
 -- Name: orders trg_accrue_fixed_plan_split; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trg_accrue_fixed_plan_split BEFORE UPDATE ON public.orders FOR EACH ROW EXECUTE FUNCTION public.accrue_fixed_plan_split();
+DROP TRIGGER IF EXISTS trg_accrue_fixed_plan_split ON public.orders; CREATE TRIGGER trg_accrue_fixed_plan_split BEFORE UPDATE ON public.orders FOR EACH ROW EXECUTE FUNCTION public.accrue_fixed_plan_split();
 
 
 -- Name: orders trg_accrue_moderator_earnings; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trg_accrue_moderator_earnings BEFORE UPDATE ON public.orders FOR EACH ROW EXECUTE FUNCTION public.accrue_moderator_earnings();
+DROP TRIGGER IF EXISTS trg_accrue_moderator_earnings ON public.orders; CREATE TRIGGER trg_accrue_moderator_earnings BEFORE UPDATE ON public.orders FOR EACH ROW EXECUTE FUNCTION public.accrue_moderator_earnings();
 
 
 -- Name: app_links trg_app_links_updated_at; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trg_app_links_updated_at BEFORE UPDATE ON public.app_links FOR EACH ROW EXECUTE FUNCTION public.set_app_links_updated_at();
+DROP TRIGGER IF EXISTS trg_app_links_updated_at ON public.app_links; CREATE TRIGGER trg_app_links_updated_at BEFORE UPDATE ON public.app_links FOR EACH ROW EXECUTE FUNCTION public.set_app_links_updated_at();
 
 
 -- Name: orders trg_create_store_driver_earning; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trg_create_store_driver_earning AFTER UPDATE ON public.orders FOR EACH ROW EXECUTE FUNCTION public.create_store_driver_earning();
+DROP TRIGGER IF EXISTS trg_create_store_driver_earning ON public.orders; CREATE TRIGGER trg_create_store_driver_earning AFTER UPDATE ON public.orders FOR EACH ROW EXECUTE FUNCTION public.create_store_driver_earning();
 
 
 -- Name: orders trg_generate_collection_code; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trg_generate_collection_code BEFORE UPDATE ON public.orders FOR EACH ROW EXECUTE FUNCTION public.generate_collection_code();
+DROP TRIGGER IF EXISTS trg_generate_collection_code ON public.orders; CREATE TRIGGER trg_generate_collection_code BEFORE UPDATE ON public.orders FOR EACH ROW EXECUTE FUNCTION public.generate_collection_code();
 
 
 -- Name: orders trg_generate_settlement_code; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trg_generate_settlement_code BEFORE UPDATE ON public.orders FOR EACH ROW EXECUTE FUNCTION public.generate_settlement_code();
+DROP TRIGGER IF EXISTS trg_generate_settlement_code ON public.orders; CREATE TRIGGER trg_generate_settlement_code BEFORE UPDATE ON public.orders FOR EACH ROW EXECUTE FUNCTION public.generate_settlement_code();
 
 
 -- Name: profiles trg_notify_admins_new_approval; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trg_notify_admins_new_approval AFTER INSERT ON public.profiles FOR EACH ROW EXECUTE FUNCTION public.notify_admins_new_approval();
+DROP TRIGGER IF EXISTS trg_notify_admins_new_approval ON public.profiles; CREATE TRIGGER trg_notify_admins_new_approval AFTER INSERT ON public.profiles FOR EACH ROW EXECUTE FUNCTION public.notify_admins_new_approval();
 
 
 -- Name: orders trg_notify_order_status_zapi; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trg_notify_order_status_zapi AFTER UPDATE OF status ON public.orders FOR EACH ROW EXECUTE FUNCTION public.notify_order_status_zapi();
+DROP TRIGGER IF EXISTS trg_notify_order_status_zapi ON public.orders; CREATE TRIGGER trg_notify_order_status_zapi AFTER UPDATE OF status ON public.orders FOR EACH ROW EXECUTE FUNCTION public.notify_order_status_zapi();
 
 
 -- Name: orders trg_order_status_chat; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trg_order_status_chat AFTER UPDATE OF status ON public.orders FOR EACH ROW EXECUTE FUNCTION public.insert_order_status_chat_message();
+DROP TRIGGER IF EXISTS trg_order_status_chat ON public.orders; CREATE TRIGGER trg_order_status_chat AFTER UPDATE OF status ON public.orders FOR EACH ROW EXECUTE FUNCTION public.insert_order_status_chat_message();
 
 
 -- Name: drivers trg_prevent_driver_protected_fields; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trg_prevent_driver_protected_fields BEFORE UPDATE ON public.drivers FOR EACH ROW EXECUTE FUNCTION public.prevent_driver_protected_fields_update();
+DROP TRIGGER IF EXISTS trg_prevent_driver_protected_fields ON public.drivers; CREATE TRIGGER trg_prevent_driver_protected_fields BEFORE UPDATE ON public.drivers FOR EACH ROW EXECUTE FUNCTION public.prevent_driver_protected_fields_update();
 
 
 -- Name: orders trg_sync_order_to_external; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trg_sync_order_to_external AFTER INSERT OR UPDATE ON public.orders FOR EACH ROW EXECUTE FUNCTION public.notify_order_sync();
+DROP TRIGGER IF EXISTS trg_sync_order_to_external ON public.orders; CREATE TRIGGER trg_sync_order_to_external AFTER INSERT OR UPDATE ON public.orders FOR EACH ROW EXECUTE FUNCTION public.notify_order_sync();
 
 
 -- Name: store_balances trg_sync_store_balances_legacy_fields; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trg_sync_store_balances_legacy_fields BEFORE INSERT OR UPDATE ON public.store_balances FOR EACH ROW EXECUTE FUNCTION public.sync_store_balances_legacy_fields();
+DROP TRIGGER IF EXISTS trg_sync_store_balances_legacy_fields ON public.store_balances; CREATE TRIGGER trg_sync_store_balances_legacy_fields BEFORE INSERT OR UPDATE ON public.store_balances FOR EACH ROW EXECUTE FUNCTION public.sync_store_balances_legacy_fields();
 
 
 -- Name: financial_transactions trg_touch_financial_transactions_updated_at; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trg_touch_financial_transactions_updated_at BEFORE UPDATE ON public.financial_transactions FOR EACH ROW EXECUTE FUNCTION public.touch_financial_transactions_updated_at();
+DROP TRIGGER IF EXISTS trg_touch_financial_transactions_updated_at ON public.financial_transactions; CREATE TRIGGER trg_touch_financial_transactions_updated_at BEFORE UPDATE ON public.financial_transactions FOR EACH ROW EXECUTE FUNCTION public.touch_financial_transactions_updated_at();
 
 
 -- Name: orders trg_validate_order_prices; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trg_validate_order_prices BEFORE INSERT ON public.orders FOR EACH ROW EXECUTE FUNCTION public.validate_order_prices();
+DROP TRIGGER IF EXISTS trg_validate_order_prices ON public.orders; CREATE TRIGGER trg_validate_order_prices BEFORE INSERT ON public.orders FOR EACH ROW EXECUTE FUNCTION public.validate_order_prices();
 
 
 -- Name: order_items trg_verify_order_subtotal; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trg_verify_order_subtotal AFTER INSERT ON public.order_items FOR EACH ROW EXECUTE FUNCTION public.verify_order_subtotal();
+DROP TRIGGER IF EXISTS trg_verify_order_subtotal ON public.order_items; CREATE TRIGGER trg_verify_order_subtotal AFTER INSERT ON public.order_items FOR EACH ROW EXECUTE FUNCTION public.verify_order_subtotal();
 
 
 -- Name: orders trigger_generate_collection_code; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trigger_generate_collection_code BEFORE UPDATE ON public.orders FOR EACH ROW EXECUTE FUNCTION public.generate_collection_code();
+DROP TRIGGER IF EXISTS trigger_generate_collection_code ON public.orders; CREATE TRIGGER trigger_generate_collection_code BEFORE UPDATE ON public.orders FOR EACH ROW EXECUTE FUNCTION public.generate_collection_code();
 
 
 -- Name: orders trigger_generate_delivery_pin; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trigger_generate_delivery_pin BEFORE UPDATE ON public.orders FOR EACH ROW EXECUTE FUNCTION public.generate_delivery_pin();
+DROP TRIGGER IF EXISTS trigger_generate_delivery_pin ON public.orders; CREATE TRIGGER trigger_generate_delivery_pin BEFORE UPDATE ON public.orders FOR EACH ROW EXECUTE FUNCTION public.generate_delivery_pin();
 
 
 -- Name: withdrawal_requests trigger_generate_withdrawal_code; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trigger_generate_withdrawal_code BEFORE INSERT ON public.withdrawal_requests FOR EACH ROW EXECUTE FUNCTION public.generate_withdrawal_code();
+DROP TRIGGER IF EXISTS trigger_generate_withdrawal_code ON public.withdrawal_requests; CREATE TRIGGER trigger_generate_withdrawal_code BEFORE INSERT ON public.withdrawal_requests FOR EACH ROW EXECUTE FUNCTION public.generate_withdrawal_code();
 
 
 -- Name: profiles trigger_prevent_role_self_change; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trigger_prevent_role_self_change BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION public.prevent_role_self_change();
+DROP TRIGGER IF EXISTS trigger_prevent_role_self_change ON public.profiles; CREATE TRIGGER trigger_prevent_role_self_change BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION public.prevent_role_self_change();
 
 
 -- Name: addon_groups trigger_sync_addon_groups; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trigger_sync_addon_groups AFTER INSERT OR UPDATE ON public.addon_groups FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
+DROP TRIGGER IF EXISTS trigger_sync_addon_groups ON public.addon_groups; CREATE TRIGGER trigger_sync_addon_groups AFTER INSERT OR UPDATE ON public.addon_groups FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
 
 
 -- Name: addon_items trigger_sync_addon_items; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trigger_sync_addon_items AFTER INSERT OR UPDATE ON public.addon_items FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
+DROP TRIGGER IF EXISTS trigger_sync_addon_items ON public.addon_items; CREATE TRIGGER trigger_sync_addon_items AFTER INSERT OR UPDATE ON public.addon_items FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
 
 
 -- Name: banners trigger_sync_banners; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trigger_sync_banners AFTER INSERT OR UPDATE ON public.banners FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
+DROP TRIGGER IF EXISTS trigger_sync_banners ON public.banners; CREATE TRIGGER trigger_sync_banners AFTER INSERT OR UPDATE ON public.banners FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
 
 
 -- Name: coupons trigger_sync_coupons; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trigger_sync_coupons AFTER INSERT OR UPDATE ON public.coupons FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
+DROP TRIGGER IF EXISTS trigger_sync_coupons ON public.coupons; CREATE TRIGGER trigger_sync_coupons AFTER INSERT OR UPDATE ON public.coupons FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
 
 
 -- Name: driver_balances trigger_sync_driver_balances; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trigger_sync_driver_balances AFTER INSERT OR UPDATE ON public.driver_balances FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
+DROP TRIGGER IF EXISTS trigger_sync_driver_balances ON public.driver_balances; CREATE TRIGGER trigger_sync_driver_balances AFTER INSERT OR UPDATE ON public.driver_balances FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
 
 
 -- Name: driver_earnings trigger_sync_driver_earnings; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trigger_sync_driver_earnings AFTER INSERT OR UPDATE ON public.driver_earnings FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
+DROP TRIGGER IF EXISTS trigger_sync_driver_earnings ON public.driver_earnings; CREATE TRIGGER trigger_sync_driver_earnings AFTER INSERT OR UPDATE ON public.driver_earnings FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
 
 
 -- Name: drivers trigger_sync_drivers; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trigger_sync_drivers AFTER INSERT OR UPDATE ON public.drivers FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
+DROP TRIGGER IF EXISTS trigger_sync_drivers ON public.drivers; CREATE TRIGGER trigger_sync_drivers AFTER INSERT OR UPDATE ON public.drivers FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
 
 
 -- Name: financial_transactions trigger_sync_financial_transactions; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trigger_sync_financial_transactions AFTER INSERT OR UPDATE ON public.financial_transactions FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
+DROP TRIGGER IF EXISTS trigger_sync_financial_transactions ON public.financial_transactions; CREATE TRIGGER trigger_sync_financial_transactions AFTER INSERT OR UPDATE ON public.financial_transactions FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
 
 
 -- Name: menu_sections trigger_sync_menu_sections; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trigger_sync_menu_sections AFTER INSERT OR UPDATE ON public.menu_sections FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
+DROP TRIGGER IF EXISTS trigger_sync_menu_sections ON public.menu_sections; CREATE TRIGGER trigger_sync_menu_sections AFTER INSERT OR UPDATE ON public.menu_sections FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
 
 
 -- Name: neighborhood_fees trigger_sync_neighborhood_fees; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trigger_sync_neighborhood_fees AFTER INSERT OR UPDATE ON public.neighborhood_fees FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
+DROP TRIGGER IF EXISTS trigger_sync_neighborhood_fees ON public.neighborhood_fees; CREATE TRIGGER trigger_sync_neighborhood_fees AFTER INSERT OR UPDATE ON public.neighborhood_fees FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
 
 
 -- Name: opening_hours trigger_sync_opening_hours; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trigger_sync_opening_hours AFTER INSERT OR UPDATE ON public.opening_hours FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
+DROP TRIGGER IF EXISTS trigger_sync_opening_hours ON public.opening_hours; CREATE TRIGGER trigger_sync_opening_hours AFTER INSERT OR UPDATE ON public.opening_hours FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
 
 
 -- Name: order_items trigger_sync_order_items; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trigger_sync_order_items AFTER INSERT OR UPDATE ON public.order_items FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
+DROP TRIGGER IF EXISTS trigger_sync_order_items ON public.order_items; CREATE TRIGGER trigger_sync_order_items AFTER INSERT OR UPDATE ON public.order_items FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
 
 
 -- Name: order_messages trigger_sync_order_messages; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trigger_sync_order_messages AFTER INSERT OR UPDATE ON public.order_messages FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
+DROP TRIGGER IF EXISTS trigger_sync_order_messages ON public.order_messages; CREATE TRIGGER trigger_sync_order_messages AFTER INSERT OR UPDATE ON public.order_messages FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
 
 
 -- Name: orders trigger_sync_orders; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trigger_sync_orders AFTER INSERT OR UPDATE ON public.orders FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
+DROP TRIGGER IF EXISTS trigger_sync_orders ON public.orders; CREATE TRIGGER trigger_sync_orders AFTER INSERT OR UPDATE ON public.orders FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
 
 
 -- Name: product_addon_groups trigger_sync_product_addon_groups; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trigger_sync_product_addon_groups AFTER INSERT OR UPDATE ON public.product_addon_groups FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
+DROP TRIGGER IF EXISTS trigger_sync_product_addon_groups ON public.product_addon_groups; CREATE TRIGGER trigger_sync_product_addon_groups AFTER INSERT OR UPDATE ON public.product_addon_groups FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
 
 
 -- Name: products trigger_sync_products; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trigger_sync_products AFTER INSERT OR UPDATE ON public.products FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
+DROP TRIGGER IF EXISTS trigger_sync_products ON public.products; CREATE TRIGGER trigger_sync_products AFTER INSERT OR UPDATE ON public.products FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
 
 
 -- Name: profiles trigger_sync_profiles; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trigger_sync_profiles AFTER INSERT OR UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
+DROP TRIGGER IF EXISTS trigger_sync_profiles ON public.profiles; CREATE TRIGGER trigger_sync_profiles AFTER INSERT OR UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
 
 
 -- Name: store_balances trigger_sync_store_balances; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trigger_sync_store_balances AFTER INSERT OR UPDATE ON public.store_balances FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
+DROP TRIGGER IF EXISTS trigger_sync_store_balances ON public.store_balances; CREATE TRIGGER trigger_sync_store_balances AFTER INSERT OR UPDATE ON public.store_balances FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
 
 
 -- Name: store_balances trigger_sync_store_balances_legacy; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trigger_sync_store_balances_legacy BEFORE INSERT OR UPDATE ON public.store_balances FOR EACH ROW EXECUTE FUNCTION public.sync_store_balances_legacy_fields();
+DROP TRIGGER IF EXISTS trigger_sync_store_balances_legacy ON public.store_balances; CREATE TRIGGER trigger_sync_store_balances_legacy BEFORE INSERT OR UPDATE ON public.store_balances FOR EACH ROW EXECUTE FUNCTION public.sync_store_balances_legacy_fields();
 
 
 -- Name: stores trigger_sync_stores; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trigger_sync_stores AFTER INSERT OR UPDATE ON public.stores FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
+DROP TRIGGER IF EXISTS trigger_sync_stores ON public.stores; CREATE TRIGGER trigger_sync_stores AFTER INSERT OR UPDATE ON public.stores FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
 
 
 -- Name: withdrawal_requests trigger_sync_withdrawal_requests; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trigger_sync_withdrawal_requests AFTER INSERT OR UPDATE ON public.withdrawal_requests FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
+DROP TRIGGER IF EXISTS trigger_sync_withdrawal_requests ON public.withdrawal_requests; CREATE TRIGGER trigger_sync_withdrawal_requests AFTER INSERT OR UPDATE ON public.withdrawal_requests FOR EACH ROW EXECUTE FUNCTION public.notify_record_sync();
 
 
 -- Name: financial_transactions trigger_touch_financial_updated_at; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trigger_touch_financial_updated_at BEFORE UPDATE ON public.financial_transactions FOR EACH ROW EXECUTE FUNCTION public.touch_financial_transactions_updated_at();
+DROP TRIGGER IF EXISTS trigger_touch_financial_updated_at ON public.financial_transactions; CREATE TRIGGER trigger_touch_financial_updated_at BEFORE UPDATE ON public.financial_transactions FOR EACH ROW EXECUTE FUNCTION public.touch_financial_transactions_updated_at();
 
 
 -- Name: order_ratings trigger_update_store_rating; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER trigger_update_store_rating AFTER INSERT ON public.order_ratings FOR EACH ROW EXECUTE FUNCTION public.update_store_rating();
+DROP TRIGGER IF EXISTS trigger_update_store_rating ON public.order_ratings; CREATE TRIGGER trigger_update_store_rating AFTER INSERT ON public.order_ratings FOR EACH ROW EXECUTE FUNCTION public.update_store_rating();
 
 
 -- Name: moderators update_moderators_updated_at; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER update_moderators_updated_at BEFORE UPDATE ON public.moderators FOR EACH ROW EXECUTE FUNCTION public.touch_financial_transactions_updated_at();
+DROP TRIGGER IF EXISTS update_moderators_updated_at ON public.moderators; CREATE TRIGGER update_moderators_updated_at BEFORE UPDATE ON public.moderators FOR EACH ROW EXECUTE FUNCTION public.touch_financial_transactions_updated_at();
 
 
 -- Name: platform_partners update_platform_partners_updated_at; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER update_platform_partners_updated_at BEFORE UPDATE ON public.platform_partners FOR EACH ROW EXECUTE FUNCTION public.touch_financial_transactions_updated_at();
+DROP TRIGGER IF EXISTS update_platform_partners_updated_at ON public.platform_partners; CREATE TRIGGER update_platform_partners_updated_at BEFORE UPDATE ON public.platform_partners FOR EACH ROW EXECUTE FUNCTION public.touch_financial_transactions_updated_at();
 
 
 -- Name: store_plans update_store_plans_updated_at; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER update_store_plans_updated_at BEFORE UPDATE ON public.store_plans FOR EACH ROW EXECUTE FUNCTION public.touch_financial_transactions_updated_at();
+DROP TRIGGER IF EXISTS update_store_plans_updated_at ON public.store_plans; CREATE TRIGGER update_store_plans_updated_at BEFORE UPDATE ON public.store_plans FOR EACH ROW EXECUTE FUNCTION public.touch_financial_transactions_updated_at();
 
 
 -- Name: store_secrets update_store_secrets_updated_at; Type: TRIGGER; Schema: public; Owner: -
 
-CREATE TRIGGER update_store_secrets_updated_at BEFORE UPDATE ON public.store_secrets FOR EACH ROW EXECUTE FUNCTION public.touch_financial_transactions_updated_at();
+DROP TRIGGER IF EXISTS update_store_secrets_updated_at ON public.store_secrets; CREATE TRIGGER update_store_secrets_updated_at BEFORE UPDATE ON public.store_secrets FOR EACH ROW EXECUTE FUNCTION public.touch_financial_transactions_updated_at();
 
 
 -- Name: addon_groups addon_groups_product_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
