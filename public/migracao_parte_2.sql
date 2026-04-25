@@ -2,6 +2,7 @@
 DO 4313 BEGIN
   DO 4397 
 BEGIN
+DO 4757 BEGIN
 IF v_owner IS NULL THEN
     RAISE EXCEPTION 'Earning not found';
   IF v_owner <> auth.uid() AND NOT is_platform_admin(auth.uid()) THEN
@@ -13,6 +14,7 @@ IF v_owner IS NULL THEN
       notes = COALESCE(_notes, notes)
   WHERE id = _earning_id;
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -32,6 +34,7 @@ DECLARE
 BEGIN
   -- Only fire for pending lojista/motoboy
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF NEW.is_approved IS DISTINCT FROM false THEN
     RETURN NEW;
   IF NEW.role::text NOT IN ('lojista', 'motoboy') THEN
@@ -56,12 +59,14 @@ IF v_admin_ids IS NULL OR array_length(v_admin_ids, 1) = 0 THEN
   EXCEPTION WHEN OTHERS THEN
     v_service_key := NULL;
   END;
+END 4757;
 END 4397;
 END 4313;
   v_url := 'https://lktzrqjvqoojlrhqnxuz.supabase.co/functions/v1/send-push';
 DO 4313 BEGIN
   DO 4397 
 BEGIN
+DO 4757 BEGIN
 IF v_service_key IS NULL THEN
     -- Cannot call without service key; skip silently (toast still works via realtime)
     RETURN NEW;
@@ -81,6 +86,7 @@ IF v_service_key IS NULL THEN
   );
   RETURN NEW;
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -103,6 +109,7 @@ DECLARE
 BEGIN
   -- Only fire on actual status change
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF OLD.status IS NOT DISTINCT FROM NEW.status THEN
     RETURN NEW;
   -- Only for statuses we want to notify the client about
@@ -138,11 +145,13 @@ DO 4313 BEGIN
     WHEN 'cancelado' THEN '❌ ' || COALESCE(_store_name, 'Loja') || ': pedido #' || _short_id || ' foi cancelado.'
     ELSE NULL
   END;
+END 4757;
 END 4397;
 END 4313;
 DO 4313 BEGIN
   DO 4397 
 BEGIN
+DO 4757 BEGIN
 IF _msg IS NULL THEN RETURN NEW; 
   _to_phone := regexp_replace(_client_phone, '\D', '', 'g');
   -- Fire-and-forget call to send-zapi internal endpoint via edge function
@@ -163,6 +172,7 @@ EXCEPTION WHEN OTHERS THEN
   RAISE LOG 'notify_order_status_zapi error: %', SQLERRM;
   RETURN NEW;
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -180,6 +190,7 @@ BEGIN
   _supabase_url := current_setting('supabase.url', true);
   _service_key := current_setting('supabase.service_role_key', true);
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF _supabase_url IS NULL OR _service_key IS NULL THEN
     RAISE LOG 'notify_order_sync: missing supabase URL or service key settings';
     RETURN NEW;
@@ -224,6 +235,7 @@ EXCEPTION WHEN OTHERS THEN
   RAISE LOG 'notify_order_sync error: %', SQLERRM;
   RETURN NEW;
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -243,6 +255,7 @@ BEGIN
   _supabase_url := current_setting('supabase.url', true);
   _service_key := current_setting('supabase.service_role_key', true);
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF _supabase_url IS NULL OR _service_key IS NULL THEN
     RAISE LOG 'notify_record_sync: missing supabase URL or service key';
     RETURN COALESCE(NEW, OLD);
@@ -267,6 +280,7 @@ EXCEPTION WHEN OTHERS THEN
   RAISE LOG 'notify_record_sync (%) error: %', _table_name, SQLERRM;
   RETURN COALESCE(NEW, OLD);
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -281,6 +295,7 @@ BEGIN
 DO 4313 BEGIN
   DO 4397 
 BEGIN
+DO 4757 BEGIN
 IF auth.uid() = NEW.user_id AND NOT public.is_platform_admin(auth.uid()) THEN
     IF NEW.is_active IS DISTINCT FROM OLD.is_active THEN
       RAISE EXCEPTION 'Não é permitido alterar is_active';
@@ -292,6 +307,7 @@ IF auth.uid() = NEW.user_id AND NOT public.is_platform_admin(auth.uid()) THEN
       RAISE EXCEPTION 'Não é permitido alterar user_id';
   RETURN NEW;
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -304,6 +320,7 @@ BEGIN
 DO 4313 BEGIN
   DO 4397 
 BEGIN
+DO 4757 BEGIN
 IF NOT public.is_platform_admin(auth.uid()) THEN
     IF OLD.role IS DISTINCT FROM NEW.role THEN
       RAISE EXCEPTION 'Não é permitido alterar o próprio cargo.';
@@ -311,6 +328,7 @@ IF NOT public.is_platform_admin(auth.uid()) THEN
       RAISE EXCEPTION 'Não é permitido alterar o próprio status de aprovação.';
   RETURN NEW;
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -328,6 +346,7 @@ DECLARE
 BEGIN
   SELECT * INTO _refund FROM public.refund_requests WHERE id = _refund_id;
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF NOT FOUND THEN RAISE EXCEPTION 'Solicitação não encontrada.'; 
   IF _refund.status != 'pending' THEN RAISE EXCEPTION 'Solicitação já processada.'; 
   _is_admin := public.is_platform_admin(auth.uid());
@@ -368,6 +387,7 @@ DO 4313 BEGIN
     'Reembolso do pedido #' || substr(_refund.order_id::text, 1, 8)
   );
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -383,11 +403,13 @@ DECLARE
 BEGIN
   -- Bloqueia se for admin / moderador / conta interna
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF _uid IS NOT NULL AND public.is_internal_account(_uid) THEN
     RETURN;
   INSERT INTO public.page_views (page, visitor_hash, user_id)
   VALUES (_page, _visitor_hash, _uid);
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -403,6 +425,7 @@ DECLARE
   _store_id uuid;
 BEGIN
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF EXISTS (SELECT 1 FROM profiles WHERE user_id = _user_id AND role != 'cliente') THEN
     RAISE EXCEPTION 'Usuário já possui cadastro de parceiro.';
   INSERT INTO profiles (user_id, full_name, role, document, avatar_url, whatsapp_number)
@@ -418,6 +441,7 @@ DO 4313 BEGIN
   RETURNING id INTO _store_id;
   RETURN _store_id;
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -433,6 +457,7 @@ DECLARE
   _store_id uuid;
 BEGIN
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF EXISTS (SELECT 1 FROM profiles WHERE user_id = _user_id AND role != 'cliente') THEN
     RAISE EXCEPTION 'Usuário já possui cadastro de parceiro.';
   INSERT INTO profiles (user_id, full_name, role, document, avatar_url, whatsapp_number)
@@ -472,6 +497,7 @@ DO 4313 BEGIN
   ) ON CONFLICT (store_id) DO NOTHING;
   RETURN _store_id;
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -487,6 +513,7 @@ DECLARE
 BEGIN
   -- Check not already registered
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF EXISTS (SELECT 1 FROM profiles WHERE user_id = _user_id AND role != 'cliente') THEN
     RAISE EXCEPTION 'Usuário já possui cadastro de parceiro.';
   -- Upsert profile
@@ -503,6 +530,7 @@ DO 4313 BEGIN
   VALUES (_user_id, _full_name)
   ON CONFLICT (user_id) DO NOTHING;
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -517,6 +545,7 @@ DECLARE
   _user_id uuid := auth.uid();
 BEGIN
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF EXISTS (SELECT 1 FROM profiles WHERE user_id = _user_id AND role != 'cliente') THEN
     RAISE EXCEPTION 'Usuário já possui cadastro de parceiro.';
   INSERT INTO profiles (user_id, full_name, role, document, vehicle, avatar_url, whatsapp_number)
@@ -532,6 +561,7 @@ DO 4313 BEGIN
   VALUES (_user_id, _full_name)
   ON CONFLICT (user_id) DO NOTHING;
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -547,6 +577,7 @@ DECLARE
   _old_device text;
 BEGIN
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF _user_id IS NULL THEN
     RAISE EXCEPTION 'Unauthorized';
   -- Get current device if any
@@ -564,6 +595,7 @@ DO 4313 BEGIN
     'previous_device', _old_device
   );
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -578,6 +610,7 @@ DECLARE
   _req record;
 BEGIN
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF NOT is_platform_admin(auth.uid()) THEN
     RAISE EXCEPTION 'Apenas administradores podem rejeitar mudanças de plano.';
   SELECT * INTO _req FROM plan_change_requests WHERE id = _request_id;
@@ -589,6 +622,7 @@ DO 4313 BEGIN
     processed_at = now()
   WHERE id = _request_id;
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -604,6 +638,7 @@ DECLARE
 BEGIN
   -- Only store owners can search
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF NOT EXISTS (SELECT 1 FROM public.stores WHERE owner_id = auth.uid()) THEN
     RAISE EXCEPTION 'Apenas lojistas podem buscar motoboys.';
   _clean := lower(trim(_search));
@@ -619,6 +654,7 @@ DO 4313 BEGIN
       )
     LIMIT 10;
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -648,6 +684,7 @@ BEGIN
   SELECT o.store_id, o.status, o.driver_id INTO _store_id, _status, _current_driver
   FROM public.orders o WHERE o.id = _order_id;
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF _store_id IS NULL THEN
     RAISE EXCEPTION 'Pedido não encontrado.';
   SELECT s.owner_id INTO _owner FROM public.stores s WHERE s.id = _store_id;
@@ -668,6 +705,7 @@ DO 4313 BEGIN
   SET assigned_driver_id = _driver_user_id
   WHERE id = _order_id;
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -684,6 +722,7 @@ DECLARE
 BEGIN
   SELECT owner_id INTO v_owner FROM stores WHERE id = _store_id;
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF v_owner IS NULL OR v_owner <> auth.uid() THEN
     RAISE EXCEPTION 'Acesso negado';
   UPDATE store_driver_earnings
@@ -695,6 +734,7 @@ DO 4313 BEGIN
   GET DIAGNOSTICS v_count = ROW_COUNT;
   RETURN v_count;
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -715,6 +755,7 @@ BEGIN
     JOIN stores s ON s.id = sde.store_id
    WHERE sde.id = _earning_id;
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF v_owner IS NULL OR v_owner <> auth.uid() THEN
     RAISE EXCEPTION 'Acesso negado';
   UPDATE store_driver_earnings
@@ -723,6 +764,7 @@ DO 4313 BEGIN
    WHERE id = _earning_id
      AND status = 'pendente';
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -749,6 +791,7 @@ BEGIN
 DO 4313 BEGIN
   DO 4397 
 BEGIN
+DO 4757 BEGIN
 IF NEW.categories IS NULL THEN
     NEW.categories := '{}'::store_category[];
   -- Always include the primary category in the array
@@ -759,6 +802,7 @@ IF NEW.categories IS NULL THEN
     NEW.category := NEW.categories[1];
   RETURN NEW;
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -804,6 +848,7 @@ BEGIN
   WHERE id = _coupon_id
   FOR UPDATE;
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Cupom não encontrado.';
   IF NOT _coupon.is_active THEN
@@ -820,6 +865,7 @@ DO 4313 BEGIN
   INSERT INTO public.coupon_uses (coupon_id, user_id, order_id) VALUES (_coupon_id, _user_id, _order_id);
   RETURN true;
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -835,6 +881,7 @@ DECLARE
   _deducted NUMERIC;
 BEGIN
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF auth.uid() != _user_id AND NOT public.is_platform_admin(auth.uid()) THEN
     RAISE EXCEPTION 'Sem permissão.';
   SELECT balance INTO _current_balance
@@ -858,6 +905,7 @@ DO 4313 BEGIN
   );
   RETURN _deducted;
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -874,11 +922,13 @@ BEGIN
   _commission_rate := public.get_store_commission_rate(NEW.store_id);
   NEW.app_fee := ROUND(COALESCE(NEW.subtotal, 0) * (_commission_rate / 100.0), 2);
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF NEW.delivery_fee < 0 THEN
     NEW.delivery_fee := 0;
   NEW.total_price := GREATEST(0, COALESCE(NEW.subtotal, 0) + COALESCE(NEW.delivery_fee, 0));
   RETURN NEW;
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -900,6 +950,7 @@ BEGIN
   WHERE order_id = NEW.order_id;
   SELECT * INTO _order_record FROM public.orders WHERE id = NEW.order_id;
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF _order_record IS NOT NULL AND ABS(_real_subtotal - _order_record.subtotal) > 0.01 THEN
     _commission_rate := public.get_store_commission_rate(_order_record.store_id);
     _app_fee := ROUND(_real_subtotal * (_commission_rate / 100.0), 2);
@@ -910,6 +961,7 @@ DO 4313 BEGIN
     WHERE id = NEW.order_id;
   RETURN NEW;
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;

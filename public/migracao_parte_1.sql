@@ -131,6 +131,7 @@ DECLARE
   _is_test boolean;
 BEGIN
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF NEW.status != 'finalizado' OR OLD.status IS NOT DISTINCT FROM 'finalizado' THEN
     RETURN NEW;
   SELECT is_test, delivery_mode INTO _is_test, _delivery_mode
@@ -149,6 +150,7 @@ DO 4313 BEGIN
     updated_at = now();
   RETURN NEW;
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -169,6 +171,7 @@ DECLARE
   _is_test boolean;
 BEGIN
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF NEW.status != 'finalizado' OR OLD.status IS NOT DISTINCT FROM 'finalizado' THEN RETURN NEW; 
   SELECT is_test INTO _is_test FROM public.stores WHERE id = NEW.store_id;
   IF COALESCE(_is_test, false) THEN RETURN NEW; 
@@ -192,6 +195,7 @@ DO 4313 BEGIN
       VALUES (_mod_ref.moderator_id, NEW.store_id, NEW.id, 'delivery_split', _mod.delivery_split);
   RETURN NEW;
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -211,6 +215,7 @@ BEGIN
   FROM public.moderator_referrals mr
   WHERE mr.store_id = _store_id;
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF NOT FOUND THEN RETURN; 
   SELECT * INTO _mod FROM public.moderators WHERE id = _mod_ref.moderator_id AND is_active = true;
   IF NOT FOUND THEN RETURN; 
@@ -219,6 +224,7 @@ DO 4313 BEGIN
     INSERT INTO public.moderator_earnings (moderator_id, store_id, earning_type, amount, period)
     VALUES (_mod_ref.moderator_id, _store_id, 'plan_fee', _amount, to_char(now(), 'YYYY-MM'));
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -231,6 +237,7 @@ BEGIN
 DO 4313 BEGIN
   DO 4397 
 BEGIN
+DO 4757 BEGIN
 IF NOT public.is_platform_admin(auth.uid()) THEN
     RAISE EXCEPTION 'Apenas o administrador pode aprovar parceiros.';
   UPDATE profiles SET is_approved = _approved WHERE user_id = _profile_user_id;
@@ -251,6 +258,7 @@ IF NOT public.is_platform_admin(auth.uid()) THEN
   -- If motoboy, activate/deactivate driver
   UPDATE drivers SET is_active = _approved WHERE user_id = _profile_user_id;
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -263,12 +271,14 @@ BEGIN
 DO 4313 BEGIN
   DO 4397 
 BEGIN
+DO 4757 BEGIN
 IF NOT public.is_platform_admin(auth.uid()) THEN
     RAISE EXCEPTION 'Apenas o administrador pode cancelar pedidos.';
   UPDATE public.orders SET status = 'cancelado' WHERE id = _order_id;
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Pedido não encontrado.';
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -283,6 +293,7 @@ DECLARE
   deleted_count integer := 0;
 BEGIN
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF NOT public.is_platform_admin(auth.uid()) THEN
     RAISE EXCEPTION 'Apenas o administrador pode limpar duplicatas.';
   WITH ranked AS (
@@ -304,6 +315,7 @@ DO 4313 BEGIN
   SELECT count(*) INTO deleted_count FROM deleted;
   RETURN deleted_count;
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -318,6 +330,7 @@ DECLARE
   _store_id uuid;
 BEGIN
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF NOT public.is_platform_admin(auth.uid()) THEN
     RAISE EXCEPTION 'Apenas administradores podem criar lojas de teste.';
   INSERT INTO public.stores (name, category, owner_id, status, slug)
@@ -338,6 +351,7 @@ DO 4313 BEGIN
   FROM generate_series(0, 6) AS d(day);
   RETURN _store_id;
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -354,6 +368,7 @@ DECLARE
 BEGIN
   -- Only platform admin can delete partners
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF NOT public.is_platform_admin(auth.uid()) THEN
     RAISE EXCEPTION 'Apenas o administrador pode excluir parceiros.';
   -- Get the partner's role
@@ -422,6 +437,7 @@ DO 4313 BEGIN
   -- Delete profile
   DELETE FROM public.profiles WHERE user_id = _profile_user_id;
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -434,6 +450,7 @@ BEGIN
 DO 4313 BEGIN
   DO 4397 
 BEGIN
+DO 4757 BEGIN
 IF NOT public.is_platform_admin(auth.uid()) THEN
     RAISE EXCEPTION 'Apenas o administrador pode excluir lojas.';
   -- Check for active orders
@@ -462,6 +479,7 @@ IF NOT public.is_platform_admin(auth.uid()) THEN
   -- Products, menu_sections, opening_hours cascade automatically
   DELETE FROM public.stores WHERE id = _store_id;
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -483,6 +501,7 @@ DECLARE
 BEGIN
   SELECT * INTO _order FROM public.orders WHERE id = _order_id;
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF NOT FOUND THEN RAISE EXCEPTION 'Pedido não encontrado.'; 
   -- Only the client, store owner or admin can cancel
   IF _order.client_id != auth.uid()
@@ -552,6 +571,7 @@ DO 4313 BEGIN
   );
   RETURN _result;
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -566,6 +586,7 @@ DECLARE
   _req record;
 BEGIN
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF NOT is_platform_admin(auth.uid()) THEN
     RAISE EXCEPTION 'Apenas administradores podem aprovar mudanças de plano.';
   SELECT * INTO _req FROM plan_change_requests WHERE id = _request_id;
@@ -585,6 +606,7 @@ DO 4313 BEGIN
     processed_at = now()
   WHERE id = _request_id;
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -669,6 +691,7 @@ DECLARE
   _points integer;
 BEGIN
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF NEW.status = 'finalizado' AND OLD.status IS DISTINCT FROM 'finalizado' THEN
     SELECT * INTO _config FROM public.loyalty_config
     WHERE store_id = NEW.store_id AND is_enabled = true;
@@ -683,6 +706,7 @@ DO 4313 BEGIN
         updated_at = now();
   RETURN NEW;
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -703,6 +727,7 @@ BEGIN
   SELECT * INTO _plan FROM store_plans
   WHERE store_id = _store_id AND is_active = true LIMIT 1;
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF NOT FOUND OR _plan.monthly_fee <= 0 THEN
     RETURN 0;
   -- Calculate days used since last billing or start
@@ -714,6 +739,7 @@ DO 4313 BEGIN
   _credit := GREATEST(0, ROUND((_days_in_cycle - _days_used) * _daily_rate, 2));
   RETURN _credit;
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -738,6 +764,7 @@ BEGIN
 declare
   _current_user uuid := auth.uid();
 begin
+DO 4757 BEGIN
   if _current_user is null then
     raise exception 'Unauthorized';
   end if;
@@ -767,6 +794,7 @@ begin
       updated_at = now();
   end if;
 end;
+END 4757;
 END 4397;
 $$;
 -- Name: client_confirm_delivery(uuid); Type: FUNCTION; Schema: public; Owner: -
@@ -788,6 +816,7 @@ BEGIN
   FROM orders
   WHERE id = _order_id;
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Pedido não encontrado.';
   IF _order.client_id != auth.uid() THEN
@@ -824,6 +853,7 @@ DO 4313 BEGIN
           repasse_pendente = store_balances.repasse_pendente + _platform_split,
           updated_at = now();
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -841,9 +871,11 @@ BEGIN
 DO 4313 BEGIN
   DO 4397 
 BEGIN
+DO 4757 BEGIN
 IF NOT FOUND THEN
     RAISE EXCEPTION 'Pedido não encontrado ou não está aguardando pagamento.';
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -872,6 +904,7 @@ DECLARE
 BEGIN
   -- Only fire on transition into 'entregue' or 'finalizado'
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF NEW.status NOT IN ('entregue', 'finalizado') THEN
     RETURN NEW;
   IF OLD.status = NEW.status THEN
@@ -910,6 +943,7 @@ DO 4313 BEGIN
   ON CONFLICT (order_id) DO NOTHING;
   RETURN NEW;
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -930,6 +964,7 @@ BEGIN
   -- Get order's store_id
   SELECT o.store_id INTO _store_id FROM public.orders o WHERE o.id = _order_id;
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF _store_id IS NULL THEN
     RAISE EXCEPTION 'Pedido não encontrado.';
   -- Check if user is a platform driver
@@ -953,6 +988,7 @@ DO 4313 BEGIN
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Não foi possível aceitar este pedido. Outro entregador pode ter aceitado primeiro.';
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -970,6 +1006,7 @@ BEGIN
     FROM store_driver_earnings
    WHERE id = _earning_id;
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF v_driver IS NULL OR v_driver <> auth.uid() THEN
     RAISE EXCEPTION 'Acesso negado';
   UPDATE store_driver_earnings
@@ -979,6 +1016,7 @@ DO 4313 BEGIN
    WHERE id = _earning_id
      AND status = 'aguardando_confirmacao';
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -1003,6 +1041,7 @@ BEGIN
   FROM public.orders
   WHERE id = _order_id;
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Pedido não encontrado.';
   IF _order.driver_id != auth.uid() THEN
@@ -1041,6 +1080,7 @@ DO 4313 BEGIN
       updated_at = now()
   WHERE driver_user_id = auth.uid();
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -1065,6 +1105,7 @@ BEGIN
   FROM public.orders
   WHERE id = _order_id;
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Pedido não encontrado.';
   IF _order.status NOT IN ('em_transito', 'saiu_entrega') THEN
@@ -1112,6 +1153,7 @@ END 4397;
     END,
     updated_at = now();
 END;
+END 4757;
 END 4313;
 $$;
 -- Name: driver_validate_collection(uuid, text); Type: FUNCTION; Schema: public; Owner: -
@@ -1129,6 +1171,7 @@ BEGIN
   FROM public.orders
   WHERE id = _order_id;
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Pedido não encontrado.';
   IF _order.driver_id != auth.uid() THEN
@@ -1146,6 +1189,7 @@ DO 4313 BEGIN
   SET collection_validated = true, status = 'em_transito'
   WHERE id = _order_id;
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -1160,6 +1204,7 @@ DECLARE
   _delivery_mode text;
 BEGIN
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF NEW.status = 'pronto_para_entrega' AND (OLD.status IS DISTINCT FROM 'pronto_para_entrega') AND NEW.collection_code IS NULL THEN
     SELECT COALESCE(s.delivery_mode, 'platform') INTO _delivery_mode
     FROM public.stores s WHERE s.id = NEW.store_id;
@@ -1167,6 +1212,7 @@ DO 4313 BEGIN
       NEW.collection_code := lpad(floor(random() * 10000)::text, 4, '0');
   RETURN NEW;
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -1179,10 +1225,12 @@ BEGIN
 DO 4313 BEGIN
   DO 4397 
 BEGIN
+DO 4757 BEGIN
 IF NEW.status = 'pendente' AND NEW.delivery_pin IS NULL THEN
     NEW.delivery_pin := lpad(floor(random() * 10000)::text, 4, '0');
   RETURN NEW;
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -1220,11 +1268,13 @@ DO 4313 BEGIN
     -- Check if store uses own delivery - skip settlement code
     SELECT delivery_mode INTO _delivery_mode
     FROM public.stores WHERE id = NEW.store_id;
+DO 4757 BEGIN
     IF _delivery_mode = 'own' THEN
       RETURN NEW;
     NEW.settlement_code := lpad(floor(random() * 10000)::text, 4, '0');
   RETURN NEW;
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -1248,6 +1298,7 @@ BEGIN
 DO 4313 BEGIN
   DO 4397 
 BEGIN
+DO 4757 BEGIN
 IF public.is_platform_admin(auth.uid()) THEN
     RETURN QUERY
       SELECT p.user_id, p.full_name, p.phone, p.whatsapp_number, p.neighborhood
@@ -1272,6 +1323,7 @@ IF public.is_platform_admin(auth.uid()) THEN
       WHERE s.owner_id = auth.uid()
     );
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -1293,6 +1345,7 @@ BEGIN
   WHERE sp.store_id = _store_id AND sp.is_active = true
   LIMIT 1;
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF _plan.plan_type IS NULL OR _plan.plan_type != 'fixed' THEN
     RETURN 0;
   -- VIP override takes precedence (including 0)
@@ -1308,6 +1361,7 @@ DO 4313 BEGIN
     RETURN COALESCE(_platform_split, 2);
   RETURN 2;
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -1333,6 +1387,7 @@ DECLARE
   _unique_today bigint;
 BEGIN
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF NOT public.is_platform_admin(auth.uid()) THEN
     RAISE EXCEPTION 'Apenas administradores podem ver estatísticas.';
   SELECT COUNT(*) INTO _today FROM public.page_views
@@ -1353,6 +1408,7 @@ DO 4313 BEGIN
     'total', _total
   );
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -1413,6 +1469,7 @@ BEGIN
   _selected_plan := NEW.raw_user_meta_data->>'selected_plan';
   _driver_type := COALESCE(NEW.raw_user_meta_data->>'driver_type', 'platform');
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF _selected_plan = 'supporter' THEN
     SELECT COUNT(*) INTO _supporter_count
     FROM public.store_plans
@@ -1475,6 +1532,7 @@ DO 4313 BEGIN
       ON CONFLICT (store_id) DO NOTHING;
   RETURN NEW;
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -1504,6 +1562,7 @@ DECLARE
 BEGIN
   -- Only trigger on actual status changes
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF OLD.status IS NOT DISTINCT FROM NEW.status THEN
     RETURN NEW;
   -- Get store owner for sender_id
@@ -1547,6 +1606,7 @@ EXCEPTION WHEN OTHERS THEN
   RAISE LOG 'insert_order_status_chat_message error: %', SQLERRM;
   RETURN NEW;
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
@@ -1634,6 +1694,7 @@ DECLARE
 BEGIN
   SELECT owner_id INTO v_owner FROM public.stores WHERE id = _store_id;
 DO 4313 BEGIN
+DO 4757 BEGIN
   IF v_owner <> auth.uid() AND NOT is_platform_admin(auth.uid()) THEN
     RAISE EXCEPTION 'Not authorized';
   UPDATE public.store_driver_earnings
@@ -1644,6 +1705,7 @@ DO 4313 BEGIN
   GET DIAGNOSTICS v_count = ROW_COUNT;
   RETURN v_count;
 END;
+END 4757;
 END 4397;
 END 4313;
 $$;
