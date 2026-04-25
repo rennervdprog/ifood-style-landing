@@ -1,8 +1,8 @@
+-- Removida linha com erro de sintaxe do dump
 --
 -- PostgreSQL database dump
 --
 
-\restrict 4z26OoyezVNlnXPzR9Et8Jv8n70LLl7zNcZyq2y98qA0fZzhVFGGgc8dfPeu0zu
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 17.9
