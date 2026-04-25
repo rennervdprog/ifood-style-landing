@@ -1,4 +1,5 @@
   WHERE e.id = _earning_id;
+DO 4313 BEGIN
   IF v_owner IS NULL THEN
     RAISE EXCEPTION 'Earning not found';
   IF v_owner <> auth.uid() AND NOT is_platform_admin(auth.uid()) THEN
@@ -10,6 +11,7 @@
       notes = COALESCE(_notes, notes)
   WHERE id = _earning_id;
 END;
+END 4313;
 $$;
 -- Name: notify_admins_new_approval(); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.notify_admins_new_approval() RETURNS trigger
@@ -24,6 +26,7 @@ DECLARE
   v_service_key text;
 BEGIN
   -- Only fire for pending lojista/motoboy
+DO 4313 BEGIN
   IF NEW.is_approved IS DISTINCT FROM false THEN
     RETURN NEW;
   IF NEW.role::text NOT IN ('lojista', 'motoboy') THEN
@@ -45,7 +48,9 @@ BEGIN
   EXCEPTION WHEN OTHERS THEN
     v_service_key := NULL;
   END;
+END 4313;
   v_url := 'https://lktzrqjvqoojlrhqnxuz.supabase.co/functions/v1/send-push';
+DO 4313 BEGIN
   IF v_service_key IS NULL THEN
     -- Cannot call without service key; skip silently (toast still works via realtime)
     RETURN NEW;
@@ -65,6 +70,7 @@ BEGIN
   );
   RETURN NEW;
 END;
+END 4313;
 $$;
 -- Name: notify_order_status_zapi(); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.notify_order_status_zapi() RETURNS trigger
@@ -82,6 +88,7 @@ DECLARE
   _to_phone text;
 BEGIN
   -- Only fire on actual status change
+DO 4313 BEGIN
   IF OLD.status IS NOT DISTINCT FROM NEW.status THEN
     RETURN NEW;
   -- Only for statuses we want to notify the client about
@@ -117,6 +124,8 @@ BEGIN
     WHEN 'cancelado' THEN '❌ ' || COALESCE(_store_name, 'Loja') || ': pedido #' || _short_id || ' foi cancelado.'
     ELSE NULL
   END;
+END 4313;
+DO 4313 BEGIN
   IF _msg IS NULL THEN RETURN NEW; 
   _to_phone := regexp_replace(_client_phone, '\D', '', 'g');
   -- Fire-and-forget call to send-zapi internal endpoint via edge function
@@ -137,6 +146,7 @@ EXCEPTION WHEN OTHERS THEN
   RAISE LOG 'notify_order_status_zapi error: %', SQLERRM;
   RETURN NEW;
 END;
+END 4313;
 $$;
 -- Name: notify_order_sync(); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.notify_order_sync() RETURNS trigger
@@ -149,6 +159,7 @@ DECLARE
 BEGIN
   _supabase_url := current_setting('supabase.url', true);
   _service_key := current_setting('supabase.service_role_key', true);
+DO 4313 BEGIN
   IF _supabase_url IS NULL OR _service_key IS NULL THEN
     RAISE LOG 'notify_order_sync: missing supabase URL or service key settings';
     RETURN NEW;
@@ -193,6 +204,7 @@ EXCEPTION WHEN OTHERS THEN
   RAISE LOG 'notify_order_sync error: %', SQLERRM;
   RETURN NEW;
 END;
+END 4313;
 $$;
 -- Name: notify_record_sync(); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.notify_record_sync() RETURNS trigger
@@ -207,6 +219,7 @@ DECLARE
 BEGIN
   _supabase_url := current_setting('supabase.url', true);
   _service_key := current_setting('supabase.service_role_key', true);
+DO 4313 BEGIN
   IF _supabase_url IS NULL OR _service_key IS NULL THEN
     RAISE LOG 'notify_record_sync: missing supabase URL or service key';
     RETURN COALESCE(NEW, OLD);
@@ -231,6 +244,7 @@ EXCEPTION WHEN OTHERS THEN
   RAISE LOG 'notify_record_sync (%) error: %', _table_name, SQLERRM;
   RETURN COALESCE(NEW, OLD);
 END;
+END 4313;
 $$;
 -- Name: prevent_driver_protected_fields_update(); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.prevent_driver_protected_fields_update() RETURNS trigger
@@ -240,6 +254,7 @@ CREATE OR REPLACE FUNCTION public.prevent_driver_protected_fields_update() RETUR
 BEGIN
   -- Apenas o próprio motoboy pode alterar seu registro via esta policy,
   -- e só pode mudar is_online. Demais campos protegidos.
+DO 4313 BEGIN
   IF auth.uid() = NEW.user_id AND NOT public.is_platform_admin(auth.uid()) THEN
     IF NEW.is_active IS DISTINCT FROM OLD.is_active THEN
       RAISE EXCEPTION 'Não é permitido alterar is_active';
@@ -251,6 +266,7 @@ BEGIN
       RAISE EXCEPTION 'Não é permitido alterar user_id';
   RETURN NEW;
 END;
+END 4313;
 $$;
 -- Name: prevent_role_self_change(); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.prevent_role_self_change() RETURNS trigger
@@ -258,6 +274,7 @@ CREATE OR REPLACE FUNCTION public.prevent_role_self_change() RETURNS trigger
     SET search_path TO 'public'
     AS $$
 BEGIN
+DO 4313 BEGIN
   IF NOT public.is_platform_admin(auth.uid()) THEN
     IF OLD.role IS DISTINCT FROM NEW.role THEN
       RAISE EXCEPTION 'Não é permitido alterar o próprio cargo.';
@@ -265,6 +282,7 @@ BEGIN
       RAISE EXCEPTION 'Não é permitido alterar o próprio status de aprovação.';
   RETURN NEW;
 END;
+END 4313;
 $$;
 -- Name: process_refund(uuid, numeric, text); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.process_refund(_refund_id uuid, _approved_amount numeric, _admin_notes text DEFAULT NULL::text) RETURNS void
@@ -277,6 +295,7 @@ DECLARE
   _is_store_owner boolean;
 BEGIN
   SELECT * INTO _refund FROM public.refund_requests WHERE id = _refund_id;
+DO 4313 BEGIN
   IF NOT FOUND THEN RAISE EXCEPTION 'Solicitação não encontrada.'; 
   IF _refund.status != 'pending' THEN RAISE EXCEPTION 'Solicitação já processada.'; 
   _is_admin := public.is_platform_admin(auth.uid());
@@ -317,6 +336,7 @@ BEGIN
     'Reembolso do pedido #' || substr(_refund.order_id::text, 1, 8)
   );
 END;
+END 4313;
 $$;
 -- Name: record_page_view(text, text); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.record_page_view(_page text, _visitor_hash text DEFAULT NULL::text) RETURNS void
@@ -327,11 +347,13 @@ DECLARE
   _uid uuid := auth.uid();
 BEGIN
   -- Bloqueia se for admin / moderador / conta interna
+DO 4313 BEGIN
   IF _uid IS NOT NULL AND public.is_internal_account(_uid) THEN
     RETURN;
   INSERT INTO public.page_views (page, visitor_hash, user_id)
   VALUES (_page, _visitor_hash, _uid);
 END;
+END 4313;
 $$;
 -- Name: register_as_lojista(text, text, text, public.store_category, text, text); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.register_as_lojista(_full_name text, _document text, _store_name text, _store_category public.store_category, _avatar_url text DEFAULT NULL::text, _whatsapp text DEFAULT NULL::text) RETURNS uuid
@@ -342,6 +364,7 @@ DECLARE
   _user_id uuid := auth.uid();
   _store_id uuid;
 BEGIN
+DO 4313 BEGIN
   IF EXISTS (SELECT 1 FROM profiles WHERE user_id = _user_id AND role != 'cliente') THEN
     RAISE EXCEPTION 'Usuário já possui cadastro de parceiro.';
   INSERT INTO profiles (user_id, full_name, role, document, avatar_url, whatsapp_number)
@@ -357,6 +380,7 @@ BEGIN
   RETURNING id INTO _store_id;
   RETURN _store_id;
 END;
+END 4313;
 $$;
 -- Name: register_as_lojista(text, text, text, public.store_category, text, text, text); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.register_as_lojista(_full_name text, _document text, _store_name text, _store_category public.store_category, _avatar_url text DEFAULT NULL::text, _whatsapp text DEFAULT NULL::text, _selected_plan text DEFAULT NULL::text) RETURNS uuid
@@ -367,6 +391,7 @@ DECLARE
   _user_id uuid := auth.uid();
   _store_id uuid;
 BEGIN
+DO 4313 BEGIN
   IF EXISTS (SELECT 1 FROM profiles WHERE user_id = _user_id AND role != 'cliente') THEN
     RAISE EXCEPTION 'Usuário já possui cadastro de parceiro.';
   INSERT INTO profiles (user_id, full_name, role, document, avatar_url, whatsapp_number)
@@ -406,6 +431,7 @@ BEGIN
   ) ON CONFLICT (store_id) DO NOTHING;
   RETURN _store_id;
 END;
+END 4313;
 $$;
 -- Name: register_as_motoboy(text, text, text, text); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.register_as_motoboy(_full_name text, _document text, _vehicle text, _avatar_url text DEFAULT NULL::text) RETURNS void
@@ -416,6 +442,7 @@ DECLARE
   _user_id uuid := auth.uid();
 BEGIN
   -- Check not already registered
+DO 4313 BEGIN
   IF EXISTS (SELECT 1 FROM profiles WHERE user_id = _user_id AND role != 'cliente') THEN
     RAISE EXCEPTION 'Usuário já possui cadastro de parceiro.';
   -- Upsert profile
@@ -432,6 +459,7 @@ BEGIN
   VALUES (_user_id, _full_name)
   ON CONFLICT (user_id) DO NOTHING;
 END;
+END 4313;
 $$;
 -- Name: register_as_motoboy(text, text, text, text, text); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.register_as_motoboy(_full_name text, _document text, _vehicle text, _avatar_url text DEFAULT NULL::text, _whatsapp text DEFAULT NULL::text) RETURNS void
@@ -441,6 +469,7 @@ CREATE OR REPLACE FUNCTION public.register_as_motoboy(_full_name text, _document
 DECLARE
   _user_id uuid := auth.uid();
 BEGIN
+DO 4313 BEGIN
   IF EXISTS (SELECT 1 FROM profiles WHERE user_id = _user_id AND role != 'cliente') THEN
     RAISE EXCEPTION 'Usuário já possui cadastro de parceiro.';
   INSERT INTO profiles (user_id, full_name, role, document, vehicle, avatar_url, whatsapp_number)
@@ -456,6 +485,7 @@ BEGIN
   VALUES (_user_id, _full_name)
   ON CONFLICT (user_id) DO NOTHING;
 END;
+END 4313;
 $$;
 -- Name: register_device_login(text); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.register_device_login(_device_id text) RETURNS jsonb
@@ -466,6 +496,7 @@ DECLARE
   _user_id uuid := auth.uid();
   _old_device text;
 BEGIN
+DO 4313 BEGIN
   IF _user_id IS NULL THEN
     RAISE EXCEPTION 'Unauthorized';
   -- Get current device if any
@@ -483,6 +514,7 @@ BEGIN
     'previous_device', _old_device
   );
 END;
+END 4313;
 $$;
 -- Name: reject_plan_change(uuid, text); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.reject_plan_change(_request_id uuid, _admin_notes text DEFAULT NULL::text) RETURNS void
@@ -492,6 +524,7 @@ CREATE OR REPLACE FUNCTION public.reject_plan_change(_request_id uuid, _admin_no
 DECLARE
   _req record;
 BEGIN
+DO 4313 BEGIN
   IF NOT is_platform_admin(auth.uid()) THEN
     RAISE EXCEPTION 'Apenas administradores podem rejeitar mudanças de plano.';
   SELECT * INTO _req FROM plan_change_requests WHERE id = _request_id;
@@ -503,6 +536,7 @@ BEGIN
     processed_at = now()
   WHERE id = _request_id;
 END;
+END 4313;
 $$;
 -- Name: search_motoboy_profiles(text); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.search_motoboy_profiles(_search text) RETURNS TABLE(user_id uuid, full_name text, phone text, whatsapp_number text, vehicle text, email text)
@@ -513,6 +547,7 @@ DECLARE
   _clean text;
 BEGIN
   -- Only store owners can search
+DO 4313 BEGIN
   IF NOT EXISTS (SELECT 1 FROM public.stores WHERE owner_id = auth.uid()) THEN
     RAISE EXCEPTION 'Apenas lojistas podem buscar motoboys.';
   _clean := lower(trim(_search));
@@ -528,6 +563,7 @@ BEGIN
       )
     LIMIT 10;
 END;
+END 4313;
 $$;
 -- Name: set_app_links_updated_at(); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.set_app_links_updated_at() RETURNS trigger
@@ -552,6 +588,7 @@ DECLARE
 BEGIN
   SELECT o.store_id, o.status, o.driver_id INTO _store_id, _status, _current_driver
   FROM public.orders o WHERE o.id = _order_id;
+DO 4313 BEGIN
   IF _store_id IS NULL THEN
     RAISE EXCEPTION 'Pedido não encontrado.';
   SELECT s.owner_id INTO _owner FROM public.stores s WHERE s.id = _store_id;
@@ -572,6 +609,7 @@ BEGIN
   SET assigned_driver_id = _driver_user_id
   WHERE id = _order_id;
 END;
+END 4313;
 $$;
 -- Name: store_mark_all_driver_earnings_paid(uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.store_mark_all_driver_earnings_paid(_driver_user_id uuid, _store_id uuid) RETURNS integer
@@ -583,6 +621,7 @@ DECLARE
   v_count integer;
 BEGIN
   SELECT owner_id INTO v_owner FROM stores WHERE id = _store_id;
+DO 4313 BEGIN
   IF v_owner IS NULL OR v_owner <> auth.uid() THEN
     RAISE EXCEPTION 'Acesso negado';
   UPDATE store_driver_earnings
@@ -594,6 +633,7 @@ BEGIN
   GET DIAGNOSTICS v_count = ROW_COUNT;
   RETURN v_count;
 END;
+END 4313;
 $$;
 -- Name: store_mark_driver_earning_paid(uuid, text); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.store_mark_driver_earning_paid(_earning_id uuid, _notes text DEFAULT NULL::text) RETURNS void
@@ -609,6 +649,7 @@ BEGIN
     FROM store_driver_earnings sde
     JOIN stores s ON s.id = sde.store_id
    WHERE sde.id = _earning_id;
+DO 4313 BEGIN
   IF v_owner IS NULL OR v_owner <> auth.uid() THEN
     RAISE EXCEPTION 'Acesso negado';
   UPDATE store_driver_earnings
@@ -617,6 +658,7 @@ BEGIN
    WHERE id = _earning_id
      AND status = 'pendente';
 END;
+END 4313;
 $$;
 -- Name: sync_store_balances_legacy_fields(); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.sync_store_balances_legacy_fields() RETURNS trigger
@@ -638,6 +680,7 @@ CREATE OR REPLACE FUNCTION public.sync_store_categories() RETURNS trigger
     AS $$
 BEGIN
   -- Ensure categories is never null
+DO 4313 BEGIN
   IF NEW.categories IS NULL THEN
     NEW.categories := '{}'::store_category[];
   -- Always include the primary category in the array
@@ -648,6 +691,7 @@ BEGIN
     NEW.category := NEW.categories[1];
   RETURN NEW;
 END;
+END 4313;
 $$;
 -- Name: touch_financial_transactions_updated_at(); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.touch_financial_transactions_updated_at() RETURNS trigger
@@ -688,6 +732,7 @@ BEGIN
   FROM public.coupons
   WHERE id = _coupon_id
   FOR UPDATE;
+DO 4313 BEGIN
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Cupom não encontrado.';
   IF NOT _coupon.is_active THEN
@@ -704,6 +749,7 @@ BEGIN
   INSERT INTO public.coupon_uses (coupon_id, user_id, order_id) VALUES (_coupon_id, _user_id, _order_id);
   RETURN true;
 END;
+END 4313;
 $$;
 -- Name: use_wallet_balance(uuid, numeric, uuid); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.use_wallet_balance(_user_id uuid, _amount numeric, _order_id uuid) RETURNS numeric
@@ -714,6 +760,7 @@ DECLARE
   _current_balance NUMERIC;
   _deducted NUMERIC;
 BEGIN
+DO 4313 BEGIN
   IF auth.uid() != _user_id AND NOT public.is_platform_admin(auth.uid()) THEN
     RAISE EXCEPTION 'Sem permissão.';
   SELECT balance INTO _current_balance
@@ -737,6 +784,7 @@ BEGIN
   );
   RETURN _deducted;
 END;
+END 4313;
 $$;
 -- Name: validate_order_prices(); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.validate_order_prices() RETURNS trigger
@@ -748,11 +796,13 @@ DECLARE
 BEGIN
   _commission_rate := public.get_store_commission_rate(NEW.store_id);
   NEW.app_fee := ROUND(COALESCE(NEW.subtotal, 0) * (_commission_rate / 100.0), 2);
+DO 4313 BEGIN
   IF NEW.delivery_fee < 0 THEN
     NEW.delivery_fee := 0;
   NEW.total_price := GREATEST(0, COALESCE(NEW.subtotal, 0) + COALESCE(NEW.delivery_fee, 0));
   RETURN NEW;
 END;
+END 4313;
 $$;
 -- Name: verify_order_subtotal(); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.verify_order_subtotal() RETURNS trigger
@@ -769,6 +819,7 @@ BEGIN
   FROM public.order_items
   WHERE order_id = NEW.order_id;
   SELECT * INTO _order_record FROM public.orders WHERE id = NEW.order_id;
+DO 4313 BEGIN
   IF _order_record IS NOT NULL AND ABS(_real_subtotal - _order_record.subtotal) > 0.01 THEN
     _commission_rate := public.get_store_commission_rate(_order_record.store_id);
     _app_fee := ROUND(_real_subtotal * (_commission_rate / 100.0), 2);
@@ -779,6 +830,7 @@ BEGIN
     WHERE id = NEW.order_id;
   RETURN NEW;
 END;
+END 4313;
 $$;
 SET default_tablespace = '';
 SET default_table_access_method = heap;
