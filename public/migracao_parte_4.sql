@@ -1,347 +1,1306 @@
--1470-463b-97b4-399f240a33f2', 'store_directory', '5de60d77-0612-4039-af71-1cb4cb45af95', 'ed862e03-693d-4b7c-8342-400527be9c42', '2026-04-22 17:03:55.005907+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('66b46b3b-7357-4560-8bd0-881e08028e87', 'store_directory', 'eee96b05-315b-4288-8c91-1e0f26128e4c', NULL, '2026-04-22 17:14:53.371662+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('09c8f5df-c40a-4009-8449-dad49bf1c32e', 'store_directory', 'c1097e27-9eec-4b48-8192-97365aa78e90', NULL, '2026-04-22 18:57:10.943096+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('a6851ee3-ca32-4a53-b658-7be7341de60c', 'store_directory', 'dc0a634d-8b8e-4bd1-b3c1-81d6e2d36265', NULL, '2026-04-22 18:58:59.39259+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('44b8cf77-0c28-4d73-9ba8-d435c18bf2c4', 'store_directory', '60b25d82-f7fd-4eb8-8e39-d726b2143f40', NULL, '2026-04-22 20:38:11.69383+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('54eec522-560d-4421-a271-dcddfb668cec', 'store_directory', '5de60d77-0612-4039-af71-1cb4cb45af95', NULL, '2026-04-22 22:22:24.225088+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('c8de407c-6dec-400b-b26f-a43a31f7bc6d', 'store_directory', '5de60d77-0612-4039-af71-1cb4cb45af95', NULL, '2026-04-22 22:22:26.421071+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('68daa594-1189-42e6-a3bb-f01337df83df', 'store_directory', '8b783490-9d79-44e3-9bcf-9cd1dfc25251', NULL, '2026-04-22 22:45:09.051887+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('d3a7e680-5e7f-470a-8ba9-8b7c29ed50c3', 'store_directory', 'c7f832b8-4dce-438b-85a8-25b483a47dee', NULL, '2026-04-23 01:21:22.273589+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('5043da72-f365-4c00-9eec-5fae2057c837', 'store_directory', '207f80be-8800-4db0-88c1-68ede53c6639', NULL, '2026-04-23 01:21:22.764234+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('0792679e-d174-4bb7-971a-e2b0d6fb3a00', 'store_directory', 'c08a6e49-c4cf-4aeb-8b05-ad87e8056f9f', NULL, '2026-04-23 07:28:28.467691+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('0c686225-f4cf-4748-8f81-4c17bba7b341', 'store_directory', '5de60d77-0612-4039-af71-1cb4cb45af95', NULL, '2026-04-23 09:02:30.168783+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('70502837-3935-4c61-a8c9-ef910c157461', 'store_directory', '5de60d77-0612-4039-af71-1cb4cb45af95', NULL, '2026-04-23 12:22:09.210965+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('f63475d5-ccbb-47b4-9f3d-3bc382607d13', 'store_directory', '47196f42-348c-41ec-8e54-ad4ecb52cf89', NULL, '2026-04-23 12:29:19.739214+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('00d0af29-f0ba-4a14-8928-a9a24e1a93ac', 'store_directory', '5de60d77-0612-4039-af71-1cb4cb45af95', NULL, '2026-04-23 13:01:02.660703+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('80054301-fb0e-4b30-97cb-9995f213a239', 'store_directory', '5de60d77-0612-4039-af71-1cb4cb45af95', NULL, '2026-04-23 13:01:05.02448+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('385e0d00-4817-4304-b469-e2c494d1fdce', 'store_directory', 'd87915f9-bc38-4ce1-8cde-8ce7634faa6d', NULL, '2026-04-23 13:22:08.706256+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('cf0c0b26-9aeb-4126-a73e-c86e373c61f0', 'store_directory', '247b1bd1-6825-4176-b669-8821630df9ba', NULL, '2026-04-23 13:22:19.869752+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('dcbc52ab-ea5a-4688-afcd-e281fa8590f7', 'store_directory', '5de60d77-0612-4039-af71-1cb4cb45af95', NULL, '2026-04-23 13:32:09.578438+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('2408a54f-af50-46ba-8301-119ef306a4a2', 'store_directory', '54812d0c-fe88-486f-8da5-e9b834164c74', NULL, '2026-04-23 13:37:32.77221+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('bc614c1d-ac0b-4d18-b79a-e6beda4cf3b5', 'store_directory', '5de60d77-0612-4039-af71-1cb4cb45af95', NULL, '2026-04-23 14:42:51.725592+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('e80a2d4f-e541-4615-8fdc-92fb5be55a12', 'store_directory', '2955aa51-64c5-450f-a663-3080e219742d', NULL, '2026-04-23 14:46:56.889273+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('b3e2e3a7-c3b3-494d-87c4-a1f93d1c30f0', 'store_directory', '8c22ea2d-c46b-4966-a84f-cf6c093dba89', NULL, '2026-04-23 14:49:33.290321+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('0dc391a6-92f7-4633-b265-20000c142fc2', 'store_directory', '83ea1dbd-f1be-4b09-8290-02ac229ec842', NULL, '2026-04-23 14:52:45.26917+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('484a0609-20e9-4613-afd5-4ab132286b20', 'store_directory', 'de72854a-89d6-436b-818f-5196aaa4c63f', NULL, '2026-04-23 14:57:53.274258+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('87fa91ac-4650-4855-8aeb-9b75142de3c5', 'store_directory', 'dd816b91-9eb1-40f1-8acd-9b5dde695973', NULL, '2026-04-23 15:06:06.814566+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('98bedb84-ebcb-4888-aa50-14c2b39b9b51', 'store_directory', 'c1097e27-9eec-4b48-8192-97365aa78e90', NULL, '2026-04-23 15:17:57.708223+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('710fd5d2-1844-4671-a4c4-812c591686bb', 'store_directory', '5de60d77-0612-4039-af71-1cb4cb45af95', NULL, '2026-04-23 15:19:04.828999+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('8fe8e4f4-7052-4a2f-90b7-aa02bf1f65cc', 'store_directory', '9089dd89-0938-4092-b02e-f1570818e6d2', NULL, '2026-04-23 15:25:25.131276+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('8e4d3ef7-663a-4bef-96e6-addd6db7d49d', 'store_directory', '8123b671-3956-4588-8211-dfec0e0e7d25', NULL, '2026-04-23 15:29:46.006575+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('d4a1dbd7-a9ea-4376-b776-7d78e1cdd4ac', 'store_directory', '081a161d-66ca-4982-ac2d-3d206eb5e300', NULL, '2026-04-23 15:29:45.895304+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('378480de-bea2-4413-a3ad-7f71d3f183cc', 'store_directory', 'f7a26ce8-1f58-4fc1-b7d0-840179061ba2', NULL, '2026-04-23 15:29:46.001928+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('f7843bce-6c4e-49a9-99c1-ce0dfc16340d', 'store_directory', '098296b8-7afe-4c01-a483-8563b60af9b8', NULL, '2026-04-23 15:29:48.75162+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('7a0b4d49-04a0-4d07-9788-f1e10f0da052', 'store_directory', 'f67f2c5a-fdc2-4d30-b745-5a0b31426379', NULL, '2026-04-23 15:29:48.705517+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('9d199d2f-6774-4665-91d7-cc64bf2051ac', 'store_directory', '5b808f1e-8bbf-474a-96eb-5e90e00f96d8', NULL, '2026-04-23 15:29:49.279784+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('b122a04c-dbf0-486c-9fdd-623fb6eed1e3', 'store_directory', 'c7b0b01b-8e8e-4995-a73f-ee61540a6ba7', NULL, '2026-04-23 15:31:09.881199+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('5c14f3b4-207e-4e09-8c9c-625f0b039eb0', 'store_directory', 'd15db5fb-c2f1-4ed7-a9fc-f62d96fb805e', NULL, '2026-04-23 15:31:09.931347+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('7c912a85-88a1-48ed-9ae2-5c10f0c3e00d', 'store_directory', '57b389b8-c073-482c-885b-2f4a932a5e2b', NULL, '2026-04-23 15:31:09.935982+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('8d4ea0d5-b8c3-4f10-89b8-152253fee8f3', 'store_directory', '56983f3b-c767-4457-af1e-ce1303de0230', NULL, '2026-04-23 15:31:10.687235+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('32fc62ac-ecb4-4654-b961-72d92ef80a11', 'store_directory', '076ec136-7544-4691-bb62-2bf0ea139347', NULL, '2026-04-23 15:31:11.692009+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('35ec233f-10c8-4203-8845-d8339e6fa5de', 'store_directory', '8e48f3a3-2890-4b66-aab9-739aedb42586', NULL, '2026-04-23 15:31:11.757835+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('928e535e-adbf-4cc5-a43f-3358f727b4d4', 'store_directory', '6e3a9f6f-0de5-45cb-afbc-b29a1f9be7fc', NULL, '2026-04-23 19:58:47.49096+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('fcd2f192-5460-450d-9fa2-b4df1b1c872f', 'store_directory', 'ab68cb7f-521a-4f67-a4b5-5d9e7fdf3298', NULL, '2026-04-23 20:03:19.488241+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('ca7490ed-a918-43b0-a262-a1a50f62fde4', 'store_directory', '5de60d77-0612-4039-af71-1cb4cb45af95', NULL, '2026-04-23 20:40:43.629464+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('2d8aa5ad-9bf1-47da-81fa-ca4bb79cae90', 'store_directory', '5de60d77-0612-4039-af71-1cb4cb45af95', NULL, '2026-04-23 20:40:47.291984+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('d8d6721a-2d25-4f8d-8fcd-3e91f85b521f', 'store_directory', 'b6f4e355-993c-4330-bbf3-3e8bc2cddd40', NULL, '2026-04-24 07:33:31.245464+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('c18f1065-c423-482d-83d7-2e6370615b1c', 'store_directory', '5de60d77-0612-4039-af71-1cb4cb45af95', NULL, '2026-04-24 09:00:25.82058+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('40f32013-e430-407a-985c-e371ab21507b', 'store_directory', '7f98483b-8c54-4e25-8c5a-0fe760467303', NULL, '2026-04-24 15:26:45.066834+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('dfff4058-3634-47ad-b319-f8ab02297e51', 'store_directory', '204617b0-85f9-4f59-b384-b7602d553b34', NULL, '2026-04-24 15:28:56.476897+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('1b4fa50d-b6c3-4f74-ba99-7b0616d01577', 'store_directory', '2ae36bf4-936d-40de-b3d0-788f55f0e1a2', NULL, '2026-04-24 15:31:36.923489+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('e6d53883-bbbf-436f-b243-d74d8d7cab5e', 'store_directory', '48ffc8bb-0c85-474c-925f-cd7ab6000f8c', NULL, '2026-04-24 15:33:24.42215+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('2c8a8adb-d77d-4070-afe9-a88ad2a11ebb', 'store_directory', '3ea2de13-1446-445a-9e5e-8a1141ce2b3b', NULL, '2026-04-24 15:35:41.727375+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('b7367b15-3e98-4d2c-bb40-4d691635dbae', 'store_directory', 'fee5bbc1-cb00-46f4-acb7-347f53052676', NULL, '2026-04-24 15:45:02.673039+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('173c8a66-2a10-45d3-bdd6-577dd53751ce', 'store_directory', '5de60d77-0612-4039-af71-1cb4cb45af95', NULL, '2026-04-24 15:56:31.541158+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('ab701cb8-0a50-4bc7-97e0-cd3652d68971', 'store_directory', '5de60d77-0612-4039-af71-1cb4cb45af95', NULL, '2026-04-24 17:13:45.954684+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('cba1b7ad-43f9-4830-89a9-ad4daf695f50', 'store_directory', 'c1097e27-9eec-4b48-8192-97365aa78e90', NULL, '2026-04-24 17:17:48.730262+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('59bfe2c0-1697-4287-b54e-e51fda307afe', 'store_directory', '62d37a7d-a004-4b3a-aeaa-9d96ac830685', NULL, '2026-04-24 17:33:42.386743+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('a095c4d0-8713-4a25-8aa6-a229e8bb6ad0', 'store_directory', 'e37d865b-c2b8-4c39-bd20-98839c6efdae', NULL, '2026-04-24 18:01:29.363708+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('330e9a7a-c554-4da8-afca-ea86652db323', 'store_directory', 'c1097e27-9eec-4b48-8192-97365aa78e90', NULL, '2026-04-25 01:14:07.017104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('b0476ba5-b5cb-4f1c-b956-2504c05f47d8', 'store_directory', '5de60d77-0612-4039-af71-1cb4cb45af95', 'acefbf75-9e70-473e-b8ae-c6fb170c886e', '2026-04-25 01:20:05.802357+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('51536d33-4eb4-4ded-a621-7a6d531361dd', 'store_directory', '2e835e2f-5983-4a0c-a49c-9895649471e0', NULL, '2026-04-25 07:35:53.068172+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('3f55911a-2117-4ce9-92b7-5b80255e2dc4', 'store_directory', 'c1097e27-9eec-4b48-8192-97365aa78e90', NULL, '2026-04-25 08:50:50.983001+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('2f598bc2-8383-48d4-8ce4-97cd830c8289', 'store_directory', 'c1097e27-9eec-4b48-8192-97365aa78e90', NULL, '2026-04-25 17:10:19.290836+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('fc4b5ca9-67cf-4d83-b2da-21a62732e31c', 'store_directory', '5de60d77-0612-4039-af71-1cb4cb45af95', 'acefbf75-9e70-473e-b8ae-c6fb170c886e', '2026-04-25 18:08:24.425558+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('8e13c47d-9f9e-47d2-91bb-c750e4182d7d', 'store_directory', '5de60d77-0612-4039-af71-1cb4cb45af95', 'acefbf75-9e70-473e-b8ae-c6fb170c886e', '2026-04-25 18:08:26.617516+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.page_views VALUES ('8d9fc431-9afe-41c6-be06-856538284899', 'store_directory', '2f7b6c60-2d68-428c-a46e-a844ded74697', NULL, '2026-04-25 18:10:47.279602+00') ON CONFLICT DO NOTHING;
+
+-- Name: financial_transactions Platform admin can insert financial transactions; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Platform admin can insert financial transactions' AND tablename = 'financial_transactions') THEN
+        CREATE POLICY "Platform admin can insert financial transactions" ON public.financial_transactions FOR INSERT TO authenticated WITH CHECK (public.is_platform_admin(auth.uid()));
+    END IF;
+-- END
 
 
--- Data for Name: partner_payouts; Type: TABLE DATA; Schema: public; Owner: -
+-- Name: pizza_borders Platform admin can manage all borders; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Platform admin can manage all borders' AND tablename = 'pizza_borders') THEN
+        CREATE POLICY "Platform admin can manage all borders" ON public.pizza_borders TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
+    END IF;
+-- END
 
 
+-- Name: app_links Platform admin can manage app_links; Type: POLICY; Schema: public; Owner: -
 
--- Data for Name: payout_history; Type: TABLE DATA; Schema: public; Owner: -
-
-
-
--- Data for Name: pizza_borders; Type: TABLE DATA; Schema: public; Owner: -
-
-INSERT INTO public.pizza_borders VALUES ('693832a4-4bcb-41d9-ac23-ab5ad4aa9837', 'e577573d-4139-415d-b49d-d6a50e1d393b', 'Borda Tradicional', 0, 0, true, '2026-04-10 02:57:28.195329+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.pizza_borders VALUES ('dea7ab99-9d4b-40af-9cab-de5d78d3fb30', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'Borda Tradicional', 0, 0, true, '2026-04-10 02:57:28.195329+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.pizza_borders VALUES ('c51a759a-b1c6-4eb9-9de1-330bdfe7b5af', '7cd86219-bb0b-4635-801c-9ee8596c6215', 'Borda Tradicional', 0, 0, true, '2026-04-10 02:57:28.195329+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.pizza_borders VALUES ('56ea5245-05ac-4779-8882-4c28077810a0', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'Catupiry', 5, 1, true, '2026-04-10 03:50:05.406624+00') ON CONFLICT DO NOTHING;
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Platform admin can manage app_links' AND tablename = 'app_links') THEN
+        CREATE POLICY "Platform admin can manage app_links" ON public.app_links TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
+    END IF;
+-- END
 
 
--- Data for Name: plan_change_requests; Type: TABLE DATA; Schema: public; Owner: -
+-- Name: banners Platform admin can manage banners; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Platform admin can manage banners' AND tablename = 'banners') THEN
+        CREATE POLICY "Platform admin can manage banners" ON public.banners TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
+    END IF;
+-- END
 
 
+-- Name: store_balances Platform admin can read all balances; Type: POLICY; Schema: public; Owner: -
 
--- Data for Name: product_addon_groups; Type: TABLE DATA; Schema: public; Owner: -
-
-INSERT INTO public.product_addon_groups VALUES ('c6fbffe9-1cb4-4bd9-aa2d-6d940524cd33', '35fc0a88-f4bc-41cc-a1d7-5f630624d5e4', '4e6609c4-de75-4d7b-99de-fea8535d81b9', '2026-04-04 02:00:50.182567+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('c2dbb22c-b452-4b66-87a3-1556e45b8ebb', 'f233c394-972b-48ff-b852-4a593c6fa317', '4e6609c4-de75-4d7b-99de-fea8535d81b9', '2026-04-04 02:01:03.535245+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('465ecb0a-d806-44d5-ba9d-9c9be1cbcc6c', '1d7cb167-521f-4ed4-b175-2670547a7047', '4e6609c4-de75-4d7b-99de-fea8535d81b9', '2026-04-04 02:01:08.554367+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('c722c091-4235-4abf-bbd1-d464bc955984', '35fc0a88-f4bc-41cc-a1d7-5f630624d5e4', 'b2758dc6-cf59-4e59-bc6e-287a9e0b92b3', '2026-04-15 00:01:23.77794+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('99ab174f-f064-473a-82c6-d77d74e1d597', 'f233c394-972b-48ff-b852-4a593c6fa317', 'b2758dc6-cf59-4e59-bc6e-287a9e0b92b3', '2026-04-15 00:01:33.018809+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('8663da19-2ad6-494e-aa1b-9e37ba27e859', '742015db-5125-4fe0-b0d5-45eacfc0450a', 'bb7290f2-ebb1-4cfb-aad4-bce85a4b78b3', '2026-04-15 15:38:16.835478+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('97f134bc-4803-48dc-8245-b859c7b44c1e', 'a63e3597-ab4e-4895-bc6c-1cd499daca48', 'bb7290f2-ebb1-4cfb-aad4-bce85a4b78b3', '2026-04-15 15:38:16.835478+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('fea9205b-88a3-40d8-9bfa-807c8eaf2d3e', '1473f9e4-c017-4f50-b0bf-2d7d7321f3e5', 'bb7290f2-ebb1-4cfb-aad4-bce85a4b78b3', '2026-04-15 15:38:16.835478+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('d03ed81a-2ef1-46b2-818f-7edb7581cd45', 'd9e5a66c-082c-4b8f-a99a-a6625ea58633', 'bb7290f2-ebb1-4cfb-aad4-bce85a4b78b3', '2026-04-15 15:38:16.835478+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('dd8934c2-a603-421f-8529-cb3589c0936b', '4245ea0a-a4b5-438f-beee-d0a5dbbd29fc', 'bb7290f2-ebb1-4cfb-aad4-bce85a4b78b3', '2026-04-15 15:38:16.835478+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('83b8b87c-3b84-4d61-b8b6-2651b5fbecd5', 'f82384a7-b57e-4dd6-b989-576800c83204', 'bb7290f2-ebb1-4cfb-aad4-bce85a4b78b3', '2026-04-15 15:38:16.835478+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('4c7f6848-b486-46aa-9252-8bcdbe2c7da9', 'b56b1fec-56fb-4af4-a1da-d2d2927f9486', 'bb7290f2-ebb1-4cfb-aad4-bce85a4b78b3', '2026-04-15 15:38:16.835478+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('ed48ed6e-830c-4e73-9056-150dd2fb52c0', '742015db-5125-4fe0-b0d5-45eacfc0450a', '82b5b534-56c7-4e7b-b831-fcb747d1c3e8', '2026-04-15 15:38:22.931167+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('76675cb4-fd9a-4ad2-870c-de2acbefa2a2', 'a63e3597-ab4e-4895-bc6c-1cd499daca48', '82b5b534-56c7-4e7b-b831-fcb747d1c3e8', '2026-04-15 15:38:22.931167+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('0438c0ea-f8a8-4572-a678-c7cbe91abcfa', '1473f9e4-c017-4f50-b0bf-2d7d7321f3e5', '82b5b534-56c7-4e7b-b831-fcb747d1c3e8', '2026-04-15 15:38:22.931167+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('cec1efb1-d527-491f-81c9-0587ad566731', 'd9e5a66c-082c-4b8f-a99a-a6625ea58633', '82b5b534-56c7-4e7b-b831-fcb747d1c3e8', '2026-04-15 15:38:22.931167+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('34f0d166-8f30-4222-ac02-459471e95f1a', '4245ea0a-a4b5-438f-beee-d0a5dbbd29fc', '82b5b534-56c7-4e7b-b831-fcb747d1c3e8', '2026-04-15 15:38:22.931167+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('235eec29-5730-4ec9-91f3-8567b80bfc30', 'f82384a7-b57e-4dd6-b989-576800c83204', '82b5b534-56c7-4e7b-b831-fcb747d1c3e8', '2026-04-15 15:38:22.931167+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('ac839eaf-5c9f-40fc-b5f5-a81ef72524b8', 'b56b1fec-56fb-4af4-a1da-d2d2927f9486', '82b5b534-56c7-4e7b-b831-fcb747d1c3e8', '2026-04-15 15:38:22.931167+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('7665bf6f-62e3-42d0-aadb-4298e3fbcbbc', '571d570c-f558-4856-ac8e-aec0d58165c7', 'd63d0323-31a1-4ded-9b1b-792e92001e7e', '2026-04-15 15:38:55.355033+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('a1fcee48-7e2e-4398-a196-31543362dadb', 'deb04401-76a5-443b-bc2d-f75c391fe110', 'd63d0323-31a1-4ded-9b1b-792e92001e7e', '2026-04-15 15:38:55.355033+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('a3b1bc53-d518-478d-8244-a8d8853e1e4a', '5d84c631-6c6c-4fb5-9e03-ae58bb0650c4', 'd63d0323-31a1-4ded-9b1b-792e92001e7e', '2026-04-15 15:38:55.355033+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('971befd3-6ee7-402e-a901-5c8e79fc6c91', 'bf142c98-4921-4e5e-a21b-bc6f6a6cfce7', 'd63d0323-31a1-4ded-9b1b-792e92001e7e', '2026-04-15 15:38:55.355033+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('96f70fbb-727c-459c-9f2a-8d252b6b94c4', '79274bbf-f7e2-4171-ae33-e1522f223b72', 'd63d0323-31a1-4ded-9b1b-792e92001e7e', '2026-04-15 15:38:55.355033+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('af66180a-d6dc-4e6a-8c8f-804ae6be3f35', '412b0cc9-e137-426f-859a-e52a5934e345', 'd63d0323-31a1-4ded-9b1b-792e92001e7e', '2026-04-15 15:38:55.355033+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('cdabffe4-ab53-416a-91bf-61bcb85f0136', 'ec192196-2abf-4f9e-b136-e814766a0c36', 'd63d0323-31a1-4ded-9b1b-792e92001e7e', '2026-04-15 15:38:55.355033+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('3ef397aa-f0c6-4035-9cc3-d85a0a122ce1', '7c6ee560-e8ae-4863-9d37-28ed0b12f9e5', 'd63d0323-31a1-4ded-9b1b-792e92001e7e', '2026-04-15 15:38:55.355033+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('c04c8751-fd4d-4498-bb3f-8d9201d1efbd', 'd14deda4-8f7a-4833-a926-8ab1aee17811', 'd63d0323-31a1-4ded-9b1b-792e92001e7e', '2026-04-15 15:38:55.355033+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('e13fa3fd-ee64-4993-a2d3-a23fa99bbdae', '5af9c4cd-a7da-4f5f-abe2-966e50dae2ec', 'd63d0323-31a1-4ded-9b1b-792e92001e7e', '2026-04-15 15:38:55.355033+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('ab7ea95a-f348-4f3d-85d1-0d62496e427e', '571d570c-f558-4856-ac8e-aec0d58165c7', 'bb7290f2-ebb1-4cfb-aad4-bce85a4b78b3', '2026-04-15 15:38:55.842983+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('9f4fc187-b6d4-43aa-9d08-c18f5ad25567', 'deb04401-76a5-443b-bc2d-f75c391fe110', 'bb7290f2-ebb1-4cfb-aad4-bce85a4b78b3', '2026-04-15 15:38:55.842983+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('32a3a0df-c409-42df-a7b7-230570860917', '5d84c631-6c6c-4fb5-9e03-ae58bb0650c4', 'bb7290f2-ebb1-4cfb-aad4-bce85a4b78b3', '2026-04-15 15:38:55.842983+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('a9d5a4b9-20e5-4324-80f9-1e5fbfa8a4ae', 'bf142c98-4921-4e5e-a21b-bc6f6a6cfce7', 'bb7290f2-ebb1-4cfb-aad4-bce85a4b78b3', '2026-04-15 15:38:55.842983+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('5a22b0f9-a066-4b96-9f56-7dca36233743', '79274bbf-f7e2-4171-ae33-e1522f223b72', 'bb7290f2-ebb1-4cfb-aad4-bce85a4b78b3', '2026-04-15 15:38:55.842983+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('b13cac97-4318-4b8e-abac-81268aab6401', '412b0cc9-e137-426f-859a-e52a5934e345', 'bb7290f2-ebb1-4cfb-aad4-bce85a4b78b3', '2026-04-15 15:38:55.842983+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('76bf03ce-73bd-4cff-bcbc-00adc11d77c1', 'ec192196-2abf-4f9e-b136-e814766a0c36', 'bb7290f2-ebb1-4cfb-aad4-bce85a4b78b3', '2026-04-15 15:38:55.842983+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('3d3deb52-64f8-4982-885d-5eaaa8286994', '7c6ee560-e8ae-4863-9d37-28ed0b12f9e5', 'bb7290f2-ebb1-4cfb-aad4-bce85a4b78b3', '2026-04-15 15:38:55.842983+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('bc7ec7ca-1607-40b5-aaf0-e7f4c8e66611', 'd14deda4-8f7a-4833-a926-8ab1aee17811', 'bb7290f2-ebb1-4cfb-aad4-bce85a4b78b3', '2026-04-15 15:38:55.842983+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('b6569cc9-f5f7-4310-9bbd-7caf59394f54', '5af9c4cd-a7da-4f5f-abe2-966e50dae2ec', 'bb7290f2-ebb1-4cfb-aad4-bce85a4b78b3', '2026-04-15 15:38:55.842983+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('60a36d96-2852-489d-9970-96110006aa49', '571d570c-f558-4856-ac8e-aec0d58165c7', '82b5b534-56c7-4e7b-b831-fcb747d1c3e8', '2026-04-15 15:38:56.896093+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('2a76648b-47f4-4e90-af8d-50f04d61b19d', 'deb04401-76a5-443b-bc2d-f75c391fe110', '82b5b534-56c7-4e7b-b831-fcb747d1c3e8', '2026-04-15 15:38:56.896093+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('853b9c24-57c7-43fa-96ac-4c409c264017', '5d84c631-6c6c-4fb5-9e03-ae58bb0650c4', '82b5b534-56c7-4e7b-b831-fcb747d1c3e8', '2026-04-15 15:38:56.896093+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('c304f421-13b9-4151-8939-c80d10e800e6', 'bf142c98-4921-4e5e-a21b-bc6f6a6cfce7', '82b5b534-56c7-4e7b-b831-fcb747d1c3e8', '2026-04-15 15:38:56.896093+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('abc3f193-0188-4a66-8d8c-e1b21e6b2cdf', '79274bbf-f7e2-4171-ae33-e1522f223b72', '82b5b534-56c7-4e7b-b831-fcb747d1c3e8', '2026-04-15 15:38:56.896093+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('c5913c01-7dc1-4bd1-b257-9efb5dfffbb4', '412b0cc9-e137-426f-859a-e52a5934e345', '82b5b534-56c7-4e7b-b831-fcb747d1c3e8', '2026-04-15 15:38:56.896093+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('7f24e8a5-afd8-4112-a0e9-7f1447aacf32', 'ec192196-2abf-4f9e-b136-e814766a0c36', '82b5b534-56c7-4e7b-b831-fcb747d1c3e8', '2026-04-15 15:38:56.896093+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('d41b23cc-2944-4631-8a21-4f55904c5855', '7c6ee560-e8ae-4863-9d37-28ed0b12f9e5', '82b5b534-56c7-4e7b-b831-fcb747d1c3e8', '2026-04-15 15:38:56.896093+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('553303c9-2504-4087-97af-59c28300ff74', 'd14deda4-8f7a-4833-a926-8ab1aee17811', '82b5b534-56c7-4e7b-b831-fcb747d1c3e8', '2026-04-15 15:38:56.896093+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('1c22d86c-1a39-4388-8d4c-e088b354129b', '5af9c4cd-a7da-4f5f-abe2-966e50dae2ec', '82b5b534-56c7-4e7b-b831-fcb747d1c3e8', '2026-04-15 15:38:56.896093+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('17ee6516-be5d-4f85-864c-3d92d966036b', 'b8370646-c633-4b3a-8989-59749c681744', '423894fe-4366-4776-8fd7-39da016a2de6', '2026-04-15 23:30:55.570632+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('f9c415be-363a-4bc5-905e-4ff289a8ce9a', '7f9d9710-12e2-46aa-af57-a1655a8dea13', '423894fe-4366-4776-8fd7-39da016a2de6', '2026-04-15 23:30:55.570632+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('8c4bcd2d-a6e9-4c91-9301-fa3f938eb3e4', '4e3af0b3-ca12-40eb-a1dc-30099a3aca90', '423894fe-4366-4776-8fd7-39da016a2de6', '2026-04-15 23:30:55.570632+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('15160f4c-8c5a-44e4-a0d3-c55f2a06adc8', 'c7ed3517-15a3-4562-9a25-1aabc2ed1fb5', '423894fe-4366-4776-8fd7-39da016a2de6', '2026-04-15 23:30:55.570632+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('f7e2e489-46c8-46dd-920a-de96988b1ee3', '7a261188-07c8-45e6-9904-5b761a16caef', '423894fe-4366-4776-8fd7-39da016a2de6', '2026-04-15 23:30:55.570632+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('ab9ae15f-0513-4358-b9a3-9663997bee58', '8834aee8-93e3-4f9c-8850-6813db392812', '423894fe-4366-4776-8fd7-39da016a2de6', '2026-04-15 23:30:55.570632+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('42914553-bce7-413b-ab81-8fc02bd543da', '0ac773de-6cd0-4e00-ad20-1b6603f7ca1e', '423894fe-4366-4776-8fd7-39da016a2de6', '2026-04-15 23:30:55.570632+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('40f34d68-b562-4360-850c-58859019d844', 'bd15767c-9fc9-4a41-8f50-6e10387ebfba', '423894fe-4366-4776-8fd7-39da016a2de6', '2026-04-15 23:30:55.570632+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('eb02e52a-4037-4057-98a9-fc7ce5c59fd7', '66c6f06a-3f50-4907-a89c-1329db401d02', '423894fe-4366-4776-8fd7-39da016a2de6', '2026-04-15 23:30:55.570632+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('5a8859e7-5023-4b1d-9efc-bc42520a20b1', '562dacdf-5cc4-41a8-b2b4-b3c49ebc3820', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('b3c2a87e-3ec8-4afe-9d59-386ef1e30f3e', '9604e6ae-684a-48e4-9b3c-4af934228fa4', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('5c86aed6-df46-482f-9aed-c00743e4b7ca', '7e192cef-bc93-4838-a48e-1aa29bfe4101', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('cf3e5877-7109-469c-ae59-014fce830ef8', 'd5fd0773-9310-4f01-938e-9b98a8c75154', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('3510ee24-6b6e-4049-a327-f9ba05afada3', '00f560a9-3792-48d5-9323-13982979e9b6', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('81d48ef7-f440-409a-a562-b18a714f0ea3', '00b80908-00c3-416e-bca7-d4a70178a865', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('a6259fc2-c370-4a54-927c-9dec88a226a7', 'c8837fba-5c1d-4227-a80b-a5dec1371b17', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('da511eb4-b405-4572-bdb0-1ab9fcd4732c', '4ae8dd17-9974-4705-9971-922e97e04bf9', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('6645c515-1ff4-4582-acba-a3354213d787', '87c4d1dc-a3c9-45b6-baac-9d113a0dfb8d', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('30f551cd-7dd4-4f4c-9aae-a0a349e65734', '92bb42ae-6f7a-45c3-8010-983011d5eacd', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('49f09c40-18dc-4ce1-a381-7e152e7c9a47', '76ea6133-792c-449c-a18f-211d969b24e3', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('23ad6bde-2444-4743-b467-d7bb445ca23f', 'cc4688ef-40b7-493c-b285-cab6ba3bb6f9', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('288b61f2-44df-4c6e-96af-c578920e707b', '2de6145a-0394-45be-8fe3-deb65cc828fb', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('d9b2c549-b02d-4bb3-92f8-c6f5cd88b0cd', 'c2c57c95-4906-41c3-9a2a-d031e3601073', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('741fb600-d190-4838-bd08-aed4e921de0d', 'a4f60baa-3585-4554-9c83-5a10fbf0e2a0', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('f07e92f7-599b-486c-ae6d-c5b92965bb88', '46924eda-ff8e-4675-9b83-a67402bd6347', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('b85bd472-2d16-44cb-9ec3-6cdb2bee1b25', 'a0e75b66-37f9-4a49-8355-5b8d1c4a7c8c', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('529b57b2-9c0d-4f4a-a3cf-cdf0f2d96c0e', '92ea4f5b-3d6d-4220-b6a3-17bcea4b37d1', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('aec1db1a-9ac4-4529-b37a-1ec4dcb854ae', '8796b417-97b4-4158-972f-dda9b0850f42', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('0fac2266-dfd4-4318-88b9-85bd0d7b072e', 'fa5ec5fd-7556-4ac4-bfad-0fbf9952c16a', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('02e903a6-7394-480b-aa9e-af73e585b416', '73a81ead-3369-48aa-89a1-0ae7d32eda29', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('92032615-b39a-4909-ad4d-57812d385c65', '04f6e36d-e521-40c6-91ff-f1ac873f0be7', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('0875b800-c382-499d-ade6-b6c8b0d85233', '2b71bfa8-7a46-4e0e-8f68-87c8aeff9902', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('95d506ae-b9c9-4e5e-9ba5-df274c5d3716', 'cb15e64a-9f92-408e-8899-4f20392b18f0', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('5fa598dd-bc38-4e0f-8a38-9a602a32b4fe', '9ee4e057-1a54-4002-853d-9620449da8ce', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('ab40134f-2b7b-46fc-8368-8ae899f29775', '6201934f-2658-4594-867f-c31c13c7418b', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('329c7dc0-e66d-422a-b2cb-7fc989e0a216', 'c6f6bb1c-b832-46c6-a6d6-84b724cb33d2', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('2e4a39c5-b3af-460c-8c09-a1ebb806c6a8', 'b2793efa-3581-4af6-9b1b-b6e466f9c057', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('914d8c04-4479-493c-9b63-e84fd62e6d7c', '3fbbdbd6-729e-4185-8b40-b521b8a5f91b', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('8bb97c79-872b-402f-8d42-a0aa1ac21305', '8b1bd760-a313-4037-86c2-35bbdef1d152', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('39649d50-3d35-4cfc-ace3-1d15de67e6eb', 'a21031df-0a9a-4772-ab74-616df8152192', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('faa5d201-d2df-403a-a90b-f374ee6ac512', '267ec1db-26ee-4785-86a3-730a46960df3', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('a768cd80-ac69-4436-a95e-e52c2e1f465c', '1cf26d4e-daba-4967-b039-f649a33ac798', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('274fd03a-11df-48a5-bc39-bda3f1cdd775', '6ce7f9c3-fb84-48b8-bebe-003f59787aa0', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('2a65a6ff-4598-420d-a859-4156328c0753', 'b5222454-4aba-4321-915a-ba0f31302f8c', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('f44e7a44-7495-4e4a-823e-a297353ad0dd', '1830d888-23f9-4ae2-95f2-72a01f17d58d', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('0f343181-eccd-4528-811e-3e63ffa41413', '83aae82c-b0d3-4f5e-9da0-f0f9b110cead', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('48c9c0c0-ad9f-42ab-b8b5-049e4263d652', 'a8581da0-2ece-499b-aca4-d1cac1698183', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('a4d6b971-c356-4a17-b2a9-94fb653298b8', '72da59de-fd15-4092-be8a-088d523542c7', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('1fd5ca12-7201-49d9-9660-2771a554c7a1', 'bc91b1be-6193-43ce-b9b8-912a3cfee560', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('03a3d8de-8a7b-4817-aa5f-aa6a2b9db65d', '203d36eb-20e8-4e21-82d9-ad4df12dde9e', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('87527457-ae1e-45aa-863c-d0db6ff10c2c', 'f702ee63-4e92-4b6f-80e5-cc1033a34113', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('2d8085e0-7351-496a-bdd3-1459300f868f', 'e71abea6-9cc5-4584-b4ef-a35bee3af139', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('c8aab4d0-1c60-4026-bad3-96e410a869bf', '98ad0da8-4d88-4741-bdf7-611da47dccec', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('6b1fc20d-6141-494f-aaf4-673d6461f226', '1ab50e7b-7c1d-460f-8612-0da02d7e10cd', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('1899d334-05b4-41de-b9c6-3446f8734a12', '556b6bd0-5f0e-437d-9391-187638e45569', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('e971fb77-65f5-4c31-b7fd-124ef5950cb9', 'd146541d-feae-42ba-8a30-3d22290689ca', '7b1ca892-4587-4068-ae03-5536f9cfe48e', '2026-04-21 12:10:21.922876+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('b254fb96-55e3-4cc8-b9d3-9c997ec8c188', '376d89e9-bbe9-4a91-be17-0f1ae485875b', 'd8f48ccc-c77f-419d-89b2-dc902186f478', '2026-04-21 18:31:31.157431+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('efca54af-7e59-4c43-8372-50793e10db4f', 'dfadb4d0-bbff-4626-8f59-cbae96c012dc', 'd8f48ccc-c77f-419d-89b2-dc902186f478', '2026-04-21 18:31:31.157431+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('f8e30561-2474-4646-9cd8-3335527e4241', 'b7bffcf0-abe0-45bc-a716-eb967be79dae', 'd8f48ccc-c77f-419d-89b2-dc902186f478', '2026-04-21 18:31:31.157431+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('d1d956ef-841c-44ac-8296-3686d6d15d38', '46a80523-229e-4f35-bd53-2e2dd3587ece', 'd8f48ccc-c77f-419d-89b2-dc902186f478', '2026-04-21 18:31:31.157431+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('de2ad0f6-dbd2-4c75-9877-7d81a63676e7', '70f762e5-c518-4411-a1c9-a6ad4250ab28', 'd8f48ccc-c77f-419d-89b2-dc902186f478', '2026-04-21 18:31:31.157431+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('d9248f20-4434-4799-b6a8-fae729962d1d', '1a23717d-12a4-4662-93ed-d27cbe80da2a', 'd8f48ccc-c77f-419d-89b2-dc902186f478', '2026-04-21 18:31:31.157431+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('361f9a4c-2591-4cc6-b0a4-699da87114df', 'ea4708d7-3509-41eb-8a24-8934a9c418d1', 'd8f48ccc-c77f-419d-89b2-dc902186f478', '2026-04-21 18:31:31.157431+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.product_addon_groups VALUES ('df7a6369-1b16-4f8d-9cda-ab6611c554c2', 'b153d910-01a2-4370-b7f7-666d36b9dc0f', 'd8f48ccc-c77f-419d-89b2-dc902186f478', '2026-04-21 18:31:31.157431+00') ON CONFLICT DO NOTHING;
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Platform admin can read all balances' AND tablename = 'store_balances') THEN
+        CREATE POLICY "Platform admin can read all balances" ON public.store_balances FOR SELECT TO authenticated USING (public.is_platform_admin(auth.uid()));
+    END IF;
+-- END
 
 
--- Data for Name: profiles; Type: TABLE DATA; Schema: public; Owner: -
+-- Name: drivers Platform admin can read all drivers; Type: POLICY; Schema: public; Owner: -
 
-INSERT INTO public.profiles VALUES ('28fbfdfe-de85-483a-8725-ba3a32685785', '37909bb0-03b4-46dc-917d-c17fadaca33c', 'Amarildo de Oliveira', 'cliente', '14136895828', NULL, NULL, '2026-04-16 21:16:20.760106+00', false, 'Rua Julieta Antunes Almeida Oliveira', '72', 'Casa', 'Próximo ao bar da Roh', 'Núcleo Habitacional Nova América', '14997925208', NULL, NULL, '5514997925208', 'amarildoolvr@gmail.com', '18694046', true, 'itatinga', NULL, NULL, NULL, NULL, '2026-04-16 21:16:22.605+00', NULL) ON CONFLICT DO NOTHING;
-INSERT INTO public.profiles VALUES ('6273a9f2-2705-4fb4-b37d-2559a30a48a1', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 'Natalino', 'motoboy', NULL, 'Fan 160', NULL, '2026-04-11 15:13:51.029231+00', true, NULL, NULL, NULL, NULL, NULL, '14991624997', NULL, NULL, '14991624997', 'natalino123@gmail.com', NULL, true, 'itatinga', NULL, NULL, NULL, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
-INSERT INTO public.profiles VALUES ('fb80fff8-9998-44ae-a96b-c1c7a87ae6a6', '1d33caaf-2aaf-4ac4-a41e-b94508e0ed50', '', 'cliente', '50537200886', NULL, NULL, '2026-04-18 16:59:23.682523+00', false, 'Avenida Dona Tita Paixão', '1237', '', '', 'Terras de São José', '14998639910', NULL, NULL, '5514998639910', 'sthellacamargo@outlook.com', '18694250', true, 'itatinga', NULL, NULL, NULL, NULL, '2026-04-18 16:59:24.933+00', NULL) ON CONFLICT DO NOTHING;
-INSERT INTO public.profiles VALUES ('54e1c99a-029a-4231-ad92-1263389e3925', '5e53b885-05f3-4cfd-9a52-d5c1f4457f3b', 'Bbburger', 'lojista', '49911096807', NULL, NULL, '2026-04-14 14:46:23.242486+00', true, 'Rua Julieta Antunes Almeida Oliveira', '72', 'Casa', 'Próximo ao bar da Roh', 'Núcleo Habitacional Nova América', '14997076863', 'thiagocorreia10092005@gmail.com', 'email', '5514997076863', 'thiagocorreia10092005@gmail.com', '18694046', true, 'itatinga', NULL, NULL, NULL, NULL, '2026-04-14 14:46:25.914+00', NULL) ON CONFLICT DO NOTHING;
-INSERT INTO public.profiles VALUES ('2bd1a12c-dc86-462b-b46d-c4ecf43d712c', 'ba9ce4c7-7133-45d5-8c2f-454914b7da38', 'DiasBurguer', 'lojista', '30731772806', NULL, NULL, '2026-04-08 08:45:53.858195+00', true, 'Rua São Francisco', '742', '', '', 'Centro', '', '14981867860', 'phone', NULL, 'diasirmaos1k@gmail.com', '18690081', true, 'itatinga', NULL, NULL, NULL, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
-INSERT INTO public.profiles VALUES ('afb3e056-7613-4668-b1b4-d1197af498ea', 'eacb717f-f61d-4e58-af9b-4149541a68df', 'Ana Claudia', 'cliente', '17508039769', NULL, NULL, '2026-04-06 10:01:51.659725+00', false, 'Rua São Francisco', '635', '', '', 'Centro', '', NULL, NULL, NULL, 'anaclaudia6demeira@gmail.com', '18690081', true, 'itatinga', NULL, NULL, NULL, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
-INSERT INTO public.profiles VALUES ('80b8dfe7-8f02-4f47-91b2-a1e0d2e32573', '6a31ec8b-3e4e-40b4-a4ff-6ae5f75ea102', '', 'cliente', NULL, NULL, NULL, '2026-04-16 09:47:34.675144+00', false, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'teste1_ita@gmail.com', NULL, false, 'itatinga', NULL, NULL, NULL, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
-INSERT INTO public.profiles VALUES ('70e9de9f-8134-4743-b4eb-454032c9faa0', '5adc5911-cca3-4cd7-85e6-374917d07a39', '', 'cliente', NULL, NULL, NULL, '2026-04-16 09:47:38.176322+00', false, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'teste2_ita@gmail.com', NULL, false, 'itatinga', NULL, NULL, NULL, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
-INSERT INTO public.profiles VALUES ('b0c615f1-87ee-4ed7-8205-1ae0ea42ab22', '4f962953-1af8-427d-8681-d30405fb994b', '', 'cliente', NULL, NULL, NULL, '2026-04-16 09:47:39.953845+00', false, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'teste3_ita@gmail.com', NULL, false, 'itatinga', NULL, NULL, NULL, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
-INSERT INTO public.profiles VALUES ('e728e85b-adf7-4e41-b47f-2148862c7157', '927289c1-9e81-463a-b950-9b83d4d505e5', 'Nata avelino', 'lojista', '53142159851', NULL, 'https://lktzrqjvqoojlrhqnxuz.supabase.co/storage/v1/object/public/partner-images/927289c1-9e81-463a-b950-9b83d4d505e5/1775239660266.jpg', '2026-04-03 18:07:41.47696+00', true, 'Rua São Francisco', '635', '', '', 'Centro', '', NULL, 'cpf', '5514991624997', NULL, '18690081', true, 'itatinga', NULL, NULL, NULL, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
-INSERT INTO public.profiles VALUES ('4b76cd04-42eb-4549-8bcb-ad1d8446b6ba', '73adfa0a-506f-43fd-8109-d3efa14507fe', '', 'cliente', NULL, NULL, NULL, '2026-04-16 09:47:41.316972+00', false, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'teste4_ita@gmail.com', NULL, false, 'itatinga', NULL, NULL, NULL, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
-INSERT INTO public.profiles VALUES ('fa72edde-91c1-4f70-88fb-b74ff5707bf0', '137c9a05-75db-4077-acff-17d9ed508c29', 'TesteMensal', 'lojista', '53142159851', NULL, NULL, '2026-04-09 18:52:56.671167+00', true, 'Rua São Francisco', NULL, NULL, NULL, 'Centro', '14991624997', 'diasirmaos1k@gmail.com', 'email', '14991624997', 'joao123@gmail.com', '18690081', true, 'itatinga', NULL, NULL, NULL, NULL, '2026-04-09 18:52:58.698+00', NULL) ON CONFLICT DO NOTHING;
-INSERT INTO public.profiles VALUES ('a0fedbef-f951-4bf7-9927-4acd80f2e1c0', '6becbb34-0fd2-4f6b-ba60-46bc058c15e6', 'Campanario Pizzaria', 'lojista', '53142159851', NULL, NULL, '2026-04-09 13:45:13.67122+00', true, 'Rua São Francisco', '635', '', '', 'Centro', '', '14 99162-4997', 'phone', '14991624997', 'luan123@gmail.com', '18690081', true, 'itatinga', NULL, NULL, NULL, NULL, '2026-04-09 13:45:15.475+00', NULL) ON CONFLICT DO NOTHING;
-INSERT INTO public.profiles VALUES ('01f54364-8711-442b-9228-126bd12d8ffa', '876ffde2-cdc0-4578-8cc4-48bb0279de71', '', 'cliente', NULL, NULL, NULL, '2026-04-16 09:47:42.560207+00', false, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'teste5_ita@gmail.com', NULL, false, 'itatinga', NULL, NULL, NULL, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
-INSERT INTO public.profiles VALUES ('1648a5a7-82bf-4d8c-9fb6-43833021a482', 'ed862e03-693d-4b7c-8342-400527be9c42', 'Jonatas', 'cliente', '39631805480', NULL, NULL, '2026-04-22 16:03:28.748584+00', false, 'Rua São Francisco', '245', '', '', 'Centro', '', NULL, NULL, '5514962345878', 'loiate@gmail.com', '18690081', true, 'itatinga', NULL, NULL, NULL, NULL, '2026-04-22 16:03:30.108+00', NULL) ON CONFLICT DO NOTHING;
-INSERT INTO public.profiles VALUES ('c2184012-8a84-4af5-a3e5-3964703ab89d', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'Renner dias', 'motoboy', '53142159851', 'Fan 150 2010', NULL, '2026-03-30 20:43:17.670906+00', true, 'Rua São Francisco', '635', '', '', 'Centro', '', '17508039769', 'cpf', '5514991624997', 'vinivias13@gmail.com', '18690081', true, 'itatinga', NULL, NULL, NULL, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
-INSERT INTO public.profiles VALUES ('65ddff2a-fb52-4cc4-845a-e32ddc55627d', 'acefbf75-9e70-473e-b8ae-c6fb170c886e', 'AnaDelivery', 'lojista', '63142159851', NULL, NULL, '2026-04-24 17:16:36.577244+00', true, 'Rua Capitão João Braz', NULL, NULL, NULL, 'Centro', '14962945776', '14965778900', 'phone', '14962945776', 'anamota@gmail.com', '18640029', true, 'pardinho', NULL, NULL, NULL, NULL, '2026-04-24 17:16:38.559+00', NULL) ON CONFLICT DO NOTHING;
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Platform admin can read all drivers' AND tablename = 'drivers') THEN
+        CREATE POLICY "Platform admin can read all drivers" ON public.drivers FOR SELECT TO authenticated USING (public.is_platform_admin(auth.uid()));
+    END IF;
+-- END
 
 
--- Data for Name: refund_requests; Type: TABLE DATA; Schema: public; Owner: -
+-- Name: financial_transactions Platform admin can read all financial transactions; Type: POLICY; Schema: public; Owner: -
 
-INSERT INTO public.refund_requests VALUES ('f1b06a20-c955-499e-be97-d9ffc111cc85', '94109d43-b46b-490c-870d-67b79f801a20', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'poor_quality', NULL, '{}', 'wallet_credit', 69, NULL, 'pending', NULL, NULL, '2026-04-13 22:08:40.465707+00', NULL) ON CONFLICT DO NOTHING;
-
-
--- Data for Name: saved_addresses; Type: TABLE DATA; Schema: public; Owner: -
-
-INSERT INTO public.saved_addresses VALUES ('fbcdb100-e6e8-4084-96c2-3a08596585d5', '6a31ec8b-3e4e-40b4-a4ff-6ae5f75ea102', 'Casa', 'Rua Coronel Luciano', '245', NULL, 'Centro', NULL, true, '2026-04-16 09:47:36.886154+00', '18690-000') ON CONFLICT DO NOTHING;
-INSERT INTO public.saved_addresses VALUES ('c13d95a7-bbfd-4ad5-9315-0ad3f8838975', '5adc5911-cca3-4cd7-85e6-374917d07a39', 'Casa', 'Rua José Bonifácio', '530', NULL, 'Vila São João', NULL, true, '2026-04-16 09:47:38.85721+00', '18690-000') ON CONFLICT DO NOTHING;
-INSERT INTO public.saved_addresses VALUES ('322c41cd-e14f-4739-919c-6b337baf2fbf', '4f962953-1af8-427d-8681-d30405fb994b', 'Casa', 'Rua das Primaveras', '120', NULL, 'Jardim Pedra Branca', NULL, true, '2026-04-16 09:47:40.480207+00', '18690-000') ON CONFLICT DO NOTHING;
-INSERT INTO public.saved_addresses VALUES ('cea3c508-f74b-4f70-85bf-c8f23bff4e44', '73adfa0a-506f-43fd-8109-d3efa14507fe', 'Casa', 'Rua dos Ipês', '88', NULL, 'Vila Canaã', NULL, true, '2026-04-16 09:47:41.788658+00', '18690-000') ON CONFLICT DO NOTHING;
-INSERT INTO public.saved_addresses VALUES ('b159df30-2471-45a1-ba0b-3efe77c8a259', '876ffde2-cdc0-4578-8cc4-48bb0279de71', 'Casa', 'Rua Benedito Alves', '310', NULL, 'Jardim Marajoara', NULL, true, '2026-04-16 09:47:43.03452+00', '18690-000') ON CONFLICT DO NOTHING;
-INSERT INTO public.saved_addresses VALUES ('26dc8a02-1595-42cc-af94-133c5328ee39', '1d33caaf-2aaf-4ac4-a41e-b94508e0ed50', 'Trabalho', 'Avenida Dona Tita Paixão', '1237', 'Escritório Terras de São José', 'Terras de São José', NULL, true, '2026-04-18 17:02:00.078373+00', '18694250') ON CONFLICT DO NOTHING;
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Platform admin can read all financial transactions' AND tablename = 'financial_transactions') THEN
+        CREATE POLICY "Platform admin can read all financial transactions" ON public.financial_transactions FOR SELECT TO authenticated USING (public.is_platform_admin(auth.uid()));
+    END IF;
+-- END
 
 
--- Data for Name: store_balances; Type: TABLE DATA; Schema: public; Owner: -
+-- Name: loyalty_points Platform admin can read all loyalty; Type: POLICY; Schema: public; Owner: -
 
-INSERT INTO public.store_balances VALUES ('7cee957e-e6fa-4d51-a3dc-48debdcec1d3', 'b243bdb4-45a9-46fc-8248-68dd6ba3e46c', 0, '2026-04-22 00:54:12.46309+00', 4, 0) ON CONFLICT DO NOTHING;
-INSERT INTO public.store_balances VALUES ('7486d7f1-69f5-49d2-8e37-cd9717612ec1', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 0, '2026-04-22 00:54:12.46309+00', 72, 0) ON CONFLICT DO NOTHING;
-INSERT INTO public.store_balances VALUES ('00f7e8f9-f514-4765-a7b3-9e0e3f5f325f', 'c936dfa8-ebc2-4fb1-a192-6f1f62029f00', 0, '2026-04-03 17:57:09.615147+00', 0, 0) ON CONFLICT DO NOTHING;
-INSERT INTO public.store_balances VALUES ('673ca66c-2b39-40e3-b057-e7e561f3fa86', 'fbff1580-ce82-4798-a96f-f149c69166b3', 0, '2026-04-08 20:33:46.602315+00', 0, 0) ON CONFLICT DO NOTHING;
-
-
--- Data for Name: store_driver_earnings; Type: TABLE DATA; Schema: public; Owner: -
-
-INSERT INTO public.store_driver_earnings VALUES ('27d2a095-387c-477c-81e9-55f00f29c312', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '997ec784-c861-46b6-b90a-b4ba8e7f7ba4', 2, 2, 0, 'pendente', NULL, NULL, NULL, '2026-04-17 01:11:22.267271+00', NULL, NULL, 'fim_do_dia') ON CONFLICT DO NOTHING;
-INSERT INTO public.store_driver_earnings VALUES ('04284354-a2d3-4c25-9033-163d42f2b91e', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '3dc19319-94b3-41d6-8132-4f65a70d6b53', 2, 2, 0, 'pendente', NULL, NULL, NULL, '2026-04-17 01:11:22.267271+00', NULL, NULL, 'fim_do_dia') ON CONFLICT DO NOTHING;
-INSERT INTO public.store_driver_earnings VALUES ('7ecc2523-b2fb-4a62-9943-4d5c09c17dd8', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '1bd27051-0b78-4792-981d-79c387574e62', 2, 2, 0, 'pendente', NULL, NULL, NULL, '2026-04-17 01:11:22.267271+00', NULL, NULL, 'fim_do_dia') ON CONFLICT DO NOTHING;
-INSERT INTO public.store_driver_earnings VALUES ('51513b35-fafd-44dc-8b39-a3828b8deda7', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '20409cc3-25d3-4862-9b30-e5475cf07caa', 2, 2, 0, 'pendente', NULL, NULL, NULL, '2026-04-17 01:11:22.267271+00', NULL, NULL, 'fim_do_dia') ON CONFLICT DO NOTHING;
-INSERT INTO public.store_driver_earnings VALUES ('45726416-accd-426f-819c-3562e443b892', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '528e1b70-b19d-4732-90cf-e1fecdb8d61b', 2, 2, 0, 'pendente', NULL, NULL, NULL, '2026-04-17 01:11:22.267271+00', NULL, NULL, 'fim_do_dia') ON CONFLICT DO NOTHING;
-INSERT INTO public.store_driver_earnings VALUES ('28709f3a-fa3b-48a2-9d6e-7516386c7beb', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '91f9dd29-559a-4d6a-b2d2-89ac5b081579', 2, 2, 0, 'pendente', NULL, NULL, NULL, '2026-04-17 01:11:22.267271+00', NULL, NULL, 'fim_do_dia') ON CONFLICT DO NOTHING;
-INSERT INTO public.store_driver_earnings VALUES ('a72f5572-a6f1-46f6-af55-3a476347967c', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '4e21aec0-4de7-4f9c-8420-2cfa72bdab9c', 2, 2, 0, 'pendente', NULL, NULL, NULL, '2026-04-17 01:11:22.267271+00', NULL, NULL, 'fim_do_dia') ON CONFLICT DO NOTHING;
-INSERT INTO public.store_driver_earnings VALUES ('55f94ee4-fa86-4495-b54d-046eeb8cb14e', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '7858058a-fa4a-46bf-8063-26301bf8983c', 2, 2, 0, 'pendente', NULL, NULL, NULL, '2026-04-17 01:11:22.267271+00', NULL, NULL, 'fim_do_dia') ON CONFLICT DO NOTHING;
-INSERT INTO public.store_driver_earnings VALUES ('87c65f91-a457-4acd-ba2d-ccb21eb113a1', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '98b42c63-9f06-40c0-bf04-022e57b68a89', 6, 2, 4, 'pendente', NULL, NULL, NULL, '2026-04-17 15:51:59.525213+00', NULL, NULL, 'fim_do_dia') ON CONFLICT DO NOTHING;
-INSERT INTO public.store_driver_earnings VALUES ('e8ba7949-e501-4f28-8a14-b6282fae5340', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '0c35d6b6-53ad-4935-a635-d1d35a325b3f', 6, 2, 4, 'pendente', NULL, NULL, NULL, '2026-04-18 18:46:00.782407+00', NULL, NULL, 'fim_do_dia') ON CONFLICT DO NOTHING;
-INSERT INTO public.store_driver_earnings VALUES ('60f54527-5bbb-45f8-b8c2-196619cc9066', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '21a92392-6e8f-4c4e-8eec-6db08f4c18c0', 3, 2, 1, 'pendente', NULL, NULL, NULL, '2026-04-18 18:59:49.092743+00', NULL, NULL, 'fim_do_dia') ON CONFLICT DO NOTHING;
-INSERT INTO public.store_driver_earnings VALUES ('9cd68544-78b9-4784-b1af-917caf641e15', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '35c46862-108f-4391-9984-3b5d2ace5155', 12, 2, 10, 'pendente', NULL, NULL, NULL, '2026-04-22 00:39:58.047604+00', NULL, NULL, 'fim_do_dia') ON CONFLICT DO NOTHING;
-INSERT INTO public.store_driver_earnings VALUES ('1fec1633-fb75-4e07-a66c-765bdfcce5bd', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 'b2d39235-52f0-4b02-8722-52721d10cb10', 12, 2, 10, 'pendente', NULL, NULL, NULL, '2026-04-22 00:40:18.895232+00', NULL, NULL, 'fim_do_dia') ON CONFLICT DO NOTHING;
-INSERT INTO public.store_driver_earnings VALUES ('8194cab7-ec4e-4e98-a457-f3546d66530f', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '4acfa4fc-5806-4097-8ddc-36d8a65612ae', 12, 2, 10, 'pendente', NULL, NULL, NULL, '2026-04-22 00:41:13.756929+00', NULL, NULL, 'fim_do_dia') ON CONFLICT DO NOTHING;
-INSERT INTO public.store_driver_earnings VALUES ('db904fbd-36fe-4c46-bd6f-a0184ae3724f', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 'a3471d4d-52e0-46c0-b788-07e37f3bb478', 12, 2, 10, 'pendente', NULL, NULL, NULL, '2026-04-22 00:45:12.215693+00', NULL, NULL, 'fim_do_dia') ON CONFLICT DO NOTHING;
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Platform admin can read all loyalty' AND tablename = 'loyalty_points') THEN
+        CREATE POLICY "Platform admin can read all loyalty" ON public.loyalty_points FOR SELECT TO authenticated USING (public.is_platform_admin(auth.uid()));
+    END IF;
+-- END
 
 
--- Data for Name: store_drivers; Type: TABLE DATA; Schema: public; Owner: -
+-- Name: order_items Platform admin can read all order items; Type: POLICY; Schema: public; Owner: -
 
-INSERT INTO public.store_drivers VALUES ('f4a7dd25-21f1-42d8-ae40-1f9332578149', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '2026-04-11 15:41:43.043789+00', 'fim_do_dia') ON CONFLICT DO NOTHING;
-INSERT INTO public.store_drivers VALUES ('1a52701c-49f0-4726-9be1-d5557f45098e', '66129fdd-1f7e-42c8-b3c1-8d4c28b14106', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '2026-04-15 00:17:25.293514+00', 'fim_do_dia') ON CONFLICT DO NOTHING;
-INSERT INTO public.store_drivers VALUES ('daa0652f-a3c6-4851-a26a-c3e7ae94ef7a', '70c8f384-a15a-4dfd-bfbc-30ebb9b7f678', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '2026-04-21 18:45:55.587556+00', 'fim_do_dia') ON CONFLICT DO NOTHING;
-
-
--- Data for Name: store_plans; Type: TABLE DATA; Schema: public; Owner: -
-
-INSERT INTO public.store_plans VALUES ('67e3e273-2f79-4bcc-9aeb-ac18a7410755', 'fbff1580-ce82-4798-a96f-f149c69166b3', 'fixed', 180, 0, true, '2026-04-09 17:30:14.013+00', '2026-05-09 17:30:14.013+00', NULL, '2026-04-09 17:30:13.871537+00', '2026-04-09 17:30:13.871537+00', NULL, 0, NULL, NULL) ON CONFLICT DO NOTHING;
-INSERT INTO public.store_plans VALUES ('67d31de7-aee2-4d41-8589-a9bc5b21fa71', 'b243bdb4-45a9-46fc-8248-68dd6ba3e46c', 'fixed', 180, 0, true, '2026-04-09 17:36:23.773+00', '2026-05-09 17:36:23.773+00', NULL, '2026-04-09 17:36:23.523852+00', '2026-04-09 17:36:23.523852+00', NULL, 0, NULL, NULL) ON CONFLICT DO NOTHING;
-INSERT INTO public.store_plans VALUES ('68b8d67d-33ac-4a97-a713-bd4df7150464', 'e577573d-4139-415d-b49d-d6a50e1d393b', 'hybrid', 100, 2.5, true, '2026-04-09 17:36:42.583+00', '2026-05-09 17:36:42.583+00', NULL, '2026-04-09 17:36:42.463691+00', '2026-04-09 17:36:42.463691+00', NULL, 0, NULL, NULL) ON CONFLICT DO NOTHING;
-INSERT INTO public.store_plans VALUES ('5fc8d4da-85ca-45fc-83c3-60c27f895127', '7cd86219-bb0b-4635-801c-9ee8596c6215', 'fixed', 180, 0, true, '2026-04-09 23:06:11.195+00', '2026-05-09 23:06:11.195+00', NULL, '2026-04-09 23:06:10.986047+00', '2026-04-09 23:06:10.986047+00', NULL, 0, NULL, NULL) ON CONFLICT DO NOTHING;
-INSERT INTO public.store_plans VALUES ('43271849-e7f6-497f-ab11-4e33fa2e24f7', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'fixed', 180, 0, true, '2026-04-09 17:36:02.105+00', '2026-05-01 03:00:00+00', NULL, '2026-04-09 17:36:01.880987+00', '2026-04-15 02:46:35.422897+00', NULL, 0, NULL, NULL) ON CONFLICT DO NOTHING;
-INSERT INTO public.store_plans VALUES ('e740fcaa-0394-47cf-83e8-d62f6c95cf5a', '050ed159-cfd4-4de5-9e9e-fcc54bf519f8', 'fixed', 180, 0, true, '2026-04-18 21:43:04.395233+00', '2026-05-01 03:00:00+00', NULL, '2026-04-18 21:43:04.395233+00', '2026-04-18 21:43:04.395233+00', NULL, 0, NULL, NULL) ON CONFLICT DO NOTHING;
-INSERT INTO public.store_plans VALUES ('6097bbb3-4849-45e1-b40e-6af1d0051e1c', '477b9f42-d4c7-4cdf-a24b-fac59212f6d1', 'commission_only', 0, 6, true, '2026-04-09 16:51:40.875159+00', NULL, NULL, '2026-04-09 16:51:40.875159+00', '2026-04-24 17:31:45.771626+00', NULL, 0, NULL, NULL) ON CONFLICT DO NOTHING;
-INSERT INTO public.store_plans VALUES ('453a91be-65c5-4e3c-9e74-2cc30ac5b305', '66129fdd-1f7e-42c8-b3c1-8d4c28b14106', 'commission_only', 0, 6, true, '2026-04-14 14:46:23.242486+00', NULL, NULL, '2026-04-14 14:46:23.242486+00', '2026-04-24 17:31:45.771626+00', NULL, 0, NULL, NULL) ON CONFLICT DO NOTHING;
-INSERT INTO public.store_plans VALUES ('ff8c73f2-7b09-45a6-b942-357fe73cf7e4', '77d96f88-c440-4c13-b547-11a6ae2240a1', 'commission_only', 0, 6, true, '2026-04-23 15:46:43.297+00', NULL, NULL, '2026-04-23 15:46:43.579158+00', '2026-04-24 17:31:45.771626+00', NULL, 0, NULL, NULL) ON CONFLICT DO NOTHING;
-INSERT INTO public.store_plans VALUES ('53090129-caaa-45d5-b57e-2a67b2dffe4d', '00f1814d-703d-4ac1-898d-d53188903aeb', 'commission_only', 0, 6, true, '2026-04-24 17:16:36.577244+00', NULL, NULL, '2026-04-24 17:16:36.577244+00', '2026-04-24 17:31:45.771626+00', NULL, 0, NULL, NULL) ON CONFLICT DO NOTHING;
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Platform admin can read all order items' AND tablename = 'order_items') THEN
+        CREATE POLICY "Platform admin can read all order items" ON public.order_items FOR SELECT TO authenticated USING (public.is_platform_admin(auth.uid()));
+    END IF;
+-- END
 
 
--- Data for Name: store_secrets; Type: TABLE DATA; Schema: public; Owner: -
+-- Name: orders Platform admin can read all orders; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Platform admin can read all orders' AND tablename = 'orders') THEN
+        CREATE POLICY "Platform admin can read all orders" ON public.orders FOR SELECT TO authenticated USING (public.is_platform_admin(auth.uid()));
+    END IF;
+-- END
 
 
+-- Name: profiles Platform admin can read all profiles; Type: POLICY; Schema: public; Owner: -
 
--- Data for Name: terms_acceptance; Type: TABLE DATA; Schema: public; Owner: -
-
-INSERT INTO public.terms_acceptance VALUES ('0d5c250d-a008-4873-a0ad-e36039301b04', '6becbb34-0fd2-4f6b-ba60-46bc058c15e6', '1.0', '1.0', NULL, 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Mobile Safari/537.36', '2026-04-09 13:45:14.865154+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.terms_acceptance VALUES ('8a7c4198-8e98-411b-8d39-d5e33af1a8d5', '137c9a05-75db-4077-acff-17d9ed508c29', '1.0', '1.0', NULL, 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Mobile Safari/537.36', '2026-04-09 18:52:58.159783+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.terms_acceptance VALUES ('ccc69e09-8c66-4a6d-8fb7-39cfc58cdae0', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '1.0', '1.0', NULL, 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Mobile Safari/537.36', '2026-04-11 15:13:51.886295+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.terms_acceptance VALUES ('df19b588-a7ac-4542-acdc-e868bcd81e98', '5e53b885-05f3-4cfd-9a52-d5c1f4457f3b', '1.0', '1.0', NULL, 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Mobile/15E148 Safari/604.1', '2026-04-14 14:46:25.211725+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.terms_acceptance VALUES ('fd7b65c5-c1cd-4914-9ea0-16241db7e214', '37909bb0-03b4-46dc-917d-c17fadaca33c', '1.0', '1.0', NULL, 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Mobile Safari/537.36', '2026-04-16 21:16:21.67077+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.terms_acceptance VALUES ('238b04eb-57ac-4deb-9a8e-224bf06a0674', '1d33caaf-2aaf-4ac4-a41e-b94508e0ed50', '1.0', '1.0', NULL, 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Mobile/15E148 Safari/604.1', '2026-04-18 16:59:24.681441+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.terms_acceptance VALUES ('05ffd6c5-2311-4b7d-902c-ecd3c8ed45fb', 'ed862e03-693d-4b7c-8342-400527be9c42', '1.0', '1.0', NULL, 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Mobile Safari/537.36', '2026-04-22 16:03:29.754369+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.terms_acceptance VALUES ('9e5f5903-318a-4300-b013-8ca1b17066b5', 'acefbf75-9e70-473e-b8ae-c6fb170c886e', '1.0', '1.0', NULL, 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Mobile Safari/537.36', '2026-04-24 17:16:37.891305+00') ON CONFLICT DO NOTHING;
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Platform admin can read all profiles' AND tablename = 'profiles') THEN
+        CREATE POLICY "Platform admin can read all profiles" ON public.profiles FOR SELECT TO authenticated USING (public.is_platform_admin(auth.uid()));
+    END IF;
+-- END
 
 
--- Data for Name: user_active_devices; Type: TABLE DATA; Schema: public; Owner: -
+-- Name: stores Platform admin can read all stores; Type: POLICY; Schema: public; Owner: -
 
-INSERT INTO public.user_active_devices VALUES ('0c1d451c-bcc5-427b-b0f2-a6611fef8ad7', '1d33caaf-2aaf-4ac4-a41e-b94508e0ed50', '24c61a71-2c4a-4359-8086-ad5f77a0f0a3', '2026-04-18 17:00:10.019769+00', '2026-04-18 16:59:24.673655+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.user_active_devices VALUES ('65bd32de-a7b8-4802-a803-fc9d8827f5ab', '6becbb34-0fd2-4f6b-ba60-46bc058c15e6', 'a21b05aa-dfd1-4eb3-90fe-e55f4b552a23', '2026-04-25 17:59:17.040741+00', '2026-04-13 10:59:55.148488+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.user_active_devices VALUES ('d2b62cd3-33a1-48ba-b832-77a05d5fc476', '5e53b885-05f3-4cfd-9a52-d5c1f4457f3b', '3d7d816c-f5e7-44d8-b563-8e91fe9f8a8c', '2026-04-22 19:20:33.916295+00', '2026-04-14 14:46:25.211377+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.user_active_devices VALUES ('b2e3dfc9-6a46-4544-862c-f8da0764ea39', 'acefbf75-9e70-473e-b8ae-c6fb170c886e', 'bbff4c26-ae2e-4f19-8188-4f5b6b5ba89d', '2026-04-25 18:29:23.158147+00', '2026-04-24 17:16:37.794973+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.user_active_devices VALUES ('4fa4aaa4-36f6-4931-9a20-60538796536f', '927289c1-9e81-463a-b950-9b83d4d505e5', '2d7646ce-7be8-4593-a96c-08768aacc5e0', '2026-04-15 00:26:53.94909+00', '2026-04-14 23:59:08.540137+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.user_active_devices VALUES ('a3a2020b-a2f0-4ee0-b7fe-c21c1dda3ca8', '37909bb0-03b4-46dc-917d-c17fadaca33c', '5b011366-18ac-4f4e-bcd6-1f625df3b251', '2026-04-16 21:31:37.158797+00', '2026-04-16 21:16:21.664599+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.user_active_devices VALUES ('b92fd6a6-70b4-4422-aebd-e6ccacafe487', 'ed862e03-693d-4b7c-8342-400527be9c42', 'bbff4c26-ae2e-4f19-8188-4f5b6b5ba89d', '2026-04-23 15:04:18.452841+00', '2026-04-22 16:03:29.89604+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.user_active_devices VALUES ('9ce1684b-b0ce-4026-b3fe-f22a5c2bf4a2', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'a5ffff67-48e9-4412-a763-cea63812b8c0', '2026-04-25 17:08:00.756482+00', '2026-04-13 12:52:56.47428+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.user_active_devices VALUES ('074d2ee5-b6f0-4a71-a56e-cbbc29cb5227', 'ba9ce4c7-7133-45d5-8c2f-454914b7da38', 'a21b05aa-dfd1-4eb3-90fe-e55f4b552a23', '2026-04-21 23:46:40.572692+00', '2026-04-14 00:32:33.73079+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.user_active_devices VALUES ('c11592c9-9923-41ba-b98e-dc78c85a93fa', '137c9a05-75db-4077-acff-17d9ed508c29', 'bbff4c26-ae2e-4f19-8188-4f5b6b5ba89d', '2026-04-15 02:43:38.737822+00', '2026-04-15 00:15:09.041825+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.user_active_devices VALUES ('6707e0ce-beec-4bfb-a1d9-de8518182de0', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 'b48a1708-ca7a-40ef-84e8-25a1b2a5e5ea', '2026-04-25 17:18:40.242688+00', '2026-04-13 12:49:55.102755+00') ON CONFLICT DO NOTHING;
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Platform admin can read all stores' AND tablename = 'stores') THEN
+        CREATE POLICY "Platform admin can read all stores" ON public.stores FOR SELECT TO authenticated USING (public.is_platform_admin(auth.uid()));
+    END IF;
+-- END
 
 
--- Data for Name: user_roles; Type: TABLE DATA; Schema: public; Owner: -
+-- Name: profiles Platform admin can update all profiles; Type: POLICY; Schema: public; Owner: -
 
-INSERT INTO public.user_roles VALUES ('4aeb16d3-0d73-4e49-bf6c-0a5a8b97081b', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'admin') ON CONFLICT DO NOTHING;
-
-
--- Data for Name: user_wallet; Type: TABLE DATA; Schema: public; Owner: -
-
-
-
--- Data for Name: wallet_transactions; Type: TABLE DATA; Schema: public; Owner: -
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Platform admin can update all profiles' AND tablename = 'profiles') THEN
+        CREATE POLICY "Platform admin can update all profiles" ON public.profiles FOR UPDATE TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
+    END IF;
+-- END
 
 
+-- Name: store_balances Platform admin can update balances; Type: POLICY; Schema: public; Owner: -
 
--- Data for Name: withdrawal_requests; Type: TABLE DATA; Schema: public; Owner: -
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Platform admin can update balances' AND tablename = 'store_balances') THEN
+        CREATE POLICY "Platform admin can update balances" ON public.store_balances FOR UPDATE TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
+    END IF;
+-- END
 
-INSERT INTO public.withdrawal_requests VALUES ('ac114293-a525-4290-9c3e-a0de4520dbcf', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 8, '17508039769', 'cpf', 'pago', '2026-03-31 16:08:21.103924+00', '2026-03-31 16:11:46.653+00', NULL, 'SK-1009') ON CONFLICT DO NOTHING;
-INSERT INTO public.withdrawal_requests VALUES ('6f653f5d-d2bb-46c8-91d7-b68465137f9b', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 16, '17508039769', 'cpf', 'pago', '2026-03-31 17:06:40.373857+00', '2026-03-31 17:06:53.978+00', NULL, 'SK-1010') ON CONFLICT DO NOTHING;
-INSERT INTO public.withdrawal_requests VALUES ('60786c05-2971-4a9b-b28d-2d870fb90857', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 4, '17508039769', 'cpf', 'pago', '2026-03-31 17:17:04.674088+00', '2026-03-31 17:17:14.58+00', NULL, 'SK-1011') ON CONFLICT DO NOTHING;
+
+-- Name: financial_transactions Platform admin can update financial transactions; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Platform admin can update financial transactions' AND tablename = 'financial_transactions') THEN
+        CREATE POLICY "Platform admin can update financial transactions" ON public.financial_transactions FOR UPDATE TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
+    END IF;
+-- END
 
 
--- Name: withdrawal_code_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: user_roles Prevent self role assignment; Type: POLICY; Schema: public; Owner: -
 
-SELECT pg_catalog.setval('public.withdrawal_code_seq', 1011, true);
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Prevent self role assignment' AND tablename = 'user_roles') THEN
+        CREATE POLICY "Prevent self role assignment" ON public.user_roles AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK (((user_id <> auth.uid()) AND public.is_platform_admin(auth.uid())));
+    END IF;
+-- END
 
+
+-- Name: order_items Store drivers can read linked order items; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store drivers can read linked order items' AND tablename = 'order_items') THEN
+        CREATE POLICY "Store drivers can read linked order items" ON public.order_items FOR SELECT TO authenticated USING ((EXISTS ( SELECT 1
+   FROM (public.orders o
+     JOIN public.store_drivers sd ON ((sd.store_id = o.store_id)))
+  WHERE ((o.id = order_items.order_id) AND (sd.driver_user_id = auth.uid())))));
+    END IF;
+-- END
+
+
+-- Name: order_messages Store drivers can read linked order messages; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store drivers can read linked order messages' AND tablename = 'order_messages') THEN
+        CREATE POLICY "Store drivers can read linked order messages" ON public.order_messages FOR SELECT TO authenticated USING ((EXISTS ( SELECT 1
+   FROM (public.orders o
+     JOIN public.store_drivers sd ON ((sd.store_id = o.store_id)))
+  WHERE ((o.id = order_messages.order_id) AND (sd.driver_user_id = auth.uid())))));
+    END IF;
+-- END
+
+
+-- Name: stores Store drivers can read linked stores; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store drivers can read linked stores' AND tablename = 'stores') THEN
+        CREATE POLICY "Store drivers can read linked stores" ON public.stores FOR SELECT TO authenticated USING ((id IN ( SELECT store_drivers.store_id
+   FROM public.store_drivers
+  WHERE (store_drivers.driver_user_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: orders Store drivers can see linked store orders; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store drivers can see linked store orders' AND tablename = 'orders') THEN
+        CREATE POLICY "Store drivers can see linked store orders" ON public.orders FOR SELECT TO authenticated USING (((EXISTS ( SELECT 1
+   FROM public.store_drivers sd
+  WHERE ((sd.driver_user_id = auth.uid()) AND (sd.store_id = orders.store_id)))) AND ((driver_id = auth.uid()) OR (assigned_driver_id = auth.uid()) OR ((assigned_driver_id IS NULL) AND (driver_id IS NULL)) OR ((driver_id IS NOT NULL) AND (driver_id = auth.uid())))));
+    END IF;
+-- END
+
+
+-- Name: order_messages Store drivers can send messages on linked orders; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store drivers can send messages on linked orders' AND tablename = 'order_messages') THEN
+        CREATE POLICY "Store drivers can send messages on linked orders" ON public.order_messages FOR INSERT TO authenticated WITH CHECK (((sender_id = auth.uid()) AND (EXISTS ( SELECT 1
+   FROM (public.orders o
+     JOIN public.store_drivers sd ON ((sd.store_id = o.store_id)))
+  WHERE ((o.id = order_messages.order_id) AND (sd.driver_user_id = auth.uid()))))));
+    END IF;
+-- END
+
+
+-- Name: orders Store drivers can update linked store orders; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store drivers can update linked store orders' AND tablename = 'orders') THEN
+        CREATE POLICY "Store drivers can update linked store orders" ON public.orders FOR UPDATE TO authenticated USING ((EXISTS ( SELECT 1
+   FROM public.store_drivers sd
+  WHERE ((sd.driver_user_id = auth.uid()) AND (sd.store_id = orders.store_id))))) WITH CHECK ((EXISTS ( SELECT 1
+   FROM public.store_drivers sd
+  WHERE ((sd.driver_user_id = auth.uid()) AND (sd.store_id = orders.store_id)))));
+    END IF;
+-- END
+
+
+-- Name: store_secrets Store owner can insert own secrets; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owner can insert own secrets' AND tablename = 'store_secrets') THEN
+        CREATE POLICY "Store owner can insert own secrets" ON public.store_secrets FOR INSERT TO authenticated WITH CHECK ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: store_secrets Store owner can read own secrets; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owner can read own secrets' AND tablename = 'store_secrets') THEN
+        CREATE POLICY "Store owner can read own secrets" ON public.store_secrets FOR SELECT TO authenticated USING (((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid()))) OR public.is_platform_admin(auth.uid())));
+    END IF;
+-- END
+
+
+-- Name: store_secrets Store owner can update own secrets; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owner can update own secrets' AND tablename = 'store_secrets') THEN
+        CREATE POLICY "Store owner can update own secrets" ON public.store_secrets FOR UPDATE TO authenticated USING (((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid()))) OR public.is_platform_admin(auth.uid())));
+    END IF;
+-- END
+
+
+-- Name: addon_groups Store owners can delete addon groups; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can delete addon groups' AND tablename = 'addon_groups') THEN
+        CREATE POLICY "Store owners can delete addon groups" ON public.addon_groups FOR DELETE TO authenticated USING ((product_id IN ( SELECT p.id
+   FROM (public.products p
+     JOIN public.stores s ON ((p.store_id = s.id)))
+  WHERE (s.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: addon_items Store owners can delete addon items; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can delete addon items' AND tablename = 'addon_items') THEN
+        CREATE POLICY "Store owners can delete addon items" ON public.addon_items FOR DELETE TO authenticated USING ((group_id IN ( SELECT ag.id
+   FROM ((public.addon_groups ag
+     JOIN public.products p ON ((ag.product_id = p.id)))
+     JOIN public.stores s ON ((p.store_id = s.id)))
+  WHERE (s.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: addon_items Store owners can delete addon items via store; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can delete addon items via store' AND tablename = 'addon_items') THEN
+        CREATE POLICY "Store owners can delete addon items via store" ON public.addon_items FOR DELETE TO authenticated USING ((group_id IN ( SELECT addon_groups.id
+   FROM public.addon_groups
+  WHERE (addon_groups.store_id IN ( SELECT stores.id
+           FROM public.stores
+          WHERE (stores.owner_id = auth.uid()))))));
+    END IF;
+-- END
+
+
+-- Name: pizza_borders Store owners can delete own borders; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can delete own borders' AND tablename = 'pizza_borders') THEN
+        CREATE POLICY "Store owners can delete own borders" ON public.pizza_borders FOR DELETE TO authenticated USING ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: opening_hours Store owners can delete own hours; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can delete own hours' AND tablename = 'opening_hours') THEN
+        CREATE POLICY "Store owners can delete own hours" ON public.opening_hours FOR DELETE TO authenticated USING ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: menu_sections Store owners can delete own menu sections; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can delete own menu sections' AND tablename = 'menu_sections') THEN
+        CREATE POLICY "Store owners can delete own menu sections" ON public.menu_sections FOR DELETE TO authenticated USING ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: products Store owners can delete own products; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can delete own products' AND tablename = 'products') THEN
+        CREATE POLICY "Store owners can delete own products" ON public.products FOR DELETE TO authenticated USING ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: store_drivers Store owners can delete own store drivers; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can delete own store drivers' AND tablename = 'store_drivers') THEN
+        CREATE POLICY "Store owners can delete own store drivers" ON public.store_drivers FOR DELETE TO authenticated USING (public.is_store_owner(auth.uid(), store_id));
+    END IF;
+-- END
+
+
+-- Name: product_addon_groups Store owners can delete product addon links; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can delete product addon links' AND tablename = 'product_addon_groups') THEN
+        CREATE POLICY "Store owners can delete product addon links" ON public.product_addon_groups FOR DELETE TO authenticated USING ((product_id IN ( SELECT p.id
+   FROM (public.products p
+     JOIN public.stores s ON ((p.store_id = s.id)))
+  WHERE (s.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: addon_groups Store owners can delete store addon groups; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can delete store addon groups' AND tablename = 'addon_groups') THEN
+        CREATE POLICY "Store owners can delete store addon groups" ON public.addon_groups FOR DELETE TO authenticated USING ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: pizza_borders Store owners can insert own borders; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can insert own borders' AND tablename = 'pizza_borders') THEN
+        CREATE POLICY "Store owners can insert own borders" ON public.pizza_borders FOR INSERT TO authenticated WITH CHECK ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: opening_hours Store owners can insert own hours; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can insert own hours' AND tablename = 'opening_hours') THEN
+        CREATE POLICY "Store owners can insert own hours" ON public.opening_hours FOR INSERT TO authenticated WITH CHECK ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: products Store owners can insert own products; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can insert own products' AND tablename = 'products') THEN
+        CREATE POLICY "Store owners can insert own products" ON public.products FOR INSERT TO authenticated WITH CHECK ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: store_drivers Store owners can insert own store drivers; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can insert own store drivers' AND tablename = 'store_drivers') THEN
+        CREATE POLICY "Store owners can insert own store drivers" ON public.store_drivers FOR INSERT TO authenticated WITH CHECK (public.is_store_owner(auth.uid(), store_id));
+    END IF;
+-- END
+
+
+-- Name: product_addon_groups Store owners can insert product addon links; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can insert product addon links' AND tablename = 'product_addon_groups') THEN
+        CREATE POLICY "Store owners can insert product addon links" ON public.product_addon_groups FOR INSERT TO authenticated WITH CHECK ((product_id IN ( SELECT p.id
+   FROM (public.products p
+     JOIN public.stores s ON ((p.store_id = s.id)))
+  WHERE (s.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: addon_groups Store owners can insert store addon groups; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can insert store addon groups' AND tablename = 'addon_groups') THEN
+        CREATE POLICY "Store owners can insert store addon groups" ON public.addon_groups FOR INSERT TO authenticated WITH CHECK ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: addon_groups Store owners can manage addon groups; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can manage addon groups' AND tablename = 'addon_groups') THEN
+        CREATE POLICY "Store owners can manage addon groups" ON public.addon_groups FOR INSERT TO authenticated WITH CHECK ((product_id IN ( SELECT p.id
+   FROM (public.products p
+     JOIN public.stores s ON ((p.store_id = s.id)))
+  WHERE (s.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: addon_items Store owners can manage addon items; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can manage addon items' AND tablename = 'addon_items') THEN
+        CREATE POLICY "Store owners can manage addon items" ON public.addon_items FOR INSERT TO authenticated WITH CHECK ((group_id IN ( SELECT ag.id
+   FROM ((public.addon_groups ag
+     JOIN public.products p ON ((ag.product_id = p.id)))
+     JOIN public.stores s ON ((p.store_id = s.id)))
+  WHERE (s.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: addon_items Store owners can manage addon items via store; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can manage addon items via store' AND tablename = 'addon_items') THEN
+        CREATE POLICY "Store owners can manage addon items via store" ON public.addon_items FOR INSERT TO authenticated WITH CHECK ((group_id IN ( SELECT addon_groups.id
+   FROM public.addon_groups
+  WHERE (addon_groups.store_id IN ( SELECT stores.id
+           FROM public.stores
+          WHERE (stores.owner_id = auth.uid()))))));
+    END IF;
+-- END
+
+
+-- Name: banners Store owners can manage own banners; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can manage own banners' AND tablename = 'banners') THEN
+        CREATE POLICY "Store owners can manage own banners" ON public.banners TO authenticated USING ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid())))) WITH CHECK ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: loyalty_config Store owners can manage own config; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can manage own config' AND tablename = 'loyalty_config') THEN
+        CREATE POLICY "Store owners can manage own config" ON public.loyalty_config TO authenticated USING ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid())))) WITH CHECK ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: coupons Store owners can manage own coupons; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can manage own coupons' AND tablename = 'coupons') THEN
+        CREATE POLICY "Store owners can manage own coupons" ON public.coupons TO authenticated USING ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid())))) WITH CHECK ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: menu_sections Store owners can manage own menu sections; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can manage own menu sections' AND tablename = 'menu_sections') THEN
+        CREATE POLICY "Store owners can manage own menu sections" ON public.menu_sections FOR INSERT TO authenticated WITH CHECK ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: driver_locations Store owners can read driver location for their orders; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can read driver location for their orders' AND tablename = 'driver_locations') THEN
+        CREATE POLICY "Store owners can read driver location for their orders" ON public.driver_locations FOR SELECT TO authenticated USING ((EXISTS ( SELECT 1
+   FROM (public.orders o
+     JOIN public.stores s ON ((o.store_id = s.id)))
+  WHERE ((o.id = driver_locations.order_id) AND (s.owner_id = auth.uid())))));
+    END IF;
+-- END
+
+
+-- Name: profiles Store owners can read linked driver profiles; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can read linked driver profiles' AND tablename = 'profiles') THEN
+        CREATE POLICY "Store owners can read linked driver profiles" ON public.profiles FOR SELECT TO authenticated USING ((user_id IN ( SELECT sd.driver_user_id
+   FROM (public.store_drivers sd
+     JOIN public.stores s ON ((sd.store_id = s.id)))
+  WHERE (s.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: store_balances Store owners can read own balance; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can read own balance' AND tablename = 'store_balances') THEN
+        CREATE POLICY "Store owners can read own balance" ON public.store_balances FOR SELECT TO authenticated USING ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: compliance_alerts Store owners can read own compliance alerts; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can read own compliance alerts' AND tablename = 'compliance_alerts') THEN
+        CREATE POLICY "Store owners can read own compliance alerts" ON public.compliance_alerts FOR SELECT TO authenticated USING ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: financial_transactions Store owners can read own financial transactions; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can read own financial transactions' AND tablename = 'financial_transactions') THEN
+        CREATE POLICY "Store owners can read own financial transactions" ON public.financial_transactions FOR SELECT TO authenticated USING ((store_id IN ( SELECT s.id
+   FROM public.stores s
+  WHERE (s.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: store_plans Store owners can read own plan; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can read own plan' AND tablename = 'store_plans') THEN
+        CREATE POLICY "Store owners can read own plan" ON public.store_plans FOR SELECT TO authenticated USING ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: plan_change_requests Store owners can read own plan requests; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can read own plan requests' AND tablename = 'plan_change_requests') THEN
+        CREATE POLICY "Store owners can read own plan requests" ON public.plan_change_requests FOR SELECT TO authenticated USING ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: store_drivers Store owners can read own store drivers; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can read own store drivers' AND tablename = 'store_drivers') THEN
+        CREATE POLICY "Store owners can read own store drivers" ON public.store_drivers FOR SELECT TO authenticated USING (public.is_store_owner(auth.uid(), store_id));
+    END IF;
+-- END
+
+
+-- Name: stores Store owners can read own stores; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can read own stores' AND tablename = 'stores') THEN
+        CREATE POLICY "Store owners can read own stores" ON public.stores FOR SELECT TO authenticated USING ((owner_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: fcm_tokens Store owners can read store fcm tokens; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can read store fcm tokens' AND tablename = 'fcm_tokens') THEN
+        CREATE POLICY "Store owners can read store fcm tokens" ON public.fcm_tokens FOR SELECT TO authenticated USING ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: loyalty_points Store owners can read store loyalty; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can read store loyalty' AND tablename = 'loyalty_points') THEN
+        CREATE POLICY "Store owners can read store loyalty" ON public.loyalty_points FOR SELECT TO authenticated USING ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: order_items Store owners can read store order items; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can read store order items' AND tablename = 'order_items') THEN
+        CREATE POLICY "Store owners can read store order items" ON public.order_items FOR SELECT TO authenticated USING ((EXISTS ( SELECT 1
+   FROM (public.orders o
+     JOIN public.stores s ON ((o.store_id = s.id)))
+  WHERE ((o.id = order_items.order_id) AND (s.owner_id = auth.uid())))));
+    END IF;
+-- END
+
+
+-- Name: orders Store owners can read store orders; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can read store orders' AND tablename = 'orders') THEN
+        CREATE POLICY "Store owners can read store orders" ON public.orders FOR SELECT TO authenticated USING ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: order_ratings Store owners can read store ratings; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can read store ratings' AND tablename = 'order_ratings') THEN
+        CREATE POLICY "Store owners can read store ratings" ON public.order_ratings FOR SELECT TO authenticated USING ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: plan_change_requests Store owners can request plan changes; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can request plan changes' AND tablename = 'plan_change_requests') THEN
+        CREATE POLICY "Store owners can request plan changes" ON public.plan_change_requests FOR INSERT TO authenticated WITH CHECK ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: addon_groups Store owners can update addon groups; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can update addon groups' AND tablename = 'addon_groups') THEN
+        CREATE POLICY "Store owners can update addon groups" ON public.addon_groups FOR UPDATE TO authenticated USING ((product_id IN ( SELECT p.id
+   FROM (public.products p
+     JOIN public.stores s ON ((p.store_id = s.id)))
+  WHERE (s.owner_id = auth.uid())))) WITH CHECK ((product_id IN ( SELECT p.id
+   FROM (public.products p
+     JOIN public.stores s ON ((p.store_id = s.id)))
+  WHERE (s.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: addon_items Store owners can update addon items; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can update addon items' AND tablename = 'addon_items') THEN
+        CREATE POLICY "Store owners can update addon items" ON public.addon_items FOR UPDATE TO authenticated USING ((group_id IN ( SELECT ag.id
+   FROM ((public.addon_groups ag
+     JOIN public.products p ON ((ag.product_id = p.id)))
+     JOIN public.stores s ON ((p.store_id = s.id)))
+  WHERE (s.owner_id = auth.uid())))) WITH CHECK ((group_id IN ( SELECT ag.id
+   FROM ((public.addon_groups ag
+     JOIN public.products p ON ((ag.product_id = p.id)))
+     JOIN public.stores s ON ((p.store_id = s.id)))
+  WHERE (s.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: addon_items Store owners can update addon items via store; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can update addon items via store' AND tablename = 'addon_items') THEN
+        CREATE POLICY "Store owners can update addon items via store" ON public.addon_items FOR UPDATE TO authenticated USING ((group_id IN ( SELECT addon_groups.id
+   FROM public.addon_groups
+  WHERE (addon_groups.store_id IN ( SELECT stores.id
+           FROM public.stores
+          WHERE (stores.owner_id = auth.uid())))))) WITH CHECK ((group_id IN ( SELECT addon_groups.id
+   FROM public.addon_groups
+  WHERE (addon_groups.store_id IN ( SELECT stores.id
+           FROM public.stores
+          WHERE (stores.owner_id = auth.uid()))))));
+    END IF;
+-- END
+
+
+-- Name: pizza_borders Store owners can update own borders; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can update own borders' AND tablename = 'pizza_borders') THEN
+        CREATE POLICY "Store owners can update own borders" ON public.pizza_borders FOR UPDATE TO authenticated USING ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid())))) WITH CHECK ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: opening_hours Store owners can update own hours; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can update own hours' AND tablename = 'opening_hours') THEN
+        CREATE POLICY "Store owners can update own hours" ON public.opening_hours FOR UPDATE TO authenticated USING ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid())))) WITH CHECK ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: menu_sections Store owners can update own menu sections; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can update own menu sections' AND tablename = 'menu_sections') THEN
+        CREATE POLICY "Store owners can update own menu sections" ON public.menu_sections FOR UPDATE TO authenticated USING ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid())))) WITH CHECK ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: products Store owners can update own products; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can update own products' AND tablename = 'products') THEN
+        CREATE POLICY "Store owners can update own products" ON public.products FOR UPDATE TO authenticated USING ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid())))) WITH CHECK ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: stores Store owners can update own store; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can update own store' AND tablename = 'stores') THEN
+        CREATE POLICY "Store owners can update own store" ON public.stores FOR UPDATE TO authenticated USING ((owner_id = auth.uid())) WITH CHECK ((owner_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: refund_requests Store owners can update refund requests; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can update refund requests' AND tablename = 'refund_requests') THEN
+        CREATE POLICY "Store owners can update refund requests" ON public.refund_requests FOR UPDATE TO authenticated USING ((EXISTS ( SELECT 1
+   FROM public.stores
+  WHERE ((stores.id = refund_requests.store_id) AND (stores.owner_id = auth.uid())))));
+    END IF;
+-- END
+
+
+-- Name: addon_groups Store owners can update store addon groups; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can update store addon groups' AND tablename = 'addon_groups') THEN
+        CREATE POLICY "Store owners can update store addon groups" ON public.addon_groups FOR UPDATE TO authenticated USING ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid())))) WITH CHECK ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: orders Store owners can update store orders; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can update store orders' AND tablename = 'orders') THEN
+        CREATE POLICY "Store owners can update store orders" ON public.orders FOR UPDATE TO authenticated USING ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid())))) WITH CHECK ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: refund_requests Store owners can view store refund requests; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners can view store refund requests' AND tablename = 'refund_requests') THEN
+        CREATE POLICY "Store owners can view store refund requests" ON public.refund_requests FOR SELECT TO authenticated USING ((EXISTS ( SELECT 1
+   FROM public.stores
+  WHERE ((stores.id = refund_requests.store_id) AND (stores.owner_id = auth.uid())))));
+    END IF;
+-- END
+
+
+-- Name: store_driver_earnings Store owners see store driver earnings; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners see store driver earnings' AND tablename = 'store_driver_earnings') THEN
+        CREATE POLICY "Store owners see store driver earnings" ON public.store_driver_earnings FOR SELECT TO authenticated USING ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: store_driver_earnings Store owners update store driver earnings; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store owners update store driver earnings' AND tablename = 'store_driver_earnings') THEN
+        CREATE POLICY "Store owners update store driver earnings" ON public.store_driver_earnings FOR UPDATE TO authenticated USING ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid())))) WITH CHECK ((store_id IN ( SELECT stores.id
+   FROM public.stores
+  WHERE (stores.owner_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: user_active_devices Users can delete own device; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can delete own device' AND tablename = 'user_active_devices') THEN
+        CREATE POLICY "Users can delete own device" ON public.user_active_devices FOR DELETE TO authenticated USING ((user_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: onesignal_players Users can delete own players; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can delete own players' AND tablename = 'onesignal_players') THEN
+        CREATE POLICY "Users can delete own players" ON public.onesignal_players FOR DELETE TO authenticated USING ((user_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: fcm_tokens Users can delete own tokens; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can delete own tokens' AND tablename = 'fcm_tokens') THEN
+        CREATE POLICY "Users can delete own tokens" ON public.fcm_tokens FOR DELETE TO authenticated USING ((user_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: coupon_uses Users can insert own coupon uses; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can insert own coupon uses' AND tablename = 'coupon_uses') THEN
+        CREATE POLICY "Users can insert own coupon uses" ON public.coupon_uses FOR INSERT TO authenticated WITH CHECK ((user_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: user_active_devices Users can insert own device; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can insert own device' AND tablename = 'user_active_devices') THEN
+        CREATE POLICY "Users can insert own device" ON public.user_active_devices FOR INSERT TO authenticated WITH CHECK ((user_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: onesignal_players Users can insert own players; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can insert own players' AND tablename = 'onesignal_players') THEN
+        CREATE POLICY "Users can insert own players" ON public.onesignal_players FOR INSERT TO authenticated WITH CHECK ((user_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: profiles Users can insert own profile; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can insert own profile' AND tablename = 'profiles') THEN
+        CREATE POLICY "Users can insert own profile" ON public.profiles FOR INSERT TO authenticated WITH CHECK ((user_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: order_ratings Users can insert own ratings; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can insert own ratings' AND tablename = 'order_ratings') THEN
+        CREATE POLICY "Users can insert own ratings" ON public.order_ratings FOR INSERT TO authenticated WITH CHECK ((user_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: terms_acceptance Users can insert own terms acceptance; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can insert own terms acceptance' AND tablename = 'terms_acceptance') THEN
+        CREATE POLICY "Users can insert own terms acceptance" ON public.terms_acceptance FOR INSERT TO authenticated WITH CHECK ((user_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: fcm_tokens Users can insert own tokens; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can insert own tokens' AND tablename = 'fcm_tokens') THEN
+        CREATE POLICY "Users can insert own tokens" ON public.fcm_tokens FOR INSERT TO authenticated WITH CHECK ((user_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: saved_addresses Users can manage own addresses; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can manage own addresses' AND tablename = 'saved_addresses') THEN
+        CREATE POLICY "Users can manage own addresses" ON public.saved_addresses TO authenticated USING ((user_id = auth.uid())) WITH CHECK ((user_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: coupon_uses Users can read own coupon uses; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can read own coupon uses' AND tablename = 'coupon_uses') THEN
+        CREATE POLICY "Users can read own coupon uses" ON public.coupon_uses FOR SELECT TO authenticated USING ((user_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: user_active_devices Users can read own device; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can read own device' AND tablename = 'user_active_devices') THEN
+        CREATE POLICY "Users can read own device" ON public.user_active_devices FOR SELECT TO authenticated USING ((user_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: loyalty_points Users can read own loyalty; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can read own loyalty' AND tablename = 'loyalty_points') THEN
+        CREATE POLICY "Users can read own loyalty" ON public.loyalty_points FOR SELECT TO authenticated USING ((user_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: onesignal_players Users can read own players; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can read own players' AND tablename = 'onesignal_players') THEN
+        CREATE POLICY "Users can read own players" ON public.onesignal_players FOR SELECT TO authenticated USING ((user_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: profiles Users can read own profile; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can read own profile' AND tablename = 'profiles') THEN
+        CREATE POLICY "Users can read own profile" ON public.profiles FOR SELECT TO authenticated USING ((user_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: order_ratings Users can read own ratings; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can read own ratings' AND tablename = 'order_ratings') THEN
+        CREATE POLICY "Users can read own ratings" ON public.order_ratings FOR SELECT TO authenticated USING ((user_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: user_roles Users can read own roles; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can read own roles' AND tablename = 'user_roles') THEN
+        CREATE POLICY "Users can read own roles" ON public.user_roles FOR SELECT TO authenticated USING ((user_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: terms_acceptance Users can read own terms acceptance; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can read own terms acceptance' AND tablename = 'terms_acceptance') THEN
+        CREATE POLICY "Users can read own terms acceptance" ON public.terms_acceptance FOR SELECT TO authenticated USING ((user_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: fcm_tokens Users can read own tokens; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can read own tokens' AND tablename = 'fcm_tokens') THEN
+        CREATE POLICY "Users can read own tokens" ON public.fcm_tokens FOR SELECT TO authenticated USING ((user_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: user_active_devices Users can update own device; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can update own device' AND tablename = 'user_active_devices') THEN
+        CREATE POLICY "Users can update own device" ON public.user_active_devices FOR UPDATE TO authenticated USING ((user_id = auth.uid())) WITH CHECK ((user_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: onesignal_players Users can update own players; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can update own players' AND tablename = 'onesignal_players') THEN
+        CREATE POLICY "Users can update own players" ON public.onesignal_players FOR UPDATE TO authenticated USING ((user_id = auth.uid())) WITH CHECK ((user_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: profiles Users can update own profile; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can update own profile' AND tablename = 'profiles') THEN
+        CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE TO authenticated USING ((user_id = auth.uid())) WITH CHECK ((user_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: fcm_tokens Users can update own tokens; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can update own tokens' AND tablename = 'fcm_tokens') THEN
+        CREATE POLICY "Users can update own tokens" ON public.fcm_tokens FOR UPDATE TO authenticated USING ((user_id = auth.uid())) WITH CHECK ((user_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: user_wallet Users can view own wallet; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can view own wallet' AND tablename = 'user_wallet') THEN
+        CREATE POLICY "Users can view own wallet" ON public.user_wallet FOR SELECT TO authenticated USING ((user_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: wallet_transactions Users can view own wallet transactions; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can view own wallet transactions' AND tablename = 'wallet_transactions') THEN
+        CREATE POLICY "Users can view own wallet transactions" ON public.wallet_transactions FOR SELECT TO authenticated USING ((user_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: addon_groups; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.addon_groups ENABLE ROW LEVEL SECURITY;
+
+-- Name: addon_items; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.addon_items ENABLE ROW LEVEL SECURITY;
+
+-- Name: admin_settings; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.admin_settings ENABLE ROW LEVEL SECURITY;
+
+-- Name: app_links; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.app_links ENABLE ROW LEVEL SECURITY;
+
+-- Name: archived_accounts; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.archived_accounts ENABLE ROW LEVEL SECURITY;
+
+-- Name: banners; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.banners ENABLE ROW LEVEL SECURITY;
+
+-- Name: compliance_alerts; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.compliance_alerts ENABLE ROW LEVEL SECURITY;
+
+-- Name: coupon_uses; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.coupon_uses ENABLE ROW LEVEL SECURITY;
+
+-- Name: coupons; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.coupons ENABLE ROW LEVEL SECURITY;
+
+-- Name: driver_balances; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.driver_balances ENABLE ROW LEVEL SECURITY;
+
+-- Name: driver_earnings; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.driver_earnings ENABLE ROW LEVEL SECURITY;
+
+-- Name: driver_locations; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.driver_locations ENABLE ROW LEVEL SECURITY;
+
+-- Name: drivers; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.drivers ENABLE ROW LEVEL SECURITY;
+
+-- Name: emergency_fund; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.emergency_fund ENABLE ROW LEVEL SECURITY;
+
+-- Name: fcm_tokens; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.fcm_tokens ENABLE ROW LEVEL SECURITY;
+
+-- Name: financial_transactions; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.financial_transactions ENABLE ROW LEVEL SECURITY;
+
+-- Name: loyalty_config; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.loyalty_config ENABLE ROW LEVEL SECURITY;
+
+-- Name: loyalty_points; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.loyalty_points ENABLE ROW LEVEL SECURITY;
+
+-- Name: menu_sections; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.menu_sections ENABLE ROW LEVEL SECURITY;
+
+-- Name: moderator_earnings; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.moderator_earnings ENABLE ROW LEVEL SECURITY;
+
+-- Name: moderator_referrals; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.moderator_referrals ENABLE ROW LEVEL SECURITY;
+
+-- Name: moderators; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.moderators ENABLE ROW LEVEL SECURITY;
+
+-- Name: neighborhood_fees; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.neighborhood_fees ENABLE ROW LEVEL SECURITY;
+
+-- Name: onesignal_players; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.onesignal_players ENABLE ROW LEVEL SECURITY;
+
+-- Name: opening_hours; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.opening_hours ENABLE ROW LEVEL SECURITY;
+
+-- Name: order_items; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
+
+-- Name: order_messages; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.order_messages ENABLE ROW LEVEL SECURITY;
+
+-- Name: order_ratings; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.order_ratings ENABLE ROW LEVEL SECURITY;
+
+-- Name: orders; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
+
+-- Name: page_views; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.page_views ENABLE ROW LEVEL SECURITY;
+
+-- Name: partner_payouts; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.partner_payouts ENABLE ROW LEVEL SECURITY;
+
+-- Name: payout_history; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.payout_history ENABLE ROW LEVEL SECURITY;
+
+-- Name: pizza_borders; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.pizza_borders ENABLE ROW LEVEL SECURITY;
+
+-- Name: plan_change_requests; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.plan_change_requests ENABLE ROW LEVEL SECURITY;
+
+-- Name: platform_partners; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.platform_partners ENABLE ROW LEVEL SECURITY;
+
+-- Name: product_addon_groups; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.product_addon_groups ENABLE ROW LEVEL SECURITY;
+
+-- Name: products; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
+
+-- Name: profiles; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+-- Name: refund_requests; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.refund_requests ENABLE ROW LEVEL SECURITY;
+
+-- Name: saved_addresses; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.saved_addresses ENABLE ROW LEVEL SECURITY;
+
+-- Name: store_balances; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.store_balances ENABLE ROW LEVEL SECURITY;
+
+-- Name: store_driver_earnings; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.store_driver_earnings ENABLE ROW LEVEL SECURITY;
+
+-- Name: store_drivers; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.store_drivers ENABLE ROW LEVEL SECURITY;
+
+-- Name: store_plans; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.store_plans ENABLE ROW LEVEL SECURITY;
+
+-- Name: store_secrets; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.store_secrets ENABLE ROW LEVEL SECURITY;
+
+-- Name: stores; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.stores ENABLE ROW LEVEL SECURITY;
+
+-- Name: terms_acceptance; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.terms_acceptance ENABLE ROW LEVEL SECURITY;
+
+-- Name: user_active_devices; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.user_active_devices ENABLE ROW LEVEL SECURITY;
+
+-- Name: user_roles; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
+
+-- Name: user_wallet; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.user_wallet ENABLE ROW LEVEL SECURITY;
+
+-- Name: wallet_transactions; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.wallet_transactions ENABLE ROW LEVEL SECURITY;
+
+-- Name: withdrawal_requests; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.withdrawal_requests ENABLE ROW LEVEL SECURITY;
 
 
 
@@ -900,4 +1859,142 @@ INSERT INTO public.orders VALUES ('98b42c63-9f06-40c0-bf04-022e57b68a89', '66a2f
 INSERT INTO public.orders VALUES ('3e4dbf5f-984f-4135-af3b-e572b7d6589d', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'cancelado', 70, 4, 74, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-16 16:37:43.524142+00', NULL, 0.00, '7456', NULL, false, 0, false, NULL, false, true, NULL, NULL, false, -23.138606, -48.4468522, NULL) ON CONFLICT DO NOTHING;
 INSERT INTO public.orders VALUES ('45ced352-0722-4da5-b6e0-3bcc1b1dea1a', 'eacb717f-f61d-4e58-af9b-4149541a68df', 'fbff1580-ce82-4798-a96f-f149c69166b3', 'finalizado', 6, 3, 9, 'pix', 'Centro', 'Rua São Francisco, 635', '2026-04-08 20:07:08.350959+00', NULL, 0.90, '3350', '2026-04-08 20:33:45.822+00', false, 0, false, NULL, false, true, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
 INSERT INTO public.orders VALUES ('e94075a4-9157-40c2-81fc-c53242be6ee2', '1d33caaf-2aaf-4ac4-a41e-b94508e0ed50', '66129fdd-1f7e-42c8-b3c1-8d4c28b14106', 'cancelado', 22, 0, 22, 'dinheiro', 'Terras de São José', 'Avenida Dona Tita Paixão, 1237', '2026-04-18 17:02:57.03179+00', NULL, 1.10, '7404', NULL, false, 0, false, NULL, false, true, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
-INSERT INTO public.orders VALUES ('73e3971c-afe8-4394-8db5-6d575825e818', 'eacb717f-f61d-4e58-af9b-4149541a68df', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 64.00, 5.00, 69.00, 'pix', 'Vila Rica', 'Rua F, 600 - Vila Rica', '2026-04-11 14:15:27.608723+00', NULL, 0.00, '0742', NULL, false, 0, false, NULL, false, true, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO 
+INSERT INTO public.orders VALUES ('73e3971c-afe8-4394-8db5-6d575825e818', 'eacb717f-f61d-4e58-af9b-4149541a68df', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 64.00, 5.00, 69.00, 'pix', 'Vila Rica', 'Rua F, 600 - Vila Rica', '2026-04-11 14:15:27.608723+00', NULL, 0.00, '0742', NULL, false, 0, false, NULL, false, true, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('19b290e2-758e-4876-8723-4598a7824e1e', '37909bb0-03b4-46dc-917d-c17fadaca33c', '66129fdd-1f7e-42c8-b3c1-8d4c28b14106', 'cancelado', 24, 0, 24, 'dinheiro', 'Núcleo Habitacional Nova América', 'Rua Julieta Antunes Almeida Oliveira, 72, Casa, Ref: Próximo ao bar da Roh', '2026-04-16 21:30:28.894737+00', NULL, 1.20, '0269', NULL, false, 0, false, NULL, false, true, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('d205aeb8-4e51-4562-9412-137c523c76da', 'eacb717f-f61d-4e58-af9b-4149541a68df', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 69.00, 5.00, 74.00, 'pix', 'Vila Nova', 'Rua B, 200 - Vila Nova', '2026-04-11 14:15:27.608723+00', NULL, 0.00, '0588', NULL, false, 0, false, NULL, false, true, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('b80d1312-d625-440c-a6ef-f10d1f5a0baf', 'eacb717f-f61d-4e58-af9b-4149541a68df', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 64.00, 5.00, 69.00, 'dinheiro', 'Jardim Europa', 'Rua I, 900 - Jardim Europa', '2026-04-11 14:15:27.608723+00', NULL, 0.00, '3655', NULL, false, 0, false, NULL, false, true, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('09f75b10-47d0-4d49-9b3d-d82cab08d163', 'eacb717f-f61d-4e58-af9b-4149541a68df', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 67.00, 5.00, 72.00, 'dinheiro', 'Centro', 'Rua A, 100 - Centro', '2026-04-11 14:15:27.608723+00', NULL, 0.00, '3745', NULL, false, 0, false, NULL, false, true, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('09c2b85e-0ae6-4b7c-bada-38980bbd8215', 'eacb717f-f61d-4e58-af9b-4149541a68df', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 69.00, 5.00, 74.00, 'cartao', 'Centro', 'Rua H, 800 - Centro', '2026-04-11 14:15:27.608723+00', NULL, 0.00, '9752', NULL, false, 0, false, NULL, false, true, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('256327a2-e2cf-4d50-b37c-3c2b594a14e9', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'b243bdb4-45a9-46fc-8248-68dd6ba3e46c', 'cancelado', 32, 5.5, 37.5, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-06 02:44:29.97551+00', NULL, 3.84, '3337', NULL, false, 0, false, '4175', false, false, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('2c73be08-696d-4759-97c8-ee004b09b5cb', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'b243bdb4-45a9-46fc-8248-68dd6ba3e46c', 'cancelado', 68, 5.5, 73.5, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-06 13:41:02.864771+00', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 8.16, '5072', NULL, false, 0, false, '6681', false, false, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('518101c4-1d1d-4b71-9bd8-6acf7d53bc70', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'cancelado', 81, 5, 86, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-10 08:14:22.980852+00', NULL, 0.00, '4149', NULL, true, 100, false, NULL, false, false, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('cf5ed3c3-b9f1-46cd-bf09-7bdabe643eab', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 73, 5, 78, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-10 08:20:12.506876+00', NULL, 0.00, '3969', NULL, false, 0, false, NULL, false, false, '8703', NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('53c8a00c-23a9-4b76-9989-1f01e7b4581e', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e577573d-4139-415d-b49d-d6a50e1d393b', 'cancelado', 0, 5, 5, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-08 16:23:51.864038+00', NULL, 0.00, '7383', NULL, false, 0, false, NULL, false, false, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('73136c29-c952-47ac-b6c8-af69848b5b4f', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'cancelado', 69, 4, 73, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-16 12:45:03.883921+00', NULL, 0.00, '8166', NULL, false, 0, false, NULL, false, true, NULL, NULL, false, -23.1276757, -48.4731513, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('5794aa50-4be7-40d9-ac92-2e05e8bc4d5a', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'b243bdb4-45a9-46fc-8248-68dd6ba3e46c', 'cancelado', 37, 3, 40, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-07 16:22:19.844462+00', NULL, 5.55, '1326', NULL, false, 0, false, NULL, false, false, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('b91d5367-fbbf-4846-95fe-15e811f105c0', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 98, 6, 104, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-10 13:09:22.273803+00', NULL, 0.00, '8334', '2026-04-10 13:11:46.285305+00', true, 150, false, NULL, false, false, '1705', NULL, true, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('df5f1d03-a683-42b3-a898-2279d28a6b58', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 72, 5, 77, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-10 09:49:20.460268+00', NULL, 0.00, '6581', NULL, true, 100, false, NULL, false, false, '1276', NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('ce46a1a8-e013-4437-8a83-d4bb283c4529', 'eacb717f-f61d-4e58-af9b-4149541a68df', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 67.00, 5.00, 72.00, 'dinheiro', 'Centro', 'Rua das Flores, 123 - Centro', '2026-04-11 16:27:44.55103+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, '1234', '2026-04-11 17:15:34.955364+00', false, 0, false, NULL, false, true, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('308a6fec-4620-47fc-9ce6-5235b51b7c68', 'eacb717f-f61d-4e58-af9b-4149541a68df', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 69.00, 5.00, 74.00, 'dinheiro', 'Santa Cruz', 'Rua E, 500 - Santa Cruz', '2026-04-11 14:15:27.608723+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, '5163', '2026-04-11 17:15:34.955364+00', false, 0, false, NULL, false, true, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('ec925cee-2fcb-4777-b06e-71839bbee8ad', 'eacb717f-f61d-4e58-af9b-4149541a68df', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 67.00, 5.00, 72.00, 'pix', 'São José', 'Rua J, 1000 - São José', '2026-04-11 14:15:27.608723+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, '7996', '2026-04-11 17:15:34.955364+00', false, 0, false, NULL, false, true, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('9dec4881-59ba-4401-89c4-c82e6d448d17', 'eacb717f-f61d-4e58-af9b-4149541a68df', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 67.00, 5.00, 72.00, 'dinheiro', 'Boa Vista', 'Rua G, 700 - Boa Vista', '2026-04-11 14:15:27.608723+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, '6306', '2026-04-11 17:15:34.955364+00', false, 0, false, NULL, false, true, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('f13fa720-dae2-4e54-b5e4-1616fdaf71b9', 'eacb717f-f61d-4e58-af9b-4149541a68df', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 64.00, 5.00, 69.00, 'cartao', 'Vila Nova', 'Rua São Paulo, 789 - Vila Nova', '2026-04-11 16:27:44.55103+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, '9012', '2026-04-11 17:15:34.955364+00', false, 0, false, NULL, false, true, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('665038fb-ebad-47c1-b9c3-64dbceb14bdd', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 67.00, 5.00, 72.00, 'dinheiro', 'Centro', 'Rua XV de Novembro, 123 - Centro, 18690-000', '2026-04-11 17:15:47.832076+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, '5623', '2026-04-11 17:18:05.781521+00', true, 100, false, NULL, false, false, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('3e7fc2bb-294f-467d-9d9e-c3d3e899873b', 'eacb717f-f61d-4e58-af9b-4149541a68df', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 69.00, 5.00, 74.00, 'pix', 'Jardim', 'Av Brasil, 456 - Jardim', '2026-04-11 16:27:44.55103+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, '5678', '2026-04-11 17:15:34.955364+00', false, 0, false, NULL, false, true, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('26cd1287-32f8-4c69-9deb-cb8913496383', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 67.00, 4.00, 71.00, 'dinheiro', 'Centro', 'Rua Teste 123, Centro - Itatinga/SP', '2026-04-11 17:05:31.56083+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, '5443', '2026-04-11 17:05:59.509104+00', true, 100.00, false, NULL, false, false, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('4acfa4fc-5806-4097-8ddc-36d8a65612ae', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 68, 14, 82, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-22 00:14:14.635621+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, '5390', '2026-04-22 00:41:13.756929+00', false, 0, false, NULL, false, true, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('a3037fec-fe51-4122-b520-852429f22839', 'eacb717f-f61d-4e58-af9b-4149541a68df', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 64.00, 5.00, 69.00, 'dinheiro', 'Jardim', 'Rua C, 300 - Jardim', '2026-04-11 14:15:27.608723+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, '8475', '2026-04-11 17:15:34.955364+00', false, 0, false, NULL, false, true, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('bfe1e0e7-8ef8-49ef-9259-47f3f9c5932a', 'eacb717f-f61d-4e58-af9b-4149541a68df', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 67.00, 5.00, 72.00, 'cartao', 'Centro', 'Rua D, 400 - Centro', '2026-04-11 14:15:27.608723+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, '1417', '2026-04-11 17:15:34.955364+00', false, 0, false, NULL, false, true, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('0c35d6b6-53ad-4935-a635-d1d35a325b3f', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 67, 8, 75, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-18 18:36:49.156442+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, '0458', '2026-04-18 18:46:00.782407+00', false, 0, false, NULL, false, true, NULL, NULL, false, -23.1384588, -48.4478759, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('997ec784-c861-46b6-b90a-b4ba8e7f7ba4', '5adc5911-cca3-4cd7-85e6-374917d07a39', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 56, 6, 62, 'dinheiro', 'Vila São João', 'Rua José Bonifácio, 530 - Vila São João, Itatinga - SP', '2026-04-16 09:47:39.230806+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, '6844', '2026-04-16 09:49:09.528828+00', true, 80, false, NULL, false, true, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('3dc19319-94b3-41d6-8132-4f65a70d6b53', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 67, 4, 71, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-13 19:05:53.345095+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, '3127', '2026-04-14 15:55:57.724932+00', false, 0, false, NULL, false, false, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('108c8373-2d7d-409b-a81a-0d1defd84344', '66a2f79c-9276-4fe8-8201-4a59b3960bed', '66129fdd-1f7e-42c8-b3c1-8d4c28b14106', 'finalizado', 52, 0, 52, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-15 15:42:42.876335+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 2.60, '2742', '2026-04-15 15:45:45.548815+00', false, 0, false, NULL, false, false, NULL, NULL, false, -23.1048864, -48.6178383, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('7858058a-fa4a-46bf-8063-26301bf8983c', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 87, 4, 91, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-13 19:14:29.719839+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, '3876', '2026-04-15 01:38:09.12761+00', false, 0, false, NULL, false, false, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('dfb918d7-94c3-4987-b5e3-dac1dd8dd103', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'cancelado', 69, 4, 73, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-16 13:07:16.979498+00', NULL, 0.00, '2911', NULL, false, 0, false, NULL, false, true, NULL, NULL, false, -23.1386047, -48.4469522, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('21a92392-6e8f-4c4e-8eec-6db08f4c18c0', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 68, 5, 73, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-18 18:57:48.711476+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, '1049', '2026-04-18 18:59:49.092743+00', false, 0, false, NULL, false, true, NULL, NULL, false, -23.1383304, -48.4478323, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('a3471d4d-52e0-46c0-b788-07e37f3bb478', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 68, 14, 82, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-22 00:43:53.071825+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, '6799', '2026-04-22 00:45:12.215693+00', false, 0, false, NULL, false, true, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('4b87ece7-bc50-49e0-8f9e-9e25c930e96b', '66a2f79c-9276-4fe8-8201-4a59b3960bed', '66129fdd-1f7e-42c8-b3c1-8d4c28b14106', 'cancelado', 36, 0, 36, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-15 15:36:35.560606+00', NULL, 1.80, '7904', NULL, false, 0, false, NULL, false, false, NULL, NULL, false, -23.1048197, -48.6179063, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('7e18db33-57af-4f9e-abd2-0371cbbc6d40', '66a2f79c-9276-4fe8-8201-4a59b3960bed', '66129fdd-1f7e-42c8-b3c1-8d4c28b14106', 'cancelado', 36, 0, 36, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-15 15:32:05.091236+00', NULL, 1.80, '0533', NULL, false, 0, false, NULL, false, false, NULL, NULL, false, -23.1049608, -48.6177896, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('ef416e41-07bc-4600-95b7-7f5ff040d678', '66a2f79c-9276-4fe8-8201-4a59b3960bed', '66129fdd-1f7e-42c8-b3c1-8d4c28b14106', 'cancelado', 56, 0, 56, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-15 01:34:12.851919+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 2.80, '2597', NULL, false, 0, false, NULL, false, false, NULL, NULL, false, -23.059268, -48.5926264, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('d5b9d06c-e43f-4dfb-8dd8-e01bbb22c131', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 69.00, 5.00, 74.00, 'pix', 'Vila Nova', 'Rua das Flores, 456 - Vila Nova, 18690-100', '2026-04-11 17:15:47.832076+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, '0845', '2026-04-11 17:18:05.781521+00', false, NULL, false, NULL, false, false, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('1bd27051-0b78-4792-981d-79c387574e62', '6a31ec8b-3e4e-40b4-a4ff-6ae5f75ea102', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 67, 5, 72, 'pix', 'Centro', 'Rua Coronel Luciano, 245 - Centro, Itatinga - SP', '2026-04-16 09:47:37.297958+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, '4332', '2026-04-16 09:49:09.528828+00', false, NULL, false, NULL, false, true, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('20409cc3-25d3-4862-9b30-e5475cf07caa', '4f962953-1af8-427d-8681-d30405fb994b', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 64, 7, 71, 'pix', 'Jardim Pedra Branca', 'Rua das Primaveras, 120 - Jardim Pedra Branca, Itatinga - SP', '2026-04-16 09:47:40.772821+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, '6185', '2026-04-16 09:49:09.528828+00', false, NULL, false, NULL, false, true, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('528e1b70-b19d-4732-90cf-e1fecdb8d61b', '73adfa0a-506f-43fd-8109-d3efa14507fe', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 82, 8, 90, 'dinheiro', 'Vila Canaã', 'Rua dos Ipês, 88 - Vila Canaã, Itatinga - SP', '2026-04-16 09:47:42.013329+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, '0357', '2026-04-16 09:49:09.528828+00', true, 100, false, NULL, false, true, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('071a9ec3-f5e3-45d3-91d1-5b11486273f1', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'cancelado', 67, 4, 71, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-16 14:25:23.91099+00', NULL, 0.00, '8908', NULL, false, 0, false, NULL, false, true, NULL, NULL, false, -23.1383418, -48.4477693, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('a0e5de22-dc8e-413f-aa83-1c09dccd1db3', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'saiu_entrega', 69, 14, 83, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-25 17:07:55.222865+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, '8775', NULL, false, 0, false, NULL, false, true, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('f258a1ac-c6a5-4237-a200-a60c4f434139', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 64.00, 5.00, 69.00, 'dinheiro', 'Jardim', 'Av. Brasil, 789 - Jardim, 18690-200', '2026-04-11 17:15:47.832076+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, '0280', '2026-04-11 17:18:05.781521+00', true, 80, false, NULL, false, false, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('76287169-2ca8-4595-9c3b-f420b292a92f', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 56.00, 5.00, 61.00, 'cartao', 'Santa Cruz', 'Rua São Paulo, 321 - Santa Cruz, 18690-300', '2026-04-11 17:15:47.832076+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, '1668', '2026-04-11 17:18:05.781521+00', false, NULL, false, NULL, false, false, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('3c2fff62-e3cd-4afa-a1f6-965c2ac539aa', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 64.00, 5.00, 69.00, 'dinheiro', 'São José', 'Rua Tiradentes, 654 - São José, 18690-400', '2026-04-11 17:15:47.832076+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, '0264', '2026-04-11 17:18:05.781521+00', true, 80, false, NULL, false, false, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('0389002c-0b8b-4549-9f00-334b54bf3fb4', '66a2f79c-9276-4fe8-8201-4a59b3960bed', '66129fdd-1f7e-42c8-b3c1-8d4c28b14106', 'cancelado', 30, 0, 30, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-15 16:29:50.250151+00', NULL, 1.50, '7422', NULL, false, 0, false, NULL, false, false, NULL, NULL, false, -23.1048806, -48.6178546, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('d869915a-2602-4b43-a329-99818f1acab1', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 56, 4, 60, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-13 01:26:05.116451+00', NULL, 0.00, '7892', NULL, false, 0, false, NULL, false, false, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('94109d43-b46b-490c-870d-67b79f801a20', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 69, 4, 73, 'cartao', 'Centro', 'Rua São Francisco, 635', '2026-04-13 12:53:21.188404+00', NULL, 0.00, '6600', NULL, false, 0, false, NULL, false, false, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('1fc64483-055c-4a1b-b47d-3b49cef2e0c9', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 93, 4, 97, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-13 00:51:51.732671+00', NULL, 0.00, '8445', NULL, false, 0, false, NULL, false, false, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('d1c82126-6734-4e83-afdc-32696b1fdb97', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 67, 4, 71, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-12 20:08:43.029619+00', NULL, 0.00, '6500', NULL, false, 0, false, NULL, false, false, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('bb6a42f4-98a0-40bc-bc66-de8100b3c6e8', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 74, 4, 78, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-12 19:26:46.588471+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, '1188', NULL, false, 0, false, NULL, false, false, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('ee8a305e-5288-4d77-a54b-94c7117d3574', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 72, 4, 76, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-12 12:21:19.934217+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, '0603', '2026-04-12 12:26:50.239878+00', false, 0, false, NULL, false, false, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('7ec44576-c245-4917-a27d-41e28cc94061', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'cancelado', 74, 4, 78, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-12 15:00:01.028074+00', NULL, 0.00, '8413', NULL, false, 0, false, NULL, false, false, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('ca61442f-8fb1-4d6c-a52a-34cfcb86d31b', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'cancelado', 87, 4, 91, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-12 14:42:16.150159+00', NULL, 0.00, '4727', NULL, false, 0, false, NULL, false, false, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('78066066-4627-4795-abfb-3056c1c0d998', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'cancelado', 56, 4, 60, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-12 12:47:50.017433+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, '0173', NULL, false, 0, false, NULL, false, false, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('724839a5-d7a5-451b-b734-f17a5c16f836', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'cancelado', 67, 4, 71, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-12 12:45:15.189186+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, '9929', NULL, false, 0, false, NULL, false, false, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('fdad9c38-0662-44f3-86f8-16f9691c4a6f', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'cancelado', 69, 4, 73, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-12 12:42:16.015257+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, '4373', NULL, false, 0, false, NULL, false, false, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('ec0bc528-a9d4-413e-ac18-c623ef55b9cb', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'cancelado', 64, 4, 68, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-12 12:37:03.080054+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, '8182', NULL, false, 0, false, NULL, false, false, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('0251cda0-c139-4f65-ac30-66efde0c346d', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'cancelado', 69, 4, 73, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-12 12:33:26.790028+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, '8922', NULL, false, 0, false, NULL, false, false, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('1545fe9b-c500-405a-9e1b-cd260dffb130', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 67, 4, 71, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-12 12:27:26.670201+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, '5451', '2026-04-12 12:31:17.064443+00', false, 0, false, NULL, false, false, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('cfee80ea-43a4-46f0-8e08-6a19bf70db53', '66a2f79c-9276-4fe8-8201-4a59b3960bed', '66129fdd-1f7e-42c8-b3c1-8d4c28b14106', 'cancelado', 56, 5, 61, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-15 00:36:53.146827+00', NULL, 2.80, '8579', NULL, false, 0, false, '0986', false, false, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('3183d21b-7b40-4188-a4b8-c2bf058440f3', '66a2f79c-9276-4fe8-8201-4a59b3960bed', '66129fdd-1f7e-42c8-b3c1-8d4c28b14106', 'cancelado', 73, 0, 73, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-15 16:04:24.248262+00', NULL, 3.65, '1059', NULL, false, 0, false, NULL, false, false, NULL, NULL, false, -23.1048852, -48.6176944, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('3c30b04c-3d82-4963-a190-2002540aefe2', '66a2f79c-9276-4fe8-8201-4a59b3960bed', '66129fdd-1f7e-42c8-b3c1-8d4c28b14106', 'cancelado', 40, 0, 40, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-15 16:18:08.271481+00', NULL, 2.00, '0165', NULL, false, 0, false, NULL, false, false, NULL, NULL, false, -23.1047391, -48.6180091, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('438365c0-c0a6-411b-9908-b9d07504000b', '66a2f79c-9276-4fe8-8201-4a59b3960bed', '66129fdd-1f7e-42c8-b3c1-8d4c28b14106', 'finalizado', 24, 0, 24, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-15 16:45:53.270326+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 1.20, '7480', '2026-04-15 16:50:14.853893+00', false, 0, false, NULL, false, false, NULL, NULL, false, -23.1049087, -48.6180185, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('183a3355-9418-4e60-80d4-f75e2af669e9', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'f667fc5c-48d2-4b05-a370-b28720161009', 'cancelado', 20.2, 0, 20.2, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-16 02:12:40.718504+00', NULL, 1.01, '7431', NULL, false, 0, false, NULL, false, false, NULL, NULL, false, -23.1048705, -48.6178467, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('91f9dd29-559a-4d6a-b2d2-89ac5b081579', '876ffde2-cdc0-4578-8cc4-48bb0279de71', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 56, 9, 65, 'pix', 'Jardim Marajoara', 'Rua Benedito Alves, 310 - Jardim Marajoara, Itatinga - SP', '2026-04-16 09:47:43.23581+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, '8651', '2026-04-16 09:49:09.528828+00', false, NULL, false, NULL, false, true, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('4e21aec0-4de7-4f9c-8420-2cfa72bdab9c', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 69, 4, 73, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-14 11:45:45.717573+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, '4987', '2026-04-14 22:20:45.292159+00', false, 0, false, NULL, false, false, NULL, NULL, false, -23.1013515, -48.6170412, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('90d96ab6-fdb4-4984-a9d8-42b730021945', '66a2f79c-9276-4fe8-8201-4a59b3960bed', '66129fdd-1f7e-42c8-b3c1-8d4c28b14106', 'finalizado', 20, 0, 20, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-15 15:48:21.25894+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 1.00, '4088', '2026-04-15 15:50:13.88197+00', false, 0, false, NULL, false, false, NULL, NULL, false, -23.1049564, -48.6180339, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('0b1baf1d-98c5-43ef-af37-2b956bd12c03', '66a2f79c-9276-4fe8-8201-4a59b3960bed', '66129fdd-1f7e-42c8-b3c1-8d4c28b14106', 'finalizado', 36, 0, 36, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-15 02:11:46.066847+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 1.80, '4376', '2026-04-15 02:18:47.889092+00', false, 0, false, NULL, false, false, NULL, NULL, false, -23.1048683, -48.6178475, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('c39bd9dd-a49e-4bfa-9537-f15aef1df52e', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'cancelado', 67, 6, 73, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-17 15:55:32.006653+00', NULL, 0.00, '7055', NULL, false, 0, false, NULL, false, true, NULL, NULL, false, -23.1049426, -48.6178274, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('35c46862-108f-4391-9984-3b5d2ace5155', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'finalizado', 67, 3, 70, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-21 14:50:30.9826+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, '7343', '2026-04-22 00:39:58.047604+00', false, 0, false, NULL, false, true, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('b5c3e4ae-360c-411e-be20-522df1489a31', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'cancelado', 67, 4, 71, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-15 16:34:27.263217+00', NULL, 0.00, '8505', NULL, false, 0, false, NULL, false, false, NULL, NULL, false, -23.1050442, -48.6173357, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('60684a78-58a4-400b-b826-ac9c914af5d2', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'cancelado', 64, 4, 68, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-16 16:10:51.975242+00', NULL, 0.00, '0868', NULL, false, 0, false, NULL, false, true, NULL, NULL, false, -23.1386127, -48.4469214, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('054b19ec-88b4-4113-b7eb-e66a736740d3', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'cancelado', 56, 4, 60, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-16 16:09:42.022612+00', NULL, 0.00, '2104', NULL, false, 0, false, NULL, false, true, NULL, NULL, false, -23.1386239, -48.4469481, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('47cab294-191e-403d-a87a-170964eac0fa', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'cancelado', 67, 4, 71, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-16 16:08:36.314008+00', NULL, 0.00, '7671', NULL, false, 0, false, NULL, false, true, NULL, NULL, false, -23.1387181, -48.4468979, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('849da996-16ab-4c0f-bf46-709fc0508b37', 'eacb717f-f61d-4e58-af9b-4149541a68df', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'cancelado', 67.00, 6.00, 73.00, 'pix', 'Centro', 'Rua Sete de Setembro, 720 - Centro, Itatinga - SP', '2026-04-17 16:00:06.346603+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, NULL, NULL, false, 0, false, NULL, true, true, NULL, NULL, false, -23.1018, -48.6156, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('9ae31874-a576-4d96-bb2f-980402139750', '4f962953-1af8-427d-8681-d30405fb994b', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'cancelado', 64.00, 7.00, 71.00, 'dinheiro', 'Centro', 'Rua Renato Lopes de Oliveira, 180 - Centro, Itatinga - SP', '2026-04-17 16:00:06.346603+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, NULL, NULL, false, 0, false, NULL, true, true, NULL, NULL, false, -23.1014, -48.6142, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('16e1cb32-2886-4673-bed8-4fdea85a7feb', '6a31ec8b-3e4e-40b4-a4ff-6ae5f75ea102', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'cancelado', 67.00, 5.00, 72.00, 'dinheiro', 'Centro', 'Rua Coronel Eduardo Lopes de Oliveira, 410 - Centro, Itatinga - SP', '2026-04-17 16:00:06.346603+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, NULL, NULL, false, 0, false, NULL, true, true, NULL, NULL, false, -23.1024, -48.6135, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('5830efde-85c9-46b5-a326-f82af843144a', '5adc5911-cca3-4cd7-85e6-374917d07a39', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'cancelado', 69.00, 6.00, 75.00, 'pix', 'Centro', 'Rua José de Oliveira, 95 - Centro, Itatinga - SP', '2026-04-17 16:00:06.346603+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, NULL, NULL, false, 0, false, NULL, true, true, NULL, NULL, false, -23.10225, -48.6168, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('800bfe94-c531-4fcd-a0cd-b46b795b4a6d', '37909bb0-03b4-46dc-917d-c17fadaca33c', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'cancelado', 134.00, 8.00, 142.00, 'cartao', 'Centro', 'Rua Antônio Prette, 240 - Centro, Itatinga - SP', '2026-04-17 16:00:06.346603+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, NULL, NULL, false, 0, false, NULL, true, true, NULL, NULL, false, -23.10125, -48.6151, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('729e8a3b-d08b-4ce6-8026-ff9250c27fd8', 'ba9ce4c7-7133-45d5-8c2f-454914b7da38', '70c8f384-a15a-4dfd-bfbc-30ebb9b7f678', 'finalizado', 22.5, 0, 22.5, 'dinheiro', 'Centro', 'Rua São Francisco, 742', '2026-04-21 18:44:18.355857+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 1.13, '1813', '2026-04-21 20:34:33.594586+00', true, 50, false, NULL, false, true, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.orders VALUES ('d5e6fdec-6819-4bfd-9ce4-48495c00231c', '66a2f79c-9276-4fe8-8201-4a59b3960bed', '66129fdd-1f7e-42c8-b3c1-8d4c28b14106', 'pendente', 24, 14, 38, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-25 17:07:56.396784+00', NULL, 1.44, '2159', NULL, false, 0, false, NULL, false, true, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+
+
+-- Data for Name: driver_locations; Type: TABLE DATA; Schema: public; Owner: -
+
+INSERT INTO public.driver_locations VALUES ('ba93e465-ce23-4302-a855-b5a1f36bcb0a', '66a2f79c-9276-4fe8-8201-4a59b3960bed', NULL, -23.139292, -48.44684, 62.935, 11.115074, 0.39163208, '2026-04-14 16:22:17.498+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.driver_locations VALUES ('40e8c789-6389-435b-aea0-5e215030ea22', '6becbb34-0fd2-4f6b-ba60-46bc058c15e6', NULL, -23.1049748, -48.6178002, 16.424, 0, 310.83374, '2026-04-17 15:33:12.611+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.driver_locations VALUES ('33966266-4a5b-44e6-b589-3a1d68ff7800', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 'a0e5de22-dc8e-413f-aa83-1c09dccd1db3', -23.1384043, -48.447921, 39.308, 0.04233812, NULL, '2026-04-25 17:19:11.357+00') ON CONFLICT DO NOTHING;
+
+
+-- Data for Name: drivers; Type: TABLE DATA; Schema: public; Owner: -
+
+INSERT INTO public.drivers VALUES ('75875da1-bddc-4a1f-bf11-f3712d0c8e3b', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 'Natalino', true, '2026-04-12 17:28:16.918269+00', true, 'itatinga') ON CONFLICT DO NOTHING;
+INSERT INTO public.drivers VALUES ('9a5377ae-4555-4de5-b43e-7d4c6eafa3ec', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'Renner dias', true, '2026-03-30 20:43:17.670906+00', true, 'itatinga') ON CONFLICT DO NOTHING;
+
+
+-- Data for Name: platform_partners; Type: TABLE DATA; Schema: public; Owner: -
+
+INSERT INTO public.platform_partners VALUES ('b611c2db-a65b-461a-9352-d50e71e82ebb', 'Thiago Correia', 'thiagocorreia10092005@gmail.com', 30, 5, NULL, NULL, false, true, false, '2026-04-16 07:57:54.930744+00', '2026-04-16 07:57:54.930744+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.platform_partners VALUES ('1c28c47e-0694-4f3e-a591-b8315eebc157', 'Vinicius', 'vinivias13@gmail.com', 70, 5, NULL, NULL, true, true, false, '2026-04-16 07:57:54.930744+00', '2026-04-16 08:17:30.634532+00') ON CONFLICT DO NOTHING;
+
+
+-- Data for Name: emergency_fund; Type: TABLE DATA; Schema: public; Owner: -
+
+
+
+-- Data for Name: fcm_tokens; Type: TABLE DATA; Schema: public; Owner: -
+
+INSERT INTO public.fcm_tokens VALUES ('c344aeac-4fa6-4c49-962d-908f3735b5d8', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 'dojsCWh1Qp202-nz2tnhMv:APA91bEK6un-ZriqXg_PJzo9tgLPdi4QLloks95pfHpSuQBnAi4byEXDi_cKicXCzqdoSCAQ636OgylzeeUDfikh9RSF4GjlW4uZqvri-Z_tT3beYsgkHVM', 'itasuper:capacitor:android:6b56318c-bc7d-4bc6-8a2e-9c52651aedc7', '2026-04-25 17:09:39.409817+00', '2026-04-25 17:18:47.633+00', NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.fcm_tokens VALUES ('81159e6b-cd67-47d8-91f6-5685633b24c5', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'eANFeRpSSSKMGxHxt2K51K:APA91bE2vl5g1DZPniVA0i8Ym4JVhZ_MZdf6u9dBAVDLBzJLxAJg0SPeMuCctQ_lJgmEl58Uqj1YqOeEvS_GPcXj7574AdPnpCoSftsl1LLVgInW1xHAi1U', 'itasuper:capacitor:android:45e50766-fb19-44c7-8e85-15e05ca8da30', '2026-04-25 17:04:50.618495+00', '2026-04-25 17:08:02.364+00', NULL) ON CONFLICT DO NOTHING;
+
+
+-- Data for Name: financial_transactions; Type: TABLE DATA; Schema: public; Owner: -
+
+INSERT INTO public.financial_transactions VALUES ('af83e2cd-ccf4-4cee-834b-93ef4c439f61', 'b243bdb4-45a9-46fc-8248-68dd6ba3e46c', 'commission_charge', '#FAT-A8589361', 11.1, 'failed', 'asaas', 'pay_0aunatoz51rz0eb5', NULL, '00020101021226800014br.gov.bcb.pix2558pix.asaas.com/qr/cobv/d63b1510-8211-4e58-9b95-5893a6280aa65204000053039865802BR5920Renner Vinicius Dias6008Itatinga61081869008162070503***63048269', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAcIAAAHCAQAAAABUY/ToAAADEElEQVR4Xu2USw7bQAxDs/P9b9RjZZeGj5QdFGhddFMFoOLMh+JjFjPO4/WP9ePxq/K3VfKuSt5VybsqeVcl7+q/kc8HdTyP1/m8v8/HIcu7qxl5nCVXk3Ywum2LohBYIF/OkotJqxz9E+zTecl4opbcT+blPUR5zDAxJb+O5GGnlxuWFvaS30G+MgKm6b22Q306Sy4mc+b4/vyZ21Hyd58F5FluHJw5fbl9PfS2f1pL7iUFqMs7jDkZk/MZk+SSe0nD9Jxy0smTQctXskWU3EvKY4Tv9RiAzkrmksvJbPEg22ELOzaocZTcS9LxVZjuQ0ePK0vfEv8Ic8nFpBoaJDOasdu6PUJJL7mYfMhv+urxNaxUHATZUnIxaeY9DzUpWUySfiRsybXkCT/8zNlj/5Cdjl5yMRnbIDYDOZZcntNbcjEpRoIqDUFOcmTa7pBYci3JyeO1CqIpdyLZzEktuZlEHTE7Z52IF6OW3EwCZPZzIljJeorxln7JvaSN+S9Wi0+272FSxlByP6kWmIxHLgQmXQRYKwZL7iXHDEaKVlYM2hKP2ZKbyeuUkadPoNncgfmW3Exyzvlj9q2QOAKYyPkzV5VcS9pFTxgNRxAjTKy2ZJRcTo41rADMrEyHGL7kYvIt0kSXSYTVpGBPRtCSe0kZcJ8hHsAJ9A0hJGLJxaQkDHFBJiJXwbcgbMn1pH0XqpO33ZnTQii5mRQwI352iiPA1rCeS24mtRQxXm/FnLjuxYSU/AbyMEzACwJJLiix0yu5mnzJpTamD5dMJDgVOcaSe0kduTacP0tHeZDsRP+IvyX3kt76CoQVI6uWgfCTqbnkZtK9CfHiDLrabEguuZh0x7LWeacpmfRqOyxVcjU5xQkLUxM7K5JzCZJdcjOp/lhQ09cIorjwk1ByMRm3ABAv8GQmOZRiSq4mZY9mqzWpClKD5wwo+QWkZk+wxDCl7JNY8jtI+cYNed4Gh9lAVsnF5Ms8Hhh5eOw2eYklV5M673Tdk+KBHCyJZVlyM/lPVfKuSt5VybsqeVcl7+rLyJ99oreDHOgmNgAAAABJRU5ErkJggg==', '00020101021226800014br.gov.bcb.pix2558pix.asaas.com/qr/cobv/d63b1510-8211-4e58-9b95-5893a6280aa65204000053039865802BR5920Renner Vinicius Dias6008Itatinga61081869008162070503***63048269', NULL, '{"expires_at": "2026-04-07T12:06:26.668Z", "store_name": "Nata Lanches", "description": "Comissão ItaSuper - Nata Lanches"}', '2026-04-07 12:01:26.668+00', '2026-04-09 06:04:35.224551+00') ON CONFLICT DO NOTHING;
+
+
+-- Data for Name: loyalty_config; Type: TABLE DATA; Schema: public; Owner: -
+
+INSERT INTO public.loyalty_config VALUES ('c2a0bb82-19db-42c0-ac12-3a23c17c0bb7', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', false, 1, 50, 0.1, 20, '2026-04-10 16:59:02.263327+00', '2026-04-10 16:59:02.477+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.loyalty_config VALUES ('0faad2cc-df5c-408f-b640-52efd2d28b8a', '66129fdd-1f7e-42c8-b3c1-8d4c28b14106', false, 1, 50, 0.1, 20, '2026-04-14 15:16:56.852495+00', '2026-04-14 15:16:56.603+00') ON CONFLICT DO NOTHING;
+
+
+-- Data for Name: loyalty_points; Type: TABLE DATA; Schema: public; Owner: -
+
+
+
+-- Data for Name: moderators; Type: TABLE DATA; Schema: public; Owner: -
+
+INSERT INTO public.moderators VALUES ('6b6bb925-e214-449b-a596-d0e893ab2f5f', NULL, 'Thiago', 'thiagocorreia10092005@gmail.com', NULL, 'MOD-YEZMU4', 40, 1, 2, true, '2026-04-16 00:43:03.886882+00', '2026-04-16 00:43:03.886882+00') ON CONFLICT DO NOTHING;
+
+
+-- Data for Name: moderator_earnings; Type: TABLE DATA; Schema: public; Owner: -
+
+
+
+-- Data for Name: moderator_referrals; Type: TABLE DATA; Schema: public; Owner: -
