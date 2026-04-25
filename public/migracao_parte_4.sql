@@ -1,8 +1,3 @@
-
-DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can manage emergency fund' AND tablename = 'emergency_fund') THEN
-        CREATE POLICY "Admins can manage emergency fund" ON public.emergency_fund TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
-    END IF;
 END $$;
 
 
@@ -1797,3 +1792,6 @@ ALTER TABLE public.moderators ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE public.neighborhood_fees ENABLE ROW LEVEL SECURITY;
 
+-- Name: onesignal_players; Type: ROW SECURITY; Schema: public; Owner: -
+
+ALTER TABLE public.onesignal_players ENABLE ROW LEVEL SECURITY;

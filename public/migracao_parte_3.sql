@@ -1,9 +1,3 @@
-
-
--- Name: product_addon_groups; Type: TABLE; Schema: public; Owner: -
-
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.product_addon_groups (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
     product_id uuid NOT NULL,
     addon_group_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now()
@@ -1797,3 +1791,8 @@ END $$;
 
 
 -- Name: emergency_fund Admins can manage emergency fund; Type: POLICY; Schema: public; Owner: -
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can manage emergency fund' AND tablename = 'emergency_fund') THEN
+        CREATE POLICY "Admins can manage emergency fund" ON public.emergency_fund TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
+    END IF;

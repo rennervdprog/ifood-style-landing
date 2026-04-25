@@ -29,11 +29,9 @@ SET row_security = off;
 
 -- Name: app_role; Type: TYPE; Schema: public; Owner: -
 
-
-
--- DO $$ BEGIN
+DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'app_role') THEN
-        -- DO $$ BEGIN
+        DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'app_role') THEN
         CREATE TYPE public.app_role AS ENUM (
     'admin',
@@ -41,14 +39,12 @@ SET row_security = off;
     'user'
 );
     END IF;
--- END $$;
+END $$;
     END IF;
--- END $$;
+END $$;
 
 
 -- Name: financial_transaction_status; Type: TYPE; Schema: public; Owner: -
-
-
 
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'financial_transaction_status') THEN
@@ -69,8 +65,6 @@ END $$;
 
 -- Name: financial_transaction_type; Type: TYPE; Schema: public; Owner: -
 
-
-
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'financial_transaction_type') THEN
         DO $$ BEGIN
@@ -87,8 +81,6 @@ END $$;
 
 
 -- Name: order_status; Type: TYPE; Schema: public; Owner: -
-
-
 
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'order_status') THEN
@@ -1797,3 +1789,10 @@ BEGIN
         CASE
           WHEN _selected_plan = 'supporter' THEN 'fixed'::public.store_plan_type
           WHEN _selected_plan = 'fixed' THEN 'fixed'::public.store_plan_type
+          WHEN _selected_plan = 'hybrid' THEN 'hybrid'::public.store_plan_type
+          ELSE 'commission_only'::public.store_plan_type
+        END,
+        CASE
+          WHEN _selected_plan = 'supporter' THEN 130
+          WHEN _selected_plan = 'fixed' THEN 180
+          WHEN _selected_plan = 'hybrid' THEN 100

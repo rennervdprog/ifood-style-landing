@@ -1,10 +1,3 @@
-          WHEN _selected_plan = 'hybrid' THEN 'hybrid'::public.store_plan_type
-          ELSE 'commission_only'::public.store_plan_type
-        END,
-        CASE
-          WHEN _selected_plan = 'supporter' THEN 130
-          WHEN _selected_plan = 'fixed' THEN 180
-          WHEN _selected_plan = 'hybrid' THEN 100
           ELSE 0
         END,
         CASE
@@ -1797,3 +1790,9 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.platform_partners 
     CONSTRAINT platform_partners_emergency_fund_percent_check CHECK (((emergency_fund_percent >= (0)::numeric) AND (emergency_fund_percent <= (50)::numeric))),
     CONSTRAINT platform_partners_profit_percent_check CHECK (((profit_percent >= (0)::numeric) AND (profit_percent <= (100)::numeric)))
 );
+
+
+-- Name: product_addon_groups; Type: TABLE; Schema: public; Owner: -
+
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.product_addon_groups (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,

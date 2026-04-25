@@ -1,7 +1,3 @@
--- Name: onesignal_players; Type: ROW SECURITY; Schema: public; Owner: -
-
-ALTER TABLE public.onesignal_players ENABLE ROW LEVEL SECURITY;
-
 -- Name: opening_hours; Type: ROW SECURITY; Schema: public; Owner: -
 
 ALTER TABLE public.opening_hours ENABLE ROW LEVEL SECURITY;
@@ -1797,3 +1793,5 @@ INSERT INTO public.store_plans VALUES ('53090129-caaa-45d5-b57e-2a67b2dffe4d', '
 
 
 -- Data for Name: store_secrets; Type: TABLE DATA; Schema: public; Owner: -
+
+

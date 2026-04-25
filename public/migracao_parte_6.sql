@@ -1,6 +1,3 @@
-
-
-
 -- Data for Name: terms_acceptance; Type: TABLE DATA; Schema: public; Owner: -
 
 INSERT INTO public.terms_acceptance VALUES ('0d5c250d-a008-4873-a0ad-e36039301b04', '6becbb34-0fd2-4f6b-ba60-46bc058c15e6', '1.0', '1.0', NULL, 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Mobile Safari/537.36', '2026-04-09 13:45:14.865154+00') ON CONFLICT DO NOTHING;
