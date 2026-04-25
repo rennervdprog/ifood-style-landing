@@ -29,36 +29,36 @@ COMMENT ON SCHEMA public IS 'standard public schema';
 
 -- Name: app_role; Type: TYPE; Schema: public; Owner: -
 
-DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = public.app_role AS ENUM (
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'app_role') THEN CREATE TYPE public.app_role AS ENUM (
     'admin',
     'moderator',
     'user'
-);
+); END IF; END $$;
 
 
 -- Name: financial_transaction_status; Type: TYPE; Schema: public; Owner: -
 
-DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = public.financial_transaction_status AS ENUM (
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'financial_transaction_status') THEN CREATE TYPE public.financial_transaction_status AS ENUM (
     'pending',
     'approved',
     'paid',
     'failed',
     'cancelled'
-);
+); END IF; END $$;
 
 
 -- Name: financial_transaction_type; Type: TYPE; Schema: public; Owner: -
 
-DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = public.financial_transaction_type AS ENUM (
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'financial_transaction_type') THEN CREATE TYPE public.financial_transaction_type AS ENUM (
     'commission_charge',
     'store_payout',
     'driver_payout'
-);
+); END IF; END $$;
 
 
 -- Name: order_status; Type: TYPE; Schema: public; Owner: -
 
-DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = public.order_status AS ENUM (
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'order_status') THEN CREATE TYPE public.order_status AS ENUM (
     'aguardando_pagamento',
     'pendente',
     'preparando',
@@ -68,63 +68,63 @@ DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = public.order_st
     'saiu_entrega',
     'finalizado',
     'cancelado'
-);
+); END IF; END $$;
 
 
 -- Name: partner_role; Type: TYPE; Schema: public; Owner: -
 
-DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = public.partner_role AS ENUM (
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'partner_role') THEN CREATE TYPE public.partner_role AS ENUM (
     'cliente',
     'lojista',
     'motoboy'
-);
+); END IF; END $$;
 
 
 -- Name: pix_type; Type: TYPE; Schema: public; Owner: -
 
-DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = public.pix_type AS ENUM (
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'pix_type') THEN CREATE TYPE public.pix_type AS ENUM (
     'cpf',
     'cnpj',
     'email',
     'phone',
     'random'
-);
+); END IF; END $$;
 
 
 -- Name: refund_reason; Type: TYPE; Schema: public; Owner: -
 
-DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = public.refund_reason AS ENUM (
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'refund_reason') THEN CREATE TYPE public.refund_reason AS ENUM (
     'wrong_product',
     'missing_items',
     'damaged',
     'late_delivery',
     'poor_quality',
     'other'
-);
+); END IF; END $$;
 
 
 -- Name: refund_status; Type: TYPE; Schema: public; Owner: -
 
-DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = public.refund_status AS ENUM (
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'refund_status') THEN CREATE TYPE public.refund_status AS ENUM (
     'pending',
     'approved',
     'processed',
     'rejected'
-);
+); END IF; END $$;
 
 
 -- Name: refund_type; Type: TYPE; Schema: public; Owner: -
 
-DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = public.refund_type AS ENUM (
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'refund_type') THEN CREATE TYPE public.refund_type AS ENUM (
     'full',
     'partial',
     'wallet_credit'
-);
+); END IF; END $$;
 
 
 -- Name: store_category; Type: TYPE; Schema: public; Owner: -
 
-DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = public.store_category AS ENUM (
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'store_category') THEN CREATE TYPE public.store_category AS ENUM (
     'lanches',
     'pizzas',
     'adegas',
@@ -137,33 +137,33 @@ DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = public.store_ca
     'docerias',
     'restaurante',
     'esfihas'
-);
+); END IF; END $$;
 
 
 -- Name: store_plan_type; Type: TYPE; Schema: public; Owner: -
 
-DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = public.store_plan_type AS ENUM (
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'store_plan_type') THEN CREATE TYPE public.store_plan_type AS ENUM (
     'fixed',
     'hybrid',
     'commission_only'
-);
+); END IF; END $$;
 
 
 -- Name: store_status; Type: TYPE; Schema: public; Owner: -
 
-DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = public.store_status AS ENUM (
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'store_status') THEN CREATE TYPE public.store_status AS ENUM (
     'analise',
     'ativo',
     'bloqueado'
-);
+); END IF; END $$;
 
 
 -- Name: wallet_transaction_type; Type: TYPE; Schema: public; Owner: -
 
-DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = public.wallet_transaction_type AS ENUM (
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'wallet_transaction_type') THEN CREATE TYPE public.wallet_transaction_type AS ENUM (
     'credit',
     'debit'
-);
+); END IF; END $$;
 
 
 -- Name: accrue_fixed_plan_split(); Type: FUNCTION; Schema: public; Owner: -
@@ -2936,7 +2936,7 @@ SET default_table_access_method = heap;
 
 -- Name: addon_groups; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.addon_groups (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.addon_groups (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     product_id uuid,
     name text NOT NULL,
@@ -2956,7 +2956,7 @@ COMMENT ON COLUMN public.addon_groups.price_replaces_base IS 'When true, the sel
 
 -- Name: addon_items; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.addon_items (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.addon_items (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     group_id uuid NOT NULL,
     name text NOT NULL,
@@ -2968,7 +2968,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.addon_items (
 
 -- Name: admin_settings; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.admin_settings (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.admin_settings (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     key text NOT NULL,
     value jsonb DEFAULT '{}'::jsonb NOT NULL,
@@ -2978,7 +2978,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.admin_settings (
 
 -- Name: app_links; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.app_links (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.app_links (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     label text NOT NULL,
     description text,
@@ -2995,7 +2995,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.app_links (
 
 -- Name: archived_accounts; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.archived_accounts (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.archived_accounts (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     original_user_id uuid NOT NULL,
     full_name text,
@@ -3024,7 +3024,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.archived_accounts (
 
 -- Name: banners; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.banners (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.banners (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     title text NOT NULL,
     subtitle text,
@@ -3040,7 +3040,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.banners (
 
 -- Name: compliance_alerts; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.compliance_alerts (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.compliance_alerts (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     store_id uuid NOT NULL,
     alert_type text DEFAULT 'unfinalized_orders'::text NOT NULL,
@@ -3053,7 +3053,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.compliance_alerts (
 
 -- Name: coupon_uses; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.coupon_uses (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.coupon_uses (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     coupon_id uuid NOT NULL,
     user_id uuid NOT NULL,
@@ -3064,7 +3064,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.coupon_uses (
 
 -- Name: coupons; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.coupons (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.coupons (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     code text NOT NULL,
     description text,
@@ -3101,7 +3101,7 @@ CREATE VIEW public.coupons_public WITH (security_invoker='on') AS
 
 -- Name: driver_balances; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.driver_balances (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.driver_balances (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     driver_user_id uuid NOT NULL,
     total_earned numeric DEFAULT 0 NOT NULL,
@@ -3113,7 +3113,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.driver_balances (
 
 -- Name: driver_earnings; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.driver_earnings (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.driver_earnings (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     driver_user_id uuid NOT NULL,
     order_id uuid NOT NULL,
@@ -3125,7 +3125,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.driver_earnings (
 
 -- Name: driver_locations; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.driver_locations (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.driver_locations (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     driver_user_id uuid NOT NULL,
     order_id uuid,
@@ -3140,7 +3140,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.driver_locations (
 
 -- Name: drivers; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.drivers (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.drivers (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     user_id uuid NOT NULL,
     name text DEFAULT ''::text NOT NULL,
@@ -3153,7 +3153,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.drivers (
 
 -- Name: emergency_fund; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.emergency_fund (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.emergency_fund (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     amount numeric DEFAULT 0 NOT NULL,
     transaction_type text NOT NULL,
@@ -3167,7 +3167,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.emergency_fund (
 
 -- Name: fcm_tokens; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.fcm_tokens (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.fcm_tokens (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     user_id uuid NOT NULL,
     token text NOT NULL,
@@ -3180,7 +3180,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.fcm_tokens (
 
 -- Name: financial_transactions; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.financial_transactions (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.financial_transactions (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     store_id uuid NOT NULL,
     transaction_kind public.financial_transaction_type NOT NULL,
@@ -3203,7 +3203,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.financial_transactions (
 
 -- Name: loyalty_config; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.loyalty_config (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.loyalty_config (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     store_id uuid NOT NULL,
     is_enabled boolean DEFAULT true NOT NULL,
@@ -3218,7 +3218,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.loyalty_config (
 
 -- Name: loyalty_points; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.loyalty_points (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.loyalty_points (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     user_id uuid NOT NULL,
     store_id uuid NOT NULL,
@@ -3231,7 +3231,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.loyalty_points (
 
 -- Name: menu_sections; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.menu_sections (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.menu_sections (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     store_id uuid NOT NULL,
     name text NOT NULL,
@@ -3242,7 +3242,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.menu_sections (
 
 -- Name: moderator_earnings; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.moderator_earnings (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.moderator_earnings (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     moderator_id uuid NOT NULL,
     store_id uuid NOT NULL,
@@ -3259,7 +3259,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.moderator_earnings (
 
 -- Name: moderator_referrals; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.moderator_referrals (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.moderator_referrals (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     moderator_id uuid NOT NULL,
     store_id uuid NOT NULL,
@@ -3269,7 +3269,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.moderator_referrals (
 
 -- Name: moderators; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.moderators (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.moderators (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     user_id uuid,
     name text NOT NULL,
@@ -3287,7 +3287,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.moderators (
 
 -- Name: neighborhood_fees; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.neighborhood_fees (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.neighborhood_fees (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     name text NOT NULL,
     fee numeric(10,2) DEFAULT 0 NOT NULL
@@ -3296,7 +3296,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.neighborhood_fees (
 
 -- Name: onesignal_players; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.onesignal_players (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.onesignal_players (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     user_id uuid NOT NULL,
     player_id text NOT NULL,
@@ -3308,7 +3308,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.onesignal_players (
 
 -- Name: opening_hours; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.opening_hours (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.opening_hours (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     store_id uuid NOT NULL,
     day_of_week integer NOT NULL,
@@ -3321,7 +3321,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.opening_hours (
 
 -- Name: order_items; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.order_items (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.order_items (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     order_id uuid NOT NULL,
     product_id uuid NOT NULL,
@@ -3334,7 +3334,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.order_items (
 
 -- Name: order_messages; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.order_messages (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.order_messages (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     order_id uuid NOT NULL,
     sender_id uuid NOT NULL,
@@ -3345,7 +3345,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.order_messages (
 
 -- Name: order_ratings; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.order_ratings (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.order_ratings (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     order_id uuid NOT NULL,
     user_id uuid NOT NULL,
@@ -3359,7 +3359,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.order_ratings (
 
 -- Name: orders; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.orders (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.orders (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     client_id uuid NOT NULL,
     store_id uuid NOT NULL,
@@ -3392,7 +3392,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.orders (
 
 -- Name: page_views; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.page_views (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.page_views (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     page text NOT NULL,
     visitor_hash text,
@@ -3403,7 +3403,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.page_views (
 
 -- Name: partner_payouts; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.partner_payouts (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.partner_payouts (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     partner_id uuid NOT NULL,
     gross_amount numeric DEFAULT 0 NOT NULL,
@@ -3422,7 +3422,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.partner_payouts (
 
 -- Name: payout_history; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.payout_history (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.payout_history (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     entity_type text NOT NULL,
     entity_id text NOT NULL,
@@ -3437,7 +3437,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.payout_history (
 
 -- Name: pizza_borders; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.pizza_borders (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.pizza_borders (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     store_id uuid NOT NULL,
     name text DEFAULT 'Borda Tradicional'::text NOT NULL,
@@ -3450,7 +3450,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.pizza_borders (
 
 -- Name: plan_change_requests; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.plan_change_requests (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.plan_change_requests (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     store_id uuid NOT NULL,
     current_plan_type public.store_plan_type NOT NULL,
@@ -3468,7 +3468,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.plan_change_requests (
 
 -- Name: platform_partners; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.platform_partners (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.platform_partners (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     name text NOT NULL,
     email text,
@@ -3488,7 +3488,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.platform_partners (
 
 -- Name: product_addon_groups; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.product_addon_groups (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.product_addon_groups (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     product_id uuid NOT NULL,
     addon_group_id uuid NOT NULL,
@@ -3498,7 +3498,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.product_addon_groups (
 
 -- Name: products; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.products (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.products (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     store_id uuid NOT NULL,
     name text NOT NULL,
@@ -3514,7 +3514,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.products (
 
 -- Name: profiles; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.profiles (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.profiles (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     user_id uuid NOT NULL,
     full_name text DEFAULT ''::text NOT NULL,
@@ -3561,7 +3561,7 @@ CREATE VIEW public.profile_contacts WITH (security_invoker='true') AS
 
 -- Name: refund_requests; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.refund_requests (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.refund_requests (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     order_id uuid NOT NULL,
     store_id uuid NOT NULL,
@@ -3582,7 +3582,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.refund_requests (
 
 -- Name: saved_addresses; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.saved_addresses (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.saved_addresses (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     user_id uuid NOT NULL,
     label text DEFAULT 'Casa'::text NOT NULL,
@@ -3599,7 +3599,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.saved_addresses (
 
 -- Name: store_balances; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.store_balances (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.store_balances (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     store_id uuid NOT NULL,
     pending_commission numeric DEFAULT 0 NOT NULL,
@@ -3611,7 +3611,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.store_balances (
 
 -- Name: store_driver_earnings; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.store_driver_earnings (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.store_driver_earnings (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     store_id uuid NOT NULL,
     driver_user_id uuid NOT NULL,
@@ -3632,7 +3632,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.store_driver_earnings (
 
 -- Name: store_drivers; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.store_drivers (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.store_drivers (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     store_id uuid NOT NULL,
     driver_user_id uuid NOT NULL,
@@ -3644,7 +3644,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.store_drivers (
 
 -- Name: store_plans; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.store_plans (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.store_plans (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     store_id uuid NOT NULL,
     plan_type public.store_plan_type DEFAULT 'commission_only'::public.store_plan_type NOT NULL,
@@ -3685,7 +3685,7 @@ CREATE VIEW public.store_plans_public WITH (security_invoker='true') AS
 
 -- Name: store_secrets; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.store_secrets (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.store_secrets (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     store_id uuid NOT NULL,
     zapi_enabled boolean DEFAULT false NOT NULL,
@@ -3698,7 +3698,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.store_secrets (
 
 -- Name: stores; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.stores (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.stores (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     name text NOT NULL,
     category public.store_category NOT NULL,
@@ -3802,7 +3802,7 @@ CREATE VIEW public.stores_public WITH (security_invoker='true') AS
 
 -- Name: terms_acceptance; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.terms_acceptance (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.terms_acceptance (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     user_id uuid NOT NULL,
     terms_version text DEFAULT '1.0'::text NOT NULL,
@@ -3815,7 +3815,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.terms_acceptance (
 
 -- Name: user_active_devices; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.user_active_devices (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.user_active_devices (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     user_id uuid NOT NULL,
     device_id text NOT NULL,
@@ -3826,7 +3826,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.user_active_devices (
 
 -- Name: user_roles; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.user_roles (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.user_roles (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     user_id uuid NOT NULL,
     role public.app_role NOT NULL
@@ -3835,7 +3835,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.user_roles (
 
 -- Name: user_wallet; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.user_wallet (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.user_wallet (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     user_id uuid NOT NULL,
     balance numeric DEFAULT 0 NOT NULL,
@@ -3845,7 +3845,7 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.user_wallet (
 
 -- Name: wallet_transactions; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.wallet_transactions (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.wallet_transactions (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     user_id uuid NOT NULL,
     amount numeric NOT NULL,
@@ -3869,7 +3869,7 @@ CREATE SEQUENCE public.withdrawal_code_seq
 
 -- Name: withdrawal_requests; Type: TABLE; Schema: public; Owner: -
 
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS public.withdrawal_requests (
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.withdrawal_requests (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     driver_user_id uuid NOT NULL,
     amount numeric NOT NULL,
