@@ -18,7 +18,9 @@ SET row_security = off;
 -- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: -
 -- COMMENT ON SCHEMA public IS 'standard public schema';
 -- Name: app_role; Type: TYPE; Schema: public; Owner: -
-        CREATE TYPE IF NOT EXISTS public.app_role AS ENUM (
+        CREATE TYPE DO 4397 
+BEGIN
+IF NOT EXISTS public.app_role AS ENUM (
     'admin',
     'moderator',
     'user'
@@ -128,6 +130,8 @@ DECLARE
   _is_physical boolean;
   _is_test boolean;
 BEGIN
+DO 4313 BEGIN
+DO 4757 BEGIN
   IF NEW.status != 'finalizado' OR OLD.status IS NOT DISTINCT FROM 'finalizado' THEN
     RETURN NEW;
   SELECT is_test, delivery_mode INTO _is_test, _delivery_mode
@@ -146,12 +150,17 @@ BEGIN
     updated_at = now();
   RETURN NEW;
 END;
+END 4757;
+END 4397;
+END 4313;
 $$;
 -- Name: accrue_moderator_earnings(); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.accrue_moderator_earnings() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
+DO 4397 
+BEGIN
 DECLARE
   _mod_ref RECORD;
   _mod RECORD;
@@ -161,6 +170,8 @@ DECLARE
   _plan_type TEXT;
   _is_test boolean;
 BEGIN
+DO 4313 BEGIN
+DO 4757 BEGIN
   IF NEW.status != 'finalizado' OR OLD.status IS NOT DISTINCT FROM 'finalizado' THEN RETURN NEW; 
   SELECT is_test INTO _is_test FROM public.stores WHERE id = NEW.store_id;
   IF COALESCE(_is_test, false) THEN RETURN NEW; 
@@ -184,12 +195,17 @@ BEGIN
       VALUES (_mod_ref.moderator_id, NEW.store_id, NEW.id, 'delivery_split', _mod.delivery_split);
   RETURN NEW;
 END;
+END 4757;
+END 4397;
+END 4313;
 $$;
 -- Name: accrue_moderator_plan_fee(uuid, numeric); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.accrue_moderator_plan_fee(_store_id uuid, _monthly_fee numeric) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
+DO 4397 
+BEGIN
 DECLARE
   _mod_ref RECORD;
   _mod RECORD;
@@ -198,6 +214,8 @@ BEGIN
   SELECT mr.moderator_id INTO _mod_ref
   FROM public.moderator_referrals mr
   WHERE mr.store_id = _store_id;
+DO 4313 BEGIN
+DO 4757 BEGIN
   IF NOT FOUND THEN RETURN; 
   SELECT * INTO _mod FROM public.moderators WHERE id = _mod_ref.moderator_id AND is_active = true;
   IF NOT FOUND THEN RETURN; 
@@ -206,6 +224,9 @@ BEGIN
     INSERT INTO public.moderator_earnings (moderator_id, store_id, earning_type, amount, period)
     VALUES (_mod_ref.moderator_id, _store_id, 'plan_fee', _amount, to_char(now(), 'YYYY-MM'));
 END;
+END 4757;
+END 4397;
+END 4313;
 $$;
 -- Name: admin_approve_partner(uuid, boolean); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.admin_approve_partner(_profile_user_id uuid, _approved boolean) RETURNS void
@@ -213,7 +234,11 @@ CREATE OR REPLACE FUNCTION public.admin_approve_partner(_profile_user_id uuid, _
     SET search_path TO 'public'
     AS $$
 BEGIN
-  IF NOT public.is_platform_admin(auth.uid()) THEN
+DO 4313 BEGIN
+  DO 4397 
+BEGIN
+DO 4757 BEGIN
+IF NOT public.is_platform_admin(auth.uid()) THEN
     RAISE EXCEPTION 'Apenas o administrador pode aprovar parceiros.';
   UPDATE profiles SET is_approved = _approved WHERE user_id = _profile_user_id;
   -- If lojista, also update store status
@@ -233,6 +258,9 @@ BEGIN
   -- If motoboy, activate/deactivate driver
   UPDATE drivers SET is_active = _approved WHERE user_id = _profile_user_id;
 END;
+END 4757;
+END 4397;
+END 4313;
 $$;
 -- Name: admin_cancel_order(uuid); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.admin_cancel_order(_order_id uuid) RETURNS void
@@ -240,21 +268,32 @@ CREATE OR REPLACE FUNCTION public.admin_cancel_order(_order_id uuid) RETURNS voi
     SET search_path TO 'public'
     AS $$
 BEGIN
-  IF NOT public.is_platform_admin(auth.uid()) THEN
+DO 4313 BEGIN
+  DO 4397 
+BEGIN
+DO 4757 BEGIN
+IF NOT public.is_platform_admin(auth.uid()) THEN
     RAISE EXCEPTION 'Apenas o administrador pode cancelar pedidos.';
   UPDATE public.orders SET status = 'cancelado' WHERE id = _order_id;
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Pedido não encontrado.';
 END;
+END 4757;
+END 4397;
+END 4313;
 $$;
 -- Name: admin_cleanup_duplicate_withdrawals(); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.admin_cleanup_duplicate_withdrawals() RETURNS integer
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
+DO 4397 
+BEGIN
 DECLARE
   deleted_count integer := 0;
 BEGIN
+DO 4313 BEGIN
+DO 4757 BEGIN
   IF NOT public.is_platform_admin(auth.uid()) THEN
     RAISE EXCEPTION 'Apenas o administrador pode limpar duplicatas.';
   WITH ranked AS (
@@ -276,15 +315,22 @@ BEGIN
   SELECT count(*) INTO deleted_count FROM deleted;
   RETURN deleted_count;
 END;
+END 4757;
+END 4397;
+END 4313;
 $$;
 -- Name: admin_create_test_store(text, public.store_category); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.admin_create_test_store(_name text, _category public.store_category) RETURNS uuid
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
+DO 4397 
+BEGIN
 DECLARE
   _store_id uuid;
 BEGIN
+DO 4313 BEGIN
+DO 4757 BEGIN
   IF NOT public.is_platform_admin(auth.uid()) THEN
     RAISE EXCEPTION 'Apenas administradores podem criar lojas de teste.';
   INSERT INTO public.stores (name, category, owner_id, status, slug)
@@ -305,17 +351,24 @@ BEGIN
   FROM generate_series(0, 6) AS d(day);
   RETURN _store_id;
 END;
+END 4757;
+END 4397;
+END 4313;
 $$;
 -- Name: admin_delete_partner(uuid); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.admin_delete_partner(_profile_user_id uuid) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
+DO 4397 
+BEGIN
 DECLARE
   _role text;
   _store_ids uuid[];
 BEGIN
   -- Only platform admin can delete partners
+DO 4313 BEGIN
+DO 4757 BEGIN
   IF NOT public.is_platform_admin(auth.uid()) THEN
     RAISE EXCEPTION 'Apenas o administrador pode excluir parceiros.';
   -- Get the partner's role
@@ -384,6 +437,9 @@ BEGIN
   -- Delete profile
   DELETE FROM public.profiles WHERE user_id = _profile_user_id;
 END;
+END 4757;
+END 4397;
+END 4313;
 $$;
 -- Name: admin_delete_store(uuid); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.admin_delete_store(_store_id uuid) RETURNS void
@@ -391,7 +447,11 @@ CREATE OR REPLACE FUNCTION public.admin_delete_store(_store_id uuid) RETURNS voi
     SET search_path TO 'public'
     AS $$
 BEGIN
-  IF NOT public.is_platform_admin(auth.uid()) THEN
+DO 4313 BEGIN
+  DO 4397 
+BEGIN
+DO 4757 BEGIN
+IF NOT public.is_platform_admin(auth.uid()) THEN
     RAISE EXCEPTION 'Apenas o administrador pode excluir lojas.';
   -- Check for active orders
   IF EXISTS (
@@ -419,12 +479,17 @@ BEGIN
   -- Products, menu_sections, opening_hours cascade automatically
   DELETE FROM public.stores WHERE id = _store_id;
 END;
+END 4757;
+END 4397;
+END 4313;
 $$;
 -- Name: apply_cancellation_policy(uuid, text); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.apply_cancellation_policy(_order_id uuid, _reason text DEFAULT 'Cancelado pelo cliente'::text) RETURNS jsonb
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
+DO 4397 
+BEGIN
 DECLARE
   _order RECORD;
   _fee_percent NUMERIC;
@@ -435,6 +500,8 @@ DECLARE
   _minutes_in_status NUMERIC;
 BEGIN
   SELECT * INTO _order FROM public.orders WHERE id = _order_id;
+DO 4313 BEGIN
+DO 4757 BEGIN
   IF NOT FOUND THEN RAISE EXCEPTION 'Pedido não encontrado.'; 
   -- Only the client, store owner or admin can cancel
   IF _order.client_id != auth.uid()
@@ -504,15 +571,22 @@ BEGIN
   );
   RETURN _result;
 END;
+END 4757;
+END 4397;
+END 4313;
 $$;
 -- Name: approve_plan_change(uuid, text); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.approve_plan_change(_request_id uuid, _admin_notes text DEFAULT NULL::text) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
+DO 4397 
+BEGIN
 DECLARE
   _req record;
 BEGIN
+DO 4313 BEGIN
+DO 4757 BEGIN
   IF NOT is_platform_admin(auth.uid()) THEN
     RAISE EXCEPTION 'Apenas administradores podem aprovar mudanças de plano.';
   SELECT * INTO _req FROM plan_change_requests WHERE id = _request_id;
@@ -532,12 +606,17 @@ BEGIN
     processed_at = now()
   WHERE id = _request_id;
 END;
+END 4757;
+END 4397;
+END 4313;
 $$;
 -- Name: auto_finalize_stale_orders(); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.auto_finalize_stale_orders() RETURNS jsonb
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
+DO 4397 
+BEGIN
 DECLARE
   _finalized_count integer := 0;
   _alert_count integer := 0;
@@ -576,6 +655,7 @@ BEGIN
     GROUP BY s.id, s.name
     HAVING count(*) >= 10
   LOOP
+DO 4313 BEGIN
     IF NOT EXISTS (
       SELECT 1 FROM compliance_alerts
       WHERE store_id = _store.store_id
@@ -596,16 +676,22 @@ BEGIN
     'timestamp', now()
   );
 END;
+END 4397;
+END 4313;
 $$;
 -- Name: award_loyalty_points(); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.award_loyalty_points() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
+DO 4397 
+BEGIN
 DECLARE
   _config record;
   _points integer;
 BEGIN
+DO 4313 BEGIN
+DO 4757 BEGIN
   IF NEW.status = 'finalizado' AND OLD.status IS DISTINCT FROM 'finalizado' THEN
     SELECT * INTO _config FROM public.loyalty_config
     WHERE store_id = NEW.store_id AND is_enabled = true;
@@ -620,12 +706,17 @@ BEGIN
         updated_at = now();
   RETURN NEW;
 END;
+END 4757;
+END 4397;
+END 4313;
 $$;
 -- Name: calculate_prorata_credit(uuid); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.calculate_prorata_credit(_store_id uuid) RETURNS numeric
     LANGUAGE plpgsql STABLE SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
+DO 4397 
+BEGIN
 DECLARE
   _plan record;
   _days_in_cycle integer := 30;
@@ -635,6 +726,8 @@ DECLARE
 BEGIN
   SELECT * INTO _plan FROM store_plans
   WHERE store_id = _store_id AND is_active = true LIMIT 1;
+DO 4313 BEGIN
+DO 4757 BEGIN
   IF NOT FOUND OR _plan.monthly_fee <= 0 THEN
     RETURN 0;
   -- Calculate days used since last billing or start
@@ -646,6 +739,9 @@ BEGIN
   _credit := GREATEST(0, ROUND((_days_in_cycle - _days_used) * _daily_rate, 2));
   RETURN _credit;
 END;
+END 4757;
+END 4397;
+END 4313;
 $$;
 -- Name: check_device_active(text); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.check_device_active(_device_id text) RETURNS boolean
@@ -663,9 +759,12 @@ CREATE OR REPLACE FUNCTION public.claim_push_device(_fcm_token text DEFAULT NULL
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
+DO 4397 
+BEGIN
 declare
   _current_user uuid := auth.uid();
 begin
+DO 4757 BEGIN
   if _current_user is null then
     raise exception 'Unauthorized';
   end if;
@@ -695,12 +794,16 @@ begin
       updated_at = now();
   end if;
 end;
+END 4757;
+END 4397;
 $$;
 -- Name: client_confirm_delivery(uuid); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.client_confirm_delivery(_order_id uuid) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
+DO 4397 
+BEGIN
 DECLARE
   _order record;
   _commission numeric;
@@ -712,6 +815,8 @@ BEGIN
   INTO _order
   FROM orders
   WHERE id = _order_id;
+DO 4313 BEGIN
+DO 4757 BEGIN
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Pedido não encontrado.';
   IF _order.client_id != auth.uid() THEN
@@ -748,6 +853,9 @@ BEGIN
           repasse_pendente = store_balances.repasse_pendente + _platform_split,
           updated_at = now();
 END;
+END 4757;
+END 4397;
+END 4313;
 $$;
 -- Name: confirm_order_payment(uuid); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.confirm_order_payment(_order_id uuid) RETURNS void
@@ -760,9 +868,16 @@ BEGIN
   WHERE id = _order_id
     AND client_id = auth.uid()
     AND status = 'aguardando_pagamento';
-  IF NOT FOUND THEN
+DO 4313 BEGIN
+  DO 4397 
+BEGIN
+DO 4757 BEGIN
+IF NOT FOUND THEN
     RAISE EXCEPTION 'Pedido não encontrado ou não está aguardando pagamento.';
 END;
+END 4757;
+END 4397;
+END 4313;
 $$;
 -- Name: count_supporter_plans(); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.count_supporter_plans() RETURNS integer
@@ -780,12 +895,16 @@ CREATE OR REPLACE FUNCTION public.create_store_driver_earning() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
+DO 4397 
+BEGIN
 DECLARE
   v_is_store_driver boolean;
   v_fee numeric;
   v_cut numeric;
 BEGIN
   -- Only fire on transition into 'entregue' or 'finalizado'
+DO 4313 BEGIN
+DO 4757 BEGIN
   IF NEW.status NOT IN ('entregue', 'finalizado') THEN
     RETURN NEW;
   IF OLD.status = NEW.status THEN
@@ -824,12 +943,17 @@ BEGIN
   ON CONFLICT (order_id) DO NOTHING;
   RETURN NEW;
 END;
+END 4757;
+END 4397;
+END 4313;
 $$;
 -- Name: driver_accept_order(uuid); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.driver_accept_order(_order_id uuid) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
+DO 4397 
+BEGIN
 DECLARE
   _driver_city text;
   _store_city text;
@@ -839,6 +963,8 @@ DECLARE
 BEGIN
   -- Get order's store_id
   SELECT o.store_id INTO _store_id FROM public.orders o WHERE o.id = _order_id;
+DO 4313 BEGIN
+DO 4757 BEGIN
   IF _store_id IS NULL THEN
     RAISE EXCEPTION 'Pedido não encontrado.';
   -- Check if user is a platform driver
@@ -862,18 +988,25 @@ BEGIN
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Não foi possível aceitar este pedido. Outro entregador pode ter aceitado primeiro.';
 END;
+END 4757;
+END 4397;
+END 4313;
 $$;
 -- Name: driver_confirm_earning_received(uuid); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.driver_confirm_earning_received(_earning_id uuid) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
+DO 4397 
+BEGIN
 DECLARE
   v_driver uuid;
 BEGIN
   SELECT driver_user_id INTO v_driver
     FROM store_driver_earnings
    WHERE id = _earning_id;
+DO 4313 BEGIN
+DO 4757 BEGIN
   IF v_driver IS NULL OR v_driver <> auth.uid() THEN
     RAISE EXCEPTION 'Acesso negado';
   UPDATE store_driver_earnings
@@ -883,12 +1016,17 @@ BEGIN
    WHERE id = _earning_id
      AND status = 'aguardando_confirmacao';
 END;
+END 4757;
+END 4397;
+END 4313;
 $$;
 -- Name: driver_confirm_store_return(uuid, text); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.driver_confirm_store_return(_order_id uuid, _settlement_code text DEFAULT NULL::text) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
+DO 4397 
+BEGIN
 DECLARE
   _order RECORD;
   _is_physical_payment boolean;
@@ -902,6 +1040,8 @@ BEGIN
   INTO _order
   FROM public.orders
   WHERE id = _order_id;
+DO 4313 BEGIN
+DO 4757 BEGIN
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Pedido não encontrado.';
   IF _order.driver_id != auth.uid() THEN
@@ -940,12 +1080,17 @@ BEGIN
       updated_at = now()
   WHERE driver_user_id = auth.uid();
 END;
+END 4757;
+END 4397;
+END 4313;
 $$;
 -- Name: driver_finish_delivery(uuid, text); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.driver_finish_delivery(_order_id uuid, _pin text DEFAULT NULL::text) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
+DO 4397 
+BEGIN
 DECLARE
   _order RECORD;
   _is_physical_payment boolean;
@@ -959,6 +1104,8 @@ BEGIN
   INTO _order
   FROM public.orders
   WHERE id = _order_id;
+DO 4313 BEGIN
+DO 4757 BEGIN
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Pedido não encontrado.';
   IF _order.status NOT IN ('em_transito', 'saiu_entrega') THEN
@@ -978,6 +1125,7 @@ BEGIN
     _earning_status := 'pendente';
   ELSE
     _earning_status := CASE WHEN _is_physical_payment THEN 'waiting_store_settlement' ELSE 'pendente' END;
+END 4397;
     _next_order_status := CASE WHEN _is_physical_payment THEN 'entregue'::public.order_status ELSE 'finalizado'::public.order_status END;
   _platform_split := public.get_fixed_plan_platform_split(_order.store_id);
   UPDATE public.orders
@@ -1005,12 +1153,16 @@ BEGIN
     END,
     updated_at = now();
 END;
+END 4757;
+END 4313;
 $$;
 -- Name: driver_validate_collection(uuid, text); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.driver_validate_collection(_order_id uuid, _code text) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
+DO 4397 
+BEGIN
 DECLARE
   _order RECORD;
   _is_authorized boolean;
@@ -1018,6 +1170,8 @@ BEGIN
   SELECT id, status, driver_id, collection_code, collection_validated, store_id INTO _order
   FROM public.orders
   WHERE id = _order_id;
+DO 4313 BEGIN
+DO 4757 BEGIN
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Pedido não encontrado.';
   IF _order.driver_id != auth.uid() THEN
@@ -1035,15 +1189,22 @@ BEGIN
   SET collection_validated = true, status = 'em_transito'
   WHERE id = _order_id;
 END;
+END 4757;
+END 4397;
+END 4313;
 $$;
 -- Name: generate_collection_code(); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.generate_collection_code() RETURNS trigger
     LANGUAGE plpgsql
     SET search_path TO 'public'
     AS $$
+DO 4397 
+BEGIN
 DECLARE
   _delivery_mode text;
 BEGIN
+DO 4313 BEGIN
+DO 4757 BEGIN
   IF NEW.status = 'pronto_para_entrega' AND (OLD.status IS DISTINCT FROM 'pronto_para_entrega') AND NEW.collection_code IS NULL THEN
     SELECT COALESCE(s.delivery_mode, 'platform') INTO _delivery_mode
     FROM public.stores s WHERE s.id = NEW.store_id;
@@ -1051,6 +1212,9 @@ BEGIN
       NEW.collection_code := lpad(floor(random() * 10000)::text, 4, '0');
   RETURN NEW;
 END;
+END 4757;
+END 4397;
+END 4313;
 $$;
 -- Name: generate_delivery_pin(); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.generate_delivery_pin() RETURNS trigger
@@ -1058,32 +1222,45 @@ CREATE OR REPLACE FUNCTION public.generate_delivery_pin() RETURNS trigger
     SET search_path TO 'public'
     AS $$
 BEGIN
-  IF NEW.status = 'pendente' AND NEW.delivery_pin IS NULL THEN
+DO 4313 BEGIN
+  DO 4397 
+BEGIN
+DO 4757 BEGIN
+IF NEW.status = 'pendente' AND NEW.delivery_pin IS NULL THEN
     NEW.delivery_pin := lpad(floor(random() * 10000)::text, 4, '0');
   RETURN NEW;
 END;
+END 4757;
+END 4397;
+END 4313;
 $$;
 -- Name: generate_financial_reference(text); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.generate_financial_reference(_prefix text) RETURNS text
     LANGUAGE plpgsql
     SET search_path TO 'public'
     AS $$
+DO 4397 
+BEGIN
 DECLARE
   _clean_prefix text;
 BEGIN
   _clean_prefix := upper(regexp_replace(COALESCE(_prefix, 'TX'), '[^A-Za-z0-9]', '', 'g'));
   RETURN '#' || _clean_prefix || '-' || upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 8));
 END;
+END 4397;
 $$;
 -- Name: generate_settlement_code(); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.generate_settlement_code() RETURNS trigger
     LANGUAGE plpgsql
     SET search_path TO 'public'
     AS $$
+DO 4397 
+BEGIN
 DECLARE
   _delivery_mode text;
 BEGIN
   -- Only generate for cash/card payments when status changes to entregue/finalizado
+DO 4313 BEGIN
   IF NEW.payment_method IN ('dinheiro', 'cartao')
      AND NEW.status IN ('entregue', 'finalizado')
      AND (OLD.status IS DISTINCT FROM NEW.status)
@@ -1091,11 +1268,15 @@ BEGIN
     -- Check if store uses own delivery - skip settlement code
     SELECT delivery_mode INTO _delivery_mode
     FROM public.stores WHERE id = NEW.store_id;
+DO 4757 BEGIN
     IF _delivery_mode = 'own' THEN
       RETURN NEW;
     NEW.settlement_code := lpad(floor(random() * 10000)::text, 4, '0');
   RETURN NEW;
 END;
+END 4757;
+END 4397;
+END 4313;
 $$;
 -- Name: generate_withdrawal_code(); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.generate_withdrawal_code() RETURNS trigger
@@ -1114,7 +1295,11 @@ CREATE OR REPLACE FUNCTION public.get_delivery_contacts(_order_ids uuid[] DEFAUL
     AS $$
 BEGIN
   -- Admin can see all
-  IF public.is_platform_admin(auth.uid()) THEN
+DO 4313 BEGIN
+  DO 4397 
+BEGIN
+DO 4757 BEGIN
+IF public.is_platform_admin(auth.uid()) THEN
     RETURN QUERY
       SELECT p.user_id, p.full_name, p.phone, p.whatsapp_number, p.neighborhood
       FROM public.profiles p;
@@ -1138,12 +1323,17 @@ BEGIN
       WHERE s.owner_id = auth.uid()
     );
 END;
+END 4757;
+END 4397;
+END 4313;
 $$;
 -- Name: get_fixed_plan_platform_split(uuid); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.get_fixed_plan_platform_split(_store_id uuid) RETURNS numeric
     LANGUAGE plpgsql STABLE SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
+DO 4397 
+BEGIN
 DECLARE
   _plan RECORD;
   _config_value jsonb;
@@ -1154,6 +1344,8 @@ BEGIN
   FROM public.store_plans sp
   WHERE sp.store_id = _store_id AND sp.is_active = true
   LIMIT 1;
+DO 4313 BEGIN
+DO 4757 BEGIN
   IF _plan.plan_type IS NULL OR _plan.plan_type != 'fixed' THEN
     RETURN 0;
   -- VIP override takes precedence (including 0)
@@ -1169,6 +1361,9 @@ BEGIN
     RETURN COALESCE(_platform_split, 2);
   RETURN 2;
 END;
+END 4757;
+END 4397;
+END 4313;
 $$;
 -- Name: get_owned_store_ids(uuid); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.get_owned_store_ids(_user_id uuid) RETURNS SETOF uuid
@@ -1182,6 +1377,8 @@ CREATE OR REPLACE FUNCTION public.get_page_view_stats(_page text DEFAULT 'store_
     LANGUAGE plpgsql STABLE SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
+DO 4397 
+BEGIN
 DECLARE
   _today bigint;
   _week bigint;
@@ -1189,6 +1386,8 @@ DECLARE
   _total bigint;
   _unique_today bigint;
 BEGIN
+DO 4313 BEGIN
+DO 4757 BEGIN
   IF NOT public.is_platform_admin(auth.uid()) THEN
     RAISE EXCEPTION 'Apenas administradores podem ver estatísticas.';
   SELECT COUNT(*) INTO _today FROM public.page_views
@@ -1209,6 +1408,9 @@ BEGIN
     'total', _total
   );
 END;
+END 4757;
+END 4397;
+END 4313;
 $$;
 -- Name: get_store_commission_rate(uuid); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.get_store_commission_rate(_store_id uuid) RETURNS numeric
@@ -1228,6 +1430,8 @@ CREATE OR REPLACE FUNCTION public.handle_new_user() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
+DO 4397 
+BEGIN
 DECLARE
   _role public.partner_role;
   _full_name text;
@@ -1264,6 +1468,8 @@ BEGIN
   _pix_key := NEW.raw_user_meta_data->>'pix_key';
   _selected_plan := NEW.raw_user_meta_data->>'selected_plan';
   _driver_type := COALESCE(NEW.raw_user_meta_data->>'driver_type', 'platform');
+DO 4313 BEGIN
+DO 4757 BEGIN
   IF _selected_plan = 'supporter' THEN
     SELECT COUNT(*) INTO _supporter_count
     FROM public.store_plans
@@ -1326,6 +1532,9 @@ BEGIN
       ON CONFLICT (store_id) DO NOTHING;
   RETURN NEW;
 END;
+END 4757;
+END 4397;
+END 4313;
 $$;
 -- Name: has_role(uuid, public.app_role); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.has_role(_user_id uuid, _role public.app_role) RETURNS boolean
@@ -1344,12 +1553,16 @@ CREATE OR REPLACE FUNCTION public.insert_order_status_chat_message() RETURNS tri
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
+DO 4397 
+BEGIN
 DECLARE
   _msg text;
   _sender uuid;
   _store_owner uuid;
 BEGIN
   -- Only trigger on actual status changes
+DO 4313 BEGIN
+DO 4757 BEGIN
   IF OLD.status IS NOT DISTINCT FROM NEW.status THEN
     RETURN NEW;
   -- Get store owner for sender_id
@@ -1393,6 +1606,9 @@ EXCEPTION WHEN OTHERS THEN
   RAISE LOG 'insert_order_status_chat_message error: %', SQLERRM;
   RETURN NEW;
 END;
+END 4757;
+END 4397;
+END 4313;
 $$;
 -- Name: is_driver(uuid); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.is_driver(_user_id uuid) RETURNS boolean
@@ -1470,11 +1686,15 @@ CREATE OR REPLACE FUNCTION public.mark_all_store_driver_earnings_paid(_driver_us
     LANGUAGE plpgsql SECURITY DEFINER
     SET search_path TO 'public'
     AS $$
+DO 4397 
+BEGIN
 DECLARE
   v_owner uuid;
   v_count integer;
 BEGIN
   SELECT owner_id INTO v_owner FROM public.stores WHERE id = _store_id;
+DO 4313 BEGIN
+DO 4757 BEGIN
   IF v_owner <> auth.uid() AND NOT is_platform_admin(auth.uid()) THEN
     RAISE EXCEPTION 'Not authorized';
   UPDATE public.store_driver_earnings
@@ -1485,6 +1705,9 @@ BEGIN
   GET DIAGNOSTICS v_count = ROW_COUNT;
   RETURN v_count;
 END;
+END 4757;
+END 4397;
+END 4313;
 $$;
 -- Name: mark_store_driver_earning_paid(uuid, text); Type: FUNCTION; Schema: public; Owner: -
 CREATE OR REPLACE FUNCTION public.mark_store_driver_earning_paid(_earning_id uuid, _notes text DEFAULT NULL::text) RETURNS void

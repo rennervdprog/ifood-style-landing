@@ -579,6 +579,8 @@ ALTER TABLE ONLY public.terms_acceptance
 ALTER TABLE ONLY public.user_roles
     ADD CONSTRAINT user_roles_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
 -- Name: admin_settings Admin can delete settings; Type: POLICY; Schema: public; Owner: -
+DO 4313 BEGIN
+DO 4757 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can delete settings' AND tablename = 'admin_settings') THEN
         CREATE POLICY "Admin can delete settings" ON public.admin_settings FOR DELETE TO authenticated USING (public.is_platform_admin(auth.uid()));
 -- Name: withdrawal_requests Admin can delete withdrawal requests; Type: POLICY; Schema: public; Owner: -
@@ -1498,3 +1500,5 @@ INSERT INTO public.menu_sections VALUES ('e2fcea76-3fbc-4f00-a2b3-3041a3403066',
 INSERT INTO public.menu_sections VALUES ('2d7cb792-d7d2-4b31-b8ec-121f56c0b263', 'b243bdb4-45a9-46fc-8248-68dd6ba3e46c', 'Lanches', 0, '2026-04-04 01:57:12.092249+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.menu_sections VALUES ('464ef4d7-4221-4e9f-91a3-2569e7fa9220', 'b243bdb4-45a9-46fc-8248-68dd6ba3e46c', 'Bebidas', 1, '2026-04-04 01:51:11.986093+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.menu_sections VALUES ('e00b12b6-c5c2-4c94-be75-69ae4897b7d5', '7bcc5fc0-d45c-4c81-86db-7d55f4d4e122', 'Destaques', 0, '2026-04-13 19:24:39.267486+00') ON CONFLICT DO NOTHING;
+
+END 4313;
