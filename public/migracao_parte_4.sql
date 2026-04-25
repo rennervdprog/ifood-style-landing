@@ -1797,3 +1797,4 @@ ALTER TABLE public.moderators ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE public.neighborhood_fees ENABLE ROW LEVEL SECURITY;
 
+

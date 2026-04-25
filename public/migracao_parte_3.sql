@@ -1797,3 +1797,4 @@ END $$;
 
 
 -- Name: emergency_fund Admins can manage emergency fund; Type: POLICY; Schema: public; Owner: -
+

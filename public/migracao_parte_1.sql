@@ -35,7 +35,7 @@ DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'app_role') THEN
         DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'app_role') THEN
-        CREATE TYPE IF NOT EXISTS public.app_role AS ENUM (
+        CREATE TYPE IF NOT EXISTS IF NOT EXISTS public.app_role AS ENUM (
     'admin',
     'moderator',
     'user'
@@ -54,7 +54,7 @@ DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'financial_transaction_status') THEN
         DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'financial_transaction_status') THEN
-        CREATE TYPE IF NOT EXISTS public.financial_transaction_status AS ENUM (
+        CREATE TYPE IF NOT EXISTS IF NOT EXISTS public.financial_transaction_status AS ENUM (
     'pending',
     'approved',
     'paid',
@@ -75,7 +75,7 @@ DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'financial_transaction_type') THEN
         DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'financial_transaction_type') THEN
-        CREATE TYPE IF NOT EXISTS public.financial_transaction_type AS ENUM (
+        CREATE TYPE IF NOT EXISTS IF NOT EXISTS public.financial_transaction_type AS ENUM (
     'commission_charge',
     'store_payout',
     'driver_payout'
@@ -94,7 +94,7 @@ DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'order_status') THEN
         DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'order_status') THEN
-        CREATE TYPE IF NOT EXISTS public.order_status AS ENUM (
+        CREATE TYPE IF NOT EXISTS IF NOT EXISTS public.order_status AS ENUM (
     'aguardando_pagamento',
     'pendente',
     'preparando',
@@ -117,7 +117,7 @@ DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'partner_role') THEN
         DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'partner_role') THEN
-        CREATE TYPE IF NOT EXISTS public.partner_role AS ENUM (
+        CREATE TYPE IF NOT EXISTS IF NOT EXISTS public.partner_role AS ENUM (
     'cliente',
     'lojista',
     'motoboy'
@@ -134,7 +134,7 @@ DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'pix_type') THEN
         DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'pix_type') THEN
-        CREATE TYPE IF NOT EXISTS public.pix_type AS ENUM (
+        CREATE TYPE IF NOT EXISTS IF NOT EXISTS public.pix_type AS ENUM (
     'cpf',
     'cnpj',
     'email',
@@ -153,7 +153,7 @@ DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'refund_reason') THEN
         DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'refund_reason') THEN
-        CREATE TYPE IF NOT EXISTS public.refund_reason AS ENUM (
+        CREATE TYPE IF NOT EXISTS IF NOT EXISTS public.refund_reason AS ENUM (
     'wrong_product',
     'missing_items',
     'damaged',
@@ -173,7 +173,7 @@ DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'refund_status') THEN
         DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'refund_status') THEN
-        CREATE TYPE IF NOT EXISTS public.refund_status AS ENUM (
+        CREATE TYPE IF NOT EXISTS IF NOT EXISTS public.refund_status AS ENUM (
     'pending',
     'approved',
     'processed',
@@ -191,7 +191,7 @@ DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'refund_type') THEN
         DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'refund_type') THEN
-        CREATE TYPE IF NOT EXISTS public.refund_type AS ENUM (
+        CREATE TYPE IF NOT EXISTS IF NOT EXISTS public.refund_type AS ENUM (
     'full',
     'partial',
     'wallet_credit'
@@ -208,7 +208,7 @@ DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'store_category') THEN
         DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'store_category') THEN
-        CREATE TYPE IF NOT EXISTS public.store_category AS ENUM (
+        CREATE TYPE IF NOT EXISTS IF NOT EXISTS public.store_category AS ENUM (
     'lanches',
     'pizzas',
     'adegas',
@@ -234,7 +234,7 @@ DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'store_plan_type') THEN
         DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'store_plan_type') THEN
-        CREATE TYPE IF NOT EXISTS public.store_plan_type AS ENUM (
+        CREATE TYPE IF NOT EXISTS IF NOT EXISTS public.store_plan_type AS ENUM (
     'fixed',
     'hybrid',
     'commission_only'
@@ -251,7 +251,7 @@ DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'store_status') THEN
         DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'store_status') THEN
-        CREATE TYPE IF NOT EXISTS public.store_status AS ENUM (
+        CREATE TYPE IF NOT EXISTS IF NOT EXISTS public.store_status AS ENUM (
     'analise',
     'ativo',
     'bloqueado'
@@ -268,7 +268,7 @@ DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'wallet_transaction_type') THEN
         DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'wallet_transaction_type') THEN
-        CREATE TYPE IF NOT EXISTS public.wallet_transaction_type AS ENUM (
+        CREATE TYPE IF NOT EXISTS IF NOT EXISTS public.wallet_transaction_type AS ENUM (
     'credit',
     'debit'
 );
@@ -436,7 +436,7 @@ BEGIN
   UPDATE public.orders SET status = 'cancelado' WHERE id = _order_id;
   
   IF NOT FOUND THEN
-    RAISE EXCEPTION 'Pedido não encontrado.';
+    RAISE EXCEPTION 'Pedido nÃ£o encontrado.';
   END IF;
 END;
 $$;
@@ -534,11 +534,11 @@ BEGIN
   SELECT role INTO _role FROM public.profiles WHERE user_id = _profile_user_id;
   
   IF _role IS NULL THEN
-    RAISE EXCEPTION 'Perfil não encontrado.';
+    RAISE EXCEPTION 'Perfil nÃ£o encontrado.';
   END IF;
 
   IF _role NOT IN ('lojista', 'motoboy') THEN
-    RAISE EXCEPTION 'Só é possível excluir lojistas ou motoboys.';
+    RAISE EXCEPTION 'SÃ³ Ã© possÃ­vel excluir lojistas ou motoboys.';
   END IF;
 
   -- Check for active orders
@@ -632,7 +632,7 @@ BEGIN
     WHERE store_id = _store_id
     AND status NOT IN ('finalizado', 'entregue')
   ) THEN
-    RAISE EXCEPTION 'Não é possível excluir uma loja com pedidos ativos.';
+    RAISE EXCEPTION 'NÃ£o Ã© possÃ­vel excluir uma loja com pedidos ativos.';
   END IF;
 
   -- Delete addon items linked to store's addon groups
@@ -678,22 +678,22 @@ DECLARE
   _minutes_in_status NUMERIC;
 BEGIN
   SELECT * INTO _order FROM public.orders WHERE id = _order_id;
-  IF NOT FOUND THEN RAISE EXCEPTION 'Pedido não encontrado.'; END IF;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Pedido nÃ£o encontrado.'; END IF;
 
   -- Only the client, store owner or admin can cancel
   IF _order.client_id != auth.uid()
      AND NOT public.is_platform_admin(auth.uid())
      AND NOT EXISTS (SELECT 1 FROM public.stores WHERE id = _order.store_id AND owner_id = auth.uid())
   THEN
-    RAISE EXCEPTION 'Sem permissão para cancelar este pedido.';
+    RAISE EXCEPTION 'Sem permissÃ£o para cancelar este pedido.';
   END IF;
 
   IF _order.status IN ('entregue', 'finalizado') THEN
-    RAISE EXCEPTION 'Pedidos entregues/finalizados não podem ser cancelados. Abra uma solicitação de reembolso.';
+    RAISE EXCEPTION 'Pedidos entregues/finalizados nÃ£o podem ser cancelados. Abra uma solicitaÃ§Ã£o de reembolso.';
   END IF;
 
   IF _order.status = 'cancelado' THEN
-    RAISE EXCEPTION 'Pedido já está cancelado.';
+    RAISE EXCEPTION 'Pedido jÃ¡ estÃ¡ cancelado.';
   END IF;
 
   -- Determine if payment was prepaid (PIX or wallet) vs pay-on-delivery (dinheiro/cartao)
@@ -776,12 +776,12 @@ DECLARE
   _req record;
 BEGIN
   IF NOT is_platform_admin(auth.uid()) THEN
-    RAISE EXCEPTION 'Apenas administradores podem aprovar mudanças de plano.';
+    RAISE EXCEPTION 'Apenas administradores podem aprovar mudanÃ§as de plano.';
   END IF;
 
   SELECT * INTO _req FROM plan_change_requests WHERE id = _request_id;
-  IF NOT FOUND THEN RAISE EXCEPTION 'Solicitação não encontrada.'; END IF;
-  IF _req.status != 'pending' THEN RAISE EXCEPTION 'Solicitação já processada.'; END IF;
+  IF NOT FOUND THEN RAISE EXCEPTION 'SolicitaÃ§Ã£o nÃ£o encontrada.'; END IF;
+  IF _req.status != 'pending' THEN RAISE EXCEPTION 'SolicitaÃ§Ã£o jÃ¡ processada.'; END IF;
 
   -- Update the store plan
   UPDATE store_plans SET
@@ -857,7 +857,7 @@ BEGIN
       VALUES (
         _store.store_id,
         'unfinalized_orders',
-        'Loja "' || _store.name || '" possui ' || _store.unfinalized_count || ' pedidos não finalizados. Possível evasão de comissão.'
+        'Loja "' || _store.name || '" possui ' || _store.unfinalized_count || ' pedidos nÃ£o finalizados. PossÃ­vel evasÃ£o de comissÃ£o.'
       );
       _alert_count := _alert_count + 1;
     END IF;
@@ -1017,19 +1017,19 @@ BEGIN
   WHERE id = _order_id;
 
   IF NOT FOUND THEN
-    RAISE EXCEPTION 'Pedido não encontrado.';
+    RAISE EXCEPTION 'Pedido nÃ£o encontrado.';
   END IF;
 
   IF _order.client_id != auth.uid() THEN
-    RAISE EXCEPTION 'Você não é o dono deste pedido.';
+    RAISE EXCEPTION 'VocÃª nÃ£o Ã© o dono deste pedido.';
   END IF;
 
   IF _order.delivery_confirmed_by_client THEN
-    RAISE EXCEPTION 'Entrega já confirmada.';
+    RAISE EXCEPTION 'Entrega jÃ¡ confirmada.';
   END IF;
 
   IF _order.status NOT IN ('saiu_entrega', 'entregue', 'em_transito') THEN
-    RAISE EXCEPTION 'Pedido não está em status de entrega.';
+    RAISE EXCEPTION 'Pedido nÃ£o estÃ¡ em status de entrega.';
   END IF;
 
   UPDATE orders
@@ -1085,7 +1085,7 @@ BEGIN
     AND status = 'aguardando_pagamento';
 
   IF NOT FOUND THEN
-    RAISE EXCEPTION 'Pedido não encontrado ou não está aguardando pagamento.';
+    RAISE EXCEPTION 'Pedido nÃ£o encontrado ou nÃ£o estÃ¡ aguardando pagamento.';
   END IF;
 END;
 $$;
@@ -1190,7 +1190,7 @@ BEGIN
   SELECT o.store_id INTO _store_id FROM public.orders o WHERE o.id = _order_id;
   
   IF _store_id IS NULL THEN
-    RAISE EXCEPTION 'Pedido não encontrado.';
+    RAISE EXCEPTION 'Pedido nÃ£o encontrado.';
   END IF;
 
   -- Check if user is a platform driver
@@ -1200,7 +1200,7 @@ BEGIN
   _is_store_driver := public.is_store_driver(auth.uid(), _store_id);
 
   IF NOT _is_platform_driver AND NOT _is_store_driver THEN
-    RAISE EXCEPTION 'Você não é um entregador autorizado para este pedido.';
+    RAISE EXCEPTION 'VocÃª nÃ£o Ã© um entregador autorizado para este pedido.';
   END IF;
 
   -- City check only for platform drivers (store drivers are already linked to the store)
@@ -1211,7 +1211,7 @@ BEGIN
     FROM public.stores s WHERE s.id = _store_id;
 
     IF _driver_city IS DISTINCT FROM _store_city THEN
-      RAISE EXCEPTION 'Este pedido é de outra cidade. Você só pode aceitar pedidos da sua cidade.';
+      RAISE EXCEPTION 'Este pedido Ã© de outra cidade. VocÃª sÃ³ pode aceitar pedidos da sua cidade.';
     END IF;
   END IF;
 
@@ -1222,7 +1222,7 @@ BEGIN
     AND driver_id IS NULL;
   
   IF NOT FOUND THEN
-    RAISE EXCEPTION 'Não foi possível aceitar este pedido. Outro entregador pode ter aceitado primeiro.';
+    RAISE EXCEPTION 'NÃ£o foi possÃ­vel aceitar este pedido. Outro entregador pode ter aceitado primeiro.';
   END IF;
 END;
 $$;
@@ -1276,11 +1276,11 @@ BEGIN
   WHERE id = _order_id;
 
   IF NOT FOUND THEN
-    RAISE EXCEPTION 'Pedido não encontrado.';
+    RAISE EXCEPTION 'Pedido nÃ£o encontrado.';
   END IF;
 
   IF _order.driver_id != auth.uid() THEN
-    RAISE EXCEPTION 'Você não é o entregador deste pedido.';
+    RAISE EXCEPTION 'VocÃª nÃ£o Ã© o entregador deste pedido.';
   END IF;
 
   IF _order.status NOT IN ('entregue', 'finalizado') THEN
@@ -1288,7 +1288,7 @@ BEGIN
   END IF;
 
   IF _order.return_to_store_confirmed THEN
-    RAISE EXCEPTION 'Retorno já confirmado.';
+    RAISE EXCEPTION 'Retorno jÃ¡ confirmado.';
   END IF;
 
   _is_physical_payment := COALESCE(_order.payment_method, '') IN ('dinheiro', 'cartao', 'money', 'card_delivery');
@@ -1297,12 +1297,12 @@ BEGIN
   _commission_rate := public.get_store_commission_rate(_order.store_id);
 
   IF NOT _is_physical_payment THEN
-    RAISE EXCEPTION 'Este pedido não exige acerto físico com a loja.';
+    RAISE EXCEPTION 'Este pedido nÃ£o exige acerto fÃ­sico com a loja.';
   END IF;
 
   IF _order.settlement_code IS NOT NULL THEN
     IF _settlement_code IS NULL OR _settlement_code != _order.settlement_code THEN
-      RAISE EXCEPTION 'Código de acerto inválido. Solicite o código ao lojista.';
+      RAISE EXCEPTION 'CÃ³digo de acerto invÃ¡lido. Solicite o cÃ³digo ao lojista.';
     END IF;
   END IF;
 
@@ -1357,24 +1357,24 @@ BEGIN
   WHERE id = _order_id;
 
   IF NOT FOUND THEN
-    RAISE EXCEPTION 'Pedido não encontrado.';
+    RAISE EXCEPTION 'Pedido nÃ£o encontrado.';
   END IF;
 
   IF _order.status NOT IN ('em_transito', 'saiu_entrega') THEN
-    RAISE EXCEPTION 'Este pedido não está em rota de entrega.';
+    RAISE EXCEPTION 'Este pedido nÃ£o estÃ¡ em rota de entrega.';
   END IF;
 
   IF _order.driver_id != auth.uid() THEN
-    RAISE EXCEPTION 'Você não é o entregador deste pedido.';
+    RAISE EXCEPTION 'VocÃª nÃ£o Ã© o entregador deste pedido.';
   END IF;
 
   _is_authorized := public.is_driver(auth.uid()) OR public.is_store_driver(auth.uid(), _order.store_id);
   IF NOT _is_authorized THEN
-    RAISE EXCEPTION 'Você não é um entregador ativo.';
+    RAISE EXCEPTION 'VocÃª nÃ£o Ã© um entregador ativo.';
   END IF;
 
   IF _order.delivery_pin IS NOT NULL AND (_pin IS NULL OR _pin != _order.delivery_pin) THEN
-    RAISE EXCEPTION 'Código inválido. Verifique com o cliente.';
+    RAISE EXCEPTION 'CÃ³digo invÃ¡lido. Verifique com o cliente.';
   END IF;
 
   _is_physical_payment := COALESCE(_order.payment_method, '') IN ('dinheiro', 'cartao', 'money', 'card_delivery');
@@ -1436,28 +1436,28 @@ BEGIN
   WHERE id = _order_id;
 
   IF NOT FOUND THEN
-    RAISE EXCEPTION 'Pedido não encontrado.';
+    RAISE EXCEPTION 'Pedido nÃ£o encontrado.';
   END IF;
 
   IF _order.driver_id != auth.uid() THEN
-    RAISE EXCEPTION 'Você não é o entregador deste pedido.';
+    RAISE EXCEPTION 'VocÃª nÃ£o Ã© o entregador deste pedido.';
   END IF;
 
   _is_authorized := public.is_driver(auth.uid()) OR public.is_store_driver(auth.uid(), _order.store_id);
   IF NOT _is_authorized THEN
-    RAISE EXCEPTION 'Você não é um entregador ativo.';
+    RAISE EXCEPTION 'VocÃª nÃ£o Ã© um entregador ativo.';
   END IF;
 
   IF _order.status != 'pronto_para_entrega' THEN
-    RAISE EXCEPTION 'Pedido não está no status correto para validação de coleta.';
+    RAISE EXCEPTION 'Pedido nÃ£o estÃ¡ no status correto para validaÃ§Ã£o de coleta.';
   END IF;
 
   IF _order.collection_code IS NULL THEN
-    RAISE EXCEPTION 'Este pedido não possui código de coleta.';
+    RAISE EXCEPTION 'Este pedido nÃ£o possui cÃ³digo de coleta.';
   END IF;
 
   IF _code IS NULL OR _code != _order.collection_code THEN
-    RAISE EXCEPTION 'Código inválido. Verifique com o lojista.';
+    RAISE EXCEPTION 'CÃ³digo invÃ¡lido. Verifique com o lojista.';
   END IF;
 
   UPDATE public.orders 
@@ -1667,7 +1667,7 @@ DECLARE
   _unique_today bigint;
 BEGIN
   IF NOT public.is_platform_admin(auth.uid()) THEN
-    RAISE EXCEPTION 'Apenas administradores podem ver estatísticas.';
+    RAISE EXCEPTION 'Apenas administradores podem ver estatÃ­sticas.';
   END IF;
 
   SELECT COUNT(*) INTO _today FROM public.page_views
@@ -1797,3 +1797,4 @@ BEGIN
         CASE
           WHEN _selected_plan = 'supporter' THEN 'fixed'::public.store_plan_type
           WHEN _selected_plan = 'fixed' THEN 'fixed'::public.store_plan_type
+

@@ -66,28 +66,28 @@ BEGIN
   -- Determine message and sender based on new status
   CASE NEW.status
     WHEN 'pendente' THEN
-      _msg := '📋 Pedido recebido pela loja';
+      _msg := 'ð Pedido recebido pela loja';
       _sender := COALESCE(_store_owner, NEW.client_id);
     WHEN 'preparando' THEN
-      _msg := '👨‍🍳 Seu pedido está sendo preparado!';
+      _msg := 'ð¨âð³ Seu pedido estÃ¡ sendo preparado!';
       _sender := COALESCE(_store_owner, NEW.client_id);
     WHEN 'pronto_para_entrega' THEN
-      _msg := '📦 Pedido pronto! Aguardando entregador.';
+      _msg := 'ð¦ Pedido pronto! Aguardando entregador.';
       _sender := COALESCE(_store_owner, NEW.client_id);
     WHEN 'saiu_entrega' THEN
-      _msg := '🛵 Saiu para entrega!';
+      _msg := 'ðµ Saiu para entrega!';
       _sender := COALESCE(NEW.driver_id, _store_owner, NEW.client_id);
     WHEN 'em_transito' THEN
-      _msg := '🛵 Entregador a caminho!';
+      _msg := 'ðµ Entregador a caminho!';
       _sender := COALESCE(NEW.driver_id, _store_owner, NEW.client_id);
     WHEN 'entregue' THEN
-      _msg := '✅ Pedido entregue!';
+      _msg := 'â Pedido entregue!';
       _sender := COALESCE(NEW.driver_id, _store_owner, NEW.client_id);
     WHEN 'finalizado' THEN
-      _msg := '🏁 Pedido finalizado. Obrigado pela preferência!';
+      _msg := 'ð Pedido finalizado. Obrigado pela preferÃªncia!';
       _sender := COALESCE(_store_owner, NEW.client_id);
     WHEN 'cancelado' THEN
-      _msg := '❌ Pedido cancelado.';
+      _msg := 'â Pedido cancelado.';
       _sender := COALESCE(_store_owner, NEW.client_id);
     ELSE
       RETURN NEW;
@@ -317,7 +317,7 @@ BEGIN
     ),
     body := jsonb_build_object(
       'user_ids', to_jsonb(v_admin_ids),
-      'title', '🔔 Novo ' || v_label || ' aguardando aprovação',
+      'title', 'ð Novo ' || v_label || ' aguardando aprovaÃ§Ã£o',
       'body', COALESCE(NEW.full_name, 'Novo cadastro') || ' acabou de se cadastrar.',
       'data', jsonb_build_object('link', '/admin', 'tab', 'approvals')
     )
@@ -384,13 +384,13 @@ BEGIN
   _short_id := upper(substr(NEW.id::text, 1, 8));
 
   _msg := CASE NEW.status
-    WHEN 'preparando' THEN '✅ ' || COALESCE(_store_name, 'Loja') || ': seu pedido #' || _short_id || ' foi aceito e está sendo preparado! 👨‍🍳'
-    WHEN 'pronto_para_entrega' THEN '📦 ' || COALESCE(_store_name, 'Loja') || ': pedido #' || _short_id || ' pronto! Aguardando entregador.'
-    WHEN 'saiu_entrega' THEN '🛵 ' || COALESCE(_store_name, 'Loja') || ': seu pedido #' || _short_id || ' saiu para entrega!'
-    WHEN 'em_transito' THEN '🛵 ' || COALESCE(_store_name, 'Loja') || ': entregador a caminho com o pedido #' || _short_id || '!'
-    WHEN 'entregue' THEN '✅ ' || COALESCE(_store_name, 'Loja') || ': pedido #' || _short_id || ' entregue! Bom apetite! 🍽️'
-    WHEN 'finalizado' THEN '🏁 ' || COALESCE(_store_name, 'Loja') || ': pedido #' || _short_id || ' finalizado. Obrigado pela preferência!'
-    WHEN 'cancelado' THEN '❌ ' || COALESCE(_store_name, 'Loja') || ': pedido #' || _short_id || ' foi cancelado.'
+    WHEN 'preparando' THEN 'â ' || COALESCE(_store_name, 'Loja') || ': seu pedido #' || _short_id || ' foi aceito e estÃ¡ sendo preparado! ð¨âð³'
+    WHEN 'pronto_para_entrega' THEN 'ð¦ ' || COALESCE(_store_name, 'Loja') || ': pedido #' || _short_id || ' pronto! Aguardando entregador.'
+    WHEN 'saiu_entrega' THEN 'ðµ ' || COALESCE(_store_name, 'Loja') || ': seu pedido #' || _short_id || ' saiu para entrega!'
+    WHEN 'em_transito' THEN 'ðµ ' || COALESCE(_store_name, 'Loja') || ': entregador a caminho com o pedido #' || _short_id || '!'
+    WHEN 'entregue' THEN 'â ' || COALESCE(_store_name, 'Loja') || ': pedido #' || _short_id || ' entregue! Bom apetite! ð½ï¸'
+    WHEN 'finalizado' THEN 'ð ' || COALESCE(_store_name, 'Loja') || ': pedido #' || _short_id || ' finalizado. Obrigado pela preferÃªncia!'
+    WHEN 'cancelado' THEN 'â ' || COALESCE(_store_name, 'Loja') || ': pedido #' || _short_id || ' foi cancelado.'
     ELSE NULL
   END;
 
@@ -536,20 +536,20 @@ CREATE OR REPLACE FUNCTION public.prevent_driver_protected_fields_update() RETUR
     SET search_path TO 'public'
     AS $$
 BEGIN
-  -- Apenas o próprio motoboy pode alterar seu registro via esta policy,
-  -- e só pode mudar is_online. Demais campos protegidos.
+  -- Apenas o prÃ³prio motoboy pode alterar seu registro via esta policy,
+  -- e sÃ³ pode mudar is_online. Demais campos protegidos.
   IF auth.uid() = NEW.user_id AND NOT public.is_platform_admin(auth.uid()) THEN
     IF NEW.is_active IS DISTINCT FROM OLD.is_active THEN
-      RAISE EXCEPTION 'Não é permitido alterar is_active';
+      RAISE EXCEPTION 'NÃ£o Ã© permitido alterar is_active';
     END IF;
     IF NEW.name IS DISTINCT FROM OLD.name THEN
-      RAISE EXCEPTION 'Não é permitido alterar name';
+      RAISE EXCEPTION 'NÃ£o Ã© permitido alterar name';
     END IF;
     IF NEW.city IS DISTINCT FROM OLD.city THEN
-      RAISE EXCEPTION 'Não é permitido alterar city';
+      RAISE EXCEPTION 'NÃ£o Ã© permitido alterar city';
     END IF;
     IF NEW.user_id IS DISTINCT FROM OLD.user_id THEN
-      RAISE EXCEPTION 'Não é permitido alterar user_id';
+      RAISE EXCEPTION 'NÃ£o Ã© permitido alterar user_id';
     END IF;
   END IF;
   RETURN NEW;
@@ -566,10 +566,10 @@ CREATE OR REPLACE FUNCTION public.prevent_role_self_change() RETURNS trigger
 BEGIN
   IF NOT public.is_platform_admin(auth.uid()) THEN
     IF OLD.role IS DISTINCT FROM NEW.role THEN
-      RAISE EXCEPTION 'Não é permitido alterar o próprio cargo.';
+      RAISE EXCEPTION 'NÃ£o Ã© permitido alterar o prÃ³prio cargo.';
     END IF;
     IF OLD.is_approved IS DISTINCT FROM NEW.is_approved THEN
-      RAISE EXCEPTION 'Não é permitido alterar o próprio status de aprovação.';
+      RAISE EXCEPTION 'NÃ£o Ã© permitido alterar o prÃ³prio status de aprovaÃ§Ã£o.';
     END IF;
   END IF;
   RETURN NEW;
@@ -589,14 +589,14 @@ DECLARE
   _is_store_owner boolean;
 BEGIN
   SELECT * INTO _refund FROM public.refund_requests WHERE id = _refund_id;
-  IF NOT FOUND THEN RAISE EXCEPTION 'Solicitação não encontrada.'; END IF;
-  IF _refund.status != 'pending' THEN RAISE EXCEPTION 'Solicitação já processada.'; END IF;
+  IF NOT FOUND THEN RAISE EXCEPTION 'SolicitaÃ§Ã£o nÃ£o encontrada.'; END IF;
+  IF _refund.status != 'pending' THEN RAISE EXCEPTION 'SolicitaÃ§Ã£o jÃ¡ processada.'; END IF;
 
   _is_admin := public.is_platform_admin(auth.uid());
   _is_store_owner := EXISTS (SELECT 1 FROM public.stores WHERE id = _refund.store_id AND owner_id = auth.uid());
 
   IF NOT _is_admin AND NOT _is_store_owner THEN
-    RAISE EXCEPTION 'Sem permissão para processar reembolsos.';
+    RAISE EXCEPTION 'Sem permissÃ£o para processar reembolsos.';
   END IF;
 
   IF _approved_amount <= 0 THEN
@@ -671,7 +671,7 @@ DECLARE
   _store_id uuid;
 BEGIN
   IF EXISTS (SELECT 1 FROM profiles WHERE user_id = _user_id AND role != 'cliente') THEN
-    RAISE EXCEPTION 'Usuário já possui cadastro de parceiro.';
+    RAISE EXCEPTION 'UsuÃ¡rio jÃ¡ possui cadastro de parceiro.';
   END IF;
 
   INSERT INTO profiles (user_id, full_name, role, document, avatar_url, whatsapp_number)
@@ -703,7 +703,7 @@ DECLARE
   _store_id uuid;
 BEGIN
   IF EXISTS (SELECT 1 FROM profiles WHERE user_id = _user_id AND role != 'cliente') THEN
-    RAISE EXCEPTION 'Usuário já possui cadastro de parceiro.';
+    RAISE EXCEPTION 'UsuÃ¡rio jÃ¡ possui cadastro de parceiro.';
   END IF;
 
   INSERT INTO profiles (user_id, full_name, role, document, avatar_url, whatsapp_number)
@@ -760,7 +760,7 @@ DECLARE
 BEGIN
   -- Check not already registered
   IF EXISTS (SELECT 1 FROM profiles WHERE user_id = _user_id AND role != 'cliente') THEN
-    RAISE EXCEPTION 'Usuário já possui cadastro de parceiro.';
+    RAISE EXCEPTION 'UsuÃ¡rio jÃ¡ possui cadastro de parceiro.';
   END IF;
 
   -- Upsert profile
@@ -791,7 +791,7 @@ DECLARE
   _user_id uuid := auth.uid();
 BEGIN
   IF EXISTS (SELECT 1 FROM profiles WHERE user_id = _user_id AND role != 'cliente') THEN
-    RAISE EXCEPTION 'Usuário já possui cadastro de parceiro.';
+    RAISE EXCEPTION 'UsuÃ¡rio jÃ¡ possui cadastro de parceiro.';
   END IF;
 
   INSERT INTO profiles (user_id, full_name, role, document, vehicle, avatar_url, whatsapp_number)
@@ -855,12 +855,12 @@ DECLARE
   _req record;
 BEGIN
   IF NOT is_platform_admin(auth.uid()) THEN
-    RAISE EXCEPTION 'Apenas administradores podem rejeitar mudanças de plano.';
+    RAISE EXCEPTION 'Apenas administradores podem rejeitar mudanÃ§as de plano.';
   END IF;
 
   SELECT * INTO _req FROM plan_change_requests WHERE id = _request_id;
-  IF NOT FOUND THEN RAISE EXCEPTION 'Solicitação não encontrada.'; END IF;
-  IF _req.status != 'pending' THEN RAISE EXCEPTION 'Solicitação já processada.'; END IF;
+  IF NOT FOUND THEN RAISE EXCEPTION 'SolicitaÃ§Ã£o nÃ£o encontrada.'; END IF;
+  IF _req.status != 'pending' THEN RAISE EXCEPTION 'SolicitaÃ§Ã£o jÃ¡ processada.'; END IF;
 
   UPDATE plan_change_requests SET
     status = 'rejected',
@@ -931,7 +931,7 @@ BEGIN
   FROM public.orders o WHERE o.id = _order_id;
 
   IF _store_id IS NULL THEN
-    RAISE EXCEPTION 'Pedido não encontrado.';
+    RAISE EXCEPTION 'Pedido nÃ£o encontrado.';
   END IF;
 
   SELECT s.owner_id INTO _owner FROM public.stores s WHERE s.id = _store_id;
@@ -940,11 +940,11 @@ BEGIN
   END IF;
 
   IF _current_driver IS NOT NULL THEN
-    RAISE EXCEPTION 'Pedido já foi aceito por um entregador.';
+    RAISE EXCEPTION 'Pedido jÃ¡ foi aceito por um entregador.';
   END IF;
 
   IF _status NOT IN ('pendente','preparando','pronto_para_entrega') THEN
-    RAISE EXCEPTION 'Pedido não está em estado válido para designação.';
+    RAISE EXCEPTION 'Pedido nÃ£o estÃ¡ em estado vÃ¡lido para designaÃ§Ã£o.';
   END IF;
 
   -- If targeting a driver, ensure they are linked to this store
@@ -953,7 +953,7 @@ BEGIN
       SELECT 1 FROM public.store_drivers sd
       WHERE sd.store_id = _store_id AND sd.driver_user_id = _driver_user_id
     ) THEN
-      RAISE EXCEPTION 'Esse entregador não está vinculado à sua loja.';
+      RAISE EXCEPTION 'Esse entregador nÃ£o estÃ¡ vinculado Ã  sua loja.';
     END IF;
   END IF;
 
@@ -1112,7 +1112,7 @@ BEGIN
   FOR UPDATE;
 
   IF NOT FOUND THEN
-    RAISE EXCEPTION 'Cupom não encontrado.';
+    RAISE EXCEPTION 'Cupom nÃ£o encontrado.';
   END IF;
 
   IF NOT _coupon.is_active THEN
@@ -1129,7 +1129,7 @@ BEGIN
 
   -- Check if user already used this coupon
   IF EXISTS (SELECT 1 FROM public.coupon_uses WHERE coupon_id = _coupon_id AND user_id = _user_id) THEN
-    RAISE EXCEPTION 'Você já utilizou este cupom.';
+    RAISE EXCEPTION 'VocÃª jÃ¡ utilizou este cupom.';
   END IF;
 
   -- Atomically increment used_count and insert usage record
@@ -1152,7 +1152,7 @@ DECLARE
   _deducted NUMERIC;
 BEGIN
   IF auth.uid() != _user_id AND NOT public.is_platform_admin(auth.uid()) THEN
-    RAISE EXCEPTION 'Sem permissão.';
+    RAISE EXCEPTION 'Sem permissÃ£o.';
   END IF;
 
   SELECT balance INTO _current_balance
@@ -1177,7 +1177,7 @@ BEGIN
     'debit',
     'order_payment',
     _order_id,
-    'Crédito usado no pedido #' || substr(_order_id::text, 1, 8)
+    'CrÃ©dito usado no pedido #' || substr(_order_id::text, 1, 8)
   );
 
   RETURN _deducted;
@@ -1797,3 +1797,4 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.platform_partners 
     CONSTRAINT platform_partners_emergency_fund_percent_check CHECK (((emergency_fund_percent >= (0)::numeric) AND (emergency_fund_percent <= (50)::numeric))),
     CONSTRAINT platform_partners_profit_percent_check CHECK (((profit_percent >= (0)::numeric) AND (profit_percent <= (100)::numeric)))
 );
+
