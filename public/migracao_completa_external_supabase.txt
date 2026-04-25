@@ -19,12 +19,12 @@ SET row_security = off;
 
 -- Name: public; Type: SCHEMA; Schema: -; Owner: -
 
-CREATE SCHEMA IF NOT EXISTS public;
+-- CREATE SCHEMA public;
 
 
 -- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: -
 
-COMMENT ON SCHEMA public IS 'standard public schema';
+-- COMMENT ON SCHEMA public IS 'standard public schema';
 
 
 -- Name: app_role; Type: TYPE; Schema: public; Owner: -
