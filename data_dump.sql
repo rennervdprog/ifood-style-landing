@@ -1737,4 +1737,115 @@ INSERT INTO public.store_driver_earnings VALUES ('45726416-accd-426f-819c-3562e4
 INSERT INTO public.store_driver_earnings VALUES ('28709f3a-fa3b-48a2-9d6e-7516386c7beb', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '91f9dd29-559a-4d6a-b2d2-89ac5b081579', 2, 2, 0, 'pendente', NULL, NULL, NULL, '2026-04-17 01:11:22.267271+00', NULL, NULL, 'fim_do_dia');
 INSERT INTO public.store_driver_earnings VALUES ('a72f5572-a6f1-46f6-af55-3a476347967c', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '4e21aec0-4de7-4f9c-8420-2cfa72bdab9c', 2, 2, 0, 'pendente', NULL, NULL, NULL, '2026-04-17 01:11:22.267271+00', NULL, NULL, 'fim_do_dia');
 INSERT INTO public.store_driver_earnings VALUES ('55f94ee4-fa86-4495-b54d-046eeb8cb14e', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '7858058a-fa4a-46bf-8063-26301bf8983c', 2, 2, 0, 'pendente', NULL, NULL, NULL, '2026-04-17 01:11:22.267271+00', NULL, NULL, 'fim_do_dia');
-INSERT INTO public.store_driver_earnings VALUES ('87
+INSERT INTO public.store_driver_earnings VALUES ('87c65f91-a457-4acd-ba2d-ccb21eb113a1', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '98b42c63-9f06-40c0-bf04-022e57b68a89', 6, 2, 4, 'pendente', NULL, NULL, NULL, '2026-04-17 15:51:59.525213+00', NULL, NULL, 'fim_do_dia');
+INSERT INTO public.store_driver_earnings VALUES ('e8ba7949-e501-4f28-8a14-b6282fae5340', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '0c35d6b6-53ad-4935-a635-d1d35a325b3f', 6, 2, 4, 'pendente', NULL, NULL, NULL, '2026-04-18 18:46:00.782407+00', NULL, NULL, 'fim_do_dia');
+INSERT INTO public.store_driver_earnings VALUES ('60f54527-5bbb-45f8-b8c2-196619cc9066', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '21a92392-6e8f-4c4e-8eec-6db08f4c18c0', 3, 2, 1, 'pendente', NULL, NULL, NULL, '2026-04-18 18:59:49.092743+00', NULL, NULL, 'fim_do_dia');
+INSERT INTO public.store_driver_earnings VALUES ('9cd68544-78b9-4784-b1af-917caf641e15', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '35c46862-108f-4391-9984-3b5d2ace5155', 12, 2, 10, 'pendente', NULL, NULL, NULL, '2026-04-22 00:39:58.047604+00', NULL, NULL, 'fim_do_dia');
+INSERT INTO public.store_driver_earnings VALUES ('1fec1633-fb75-4e07-a66c-765bdfcce5bd', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 'b2d39235-52f0-4b02-8722-52721d10cb10', 12, 2, 10, 'pendente', NULL, NULL, NULL, '2026-04-22 00:40:18.895232+00', NULL, NULL, 'fim_do_dia');
+INSERT INTO public.store_driver_earnings VALUES ('8194cab7-ec4e-4e98-a457-f3546d66530f', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '4acfa4fc-5806-4097-8ddc-36d8a65612ae', 12, 2, 10, 'pendente', NULL, NULL, NULL, '2026-04-22 00:41:13.756929+00', NULL, NULL, 'fim_do_dia');
+INSERT INTO public.store_driver_earnings VALUES ('db904fbd-36fe-4c46-bd6f-a0184ae3724f', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 'a3471d4d-52e0-46c0-b788-07e37f3bb478', 12, 2, 10, 'pendente', NULL, NULL, NULL, '2026-04-22 00:45:12.215693+00', NULL, NULL, 'fim_do_dia');
+
+
+--
+-- Data for Name: store_drivers; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+INSERT INTO public.store_drivers VALUES ('f4a7dd25-21f1-42d8-ae40-1f9332578149', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '2026-04-11 15:41:43.043789+00', 'fim_do_dia');
+INSERT INTO public.store_drivers VALUES ('1a52701c-49f0-4726-9be1-d5557f45098e', '66129fdd-1f7e-42c8-b3c1-8d4c28b14106', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '2026-04-15 00:17:25.293514+00', 'fim_do_dia');
+INSERT INTO public.store_drivers VALUES ('daa0652f-a3c6-4851-a26a-c3e7ae94ef7a', '70c8f384-a15a-4dfd-bfbc-30ebb9b7f678', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '2026-04-21 18:45:55.587556+00', 'fim_do_dia');
+
+
+--
+-- Data for Name: store_plans; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+INSERT INTO public.store_plans VALUES ('67e3e273-2f79-4bcc-9aeb-ac18a7410755', 'fbff1580-ce82-4798-a96f-f149c69166b3', 'fixed', 180, 0, true, '2026-04-09 17:30:14.013+00', '2026-05-09 17:30:14.013+00', NULL, '2026-04-09 17:30:13.871537+00', '2026-04-09 17:30:13.871537+00', NULL, 0, NULL, NULL);
+INSERT INTO public.store_plans VALUES ('67d31de7-aee2-4d41-8589-a9bc5b21fa71', 'b243bdb4-45a9-46fc-8248-68dd6ba3e46c', 'fixed', 180, 0, true, '2026-04-09 17:36:23.773+00', '2026-05-09 17:36:23.773+00', NULL, '2026-04-09 17:36:23.523852+00', '2026-04-09 17:36:23.523852+00', NULL, 0, NULL, NULL);
+INSERT INTO public.store_plans VALUES ('68b8d67d-33ac-4a97-a713-bd4df7150464', 'e577573d-4139-415d-b49d-d6a50e1d393b', 'hybrid', 100, 2.5, true, '2026-04-09 17:36:42.583+00', '2026-05-09 17:36:42.583+00', NULL, '2026-04-09 17:36:42.463691+00', '2026-04-09 17:36:42.463691+00', NULL, 0, NULL, NULL);
+INSERT INTO public.store_plans VALUES ('5fc8d4da-85ca-45fc-83c3-60c27f895127', '7cd86219-bb0b-4635-801c-9ee8596c6215', 'fixed', 180, 0, true, '2026-04-09 23:06:11.195+00', '2026-05-09 23:06:11.195+00', NULL, '2026-04-09 23:06:10.986047+00', '2026-04-09 23:06:10.986047+00', NULL, 0, NULL, NULL);
+INSERT INTO public.store_plans VALUES ('43271849-e7f6-497f-ab11-4e33fa2e24f7', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'fixed', 180, 0, true, '2026-04-09 17:36:02.105+00', '2026-05-01 03:00:00+00', NULL, '2026-04-09 17:36:01.880987+00', '2026-04-15 02:46:35.422897+00', NULL, 0, NULL, NULL);
+INSERT INTO public.store_plans VALUES ('e740fcaa-0394-47cf-83e8-d62f6c95cf5a', '050ed159-cfd4-4de5-9e9e-fcc54bf519f8', 'fixed', 180, 0, true, '2026-04-18 21:43:04.395233+00', '2026-05-01 03:00:00+00', NULL, '2026-04-18 21:43:04.395233+00', '2026-04-18 21:43:04.395233+00', NULL, 0, NULL, NULL);
+INSERT INTO public.store_plans VALUES ('6097bbb3-4849-45e1-b40e-6af1d0051e1c', '477b9f42-d4c7-4cdf-a24b-fac59212f6d1', 'commission_only', 0, 6, true, '2026-04-09 16:51:40.875159+00', NULL, NULL, '2026-04-09 16:51:40.875159+00', '2026-04-24 17:31:45.771626+00', NULL, 0, NULL, NULL);
+INSERT INTO public.store_plans VALUES ('453a91be-65c5-4e3c-9e74-2cc30ac5b305', '66129fdd-1f7e-42c8-b3c1-8d4c28b14106', 'commission_only', 0, 6, true, '2026-04-14 14:46:23.242486+00', NULL, NULL, '2026-04-14 14:46:23.242486+00', '2026-04-24 17:31:45.771626+00', NULL, 0, NULL, NULL);
+INSERT INTO public.store_plans VALUES ('ff8c73f2-7b09-45a6-b942-357fe73cf7e4', '77d96f88-c440-4c13-b547-11a6ae2240a1', 'commission_only', 0, 6, true, '2026-04-23 15:46:43.297+00', NULL, NULL, '2026-04-23 15:46:43.579158+00', '2026-04-24 17:31:45.771626+00', NULL, 0, NULL, NULL);
+INSERT INTO public.store_plans VALUES ('53090129-caaa-45d5-b57e-2a67b2dffe4d', '00f1814d-703d-4ac1-898d-d53188903aeb', 'commission_only', 0, 6, true, '2026-04-24 17:16:36.577244+00', NULL, NULL, '2026-04-24 17:16:36.577244+00', '2026-04-24 17:31:45.771626+00', NULL, 0, NULL, NULL);
+
+
+--
+-- Data for Name: store_secrets; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: terms_acceptance; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+INSERT INTO public.terms_acceptance VALUES ('0d5c250d-a008-4873-a0ad-e36039301b04', '6becbb34-0fd2-4f6b-ba60-46bc058c15e6', '1.0', '1.0', NULL, 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Mobile Safari/537.36', '2026-04-09 13:45:14.865154+00');
+INSERT INTO public.terms_acceptance VALUES ('8a7c4198-8e98-411b-8d39-d5e33af1a8d5', '137c9a05-75db-4077-acff-17d9ed508c29', '1.0', '1.0', NULL, 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Mobile Safari/537.36', '2026-04-09 18:52:58.159783+00');
+INSERT INTO public.terms_acceptance VALUES ('ccc69e09-8c66-4a6d-8fb7-39cfc58cdae0', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '1.0', '1.0', NULL, 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Mobile Safari/537.36', '2026-04-11 15:13:51.886295+00');
+INSERT INTO public.terms_acceptance VALUES ('df19b588-a7ac-4542-acdc-e868bcd81e98', '5e53b885-05f3-4cfd-9a52-d5c1f4457f3b', '1.0', '1.0', NULL, 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Mobile/15E148 Safari/604.1', '2026-04-14 14:46:25.211725+00');
+INSERT INTO public.terms_acceptance VALUES ('fd7b65c5-c1cd-4914-9ea0-16241db7e214', '37909bb0-03b4-46dc-917d-c17fadaca33c', '1.0', '1.0', NULL, 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Mobile Safari/537.36', '2026-04-16 21:16:21.67077+00');
+INSERT INTO public.terms_acceptance VALUES ('238b04eb-57ac-4deb-9a8e-224bf06a0674', '1d33caaf-2aaf-4ac4-a41e-b94508e0ed50', '1.0', '1.0', NULL, 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Mobile/15E148 Safari/604.1', '2026-04-18 16:59:24.681441+00');
+INSERT INTO public.terms_acceptance VALUES ('05ffd6c5-2311-4b7d-902c-ecd3c8ed45fb', 'ed862e03-693d-4b7c-8342-400527be9c42', '1.0', '1.0', NULL, 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Mobile Safari/537.36', '2026-04-22 16:03:29.754369+00');
+INSERT INTO public.terms_acceptance VALUES ('9e5f5903-318a-4300-b013-8ca1b17066b5', 'acefbf75-9e70-473e-b8ae-c6fb170c886e', '1.0', '1.0', NULL, 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Mobile Safari/537.36', '2026-04-24 17:16:37.891305+00');
+
+
+--
+-- Data for Name: user_active_devices; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+INSERT INTO public.user_active_devices VALUES ('0c1d451c-bcc5-427b-b0f2-a6611fef8ad7', '1d33caaf-2aaf-4ac4-a41e-b94508e0ed50', '24c61a71-2c4a-4359-8086-ad5f77a0f0a3', '2026-04-18 17:00:10.019769+00', '2026-04-18 16:59:24.673655+00');
+INSERT INTO public.user_active_devices VALUES ('65bd32de-a7b8-4802-a803-fc9d8827f5ab', '6becbb34-0fd2-4f6b-ba60-46bc058c15e6', 'a21b05aa-dfd1-4eb3-90fe-e55f4b552a23', '2026-04-25 17:59:17.040741+00', '2026-04-13 10:59:55.148488+00');
+INSERT INTO public.user_active_devices VALUES ('d2b62cd3-33a1-48ba-b832-77a05d5fc476', '5e53b885-05f3-4cfd-9a52-d5c1f4457f3b', '3d7d816c-f5e7-44d8-b563-8e91fe9f8a8c', '2026-04-22 19:20:33.916295+00', '2026-04-14 14:46:25.211377+00');
+INSERT INTO public.user_active_devices VALUES ('b2e3dfc9-6a46-4544-862c-f8da0764ea39', 'acefbf75-9e70-473e-b8ae-c6fb170c886e', 'bbff4c26-ae2e-4f19-8188-4f5b6b5ba89d', '2026-04-25 18:29:23.158147+00', '2026-04-24 17:16:37.794973+00');
+INSERT INTO public.user_active_devices VALUES ('4fa4aaa4-36f6-4931-9a20-60538796536f', '927289c1-9e81-463a-b950-9b83d4d505e5', '2d7646ce-7be8-4593-a96c-08768aacc5e0', '2026-04-15 00:26:53.94909+00', '2026-04-14 23:59:08.540137+00');
+INSERT INTO public.user_active_devices VALUES ('a3a2020b-a2f0-4ee0-b7fe-c21c1dda3ca8', '37909bb0-03b4-46dc-917d-c17fadaca33c', '5b011366-18ac-4f4e-bcd6-1f625df3b251', '2026-04-16 21:31:37.158797+00', '2026-04-16 21:16:21.664599+00');
+INSERT INTO public.user_active_devices VALUES ('b92fd6a6-70b4-4422-aebd-e6ccacafe487', 'ed862e03-693d-4b7c-8342-400527be9c42', 'bbff4c26-ae2e-4f19-8188-4f5b6b5ba89d', '2026-04-23 15:04:18.452841+00', '2026-04-22 16:03:29.89604+00');
+INSERT INTO public.user_active_devices VALUES ('9ce1684b-b0ce-4026-b3fe-f22a5c2bf4a2', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'a5ffff67-48e9-4412-a763-cea63812b8c0', '2026-04-25 17:08:00.756482+00', '2026-04-13 12:52:56.47428+00');
+INSERT INTO public.user_active_devices VALUES ('074d2ee5-b6f0-4a71-a56e-cbbc29cb5227', 'ba9ce4c7-7133-45d5-8c2f-454914b7da38', 'a21b05aa-dfd1-4eb3-90fe-e55f4b552a23', '2026-04-21 23:46:40.572692+00', '2026-04-14 00:32:33.73079+00');
+INSERT INTO public.user_active_devices VALUES ('c11592c9-9923-41ba-b98e-dc78c85a93fa', '137c9a05-75db-4077-acff-17d9ed508c29', 'bbff4c26-ae2e-4f19-8188-4f5b6b5ba89d', '2026-04-15 02:43:38.737822+00', '2026-04-15 00:15:09.041825+00');
+INSERT INTO public.user_active_devices VALUES ('6707e0ce-beec-4bfb-a1d9-de8518182de0', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 'b48a1708-ca7a-40ef-84e8-25a1b2a5e5ea', '2026-04-25 17:18:40.242688+00', '2026-04-13 12:49:55.102755+00');
+
+
+--
+-- Data for Name: user_roles; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+INSERT INTO public.user_roles VALUES ('4aeb16d3-0d73-4e49-bf6c-0a5a8b97081b', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'admin');
+
+
+--
+-- Data for Name: user_wallet; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: wallet_transactions; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: withdrawal_requests; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+INSERT INTO public.withdrawal_requests VALUES ('ac114293-a525-4290-9c3e-a0de4520dbcf', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 8, '17508039769', 'cpf', 'pago', '2026-03-31 16:08:21.103924+00', '2026-03-31 16:11:46.653+00', NULL, 'SK-1009');
+INSERT INTO public.withdrawal_requests VALUES ('6f653f5d-d2bb-46c8-91d7-b68465137f9b', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 16, '17508039769', 'cpf', 'pago', '2026-03-31 17:06:40.373857+00', '2026-03-31 17:06:53.978+00', NULL, 'SK-1010');
+INSERT INTO public.withdrawal_requests VALUES ('60786c05-2971-4a9b-b28d-2d870fb90857', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 4, '17508039769', 'cpf', 'pago', '2026-03-31 17:17:04.674088+00', '2026-03-31 17:17:14.58+00', NULL, 'SK-1011');
+
+
+--
+-- Name: withdrawal_code_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.withdrawal_code_seq', 1011, true);
+
+
+--
+-- PostgreSQL database dump complete
+--
+
+\unrestrict nbCWJPmHOydNnBf7JIiLdLmWi00qyqgGBkqww4hoBovOIVum0yd4LXlFxvjpjgZ
+
