@@ -1,414 +1,4 @@
 
-
--- Name: product_addon_groups; Type: TABLE; Schema: public; Owner: -
-
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.product_addon_groups (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    product_id uuid NOT NULL,
-    addon_group_id uuid NOT NULL,
-    created_at timestamp with time zone DEFAULT now()
-);
-
-
--- Name: products; Type: TABLE; Schema: public; Owner: -
-
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.products (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    store_id uuid NOT NULL,
-    name text NOT NULL,
-    price numeric(10,2) NOT NULL,
-    description text,
-    image_url text,
-    is_available boolean DEFAULT true NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    section_id uuid,
-    metadata jsonb DEFAULT '{}'::jsonb NOT NULL
-);
-
-
--- Name: profiles; Type: TABLE; Schema: public; Owner: -
-
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.profiles (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    user_id uuid NOT NULL,
-    full_name text DEFAULT ''::text NOT NULL,
-    role public.partner_role DEFAULT 'cliente'::public.partner_role NOT NULL,
-    document text,
-    vehicle text,
-    avatar_url text,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    is_approved boolean DEFAULT false NOT NULL,
-    street text,
-    number text,
-    complement text,
-    reference_point text,
-    neighborhood text,
-    phone text,
-    pix_key text,
-    pix_type public.pix_type,
-    whatsapp_number text,
-    email text,
-    cep text,
-    has_seen_onboarding boolean DEFAULT false NOT NULL,
-    city text DEFAULT 'itatinga'::text,
-    cnh_number text,
-    cnh_front_url text,
-    cnh_back_url text,
-    selfie_url text,
-    terms_accepted_at timestamp with time zone,
-    deleted_at timestamp with time zone
-);
-
-
--- Name: profile_contacts; Type: VIEW; Schema: public; Owner: -
-
-CREATE VIEW public.profile_contacts WITH (security_invoker='true') AS
- SELECT user_id,
-    full_name,
-    phone,
-    whatsapp_number,
-    neighborhood,
-    email
-   FROM public.profiles
-  WHERE (deleted_at IS NULL);
-
-
--- Name: refund_requests; Type: TABLE; Schema: public; Owner: -
-
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.refund_requests (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    order_id uuid NOT NULL,
-    store_id uuid NOT NULL,
-    requester_id uuid NOT NULL,
-    reason public.refund_reason DEFAULT 'other'::public.refund_reason NOT NULL,
-    description text,
-    evidence_urls text[] DEFAULT '{}'::text[],
-    refund_type public.refund_type DEFAULT 'wallet_credit'::public.refund_type NOT NULL,
-    requested_amount numeric DEFAULT 0 NOT NULL,
-    approved_amount numeric,
-    status public.refund_status DEFAULT 'pending'::public.refund_status NOT NULL,
-    admin_notes text,
-    resolved_by uuid,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    resolved_at timestamp with time zone
-);
-
-
--- Name: saved_addresses; Type: TABLE; Schema: public; Owner: -
-
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.saved_addresses (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    user_id uuid NOT NULL,
-    label text DEFAULT 'Casa'::text NOT NULL,
-    street text NOT NULL,
-    number text NOT NULL,
-    complement text,
-    neighborhood text NOT NULL,
-    reference_point text,
-    is_default boolean DEFAULT false NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    cep text
-);
-
-
--- Name: store_balances; Type: TABLE; Schema: public; Owner: -
-
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.store_balances (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    store_id uuid NOT NULL,
-    pending_commission numeric DEFAULT 0 NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    repasse_pendente numeric DEFAULT 0 NOT NULL,
-    comissao_pendente numeric DEFAULT 0 NOT NULL
-);
-
-
--- Name: store_driver_earnings; Type: TABLE; Schema: public; Owner: -
-
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.store_driver_earnings (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    store_id uuid NOT NULL,
-    driver_user_id uuid NOT NULL,
-    order_id uuid NOT NULL,
-    fee_total numeric DEFAULT 0 NOT NULL,
-    platform_cut numeric DEFAULT 0 NOT NULL,
-    driver_amount numeric DEFAULT 0 NOT NULL,
-    status text DEFAULT 'pendente'::text NOT NULL,
-    paid_at timestamp with time zone,
-    paid_by uuid,
-    notes text,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    store_marked_paid_at timestamp with time zone,
-    driver_confirmed_at timestamp with time zone,
-    payment_mode text DEFAULT 'fim_do_dia'::text
-);
-
-
--- Name: store_drivers; Type: TABLE; Schema: public; Owner: -
-
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.store_drivers (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    store_id uuid NOT NULL,
-    driver_user_id uuid NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    payment_mode text DEFAULT 'fim_do_dia'::text NOT NULL,
-    CONSTRAINT store_drivers_payment_mode_check CHECK ((payment_mode = ANY (ARRAY['instantaneo'::text, 'fim_do_dia'::text])))
-);
-
-
--- Name: store_plans; Type: TABLE; Schema: public; Owner: -
-
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.store_plans (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    store_id uuid NOT NULL,
-    plan_type public.store_plan_type DEFAULT 'commission_only'::public.store_plan_type NOT NULL,
-    monthly_fee numeric DEFAULT 0 NOT NULL,
-    commission_rate numeric DEFAULT 15 NOT NULL,
-    is_active boolean DEFAULT true NOT NULL,
-    started_at timestamp with time zone DEFAULT now() NOT NULL,
-    next_billing_date timestamp with time zone,
-    last_billed_at timestamp with time zone,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    trial_ends_at timestamp with time zone,
-    app_addon_fee numeric DEFAULT 0 NOT NULL,
-    pix_operational_fee_override numeric,
-    platform_delivery_split_override numeric
-);
-
-
--- Name: COLUMN store_plans.pix_operational_fee_override; Type: COMMENT; Schema: public; Owner: -
-
-COMMENT ON COLUMN public.store_plans.pix_operational_fee_override IS 'NULL = use admin_settings global; numeric = override specific to this store (R$ per PIX transaction)';
-
-
--- Name: COLUMN store_plans.platform_delivery_split_override; Type: COMMENT; Schema: public; Owner: -
-
-COMMENT ON COLUMN public.store_plans.platform_delivery_split_override IS 'NULL = use admin_settings global; numeric = override specific to this store (R$ per delivery for platform)';
-
-
--- Name: store_plans_public; Type: VIEW; Schema: public; Owner: -
-
-CREATE VIEW public.store_plans_public WITH (security_invoker='true') AS
- SELECT store_id,
-    plan_type,
-    is_active,
-    trial_ends_at
-   FROM public.store_plans;
-
-
--- Name: store_secrets; Type: TABLE; Schema: public; Owner: -
-
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.store_secrets (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    store_id uuid NOT NULL,
-    zapi_enabled boolean DEFAULT false NOT NULL,
-    zapi_instance_id text,
-    zapi_token text,
-    zapi_client_token text,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-
--- Name: stores; Type: TABLE; Schema: public; Owner: -
-
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.stores (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    name text NOT NULL,
-    category public.store_category NOT NULL,
-    image_url text,
-    is_open boolean DEFAULT true NOT NULL,
-    rating numeric(2,1) DEFAULT 0,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    owner_id uuid,
-    status public.store_status DEFAULT 'analise'::public.store_status NOT NULL,
-    force_closed boolean DEFAULT false NOT NULL,
-    slug text,
-    address_street text,
-    address_number text,
-    address_complement text,
-    address_neighborhood text,
-    address_reference text,
-    address_city text DEFAULT 'Itatinga'::text,
-    address_state text DEFAULT 'SP'::text,
-    address_cep text,
-    delivery_mode text DEFAULT 'own'::text NOT NULL,
-    own_delivery_fee numeric DEFAULT 0 NOT NULL,
-    asaas_account_id text,
-    asaas_wallet_id text,
-    settings jsonb DEFAULT '{}'::jsonb NOT NULL,
-    commission_rate numeric DEFAULT 6 NOT NULL,
-    app_enabled boolean DEFAULT false NOT NULL,
-    app_subscribed boolean DEFAULT false NOT NULL,
-    latitude double precision,
-    longitude double precision,
-    is_test boolean DEFAULT false NOT NULL,
-    categories public.store_category[] DEFAULT '{}'::public.store_category[] NOT NULL,
-    CONSTRAINT stores_delivery_mode_check CHECK ((delivery_mode = ANY (ARRAY['platform'::text, 'own'::text])))
-);
-
-
--- Name: COLUMN stores.asaas_account_id; Type: COMMENT; Schema: public; Owner: -
-
-COMMENT ON COLUMN public.stores.asaas_account_id IS 'Asaas subaccount ID for split payments';
-
-
--- Name: COLUMN stores.asaas_wallet_id; Type: COMMENT; Schema: public; Owner: -
-
-COMMENT ON COLUMN public.stores.asaas_wallet_id IS 'Asaas wallet ID for receiving split payments';
-
-
--- Name: stores_driver_view; Type: VIEW; Schema: public; Owner: -
-
-CREATE VIEW public.stores_driver_view WITH (security_invoker='true') AS
- SELECT id,
-    name,
-    slug,
-    image_url,
-    category,
-    is_open,
-    force_closed,
-    status,
-    delivery_mode,
-    own_delivery_fee,
-    address_cep,
-    address_city,
-    address_neighborhood,
-    address_street,
-    address_number,
-    address_complement,
-    address_reference,
-    address_state,
-    latitude,
-    longitude
-   FROM public.stores;
-
-
--- Name: stores_public; Type: VIEW; Schema: public; Owner: -
-
-CREATE VIEW public.stores_public WITH (security_invoker='true') AS
- SELECT id,
-    name,
-    slug,
-    image_url,
-    category,
-    categories,
-    rating,
-    is_open,
-    force_closed,
-    status,
-    delivery_mode,
-    own_delivery_fee,
-    created_at,
-    owner_id,
-    address_cep,
-    address_city,
-    address_complement,
-    address_neighborhood,
-    address_number,
-    address_reference,
-    address_state,
-    address_street,
-    settings
-   FROM public.stores s
-  WHERE ((is_test = false) OR (is_test IS NULL));
-
-
--- Name: terms_acceptance; Type: TABLE; Schema: public; Owner: -
-
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.terms_acceptance (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    user_id uuid NOT NULL,
-    terms_version text DEFAULT '1.0'::text NOT NULL,
-    privacy_version text DEFAULT '1.0'::text NOT NULL,
-    ip_address text,
-    user_agent text,
-    accepted_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-
--- Name: user_active_devices; Type: TABLE; Schema: public; Owner: -
-
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.user_active_devices (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    user_id uuid NOT NULL,
-    device_id text NOT NULL,
-    last_seen_at timestamp with time zone DEFAULT now() NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-
--- Name: user_roles; Type: TABLE; Schema: public; Owner: -
-
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.user_roles (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    user_id uuid NOT NULL,
-    role public.app_role NOT NULL
-);
-
-
--- Name: user_wallet; Type: TABLE; Schema: public; Owner: -
-
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.user_wallet (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    user_id uuid NOT NULL,
-    balance numeric DEFAULT 0 NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-
--- Name: wallet_transactions; Type: TABLE; Schema: public; Owner: -
-
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.wallet_transactions (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    user_id uuid NOT NULL,
-    amount numeric NOT NULL,
-    transaction_type public.wallet_transaction_type NOT NULL,
-    reference_type text DEFAULT 'refund'::text NOT NULL,
-    reference_id uuid,
-    description text,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-
--- Name: withdrawal_code_seq; Type: SEQUENCE; Schema: public; Owner: -
-
-CREATE SEQUENCE public.withdrawal_code_seq
-    START WITH 1001
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
--- Name: withdrawal_requests; Type: TABLE; Schema: public; Owner: -
-
-CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.withdrawal_requests (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    driver_user_id uuid NOT NULL,
-    amount numeric NOT NULL,
-    pix_key text NOT NULL,
-    pix_type text DEFAULT 'cpf'::text NOT NULL,
-    status text DEFAULT 'solicitado'::text NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    processed_at timestamp with time zone,
-    admin_notes text,
-    transaction_code text
-);
-
-
--- Name: addon_groups addon_groups_pkey; Type: CONSTRAINT; Schema: public; Owner: -
-
-ALTER TABLE ONLY public.addon_groups
-    ADD CONSTRAINT addon_groups_pkey PRIMARY KEY (id);
-
-
--- Name: addon_items addon_items_pkey; Type: CONSTRAINT; Schema: public; Owner: -
-
-ALTER TABLE ONLY public.addon_items
-    ADD CONSTRAINT addon_items_pkey PRIMARY KEY (id);
-
-
 -- Name: admin_settings admin_settings_key_key; Type: CONSTRAINT; Schema: public; Owner: -
 
 ALTER TABLE ONLY public.admin_settings
@@ -1553,248 +1143,858 @@ ALTER TABLE ONLY public.user_roles
 
 -- Name: admin_settings Admin can delete settings; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can delete settings' AND tablename = 'admin_settings') THEN
         CREATE POLICY "Admin can delete settings" ON public.admin_settings FOR DELETE TO authenticated USING (public.is_platform_admin(auth.uid()));
     END IF;
-END $$;
+-- END
 
 
 -- Name: withdrawal_requests Admin can delete withdrawal requests; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can delete withdrawal requests' AND tablename = 'withdrawal_requests') THEN
         CREATE POLICY "Admin can delete withdrawal requests" ON public.withdrawal_requests FOR DELETE TO authenticated USING (public.is_platform_admin(auth.uid()));
     END IF;
-END $$;
+-- END
 
 
 -- Name: archived_accounts Admin can insert archived accounts; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can insert archived accounts' AND tablename = 'archived_accounts') THEN
         CREATE POLICY "Admin can insert archived accounts" ON public.archived_accounts FOR INSERT TO authenticated WITH CHECK (public.is_platform_admin(auth.uid()));
     END IF;
-END $$;
+-- END
 
 
 -- Name: admin_settings Admin can insert settings; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can insert settings' AND tablename = 'admin_settings') THEN
         CREATE POLICY "Admin can insert settings" ON public.admin_settings FOR INSERT TO authenticated WITH CHECK (public.is_platform_admin(auth.uid()));
     END IF;
-END $$;
+-- END
 
 
 -- Name: loyalty_config Admin can manage all config; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can manage all config' AND tablename = 'loyalty_config') THEN
         CREATE POLICY "Admin can manage all config" ON public.loyalty_config TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
     END IF;
-END $$;
+-- END
 
 
 -- Name: coupons Admin can manage all coupons; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can manage all coupons' AND tablename = 'coupons') THEN
         CREATE POLICY "Admin can manage all coupons" ON public.coupons TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
     END IF;
-END $$;
+-- END
 
 
 -- Name: plan_change_requests Admin can manage all plan requests; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can manage all plan requests' AND tablename = 'plan_change_requests') THEN
         CREATE POLICY "Admin can manage all plan requests" ON public.plan_change_requests TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
     END IF;
-END $$;
+-- END
 
 
 -- Name: store_plans Admin can manage all store plans; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can manage all store plans' AND tablename = 'store_plans') THEN
         CREATE POLICY "Admin can manage all store plans" ON public.store_plans TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
     END IF;
-END $$;
+-- END
 
 
 -- Name: compliance_alerts Admin can manage compliance alerts; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can manage compliance alerts' AND tablename = 'compliance_alerts') THEN
         CREATE POLICY "Admin can manage compliance alerts" ON public.compliance_alerts TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
     END IF;
-END $$;
+-- END
 
 
 -- Name: payout_history Admin can manage payout history; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can manage payout history' AND tablename = 'payout_history') THEN
         CREATE POLICY "Admin can manage payout history" ON public.payout_history TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
     END IF;
-END $$;
+-- END
 
 
 -- Name: coupon_uses Admin can read all coupon uses; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can read all coupon uses' AND tablename = 'coupon_uses') THEN
         CREATE POLICY "Admin can read all coupon uses" ON public.coupon_uses FOR SELECT TO authenticated USING (public.is_platform_admin(auth.uid()));
     END IF;
-END $$;
+-- END
 
 
 -- Name: driver_balances Admin can read all driver balances; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can read all driver balances' AND tablename = 'driver_balances') THEN
         CREATE POLICY "Admin can read all driver balances" ON public.driver_balances FOR SELECT TO authenticated USING (public.is_platform_admin(auth.uid()));
     END IF;
-END $$;
+-- END
 
 
 -- Name: driver_earnings Admin can read all driver earnings; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can read all driver earnings' AND tablename = 'driver_earnings') THEN
         CREATE POLICY "Admin can read all driver earnings" ON public.driver_earnings FOR SELECT TO authenticated USING (public.is_platform_admin(auth.uid()));
     END IF;
-END $$;
+-- END
 
 
 -- Name: fcm_tokens Admin can read all fcm tokens; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can read all fcm tokens' AND tablename = 'fcm_tokens') THEN
         CREATE POLICY "Admin can read all fcm tokens" ON public.fcm_tokens FOR SELECT TO authenticated USING (public.is_platform_admin(auth.uid()));
     END IF;
-END $$;
+-- END
 
 
 -- Name: order_ratings Admin can read all ratings; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can read all ratings' AND tablename = 'order_ratings') THEN
         CREATE POLICY "Admin can read all ratings" ON public.order_ratings FOR SELECT TO authenticated USING (public.is_platform_admin(auth.uid()));
     END IF;
-END $$;
+-- END
 
 
 -- Name: terms_acceptance Admin can read all terms acceptance; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can read all terms acceptance' AND tablename = 'terms_acceptance') THEN
         CREATE POLICY "Admin can read all terms acceptance" ON public.terms_acceptance FOR SELECT TO authenticated USING (public.is_platform_admin(auth.uid()));
     END IF;
-END $$;
+-- END
 
 
 -- Name: withdrawal_requests Admin can read all withdrawal requests; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can read all withdrawal requests' AND tablename = 'withdrawal_requests') THEN
         CREATE POLICY "Admin can read all withdrawal requests" ON public.withdrawal_requests FOR SELECT TO authenticated USING (public.is_platform_admin(auth.uid()));
     END IF;
-END $$;
+-- END
 
 
 -- Name: archived_accounts Admin can read archived accounts; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can read archived accounts' AND tablename = 'archived_accounts') THEN
         CREATE POLICY "Admin can read archived accounts" ON public.archived_accounts FOR SELECT TO authenticated USING (public.is_platform_admin(auth.uid()));
     END IF;
-END $$;
+-- END
 
 
 -- Name: admin_settings Admin can read settings; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can read settings' AND tablename = 'admin_settings') THEN
         CREATE POLICY "Admin can read settings" ON public.admin_settings FOR SELECT TO authenticated USING (public.is_platform_admin(auth.uid()));
     END IF;
-END $$;
+-- END
 
 
 -- Name: driver_balances Admin can update driver balances; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can update driver balances' AND tablename = 'driver_balances') THEN
         CREATE POLICY "Admin can update driver balances" ON public.driver_balances FOR UPDATE TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
     END IF;
-END $$;
+-- END
 
 
 -- Name: driver_earnings Admin can update driver earnings; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can update driver earnings' AND tablename = 'driver_earnings') THEN
         CREATE POLICY "Admin can update driver earnings" ON public.driver_earnings FOR UPDATE TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
     END IF;
-END $$;
+-- END
 
 
 -- Name: admin_settings Admin can update settings; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can update settings' AND tablename = 'admin_settings') THEN
         CREATE POLICY "Admin can update settings" ON public.admin_settings FOR UPDATE TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
     END IF;
-END $$;
+-- END
 
 
 -- Name: withdrawal_requests Admin can update withdrawal requests; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin can update withdrawal requests' AND tablename = 'withdrawal_requests') THEN
         CREATE POLICY "Admin can update withdrawal requests" ON public.withdrawal_requests FOR UPDATE TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
     END IF;
-END $$;
+-- END
 
 
 -- Name: store_drivers Admin full access store drivers; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin full access store drivers' AND tablename = 'store_drivers') THEN
         CREATE POLICY "Admin full access store drivers" ON public.store_drivers TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
     END IF;
-END $$;
+-- END
 
 
 -- Name: store_driver_earnings Admin manage store driver earnings; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admin manage store driver earnings' AND tablename = 'store_driver_earnings') THEN
         CREATE POLICY "Admin manage store driver earnings" ON public.store_driver_earnings TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
     END IF;
-END $$;
+-- END
 
 
 -- Name: drivers Admins and store owners can read online drivers; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins and store owners can read online drivers' AND tablename = 'drivers') THEN
         CREATE POLICY "Admins and store owners can read online drivers" ON public.drivers FOR SELECT TO authenticated USING ((public.is_platform_admin(auth.uid()) OR (EXISTS ( SELECT 1
    FROM public.stores
   WHERE (stores.owner_id = auth.uid())))));
     END IF;
-END $$;
+-- END
 
 
 -- Name: moderator_earnings Admins can manage earnings; Type: POLICY; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can manage earnings' AND tablename = 'moderator_earnings') THEN
         CREATE POLICY "Admins can manage earnings" ON public.moderator_earnings TO authenticated USING (public.has_role(auth.uid(), 'admin'::public.app_role)) WITH CHECK (public.has_role(auth.uid(), 'admin'::public.app_role));
     END IF;
-END $$;
+-- END
 
 
 -- Name: emergency_fund Admins can manage emergency fund; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can manage emergency fund' AND tablename = 'emergency_fund') THEN
+        CREATE POLICY "Admins can manage emergency fund" ON public.emergency_fund TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: moderators Admins can manage moderators; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can manage moderators' AND tablename = 'moderators') THEN
+        CREATE POLICY "Admins can manage moderators" ON public.moderators TO authenticated USING (public.has_role(auth.uid(), 'admin'::public.app_role)) WITH CHECK (public.has_role(auth.uid(), 'admin'::public.app_role));
+    END IF;
+-- END
+
+
+-- Name: partner_payouts Admins can manage partner payouts; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can manage partner payouts' AND tablename = 'partner_payouts') THEN
+        CREATE POLICY "Admins can manage partner payouts" ON public.partner_payouts TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: platform_partners Admins can manage partners; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can manage partners' AND tablename = 'platform_partners') THEN
+        CREATE POLICY "Admins can manage partners" ON public.platform_partners TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: moderator_referrals Admins can manage referrals; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can manage referrals' AND tablename = 'moderator_referrals') THEN
+        CREATE POLICY "Admins can manage referrals" ON public.moderator_referrals TO authenticated USING (public.has_role(auth.uid(), 'admin'::public.app_role)) WITH CHECK (public.has_role(auth.uid(), 'admin'::public.app_role));
+    END IF;
+-- END
+
+
+-- Name: user_roles Admins can manage roles; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can manage roles' AND tablename = 'user_roles') THEN
+        CREATE POLICY "Admins can manage roles" ON public.user_roles TO authenticated USING (public.has_role(auth.uid(), 'admin'::public.app_role)) WITH CHECK (public.has_role(auth.uid(), 'admin'::public.app_role));
+    END IF;
+-- END
+
+
+-- Name: driver_locations Admins can read all locations; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can read all locations' AND tablename = 'driver_locations') THEN
+        CREATE POLICY "Admins can read all locations" ON public.driver_locations FOR SELECT TO authenticated USING (public.has_role(auth.uid(), 'admin'::public.app_role));
+    END IF;
+-- END
+
+
+-- Name: user_roles Admins can read all roles; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can read all roles' AND tablename = 'user_roles') THEN
+        CREATE POLICY "Admins can read all roles" ON public.user_roles FOR SELECT TO authenticated USING (public.has_role(auth.uid(), 'admin'::public.app_role));
+    END IF;
+-- END
+
+
+-- Name: page_views Admins can read page views; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can read page views' AND tablename = 'page_views') THEN
+        CREATE POLICY "Admins can read page views" ON public.page_views FOR SELECT TO authenticated USING (public.is_platform_admin(auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: refund_requests Admins can update all refund requests; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can update all refund requests' AND tablename = 'refund_requests') THEN
+        CREATE POLICY "Admins can update all refund requests" ON public.refund_requests FOR UPDATE TO authenticated USING (public.is_platform_admin(auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: refund_requests Admins can view all refund requests; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can view all refund requests' AND tablename = 'refund_requests') THEN
+        CREATE POLICY "Admins can view all refund requests" ON public.refund_requests FOR SELECT TO authenticated USING (public.is_platform_admin(auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: wallet_transactions Admins can view all wallet transactions; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can view all wallet transactions' AND tablename = 'wallet_transactions') THEN
+        CREATE POLICY "Admins can view all wallet transactions" ON public.wallet_transactions FOR SELECT TO authenticated USING (public.is_platform_admin(auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: user_wallet Admins can view all wallets; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Admins can view all wallets' AND tablename = 'user_wallet') THEN
+        CREATE POLICY "Admins can view all wallets" ON public.user_wallet FOR SELECT TO authenticated USING (public.is_platform_admin(auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: app_links Anyone can read active app_links; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Anyone can read active app_links' AND tablename = 'app_links') THEN
+        CREATE POLICY "Anyone can read active app_links" ON public.app_links FOR SELECT USING ((is_active = true));
+    END IF;
+-- END
+
+
+-- Name: banners Anyone can read active banners; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Anyone can read active banners' AND tablename = 'banners') THEN
+        CREATE POLICY "Anyone can read active banners" ON public.banners FOR SELECT USING ((is_active = true));
+    END IF;
+-- END
+
+
+-- Name: addon_groups Anyone can read addon groups; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Anyone can read addon groups' AND tablename = 'addon_groups') THEN
+        CREATE POLICY "Anyone can read addon groups" ON public.addon_groups FOR SELECT USING (true);
+    END IF;
+-- END
+
+
+-- Name: addon_items Anyone can read addon items; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Anyone can read addon items' AND tablename = 'addon_items') THEN
+        CREATE POLICY "Anyone can read addon items" ON public.addon_items FOR SELECT USING (true);
+    END IF;
+-- END
+
+
+-- Name: loyalty_config Anyone can read loyalty config; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Anyone can read loyalty config' AND tablename = 'loyalty_config') THEN
+        CREATE POLICY "Anyone can read loyalty config" ON public.loyalty_config FOR SELECT USING (true);
+    END IF;
+-- END
+
+
+-- Name: menu_sections Anyone can read menu sections; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Anyone can read menu sections' AND tablename = 'menu_sections') THEN
+        CREATE POLICY "Anyone can read menu sections" ON public.menu_sections FOR SELECT USING (true);
+    END IF;
+-- END
+
+
+-- Name: neighborhood_fees Anyone can read neighborhood_fees; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Anyone can read neighborhood_fees' AND tablename = 'neighborhood_fees') THEN
+        CREATE POLICY "Anyone can read neighborhood_fees" ON public.neighborhood_fees FOR SELECT USING (true);
+    END IF;
+-- END
+
+
+-- Name: opening_hours Anyone can read opening hours; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Anyone can read opening hours' AND tablename = 'opening_hours') THEN
+        CREATE POLICY "Anyone can read opening hours" ON public.opening_hours FOR SELECT USING (true);
+    END IF;
+-- END
+
+
+-- Name: pizza_borders Anyone can read pizza borders; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Anyone can read pizza borders' AND tablename = 'pizza_borders') THEN
+        CREATE POLICY "Anyone can read pizza borders" ON public.pizza_borders FOR SELECT USING (true);
+    END IF;
+-- END
+
+
+-- Name: product_addon_groups Anyone can read product addon links; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Anyone can read product addon links' AND tablename = 'product_addon_groups') THEN
+        CREATE POLICY "Anyone can read product addon links" ON public.product_addon_groups FOR SELECT USING (true);
+    END IF;
+-- END
+
+
+-- Name: products Anyone can read products; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Anyone can read products' AND tablename = 'products') THEN
+        CREATE POLICY "Anyone can read products" ON public.products FOR SELECT USING (true);
+    END IF;
+-- END
+
+
+-- Name: admin_settings Anyone can read public settings; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Anyone can read public settings' AND tablename = 'admin_settings') THEN
+        CREATE POLICY "Anyone can read public settings" ON public.admin_settings FOR SELECT USING ((key = ANY (ARRAY['delivery_fee_config'::text, 'min_payout_amount'::text])));
+    END IF;
+-- END
+
+
+-- Name: page_views Anyone can record page view; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Anyone can record page view' AND tablename = 'page_views') THEN
+        CREATE POLICY "Anyone can record page view" ON public.page_views FOR INSERT TO authenticated, anon WITH CHECK ((((auth.uid() IS NULL) AND (user_id IS NULL)) OR ((auth.uid() IS NOT NULL) AND ((user_id = auth.uid()) OR (user_id IS NULL)))));
+    END IF;
+-- END
+
+
+-- Name: refund_requests Clients can create refund requests; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Clients can create refund requests' AND tablename = 'refund_requests') THEN
+        CREATE POLICY "Clients can create refund requests" ON public.refund_requests FOR INSERT TO authenticated WITH CHECK (((requester_id = auth.uid()) AND (EXISTS ( SELECT 1
+   FROM public.orders
+  WHERE ((orders.id = refund_requests.order_id) AND (orders.client_id = auth.uid()))))));
+    END IF;
+-- END
+
+
+-- Name: orders Clients can hide own completed orders; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Clients can hide own completed orders' AND tablename = 'orders') THEN
+        CREATE POLICY "Clients can hide own completed orders" ON public.orders FOR UPDATE TO authenticated USING (((client_id = auth.uid()) AND (status = ANY (ARRAY['entregue'::public.order_status, 'finalizado'::public.order_status, 'cancelado'::public.order_status])))) WITH CHECK (((client_id = auth.uid()) AND (status = ANY (ARRAY['entregue'::public.order_status, 'finalizado'::public.order_status, 'cancelado'::public.order_status]))));
+    END IF;
+-- END
+
+
+-- Name: order_items Clients can insert own order items; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Clients can insert own order items' AND tablename = 'order_items') THEN
+        CREATE POLICY "Clients can insert own order items" ON public.order_items FOR INSERT TO authenticated WITH CHECK ((EXISTS ( SELECT 1
+   FROM public.orders
+  WHERE ((orders.id = order_items.order_id) AND (orders.client_id = auth.uid())))));
+    END IF;
+-- END
+
+
+-- Name: orders Clients can insert own orders; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Clients can insert own orders' AND tablename = 'orders') THEN
+        CREATE POLICY "Clients can insert own orders" ON public.orders FOR INSERT TO authenticated WITH CHECK ((client_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: driver_locations Clients can read driver location for their orders; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Clients can read driver location for their orders' AND tablename = 'driver_locations') THEN
+        CREATE POLICY "Clients can read driver location for their orders" ON public.driver_locations FOR SELECT TO authenticated USING ((EXISTS ( SELECT 1
+   FROM public.orders o
+  WHERE ((o.driver_id = driver_locations.driver_user_id) AND (o.client_id = auth.uid()) AND (o.status = ANY (ARRAY['em_transito'::public.order_status, 'saiu_entrega'::public.order_status]))))));
+    END IF;
+-- END
+
+
+-- Name: order_items Clients can read own order items; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Clients can read own order items' AND tablename = 'order_items') THEN
+        CREATE POLICY "Clients can read own order items" ON public.order_items FOR SELECT TO authenticated USING ((EXISTS ( SELECT 1
+   FROM public.orders
+  WHERE ((orders.id = order_items.order_id) AND (orders.client_id = auth.uid())))));
+    END IF;
+-- END
+
+
+-- Name: orders Clients can read own orders; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Clients can read own orders' AND tablename = 'orders') THEN
+        CREATE POLICY "Clients can read own orders" ON public.orders FOR SELECT TO authenticated USING ((client_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: orders Clients can update own orders; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Clients can update own orders' AND tablename = 'orders') THEN
+        CREATE POLICY "Clients can update own orders" ON public.orders FOR UPDATE TO authenticated USING (((client_id = auth.uid()) AND (status = 'aguardando_pagamento'::public.order_status))) WITH CHECK (((client_id = auth.uid()) AND (status = 'cancelado'::public.order_status)));
+    END IF;
+-- END
+
+
+-- Name: refund_requests Clients can view own refund requests; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Clients can view own refund requests' AND tablename = 'refund_requests') THEN
+        CREATE POLICY "Clients can view own refund requests" ON public.refund_requests FOR SELECT TO authenticated USING ((requester_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: store_driver_earnings Drivers can confirm own earnings; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Drivers can confirm own earnings' AND tablename = 'store_driver_earnings') THEN
+        CREATE POLICY "Drivers can confirm own earnings" ON public.store_driver_earnings FOR UPDATE TO authenticated USING ((driver_user_id = auth.uid())) WITH CHECK ((driver_user_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: withdrawal_requests Drivers can create withdrawal requests; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Drivers can create withdrawal requests' AND tablename = 'withdrawal_requests') THEN
+        CREATE POLICY "Drivers can create withdrawal requests" ON public.withdrawal_requests FOR INSERT TO authenticated WITH CHECK ((driver_user_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: driver_locations Drivers can insert own location; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Drivers can insert own location' AND tablename = 'driver_locations') THEN
+        CREATE POLICY "Drivers can insert own location" ON public.driver_locations FOR INSERT TO authenticated WITH CHECK ((auth.uid() = driver_user_id));
+    END IF;
+-- END
+
+
+-- Name: order_messages Drivers can read messages for assigned orders; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Drivers can read messages for assigned orders' AND tablename = 'order_messages') THEN
+        CREATE POLICY "Drivers can read messages for assigned orders" ON public.order_messages FOR SELECT TO authenticated USING ((EXISTS ( SELECT 1
+   FROM public.orders o
+  WHERE ((o.id = order_messages.order_id) AND (o.driver_id = auth.uid())))));
+    END IF;
+-- END
+
+
+-- Name: driver_balances Drivers can read own balance; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Drivers can read own balance' AND tablename = 'driver_balances') THEN
+        CREATE POLICY "Drivers can read own balance" ON public.driver_balances FOR SELECT TO authenticated USING ((driver_user_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: driver_earnings Drivers can read own earnings; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Drivers can read own earnings' AND tablename = 'driver_earnings') THEN
+        CREATE POLICY "Drivers can read own earnings" ON public.driver_earnings FOR SELECT TO authenticated USING ((driver_user_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: driver_locations Drivers can read own location; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Drivers can read own location' AND tablename = 'driver_locations') THEN
+        CREATE POLICY "Drivers can read own location" ON public.driver_locations FOR SELECT TO authenticated USING ((auth.uid() = driver_user_id));
+    END IF;
+-- END
+
+
+-- Name: drivers Drivers can read own record; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Drivers can read own record' AND tablename = 'drivers') THEN
+        CREATE POLICY "Drivers can read own record" ON public.drivers FOR SELECT TO authenticated USING ((user_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: store_drivers Drivers can read own store links; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Drivers can read own store links' AND tablename = 'store_drivers') THEN
+        CREATE POLICY "Drivers can read own store links" ON public.store_drivers FOR SELECT TO authenticated USING ((driver_user_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: withdrawal_requests Drivers can read own withdrawal requests; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Drivers can read own withdrawal requests' AND tablename = 'withdrawal_requests') THEN
+        CREATE POLICY "Drivers can read own withdrawal requests" ON public.withdrawal_requests FOR SELECT TO authenticated USING ((driver_user_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: orders Drivers can see ready orders; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Drivers can see ready orders' AND tablename = 'orders') THEN
+        CREATE POLICY "Drivers can see ready orders" ON public.orders FOR SELECT TO authenticated USING ((public.is_driver(auth.uid()) AND (((status = 'pronto_para_entrega'::public.order_status) AND (driver_id IS NULL) AND (store_id IN ( SELECT s.id
+   FROM public.stores s
+  WHERE ((COALESCE(s.address_city, 'itatinga'::text) = ( SELECT COALESCE(d.city, 'itatinga'::text) AS "coalesce"
+           FROM public.drivers d
+          WHERE (d.user_id = auth.uid()))) AND (COALESCE(s.delivery_mode, 'platform'::text) = 'platform'::text))))) OR (driver_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: order_messages Drivers can send messages on assigned orders; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Drivers can send messages on assigned orders' AND tablename = 'order_messages') THEN
+        CREATE POLICY "Drivers can send messages on assigned orders" ON public.order_messages FOR INSERT TO authenticated WITH CHECK (((sender_id = auth.uid()) AND (EXISTS ( SELECT 1
+   FROM public.orders o
+  WHERE ((o.id = order_messages.order_id) AND (o.driver_id = auth.uid()))))));
+    END IF;
+-- END
+
+
+-- Name: driver_locations Drivers can update own location; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Drivers can update own location' AND tablename = 'driver_locations') THEN
+        CREATE POLICY "Drivers can update own location" ON public.driver_locations FOR UPDATE TO authenticated USING ((auth.uid() = driver_user_id));
+    END IF;
+-- END
+
+
+-- Name: drivers Drivers can update own online status; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Drivers can update own online status' AND tablename = 'drivers') THEN
+        CREATE POLICY "Drivers can update own online status" ON public.drivers FOR UPDATE TO authenticated USING ((user_id = auth.uid())) WITH CHECK ((user_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: store_driver_earnings Drivers see own store earnings; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Drivers see own store earnings' AND tablename = 'store_driver_earnings') THEN
+        CREATE POLICY "Drivers see own store earnings" ON public.store_driver_earnings FOR SELECT TO authenticated USING ((driver_user_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: moderator_earnings Moderators can view own earnings; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Moderators can view own earnings' AND tablename = 'moderator_earnings') THEN
+        CREATE POLICY "Moderators can view own earnings" ON public.moderator_earnings FOR SELECT TO authenticated USING ((moderator_id IN ( SELECT moderators.id
+   FROM public.moderators
+  WHERE (moderators.user_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: moderators Moderators can view own record; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Moderators can view own record' AND tablename = 'moderators') THEN
+        CREATE POLICY "Moderators can view own record" ON public.moderators FOR SELECT TO authenticated USING ((user_id = auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: moderator_referrals Moderators can view own referrals; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Moderators can view own referrals' AND tablename = 'moderator_referrals') THEN
+        CREATE POLICY "Moderators can view own referrals" ON public.moderator_referrals FOR SELECT TO authenticated USING ((moderator_id IN ( SELECT moderators.id
+   FROM public.moderators
+  WHERE (moderators.user_id = auth.uid()))));
+    END IF;
+-- END
+
+
+-- Name: drivers No direct driver delete; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'No direct driver delete' AND tablename = 'drivers') THEN
+        CREATE POLICY "No direct driver delete" ON public.drivers FOR DELETE TO authenticated USING (false);
+    END IF;
+-- END
+
+
+-- Name: drivers No direct driver insert; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'No direct driver insert' AND tablename = 'drivers') THEN
+        CREATE POLICY "No direct driver insert" ON public.drivers FOR INSERT TO authenticated WITH CHECK (false);
+    END IF;
+-- END
+
+
+-- Name: order_messages Order participants can read messages; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Order participants can read messages' AND tablename = 'order_messages') THEN
+        CREATE POLICY "Order participants can read messages" ON public.order_messages FOR SELECT TO authenticated USING ((EXISTS ( SELECT 1
+   FROM public.orders o
+  WHERE ((o.id = order_messages.order_id) AND ((o.client_id = auth.uid()) OR (o.store_id IN ( SELECT s.id
+           FROM public.stores s
+          WHERE (s.owner_id = auth.uid()))) OR public.is_platform_admin(auth.uid()))))));
+    END IF;
+-- END
+
+
+-- Name: order_messages Order participants can send messages; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Order participants can send messages' AND tablename = 'order_messages') THEN
+        CREATE POLICY "Order participants can send messages" ON public.order_messages FOR INSERT TO authenticated WITH CHECK (((sender_id = auth.uid()) AND (EXISTS ( SELECT 1
+   FROM public.orders o
+  WHERE ((o.id = order_messages.order_id) AND ((o.client_id = auth.uid()) OR (o.store_id IN ( SELECT s.id
+           FROM public.stores s
+          WHERE (s.owner_id = auth.uid())))))))));
+    END IF;
+-- END
+
+
+-- Name: addon_groups Platform admin can delete addon groups; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Platform admin can delete addon groups' AND tablename = 'addon_groups') THEN
+        CREATE POLICY "Platform admin can delete addon groups" ON public.addon_groups FOR DELETE TO authenticated USING (public.is_platform_admin(auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: addon_items Platform admin can delete addon items; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Platform admin can delete addon items' AND tablename = 'addon_items') THEN
+        CREATE POLICY "Platform admin can delete addon items" ON public.addon_items FOR DELETE TO authenticated USING (public.is_platform_admin(auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: financial_transactions Platform admin can delete financial transactions; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Platform admin can delete financial transactions' AND tablename = 'financial_transactions') THEN
+        CREATE POLICY "Platform admin can delete financial transactions" ON public.financial_transactions FOR DELETE TO authenticated USING (public.is_platform_admin(auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: menu_sections Platform admin can delete menu sections; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Platform admin can delete menu sections' AND tablename = 'menu_sections') THEN
+        CREATE POLICY "Platform admin can delete menu sections" ON public.menu_sections FOR DELETE TO authenticated USING (public.is_platform_admin(auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: opening_hours Platform admin can delete opening hours; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Platform admin can delete opening hours' AND tablename = 'opening_hours') THEN
+        CREATE POLICY "Platform admin can delete opening hours" ON public.opening_hours FOR DELETE TO authenticated USING (public.is_platform_admin(auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: product_addon_groups Platform admin can delete product addon links; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Platform admin can delete product addon links' AND tablename = 'product_addon_groups') THEN
+        CREATE POLICY "Platform admin can delete product addon links" ON public.product_addon_groups FOR DELETE TO authenticated USING (public.is_platform_admin(auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: products Platform admin can delete products; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Platform admin can delete products' AND tablename = 'products') THEN
+        CREATE POLICY "Platform admin can delete products" ON public.products FOR DELETE TO authenticated USING (public.is_platform_admin(auth.uid()));
+    END IF;
+-- END
+
+
+-- Name: stores Platform admin can delete stores; Type: POLICY; Schema: public; Owner: -
+
+-- DO BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Platform admin can delete stores' AND tablename = 'stores') THEN
+        CREATE POLICY "Platform admin can delete stores" ON public.stores FOR DELETE TO authenticated USING (public.is_platform_admin(auth.uid()));
+    END IF;
+-- END
 

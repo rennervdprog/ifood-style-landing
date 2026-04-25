@@ -1,212 +1,3 @@
-          WHEN _selected_plan = 'hybrid' THEN 'hybrid'::public.store_plan_type
-          ELSE 'commission_only'::public.store_plan_type
-        END,
-        CASE
-          WHEN _selected_plan = 'supporter' THEN 130
-          WHEN _selected_plan = 'fixed' THEN 180
-          WHEN _selected_plan = 'hybrid' THEN 100
-          ELSE 0
-        END,
-        CASE
-          WHEN _selected_plan IN ('supporter', 'fixed') THEN 0
-          WHEN _selected_plan = 'hybrid' THEN 2.5
-          ELSE 6
-        END,
-        true,
-        CASE
-          WHEN _selected_plan IN ('supporter', 'fixed', 'hybrid') THEN now() + interval '7 days'
-          ELSE NULL
-        END
-      )
-      ON CONFLICT (store_id) DO NOTHING;
-    END IF;
-  END IF;
-
-  RETURN NEW;
-END;
-$$;
-
-
--- Name: has_role(uuid, public.app_role); Type: FUNCTION; Schema: public; Owner: -
-
-CREATE OR REPLACE FUNCTION public.has_role(_user_id uuid, _role public.app_role) RETURNS boolean
-    LANGUAGE sql STABLE SECURITY DEFINER
-    SET search_path TO 'public'
-    AS $$
-  SELECT EXISTS (
-    SELECT 1
-    FROM public.user_roles
-    WHERE user_id = _user_id
-      AND role = _role
-  )
-$$;
-
-
--- Name: insert_order_status_chat_message(); Type: FUNCTION; Schema: public; Owner: -
-
-CREATE OR REPLACE FUNCTION public.insert_order_status_chat_message() RETURNS trigger
-    LANGUAGE plpgsql SECURITY DEFINER
-    SET search_path TO 'public'
-    AS $$
-DECLARE
-  _msg text;
-  _sender uuid;
-  _store_owner uuid;
-BEGIN
-  -- Only trigger on actual status changes
-  IF OLD.status IS NOT DISTINCT FROM NEW.status THEN
-    RETURN NEW;
-  END IF;
-
-  -- Get store owner for sender_id
-  SELECT owner_id INTO _store_owner
-  FROM public.stores
-  WHERE id = NEW.store_id;
-
-  -- Determine message and sender based on new status
-  CASE NEW.status
-    WHEN 'pendente' THEN
-      _msg := 'ð Pedido recebido pela loja';
-      _sender := COALESCE(_store_owner, NEW.client_id);
-    WHEN 'preparando' THEN
-      _msg := 'ð¨âð³ Seu pedido estÃ¡ sendo preparado!';
-      _sender := COALESCE(_store_owner, NEW.client_id);
-    WHEN 'pronto_para_entrega' THEN
-      _msg := 'ð¦ Pedido pronto! Aguardando entregador.';
-      _sender := COALESCE(_store_owner, NEW.client_id);
-    WHEN 'saiu_entrega' THEN
-      _msg := 'ðµ Saiu para entrega!';
-      _sender := COALESCE(NEW.driver_id, _store_owner, NEW.client_id);
-    WHEN 'em_transito' THEN
-      _msg := 'ðµ Entregador a caminho!';
-      _sender := COALESCE(NEW.driver_id, _store_owner, NEW.client_id);
-    WHEN 'entregue' THEN
-      _msg := 'â Pedido entregue!';
-      _sender := COALESCE(NEW.driver_id, _store_owner, NEW.client_id);
-    WHEN 'finalizado' THEN
-      _msg := 'ð Pedido finalizado. Obrigado pela preferÃªncia!';
-      _sender := COALESCE(_store_owner, NEW.client_id);
-    WHEN 'cancelado' THEN
-      _msg := 'â Pedido cancelado.';
-      _sender := COALESCE(_store_owner, NEW.client_id);
-    ELSE
-      RETURN NEW;
-  END CASE;
-
-  -- Insert the system message
-  INSERT INTO public.order_messages (order_id, sender_id, message)
-  VALUES (NEW.id, _sender, _msg);
-
-  RETURN NEW;
-EXCEPTION WHEN OTHERS THEN
-  RAISE LOG 'insert_order_status_chat_message error: %', SQLERRM;
-  RETURN NEW;
-END;
-$$;
-
-
--- Name: is_driver(uuid); Type: FUNCTION; Schema: public; Owner: -
-
-CREATE OR REPLACE FUNCTION public.is_driver(_user_id uuid) RETURNS boolean
-    LANGUAGE sql STABLE SECURITY DEFINER
-    SET search_path TO 'public'
-    AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM public.drivers
-    WHERE user_id = _user_id AND is_active = true
-  )
-$$;
-
-
--- Name: is_internal_account(uuid); Type: FUNCTION; Schema: public; Owner: -
-
-CREATE OR REPLACE FUNCTION public.is_internal_account(_user_id uuid) RETURNS boolean
-    LANGUAGE sql STABLE SECURITY DEFINER
-    SET search_path TO 'public'
-    AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM auth.users u
-    WHERE u.id = _user_id
-      AND lower(u.email) IN ('luan123@gmail.com', 'natalino123@gmail.com')
-  )
-  OR public.has_role(_user_id, 'admin'::app_role)
-  OR public.has_role(_user_id, 'moderator'::app_role);
-$$;
-
-
--- Name: is_platform_admin(uuid); Type: FUNCTION; Schema: public; Owner: -
-
-CREATE OR REPLACE FUNCTION public.is_platform_admin(_user_id uuid) RETURNS boolean
-    LANGUAGE sql STABLE SECURITY DEFINER
-    SET search_path TO 'public'
-    AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM public.user_roles
-    WHERE user_id = _user_id AND role = 'admin'
-  )
-$$;
-
-
--- Name: is_store_driver(uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
-
-CREATE OR REPLACE FUNCTION public.is_store_driver(_user_id uuid, _store_id uuid) RETURNS boolean
-    LANGUAGE sql STABLE SECURITY DEFINER
-    SET search_path TO 'public'
-    AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM public.store_drivers
-    WHERE driver_user_id = _user_id
-      AND store_id = _store_id
-  )
-$$;
-
-
--- Name: is_store_driver_member(uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
-
-CREATE OR REPLACE FUNCTION public.is_store_driver_member(_user_id uuid, _store_id uuid) RETURNS boolean
-    LANGUAGE sql STABLE SECURITY DEFINER
-    SET search_path TO 'public'
-    AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM public.store_drivers
-    WHERE driver_user_id = _user_id AND store_id = _store_id
-  )
-$$;
-
-
--- Name: is_store_owner(uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
-
-CREATE OR REPLACE FUNCTION public.is_store_owner(_user_id uuid, _store_id uuid) RETURNS boolean
-    LANGUAGE sql STABLE SECURITY DEFINER
-    SET search_path TO 'public'
-    AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM public.stores
-    WHERE id = _store_id AND owner_id = _user_id
-  )
-$$;
-
-
--- Name: is_test_store(uuid); Type: FUNCTION; Schema: public; Owner: -
-
-CREATE OR REPLACE FUNCTION public.is_test_store(_store_id uuid) RETURNS boolean
-    LANGUAGE sql STABLE SECURITY DEFINER
-    SET search_path TO 'public'
-    AS $$
-  SELECT COALESCE((SELECT is_test FROM public.stores WHERE id = _store_id), false);
-$$;
-
-
--- Name: mark_all_store_driver_earnings_paid(uuid, uuid); Type: FUNCTION; Schema: public; Owner: -
-
-CREATE OR REPLACE FUNCTION public.mark_all_store_driver_earnings_paid(_driver_user_id uuid, _store_id uuid) RETURNS integer
-    LANGUAGE plpgsql SECURITY DEFINER
-    SET search_path TO 'public'
-    AS $$
-DECLARE
-  v_owner uuid;
-  v_count integer;
-BEGIN
   SELECT owner_id INTO v_owner FROM public.stores WHERE id = _store_id;
 
   IF v_owner <> auth.uid() AND NOT is_platform_admin(auth.uid()) THEN
@@ -317,7 +108,7 @@ BEGIN
     ),
     body := jsonb_build_object(
       'user_ids', to_jsonb(v_admin_ids),
-      'title', 'ð Novo ' || v_label || ' aguardando aprovaÃ§Ã£o',
+      'title', '🔔 Novo ' || v_label || ' aguardando aprovação',
       'body', COALESCE(NEW.full_name, 'Novo cadastro') || ' acabou de se cadastrar.',
       'data', jsonb_build_object('link', '/admin', 'tab', 'approvals')
     )
@@ -384,13 +175,13 @@ BEGIN
   _short_id := upper(substr(NEW.id::text, 1, 8));
 
   _msg := CASE NEW.status
-    WHEN 'preparando' THEN 'â ' || COALESCE(_store_name, 'Loja') || ': seu pedido #' || _short_id || ' foi aceito e estÃ¡ sendo preparado! ð¨âð³'
-    WHEN 'pronto_para_entrega' THEN 'ð¦ ' || COALESCE(_store_name, 'Loja') || ': pedido #' || _short_id || ' pronto! Aguardando entregador.'
-    WHEN 'saiu_entrega' THEN 'ðµ ' || COALESCE(_store_name, 'Loja') || ': seu pedido #' || _short_id || ' saiu para entrega!'
-    WHEN 'em_transito' THEN 'ðµ ' || COALESCE(_store_name, 'Loja') || ': entregador a caminho com o pedido #' || _short_id || '!'
-    WHEN 'entregue' THEN 'â ' || COALESCE(_store_name, 'Loja') || ': pedido #' || _short_id || ' entregue! Bom apetite! ð½ï¸'
-    WHEN 'finalizado' THEN 'ð ' || COALESCE(_store_name, 'Loja') || ': pedido #' || _short_id || ' finalizado. Obrigado pela preferÃªncia!'
-    WHEN 'cancelado' THEN 'â ' || COALESCE(_store_name, 'Loja') || ': pedido #' || _short_id || ' foi cancelado.'
+    WHEN 'preparando' THEN '✅ ' || COALESCE(_store_name, 'Loja') || ': seu pedido #' || _short_id || ' foi aceito e está sendo preparado! 👨‍🍳'
+    WHEN 'pronto_para_entrega' THEN '📦 ' || COALESCE(_store_name, 'Loja') || ': pedido #' || _short_id || ' pronto! Aguardando entregador.'
+    WHEN 'saiu_entrega' THEN '🛵 ' || COALESCE(_store_name, 'Loja') || ': seu pedido #' || _short_id || ' saiu para entrega!'
+    WHEN 'em_transito' THEN '🛵 ' || COALESCE(_store_name, 'Loja') || ': entregador a caminho com o pedido #' || _short_id || '!'
+    WHEN 'entregue' THEN '✅ ' || COALESCE(_store_name, 'Loja') || ': pedido #' || _short_id || ' entregue! Bom apetite! 🍽️'
+    WHEN 'finalizado' THEN '🏁 ' || COALESCE(_store_name, 'Loja') || ': pedido #' || _short_id || ' finalizado. Obrigado pela preferência!'
+    WHEN 'cancelado' THEN '❌ ' || COALESCE(_store_name, 'Loja') || ': pedido #' || _short_id || ' foi cancelado.'
     ELSE NULL
   END;
 
@@ -536,20 +327,20 @@ CREATE OR REPLACE FUNCTION public.prevent_driver_protected_fields_update() RETUR
     SET search_path TO 'public'
     AS $$
 BEGIN
-  -- Apenas o prÃ³prio motoboy pode alterar seu registro via esta policy,
-  -- e sÃ³ pode mudar is_online. Demais campos protegidos.
+  -- Apenas o próprio motoboy pode alterar seu registro via esta policy,
+  -- e só pode mudar is_online. Demais campos protegidos.
   IF auth.uid() = NEW.user_id AND NOT public.is_platform_admin(auth.uid()) THEN
     IF NEW.is_active IS DISTINCT FROM OLD.is_active THEN
-      RAISE EXCEPTION 'NÃ£o Ã© permitido alterar is_active';
+      RAISE EXCEPTION 'Não é permitido alterar is_active';
     END IF;
     IF NEW.name IS DISTINCT FROM OLD.name THEN
-      RAISE EXCEPTION 'NÃ£o Ã© permitido alterar name';
+      RAISE EXCEPTION 'Não é permitido alterar name';
     END IF;
     IF NEW.city IS DISTINCT FROM OLD.city THEN
-      RAISE EXCEPTION 'NÃ£o Ã© permitido alterar city';
+      RAISE EXCEPTION 'Não é permitido alterar city';
     END IF;
     IF NEW.user_id IS DISTINCT FROM OLD.user_id THEN
-      RAISE EXCEPTION 'NÃ£o Ã© permitido alterar user_id';
+      RAISE EXCEPTION 'Não é permitido alterar user_id';
     END IF;
   END IF;
   RETURN NEW;
@@ -566,10 +357,10 @@ CREATE OR REPLACE FUNCTION public.prevent_role_self_change() RETURNS trigger
 BEGIN
   IF NOT public.is_platform_admin(auth.uid()) THEN
     IF OLD.role IS DISTINCT FROM NEW.role THEN
-      RAISE EXCEPTION 'NÃ£o Ã© permitido alterar o prÃ³prio cargo.';
+      RAISE EXCEPTION 'Não é permitido alterar o próprio cargo.';
     END IF;
     IF OLD.is_approved IS DISTINCT FROM NEW.is_approved THEN
-      RAISE EXCEPTION 'NÃ£o Ã© permitido alterar o prÃ³prio status de aprovaÃ§Ã£o.';
+      RAISE EXCEPTION 'Não é permitido alterar o próprio status de aprovação.';
     END IF;
   END IF;
   RETURN NEW;
@@ -589,14 +380,14 @@ DECLARE
   _is_store_owner boolean;
 BEGIN
   SELECT * INTO _refund FROM public.refund_requests WHERE id = _refund_id;
-  IF NOT FOUND THEN RAISE EXCEPTION 'SolicitaÃ§Ã£o nÃ£o encontrada.'; END IF;
-  IF _refund.status != 'pending' THEN RAISE EXCEPTION 'SolicitaÃ§Ã£o jÃ¡ processada.'; END IF;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Solicitação não encontrada.'; END IF;
+  IF _refund.status != 'pending' THEN RAISE EXCEPTION 'Solicitação já processada.'; END IF;
 
   _is_admin := public.is_platform_admin(auth.uid());
   _is_store_owner := EXISTS (SELECT 1 FROM public.stores WHERE id = _refund.store_id AND owner_id = auth.uid());
 
   IF NOT _is_admin AND NOT _is_store_owner THEN
-    RAISE EXCEPTION 'Sem permissÃ£o para processar reembolsos.';
+    RAISE EXCEPTION 'Sem permissão para processar reembolsos.';
   END IF;
 
   IF _approved_amount <= 0 THEN
@@ -671,7 +462,7 @@ DECLARE
   _store_id uuid;
 BEGIN
   IF EXISTS (SELECT 1 FROM profiles WHERE user_id = _user_id AND role != 'cliente') THEN
-    RAISE EXCEPTION 'UsuÃ¡rio jÃ¡ possui cadastro de parceiro.';
+    RAISE EXCEPTION 'Usuário já possui cadastro de parceiro.';
   END IF;
 
   INSERT INTO profiles (user_id, full_name, role, document, avatar_url, whatsapp_number)
@@ -703,7 +494,7 @@ DECLARE
   _store_id uuid;
 BEGIN
   IF EXISTS (SELECT 1 FROM profiles WHERE user_id = _user_id AND role != 'cliente') THEN
-    RAISE EXCEPTION 'UsuÃ¡rio jÃ¡ possui cadastro de parceiro.';
+    RAISE EXCEPTION 'Usuário já possui cadastro de parceiro.';
   END IF;
 
   INSERT INTO profiles (user_id, full_name, role, document, avatar_url, whatsapp_number)
@@ -760,7 +551,7 @@ DECLARE
 BEGIN
   -- Check not already registered
   IF EXISTS (SELECT 1 FROM profiles WHERE user_id = _user_id AND role != 'cliente') THEN
-    RAISE EXCEPTION 'UsuÃ¡rio jÃ¡ possui cadastro de parceiro.';
+    RAISE EXCEPTION 'Usuário já possui cadastro de parceiro.';
   END IF;
 
   -- Upsert profile
@@ -791,7 +582,7 @@ DECLARE
   _user_id uuid := auth.uid();
 BEGIN
   IF EXISTS (SELECT 1 FROM profiles WHERE user_id = _user_id AND role != 'cliente') THEN
-    RAISE EXCEPTION 'UsuÃ¡rio jÃ¡ possui cadastro de parceiro.';
+    RAISE EXCEPTION 'Usuário já possui cadastro de parceiro.';
   END IF;
 
   INSERT INTO profiles (user_id, full_name, role, document, vehicle, avatar_url, whatsapp_number)
@@ -855,12 +646,12 @@ DECLARE
   _req record;
 BEGIN
   IF NOT is_platform_admin(auth.uid()) THEN
-    RAISE EXCEPTION 'Apenas administradores podem rejeitar mudanÃ§as de plano.';
+    RAISE EXCEPTION 'Apenas administradores podem rejeitar mudanças de plano.';
   END IF;
 
   SELECT * INTO _req FROM plan_change_requests WHERE id = _request_id;
-  IF NOT FOUND THEN RAISE EXCEPTION 'SolicitaÃ§Ã£o nÃ£o encontrada.'; END IF;
-  IF _req.status != 'pending' THEN RAISE EXCEPTION 'SolicitaÃ§Ã£o jÃ¡ processada.'; END IF;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Solicitação não encontrada.'; END IF;
+  IF _req.status != 'pending' THEN RAISE EXCEPTION 'Solicitação já processada.'; END IF;
 
   UPDATE plan_change_requests SET
     status = 'rejected',
@@ -931,7 +722,7 @@ BEGIN
   FROM public.orders o WHERE o.id = _order_id;
 
   IF _store_id IS NULL THEN
-    RAISE EXCEPTION 'Pedido nÃ£o encontrado.';
+    RAISE EXCEPTION 'Pedido não encontrado.';
   END IF;
 
   SELECT s.owner_id INTO _owner FROM public.stores s WHERE s.id = _store_id;
@@ -940,11 +731,11 @@ BEGIN
   END IF;
 
   IF _current_driver IS NOT NULL THEN
-    RAISE EXCEPTION 'Pedido jÃ¡ foi aceito por um entregador.';
+    RAISE EXCEPTION 'Pedido já foi aceito por um entregador.';
   END IF;
 
   IF _status NOT IN ('pendente','preparando','pronto_para_entrega') THEN
-    RAISE EXCEPTION 'Pedido nÃ£o estÃ¡ em estado vÃ¡lido para designaÃ§Ã£o.';
+    RAISE EXCEPTION 'Pedido não está em estado válido para designação.';
   END IF;
 
   -- If targeting a driver, ensure they are linked to this store
@@ -953,7 +744,7 @@ BEGIN
       SELECT 1 FROM public.store_drivers sd
       WHERE sd.store_id = _store_id AND sd.driver_user_id = _driver_user_id
     ) THEN
-      RAISE EXCEPTION 'Esse entregador nÃ£o estÃ¡ vinculado Ã  sua loja.';
+      RAISE EXCEPTION 'Esse entregador não está vinculado à sua loja.';
     END IF;
   END IF;
 
@@ -1112,7 +903,7 @@ BEGIN
   FOR UPDATE;
 
   IF NOT FOUND THEN
-    RAISE EXCEPTION 'Cupom nÃ£o encontrado.';
+    RAISE EXCEPTION 'Cupom não encontrado.';
   END IF;
 
   IF NOT _coupon.is_active THEN
@@ -1129,7 +920,7 @@ BEGIN
 
   -- Check if user already used this coupon
   IF EXISTS (SELECT 1 FROM public.coupon_uses WHERE coupon_id = _coupon_id AND user_id = _user_id) THEN
-    RAISE EXCEPTION 'VocÃª jÃ¡ utilizou este cupom.';
+    RAISE EXCEPTION 'Você já utilizou este cupom.';
   END IF;
 
   -- Atomically increment used_count and insert usage record
@@ -1152,7 +943,7 @@ DECLARE
   _deducted NUMERIC;
 BEGIN
   IF auth.uid() != _user_id AND NOT public.is_platform_admin(auth.uid()) THEN
-    RAISE EXCEPTION 'Sem permissÃ£o.';
+    RAISE EXCEPTION 'Sem permissão.';
   END IF;
 
   SELECT balance INTO _current_balance
@@ -1177,7 +968,7 @@ BEGIN
     'debit',
     'order_payment',
     _order_id,
-    'CrÃ©dito usado no pedido #' || substr(_order_id::text, 1, 8)
+    'Crédito usado no pedido #' || substr(_order_id::text, 1, 8)
   );
 
   RETURN _deducted;
@@ -1797,4 +1588,413 @@ CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.platform_partners 
     CONSTRAINT platform_partners_emergency_fund_percent_check CHECK (((emergency_fund_percent >= (0)::numeric) AND (emergency_fund_percent <= (50)::numeric))),
     CONSTRAINT platform_partners_profit_percent_check CHECK (((profit_percent >= (0)::numeric) AND (profit_percent <= (100)::numeric)))
 );
+
+
+-- Name: product_addon_groups; Type: TABLE; Schema: public; Owner: -
+
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.product_addon_groups (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    product_id uuid NOT NULL,
+    addon_group_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now()
+);
+
+
+-- Name: products; Type: TABLE; Schema: public; Owner: -
+
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.products (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    store_id uuid NOT NULL,
+    name text NOT NULL,
+    price numeric(10,2) NOT NULL,
+    description text,
+    image_url text,
+    is_available boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    section_id uuid,
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL
+);
+
+
+-- Name: profiles; Type: TABLE; Schema: public; Owner: -
+
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.profiles (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    full_name text DEFAULT ''::text NOT NULL,
+    role public.partner_role DEFAULT 'cliente'::public.partner_role NOT NULL,
+    document text,
+    vehicle text,
+    avatar_url text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    is_approved boolean DEFAULT false NOT NULL,
+    street text,
+    number text,
+    complement text,
+    reference_point text,
+    neighborhood text,
+    phone text,
+    pix_key text,
+    pix_type public.pix_type,
+    whatsapp_number text,
+    email text,
+    cep text,
+    has_seen_onboarding boolean DEFAULT false NOT NULL,
+    city text DEFAULT 'itatinga'::text,
+    cnh_number text,
+    cnh_front_url text,
+    cnh_back_url text,
+    selfie_url text,
+    terms_accepted_at timestamp with time zone,
+    deleted_at timestamp with time zone
+);
+
+
+-- Name: profile_contacts; Type: VIEW; Schema: public; Owner: -
+
+CREATE VIEW public.profile_contacts WITH (security_invoker='true') AS
+ SELECT user_id,
+    full_name,
+    phone,
+    whatsapp_number,
+    neighborhood,
+    email
+   FROM public.profiles
+  WHERE (deleted_at IS NULL);
+
+
+-- Name: refund_requests; Type: TABLE; Schema: public; Owner: -
+
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.refund_requests (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    order_id uuid NOT NULL,
+    store_id uuid NOT NULL,
+    requester_id uuid NOT NULL,
+    reason public.refund_reason DEFAULT 'other'::public.refund_reason NOT NULL,
+    description text,
+    evidence_urls text[] DEFAULT '{}'::text[],
+    refund_type public.refund_type DEFAULT 'wallet_credit'::public.refund_type NOT NULL,
+    requested_amount numeric DEFAULT 0 NOT NULL,
+    approved_amount numeric,
+    status public.refund_status DEFAULT 'pending'::public.refund_status NOT NULL,
+    admin_notes text,
+    resolved_by uuid,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    resolved_at timestamp with time zone
+);
+
+
+-- Name: saved_addresses; Type: TABLE; Schema: public; Owner: -
+
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.saved_addresses (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    label text DEFAULT 'Casa'::text NOT NULL,
+    street text NOT NULL,
+    number text NOT NULL,
+    complement text,
+    neighborhood text NOT NULL,
+    reference_point text,
+    is_default boolean DEFAULT false NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    cep text
+);
+
+
+-- Name: store_balances; Type: TABLE; Schema: public; Owner: -
+
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.store_balances (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    store_id uuid NOT NULL,
+    pending_commission numeric DEFAULT 0 NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    repasse_pendente numeric DEFAULT 0 NOT NULL,
+    comissao_pendente numeric DEFAULT 0 NOT NULL
+);
+
+
+-- Name: store_driver_earnings; Type: TABLE; Schema: public; Owner: -
+
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.store_driver_earnings (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    store_id uuid NOT NULL,
+    driver_user_id uuid NOT NULL,
+    order_id uuid NOT NULL,
+    fee_total numeric DEFAULT 0 NOT NULL,
+    platform_cut numeric DEFAULT 0 NOT NULL,
+    driver_amount numeric DEFAULT 0 NOT NULL,
+    status text DEFAULT 'pendente'::text NOT NULL,
+    paid_at timestamp with time zone,
+    paid_by uuid,
+    notes text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    store_marked_paid_at timestamp with time zone,
+    driver_confirmed_at timestamp with time zone,
+    payment_mode text DEFAULT 'fim_do_dia'::text
+);
+
+
+-- Name: store_drivers; Type: TABLE; Schema: public; Owner: -
+
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.store_drivers (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    store_id uuid NOT NULL,
+    driver_user_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    payment_mode text DEFAULT 'fim_do_dia'::text NOT NULL,
+    CONSTRAINT store_drivers_payment_mode_check CHECK ((payment_mode = ANY (ARRAY['instantaneo'::text, 'fim_do_dia'::text])))
+);
+
+
+-- Name: store_plans; Type: TABLE; Schema: public; Owner: -
+
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.store_plans (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    store_id uuid NOT NULL,
+    plan_type public.store_plan_type DEFAULT 'commission_only'::public.store_plan_type NOT NULL,
+    monthly_fee numeric DEFAULT 0 NOT NULL,
+    commission_rate numeric DEFAULT 15 NOT NULL,
+    is_active boolean DEFAULT true NOT NULL,
+    started_at timestamp with time zone DEFAULT now() NOT NULL,
+    next_billing_date timestamp with time zone,
+    last_billed_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    trial_ends_at timestamp with time zone,
+    app_addon_fee numeric DEFAULT 0 NOT NULL,
+    pix_operational_fee_override numeric,
+    platform_delivery_split_override numeric
+);
+
+
+-- Name: COLUMN store_plans.pix_operational_fee_override; Type: COMMENT; Schema: public; Owner: -
+
+COMMENT ON COLUMN public.store_plans.pix_operational_fee_override IS 'NULL = use admin_settings global; numeric = override specific to this store (R$ per PIX transaction)';
+
+
+-- Name: COLUMN store_plans.platform_delivery_split_override; Type: COMMENT; Schema: public; Owner: -
+
+COMMENT ON COLUMN public.store_plans.platform_delivery_split_override IS 'NULL = use admin_settings global; numeric = override specific to this store (R$ per delivery for platform)';
+
+
+-- Name: store_plans_public; Type: VIEW; Schema: public; Owner: -
+
+CREATE VIEW public.store_plans_public WITH (security_invoker='true') AS
+ SELECT store_id,
+    plan_type,
+    is_active,
+    trial_ends_at
+   FROM public.store_plans;
+
+
+-- Name: store_secrets; Type: TABLE; Schema: public; Owner: -
+
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.store_secrets (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    store_id uuid NOT NULL,
+    zapi_enabled boolean DEFAULT false NOT NULL,
+    zapi_instance_id text,
+    zapi_token text,
+    zapi_client_token text,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+-- Name: stores; Type: TABLE; Schema: public; Owner: -
+
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.stores (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    name text NOT NULL,
+    category public.store_category NOT NULL,
+    image_url text,
+    is_open boolean DEFAULT true NOT NULL,
+    rating numeric(2,1) DEFAULT 0,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    owner_id uuid,
+    status public.store_status DEFAULT 'analise'::public.store_status NOT NULL,
+    force_closed boolean DEFAULT false NOT NULL,
+    slug text,
+    address_street text,
+    address_number text,
+    address_complement text,
+    address_neighborhood text,
+    address_reference text,
+    address_city text DEFAULT 'Itatinga'::text,
+    address_state text DEFAULT 'SP'::text,
+    address_cep text,
+    delivery_mode text DEFAULT 'own'::text NOT NULL,
+    own_delivery_fee numeric DEFAULT 0 NOT NULL,
+    asaas_account_id text,
+    asaas_wallet_id text,
+    settings jsonb DEFAULT '{}'::jsonb NOT NULL,
+    commission_rate numeric DEFAULT 6 NOT NULL,
+    app_enabled boolean DEFAULT false NOT NULL,
+    app_subscribed boolean DEFAULT false NOT NULL,
+    latitude double precision,
+    longitude double precision,
+    is_test boolean DEFAULT false NOT NULL,
+    categories public.store_category[] DEFAULT '{}'::public.store_category[] NOT NULL,
+    CONSTRAINT stores_delivery_mode_check CHECK ((delivery_mode = ANY (ARRAY['platform'::text, 'own'::text])))
+);
+
+
+-- Name: COLUMN stores.asaas_account_id; Type: COMMENT; Schema: public; Owner: -
+
+COMMENT ON COLUMN public.stores.asaas_account_id IS 'Asaas subaccount ID for split payments';
+
+
+-- Name: COLUMN stores.asaas_wallet_id; Type: COMMENT; Schema: public; Owner: -
+
+COMMENT ON COLUMN public.stores.asaas_wallet_id IS 'Asaas wallet ID for receiving split payments';
+
+
+-- Name: stores_driver_view; Type: VIEW; Schema: public; Owner: -
+
+CREATE VIEW public.stores_driver_view WITH (security_invoker='true') AS
+ SELECT id,
+    name,
+    slug,
+    image_url,
+    category,
+    is_open,
+    force_closed,
+    status,
+    delivery_mode,
+    own_delivery_fee,
+    address_cep,
+    address_city,
+    address_neighborhood,
+    address_street,
+    address_number,
+    address_complement,
+    address_reference,
+    address_state,
+    latitude,
+    longitude
+   FROM public.stores;
+
+
+-- Name: stores_public; Type: VIEW; Schema: public; Owner: -
+
+CREATE VIEW public.stores_public WITH (security_invoker='true') AS
+ SELECT id,
+    name,
+    slug,
+    image_url,
+    category,
+    categories,
+    rating,
+    is_open,
+    force_closed,
+    status,
+    delivery_mode,
+    own_delivery_fee,
+    created_at,
+    owner_id,
+    address_cep,
+    address_city,
+    address_complement,
+    address_neighborhood,
+    address_number,
+    address_reference,
+    address_state,
+    address_street,
+    settings
+   FROM public.stores s
+  WHERE ((is_test = false) OR (is_test IS NULL));
+
+
+-- Name: terms_acceptance; Type: TABLE; Schema: public; Owner: -
+
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.terms_acceptance (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    terms_version text DEFAULT '1.0'::text NOT NULL,
+    privacy_version text DEFAULT '1.0'::text NOT NULL,
+    ip_address text,
+    user_agent text,
+    accepted_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+-- Name: user_active_devices; Type: TABLE; Schema: public; Owner: -
+
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.user_active_devices (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    device_id text NOT NULL,
+    last_seen_at timestamp with time zone DEFAULT now() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+-- Name: user_roles; Type: TABLE; Schema: public; Owner: -
+
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.user_roles (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    role public.app_role NOT NULL
+);
+
+
+-- Name: user_wallet; Type: TABLE; Schema: public; Owner: -
+
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.user_wallet (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    balance numeric DEFAULT 0 NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+-- Name: wallet_transactions; Type: TABLE; Schema: public; Owner: -
+
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.wallet_transactions (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    amount numeric NOT NULL,
+    transaction_type public.wallet_transaction_type NOT NULL,
+    reference_type text DEFAULT 'refund'::text NOT NULL,
+    reference_id uuid,
+    description text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+-- Name: withdrawal_code_seq; Type: SEQUENCE; Schema: public; Owner: -
+
+CREATE SEQUENCE public.withdrawal_code_seq
+    START WITH 1001
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+-- Name: withdrawal_requests; Type: TABLE; Schema: public; Owner: -
+
+CREATE TABLE IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public.withdrawal_requests (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    driver_user_id uuid NOT NULL,
+    amount numeric NOT NULL,
+    pix_key text NOT NULL,
+    pix_type text DEFAULT 'cpf'::text NOT NULL,
+    status text DEFAULT 'solicitado'::text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    processed_at timestamp with time zone,
+    admin_notes text,
+    transaction_code text
+);
+
+
+-- Name: addon_groups addon_groups_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+
+ALTER TABLE ONLY public.addon_groups
+    ADD CONSTRAINT addon_groups_pkey PRIMARY KEY (id);
+
+
+-- Name: addon_items addon_items_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+
+ALTER TABLE ONLY public.addon_items
+    ADD CONSTRAINT addon_items_pkey PRIMARY KEY (id);
 
