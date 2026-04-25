@@ -29,9 +29,9 @@ SET row_security = off;
 
 -- Name: app_role; Type: TYPE; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'app_role') THEN
-        DO $$ BEGIN
+        -- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'app_role') THEN
         CREATE TYPE public.app_role AS ENUM (
     'admin',
@@ -39,16 +39,16 @@ DO $$ BEGIN
     'user'
 );
     END IF;
-END $$;
+-- END
     END IF;
-END $$;
+-- END
 
 
 -- Name: financial_transaction_status; Type: TYPE; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'financial_transaction_status') THEN
-        DO $$ BEGIN
+        -- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'financial_transaction_status') THEN
         CREATE TYPE public.financial_transaction_status AS ENUM (
     'pending',
@@ -58,16 +58,16 @@ DO $$ BEGIN
     'cancelled'
 );
     END IF;
-END $$;
+-- END
     END IF;
-END $$;
+-- END
 
 
 -- Name: financial_transaction_type; Type: TYPE; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'financial_transaction_type') THEN
-        DO $$ BEGIN
+        -- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'financial_transaction_type') THEN
         CREATE TYPE public.financial_transaction_type AS ENUM (
     'commission_charge',
@@ -75,16 +75,16 @@ DO $$ BEGIN
     'driver_payout'
 );
     END IF;
-END $$;
+-- END
     END IF;
-END $$;
+-- END
 
 
 -- Name: order_status; Type: TYPE; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'order_status') THEN
-        DO $$ BEGIN
+        -- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'order_status') THEN
         CREATE TYPE public.order_status AS ENUM (
     'aguardando_pagamento',
@@ -98,16 +98,16 @@ DO $$ BEGIN
     'cancelado'
 );
     END IF;
-END $$;
+-- END
     END IF;
-END $$;
+-- END
 
 
 -- Name: partner_role; Type: TYPE; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'partner_role') THEN
-        DO $$ BEGIN
+        -- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'partner_role') THEN
         CREATE TYPE public.partner_role AS ENUM (
     'cliente',
@@ -115,16 +115,16 @@ DO $$ BEGIN
     'motoboy'
 );
     END IF;
-END $$;
+-- END
     END IF;
-END $$;
+-- END
 
 
 -- Name: pix_type; Type: TYPE; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'pix_type') THEN
-        DO $$ BEGIN
+        -- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'pix_type') THEN
         CREATE TYPE public.pix_type AS ENUM (
     'cpf',
@@ -134,16 +134,16 @@ DO $$ BEGIN
     'random'
 );
     END IF;
-END $$;
+-- END
     END IF;
-END $$;
+-- END
 
 
 -- Name: refund_reason; Type: TYPE; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'refund_reason') THEN
-        DO $$ BEGIN
+        -- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'refund_reason') THEN
         CREATE TYPE public.refund_reason AS ENUM (
     'wrong_product',
@@ -154,16 +154,16 @@ DO $$ BEGIN
     'other'
 );
     END IF;
-END $$;
+-- END
     END IF;
-END $$;
+-- END
 
 
 -- Name: refund_status; Type: TYPE; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'refund_status') THEN
-        DO $$ BEGIN
+        -- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'refund_status') THEN
         CREATE TYPE public.refund_status AS ENUM (
     'pending',
@@ -172,16 +172,16 @@ DO $$ BEGIN
     'rejected'
 );
     END IF;
-END $$;
+-- END
     END IF;
-END $$;
+-- END
 
 
 -- Name: refund_type; Type: TYPE; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'refund_type') THEN
-        DO $$ BEGIN
+        -- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'refund_type') THEN
         CREATE TYPE public.refund_type AS ENUM (
     'full',
@@ -189,16 +189,16 @@ DO $$ BEGIN
     'wallet_credit'
 );
     END IF;
-END $$;
+-- END
     END IF;
-END $$;
+-- END
 
 
 -- Name: store_category; Type: TYPE; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'store_category') THEN
-        DO $$ BEGIN
+        -- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'store_category') THEN
         CREATE TYPE public.store_category AS ENUM (
     'lanches',
@@ -215,16 +215,16 @@ DO $$ BEGIN
     'esfihas'
 );
     END IF;
-END $$;
+-- END
     END IF;
-END $$;
+-- END
 
 
 -- Name: store_plan_type; Type: TYPE; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'store_plan_type') THEN
-        DO $$ BEGIN
+        -- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'store_plan_type') THEN
         CREATE TYPE public.store_plan_type AS ENUM (
     'fixed',
@@ -232,16 +232,16 @@ DO $$ BEGIN
     'commission_only'
 );
     END IF;
-END $$;
+-- END
     END IF;
-END $$;
+-- END
 
 
 -- Name: store_status; Type: TYPE; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'store_status') THEN
-        DO $$ BEGIN
+        -- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'store_status') THEN
         CREATE TYPE public.store_status AS ENUM (
     'analise',
@@ -249,25 +249,25 @@ DO $$ BEGIN
     'bloqueado'
 );
     END IF;
-END $$;
+-- END
     END IF;
-END $$;
+-- END
 
 
 -- Name: wallet_transaction_type; Type: TYPE; Schema: public; Owner: -
 
-DO $$ BEGIN
+-- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'wallet_transaction_type') THEN
-        DO $$ BEGIN
+        -- DO BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'wallet_transaction_type') THEN
         CREATE TYPE public.wallet_transaction_type AS ENUM (
     'credit',
     'debit'
 );
     END IF;
-END $$;
+-- END
     END IF;
-END $$;
+-- END
 
 
 -- Name: accrue_fixed_plan_split(); Type: FUNCTION; Schema: public; Owner: -
