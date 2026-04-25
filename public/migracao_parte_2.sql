@@ -12,8 +12,8 @@
         END
       )
       ON CONFLICT (store_id) DO NOTHING;
-    END IF;
-  END IF;
+--     END IF;
+--   END IF;
 
   RETURN NEW;
 END;
@@ -49,7 +49,7 @@ BEGIN
   -- Only trigger on actual status changes
   IF OLD.status IS NOT DISTINCT FROM NEW.status THEN
     RETURN NEW;
-  END IF;
+--   END IF;
 
   -- Get store owner for sender_id
   SELECT owner_id INTO _store_owner
@@ -204,7 +204,7 @@ BEGIN
 
   IF v_owner <> auth.uid() AND NOT is_platform_admin(auth.uid()) THEN
     RAISE EXCEPTION 'Not authorized';
-  END IF;
+--   END IF;
 
   UPDATE public.store_driver_earnings
   SET status = 'pago', paid_at = now(), paid_by = auth.uid()
@@ -235,11 +235,11 @@ BEGIN
 
   IF v_owner IS NULL THEN
     RAISE EXCEPTION 'Earning not found';
-  END IF;
+--   END IF;
 
   IF v_owner <> auth.uid() AND NOT is_platform_admin(auth.uid()) THEN
     RAISE EXCEPTION 'Not authorized';
-  END IF;
+--   END IF;
 
   UPDATE public.store_driver_earnings
   SET status = 'pago',
@@ -267,10 +267,10 @@ BEGIN
   -- Only fire for pending lojista/motoboy
   IF NEW.is_approved IS DISTINCT FROM false THEN
     RETURN NEW;
-  END IF;
+--   END IF;
   IF NEW.role::text NOT IN ('lojista', 'motoboy') THEN
     RETURN NEW;
-  END IF;
+--   END IF;
 
   v_role := NEW.role::text;
   v_label := CASE WHEN v_role = 'lojista' THEN 'lojista' ELSE 'entregador' END;
@@ -282,7 +282,7 @@ BEGIN
 
   IF v_admin_ids IS NULL OR array_length(v_admin_ids, 1) = 0 THEN
     RETURN NEW;
-  END IF;
+--   END IF;
 
   -- Get supabase URL and service role key from vault (fallback to settings)
   BEGIN
@@ -299,7 +299,7 @@ BEGIN
   IF v_service_key IS NULL THEN
     -- Cannot call without service key; skip silently (toast still works via realtime)
     RETURN NEW;
-  END IF;
+--   END IF;
 
   -- Fire async HTTP request via pg_net
   PERFORM net.http_post(
@@ -340,19 +340,19 @@ BEGIN
   -- Only fire on actual status change
   IF OLD.status IS NOT DISTINCT FROM NEW.status THEN
     RETURN NEW;
-  END IF;
+--   END IF;
 
   -- Only for statuses we want to notify the client about
   IF NEW.status NOT IN ('preparando','pronto_para_entrega','saiu_entrega','em_transito','entregue','finalizado','cancelado') THEN
     RETURN NEW;
-  END IF;
+--   END IF;
 
   _supabase_url := current_setting('supabase.url', true);
   _service_key := current_setting('supabase.service_role_key', true);
   IF _supabase_url IS NULL OR _service_key IS NULL THEN
     RAISE LOG 'notify_order_status_zapi: missing settings';
     RETURN NEW;
-  END IF;
+--   END IF;
 
   -- Check Z-API enabled for this store
   SELECT zapi_enabled INTO _zapi_enabled
@@ -361,7 +361,7 @@ BEGIN
 
   IF NOT COALESCE(_zapi_enabled, false) THEN
     RETURN NEW;
-  END IF;
+--   END IF;
 
   -- Get client whatsapp/phone
   SELECT COALESCE(p.whatsapp_number, p.phone) INTO _client_phone
@@ -370,7 +370,7 @@ BEGIN
 
   IF _client_phone IS NULL OR length(regexp_replace(_client_phone, '\D', '', 'g')) < 10 THEN
     RETURN NEW;
-  END IF;
+--   END IF;
 
   -- Store name + short id for the message
   SELECT name INTO _store_name FROM public.stores WHERE id = NEW.store_id;
@@ -429,7 +429,7 @@ BEGIN
   IF _supabase_url IS NULL OR _service_key IS NULL THEN
     RAISE LOG 'notify_order_sync: missing supabase URL or service key settings';
     RETURN NEW;
-  END IF;
+--   END IF;
 
   PERFORM extensions.http_post(
     url := _supabase_url || '/functions/v1/sync-to-external',
@@ -494,7 +494,7 @@ BEGIN
   IF _supabase_url IS NULL OR _service_key IS NULL THEN
     RAISE LOG 'notify_record_sync: missing supabase URL or service key';
     RETURN COALESCE(NEW, OLD);
-  END IF;
+--   END IF;
 
   _table_name := TG_TABLE_NAME;
   _record := to_jsonb(COALESCE(NEW, OLD));
@@ -534,17 +534,17 @@ BEGIN
   IF auth.uid() = NEW.user_id AND NOT public.is_platform_admin(auth.uid()) THEN
     IF NEW.is_active IS DISTINCT FROM OLD.is_active THEN
       RAISE EXCEPTION 'Não é permitido alterar is_active';
-    END IF;
+--     END IF;
     IF NEW.name IS DISTINCT FROM OLD.name THEN
       RAISE EXCEPTION 'Não é permitido alterar name';
-    END IF;
+--     END IF;
     IF NEW.city IS DISTINCT FROM OLD.city THEN
       RAISE EXCEPTION 'Não é permitido alterar city';
-    END IF;
+--     END IF;
     IF NEW.user_id IS DISTINCT FROM OLD.user_id THEN
       RAISE EXCEPTION 'Não é permitido alterar user_id';
-    END IF;
-  END IF;
+--     END IF;
+--   END IF;
   RETURN NEW;
 END;
 $$;
@@ -560,11 +560,11 @@ BEGIN
   IF NOT public.is_platform_admin(auth.uid()) THEN
     IF OLD.role IS DISTINCT FROM NEW.role THEN
       RAISE EXCEPTION 'Não é permitido alterar o próprio cargo.';
-    END IF;
+--     END IF;
     IF OLD.is_approved IS DISTINCT FROM NEW.is_approved THEN
       RAISE EXCEPTION 'Não é permitido alterar o próprio status de aprovação.';
-    END IF;
-  END IF;
+--     END IF;
+--   END IF;
   RETURN NEW;
 END;
 $$;
@@ -590,7 +590,7 @@ BEGIN
 
   IF NOT _is_admin AND NOT _is_store_owner THEN
     RAISE EXCEPTION 'Sem permissão para processar reembolsos.';
-  END IF;
+--   END IF;
 
   IF _approved_amount <= 0 THEN
     -- Reject
@@ -601,7 +601,7 @@ BEGIN
       resolved_at = now()
     WHERE id = _refund_id;
     RETURN;
-  END IF;
+--   END IF;
 
   -- Approve and credit wallet
   UPDATE public.refund_requests SET
@@ -645,7 +645,7 @@ BEGIN
   -- Bloqueia se for admin / moderador / conta interna
   IF _uid IS NOT NULL AND public.is_internal_account(_uid) THEN
     RETURN;
-  END IF;
+--   END IF;
 
   INSERT INTO public.page_views (page, visitor_hash, user_id)
   VALUES (_page, _visitor_hash, _uid);
@@ -665,7 +665,7 @@ DECLARE
 BEGIN
   IF EXISTS (SELECT 1 FROM profiles WHERE user_id = _user_id AND role != 'cliente') THEN
     RAISE EXCEPTION 'Usuário já possui cadastro de parceiro.';
-  END IF;
+--   END IF;
 
   INSERT INTO profiles (user_id, full_name, role, document, avatar_url, whatsapp_number)
   VALUES (_user_id, _full_name, 'lojista', _document, _avatar_url, _whatsapp)
@@ -697,7 +697,7 @@ DECLARE
 BEGIN
   IF EXISTS (SELECT 1 FROM profiles WHERE user_id = _user_id AND role != 'cliente') THEN
     RAISE EXCEPTION 'Usuário já possui cadastro de parceiro.';
-  END IF;
+--   END IF;
 
   INSERT INTO profiles (user_id, full_name, role, document, avatar_url, whatsapp_number)
   VALUES (_user_id, _full_name, 'lojista', _document, _avatar_url, _whatsapp)
@@ -754,7 +754,7 @@ BEGIN
   -- Check not already registered
   IF EXISTS (SELECT 1 FROM profiles WHERE user_id = _user_id AND role != 'cliente') THEN
     RAISE EXCEPTION 'Usuário já possui cadastro de parceiro.';
-  END IF;
+--   END IF;
 
   -- Upsert profile
   INSERT INTO profiles (user_id, full_name, role, document, vehicle, avatar_url)
@@ -785,7 +785,7 @@ DECLARE
 BEGIN
   IF EXISTS (SELECT 1 FROM profiles WHERE user_id = _user_id AND role != 'cliente') THEN
     RAISE EXCEPTION 'Usuário já possui cadastro de parceiro.';
-  END IF;
+--   END IF;
 
   INSERT INTO profiles (user_id, full_name, role, document, vehicle, avatar_url, whatsapp_number)
   VALUES (_user_id, _full_name, 'motoboy', _document, _vehicle, _avatar_url, _whatsapp)
@@ -816,7 +816,7 @@ DECLARE
 BEGIN
   IF _user_id IS NULL THEN
     RAISE EXCEPTION 'Unauthorized';
-  END IF;
+--   END IF;
 
   -- Get current device if any
   SELECT device_id INTO _old_device
@@ -849,7 +849,7 @@ DECLARE
 BEGIN
   IF NOT is_platform_admin(auth.uid()) THEN
     RAISE EXCEPTION 'Apenas administradores podem rejeitar mudanças de plano.';
-  END IF;
+--   END IF;
 
   SELECT * INTO _req FROM plan_change_requests WHERE id = _request_id;
   IF NOT FOUND THEN RAISE EXCEPTION 'Solicitação não encontrada.'; END IF;
@@ -874,9 +874,9 @@ DECLARE
   _clean text;
 BEGIN
   -- Only store owners can search
-  IF NOT EXISTS (SELECT 1 FROM public.stores WHERE owner_id = auth.uid()) THEN
+--   IF NOT EXISTS (SELECT 1 FROM public.stores WHERE owner_id = auth.uid()) THEN
     RAISE EXCEPTION 'Apenas lojistas podem buscar motoboys.';
-  END IF;
+--   END IF;
 
   _clean := lower(trim(_search));
 
@@ -925,30 +925,30 @@ BEGIN
 
   IF _store_id IS NULL THEN
     RAISE EXCEPTION 'Pedido não encontrado.';
-  END IF;
+--   END IF;
 
   SELECT s.owner_id INTO _owner FROM public.stores s WHERE s.id = _store_id;
   IF _owner IS DISTINCT FROM auth.uid() AND NOT public.is_platform_admin(auth.uid()) THEN
     RAISE EXCEPTION 'Apenas o lojista pode designar entregadores.';
-  END IF;
+--   END IF;
 
   IF _current_driver IS NOT NULL THEN
     RAISE EXCEPTION 'Pedido já foi aceito por um entregador.';
-  END IF;
+--   END IF;
 
   IF _status NOT IN ('pendente','preparando','pronto_para_entrega') THEN
     RAISE EXCEPTION 'Pedido não está em estado válido para designação.';
-  END IF;
+--   END IF;
 
   -- If targeting a driver, ensure they are linked to this store
   IF _driver_user_id IS NOT NULL THEN
-    IF NOT EXISTS (
+--     IF NOT EXISTS (
       SELECT 1 FROM public.store_drivers sd
       WHERE sd.store_id = _store_id AND sd.driver_user_id = _driver_user_id
     ) THEN
       RAISE EXCEPTION 'Esse entregador não está vinculado à sua loja.';
-    END IF;
-  END IF;
+--     END IF;
+--   END IF;
 
   UPDATE public.orders
   SET assigned_driver_id = _driver_user_id
@@ -970,7 +970,7 @@ BEGIN
   SELECT owner_id INTO v_owner FROM stores WHERE id = _store_id;
   IF v_owner IS NULL OR v_owner <> auth.uid() THEN
     RAISE EXCEPTION 'Acesso negado';
-  END IF;
+--   END IF;
 
   UPDATE store_driver_earnings
      SET status = 'aguardando_confirmacao',
@@ -1003,7 +1003,7 @@ BEGIN
 
   IF v_owner IS NULL OR v_owner <> auth.uid() THEN
     RAISE EXCEPTION 'Acesso negado';
-  END IF;
+--   END IF;
 
   UPDATE store_driver_earnings
      SET status = 'aguardando_confirmacao',
@@ -1040,17 +1040,17 @@ BEGIN
   -- Ensure categories is never null
   IF NEW.categories IS NULL THEN
     NEW.categories := '{}'::store_category[];
-  END IF;
+--   END IF;
 
   -- Always include the primary category in the array
   IF NEW.category IS NOT NULL AND NOT (NEW.category = ANY (NEW.categories)) THEN
     NEW.categories := array_prepend(NEW.category, NEW.categories);
-  END IF;
+--   END IF;
 
   -- If primary category is not set but array has values, set primary to first
   IF NEW.category IS NULL AND array_length(NEW.categories, 1) > 0 THEN
     NEW.category := NEW.categories[1];
-  END IF;
+--   END IF;
 
   RETURN NEW;
 END;
@@ -1106,24 +1106,24 @@ BEGIN
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Cupom não encontrado.';
-  END IF;
+--   END IF;
 
   IF NOT _coupon.is_active THEN
     RAISE EXCEPTION 'Cupom inativo.';
-  END IF;
+--   END IF;
 
   IF _coupon.max_uses IS NOT NULL AND _coupon.used_count >= _coupon.max_uses THEN
     RAISE EXCEPTION 'Cupom esgotado.';
-  END IF;
+--   END IF;
 
   IF _coupon.expires_at IS NOT NULL AND _coupon.expires_at < now() THEN
     RAISE EXCEPTION 'Cupom expirado.';
-  END IF;
+--   END IF;
 
   -- Check if user already used this coupon
   IF EXISTS (SELECT 1 FROM public.coupon_uses WHERE coupon_id = _coupon_id AND user_id = _user_id) THEN
     RAISE EXCEPTION 'Você já utilizou este cupom.';
-  END IF;
+--   END IF;
 
   -- Atomically increment used_count and insert usage record
   UPDATE public.coupons SET used_count = used_count + 1 WHERE id = _coupon_id;
@@ -1146,7 +1146,7 @@ DECLARE
 BEGIN
   IF auth.uid() != _user_id AND NOT public.is_platform_admin(auth.uid()) THEN
     RAISE EXCEPTION 'Sem permissão.';
-  END IF;
+--   END IF;
 
   SELECT balance INTO _current_balance
   FROM public.user_wallet
@@ -1155,7 +1155,7 @@ BEGIN
 
   IF NOT FOUND OR _current_balance <= 0 THEN
     RETURN 0;
-  END IF;
+--   END IF;
 
   _deducted := LEAST(_current_balance, _amount);
 
@@ -1193,7 +1193,7 @@ BEGIN
 
   IF NEW.delivery_fee < 0 THEN
     NEW.delivery_fee := 0;
-  END IF;
+--   END IF;
 
   NEW.total_price := GREATEST(0, COALESCE(NEW.subtotal, 0) + COALESCE(NEW.delivery_fee, 0));
 
@@ -1229,7 +1229,7 @@ BEGIN
         app_fee = _app_fee,
         total_price = GREATEST(0, _real_subtotal + COALESCE(_order_record.delivery_fee, 0))
     WHERE id = NEW.order_id;
-  END IF;
+--   END IF;
 
   RETURN NEW;
 END;
