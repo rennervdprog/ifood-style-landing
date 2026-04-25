@@ -31,9 +31,9 @@ SET row_security = off;
 
 
 
-DO $$ BEGIN
+-- DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'app_role') THEN
-        DO $$ BEGIN
+        -- DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'app_role') THEN
         CREATE TYPE public.app_role AS ENUM (
     'admin',
@@ -41,9 +41,9 @@ DO $$ BEGIN
     'user'
 );
     END IF;
-END $$;
+-- END $$;
     END IF;
-END $$;
+-- END $$;
 
 
 -- Name: financial_transaction_status; Type: TYPE; Schema: public; Owner: -
