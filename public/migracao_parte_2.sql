@@ -13,6 +13,7 @@
       )
       ON CONFLICT (store_id) DO NOTHING;
     END IF;
+  END IF;
 
   RETURN NEW;
 END;
@@ -543,6 +544,7 @@ BEGIN
     IF NEW.user_id IS DISTINCT FROM OLD.user_id THEN
       RAISE EXCEPTION 'Não é permitido alterar user_id';
     END IF;
+  END IF;
   RETURN NEW;
 END;
 $$;
@@ -562,6 +564,7 @@ BEGIN
     IF OLD.is_approved IS DISTINCT FROM NEW.is_approved THEN
       RAISE EXCEPTION 'Não é permitido alterar o próprio status de aprovação.';
     END IF;
+  END IF;
   RETURN NEW;
 END;
 $$;
@@ -580,6 +583,7 @@ DECLARE
 BEGIN
   SELECT * INTO _refund FROM public.refund_requests WHERE id = _refund_id;
   IF NOT FOUND THEN RAISE EXCEPTION 'Solicitação não encontrada.'; END IF;
+  IF _refund.status != 'pending' THEN RAISE EXCEPTION 'Solicitação já processada.'; END IF;
 
   _is_admin := public.is_platform_admin(auth.uid());
   _is_store_owner := EXISTS (SELECT 1 FROM public.stores WHERE id = _refund.store_id AND owner_id = auth.uid());
@@ -849,6 +853,7 @@ BEGIN
 
   SELECT * INTO _req FROM plan_change_requests WHERE id = _request_id;
   IF NOT FOUND THEN RAISE EXCEPTION 'Solicitação não encontrada.'; END IF;
+  IF _req.status != 'pending' THEN RAISE EXCEPTION 'Solicitação já processada.'; END IF;
 
   UPDATE plan_change_requests SET
     status = 'rejected',
@@ -943,6 +948,7 @@ BEGIN
     ) THEN
       RAISE EXCEPTION 'Esse entregador não está vinculado à sua loja.';
     END IF;
+  END IF;
 
   UPDATE public.orders
   SET assigned_driver_id = _driver_user_id

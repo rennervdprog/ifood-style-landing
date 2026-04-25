@@ -29,8 +29,6 @@ SET row_security = off;
 
 -- Name: app_role; Type: TYPE; Schema: public; Owner: -
 
-
-
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'app_role') THEN
         DO $$ BEGIN
@@ -47,8 +45,6 @@ END $$;
 
 
 -- Name: financial_transaction_status; Type: TYPE; Schema: public; Owner: -
-
-
 
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'financial_transaction_status') THEN
@@ -69,8 +65,6 @@ END $$;
 
 -- Name: financial_transaction_type; Type: TYPE; Schema: public; Owner: -
 
-
-
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'financial_transaction_type') THEN
         DO $$ BEGIN
@@ -87,8 +81,6 @@ END $$;
 
 
 -- Name: order_status; Type: TYPE; Schema: public; Owner: -
-
-
 
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'order_status') THEN
@@ -298,6 +290,7 @@ BEGIN
   IF COALESCE(_is_test, false) THEN RETURN NEW; END IF;
   _is_physical := COALESCE(NEW.payment_method, '') IN ('dinheiro', 'cartao', 'money', 'card_delivery');
   IF NOT _is_physical THEN RETURN NEW; END IF;
+  IF COALESCE(NEW.delivery_fee, 0) <= 0 THEN RETURN NEW; END IF;
   IF _delivery_mode != 'own' THEN RETURN NEW; END IF;
   _platform_split := public.get_fixed_plan_platform_split(NEW.store_id);
   IF _platform_split <= 0 THEN RETURN NEW; END IF;
@@ -343,12 +336,14 @@ BEGIN
       INSERT INTO public.moderator_earnings (moderator_id, store_id, order_id, earning_type, amount)
       VALUES (_mod_ref.moderator_id, NEW.store_id, NEW.id, 'commission_split', _mod_commission_amount);
     END IF;
+  END IF;
   IF _plan_type = 'fixed' THEN
     SELECT delivery_mode INTO _delivery_mode FROM public.stores WHERE id = NEW.store_id;
     IF _delivery_mode = 'platform' AND COALESCE(NEW.delivery_fee, 0) > 0 AND _mod.delivery_split > 0 THEN
       INSERT INTO public.moderator_earnings (moderator_id, store_id, order_id, earning_type, amount)
       VALUES (_mod_ref.moderator_id, NEW.store_id, NEW.id, 'delivery_split', _mod.delivery_split);
     END IF;
+  END IF;
   RETURN NEW;
 END;
 $$;
@@ -547,6 +542,7 @@ BEGIN
     ) THEN
       RAISE EXCEPTION 'Este entregador possui pedidos ativos. Finalize-os antes de excluir.';
     END IF;
+  END IF;
 
   IF _role = 'lojista' THEN
     -- Get all store IDs for this owner
@@ -589,6 +585,7 @@ BEGIN
       DELETE FROM public.orders WHERE store_id = ANY(_store_ids);
       DELETE FROM public.stores WHERE id = ANY(_store_ids);
     END IF;
+  END IF;
 
   IF _role = 'motoboy' THEN
     -- Delete driver-related data
@@ -776,6 +773,7 @@ BEGIN
 
   SELECT * INTO _req FROM plan_change_requests WHERE id = _request_id;
   IF NOT FOUND THEN RAISE EXCEPTION 'Solicitação não encontrada.'; END IF;
+  IF _req.status != 'pending' THEN RAISE EXCEPTION 'Solicitação já processada.'; END IF;
 
   -- Update the store plan
   UPDATE store_plans SET
@@ -891,6 +889,7 @@ BEGIN
         last_order_at = now(),
         updated_at = now();
     END IF;
+  END IF;
   
   RETURN NEW;
 END;
@@ -1058,6 +1057,7 @@ BEGIN
           repasse_pendente = store_balances.repasse_pendente + _platform_split,
           updated_at = now();
       END IF;
+    END IF;
   END IF;
 END;
 $$;
@@ -1205,6 +1205,7 @@ BEGIN
     IF _driver_city IS DISTINCT FROM _store_city THEN
       RAISE EXCEPTION 'Este pedido é de outra cidade. Você só pode aceitar pedidos da sua cidade.';
     END IF;
+  END IF;
 
   UPDATE public.orders
   SET driver_id = auth.uid()
@@ -1295,6 +1296,7 @@ BEGIN
     IF _settlement_code IS NULL OR _settlement_code != _order.settlement_code THEN
       RAISE EXCEPTION 'Código de acerto inválido. Solicite o código ao lojista.';
     END IF;
+  END IF;
 
   UPDATE public.orders
   SET return_to_store_confirmed = true,
@@ -1473,6 +1475,7 @@ BEGIN
     IF _delivery_mode = 'platform' THEN
       NEW.collection_code := lpad(floor(random() * 10000)::text, 4, '0');
     END IF;
+  END IF;
   RETURN NEW;
 END;
 $$;
@@ -1747,6 +1750,7 @@ BEGIN
     IF _supporter_count >= 10 THEN
       _selected_plan := 'fixed';
     END IF;
+  END IF;
 
   INSERT INTO public.profiles (user_id, full_name, role, document, vehicle, whatsapp_number, phone, email, city, cep, street, neighborhood, pix_type, pix_key)
   VALUES (NEW.id, _full_name, _role, _document, _vehicle, _whatsapp, _phone, NEW.email, _city, _cep, _street, _neighborhood,
