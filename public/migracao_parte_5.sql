@@ -1,58 +1,9 @@
-INSERT INTO public.store_plans VALUES ('68b8d67d-33ac-4a97-a713-bd4df7150464', 'e577573d-4139-415d-b49d-d6a50e1d393b', 'hybrid', 100, 2.5, true, '2026-04-09 17:36:42.583+00', '2026-05-09 17:36:42.583+00', NULL, '2026-04-09 17:36:42.463691+00', '2026-04-09 17:36:42.463691+00', NULL, 0, NULL, NULL) ON CONFLICT DO NOTHING;
-INSERT INTO public.store_plans VALUES ('5fc8d4da-85ca-45fc-83c3-60c27f895127', '7cd86219-bb0b-4635-801c-9ee8596c6215', 'fixed', 180, 0, true, '2026-04-09 23:06:11.195+00', '2026-05-09 23:06:11.195+00', NULL, '2026-04-09 23:06:10.986047+00', '2026-04-09 23:06:10.986047+00', NULL, 0, NULL, NULL) ON CONFLICT DO NOTHING;
-INSERT INTO public.store_plans VALUES ('43271849-e7f6-497f-ab11-4e33fa2e24f7', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'fixed', 180, 0, true, '2026-04-09 17:36:02.105+00', '2026-05-01 03:00:00+00', NULL, '2026-04-09 17:36:01.880987+00', '2026-04-15 02:46:35.422897+00', NULL, 0, NULL, NULL) ON CONFLICT DO NOTHING;
-INSERT INTO public.store_plans VALUES ('e740fcaa-0394-47cf-83e8-d62f6c95cf5a', '050ed159-cfd4-4de5-9e9e-fcc54bf519f8', 'fixed', 180, 0, true, '2026-04-18 21:43:04.395233+00', '2026-05-01 03:00:00+00', NULL, '2026-04-18 21:43:04.395233+00', '2026-04-18 21:43:04.395233+00', NULL, 0, NULL, NULL) ON CONFLICT DO NOTHING;
-INSERT INTO public.store_plans VALUES ('6097bbb3-4849-45e1-b40e-6af1d0051e1c', '477b9f42-d4c7-4cdf-a24b-fac59212f6d1', 'commission_only', 0, 6, true, '2026-04-09 16:51:40.875159+00', NULL, NULL, '2026-04-09 16:51:40.875159+00', '2026-04-24 17:31:45.771626+00', NULL, 0, NULL, NULL) ON CONFLICT DO NOTHING;
-INSERT INTO public.store_plans VALUES ('453a91be-65c5-4e3c-9e74-2cc30ac5b305', '66129fdd-1f7e-42c8-b3c1-8d4c28b14106', 'commission_only', 0, 6, true, '2026-04-14 14:46:23.242486+00', NULL, NULL, '2026-04-14 14:46:23.242486+00', '2026-04-24 17:31:45.771626+00', NULL, 0, NULL, NULL) ON CONFLICT DO NOTHING;
-INSERT INTO public.store_plans VALUES ('ff8c73f2-7b09-45a6-b942-357fe73cf7e4', '77d96f88-c440-4c13-b547-11a6ae2240a1', 'commission_only', 0, 6, true, '2026-04-23 15:46:43.297+00', NULL, NULL, '2026-04-23 15:46:43.579158+00', '2026-04-24 17:31:45.771626+00', NULL, 0, NULL, NULL) ON CONFLICT DO NOTHING;
-INSERT INTO public.store_plans VALUES ('53090129-caaa-45d5-b57e-2a67b2dffe4d', '00f1814d-703d-4ac1-898d-d53188903aeb', 'commission_only', 0, 6, true, '2026-04-24 17:16:36.577244+00', NULL, NULL, '2026-04-24 17:16:36.577244+00', '2026-04-24 17:31:45.771626+00', NULL, 0, NULL, NULL) ON CONFLICT DO NOTHING;
--- Data for Name: store_secrets; Type: TABLE DATA; Schema: public; Owner: -
--- Data for Name: terms_acceptance; Type: TABLE DATA; Schema: public; Owner: -
-INSERT INTO public.terms_acceptance VALUES ('0d5c250d-a008-4873-a0ad-e36039301b04', '6becbb34-0fd2-4f6b-ba60-46bc058c15e6', '1.0', '1.0', NULL, 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Mobile Safari/537.36', '2026-04-09 13:45:14.865154+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.terms_acceptance VALUES ('8a7c4198-8e98-411b-8d39-d5e33af1a8d5', '137c9a05-75db-4077-acff-17d9ed508c29', '1.0', '1.0', NULL, 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Mobile Safari/537.36', '2026-04-09 18:52:58.159783+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.terms_acceptance VALUES ('ccc69e09-8c66-4a6d-8fb7-39cfc58cdae0', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '1.0', '1.0', NULL, 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Mobile Safari/537.36', '2026-04-11 15:13:51.886295+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.terms_acceptance VALUES ('df19b588-a7ac-4542-acdc-e868bcd81e98', '5e53b885-05f3-4cfd-9a52-d5c1f4457f3b', '1.0', '1.0', NULL, 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Mobile/15E148 Safari/604.1', '2026-04-14 14:46:25.211725+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.terms_acceptance VALUES ('fd7b65c5-c1cd-4914-9ea0-16241db7e214', '37909bb0-03b4-46dc-917d-c17fadaca33c', '1.0', '1.0', NULL, 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Mobile Safari/537.36', '2026-04-16 21:16:21.67077+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.terms_acceptance VALUES ('238b04eb-57ac-4deb-9a8e-224bf06a0674', '1d33caaf-2aaf-4ac4-a41e-b94508e0ed50', '1.0', '1.0', NULL, 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Mobile/15E148 Safari/604.1', '2026-04-18 16:59:24.681441+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.terms_acceptance VALUES ('05ffd6c5-2311-4b7d-902c-ecd3c8ed45fb', 'ed862e03-693d-4b7c-8342-400527be9c42', '1.0', '1.0', NULL, 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Mobile Safari/537.36', '2026-04-22 16:03:29.754369+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.terms_acceptance VALUES ('9e5f5903-318a-4300-b013-8ca1b17066b5', 'acefbf75-9e70-473e-b8ae-c6fb170c886e', '1.0', '1.0', NULL, 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Mobile Safari/537.36', '2026-04-24 17:16:37.891305+00') ON CONFLICT DO NOTHING;
--- Data for Name: user_active_devices; Type: TABLE DATA; Schema: public; Owner: -
-INSERT INTO public.user_active_devices VALUES ('0c1d451c-bcc5-427b-b0f2-a6611fef8ad7', '1d33caaf-2aaf-4ac4-a41e-b94508e0ed50', '24c61a71-2c4a-4359-8086-ad5f77a0f0a3', '2026-04-18 17:00:10.019769+00', '2026-04-18 16:59:24.673655+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.user_active_devices VALUES ('65bd32de-a7b8-4802-a803-fc9d8827f5ab', '6becbb34-0fd2-4f6b-ba60-46bc058c15e6', 'a21b05aa-dfd1-4eb3-90fe-e55f4b552a23', '2026-04-25 17:59:17.040741+00', '2026-04-13 10:59:55.148488+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.user_active_devices VALUES ('d2b62cd3-33a1-48ba-b832-77a05d5fc476', '5e53b885-05f3-4cfd-9a52-d5c1f4457f3b', '3d7d816c-f5e7-44d8-b563-8e91fe9f8a8c', '2026-04-22 19:20:33.916295+00', '2026-04-14 14:46:25.211377+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.user_active_devices VALUES ('b2e3dfc9-6a46-4544-862c-f8da0764ea39', 'acefbf75-9e70-473e-b8ae-c6fb170c886e', 'bbff4c26-ae2e-4f19-8188-4f5b6b5ba89d', '2026-04-25 18:29:23.158147+00', '2026-04-24 17:16:37.794973+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.user_active_devices VALUES ('4fa4aaa4-36f6-4931-9a20-60538796536f', '927289c1-9e81-463a-b950-9b83d4d505e5', '2d7646ce-7be8-4593-a96c-08768aacc5e0', '2026-04-15 00:26:53.94909+00', '2026-04-14 23:59:08.540137+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.user_active_devices VALUES ('a3a2020b-a2f0-4ee0-b7fe-c21c1dda3ca8', '37909bb0-03b4-46dc-917d-c17fadaca33c', '5b011366-18ac-4f4e-bcd6-1f625df3b251', '2026-04-16 21:31:37.158797+00', '2026-04-16 21:16:21.664599+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.user_active_devices VALUES ('b92fd6a6-70b4-4422-aebd-e6ccacafe487', 'ed862e03-693d-4b7c-8342-400527be9c42', 'bbff4c26-ae2e-4f19-8188-4f5b6b5ba89d', '2026-04-23 15:04:18.452841+00', '2026-04-22 16:03:29.89604+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.user_active_devices VALUES ('9ce1684b-b0ce-4026-b3fe-f22a5c2bf4a2', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'a5ffff67-48e9-4412-a763-cea63812b8c0', '2026-04-25 17:08:00.756482+00', '2026-04-13 12:52:56.47428+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.user_active_devices VALUES ('074d2ee5-b6f0-4a71-a56e-cbbc29cb5227', 'ba9ce4c7-7133-45d5-8c2f-454914b7da38', 'a21b05aa-dfd1-4eb3-90fe-e55f4b552a23', '2026-04-21 23:46:40.572692+00', '2026-04-14 00:32:33.73079+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.user_active_devices VALUES ('c11592c9-9923-41ba-b98e-dc78c85a93fa', '137c9a05-75db-4077-acff-17d9ed508c29', 'bbff4c26-ae2e-4f19-8188-4f5b6b5ba89d', '2026-04-15 02:43:38.737822+00', '2026-04-15 00:15:09.041825+00') ON CONFLICT DO NOTHING;
-INSERT INTO public.user_active_devices VALUES ('6707e0ce-beec-4bfb-a1d9-de8518182de0', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 'b48a1708-ca7a-40ef-84e8-25a1b2a5e5ea', '2026-04-25 17:18:40.242688+00', '2026-04-13 12:49:55.102755+00') ON CONFLICT DO NOTHING;
--- Data for Name: user_roles; Type: TABLE DATA; Schema: public; Owner: -
-INSERT INTO public.user_roles VALUES ('4aeb16d3-0d73-4e49-bf6c-0a5a8b97081b', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'admin') ON CONFLICT DO NOTHING;
--- Data for Name: user_wallet; Type: TABLE DATA; Schema: public; Owner: -
--- Data for Name: wallet_transactions; Type: TABLE DATA; Schema: public; Owner: -
--- Data for Name: withdrawal_requests; Type: TABLE DATA; Schema: public; Owner: -
-INSERT INTO public.withdrawal_requests VALUES ('ac114293-a525-4290-9c3e-a0de4520dbcf', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 8, '17508039769', 'cpf', 'pago', '2026-03-31 16:08:21.103924+00', '2026-03-31 16:11:46.653+00', NULL, 'SK-1009') ON CONFLICT DO NOTHING;
-INSERT INTO public.withdrawal_requests VALUES ('6f653f5d-d2bb-46c8-91d7-b68465137f9b', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 16, '17508039769', 'cpf', 'pago', '2026-03-31 17:06:40.373857+00', '2026-03-31 17:06:53.978+00', NULL, 'SK-1010') ON CONFLICT DO NOTHING;
-INSERT INTO public.withdrawal_requests VALUES ('60786c05-2971-4a9b-b28d-2d870fb90857', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 4, '17508039769', 'cpf', 'pago', '2026-03-31 17:17:04.674088+00', '2026-03-31 17:17:14.58+00', NULL, 'SK-1011') ON CONFLICT DO NOTHING;
--- Name: withdrawal_code_seq; Type: SEQUENCE SET; Schema: public; Owner: -
-SELECT pg_catalog.setval('public.withdrawal_code_seq', 1011, true);
--- PostgreSQL database dump
--- Dumped from database version 17.6
--- Dumped by pg_dump version 17.9
-SET statement_timeout = 0;
-SET lock_timeout = 0;
-SET idle_in_transaction_session_timeout = 0;
-SET transaction_timeout = 0;
-SET client_encoding = 'UTF8';
-SET standard_conforming_strings = on;
-SELECT pg_catalog.set_config('search_path', '', false);
-SET check_function_bodies = false;
 SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
+
 -- Data for Name: stores; Type: TABLE DATA; Schema: public; Owner: -
+
 INSERT INTO public.stores VALUES ('66129fdd-1f7e-42c8-b3c1-8d4c28b14106', 'Bbburger', 'lanches', NULL, true, 0.0, '2026-04-14 14:46:23.242486+00', '5e53b885-05f3-4cfd-9a52-d5c1f4457f3b', 'ativo', false, 'bbburger', 'Rua Julieta Antunes Almeida Oliveira', NULL, NULL, 'Núcleo Habitacional Nova América', NULL, 'Itatinga', 'SP', '18694046', 'own', 0, NULL, NULL, '{"zapi_enabled": false, "pizza_price_mode": "maior", "pizza_half_enabled": false}', 6, false, false, NULL, NULL, false, '{lanches}') ON CONFLICT DO NOTHING;
 INSERT INTO public.stores VALUES ('77d96f88-c440-4c13-b547-11a6ae2240a1', 'Teste Restaurante', 'restaurante', NULL, true, 0.0, '2026-04-11 22:25:27.540778+00', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'ativo', false, 'test-teste-restaurante-d27e', NULL, NULL, NULL, NULL, NULL, 'Itatinga', 'SP', NULL, 'own', 3, NULL, NULL, '{"zapi_enabled": false, "pizza_price_mode": "maior", "pizza_half_enabled": false}', 6, false, false, NULL, NULL, false, '{restaurante}') ON CONFLICT DO NOTHING;
 INSERT INTO public.stores VALUES ('7bcc5fc0-d45c-4c81-86db-7d55f4d4e122', 'Teste Farmcias', 'farmacias', NULL, true, 0.0, '2026-04-13 19:24:39.267486+00', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'ativo', false, 'test-teste-farmcias-0cf7', NULL, NULL, NULL, NULL, NULL, 'Itatinga', 'SP', NULL, 'own', 0, NULL, NULL, '{}', 6, false, false, NULL, NULL, false, '{farmacias}') ON CONFLICT DO NOTHING;
@@ -66,7 +17,10 @@ INSERT INTO public.stores VALUES ('f667fc5c-48d2-4b05-a370-b28720161009', 'Teste
 INSERT INTO public.stores VALUES ('70c8f384-a15a-4dfd-bfbc-30ebb9b7f678', 'Jessica Cakes', 'docerias', 'https://lktzrqjvqoojlrhqnxuz.supabase.co/storage/v1/object/public/store-assets/66a2f79c-9276-4fe8-8201-4a59b3960bed/logo_1776435476293.jpg', true, 0.0, '2026-04-17 13:52:40.632594+00', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'ativo', false, 'test-teste-docerias-d60b', NULL, NULL, NULL, NULL, NULL, 'Itatinga', 'SP', NULL, 'own', 3, NULL, NULL, '{"zapi_enabled": false, "pizza_price_mode": "maior", "pizza_half_enabled": false}', 6, false, false, NULL, NULL, false, '{docerias}') ON CONFLICT DO NOTHING;
 INSERT INTO public.stores VALUES ('e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'ItaSuper Pizzaria', 'pizzas', 'https://lktzrqjvqoojlrhqnxuz.supabase.co/storage/v1/object/public/store-assets/6becbb34-0fd2-4f6b-ba60-46bc058c15e6/logo_1775742396187.png', true, 5.0, '2026-04-09 13:45:13.67122+00', '6becbb34-0fd2-4f6b-ba60-46bc058c15e6', 'ativo', false, 'campanario-pizzaria', 'Rua São Francisco', '635', NULL, 'Centro', NULL, 'itatinga', 'SP', '18690081', 'own', 12, NULL, NULL, '{"zapi_enabled": false, "pizza_price_mode": "maior", "pizza_half_enabled": true}', 6, false, false, NULL, NULL, false, '{pizzas,lanches,restaurante}') ON CONFLICT DO NOTHING;
 INSERT INTO public.stores VALUES ('00f1814d-703d-4ac1-898d-d53188903aeb', 'AnaDelivery', 'restaurante', NULL, true, 0.0, '2026-04-24 17:16:36.577244+00', 'acefbf75-9e70-473e-b8ae-c6fb170c886e', 'ativo', false, NULL, 'Rua Capitão João Braz', '37', NULL, 'Centro', NULL, 'Pardinho', 'SP', '18640029', 'own', 0, NULL, NULL, '{}', 6, false, false, NULL, NULL, false, '{restaurante}') ON CONFLICT DO NOTHING;
+
+
 -- Data for Name: menu_sections; Type: TABLE DATA; Schema: public; Owner: -
+
 INSERT INTO public.menu_sections VALUES ('e2fcea76-3fbc-4f00-a2b3-3041a3403066', '477b9f42-d4c7-4cdf-a24b-fac59212f6d1', 'Destaques', 0, '2026-04-09 15:59:33.512913+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.menu_sections VALUES ('2d7cb792-d7d2-4b31-b8ec-121f56c0b263', 'b243bdb4-45a9-46fc-8248-68dd6ba3e46c', 'Lanches', 0, '2026-04-04 01:57:12.092249+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.menu_sections VALUES ('464ef4d7-4221-4e9f-91a3-2569e7fa9220', 'b243bdb4-45a9-46fc-8248-68dd6ba3e46c', 'Bebidas', 1, '2026-04-04 01:51:11.986093+00') ON CONFLICT DO NOTHING;
@@ -110,7 +64,10 @@ INSERT INTO public.menu_sections VALUES ('96e88631-20be-4b4f-9cbe-59f9efcd8775',
 INSERT INTO public.menu_sections VALUES ('22bc9730-12e3-4b26-b355-86de6a5f3091', '050ed159-cfd4-4de5-9e9e-fcc54bf519f8', 'Refrigerantes', 2, '2026-04-18 21:48:05.271107+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.menu_sections VALUES ('8b04df45-f30b-48ac-becb-06ce5c958176', '050ed159-cfd4-4de5-9e9e-fcc54bf519f8', 'Pizzas Salgadas', 0, '2026-04-18 21:48:05.271107+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.menu_sections VALUES ('c73a4ba3-4e46-4b52-8d40-1c8ea6e8354a', '77d96f88-c440-4c13-b547-11a6ae2240a1', 'Prato Do Dia', 0, '2026-04-11 22:25:27.540778+00') ON CONFLICT DO NOTHING;
+
+
 -- Data for Name: products; Type: TABLE DATA; Schema: public; Owner: -
+
 INSERT INTO public.products VALUES ('5af9c4cd-a7da-4f5f-abe2-966e50dae2ec', '66129fdd-1f7e-42c8-b3c1-8d4c28b14106', 'U2', 28.00, 'Hambúrguer especial de calabresa, queijo prato,bacon,alface americana e picles.', NULL, true, '2026-04-14 23:23:57.150888+00', 'c3078d60-9571-4037-b6a9-5cfc0552ca8e', '{"is_beverage": false}') ON CONFLICT DO NOTHING;
 INSERT INTO public.products VALUES ('a0e75b66-37f9-4a49-8355-5b8d1c4a7c8c', 'f667fc5c-48d2-4b05-a370-b28720161009', 'Baianinha', 5.99, 'Calabresa ralada, mussarela, tomate em cubos, cebola fatiada, pimenta e ovo', NULL, true, '2026-04-16 02:03:35.613081+00', 'a1b2c3d4-0001-4000-8000-000000000001', '{}') ON CONFLICT DO NOTHING;
 INSERT INTO public.products VALUES ('92ea4f5b-3d6d-4220-b6a3-17bcea4b37d1', 'f667fc5c-48d2-4b05-a370-b28720161009', 'Bauru', 5.85, 'Presunto ralado, mussarela ralada, tomate em cubos e orégano', NULL, true, '2026-04-16 02:03:35.613081+00', 'a1b2c3d4-0001-4000-8000-000000000001', '{}') ON CONFLICT DO NOTHING;
@@ -405,7 +362,10 @@ INSERT INTO public.products VALUES ('08f30583-2031-48a5-81ef-78344770176e', '050
 INSERT INTO public.products VALUES ('10e85ea9-c4be-4ec6-bf6b-948154e12bc3', '050ed159-cfd4-4de5-9e9e-fcc54bf519f8', 'Nutella c/ Morango', 45.00, 'Creme de leite, nutella, morangos frescos.', NULL, true, '2026-04-18 21:48:50.466837+00', '6428911a-1a10-4764-a50a-34cb28a9753e', '{}') ON CONFLICT DO NOTHING;
 INSERT INTO public.products VALUES ('1c2b97f4-03d6-43c3-abe8-2bf891924193', '050ed159-cfd4-4de5-9e9e-fcc54bf519f8', 'Ouro Branco', 45.00, 'Chocolate branco e ouro branco.', NULL, true, '2026-04-18 21:48:50.466837+00', '6428911a-1a10-4764-a50a-34cb28a9753e', '{}') ON CONFLICT DO NOTHING;
 INSERT INTO public.products VALUES ('601f2c1e-0513-4991-bc9e-ecda9aa49220', '77d96f88-c440-4c13-b547-11a6ae2240a1', 'Marmita G', 25.00, 'Arroz, Feijão, batata frita, parmegiana', NULL, true, '2026-04-23 15:09:47.447062+00', 'c73a4ba3-4e46-4b52-8d40-1c8ea6e8354a', '{"is_daily_menu": true}') ON CONFLICT DO NOTHING;
+
+
 -- Data for Name: addon_groups; Type: TABLE DATA; Schema: public; Owner: -
+
 INSERT INTO public.addon_groups VALUES ('4e6609c4-de75-4d7b-99de-fea8535d81b9', NULL, 'Adicionais', 0, 3, 1, '2026-04-03 20:57:26.838975+00', 'b243bdb4-45a9-46fc-8248-68dd6ba3e46c', false) ON CONFLICT DO NOTHING;
 INSERT INTO public.addon_groups VALUES ('82b5b534-56c7-4e7b-b831-fcb747d1c3e8', NULL, 'Adicionais', 0, 99, 1, '2026-04-14 23:28:38.184558+00', '66129fdd-1f7e-42c8-b3c1-8d4c28b14106', false) ON CONFLICT DO NOTHING;
 INSERT INTO public.addon_groups VALUES ('b2758dc6-cf59-4e59-bc6e-287a9e0b92b3', NULL, 'Tipo de pao', 0, 1, 2, '2026-04-15 00:00:35.954599+00', 'b243bdb4-45a9-46fc-8248-68dd6ba3e46c', false) ON CONFLICT DO NOTHING;
@@ -417,7 +377,10 @@ INSERT INTO public.addon_groups VALUES ('ad6f0e89-6473-480b-be27-39e03ad3e031', 
 INSERT INTO public.addon_groups VALUES ('7b1ca892-4587-4068-ae03-5536f9cfe48e', NULL, 'Sabores', 0, 1, 3, '2026-04-17 14:07:44.882281+00', '70c8f384-a15a-4dfd-bfbc-30ebb9b7f678', false) ON CONFLICT DO NOTHING;
 INSERT INTO public.addon_groups VALUES ('46e1967e-185b-4395-8035-7373b94af81f', NULL, 'Tamanho', 1, 1, 2, '2026-04-21 18:29:08.744801+00', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', true) ON CONFLICT DO NOTHING;
 INSERT INTO public.addon_groups VALUES ('d8f48ccc-c77f-419d-89b2-dc902186f478', NULL, 'Tamanho', 1, 1, 2, '2026-04-17 14:04:30.368006+00', '70c8f384-a15a-4dfd-bfbc-30ebb9b7f678', true) ON CONFLICT DO NOTHING;
+
+
 -- Data for Name: addon_items; Type: TABLE DATA; Schema: public; Owner: -
+
 INSERT INTO public.addon_items VALUES ('2b9bd75a-2289-4bd8-a870-825401bd46e7', '4e6609c4-de75-4d7b-99de-fea8535d81b9', 'Bacon', 5, 0, '2026-04-04 01:49:15.67642+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.addon_items VALUES ('d3c861d4-b2f7-4146-a27e-2be3adaa6b60', '4e6609c4-de75-4d7b-99de-fea8535d81b9', 'Salada', 5, 0, '2026-04-04 01:49:22.757445+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.addon_items VALUES ('21b1d4f5-11dd-47b1-b71e-86648201d3d5', '4e6609c4-de75-4d7b-99de-fea8535d81b9', 'Cheddar', 5, 0, '2026-04-04 01:50:02.901078+00') ON CONFLICT DO NOTHING;
@@ -474,7 +437,10 @@ INSERT INTO public.addon_items VALUES ('51f3524e-303c-496c-a64a-6f0075edf12a', '
 INSERT INTO public.addon_items VALUES ('36b18d64-d701-4124-9387-ab716f74d0c4', '7b1ca892-4587-4068-ae03-5536f9cfe48e', '3 Brownie supremo:', 51, 6, '2026-04-17 14:07:45.4018+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.addon_items VALUES ('19b510e6-e5b7-46ea-a673-446d9f0b1aa8', '7b1ca892-4587-4068-ae03-5536f9cfe48e', '3 Morango supreme:', 51, 7, '2026-04-17 14:07:45.4018+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.addon_items VALUES ('43baf5ce-4e5f-4e32-9914-6823bc942c99', '7b1ca892-4587-4068-ae03-5536f9cfe48e', '3 Ninhotella:', 51, 8, '2026-04-17 14:07:45.4018+00') ON CONFLICT DO NOTHING;
+
+
 -- Data for Name: admin_settings; Type: TABLE DATA; Schema: public; Owner: -
+
 INSERT INTO public.admin_settings VALUES ('221c2412-3280-49f8-8fc6-4eb8b493a6f1', 'payout_modes', '{"store_payout": "manual", "driver_payout": "manual", "admin_commission": "manual"}', '2026-04-03 17:23:13.287+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.admin_settings VALUES ('cff6ce1d-0fed-4285-b5de-66e985d82f3f', 'payout_schedule', '{"enabled": true, "day_of_week": 3}', '2026-04-03 17:23:54.455+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.admin_settings VALUES ('e2255a67-5c86-4cad-a027-7117031a2866', 'payment_gateway', '{"provider": "ASAAS"}', '2026-04-03 21:31:01.601+00') ON CONFLICT DO NOTHING;
@@ -484,7 +450,10 @@ INSERT INTO public.admin_settings VALUES ('96769b6f-933b-4e6e-8fc3-46d3e5abfd5c'
 INSERT INTO public.admin_settings VALUES ('6e560d35-9d1f-4b49-a029-0363d63c4007', 'min_payout_amount', '100', '2026-04-10 10:24:26.713611+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.admin_settings VALUES ('bc81d18a-5e75-400d-bcf2-149ef29a147e', 'delivery_fee_config', '{"city_fee": 5, "city_name": "Itatinga", "rural_per_km": 1.2, "platform_split": 2, "rural_base_fee": 12}', '2026-04-10 13:54:27.902985+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.admin_settings VALUES ('41474d6a-8368-4328-8cb0-5f8d431bd47e', 'store_driver_platform_cut', '{"amount": 2}', '2026-04-17 01:02:25.188502+00') ON CONFLICT DO NOTHING;
+
+
 -- Data for Name: app_links; Type: TABLE DATA; Schema: public; Owner: -
+
 INSERT INTO public.app_links VALUES ('c10b91df-babc-4033-a627-5db4ff5f4ffb', 'Fazer um Pedido', 'Veja todas as lojas disponíveis', '/', 'ShoppingBag', false, true, true, 10, '2026-04-18 08:37:30.779237+00', '2026-04-18 08:37:30.779237+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.app_links VALUES ('ea8b2c11-7809-4639-96e2-9ed7032aa95d', 'Cadastrar minha Loja', 'Cadastro 100% grátis • Sem mensalidade', '/cadastro-lojista', 'Store', false, true, true, 20, '2026-04-18 08:37:30.779237+00', '2026-04-18 08:37:30.779237+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.app_links VALUES ('05fe35ea-b344-406c-aa89-ba46d3d04b6c', 'Quero ser Entregador', 'Faça entregas e ganhe por corrida', '/cadastro-entregador', 'Bike', false, false, true, 30, '2026-04-18 08:37:30.779237+00', '2026-04-18 08:37:30.779237+00') ON CONFLICT DO NOTHING;
@@ -495,16 +464,37 @@ INSERT INTO public.app_links VALUES ('9480496a-dd26-45cb-8185-872623201804', 'In
 INSERT INTO public.app_links VALUES ('1117e956-e557-451b-81a8-0213c4b95ae4', 'Falar no WhatsApp', 'Suporte e dúvidas', 'https://wa.me/5514998765432', 'MessageCircle', true, false, true, 80, '2026-04-18 08:37:30.779237+00', '2026-04-18 08:37:30.779237+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.app_links VALUES ('d372f1b8-775d-4719-ab41-6cd726b97c1e', 'Termos de Uso', NULL, '/termos-de-uso', 'FileText', false, false, true, 90, '2026-04-18 08:37:30.779237+00', '2026-04-18 08:37:30.779237+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.app_links VALUES ('29b913c0-84dd-4077-985f-d5f9a0e09bad', 'Política de Privacidade', NULL, '/politica-de-privacidade', 'Shield', false, false, true, 100, '2026-04-18 08:37:30.779237+00', '2026-04-18 08:37:30.779237+00') ON CONFLICT DO NOTHING;
+
+
 -- Data for Name: archived_accounts; Type: TABLE DATA; Schema: public; Owner: -
+
+
+
 -- Data for Name: banners; Type: TABLE DATA; Schema: public; Owner: -
+
+
+
 -- Data for Name: compliance_alerts; Type: TABLE DATA; Schema: public; Owner: -
+
+
+
 -- Data for Name: coupons; Type: TABLE DATA; Schema: public; Owner: -
+
 INSERT INTO public.coupons VALUES ('a421970b-4a6c-4d4d-9043-aee7f032a221', '5OFF', NULL, 'fixed', 5, 0, NULL, 0, true, false, NULL, '2026-04-03 15:10:14.187241+00', NULL) ON CONFLICT DO NOTHING;
+
+
 -- Data for Name: coupon_uses; Type: TABLE DATA; Schema: public; Owner: -
+
+
+
 -- Data for Name: driver_balances; Type: TABLE DATA; Schema: public; Owner: -
+
 INSERT INTO public.driver_balances VALUES ('a1c4a6ca-20f5-44a9-b78c-38ea69bfb77a', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 11.0, 0, 11.0, '2026-04-06 01:45:33.209369+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.driver_balances VALUES ('c024e72e-f15b-4961-a1ce-c77f4e8684bc', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 78, 36, 0, '2026-04-22 00:45:12.215693+00') ON CONFLICT DO NOTHING;
+
+
 -- Data for Name: driver_earnings; Type: TABLE DATA; Schema: public; Owner: -
+
 INSERT INTO public.driver_earnings VALUES ('e0bd9c07-0a06-4a22-811f-924332fb5ab3', '66a2f79c-9276-4fe8-8201-4a59b3960bed', '4bf31210-55f2-4827-8408-5a293b709c8a', 5.5, 'pago_loja', '2026-04-04 00:03:51.997321+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.driver_earnings VALUES ('a96a0432-cc23-4209-b0e0-ea2194986d8c', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'bf8d6d94-fff2-4866-aa39-496ceeac70f4', 5.5, 'pago_loja', '2026-04-06 01:44:11.781029+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.driver_earnings VALUES ('bb08c3d3-20d8-4593-9a10-ae40e0453ea3', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 'ee8a305e-5288-4d77-a54b-94c7117d3574', 4, 'waiting_store_settlement', '2026-04-12 12:26:50.239878+00') ON CONFLICT DO NOTHING;
@@ -523,7 +513,10 @@ INSERT INTO public.driver_earnings VALUES ('8b0d4fb1-d6c2-4c86-a335-5c607c383941
 INSERT INTO public.driver_earnings VALUES ('8c458638-d4e2-461d-9be9-e096e580053e', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 'b2d39235-52f0-4b02-8722-52721d10cb10', 14, 'pendente', '2026-04-22 00:40:18.895232+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.driver_earnings VALUES ('06fd076a-4e6d-4c9c-88e6-121e332103b1', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '4acfa4fc-5806-4097-8ddc-36d8a65612ae', 14, 'pendente', '2026-04-22 00:41:13.756929+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.driver_earnings VALUES ('b06e8e77-5910-4d79-8507-bddb67730a8a', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 'a3471d4d-52e0-46c0-b788-07e37f3bb478', 14, 'pendente', '2026-04-22 00:45:12.215693+00') ON CONFLICT DO NOTHING;
+
+
 -- Data for Name: orders; Type: TABLE DATA; Schema: public; Owner: -
+
 INSERT INTO public.orders VALUES ('2f34cc77-d098-4a7a-83fa-00be7feec2a1', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'b243bdb4-45a9-46fc-8248-68dd6ba3e46c', 'cancelado', 68, 5.5, 73.5, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-06 13:34:50.91761+00', NULL, 8.16, '7420', NULL, false, 0, false, '3886', false, false, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
 INSERT INTO public.orders VALUES ('56a3d026-a105-4798-a639-7f092c1d2c1d', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'b243bdb4-45a9-46fc-8248-68dd6ba3e46c', 'cancelado', 36, 5.5, 41.5, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-06 13:30:12.075727+00', NULL, 4.32, '2075', NULL, false, 0, false, '2928', false, false, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
 INSERT INTO public.orders VALUES ('a39bdddf-cea4-426e-879d-0e6b202c50c9', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'b243bdb4-45a9-46fc-8248-68dd6ba3e46c', 'cancelado', 25, 5.5, 30.5, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-06 13:24:49.530138+00', NULL, 3, '6973', NULL, false, 0, false, '4805', false, false, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
@@ -629,31 +622,67 @@ INSERT INTO public.orders VALUES ('5830efde-85c9-46b5-a326-f82af843144a', '5adc5
 INSERT INTO public.orders VALUES ('800bfe94-c531-4fcd-a0cd-b46b795b4a6d', '37909bb0-03b4-46dc-917d-c17fadaca33c', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'cancelado', 134.00, 8.00, 142.00, 'cartao', 'Centro', 'Rua Antônio Prette, 240 - Centro, Itatinga - SP', '2026-04-17 16:00:06.346603+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 0.00, NULL, NULL, false, 0, false, NULL, true, true, NULL, NULL, false, -23.10125, -48.6151, NULL) ON CONFLICT DO NOTHING;
 INSERT INTO public.orders VALUES ('729e8a3b-d08b-4ce6-8026-ff9250c27fd8', 'ba9ce4c7-7133-45d5-8c2f-454914b7da38', '70c8f384-a15a-4dfd-bfbc-30ebb9b7f678', 'finalizado', 22.5, 0, 22.5, 'dinheiro', 'Centro', 'Rua São Francisco, 742', '2026-04-21 18:44:18.355857+00', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 1.13, '1813', '2026-04-21 20:34:33.594586+00', true, 50, false, NULL, false, true, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
 INSERT INTO public.orders VALUES ('d5e6fdec-6819-4bfd-9ce4-48495c00231c', '66a2f79c-9276-4fe8-8201-4a59b3960bed', '66129fdd-1f7e-42c8-b3c1-8d4c28b14106', 'pendente', 24, 14, 38, 'dinheiro', 'Centro', 'Rua São Francisco, 635', '2026-04-25 17:07:56.396784+00', NULL, 1.44, '2159', NULL, false, 0, false, NULL, false, true, NULL, NULL, false, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+
+
 -- Data for Name: driver_locations; Type: TABLE DATA; Schema: public; Owner: -
+
 INSERT INTO public.driver_locations VALUES ('ba93e465-ce23-4302-a855-b5a1f36bcb0a', '66a2f79c-9276-4fe8-8201-4a59b3960bed', NULL, -23.139292, -48.44684, 62.935, 11.115074, 0.39163208, '2026-04-14 16:22:17.498+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.driver_locations VALUES ('40e8c789-6389-435b-aea0-5e215030ea22', '6becbb34-0fd2-4f6b-ba60-46bc058c15e6', NULL, -23.1049748, -48.6178002, 16.424, 0, 310.83374, '2026-04-17 15:33:12.611+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.driver_locations VALUES ('33966266-4a5b-44e6-b589-3a1d68ff7800', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 'a0e5de22-dc8e-413f-aa83-1c09dccd1db3', -23.1384043, -48.447921, 39.308, 0.04233812, NULL, '2026-04-25 17:19:11.357+00') ON CONFLICT DO NOTHING;
+
+
 -- Data for Name: drivers; Type: TABLE DATA; Schema: public; Owner: -
+
 INSERT INTO public.drivers VALUES ('75875da1-bddc-4a1f-bf11-f3712d0c8e3b', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 'Natalino', true, '2026-04-12 17:28:16.918269+00', true, 'itatinga') ON CONFLICT DO NOTHING;
 INSERT INTO public.drivers VALUES ('9a5377ae-4555-4de5-b43e-7d4c6eafa3ec', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'Renner dias', true, '2026-03-30 20:43:17.670906+00', true, 'itatinga') ON CONFLICT DO NOTHING;
+
+
 -- Data for Name: platform_partners; Type: TABLE DATA; Schema: public; Owner: -
+
 INSERT INTO public.platform_partners VALUES ('b611c2db-a65b-461a-9352-d50e71e82ebb', 'Thiago Correia', 'thiagocorreia10092005@gmail.com', 30, 5, NULL, NULL, false, true, false, '2026-04-16 07:57:54.930744+00', '2026-04-16 07:57:54.930744+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.platform_partners VALUES ('1c28c47e-0694-4f3e-a591-b8315eebc157', 'Vinicius', 'vinivias13@gmail.com', 70, 5, NULL, NULL, true, true, false, '2026-04-16 07:57:54.930744+00', '2026-04-16 08:17:30.634532+00') ON CONFLICT DO NOTHING;
+
+
 -- Data for Name: emergency_fund; Type: TABLE DATA; Schema: public; Owner: -
+
+
+
 -- Data for Name: fcm_tokens; Type: TABLE DATA; Schema: public; Owner: -
+
 INSERT INTO public.fcm_tokens VALUES ('c344aeac-4fa6-4c49-962d-908f3735b5d8', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 'dojsCWh1Qp202-nz2tnhMv:APA91bEK6un-ZriqXg_PJzo9tgLPdi4QLloks95pfHpSuQBnAi4byEXDi_cKicXCzqdoSCAQ636OgylzeeUDfikh9RSF4GjlW4uZqvri-Z_tT3beYsgkHVM', 'itasuper:capacitor:android:6b56318c-bc7d-4bc6-8a2e-9c52651aedc7', '2026-04-25 17:09:39.409817+00', '2026-04-25 17:18:47.633+00', NULL) ON CONFLICT DO NOTHING;
 INSERT INTO public.fcm_tokens VALUES ('81159e6b-cd67-47d8-91f6-5685633b24c5', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'eANFeRpSSSKMGxHxt2K51K:APA91bE2vl5g1DZPniVA0i8Ym4JVhZ_MZdf6u9dBAVDLBzJLxAJg0SPeMuCctQ_lJgmEl58Uqj1YqOeEvS_GPcXj7574AdPnpCoSftsl1LLVgInW1xHAi1U', 'itasuper:capacitor:android:45e50766-fb19-44c7-8e85-15e05ca8da30', '2026-04-25 17:04:50.618495+00', '2026-04-25 17:08:02.364+00', NULL) ON CONFLICT DO NOTHING;
+
+
 -- Data for Name: financial_transactions; Type: TABLE DATA; Schema: public; Owner: -
+
 INSERT INTO public.financial_transactions VALUES ('af83e2cd-ccf4-4cee-834b-93ef4c439f61', 'b243bdb4-45a9-46fc-8248-68dd6ba3e46c', 'commission_charge', '#FAT-A8589361', 11.1, 'failed', 'asaas', 'pay_0aunatoz51rz0eb5', NULL, '00020101021226800014br.gov.bcb.pix2558pix.asaas.com/qr/cobv/d63b1510-8211-4e58-9b95-5893a6280aa65204000053039865802BR5920Renner Vinicius Dias6008Itatinga61081869008162070503***63048269', 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAcIAAAHCAQAAAABUY/ToAAADEElEQVR4Xu2USw7bQAxDs/P9b9RjZZeGj5QdFGhddFMFoOLMh+JjFjPO4/WP9ePxq/K3VfKuSt5VybsqeVcl7+q/kc8HdTyP1/m8v8/HIcu7qxl5nCVXk3Ywum2LohBYIF/OkotJqxz9E+zTecl4opbcT+blPUR5zDAxJb+O5GGnlxuWFvaS30G+MgKm6b22Q306Sy4mc+b4/vyZ21Hyd58F5FluHJw5fbl9PfS2f1pL7iUFqMs7jDkZk/MZk+SSe0nD9Jxy0smTQctXskWU3EvKY4Tv9RiAzkrmksvJbPEg22ELOzaocZTcS9LxVZjuQ0ePK0vfEv8Ic8nFpBoaJDOasdu6PUJJL7mYfMhv+urxNaxUHATZUnIxaeY9DzUpWUySfiRsybXkCT/8zNlj/5Cdjl5yMRnbIDYDOZZcntNbcjEpRoIqDUFOcmTa7pBYci3JyeO1CqIpdyLZzEktuZlEHTE7Z52IF6OW3EwCZPZzIljJeorxln7JvaSN+S9Wi0+272FSxlByP6kWmIxHLgQmXQRYKwZL7iXHDEaKVlYM2hKP2ZKbyeuUkadPoNncgfmW3Exyzvlj9q2QOAKYyPkzV5VcS9pFTxgNRxAjTKy2ZJRcTo41rADMrEyHGL7kYvIt0kSXSYTVpGBPRtCSe0kZcJ8hHsAJ9A0hJGLJxaQkDHFBJiJXwbcgbMn1pH0XqpO33ZnTQii5mRQwI352iiPA1rCeS24mtRQxXm/FnLjuxYSU/AbyMEzACwJJLiix0yu5mnzJpTamD5dMJDgVOcaSe0kduTacP0tHeZDsRP+IvyX3kt76CoQVI6uWgfCTqbnkZtK9CfHiDLrabEguuZh0x7LWeacpmfRqOyxVcjU5xQkLUxM7K5JzCZJdcjOp/lhQ09cIorjwk1ByMRm3ABAv8GQmOZRiSq4mZY9mqzWpClKD5wwo+QWkZk+wxDCl7JNY8jtI+cYNed4Gh9lAVsnF5Ms8Hhh5eOw2eYklV5M673Tdk+KBHCyJZVlyM/lPVfKuSt5VybsqeVcl7+rLyJ99oreDHOgmNgAAAABJRU5ErkJggg==', '00020101021226800014br.gov.bcb.pix2558pix.asaas.com/qr/cobv/d63b1510-8211-4e58-9b95-5893a6280aa65204000053039865802BR5920Renner Vinicius Dias6008Itatinga61081869008162070503***63048269', NULL, '{"expires_at": "2026-04-07T12:06:26.668Z", "store_name": "Nata Lanches", "description": "Comissão ItaSuper - Nata Lanches"}', '2026-04-07 12:01:26.668+00', '2026-04-09 06:04:35.224551+00') ON CONFLICT DO NOTHING;
+
+
 -- Data for Name: loyalty_config; Type: TABLE DATA; Schema: public; Owner: -
+
 INSERT INTO public.loyalty_config VALUES ('c2a0bb82-19db-42c0-ac12-3a23c17c0bb7', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', false, 1, 50, 0.1, 20, '2026-04-10 16:59:02.263327+00', '2026-04-10 16:59:02.477+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.loyalty_config VALUES ('0faad2cc-df5c-408f-b640-52efd2d28b8a', '66129fdd-1f7e-42c8-b3c1-8d4c28b14106', false, 1, 50, 0.1, 20, '2026-04-14 15:16:56.852495+00', '2026-04-14 15:16:56.603+00') ON CONFLICT DO NOTHING;
+
+
 -- Data for Name: loyalty_points; Type: TABLE DATA; Schema: public; Owner: -
+
+
+
 -- Data for Name: moderators; Type: TABLE DATA; Schema: public; Owner: -
+
 INSERT INTO public.moderators VALUES ('6b6bb925-e214-449b-a596-d0e893ab2f5f', NULL, 'Thiago', 'thiagocorreia10092005@gmail.com', NULL, 'MOD-YEZMU4', 40, 1, 2, true, '2026-04-16 00:43:03.886882+00', '2026-04-16 00:43:03.886882+00') ON CONFLICT DO NOTHING;
+
+
 -- Data for Name: moderator_earnings; Type: TABLE DATA; Schema: public; Owner: -
+
+
+
 -- Data for Name: moderator_referrals; Type: TABLE DATA; Schema: public; Owner: -
+
+
+
 -- Data for Name: neighborhood_fees; Type: TABLE DATA; Schema: public; Owner: -
+
 INSERT INTO public.neighborhood_fees VALUES ('ada7331e-3c2b-469e-83ac-c754acc8f6db', 'Centro', 4.00) ON CONFLICT DO NOTHING;
 INSERT INTO public.neighborhood_fees VALUES ('88766fba-0f0c-4baa-90e4-a4ee478068db', 'Vila São João', 4.00) ON CONFLICT DO NOTHING;
 INSERT INTO public.neighborhood_fees VALUES ('3ab97612-0a31-4128-9574-fd28c8d1f4d9', 'Jardim Pedra Branca', 4.00) ON CONFLICT DO NOTHING;
@@ -673,8 +702,14 @@ INSERT INTO public.neighborhood_fees VALUES ('3a9c1a7d-6ae7-4ce9-9691-8ade287b88
 INSERT INTO public.neighborhood_fees VALUES ('8ac55292-899a-458c-b8ec-535f1b8a95a0', 'Vila dos Lavradores', 12.00) ON CONFLICT DO NOTHING;
 INSERT INTO public.neighborhood_fees VALUES ('7a11c417-6553-4532-8bc8-77a5cb2e158a', 'Entorno do CDP', 12.00) ON CONFLICT DO NOTHING;
 INSERT INTO public.neighborhood_fees VALUES ('64ae8236-55dc-4b86-8650-e5886d9ccde3', 'Fazendas/Sítios (Geral)', 12.00) ON CONFLICT DO NOTHING;
+
+
 -- Data for Name: onesignal_players; Type: TABLE DATA; Schema: public; Owner: -
+
+
+
 -- Data for Name: opening_hours; Type: TABLE DATA; Schema: public; Owner: -
+
 INSERT INTO public.opening_hours VALUES ('01c60bb1-ce57-48a4-9bcc-c84583874845', '477b9f42-d4c7-4cdf-a24b-fac59212f6d1', 0, '08:00:00', '23:00:00', false) ON CONFLICT DO NOTHING;
 INSERT INTO public.opening_hours VALUES ('a16c49d0-e472-436f-b10f-736be9c845ef', '477b9f42-d4c7-4cdf-a24b-fac59212f6d1', 1, '08:00:00', '23:00:00', false) ON CONFLICT DO NOTHING;
 INSERT INTO public.opening_hours VALUES ('2b1c416d-732d-4721-817c-d28c1a420e95', '477b9f42-d4c7-4cdf-a24b-fac59212f6d1', 2, '08:00:00', '23:00:00', false) ON CONFLICT DO NOTHING;
@@ -766,7 +801,10 @@ INSERT INTO public.opening_hours VALUES ('e0f470d0-1e51-4a68-bf66-03dbd0b852cc',
 INSERT INTO public.opening_hours VALUES ('97d2478a-0675-44bc-ba33-4e5ebf534fd7', '00f1814d-703d-4ac1-898d-d53188903aeb', 2, '08:00:00', '22:00:00', true) ON CONFLICT DO NOTHING;
 INSERT INTO public.opening_hours VALUES ('b88b96c4-ca42-49f2-8478-69d0d30951cc', '00f1814d-703d-4ac1-898d-d53188903aeb', 0, '08:00:00', '22:00:00', true) ON CONFLICT DO NOTHING;
 INSERT INTO public.opening_hours VALUES ('8d4c035f-0da4-4db5-a3f5-9c98875d78f5', '00f1814d-703d-4ac1-898d-d53188903aeb', 5, '08:00:00', '22:00:00', true) ON CONFLICT DO NOTHING;
+
+
 -- Data for Name: order_items; Type: TABLE DATA; Schema: public; Owner: -
+
 INSERT INTO public.order_items VALUES ('4eba4364-cffc-4fc0-9e85-8a176d6dacea', '4bf31210-55f2-4827-8408-5a293b709c8a', '4a1ed1fb-d4a3-448e-89ed-2ee5a98fcf85', 1, 1, NULL, NULL) ON CONFLICT DO NOTHING;
 INSERT INTO public.order_items VALUES ('120242fb-dae3-4cf9-ae1c-c7a7dc285421', 'bf8d6d94-fff2-4866-aa39-496ceeac70f4', '0756deeb-97d1-4557-b9e7-cbfaef3d99c6', 1, 32, NULL, NULL) ON CONFLICT DO NOTHING;
 INSERT INTO public.order_items VALUES ('5f17ecc6-d834-4709-b623-71c0070abddc', 'bf8d6d94-fff2-4866-aa39-496ceeac70f4', '1d7cb167-521f-4ed4-b175-2670547a7047', 1, 41, NULL, '"[{\"name\":\"Cheddar\",\"price\":5}]"') ON CONFLICT DO NOTHING;
@@ -877,7 +915,10 @@ INSERT INTO public.order_items VALUES ('d4bcaf33-d232-4510-af5f-50adca85e511', '
 INSERT INTO public.order_items VALUES ('a3910a49-3a19-4b06-93c1-a07e767844af', 'a3471d4d-52e0-46c0-b788-07e37f3bb478', '7f9d9710-12e2-46aa-af57-a1655a8dea13', 1, 54, NULL, NULL) ON CONFLICT DO NOTHING;
 INSERT INTO public.order_items VALUES ('14800a72-002c-4b77-b086-3ed5cc8c027d', 'a0e5de22-dc8e-413f-aa83-1c09dccd1db3', '1b997cc8-41b3-49eb-814c-feb45f7ad6ad', 1, 69, NULL, '"[{\"name\":\"½ 4 queijos\",\"price\":0},{\"name\":\"½ Atum\",\"price\":0},{\"name\":\"Borda: Borda Tradicional\",\"price\":0}]"') ON CONFLICT DO NOTHING;
 INSERT INTO public.order_items VALUES ('629a125a-4d51-4721-9dbb-2df5c45e6e9c', 'd5e6fdec-6819-4bfd-9ce4-48495c00231c', '742015db-5125-4fe0-b0d5-45eacfc0450a', 1, 24, NULL, '"[{\"name\":\"Hambúrguer\",\"price\":4,\"required\":false,\"groupName\":\"Adicionais\"},{\"name\":\"Tradicional\",\"price\":0,\"required\":true,\"groupName\":\"Tipo de Pão\"}]"') ON CONFLICT DO NOTHING;
+
+
 -- Data for Name: order_messages; Type: TABLE DATA; Schema: public; Owner: -
+
 INSERT INTO public.order_messages VALUES ('d7fb68ea-6bc3-4310-930e-c58d3e82b757', '7e332fee-4d9b-4a86-8990-15ed66dcb7d7', '6becbb34-0fd2-4f6b-ba60-46bc058c15e6', '❌ Pedido cancelado.', '2026-04-10 08:18:00.023672+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.order_messages VALUES ('99378571-b582-4ba8-94eb-e87f3dd16fd0', '88418451-997a-4b3f-b3d0-66cb2c6451c3', '6becbb34-0fd2-4f6b-ba60-46bc058c15e6', '❌ Pedido cancelado.', '2026-04-10 08:18:04.387844+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.order_messages VALUES ('61907e16-9999-4d8c-88cf-50c84560b3cd', '64e58f6d-3f39-4aaa-99da-c8efe0f5896e', '6becbb34-0fd2-4f6b-ba60-46bc058c15e6', '❌ Pedido cancelado.', '2026-04-10 08:18:10.139768+00') ON CONFLICT DO NOTHING;
@@ -1148,14 +1189,20 @@ INSERT INTO public.order_messages VALUES ('29c3b787-e2d8-418b-83f8-0fcb21e2120f'
 INSERT INTO public.order_messages VALUES ('93d45853-ffb1-4dd0-8d52-d3cf716c6ffd', 'a0e5de22-dc8e-413f-aa83-1c09dccd1db3', '6becbb34-0fd2-4f6b-ba60-46bc058c15e6', '👨‍🍳 Seu pedido está sendo preparado!', '2026-04-25 17:10:36.839997+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.order_messages VALUES ('ff9e3e2b-77a7-428e-bf46-7b3f2e474358', 'a0e5de22-dc8e-413f-aa83-1c09dccd1db3', '6becbb34-0fd2-4f6b-ba60-46bc058c15e6', '📦 Pedido pronto! Aguardando entregador.', '2026-04-25 17:11:27.455428+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.order_messages VALUES ('ce891cf7-60da-4b9f-bb24-a61d20bf9b85', 'a0e5de22-dc8e-413f-aa83-1c09dccd1db3', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '🛵 Saiu para entrega!', '2026-04-25 17:14:01.388833+00') ON CONFLICT DO NOTHING;
+
+
 -- Data for Name: order_ratings; Type: TABLE DATA; Schema: public; Owner: -
+
 INSERT INTO public.order_ratings VALUES ('14e25120-a5a3-4cc7-a0c5-d12077e94395', '4bf31210-55f2-4827-8408-5a293b709c8a', '927289c1-9e81-463a-b950-9b83d4d505e5', 'b243bdb4-45a9-46fc-8248-68dd6ba3e46c', 3, NULL, '2026-04-04 01:14:55.994676+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.order_ratings VALUES ('717bfa35-a115-4d10-ae5a-8e5f807d9390', 'bf8d6d94-fff2-4866-aa39-496ceeac70f4', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'b243bdb4-45a9-46fc-8248-68dd6ba3e46c', 5, NULL, '2026-04-06 02:42:42.25262+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.order_ratings VALUES ('ec7408be-a7f3-4fb2-94bb-d34d0ec33934', 'cf5ed3c3-b9f1-46cd-bf09-7bdabe643eab', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 5, NULL, '2026-04-10 09:10:19.894142+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.order_ratings VALUES ('2214915d-9f14-40d6-bde4-592c4dda7927', 'df5f1d03-a683-42b3-a898-2279d28a6b58', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 5, NULL, '2026-04-10 13:09:43.23928+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.order_ratings VALUES ('9000e20b-2da7-4960-b9d3-2d2ac6e20f7e', 'b91d5367-fbbf-4846-95fe-15e811f105c0', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 5, NULL, '2026-04-10 13:12:03.352634+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.order_ratings VALUES ('3f5ae7aa-f7da-493a-b8d0-bbaca363e78d', 'ee8a305e-5288-4d77-a54b-94c7117d3574', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 5, NULL, '2026-04-12 12:27:01.651663+00') ON CONFLICT DO NOTHING;
+
+
 -- Data for Name: page_views; Type: TABLE DATA; Schema: public; Owner: -
+
 INSERT INTO public.page_views VALUES ('53eb28d9-4f22-46ad-a6a8-e7f62596edd1', 'store_directory', 'fac9de37-5b5c-4c52-8c20-4beaad01d303', NULL, '2026-04-18 11:06:39.156853+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.page_views VALUES ('e02c6e05-eecc-41e1-b0bb-d5765411c23a', 'store_directory', 'c4f44cde-ff7c-4de8-8ff1-7af5b6c1b7a7', NULL, '2026-04-18 11:14:30.793684+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.page_views VALUES ('89421f9b-4422-417e-abcd-024cd05fbace', 'store_directory', '7562892c-0445-45a3-8781-96d7f9104f77', NULL, '2026-04-18 11:16:34.657532+00') ON CONFLICT DO NOTHING;
@@ -1394,15 +1441,30 @@ INSERT INTO public.page_views VALUES ('2f598bc2-8383-48d4-8ce4-97cd830c8289', 's
 INSERT INTO public.page_views VALUES ('fc4b5ca9-67cf-4d83-b2da-21a62732e31c', 'store_directory', '5de60d77-0612-4039-af71-1cb4cb45af95', 'acefbf75-9e70-473e-b8ae-c6fb170c886e', '2026-04-25 18:08:24.425558+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.page_views VALUES ('8e13c47d-9f9e-47d2-91bb-c750e4182d7d', 'store_directory', '5de60d77-0612-4039-af71-1cb4cb45af95', 'acefbf75-9e70-473e-b8ae-c6fb170c886e', '2026-04-25 18:08:26.617516+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.page_views VALUES ('8d9fc431-9afe-41c6-be06-856538284899', 'store_directory', '2f7b6c60-2d68-428c-a46e-a844ded74697', NULL, '2026-04-25 18:10:47.279602+00') ON CONFLICT DO NOTHING;
+
+
 -- Data for Name: partner_payouts; Type: TABLE DATA; Schema: public; Owner: -
+
+
+
 -- Data for Name: payout_history; Type: TABLE DATA; Schema: public; Owner: -
+
+
+
 -- Data for Name: pizza_borders; Type: TABLE DATA; Schema: public; Owner: -
+
 INSERT INTO public.pizza_borders VALUES ('693832a4-4bcb-41d9-ac23-ab5ad4aa9837', 'e577573d-4139-415d-b49d-d6a50e1d393b', 'Borda Tradicional', 0, 0, true, '2026-04-10 02:57:28.195329+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.pizza_borders VALUES ('dea7ab99-9d4b-40af-9cab-de5d78d3fb30', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'Borda Tradicional', 0, 0, true, '2026-04-10 02:57:28.195329+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.pizza_borders VALUES ('c51a759a-b1c6-4eb9-9de1-330bdfe7b5af', '7cd86219-bb0b-4635-801c-9ee8596c6215', 'Borda Tradicional', 0, 0, true, '2026-04-10 02:57:28.195329+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.pizza_borders VALUES ('56ea5245-05ac-4779-8882-4c28077810a0', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'Catupiry', 5, 1, true, '2026-04-10 03:50:05.406624+00') ON CONFLICT DO NOTHING;
+
+
 -- Data for Name: plan_change_requests; Type: TABLE DATA; Schema: public; Owner: -
+
+
+
 -- Data for Name: product_addon_groups; Type: TABLE DATA; Schema: public; Owner: -
+
 INSERT INTO public.product_addon_groups VALUES ('c6fbffe9-1cb4-4bd9-aa2d-6d940524cd33', '35fc0a88-f4bc-41cc-a1d7-5f630624d5e4', '4e6609c4-de75-4d7b-99de-fea8535d81b9', '2026-04-04 02:00:50.182567+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.product_addon_groups VALUES ('c2dbb22c-b452-4b66-87a3-1556e45b8ebb', 'f233c394-972b-48ff-b852-4a593c6fa317', '4e6609c4-de75-4d7b-99de-fea8535d81b9', '2026-04-04 02:01:03.535245+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.product_addon_groups VALUES ('465ecb0a-d806-44d5-ba9d-9c9be1cbcc6c', '1d7cb167-521f-4ed4-b175-2670547a7047', '4e6609c4-de75-4d7b-99de-fea8535d81b9', '2026-04-04 02:01:08.554367+00') ON CONFLICT DO NOTHING;
@@ -1498,3 +1560,174 @@ INSERT INTO public.product_addon_groups VALUES ('274fd03a-11df-48a5-bc39-bda3f1c
 INSERT INTO public.product_addon_groups VALUES ('2a65a6ff-4598-420d-a859-4156328c0753', 'b5222454-4aba-4321-915a-ba0f31302f8c', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.product_addon_groups VALUES ('f44e7a44-7495-4e4a-823e-a297353ad0dd', '1830d888-23f9-4ae2-95f2-72a01f17d58d', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
 INSERT INTO public.product_addon_groups VALUES ('0f343181-eccd-4528-811e-3e63ffa41413', '83aae82c-b0d3-4f5e-9da0-f0f9b110cead', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.product_addon_groups VALUES ('48c9c0c0-ad9f-42ab-b8b5-049e4263d652', 'a8581da0-2ece-499b-aca4-d1cac1698183', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.product_addon_groups VALUES ('a4d6b971-c356-4a17-b2a9-94fb653298b8', '72da59de-fd15-4092-be8a-088d523542c7', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.product_addon_groups VALUES ('1fd5ca12-7201-49d9-9660-2771a554c7a1', 'bc91b1be-6193-43ce-b9b8-912a3cfee560', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.product_addon_groups VALUES ('03a3d8de-8a7b-4817-aa5f-aa6a2b9db65d', '203d36eb-20e8-4e21-82d9-ad4df12dde9e', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.product_addon_groups VALUES ('87527457-ae1e-45aa-863c-d0db6ff10c2c', 'f702ee63-4e92-4b6f-80e5-cc1033a34113', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.product_addon_groups VALUES ('2d8085e0-7351-496a-bdd3-1459300f868f', 'e71abea6-9cc5-4584-b4ef-a35bee3af139', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.product_addon_groups VALUES ('c8aab4d0-1c60-4026-bad3-96e410a869bf', '98ad0da8-4d88-4741-bdf7-611da47dccec', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.product_addon_groups VALUES ('6b1fc20d-6141-494f-aaf4-673d6461f226', '1ab50e7b-7c1d-460f-8612-0da02d7e10cd', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.product_addon_groups VALUES ('1899d334-05b4-41de-b9c6-3446f8734a12', '556b6bd0-5f0e-437d-9391-187638e45569', 'f0d289e2-8caf-4761-a1a6-7ac687aed4f9', '2026-04-16 02:06:44.396104+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.product_addon_groups VALUES ('e971fb77-65f5-4c31-b7fd-124ef5950cb9', 'd146541d-feae-42ba-8a30-3d22290689ca', '7b1ca892-4587-4068-ae03-5536f9cfe48e', '2026-04-21 12:10:21.922876+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.product_addon_groups VALUES ('b254fb96-55e3-4cc8-b9d3-9c997ec8c188', '376d89e9-bbe9-4a91-be17-0f1ae485875b', 'd8f48ccc-c77f-419d-89b2-dc902186f478', '2026-04-21 18:31:31.157431+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.product_addon_groups VALUES ('efca54af-7e59-4c43-8372-50793e10db4f', 'dfadb4d0-bbff-4626-8f59-cbae96c012dc', 'd8f48ccc-c77f-419d-89b2-dc902186f478', '2026-04-21 18:31:31.157431+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.product_addon_groups VALUES ('f8e30561-2474-4646-9cd8-3335527e4241', 'b7bffcf0-abe0-45bc-a716-eb967be79dae', 'd8f48ccc-c77f-419d-89b2-dc902186f478', '2026-04-21 18:31:31.157431+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.product_addon_groups VALUES ('d1d956ef-841c-44ac-8296-3686d6d15d38', '46a80523-229e-4f35-bd53-2e2dd3587ece', 'd8f48ccc-c77f-419d-89b2-dc902186f478', '2026-04-21 18:31:31.157431+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.product_addon_groups VALUES ('de2ad0f6-dbd2-4c75-9877-7d81a63676e7', '70f762e5-c518-4411-a1c9-a6ad4250ab28', 'd8f48ccc-c77f-419d-89b2-dc902186f478', '2026-04-21 18:31:31.157431+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.product_addon_groups VALUES ('d9248f20-4434-4799-b6a8-fae729962d1d', '1a23717d-12a4-4662-93ed-d27cbe80da2a', 'd8f48ccc-c77f-419d-89b2-dc902186f478', '2026-04-21 18:31:31.157431+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.product_addon_groups VALUES ('361f9a4c-2591-4cc6-b0a4-699da87114df', 'ea4708d7-3509-41eb-8a24-8934a9c418d1', 'd8f48ccc-c77f-419d-89b2-dc902186f478', '2026-04-21 18:31:31.157431+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.product_addon_groups VALUES ('df7a6369-1b16-4f8d-9cda-ab6611c554c2', 'b153d910-01a2-4370-b7f7-666d36b9dc0f', 'd8f48ccc-c77f-419d-89b2-dc902186f478', '2026-04-21 18:31:31.157431+00') ON CONFLICT DO NOTHING;
+
+
+-- Data for Name: profiles; Type: TABLE DATA; Schema: public; Owner: -
+
+INSERT INTO public.profiles VALUES ('28fbfdfe-de85-483a-8725-ba3a32685785', '37909bb0-03b4-46dc-917d-c17fadaca33c', 'Amarildo de Oliveira', 'cliente', '14136895828', NULL, NULL, '2026-04-16 21:16:20.760106+00', false, 'Rua Julieta Antunes Almeida Oliveira', '72', 'Casa', 'Próximo ao bar da Roh', 'Núcleo Habitacional Nova América', '14997925208', NULL, NULL, '5514997925208', 'amarildoolvr@gmail.com', '18694046', true, 'itatinga', NULL, NULL, NULL, NULL, '2026-04-16 21:16:22.605+00', NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.profiles VALUES ('6273a9f2-2705-4fb4-b37d-2559a30a48a1', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 'Natalino', 'motoboy', NULL, 'Fan 160', NULL, '2026-04-11 15:13:51.029231+00', true, NULL, NULL, NULL, NULL, NULL, '14991624997', NULL, NULL, '14991624997', 'natalino123@gmail.com', NULL, true, 'itatinga', NULL, NULL, NULL, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.profiles VALUES ('fb80fff8-9998-44ae-a96b-c1c7a87ae6a6', '1d33caaf-2aaf-4ac4-a41e-b94508e0ed50', '', 'cliente', '50537200886', NULL, NULL, '2026-04-18 16:59:23.682523+00', false, 'Avenida Dona Tita Paixão', '1237', '', '', 'Terras de São José', '14998639910', NULL, NULL, '5514998639910', 'sthellacamargo@outlook.com', '18694250', true, 'itatinga', NULL, NULL, NULL, NULL, '2026-04-18 16:59:24.933+00', NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.profiles VALUES ('54e1c99a-029a-4231-ad92-1263389e3925', '5e53b885-05f3-4cfd-9a52-d5c1f4457f3b', 'Bbburger', 'lojista', '49911096807', NULL, NULL, '2026-04-14 14:46:23.242486+00', true, 'Rua Julieta Antunes Almeida Oliveira', '72', 'Casa', 'Próximo ao bar da Roh', 'Núcleo Habitacional Nova América', '14997076863', 'thiagocorreia10092005@gmail.com', 'email', '5514997076863', 'thiagocorreia10092005@gmail.com', '18694046', true, 'itatinga', NULL, NULL, NULL, NULL, '2026-04-14 14:46:25.914+00', NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.profiles VALUES ('2bd1a12c-dc86-462b-b46d-c4ecf43d712c', 'ba9ce4c7-7133-45d5-8c2f-454914b7da38', 'DiasBurguer', 'lojista', '30731772806', NULL, NULL, '2026-04-08 08:45:53.858195+00', true, 'Rua São Francisco', '742', '', '', 'Centro', '', '14981867860', 'phone', NULL, 'diasirmaos1k@gmail.com', '18690081', true, 'itatinga', NULL, NULL, NULL, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.profiles VALUES ('afb3e056-7613-4668-b1b4-d1197af498ea', 'eacb717f-f61d-4e58-af9b-4149541a68df', 'Ana Claudia', 'cliente', '17508039769', NULL, NULL, '2026-04-06 10:01:51.659725+00', false, 'Rua São Francisco', '635', '', '', 'Centro', '', NULL, NULL, NULL, 'anaclaudia6demeira@gmail.com', '18690081', true, 'itatinga', NULL, NULL, NULL, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.profiles VALUES ('80b8dfe7-8f02-4f47-91b2-a1e0d2e32573', '6a31ec8b-3e4e-40b4-a4ff-6ae5f75ea102', '', 'cliente', NULL, NULL, NULL, '2026-04-16 09:47:34.675144+00', false, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'teste1_ita@gmail.com', NULL, false, 'itatinga', NULL, NULL, NULL, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.profiles VALUES ('70e9de9f-8134-4743-b4eb-454032c9faa0', '5adc5911-cca3-4cd7-85e6-374917d07a39', '', 'cliente', NULL, NULL, NULL, '2026-04-16 09:47:38.176322+00', false, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'teste2_ita@gmail.com', NULL, false, 'itatinga', NULL, NULL, NULL, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.profiles VALUES ('b0c615f1-87ee-4ed7-8205-1ae0ea42ab22', '4f962953-1af8-427d-8681-d30405fb994b', '', 'cliente', NULL, NULL, NULL, '2026-04-16 09:47:39.953845+00', false, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'teste3_ita@gmail.com', NULL, false, 'itatinga', NULL, NULL, NULL, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.profiles VALUES ('e728e85b-adf7-4e41-b47f-2148862c7157', '927289c1-9e81-463a-b950-9b83d4d505e5', 'Nata avelino', 'lojista', '53142159851', NULL, 'https://lktzrqjvqoojlrhqnxuz.supabase.co/storage/v1/object/public/partner-images/927289c1-9e81-463a-b950-9b83d4d505e5/1775239660266.jpg', '2026-04-03 18:07:41.47696+00', true, 'Rua São Francisco', '635', '', '', 'Centro', '', NULL, 'cpf', '5514991624997', NULL, '18690081', true, 'itatinga', NULL, NULL, NULL, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.profiles VALUES ('4b76cd04-42eb-4549-8bcb-ad1d8446b6ba', '73adfa0a-506f-43fd-8109-d3efa14507fe', '', 'cliente', NULL, NULL, NULL, '2026-04-16 09:47:41.316972+00', false, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'teste4_ita@gmail.com', NULL, false, 'itatinga', NULL, NULL, NULL, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.profiles VALUES ('fa72edde-91c1-4f70-88fb-b74ff5707bf0', '137c9a05-75db-4077-acff-17d9ed508c29', 'TesteMensal', 'lojista', '53142159851', NULL, NULL, '2026-04-09 18:52:56.671167+00', true, 'Rua São Francisco', NULL, NULL, NULL, 'Centro', '14991624997', 'diasirmaos1k@gmail.com', 'email', '14991624997', 'joao123@gmail.com', '18690081', true, 'itatinga', NULL, NULL, NULL, NULL, '2026-04-09 18:52:58.698+00', NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.profiles VALUES ('a0fedbef-f951-4bf7-9927-4acd80f2e1c0', '6becbb34-0fd2-4f6b-ba60-46bc058c15e6', 'Campanario Pizzaria', 'lojista', '53142159851', NULL, NULL, '2026-04-09 13:45:13.67122+00', true, 'Rua São Francisco', '635', '', '', 'Centro', '', '14 99162-4997', 'phone', '14991624997', 'luan123@gmail.com', '18690081', true, 'itatinga', NULL, NULL, NULL, NULL, '2026-04-09 13:45:15.475+00', NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.profiles VALUES ('01f54364-8711-442b-9228-126bd12d8ffa', '876ffde2-cdc0-4578-8cc4-48bb0279de71', '', 'cliente', NULL, NULL, NULL, '2026-04-16 09:47:42.560207+00', false, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'teste5_ita@gmail.com', NULL, false, 'itatinga', NULL, NULL, NULL, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.profiles VALUES ('1648a5a7-82bf-4d8c-9fb6-43833021a482', 'ed862e03-693d-4b7c-8342-400527be9c42', 'Jonatas', 'cliente', '39631805480', NULL, NULL, '2026-04-22 16:03:28.748584+00', false, 'Rua São Francisco', '245', '', '', 'Centro', '', NULL, NULL, '5514962345878', 'loiate@gmail.com', '18690081', true, 'itatinga', NULL, NULL, NULL, NULL, '2026-04-22 16:03:30.108+00', NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.profiles VALUES ('c2184012-8a84-4af5-a3e5-3964703ab89d', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'Renner dias', 'motoboy', '53142159851', 'Fan 150 2010', NULL, '2026-03-30 20:43:17.670906+00', true, 'Rua São Francisco', '635', '', '', 'Centro', '', '17508039769', 'cpf', '5514991624997', 'vinivias13@gmail.com', '18690081', true, 'itatinga', NULL, NULL, NULL, NULL, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.profiles VALUES ('65ddff2a-fb52-4cc4-845a-e32ddc55627d', 'acefbf75-9e70-473e-b8ae-c6fb170c886e', 'AnaDelivery', 'lojista', '63142159851', NULL, NULL, '2026-04-24 17:16:36.577244+00', true, 'Rua Capitão João Braz', NULL, NULL, NULL, 'Centro', '14962945776', '14965778900', 'phone', '14962945776', 'anamota@gmail.com', '18640029', true, 'pardinho', NULL, NULL, NULL, NULL, '2026-04-24 17:16:38.559+00', NULL) ON CONFLICT DO NOTHING;
+
+
+-- Data for Name: refund_requests; Type: TABLE DATA; Schema: public; Owner: -
+
+INSERT INTO public.refund_requests VALUES ('f1b06a20-c955-499e-be97-d9ffc111cc85', '94109d43-b46b-490c-870d-67b79f801a20', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'poor_quality', NULL, '{}', 'wallet_credit', 69, NULL, 'pending', NULL, NULL, '2026-04-13 22:08:40.465707+00', NULL) ON CONFLICT DO NOTHING;
+
+
+-- Data for Name: saved_addresses; Type: TABLE DATA; Schema: public; Owner: -
+
+INSERT INTO public.saved_addresses VALUES ('fbcdb100-e6e8-4084-96c2-3a08596585d5', '6a31ec8b-3e4e-40b4-a4ff-6ae5f75ea102', 'Casa', 'Rua Coronel Luciano', '245', NULL, 'Centro', NULL, true, '2026-04-16 09:47:36.886154+00', '18690-000') ON CONFLICT DO NOTHING;
+INSERT INTO public.saved_addresses VALUES ('c13d95a7-bbfd-4ad5-9315-0ad3f8838975', '5adc5911-cca3-4cd7-85e6-374917d07a39', 'Casa', 'Rua José Bonifácio', '530', NULL, 'Vila São João', NULL, true, '2026-04-16 09:47:38.85721+00', '18690-000') ON CONFLICT DO NOTHING;
+INSERT INTO public.saved_addresses VALUES ('322c41cd-e14f-4739-919c-6b337baf2fbf', '4f962953-1af8-427d-8681-d30405fb994b', 'Casa', 'Rua das Primaveras', '120', NULL, 'Jardim Pedra Branca', NULL, true, '2026-04-16 09:47:40.480207+00', '18690-000') ON CONFLICT DO NOTHING;
+INSERT INTO public.saved_addresses VALUES ('cea3c508-f74b-4f70-85bf-c8f23bff4e44', '73adfa0a-506f-43fd-8109-d3efa14507fe', 'Casa', 'Rua dos Ipês', '88', NULL, 'Vila Canaã', NULL, true, '2026-04-16 09:47:41.788658+00', '18690-000') ON CONFLICT DO NOTHING;
+INSERT INTO public.saved_addresses VALUES ('b159df30-2471-45a1-ba0b-3efe77c8a259', '876ffde2-cdc0-4578-8cc4-48bb0279de71', 'Casa', 'Rua Benedito Alves', '310', NULL, 'Jardim Marajoara', NULL, true, '2026-04-16 09:47:43.03452+00', '18690-000') ON CONFLICT DO NOTHING;
+INSERT INTO public.saved_addresses VALUES ('26dc8a02-1595-42cc-af94-133c5328ee39', '1d33caaf-2aaf-4ac4-a41e-b94508e0ed50', 'Trabalho', 'Avenida Dona Tita Paixão', '1237', 'Escritório Terras de São José', 'Terras de São José', NULL, true, '2026-04-18 17:02:00.078373+00', '18694250') ON CONFLICT DO NOTHING;
+
+
+-- Data for Name: store_balances; Type: TABLE DATA; Schema: public; Owner: -
+
+INSERT INTO public.store_balances VALUES ('7cee957e-e6fa-4d51-a3dc-48debdcec1d3', 'b243bdb4-45a9-46fc-8248-68dd6ba3e46c', 0, '2026-04-22 00:54:12.46309+00', 4, 0) ON CONFLICT DO NOTHING;
+INSERT INTO public.store_balances VALUES ('7486d7f1-69f5-49d2-8e37-cd9717612ec1', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 0, '2026-04-22 00:54:12.46309+00', 72, 0) ON CONFLICT DO NOTHING;
+INSERT INTO public.store_balances VALUES ('00f7e8f9-f514-4765-a7b3-9e0e3f5f325f', 'c936dfa8-ebc2-4fb1-a192-6f1f62029f00', 0, '2026-04-03 17:57:09.615147+00', 0, 0) ON CONFLICT DO NOTHING;
+INSERT INTO public.store_balances VALUES ('673ca66c-2b39-40e3-b057-e7e561f3fa86', 'fbff1580-ce82-4798-a96f-f149c69166b3', 0, '2026-04-08 20:33:46.602315+00', 0, 0) ON CONFLICT DO NOTHING;
+
+
+-- Data for Name: store_driver_earnings; Type: TABLE DATA; Schema: public; Owner: -
+
+INSERT INTO public.store_driver_earnings VALUES ('27d2a095-387c-477c-81e9-55f00f29c312', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '997ec784-c861-46b6-b90a-b4ba8e7f7ba4', 2, 2, 0, 'pendente', NULL, NULL, NULL, '2026-04-17 01:11:22.267271+00', NULL, NULL, 'fim_do_dia') ON CONFLICT DO NOTHING;
+INSERT INTO public.store_driver_earnings VALUES ('04284354-a2d3-4c25-9033-163d42f2b91e', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '3dc19319-94b3-41d6-8132-4f65a70d6b53', 2, 2, 0, 'pendente', NULL, NULL, NULL, '2026-04-17 01:11:22.267271+00', NULL, NULL, 'fim_do_dia') ON CONFLICT DO NOTHING;
+INSERT INTO public.store_driver_earnings VALUES ('7ecc2523-b2fb-4a62-9943-4d5c09c17dd8', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '1bd27051-0b78-4792-981d-79c387574e62', 2, 2, 0, 'pendente', NULL, NULL, NULL, '2026-04-17 01:11:22.267271+00', NULL, NULL, 'fim_do_dia') ON CONFLICT DO NOTHING;
+INSERT INTO public.store_driver_earnings VALUES ('51513b35-fafd-44dc-8b39-a3828b8deda7', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '20409cc3-25d3-4862-9b30-e5475cf07caa', 2, 2, 0, 'pendente', NULL, NULL, NULL, '2026-04-17 01:11:22.267271+00', NULL, NULL, 'fim_do_dia') ON CONFLICT DO NOTHING;
+INSERT INTO public.store_driver_earnings VALUES ('45726416-accd-426f-819c-3562e443b892', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '528e1b70-b19d-4732-90cf-e1fecdb8d61b', 2, 2, 0, 'pendente', NULL, NULL, NULL, '2026-04-17 01:11:22.267271+00', NULL, NULL, 'fim_do_dia') ON CONFLICT DO NOTHING;
+INSERT INTO public.store_driver_earnings VALUES ('28709f3a-fa3b-48a2-9d6e-7516386c7beb', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '91f9dd29-559a-4d6a-b2d2-89ac5b081579', 2, 2, 0, 'pendente', NULL, NULL, NULL, '2026-04-17 01:11:22.267271+00', NULL, NULL, 'fim_do_dia') ON CONFLICT DO NOTHING;
+INSERT INTO public.store_driver_earnings VALUES ('a72f5572-a6f1-46f6-af55-3a476347967c', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '4e21aec0-4de7-4f9c-8420-2cfa72bdab9c', 2, 2, 0, 'pendente', NULL, NULL, NULL, '2026-04-17 01:11:22.267271+00', NULL, NULL, 'fim_do_dia') ON CONFLICT DO NOTHING;
+INSERT INTO public.store_driver_earnings VALUES ('55f94ee4-fa86-4495-b54d-046eeb8cb14e', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '7858058a-fa4a-46bf-8063-26301bf8983c', 2, 2, 0, 'pendente', NULL, NULL, NULL, '2026-04-17 01:11:22.267271+00', NULL, NULL, 'fim_do_dia') ON CONFLICT DO NOTHING;
+INSERT INTO public.store_driver_earnings VALUES ('87c65f91-a457-4acd-ba2d-ccb21eb113a1', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '98b42c63-9f06-40c0-bf04-022e57b68a89', 6, 2, 4, 'pendente', NULL, NULL, NULL, '2026-04-17 15:51:59.525213+00', NULL, NULL, 'fim_do_dia') ON CONFLICT DO NOTHING;
+INSERT INTO public.store_driver_earnings VALUES ('e8ba7949-e501-4f28-8a14-b6282fae5340', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '0c35d6b6-53ad-4935-a635-d1d35a325b3f', 6, 2, 4, 'pendente', NULL, NULL, NULL, '2026-04-18 18:46:00.782407+00', NULL, NULL, 'fim_do_dia') ON CONFLICT DO NOTHING;
+INSERT INTO public.store_driver_earnings VALUES ('60f54527-5bbb-45f8-b8c2-196619cc9066', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '21a92392-6e8f-4c4e-8eec-6db08f4c18c0', 3, 2, 1, 'pendente', NULL, NULL, NULL, '2026-04-18 18:59:49.092743+00', NULL, NULL, 'fim_do_dia') ON CONFLICT DO NOTHING;
+INSERT INTO public.store_driver_earnings VALUES ('9cd68544-78b9-4784-b1af-917caf641e15', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '35c46862-108f-4391-9984-3b5d2ace5155', 12, 2, 10, 'pendente', NULL, NULL, NULL, '2026-04-22 00:39:58.047604+00', NULL, NULL, 'fim_do_dia') ON CONFLICT DO NOTHING;
+INSERT INTO public.store_driver_earnings VALUES ('1fec1633-fb75-4e07-a66c-765bdfcce5bd', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 'b2d39235-52f0-4b02-8722-52721d10cb10', 12, 2, 10, 'pendente', NULL, NULL, NULL, '2026-04-22 00:40:18.895232+00', NULL, NULL, 'fim_do_dia') ON CONFLICT DO NOTHING;
+INSERT INTO public.store_driver_earnings VALUES ('8194cab7-ec4e-4e98-a457-f3546d66530f', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '4acfa4fc-5806-4097-8ddc-36d8a65612ae', 12, 2, 10, 'pendente', NULL, NULL, NULL, '2026-04-22 00:41:13.756929+00', NULL, NULL, 'fim_do_dia') ON CONFLICT DO NOTHING;
+INSERT INTO public.store_driver_earnings VALUES ('db904fbd-36fe-4c46-bd6f-a0184ae3724f', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 'a3471d4d-52e0-46c0-b788-07e37f3bb478', 12, 2, 10, 'pendente', NULL, NULL, NULL, '2026-04-22 00:45:12.215693+00', NULL, NULL, 'fim_do_dia') ON CONFLICT DO NOTHING;
+
+
+-- Data for Name: store_drivers; Type: TABLE DATA; Schema: public; Owner: -
+
+INSERT INTO public.store_drivers VALUES ('f4a7dd25-21f1-42d8-ae40-1f9332578149', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '2026-04-11 15:41:43.043789+00', 'fim_do_dia') ON CONFLICT DO NOTHING;
+INSERT INTO public.store_drivers VALUES ('1a52701c-49f0-4726-9be1-d5557f45098e', '66129fdd-1f7e-42c8-b3c1-8d4c28b14106', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '2026-04-15 00:17:25.293514+00', 'fim_do_dia') ON CONFLICT DO NOTHING;
+INSERT INTO public.store_drivers VALUES ('daa0652f-a3c6-4851-a26a-c3e7ae94ef7a', '70c8f384-a15a-4dfd-bfbc-30ebb9b7f678', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '2026-04-21 18:45:55.587556+00', 'fim_do_dia') ON CONFLICT DO NOTHING;
+
+
+-- Data for Name: store_plans; Type: TABLE DATA; Schema: public; Owner: -
+
+INSERT INTO public.store_plans VALUES ('67e3e273-2f79-4bcc-9aeb-ac18a7410755', 'fbff1580-ce82-4798-a96f-f149c69166b3', 'fixed', 180, 0, true, '2026-04-09 17:30:14.013+00', '2026-05-09 17:30:14.013+00', NULL, '2026-04-09 17:30:13.871537+00', '2026-04-09 17:30:13.871537+00', NULL, 0, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.store_plans VALUES ('67d31de7-aee2-4d41-8589-a9bc5b21fa71', 'b243bdb4-45a9-46fc-8248-68dd6ba3e46c', 'fixed', 180, 0, true, '2026-04-09 17:36:23.773+00', '2026-05-09 17:36:23.773+00', NULL, '2026-04-09 17:36:23.523852+00', '2026-04-09 17:36:23.523852+00', NULL, 0, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.store_plans VALUES ('68b8d67d-33ac-4a97-a713-bd4df7150464', 'e577573d-4139-415d-b49d-d6a50e1d393b', 'hybrid', 100, 2.5, true, '2026-04-09 17:36:42.583+00', '2026-05-09 17:36:42.583+00', NULL, '2026-04-09 17:36:42.463691+00', '2026-04-09 17:36:42.463691+00', NULL, 0, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.store_plans VALUES ('5fc8d4da-85ca-45fc-83c3-60c27f895127', '7cd86219-bb0b-4635-801c-9ee8596c6215', 'fixed', 180, 0, true, '2026-04-09 23:06:11.195+00', '2026-05-09 23:06:11.195+00', NULL, '2026-04-09 23:06:10.986047+00', '2026-04-09 23:06:10.986047+00', NULL, 0, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.store_plans VALUES ('43271849-e7f6-497f-ab11-4e33fa2e24f7', 'e142e377-ec8d-4e63-b80f-cdb5c9c561a5', 'fixed', 180, 0, true, '2026-04-09 17:36:02.105+00', '2026-05-01 03:00:00+00', NULL, '2026-04-09 17:36:01.880987+00', '2026-04-15 02:46:35.422897+00', NULL, 0, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.store_plans VALUES ('e740fcaa-0394-47cf-83e8-d62f6c95cf5a', '050ed159-cfd4-4de5-9e9e-fcc54bf519f8', 'fixed', 180, 0, true, '2026-04-18 21:43:04.395233+00', '2026-05-01 03:00:00+00', NULL, '2026-04-18 21:43:04.395233+00', '2026-04-18 21:43:04.395233+00', NULL, 0, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.store_plans VALUES ('6097bbb3-4849-45e1-b40e-6af1d0051e1c', '477b9f42-d4c7-4cdf-a24b-fac59212f6d1', 'commission_only', 0, 6, true, '2026-04-09 16:51:40.875159+00', NULL, NULL, '2026-04-09 16:51:40.875159+00', '2026-04-24 17:31:45.771626+00', NULL, 0, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.store_plans VALUES ('453a91be-65c5-4e3c-9e74-2cc30ac5b305', '66129fdd-1f7e-42c8-b3c1-8d4c28b14106', 'commission_only', 0, 6, true, '2026-04-14 14:46:23.242486+00', NULL, NULL, '2026-04-14 14:46:23.242486+00', '2026-04-24 17:31:45.771626+00', NULL, 0, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.store_plans VALUES ('ff8c73f2-7b09-45a6-b942-357fe73cf7e4', '77d96f88-c440-4c13-b547-11a6ae2240a1', 'commission_only', 0, 6, true, '2026-04-23 15:46:43.297+00', NULL, NULL, '2026-04-23 15:46:43.579158+00', '2026-04-24 17:31:45.771626+00', NULL, 0, NULL, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO public.store_plans VALUES ('53090129-caaa-45d5-b57e-2a67b2dffe4d', '00f1814d-703d-4ac1-898d-d53188903aeb', 'commission_only', 0, 6, true, '2026-04-24 17:16:36.577244+00', NULL, NULL, '2026-04-24 17:16:36.577244+00', '2026-04-24 17:31:45.771626+00', NULL, 0, NULL, NULL) ON CONFLICT DO NOTHING;
+
+
+-- Data for Name: store_secrets; Type: TABLE DATA; Schema: public; Owner: -
+
+
+
+-- Data for Name: terms_acceptance; Type: TABLE DATA; Schema: public; Owner: -
+
+INSERT INTO public.terms_acceptance VALUES ('0d5c250d-a008-4873-a0ad-e36039301b04', '6becbb34-0fd2-4f6b-ba60-46bc058c15e6', '1.0', '1.0', NULL, 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Mobile Safari/537.36', '2026-04-09 13:45:14.865154+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.terms_acceptance VALUES ('8a7c4198-8e98-411b-8d39-d5e33af1a8d5', '137c9a05-75db-4077-acff-17d9ed508c29', '1.0', '1.0', NULL, 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Mobile Safari/537.36', '2026-04-09 18:52:58.159783+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.terms_acceptance VALUES ('ccc69e09-8c66-4a6d-8fb7-39cfc58cdae0', '901e44d6-fc0e-487b-af03-f6460a2d60fa', '1.0', '1.0', NULL, 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Mobile Safari/537.36', '2026-04-11 15:13:51.886295+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.terms_acceptance VALUES ('df19b588-a7ac-4542-acdc-e868bcd81e98', '5e53b885-05f3-4cfd-9a52-d5c1f4457f3b', '1.0', '1.0', NULL, 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Mobile/15E148 Safari/604.1', '2026-04-14 14:46:25.211725+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.terms_acceptance VALUES ('fd7b65c5-c1cd-4914-9ea0-16241db7e214', '37909bb0-03b4-46dc-917d-c17fadaca33c', '1.0', '1.0', NULL, 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Mobile Safari/537.36', '2026-04-16 21:16:21.67077+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.terms_acceptance VALUES ('238b04eb-57ac-4deb-9a8e-224bf06a0674', '1d33caaf-2aaf-4ac4-a41e-b94508e0ed50', '1.0', '1.0', NULL, 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.3 Mobile/15E148 Safari/604.1', '2026-04-18 16:59:24.681441+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.terms_acceptance VALUES ('05ffd6c5-2311-4b7d-902c-ecd3c8ed45fb', 'ed862e03-693d-4b7c-8342-400527be9c42', '1.0', '1.0', NULL, 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Mobile Safari/537.36', '2026-04-22 16:03:29.754369+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.terms_acceptance VALUES ('9e5f5903-318a-4300-b013-8ca1b17066b5', 'acefbf75-9e70-473e-b8ae-c6fb170c886e', '1.0', '1.0', NULL, 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Mobile Safari/537.36', '2026-04-24 17:16:37.891305+00') ON CONFLICT DO NOTHING;
+
+
+-- Data for Name: user_active_devices; Type: TABLE DATA; Schema: public; Owner: -
+
+INSERT INTO public.user_active_devices VALUES ('0c1d451c-bcc5-427b-b0f2-a6611fef8ad7', '1d33caaf-2aaf-4ac4-a41e-b94508e0ed50', '24c61a71-2c4a-4359-8086-ad5f77a0f0a3', '2026-04-18 17:00:10.019769+00', '2026-04-18 16:59:24.673655+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.user_active_devices VALUES ('65bd32de-a7b8-4802-a803-fc9d8827f5ab', '6becbb34-0fd2-4f6b-ba60-46bc058c15e6', 'a21b05aa-dfd1-4eb3-90fe-e55f4b552a23', '2026-04-25 17:59:17.040741+00', '2026-04-13 10:59:55.148488+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.user_active_devices VALUES ('d2b62cd3-33a1-48ba-b832-77a05d5fc476', '5e53b885-05f3-4cfd-9a52-d5c1f4457f3b', '3d7d816c-f5e7-44d8-b563-8e91fe9f8a8c', '2026-04-22 19:20:33.916295+00', '2026-04-14 14:46:25.211377+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.user_active_devices VALUES ('b2e3dfc9-6a46-4544-862c-f8da0764ea39', 'acefbf75-9e70-473e-b8ae-c6fb170c886e', 'bbff4c26-ae2e-4f19-8188-4f5b6b5ba89d', '2026-04-25 18:29:23.158147+00', '2026-04-24 17:16:37.794973+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.user_active_devices VALUES ('4fa4aaa4-36f6-4931-9a20-60538796536f', '927289c1-9e81-463a-b950-9b83d4d505e5', '2d7646ce-7be8-4593-a96c-08768aacc5e0', '2026-04-15 00:26:53.94909+00', '2026-04-14 23:59:08.540137+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.user_active_devices VALUES ('a3a2020b-a2f0-4ee0-b7fe-c21c1dda3ca8', '37909bb0-03b4-46dc-917d-c17fadaca33c', '5b011366-18ac-4f4e-bcd6-1f625df3b251', '2026-04-16 21:31:37.158797+00', '2026-04-16 21:16:21.664599+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.user_active_devices VALUES ('b92fd6a6-70b4-4422-aebd-e6ccacafe487', 'ed862e03-693d-4b7c-8342-400527be9c42', 'bbff4c26-ae2e-4f19-8188-4f5b6b5ba89d', '2026-04-23 15:04:18.452841+00', '2026-04-22 16:03:29.89604+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.user_active_devices VALUES ('9ce1684b-b0ce-4026-b3fe-f22a5c2bf4a2', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'a5ffff67-48e9-4412-a763-cea63812b8c0', '2026-04-25 17:08:00.756482+00', '2026-04-13 12:52:56.47428+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.user_active_devices VALUES ('074d2ee5-b6f0-4a71-a56e-cbbc29cb5227', 'ba9ce4c7-7133-45d5-8c2f-454914b7da38', 'a21b05aa-dfd1-4eb3-90fe-e55f4b552a23', '2026-04-21 23:46:40.572692+00', '2026-04-14 00:32:33.73079+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.user_active_devices VALUES ('c11592c9-9923-41ba-b98e-dc78c85a93fa', '137c9a05-75db-4077-acff-17d9ed508c29', 'bbff4c26-ae2e-4f19-8188-4f5b6b5ba89d', '2026-04-15 02:43:38.737822+00', '2026-04-15 00:15:09.041825+00') ON CONFLICT DO NOTHING;
+INSERT INTO public.user_active_devices VALUES ('6707e0ce-beec-4bfb-a1d9-de8518182de0', '901e44d6-fc0e-487b-af03-f6460a2d60fa', 'b48a1708-ca7a-40ef-84e8-25a1b2a5e5ea', '2026-04-25 17:18:40.242688+00', '2026-04-13 12:49:55.102755+00') ON CONFLICT DO NOTHING;
+
+
+-- Data for Name: user_roles; Type: TABLE DATA; Schema: public; Owner: -
+
+INSERT INTO public.user_roles VALUES ('4aeb16d3-0d73-4e49-bf6c-0a5a8b97081b', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 'admin') ON CONFLICT DO NOTHING;
+
+
+-- Data for Name: user_wallet; Type: TABLE DATA; Schema: public; Owner: -
+
+
+
+-- Data for Name: wallet_transactions; Type: TABLE DATA; Schema: public; Owner: -
+
+
+
+-- Data for Name: withdrawal_requests; Type: TABLE DATA; Schema: public; Owner: -
+
+INSERT INTO public.withdrawal_requests VALUES ('ac114293-a525-4290-9c3e-a0de4520dbcf', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 8, '17508039769', 'cpf', 'pago', '2026-03-31 16:08:21.103924+00', '2026-03-31 16:11:46.653+00', NULL, 'SK-1009') ON CONFLICT DO NOTHING;
+INSERT INTO public.withdrawal_requests VALUES ('6f653f5d-d2bb-46c8-91d7-b68465137f9b', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 16, '17508039769', 'cpf', 'pago', '2026-03-31 17:06:40.373857+00', '2026-03-31 17:06:53.978+00', NULL, 'SK-1010') ON CONFLICT DO NOTHING;
+INSERT INTO public.withdrawal_requests VALUES ('60786c05-2971-4a9b-b28d-2d870fb90857', '66a2f79c-9276-4fe8-8201-4a59b3960bed', 4, '17508039769', 'cpf', 'pago', '2026-03-31 17:17:04.674088+00', '2026-03-31 17:17:14.58+00', NULL, 'SK-1011') ON CONFLICT DO NOTHING;
+
+
+-- Name: withdrawal_code_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+
+SELECT pg_catalog.setval('public.withdrawal_code_seq', 1011, true);
+
+
+
+
+-- PostgreSQL database dump
+
+
+-- Dumped from database version 17.6
+-- Dumped by pg_dump version 17.9
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
