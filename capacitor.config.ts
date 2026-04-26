@@ -15,11 +15,18 @@ const config: CapacitorConfig = {
    // Isso impede que ele abra o navegador externo e garante que
    // funcione como um app nativo real.
    // ===============================================================
-   server: {
-     androidScheme: 'https',
+  server: {
+    androidScheme: 'https',
     hostname: 'localhost',
-    allowNavigation: ['lktzrqjvqoojlrhqnxuz.supabase.co']
-   },
+    // Permitir todas as navegações dentro do WebView para evitar que abra o navegador externo
+    allowNavigation: [
+      'localhost',
+      '*.supabase.co',
+      'qkjhguziuchqsbxzruea.supabase.co',
+      'lktzrqjvqoojlrhqnxuz.supabase.co',
+      '*'
+    ]
+  },
   plugins: {
     SplashScreen: {
       // Cobre o WebView enquanto o HTML/JS ainda está sendo baixado.
