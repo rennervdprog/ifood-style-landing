@@ -186,14 +186,7 @@ const App = () => {
                 <Route path="/perfil" element={<PerfilPage />} />
                 <Route path="/auth" element={<AuthPage />} />
                 <Route path="/portal-parceiro" element={<PartnerLogin />} />
-                <Route
-                  path="/admin"
-                  element={
-                    <RoleGuard allowedRoles={["lojista", "admin"]} redirectTo="/">
-                      <AdminDashboard />
-                    </RoleGuard>
-                  }
-                />
+                <Route path="/admin" element={<RoleGuard allowedRoles={["lojista", "admin"]} redirectTo="/" requireApproval><AdminDashboard /></RoleGuard>} />
                 <Route
                   path="/entregador"
                   element={
