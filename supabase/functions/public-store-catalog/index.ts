@@ -47,7 +47,10 @@ Deno.serve(async (req) => {
     }
 
     const { data, error } = await query;
-    if (error) throw error;
+    if (error) {
+      console.error("Supabase query error:", error);
+      throw error;
+    }
 
     let stores = data || [];
 
@@ -64,6 +67,7 @@ Deno.serve(async (req) => {
       status: 200,
     });
   } catch (error) {
+    console.error("Function error:", error);
     return new Response(JSON.stringify({ error: "Failed to load stores" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
