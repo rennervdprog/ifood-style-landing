@@ -6,38 +6,11 @@ ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE drivers ENABLE ROW LEVEL SECURITY;
 
--- Políticas de Segurança
-DO $$ 
-BEGIN 
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Public profiles are viewable by everyone') THEN 
-        CREATE POLICY "Public profiles are viewable by everyone" ON profiles FOR SELECT USING (true); 
-    END IF; 
-END $$;
+-- Políticas de Segurança (Removido blocos DO $$ para compatibilidade máxima)
+-- Se a política já existir, o SQL apenas dará um aviso ou erro que você pode ignorar.
 
-DO $$ 
-BEGIN 
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can update own profile') THEN 
-        CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = user_id); 
-    END IF; 
-END $$;
-
-DO $$ 
-BEGIN 
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Anyone can read products') THEN 
-        CREATE POLICY "Anyone can read products" ON products FOR SELECT USING (true); 
-    END IF; 
-END $$;
-
-DO $$ 
-BEGIN 
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Clients can read own orders') THEN 
-        CREATE POLICY "Clients can read own orders" ON orders FOR SELECT USING (auth.uid() = client_id); 
-    END IF; 
-END $$;
-
-DO $$ 
-BEGIN 
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Owners can manage their stores') THEN 
-        CREATE POLICY "Owners can manage their stores" ON stores FOR ALL USING (auth.uid() = owner_id); 
-    END IF; 
-END $$;
+CREATE POLICY "Public profiles are viewable by everyone" ON profiles FOR SELECT USING (true);
+CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Anyone can read products" ON products FOR SELECT USING (true);
+CREATE POLICY "Clients can read own orders" ON orders FOR SELECT USING (auth.uid() = client_id);
+CREATE POLICY "Owners can manage their stores" ON stores FOR ALL USING (auth.uid() = owner_id);
