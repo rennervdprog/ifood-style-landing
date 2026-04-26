@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.zapi-send-internal]
 verify_jwt = false
+
+[functions.test-asaas-webhook-temp]
+verify_jwt = false
