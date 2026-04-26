@@ -133,6 +133,7 @@ const AuthPage = () => {
             .maybeSingle();
           
           if (adminRole) {
+            console.log("[Auth] Admin detected, redirecting to /super-admin");
             navigate("/super-admin", { replace: true });
             return;
           }
