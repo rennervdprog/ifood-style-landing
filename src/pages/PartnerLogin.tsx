@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { isCapacitorNative } from "@/lib/capacitorNative";
+import { isCapacitorNative, hasPendingPushNavigation } from "@/lib/capacitorNative";
+import { persistCapacitorAppMode } from "@/lib/capacitorAppMode";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -18,10 +19,19 @@ const PartnerLogin = () => {
 
   useEffect(() => {
     if (authLoading || !user) return;
+    
+    // Se houver uma navegação pendente (push notification), não redirecionamos aqui,
+    // deixamos o PushNavigator (que é montado no App.tsx) cuidar disso.
+    if (hasPendingPushNavigation()) return;
+    
     redirectByRole(user.id);
   }, [user, authLoading]);
 
   const redirectByRole = async (userId: string) => {
+    // If we are on the partner login page, we should ensure the app mode is 'partner'
+    if (isCapacitorNative()) {
+      persistCapacitorAppMode("partner");
+    }
     setChecking(true);
     try {
       const { data: adminRole } = await supabase
