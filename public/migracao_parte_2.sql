@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS stores (id uuid PRIMARY KEY DEFAULT gen_random_uuid()
 
 CREATE TABLE IF NOT EXISTS menu_sections (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), store_id uuid REFERENCES stores(id) ON DELETE CASCADE, name text NOT NULL, description text, sort_order integer DEFAULT 0, created_at timestamptz DEFAULT now());
 
-CREATE TABLE IF NOT EXISTS products (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), store_id uuid REFERENCES stores(id) ON DELETE CASCADE, section_id uuid REFERENCES menu_sections(id) ON DELETE SET NULL, name text NOT NULL, description text, price numeric NOT NULL, image_url text, is_available boolean DEFAULT true, sort_order integer DEFAULT 0, created_at timestamptz DEFAULT now(), updated_at timestamptz DEFAULT now());
+CREATE TABLE IF NOT EXISTS products (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), store_id uuid REFERENCES stores(id) ON DELETE CASCADE, section_id uuid REFERENCES menu_sections(id) ON DELETE SET NULL, name text NOT NULL, description text, price numeric NOT NULL, image_url text, is_available boolean DEFAULT true, sort_order integer DEFAULT 0, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now());
 
 CREATE TABLE IF NOT EXISTS addon_groups (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), product_id uuid REFERENCES products(id) ON DELETE CASCADE, store_id uuid NOT NULL REFERENCES stores(id), name text NOT NULL, min_select integer NOT NULL DEFAULT 0, max_select integer NOT NULL DEFAULT 1, sort_order integer NOT NULL DEFAULT 0, price_replaces_base boolean NOT NULL DEFAULT false, created_at timestamptz NOT NULL DEFAULT now());
 
