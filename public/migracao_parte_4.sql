@@ -1,9 +1,52 @@
-CREATE TABLE IF NOT EXISTS store_balances (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), store_id uuid UNIQUE REFERENCES stores(id) ON DELETE CASCADE, balance numeric DEFAULT 0, pending_balance numeric DEFAULT 0, updated_at timestamptz DEFAULT now());
+CREATE TABLE IF NOT EXISTS store_balances (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(), 
+    store_id uuid UNIQUE REFERENCES stores(id) ON DELETE CASCADE, 
+    balance numeric DEFAULT 0, 
+    pending_balance numeric DEFAULT 0, 
+    updated_at timestamptz DEFAULT now()
+);
 
-CREATE TABLE IF NOT EXISTS store_driver_earnings (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), order_id uuid REFERENCES orders(id) ON DELETE CASCADE, store_id uuid REFERENCES stores(id) ON DELETE CASCADE, driver_user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE, amount numeric NOT NULL, status text DEFAULT 'pendente', created_at timestamptz DEFAULT now(), paid_at timestamptz, paid_by uuid REFERENCES auth.users(id));
+CREATE TABLE IF NOT EXISTS store_driver_earnings (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(), 
+    order_id uuid REFERENCES orders(id) ON DELETE CASCADE, 
+    store_id uuid REFERENCES stores(id) ON DELETE CASCADE, 
+    driver_user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE, 
+    amount numeric NOT NULL, 
+    status text DEFAULT 'pendente', 
+    created_at timestamptz DEFAULT now(), 
+    paid_at timestamptz, 
+    paid_by uuid REFERENCES auth.users(id)
+);
 
-CREATE TABLE IF NOT EXISTS store_payouts (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), store_id uuid REFERENCES stores(id) ON DELETE CASCADE, amount numeric NOT NULL, status text DEFAULT 'pending', pix_key text, pix_type text, processed_at timestamptz, created_at timestamptz DEFAULT now());
+CREATE TABLE IF NOT EXISTS store_payouts (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(), 
+    store_id uuid REFERENCES stores(id) ON DELETE CASCADE, 
+    amount numeric NOT NULL, 
+    status text DEFAULT 'pending', 
+    pix_key text, 
+    pix_type text, 
+    processed_at timestamptz, 
+    created_at timestamptz DEFAULT now()
+);
 
-CREATE TABLE IF NOT EXISTS wallet_transactions (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE, amount numeric NOT NULL, type wallet_transaction_type NOT NULL, description text, order_id uuid REFERENCES orders(id) ON DELETE SET NULL, created_at timestamptz DEFAULT now());
+CREATE TABLE IF NOT EXISTS wallet_transactions (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(), 
+    user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE, 
+    amount numeric NOT NULL, 
+    type wallet_transaction_type NOT NULL, 
+    description text, 
+    order_id uuid REFERENCES orders(id) ON DELETE SET NULL, 
+    created_at timestamptz DEFAULT now()
+);
 
-CREATE TABLE IF NOT EXISTS withdrawal_requests (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE, amount numeric NOT NULL, status text DEFAULT 'pending', pix_key text, pix_type text, processed_at timestamptz, created_at timestamptz DEFAULT now(), transaction_code text UNIQUE);
+CREATE TABLE IF NOT EXISTS withdrawal_requests (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(), 
+    user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE, 
+    amount numeric NOT NULL, 
+    status text DEFAULT 'pending', 
+    pix_key text, 
+    pix_type text, 
+    processed_at timestamptz, 
+    created_at timestamptz DEFAULT now(), 
+    transaction_code text UNIQUE
+);
