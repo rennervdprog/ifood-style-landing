@@ -8,19 +8,18 @@ const config: CapacitorConfig = {
     allowMixedContent: true,
     webContentsDebuggingEnabled: false,
   },
-  // ============================================================
-  // 🔧 MODO HÍBRIDO COM HOT-RELOAD DO LOVABLE
-  // ============================================================
-  // O app Android carrega direto do sandbox do Lovable.
-  // Vantagem: vê mudanças em tempo real sem rebuild do APK.
-  // Para PRODUÇÃO (Play Store): comente o bloco "server" abaixo
-  // e o app passa a usar o HTML/JS empacotado em "webDir: dist".
-  // ============================================================
-  server: {
-     url: 'https://itasuper.lovable.app',
-    cleartext: true,
-    androidScheme: 'https',
-  },
+   // ===============================================================
+   // 🚀 MODO NATIVO HÍBRIDO (OFFLINE-FIRST)
+   // ===============================================================
+   // O app agora carrega os arquivos locais da pasta 'dist'.
+   // Isso impede que ele abra o navegador externo e garante que
+   // funcione como um app nativo real.
+   // ===============================================================
+   server: {
+     androidScheme: 'https',
+     hostname: 'itasuper.lovable.app',
+     allowNavigation: ['itasuper.lovable.app', 'lktzrqjvqoojlrhqnxuz.supabase.co']
+   },
   plugins: {
     SplashScreen: {
       // Cobre o WebView enquanto o HTML/JS ainda está sendo baixado.
