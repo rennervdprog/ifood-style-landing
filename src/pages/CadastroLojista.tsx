@@ -222,6 +222,35 @@ const CadastroLojista = () => {
       if (signUpError) throw signUpError;
 
       if (signUpData?.user?.id) {
+        // Garante que existe sessão para chamadas autenticadas (RPC + updates)
+        // Caso o projeto exija confirmação de e-mail, o signIn falhará silenciosamente.
+        try {
+          await supabase.auth.signInWithPassword({ email: email.trim(), password });
+        } catch {
+          /* sessão pode já existir ou exigir confirmação por e-mail */
+        }
+
+        // 🔑 Cria perfil + loja + plano via RPC (não depende de trigger no auth.users)
+        let createdStoreId: string | null = null;
+        try {
+          const { data: storeIdRpc, error: rpcErr } = await (supabase as any).rpc("register_as_lojista", {
+            _full_name: storeName.trim(),
+            _document: document.trim(),
+            _store_name: storeName.trim(),
+            _store_category: storeCategory,
+            _avatar_url: null,
+            _whatsapp: whatsapp.trim(),
+            _selected_plan: selectedPlan,
+          });
+          if (rpcErr) {
+            console.warn("register_as_lojista RPC falhou:", rpcErr);
+          } else if (typeof storeIdRpc === "string") {
+            createdStoreId = storeIdRpc;
+          }
+        } catch (e) {
+          console.warn("register_as_lojista exception:", e);
+        }
+
         await supabase.from("terms_acceptance").insert({
           user_id: signUpData.user.id,
           terms_version: "1.0",
@@ -230,14 +259,28 @@ const CadastroLojista = () => {
         });
         await supabase.from("profiles").update({
           terms_accepted_at: new Date().toISOString(),
-        }).eq("user_id", signUpData.user.id);
+          birth_date: birthDate,
+          pix_type: pixType as any,
+          pix_key: pixKey.trim(),
+          cep: cep.replace(/\D/g, ""),
+          street: street,
+          address_number: addressNumber.trim(),
+          neighborhood: neighborhood,
+          city: normalizedCity,
+          phone: whatsapp.trim(),
+          whatsapp_number: whatsapp.trim(),
+        } as any).eq("user_id", signUpData.user.id);
 
-        // Ensure store address fields are set (trigger may not map all fields)
-        const { data: storeRow } = await supabase
-          .from("stores")
-          .select("id")
-          .eq("owner_id", signUpData.user.id)
-          .maybeSingle();
+        // Busca a loja (criada via RPC ou via trigger, dependendo do ambiente)
+        let storeRow: { id: string } | null = createdStoreId ? { id: createdStoreId } : null;
+        if (!storeRow) {
+          const { data } = await supabase
+            .from("stores")
+            .select("id")
+            .eq("owner_id", signUpData.user.id)
+            .maybeSingle();
+          storeRow = data as any;
+        }
         if (storeRow?.id) {
           await supabase.from("stores").update({
             address_street: street.trim(),
