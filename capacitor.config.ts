@@ -17,8 +17,8 @@ const config: CapacitorConfig = {
    // ===============================================================
    server: {
      androidScheme: 'https',
-     hostname: 'itasuper.lovable.app',
-     allowNavigation: ['itasuper.lovable.app', 'lktzrqjvqoojlrhqnxuz.supabase.co']
+    hostname: 'localhost',
+    allowNavigation: ['lktzrqjvqoojlrhqnxuz.supabase.co']
    },
   plugins: {
     SplashScreen: {
