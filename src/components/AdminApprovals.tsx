@@ -139,11 +139,15 @@ const AdminApprovals = () => {
       if (approve) {
         try {
           const { data: freshProfile } = await supabase.from("profiles").select("*").eq("user_id", profile.user_id).single();
-          await supabase.functions.invoke("sync-to-external", {
+          const { error: syncError } = await supabase.functions.invoke("sync-to-external", {
             body: { action: "sync_profile", data: { profile: { ...(freshProfile || profile), status: "approved" } } },
           });
+          if (syncError) throw syncError;
           toast.success("Parceiro aprovado e sincronizado!");
-        } catch { toast.success("Parceiro aprovado!"); }
+        } catch (syncError: any) {
+          console.error("Erro ao sincronizar parceiro aprovado:", syncError);
+          toast.warning("Parceiro aprovado, mas a sincronização externa falhou.");
+        }
 
         // Send automatic WhatsApp congratulations message
         const whatsappNumber = profile.whatsapp_number || profile.phone;
