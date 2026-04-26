@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Mail, Lock, Eye, EyeOff, KeyRound, FileText, ShoppingBag, CheckCircle2, Zap, Check, X, Phone, User } from "lucide-react";
 import { maskWhatsApp } from "@/lib/whatsapp";
-import { isPartnerCapacitorApp } from "@/lib/capacitorAppMode";
+import { isPartnerCapacitorApp, persistCapacitorAppMode } from "@/lib/capacitorAppMode";
+import { PARTNER_ROUTES } from "@/components/CapacitorRouteGuard";
 
 type AuthMode = "login" | "signup" | "forgot" | "reset";
 
@@ -159,7 +160,15 @@ const AuthPage = () => {
             .eq("role", "admin")
             .maybeSingle();
           
+          const { data: adminRole } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", loggedUser.id)
+            .eq("role", "admin")
+            .maybeSingle();
+          
           if (adminRole) {
+            if (isPartnerCapacitorApp()) persistCapacitorAppMode("partner");
             navigate("/super-admin", { replace: true });
             return;
           }
@@ -171,16 +180,24 @@ const AuthPage = () => {
             .maybeSingle();
           
           if (prof?.role === "lojista") {
+            if (isPartnerCapacitorApp()) persistCapacitorAppMode("partner");
             navigate("/admin", { replace: true });
             return;
           }
           
           if (prof?.role === "motoboy") {
+            if (isPartnerCapacitorApp()) persistCapacitorAppMode("partner");
             navigate("/entregador", { replace: true });
             return;
           }
         }
-        navigate("/cliente", { replace: true });
+        
+        // Fallback: If it's the partner app but user is just a client, we shouldn't send to /cliente
+        if (isPartnerCapacitorApp()) {
+          navigate("/portal-parceiro", { replace: true });
+        } else {
+          navigate("/cliente", { replace: true });
+        }
       } else if (mode === "signup") {
         const { data: signUpData, error } = await supabase.auth.signUp({
           email: email.trim(),
@@ -211,7 +228,12 @@ const AuthPage = () => {
           }).eq("user_id", signUpData.user.id);
         }
         toast.success("Conta criada com sucesso!");
-        navigate("/cliente", { replace: true });
+        if (isPartnerCapacitorApp()) {
+          // A client signing up in the partner app? Send back to partner portal
+          navigate("/portal-parceiro", { replace: true });
+        } else {
+          navigate("/cliente", { replace: true });
+        }
       } else if (mode === "reset") {
         const { error } = await supabase.auth.updateUser({ password });
         if (error) throw error;

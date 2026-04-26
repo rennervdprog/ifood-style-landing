@@ -12,7 +12,7 @@ import { getCapacitorAppMode, isPartnerCapacitorApp, persistCapacitorAppMode } f
  * 2) persisted app mode in storage
  * 3) legacy partner flag for backward compatibility
  */
-const PARTNER_ROUTES = [
+export const PARTNER_ROUTES = [
   "/portal-parceiro",
   "/admin",
   "/entregador",
@@ -49,6 +49,8 @@ const CapacitorRouteGuard = () => {
       ) || path === "/termos-de-uso" || path === "/politica-de-privacidade";
 
       if (!isAllowed) {
+        // Se estiver autenticado e for admin ou lojista, talvez esteja no lugar errado, 
+        // mas a regra geral para o app parceiro é ficar nas rotas de parceiro.
         navigate("/portal-parceiro", { replace: true });
       }
     } else {
