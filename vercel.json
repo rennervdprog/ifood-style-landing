@@ -1,16 +1,16 @@
 {
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
   "headers": [
     {
       "source": "/assets/(.*)",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
-   ],
-   "rewrites": [
-     { "source": "/(.*)", "destination": "/index.html" }
-   ]
+      ]
     },
     {
-      "source": "/(.*).(js|css|woff2|woff|ttf|otf|svg|png|jpg|jpeg|webp|ico|gif)",
+      "source": "/(.*)\\.(js|css|woff2|woff|ttf|otf|svg|png|jpg|jpeg|webp|ico|gif)",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
       ]
