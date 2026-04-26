@@ -42,11 +42,15 @@ const CapacitorRouteGuard = () => {
       persistCapacitorAppMode(looksLikePartnerRoute ? "partner" : "client");
     }
 
-    if (isPartnerCapacitorApp() && (path === "/" || path === "/cliente")) {
-      // PARCEIRO app: always force to portal-parceiro from root/client landing.
-      // PartnerLogin.tsx will then decide if it needs to show login or redirect to dashboard.
-      navigate("/portal-parceiro", { replace: true });
-    } else if (!isPartnerCapacitorApp()) {
+    if (isPartnerCapacitorApp()) {
+      // PARCEIRO app: block client-only routes (root and /cliente).
+      // We also check if we are already logged in to skip the login screen and go to panel.
+      const isClientRoute = path === "/" || path === "/cliente";
+      
+      if (isClientRoute) {
+        navigate("/portal-parceiro", { replace: true });
+      }
+    } else {
       // CLIENTE app: block partner-only routes, send to /cliente
       const isPartnerRoute = PARTNER_ROUTES.some(
         (route) => path === route || path.startsWith(route + "/")
