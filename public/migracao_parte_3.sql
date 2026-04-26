@@ -1,4 +1,4 @@
--- Parte 3: Pedidos (Atualizada com colunas reais)
+-- Parte 3: Pedidos
 CREATE TABLE IF NOT EXISTS neighborhood_fees (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     name text UNIQUE NOT NULL,
