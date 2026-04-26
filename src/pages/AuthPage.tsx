@@ -114,8 +114,34 @@ const AuthPage = () => {
     setLoading(true);
     try {
       if (mode === "login") {
-        const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+        const { data: signInData, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
         if (error) throw error;
+
+        // Detect accounts migrated from Lovable Cloud — force them to redefine their password
+        const meta = (signInData?.user?.user_metadata || {}) as Record<string, any>;
+        const { data: profMig } = await supabase
+          .from("profiles")
+          .select("migrated_from_cloud, migration_temp_password")
+          .eq("user_id", signInData!.user!.id)
+          .maybeSingle();
+        const isMigrated = !!meta.migrated_from_cloud || !!(profMig as any)?.migrated_from_cloud;
+        const tempPwStillActive = !!(profMig as any)?.migration_temp_password;
+
+        if (isMigrated && tempPwStillActive) {
+          // Sign back out and send recovery email automatically
+          await supabase.auth.signOut();
+          await supabase.auth.resetPasswordForEmail(email.trim(), {
+            redirectTo: `${window.location.origin}/auth?mode=reset`,
+          });
+          toast.warning(
+            "Sua conta foi migrada. Enviamos um e-mail para você redefinir sua senha.",
+            { duration: 8000 }
+          );
+          setMode("forgot");
+          setResetSent(true);
+          return;
+        }
+
         if (rememberMe) {
           localStorage.setItem(REMEMBER_KEY, String(Date.now() + TWO_MONTHS_MS));
         } else {
@@ -189,6 +215,14 @@ const AuthPage = () => {
       } else if (mode === "reset") {
         const { error } = await supabase.auth.updateUser({ password });
         if (error) throw error;
+        // Clear the migration temp-password flag so we don't ask again next time
+        const { data: { user: u } } = await supabase.auth.getUser();
+        if (u?.id) {
+          await supabase
+            .from("profiles")
+            .update({ migration_temp_password: false } as any)
+            .eq("user_id", u.id);
+        }
         toast.success("Senha atualizada com sucesso!");
         navigate("/", { replace: true });
       }
