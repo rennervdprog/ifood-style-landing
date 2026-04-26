@@ -126,15 +126,14 @@ const AuthPage = () => {
         const { data: { user: loggedUser } } = await supabase.auth.getUser();
         if (loggedUser) {
           console.log("[Auth] Checking roles for user:", loggedUser.id);
-          const { data: roleRows } = await supabase
+          const { data: adminRole } = await supabase
             .from("user_roles")
             .select("role")
-            .eq("user_id", loggedUser.id);
+            .eq("user_id", loggedUser.id)
+            .eq("role", "admin")
+            .maybeSingle();
           
-          const isAdmin = roleRows?.some(r => r.role === "admin");
-          
-          if (isAdmin) {
-            console.log("[Auth] Admin confirmed, redirecting to /super-admin");
+          if (adminRole) {
             navigate("/super-admin", { replace: true });
             return;
           }
