@@ -186,6 +186,16 @@ const PartnerLogin = () => {
                   </button>
                 </div>
 
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => navigate("/auth?mode=forgot")}
+                    className="text-xs text-primary font-medium hover:underline"
+                  >
+                    Esqueceu a senha?
+                  </button>
+                </div>
+
                 <button
                   type="submit"
                   disabled={loading}
