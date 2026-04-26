@@ -76,8 +76,9 @@ jobs:
             appName: 'ItaSuper',
             webDir: 'dist',
             server: {
-              url: 'https://itasuper.com.br/cliente?capApp=client',
-              cleartext: false
+              androidScheme: 'https',
+              hostname: 'localhost',
+              allowNavigation: ['*']
             },
             plugins: {
               SplashScreen: {
@@ -218,8 +219,9 @@ jobs:
             appName: 'ItaSuper Parceiro',
             webDir: 'dist',
             server: {
-              url: 'https://itasuper.com.br/portal-parceiro?capApp=partner',
-              cleartext: false
+              androidScheme: 'https',
+              hostname: 'localhost',
+              allowNavigation: ['*']
             },
             plugins: {
               SplashScreen: {
@@ -375,8 +377,9 @@ jobs:
             appName: '${STORE_APP_NAME}',
             webDir: 'dist',
             server: {
-              url: 'https://itasuper.com.br/${STORE_SLUG}?storeApp=true',
-              cleartext: false
+              androidScheme: 'https',
+              hostname: 'localhost',
+              allowNavigation: ['*']
             },
             plugins: {
               SplashScreen: {
