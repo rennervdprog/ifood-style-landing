@@ -4,17 +4,21 @@ const config: CapacitorConfig = {
   appId: 'app.itasuper.cliente',
   appName: 'ItaSuper',
   webDir: 'dist',
-  // Carrega o app a partir do domínio publicado.
-  // androidScheme: 'https' permite cookies persistentes e cache de service worker
-  // entre sessões — fundamental para o WebView não baixar tudo de novo no
-  // segundo cold-start, reduzindo a "tela preta inicial".
   android: {
-    allowMixedContent: false,
+    allowMixedContent: true,
     webContentsDebuggingEnabled: false,
   },
+  // ============================================================
+  // 🔧 MODO HÍBRIDO COM HOT-RELOAD DO LOVABLE
+  // ============================================================
+  // O app Android carrega direto do sandbox do Lovable.
+  // Vantagem: vê mudanças em tempo real sem rebuild do APK.
+  // Para PRODUÇÃO (Play Store): comente o bloco "server" abaixo
+  // e o app passa a usar o HTML/JS empacotado em "webDir: dist".
+  // ============================================================
   server: {
-    url: 'https://itasuper.com.br',
-    cleartext: false,
+    url: 'https://e8d28ade-d633-4d74-be21-61c8dbe24765.lovableproject.com?forceHideBadge=true',
+    cleartext: true,
     androidScheme: 'https',
   },
   plugins: {
