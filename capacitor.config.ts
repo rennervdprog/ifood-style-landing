@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.itasuper.cliente',
+  appId: 'app.lovable.e8d28aded6334d74be2161c8dbe24765',
   appName: 'ItaSuper',
   webDir: 'dist',
   android: {
