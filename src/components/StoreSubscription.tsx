@@ -73,7 +73,7 @@ const planOptions: { type: StorePlanType; label: string; fee: number; rate: numb
     type: "commission_only",
     label: "Comissão Pura",
     fee: 0,
-    rate: 5,
+    rate: 6,
     tagline: "Para começar sem investimento",
     bullets: ["Zero mensalidade", "6% por pedido", "Todos recursos", "Suporte completo"],
   },
