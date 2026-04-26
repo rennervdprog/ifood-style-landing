@@ -66,12 +66,8 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Function error:", error);
-    return new Response(JSON.stringify({ 
-      error: "Failed to load stores",
-      details: error.message || String(error)
-    }), {
     return new Response(JSON.stringify({ error: "Failed to load stores" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
