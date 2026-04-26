@@ -42,18 +42,16 @@ const CapacitorRouteGuard = () => {
       persistCapacitorAppMode(looksLikePartnerRoute ? "partner" : "client");
     }
 
-    if (isPartnerCapacitorApp()) {
-      // PARCEIRO app: only allow partner routes
-      const isAllowed = PARTNER_ROUTES.some(
-        (route) => path === route || path.startsWith(route + "/")
-      ) || path === "/termos-de-uso" || path === "/politica-de-privacidade";
-
-      if (!isAllowed) {
-        // Se estiver autenticado e for admin ou lojista, talvez esteja no lugar errado, 
-        // mas a regra geral para o app parceiro é ficar nas rotas de parceiro.
-        navigate("/portal-parceiro", { replace: true });
-      }
-    } else {
+   if (isPartnerCapacitorApp()) {
+     // PARCEIRO app: block client-only routes (root and /cliente), send to /portal-parceiro
+     const isClientRoute = path === "/" || path === "/cliente";
+     
+     // We allow everything else for now to let RoleGuard handle specific access,
+     // but if they hit client landing, send to partner login/dashboard
+     if (isClientRoute) {
+       navigate("/portal-parceiro", { replace: true });
+     }
+   } else {
       // CLIENTE app: block partner-only routes, send to /cliente
       const isPartnerRoute = PARTNER_ROUTES.some(
         (route) => path === route || path.startsWith(route + "/")
