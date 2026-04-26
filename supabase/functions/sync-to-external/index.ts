@@ -44,11 +44,25 @@ serve(async (req) => {
     const internalServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const internalClient = createClient(internalUrl, internalServiceKey);
 
-    const externalUrl = Deno.env.get("EXTERNAL_SUPABASE_URL");
-    const externalKey = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY");
+    const externalProjectRef = Deno.env.get("EXTERNAL_SUPABASE_PROJECT_REF");
+    const externalUrl = Deno.env.get("EXTERNAL_SUPABASE_URL") ||
+      (externalProjectRef ? `https://${externalProjectRef}.supabase.co` : undefined);
+    const externalKey = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") ||
+      Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY");
 
     if (!externalUrl || !externalKey) {
-      return jsonRes({ error: "External Supabase credentials not configured" }, 500);
+      console.error("sync-to-external missing external configuration", {
+        hasExternalUrl: Boolean(externalUrl),
+        hasExternalProjectRef: Boolean(externalProjectRef),
+        hasExternalServiceKey: Boolean(externalKey),
+      });
+      return jsonRes({
+        error: "External Supabase credentials not configured",
+        missing: {
+          url: !externalUrl,
+          service_key: !externalKey,
+        },
+      }, 500);
     }
 
     const externalClient = createClient(externalUrl, externalKey);
