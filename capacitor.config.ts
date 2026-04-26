@@ -17,7 +17,7 @@ const config: CapacitorConfig = {
   // e o app passa a usar o HTML/JS empacotado em "webDir: dist".
   // ============================================================
   server: {
-    url: 'https://e8d28ade-d633-4d74-be21-61c8dbe24765.lovableproject.com?forceHideBadge=true',
+     url: 'https://itasuper.lovable.app',
     cleartext: true,
     androidScheme: 'https',
   },
