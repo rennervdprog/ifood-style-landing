@@ -126,7 +126,7 @@ const RoleGuard = ({ allowedRoles, redirectTo, children, requireApproval = false
     };
 
     checkRole();
-  }, [user, authLoading, allowedRoles, redirectTo, navigate, requireApproval]);
+  }, [user?.id, authLoading, allowedRoles, redirectTo, navigate, requireApproval]);
 
   if (authLoading || checking) {
     return (

@@ -42,16 +42,15 @@ const CapacitorRouteGuard = () => {
       persistCapacitorAppMode(looksLikePartnerRoute ? "partner" : "client");
     }
 
-   if (isPartnerCapacitorApp()) {
-     // PARCEIRO app: block client-only routes (root and /cliente), send to /portal-parceiro
-     const isClientRoute = path === "/" || path === "/cliente";
-     
-     // We allow everything else for now to let RoleGuard handle specific access,
-     // but if they hit client landing, send to partner login/dashboard
-     if (isClientRoute) {
-       navigate("/portal-parceiro", { replace: true });
-     }
-   } else {
+    if (isPartnerCapacitorApp()) {
+      // PARCEIRO app: block client-only routes (root and /cliente).
+      // We also check if we are already logged in to skip the login screen and go to panel.
+      const isClientRoute = path === "/" || path === "/cliente";
+      
+      if (isClientRoute) {
+        navigate("/portal-parceiro", { replace: true });
+      }
+    } else {
       // CLIENTE app: block partner-only routes, send to /cliente
       const isPartnerRoute = PARTNER_ROUTES.some(
         (route) => path === route || path.startsWith(route + "/")
