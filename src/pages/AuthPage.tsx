@@ -53,8 +53,13 @@ const AuthPage = () => {
     }
   }, []);
 
-  // We keep this but ensure it only triggers if we aren't already on a flow 
-  // that is allowed in the partner app (like login/reset).
+  useEffect(() => {
+    // If we're in the partner app, but trying to access the client auth page, 
+    // redirect to the partner login page.
+    if (isPartnerCapacitorApp() && mode !== "reset") {
+      navigate("/portal-parceiro", { replace: true });
+    }
+  }, [mode, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
