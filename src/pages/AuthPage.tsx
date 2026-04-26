@@ -160,13 +160,6 @@ const AuthPage = () => {
             .eq("role", "admin")
             .maybeSingle();
           
-          const { data: adminRole } = await supabase
-            .from("user_roles")
-            .select("role")
-            .eq("user_id", loggedUser.id)
-            .eq("role", "admin")
-            .maybeSingle();
-          
           if (adminRole) {
             if (isPartnerCapacitorApp()) persistCapacitorAppMode("partner");
             navigate("/super-admin", { replace: true });
