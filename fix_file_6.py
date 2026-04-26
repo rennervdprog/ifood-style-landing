@@ -1,4 +1,6 @@
--- Habilitar RLS em tabelas principais
+import os
+
+content = """-- Habilitar RLS em tabelas principais
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE stores ENABLE ROW LEVEL SECURITY;
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
@@ -41,3 +43,7 @@ BEGIN
         CREATE POLICY "Owners can manage their stores" ON stores FOR ALL USING (auth.uid() = owner_id); 
     END IF; 
 END $$;
+"""
+
+with open('public/migracao_parte_6.sql', 'w', encoding='utf-8') as f:
+    f.write(content)
