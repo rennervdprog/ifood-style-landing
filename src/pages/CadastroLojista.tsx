@@ -223,17 +223,24 @@ const CadastroLojista = () => {
 
       if (signUpData?.user?.id) {
         // Garante que existe sessão para chamadas autenticadas (RPC + updates)
-        // Caso o projeto exija confirmação de e-mail, o signIn falhará silenciosamente.
-        try {
-          await supabase.auth.signInWithPassword({ email: email.trim(), password });
-        } catch {
-          /* sessão pode já existir ou exigir confirmação por e-mail */
+        // Auto-confirm está ATIVO no Supabase externo, então sign-in deve funcionar.
+        // Se falhar, abortamos: sem sessão, auth.uid() é NULL e a RPC quebra.
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
+        if (signInError) {
+          console.error("Falha ao iniciar sessão pós-signup:", signInError);
+          throw new Error(
+            "Cadastro criado, mas não foi possível iniciar a sessão. Faça login manualmente."
+          );
         }
 
         // 🔑 Cria perfil + loja + plano via RPC (não depende de trigger no auth.users)
         let createdStoreId: string | null = null;
-        try {
-          const { data: storeIdRpc, error: rpcErr } = await (supabase as any).rpc("register_as_lojista", {
+        const { data: storeIdRpc, error: rpcErr } = await (supabase as any).rpc(
+          "register_as_lojista",
+          {
             _full_name: storeName.trim(),
             _document: document.trim(),
             _store_name: storeName.trim(),
@@ -241,14 +248,17 @@ const CadastroLojista = () => {
             _avatar_url: null,
             _whatsapp: whatsapp.trim(),
             _selected_plan: selectedPlan,
-          });
-          if (rpcErr) {
-            console.warn("register_as_lojista RPC falhou:", rpcErr);
-          } else if (typeof storeIdRpc === "string") {
-            createdStoreId = storeIdRpc;
           }
-        } catch (e) {
-          console.warn("register_as_lojista exception:", e);
+        );
+        if (rpcErr) {
+          console.error("register_as_lojista RPC falhou:", rpcErr);
+          throw new Error(
+            rpcErr.message ||
+              "Não foi possível vincular sua loja ao cadastro. Tente novamente ou contate o suporte."
+          );
+        }
+        if (typeof storeIdRpc === "string") {
+          createdStoreId = storeIdRpc;
         }
 
         await supabase.from("terms_acceptance").insert({
