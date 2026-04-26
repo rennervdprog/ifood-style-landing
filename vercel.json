@@ -7,6 +7,14 @@
       ],
       "destination": "https://www.itasuper.com.br/:path*",
       "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        { "type": "host", "value": "(?<vhost>.*\\.vercel\\.app)" }
+      ],
+      "destination": "https://www.itasuper.com.br/:path*",
+      "permanent": false
     }
   ],
   "rewrites": [
