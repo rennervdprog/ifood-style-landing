@@ -1,3 +1,4 @@
+-- Parte 3: Pedidos (Atualizada com colunas reais)
 CREATE TABLE IF NOT EXISTS neighborhood_fees (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     name text UNIQUE NOT NULL,
@@ -11,22 +12,30 @@ CREATE TABLE IF NOT EXISTS orders (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     client_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
     store_id uuid REFERENCES stores(id),
-    driver_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
     status order_status DEFAULT 'pendente',
-    total_amount numeric NOT NULL,
+    subtotal numeric NOT NULL DEFAULT 0,
     delivery_fee numeric DEFAULT 0,
-    delivery_address text NOT NULL,
+    total_price numeric NOT NULL DEFAULT 0,
     payment_method text NOT NULL,
+    neighborhood text,
+    address_details text,
     created_at timestamptz DEFAULT now(),
-    updated_at timestamptz DEFAULT now(),
-    neighborhood_fee_id uuid REFERENCES neighborhood_fees(id),
-    change_amount numeric,
-    observation text,
-    cancellation_reason text,
+    driver_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+    app_fee numeric DEFAULT 0,
+    delivery_pin text,
+    confirmed_at timestamptz,
+    needs_change boolean DEFAULT false,
+    change_for numeric,
+    return_to_store_confirmed boolean DEFAULT false,
     collection_code text,
-    delivery_code text,
-    client_delivery_code text,
-    cancellation_role text
+    collection_validated boolean DEFAULT false,
+    visible_to_client boolean DEFAULT true,
+    settlement_code text,
+    scheduled_for timestamptz,
+    delivery_confirmed_by_client boolean DEFAULT false,
+    client_lat double precision,
+    client_lng double precision,
+    assigned_driver_id uuid REFERENCES auth.users(id)
 );
 
 CREATE TABLE IF NOT EXISTS order_items (
@@ -40,20 +49,10 @@ CREATE TABLE IF NOT EXISTS order_items (
     addon_details jsonb
 );
 
-CREATE TABLE IF NOT EXISTS order_ratings (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    order_id uuid UNIQUE REFERENCES orders(id) ON DELETE CASCADE,
-    store_id uuid REFERENCES stores(id) ON DELETE CASCADE,
-    client_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
-    rating integer NOT NULL CHECK (rating >= 1 AND rating <= 5),
-    comment text,
-    created_at timestamptz DEFAULT now()
-);
-
-CREATE TABLE IF NOT EXISTS order_status_history (
+CREATE TABLE IF NOT EXISTS order_messages (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     order_id uuid REFERENCES orders(id) ON DELETE CASCADE,
-    status order_status NOT NULL,
-    created_at timestamptz DEFAULT now(),
-    created_by uuid REFERENCES auth.users(id)
+    sender_id uuid REFERENCES auth.users(id),
+    content text NOT NULL,
+    created_at timestamptz DEFAULT now()
 );
