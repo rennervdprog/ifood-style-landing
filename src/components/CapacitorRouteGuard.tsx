@@ -133,7 +133,7 @@ const CapacitorRouteGuard = () => {
         navigate("/cliente", { replace: true });
       }
     }
-  }, [location.pathname, navigate, user?.id, authLoading]);
+  }, [location.pathname, navigate, user?.id, authLoading, appMode]);
 
   return null;
 };
