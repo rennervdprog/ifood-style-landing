@@ -810,7 +810,7 @@ async function handleCommissionCharge(
   // Fetch store owner's profile for real CPF
   const serviceClient = createClient(
     Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    getServiceRoleKey()!,
   );
 
   const { data: ownerProfile } = await serviceClient
@@ -913,7 +913,7 @@ async function handleStorePayout(
 ): Promise<Response> {
   const serviceClient = createClient(
     Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    getServiceRoleKey()!,
   );
 
   // Check admin via DB function
@@ -1351,7 +1351,7 @@ async function handleDriverPayout(
 ): Promise<Response> {
   const serviceClient = createClient(
     Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    getServiceRoleKey()!,
   );
 
   // Only admin can do driver payouts
@@ -1502,7 +1502,7 @@ async function handleCancelPayment(
   // Look for pending financial transactions with this order_id as reference
   const serviceClient = createClient(
     Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    getServiceRoleKey()!,
   );
 
   // Try to find any payment record linked to this order
