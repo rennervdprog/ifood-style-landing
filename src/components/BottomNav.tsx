@@ -85,7 +85,9 @@ const BottomNav = memo(() => {
     if (path === "/" && location.pathname === "/") return true;
     if (path === "/cliente" && location.pathname === "/cliente") return true;
     if (path === "/pedidos" && location.pathname === "/pedidos") return true;
-    if (path === "/perfil" && location.pathname === "/perfil") return true;
+     if (path === "/perfil" && location.pathname === "/perfil") return true;
+     if (path === "/admin" && location.pathname === "/admin") return true;
+     if (path === "/entregador" && location.pathname === "/entregador") return true;
     if (path.startsWith("/loja/") && location.pathname === path) return true;
     if (currentStoreSlug && location.pathname === `/${currentStoreSlug}`) return path === `/${currentStoreSlug}`;
     if (location.pathname.startsWith("/loja/") && path === `/${currentStoreSlug}`) return true;
