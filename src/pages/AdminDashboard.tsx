@@ -1437,30 +1437,55 @@ const AdminDashboard = () => {
 
               {/* ── KPI Cards ── */}
                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-                 {isOwnDelivery && (
-                   <div className="md:col-span-2 lg:col-span-4 bg-primary/5 border border-primary/20 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                     <div className="flex items-center gap-3">
-                       <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                         <Truck className="h-5 w-5 text-primary" />
-                       </div>
-                       <div>
-                         <p className="text-sm font-bold text-foreground">Taxa de Entrega: <span className="text-primary">{store.delivery_fee_type === "fixed" ? "Taxa Fixa" : "Por KM"}</span></p>
-                         <p className="text-[10px] text-muted-foreground mt-0.5">
-                           {store.delivery_fee_type === "fixed" 
-                             ? `Cobrança de ${formatBRL(store.own_delivery_fee || 0)} para todos os pedidos.` 
-                             : `Base: ${formatBRL(store.delivery_fee_base || 0)} até ${store.delivery_base_km}km + ${formatBRL(store.delivery_fee_per_km || 0)}/km extra.`}
-                         </p>
-                       </div>
-                     </div>
-                     <button 
-                       onClick={() => setDashboardTab("settings")}
-                       className="w-full sm:w-auto px-4 py-2 bg-primary text-primary-foreground text-xs font-bold rounded-xl hover:bg-primary/90 transition-all active:scale-95 shadow-sm flex items-center justify-center gap-2"
-                     >
-                       <Settings className="h-3.5 w-3.5" />
-                       Alterar Taxa
-                     </button>
-                   </div>
-                 )}
+                  {isOwnDelivery && (
+                    <div className="md:col-span-2 lg:col-span-4 grid sm:grid-cols-2 gap-3">
+                      <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 flex flex-col justify-between gap-4">
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                            <Truck className="h-5 w-5 text-primary" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-black text-foreground">Configuração de Entrega</p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5 leading-relaxed">
+                              {store.delivery_fee_type === "fixed" 
+                                ? `Taxa Fixa: ${formatBRL(store.own_delivery_fee || 0)}` 
+                                : `Por KM: ${formatBRL(store.delivery_fee_base || 0)} base + ${formatBRL(store.delivery_fee_per_km || 0)}/km extra`}
+                            </p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => setDashboardTab("settings")}
+                          className="w-full px-4 py-2.5 bg-primary text-primary-foreground text-xs font-bold rounded-xl hover:bg-primary/90 transition-all active:scale-95 shadow-sm flex items-center justify-center gap-2"
+                        >
+                          <Settings className="h-3.5 w-3.5" />
+                          Editar Taxas
+                        </button>
+                      </div>
+
+                      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between gap-4">
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center shrink-0">
+                            <Bike className="h-5 w-5 text-primary" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-black text-white">Sistema de Motoboy</p>
+                            <p className="text-[10px] text-slate-400 mt-0.5 leading-relaxed">
+                              {(onlineDrivers?.length || 0) > 0 
+                                ? `${onlineDrivers?.length} motoboy(s) online agora` 
+                                : "Nenhum motoboy online no momento"}
+                            </p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => setDashboardTab("drivers")}
+                          className="w-full px-4 py-2.5 bg-slate-800 text-white text-xs font-bold rounded-xl hover:bg-slate-700 transition-all active:scale-95 border border-white/5 flex items-center justify-center gap-2"
+                        >
+                          <Users className="h-3.5 w-3.5 text-primary" />
+                          Gerenciar Equipe
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 <GlanceCard
                   icon={ShoppingBag} label="Pedidos Pendentes" value={pendingCount}
                   subValue={preparingCount > 0 ? `+ ${preparingCount} em preparo` : "Sem pedidos novos"}
