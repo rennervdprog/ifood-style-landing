@@ -42,7 +42,8 @@ const BottomNav = memo(() => {
     staleTime: 1000 * 60 * 5,
   });
 
-  const isLojista = profile?.role === "lojista";
+   const isLojista = profile?.role === "lojista";
+   const isMotoboy = profile?.role === "motoboy" || profile?.role === "entregador";
   const isStoreContext = !!currentStoreSlug;
 
   const tabs = useMemo(() => {
