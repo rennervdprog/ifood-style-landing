@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { isCapacitorNative } from "@/lib/capacitorNative";
 import { detectAndPersistNativeAppMode, getCapacitorAppMode, persistCapacitorAppMode, type CapacitorAppMode } from "@/lib/capacitorAppMode";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { resolvePartnerDashboard } from "@/lib/partnerDashboard";
 
 /**
  * On Capacitor Android PARCEIRO app, restrict navigation to partner-only routes.
@@ -91,25 +91,7 @@ const CapacitorRouteGuard = () => {
         if (!authLoading && user) {
           (async () => {
             try {
-              const { data: adminRole } = await supabase
-                .from("user_roles")
-                .select("role")
-                .eq("user_id", user.id)
-                .eq("role", "admin")
-                .maybeSingle();
-              if (adminRole) {
-                navigate("/super-admin", { replace: true });
-                return;
-              }
-              const { data: profile } = await supabase
-                .from("profiles")
-                .select("role")
-                .eq("user_id", user.id)
-                .maybeSingle();
-              const role = (profile as any)?.role as string | undefined;
-              if (role === "lojista") navigate("/admin", { replace: true });
-              else if (role === "motoboy") navigate("/entregador", { replace: true });
-              else navigate("/portal-parceiro", { replace: true });
+              navigate(await resolvePartnerDashboard(user.id), { replace: true });
             } catch {
               navigate("/portal-parceiro", { replace: true });
             }
