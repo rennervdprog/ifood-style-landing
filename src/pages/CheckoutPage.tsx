@@ -156,10 +156,7 @@ const CheckoutPage = () => {
   const effectivePlatformSplit = isOwnDelivery && storePlan.isFixedPlan
     ? (storePlan.platformDeliverySplit > 0 ? storePlan.platformDeliverySplit : platformSplitFallback)
     : 0;
-  const ownDeliveryFeeWithSplit = isOwnDelivery
-    ? storeOwnFee + effectivePlatformSplit
-    : storeOwnFee;
-  const activeDeliveryFee = isPickup ? 0 : (isOwnDelivery ? ownDeliveryFeeWithSplit : (calculatedDeliveryFee !== null ? calculatedDeliveryFee : config.city_fee));
+   const activeDeliveryFee = isPickup ? 0 : (calculatedDeliveryFee !== null ? calculatedDeliveryFee : (isOwnDelivery ? storeOwnFee + effectivePlatformSplit : config.city_fee));
   const effectiveDeliveryFee = isPickup ? 0 : (couponType === "free_shipping" ? 0 : activeDeliveryFee);
   const walletDiscount = useWallet ? Math.min(walletBalance, Math.max(0, addMoney(subtotal, effectiveDeliveryFee, -couponDiscount, -loyaltyDiscount))) : 0;
   const finalTotal = Math.max(0, addMoney(subtotal, effectiveDeliveryFee, -couponDiscount, -loyaltyDiscount, -walletDiscount));
