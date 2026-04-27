@@ -308,59 +308,58 @@ const PedidosPage = () => {
   // Realtime subscription for CLIENT orders
   useEffect(() => {
     if (!user) return;
-    const channel = supabase
-      .channel("orders-realtime")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "orders",
-          filter: `client_id=eq.${user.id}`,
-        },
-        (payload) => {
-          const updated = payload.new as any;
-          const previous = payload.old as any;
+    const channel = supabase.channel("orders-realtime");
 
-          if (payload.eventType === "INSERT") {
-            queryClient.invalidateQueries({ queryKey: ["orders", user.id] });
-          } else if (payload.eventType === "UPDATE") {
-            queryClient.setQueryData(["orders", user.id, storeFilter], (old: any[] | undefined) => {
-              if (!old) return old;
-              const exists = old.findIndex((o: any) => o.id === updated.id);
-              if (exists >= 0) {
-                const copy = [...old];
-                copy[exists] = { ...copy[exists], ...updated };
-                return copy;
-              }
-              return old;
-            });
-          }
+    channel.on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "orders",
+        filter: `client_id=eq.${user.id}`,
+      },
+      (payload) => {
+        const updated = payload.new as any;
+        const previous = payload.old as any;
 
-          if (payload.eventType !== "UPDATE") return;
-
-          const newStatus = updated?.status;
-          const oldStatus = previous?.status;
-
-          if (!newStatus || newStatus === oldStatus) return;
-
-          if (newStatus === "pendente" && oldStatus === "aguardando_pagamento") {
-            const orderId = updated.id;
-            clearPixForOrder(orderId);
-            setPixModal(null);
-            toast.success("✅ Pagamento confirmado! Seu pedido foi enviado à loja.");
-          }
-
-          if (newStatus === "preparando" && oldStatus !== "preparando") notifyOrderPreparing();
-          if ((newStatus === "em_transito" || newStatus === "saiu_entrega") && oldStatus !== newStatus) notifyOrderOnTheWay();
-          if ((newStatus === "finalizado" || newStatus === "entregue") && oldStatus !== newStatus) notifyOrderDelivered();
+        if (payload.eventType === "INSERT") {
+          queryClient.invalidateQueries({ queryKey: ["orders", user.id] });
+        } else if (payload.eventType === "UPDATE") {
+          queryClient.setQueryData(["orders", user.id, storeFilter], (old: any[] | undefined) => {
+            if (!old) return old;
+            const exists = old.findIndex((o: any) => o.id === updated.id);
+            if (exists >= 0) {
+              const copy = [...old];
+              copy[exists] = { ...copy[exists], ...updated };
+              return copy;
+            }
+            return old;
+          });
         }
-      )
-      .subscribe((status) => {
-        if (status === "SUBSCRIBED") {
-          refreshPedidosData().catch(console.error);
+
+        if (payload.eventType !== "UPDATE") return;
+
+        const newStatus = updated?.status;
+        const oldStatus = previous?.status;
+
+        if (!newStatus || newStatus === oldStatus) return;
+
+        if (newStatus === "pendente" && oldStatus === "aguardando_pagamento") {
+          const orderId = updated.id;
+          clearPixForOrder(orderId);
+          setPixModal(null);
+          toast.success("✅ Pagamento confirmado! Seu pedido foi enviado à loja.");
         }
-      });
+
+        if (newStatus === "preparando" && oldStatus !== "preparando") notifyOrderPreparing();
+        if ((newStatus === "em_transito" || newStatus === "saiu_entrega") && oldStatus !== newStatus) notifyOrderOnTheWay();
+        if ((newStatus === "finalizado" || newStatus === "entregue") && oldStatus !== newStatus) notifyOrderDelivered();
+      }
+    ).subscribe((status) => {
+      if (status === "SUBSCRIBED") {
+        refreshPedidosData().catch(console.error);
+      }
+    });
 
     return () => {
       supabase.removeChannel(channel);
