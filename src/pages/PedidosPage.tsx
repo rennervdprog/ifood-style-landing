@@ -37,8 +37,8 @@ const statusConfig: Record<string, { label: string; icon: React.ElementType; col
    pendente: { label: "Pedido Recebido", icon: Clock, color: "text-blue-700 dark:text-blue-400", bg: "bg-white dark:bg-blue-950/20", border: "border-blue-200 dark:border-blue-900/50" },
    preparando: { label: "Preparando", icon: ChefHat, color: "text-orange-700 dark:text-orange-400", bg: "bg-white dark:bg-orange-950/20", border: "border-orange-200 dark:border-orange-900/50" },
    pronto_para_entrega: { label: "Pronto p/ Entrega", icon: CheckCircle2, color: "text-indigo-700 dark:text-indigo-400", bg: "bg-white dark:bg-indigo-950/20", border: "border-indigo-200 dark:border-indigo-900/50" },
-   saiu_entrega: { label: "Saiu p/ Entrega", icon: Truck, color: "text-purple-700 dark:text-purple-400", bg: "bg-white dark:bg-purple-950/20", border: "border-purple-200 dark:border-purple-900/50" },
-   em_transito: { label: "Em Trânsito", icon: Truck, color: "text-purple-700 dark:text-purple-400", bg: "bg-white dark:bg-purple-950/20", border: "border-purple-200 dark:border-purple-900/50" },
+    saiu_entrega: { label: "Saiu p/ Entrega", icon: Truck, color: "text-[#6A3B1F] dark:text-[#8B5E3C]", bg: "bg-white dark:bg-[#6A3B1F]/10", border: "border-[#6A3B1F]/20 dark:border-[#6A3B1F]/30" },
+    em_transito: { label: "Em Trânsito", icon: Truck, color: "text-[#6A3B1F] dark:text-[#8B5E3C]", bg: "bg-white dark:bg-[#6A3B1F]/10", border: "border-[#6A3B1F]/20 dark:border-[#6A3B1F]/30" },
    entregue: { label: "Entregue", icon: CheckCircle2, color: "text-emerald-700 dark:text-emerald-400", bg: "bg-white dark:bg-emerald-900/20", border: "border-emerald-200 dark:border-emerald-800" },
    finalizado: { label: "Finalizado", icon: CheckCircle2, color: "text-emerald-700 dark:text-emerald-400", bg: "bg-white dark:bg-emerald-900/20", border: "border-emerald-200 dark:border-emerald-800" },
    cancelado: { label: "Cancelado", icon: XCircle, color: "text-red-700 dark:text-red-400", bg: "bg-white dark:bg-red-950/20", border: "border-red-200 dark:border-red-900/50" },
@@ -893,11 +893,11 @@ const PedidosPage = () => {
                         {/* Timeline */}
                         {!isWaitingPayment && <StatusTimeline status={order.status} isPickup={order.neighborhood === "RETIRADA"} />}
 
-                        {/* Waiting Payment */}
+                        {/* Waiting Payment (background changed to white) */}
                         {isWaitingPayment && (() => {
                           const hasSavedPix = savedPixData[order.id];
                           return (
-                            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
+                            <div className="bg-white dark:bg-card border border-amber-200 rounded-xl p-3">
                               <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
                                   <Loader2 className="h-4 w-4 text-amber-500 animate-spin" />
@@ -992,9 +992,9 @@ const PedidosPage = () => {
                           );
                         })()}
 
-                        {/* Pickup badge */}
+                        {/* Pickup badge (background changed to white) */}
                         {order.neighborhood === "RETIRADA" && order.status === "pronto_para_entrega" && (
-                          <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 flex items-center gap-2">
+                          <div className="bg-white dark:bg-card border border-primary/20 rounded-xl p-3 flex items-center gap-2">
                             <span className="text-lg">🏪</span>
                             <div>
                               <span className="text-xs font-bold text-primary">Pronto para retirada!</span>
@@ -1003,9 +1003,9 @@ const PedidosPage = () => {
                           </div>
                         )}
 
-                        {/* Delivery PIN (not for pickup) */}
+                        {/* Delivery PIN (not for pickup) (background changed to white) */}
                         {order.neighborhood !== "RETIRADA" && showPin && (
-                          <div className="bg-primary/5 border border-primary/20 rounded-xl p-3">
+                          <div className="bg-white dark:bg-card border border-primary/20 rounded-xl p-3">
                             <div className="flex items-center gap-2 mb-1">
                               <Lock className="h-4 w-4 text-primary" />
                               <span className="text-xs font-bold text-primary">Código de Entrega</span>
@@ -1040,9 +1040,9 @@ const PedidosPage = () => {
                           />
                         )}
 
-                        {/* Confirm Delivery (not for pickup orders) */}
+                        {/* Confirm Delivery (not for pickup orders) (background changed to white) */}
                         {order.neighborhood !== "RETIRADA" && ["saiu_entrega", "em_transito"].includes(order.status) && !(order as any).delivery_confirmed_by_client && (
-                          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3">
+                          <div className="bg-white dark:bg-card border border-emerald-200 rounded-xl p-3">
                             <div className="flex items-center gap-2 mb-2">
                               <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                               <span className="text-xs font-bold text-emerald-600">Recebeu seu pedido?</span>
@@ -1064,8 +1064,8 @@ const PedidosPage = () => {
                           </div>
                         )}
 
-                        {/* Items + financial breakdown */}
-                        <div className="bg-muted/40 rounded-xl p-3 space-y-2">
+                        {/* Items + financial breakdown (background changed to white) */}
+                        <div className="bg-white dark:bg-card border border-border/40 rounded-xl p-3 space-y-2">
                           <div className="text-xs text-foreground/80 space-y-1">
                             {order.order_items?.map((item: any) => (
                               <div key={item.id} className="flex justify-between">
@@ -1128,7 +1128,7 @@ const PedidosPage = () => {
                   const isCancelled = order.status === "cancelado";
 
                   return (
-                    <div key={order.id} className={`bg-card rounded-2xl border overflow-hidden ${isCancelled ? "border-red-200 opacity-60" : "border-border"}`}>
+                    <div key={order.id} className={`bg-white dark:bg-card rounded-2xl border overflow-hidden ${isCancelled ? "border-red-200 opacity-60" : "border-border"}`}>
                       {/* Compact header */}
                       <div className="px-4 py-3 flex items-center justify-between">
                         <div className="flex items-center gap-3">
