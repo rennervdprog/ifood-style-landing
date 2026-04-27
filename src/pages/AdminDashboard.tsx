@@ -35,6 +35,7 @@ import TutoriaisPanel from "@/components/TutoriaisPanel";
 import StoreFinancePanel from "@/components/StoreFinancePanel";
 import StoreFinanceBasic from "@/components/StoreFinanceBasic";
 import StoreSubscription from "@/components/StoreSubscription";
+import { CashRegister } from "@/components/CashRegister";
 import CommissionAlert from "@/components/CommissionAlert";
 import PlatformSplitAlert from "@/components/PlatformSplitAlert";
 import LoyaltyConfigPanel from "@/components/LoyaltyConfigPanel";
@@ -52,7 +53,7 @@ import AdminRefundPanel from "@/components/AdminRefundPanel";
 
 type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_entrega" | "em_transito" | "entregue" | "finalizado";
 type OrderTabKey = OrderStatus | "delivery";
-type DashboardTab = "dashboard" | "orders" | "menu" | "addons" | "bordas" | "hours" | "settings" | "finance" | "clients" | "reports" | "subscription" | "loyalty" | "drivers" | "refunds" | "tutoriais";
+type DashboardTab = "dashboard" | "orders" | "menu" | "addons" | "bordas" | "hours" | "settings" | "finance" | "clients" | "reports" | "subscription" | "loyalty" | "drivers" | "refunds" | "tutoriais" | "cash_register";
 type StoreAddonGroup = {
   id: string;
   name: string;
@@ -231,7 +232,8 @@ const baseSidebarItems: { key: DashboardTab; label: string; icon: React.ElementT
   { key: "addons", label: "Adicionais", icon: Plus },
   { key: "bordas", label: "Bordas", icon: CircleDot, pizzaOnly: true },
   { key: "hours", label: "Horários", icon: Clock },
-  { key: "finance", label: "Finanças", icon: Coins },
+  { key: "finance", label: "Financeiro", icon: Coins },
+  { key: "cash_register", label: "Caixa (PDV)", icon: Banknote },
   { key: "reports", label: "Relatórios", icon: BarChart3 },
   { key: "subscription", label: "Assinatura", icon: CreditCard },
   { key: "loyalty", label: "Fidelidade", icon: Star },
@@ -254,7 +256,8 @@ const moreSheetItems: { key: DashboardTab; label: string; icon: React.ElementTyp
   { key: "addons", label: "Adicionais", icon: Plus },
   { key: "bordas", label: "Bordas", icon: CircleDot, pizzaOnly: true },
   { key: "hours", label: "Horários", icon: Clock },
-  { key: "finance", label: "Finanças", icon: Coins },
+  { key: "finance", label: "Financeiro", icon: Coins },
+  { key: "cash_register", label: "Caixa (PDV)", icon: Banknote },
   { key: "reports", label: "Relatórios", icon: BarChart3 },
   { key: "subscription", label: "Assinatura", icon: CreditCard },
   { key: "loyalty", label: "Fidelidade", icon: Star },
@@ -1413,12 +1416,20 @@ const AdminDashboard = () => {
                   highlight={pendingCount > 0}
                   onClick={() => { setDashboardTab("orders"); setActiveTab("pendente"); }}
                 />
-                <GlanceCard
-                  icon={DollarSign} label="Faturamento Hoje" value={formatBRL(todayTotal)}
-                  subValue={`${todayCount} pedido${todayCount !== 1 ? "s" : ""} hoje`}
-                  color="text-emerald-500" trend={todayTotal > 0 ? "up" : null}
-                  onClick={() => setDashboardTab("finance")}
-                />
+                <div className="flex flex-col gap-3">
+                  <GlanceCard
+                    icon={DollarSign} label="Faturamento Hoje" value={formatBRL(todayTotal)}
+                    subValue={`${todayCount} pedido${todayCount !== 1 ? "s" : ""} hoje`}
+                    color="text-emerald-500" trend={todayTotal > 0 ? "up" : null}
+                    onClick={() => setDashboardTab("finance")}
+                  />
+                  <button 
+                    onClick={() => setDashboardTab("cash_register")}
+                    className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-600 hover:bg-emerald-500/20 transition-all text-xs font-bold"
+                  >
+                    <Banknote className="h-4 w-4" /> Gerenciar Caixa (PDV)
+                  </button>
+                </div>
                 <GlanceCard
                   icon={Timer} label="Tempo Médio" value={avgDeliveryTime ? `${avgDeliveryTime} min` : "—"}
                   subValue="Pedido até entrega" color="text-purple-500"
@@ -2479,6 +2490,7 @@ const AdminDashboard = () => {
           {!["dashboard", "orders", "clients"].includes(dashboardTab) && store && (
             <div className="p-4 lg:p-6 max-w-6xl mx-auto">
               {dashboardTab === "menu" && <MenuBuilder storeId={store.id} storeCategory={store.category} />}
+              {dashboardTab === "cash_register" && <CashRegister storeId={store.id} />}
               {dashboardTab === "tutoriais" && <TutoriaisPanel />}
               
               {dashboardTab === "addons" && <AddonManager storeId={store.id} />}
