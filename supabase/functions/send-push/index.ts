@@ -255,15 +255,16 @@ Deno.serve(async (req) => {
 
        const isDriver = !!driverInfo;
 
-       if (!isStoreOwner && !isDriver && callerRole !== "lojista" && callerRole !== "motoboy") {
+       // Priority roles: lojista (store owner) or motoboy (driver)
+       const effectiveRole = isStoreOwner || callerRole === "lojista" ? "lojista" : (isDriver || callerRole === "motoboy" ? "motoboy" : callerRole);
+
+       if (effectiveRole !== "lojista" && effectiveRole !== "motoboy") {
          console.warn(`[send-push] Denied: user ${callerUserId} has role ${callerRole}, isStoreOwner=${isStoreOwner}, isDriver=${isDriver}`);
          return new Response(JSON.stringify({ error: "Sem permissão para enviar notificações." }), {
            status: 403,
            headers: { ...corsHeaders, "Content-Type": "application/json" },
          });
        }
-
-       const effectiveRole = isStoreOwner ? "lojista" : (isDriver ? "motoboy" : callerRole);
        console.log(`[send-push] Effective role for ${callerUserId}: ${effectiveRole}`);
 
       // Validate that target user_ids are related to caller's orders
