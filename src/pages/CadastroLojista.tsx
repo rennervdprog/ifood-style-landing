@@ -7,6 +7,7 @@ import { ArrowLeft, Mail, Lock, Eye, EyeOff, Store, FileText, CheckCircle, Check
 import { PasswordStrengthIndicator, usePasswordStrength } from "@/components/PasswordStrengthIndicator";
 import { Constants } from "@/integrations/supabase/types";
 import { formatCep, fetchCep } from "@/lib/cepLookup";
+import { formatPixKeyDisplay, sanitizePixKeyForAsaas, validatePixKey, PIX_PLACEHOLDERS } from "@/lib/pixFormat";
 
 const storeCategories = Constants.public.Enums.store_category;
 
@@ -178,6 +179,14 @@ const CadastroLojista = () => {
     setErrors({});
 
     const result = schema.safeParse({ email, confirmEmail, password, storeName, document, birthDate, whatsapp, pixType, pixKey, storeCategory, cep, city, street, addressNumber, neighborhood, selectedPlan });
+    // Extra: valida formato da chave PIX conforme tipo (Asaas)
+    const pixErr = validatePixKey(pixKey, pixType);
+    if (pixErr && result.success) {
+      setErrors({ pixKey: pixErr });
+      toast.error(pixErr);
+      return;
+    }
+    const cleanPixKey = sanitizePixKeyForAsaas(pixKey, pixType);
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
       result.error.errors.forEach((err) => {
@@ -207,7 +216,7 @@ const CadastroLojista = () => {
               whatsapp: whatsapp.trim(),
               phone: whatsapp.trim(),
               pix_type: pixType,
-              pix_key: pixKey.trim(),
+              pix_key: cleanPixKey,
               store_name: storeName.trim(),
               store_category: storeCategory,
               city: normalizedCity,
@@ -271,7 +280,7 @@ const CadastroLojista = () => {
           terms_accepted_at: new Date().toISOString(),
           birth_date: birthDate,
           pix_type: pixType as any,
-          pix_key: pixKey.trim(),
+          pix_key: cleanPixKey,
           cep: cep.replace(/\D/g, ""),
           street: street,
           address_number: addressNumber.trim(),
@@ -793,7 +802,13 @@ const CadastroLojista = () => {
                     </select>
                   </div>
                   {errors.pixType && <p className="text-xs text-destructive mt-1 px-1">{errors.pixType}</p>}
-                  <FieldInput icon={Key} placeholder={pixType === "email" ? "seu@email.com" : pixType === "phone" ? "(11) 99999-9999" : "Sua chave PIX"} value={pixKey} onChange={setPixKey} error={errors.pixKey} />
+                  <FieldInput
+                    icon={Key}
+                    placeholder={PIX_PLACEHOLDERS[pixType] || "Sua chave PIX"}
+                    value={pixType ? formatPixKeyDisplay(pixKey, pixType) : pixKey}
+                    onChange={setPixKey}
+                    error={errors.pixKey}
+                  />
                   <p className="text-[10px] text-muted-foreground px-1">Chave PIX onde você receberá os pagamentos</p>
                 </div>
 
