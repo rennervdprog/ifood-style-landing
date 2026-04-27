@@ -111,52 +111,67 @@ function haversineDistance(
   return R * c;
 }
 
-// Geocode a CEP using BrasilAPI (returns lat/lng)
-async function geocodeCep(cep: string): Promise<{ lat: number; lng: number } | null> {
-  const digits = cep.replace(/\D/g, "");
-  if (digits.length !== 8) return null;
-
-  try {
-    const res = await fetch(`https://brasilapi.com.br/api/cep/v2/${digits}`);
-    if (!res.ok) return null;
-    const data = await res.json();
-    if (data.location?.coordinates?.longitude && data.location?.coordinates?.latitude) {
-      return {
-        lat: data.location.coordinates.latitude,
-        lng: data.location.coordinates.longitude,
-      };
-    }
-    // BrasilAPI didn't return coordinates, try geocoding by city name
-    if (data.city) {
-      return geocodeByCity(data.city, data.state || "SP");
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-// Fallback geocoding using Nominatim (OpenStreetMap) by city name
-async function geocodeByCity(city: string, state: string): Promise<{ lat: number; lng: number } | null> {
-  try {
-    const query = encodeURIComponent(`${city}, ${state}, Brazil`);
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`,
-      { headers: { "User-Agent": "LovableDeliveryApp/1.0" } }
-    );
-    if (!res.ok) return null;
-    const data = await res.json();
-    if (data.length > 0 && data[0].lat && data[0].lon) {
-      return {
-        lat: parseFloat(data[0].lat),
-        lng: parseFloat(data[0].lon),
-      };
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
+ // Geocode an address using nominatim (returns lat/lng)
+ async function geocodeAddress(cep: string, street?: string, number?: string): Promise<{ lat: number; lng: number } | null> {
+   // 1. Try CEP + Street + Number for high precision
+   if (street && number) {
+     try {
+       const query = encodeURIComponent(`${street}, ${number}, ${cep}, Brazil`);
+       const res = await fetch(
+         `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`,
+         { headers: { "User-Agent": "LovableDeliveryApp/1.0" } }
+       );
+       if (res.ok) {
+         const data = await res.json();
+         if (data.length > 0 && data[0].lat && data[0].lon) {
+           return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+         }
+       }
+     } catch {}
+   }
+ 
+   // 2. Fallback to BrasilAPI (v2 has coords for some CEPs)
+   const digits = cep.replace(/\D/g, "");
+   if (digits.length === 8) {
+     try {
+       const res = await fetch(`https://brasilapi.com.br/api/cep/v2/${digits}`);
+       if (res.ok) {
+         const data = await res.json();
+         if (data.location?.coordinates?.longitude && data.location?.coordinates?.latitude) {
+           return {
+             lat: data.location.coordinates.latitude,
+             lng: data.location.coordinates.longitude,
+           };
+         }
+         if (data.city) {
+           return geocodeByCity(data.city, data.state || "SP");
+         }
+       }
+     } catch {}
+   }
+   return null;
+ }
+ 
+ async function geocodeByCity(city: string, state: string): Promise<{ lat: number; lng: number } | null> {
+   try {
+     const query = encodeURIComponent(`${city}, ${state}, Brazil`);
+     const res = await fetch(
+       `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`,
+       { headers: { "User-Agent": "LovableDeliveryApp/1.0" } }
+     );
+     if (!res.ok) return null;
+     const data = await res.json();
+     if (data.length > 0 && data[0].lat && data[0].lon) {
+       return {
+         lat: parseFloat(data[0].lat),
+         lng: parseFloat(data[0].lon),
+       };
+     }
+     return null;
+   } catch {
+     return null;
+   }
+ }
 
 function isDistrictNeighborhood(bairro: string | undefined): boolean {
   if (!bairro) return false;
