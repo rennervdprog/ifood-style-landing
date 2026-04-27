@@ -613,31 +613,48 @@ const DriverDashboard = () => {
     }
   };
 
-  const finishDelivery = async (orderId: string) => {
-    if (pinInput.length !== 4) { toast.error("Digite o código de 4 dígitos do cliente."); return; }
+  const finishDelivery = async (orderId: string, value?: string) => {
+    const finalPin = value || pinInput;
+    if (finalPin.length !== 4) {
+      if (!value) toast.error("Digite o código de 4 dígitos do cliente.");
+      return;
+    }
+    
     setVerifying(true);
     const orderData = myDelivery || availableOrders?.find((o: any) => o.id === orderId);
     const deliveryFee = Number(orderData?.delivery_fee || 0);
-    const { error } = await supabase.rpc("driver_finish_delivery", { _order_id: orderId, _pin: pinInput } as any);
-    if (error) {
-      toast.error(error.message || "Código inválido. Verifique com o cliente.");
-      setVerifying(false);
-    } else {
-      confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
-      const isPhysical = ["dinheiro", "cartao"].includes(orderData?.payment_method || "");
-      if (isPhysical) {
-        toast.success(`✅ Entrega confirmada! Retorne à loja para acertar ${formatBRL(deliveryFee)} em mãos.`, { duration: 8000, icon: "🏪" });
+    
+    try {
+      const { error } = await supabase.rpc("driver_finish_delivery", { _order_id: orderId, _pin: finalPin } as any);
+      
+      if (error) {
+        toast.error(error.message || "Código inválido. Verifique com o cliente.");
+        setVerifying(false);
       } else {
-        toast.success(`🎉 Parabéns! ${formatBRL(deliveryFee)} foi adicionado ao seu saldo Pix!`, { duration: 8000, icon: "💰" });
+        confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
+        const isPhysical = ["dinheiro", "cartao"].includes(orderData?.payment_method || "");
+        if (isPhysical) {
+          toast.success(`✅ Entrega confirmada! Retorne à loja para acertar ${formatBRL(deliveryFee)} em mãos.`, { duration: 8000, icon: "🏪" });
+        } else {
+          toast.success(`🎉 Parabéns! ${formatBRL(deliveryFee)} foi adicionado ao seu saldo Pix!`, { duration: 8000, icon: "💰" });
+        }
+        setPinInput("");
+        setVerifying(false);
+        
+        // Invalidate queries in parallel
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ["driver-my-delivery", user!.id] }),
+          queryClient.invalidateQueries({ queryKey: ["driver-pending-return", user!.id] }),
+          queryClient.invalidateQueries({ queryKey: ["driver-available-orders"] }),
+          queryClient.invalidateQueries({ queryKey: ["driver-history", user!.id] }),
+          queryClient.invalidateQueries({ queryKey: ["driver-balance", user!.id] }),
+          queryClient.invalidateQueries({ queryKey: ["driver-earnings", user!.id] })
+        ]);
       }
-      setPinInput("");
+    } catch (err) {
+      console.error("Error finishing delivery:", err);
+      toast.error("Erro ao finalizar entrega. Verifique sua conexão.");
       setVerifying(false);
-      await queryClient.invalidateQueries({ queryKey: ["driver-my-delivery", user!.id] });
-      await queryClient.invalidateQueries({ queryKey: ["driver-pending-return", user!.id] });
-      queryClient.invalidateQueries({ queryKey: ["driver-available-orders"] });
-      queryClient.invalidateQueries({ queryKey: ["driver-history", user!.id] });
-      queryClient.invalidateQueries({ queryKey: ["driver-balance", user!.id] });
-      queryClient.invalidateQueries({ queryKey: ["driver-earnings", user!.id] });
     }
   };
 
@@ -1053,7 +1070,13 @@ const DriverDashboard = () => {
                             maxLength={4}
                             placeholder="• • • •"
                             value={pinInput}
-                            onChange={(e) => setPinInput(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                           onChange={(e) => {
+                             const val = e.target.value.replace(/\D/g, "").slice(0, 4);
+                             setPinInput(val);
+                             if (val.length === 4) {
+                               finishDelivery(myDelivery.id, val);
+                             }
+                           }}
                             className="w-full text-center text-3xl font-black tracking-[0.5em] bg-card border-2 border-green-500/20 rounded-2xl py-4 text-foreground placeholder:text-muted-foreground/20 focus:outline-none focus:border-green-500 transition-colors"
                           />
                           <button
