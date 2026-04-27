@@ -1166,7 +1166,14 @@ async function routePixCreation(params: {
       }
     }
 
-    return json({ error: asaasResult.data?.message || "Erro ao gerar PIX. Tente novamente.", provider: "asaas" }, asaasResult.status >= 400 ? asaasResult.status : 500);
+    return json(
+      {
+        error: asaasResult.data?.message || "Erro ao gerar PIX. Tente novamente.",
+        provider: "asaas",
+        missing_pix_key: !!asaasResult.data?.missing_pix_key,
+      },
+      asaasResult.status >= 400 ? asaasResult.status : 200,
+    );
   }
 
   // ── Efí Bank (primary) ──
