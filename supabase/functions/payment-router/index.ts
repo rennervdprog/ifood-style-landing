@@ -1541,8 +1541,11 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const reqId = crypto.randomUUID().slice(0, 8);
+    console.log(`[PR ${reqId}] ▶️ ${req.method} ${new URL(req.url).pathname}`);
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
+      console.warn(`[PR ${reqId}] ❌ Missing Authorization header`);
       return json({ error: "Unauthorized" }, 401);
     }
 
@@ -1555,6 +1558,7 @@ Deno.serve(async (req) => {
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabase.auth.getUser(token);
     if (userError || !userData?.user) {
+      console.warn(`[PR ${reqId}] ❌ Auth failed:`, userError?.message);
       return json({ error: "Unauthorized" }, 401);
     }
 
@@ -1562,8 +1566,10 @@ Deno.serve(async (req) => {
     const userEmail = userData.user.email || "";
 
     const rawBody = await req.json();
+    console.log(`[PR ${reqId}] 👤 user=${userId.slice(0, 8)} action=${(rawBody as any)?.action} body=${JSON.stringify(rawBody).slice(0, 300)}`);
     const parsed = BodySchema.safeParse(rawBody);
     if (!parsed.success) {
+      console.warn(`[PR ${reqId}] ❌ Schema invalid:`, JSON.stringify(parsed.error.flatten().fieldErrors));
       return json({ error: "Dados inválidos", details: parsed.error.flatten().fieldErrors }, 400);
     }
 
@@ -1584,7 +1590,7 @@ Deno.serve(async (req) => {
         return json({ error: "Ação desconhecida" }, 400);
     }
   } catch (err) {
-    console.error("Payment Router Error:", err);
-    return json({ error: "Erro interno no roteador de pagamentos" }, 500);
+    console.error("[PR] 💥 Payment Router Error:", err instanceof Error ? `${err.message}\n${err.stack}` : String(err));
+    return json({ error: "Erro interno no roteador de pagamentos", detail: err instanceof Error ? err.message : String(err) }, 500);
   }
 });
