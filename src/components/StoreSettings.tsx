@@ -827,44 +827,63 @@ const NotificationSection = () => {
                </div>
              )}
 
-            {/* Preview: como vai aparecer pro cliente */}
-            {(() => {
-              const lojistaFee = parseFloat(ownDeliveryFee.replace(",", ".")) || 0;
-              const platformFee = storePlan.platformDeliverySplit || 0;
-              const totalCliente = lojistaFee + platformFee;
-              return (
-                <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-2">
-                  <p className="text-xs font-bold text-primary flex items-center gap-1.5">
-                    👁️ Como o cliente vai ver
-                  </p>
-                  <div className="space-y-1 text-xs">
-                    <div className="flex justify-between text-muted-foreground">
-                      <span>Sua taxa de entrega:</span>
-                      <span className="font-bold text-foreground">{formatBRL(lojistaFee)}</span>
-                    </div>
-                    {platformFee > 0 && (
-                      <div className="flex justify-between text-muted-foreground">
-                        <span>+ Taxa da plataforma:</span>
-                        <span className="font-bold text-foreground">{formatBRL(platformFee)}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between pt-2 border-t border-primary/20">
-                      <span className="font-bold text-foreground">Total cobrado do cliente:</span>
-                      <span className="font-bold text-primary text-sm">{formatBRL(totalCliente)}</span>
-                    </div>
-                  </div>
-                  {platformFee > 0 ? (
-                    <p className="text-[10px] text-muted-foreground/80 leading-relaxed">
-                      ℹ️ A plataforma adiciona automaticamente <strong>{formatBRL(platformFee)}</strong> em cima da sua taxa para custear a operação. Você recebe os <strong>{formatBRL(lojistaFee)}</strong> integrais.
-                    </p>
-                  ) : (
-                    <p className="text-[10px] text-muted-foreground/80 leading-relaxed">
-                      ℹ️ Você recebe a taxa integral. Sem split de plataforma no seu plano.
-                    </p>
-                  )}
-                </div>
-              );
-            })()}
+             {/* Preview: como vai aparecer pro cliente */}
+             {(() => {
+               let lojistaFee = 0;
+               let previewLabel = "Sua taxa de entrega:";
+               
+               if (deliveryFeeType === "fixed") {
+                 lojistaFee = parseFloat(ownDeliveryFee.replace(",", ".")) || 0;
+               } else {
+                 lojistaFee = parseFloat(deliveryFeeBase.replace(",", ".")) || 0;
+                 previewLabel = `Sua taxa base (até ${deliveryBaseKm}km):`;
+               }
+ 
+               const platformFee = storePlan.platformDeliverySplit || 0;
+               const totalCliente = lojistaFee + platformFee;
+               
+               return (
+                 <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-2">
+                   <p className="text-xs font-bold text-primary flex items-center gap-1.5">
+                     👁️ Como o cliente vai ver
+                   </p>
+                   <div className="space-y-1 text-xs">
+                     <div className="flex justify-between text-muted-foreground">
+                       <span>{previewLabel}</span>
+                       <span className="font-bold text-foreground">{formatBRL(lojistaFee)}</span>
+                     </div>
+                     {deliveryFeeType === "km" && (
+                       <div className="flex justify-between text-muted-foreground italic opacity-70">
+                         <span>Km adicional:</span>
+                         <span>+{formatBRL(parseFloat(deliveryFeePerKm.replace(",", ".")) || 0)}/km</span>
+                       </div>
+                     )}
+                     {platformFee > 0 && (
+                       <div className="flex justify-between text-muted-foreground">
+                         <span>+ Taxa da plataforma:</span>
+                         <span className="font-bold text-foreground">{formatBRL(platformFee)}</span>
+                       </div>
+                     )}
+                     <div className="flex justify-between pt-2 border-t border-primary/20">
+                       <span className="font-bold text-foreground">Total cobrado do cliente:</span>
+                       <span className="font-bold text-primary text-sm">
+                         {formatBRL(totalCliente)}
+                         {deliveryFeeType === "km" && " + km extra"}
+                       </span>
+                     </div>
+                   </div>
+                   {platformFee > 0 ? (
+                     <p className="text-[10px] text-muted-foreground/80 leading-relaxed">
+                       ℹ️ A plataforma adiciona automaticamente <strong>{formatBRL(platformFee)}</strong> em cima da sua taxa para custear a operação. Você recebe os <strong>{formatBRL(lojistaFee)}</strong> integrais.
+                     </p>
+                   ) : (
+                     <p className="text-[10px] text-muted-foreground/80 leading-relaxed">
+                       ℹ️ Você recebe a taxa integral. Sem split de plataforma no seu plano.
+                     </p>
+                   )}
+                 </div>
+               );
+             })()}
           </div>
         )}
       </div>
