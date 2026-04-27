@@ -593,33 +593,42 @@ const Index = () => {
 
       <ReorderSection />
 
-      {/* ══════ STORES LISTING ══════ */}
-      <div className="px-4 mt-4">
-        <h2 className="text-sm font-bold text-foreground mb-3">Estabelecimentos</h2>
-        {isLoading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-            {Array.from({ length: 6 }).map((_, i) => <StoreCardSkeleton key={i} />)}
-          </div>
-        ) : filtered && filtered.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-            {filtered.map((store, idx) => (
-              <div key={store.id} {...(idx === 0 ? { "data-tour": "store-card" } : {})}>
-                <StoreCard {...store} is_open={store.computedOpen} statusReason={store.statusReason} />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <PackageOpen className="h-16 w-16 text-muted-foreground mb-4" />
-            <h2 className="text-lg font-bold text-foreground mb-1">
-              {search.length >= 2 ? "Nenhum resultado encontrado" : stores && stores.length === 0 ? "Estamos chegando!" : category === "farmacias" ? "Ainda não temos farmácias parceiras" : category === "docerias" ? "Ainda não temos docerias parceiras" : "Nenhum estabelecimento nesta categoria"}
-            </h2>
-            <p className="text-sm text-muted-foreground max-w-xs">
-              {search.length >= 2 ? `Nenhuma loja ou produto encontrado para "${search}".` : stores && stores.length === 0 ? "Novas lojas no ItaSuper em breve. Fique ligado!" : "Nenhum estabelecimento aberto no momento. Volte mais tarde!"}
-            </p>
-          </div>
-        )}
-      </div>
+       {/* ══════ STORES LISTING ══════ */}
+       <section className="py-16 px-4 bg-muted/20">
+         <div className="mx-auto max-w-7xl">
+           <div className="flex items-center justify-between mb-8">
+             <h2 className="text-2xl font-black text-foreground">Estabelecimentos</h2>
+             <div className="h-1 flex-1 bg-border/50 mx-6 rounded-full hidden sm:block" />
+             <span className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{filtered?.length || 0} lojas</span>
+           </div>
+           
+           {isLoading ? (
+             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+               {Array.from({ length: 10 }).map((_, i) => <StoreCardSkeleton key={i} />)}
+             </div>
+           ) : filtered && filtered.length > 0 ? (
+             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+               {filtered.map((store, idx) => (
+                 <div key={store.id} className="transition-transform hover:scale-[1.03]" {...(idx === 0 ? { "data-tour": "store-card" } : {})}>
+                   <StoreCard {...store} is_open={store.computedOpen} statusReason={store.statusReason} />
+                 </div>
+               ))}
+             </div>
+           ) : (
+             <div className="flex flex-col items-center justify-center py-24 text-center bg-card rounded-[3rem] border border-dashed border-border">
+               <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-6">
+                 <PackageOpen className="h-12 w-12 text-muted-foreground" />
+               </div>
+               <h2 className="text-2xl font-black text-foreground mb-2">
+                 {search.length >= 2 ? "Nenhum resultado encontrado" : stores && stores.length === 0 ? "Estamos chegando!" : "Nenhum estabelecimento encontrado"}
+               </h2>
+               <p className="text-muted-foreground max-w-md font-medium">
+                 {search.length >= 2 ? `Não encontramos lojas ou produtos para "${search}". Tente outro termo.` : "Novas lojas parceiras estão chegando em breve. Fique ligado!"}
+               </p>
+             </div>
+           )}
+         </div>
+       </section>
 
       {/* ══════ GUARANTEE ══════ */}
       <section className="py-10 px-4 bg-muted/30 border-y border-border mt-8">
