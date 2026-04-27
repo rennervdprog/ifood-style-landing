@@ -2418,10 +2418,14 @@ export type Database = {
           commission_rate: number
           created_at: string
           delivery_base_km: number | null
+          delivery_enabled: boolean | null
+          delivery_fee: number | null
           delivery_fee_base: number | null
           delivery_fee_per_km: number | null
           delivery_fee_type: string | null
           delivery_mode: string
+          delivery_radius: number | null
+          estimated_delivery_time: string | null
           force_closed: boolean
           id: string
           image_url: string | null
@@ -2429,6 +2433,7 @@ export type Database = {
           is_test: boolean
           latitude: number | null
           longitude: number | null
+          minimum_order_value: number | null
           name: string
           own_delivery_fee: number
           owner_id: string | null
@@ -2455,10 +2460,14 @@ export type Database = {
           commission_rate?: number
           created_at?: string
           delivery_base_km?: number | null
+          delivery_enabled?: boolean | null
+          delivery_fee?: number | null
           delivery_fee_base?: number | null
           delivery_fee_per_km?: number | null
           delivery_fee_type?: string | null
           delivery_mode?: string
+          delivery_radius?: number | null
+          estimated_delivery_time?: string | null
           force_closed?: boolean
           id?: string
           image_url?: string | null
@@ -2466,6 +2475,7 @@ export type Database = {
           is_test?: boolean
           latitude?: number | null
           longitude?: number | null
+          minimum_order_value?: number | null
           name: string
           own_delivery_fee?: number
           owner_id?: string | null
@@ -2492,10 +2502,14 @@ export type Database = {
           commission_rate?: number
           created_at?: string
           delivery_base_km?: number | null
+          delivery_enabled?: boolean | null
+          delivery_fee?: number | null
           delivery_fee_base?: number | null
           delivery_fee_per_km?: number | null
           delivery_fee_type?: string | null
           delivery_mode?: string
+          delivery_radius?: number | null
+          estimated_delivery_time?: string | null
           force_closed?: boolean
           id?: string
           image_url?: string | null
@@ -2503,6 +2517,7 @@ export type Database = {
           is_test?: boolean
           latitude?: number | null
           longitude?: number | null
+          minimum_order_value?: number | null
           name?: string
           own_delivery_fee?: number
           owner_id?: string | null
