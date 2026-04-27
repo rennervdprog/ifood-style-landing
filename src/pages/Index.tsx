@@ -569,29 +569,40 @@ const Index = () => {
          </div>
        </section>
 
-      {/* ══════ DIVIDER: CONSUMER SECTION ══════ */}
-      <section className="py-6 px-4 bg-muted/40 border-y border-border">
-        <div className="mx-auto max-w-5xl text-center">
-          <h2 className="text-xl font-bold text-foreground">Já é cliente? Peça agora! 🍕</h2>
-          <p className="text-sm text-muted-foreground mt-1">Navegue pelas lojas disponíveis e faça seu pedido.</p>
-        </div>
-      </section>
-
-      {/* ══════ SEARCH + CATEGORIES ══════ */}
-      <div className="px-4 space-y-3 mt-4">
-        <div data-tour="search">
-          <SearchBar value={search} onChange={setSearch} />
-        </div>
-      </div>
-
-      <PromoBanners />
-      <FirstOrderBanner />
-
-      <div data-tour="categories">
-        <CategoryScroll selected={category} onSelect={setCategory} />
-      </div>
-
-      <ReorderSection />
+       {/* ══════ CONSUMER EXPERIENCE ══════ */}
+       <section className="py-24 px-4 bg-background">
+         <div className="mx-auto max-w-6xl">
+           <div className="text-center mb-16">
+             <span className="bg-primary/10 text-primary font-black text-xs uppercase tracking-widest px-4 py-2 rounded-full mb-6 inline-block">
+               Área do Cliente
+             </span>
+             <h2 className="text-3xl md:text-5xl font-black text-foreground mb-4">Peça agora no ItaSuper 🍕</h2>
+             <p className="text-muted-foreground text-lg font-medium max-w-2xl mx-auto">
+               A melhor experiência de delivery da cidade. Rápido, seguro e com as melhores lojas.
+             </p>
+           </div>
+ 
+           <div className="space-y-12">
+             <div className="max-w-2xl mx-auto" data-tour="search">
+               <SearchBar value={search} onChange={setSearch} />
+             </div>
+ 
+             <div className="grid gap-8">
+               <div className="rounded-[2.5rem] overflow-hidden shadow-2xl">
+                 <PromoBanners />
+               </div>
+               
+               <FirstOrderBanner />
+ 
+               <div className="bg-muted/30 p-8 rounded-[2.5rem]" data-tour="categories">
+                 <CategoryScroll selected={category} onSelect={setCategory} />
+               </div>
+ 
+               <ReorderSection />
+             </div>
+           </div>
+         </div>
+       </section>
 
        {/* ══════ STORES LISTING ══════ */}
        <section className="py-16 px-4 bg-muted/20">
