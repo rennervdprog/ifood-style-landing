@@ -1,7 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { isCapacitorNative } from "@/lib/capacitorNative";
-import { getCapacitorAppMode, isPartnerCapacitorApp, persistCapacitorAppMode } from "@/lib/capacitorAppMode";
+import { detectAndPersistNativeAppMode, getCapacitorAppMode, persistCapacitorAppMode, type CapacitorAppMode } from "@/lib/capacitorAppMode";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -55,21 +55,30 @@ const CapacitorRouteGuard = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const [appMode, setAppMode] = useState<CapacitorAppMode | null>(() => getCapacitorAppMode());
 
   useEffect(() => {
     if (!isCapacitorNative()) return;
 
     const path = location.pathname;
-    const appMode = getCapacitorAppMode();
+    const currentMode = getCapacitorAppMode() || appMode;
 
-    if (!appMode) {
+    if (!currentMode) {
       const looksLikePartnerRoute = PARTNER_ROUTES.some(
         (route) => path === route || path.startsWith(route + "/")
       );
-      persistCapacitorAppMode(looksLikePartnerRoute ? "partner" : "client");
+      if (looksLikePartnerRoute) {
+        persistCapacitorAppMode("partner");
+        setAppMode("partner");
+      } else {
+        detectAndPersistNativeAppMode().then((mode) => {
+          if (mode) setAppMode(mode);
+        });
+      }
+      return;
     }
 
-    if (isPartnerCapacitorApp()) {
+    if (currentMode === "partner") {
       // APK PARCEIRO: bloqueia TUDO que não seja explicitamente uma rota de parceiro.
       // Inclui: "/", "/cliente", "/loja/:id", "/carrinho", "/checkout", "/pedidos",
       // "/perfil" e qualquer "/:slug" (catch-all que vira página de loja-cliente).
