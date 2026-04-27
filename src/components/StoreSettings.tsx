@@ -205,36 +205,47 @@ type PizzaPriceMode = "maior" | "media" | "soma";
     // Ensure primary category is always present in the list, and primary equals first selected
     const finalCategories = Array.from(new Set([category, ...categories].filter(Boolean)));
     const primaryCategory = finalCategories[0] || category;
+    const updateData = {
+      name: name.trim(),
+      category: primaryCategory as any,
+      categories: finalCategories as any,
+      image_url: imageUrl || null,
+      slug: cleanSlug || null,
+      settings: {
+        ...(storeSettings || {}),
+        pizza_half_enabled: pizzaHalfEnabled,
+        pizza_price_mode: pizzaPriceMode,
+        zapi_enabled: zapiEnabled,
+      },
+      delivery_mode: deliveryMode,
+      own_delivery_fee: parseFloat(ownDeliveryFee.toString().replace(",", ".")) || 0,
+      delivery_fee_type: deliveryFeeType,
+      delivery_base_km: parseFloat(deliveryBaseKm.toString().replace(",", ".")) || 0,
+      delivery_fee_base: parseFloat(deliveryFeeBase.toString().replace(",", ".")) || 0,
+      delivery_fee_per_km: parseFloat(deliveryFeePerKm.toString().replace(",", ".")) || 0,
+      address_street: addressStreet.trim() || null,
+      address_number: addressNumber.trim() || null,
+      address_complement: addressComplement.trim() || null,
+      address_neighborhood: addressNeighborhood.trim() || null,
+      address_reference: addressReference.trim() || null,
+      address_city: addressCity.trim() || "Itatinga",
+      address_state: addressState.trim() || "SP",
+      address_cep: addressCep.replace(/\D/g, "") || null,
+    };
+
+    console.log("[DEBUG] Salvando configurações da loja:", { storeId, updateData });
+
     const { error: storeError } = await supabase
       .from("stores")
-      .update({
-        name: name.trim(),
-        category: primaryCategory as any,
-        categories: finalCategories as any,
-        image_url: imageUrl || null,
-        slug: cleanSlug || null,
-        settings: {
-          ...(storeSettings || {}),
-          pizza_half_enabled: pizzaHalfEnabled,
-          pizza_price_mode: pizzaPriceMode,
-          zapi_enabled: zapiEnabled, // keep a flag here for quick checks (no secrets)
-        },
-         delivery_mode: deliveryMode,
-         own_delivery_fee: parseFloat(ownDeliveryFee.toString().replace(",", ".")) || 0,
-         delivery_fee_type: deliveryFeeType,
-         delivery_base_km: parseFloat(deliveryBaseKm.toString().replace(",", ".")) || 0,
-         delivery_fee_base: parseFloat(deliveryFeeBase.toString().replace(",", ".")) || 0,
-         delivery_fee_per_km: parseFloat(deliveryFeePerKm.toString().replace(",", ".")) || 0,
-        address_street: addressStreet.trim() || null,
-        address_number: addressNumber.trim() || null,
-        address_complement: addressComplement.trim() || null,
-        address_neighborhood: addressNeighborhood.trim() || null,
-        address_reference: addressReference.trim() || null,
-        address_city: addressCity.trim() || "Itatinga",
-        address_state: addressState.trim() || "SP",
-        address_cep: addressCep.replace(/\D/g, "") || null,
-      } as any)
+      .update(updateData as any)
       .eq("id", storeId);
+
+    if (storeError) {
+      console.error("[DEBUG] Erro ao salvar dados da loja no Supabase:", storeError);
+      toast.error(`Erro ao salvar: ${storeError.message || "Verifique os dados"}`);
+      setSaving(false);
+      return;
+    }
 
     if (storeError) {
       toast.error("Erro ao salvar dados da loja.");
