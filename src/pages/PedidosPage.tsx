@@ -479,6 +479,37 @@ const PedidosPage = () => {
 
   const isPixBlocked = pixCooldownMs > 0 || safetyModeMs > 0;
 
+  // Webhook fallback: poll Asaas directly while any order is awaiting PIX payment.
+  // This covers the case where the Asaas webhook fails to reach our backend
+  // (token mismatch, network issue, etc.) — the user still gets confirmation.
+  useEffect(() => {
+    if (!user || isLojista) return;
+    const waiting = (orders || []).filter((o: any) => o.status === "aguardando_pagamento" && o.payment_method === "pix");
+    if (waiting.length === 0) return;
+
+    let cancelled = false;
+    const tick = async () => {
+      for (const o of waiting) {
+        if (cancelled) return;
+        try {
+          const { data } = await supabase.functions.invoke("confirm-order-payment", {
+            body: { order_id: o.id },
+          });
+          if (data?.confirmed) {
+            queryClient.invalidateQueries({ queryKey: ["orders", user.id] });
+          }
+        } catch (_) {
+          // silent — retry on next tick
+        }
+      }
+    };
+
+    // Run once immediately then every 6s
+    tick();
+    const id = window.setInterval(tick, 6000);
+    return () => { cancelled = true; window.clearInterval(id); };
+  }, [orders, user, isLojista, queryClient]);
+
   const generatePix = async (order: any) => {
     if (!user) return;
 
