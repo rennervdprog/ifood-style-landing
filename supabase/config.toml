@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.zapi-send-internal]
 verify_jwt = false
+
+[functions.asaas-webhook]
+verify_jwt = false
+
+[functions.confirm-order-payment]
+verify_jwt = false
