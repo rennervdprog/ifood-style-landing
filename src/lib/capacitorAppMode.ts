@@ -58,22 +58,56 @@ export function persistCapacitorAppMode(mode: CapacitorAppMode) {
   } catch {}
 }
 
+export async function detectAndPersistNativeAppMode(): Promise<CapacitorAppMode | null> {
+  if (!isCapacitorNative()) return null;
+  if (nativeDetectedMode) return nativeDetectedMode;
+  if (nativeDetectionPromise) return nativeDetectionPromise;
+
+  nativeDetectionPromise = (async () => {
+    try {
+      const { App } = await import("@capacitor/app");
+      const info = await App.getInfo();
+      const mode = detectModeFromIdentifier(info.id) || detectModeFromIdentifier(info.name);
+      if (mode) {
+        nativeDetectedMode = mode;
+        persistCapacitorAppMode(mode);
+        return mode;
+      }
+    } catch {}
+
+    return null;
+  })();
+
+  return nativeDetectionPromise;
+}
+
 export function getCapacitorAppMode(): CapacitorAppMode | null {
   if (!isCapacitorNative()) return null;
 
-  // 1) Fonte da verdade definitiva: appId nativo do APK
-  const nativeMode = detectModeFromNativeAppId();
+  // 1) Fonte da verdade no bundle gerado pelo workflow Android
+  const buildMode = getBuildTimeAppMode();
+  if (buildMode) {
+    persistCapacitorAppMode(buildMode);
+    return buildMode;
+  }
+
+  // 2) Fonte nativa já resolvida pelo App.getInfo() assíncrono
+  const nativeMode = nativeDetectedMode;
   if (nativeMode) {
     persistCapacitorAppMode(nativeMode);
     return nativeMode;
   }
 
-  // 2) Override explícito por URL (?capApp=partner|client) — útil para testes
+  // Dispara detecção nativa para a próxima renderização sem bloquear o guard.
+  detectAndPersistNativeAppMode().catch(() => {});
+
+  // 3) Override explícito por URL (?capApp=partner|client) — útil para testes
   const params = new URLSearchParams(window.location.search);
   const explicitMode = params.get("capApp");
-  if (explicitMode === "partner" || explicitMode === "client") {
-    persistCapacitorAppMode(explicitMode);
-    return explicitMode;
+  const urlMode = normalizeMode(explicitMode);
+  if (urlMode) {
+    persistCapacitorAppMode(urlMode);
+    return urlMode;
   }
 
   if ((window as any).__CAP_PARTNER_REDIRECTED) {
