@@ -121,6 +121,25 @@ async function confirmAndSplit(supabase: any, orderId: string, paymentId: string
           const pixTypeMap: Record<string, string> = {
             cpf: "CPF", cnpj: "CNPJ", email: "EMAIL", phone: "PHONE", random: "EVP",
           };
+          const sanitizePix = (key: string, type: string): string => {
+            const raw = (key || "").trim();
+            switch ((type || "random").toLowerCase()) {
+              case "cpf":
+              case "cnpj":
+                return raw.replace(/\D/g, "");
+              case "phone": {
+                const digits = raw.replace(/\D/g, "");
+                if (digits.length === 11) return `+55${digits}`;
+                if (digits.length === 13 && digits.startsWith("55")) return `+${digits}`;
+                if (raw.startsWith("+")) return raw;
+                return `+${digits}`;
+              }
+              case "email":
+                return raw.toLowerCase();
+              default:
+                return raw;
+            }
+          };
           try {
             const transferRes = await fetch(`${baseUrl}/transfers`, {
               method: "POST",
@@ -128,7 +147,7 @@ async function confirmAndSplit(supabase: any, orderId: string, paymentId: string
               body: JSON.stringify({
                 value: storeShare,
                 operationType: "PIX",
-                pixAddressKey: ownerProfile.pix_key,
+                pixAddressKey: sanitizePix(ownerProfile.pix_key, ownerProfile.pix_type || "random"),
                 pixAddressKeyType: pixTypeMap[ownerProfile.pix_type || "random"] || "EVP",
                 description: `Repasse pedido #${orderId.substring(0, 8)} - ${store.name}`.substring(0, 140),
               }),

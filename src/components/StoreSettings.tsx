@@ -11,6 +11,7 @@ import { maskWhatsApp } from "@/lib/whatsapp";
 import { formatCep, fetchCep } from "@/lib/cepLookup";
 import { formatBRL } from "@/lib/utils";
 import { useStorePlan } from "@/hooks/useStorePlan";
+import { formatPixKeyDisplay, sanitizePixKeyForAsaas, validatePixKey, PIX_PLACEHOLDERS } from "@/lib/pixFormat";
 
 const PIX_TYPE_OPTIONS = [
   { value: "cpf", label: "CPF" },
@@ -278,14 +279,25 @@ type PizzaPriceMode = "maior" | "media" | "soma";
     // Update whatsapp + pix on profile
     if (user) {
       const cleanWhatsapp = whatsapp.replace(/\D/g, "");
+      let cleanPix: string | null = null;
+      if (pixKey.trim() && pixType) {
+        const err = validatePixKey(pixKey, pixType);
+        if (err) {
+          toast.error(`PIX inválido: ${err}`);
+          setSaving(false);
+          return;
+        }
+        cleanPix = sanitizePixKeyForAsaas(pixKey, pixType);
+      }
       await supabase
         .from("profiles")
         .update({
           whatsapp_number: cleanWhatsapp || null,
-          pix_key: pixKey.trim() || null,
+          pix_key: cleanPix,
           pix_type: (pixType as any) || null,
         })
         .eq("user_id", user.id);
+      if (cleanPix) setPixKey(cleanPix);
     }
 
     queryClient.invalidateQueries({ queryKey: ["my-store"] });
@@ -734,9 +746,9 @@ const NotificationSection = () => {
         </select>
         <input
           type="text"
-          value={pixKey}
+          value={pixType ? formatPixKeyDisplay(pixKey, pixType) : pixKey}
           onChange={(e) => setPixKey(e.target.value)}
-          placeholder={pixType === "cpf" ? "000.000.000-00" : pixType === "cnpj" ? "00.000.000/0000-00" : pixType === "email" ? "email@exemplo.com" : pixType === "phone" ? "+55 14 99999-9999" : "Chave aleatória"}
+          placeholder={PIX_PLACEHOLDERS[pixType] || "Sua chave PIX"}
           maxLength={256}
           className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
         />

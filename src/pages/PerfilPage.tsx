@@ -17,6 +17,7 @@ import { maskWhatsApp, formatWhatsAppNumber, isValidWhatsApp } from "@/lib/whats
 import { formatCep, fetchCep } from "@/lib/cepLookup";
 import { calculateDeliveryFee, DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig } from "@/lib/deliveryFee";
 import SignOutConfirm from "@/components/SignOutConfirm";
+import { formatPixKeyDisplay, sanitizePixKeyForAsaas, validatePixKey, PIX_PLACEHOLDERS } from "@/lib/pixFormat";
 
 /* ── Reusable UI atoms ─────────────────────────────────── */
 
@@ -163,7 +164,7 @@ const PerfilPage = () => {
   const [document, setDocument] = useState("");
   const [savingPersonal, setSavingPersonal] = useState(false);
   const [personalLoaded, setPersonalLoaded] = useState(false);
-  const [appVersion, setAppVersion] = useState("1.2.16");
+  const [appVersion, setAppVersion] = useState("1.2.17");
 
   /* ── Effects ── */
   useEffect(() => {
@@ -315,13 +316,17 @@ const PerfilPage = () => {
   };
 
   const handleSavePix = async () => {
-    if (!pixKey.trim() || !pixType) { toast.error("Preencha o tipo e a chave PIX."); return; }
+    if (!pixType) { toast.error("Selecione o tipo da chave PIX."); return; }
+    const validation = validatePixKey(pixKey, pixType);
+    if (validation) { toast.error(validation); return; }
+    const cleanKey = sanitizePixKeyForAsaas(pixKey, pixType);
     setSavingPix(true);
     try {
       const { error } = await supabase.from("profiles").upsert({
-        user_id: user!.id, pix_key: pixKey.trim(), pix_type: pixType,
+        user_id: user!.id, pix_key: cleanKey, pix_type: pixType,
       } as any, { onConflict: "user_id" });
       if (error) throw error;
+      setPixKey(cleanKey);
       toast.success("Chave PIX salva!");
       queryClient.invalidateQueries({ queryKey: ["my-profile", user?.id] });
     } catch (err: any) { toast.error(err.message || "Erro ao salvar."); } finally { setSavingPix(false); }
@@ -654,7 +659,12 @@ const PerfilPage = () => {
                 </div>
                 <div className="flex gap-2">
                   <div className="flex-1">
-                    <InputField label="Chave PIX" placeholder="Cole sua chave aqui" value={pixKey} onChange={(e) => setPixKey(e.target.value)} />
+                    <InputField
+                      label="Chave PIX"
+                      placeholder={PIX_PLACEHOLDERS[pixType] || "Sua chave PIX"}
+                      value={pixType ? formatPixKeyDisplay(pixKey, pixType) : pixKey}
+                      onChange={(e) => setPixKey(e.target.value)}
+                    />
                   </div>
                   {pixKey && (
                     <div className="pt-[22px]">
