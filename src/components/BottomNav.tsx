@@ -61,12 +61,24 @@ const BottomNav = memo(() => {
         { icon: User, label: "Perfil", path: "/perfil" },
       ];
     }
-    return [
-      { icon: Home, label: "Home", path: "/cliente" },
-      { icon: ClipboardList, label: "Pedidos", path: "/pedidos" },
-      { icon: User, label: "Perfil", path: "/perfil" },
-    ];
-  }, [isStoreContext, currentStoreSlug, currentStoreId, isLojista, ownStore]);
+     if (isPartnerApp) {
+       if (!user) return [];
+       const baseTabs = [];
+       if (isLojista) {
+         baseTabs.push({ icon: LayoutDashboard, label: "Painel", path: "/admin" });
+       } else if (isMotoboy) {
+         baseTabs.push({ icon: LayoutDashboard, label: "Entregas", path: "/entregador" });
+       }
+       baseTabs.push({ icon: ClipboardList, label: "Pedidos", path: "/pedidos" });
+       baseTabs.push({ icon: User, label: "Perfil", path: "/perfil" });
+       return baseTabs;
+     }
+     return [
+       { icon: Home, label: "Home", path: "/cliente" },
+       { icon: ClipboardList, label: "Pedidos", path: "/pedidos" },
+       { icon: User, label: "Perfil", path: "/perfil" },
+     ];
+   }, [isStoreContext, currentStoreSlug, currentStoreId, isLojista, ownStore, isPartnerApp, user, isMotoboy]);
 
   const isActive = (tabPath: string) => {
     const [path] = tabPath.split("?");
