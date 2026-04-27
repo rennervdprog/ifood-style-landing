@@ -18,8 +18,8 @@ import { addMoney, multiplyMoney, sumMoney, formatBRL } from "@/lib/utils";
 import { useStorePlan } from "@/hooks/useStorePlan";
 import LoyaltyRedemption from "@/components/LoyaltyRedemption";
 import DeliveryTimeEstimate from "@/components/DeliveryTimeEstimate";
-import { resolveAddressContext } from "@/lib/addressGeocoding";
-import { getBestClientCoordinates } from "@/lib/deviceLocation";
+import { resolveAddressContext, type Coordinates } from "@/lib/addressGeocoding";
+import { getBestClientCoordinates, getDeviceGPS } from "@/lib/deviceLocation";
 
 const allPaymentMethods = [
   { id: "pix", label: "PIX Online", desc: "Pagamento instantâneo", icon: QrCode },
@@ -44,7 +44,9 @@ const CheckoutPage = () => {
   const [couponCode, setCouponCode] = useState<string | null>(null);
   const [couponType, setCouponType] = useState<string | null>(null);
    const [calculatedDeliveryFee, setCalculatedDeliveryFee] = useState<number | null>(null);
-   const [clientCoords, setClientCoords] = useState<{ lat: number; lng: number } | null>(null);
+   const [clientCoords, setClientCoords] = useState<Coordinates | null>(null);
+   const [isLocationRequested, setIsLocationRequested] = useState(false);
+   const [requestingLocation, setRequestingLocation] = useState(false);
   const [calculatingFee, setCalculatingFee] = useState(false);
   const [feeBreakdown, setFeeBreakdown] = useState<string | null>(null);
   const [loyaltyDiscount, setLoyaltyDiscount] = useState(0);
@@ -162,9 +164,9 @@ const CheckoutPage = () => {
   const walletDiscount = useWallet ? Math.min(walletBalance, Math.max(0, addMoney(subtotal, effectiveDeliveryFee, -couponDiscount, -loyaltyDiscount))) : 0;
   const finalTotal = Math.max(0, addMoney(subtotal, effectiveDeliveryFee, -couponDiscount, -loyaltyDiscount, -walletDiscount));
 
-   // Effect to get high precision GPS coordinates once
+   // Background geocoding from address (initial estimate)
    useEffect(() => {
-     if (hasAddress || selectedSavedAddressId) {
+     if ((hasAddress || selectedSavedAddressId) && !clientCoords) {
        const geoCep = selectedSavedAddressId && savedAddressData?.cep ? savedAddressData.cep : profileCep;
        const geoStreet = selectedSavedAddressId && savedAddressData
          ? [savedAddressData.street, savedAddressData.number].filter(Boolean).join(" ")
@@ -177,11 +179,32 @@ const CheckoutPage = () => {
          postalcode: geoCep,
        }).then(context => {
          getBestClientCoordinates(context).then(coords => {
-           if (coords) setClientCoords(coords);
+           if (coords && !clientCoords) {
+             console.log("[Checkout] Address geocoding fallback set:", coords);
+             setClientCoords(coords);
+           }
          });
        });
      }
-   }, [hasAddress, selectedSavedAddressId, savedAddressData, profileCep, profileStreet, profileNumber, profileNeighborhood]);
+   }, [hasAddress, selectedSavedAddressId, savedAddressData, profileCep, profileStreet, profileNumber, profileNeighborhood, clientCoords]);
+ 
+   const handleRequestLocation = async () => {
+     setRequestingLocation(true);
+     try {
+       const gps = await getDeviceGPS();
+       if (gps) {
+         setClientCoords(gps);
+         setIsLocationRequested(true);
+         toast.success("Localização ativada com sucesso!");
+       } else {
+         toast.error("Não foi possível obter sua localização exata. Verifique se o GPS está ativado.");
+       }
+     } catch (e) {
+       console.error("Error requesting location:", e);
+     } finally {
+       setRequestingLocation(false);
+     }
+   };
  
    useEffect(() => {
      const customerCep = selectedSavedAddressId && savedAddressData?.cep ? savedAddressData.cep : profileCep;
@@ -995,6 +1018,24 @@ const CheckoutPage = () => {
             {storeStatus?.nextOpenDay && storeStatus?.nextOpenTime
               ? `${storeStatus.nextOpenDay === "Hoje" ? "Abre" : `Abre ${storeStatus.nextOpenDay}`} às ${storeStatus.nextOpenTime}`
               : "Loja fechada"}
+          </button>
+        ) : !isPickup && !isLocationRequested ? (
+          <button
+            onClick={handleRequestLocation}
+            disabled={requestingLocation}
+            className="w-full bg-primary text-primary-foreground font-bold py-4 rounded-2xl active:scale-[0.98] transition-all disabled:opacity-50 shadow-lg shadow-primary/25 text-base flex items-center justify-center gap-2"
+          >
+            {requestingLocation ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Buscando GPS...
+              </>
+            ) : (
+              <>
+                <MapPin className="h-5 w-5" />
+                Ativar Localização
+              </>
+            )}
           </button>
         ) : (
           <button
