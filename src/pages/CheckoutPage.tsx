@@ -43,7 +43,8 @@ const CheckoutPage = () => {
   const [couponId, setCouponId] = useState<string | null>(null);
   const [couponCode, setCouponCode] = useState<string | null>(null);
   const [couponType, setCouponType] = useState<string | null>(null);
-  const [calculatedDeliveryFee, setCalculatedDeliveryFee] = useState<number | null>(null);
+   const [calculatedDeliveryFee, setCalculatedDeliveryFee] = useState<number | null>(null);
+   const [clientCoords, setClientCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [calculatingFee, setCalculatingFee] = useState(false);
   const [feeBreakdown, setFeeBreakdown] = useState<string | null>(null);
   const [loyaltyDiscount, setLoyaltyDiscount] = useState(0);
@@ -161,65 +162,89 @@ const CheckoutPage = () => {
   const walletDiscount = useWallet ? Math.min(walletBalance, Math.max(0, addMoney(subtotal, effectiveDeliveryFee, -couponDiscount, -loyaltyDiscount))) : 0;
   const finalTotal = Math.max(0, addMoney(subtotal, effectiveDeliveryFee, -couponDiscount, -loyaltyDiscount, -walletDiscount));
 
-  useEffect(() => {
-    const customerCep = selectedSavedAddressId && savedAddressData?.cep ? savedAddressData.cep : profileCep;
-    const activeNeighborhood = selectedSavedAddressId && savedAddressData?.neighborhood ? savedAddressData.neighborhood : profileNeighborhood;
-
-     if (isOwnDelivery) {
-       if (!customerCep || !storeCep) {
-         setCalculatedDeliveryFee(null);
-         setFeeBreakdown(null);
-         return;
-       }
+   // Effect to get high precision GPS coordinates once
+   useEffect(() => {
+     if (hasAddress || selectedSavedAddressId) {
+       const geoCep = selectedSavedAddressId && savedAddressData?.cep ? savedAddressData.cep : profileCep;
+       const geoStreet = selectedSavedAddressId && savedAddressData
+         ? [savedAddressData.street, savedAddressData.number].filter(Boolean).join(" ")
+         : [profileStreet, profileNumber].filter(Boolean).join(" ");
+       const geoNeighborhood = selectedSavedAddressId && savedAddressData?.neighborhood ? savedAddressData.neighborhood : profileNeighborhood;
  
-       let cancelled = false;
-       setCalculatingFee(true);
- 
-       const ownConfig = {
-         delivery_fee_type: (storeData as any).delivery_fee_type || 'fixed',
-         delivery_base_km: (storeData as any).delivery_base_km || 0,
-         delivery_fee_base: (storeData as any).delivery_fee_base || 0,
-         delivery_fee_per_km: (storeData as any).delivery_fee_per_km || 0,
-         own_delivery_fee: (storeData as any).own_delivery_fee || 0,
-       };
- 
-       calculateStoreOwnDeliveryFee(customerCep, storeCep, ownConfig).then((result) => {
-         if (cancelled) return;
-         const feeWithSplit = result.fee + effectivePlatformSplit;
-         setCalculatedDeliveryFee(feeWithSplit);
-         setFeeBreakdown(result.breakdown + (effectivePlatformSplit > 0 ? ` + Taxa plataforma: ${formatBRL(effectivePlatformSplit)}` : ""));
-         if (activeNeighborhood) setNeighborhood(activeNeighborhood, feeWithSplit);
-         setCalculatingFee(false);
-       }).catch(() => {
-         if (cancelled) return;
-         setCalculatingFee(false);
+       resolveAddressContext({
+         street: geoStreet,
+         neighborhood: geoNeighborhood,
+         postalcode: geoCep,
+       }).then(context => {
+         getBestClientCoordinates(context).then(coords => {
+           if (coords) setClientCoords(coords);
+         });
        });
- 
-       return () => { cancelled = true; };
      }
-
-    if (!customerCep || !storeCep) {
-      setCalculatedDeliveryFee(null);
-      setFeeBreakdown(null);
-      return;
-    }
-
-    let cancelled = false;
-    setCalculatingFee(true);
-
-    calculateDeliveryFee(customerCep, storeCep, config).then((result) => {
-      if (cancelled) return;
-      setCalculatedDeliveryFee(result.fee);
-      setFeeBreakdown(result.breakdown);
-      setNeighborhood(activeNeighborhood || neighborhood || "", result.fee);
-      setCalculatingFee(false);
-    }).catch(() => {
-      if (cancelled) return;
-      setCalculatingFee(false);
-    });
-
-    return () => { cancelled = true; };
-  }, [profileCep, storeCep, config, savedAddressData, selectedSavedAddressId, profileNeighborhood, isOwnDelivery, storeOwnFee, ownDeliveryFeeWithSplit, storePlan.isFixedPlan, storePlan.platformDeliverySplit, effectivePlatformSplit]);
+   }, [hasAddress, selectedSavedAddressId, savedAddressData, profileCep, profileStreet, profileNumber, profileNeighborhood]);
+ 
+   useEffect(() => {
+     const customerCep = selectedSavedAddressId && savedAddressData?.cep ? savedAddressData.cep : profileCep;
+     const activeNeighborhood = selectedSavedAddressId && savedAddressData?.neighborhood ? savedAddressData.neighborhood : profileNeighborhood;
+ 
+      if (isOwnDelivery) {
+        if (!customerCep || !storeCep) {
+          setCalculatedDeliveryFee(null);
+          setFeeBreakdown(null);
+          return;
+        }
+  
+        let cancelled = false;
+        setCalculatingFee(true);
+  
+        const ownConfig = {
+          delivery_fee_type: (storeData as any).delivery_fee_type || 'fixed',
+          delivery_base_km: (storeData as any).delivery_base_km || 0,
+          delivery_fee_base: (storeData as any).delivery_fee_base || 0,
+          delivery_fee_per_km: (storeData as any).delivery_fee_per_km || 0,
+          own_delivery_fee: (storeData as any).own_delivery_fee || 0,
+          customer_street: selectedSavedAddressId && savedAddressData ? savedAddressData.street : profileStreet,
+          customer_number: selectedSavedAddressId && savedAddressData ? savedAddressData.number : profileNumber,
+          customer_coords: clientCoords
+        };
+  
+        calculateStoreOwnDeliveryFee(customerCep, storeCep, ownConfig).then((result) => {
+          if (cancelled) return;
+          const feeWithSplit = result.fee + effectivePlatformSplit;
+          setCalculatedDeliveryFee(feeWithSplit);
+          setFeeBreakdown(result.breakdown + (effectivePlatformSplit > 0 ? ` + Taxa plataforma: ${formatBRL(effectivePlatformSplit)}` : ""));
+          if (activeNeighborhood) setNeighborhood(activeNeighborhood, feeWithSplit);
+          setCalculatingFee(false);
+        }).catch(() => {
+          if (cancelled) return;
+          setCalculatingFee(false);
+        });
+  
+        return () => { cancelled = true; };
+      }
+ 
+     if (!customerCep || !storeCep) {
+       setCalculatedDeliveryFee(null);
+       setFeeBreakdown(null);
+       return;
+     }
+ 
+     let cancelled = false;
+     setCalculatingFee(true);
+ 
+     calculateDeliveryFee(customerCep, storeCep, config, clientCoords).then((result) => {
+       if (cancelled) return;
+       setCalculatedDeliveryFee(result.fee);
+       setFeeBreakdown(result.breakdown);
+       setNeighborhood(activeNeighborhood || neighborhood || "", result.fee);
+       setCalculatingFee(false);
+     }).catch(() => {
+       if (cancelled) return;
+       setCalculatingFee(false);
+     });
+ 
+     return () => { cancelled = true; };
+   }, [profileCep, storeCep, config, savedAddressData, selectedSavedAddressId, profileNeighborhood, isOwnDelivery, storeOwnFee, ownDeliveryFeeWithSplit, storePlan.isFixedPlan, storePlan.platformDeliverySplit, effectivePlatformSplit, clientCoords]);
 
   const buildAddressString = () => {
     if (!hasAddress) return "";
