@@ -842,42 +842,33 @@ const AdminDashboard = () => {
   };
 
   const updateOrderStatus = async (orderId: string, newStatus: OrderStatus) => {
-    // Optimistic UI: update cache immediately so the order moves between tabs instantly
-    const previousOrders = queryClient.getQueryData<any[]>(["store-orders", store?.id]);
     const order = orders?.find((o: any) => o.id === orderId);
-    if (previousOrders) {
-      queryClient.setQueryData(
-        ["store-orders", store?.id],
-        previousOrders.map((o: any) => (o.id === orderId ? { ...o, status: newStatus } : o)),
-      );
-    }
-    // Show toast immediately
-    toast.success("Pedido atualizado!");
-
+    
     // Auto-print synchronously (user gesture preserves printer prompt on web)
     if (newStatus === "preparando" && autoPrint && order) {
       try { handlePrint(order); } catch (e) { console.warn("print error", e); }
     }
 
     try {
-      const { error, data } = await supabase
+      // Direct update and refetch to ensure source of truth and instant tab switch without ghosting
+      const { error } = await supabase
         .from("orders")
         .update({ status: newStatus })
-        .eq("id", orderId)
-        .select();
+        .eq("id", orderId);
+
       if (error) {
-        // Revert optimistic update
-        if (previousOrders) queryClient.setQueryData(["store-orders", store?.id], previousOrders);
         toast.error(`Erro ao atualizar pedido: ${error.message}`);
         return;
       }
-      if (!data || data.length === 0) {
-        if (previousOrders) queryClient.setQueryData(["store-orders", store?.id], previousOrders);
-        toast.error("Pedido não atualizado — verifique permissões");
-        return;
-      }
 
-      // Background: send notifications without blocking UI
+      // Invalidate and switch tab before toast
+      await queryClient.invalidateQueries({ queryKey: ["store-orders", store?.id] });
+      
+      // Remove redundância, já estamos trocando a aba no onClick para resposta imediata
+      
+      toast.success("Pedido atualizado!");
+
+      // Notifications
       if (order) {
         const clientPhone = getClientWhatsApp(order.client_id);
         const clientName = getClientName(order.client_id);
@@ -911,7 +902,6 @@ const AdminDashboard = () => {
         }
       }
     } catch (e: any) {
-      if (previousOrders) queryClient.setQueryData(["store-orders", store?.id], previousOrders);
       toast.error(`Erro inesperado: ${e?.message}`);
     }
   };
@@ -1502,13 +1492,21 @@ const AdminDashboard = () => {
                             </div>
                             <div className="flex gap-2">
                               {order.status === "pendente" && (
-                                <button onClick={() => updateOrderStatus(order.id, "preparando")}
+                                <button onClick={() => {
+                                  setDashboardTab("orders");
+                                  setActiveTab("preparando");
+                                  updateOrderStatus(order.id, "preparando");
+                                }}
                                   className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2.5 rounded-xl text-xs active:scale-[0.98] transition-transform">
                                   {order.payment_method === "pix" ? "🍳 PRODUZIR" : "✓ ACEITAR"}
                                 </button>
                               )}
                               {order.status === "preparando" && (
-                                <button onClick={() => updateOrderStatus(order.id, "pronto_para_entrega" as OrderStatus)}
+                                <button onClick={() => {
+                                  setDashboardTab("orders");
+                                  setActiveTab("pronto_para_entrega");
+                                  updateOrderStatus(order.id, "pronto_para_entrega" as OrderStatus);
+                                }}
                                   className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2.5 rounded-xl text-xs active:scale-[0.98] transition-transform">
                                   🔔 MARCAR PRONTO
                                 </button>
@@ -2369,7 +2367,10 @@ const AdminDashboard = () => {
                                     <span className="text-[10px] bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded font-bold">💰 PIX — Pagamento Confirmado</span>
                                   </div>
                                 )}
-                                <button onClick={() => updateOrderStatus(order.id, "preparando")}
+                                <button onClick={() => {
+                                  setActiveTab("preparando");
+                                  updateOrderStatus(order.id, "preparando");
+                                }}
                                   className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 rounded-xl text-sm active:scale-[0.98] transition-transform h-12">
                                   {order.payment_method === "pix" ? "🍳 COMEÇAR PRODUÇÃO" : "✓ ACEITAR PEDIDO"}
                                 </button>
@@ -2380,7 +2381,12 @@ const AdminDashboard = () => {
                               </div>
                             ) : action ? (
                               <div className="space-y-1">
-                                <button onClick={() => updateOrderStatus(order.id, action.next)}
+                                <button onClick={() => {
+                                  // Local tab change first for instant response
+                                  if (action.next === "preparando") setActiveTab("preparando");
+                                  else if (action.next === "pronto_para_entrega") setActiveTab("pronto_para_entrega");
+                                  updateOrderStatus(order.id, action.next);
+                                }}
                                   className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 rounded-xl text-sm active:scale-[0.98] transition-transform h-12">
                                   {action.emoji} {action.label}
                                 </button>
