@@ -158,11 +158,22 @@ async function confirmAndSplit(supabase: any, orderId: string, paymentId: string
             const tData = await transferRes.json();
             if (transferRes.ok) {
               console.log(`[confirm-order-payment] split R$${storeShare} → ${store.name} ok (${tData.id})`);
+              await supabase.from("orders").update({
+                store_payout_id: tData.id,
+                store_payout_at: new Date().toISOString(),
+                store_payout_error: null,
+              }).eq("id", orderId);
             } else {
               console.error(`[confirm-order-payment] split failed:`, JSON.stringify(tData));
+              await supabase.from("orders").update({
+                store_payout_error: JSON.stringify(tData).substring(0, 500),
+              }).eq("id", orderId);
             }
           } catch (e) {
             console.error("[confirm-order-payment] split exception:", e);
+            await supabase.from("orders").update({
+              store_payout_error: String(e).substring(0, 500),
+            }).eq("id", orderId);
           }
         }
       }
