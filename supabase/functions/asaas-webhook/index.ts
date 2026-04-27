@@ -99,25 +99,33 @@ Deno.serve(async (req) => {
           return json({ error: "Order not found" }, 404);
         }
 
-        // Idempotency: only update if still awaiting payment
-        if (order.status !== "aguardando_pagamento") {
-          console.log(`Order ${externalReference} already processed (status: ${order.status})`);
-          return json({ received: true, already_processed: true });
+        // Status update — only first time
+        if (order.status === "aguardando_pagamento") {
+          const { error: updateError } = await supabase
+            .from("orders")
+            .update({
+              status: "pendente" as any,
+              confirmed_at: new Date().toISOString(),
+            })
+            .eq("id", externalReference);
+          if (updateError) {
+            console.error("Error updating order:", updateError);
+          } else {
+            console.log(`Order ${externalReference} payment confirmed via Asaas, status → pendente`);
+          }
+        } else {
+          console.log(`Order ${externalReference} status=${order.status} (already past aguardando_pagamento) — will still attempt payout if pending`);
         }
 
-        // Payment confirmed → set to pendente
-        const { error: updateError } = await supabase
+        // Re-fetch to check payout state
+        const { data: payoutCheck } = await supabase
           .from("orders")
-          .update({
-            status: "pendente" as any,
-            confirmed_at: new Date().toISOString(),
-          })
-          .eq("id", externalReference);
-
-        if (updateError) {
-          console.error("Error updating order:", updateError);
-        } else {
-          console.log(`Order ${externalReference} payment confirmed via Asaas, status → pendente`);
+          .select("store_payout_id")
+          .eq("id", externalReference)
+          .maybeSingle();
+        if (payoutCheck?.store_payout_id) {
+          console.log(`Order ${externalReference} already split (transfer ${payoutCheck.store_payout_id}) — skipping`);
+          return json({ received: true, already_processed: true, split_already_done: true });
         }
 
         // ── Auto-transfer store share to owner's PIX key ──
@@ -263,11 +271,22 @@ Deno.serve(async (req) => {
                   const transferData = await transferRes.json();
                   if (transferRes.ok) {
                     console.log(`Auto-transfer R$${storeShare} to ${store.name} (PIX: ${ownerProfile.pix_key}) — transfer ID: ${transferData.id}`);
+                    await supabase.from("orders").update({
+                      store_payout_id: transferData.id,
+                      store_payout_at: new Date().toISOString(),
+                      store_payout_error: null,
+                    }).eq("id", externalReference);
                   } else {
                     console.error(`Auto-transfer failed for ${store.name}:`, JSON.stringify(transferData));
+                    await supabase.from("orders").update({
+                      store_payout_error: JSON.stringify(transferData).substring(0, 500),
+                    }).eq("id", externalReference);
                   }
                 } catch (transferErr) {
                   console.error(`Auto-transfer exception for ${store.name}:`, transferErr);
+                  await supabase.from("orders").update({
+                    store_payout_error: String(transferErr).substring(0, 500),
+                  }).eq("id", externalReference);
                 }
               }
             }
