@@ -32,6 +32,8 @@ Deno.serve(async (req) => {
 
   try {
     const rawBody = await req.text();
+    const wId = crypto.randomUUID().slice(0, 8);
+    console.log(`[ASAAS-WH ${wId}] ▶️ ${req.method} body_len=${rawBody.length}`);
 
     // Validate the webhook token from Asaas
     const asaasToken = req.headers.get("asaas-access-token");
@@ -42,24 +44,24 @@ Deno.serve(async (req) => {
     const expectedToken = webhookToken || apiKey;
 
     if (!expectedToken) {
-      console.error("ASAAS_WEBHOOK_TOKEN/ASAAS_API_KEY not configured");
+      console.error(`[ASAAS-WH ${wId}] ❌ ASAAS_WEBHOOK_TOKEN/ASAAS_API_KEY not configured`);
       return json({ error: "Not configured" }, 500);
     }
 
     // SECURITY: Require token header on ALL requests, not just when present
     if (!asaasToken || asaasToken !== expectedToken) {
-      console.warn("Missing or invalid Asaas webhook token — rejecting request");
+      console.warn(`[ASAAS-WH ${wId}] ❌ Token inválido (recebido=${asaasToken ? asaasToken.slice(0,6)+"..." : "MISSING"} esperado_prefix=${expectedToken.slice(0,6)}...)`);
       return json({ error: "Unauthorized" }, 401);
     }
 
     const parsed = WebhookSchema.safeParse(JSON.parse(rawBody));
     if (!parsed.success) {
-      console.error("Invalid webhook payload:", parsed.error.flatten());
+      console.error(`[ASAAS-WH ${wId}] ❌ Payload inválido:`, JSON.stringify(parsed.error.flatten()));
       return json({ error: "Invalid payload" }, 400);
     }
 
     const { event, payment } = parsed.data;
-    console.log("Asaas webhook received:", JSON.stringify({ event, payment_id: payment?.id, status: payment?.status }));
+    console.log(`[ASAAS-WH ${wId}] 📨 event=${event} payment_id=${payment?.id} status=${payment?.status} ext_ref=${payment?.externalReference} value=${payment?.value}`);
 
     // Only process payment events
     if (!event.startsWith("PAYMENT_") || !payment) {
