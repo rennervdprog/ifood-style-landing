@@ -93,23 +93,23 @@ const painPoints = [
   { emoji: "🔇", pain: "Perde pedido porque não ouviu a mensagem", solution: "Alerta sonoro + notificação push no celular" },
 ];
 
-const steps = [
-  { step: "01", title: "Cadastre sua loja", desc: "Preencha os dados básicos e escolha seu plano." },
-  { step: "02", title: "Monte seu cardápio", desc: "Adicione categorias, produtos, fotos e preços." },
-  { step: "03", title: "Compartilhe o link", desc: "Envie pelo WhatsApp, redes sociais ou imprima o QR Code." },
-  { step: "04", title: "Receba pedidos!", desc: "Clientes pedem pelo celular e você recebe tudo organizado." },
-];
-
-const features = [
-  { icon: Smartphone, title: "Cardápio no celular", desc: "Cliente abre o link e já faz o pedido. Sem baixar nenhum app." },
-  { icon: QrCode, title: "QR Code exclusivo", desc: "Divulgue seu QR Code. O cliente aponta a câmera e faz o pedido digital." },
-  { icon: CreditCard, title: "PIX automático", desc: "Pagamento confirmado na hora. Sem conferir extrato." },
-  { icon: Bell, title: "Alerta instantâneo", desc: "Novo pedido? Alerta sonoro e push notification no celular." },
-  { icon: Utensils, title: "Cardápio profissional", desc: "Categorias, fotos HD, descrições e adicionais personalizáveis." },
-  { icon: BarChart3, title: "Relatórios completos", desc: "Saiba quanto vendeu, produtos mais pedidos e horários de pico." },
-  { icon: Gift, title: "Fidelidade & Cupons", desc: "Programa de pontos e cupons de desconto para fidelizar clientes." },
-  { icon: Truck, title: "Entrega integrada", desc: "Gerencie entregas, taxas por bairro e motoboys na plataforma." },
-];
+ const steps = [
+   { step: "01", title: "Crie sua loja", desc: "Cadastre seu negócio e configure sua marca em minutos." },
+   { step: "02", title: "Monte o cardápio", desc: "Adicione seus produtos com fotos, preços e categorias." },
+   { step: "03", title: "Divulgue seu link", desc: "Compartilhe no WhatsApp e redes sociais ou use QR Code." },
+   { step: "04", title: "Venda e gerencie", desc: "Receba pedidos organizados e acompanhe tudo em tempo real." },
+ ];
+ 
+ const features = [
+   { icon: Smartphone, title: "Cardápio Digital", desc: "Link exclusivo para seus clientes pedirem sem precisar baixar aplicativos." },
+   { icon: QrCode, title: "Mesas e Balcão", desc: "QR Code para autoatendimento no local, agilizando o serviço e evitando filas." },
+   { icon: CreditCard, title: "PIX Automático", desc: "Confirmação instantânea de pagamento. Esqueça a conferência manual de extratos." },
+   { icon: Bell, title: "Gestão de Pedidos", desc: "Painel inteligente com alertas sonoros e notificações para você não perder nada." },
+   { icon: Utensils, title: "Personalização", desc: "Cardápio com fotos HD, adicionais, combos e opções de personalização total." },
+   { icon: BarChart3, title: "Dashboard", desc: "Relatórios de vendas, produtos mais pedidos e horários de maior movimento." },
+   { icon: Gift, title: "Fidelize Clientes", desc: "Crie cupons de desconto e programas de fidelidade para aumentar o faturamento." },
+   { icon: Truck, title: "Logística Nativa", desc: "Sistema integrado para gestão de motoboys e rastreamento de entregas." },
+ ];
 
 const plans = [
    { name: "Comissão", price: "R$0", sub: "/mês", desc: "6% por pedido", icon: Rocket, tags: ["Sem mensalidade", "Todas as ferramentas"], subtitle: "Todas as ferramentas incluídas. Pague só quando vender.", popular: false },
@@ -222,23 +222,23 @@ const Index = () => {
         <div className="absolute -bottom-40 -left-40 w-[400px] h-[400px] rounded-full bg-accent/30 blur-3xl pointer-events-none" />
 
         <div className="relative mx-auto max-w-5xl text-center">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-foreground leading-[1.1] mb-5">
-            Delivery digital{" "}
-            <span className="relative inline-block">
-              <span className="relative z-10 text-primary">para sua loja.</span>
-              <span className="absolute bottom-1 left-0 w-full h-3 bg-primary/15 -z-0 rounded" />
-            </span>
-          </h1>
-
-          <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed">
-            Cardápio profissional, pedidos organizados e pagamentos automáticos — <strong className="text-foreground">comece grátis</strong> ou escolha um plano a partir de R$100/mês.
-          </p>
-
-          <div className="flex flex-col items-center gap-4 mb-6">
-            <Button size="lg" onClick={handleCTA} className="text-base px-8 py-6 rounded-full shadow-lg shadow-primary/20 w-full max-w-sm">
-              Cadastrar minha loja — É grátis <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-          </div>
+           <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black tracking-tight text-foreground leading-[1.1] mb-6">
+             O seu delivery <br />
+             <span className="text-primary">mais profissional.</span>
+           </h1>
+ 
+           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
+             A plataforma completa para vender mais: cardápio digital, gestão de entregas e pagamentos automáticos. <strong className="text-foreground">Comece hoje mesmo.</strong>
+           </p>
+ 
+           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
+             <Button size="lg" onClick={handleCTA} className="text-base font-bold px-10 py-7 rounded-full shadow-2xl shadow-primary/30 w-full sm:w-auto transition-all hover:scale-105">
+               Criar Loja Grátis <ArrowRight className="ml-2 h-5 w-5" />
+             </Button>
+             <Button size="lg" variant="outline" onClick={handleWhatsApp} className="text-base font-bold px-10 py-7 rounded-full w-full sm:w-auto border-2">
+               Falar com Consultor
+             </Button>
+           </div>
 
           {/* Trust badges */}
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
@@ -255,44 +255,30 @@ const Index = () => {
         </div>
       </section>
 
-      {/* ══════ MICRO STATS ══════ */}
-      <section ref={statsRef.ref} className="py-10 border-y border-border bg-muted/30">
-        <div className="mx-auto max-w-4xl grid grid-cols-3 gap-4 text-center px-4">
-          {[
-            { value: "100%", label: "Digital" },
-            { value: "0%", label: "Taxa de adesão" },
-            { value: "R$0", label: "Para começar" },
-          ].map((s) => (
-            <div key={s.label}>
-              <p className="text-2xl md:text-3xl font-extrabold text-primary">{s.value}</p>
-              <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ══════ PAIN POINTS ══════ */}
-      <section className="py-16 px-4">
-        <div className="mx-auto max-w-5xl">
-          <h2 className="text-2xl md:text-3xl font-bold text-center text-foreground mb-4">
-            Você ainda faz isso? 🤔
-          </h2>
-          <p className="text-center text-muted-foreground mb-10 max-w-xl mx-auto">
-            Se identificou com algum desses problemas? Tem solução.
-          </p>
-          <div className="grid sm:grid-cols-2 gap-4">
-            {painPoints.map((item) => (
-              <div key={item.pain} className="group flex gap-4 items-start rounded-2xl border border-border bg-card p-5 hover:shadow-md transition-shadow">
-                <span className="text-3xl flex-shrink-0">{item.emoji}</span>
-                <div>
-                  <p className="text-sm text-muted-foreground line-through mb-1">{item.pain}</p>
-                  <p className="text-sm font-semibold text-primary">{item.solution}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+       {/* ══════ PAIN POINTS ══════ */}
+       <section className="py-24 px-4 bg-muted/30">
+         <div className="mx-auto max-w-5xl">
+           <div className="text-center mb-16">
+             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+               Sua operação ainda é manual? 🤔
+             </h2>
+             <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+               Muitas lojas perdem vendas por falta de organização. Nós resolvemos isso para você.
+             </p>
+           </div>
+           <div className="grid sm:grid-cols-2 gap-6">
+             {painPoints.map((item) => (
+               <div key={item.pain} className="group flex gap-5 items-center rounded-3xl border border-border bg-card p-8 hover:border-primary/30 hover:shadow-xl transition-all duration-300">
+                 <span className="text-4xl flex-shrink-0 bg-muted p-4 rounded-2xl group-hover:scale-110 transition-transform">{item.emoji}</span>
+                 <div>
+                   <p className="text-sm text-muted-foreground line-through mb-1 opacity-60 font-medium">{item.pain}</p>
+                   <p className="text-lg font-bold text-foreground leading-tight">{item.solution}</p>
+                 </div>
+               </div>
+             ))}
+           </div>
+         </div>
+       </section>
 
        {/* ══════ MOTOBOY SYSTEM SECTION ══════ */}
        <section className="py-16 px-4 bg-slate-900 text-white overflow-hidden relative">
