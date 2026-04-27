@@ -219,12 +219,12 @@ type PizzaPriceMode = "maior" | "media" | "soma";
           pizza_price_mode: pizzaPriceMode,
           zapi_enabled: zapiEnabled, // keep a flag here for quick checks (no secrets)
         },
-          delivery_mode: deliveryMode,
-          own_delivery_fee: parseFloat(ownDeliveryFee.toString().replace(",", ".")) || 0,
-          delivery_fee_type: deliveryFeeType,
-          delivery_base_km: parseFloat(deliveryBaseKm.toString().replace(",", ".")) || 0,
-          delivery_fee_base: parseFloat(deliveryFeeBase.toString().replace(",", ".")) || 0,
-          delivery_fee_per_km: parseFloat(deliveryFeePerKm.toString().replace(",", ".")) || 0,
+         delivery_mode: deliveryMode,
+         own_delivery_fee: parseFloat(ownDeliveryFee.toString().replace(",", ".")) || 0,
+         delivery_fee_type: deliveryFeeType,
+         delivery_base_km: parseFloat(deliveryBaseKm.toString().replace(",", ".")) || 0,
+         delivery_fee_base: parseFloat(deliveryFeeBase.toString().replace(",", ".")) || 0,
+         delivery_fee_per_km: parseFloat(deliveryFeePerKm.toString().replace(",", ".")) || 0,
         address_street: addressStreet.trim() || null,
         address_number: addressNumber.trim() || null,
         address_complement: addressComplement.trim() || null,
@@ -807,7 +807,7 @@ const NotificationSection = () => {
                        type="text"
                        inputMode="numeric"
                        value={deliveryBaseKm}
-                       onChange={(e) => setDeliveryBaseKm(e.target.value.replace(/\D/g, ""))}
+                       onChange={(e) => setDeliveryBaseKm(e.target.value.replace(/[^0-9.,]/g, ""))}
                        className="w-full bg-card border border-border rounded-lg px-3 py-2 text-sm"
                      />
                    </div>
