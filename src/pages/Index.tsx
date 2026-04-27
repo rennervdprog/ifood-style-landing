@@ -479,58 +479,71 @@ const Index = () => {
         </div>
       </section>
 
-      {/* ══════ TESTIMONIALS ══════ */}
-      <section className="py-16 px-4">
-        <div className="mx-auto max-w-5xl">
-          <h2 className="text-2xl md:text-3xl font-bold text-center text-foreground mb-3">
-            O que nossos parceiros dizem ⭐
-          </h2>
-          <p className="text-center text-muted-foreground mb-12 max-w-xl mx-auto">
-            Lojistas reais que transformaram seu delivery.
-          </p>
-          <div className="grid sm:grid-cols-3 gap-6">
-            {testimonials.map((t) => (
-              <Card key={t.name} className="border-border rounded-2xl hover:shadow-md transition-shadow">
-                <CardContent className="pt-6">
-                  <div className="flex gap-0.5 mb-3">
-                    {Array.from({ length: t.rating }).map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-primary text-primary" />
-                    ))}
-                  </div>
-                  <p className="text-sm text-muted-foreground italic leading-relaxed mb-4">"{t.text}"</p>
-                  <p className="text-sm font-bold text-foreground">{t.name}</p>
-                  <p className="text-xs text-muted-foreground">{t.store} • {t.orders}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
+       {/* ══════ TESTIMONIALS ══════ */}
+       <section className="py-24 px-4 bg-background">
+         <div className="mx-auto max-w-6xl">
+           <div className="text-center mb-16">
+             <h2 className="text-3xl md:text-5xl font-black text-foreground mb-4">
+               Quem usa, aprova ⭐
+             </h2>
+             <p className="text-muted-foreground text-lg max-w-2xl mx-auto font-medium">
+               Lojistas que decidiram profissionalizar sua gestão e hoje colhem os resultados.
+             </p>
+           </div>
+           <div className="grid sm:grid-cols-3 gap-8">
+             {testimonials.map((t) => (
+               <Card key={t.name} className="border-border rounded-[2rem] hover:shadow-2xl transition-all duration-300 bg-muted/30 p-2 border-none">
+                 <CardContent className="pt-8 px-6 pb-8">
+                   <div className="flex gap-1 mb-6">
+                     {Array.from({ length: t.rating }).map((_, i) => (
+                       <Star key={i} className="h-5 w-5 fill-primary text-primary" />
+                     ))}
+                   </div>
+                   <p className="text-lg text-foreground font-medium leading-relaxed mb-8 italic">"{t.text}"</p>
+                   <div className="flex items-center gap-4">
+                     <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center font-bold text-primary">
+                       {t.name.charAt(0)}
+                     </div>
+                     <div>
+                       <p className="font-bold text-foreground">{t.name}</p>
+                       <p className="text-sm text-muted-foreground font-semibold">{t.store} • {t.orders}</p>
+                     </div>
+                   </div>
+                 </CardContent>
+               </Card>
+             ))}
+           </div>
+         </div>
+       </section>
 
-      {/* ══════ FAQ ══════ */}
-      <section className="py-16 px-4 bg-muted/20">
-        <div className="mx-auto max-w-3xl">
-          <h2 className="text-2xl md:text-3xl font-bold text-center text-foreground mb-3">
-            Perguntas frequentes
-          </h2>
-          <p className="text-center text-muted-foreground mb-10">
-            Tire suas dúvidas antes de começar.
-          </p>
-          <div className="space-y-3">
-            {faqs.map((faq, i) => (
-              <div key={i} className="rounded-2xl border border-border bg-card overflow-hidden">
-                <button onClick={() => setOpenFaq(openFaq === i ? null : i)} className="w-full flex items-center justify-between p-5 text-left">
-                  <span className="font-semibold text-foreground text-sm pr-4">{faq.q}</span>
-                  <ChevronDown className={`h-5 w-5 text-muted-foreground shrink-0 transition-transform ${openFaq === i ? "rotate-180" : ""}`} />
-                </button>
-                {openFaq === i && (
-                  <div className="px-5 pb-5 text-sm text-muted-foreground leading-relaxed animate-fade-in">{faq.a}</div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+       {/* ══════ FAQ ══════ */}
+       <section className="py-24 px-4 bg-muted/40">
+         <div className="mx-auto max-w-4xl">
+           <div className="text-center mb-16">
+             <h2 className="text-3xl md:text-5xl font-black text-foreground mb-4">
+               Dúvidas frequentes
+             </h2>
+             <p className="text-muted-foreground text-lg font-medium">
+               Tudo o que você precisa saber para começar agora mesmo.
+             </p>
+           </div>
+           <div className="space-y-4">
+             {faqs.map((faq, i) => (
+               <div key={i} className="rounded-3xl border border-border bg-card overflow-hidden transition-all hover:border-primary/30">
+                 <button onClick={() => setOpenFaq(openFaq === i ? null : i)} className="w-full flex items-center justify-between p-8 text-left group">
+                   <span className="text-lg font-bold text-foreground pr-8 group-hover:text-primary transition-colors">{faq.q}</span>
+                   <ChevronDown className={`h-6 w-6 text-muted-foreground shrink-0 transition-transform duration-300 ${openFaq === i ? "rotate-180 text-primary" : ""}`} />
+                 </button>
+                 {openFaq === i && (
+                   <div className="px-8 pb-8 text-lg text-muted-foreground leading-relaxed animate-in fade-in slide-in-from-top-2 duration-300">
+                     {faq.a}
+                   </div>
+                 )}
+               </div>
+             ))}
+           </div>
+         </div>
+       </section>
 
        {/* ══════ CTA FINAL ══════ */}
        <section className="relative py-32 px-4 overflow-hidden bg-primary">
