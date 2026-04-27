@@ -654,14 +654,48 @@ const Index = () => {
         </div>
       </section>
 
-      {/* ══════ FOOTER ══════ */}
-      <footer className="py-8 text-center text-sm text-muted-foreground border-t border-border px-4 mb-16">
-         <p className="font-semibold text-foreground mb-1">Itasuper todos os direitos reservado</p>
-         <div className="flex items-center justify-center gap-4 text-xs mt-1">
-           <a href="/termos-de-uso" className="hover:text-primary transition-colors">termos</a>
-           <a href="/politica-de-privacidade" className="hover:text-primary transition-colors">politica</a>
+       {/* ══════ FOOTER ══════ */}
+       <footer className="bg-card pt-20 pb-10 border-t border-border px-4 mb-16 sm:mb-0">
+         <div className="mx-auto max-w-7xl">
+           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+             <div className="col-span-1 md:col-span-2">
+               <div className="flex items-center gap-3 mb-6">
+                 <img src="/itasuper-logo.jpg" alt="ItaSuper" className="w-12 h-12 rounded-2xl" />
+                 <span className="text-2xl font-black text-primary">ItaSuper</span>
+               </div>
+               <p className="text-muted-foreground text-lg font-medium leading-relaxed max-w-md">
+                 Transformando o delivery da sua cidade com tecnologia e simplicidade. 
+                 O parceiro ideal para o crescimento do seu negócio.
+               </p>
+             </div>
+             <div>
+               <h4 className="font-black text-foreground uppercase tracking-widest text-xs mb-6">Institucional</h4>
+               <ul className="space-y-4 font-bold text-muted-foreground">
+                 <li><a href="/termos-de-uso" className="hover:text-primary transition-colors">Termos de Uso</a></li>
+                 <li><a href="/politica-de-privacidade" className="hover:text-primary transition-colors">Política de Privacidade</a></li>
+               </ul>
+             </div>
+             <div>
+               <h4 className="font-black text-foreground uppercase tracking-widest text-xs mb-6">Contato</h4>
+               <ul className="space-y-4 font-bold text-muted-foreground">
+                 <li><a href="https://wa.me/5514991624997" target="_blank" className="hover:text-primary transition-colors">WhatsApp Suporte</a></li>
+                 <li><a href="mailto:contato@itasuper.com.br" className="hover:text-primary transition-colors">E-mail</a></li>
+               </ul>
+             </div>
+           </div>
+           <div className="pt-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-6">
+             <p className="font-bold text-muted-foreground text-sm">
+               © {new Date().getFullYear()} ItaSuper - Todos os direitos reservados.
+             </p>
+             <div className="flex items-center gap-6">
+               <div className="flex flex-col items-end">
+                 <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Desenvolvido por</span>
+                 <span className="font-black text-primary">Lovable AI</span>
+               </div>
+             </div>
+           </div>
          </div>
-      </footer>
+       </footer>
 
       <div data-tour="cart-fab"><CartFAB /></div>
       <BottomNav />
