@@ -96,6 +96,8 @@ jobs:
 
       - name: Build web app
         run: npm run build
+        env:
+          VITE_CAPACITOR_APP_MODE: cliente
 
       - name: Add Android platform
         run: npx cap add android || true
@@ -235,6 +237,8 @@ jobs:
 
       - name: Build web app
         run: npm run build
+        env:
+          VITE_CAPACITOR_APP_MODE: parceiro
 
       - name: Add Android platform
         run: npx cap add android || true
