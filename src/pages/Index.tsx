@@ -365,28 +365,30 @@ const Index = () => {
        </section>
  
        {/* ══════ HOW IT WORKS ══════ */}
-      <section className="py-16 px-4 bg-muted/20">
-        <div className="mx-auto max-w-5xl">
-          <h2 className="text-2xl md:text-3xl font-bold text-center text-foreground mb-4">
-            Funciona em 4 passos simples
-          </h2>
-          <p className="text-center text-muted-foreground mb-14 max-w-xl mx-auto">
-            Do cadastro ao primeiro pedido em menos de 10 minutos.
-          </p>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {steps.map((s, i) => (
-              <div key={s.step} className="relative text-center group">
-                {i < 3 && <div className="hidden lg:block absolute top-6 left-[60%] w-[80%] h-px bg-border" />}
-                <div className="relative mx-auto w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-orange-600 text-primary-foreground flex items-center justify-center text-lg font-bold mb-4 shadow-lg shadow-primary/20 group-hover:scale-110 transition-transform">
-                  {s.step}
-                </div>
-                <h3 className="font-bold text-foreground mb-1">{s.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+       <section className="py-24 px-4 bg-background border-t border-border">
+         <div className="mx-auto max-w-6xl">
+           <div className="text-center mb-16">
+             <h2 className="text-3xl md:text-5xl font-black text-foreground mb-4">
+               Comece a vender hoje 🚀
+             </h2>
+             <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+               Do cadastro ao primeiro pedido em menos de 10 minutos. É simples e rápido.
+             </p>
+           </div>
+           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-12">
+             {steps.map((s, i) => (
+               <div key={s.step} className="relative text-center group">
+                 {i < 3 && <div className="hidden lg:block absolute top-10 left-[70%] w-[60%] h-[2px] bg-gradient-to-r from-primary/30 to-transparent" />}
+                 <div className="relative mx-auto w-20 h-20 rounded-[2rem] bg-gradient-to-br from-primary to-orange-600 text-white flex items-center justify-center text-2xl font-black mb-8 shadow-2xl shadow-primary/20 group-hover:rotate-12 transition-all duration-300">
+                   {s.step}
+                 </div>
+                 <h3 className="text-xl font-bold text-foreground mb-3">{s.title}</h3>
+                 <p className="text-muted-foreground leading-relaxed font-medium">{s.desc}</p>
+               </div>
+             ))}
+           </div>
+         </div>
+       </section>
 
        {/* ══════ FEATURES GRID ══════ */}
        <section className="py-24 px-4 bg-background">
@@ -530,30 +532,29 @@ const Index = () => {
         </div>
       </section>
 
-      {/* ══════ CTA FINAL ══════ */}
-      <section className="relative py-16 px-4 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/20 pointer-events-none" />
-        <div className="relative mx-auto max-w-2xl text-center">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary/10 mb-4">
-            <Rocket className="h-7 w-7 text-primary" />
-          </div>
-          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
-            Pronto para vender mais?
-          </h2>
-          <p className="text-muted-foreground mb-8 leading-relaxed max-w-lg mx-auto">
-            Cadastre-se agora e tenha sua loja online em menos de 5 minutos.
-            <span className="block mt-1 font-semibold text-primary">Comece grátis — sem cartão de crédito!</span>
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button size="lg" onClick={handleCTA} className="text-base px-8 py-6 rounded-2xl shadow-lg shadow-primary/20">
-              Começar agora <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-            <Button size="lg" variant="outline" onClick={handleWhatsApp} className="text-base px-8 py-6 rounded-2xl">
-              <MessageCircle className="mr-2 h-5 w-5" /> Falar conosco
-            </Button>
-          </div>
-        </div>
-      </section>
+       {/* ══════ CTA FINAL ══════ */}
+       <section className="relative py-32 px-4 overflow-hidden bg-primary">
+         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10" />
+         <div className="relative mx-auto max-w-4xl text-center">
+           <h2 className="text-4xl md:text-6xl font-black text-black mb-6 leading-tight">
+             Pronto para profissionalizar o seu delivery?
+           </h2>
+           <p className="text-black/70 text-xl md:text-2xl mb-12 font-medium max-w-2xl mx-auto">
+             Junte-se a centenas de lojistas que já estão lucrando com o ItaSuper.
+           </p>
+           <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+             <Button size="lg" onClick={handleCTA} className="bg-black text-white hover:bg-black/90 text-xl font-bold px-12 py-8 rounded-full shadow-2xl transition-all hover:scale-105">
+               Criar minha loja agora
+             </Button>
+             <Button size="lg" variant="outline" onClick={handleWhatsApp} className="border-black text-black hover:bg-black/10 text-xl font-bold px-12 py-8 rounded-full border-2 transition-all">
+               Falar com suporte
+             </Button>
+           </div>
+           <p className="mt-8 text-black/50 font-bold text-sm tracking-widest uppercase">
+             Aprovação em até 24h • Sem fidelidade • Suporte humanizado
+           </p>
+         </div>
+       </section>
 
       {/* ══════ DIVIDER: CONSUMER SECTION ══════ */}
       <section className="py-6 px-4 bg-muted/40 border-y border-border">
