@@ -12,7 +12,7 @@ import confetti from "canvas-confetti";
 import AddressModal from "@/components/AddressModal";
 import SavedAddressPicker from "@/components/SavedAddressPicker";
 import CouponInput from "@/components/CouponInput";
-import { calculateDeliveryFee, DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig } from "@/lib/deliveryFee";
+ import { calculateDeliveryFee, calculateStoreOwnDeliveryFee, DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig } from "@/lib/deliveryFee";
 import { formatCep, fetchCep } from "@/lib/cepLookup";
 import { addMoney, multiplyMoney, sumMoney, formatBRL } from "@/lib/utils";
 import { useStorePlan } from "@/hooks/useStorePlan";
@@ -107,9 +107,9 @@ const CheckoutPage = () => {
     queryKey: ["store-checkout", storeId],
     queryFn: async () => {
       const { data } = await supabase
-        .from("stores_public")
-        .select("address_cep, delivery_mode, own_delivery_fee, is_open, force_closed")
-        .eq("id", storeId!)
+         .from("stores_public")
+         .select("address_cep, delivery_mode, own_delivery_fee, delivery_fee_type, delivery_base_km, delivery_fee_base, delivery_fee_per_km, is_open, force_closed")
+         .eq("id", storeId!)
         .maybeSingle();
       return data;
     },
@@ -165,17 +165,38 @@ const CheckoutPage = () => {
     const customerCep = selectedSavedAddressId && savedAddressData?.cep ? savedAddressData.cep : profileCep;
     const activeNeighborhood = selectedSavedAddressId && savedAddressData?.neighborhood ? savedAddressData.neighborhood : profileNeighborhood;
 
-    if (isOwnDelivery) {
-      setCalculatedDeliveryFee(null);
-      const totalOwnFee = ownDeliveryFeeWithSplit;
-      if (effectivePlatformSplit > 0) {
-        setFeeBreakdown(`Entrega loja: ${formatBRL(storeOwnFee)} + Taxa plataforma: ${formatBRL(effectivePlatformSplit)}`);
-      } else {
-        setFeeBreakdown(`Taxa fixa da loja: ${formatBRL(storeOwnFee)}`);
-      }
-      if (activeNeighborhood) setNeighborhood(activeNeighborhood, totalOwnFee);
-      return;
-    }
+     if (isOwnDelivery) {
+       if (!customerCep || !storeCep) {
+         setCalculatedDeliveryFee(null);
+         setFeeBreakdown(null);
+         return;
+       }
+ 
+       let cancelled = false;
+       setCalculatingFee(true);
+ 
+       const ownConfig = {
+         delivery_fee_type: (storeData as any).delivery_fee_type || 'fixed',
+         delivery_base_km: (storeData as any).delivery_base_km || 0,
+         delivery_fee_base: (storeData as any).delivery_fee_base || 0,
+         delivery_fee_per_km: (storeData as any).delivery_fee_per_km || 0,
+         own_delivery_fee: (storeData as any).own_delivery_fee || 0,
+       };
+ 
+       calculateStoreOwnDeliveryFee(customerCep, storeCep, ownConfig).then((result) => {
+         if (cancelled) return;
+         const feeWithSplit = result.fee + effectivePlatformSplit;
+         setCalculatedDeliveryFee(feeWithSplit);
+         setFeeBreakdown(result.breakdown + (effectivePlatformSplit > 0 ? ` + Taxa plataforma: ${formatBRL(effectivePlatformSplit)}` : ""));
+         if (activeNeighborhood) setNeighborhood(activeNeighborhood, feeWithSplit);
+         setCalculatingFee(false);
+       }).catch(() => {
+         if (cancelled) return;
+         setCalculatingFee(false);
+       });
+ 
+       return () => { cancelled = true; };
+     }
 
     if (!customerCep || !storeCep) {
       setCalculatedDeliveryFee(null);
