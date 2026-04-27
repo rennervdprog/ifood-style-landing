@@ -715,6 +715,14 @@ const NotificationSection = () => {
         <p className="text-[10px] text-muted-foreground/70 -mt-1">
           Cadastre sua chave Pix para receber os repasses das vendas via App.
         </p>
+        {!pixKey && (
+          <div className="bg-destructive/10 border-2 border-destructive/40 rounded-xl p-3 space-y-1">
+            <p className="text-xs font-bold text-destructive">⚠️ Sua chave Pix NÃO está cadastrada</p>
+            <p className="text-[11px] text-foreground/80 leading-snug">
+              Sem chave Pix, todo o valor das vendas em PIX fica retido na plataforma — você não recebe o repasse automático. Cadastre agora.
+            </p>
+          </div>
+        )}
         <select
           value={pixType}
           onChange={(e) => setPixType(e.target.value)}
