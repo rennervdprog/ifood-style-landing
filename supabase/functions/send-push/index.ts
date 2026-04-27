@@ -395,8 +395,10 @@ Deno.serve(async (req) => {
     if (latestFcmTokens.length > 0 && serviceAccountJson) {
       const serviceAccount = JSON.parse(serviceAccountJson);
       console.log(`[send-push] 🔑 FCM Project ID from Secret: ${serviceAccount.project_id}`);
-      if (serviceAccount.project_id !== "itasuper-c71a1") {
-        console.warn(`[send-push] ⚠️ PROJECT ID MISMATCH: Secret has ${serviceAccount.project_id} but frontend uses itasuper-c71a1`);
+      // Accept both itasuper and itafood to avoid mismatch errors during transition
+      const validProjectIds = ["itasuper-c71a1", "itafood-c71a1"];
+      if (!validProjectIds.includes(serviceAccount.project_id)) {
+        console.warn(`[send-push] ⚠️ PROJECT ID MISMATCH: Secret has ${serviceAccount.project_id} which is not in allowed list ${JSON.stringify(validProjectIds)}`);
       }
 
       const accessToken = await getAccessToken(serviceAccount);
