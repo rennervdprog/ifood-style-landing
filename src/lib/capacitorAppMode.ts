@@ -1,10 +1,12 @@
 import { isCapacitorNative } from "@/lib/capacitorNative";
-import { Capacitor } from "@capacitor/core";
 
 export type CapacitorAppMode = "partner" | "client";
 
 const APP_MODE_KEY = "cap_app_mode";
 const LEGACY_PARTNER_KEY = "cap_partner";
+const BUILD_TIME_APP_MODE = (import.meta.env.VITE_CAPACITOR_APP_MODE || "").toLowerCase();
+let nativeDetectedMode: CapacitorAppMode | null = null;
+let nativeDetectionPromise: Promise<CapacitorAppMode | null> | null = null;
 
 /**
  * Native appIds dos APKs gerados pelo workflow de build.
@@ -19,30 +21,24 @@ const CLIENT_APP_IDS = new Set<string>([
   "app.lovable.e8d28aded6334d74be2161c8dbe24765",
 ]);
 
-/** Lê o appId nativo (ex: app.itasuper.parceiro) — só funciona dentro do APK. */
-function getNativeAppId(): string | null {
-  try {
-    if (!isCapacitorNative()) return null;
-    // Capacitor.getAppId() existe em runtime nativo
-    const anyCap = Capacitor as any;
-    if (typeof anyCap.getAppId === "function") {
-      const id = anyCap.getAppId();
-      return typeof id === "string" && id ? id : null;
-    }
-  } catch {}
+function normalizeMode(value: string | undefined | null): CapacitorAppMode | null {
+  if (value === "partner" || value === "parceiro") return "partner";
+  if (value === "client" || value === "cliente") return "client";
   return null;
 }
 
-/** Detecta o modo do APK pelo appId nativo (mais confiável que URL/storage). */
-function detectModeFromNativeAppId(): CapacitorAppMode | null {
-  const appId = getNativeAppId();
-  if (!appId) return null;
-  if (PARTNER_APP_IDS.has(appId)) return "partner";
-  if (CLIENT_APP_IDS.has(appId)) return "client";
+function detectModeFromIdentifier(identifier: string | undefined | null): CapacitorAppMode | null {
+  if (!identifier) return null;
+  if (PARTNER_APP_IDS.has(identifier)) return "partner";
+  if (CLIENT_APP_IDS.has(identifier)) return "client";
   // Fallback heurístico para appIds futuros
-  if (/parceiro|partner/i.test(appId)) return "partner";
-  if (/cliente|client/i.test(appId)) return "client";
+  if (/parceiro|partner/i.test(identifier)) return "partner";
+  if (/cliente|client/i.test(identifier)) return "client";
   return null;
+}
+
+function getBuildTimeAppMode(): CapacitorAppMode | null {
+  return normalizeMode(BUILD_TIME_APP_MODE);
 }
 
 export function persistCapacitorAppMode(mode: CapacitorAppMode) {
@@ -62,22 +58,56 @@ export function persistCapacitorAppMode(mode: CapacitorAppMode) {
   } catch {}
 }
 
+export async function detectAndPersistNativeAppMode(): Promise<CapacitorAppMode | null> {
+  if (!isCapacitorNative()) return null;
+  if (nativeDetectedMode) return nativeDetectedMode;
+  if (nativeDetectionPromise) return nativeDetectionPromise;
+
+  nativeDetectionPromise = (async () => {
+    try {
+      const { App } = await import("@capacitor/app");
+      const info = await App.getInfo();
+      const mode = detectModeFromIdentifier(info.id) || detectModeFromIdentifier(info.name);
+      if (mode) {
+        nativeDetectedMode = mode;
+        persistCapacitorAppMode(mode);
+        return mode;
+      }
+    } catch {}
+
+    return null;
+  })();
+
+  return nativeDetectionPromise;
+}
+
 export function getCapacitorAppMode(): CapacitorAppMode | null {
   if (!isCapacitorNative()) return null;
 
-  // 1) Fonte da verdade definitiva: appId nativo do APK
-  const nativeMode = detectModeFromNativeAppId();
+  // 1) Fonte da verdade no bundle gerado pelo workflow Android
+  const buildMode = getBuildTimeAppMode();
+  if (buildMode) {
+    persistCapacitorAppMode(buildMode);
+    return buildMode;
+  }
+
+  // 2) Fonte nativa já resolvida pelo App.getInfo() assíncrono
+  const nativeMode = nativeDetectedMode;
   if (nativeMode) {
     persistCapacitorAppMode(nativeMode);
     return nativeMode;
   }
 
-  // 2) Override explícito por URL (?capApp=partner|client) — útil para testes
+  // Dispara detecção nativa para a próxima renderização sem bloquear o guard.
+  detectAndPersistNativeAppMode().catch(() => {});
+
+  // 3) Override explícito por URL (?capApp=partner|client) — útil para testes
   const params = new URLSearchParams(window.location.search);
   const explicitMode = params.get("capApp");
-  if (explicitMode === "partner" || explicitMode === "client") {
-    persistCapacitorAppMode(explicitMode);
-    return explicitMode;
+  const urlMode = normalizeMode(explicitMode);
+  if (urlMode) {
+    persistCapacitorAppMode(urlMode);
+    return urlMode;
   }
 
   if ((window as any).__CAP_PARTNER_REDIRECTED) {
@@ -87,8 +117,10 @@ export function getCapacitorAppMode(): CapacitorAppMode | null {
 
   try {
     const storedMode = sessionStorage.getItem(APP_MODE_KEY) || localStorage.getItem(APP_MODE_KEY);
-    if (storedMode === "partner" || storedMode === "client") {
-      return storedMode;
+    // Nunca confie em "client" salvo no storage antes de confirmar o app nativo:
+    // versões anteriores podiam gravar client no APK parceiro ao abrir em "/".
+    if (storedMode === "partner") {
+      return "partner";
     }
 
     const legacyPartner =

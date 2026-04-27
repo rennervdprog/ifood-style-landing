@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Mail, Lock, Eye, EyeOff, Store, Shield, Bike } from "lucide-react";
+import { resolvePartnerDashboard } from "@/lib/partnerDashboard";
 
 const PartnerLogin = () => {
   const { user, loading: authLoading } = useAuth();
@@ -34,25 +35,8 @@ const PartnerLogin = () => {
     }
     setChecking(true);
     try {
-      const { data: adminRole } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", userId)
-        .eq("role", "admin")
-        .maybeSingle();
-
-      if (adminRole) {
-        navigate("/super-admin", { replace: true });
-        return;
-      }
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role, is_approved")
-        .eq("user_id", userId)
-        .maybeSingle();
-
-      if (!profile || (profile as any).role === "cliente") {
+      const dashboardPath = await resolvePartnerDashboard(userId);
+      if (dashboardPath === "/portal-parceiro") {
         // On Capacitor, show choose mode instead of navigating to onboarding landing
         if (isCapacitorNative()) {
           setMode("choose");
@@ -62,20 +46,7 @@ const PartnerLogin = () => {
         navigate("/parceiro", { replace: true });
         return;
       }
-
-      const role = (profile as any).role as string;
-      if (role === "lojista") {
-        navigate("/admin", { replace: true });
-      } else if (role === "motoboy") {
-        navigate("/entregador", { replace: true });
-      } else {
-        if (isCapacitorNative()) {
-          setMode("choose");
-          setChecking(false);
-          return;
-        }
-        navigate("/parceiro", { replace: true });
-      }
+      navigate(dashboardPath, { replace: true });
     } catch {
       if (isCapacitorNative()) {
         setMode("choose");

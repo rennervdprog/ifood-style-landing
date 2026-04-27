@@ -1,9 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { isCapacitorNative } from "@/lib/capacitorNative";
-import { getCapacitorAppMode, isPartnerCapacitorApp, persistCapacitorAppMode } from "@/lib/capacitorAppMode";
+import { detectAndPersistNativeAppMode, getCapacitorAppMode, persistCapacitorAppMode, type CapacitorAppMode } from "@/lib/capacitorAppMode";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { resolvePartnerDashboard } from "@/lib/partnerDashboard";
 
 /**
  * On Capacitor Android PARCEIRO app, restrict navigation to partner-only routes.
@@ -55,21 +55,30 @@ const CapacitorRouteGuard = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const [appMode, setAppMode] = useState<CapacitorAppMode | null>(() => getCapacitorAppMode());
 
   useEffect(() => {
     if (!isCapacitorNative()) return;
 
     const path = location.pathname;
-    const appMode = getCapacitorAppMode();
+    const currentMode = getCapacitorAppMode() || appMode;
 
-    if (!appMode) {
+    if (!currentMode) {
       const looksLikePartnerRoute = PARTNER_ROUTES.some(
         (route) => path === route || path.startsWith(route + "/")
       );
-      persistCapacitorAppMode(looksLikePartnerRoute ? "partner" : "client");
+      if (looksLikePartnerRoute) {
+        persistCapacitorAppMode("partner");
+        setAppMode("partner");
+      } else {
+        detectAndPersistNativeAppMode().then((mode) => {
+          if (mode) setAppMode(mode);
+        });
+      }
+      return;
     }
 
-    if (isPartnerCapacitorApp()) {
+    if (currentMode === "partner") {
       // APK PARCEIRO: bloqueia TUDO que não seja explicitamente uma rota de parceiro.
       // Inclui: "/", "/cliente", "/loja/:id", "/carrinho", "/checkout", "/pedidos",
       // "/perfil" e qualquer "/:slug" (catch-all que vira página de loja-cliente).
@@ -82,25 +91,7 @@ const CapacitorRouteGuard = () => {
         if (!authLoading && user) {
           (async () => {
             try {
-              const { data: adminRole } = await supabase
-                .from("user_roles")
-                .select("role")
-                .eq("user_id", user.id)
-                .eq("role", "admin")
-                .maybeSingle();
-              if (adminRole) {
-                navigate("/super-admin", { replace: true });
-                return;
-              }
-              const { data: profile } = await supabase
-                .from("profiles")
-                .select("role")
-                .eq("user_id", user.id)
-                .maybeSingle();
-              const role = (profile as any)?.role as string | undefined;
-              if (role === "lojista") navigate("/admin", { replace: true });
-              else if (role === "motoboy") navigate("/entregador", { replace: true });
-              else navigate("/portal-parceiro", { replace: true });
+              navigate(await resolvePartnerDashboard(user.id), { replace: true });
             } catch {
               navigate("/portal-parceiro", { replace: true });
             }
@@ -124,7 +115,7 @@ const CapacitorRouteGuard = () => {
         navigate("/cliente", { replace: true });
       }
     }
-  }, [location.pathname, navigate, user?.id, authLoading]);
+  }, [location.pathname, navigate, user?.id, authLoading, appMode]);
 
   return null;
 };
