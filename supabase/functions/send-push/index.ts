@@ -392,17 +392,13 @@ Deno.serve(async (req) => {
     ));
     console.log(`[send-push] 🔍 DEBUG: Target user_ids=${JSON.stringify(requestedUserIds)}, FCM tokens selected=${latestFcmTokens.length}`);
 
-    if (latestFcmTokens.length > 0) {
-      if (!serviceAccountJson) {
-        console.error("[send-push] ❌ FCM_SERVICE_ACCOUNT_JSON is NOT set in Edge Function secrets!");
-      } else {
-        const sa = JSON.parse(serviceAccountJson);
-        console.log(`[send-push] 🔑 FCM Project ID from Secret: ${sa.project_id}`);
-        if (sa.project_id !== "itasuper-c71a1") {
-          console.warn(`[send-push] ⚠️ PROJECT ID MISMATCH: Secret has ${sa.project_id} but frontend uses itasuper-c71a1`);
-        }
-
+    if (latestFcmTokens.length > 0 && serviceAccountJson) {
       const serviceAccount = JSON.parse(serviceAccountJson);
+      console.log(`[send-push] 🔑 FCM Project ID from Secret: ${serviceAccount.project_id}`);
+      if (serviceAccount.project_id !== "itasuper-c71a1") {
+        console.warn(`[send-push] ⚠️ PROJECT ID MISMATCH: Secret has ${serviceAccount.project_id} but frontend uses itasuper-c71a1`);
+      }
+
       const accessToken = await getAccessToken(serviceAccount);
       const projectId = serviceAccount.project_id;
 
