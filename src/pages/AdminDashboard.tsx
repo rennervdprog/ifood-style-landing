@@ -2538,9 +2538,13 @@ const AdminDashboard = () => {
                     storeAddressCity={(store as any).address_city || null}
                     storeAddressState={(store as any).address_state || null}
                     storeAddressCep={(store as any).address_cep || null}
-                    storeDeliveryMode={(store as any).delivery_mode || "platform"}
-                    storeOwnDeliveryFee={(store as any).own_delivery_fee || 0}
-                    storeSettings={(store as any).settings || null} />
+                     storeDeliveryMode={(store as any).delivery_mode || "platform"}
+                     storeOwnDeliveryFee={(store as any).own_delivery_fee || 0}
+                     storeDeliveryFeeType={(store as any).delivery_fee_type || "fixed"}
+                     storeDeliveryBaseKm={(store as any).delivery_base_km || 0}
+                     storeDeliveryFeeBase={(store as any).delivery_fee_base || 0}
+                     storeDeliveryFeePerKm={(store as any).delivery_fee_per_km || 0}
+                     storeSettings={(store as any).settings || null} />
 
                 </div>
               )}
