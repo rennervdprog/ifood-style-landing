@@ -842,42 +842,34 @@ const AdminDashboard = () => {
   };
 
   const updateOrderStatus = async (orderId: string, newStatus: OrderStatus) => {
-    // Optimistic UI: update cache immediately so the order moves between tabs instantly
-    const previousOrders = queryClient.getQueryData<any[]>(["store-orders", store?.id]);
     const order = orders?.find((o: any) => o.id === orderId);
-    if (previousOrders) {
-      queryClient.setQueryData(
-        ["store-orders", store?.id],
-        previousOrders.map((o: any) => (o.id === orderId ? { ...o, status: newStatus } : o)),
-      );
-    }
-    // Show toast immediately
-    toast.success("Pedido atualizado!");
-
+    
     // Auto-print synchronously (user gesture preserves printer prompt on web)
     if (newStatus === "preparando" && autoPrint && order) {
       try { handlePrint(order); } catch (e) { console.warn("print error", e); }
     }
 
     try {
-      const { error, data } = await supabase
+      // Direct update and refetch to ensure source of truth and instant tab switch without ghosting
+      const { error } = await supabase
         .from("orders")
         .update({ status: newStatus })
-        .eq("id", orderId)
-        .select();
+        .eq("id", orderId);
+
       if (error) {
-        // Revert optimistic update
-        if (previousOrders) queryClient.setQueryData(["store-orders", store?.id], previousOrders);
         toast.error(`Erro ao atualizar pedido: ${error.message}`);
         return;
       }
-      if (!data || data.length === 0) {
-        if (previousOrders) queryClient.setQueryData(["store-orders", store?.id], previousOrders);
-        toast.error("Pedido não atualizado — verifique permissões");
-        return;
-      }
 
-      // Background: send notifications without blocking UI
+      // Invalidate and switch tab before toast
+      await queryClient.invalidateQueries({ queryKey: ["store-orders", store?.id] });
+      
+      if (newStatus === "preparando") setActiveTab("preparando");
+      if (newStatus === "pronto_para_entrega") setActiveTab("pronto_para_entrega");
+      
+      toast.success("Pedido atualizado!");
+
+      // Notifications
       if (order) {
         const clientPhone = getClientWhatsApp(order.client_id);
         const clientName = getClientName(order.client_id);
