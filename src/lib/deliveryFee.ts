@@ -4,8 +4,9 @@
    delivery_fee_base: number;
    delivery_fee_per_km: number;
    own_delivery_fee: number;
-   customer_street?: string;
-   customer_number?: string;
+   customer_street?: string | null;
+   customer_number?: string | null;
+   customer_coords?: { lat: number; lng: number } | null;
  }
  
  /**
@@ -26,7 +27,8 @@
    }
  
    // KM based fee
-   const customerCoords = await geocodeAddress(customerCep, config.customer_street, config.customer_number);
+   // Use provided coordinates (GPS) or fall back to geocoding address
+   const customerCoords = config.customer_coords || await geocodeAddress(customerCep, config.customer_street || undefined, config.customer_number || undefined);
    const storeCoords = storeCep ? await geocodeAddress(storeCep) : ITATINGA_CENTER;
  
    if (!customerCoords) {
@@ -203,11 +205,12 @@ export interface DeliveryFeeResult {
  * 2. If within URBAN_RADIUS_KM from center AND same city AND not a district = fixed city fee
  * 3. Otherwise = rural base fee + per-km distance
  */
-export async function calculateDeliveryFee(
-  customerCep: string,
-  storeCep: string,
-  config: DeliveryFeeConfig
-): Promise<DeliveryFeeResult> {
+ export async function calculateDeliveryFee(
+   customerCep: string,
+   storeCep: string,
+   config: DeliveryFeeConfig,
+   customerCoordsInput?: { lat: number; lng: number } | null
+ ): Promise<DeliveryFeeResult> {
   const customerAddr = await fetchCep(customerCep);
 
   if (!customerAddr) {
@@ -242,8 +245,8 @@ export async function calculateDeliveryFee(
     };
   }
 
-   // PRIORITY 2: Use geocoding to check radius
-   const customerCoords = await geocodeAddress(customerCep);
+   // PRIORITY 2: Use provided coords (GPS) or geocoding to check radius
+   const customerCoords = customerCoordsInput || await geocodeAddress(customerCep);
  
    if (customerCoords) {
     const distFromCenter = haversineDistance(
