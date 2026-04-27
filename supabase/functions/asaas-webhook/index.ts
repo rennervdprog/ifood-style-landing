@@ -271,11 +271,22 @@ Deno.serve(async (req) => {
                   const transferData = await transferRes.json();
                   if (transferRes.ok) {
                     console.log(`Auto-transfer R$${storeShare} to ${store.name} (PIX: ${ownerProfile.pix_key}) — transfer ID: ${transferData.id}`);
+                    await supabase.from("orders").update({
+                      store_payout_id: transferData.id,
+                      store_payout_at: new Date().toISOString(),
+                      store_payout_error: null,
+                    }).eq("id", externalReference);
                   } else {
                     console.error(`Auto-transfer failed for ${store.name}:`, JSON.stringify(transferData));
+                    await supabase.from("orders").update({
+                      store_payout_error: JSON.stringify(transferData).substring(0, 500),
+                    }).eq("id", externalReference);
                   }
                 } catch (transferErr) {
                   console.error(`Auto-transfer exception for ${store.name}:`, transferErr);
+                  await supabase.from("orders").update({
+                    store_payout_error: String(transferErr).substring(0, 500),
+                  }).eq("id", externalReference);
                 }
               }
             }
