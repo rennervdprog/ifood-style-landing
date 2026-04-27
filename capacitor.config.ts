@@ -17,10 +17,11 @@ const config: CapacitorConfig = {
    // ===============================================================
   server: {
     androidScheme: 'https',
-    hostname: 'localhost',
+    url: 'https://ifood-style-landing.vercel.app/',
+    cleartext: true,
     // Permitir todas as navegações dentro do WebView para evitar que abra o navegador externo
     allowNavigation: [
-      'localhost',
+      'ifood-style-landing.vercel.app',
       '*.supabase.co',
       'qkjhguziuchqsbxzruea.supabase.co',
       'lktzrqjvqoojlrhqnxuz.supabase.co',
