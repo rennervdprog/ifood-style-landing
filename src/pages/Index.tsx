@@ -93,23 +93,23 @@ const painPoints = [
   { emoji: "🔇", pain: "Perde pedido porque não ouviu a mensagem", solution: "Alerta sonoro + notificação push no celular" },
 ];
 
-const steps = [
-  { step: "01", title: "Cadastre sua loja", desc: "Preencha os dados básicos e escolha seu plano." },
-  { step: "02", title: "Monte seu cardápio", desc: "Adicione categorias, produtos, fotos e preços." },
-  { step: "03", title: "Compartilhe o link", desc: "Envie pelo WhatsApp, redes sociais ou imprima o QR Code." },
-  { step: "04", title: "Receba pedidos!", desc: "Clientes pedem pelo celular e você recebe tudo organizado." },
-];
-
-const features = [
-  { icon: Smartphone, title: "Cardápio no celular", desc: "Cliente abre o link e já faz o pedido. Sem baixar nenhum app." },
-  { icon: QrCode, title: "QR Code exclusivo", desc: "Divulgue seu QR Code. O cliente aponta a câmera e faz o pedido digital." },
-  { icon: CreditCard, title: "PIX automático", desc: "Pagamento confirmado na hora. Sem conferir extrato." },
-  { icon: Bell, title: "Alerta instantâneo", desc: "Novo pedido? Alerta sonoro e push notification no celular." },
-  { icon: Utensils, title: "Cardápio profissional", desc: "Categorias, fotos HD, descrições e adicionais personalizáveis." },
-  { icon: BarChart3, title: "Relatórios completos", desc: "Saiba quanto vendeu, produtos mais pedidos e horários de pico." },
-  { icon: Gift, title: "Fidelidade & Cupons", desc: "Programa de pontos e cupons de desconto para fidelizar clientes." },
-  { icon: Truck, title: "Entrega integrada", desc: "Gerencie entregas, taxas por bairro e motoboys na plataforma." },
-];
+ const steps = [
+   { step: "01", title: "Crie sua loja", desc: "Cadastre seu negócio e configure sua marca em minutos." },
+   { step: "02", title: "Monte o cardápio", desc: "Adicione seus produtos com fotos, preços e categorias." },
+   { step: "03", title: "Divulgue seu link", desc: "Compartilhe no WhatsApp e redes sociais ou use QR Code." },
+   { step: "04", title: "Venda e gerencie", desc: "Receba pedidos organizados e acompanhe tudo em tempo real." },
+ ];
+ 
+ const features = [
+   { icon: Smartphone, title: "Cardápio Digital", desc: "Link exclusivo para seus clientes pedirem sem precisar baixar aplicativos." },
+   { icon: QrCode, title: "Mesas e Balcão", desc: "QR Code para autoatendimento no local, agilizando o serviço e evitando filas." },
+   { icon: CreditCard, title: "PIX Automático", desc: "Confirmação instantânea de pagamento. Esqueça a conferência manual de extratos." },
+   { icon: Bell, title: "Gestão de Pedidos", desc: "Painel inteligente com alertas sonoros e notificações para você não perder nada." },
+   { icon: Utensils, title: "Personalização", desc: "Cardápio com fotos HD, adicionais, combos e opções de personalização total." },
+   { icon: BarChart3, title: "Dashboard", desc: "Relatórios de vendas, produtos mais pedidos e horários de maior movimento." },
+   { icon: Gift, title: "Fidelize Clientes", desc: "Crie cupons de desconto e programas de fidelidade para aumentar o faturamento." },
+   { icon: Truck, title: "Logística Nativa", desc: "Sistema integrado para gestão de motoboys e rastreamento de entregas." },
+ ];
 
 const plans = [
    { name: "Comissão", price: "R$0", sub: "/mês", desc: "6% por pedido", icon: Rocket, tags: ["Sem mensalidade", "Todas as ferramentas"], subtitle: "Todas as ferramentas incluídas. Pague só quando vender.", popular: false },
@@ -222,23 +222,23 @@ const Index = () => {
         <div className="absolute -bottom-40 -left-40 w-[400px] h-[400px] rounded-full bg-accent/30 blur-3xl pointer-events-none" />
 
         <div className="relative mx-auto max-w-5xl text-center">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-foreground leading-[1.1] mb-5">
-            Delivery digital{" "}
-            <span className="relative inline-block">
-              <span className="relative z-10 text-primary">para sua loja.</span>
-              <span className="absolute bottom-1 left-0 w-full h-3 bg-primary/15 -z-0 rounded" />
-            </span>
-          </h1>
-
-          <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed">
-            Cardápio profissional, pedidos organizados e pagamentos automáticos — <strong className="text-foreground">comece grátis</strong> ou escolha um plano a partir de R$100/mês.
-          </p>
-
-          <div className="flex flex-col items-center gap-4 mb-6">
-            <Button size="lg" onClick={handleCTA} className="text-base px-8 py-6 rounded-full shadow-lg shadow-primary/20 w-full max-w-sm">
-              Cadastrar minha loja — É grátis <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-          </div>
+           <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black tracking-tight text-foreground leading-[1.1] mb-6">
+             O seu delivery <br />
+             <span className="text-primary">mais profissional.</span>
+           </h1>
+ 
+           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
+             A plataforma completa para vender mais: cardápio digital, gestão de entregas e pagamentos automáticos. <strong className="text-foreground">Comece hoje mesmo.</strong>
+           </p>
+ 
+           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
+             <Button size="lg" onClick={handleCTA} className="text-base font-bold px-10 py-7 rounded-full shadow-2xl shadow-primary/30 w-full sm:w-auto transition-all hover:scale-105">
+               Criar Loja Grátis <ArrowRight className="ml-2 h-5 w-5" />
+             </Button>
+             <Button size="lg" variant="outline" onClick={handleWhatsApp} className="text-base font-bold px-10 py-7 rounded-full w-full sm:w-auto border-2">
+               Falar com Consultor
+             </Button>
+           </div>
 
           {/* Trust badges */}
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
@@ -255,44 +255,30 @@ const Index = () => {
         </div>
       </section>
 
-      {/* ══════ MICRO STATS ══════ */}
-      <section ref={statsRef.ref} className="py-10 border-y border-border bg-muted/30">
-        <div className="mx-auto max-w-4xl grid grid-cols-3 gap-4 text-center px-4">
-          {[
-            { value: "100%", label: "Digital" },
-            { value: "0%", label: "Taxa de adesão" },
-            { value: "R$0", label: "Para começar" },
-          ].map((s) => (
-            <div key={s.label}>
-              <p className="text-2xl md:text-3xl font-extrabold text-primary">{s.value}</p>
-              <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ══════ PAIN POINTS ══════ */}
-      <section className="py-16 px-4">
-        <div className="mx-auto max-w-5xl">
-          <h2 className="text-2xl md:text-3xl font-bold text-center text-foreground mb-4">
-            Você ainda faz isso? 🤔
-          </h2>
-          <p className="text-center text-muted-foreground mb-10 max-w-xl mx-auto">
-            Se identificou com algum desses problemas? Tem solução.
-          </p>
-          <div className="grid sm:grid-cols-2 gap-4">
-            {painPoints.map((item) => (
-              <div key={item.pain} className="group flex gap-4 items-start rounded-2xl border border-border bg-card p-5 hover:shadow-md transition-shadow">
-                <span className="text-3xl flex-shrink-0">{item.emoji}</span>
-                <div>
-                  <p className="text-sm text-muted-foreground line-through mb-1">{item.pain}</p>
-                  <p className="text-sm font-semibold text-primary">{item.solution}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+       {/* ══════ PAIN POINTS ══════ */}
+       <section className="py-24 px-4 bg-muted/30">
+         <div className="mx-auto max-w-5xl">
+           <div className="text-center mb-16">
+             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+               Sua operação ainda é manual? 🤔
+             </h2>
+             <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+               Muitas lojas perdem vendas por falta de organização. Nós resolvemos isso para você.
+             </p>
+           </div>
+           <div className="grid sm:grid-cols-2 gap-6">
+             {painPoints.map((item) => (
+               <div key={item.pain} className="group flex gap-5 items-center rounded-3xl border border-border bg-card p-8 hover:border-primary/30 hover:shadow-xl transition-all duration-300">
+                 <span className="text-4xl flex-shrink-0 bg-muted p-4 rounded-2xl group-hover:scale-110 transition-transform">{item.emoji}</span>
+                 <div>
+                   <p className="text-sm text-muted-foreground line-through mb-1 opacity-60 font-medium">{item.pain}</p>
+                   <p className="text-lg font-bold text-foreground leading-tight">{item.solution}</p>
+                 </div>
+               </div>
+             ))}
+           </div>
+         </div>
+       </section>
 
        {/* ══════ MOTOBOY SYSTEM SECTION ══════ */}
        <section className="py-16 px-4 bg-slate-900 text-white overflow-hidden relative">
@@ -379,94 +365,102 @@ const Index = () => {
        </section>
  
        {/* ══════ HOW IT WORKS ══════ */}
-      <section className="py-16 px-4 bg-muted/20">
-        <div className="mx-auto max-w-5xl">
-          <h2 className="text-2xl md:text-3xl font-bold text-center text-foreground mb-4">
-            Funciona em 4 passos simples
-          </h2>
-          <p className="text-center text-muted-foreground mb-14 max-w-xl mx-auto">
-            Do cadastro ao primeiro pedido em menos de 10 minutos.
-          </p>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {steps.map((s, i) => (
-              <div key={s.step} className="relative text-center group">
-                {i < 3 && <div className="hidden lg:block absolute top-6 left-[60%] w-[80%] h-px bg-border" />}
-                <div className="relative mx-auto w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-orange-600 text-primary-foreground flex items-center justify-center text-lg font-bold mb-4 shadow-lg shadow-primary/20 group-hover:scale-110 transition-transform">
-                  {s.step}
-                </div>
-                <h3 className="font-bold text-foreground mb-1">{s.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+       <section className="py-24 px-4 bg-background border-t border-border">
+         <div className="mx-auto max-w-6xl">
+           <div className="text-center mb-16">
+             <h2 className="text-3xl md:text-5xl font-black text-foreground mb-4">
+               Comece a vender hoje 🚀
+             </h2>
+             <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+               Do cadastro ao primeiro pedido em menos de 10 minutos. É simples e rápido.
+             </p>
+           </div>
+           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-12">
+             {steps.map((s, i) => (
+               <div key={s.step} className="relative text-center group">
+                 {i < 3 && <div className="hidden lg:block absolute top-10 left-[70%] w-[60%] h-[2px] bg-gradient-to-r from-primary/30 to-transparent" />}
+                 <div className="relative mx-auto w-20 h-20 rounded-[2rem] bg-gradient-to-br from-primary to-orange-600 text-white flex items-center justify-center text-2xl font-black mb-8 shadow-2xl shadow-primary/20 group-hover:rotate-12 transition-all duration-300">
+                   {s.step}
+                 </div>
+                 <h3 className="text-xl font-bold text-foreground mb-3">{s.title}</h3>
+                 <p className="text-muted-foreground leading-relaxed font-medium">{s.desc}</p>
+               </div>
+             ))}
+           </div>
+         </div>
+       </section>
 
-      {/* ══════ FEATURES GRID ══════ */}
-      <section className="py-16 px-4">
-        <div className="mx-auto max-w-5xl">
-          <h2 className="text-2xl md:text-3xl font-bold text-center text-foreground mb-4">
-            Tudo que seu delivery precisa
-          </h2>
-          <p className="text-center text-muted-foreground mb-14 max-w-xl mx-auto">
-            Praticidade total para você e para seu cliente. Incluso em todos os planos.
-          </p>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {features.map((f) => (
-              <div key={f.title} className="rounded-2xl border border-border bg-card p-5 hover:shadow-md hover:-translate-y-1 transition-all">
-                <div className="rounded-xl bg-primary/10 w-11 h-11 flex items-center justify-center mb-4">
-                  <f.icon className="h-5 w-5 text-primary" />
-                </div>
-                <h3 className="font-bold text-foreground mb-1">{f.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+       {/* ══════ FEATURES GRID ══════ */}
+       <section className="py-24 px-4 bg-background">
+         <div className="mx-auto max-w-6xl">
+           <div className="text-center mb-16">
+             <h2 className="text-3xl md:text-5xl font-black text-foreground mb-4">
+               Tudo que seu delivery precisa
+             </h2>
+             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+               Funcionalidades profissionais pensadas para escalar o seu negócio e facilitar a vida do seu cliente.
+             </p>
+           </div>
+           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+             {features.map((f) => (
+               <div key={f.title} className="group rounded-3xl border border-border bg-card p-8 hover:border-primary/50 hover:shadow-2xl hover:-translate-y-2 transition-all duration-300">
+                 <div className="rounded-2xl bg-primary/10 w-14 h-14 flex items-center justify-center mb-6 group-hover:bg-primary group-hover:text-white transition-colors">
+                   <f.icon className="h-7 w-7 text-primary group-hover:text-white transition-colors" />
+                 </div>
+                 <h3 className="text-xl font-bold text-foreground mb-3">{f.title}</h3>
+                 <p className="text-muted-foreground leading-relaxed">{f.desc}</p>
+               </div>
+             ))}
+           </div>
+         </div>
+       </section>
 
-      {/* ══════ PLANS SUMMARY ══════ */}
-      <section className="py-16 px-4 bg-muted/20">
-        <div className="mx-auto max-w-5xl">
-          <h2 className="text-2xl md:text-3xl font-bold text-center text-foreground mb-3">
-            Escolha o plano ideal 💰
-          </h2>
-          <p className="text-center text-muted-foreground mb-10 max-w-xl mx-auto">
-            Sem contrato de fidelidade. Troque quando quiser.
-          </p>
-          <div className="grid sm:grid-cols-3 gap-5">
-            {plans.map((plan) => (
-              <Card key={plan.name} className={`rounded-2xl border-2 transition-all hover:shadow-lg relative ${plan.popular ? "border-primary shadow-md" : "border-border"}`}>
-                {plan.popular && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-xs font-bold px-3 py-1 rounded-full bg-primary text-primary-foreground">⭐ Popular</span>
-                )}
-                <CardContent className="pt-8 pb-6 text-center">
-                  <div className="mx-auto w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-                    <plan.icon className="h-6 w-6 text-primary" />
-                  </div>
-                  <h3 className="font-bold text-lg text-foreground">{plan.name}</h3>
-                  <div className="mt-2 mb-1">
-                    <span className="text-3xl font-extrabold text-foreground">{plan.price}</span>
-                    <span className="text-sm text-muted-foreground">{plan.sub}</span>
-                  </div>
-                  <p className="text-sm font-semibold text-primary mb-2">{plan.desc}</p>
-                  <p className="text-xs text-muted-foreground mb-4">{plan.subtitle}</p>
-                  <div className="flex flex-wrap justify-center gap-1.5">
-                    {plan.tags.map(tag => (
-                      <span key={tag} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{tag}</span>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-          <div className="text-center mt-8">
-            <Button variant="outline" onClick={() => navigate("/planos")} className="rounded-2xl px-6">
-              Ver comparativo completo <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </section>
+       {/* ══════ PLANS SUMMARY ══════ */}
+       <section className="py-24 px-4 bg-muted/40">
+         <div className="mx-auto max-w-6xl">
+           <div className="text-center mb-16">
+             <h2 className="text-3xl md:text-5xl font-black text-foreground mb-4">
+               Planos que cabem no seu bolso 💰
+             </h2>
+             <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+               Sem fidelidade ou taxas escondidas. Mude de plano quando quiser.
+             </p>
+           </div>
+           <div className="grid sm:grid-cols-3 gap-8">
+             {plans.map((plan) => (
+               <Card key={plan.name} className={`rounded-[2.5rem] border-2 overflow-hidden transition-all hover:shadow-2xl relative ${plan.popular ? "border-primary shadow-xl scale-105 z-10" : "border-border shadow-md"}`}>
+                 {plan.popular && (
+                   <div className="absolute top-0 right-0 bg-primary text-black font-black text-[10px] uppercase tracking-widest px-6 py-2 rounded-bl-3xl">
+                     MAIS POPULAR
+                   </div>
+                 )}
+                 <CardContent className="pt-12 pb-10 px-8 text-center">
+                   <div className="mx-auto w-16 h-16 rounded-3xl bg-primary/10 flex items-center justify-center mb-6">
+                     <plan.icon className="h-8 w-8 text-primary" />
+                   </div>
+                   <h3 className="text-2xl font-black text-foreground mb-2">{plan.name}</h3>
+                   <div className="mb-4">
+                     <span className="text-5xl font-black text-foreground">{plan.price}</span>
+                     <span className="text-muted-foreground font-medium">{plan.sub}</span>
+                   </div>
+                   <p className="text-lg font-bold text-primary mb-4">{plan.desc}</p>
+                   <p className="text-sm text-muted-foreground mb-8 leading-relaxed">{plan.subtitle}</p>
+                   <div className="flex flex-col gap-3">
+                     {plan.tags.map(tag => (
+                       <div key={tag} className="flex items-center justify-center gap-2 text-sm font-semibold text-foreground bg-muted/50 py-2 rounded-2xl">
+                         <Check className="h-4 w-4 text-primary" /> {tag}
+                       </div>
+                     ))}
+                   </div>
+                   <Button onClick={handleCTA} className={`w-full mt-8 py-7 rounded-2xl font-bold text-lg ${plan.popular ? "bg-primary hover:bg-primary/90" : "variant-outline"}`}>
+                     Começar agora
+                   </Button>
+                 </CardContent>
+               </Card>
+             ))}
+           </div>
+         </div>
+       </section>
 
       {/* ══════ ANIMATED STATS ══════ */}
       <section className="py-14 border-y border-border">
@@ -485,135 +479,167 @@ const Index = () => {
         </div>
       </section>
 
-      {/* ══════ TESTIMONIALS ══════ */}
-      <section className="py-16 px-4">
-        <div className="mx-auto max-w-5xl">
-          <h2 className="text-2xl md:text-3xl font-bold text-center text-foreground mb-3">
-            O que nossos parceiros dizem ⭐
-          </h2>
-          <p className="text-center text-muted-foreground mb-12 max-w-xl mx-auto">
-            Lojistas reais que transformaram seu delivery.
-          </p>
-          <div className="grid sm:grid-cols-3 gap-6">
-            {testimonials.map((t) => (
-              <Card key={t.name} className="border-border rounded-2xl hover:shadow-md transition-shadow">
-                <CardContent className="pt-6">
-                  <div className="flex gap-0.5 mb-3">
-                    {Array.from({ length: t.rating }).map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-primary text-primary" />
-                    ))}
-                  </div>
-                  <p className="text-sm text-muted-foreground italic leading-relaxed mb-4">"{t.text}"</p>
-                  <p className="text-sm font-bold text-foreground">{t.name}</p>
-                  <p className="text-xs text-muted-foreground">{t.store} • {t.orders}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
+       {/* ══════ TESTIMONIALS ══════ */}
+       <section className="py-24 px-4 bg-background">
+         <div className="mx-auto max-w-6xl">
+           <div className="text-center mb-16">
+             <h2 className="text-3xl md:text-5xl font-black text-foreground mb-4">
+               Quem usa, aprova ⭐
+             </h2>
+             <p className="text-muted-foreground text-lg max-w-2xl mx-auto font-medium">
+               Lojistas que decidiram profissionalizar sua gestão e hoje colhem os resultados.
+             </p>
+           </div>
+           <div className="grid sm:grid-cols-3 gap-8">
+             {testimonials.map((t) => (
+               <Card key={t.name} className="border-border rounded-[2rem] hover:shadow-2xl transition-all duration-300 bg-muted/30 p-2 border-none">
+                 <CardContent className="pt-8 px-6 pb-8">
+                   <div className="flex gap-1 mb-6">
+                     {Array.from({ length: t.rating }).map((_, i) => (
+                       <Star key={i} className="h-5 w-5 fill-primary text-primary" />
+                     ))}
+                   </div>
+                   <p className="text-lg text-foreground font-medium leading-relaxed mb-8 italic">"{t.text}"</p>
+                   <div className="flex items-center gap-4">
+                     <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center font-bold text-primary">
+                       {t.name.charAt(0)}
+                     </div>
+                     <div>
+                       <p className="font-bold text-foreground">{t.name}</p>
+                       <p className="text-sm text-muted-foreground font-semibold">{t.store} • {t.orders}</p>
+                     </div>
+                   </div>
+                 </CardContent>
+               </Card>
+             ))}
+           </div>
+         </div>
+       </section>
 
-      {/* ══════ FAQ ══════ */}
-      <section className="py-16 px-4 bg-muted/20">
-        <div className="mx-auto max-w-3xl">
-          <h2 className="text-2xl md:text-3xl font-bold text-center text-foreground mb-3">
-            Perguntas frequentes
-          </h2>
-          <p className="text-center text-muted-foreground mb-10">
-            Tire suas dúvidas antes de começar.
-          </p>
-          <div className="space-y-3">
-            {faqs.map((faq, i) => (
-              <div key={i} className="rounded-2xl border border-border bg-card overflow-hidden">
-                <button onClick={() => setOpenFaq(openFaq === i ? null : i)} className="w-full flex items-center justify-between p-5 text-left">
-                  <span className="font-semibold text-foreground text-sm pr-4">{faq.q}</span>
-                  <ChevronDown className={`h-5 w-5 text-muted-foreground shrink-0 transition-transform ${openFaq === i ? "rotate-180" : ""}`} />
-                </button>
-                {openFaq === i && (
-                  <div className="px-5 pb-5 text-sm text-muted-foreground leading-relaxed animate-fade-in">{faq.a}</div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+       {/* ══════ FAQ ══════ */}
+       <section className="py-24 px-4 bg-muted/40">
+         <div className="mx-auto max-w-4xl">
+           <div className="text-center mb-16">
+             <h2 className="text-3xl md:text-5xl font-black text-foreground mb-4">
+               Dúvidas frequentes
+             </h2>
+             <p className="text-muted-foreground text-lg font-medium">
+               Tudo o que você precisa saber para começar agora mesmo.
+             </p>
+           </div>
+           <div className="space-y-4">
+             {faqs.map((faq, i) => (
+               <div key={i} className="rounded-3xl border border-border bg-card overflow-hidden transition-all hover:border-primary/30">
+                 <button onClick={() => setOpenFaq(openFaq === i ? null : i)} className="w-full flex items-center justify-between p-8 text-left group">
+                   <span className="text-lg font-bold text-foreground pr-8 group-hover:text-primary transition-colors">{faq.q}</span>
+                   <ChevronDown className={`h-6 w-6 text-muted-foreground shrink-0 transition-transform duration-300 ${openFaq === i ? "rotate-180 text-primary" : ""}`} />
+                 </button>
+                 {openFaq === i && (
+                   <div className="px-8 pb-8 text-lg text-muted-foreground leading-relaxed animate-in fade-in slide-in-from-top-2 duration-300">
+                     {faq.a}
+                   </div>
+                 )}
+               </div>
+             ))}
+           </div>
+         </div>
+       </section>
 
-      {/* ══════ CTA FINAL ══════ */}
-      <section className="relative py-16 px-4 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/20 pointer-events-none" />
-        <div className="relative mx-auto max-w-2xl text-center">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary/10 mb-4">
-            <Rocket className="h-7 w-7 text-primary" />
-          </div>
-          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
-            Pronto para vender mais?
-          </h2>
-          <p className="text-muted-foreground mb-8 leading-relaxed max-w-lg mx-auto">
-            Cadastre-se agora e tenha sua loja online em menos de 5 minutos.
-            <span className="block mt-1 font-semibold text-primary">Comece grátis — sem cartão de crédito!</span>
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button size="lg" onClick={handleCTA} className="text-base px-8 py-6 rounded-2xl shadow-lg shadow-primary/20">
-              Começar agora <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-            <Button size="lg" variant="outline" onClick={handleWhatsApp} className="text-base px-8 py-6 rounded-2xl">
-              <MessageCircle className="mr-2 h-5 w-5" /> Falar conosco
-            </Button>
-          </div>
-        </div>
-      </section>
+       {/* ══════ CTA FINAL ══════ */}
+       <section className="relative py-32 px-4 overflow-hidden bg-primary">
+         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10" />
+         <div className="relative mx-auto max-w-4xl text-center">
+           <h2 className="text-4xl md:text-6xl font-black text-black mb-6 leading-tight">
+             Pronto para profissionalizar o seu delivery?
+           </h2>
+           <p className="text-black/70 text-xl md:text-2xl mb-12 font-medium max-w-2xl mx-auto">
+             Junte-se a centenas de lojistas que já estão lucrando com o ItaSuper.
+           </p>
+           <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+             <Button size="lg" onClick={handleCTA} className="bg-black text-white hover:bg-black/90 text-xl font-bold px-12 py-8 rounded-full shadow-2xl transition-all hover:scale-105">
+               Criar minha loja agora
+             </Button>
+             <Button size="lg" variant="outline" onClick={handleWhatsApp} className="border-black text-black hover:bg-black/10 text-xl font-bold px-12 py-8 rounded-full border-2 transition-all">
+               Falar com suporte
+             </Button>
+           </div>
+           <p className="mt-8 text-black/50 font-bold text-sm tracking-widest uppercase">
+             Aprovação em até 24h • Sem fidelidade • Suporte humanizado
+           </p>
+         </div>
+       </section>
 
-      {/* ══════ DIVIDER: CONSUMER SECTION ══════ */}
-      <section className="py-6 px-4 bg-muted/40 border-y border-border">
-        <div className="mx-auto max-w-5xl text-center">
-          <h2 className="text-xl font-bold text-foreground">Já é cliente? Peça agora! 🍕</h2>
-          <p className="text-sm text-muted-foreground mt-1">Navegue pelas lojas disponíveis e faça seu pedido.</p>
-        </div>
-      </section>
+       {/* ══════ CONSUMER EXPERIENCE ══════ */}
+       <section className="py-24 px-4 bg-background">
+         <div className="mx-auto max-w-6xl">
+           <div className="text-center mb-16">
+             <span className="bg-primary/10 text-primary font-black text-xs uppercase tracking-widest px-4 py-2 rounded-full mb-6 inline-block">
+               Área do Cliente
+             </span>
+             <h2 className="text-3xl md:text-5xl font-black text-foreground mb-4">Peça agora no ItaSuper 🍕</h2>
+             <p className="text-muted-foreground text-lg font-medium max-w-2xl mx-auto">
+               A melhor experiência de delivery da cidade. Rápido, seguro e com as melhores lojas.
+             </p>
+           </div>
+ 
+           <div className="space-y-12">
+             <div className="max-w-2xl mx-auto" data-tour="search">
+               <SearchBar value={search} onChange={setSearch} />
+             </div>
+ 
+             <div className="grid gap-8">
+               <div className="rounded-[2.5rem] overflow-hidden shadow-2xl">
+                 <PromoBanners />
+               </div>
+               
+               <FirstOrderBanner />
+ 
+               <div className="bg-muted/30 p-8 rounded-[2.5rem]" data-tour="categories">
+                 <CategoryScroll selected={category} onSelect={setCategory} />
+               </div>
+ 
+               <ReorderSection />
+             </div>
+           </div>
+         </div>
+       </section>
 
-      {/* ══════ SEARCH + CATEGORIES ══════ */}
-      <div className="px-4 space-y-3 mt-4">
-        <div data-tour="search">
-          <SearchBar value={search} onChange={setSearch} />
-        </div>
-      </div>
-
-      <PromoBanners />
-      <FirstOrderBanner />
-
-      <div data-tour="categories">
-        <CategoryScroll selected={category} onSelect={setCategory} />
-      </div>
-
-      <ReorderSection />
-
-      {/* ══════ STORES LISTING ══════ */}
-      <div className="px-4 mt-4">
-        <h2 className="text-sm font-bold text-foreground mb-3">Estabelecimentos</h2>
-        {isLoading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-            {Array.from({ length: 6 }).map((_, i) => <StoreCardSkeleton key={i} />)}
-          </div>
-        ) : filtered && filtered.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-            {filtered.map((store, idx) => (
-              <div key={store.id} {...(idx === 0 ? { "data-tour": "store-card" } : {})}>
-                <StoreCard {...store} is_open={store.computedOpen} statusReason={store.statusReason} />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <PackageOpen className="h-16 w-16 text-muted-foreground mb-4" />
-            <h2 className="text-lg font-bold text-foreground mb-1">
-              {search.length >= 2 ? "Nenhum resultado encontrado" : stores && stores.length === 0 ? "Estamos chegando!" : category === "farmacias" ? "Ainda não temos farmácias parceiras" : category === "docerias" ? "Ainda não temos docerias parceiras" : "Nenhum estabelecimento nesta categoria"}
-            </h2>
-            <p className="text-sm text-muted-foreground max-w-xs">
-              {search.length >= 2 ? `Nenhuma loja ou produto encontrado para "${search}".` : stores && stores.length === 0 ? "Novas lojas no ItaSuper em breve. Fique ligado!" : "Nenhum estabelecimento aberto no momento. Volte mais tarde!"}
-            </p>
-          </div>
-        )}
-      </div>
+       {/* ══════ STORES LISTING ══════ */}
+       <section className="py-16 px-4 bg-muted/20">
+         <div className="mx-auto max-w-7xl">
+           <div className="flex items-center justify-between mb-8">
+             <h2 className="text-2xl font-black text-foreground">Estabelecimentos</h2>
+             <div className="h-1 flex-1 bg-border/50 mx-6 rounded-full hidden sm:block" />
+             <span className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{filtered?.length || 0} lojas</span>
+           </div>
+           
+           {isLoading ? (
+             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+               {Array.from({ length: 10 }).map((_, i) => <StoreCardSkeleton key={i} />)}
+             </div>
+           ) : filtered && filtered.length > 0 ? (
+             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+               {filtered.map((store, idx) => (
+                 <div key={store.id} className="transition-transform hover:scale-[1.03]" {...(idx === 0 ? { "data-tour": "store-card" } : {})}>
+                   <StoreCard {...store} is_open={store.computedOpen} statusReason={store.statusReason} />
+                 </div>
+               ))}
+             </div>
+           ) : (
+             <div className="flex flex-col items-center justify-center py-24 text-center bg-card rounded-[3rem] border border-dashed border-border">
+               <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-6">
+                 <PackageOpen className="h-12 w-12 text-muted-foreground" />
+               </div>
+               <h2 className="text-2xl font-black text-foreground mb-2">
+                 {search.length >= 2 ? "Nenhum resultado encontrado" : stores && stores.length === 0 ? "Estamos chegando!" : "Nenhum estabelecimento encontrado"}
+               </h2>
+               <p className="text-muted-foreground max-w-md font-medium">
+                 {search.length >= 2 ? `Não encontramos lojas ou produtos para "${search}". Tente outro termo.` : "Novas lojas parceiras estão chegando em breve. Fique ligado!"}
+               </p>
+             </div>
+           )}
+         </div>
+       </section>
 
       {/* ══════ GUARANTEE ══════ */}
       <section className="py-10 px-4 bg-muted/30 border-y border-border mt-8">
@@ -628,14 +654,48 @@ const Index = () => {
         </div>
       </section>
 
-      {/* ══════ FOOTER ══════ */}
-      <footer className="py-8 text-center text-sm text-muted-foreground border-t border-border px-4 mb-16">
-         <p className="font-semibold text-foreground mb-1">Itasuper todos os direitos reservado</p>
-         <div className="flex items-center justify-center gap-4 text-xs mt-1">
-           <a href="/termos-de-uso" className="hover:text-primary transition-colors">termos</a>
-           <a href="/politica-de-privacidade" className="hover:text-primary transition-colors">politica</a>
+       {/* ══════ FOOTER ══════ */}
+       <footer className="bg-card pt-20 pb-10 border-t border-border px-4 mb-16 sm:mb-0">
+         <div className="mx-auto max-w-7xl">
+           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+             <div className="col-span-1 md:col-span-2">
+               <div className="flex items-center gap-3 mb-6">
+                 <img src="/itasuper-logo.jpg" alt="ItaSuper" className="w-12 h-12 rounded-2xl" />
+                 <span className="text-2xl font-black text-primary">ItaSuper</span>
+               </div>
+               <p className="text-muted-foreground text-lg font-medium leading-relaxed max-w-md">
+                 Transformando o delivery da sua cidade com tecnologia e simplicidade. 
+                 O parceiro ideal para o crescimento do seu negócio.
+               </p>
+             </div>
+             <div>
+               <h4 className="font-black text-foreground uppercase tracking-widest text-xs mb-6">Institucional</h4>
+               <ul className="space-y-4 font-bold text-muted-foreground">
+                 <li><a href="/termos-de-uso" className="hover:text-primary transition-colors">Termos de Uso</a></li>
+                 <li><a href="/politica-de-privacidade" className="hover:text-primary transition-colors">Política de Privacidade</a></li>
+               </ul>
+             </div>
+             <div>
+               <h4 className="font-black text-foreground uppercase tracking-widest text-xs mb-6">Contato</h4>
+               <ul className="space-y-4 font-bold text-muted-foreground">
+                 <li><a href="https://wa.me/5514991624997" target="_blank" className="hover:text-primary transition-colors">WhatsApp Suporte</a></li>
+                 <li><a href="mailto:contato@itasuper.com.br" className="hover:text-primary transition-colors">E-mail</a></li>
+               </ul>
+             </div>
+           </div>
+           <div className="pt-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-6">
+             <p className="font-bold text-muted-foreground text-sm">
+               © {new Date().getFullYear()} ItaSuper - Todos os direitos reservados.
+             </p>
+             <div className="flex items-center gap-6">
+               <div className="flex flex-col items-end">
+                 <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Desenvolvido por</span>
+                 <span className="font-black text-primary">Lovable AI</span>
+               </div>
+             </div>
+           </div>
          </div>
-      </footer>
+       </footer>
 
       <div data-tour="cart-fab"><CartFAB /></div>
       <BottomNav />
