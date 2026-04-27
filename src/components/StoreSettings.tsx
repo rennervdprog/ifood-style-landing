@@ -37,29 +37,39 @@ const CATEGORY_OPTIONS = [
 
 type PizzaPriceMode = "maior" | "media" | "soma";
 
-interface StoreSettingsProps {
-  storeId: string;
-  storeName: string;
-  storeCategory: string;
-  storeCategories?: string[] | null;
-  storeImageUrl: string | null;
-  storeIsOpen: boolean;
-  forceClosed: boolean;
-  storeSlug?: string | null;
-  storeAddressStreet?: string | null;
-  storeAddressNumber?: string | null;
-  storeAddressComplement?: string | null;
-  storeAddressNeighborhood?: string | null;
-  storeAddressReference?: string | null;
-  storeAddressCity?: string | null;
-  storeAddressState?: string | null;
-  storeAddressCep?: string | null;
-  storeDeliveryMode?: string | null;
-  storeOwnDeliveryFee?: number | null;
-  storeSettings?: Record<string, any> | null;
-}
-
-const StoreSettings = ({ storeId, storeName, storeCategory, storeCategories, storeImageUrl, storeIsOpen, forceClosed, storeSlug, storeAddressStreet, storeAddressNumber, storeAddressComplement, storeAddressNeighborhood, storeAddressReference, storeAddressCity, storeAddressState, storeAddressCep, storeDeliveryMode, storeOwnDeliveryFee, storeSettings }: StoreSettingsProps) => {
+ interface StoreSettingsProps {
+   storeId: string;
+   storeName: string;
+   storeCategory: string;
+   storeCategories?: string[] | null;
+   storeImageUrl: string | null;
+   storeIsOpen: boolean;
+   forceClosed: boolean;
+   storeSlug?: string | null;
+   storeAddressStreet?: string | null;
+   storeAddressNumber?: string | null;
+   storeAddressComplement?: string | null;
+   storeAddressNeighborhood?: string | null;
+   storeAddressReference?: string | null;
+   storeAddressCity?: string | null;
+   storeAddressState?: string | null;
+   storeAddressCep?: string | null;
+   storeDeliveryMode?: string | null;
+   storeOwnDeliveryFee?: number | null;
+   storeDeliveryFeeType?: string | null;
+   storeDeliveryBaseKm?: number | null;
+   storeDeliveryFeeBase?: number | null;
+   storeDeliveryFeePerKm?: number | null;
+   storeSettings?: Record<string, any> | null;
+ }
+ 
+ const StoreSettings = ({
+   storeId, storeName, storeCategory, storeCategories, storeImageUrl, storeIsOpen, forceClosed,
+   storeSlug, storeAddressStreet, storeAddressNumber, storeAddressComplement, storeAddressNeighborhood,
+   storeAddressReference, storeAddressCity, storeAddressState, storeAddressCep, storeDeliveryMode,
+   storeOwnDeliveryFee, storeDeliveryFeeType, storeDeliveryBaseKm, storeDeliveryFeeBase,
+   storeDeliveryFeePerKm, storeSettings
+ }: StoreSettingsProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -85,8 +95,12 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeCategories, sto
   const [loadingCep, setLoadingCep] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [deliveryMode, setDeliveryMode] = useState(storeDeliveryMode || "platform");
-  const [ownDeliveryFee, setOwnDeliveryFee] = useState(storeOwnDeliveryFee?.toString() || "0");
+   const [deliveryMode, setDeliveryMode] = useState(storeDeliveryMode || "platform");
+   const [ownDeliveryFee, setOwnDeliveryFee] = useState(storeOwnDeliveryFee?.toString() || "0");
+   const [deliveryFeeType, setDeliveryFeeType] = useState(storeDeliveryFeeType || "fixed");
+   const [deliveryBaseKm, setDeliveryBaseKm] = useState(storeDeliveryBaseKm?.toString() || "0");
+   const [deliveryFeeBase, setDeliveryFeeBase] = useState(storeDeliveryFeeBase?.toString() || "0");
+   const [deliveryFeePerKm, setDeliveryFeePerKm] = useState(storeDeliveryFeePerKm?.toString() || "0");
   const storePlan = useStorePlan(storeId);
 
   const [pizzaHalfEnabled, setPizzaHalfEnabled] = useState<boolean>(storeSettings?.pizza_half_enabled || false);
@@ -205,8 +219,12 @@ const StoreSettings = ({ storeId, storeName, storeCategory, storeCategories, sto
           pizza_price_mode: pizzaPriceMode,
           zapi_enabled: zapiEnabled, // keep a flag here for quick checks (no secrets)
         },
-        delivery_mode: deliveryMode,
-        own_delivery_fee: parseFloat(ownDeliveryFee) || 0,
+         delivery_mode: deliveryMode,
+         own_delivery_fee: parseFloat(ownDeliveryFee) || 0,
+         delivery_fee_type: deliveryFeeType,
+         delivery_base_km: parseFloat(deliveryBaseKm) || 0,
+         delivery_fee_base: parseFloat(deliveryFeeBase) || 0,
+         delivery_fee_per_km: parseFloat(deliveryFeePerKm) || 0,
         address_street: addressStreet.trim() || null,
         address_number: addressNumber.trim() || null,
         address_complement: addressComplement.trim() || null,
@@ -740,57 +758,132 @@ const NotificationSection = () => {
                 Com motoboy próprio, você terá um botão "Saiu para Entrega" direto no painel. Não será necessário aguardar aceite de entregador.
               </p>
             </div>
-            <div>
-              <label className="text-xs font-bold text-foreground/80 mb-1 block">Taxa de entrega fixa (R$)</label>
-              <input
-                type="text"
-                inputMode="decimal"
-                value={ownDeliveryFee}
-                onChange={(e) => setOwnDeliveryFee(e.target.value.replace(/[^0-9.,]/g, ""))}
-                placeholder="Ex: 5.00"
-                className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
-              />
-              <p className="text-[10px] text-muted-foreground mt-1">Este valor é o que <strong>você</strong> recebe pela entrega.</p>
-            </div>
+             <div className="flex flex-col gap-2">
+               <label className="text-xs font-bold text-foreground/80">Modelo de Cobrança</label>
+               <div className="grid grid-cols-2 gap-2">
+                 <button
+                   onClick={() => setDeliveryFeeType("fixed")}
+                   className={`py-2 px-3 rounded-lg text-xs font-bold border-2 transition-all ${deliveryFeeType === "fixed" ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground"}`}
+                 >
+                   Taxa Fixa
+                 </button>
+                 <button
+                   onClick={() => setDeliveryFeeType("km")}
+                   className={`py-2 px-3 rounded-lg text-xs font-bold border-2 transition-all ${deliveryFeeType === "km" ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground"}`}
+                 >
+                   Por KM
+                 </button>
+               </div>
+             </div>
+ 
+             {deliveryFeeType === "fixed" ? (
+               <div>
+                 <label className="text-xs font-bold text-foreground/80 mb-1 block">Taxa de entrega fixa (R$)</label>
+                 <input
+                   type="text"
+                   inputMode="decimal"
+                   value={ownDeliveryFee}
+                   onChange={(e) => setOwnDeliveryFee(e.target.value.replace(/[^0-9.,]/g, ""))}
+                   placeholder="Ex: 5.00"
+                   className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                 />
+                 <p className="text-[10px] text-muted-foreground mt-1">Este valor é o que <strong>você</strong> recebe pela entrega.</p>
+               </div>
+             ) : (
+               <div className="space-y-3 p-3 bg-secondary/50 rounded-xl border border-border">
+                 <div className="grid grid-cols-2 gap-3">
+                   <div>
+                     <label className="text-[10px] font-bold text-foreground/80 mb-1 block uppercase">Taxa Base (R$)</label>
+                     <input
+                       type="text"
+                       inputMode="decimal"
+                       value={deliveryFeeBase}
+                       onChange={(e) => setDeliveryFeeBase(e.target.value.replace(/[^0-9.,]/g, ""))}
+                       className="w-full bg-card border border-border rounded-lg px-3 py-2 text-sm"
+                     />
+                   </div>
+                   <div>
+                     <label className="text-[10px] font-bold text-foreground/80 mb-1 block uppercase">Até quantos KM?</label>
+                     <input
+                       type="text"
+                       inputMode="numeric"
+                       value={deliveryBaseKm}
+                       onChange={(e) => setDeliveryBaseKm(e.target.value.replace(/\D/g, ""))}
+                       className="w-full bg-card border border-border rounded-lg px-3 py-2 text-sm"
+                     />
+                   </div>
+                 </div>
+                 <div>
+                   <label className="text-[10px] font-bold text-foreground/80 mb-1 block uppercase">Valor por KM Adicional (R$)</label>
+                   <input
+                     type="text"
+                     inputMode="decimal"
+                     value={deliveryFeePerKm}
+                     onChange={(e) => setDeliveryFeePerKm(e.target.value.replace(/[^0-9.,]/g, ""))}
+                       className="w-full bg-card border border-border rounded-lg px-3 py-2 text-sm"
+                   />
+                   <p className="text-[10px] text-muted-foreground mt-1">Ex: {formatBRL(parseFloat(deliveryFeeBase.replace(",", ".")) || 0)} até {deliveryBaseKm}km, depois +{formatBRL(parseFloat(deliveryFeePerKm.replace(",", ".")) || 0)} p/ cada km extra.</p>
+                 </div>
+               </div>
+             )}
 
-            {/* Preview: como vai aparecer pro cliente */}
-            {(() => {
-              const lojistaFee = parseFloat(ownDeliveryFee.replace(",", ".")) || 0;
-              const platformFee = storePlan.platformDeliverySplit || 0;
-              const totalCliente = lojistaFee + platformFee;
-              return (
-                <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-2">
-                  <p className="text-xs font-bold text-primary flex items-center gap-1.5">
-                    👁️ Como o cliente vai ver
-                  </p>
-                  <div className="space-y-1 text-xs">
-                    <div className="flex justify-between text-muted-foreground">
-                      <span>Sua taxa de entrega:</span>
-                      <span className="font-bold text-foreground">{formatBRL(lojistaFee)}</span>
-                    </div>
-                    {platformFee > 0 && (
-                      <div className="flex justify-between text-muted-foreground">
-                        <span>+ Taxa da plataforma:</span>
-                        <span className="font-bold text-foreground">{formatBRL(platformFee)}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between pt-2 border-t border-primary/20">
-                      <span className="font-bold text-foreground">Total cobrado do cliente:</span>
-                      <span className="font-bold text-primary text-sm">{formatBRL(totalCliente)}</span>
-                    </div>
-                  </div>
-                  {platformFee > 0 ? (
-                    <p className="text-[10px] text-muted-foreground/80 leading-relaxed">
-                      ℹ️ A plataforma adiciona automaticamente <strong>{formatBRL(platformFee)}</strong> em cima da sua taxa para custear a operação. Você recebe os <strong>{formatBRL(lojistaFee)}</strong> integrais.
-                    </p>
-                  ) : (
-                    <p className="text-[10px] text-muted-foreground/80 leading-relaxed">
-                      ℹ️ Você recebe a taxa integral. Sem split de plataforma no seu plano.
-                    </p>
-                  )}
-                </div>
-              );
-            })()}
+             {/* Preview: como vai aparecer pro cliente */}
+             {(() => {
+               let lojistaFee = 0;
+               let previewLabel = "Sua taxa de entrega:";
+               
+               if (deliveryFeeType === "fixed") {
+                 lojistaFee = parseFloat(ownDeliveryFee.replace(",", ".")) || 0;
+               } else {
+                 lojistaFee = parseFloat(deliveryFeeBase.replace(",", ".")) || 0;
+                 previewLabel = `Sua taxa base (até ${deliveryBaseKm}km):`;
+               }
+ 
+               const platformFee = storePlan.platformDeliverySplit || 0;
+               const totalCliente = lojistaFee + platformFee;
+               
+               return (
+                 <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-2">
+                   <p className="text-xs font-bold text-primary flex items-center gap-1.5">
+                     👁️ Como o cliente vai ver
+                   </p>
+                   <div className="space-y-1 text-xs">
+                     <div className="flex justify-between text-muted-foreground">
+                       <span>{previewLabel}</span>
+                       <span className="font-bold text-foreground">{formatBRL(lojistaFee)}</span>
+                     </div>
+                     {deliveryFeeType === "km" && (
+                       <div className="flex justify-between text-muted-foreground italic opacity-70">
+                         <span>Km adicional:</span>
+                         <span>+{formatBRL(parseFloat(deliveryFeePerKm.replace(",", ".")) || 0)}/km</span>
+                       </div>
+                     )}
+                     {platformFee > 0 && (
+                       <div className="flex justify-between text-muted-foreground">
+                         <span>+ Taxa da plataforma:</span>
+                         <span className="font-bold text-foreground">{formatBRL(platformFee)}</span>
+                       </div>
+                     )}
+                     <div className="flex justify-between pt-2 border-t border-primary/20">
+                       <span className="font-bold text-foreground">Total cobrado do cliente:</span>
+                       <span className="font-bold text-primary text-sm">
+                         {formatBRL(totalCliente)}
+                         {deliveryFeeType === "km" && " + km extra"}
+                       </span>
+                     </div>
+                   </div>
+                   {platformFee > 0 ? (
+                     <p className="text-[10px] text-muted-foreground/80 leading-relaxed">
+                       ℹ️ A plataforma adiciona automaticamente <strong>{formatBRL(platformFee)}</strong> em cima da sua taxa para custear a operação. Você recebe os <strong>{formatBRL(lojistaFee)}</strong> integrais.
+                     </p>
+                   ) : (
+                     <p className="text-[10px] text-muted-foreground/80 leading-relaxed">
+                       ℹ️ Você recebe a taxa integral. Sem split de plataforma no seu plano.
+                     </p>
+                   )}
+                 </div>
+               );
+             })()}
           </div>
         )}
       </div>

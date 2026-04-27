@@ -1,3 +1,64 @@
+ export interface StoreDeliveryConfig {
+   delivery_fee_type: 'fixed' | 'km';
+   delivery_base_km: number;
+   delivery_fee_base: number;
+   delivery_fee_per_km: number;
+   own_delivery_fee: number;
+ }
+ 
+ /**
+  * Calculate delivery fee for a store that manages its own delivery.
+  */
+ export async function calculateStoreOwnDeliveryFee(
+   customerCep: string,
+   storeCep: string,
+   config: StoreDeliveryConfig
+ ): Promise<DeliveryFeeResult> {
+   if (config.delivery_fee_type === 'fixed') {
+     return {
+       fee: config.own_delivery_fee,
+       isRural: false,
+       distanceKm: null,
+       breakdown: `Taxa fixa: ${formatBRL(config.own_delivery_fee)}`,
+     };
+   }
+ 
+   // KM based fee
+   const customerCoords = await geocodeCep(customerCep);
+   const storeCoords = storeCep ? await geocodeCep(storeCep) : ITATINGA_CENTER;
+ 
+   if (!customerCoords) {
+     return {
+       fee: config.delivery_fee_base,
+       isRural: false,
+       distanceKm: null,
+       breakdown: `Taxa base (CEP não localizado): ${formatBRL(config.delivery_fee_base)}`,
+     };
+   }
+ 
+   const distanceKm = haversineDistance(
+     storeCoords.lat, storeCoords.lng,
+     customerCoords.lat, customerCoords.lng
+   );
+ 
+   const roundedDistance = Math.max(0, Math.ceil(distanceKm));
+   let fee = config.delivery_fee_base;
+ 
+   if (roundedDistance > config.delivery_base_km) {
+     const extraKm = roundedDistance - config.delivery_base_km;
+     fee += extraKm * config.delivery_fee_per_km;
+   }
+ 
+   return {
+     fee: Math.round(fee * 100) / 100,
+     isRural: distanceKm > config.delivery_base_km,
+     distanceKm: Math.round(distanceKm * 10) / 10,
+     breakdown: roundedDistance <= config.delivery_base_km 
+       ? `Até ${config.delivery_base_km}km: ${formatBRL(config.delivery_fee_base)}`
+       : `Base ${formatBRL(config.delivery_fee_base)} + ${roundedDistance - config.delivery_base_km}km extras (${formatBRL(config.delivery_fee_per_km)}/km)`,
+   };
+ }
+ 
 import { formatBRL } from "@/lib/utils";
 import { fetchCep } from "./cepLookup";
 
