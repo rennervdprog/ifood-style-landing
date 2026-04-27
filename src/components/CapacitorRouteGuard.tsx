@@ -48,7 +48,33 @@ const PARTNER_ALLOWED_PREFIXES = [
   "/planos",
   "/auth",
   "/termos-de-uso",
-  "/politica-de-privacidade",
+   "/politica-de-privacidade",
+   "/auth",
+ ];
+ 
+ /**
+  * No APK Cliente, bloqueia acesso às rotas de parceiro.
+  */
+ const CLIENT_ALLOWED_PREFIXES = [
+   "/cliente",
+   "/loja",
+   "/carrinho",
+   "/checkout",
+   "/pedidos",
+   "/perfil",
+   "/auth",
+   "/termos-de-uso",
+   "/politica-de-privacidade",
+   "/pesquisa",
+   "/categorias",
+   "/historico",
+   "/favoritos",
+   "/cupons",
+   "/ajuda",
+   "/configuracoes",
+   "/notificacoes",
+   "/cupons",
+   "/sac",
 ];
 
 const CapacitorRouteGuard = () => {
@@ -78,43 +104,51 @@ const CapacitorRouteGuard = () => {
       return;
     }
 
-    if (currentMode === "partner") {
-      // APK PARCEIRO: bloqueia TUDO que não seja explicitamente uma rota de parceiro.
-      // Inclui: "/", "/cliente", "/loja/:id", "/carrinho", "/checkout", "/pedidos",
-      // "/perfil" e qualquer "/:slug" (catch-all que vira página de loja-cliente).
-      const isAllowed = PARTNER_ALLOWED_PREFIXES.some(
-        (route) => path === route || path.startsWith(route + "/")
-      );
-      if (!isAllowed) {
-        // Se já está logado, tenta levar direto pro painel correto.
-        // Se não, volta pro login do parceiro.
-        if (!authLoading && user) {
-          (async () => {
-            try {
-              navigate(await resolvePartnerDashboard(user.id), { replace: true });
-            } catch {
-              navigate("/portal-parceiro", { replace: true });
-            }
-          })();
-        } else {
-          navigate("/portal-parceiro", { replace: true });
-        }
-      }
-    } else {
-      // CLIENTE app: block partner-only routes, send to /cliente
-      const isPartnerRoute = PARTNER_ROUTES.some(
-        (route) => path === route || path.startsWith(route + "/")
-      );
-
-      if (isPartnerRoute) {
-        navigate("/cliente", { replace: true });
-      }
-
-      // Also redirect landing page "/" to /cliente in client app
-      if (path === "/") {
-        navigate("/cliente", { replace: true });
-      }
-    }
+     if (currentMode === "partner") {
+       const isAllowed = PARTNER_ALLOWED_PREFIXES.some(
+         (route) => path === route || path.startsWith(route + "/")
+       );
+ 
+       const isDashboardRoute = ["/super-admin", "/admin", "/entregador"].some(
+         (route) => path === route || path.startsWith(route + "/")
+       );
+ 
+       if (!isAllowed) {
+         if (!authLoading && user) {
+           (async () => {
+             const dest = await resolvePartnerDashboard(user.id);
+             navigate(dest, { replace: true });
+           })();
+         } else if (!authLoading) {
+           navigate("/portal-parceiro", { replace: true });
+         }
+       } else if (path === "/portal-parceiro" && user && !authLoading) {
+         (async () => {
+           const dest = await resolvePartnerDashboard(user.id);
+           if (dest !== "/portal-parceiro") {
+             navigate(dest, { replace: true });
+           }
+         })();
+       }
+     } else if (currentMode === "client") {
+       const isPartnerRoute = PARTNER_ROUTES.some(
+         (route) => path === route || path.startsWith(route + "/")
+       );
+ 
+       const isWhitelistedClientRoute = CLIENT_ALLOWED_PREFIXES.some(
+         (route) => path === route || path.startsWith(route + "/")
+       );
+ 
+       if (isPartnerRoute || !isWhitelistedClientRoute) {
+         if (path !== "/cliente" && path !== "/") {
+           navigate("/cliente", { replace: true });
+         }
+       }
+ 
+       if (path === "/") {
+         navigate("/cliente", { replace: true });
+       }
+     }
   }, [location.pathname, navigate, user?.id, authLoading, appMode]);
 
   return null;
