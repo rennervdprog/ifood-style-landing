@@ -2893,6 +2893,10 @@ export type Database = {
           categories: Database["public"]["Enums"]["store_category"][] | null
           category: Database["public"]["Enums"]["store_category"] | null
           created_at: string | null
+          delivery_base_km: number | null
+          delivery_fee_base: number | null
+          delivery_fee_per_km: number | null
+          delivery_fee_type: string | null
           delivery_mode: string | null
           force_closed: boolean | null
           id: string | null
@@ -2918,6 +2922,10 @@ export type Database = {
           categories?: Database["public"]["Enums"]["store_category"][] | null
           category?: Database["public"]["Enums"]["store_category"] | null
           created_at?: string | null
+          delivery_base_km?: number | null
+          delivery_fee_base?: number | null
+          delivery_fee_per_km?: number | null
+          delivery_fee_type?: string | null
           delivery_mode?: string | null
           force_closed?: boolean | null
           id?: string | null
@@ -2943,6 +2951,10 @@ export type Database = {
           categories?: Database["public"]["Enums"]["store_category"][] | null
           category?: Database["public"]["Enums"]["store_category"] | null
           created_at?: string | null
+          delivery_base_km?: number | null
+          delivery_fee_base?: number | null
+          delivery_fee_per_km?: number | null
+          delivery_fee_type?: string | null
           delivery_mode?: string | null
           force_closed?: boolean | null
           id?: string | null
