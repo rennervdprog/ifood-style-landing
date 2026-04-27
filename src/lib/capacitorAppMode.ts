@@ -117,8 +117,10 @@ export function getCapacitorAppMode(): CapacitorAppMode | null {
 
   try {
     const storedMode = sessionStorage.getItem(APP_MODE_KEY) || localStorage.getItem(APP_MODE_KEY);
-    if (storedMode === "partner" || storedMode === "client") {
-      return storedMode;
+    // Nunca confie em "client" salvo no storage antes de confirmar o app nativo:
+    // versões anteriores podiam gravar client no APK parceiro ao abrir em "/".
+    if (storedMode === "partner") {
+      return "partner";
     }
 
     const legacyPartner =
