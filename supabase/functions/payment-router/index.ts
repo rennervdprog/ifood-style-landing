@@ -688,7 +688,7 @@ function createSimulatedPix(params: {
 type Provider = "MERCADO_PAGO" | "EFI_BANK" | "ASAAS" | "SIMULATED";
 
 function getServiceRoleKey(): string | undefined {
-  return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("SERVICE_ROLE_KEY");
+  return Deno.env.get("SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 }
 
 async function getActiveProviderFromDB(): Promise<Provider> {
