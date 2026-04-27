@@ -797,7 +797,7 @@ const NotificationSection = () => {
                        type="text"
                        inputMode="decimal"
                        value={deliveryFeeBase}
-                       onChange={(e) => setDeliveryFeeBase(e.target.value.replace(/[^0-9.,]/g, ""))}
+                        onChange={(e) => setDeliveryFeeBase(e.target.value.replace(/[^0-9.,]/g, ""))}
                        className="w-full bg-card border border-border rounded-lg px-3 py-2 text-sm"
                      />
                    </div>
@@ -807,7 +807,7 @@ const NotificationSection = () => {
                        type="text"
                        inputMode="numeric"
                        value={deliveryBaseKm}
-                       onChange={(e) => setDeliveryBaseKm(e.target.value.replace(/[^0-9.,]/g, ""))}
+                        onChange={(e) => setDeliveryBaseKm(e.target.value.replace(/[^0-9.,]/g, ""))}
                        className="w-full bg-card border border-border rounded-lg px-3 py-2 text-sm"
                      />
                    </div>
@@ -818,7 +818,7 @@ const NotificationSection = () => {
                      type="text"
                      inputMode="decimal"
                      value={deliveryFeePerKm}
-                     onChange={(e) => setDeliveryFeePerKm(e.target.value.replace(/[^0-9.,]/g, ""))}
+                      onChange={(e) => setDeliveryFeePerKm(e.target.value.replace(/[^0-9.,]/g, ""))}
                        className="w-full bg-card border border-border rounded-lg px-3 py-2 text-sm"
                    />
                    <p className="text-[10px] text-muted-foreground mt-1">Ex: {formatBRL(parseFloat(deliveryFeeBase.replace(",", ".")) || 0)} até {deliveryBaseKm}km, depois +{formatBRL(parseFloat(deliveryFeePerKm.replace(",", ".")) || 0)} p/ cada km extra.</p>
