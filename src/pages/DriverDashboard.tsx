@@ -1063,7 +1063,7 @@ const DriverDashboard = () => {
                             <KeyRound className="h-4 w-4 text-green-500" />
                             <span className="text-sm font-bold text-foreground">Confirmar Entrega</span>
                           </div>
-                          <p className="text-xs text-muted-foreground">Peça o código de 4 dígitos ao cliente.</p>
+                           <p className="text-xs font-bold text-green-600 dark:text-green-400">Peça o código de 4 dígitos ao cliente.</p>
                           <input
                             type="text"
                             inputMode="numeric"
@@ -1077,7 +1077,7 @@ const DriverDashboard = () => {
                                finishDelivery(myDelivery.id, val);
                              }
                            }}
-                            className="w-full text-center text-3xl font-black tracking-[0.5em] bg-card border-2 border-green-500/20 rounded-2xl py-4 text-foreground placeholder:text-muted-foreground/20 focus:outline-none focus:border-green-500 transition-colors"
+                             className="w-full text-center text-3xl font-black tracking-[0.5em] bg-card border-4 border-green-500/50 rounded-2xl py-6 text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:border-green-600 transition-all shadow-inner"
                           />
                           <button
                             onClick={() => finishDelivery(myDelivery.id)}
@@ -1128,18 +1128,18 @@ const DriverDashboard = () => {
                         </div>
                       );
                     })()}
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-amber-500">🔐 Código de Acerto</label>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        maxLength={4}
-                        value={settlementCodeInput}
-                        onChange={(e) => setSettlementCodeInput(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                        placeholder="• • • •"
-                        className="w-full text-center text-3xl font-black tracking-[0.5em] bg-card border-2 border-amber-500/20 rounded-2xl py-4 text-foreground placeholder:text-muted-foreground/20 focus:outline-none focus:border-amber-500 transition-colors"
-                      />
-                    </div>
+                     <div className="bg-amber-500/5 p-4 rounded-2xl border border-amber-500/20 space-y-3">
+                       <label className="text-xs font-bold text-amber-600 dark:text-amber-400 block text-center uppercase tracking-wider">🔐 Código de Acerto</label>
+                       <input
+                         type="text"
+                         inputMode="numeric"
+                         maxLength={4}
+                         value={settlementCodeInput}
+                         onChange={(e) => setSettlementCodeInput(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                         placeholder="• • • •"
+                         className="w-full text-center text-3xl font-black tracking-[0.5em] bg-card border-4 border-amber-500/50 rounded-2xl py-6 text-foreground placeholder:text-muted-foreground/30 focus:outline-none focus:border-amber-600 transition-all shadow-inner"
+                       />
+                     </div>
                     <button
                       onClick={() => confirmStoreReturn(pendingReturn.id)}
                       disabled={settlementCodeInput.length !== 4 || confirmingReturn}
