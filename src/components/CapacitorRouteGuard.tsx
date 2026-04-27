@@ -27,9 +27,6 @@ export const PARTNER_ROUTES = [
   "/super-admin",
   "/planos",
   "/moderador",
-  "/auth",
-  "/termos-de-uso",
-  "/politica-de-privacidade",
 ];
 
 /**
