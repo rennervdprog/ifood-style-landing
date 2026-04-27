@@ -11,7 +11,8 @@ const BottomNav = memo(() => {
   const location = useLocation();
   const navigate = useNavigate();
   const { currentStoreSlug, currentStoreId } = useStoreContext();
-  const { user } = useAuth();
+   const { user } = useAuth();
+   const isPartnerApp = isPartnerCapacitorApp();
 
   const { data: profile } = useQuery({
     queryKey: ["bottom-nav-profile", user?.id],
