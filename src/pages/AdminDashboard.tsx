@@ -903,7 +903,6 @@ const AdminDashboard = () => {
         }
       }
     } catch (e: any) {
-      if (previousOrders) queryClient.setQueryData(["store-orders", store?.id], previousOrders);
       toast.error(`Erro inesperado: ${e?.message}`);
     }
   };
