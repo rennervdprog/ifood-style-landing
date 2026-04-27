@@ -1064,8 +1064,8 @@ const PedidosPage = () => {
                           </div>
                         )}
 
-                        {/* Items + financial breakdown */}
-                        <div className="bg-muted/40 rounded-xl p-3 space-y-2">
+                        {/* Items + financial breakdown (background changed to white) */}
+                        <div className="bg-white dark:bg-card border border-border/40 rounded-xl p-3 space-y-2">
                           <div className="text-xs text-foreground/80 space-y-1">
                             {order.order_items?.map((item: any) => (
                               <div key={item.id} className="flex justify-between">
