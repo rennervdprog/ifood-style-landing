@@ -893,11 +893,11 @@ const PedidosPage = () => {
                         {/* Timeline */}
                         {!isWaitingPayment && <StatusTimeline status={order.status} isPickup={order.neighborhood === "RETIRADA"} />}
 
-                        {/* Waiting Payment */}
+                        {/* Waiting Payment (background changed to white) */}
                         {isWaitingPayment && (() => {
                           const hasSavedPix = savedPixData[order.id];
                           return (
-                            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
+                            <div className="bg-white dark:bg-card border border-amber-200 rounded-xl p-3">
                               <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
                                   <Loader2 className="h-4 w-4 text-amber-500 animate-spin" />
