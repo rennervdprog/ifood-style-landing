@@ -232,8 +232,8 @@ const baseSidebarItems: { key: DashboardTab; label: string; icon: React.ElementT
   { key: "addons", label: "Adicionais", icon: Plus },
   { key: "bordas", label: "Bordas", icon: CircleDot, pizzaOnly: true },
   { key: "hours", label: "Horários", icon: Clock },
-  { key: "finance", label: "Financeiro", icon: Coins },
-  { key: "cash_register", label: "Caixa (PDV)", icon: Banknote },
+   { key: "finance", label: "Financeiro", icon: Coins },
+   // { key: "cash_register", label: "Caixa (PDV)", icon: Banknote },
   { key: "reports", label: "Relatórios", icon: BarChart3 },
   { key: "subscription", label: "Assinatura", icon: CreditCard },
   { key: "loyalty", label: "Fidelidade", icon: Star },
@@ -256,8 +256,8 @@ const moreSheetItems: { key: DashboardTab; label: string; icon: React.ElementTyp
   { key: "addons", label: "Adicionais", icon: Plus },
   { key: "bordas", label: "Bordas", icon: CircleDot, pizzaOnly: true },
   { key: "hours", label: "Horários", icon: Clock },
-  { key: "finance", label: "Financeiro", icon: Coins },
-  { key: "cash_register", label: "Caixa (PDV)", icon: Banknote },
+   { key: "finance", label: "Financeiro", icon: Coins },
+   // { key: "cash_register", label: "Caixa (PDV)", icon: Banknote },
   { key: "reports", label: "Relatórios", icon: BarChart3 },
   { key: "subscription", label: "Assinatura", icon: CreditCard },
   { key: "loyalty", label: "Fidelidade", icon: Star },
@@ -1451,12 +1451,12 @@ const AdminDashboard = () => {
                     color="text-emerald-500" trend={todayTotal > 0 ? "up" : null}
                     onClick={() => setDashboardTab("finance")}
                   />
-                  <button 
-                    onClick={() => setDashboardTab("cash_register")}
-                    className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-600 hover:bg-emerald-500/20 transition-all text-xs font-bold"
-                  >
-                    <Banknote className="h-4 w-4" /> Gerenciar Caixa (PDV)
-                  </button>
+                   {/* <button 
+                     onClick={() => setDashboardTab("cash_register")}
+                     className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-600 hover:bg-emerald-500/20 transition-all text-xs font-bold"
+                   >
+                     <Banknote className="h-4 w-4" /> Gerenciar Caixa (PDV)
+                   </button> */}
                 </div>
                 <GlanceCard
                   icon={Timer} label="Tempo Médio" value={avgDeliveryTime ? `${avgDeliveryTime} min` : "—"}
