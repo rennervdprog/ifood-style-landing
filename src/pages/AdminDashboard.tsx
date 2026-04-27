@@ -1451,12 +1451,12 @@ const AdminDashboard = () => {
                     color="text-emerald-500" trend={todayTotal > 0 ? "up" : null}
                     onClick={() => setDashboardTab("finance")}
                   />
-                  <button 
-                    onClick={() => setDashboardTab("cash_register")}
-                    className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-600 hover:bg-emerald-500/20 transition-all text-xs font-bold"
-                  >
-                    <Banknote className="h-4 w-4" /> Gerenciar Caixa (PDV)
-                  </button>
+                   {/* <button 
+                     onClick={() => setDashboardTab("cash_register")}
+                     className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-600 hover:bg-emerald-500/20 transition-all text-xs font-bold"
+                   >
+                     <Banknote className="h-4 w-4" /> Gerenciar Caixa (PDV)
+                   </button> */}
                 </div>
                 <GlanceCard
                   icon={Timer} label="Tempo Médio" value={avgDeliveryTime ? `${avgDeliveryTime} min` : "—"}
