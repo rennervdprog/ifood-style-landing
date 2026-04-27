@@ -1722,12 +1722,17 @@ const AdminDashboard = () => {
                         <label className="text-xs font-bold text-foreground/80">Taxa de entrega fixa (R$)</label>
                         <input type="text" inputMode="decimal"
                           defaultValue={((store as any).own_delivery_fee || 0).toString()}
-                          onBlur={async (e) => {
-                            const val = parseFloat(e.target.value.replace(",", ".")) || 0;
-                            await supabase.from("stores").update({ own_delivery_fee: val } as any).eq("id", store.id);
-                            queryClient.invalidateQueries({ queryKey: ["my-store", user?.id] });
-                            toast.success(`Taxa fixa atualizada para ${formatBRL(val)}`);
-                          }}
+                           onBlur={async (e) => {
+                             const valString = e.target.value.replace(/[^0-9.,]/g, "").replace(",", ".");
+                             const val = parseFloat(valString) || 0;
+                             const { error } = await supabase.from("stores").update({ own_delivery_fee: val } as any).eq("id", store.id);
+                             if (error) {
+                               toast.error("Erro ao atualizar taxa.");
+                             } else {
+                               queryClient.invalidateQueries({ queryKey: ["my-store", user?.id] });
+                               toast.success(`Taxa fixa atualizada para ${formatBRL(val)}`);
+                             }
+                           }}
                           placeholder="Ex: 5.00"
                           className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                         />
