@@ -369,37 +369,36 @@ const PedidosPage = () => {
   // Realtime subscription for LOJISTA store orders
   useEffect(() => {
     if (!ownStore?.id || !isLojista) return;
-    const channel = supabase
-      .channel(`store-orders-realtime-${ownStore.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "orders",
-          filter: `store_id=eq.${ownStore.id}`,
-        },
-        (payload) => {
-          const updated = payload.new as any;
+    const channel = supabase.channel(`store-orders-realtime-${ownStore.id}`);
 
-          if (payload.eventType === "INSERT") {
-            queryClient.invalidateQueries({ queryKey: ["store-orders-lojista", ownStore.id] });
-            toast.info("🔔 Novo pedido recebido!");
-          } else if (payload.eventType === "UPDATE") {
-            queryClient.setQueryData(["store-orders-lojista", ownStore.id], (old: any[] | undefined) => {
-              if (!old) return old;
-              const idx = old.findIndex((o: any) => o.id === updated.id);
-              if (idx >= 0) {
-                const copy = [...old];
-                copy[idx] = { ...copy[idx], ...updated };
-                return copy;
-              }
-              return [updated, ...old];
-            });
-          }
+    channel.on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "orders",
+        filter: `store_id=eq.${ownStore.id}`,
+      },
+      (payload) => {
+        const updated = payload.new as any;
+
+        if (payload.eventType === "INSERT") {
+          queryClient.invalidateQueries({ queryKey: ["store-orders-lojista", ownStore.id] });
+          toast.info("🔔 Novo pedido recebido!");
+        } else if (payload.eventType === "UPDATE") {
+          queryClient.setQueryData(["store-orders-lojista", ownStore.id], (old: any[] | undefined) => {
+            if (!old) return old;
+            const idx = old.findIndex((o: any) => o.id === updated.id);
+            if (idx >= 0) {
+              const copy = [...old];
+              copy[idx] = { ...copy[idx], ...updated };
+              return copy;
+            }
+            return [updated, ...old];
+          });
         }
-      )
-      .subscribe();
+      }
+    ).subscribe();
 
     return () => {
       supabase.removeChannel(channel);
