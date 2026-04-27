@@ -19,18 +19,18 @@ import { Card, CardContent } from "@/components/ui/card";
 /* ─── hooks ─── */
 
 /* ─── static data ─── */
-const painPoints = [
-  { emoji: "📸", pain: "Manda foto do cardápio pelo WhatsApp", solution: "Link profissional com fotos e preços atualizados" },
-  { emoji: "📝", pain: "Anota pedido na mão e erra", solution: "Pedidos organizados e detalhados automaticamente" },
-  { emoji: "💸", pain: "Confere PIX no extrato um por um", solution: "Pagamento confirmado na hora, sem conferir nada" },
-  { emoji: "🔇", pain: "Perde pedido porque não ouviu a mensagem", solution: "Alerta sonoro + notificação push no celular" },
-];
+ const painPoints = [
+   { emoji: "📸", pain: "Manda foto do cardápio pelo WhatsApp", solution: "Cardápio digital profissional com fotos HD e preços sempre atualizados" },
+   { emoji: "📝", pain: "Anota pedido na mão e erra o endereço", solution: "Pedidos organizados automaticamente com endereço via GPS integrado" },
+   { emoji: "💸", pain: "Confere PIX no extrato manual um por um", solution: "Pagamento PIX confirmado instantaneamente pelo sistema" },
+   { emoji: "🔇", pain: "Perde pedidos por não ver as mensagens", solution: "Alertas sonoros e notificações push para você nunca perder uma venda" },
+ ];
 
 const steps = [
-  { step: "01", title: "Cadastre sua loja", desc: "Preencha os dados básicos e escolha seu plano." },
-  { step: "02", title: "Monte seu cardápio", desc: "Adicione categorias, produtos, fotos e preços." },
-  { step: "03", title: "Compartilhe o link", desc: "Envie pelo WhatsApp, redes sociais ou imprima o QR Code." },
-   { step: "04", title: "Receba pedidos!", desc: "Clientes pedem pelo celular e você recebe tudo organizado." },
+   { step: "01", title: "Cadastre sua loja", desc: "Crie sua conta em minutos e escolha o plano ideal para seu momento." },
+   { step: "02", title: "Monte seu cardápio", desc: "Adicione seus produtos, fotos e preços de forma simples e rápida." },
+   { step: "03", title: "Divulgue seu link", desc: "Compartilhe seu link exclusivo no WhatsApp, Instagram e use QR Codes." },
+   { step: "04", title: "Venda muito mais!", desc: "Receba pedidos organizados, pagamentos automáticos e gerencie entregas." },
  ];
  
  /* ─── Motoboy Data ─── */
@@ -66,15 +66,15 @@ const steps = [
  ];
  
  const features = [
-    { icon: Package, title: "Gestão De Pedidos", desc: "Emissão de nota e mensagem de atualização sobre os pedidos pro WhatsApp (abre o WhatsApp para envio manual)." },
-    { icon: BarChart3, title: "Finanças e Relatórios", desc: "Tudo 100% detalhado: saiba qual produto mais vende, qual dia vendeu mais e tenha relatórios de todos os dias." },
-    { icon: Truck, title: "Motoboy Integrado", desc: "Ao marcar pedido como pronto, um alerta sonoro avisa instantaneamente o motoboy no aplicativo." },
-   { icon: CreditCard, title: "PIX Automático", desc: "Pagamento confirmado na hora, sem necessidade de conferência manual de extrato." },
-   { icon: Smartphone, title: "Cardápio Digital", desc: "Link profissional com fotos em alta definição, sem necessidade do cliente baixar aplicativo." },
-   { icon: QrCode, title: "QR Code Digital", desc: "Facilite o autoatendimento. O cliente aponta a câmera, escolhe e paga tudo pelo celular." },
-   { icon: Bell, title: "Alertas em Tempo Real", desc: "Notificações push e alertas sonoros garantem que você nunca perca um pedido." },
-   { icon: Globe, title: "Abrangência Nacional", desc: "Plataforma robusta pronta para operar em qualquer cidade do Brasil." },
-];
+   { icon: Smartphone, title: "Cardápio Digital", desc: "Link profissional com fotos em alta definição, sem o cliente precisar baixar nada." },
+   { icon: CreditCard, title: "PIX Automático", desc: "Receba e confirme pagamentos instantaneamente sem conferir extratos." },
+   { icon: Truck, title: "Gestão de Motoboy", desc: "Chame seus entregadores com alerta sonoro e rastreie o pedido em tempo real." },
+   { icon: BarChart3, title: "Relatórios de Vendas", desc: "Saiba exatamente quanto vendeu, quais os produtos favoritos e seu lucro real." },
+   { icon: QrCode, title: "QR Code de Mesa", desc: "Autoatendimento moderno para seu balcão ou mesas, reduzindo filas e erros." },
+   { icon: Bell, title: "Alertas Sonoros", desc: "Notificações em tempo real para você preparar e enviar pedidos sem atrasos." },
+   { icon: Package, title: "Impressão de Pedidos", desc: "Organize sua cozinha com a impressão automática de comandas e notas." },
+   { icon: ShieldCheck, title: "Segurança Total", desc: "Plataforma estável e segura para processar seus pagamentos e dados." },
+ ];
 
 const plans = [
   {
@@ -198,26 +198,26 @@ const plans = [
   },
 ];
 
-const benefits = [
-  {
-    icon: "🍕",
-    segment: "Pizzarias & Hamburguerias",
-    headline: "Pedidos sem erro de anotação",
-    text: "Adicionais, bordas e meio-a-meio organizados automaticamente. Sem retrabalho na cozinha.",
-  },
-  {
-    icon: "🛒",
-    segment: "Mercados & Conveniências",
-    headline: "Cardápio com centenas de itens",
-    text: "Importe seu catálogo de uma vez. Categorias, fotos e preços sempre atualizados em segundos.",
-  },
-  {
-    icon: "🍰",
-    segment: "Doceiras & Confeitarias",
-    headline: "Encomendas com agendamento",
-    text: "Cliente escolhe data e hora de retirada. Você organiza a produção sem confusão no WhatsApp.",
-  },
-];
+ const benefits = [
+   {
+     icon: "🍕",
+     segment: "Pizzarias & Hamburguerias",
+     headline: "Chega de erros nos pedidos",
+     text: "Bordas recheadas, adicionais e pizzas meio-a-meio organizadas automaticamente para a sua cozinha.",
+   },
+   {
+     icon: "🛒",
+     segment: "Mercados & Adegas",
+     headline: "Seu estoque no celular",
+     text: "Cadastre centenas de itens rapidamente. Preços e estoque atualizados em tempo real para seus clientes.",
+   },
+   {
+     icon: "🍰",
+     segment: "Docerias & Padarias",
+     headline: "Agendamento Inteligente",
+     text: "Permita que seus clientes agendem a retirada ou entrega. Organize sua produção sem estresse no WhatsApp.",
+   },
+ ];
 
 const faqs = [
   { q: "Preciso baixar algum aplicativo?", a: "Não! Você gerencia tudo pelo navegador do celular ou computador. Seus clientes também pedem direto pelo link, sem instalar nada." },
@@ -508,44 +508,8 @@ const StoreDirectory = () => {
         </div>
       </section>
 
-      {/* ══════ BRASIL SECTION ══════ */}
-      <section className="py-20 px-4 bg-primary/5 border-y border-primary/10">
-        <div className="mx-auto max-w-5xl flex flex-col md:flex-row items-center gap-12">
-          <div className="flex-1 text-center md:text-left">
-            <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary mb-4">
-              <Globe className="h-3 w-3" /> PRESENÇA NACIONAL
-            </div>
-            <h2 className="text-3xl md:text-5xl font-black text-foreground mb-6 leading-tight tracking-tighter">
-              Do Oiapoque ao Chuí. <br />
-              Para <span className="text-primary italic">todo</span> o Brasil.
-            </h2>
-            <p className="text-muted-foreground text-lg leading-relaxed mb-8 font-medium">
-              Não importa o tamanho da sua cidade. Nossa infraestrutura está pronta para processar seus pedidos, confirmar seus pagamentos via PIX e gerenciar sua logística com segurança e rapidez em qualquer lugar do país.
-            </p>
-            <div className="flex flex-wrap justify-center md:justify-start gap-6">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-primary" />
-                <span className="font-bold text-foreground">Suporte 24/7</span>
-              </div>
-               <div className="flex items-center gap-2">
-                 <CheckCircle2 className="h-5 w-5 text-primary" />
-                 <span className="font-bold text-foreground">100% Online</span>
-               </div>
-               <div className="flex items-center gap-2">
-                 <CheckCircle2 className="h-5 w-5 text-primary" />
-                 <span className="font-bold text-foreground">Escalabilidade</span>
-               </div>
-             </div>
-           </div>
-           <div className="flex-1 relative flex justify-center">
-             <div className="w-64 h-64 md:w-80 md:h-80 bg-primary/20 rounded-full blur-3xl absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -z-10" />
-             <Globe className="w-48 h-48 md:w-64 md:h-64 text-primary opacity-30 animate-pulse" />
-           </div>
-         </div>
-       </section>
- 
        {/* ══════ MOTOBOY SYSTEM SECTION ══════ */}
-       <section className="py-20 px-4 bg-slate-900 text-white overflow-hidden relative">
+       <section className="py-24 px-4 bg-slate-900 text-white overflow-hidden relative">
          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-[100px] rounded-full -translate-y-1/2 translate-x-1/2" />
          <div className="absolute bottom-0 left-0 w-64 h-64 bg-orange-600/10 blur-[100px] rounded-full translate-y-1/2 -translate-x-1/2" />
          
@@ -641,31 +605,30 @@ const StoreDirectory = () => {
        </section>
  
        {/* ══════ HOW IT WORKS ══════ */}
-      <section id="como-funciona" className="py-20 px-4">
-        <div className="mx-auto max-w-5xl">
-          <h2 className="text-3xl font-bold text-center text-foreground mb-4">
-            Funciona em 4 passos simples
-          </h2>
-          <p className="text-center text-muted-foreground mb-14 max-w-xl mx-auto">
-            Do cadastro ao primeiro pedido em menos de 10 minutos.
-          </p>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {steps.map((s, i) => (
-              <div key={s.step} className="relative text-center group">
-                {i < 3 && (
-                  <div className="hidden lg:block absolute top-6 left-[60%] w-[80%] h-px bg-border" />
-                )}
-                <div className="relative mx-auto w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-orange-600 text-primary-foreground flex items-center justify-center text-lg font-bold mb-4 shadow-lg shadow-primary/20 group-hover:scale-110 transition-transform">
-                  {s.step}
-                </div>
-                <h3 className="font-bold text-foreground mb-1">{s.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
-              </div>
-            ))}
-          </div>
-
-        </div>
-      </section>
+       <section id="como-funciona" className="py-24 px-4 bg-background border-t border-border">
+         <div className="mx-auto max-w-6xl">
+           <div className="text-center mb-16">
+             <h2 className="text-3xl md:text-5xl font-black text-foreground mb-4">
+               Comece a vender hoje 🚀
+             </h2>
+             <p className="text-muted-foreground text-lg max-w-xl mx-auto font-medium">
+               Do cadastro ao primeiro pedido em menos de 10 minutos. É simples e rápido.
+             </p>
+           </div>
+           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-12">
+             {steps.map((s, i) => (
+               <div key={s.step} className="relative text-center group">
+                 {i < 3 && <div className="hidden lg:block absolute top-10 left-[70%] w-[60%] h-[2px] bg-gradient-to-r from-primary/30 to-transparent" />}
+                 <div className="relative mx-auto w-20 h-20 rounded-[2rem] bg-gradient-to-br from-primary to-orange-600 text-white flex items-center justify-center text-2xl font-black mb-8 shadow-2xl shadow-primary/20 group-hover:rotate-12 transition-all duration-300">
+                   {s.step}
+                 </div>
+                 <h3 className="text-xl font-bold text-foreground mb-3">{s.title}</h3>
+                 <p className="text-muted-foreground leading-relaxed font-medium">{s.desc}</p>
+               </div>
+             ))}
+           </div>
+         </div>
+       </section>
 
       {/* ══════ FEATURES GRID ══════ */}
       <section className="py-20 px-4 bg-muted/20">
@@ -690,34 +653,36 @@ const StoreDirectory = () => {
         </div>
       </section>
 
-      {/* ══════ VALUE GUARANTEES (replaces fake stats) ══════ */}
-      <section className="py-14 border-y border-border bg-muted/20">
-        <div className="mx-auto max-w-5xl px-4">
-          <h2 className="text-2xl md:text-3xl font-bold text-center text-foreground mb-3">
-            Por que confiar na ItaSuper?
-          </h2>
-          <p className="text-center text-muted-foreground mb-10 max-w-xl mx-auto text-sm">
-            Não inventamos números. Mostramos o que realmente entregamos a você.
-          </p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-            {[
-              { icon: DollarSign, value: "Até 0%", label: "de comissão por pedido", desc: "Você fica com mais lucro" },
-              { icon: Clock, value: "10 min", label: "para montar seu cardápio", desc: "Pronto pra vender hoje" },
-              { icon: ShieldCheck, value: "Sem fidelidade", label: "cancele quando quiser", desc: "Sem multa, sem pegadinha" },
-              { icon: Globe, value: "Brasil todo", label: "qualquer cidade do país", desc: "Funciona em qualquer lugar" },
-            ].map((s) => (
-              <div key={s.label} className="flex flex-col items-center text-center rounded-2xl bg-card border border-border p-5 hover:shadow-md transition-shadow">
-                <div className="w-11 h-11 rounded-2xl bg-primary/10 flex items-center justify-center mb-3">
-                  <s.icon className="h-5 w-5 text-primary" />
-                </div>
-                <p className="text-2xl md:text-3xl font-extrabold text-primary leading-tight">{s.value}</p>
-                <p className="text-sm font-semibold text-foreground mt-1">{s.label}</p>
-                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{s.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+       {/* ══════ VALUE GUARANTEES (replaces fake stats) ══════ */}
+       <section className="py-24 px-4 bg-muted/20 border-y border-border">
+         <div className="mx-auto max-w-6xl">
+           <div className="text-center mb-16">
+             <h2 className="text-3xl md:text-5xl font-black text-foreground mb-4">
+               Por que escolher a ItaSuper? 🚀
+             </h2>
+             <p className="text-muted-foreground text-lg max-w-xl mx-auto font-medium">
+               Não inventamos números. Mostramos o que realmente entregamos a você para o seu negócio crescer.
+             </p>
+           </div>
+           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+             {[
+               { icon: DollarSign, value: "Até 0%", label: "Comissão", desc: "Fique com o lucro total das suas vendas nos planos pagos." },
+               { icon: Clock, value: "10 min", label: "Configuração", desc: "Seu cardápio digital pronto para vender no mesmo dia." },
+               { icon: ShieldCheck, value: "Sem Fidelidade", label: "Liberdade", desc: "Cancele quando quiser, sem multas ou taxas escondidas." },
+               { icon: Globe, value: "Brasil Todo", label: "Abrangência", desc: "Nossa tecnologia funciona em qualquer cidade do país." },
+             ].map((s) => (
+               <div key={s.label} className="flex flex-col items-center text-center group">
+                 <div className="w-20 h-20 rounded-[2rem] bg-primary/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                   <s.icon className="h-10 w-10 text-primary" />
+                 </div>
+                 <p className="text-4xl font-black text-primary leading-tight mb-2">{s.value}</p>
+                 <p className="text-xl font-bold text-foreground mb-2">{s.label}</p>
+                 <p className="text-sm text-muted-foreground leading-relaxed font-medium">{s.desc}</p>
+               </div>
+             ))}
+           </div>
+         </div>
+       </section>
 
       {/* ══════ PLANS ══════ */}
       <section id="planos" className="py-20 px-4">
@@ -830,27 +795,29 @@ const StoreDirectory = () => {
         </div>
       </section>
 
-      {/* ══════ BENEFITS BY SEGMENT ══════ */}
-      <section className="py-20 px-4 bg-muted/20">
-        <div className="mx-auto max-w-5xl">
-          <h2 className="text-3xl font-bold text-center text-foreground mb-4">
-            Feito para o seu tipo de negócio
-          </h2>
-          <p className="text-center text-muted-foreground mb-14 max-w-xl mx-auto">
-            Seja qual for o seu segmento, a plataforma se adapta às suas necessidades.
-          </p>
-          <div className="grid sm:grid-cols-3 gap-6">
-            {benefits.map((b) => (
-              <Card key={b.segment} className="border-border rounded-2xl hover:shadow-md hover:-translate-y-1 transition-all">
-                <CardContent className="pt-6">
-                  <div className="text-4xl mb-3">{b.icon}</div>
-                  <p className="text-xs font-bold text-primary uppercase tracking-wide mb-2">{b.segment}</p>
-                  <h3 className="text-base font-bold text-foreground mb-2 leading-snug">{b.headline}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{b.text}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+       {/* ══════ BENEFITS BY SEGMENT ══════ */}
+       <section className="py-24 px-4 bg-muted/30">
+         <div className="mx-auto max-w-6xl">
+           <div className="text-center mb-16">
+             <h2 className="text-3xl md:text-5xl font-black text-foreground mb-4">
+               Feito para o seu negócio 🚀
+             </h2>
+             <p className="text-muted-foreground text-lg max-w-xl mx-auto font-medium">
+               Seja qual for o seu segmento, a ItaSuper se adapta perfeitamente à sua rotina.
+             </p>
+           </div>
+           <div className="grid sm:grid-cols-3 gap-8">
+             {benefits.map((b) => (
+               <Card key={b.segment} className="rounded-[2.5rem] border-none bg-card p-4 hover:shadow-2xl transition-all duration-300">
+                 <CardContent className="pt-6">
+                   <div className="text-5xl mb-6">{b.icon}</div>
+                   <p className="text-xs font-black text-primary uppercase tracking-[0.2em] mb-4">{b.segment}</p>
+                   <h3 className="text-xl font-bold text-foreground mb-4 leading-tight">{b.headline}</h3>
+                   <p className="text-muted-foreground leading-relaxed font-medium">{b.text}</p>
+                 </CardContent>
+               </Card>
+             ))}
+           </div>
 
           {/* Aggregated trust strip */}
           <div className="mt-12 grid sm:grid-cols-3 gap-4 max-w-3xl mx-auto">
