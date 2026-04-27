@@ -1125,7 +1125,6 @@ async function routePixCreation(params: {
         payerName: `${params.payerFirstName} ${params.payerLastName}`.trim(),
         externalReference: params.externalReference,
         expiresAt: params.expiresAt,
-        splitWalletId: params.splitWalletId,
       });
       if (asaasResult.ok) {
         const resp: StandardPixResponse = {
@@ -1201,7 +1200,6 @@ async function routePixCreation(params: {
           payerName: `${params.payerFirstName} ${params.payerLastName}`.trim(),
           externalReference: params.externalReference,
           expiresAt: params.expiresAt,
-          splitWalletId: params.splitWalletId,
         });
         if (asaasResult.ok) {
           const resp: StandardPixResponse = {
