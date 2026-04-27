@@ -992,9 +992,9 @@ const PedidosPage = () => {
                           );
                         })()}
 
-                        {/* Pickup badge */}
+                        {/* Pickup badge (background changed to white) */}
                         {order.neighborhood === "RETIRADA" && order.status === "pronto_para_entrega" && (
-                          <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 flex items-center gap-2">
+                          <div className="bg-white dark:bg-card border border-primary/20 rounded-xl p-3 flex items-center gap-2">
                             <span className="text-lg">🏪</span>
                             <div>
                               <span className="text-xs font-bold text-primary">Pronto para retirada!</span>
@@ -1003,9 +1003,9 @@ const PedidosPage = () => {
                           </div>
                         )}
 
-                        {/* Delivery PIN (not for pickup) */}
+                        {/* Delivery PIN (not for pickup) (background changed to white) */}
                         {order.neighborhood !== "RETIRADA" && showPin && (
-                          <div className="bg-primary/5 border border-primary/20 rounded-xl p-3">
+                          <div className="bg-white dark:bg-card border border-primary/20 rounded-xl p-3">
                             <div className="flex items-center gap-2 mb-1">
                               <Lock className="h-4 w-4 text-primary" />
                               <span className="text-xs font-bold text-primary">Código de Entrega</span>
