@@ -23,25 +23,28 @@ function getServiceRoleKey() {
 async function confirmAndSplit(supabase: any, orderId: string, paymentId: string | null) {
   const { data: order } = await supabase
     .from("orders")
-    .select("id, status, store_id, subtotal, delivery_fee, payment_method")
+    .select("id, status, store_id, subtotal, delivery_fee, payment_method, store_payout_id")
     .eq("id", orderId)
     .single();
 
   if (!order) return { confirmed: false, reason: "order_not_found" };
-  if (order.status !== "aguardando_pagamento") {
-    return { confirmed: true, reason: "already_processed", status: order.status };
+
+  // Move to pendente only if still awaiting
+  if (order.status === "aguardando_pagamento") {
+    const { error: updErr } = await supabase
+      .from("orders")
+      .update({ status: "pendente" as any, confirmed_at: new Date().toISOString() })
+      .eq("id", orderId)
+      .eq("status", "aguardando_pagamento");
+    if (updErr) {
+      console.error("[confirm-order-payment] update error:", updErr);
+      return { confirmed: false, reason: "update_failed" };
+    }
   }
 
-  // Move to pendente
-  const { error: updErr } = await supabase
-    .from("orders")
-    .update({ status: "pendente" as any, confirmed_at: new Date().toISOString() })
-    .eq("id", orderId)
-    .eq("status", "aguardando_pagamento");
-
-  if (updErr) {
-    console.error("[confirm-order-payment] update error:", updErr);
-    return { confirmed: false, reason: "update_failed" };
+  // Skip split if already done
+  if (order.store_payout_id) {
+    return { confirmed: true, reason: "already_split", status: "pendente", payout_id: order.store_payout_id };
   }
 
   // ── Auto-transfer store share via Asaas (mirrors asaas-webhook logic) ──
