@@ -215,6 +215,7 @@ Deno.serve(async (req) => {
     const { user_ids, title, body: msgBody, data } = body;
 
     if (!user_ids || !Array.isArray(user_ids) || !title) {
+      console.error("[send-push] ❌ Validation failed: user_ids or title missing", { user_ids, title });
       return new Response(JSON.stringify({ error: "user_ids (array) and title are required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -392,17 +393,12 @@ Deno.serve(async (req) => {
     console.log(`[send-push] 🔍 DEBUG: Target user_ids=${JSON.stringify(requestedUserIds)}, FCM tokens selected=${latestFcmTokens.length}`);
 
     if (latestFcmTokens.length > 0 && serviceAccountJson) {
-       if (serviceAccountJson) {
-         const sa = JSON.parse(serviceAccountJson);
-         console.log(`[send-push] 🔑 FCM Project ID from Secret: ${sa.project_id}`);
-         if (sa.project_id !== "itasuper-c71a1") {
-           console.warn(`[send-push] ⚠️ PROJECT ID MISMATCH: Secret has ${sa.project_id} but frontend uses itasuper-c71a1`);
-         }
-       } else {
-         console.error("[send-push] ❌ FCM_SERVICE_ACCOUNT_JSON is NOT set in Edge Function secrets!");
-       }
-
       const serviceAccount = JSON.parse(serviceAccountJson);
+      console.log(`[send-push] 🔑 FCM Project ID from Secret: ${serviceAccount.project_id}`);
+      if (serviceAccount.project_id !== "itasuper-c71a1") {
+        console.warn(`[send-push] ⚠️ PROJECT ID MISMATCH: Secret has ${serviceAccount.project_id} but frontend uses itasuper-c71a1`);
+      }
+
       const accessToken = await getAccessToken(serviceAccount);
       const projectId = serviceAccount.project_id;
 
