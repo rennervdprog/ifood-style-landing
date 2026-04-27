@@ -35,18 +35,10 @@ function sanitize(key: string, type: string): string {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
-    // Authorize: require admin via Lovable Cloud (internal) JWT
-    const authHeader = req.headers.get("Authorization") || "";
-    const internal = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } },
-    );
-    const { data: u } = await internal.auth.getUser(authHeader.replace("Bearer ", ""));
-    if (!u?.user) return json({ error: "Unauthorized" }, 401);
-    const adminClient = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-    const { data: roleRow } = await adminClient.from("user_roles").select("role").eq("user_id", u.user.id).eq("role", "admin").maybeSingle();
-    if (!roleRow) return json({ error: "Admin only" }, 403);
+    // Authorize: shared-secret header (use the existing ASAAS_WEBHOOK_TOKEN)
+    const expected = Deno.env.get("ASAAS_WEBHOOK_TOKEN") || "";
+    const provided = req.headers.get("x-maintenance-token") || "";
+    if (!expected || provided !== expected) return json({ error: "Unauthorized" }, 401);
 
     const externalUrl = Deno.env.get("EXTERNAL_SUPABASE_URL")!;
     const externalKey = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY")!;
