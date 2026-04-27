@@ -17,11 +17,11 @@ const config: CapacitorConfig = {
    // ===============================================================
   server: {
     androidScheme: 'https',
-    url: 'https://ifood-style-landing.vercel.app/',
+    url: 'https://www.itasuper.com.br',
     cleartext: true,
     // Permitir todas as navegações dentro do WebView para evitar que abra o navegador externo
     allowNavigation: [
-      'ifood-style-landing.vercel.app',
+      'www.itasuper.com.br',
       '*.supabase.co',
       'qkjhguziuchqsbxzruea.supabase.co',
       'lktzrqjvqoojlrhqnxuz.supabase.co',
