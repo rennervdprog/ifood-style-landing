@@ -19,18 +19,18 @@ import { Card, CardContent } from "@/components/ui/card";
 /* ─── hooks ─── */
 
 /* ─── static data ─── */
-const painPoints = [
-  { emoji: "📸", pain: "Manda foto do cardápio pelo WhatsApp", solution: "Link profissional com fotos e preços atualizados" },
-  { emoji: "📝", pain: "Anota pedido na mão e erra", solution: "Pedidos organizados e detalhados automaticamente" },
-  { emoji: "💸", pain: "Confere PIX no extrato um por um", solution: "Pagamento confirmado na hora, sem conferir nada" },
-  { emoji: "🔇", pain: "Perde pedido porque não ouviu a mensagem", solution: "Alerta sonoro + notificação push no celular" },
-];
+ const painPoints = [
+   { emoji: "📸", pain: "Manda foto do cardápio pelo WhatsApp", solution: "Cardápio digital profissional com fotos HD e preços sempre atualizados" },
+   { emoji: "📝", pain: "Anota pedido na mão e erra o endereço", solution: "Pedidos organizados automaticamente com endereço via GPS integrado" },
+   { emoji: "💸", pain: "Confere PIX no extrato manual um por um", solution: "Pagamento PIX confirmado instantaneamente pelo sistema" },
+   { emoji: "🔇", pain: "Perde pedidos por não ver as mensagens", solution: "Alertas sonoros e notificações push para você nunca perder uma venda" },
+ ];
 
 const steps = [
-  { step: "01", title: "Cadastre sua loja", desc: "Preencha os dados básicos e escolha seu plano." },
-  { step: "02", title: "Monte seu cardápio", desc: "Adicione categorias, produtos, fotos e preços." },
-  { step: "03", title: "Compartilhe o link", desc: "Envie pelo WhatsApp, redes sociais ou imprima o QR Code." },
-   { step: "04", title: "Receba pedidos!", desc: "Clientes pedem pelo celular e você recebe tudo organizado." },
+   { step: "01", title: "Cadastre sua loja", desc: "Crie sua conta em minutos e escolha o plano ideal para seu momento." },
+   { step: "02", title: "Monte seu cardápio", desc: "Adicione seus produtos, fotos e preços de forma simples e rápida." },
+   { step: "03", title: "Divulgue seu link", desc: "Compartilhe seu link exclusivo no WhatsApp, Instagram e use QR Codes." },
+   { step: "04", title: "Venda muito mais!", desc: "Receba pedidos organizados, pagamentos automáticos e gerencie entregas." },
  ];
  
  /* ─── Motoboy Data ─── */
@@ -66,15 +66,15 @@ const steps = [
  ];
  
  const features = [
-    { icon: Package, title: "Gestão De Pedidos", desc: "Emissão de nota e mensagem de atualização sobre os pedidos pro WhatsApp (abre o WhatsApp para envio manual)." },
-    { icon: BarChart3, title: "Finanças e Relatórios", desc: "Tudo 100% detalhado: saiba qual produto mais vende, qual dia vendeu mais e tenha relatórios de todos os dias." },
-    { icon: Truck, title: "Motoboy Integrado", desc: "Ao marcar pedido como pronto, um alerta sonoro avisa instantaneamente o motoboy no aplicativo." },
-   { icon: CreditCard, title: "PIX Automático", desc: "Pagamento confirmado na hora, sem necessidade de conferência manual de extrato." },
-   { icon: Smartphone, title: "Cardápio Digital", desc: "Link profissional com fotos em alta definição, sem necessidade do cliente baixar aplicativo." },
-   { icon: QrCode, title: "QR Code Digital", desc: "Facilite o autoatendimento. O cliente aponta a câmera, escolhe e paga tudo pelo celular." },
-   { icon: Bell, title: "Alertas em Tempo Real", desc: "Notificações push e alertas sonoros garantem que você nunca perca um pedido." },
-   { icon: Globe, title: "Abrangência Nacional", desc: "Plataforma robusta pronta para operar em qualquer cidade do Brasil." },
-];
+   { icon: Smartphone, title: "Cardápio Digital", desc: "Link profissional com fotos em alta definição, sem o cliente precisar baixar nada." },
+   { icon: CreditCard, title: "PIX Automático", desc: "Receba e confirme pagamentos instantaneamente sem conferir extratos." },
+   { icon: Truck, title: "Gestão de Motoboy", desc: "Chame seus entregadores com alerta sonoro e rastreie o pedido em tempo real." },
+   { icon: BarChart3, title: "Relatórios de Vendas", desc: "Saiba exatamente quanto vendeu, quais os produtos favoritos e seu lucro real." },
+   { icon: QrCode, title: "QR Code de Mesa", desc: "Autoatendimento moderno para seu balcão ou mesas, reduzindo filas e erros." },
+   { icon: Bell, title: "Alertas Sonoros", desc: "Notificações em tempo real para você preparar e enviar pedidos sem atrasos." },
+   { icon: Package, title: "Impressão de Pedidos", desc: "Organize sua cozinha com a impressão automática de comandas e notas." },
+   { icon: ShieldCheck, title: "Segurança Total", desc: "Plataforma estável e segura para processar seus pagamentos e dados." },
+ ];
 
 const plans = [
   {
@@ -198,26 +198,26 @@ const plans = [
   },
 ];
 
-const benefits = [
-  {
-    icon: "🍕",
-    segment: "Pizzarias & Hamburguerias",
-    headline: "Pedidos sem erro de anotação",
-    text: "Adicionais, bordas e meio-a-meio organizados automaticamente. Sem retrabalho na cozinha.",
-  },
-  {
-    icon: "🛒",
-    segment: "Mercados & Conveniências",
-    headline: "Cardápio com centenas de itens",
-    text: "Importe seu catálogo de uma vez. Categorias, fotos e preços sempre atualizados em segundos.",
-  },
-  {
-    icon: "🍰",
-    segment: "Doceiras & Confeitarias",
-    headline: "Encomendas com agendamento",
-    text: "Cliente escolhe data e hora de retirada. Você organiza a produção sem confusão no WhatsApp.",
-  },
-];
+ const benefits = [
+   {
+     icon: "🍕",
+     segment: "Pizzarias & Hamburguerias",
+     headline: "Chega de erros nos pedidos",
+     text: "Bordas recheadas, adicionais e pizzas meio-a-meio organizadas automaticamente para a sua cozinha.",
+   },
+   {
+     icon: "🛒",
+     segment: "Mercados & Adegas",
+     headline: "Seu estoque no celular",
+     text: "Cadastre centenas de itens rapidamente. Preços e estoque atualizados em tempo real para seus clientes.",
+   },
+   {
+     icon: "🍰",
+     segment: "Docerias & Padarias",
+     headline: "Agendamento Inteligente",
+     text: "Permita que seus clientes agendem a retirada ou entrega. Organize sua produção sem estresse no WhatsApp.",
+   },
+ ];
 
 const faqs = [
   { q: "Preciso baixar algum aplicativo?", a: "Não! Você gerencia tudo pelo navegador do celular ou computador. Seus clientes também pedem direto pelo link, sem instalar nada." },
