@@ -99,25 +99,33 @@ Deno.serve(async (req) => {
           return json({ error: "Order not found" }, 404);
         }
 
-        // Idempotency: only update if still awaiting payment
-        if (order.status !== "aguardando_pagamento") {
-          console.log(`Order ${externalReference} already processed (status: ${order.status})`);
-          return json({ received: true, already_processed: true });
+        // Status update — only first time
+        if (order.status === "aguardando_pagamento") {
+          const { error: updateError } = await supabase
+            .from("orders")
+            .update({
+              status: "pendente" as any,
+              confirmed_at: new Date().toISOString(),
+            })
+            .eq("id", externalReference);
+          if (updateError) {
+            console.error("Error updating order:", updateError);
+          } else {
+            console.log(`Order ${externalReference} payment confirmed via Asaas, status → pendente`);
+          }
+        } else {
+          console.log(`Order ${externalReference} status=${order.status} (already past aguardando_pagamento) — will still attempt payout if pending`);
         }
 
-        // Payment confirmed → set to pendente
-        const { error: updateError } = await supabase
+        // Re-fetch to check payout state
+        const { data: payoutCheck } = await supabase
           .from("orders")
-          .update({
-            status: "pendente" as any,
-            confirmed_at: new Date().toISOString(),
-          })
-          .eq("id", externalReference);
-
-        if (updateError) {
-          console.error("Error updating order:", updateError);
-        } else {
-          console.log(`Order ${externalReference} payment confirmed via Asaas, status → pendente`);
+          .select("store_payout_id")
+          .eq("id", externalReference)
+          .maybeSingle();
+        if (payoutCheck?.store_payout_id) {
+          console.log(`Order ${externalReference} already split (transfer ${payoutCheck.store_payout_id}) — skipping`);
+          return json({ received: true, already_processed: true, split_already_done: true });
         }
 
         // ── Auto-transfer store share to owner's PIX key ──
