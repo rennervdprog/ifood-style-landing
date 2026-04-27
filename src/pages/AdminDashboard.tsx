@@ -2371,7 +2371,12 @@ const AdminDashboard = () => {
                               </div>
                             ) : action ? (
                               <div className="space-y-1">
-                                <button onClick={() => updateOrderStatus(order.id, action.next)}
+                                <button onClick={() => {
+                                  // Local tab change first for instant response
+                                  if (action.next === "preparando") setActiveTab("preparando");
+                                  else if (action.next === "pronto_para_entrega") setActiveTab("pronto_para_entrega");
+                                  updateOrderStatus(order.id, action.next);
+                                }}
                                   className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 rounded-xl text-sm active:scale-[0.98] transition-transform h-12">
                                   {action.emoji} {action.label}
                                 </button>
