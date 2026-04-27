@@ -653,34 +653,36 @@ const StoreDirectory = () => {
         </div>
       </section>
 
-      {/* ══════ VALUE GUARANTEES (replaces fake stats) ══════ */}
-      <section className="py-14 border-y border-border bg-muted/20">
-        <div className="mx-auto max-w-5xl px-4">
-          <h2 className="text-2xl md:text-3xl font-bold text-center text-foreground mb-3">
-            Por que confiar na ItaSuper?
-          </h2>
-          <p className="text-center text-muted-foreground mb-10 max-w-xl mx-auto text-sm">
-            Não inventamos números. Mostramos o que realmente entregamos a você.
-          </p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-            {[
-              { icon: DollarSign, value: "Até 0%", label: "de comissão por pedido", desc: "Você fica com mais lucro" },
-              { icon: Clock, value: "10 min", label: "para montar seu cardápio", desc: "Pronto pra vender hoje" },
-              { icon: ShieldCheck, value: "Sem fidelidade", label: "cancele quando quiser", desc: "Sem multa, sem pegadinha" },
-              { icon: Globe, value: "Brasil todo", label: "qualquer cidade do país", desc: "Funciona em qualquer lugar" },
-            ].map((s) => (
-              <div key={s.label} className="flex flex-col items-center text-center rounded-2xl bg-card border border-border p-5 hover:shadow-md transition-shadow">
-                <div className="w-11 h-11 rounded-2xl bg-primary/10 flex items-center justify-center mb-3">
-                  <s.icon className="h-5 w-5 text-primary" />
-                </div>
-                <p className="text-2xl md:text-3xl font-extrabold text-primary leading-tight">{s.value}</p>
-                <p className="text-sm font-semibold text-foreground mt-1">{s.label}</p>
-                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{s.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+       {/* ══════ VALUE GUARANTEES (replaces fake stats) ══════ */}
+       <section className="py-24 px-4 bg-muted/20 border-y border-border">
+         <div className="mx-auto max-w-6xl">
+           <div className="text-center mb-16">
+             <h2 className="text-3xl md:text-5xl font-black text-foreground mb-4">
+               Por que escolher a ItaSuper? 🚀
+             </h2>
+             <p className="text-muted-foreground text-lg max-w-xl mx-auto font-medium">
+               Não inventamos números. Mostramos o que realmente entregamos a você para o seu negócio crescer.
+             </p>
+           </div>
+           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+             {[
+               { icon: DollarSign, value: "Até 0%", label: "Comissão", desc: "Fique com o lucro total das suas vendas nos planos pagos." },
+               { icon: Clock, value: "10 min", label: "Configuração", desc: "Seu cardápio digital pronto para vender no mesmo dia." },
+               { icon: ShieldCheck, value: "Sem Fidelidade", label: "Liberdade", desc: "Cancele quando quiser, sem multas ou taxas escondidas." },
+               { icon: Globe, value: "Brasil Todo", label: "Abrangência", desc: "Nossa tecnologia funciona em qualquer cidade do país." },
+             ].map((s) => (
+               <div key={s.label} className="flex flex-col items-center text-center group">
+                 <div className="w-20 h-20 rounded-[2rem] bg-primary/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                   <s.icon className="h-10 w-10 text-primary" />
+                 </div>
+                 <p className="text-4xl font-black text-primary leading-tight mb-2">{s.value}</p>
+                 <p className="text-xl font-bold text-foreground mb-2">{s.label}</p>
+                 <p className="text-sm text-muted-foreground leading-relaxed font-medium">{s.desc}</p>
+               </div>
+             ))}
+           </div>
+         </div>
+       </section>
 
       {/* ══════ PLANS ══════ */}
       <section id="planos" className="py-20 px-4">
