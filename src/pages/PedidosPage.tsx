@@ -575,7 +575,9 @@ const PedidosPage = () => {
       }
 
       if (pixData?.error) {
-        throw new Error(pixData.error);
+        const error = new Error(pixData.error) as Error & { missingPixKey?: boolean };
+        error.missingPixKey = !!pixData.missing_pix_key;
+        throw error;
       }
 
       // Standardized response: pix_code, qr_code_url (with fallback to legacy fields)
@@ -602,6 +604,10 @@ const PedidosPage = () => {
       }
 
       const msg = err?.message || err?.error_description || "Erro ao gerar PIX. Verifique se seu e-mail e CPF estão corretos.";
+      if (err?.missingPixKey) {
+        toast.error(msg, { duration: 9000 });
+        return;
+      }
       toast.error(msg);
       setPixModal(null);
     } finally {

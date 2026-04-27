@@ -213,6 +213,30 @@ async function createAsaasPix(params: {
   console.log(`[Asaas] Mode: ${isSandbox ? "SANDBOX" : "PRODUCTION"}, Key prefix: ${apiKey.substring(0, 10)}...`);
 
   try {
+    // Asaas only generates PIX charges when the account has at least one active PIX key.
+    const pixKeysRes = await fetch(`${baseUrl}/pix/addressKeys?limit=1`, {
+      headers: { "access_token": apiKey },
+    });
+
+    if (pixKeysRes.ok) {
+      const pixKeysData = await pixKeysRes.json();
+      const hasPixKey = Number(pixKeysData?.totalCount || 0) > 0 || (Array.isArray(pixKeysData?.data) && pixKeysData.data.length > 0);
+      if (!hasPixKey) {
+        console.error("[Asaas] No PIX key available for receiving charges");
+        return {
+          ok: false,
+          data: {
+            message: "Sua conta Asaas ainda não possui chave Pix cadastrada para receber cobranças. Cadastre/ative uma chave Pix no Asaas e tente novamente.",
+            missing_pix_key: true,
+          },
+          status: 200,
+        };
+      }
+    } else {
+      const pixKeysErr = await pixKeysRes.text();
+      console.warn(`[Asaas] PIX key preflight failed (${pixKeysRes.status}):`, pixKeysErr);
+    }
+
     // Step 1: Find or create customer by CPF
     let cleanCpf = params.payerCpf.replace(/\D/g, "");
     
@@ -323,6 +347,17 @@ async function createAsaasPix(params: {
           userMsg = `Asaas: ${errJson.errors[0].description}`;
         }
       } catch {}
+
+      if (userMsg.includes("Não há nenhuma chave Pix disponível")) {
+        return {
+          ok: false,
+          data: {
+            message: "Sua conta Asaas ainda não possui chave Pix cadastrada para receber cobranças. Cadastre/ative uma chave Pix no Asaas e tente novamente.",
+            missing_pix_key: true,
+          },
+          status: 200,
+        };
+      }
       
       return { ok: false, data: { message: userMsg, asaas_error: errData }, status: paymentRes.status };
     }
@@ -1131,7 +1166,14 @@ async function routePixCreation(params: {
       }
     }
 
-    return json({ error: asaasResult.data?.message || "Erro ao gerar PIX. Tente novamente.", provider: "asaas" }, asaasResult.status >= 400 ? asaasResult.status : 500);
+    return json(
+      {
+        error: asaasResult.data?.message || "Erro ao gerar PIX. Tente novamente.",
+        provider: "asaas",
+        missing_pix_key: !!asaasResult.data?.missing_pix_key,
+      },
+      asaasResult.status >= 400 ? asaasResult.status : 200,
+    );
   }
 
   // ── Efí Bank (primary) ──
