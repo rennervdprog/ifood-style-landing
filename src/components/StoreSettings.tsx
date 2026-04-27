@@ -37,29 +37,39 @@ const CATEGORY_OPTIONS = [
 
 type PizzaPriceMode = "maior" | "media" | "soma";
 
-interface StoreSettingsProps {
-  storeId: string;
-  storeName: string;
-  storeCategory: string;
-  storeCategories?: string[] | null;
-  storeImageUrl: string | null;
-  storeIsOpen: boolean;
-  forceClosed: boolean;
-  storeSlug?: string | null;
-  storeAddressStreet?: string | null;
-  storeAddressNumber?: string | null;
-  storeAddressComplement?: string | null;
-  storeAddressNeighborhood?: string | null;
-  storeAddressReference?: string | null;
-  storeAddressCity?: string | null;
-  storeAddressState?: string | null;
-  storeAddressCep?: string | null;
-  storeDeliveryMode?: string | null;
-  storeOwnDeliveryFee?: number | null;
-  storeSettings?: Record<string, any> | null;
-}
-
-const StoreSettings = ({ storeId, storeName, storeCategory, storeCategories, storeImageUrl, storeIsOpen, forceClosed, storeSlug, storeAddressStreet, storeAddressNumber, storeAddressComplement, storeAddressNeighborhood, storeAddressReference, storeAddressCity, storeAddressState, storeAddressCep, storeDeliveryMode, storeOwnDeliveryFee, storeSettings }: StoreSettingsProps) => {
+ interface StoreSettingsProps {
+   storeId: string;
+   storeName: string;
+   storeCategory: string;
+   storeCategories?: string[] | null;
+   storeImageUrl: string | null;
+   storeIsOpen: boolean;
+   forceClosed: boolean;
+   storeSlug?: string | null;
+   storeAddressStreet?: string | null;
+   storeAddressNumber?: string | null;
+   storeAddressComplement?: string | null;
+   storeAddressNeighborhood?: string | null;
+   storeAddressReference?: string | null;
+   storeAddressCity?: string | null;
+   storeAddressState?: string | null;
+   storeAddressCep?: string | null;
+   storeDeliveryMode?: string | null;
+   storeOwnDeliveryFee?: number | null;
+   storeDeliveryFeeType?: string | null;
+   storeDeliveryBaseKm?: number | null;
+   storeDeliveryFeeBase?: number | null;
+   storeDeliveryFeePerKm?: number | null;
+   storeSettings?: Record<string, any> | null;
+ }
+ 
+ const StoreSettings = ({
+   storeId, storeName, storeCategory, storeCategories, storeImageUrl, storeIsOpen, forceClosed,
+   storeSlug, storeAddressStreet, storeAddressNumber, storeAddressComplement, storeAddressNeighborhood,
+   storeAddressReference, storeAddressCity, storeAddressState, storeAddressCep, storeDeliveryMode,
+   storeOwnDeliveryFee, storeDeliveryFeeType, storeDeliveryBaseKm, storeDeliveryFeeBase,
+   storeDeliveryFeePerKm, storeSettings
+ }: StoreSettingsProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
