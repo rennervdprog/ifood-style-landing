@@ -2417,6 +2417,10 @@ export type Database = {
           category: Database["public"]["Enums"]["store_category"]
           commission_rate: number
           created_at: string
+          delivery_base_km: number | null
+          delivery_fee_base: number | null
+          delivery_fee_per_km: number | null
+          delivery_fee_type: string | null
           delivery_mode: string
           force_closed: boolean
           id: string
@@ -2450,6 +2454,10 @@ export type Database = {
           category: Database["public"]["Enums"]["store_category"]
           commission_rate?: number
           created_at?: string
+          delivery_base_km?: number | null
+          delivery_fee_base?: number | null
+          delivery_fee_per_km?: number | null
+          delivery_fee_type?: string | null
           delivery_mode?: string
           force_closed?: boolean
           id?: string
@@ -2483,6 +2491,10 @@ export type Database = {
           category?: Database["public"]["Enums"]["store_category"]
           commission_rate?: number
           created_at?: string
+          delivery_base_km?: number | null
+          delivery_fee_base?: number | null
+          delivery_fee_per_km?: number | null
+          delivery_fee_type?: string | null
           delivery_mode?: string
           force_closed?: boolean
           id?: string
