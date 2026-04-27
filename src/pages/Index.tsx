@@ -388,71 +388,77 @@ const Index = () => {
         </div>
       </section>
 
-      {/* ══════ FEATURES GRID ══════ */}
-      <section className="py-16 px-4">
-        <div className="mx-auto max-w-5xl">
-          <h2 className="text-2xl md:text-3xl font-bold text-center text-foreground mb-4">
-            Tudo que seu delivery precisa
-          </h2>
-          <p className="text-center text-muted-foreground mb-14 max-w-xl mx-auto">
-            Praticidade total para você e para seu cliente. Incluso em todos os planos.
-          </p>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {features.map((f) => (
-              <div key={f.title} className="rounded-2xl border border-border bg-card p-5 hover:shadow-md hover:-translate-y-1 transition-all">
-                <div className="rounded-xl bg-primary/10 w-11 h-11 flex items-center justify-center mb-4">
-                  <f.icon className="h-5 w-5 text-primary" />
-                </div>
-                <h3 className="font-bold text-foreground mb-1">{f.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+       {/* ══════ FEATURES GRID ══════ */}
+       <section className="py-24 px-4 bg-background">
+         <div className="mx-auto max-w-6xl">
+           <div className="text-center mb-16">
+             <h2 className="text-3xl md:text-5xl font-black text-foreground mb-4">
+               Tudo que seu delivery precisa
+             </h2>
+             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+               Funcionalidades profissionais pensadas para escalar o seu negócio e facilitar a vida do seu cliente.
+             </p>
+           </div>
+           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+             {features.map((f) => (
+               <div key={f.title} className="group rounded-3xl border border-border bg-card p-8 hover:border-primary/50 hover:shadow-2xl hover:-translate-y-2 transition-all duration-300">
+                 <div className="rounded-2xl bg-primary/10 w-14 h-14 flex items-center justify-center mb-6 group-hover:bg-primary group-hover:text-white transition-colors">
+                   <f.icon className="h-7 w-7 text-primary group-hover:text-white transition-colors" />
+                 </div>
+                 <h3 className="text-xl font-bold text-foreground mb-3">{f.title}</h3>
+                 <p className="text-muted-foreground leading-relaxed">{f.desc}</p>
+               </div>
+             ))}
+           </div>
+         </div>
+       </section>
 
-      {/* ══════ PLANS SUMMARY ══════ */}
-      <section className="py-16 px-4 bg-muted/20">
-        <div className="mx-auto max-w-5xl">
-          <h2 className="text-2xl md:text-3xl font-bold text-center text-foreground mb-3">
-            Escolha o plano ideal 💰
-          </h2>
-          <p className="text-center text-muted-foreground mb-10 max-w-xl mx-auto">
-            Sem contrato de fidelidade. Troque quando quiser.
-          </p>
-          <div className="grid sm:grid-cols-3 gap-5">
-            {plans.map((plan) => (
-              <Card key={plan.name} className={`rounded-2xl border-2 transition-all hover:shadow-lg relative ${plan.popular ? "border-primary shadow-md" : "border-border"}`}>
-                {plan.popular && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-xs font-bold px-3 py-1 rounded-full bg-primary text-primary-foreground">⭐ Popular</span>
-                )}
-                <CardContent className="pt-8 pb-6 text-center">
-                  <div className="mx-auto w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-                    <plan.icon className="h-6 w-6 text-primary" />
-                  </div>
-                  <h3 className="font-bold text-lg text-foreground">{plan.name}</h3>
-                  <div className="mt-2 mb-1">
-                    <span className="text-3xl font-extrabold text-foreground">{plan.price}</span>
-                    <span className="text-sm text-muted-foreground">{plan.sub}</span>
-                  </div>
-                  <p className="text-sm font-semibold text-primary mb-2">{plan.desc}</p>
-                  <p className="text-xs text-muted-foreground mb-4">{plan.subtitle}</p>
-                  <div className="flex flex-wrap justify-center gap-1.5">
-                    {plan.tags.map(tag => (
-                      <span key={tag} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{tag}</span>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-          <div className="text-center mt-8">
-            <Button variant="outline" onClick={() => navigate("/planos")} className="rounded-2xl px-6">
-              Ver comparativo completo <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </section>
+       {/* ══════ PLANS SUMMARY ══════ */}
+       <section className="py-24 px-4 bg-muted/40">
+         <div className="mx-auto max-w-6xl">
+           <div className="text-center mb-16">
+             <h2 className="text-3xl md:text-5xl font-black text-foreground mb-4">
+               Planos que cabem no seu bolso 💰
+             </h2>
+             <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+               Sem fidelidade ou taxas escondidas. Mude de plano quando quiser.
+             </p>
+           </div>
+           <div className="grid sm:grid-cols-3 gap-8">
+             {plans.map((plan) => (
+               <Card key={plan.name} className={`rounded-[2.5rem] border-2 overflow-hidden transition-all hover:shadow-2xl relative ${plan.popular ? "border-primary shadow-xl scale-105 z-10" : "border-border shadow-md"}`}>
+                 {plan.popular && (
+                   <div className="absolute top-0 right-0 bg-primary text-black font-black text-[10px] uppercase tracking-widest px-6 py-2 rounded-bl-3xl">
+                     MAIS POPULAR
+                   </div>
+                 )}
+                 <CardContent className="pt-12 pb-10 px-8 text-center">
+                   <div className="mx-auto w-16 h-16 rounded-3xl bg-primary/10 flex items-center justify-center mb-6">
+                     <plan.icon className="h-8 w-8 text-primary" />
+                   </div>
+                   <h3 className="text-2xl font-black text-foreground mb-2">{plan.name}</h3>
+                   <div className="mb-4">
+                     <span className="text-5xl font-black text-foreground">{plan.price}</span>
+                     <span className="text-muted-foreground font-medium">{plan.sub}</span>
+                   </div>
+                   <p className="text-lg font-bold text-primary mb-4">{plan.desc}</p>
+                   <p className="text-sm text-muted-foreground mb-8 leading-relaxed">{plan.subtitle}</p>
+                   <div className="flex flex-col gap-3">
+                     {plan.tags.map(tag => (
+                       <div key={tag} className="flex items-center justify-center gap-2 text-sm font-semibold text-foreground bg-muted/50 py-2 rounded-2xl">
+                         <Check className="h-4 w-4 text-primary" /> {tag}
+                       </div>
+                     ))}
+                   </div>
+                   <Button onClick={handleCTA} className={`w-full mt-8 py-7 rounded-2xl font-bold text-lg ${plan.popular ? "bg-primary hover:bg-primary/90" : "variant-outline"}`}>
+                     Começar agora
+                   </Button>
+                 </CardContent>
+               </Card>
+             ))}
+           </div>
+         </div>
+       </section>
 
       {/* ══════ ANIMATED STATS ══════ */}
       <section className="py-14 border-y border-border">
