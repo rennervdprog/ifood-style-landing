@@ -121,6 +121,23 @@ serve(async (req) => {
         } catch (_) { /* skip */ }
       }
 
+      // Sanitize PIX key into Asaas-friendly format for profiles
+      if (table === "profiles" && record.pix_key && record.pix_type) {
+        const raw = String(record.pix_key).trim();
+        const t = String(record.pix_type).toLowerCase();
+        if (t === "cpf" || t === "cnpj") {
+          record.pix_key = raw.replace(/\D/g, "");
+        } else if (t === "phone") {
+          const digits = raw.replace(/\D/g, "");
+          if (digits.length === 11) record.pix_key = `+55${digits}`;
+          else if (digits.length === 13 && digits.startsWith("55")) record.pix_key = `+${digits}`;
+          else if (raw.startsWith("+")) record.pix_key = raw;
+          else record.pix_key = `+${digits}`;
+        } else if (t === "email") {
+          record.pix_key = raw.toLowerCase();
+        }
+      }
+
       const { error } = await externalClient
         .from(table)
         .upsert(record, { onConflict: conflict_column || "id" });
