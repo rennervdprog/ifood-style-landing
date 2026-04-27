@@ -795,27 +795,29 @@ const StoreDirectory = () => {
         </div>
       </section>
 
-      {/* ══════ BENEFITS BY SEGMENT ══════ */}
-      <section className="py-20 px-4 bg-muted/20">
-        <div className="mx-auto max-w-5xl">
-          <h2 className="text-3xl font-bold text-center text-foreground mb-4">
-            Feito para o seu tipo de negócio
-          </h2>
-          <p className="text-center text-muted-foreground mb-14 max-w-xl mx-auto">
-            Seja qual for o seu segmento, a plataforma se adapta às suas necessidades.
-          </p>
-          <div className="grid sm:grid-cols-3 gap-6">
-            {benefits.map((b) => (
-              <Card key={b.segment} className="border-border rounded-2xl hover:shadow-md hover:-translate-y-1 transition-all">
-                <CardContent className="pt-6">
-                  <div className="text-4xl mb-3">{b.icon}</div>
-                  <p className="text-xs font-bold text-primary uppercase tracking-wide mb-2">{b.segment}</p>
-                  <h3 className="text-base font-bold text-foreground mb-2 leading-snug">{b.headline}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{b.text}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+       {/* ══════ BENEFITS BY SEGMENT ══════ */}
+       <section className="py-24 px-4 bg-muted/30">
+         <div className="mx-auto max-w-6xl">
+           <div className="text-center mb-16">
+             <h2 className="text-3xl md:text-5xl font-black text-foreground mb-4">
+               Feito para o seu negócio 🚀
+             </h2>
+             <p className="text-muted-foreground text-lg max-w-xl mx-auto font-medium">
+               Seja qual for o seu segmento, a ItaSuper se adapta perfeitamente à sua rotina.
+             </p>
+           </div>
+           <div className="grid sm:grid-cols-3 gap-8">
+             {benefits.map((b) => (
+               <Card key={b.segment} className="rounded-[2.5rem] border-none bg-card p-4 hover:shadow-2xl transition-all duration-300">
+                 <CardContent className="pt-6">
+                   <div className="text-5xl mb-6">{b.icon}</div>
+                   <p className="text-xs font-black text-primary uppercase tracking-[0.2em] mb-4">{b.segment}</p>
+                   <h3 className="text-xl font-bold text-foreground mb-4 leading-tight">{b.headline}</h3>
+                   <p className="text-muted-foreground leading-relaxed font-medium">{b.text}</p>
+                 </CardContent>
+               </Card>
+             ))}
+           </div>
 
           {/* Aggregated trust strip */}
           <div className="mt-12 grid sm:grid-cols-3 gap-4 max-w-3xl mx-auto">
