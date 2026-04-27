@@ -738,18 +738,17 @@ const NotificationSection = () => {
         <p className="text-[10px] text-muted-foreground/70">
           Configure seu entregador próprio para realizar as entregas.
         </p>
-        <div className="grid grid-cols-1 gap-2">
-          <button
-            onClick={() => setDeliveryMode("own")}
-            className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all border-primary bg-primary/10"
-          >
-            <Truck className="h-6 w-6 text-primary" />
-            <span className="text-xs font-bold text-primary">
-              Motoboy Próprio
-            </span>
-            <span className="text-[10px] text-muted-foreground text-center">Seu próprio entregador</span>
-          </button>
-        </div>
+         <div className="grid grid-cols-1 gap-2">
+           <div
+             className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-primary bg-primary/10"
+           >
+             <Truck className="h-6 w-6 text-primary" />
+             <span className="text-xs font-bold text-primary">
+               Sistema Integrado Ativo
+             </span>
+             <span className="text-[10px] text-muted-foreground text-center">Gestão de entregas e motoboys unificada</span>
+           </div>
+         </div>
         {deliveryMode === "own" && (
           <div className="space-y-3">
             <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-start gap-2">
