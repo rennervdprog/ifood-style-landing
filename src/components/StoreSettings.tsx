@@ -95,8 +95,12 @@ type PizzaPriceMode = "maior" | "media" | "soma";
   const [loadingCep, setLoadingCep] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [deliveryMode, setDeliveryMode] = useState(storeDeliveryMode || "platform");
-  const [ownDeliveryFee, setOwnDeliveryFee] = useState(storeOwnDeliveryFee?.toString() || "0");
+   const [deliveryMode, setDeliveryMode] = useState(storeDeliveryMode || "platform");
+   const [ownDeliveryFee, setOwnDeliveryFee] = useState(storeOwnDeliveryFee?.toString() || "0");
+   const [deliveryFeeType, setDeliveryFeeType] = useState(storeDeliveryFeeType || "fixed");
+   const [deliveryBaseKm, setDeliveryBaseKm] = useState(storeDeliveryBaseKm?.toString() || "0");
+   const [deliveryFeeBase, setDeliveryFeeBase] = useState(storeDeliveryFeeBase?.toString() || "0");
+   const [deliveryFeePerKm, setDeliveryFeePerKm] = useState(storeDeliveryFeePerKm?.toString() || "0");
   const storePlan = useStorePlan(storeId);
 
   const [pizzaHalfEnabled, setPizzaHalfEnabled] = useState<boolean>(storeSettings?.pizza_half_enabled || false);
