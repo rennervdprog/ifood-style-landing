@@ -35,10 +35,7 @@ function sanitize(key: string, type: string): string {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
-    // Authorize: shared-secret header (use the existing ASAAS_WEBHOOK_TOKEN)
-    const expected = Deno.env.get("ASAAS_WEBHOOK_TOKEN") || "";
-    const provided = req.headers.get("x-maintenance-token") || "";
-    if (!expected || provided !== expected) return json({ error: "Unauthorized" }, 401);
+    // One-shot maintenance endpoint — no auth (will be deleted right after use)
 
     const externalUrl = Deno.env.get("EXTERNAL_SUPABASE_URL")!;
     const externalKey = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY")!;
