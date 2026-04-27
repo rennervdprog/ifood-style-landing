@@ -149,6 +149,12 @@ const CheckoutPage = () => {
   const storeOwnFee = (storeData as any)?.own_delivery_fee || 0;
   const isOwnDelivery = storeDeliveryMode === "own";
   const config = deliveryFeeConfig || DEFAULT_DELIVERY_FEE_CONFIG;
+  const storeSettings = ((storeData as any)?.settings || {}) as Record<string, any>;
+  const storeDeliveryFeeType = ((storeData as any)?.delivery_fee_type || storeSettings.delivery_fee_type || "fixed") as "fixed" | "km";
+  const storeDeliveryBaseKm = Number((storeData as any)?.delivery_base_km ?? storeSettings.delivery_base_km ?? 0);
+  const storeDeliveryFeeBase = Number((storeData as any)?.delivery_fee_base ?? storeSettings.delivery_fee_base ?? 0);
+  const storeDeliveryFeePerKm = Number((storeData as any)?.delivery_fee_per_km ?? storeSettings.delivery_fee_per_km ?? 0);
+  const isKmOwnDelivery = isOwnDelivery && storeDeliveryFeeType === "km";
   // For own delivery stores on FIXED plan: always add platform split on top of store's own fee.
   // Fallback to admin_settings.platform_split (default R$2) if useStorePlan is still loading
   // or hasn't computed the split yet, so the customer always sees the correct total.
@@ -156,11 +162,12 @@ const CheckoutPage = () => {
   const effectivePlatformSplit = isOwnDelivery && storePlan.isFixedPlan
     ? (storePlan.platformDeliverySplit > 0 ? storePlan.platformDeliverySplit : platformSplitFallback)
     : 0;
-   const activeDeliveryFee = isPickup 
-     ? 0 
-     : (isOwnDelivery && (storeData as any)?.delivery_fee_type === 'km' && calculatedDeliveryFee !== null
-       ? calculatedDeliveryFee 
-       : (isOwnDelivery ? storeOwnFee + effectivePlatformSplit : (calculatedDeliveryFee !== null ? calculatedDeliveryFee : config.city_fee)));
+  const ownDeliveryFallbackFee = isKmOwnDelivery
+    ? addMoney(storeDeliveryFeeBase, effectivePlatformSplit)
+    : addMoney(storeOwnFee, effectivePlatformSplit);
+  const activeDeliveryFee = isPickup
+    ? 0
+    : (calculatedDeliveryFee !== null ? calculatedDeliveryFee : (isOwnDelivery ? ownDeliveryFallbackFee : config.city_fee));
   const effectiveDeliveryFee = isPickup ? 0 : (couponType === "free_shipping" ? 0 : activeDeliveryFee);
   const walletDiscount = useWallet ? Math.min(walletBalance, Math.max(0, addMoney(subtotal, effectiveDeliveryFee, -couponDiscount, -loyaltyDiscount))) : 0;
   const finalTotal = Math.max(0, addMoney(subtotal, effectiveDeliveryFee, -couponDiscount, -loyaltyDiscount, -walletDiscount));
