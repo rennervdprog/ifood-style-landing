@@ -1128,7 +1128,7 @@ const PedidosPage = () => {
                   const isCancelled = order.status === "cancelado";
 
                   return (
-                    <div key={order.id} className={`bg-card rounded-2xl border overflow-hidden ${isCancelled ? "border-red-200 opacity-60" : "border-border"}`}>
+                    <div key={order.id} className={`bg-white dark:bg-card rounded-2xl border overflow-hidden ${isCancelled ? "border-red-200 opacity-60" : "border-border"}`}>
                       {/* Compact header */}
                       <div className="px-4 py-3 flex items-center justify-between">
                         <div className="flex items-center gap-3">
