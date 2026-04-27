@@ -864,8 +864,7 @@ const AdminDashboard = () => {
       // Invalidate and switch tab before toast
       await queryClient.invalidateQueries({ queryKey: ["store-orders", store?.id] });
       
-      if (newStatus === "preparando") setActiveTab("preparando");
-      if (newStatus === "pronto_para_entrega") setActiveTab("pronto_para_entrega");
+      // Remove redundância, já estamos trocando a aba no onClick para resposta imediata
       
       toast.success("Pedido atualizado!");
 
