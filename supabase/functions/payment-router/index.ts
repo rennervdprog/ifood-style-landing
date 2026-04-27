@@ -184,6 +184,8 @@ function isValidCpf(cpf: string): boolean {
   return parseInt(clean[10]) === d2;
 }
 
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 async function createAsaasPix(params: {
   amount: number;
   description: string;
@@ -329,22 +331,42 @@ async function createAsaasPix(params: {
     const paymentId = paymentData.id;
     console.log(`[Asaas] Payment created: ${paymentId}, status: ${paymentData.status}`);
 
-    // Step 3: Get PIX QR Code
-    const pixRes = await fetch(`${baseUrl}/payments/${paymentId}/pixQrCode`, {
-      headers: { "access_token": apiKey },
-    });
-
     let pixCode: string | null = null;
     let qrCodeBase64: string | null = null;
 
-    if (pixRes.ok) {
-      const pixData = await pixRes.json();
-      pixCode = pixData.payload || null;
-      qrCodeBase64 = pixData.encodedImage ? `data:image/png;base64,${pixData.encodedImage}` : null;
-      console.log("[Asaas] QR code obtained successfully");
-    } else {
-      const pixErr = await pixRes.text();
-      console.warn(`[Asaas] QR code fetch failed (${pixRes.status}):`, pixErr);
+    // Step 3: Get PIX QR Code — Asaas can take a short moment to release it after payment creation.
+    for (let attempt = 1; attempt <= 4; attempt++) {
+      const pixRes = await fetch(`${baseUrl}/payments/${paymentId}/pixQrCode`, {
+        headers: { "access_token": apiKey },
+      });
+
+      if (pixRes.ok) {
+        const pixData = await pixRes.json();
+        pixCode = pixData.payload || null;
+        qrCodeBase64 = pixData.encodedImage ? `data:image/png;base64,${pixData.encodedImage}` : null;
+        if (pixCode || qrCodeBase64) {
+          console.log(`[Asaas] QR code obtained successfully on attempt ${attempt}`);
+          break;
+        }
+        console.warn(`[Asaas] QR code empty on attempt ${attempt}:`, JSON.stringify(pixData).slice(0, 500));
+      } else {
+        const pixErr = await pixRes.text();
+        console.warn(`[Asaas] QR code fetch failed attempt ${attempt} (${pixRes.status}):`, pixErr);
+      }
+
+      if (attempt < 4) await wait(650 * attempt);
+    }
+
+    if (!pixCode && !qrCodeBase64) {
+      return {
+        ok: false,
+        data: {
+          message: "Pagamento criado no Asaas, mas o QR Code ainda não foi liberado. Tente gerar novamente em alguns segundos.",
+          payment_id: paymentId,
+          no_qr: true,
+        },
+        status: 202,
+      };
     }
 
     return {
@@ -1075,6 +1097,10 @@ async function routePixCreation(params: {
       return json(resp);
     }
 
+    if (asaasResult.data?.no_qr) {
+      return json({ error: asaasResult.data.message, provider: "asaas", payment_id: asaasResult.data.payment_id }, 202);
+    }
+
     // Asaas failed → check if it's a minimum amount error (don't fallback for validation errors)
     if (asaasResult.data?.min_amount) {
       return json({ error: asaasResult.data.message, provider: "asaas" }, 400);
@@ -1101,7 +1127,7 @@ async function routePixCreation(params: {
       }
     }
 
-    return json({ error: "Erro ao gerar PIX. Tente novamente.", provider: "asaas" }, 500);
+    return json({ error: asaasResult.data?.message || "Erro ao gerar PIX. Tente novamente.", provider: "asaas" }, asaasResult.status >= 400 ? asaasResult.status : 500);
   }
 
   // ── Efí Bank (primary) ──

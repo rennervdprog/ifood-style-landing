@@ -552,7 +552,22 @@ const PedidosPage = () => {
         }
       );
 
-      if (pixError) throw pixError;
+      if (pixError) {
+        console.error("PIX function error:", JSON.stringify(pixError, null, 2));
+        const contextBody = (pixError as any)?.context?.body;
+        let gatewayMessage = "";
+        if (typeof contextBody === "string") {
+          try {
+            const parsedBody = JSON.parse(contextBody);
+            gatewayMessage = parsedBody?.error || parsedBody?.message || "";
+          } catch {
+            gatewayMessage = contextBody;
+          }
+        } else if (contextBody && typeof contextBody === "object") {
+          gatewayMessage = contextBody.error || contextBody.message || "";
+        }
+        throw new Error(gatewayMessage || pixError.message || "Erro ao gerar PIX.");
+      }
 
       if (pixData?.rate_limited) {
         activateSafetyMode();
