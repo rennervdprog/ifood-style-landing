@@ -1493,13 +1493,21 @@ const AdminDashboard = () => {
                             </div>
                             <div className="flex gap-2">
                               {order.status === "pendente" && (
-                                <button onClick={() => updateOrderStatus(order.id, "preparando")}
+                                <button onClick={() => {
+                                  setDashboardTab("orders");
+                                  setActiveTab("preparando");
+                                  updateOrderStatus(order.id, "preparando");
+                                }}
                                   className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2.5 rounded-xl text-xs active:scale-[0.98] transition-transform">
                                   {order.payment_method === "pix" ? "🍳 PRODUZIR" : "✓ ACEITAR"}
                                 </button>
                               )}
                               {order.status === "preparando" && (
-                                <button onClick={() => updateOrderStatus(order.id, "pronto_para_entrega" as OrderStatus)}
+                                <button onClick={() => {
+                                  setDashboardTab("orders");
+                                  setActiveTab("pronto_para_entrega");
+                                  updateOrderStatus(order.id, "pronto_para_entrega" as OrderStatus);
+                                }}
                                   className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2.5 rounded-xl text-xs active:scale-[0.98] transition-transform">
                                   🔔 MARCAR PRONTO
                                 </button>
@@ -2360,7 +2368,10 @@ const AdminDashboard = () => {
                                     <span className="text-[10px] bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded font-bold">💰 PIX — Pagamento Confirmado</span>
                                   </div>
                                 )}
-                                <button onClick={() => updateOrderStatus(order.id, "preparando")}
+                                <button onClick={() => {
+                                  setActiveTab("preparando");
+                                  updateOrderStatus(order.id, "preparando");
+                                }}
                                   className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 rounded-xl text-sm active:scale-[0.98] transition-transform h-12">
                                   {order.payment_method === "pix" ? "🍳 COMEÇAR PRODUÇÃO" : "✓ ACEITAR PEDIDO"}
                                 </button>
