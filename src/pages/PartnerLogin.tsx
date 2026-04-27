@@ -19,14 +19,16 @@ const PartnerLogin = () => {
   const [checking, setChecking] = useState(false);
 
   useEffect(() => {
-    if (authLoading || !user) return;
-    
-    // Se houver uma navegação pendente (push notification), não redirecionamos aqui,
-    // deixamos o PushNavigator (que é montado no App.tsx) cuidar disso.
-    if (hasPendingPushNavigation()) return;
-    
-    redirectByRole(user.id);
-  }, [user, authLoading]);
+     if (authLoading) return;
+     
+     if (user) {
+       if (hasPendingPushNavigation()) return;
+       redirectByRole(user.id);
+     } else if (isCapacitorNative()) {
+       // Força modo parceiro ao carregar esta página no nativo
+       persistCapacitorAppMode("partner");
+     }
+   }, [user, authLoading]);
 
   const redirectByRole = async (userId: string) => {
     // If we are on the partner login page, we should ensure the app mode is 'partner'
