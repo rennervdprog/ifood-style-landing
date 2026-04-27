@@ -129,9 +129,9 @@ const CheckoutPage = () => {
     refetchInterval: 60_000,
   });
 
-  const storeStatus = storeData && storeHours
-    ? getStoreOpenStatus(storeHours, storeData.force_closed ?? false, storeData.is_open ?? true)
-    : null;
+   const storeStatus = storeData && storeHours && !('error' in storeData)
+     ? getStoreOpenStatus(storeHours, (storeData as any).force_closed ?? false, (storeData as any).is_open ?? true)
+     : null;
   const isStoreClosed = storeStatus ? !storeStatus.isOpen : false;
 
   const profileNeighborhood = (userProfile as any)?.neighborhood;
