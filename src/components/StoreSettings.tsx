@@ -758,18 +758,74 @@ const NotificationSection = () => {
                 Com motoboy próprio, você terá um botão "Saiu para Entrega" direto no painel. Não será necessário aguardar aceite de entregador.
               </p>
             </div>
-            <div>
-              <label className="text-xs font-bold text-foreground/80 mb-1 block">Taxa de entrega fixa (R$)</label>
-              <input
-                type="text"
-                inputMode="decimal"
-                value={ownDeliveryFee}
-                onChange={(e) => setOwnDeliveryFee(e.target.value.replace(/[^0-9.,]/g, ""))}
-                placeholder="Ex: 5.00"
-                className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
-              />
-              <p className="text-[10px] text-muted-foreground mt-1">Este valor é o que <strong>você</strong> recebe pela entrega.</p>
-            </div>
+             <div className="flex flex-col gap-2">
+               <label className="text-xs font-bold text-foreground/80">Modelo de Cobrança</label>
+               <div className="grid grid-cols-2 gap-2">
+                 <button
+                   onClick={() => setDeliveryFeeType("fixed")}
+                   className={`py-2 px-3 rounded-lg text-xs font-bold border-2 transition-all ${deliveryFeeType === "fixed" ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground"}`}
+                 >
+                   Taxa Fixa
+                 </button>
+                 <button
+                   onClick={() => setDeliveryFeeType("km")}
+                   className={`py-2 px-3 rounded-lg text-xs font-bold border-2 transition-all ${deliveryFeeType === "km" ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground"}`}
+                 >
+                   Por KM
+                 </button>
+               </div>
+             </div>
+ 
+             {deliveryFeeType === "fixed" ? (
+               <div>
+                 <label className="text-xs font-bold text-foreground/80 mb-1 block">Taxa de entrega fixa (R$)</label>
+                 <input
+                   type="text"
+                   inputMode="decimal"
+                   value={ownDeliveryFee}
+                   onChange={(e) => setOwnDeliveryFee(e.target.value.replace(/[^0-9.,]/g, ""))}
+                   placeholder="Ex: 5.00"
+                   className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                 />
+                 <p className="text-[10px] text-muted-foreground mt-1">Este valor é o que <strong>você</strong> recebe pela entrega.</p>
+               </div>
+             ) : (
+               <div className="space-y-3 p-3 bg-secondary/50 rounded-xl border border-border">
+                 <div className="grid grid-cols-2 gap-3">
+                   <div>
+                     <label className="text-[10px] font-bold text-foreground/80 mb-1 block uppercase">Taxa Base (R$)</label>
+                     <input
+                       type="text"
+                       inputMode="decimal"
+                       value={deliveryFeeBase}
+                       onChange={(e) => setDeliveryFeeBase(e.target.value.replace(/[^0-9.,]/g, ""))}
+                       className="w-full bg-card border border-border rounded-lg px-3 py-2 text-sm"
+                     />
+                   </div>
+                   <div>
+                     <label className="text-[10px] font-bold text-foreground/80 mb-1 block uppercase">Até quantos KM?</label>
+                     <input
+                       type="text"
+                       inputMode="numeric"
+                       value={deliveryBaseKm}
+                       onChange={(e) => setDeliveryBaseKm(e.target.value.replace(/\D/g, ""))}
+                       className="w-full bg-card border border-border rounded-lg px-3 py-2 text-sm"
+                     />
+                   </div>
+                 </div>
+                 <div>
+                   <label className="text-[10px] font-bold text-foreground/80 mb-1 block uppercase">Valor por KM Adicional (R$)</label>
+                   <input
+                     type="text"
+                     inputMode="decimal"
+                     value={deliveryFeePerKm}
+                     onChange={(e) => setDeliveryFeePerKm(e.target.value.replace(/[^0-9.,]/g, ""))}
+                       className="w-full bg-card border border-border rounded-lg px-3 py-2 text-sm"
+                   />
+                   <p className="text-[10px] text-muted-foreground mt-1">Ex: {formatBRL(parseFloat(deliveryFeeBase.replace(",", ".")) || 0)} até {deliveryBaseKm}km, depois +{formatBRL(parseFloat(deliveryFeePerKm.replace(",", ".")) || 0)} p/ cada km extra.</p>
+                 </div>
+               </div>
+             )}
 
             {/* Preview: como vai aparecer pro cliente */}
             {(() => {
