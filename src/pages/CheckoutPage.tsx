@@ -229,11 +229,11 @@ const CheckoutPage = () => {
         setCalculatingFee(true);
   
         const ownConfig = {
-          delivery_fee_type: (storeData as any).delivery_fee_type || 'fixed',
-          delivery_base_km: (storeData as any).delivery_base_km || 0,
-          delivery_fee_base: (storeData as any).delivery_fee_base || 0,
-          delivery_fee_per_km: (storeData as any).delivery_fee_per_km || 0,
-          own_delivery_fee: (storeData as any).own_delivery_fee || 0,
+          delivery_fee_type: storeDeliveryFeeType,
+          delivery_base_km: storeDeliveryBaseKm,
+          delivery_fee_base: storeDeliveryFeeBase,
+          delivery_fee_per_km: storeDeliveryFeePerKm,
+          own_delivery_fee: storeOwnFee,
           customer_street: selectedSavedAddressId && savedAddressData ? savedAddressData.street : profileStreet,
           customer_number: selectedSavedAddressId && savedAddressData ? savedAddressData.number : profileNumber,
           customer_coords: clientCoords
@@ -275,7 +275,7 @@ const CheckoutPage = () => {
      });
  
      return () => { cancelled = true; };
-   }, [profileCep, storeCep, config, savedAddressData, selectedSavedAddressId, profileNeighborhood, isOwnDelivery, storeOwnFee, storePlan.isFixedPlan, storePlan.platformDeliverySplit, effectivePlatformSplit, clientCoords]);
+    }, [profileCep, storeCep, config, savedAddressData, selectedSavedAddressId, profileNeighborhood, isOwnDelivery, storeDeliveryFeeType, storeDeliveryBaseKm, storeDeliveryFeeBase, storeDeliveryFeePerKm, storeOwnFee, storePlan.isFixedPlan, storePlan.platformDeliverySplit, effectivePlatformSplit, clientCoords]);
 
   const buildAddressString = () => {
     if (!hasAddress) return "";
