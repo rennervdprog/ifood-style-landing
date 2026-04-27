@@ -4,6 +4,8 @@
    delivery_fee_base: number;
    delivery_fee_per_km: number;
    own_delivery_fee: number;
+   customer_street?: string;
+   customer_number?: string;
  }
  
  /**
