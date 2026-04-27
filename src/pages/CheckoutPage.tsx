@@ -111,7 +111,7 @@ const CheckoutPage = () => {
     queryFn: async () => {
       const { data } = await supabase
          .from("stores_public")
-         .select("address_cep, delivery_mode, own_delivery_fee, delivery_fee_type, delivery_base_km, delivery_fee_base, delivery_fee_per_km, is_open, force_closed")
+         .select("address_cep, delivery_mode, own_delivery_fee, settings, is_open, force_closed")
          .eq("id", storeId!)
         .maybeSingle();
       return data;
