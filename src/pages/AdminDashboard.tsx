@@ -35,6 +35,7 @@ import TutoriaisPanel from "@/components/TutoriaisPanel";
 import StoreFinancePanel from "@/components/StoreFinancePanel";
 import StoreFinanceBasic from "@/components/StoreFinanceBasic";
 import StoreSubscription from "@/components/StoreSubscription";
+import { CashRegister } from "@/components/CashRegister";
 import CommissionAlert from "@/components/CommissionAlert";
 import PlatformSplitAlert from "@/components/PlatformSplitAlert";
 import LoyaltyConfigPanel from "@/components/LoyaltyConfigPanel";
@@ -52,7 +53,7 @@ import AdminRefundPanel from "@/components/AdminRefundPanel";
 
 type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_entrega" | "em_transito" | "entregue" | "finalizado";
 type OrderTabKey = OrderStatus | "delivery";
-type DashboardTab = "dashboard" | "orders" | "menu" | "addons" | "bordas" | "hours" | "settings" | "finance" | "clients" | "reports" | "subscription" | "loyalty" | "drivers" | "refunds" | "tutoriais";
+type DashboardTab = "dashboard" | "orders" | "menu" | "addons" | "bordas" | "hours" | "settings" | "finance" | "clients" | "reports" | "subscription" | "loyalty" | "drivers" | "refunds" | "tutoriais" | "cash_register";
 type StoreAddonGroup = {
   id: string;
   name: string;
@@ -231,7 +232,8 @@ const baseSidebarItems: { key: DashboardTab; label: string; icon: React.ElementT
   { key: "addons", label: "Adicionais", icon: Plus },
   { key: "bordas", label: "Bordas", icon: CircleDot, pizzaOnly: true },
   { key: "hours", label: "Horários", icon: Clock },
-  { key: "finance", label: "Finanças", icon: Coins },
+  { key: "finance", label: "Financeiro", icon: Coins },
+  { key: "cash_register", label: "Caixa (PDV)", icon: Banknote },
   { key: "reports", label: "Relatórios", icon: BarChart3 },
   { key: "subscription", label: "Assinatura", icon: CreditCard },
   { key: "loyalty", label: "Fidelidade", icon: Star },
@@ -2479,6 +2481,7 @@ const AdminDashboard = () => {
           {!["dashboard", "orders", "clients"].includes(dashboardTab) && store && (
             <div className="p-4 lg:p-6 max-w-6xl mx-auto">
               {dashboardTab === "menu" && <MenuBuilder storeId={store.id} storeCategory={store.category} />}
+              {dashboardTab === "cash_register" && <CashRegister storeId={store.id} />}
               {dashboardTab === "tutoriais" && <TutoriaisPanel />}
               
               {dashboardTab === "addons" && <AddonManager storeId={store.id} />}
