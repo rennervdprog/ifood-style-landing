@@ -716,6 +716,7 @@ async function handleOrderPix(
   supabase: any,
 ): Promise<Response> {
   const { order_id, amount, description, payer_first_name, payer_last_name, payer_cpf } = body;
+  console.log(`[OrderPix] 🔵 START order=${order_id} amount=${amount} user=${userId.slice(0,8)}`);
 
   const { data: order, error: orderError } = await supabase
     .from("orders")
@@ -724,19 +725,30 @@ async function handleOrderPix(
     .eq("client_id", userId)
     .single();
 
-  if (orderError || !order) return json({ error: "Pedido não encontrado" }, 404);
-  if (order.status !== "aguardando_pagamento") return json({ error: "Pedido não está aguardando pagamento" }, 400);
+  if (orderError || !order) {
+    console.warn(`[OrderPix] ❌ Order not found: ${orderError?.message}`);
+    return json({ error: "Pedido não encontrado" }, 404);
+  }
+  console.log(`[OrderPix] ✅ Order ok: status=${order.status} total=${order.total_price} store=${order.store_id}`);
+  if (order.status !== "aguardando_pagamento") {
+    console.warn(`[OrderPix] ❌ Wrong status: ${order.status}`);
+    return json({ error: "Pedido não está aguardando pagamento" }, 400);
+  }
 
   if (typeof amount !== "number" || amount <= 0 || amount > 100000) return json({ error: "Valor inválido" }, 400);
 
   const cleanCpf = String(payer_cpf || "").replace(/\D/g, "");
-  if (!cleanCpf || cleanCpf.length !== 11) return json({ error: "CPF inválido. Informe um CPF com 11 dígitos." }, 400);
+  if (!cleanCpf || cleanCpf.length !== 11) {
+    console.warn(`[OrderPix] ❌ Invalid CPF: length=${cleanCpf.length}`);
+    return json({ error: "CPF inválido. Informe um CPF com 11 dígitos." }, 400);
+  }
 
   // Payment goes 100% to main account. Store share transferred via webhook on confirmation.
 
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
   const desc = String(description || `Pedido ItaSuper #${order_id.substring(0, 6).toUpperCase()}`).substring(0, 256);
   const idempotencyKey = `pix-${order_id}-${Date.now()}`;
+  console.log(`[OrderPix] 🚀 Routing to provider…`);
 
   return await routePixCreation({
     amount,
@@ -1025,6 +1037,7 @@ async function routePixCreation(params: {
   expiresAt?: string;
 }): Promise<Response> {
   const provider = await getActiveProviderFromDB();
+  console.log(`[Route] 🎯 Active provider: ${provider} | hasAsaas=${hasAsaasCredentials()} hasMP=${hasMpCredentials()} hasEfi=${hasEfiCredentials()}`);
 
   // ── Simulation ──
   if (provider === "SIMULATED") {
