@@ -1,10 +1,11 @@
 import { memo, useMemo } from "react";
-import { Home, ClipboardList, User, Store } from "lucide-react";
+ import { Home, ClipboardList, User, Store, LayoutDashboard } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useStoreContext } from "@/contexts/StoreContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+ import { supabase } from "@/integrations/supabase/client";
+ import { isPartnerCapacitorApp } from "@/lib/capacitorAppMode";
 
 const BottomNav = memo(() => {
   const location = useLocation();
