@@ -98,29 +98,32 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
   useEffect(() => {
     if (!driverId) return;
 
-    const channel = supabase
-      .channel(`driver-location-${driverId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "driver_locations",
-          filter: `driver_user_id=eq.${driverId}`,
-        },
-        (payload) => {
-          const newData = payload.new as any;
-          if (newData && isValidCoordinate(newData.latitude, newData.longitude)) {
-            queryClient.setQueryData(["driver-location", driverId], {
-              latitude: newData.latitude,
-              longitude: newData.longitude,
-              speed: newData.speed,
-              heading: newData.heading,
-              updated_at: newData.updated_at,
-            });
-          }
+    // Unique channel name per mount prevents collision with stale channels
+    // that may still be subscribed (e.g., after Capacitor app resume).
+    const channelName = `driver-location-${driverId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const channel = supabase.channel(channelName);
+
+    channel.on(
+      "postgres_changes" as any,
+      {
+        event: "*",
+        schema: "public",
+        table: "driver_locations",
+        filter: `driver_user_id=eq.${driverId}`,
+      },
+      (payload: any) => {
+        const newData = payload.new as any;
+        if (newData && isValidCoordinate(newData.latitude, newData.longitude)) {
+          queryClient.setQueryData(["driver-location", driverId], {
+            latitude: newData.latitude,
+            longitude: newData.longitude,
+            speed: newData.speed,
+            heading: newData.heading,
+            updated_at: newData.updated_at,
+          });
         }
-      );
+      }
+    );
 
     channel.subscribe();
 
