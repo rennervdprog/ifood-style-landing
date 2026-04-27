@@ -239,25 +239,39 @@ Deno.serve(async (req) => {
 
       const callerRole = callerProfile?.role;
 
-      if (callerRole !== "lojista" && callerRole !== "motoboy") {
-        return new Response(JSON.stringify({ error: "Sem permissão para enviar notificações." }), {
-          status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
+       // Check if they are a store owner or driver regardless of their profile.role
+       const { data: ownedStores } = await supabaseAdmin
+         .from("stores")
+         .select("id")
+         .eq("owner_id", callerUserId);
+       
+       const isStoreOwner = (ownedStores || []).length > 0;
+
+       const { data: driverInfo } = await supabaseAdmin
+         .from("drivers")
+         .select("id")
+         .eq("user_id", callerUserId)
+         .maybeSingle();
+
+       const isDriver = !!driverInfo;
+
+       if (!isStoreOwner && !isDriver && callerRole !== "lojista" && callerRole !== "motoboy") {
+         console.warn(`[send-push] Denied: user ${callerUserId} has role ${callerRole}, isStoreOwner=${isStoreOwner}, isDriver=${isDriver}`);
+         return new Response(JSON.stringify({ error: "Sem permissão para enviar notificações." }), {
+           status: 403,
+           headers: { ...corsHeaders, "Content-Type": "application/json" },
+         });
+       }
+
+       const effectiveRole = isStoreOwner ? "lojista" : (isDriver ? "motoboy" : callerRole);
+       console.log(`[send-push] Effective role for ${callerUserId}: ${effectiveRole}`);
 
       // Validate that target user_ids are related to caller's orders
       const requestedUserIds = [...new Set((user_ids as string[]).filter(Boolean))];
       let allowedUserIds: Set<string>;
 
-      if (callerRole === "lojista") {
-        // Store owner can notify clients, already-assigned drivers, and linked store drivers from their own stores
-        const { data: ownedStores } = await supabaseAdmin
-          .from("stores")
-          .select("id")
-          .eq("owner_id", callerUserId);
-
-        const ownedStoreIds = (ownedStores || []).map((s: any) => s.id).filter(Boolean);
+       if (effectiveRole === "lojista") {
+         const ownedStoreIds = (ownedStores || []).map((s: any) => s.id).filter(Boolean);
 
         const { data: storeOrders } = ownedStoreIds.length > 0
           ? await supabaseAdmin
