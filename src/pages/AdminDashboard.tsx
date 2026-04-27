@@ -871,6 +871,34 @@ const AdminDashboard = () => {
       
       toast.success("Pedido atualizado!");
 
+      // Integrar com o Caixa (PDV) se o pedido for finalizado e pago em dinheiro
+      if ((newStatus === "entregue" || newStatus === "finalizado") && order?.payment_method === "dinheiro" && store?.id) {
+        try {
+          const { data: activeRegister } = await supabase
+            .from("cash_registers")
+            .select("id")
+            .eq("store_id", store.id)
+            .eq("status", "open")
+            .maybeSingle();
+
+          if (activeRegister) {
+            await supabase.from("cash_transactions").insert({
+              cash_register_id: activeRegister.id,
+              amount: Number(order.total_price),
+              type: 'in',
+              category: 'sale',
+              description: `Venda Pedido #${order.id.slice(0, 8)}`,
+              order_id: order.id,
+              created_by: user?.id
+            });
+            queryClient.invalidateQueries({ queryKey: ["cash-transactions", activeRegister.id] });
+            queryClient.invalidateQueries({ queryKey: ["active-cash-register", store.id] });
+          }
+        } catch (error) {
+          console.error("Erro ao registrar no caixa:", error);
+        }
+      }
+
       // Notifications
       if (order) {
         const clientPhone = getClientWhatsApp(order.client_id);

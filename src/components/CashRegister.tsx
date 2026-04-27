@@ -55,12 +55,14 @@ export const CashRegister = ({ storeId }: CashRegisterProps) => {
   const openMutation = useMutation({
     mutationFn: async (amount: number) => {
       const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error("Usuário não autenticado");
+      
       const { data, error } = await supabase
         .from("cash_registers")
         .insert({
           store_id: storeId,
           opening_balance: amount,
-          opened_by: userData.user?.id,
+          opened_by: userData.user.id,
           status: "open",
         })
         .select()
@@ -69,7 +71,7 @@ export const CashRegister = ({ storeId }: CashRegisterProps) => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["active-cash-register"] });
+      queryClient.invalidateQueries({ queryKey: ["active-cash-register", storeId] });
       toast.success("Caixa aberto com sucesso!");
     },
   });
@@ -160,7 +162,7 @@ export const CashRegister = ({ storeId }: CashRegisterProps) => {
         <div className="p-6 border rounded-xl bg-card shadow-sm">
           <p className="text-sm text-muted-foreground">Saldo em Caixa</p>
           <p className="text-2xl font-bold text-emerald-500">
-            {formatBRL(activeRegister.opening_balance + (transactions?.reduce((acc, curr) => curr.type === 'in' ? acc + Number(curr.amount) : acc - Number(curr.amount), 0) || 0))}
+            {formatBRL(Number(activeRegister.opening_balance) + (transactions?.reduce((acc, curr) => curr.type === 'in' ? acc + Number(curr.amount) : acc - Number(curr.amount), 0) || 0))}
           </p>
         </div>
         <div className="p-6 border rounded-xl bg-card shadow-sm">
