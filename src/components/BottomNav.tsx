@@ -1,16 +1,18 @@
 import { memo, useMemo } from "react";
-import { Home, ClipboardList, User, Store } from "lucide-react";
+ import { Home, ClipboardList, User, Store, LayoutDashboard } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useStoreContext } from "@/contexts/StoreContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+ import { supabase } from "@/integrations/supabase/client";
+ import { isPartnerCapacitorApp } from "@/lib/capacitorAppMode";
 
 const BottomNav = memo(() => {
   const location = useLocation();
   const navigate = useNavigate();
   const { currentStoreSlug, currentStoreId } = useStoreContext();
-  const { user } = useAuth();
+   const { user } = useAuth();
+   const isPartnerApp = isPartnerCapacitorApp();
 
   const { data: profile } = useQuery({
     queryKey: ["bottom-nav-profile", user?.id],
@@ -40,7 +42,8 @@ const BottomNav = memo(() => {
     staleTime: 1000 * 60 * 5,
   });
 
-  const isLojista = profile?.role === "lojista";
+   const isLojista = (profile as any)?.role === "lojista";
+   const isMotoboy = (profile as any)?.role === "motoboy" || (profile as any)?.role === "entregador";
   const isStoreContext = !!currentStoreSlug;
 
   const tabs = useMemo(() => {
@@ -58,27 +61,44 @@ const BottomNav = memo(() => {
         { icon: User, label: "Perfil", path: "/perfil" },
       ];
     }
-    return [
-      { icon: Home, label: "Home", path: "/cliente" },
-      { icon: ClipboardList, label: "Pedidos", path: "/pedidos" },
-      { icon: User, label: "Perfil", path: "/perfil" },
-    ];
-  }, [isStoreContext, currentStoreSlug, currentStoreId, isLojista, ownStore]);
+     if (isPartnerApp) {
+       if (!user) return [];
+       const baseTabs = [];
+       if (isLojista) {
+         baseTabs.push({ icon: LayoutDashboard, label: "Painel", path: "/admin" });
+       } else if (isMotoboy) {
+         baseTabs.push({ icon: LayoutDashboard, label: "Entregas", path: "/entregador" });
+       }
+       baseTabs.push({ icon: ClipboardList, label: "Pedidos", path: "/pedidos" });
+       baseTabs.push({ icon: User, label: "Perfil", path: "/perfil" });
+       return baseTabs;
+     }
+     return [
+       { icon: Home, label: "Home", path: "/cliente" },
+       { icon: ClipboardList, label: "Pedidos", path: "/pedidos" },
+       { icon: User, label: "Perfil", path: "/perfil" },
+     ];
+   }, [isStoreContext, currentStoreSlug, currentStoreId, isLojista, ownStore, isPartnerApp, user, isMotoboy]);
 
   const isActive = (tabPath: string) => {
     const [path] = tabPath.split("?");
     if (path === "/" && location.pathname === "/") return true;
     if (path === "/cliente" && location.pathname === "/cliente") return true;
     if (path === "/pedidos" && location.pathname === "/pedidos") return true;
-    if (path === "/perfil" && location.pathname === "/perfil") return true;
+     if (path === "/perfil" && location.pathname === "/perfil") return true;
+     if (path === "/admin" && location.pathname === "/admin") return true;
+     if (path === "/entregador" && location.pathname === "/entregador") return true;
     if (path.startsWith("/loja/") && location.pathname === path) return true;
     if (currentStoreSlug && location.pathname === `/${currentStoreSlug}`) return path === `/${currentStoreSlug}`;
     if (location.pathname.startsWith("/loja/") && path === `/${currentStoreSlug}`) return true;
     return false;
   };
 
-  return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border pb-safe">
+   if (isPartnerApp && !user) return null;
+   if (tabs.length === 0) return null;
+ 
+   return (
+     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border pb-safe">
       <div className="flex items-center justify-around h-16">
         {tabs.map((tab) => {
           const active = isActive(tab.path);

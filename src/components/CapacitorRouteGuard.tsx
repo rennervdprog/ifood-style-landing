@@ -105,6 +105,7 @@ const CapacitorRouteGuard = () => {
     }
 
      if (currentMode === "partner") {
+       console.log("[CapRouteGuard] Partner Mode active. Path:", path);
        const isAllowed = PARTNER_ALLOWED_PREFIXES.some(
          (route) => path === route || path.startsWith(route + "/")
        );
