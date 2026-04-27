@@ -264,7 +264,7 @@ const CheckoutPage = () => {
      });
  
      return () => { cancelled = true; };
-   }, [profileCep, storeCep, config, savedAddressData, selectedSavedAddressId, profileNeighborhood, isOwnDelivery, storeOwnFee, ownDeliveryFeeWithSplit, storePlan.isFixedPlan, storePlan.platformDeliverySplit, effectivePlatformSplit, clientCoords]);
+   }, [profileCep, storeCep, config, savedAddressData, selectedSavedAddressId, profileNeighborhood, isOwnDelivery, storeOwnFee, storePlan.isFixedPlan, storePlan.platformDeliverySplit, effectivePlatformSplit, clientCoords]);
 
   const buildAddressString = () => {
     if (!hasAddress) return "";
