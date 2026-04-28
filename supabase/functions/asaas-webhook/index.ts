@@ -25,6 +25,17 @@ const WebhookSchema = z.object({
   }).optional(),
 }).passthrough();
 
+const TransferAuthorizationSchema = z.object({
+  type: z.string(),
+  transfer: z.object({
+    id: z.string().optional(),
+    status: z.string().optional(),
+    value: z.number().optional(),
+    operationType: z.string().optional(),
+    description: z.string().optional().nullable(),
+  }).passthrough().optional(),
+}).passthrough();
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -54,7 +65,15 @@ Deno.serve(async (req) => {
       return json({ error: "Unauthorized" }, 401);
     }
 
-    const parsed = WebhookSchema.safeParse(JSON.parse(rawBody));
+    const payload = JSON.parse(rawBody);
+    const transferAuth = TransferAuthorizationSchema.safeParse(payload);
+    if (transferAuth.success && transferAuth.data.type === "TRANSFER") {
+      const transfer = transferAuth.data.transfer;
+      console.log(`[ASAAS-WH ${wId}] ✅ Autorização externa de transferência aprovada transfer_id=${transfer?.id || "unknown"} value=${transfer?.value ?? "unknown"} desc=${transfer?.description || ""}`);
+      return json({ status: "APPROVED" });
+    }
+
+    const parsed = WebhookSchema.safeParse(payload);
     if (!parsed.success) {
       console.error(`[ASAAS-WH ${wId}] ❌ Payload inválido:`, JSON.stringify(parsed.error.flatten()));
       return json({ error: "Invalid payload" }, 400);
