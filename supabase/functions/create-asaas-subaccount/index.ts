@@ -1,0 +1,165 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://esm.sh/zod@3.25.76";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
+const BodySchema = z.object({
+  store_id: z.string().uuid(),
+  name: z.string().min(3).max(120),
+  email: z.string().email(),
+  cpfCnpj: z.string().min(11).max(18),
+  birthDate: z.string().optional(), // yyyy-mm-dd, required for CPF
+  companyType: z.enum(["MEI", "INDIVIDUAL", "LIMITED", "ASSOCIATION"]).optional(),
+  phone: z.string().min(10).max(15),
+  mobilePhone: z.string().min(10).max(15).optional(),
+  address: z.string().min(3).max(120),
+  addressNumber: z.string().min(1).max(20),
+  complement: z.string().max(120).optional(),
+  province: z.string().min(2).max(120), // bairro
+  postalCode: z.string().min(8).max(9),
+  // PIX key for withdrawals (any bank)
+  pixAddressKey: z.string().min(1).max(120),
+  pixAddressKeyType: z.enum(["CPF", "CNPJ", "EMAIL", "PHONE", "EVP"]),
+});
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
+
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+    const adminClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: userData, error: userErr } = await supabase.auth.getUser(token);
+    if (userErr || !userData?.user) return json({ error: "Unauthorized" }, 401);
+    const userId = userData.user.id;
+
+    const parsed = BodySchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return json({ error: "Dados inválidos", details: parsed.error.flatten().fieldErrors }, 400);
+    }
+    const body = parsed.data;
+
+    // Verify the user owns the store
+    const { data: store, error: storeErr } = await supabase
+      .from("stores")
+      .select("id, owner_id, asaas_wallet_id")
+      .eq("id", body.store_id)
+      .maybeSingle();
+    if (storeErr || !store) return json({ error: "Loja não encontrada" }, 404);
+    if (store.owner_id !== userId) return json({ error: "Sem permissão" }, 403);
+    if (store.asaas_wallet_id) {
+      return json({ error: "Esta loja já possui subconta Asaas configurada." }, 400);
+    }
+
+    const ASAAS_API_KEY = Deno.env.get("ASAAS_API_KEY");
+    if (!ASAAS_API_KEY) return json({ error: "Chave Asaas não configurada." }, 500);
+
+    const isSandbox = !ASAAS_API_KEY.startsWith("$aact_");
+    const baseUrl = isSandbox
+      ? "https://sandbox.asaas.com/api/v3"
+      : "https://api.asaas.com/v3";
+
+    const cpfCnpj = body.cpfCnpj.replace(/\D/g, "");
+    const phone = body.phone.replace(/\D/g, "");
+    const postalCode = body.postalCode.replace(/\D/g, "");
+
+    // Build payload for Asaas /accounts (create subaccount)
+    const subaccountPayload: Record<string, unknown> = {
+      name: body.name,
+      email: body.email,
+      cpfCnpj,
+      phone,
+      mobilePhone: (body.mobilePhone || body.phone).replace(/\D/g, ""),
+      address: body.address,
+      addressNumber: body.addressNumber,
+      complement: body.complement || undefined,
+      province: body.province,
+      postalCode,
+      personType: cpfCnpj.length === 11 ? "FISICA" : "JURIDICA",
+    };
+    if (cpfCnpj.length === 11 && body.birthDate) subaccountPayload.birthDate = body.birthDate;
+    if (cpfCnpj.length === 14 && body.companyType) subaccountPayload.companyType = body.companyType;
+
+    const accRes = await fetch(`${baseUrl}/accounts`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", access_token: ASAAS_API_KEY },
+      body: JSON.stringify(subaccountPayload),
+    });
+    const accData = await accRes.json();
+    if (!accRes.ok) {
+      console.error("Asaas /accounts error:", JSON.stringify(accData));
+      const msg =
+        accData?.errors?.[0]?.description || "Falha ao criar subconta no Asaas.";
+      return json({ error: msg, asaas: accData }, 400);
+    }
+
+    const walletId: string | undefined = accData.walletId;
+    const apiKey: string | undefined = accData.apiKey;
+    if (!walletId || !apiKey) {
+      return json({ error: "Resposta inesperada do Asaas (sem walletId/apiKey).", asaas: accData }, 500);
+    }
+
+    // Optional: register PIX key on subaccount so lojista can withdraw to own bank
+    try {
+      await fetch(`${baseUrl}/pix/addressKeys`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", access_token: apiKey },
+        body: JSON.stringify({
+          type: body.pixAddressKeyType,
+          // Asaas auto-detects key value for some types; for EVP it generates a random one
+          ...(body.pixAddressKeyType !== "EVP" ? { key: body.pixAddressKey } : {}),
+        }),
+      });
+    } catch (e) {
+      console.warn("PIX key registration soft-failed:", e);
+    }
+
+    // Persist on store (use admin client to bypass RLS for asaas_subaccount_api_key column)
+    const { error: updErr } = await adminClient
+      .from("stores")
+      .update({
+        asaas_wallet_id: walletId,
+        asaas_subaccount_api_key: apiKey,
+        asaas_account_id: accData.id || null,
+      })
+      .eq("id", body.store_id);
+
+    if (updErr) {
+      console.error("Failed to persist subaccount:", updErr);
+      return json({ error: "Subconta criada mas houve erro ao salvar. Contate o suporte.", walletId }, 500);
+    }
+
+    return json({
+      success: true,
+      walletId,
+      accountId: accData.id,
+      message: "Subconta Asaas criada! O split agora será automático em todas as suas vendas PIX.",
+    });
+  } catch (err) {
+    console.error("create-asaas-subaccount error:", err);
+    return json({ error: "Erro interno." }, 500);
+  }
+});

@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
     // Verify the order belongs to this user and is awaiting payment
     const { data: order, error: orderError } = await supabase
       .from("orders")
-      .select("id, client_id, total_price, status")
+      .select("id, client_id, total_price, status, store_id, subtotal, delivery_fee, payment_method")
       .eq("id", order_id)
       .eq("client_id", userId)
       .single();
@@ -161,7 +161,37 @@ Deno.serve(async (req) => {
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + 1);
 
-    const paymentBody = {
+    // Step 2a: Compute split (only if store has Asaas subaccount configured)
+    let splitArray: Array<{ walletId: string; fixedValue: number }> | undefined;
+    try {
+      const { data: splitInfo, error: splitErr } = await supabase.rpc(
+        "get_asaas_split_for_order",
+        {
+          _store_id: order.store_id,
+          _subtotal: Number(order.subtotal || 0),
+          _delivery_fee: Number(order.delivery_fee || 0),
+          _payment_method: "pix",
+        }
+      );
+      if (!splitErr && splitInfo && (splitInfo as any).has_split) {
+        const platformAmount = Number((splitInfo as any).platform_amount || 0);
+        const storeWalletId = (splitInfo as any).store_wallet_id as string | null;
+        // Asaas split: list of recipients other than the master account.
+        // We send the STORE's portion to the store wallet; platform keeps the rest.
+        const total = Number(amount);
+        const storeAmount = Math.max(0, +(total - platformAmount).toFixed(2));
+        if (storeWalletId && storeAmount > 0 && storeAmount < total) {
+          splitArray = [{ walletId: storeWalletId, fixedValue: storeAmount }];
+          console.log(`[Split] order=${order_id} platform=${platformAmount} store=${storeAmount} wallet=${storeWalletId}`);
+        }
+      } else {
+        console.log(`[Split] no split for order ${order_id} (fallback to legacy flow)`);
+      }
+    } catch (e) {
+      console.warn("Split computation failed, proceeding without split:", e);
+    }
+
+    const paymentBody: Record<string, unknown> = {
       customer: customerId,
       billingType: "PIX",
       value: Number(amount),
@@ -169,6 +199,9 @@ Deno.serve(async (req) => {
       description: String(description || `Pedido ItaSuper #${order_id.substring(0, 6).toUpperCase()}`).substring(0, 140),
       externalReference: order_id,
     };
+    if (splitArray && splitArray.length > 0) {
+      paymentBody.split = splitArray;
+    }
 
     const paymentRes = await fetch(`${baseUrl}/payments`, {
       method: "POST",
