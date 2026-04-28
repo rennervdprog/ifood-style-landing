@@ -2412,6 +2412,7 @@ export type Database = {
           app_enabled: boolean
           app_subscribed: boolean
           asaas_account_id: string | null
+          asaas_subaccount_api_key: string | null
           asaas_wallet_id: string | null
           categories: Database["public"]["Enums"]["store_category"][]
           category: Database["public"]["Enums"]["store_category"]
@@ -2454,6 +2455,7 @@ export type Database = {
           app_enabled?: boolean
           app_subscribed?: boolean
           asaas_account_id?: string | null
+          asaas_subaccount_api_key?: string | null
           asaas_wallet_id?: string | null
           categories?: Database["public"]["Enums"]["store_category"][]
           category: Database["public"]["Enums"]["store_category"]
@@ -2496,6 +2498,7 @@ export type Database = {
           app_enabled?: boolean
           app_subscribed?: boolean
           asaas_account_id?: string | null
+          asaas_subaccount_api_key?: string | null
           asaas_wallet_id?: string | null
           categories?: Database["public"]["Enums"]["store_category"][]
           category?: Database["public"]["Enums"]["store_category"]
@@ -3054,6 +3057,15 @@ export type Database = {
       generate_financial_reference: {
         Args: { _prefix: string }
         Returns: string
+      }
+      get_asaas_split_for_order: {
+        Args: {
+          _delivery_fee: number
+          _payment_method?: string
+          _store_id: string
+          _subtotal: number
+        }
+        Returns: Json
       }
       get_delivery_contacts: {
         Args: { _order_ids?: string[] }
