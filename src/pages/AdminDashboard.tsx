@@ -35,6 +35,7 @@ import TutoriaisPanel from "@/components/TutoriaisPanel";
 import StoreFinancePanel from "@/components/StoreFinancePanel";
 import StoreFinanceBasic from "@/components/StoreFinanceBasic";
 import StoreSubscription from "@/components/StoreSubscription";
+import AsaasSubaccountSetup from "@/components/AsaasSubaccountSetup";
 import { CashRegister } from "@/components/CashRegister";
 import CommissionAlert from "@/components/CommissionAlert";
 import PlatformSplitAlert from "@/components/PlatformSplitAlert";
@@ -2518,8 +2519,14 @@ const AdminDashboard = () => {
 
                 </div>
               )}
-              {dashboardTab === "finance" && storePlan.hasCommission && <StoreFinancePanel storeId={store.id} storeName={store.name} />}
-               {dashboardTab === "finance" && !storePlan.hasCommission && <StoreFinanceBasic storeId={store.id} storeName={store.name} />}
+              {dashboardTab === "finance" && (
+                <div className="space-y-4">
+                  <AsaasSubaccountSetup storeId={store.id} />
+                  {storePlan.hasCommission
+                    ? <StoreFinancePanel storeId={store.id} storeName={store.name} />
+                    : <StoreFinanceBasic storeId={store.id} storeName={store.name} />}
+                </div>
+              )}
               {dashboardTab === "subscription" && <StoreSubscription storeId={store.id} storeName={store.name} />}
               {dashboardTab === "loyalty" && storePlan.allowLoyalty && <LoyaltyConfigPanel storeId={store.id} />}
               {dashboardTab === "loyalty" && !storePlan.allowLoyalty && (
