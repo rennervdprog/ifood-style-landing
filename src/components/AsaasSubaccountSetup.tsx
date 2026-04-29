@@ -120,36 +120,53 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
     }
 
     setSubmitting(true);
+    const payload = {
+      store_id: storeId,
+      name: form.name,
+      email: form.email,
+      cpfCnpj: cleanCpfCnpj,
+      birthDate: isCpf ? form.birthDate : undefined,
+      companyType: !isCpf ? form.companyType : undefined,
+      phone: cleanPhone,
+      mobilePhone: cleanPhone,
+      address: form.address,
+      addressNumber: form.addressNumber,
+      complement: form.complement || undefined,
+      province: form.province,
+      postalCode: cleanCep,
+      pixAddressKey: sanitizePixKeyForAsaas(form.pixAddressKey, form.pixAddressKeyType.toLowerCase()),
+      pixAddressKeyType: form.pixAddressKeyType,
+    };
+
+    console.log("Iniciando criação de subconta Asaas:", payload);
+
     try {
       const { data, error } = await supabase.functions.invoke("create-asaas-subaccount", {
-        body: {
-          store_id: storeId,
-          name: form.name,
-          email: form.email,
-          cpfCnpj: cleanCpfCnpj,
-          birthDate: isCpf ? form.birthDate : undefined,
-          companyType: !isCpf ? form.companyType : undefined,
-          phone: cleanPhone,
-          mobilePhone: cleanPhone,
-          address: form.address,
-          addressNumber: form.addressNumber,
-          complement: form.complement || undefined,
-          province: form.province,
-          postalCode: cleanCep,
-          pixAddressKey: sanitizePixKeyForAsaas(form.pixAddressKey, form.pixAddressKeyType.toLowerCase()),
-          pixAddressKeyType: form.pixAddressKeyType,
-        },
+        body: payload,
       });
-      if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
+
+      if (error) {
+        console.error("Erro no invoke da Edge Function:", error);
+        throw error;
+      }
+
+      console.log("Resposta da Edge Function:", data);
+
+      if ((data as any)?.error) {
+        console.error("Erro retornado pelo Asaas:", (data as any).error);
+        throw new Error((data as any).error);
+      }
+
       toast.success("Subconta criada! Split automático ativado. 🎉");
       qc.invalidateQueries({ queryKey: ["store-asaas", storeId] });
     } catch (e: any) {
+      console.error("Erro ao criar subconta:", e);
       toast.error(e?.message || "Falha ao criar subconta.");
     } finally {
       setSubmitting(false);
     }
   };
+
 
   if (isLoading) {
     return (
