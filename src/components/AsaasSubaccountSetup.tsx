@@ -28,6 +28,29 @@ interface Props {
 
 type PixKeyType = "CPF" | "CNPJ" | "EMAIL" | "PHONE" | "EVP";
 
+const isValidCpf = (value: string) => {
+  const cpf = value.replace(/\D/g, "");
+  if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
+  const calc = (base: string, factor: number) => {
+    const total = base.split("").reduce((sum, n) => sum + Number(n) * factor--, 0);
+    const digit = (total * 10) % 11;
+    return digit === 10 ? 0 : digit;
+  };
+  return calc(cpf.slice(0, 9), 10) === Number(cpf[9]) && calc(cpf.slice(0, 10), 11) === Number(cpf[10]);
+};
+
+const isValidCnpj = (value: string) => {
+  const cnpj = value.replace(/\D/g, "");
+  if (cnpj.length !== 14 || /^(\d)\1+$/.test(cnpj)) return false;
+  const calc = (base: string, factors: number[]) => {
+    const total = base.split("").reduce((sum, n, i) => sum + Number(n) * factors[i], 0);
+    const rest = total % 11;
+    return rest < 2 ? 0 : 11 - rest;
+  };
+  return calc(cnpj.slice(0, 12), [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]) === Number(cnpj[12]) &&
+    calc(cnpj.slice(0, 13), [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]) === Number(cnpj[13]);
+};
+
 export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
   const qc = useQueryClient();
   const [submitting, setSubmitting] = useState(false);
@@ -58,6 +81,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
     cpfCnpj: initialData?.cpfCnpj || "",
     birthDate: "",
     companyType: "MEI" as "MEI" | "INDIVIDUAL" | "LIMITED" | "ASSOCIATION",
+    incomeValue: "",
     phone: initialData?.phone || "",
     address: initialData?.address || "",
     addressNumber: initialData?.addressNumber || "",
@@ -105,28 +129,32 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
     const cleanCpfCnpj = form.cpfCnpj.replace(/\D/g, "");
     const cleanPhone = form.phone.replace(/\D/g, "");
     const cleanCep = form.postalCode.replace(/\D/g, "");
-
-    console.log("Campos para auditoria:", {
-      name: form.name,
-      email: form.email,
-      cpfCnpj: cleanCpfCnpj,
-      phone: cleanPhone,
-      address: form.address,
-      addressNumber: form.addressNumber,
-      province: form.province,
-      postalCode: cleanCep,
-      birthDate: form.birthDate,
-      personType: personType,
-      pixKey: form.pixAddressKey
-    });
+    const cleanIncomeValue = Number(String(form.incomeValue).replace(/\./g, "").replace(",", "."));
+    const documentIsCpf = cleanCpfCnpj.length === 11;
 
     if (!form.name || !form.email || cleanCpfCnpj.length < 11 || cleanPhone.length < 10 || !form.address ||
         !form.addressNumber || !form.province || cleanCep.length !== 8 || !form.pixAddressKey) {
       toast.error("Preencha todos os campos obrigatórios.");
       return;
     }
-    if (isCpf && !form.birthDate) {
+    if ((personType === "FISICA" && cleanCpfCnpj.length !== 11) || (personType === "JURIDICA" && cleanCpfCnpj.length !== 14)) {
+      toast.error(personType === "FISICA" ? "CPF deve ter 11 dígitos." : "CNPJ deve ter 14 dígitos.");
+      return;
+    }
+    if (documentIsCpf && !isValidCpf(cleanCpfCnpj)) {
+      toast.error("CPF inválido. Confira os números digitados.");
+      return;
+    }
+    if (!documentIsCpf && !isValidCnpj(cleanCpfCnpj)) {
+      toast.error("CNPJ inválido. Confira os números digitados.");
+      return;
+    }
+    if (documentIsCpf && !form.birthDate) {
       toast.error("Data de nascimento é obrigatória para CPF.");
+      return;
+    }
+    if (!Number.isFinite(cleanIncomeValue) || cleanIncomeValue <= 0) {
+      toast.error(documentIsCpf ? "Informe a renda mensal." : "Informe o faturamento mensal.");
       return;
     }
     const pixErr = validatePixKey(form.pixAddressKey, form.pixAddressKeyType.toLowerCase());
@@ -141,9 +169,10 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
       name: form.name,
       email: form.email,
       cpfCnpj: cleanCpfCnpj,
-      birthDate: isCpf ? form.birthDate : undefined,
-      personType: personType,
-      companyType: !isCpf ? form.companyType : undefined,
+      birthDate: documentIsCpf ? form.birthDate : undefined,
+      personType: documentIsCpf ? "FISICA" : "JURIDICA",
+      companyType: !documentIsCpf ? form.companyType : undefined,
+      incomeValue: cleanIncomeValue,
       phone: cleanPhone,
       mobilePhone: cleanPhone,
       address: form.address,
@@ -155,40 +184,27 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
       pixAddressKeyType: form.pixAddressKeyType,
     };
 
-    console.log("Iniciando criação de subconta Asaas:", payload);
-
     setLastError(null);
     setDebugInfo(null);
     try {
        console.log("Chamando edge function create-asaas-subaccount manualmente via fetch...");
-       
        const { data: { session } } = await supabase.auth.getSession();
-        console.log("Chamando edge function via cliente nativo...");
-        const { data, error: invokeError } = await supabase.functions.invoke("create-asaas-subaccount", {
-          body: payload,
-        });
+       const response = await fetch("https://qkjhguziuchqsbxzruea.supabase.co/functions/v1/create-asaas-subaccount", {
+         method: "POST",
+         headers: {
+           "Content-Type": "application/json",
+           Authorization: `Bearer ${session?.access_token}`,
+            apikey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFramhndXppdWNocXNieHpydWVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDg4NTUsImV4cCI6MjA5MDYyNDg1NX0.2sTeKchqAEN2gCqnH1_Zn9cJmUSmZgryt05A66tgm2Y",
+         },
+         body: JSON.stringify(payload),
+       });
+       const data = await response.json();
 
-        if (invokeError) {
-          console.error("Erro na chamada da função:", invokeError);
-          
-          // Tentar extrair o corpo do erro se for um erro de HTTP
-          let errorDetail = invokeError.message;
-          if (invokeError instanceof Error && 'context' in invokeError) {
-            try {
-              const response = (invokeError as any).context;
-              if (response && typeof response.json === 'function') {
-                const body = await response.json();
-                errorDetail = body.error || body.message || errorDetail;
-                setDebugInfo(body);
-              }
-            } catch (e) {
-              console.error("Não foi possível ler o corpo do erro:", e);
-            }
-          }
-          
-          setLastError(errorDetail);
-          throw new Error(errorDetail);
-        }
+       if (!response.ok) {
+         console.error("Erro retornado pela função:", data);
+         setDebugInfo(data);
+         throw new Error((data as any)?.error || "Erro na comunicação com o servidor.");
+       }
 
       console.log("Resposta da Edge Function:", data);
 
@@ -319,6 +335,15 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
               </Select>
             </div>
           )}
+          <div className="space-y-1.5">
+            <Label className="text-xs">{isCpf ? "Renda mensal *" : "Faturamento mensal *"}</Label>
+            <Input
+              inputMode="decimal"
+              value={form.incomeValue}
+              onChange={(e) => update("incomeValue", e.target.value.replace(/[^\d,.]/g, ""))}
+              placeholder="2500,00"
+            />
+          </div>
           <div className="space-y-1.5">
             <Label className="text-xs">Celular (WhatsApp) *</Label>
             <Input value={formatPixKeyDisplay(form.phone, "phone")} onChange={(e) => update("phone", e.target.value)} placeholder="(14) 99999-9999" />

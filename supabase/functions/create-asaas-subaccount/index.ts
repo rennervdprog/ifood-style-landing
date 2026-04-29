@@ -21,6 +21,7 @@ const BodySchema = z.object({
   birthDate: z.string().optional().or(z.literal("")), // yyyy-mm-dd, required for CPF
   personType: z.enum(["FISICA", "JURIDICA"]).optional(),
   companyType: z.enum(["MEI", "INDIVIDUAL", "LIMITED", "ASSOCIATION"]).optional().or(z.literal("")),
+  incomeValue: z.number().positive(),
   phone: z.string().min(10).max(15),
   mobilePhone: z.string().min(10).max(15).optional(),
   address: z.string().min(3).max(120),
@@ -86,6 +87,11 @@ Deno.serve(async (req) => {
     const cpfCnpj = body.cpfCnpj.replace(/\D/g, "");
     const phone = body.phone.replace(/\D/g, "");
     const postalCode = body.postalCode.replace(/\D/g, "");
+    const inferredPersonType = cpfCnpj.length === 11 ? "FISICA" : "JURIDICA";
+
+    if ((inferredPersonType === "FISICA" && !body.birthDate) || (inferredPersonType === "JURIDICA" && !body.companyType)) {
+      return json({ error: inferredPersonType === "FISICA" ? "Data de nascimento é obrigatória para CPF." : "Tipo da empresa é obrigatório para CNPJ." }, 400);
+    }
 
     // Build payload for Asaas /accounts (create subaccount)
     const subaccountPayload: Record<string, unknown> = {
@@ -99,7 +105,7 @@ Deno.serve(async (req) => {
       complement: body.complement || undefined,
       province: body.province,
       postalCode,
-      personType: cpfCnpj.length === 11 ? "FISICA" : "JURIDICA",
+      incomeValue: body.incomeValue,
     };
     if (cpfCnpj.length === 11 && body.birthDate) subaccountPayload.birthDate = body.birthDate;
     if (cpfCnpj.length === 14 && body.companyType) subaccountPayload.companyType = body.companyType;
