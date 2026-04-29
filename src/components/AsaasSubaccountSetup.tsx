@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { formatPixKeyDisplay, sanitizePixKeyForAsaas, validatePixKey } from "@/lib/pixFormat";
 import { fetchCep } from "@/lib/cepLookup";
+import AsaasDocumentsUpload from "./AsaasDocumentsUpload";
 
 interface Props {
   storeId: string;
