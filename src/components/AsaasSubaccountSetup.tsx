@@ -27,7 +27,7 @@ interface Props {
 
 type PixKeyType = "CPF" | "CNPJ" | "EMAIL" | "PHONE" | "EVP";
 
-export default function AsaasSubaccountSetup({ storeId }: Props) {
+export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
   const qc = useQueryClient();
   const [submitting, setSubmitting] = useState(false);
 
