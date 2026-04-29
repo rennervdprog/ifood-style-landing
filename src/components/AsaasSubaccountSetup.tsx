@@ -197,9 +197,31 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
         </Alert>
 
         <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-1.5 sm:col-span-2">
+            <Label className="text-xs">Tipo de Documento *</Label>
+            <div className="flex gap-2">
+              <Button 
+                type="button"
+                variant={isCpf ? "default" : "outline"}
+                className="flex-1"
+                onClick={() => update("cpfCnpj", "")}
+              >
+                Pessoa Física (CPF)
+              </Button>
+              <Button 
+                type="button"
+                variant={!isCpf ? "default" : "outline"}
+                className="flex-1"
+                onClick={() => update("cpfCnpj", "00000000000000")} // Force JURIDICA mode briefly then clean
+              >
+                Pessoa Jurídica (CNPJ)
+              </Button>
+            </div>
+          </div>
+
           <div className="space-y-1.5">
-            <Label className="text-xs">Nome completo / Razão social *</Label>
-            <Input value={form.name} onChange={(e) => update("name", e.target.value)} />
+            <Label className="text-xs">{isCpf ? "Nome completo *" : "Razão social *"}</Label>
+            <Input value={form.name} onChange={(e) => update("name", e.target.value)} placeholder={isCpf ? "Seu nome" : "Nome da empresa"} />
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs">Email *</Label>
