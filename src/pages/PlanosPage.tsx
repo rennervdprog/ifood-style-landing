@@ -417,22 +417,32 @@ const comparisonRows = [
           </p>
 
           <div className="grid md:grid-cols-3 gap-6 items-start">
-            {plans.map((plan) => {
-              const Icon = plan.icon;
-              return (
-                <Card
-                  key={plan.id}
-                  className={`relative flex flex-col rounded-3xl transition-all hover:shadow-xl ${
-                    plan.highlight
-                      ? "border-2 border-primary shadow-lg shadow-primary/10 ring-2 ring-primary/10 scale-[1.02]"
-                      : "border-border hover:border-primary/30"
-                  }`}
-                >
-                  {plan.badge && (
-                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs font-bold px-5 py-1.5 rounded-full shadow-md whitespace-nowrap">
-                      {plan.badge}
-                    </div>
-                  )}
+             {plans.map((plan) => {
+               const Icon = plan.icon;
+               const isSupporter = plan.id === "supporter";
+               const remaining = isSupporter && supporterCount !== null ? Math.max(0, 10 - supporterCount) : null;
+               const isSoldOut = isSupporter && remaining === 0;
+               
+               const planBadge = isSupporter 
+                 ? (supporterLoading 
+                     ? "🚀 Carregando vagas..." 
+                     : (isSoldOut ? "❌ Vagas esgotadas" : `🚀 Restam ${remaining} vagas`))
+                 : plan.badge;
+ 
+               return (
+                 <Card
+                   key={plan.id}
+                   className={`relative flex flex-col rounded-3xl transition-all hover:shadow-xl ${
+                     plan.highlight
+                       ? "border-2 border-primary shadow-lg shadow-primary/10 ring-2 ring-primary/10 scale-[1.02]"
+                       : "border-border hover:border-primary/30"
+                   }`}
+                 >
+                   {planBadge && (
+                     <div className={`absolute -top-3.5 left-1/2 -translate-x-1/2 ${isSoldOut ? 'bg-muted-foreground' : 'bg-primary'} text-primary-foreground text-xs font-bold px-5 py-1.5 rounded-full shadow-md whitespace-nowrap transition-colors`}>
+                       {planBadge}
+                     </div>
+                   )}
 
                   <CardContent className="flex flex-col flex-1 p-6 pt-8">
                     {/* Header */}
