@@ -2831,39 +2831,68 @@ const AdminDashboard = () => {
           )}
         </div>
 
-        {/* ── BOTTOM NAVIGATION (mobile only) ── */}
-        <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border lg:hidden pb-safe">
-          <div className="flex items-center justify-around h-14">
-            {bottomNavTabs.map(tab => {
+        {/* ── PREMIUM FLOATING BOTTOM NAVIGATION (mobile only) ── */}
+        <div className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-6 lg:hidden pointer-events-none">
+          <nav className="mx-auto max-w-md pointer-events-auto h-20 bg-card/80 backdrop-blur-2xl border border-border/40 shadow-[0_20px_50px_rgba(0,0,0,0.2)] rounded-[2.5rem] flex items-center justify-around px-2 relative overflow-hidden">
+            {/* Active Indicator Background Slider */}
+            <div 
+              className="absolute h-14 bg-primary rounded-full transition-all duration-500"
+              style={{ 
+                transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+                width: `${100 / (bottomNavTabs.length + 1)}%`,
+                left: `${(bottomNavTabs.findIndex(t => t.key === dashboardTab) !== -1 ? bottomNavTabs.findIndex(t => t.key === dashboardTab) : bottomNavTabs.length) * (100 / (bottomNavTabs.length + 1))}%`,
+                opacity: (bottomNavTabs.some(t => t.key === dashboardTab) || isBottomNavMore) ? 1 : 0,
+                transform: 'scale(0.85)',
+              }}
+            />
+            
+            {bottomNavTabs.map((tab) => {
               const Icon = tab.icon;
-              const isActive = dashboardTab === tab.key;
+              const isActive = dashboardTab === tab.key && !showMoreSheet;
               return (
-                <button key={tab.key} onClick={() => handleTabChange(tab.key)}
-                  className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-colors relative ${
-                    isActive ? "text-primary" : "text-muted-foreground"
-                  }`}>
-                  {isActive && <div className="absolute inset-0 bg-primary/10 rounded-xl" />}
+                <button 
+                  key={tab.key} 
+                  onClick={() => handleTabChange(tab.key)}
+                  className={`group relative flex flex-col items-center justify-center w-full h-full transition-all duration-300 ${
+                    isActive ? "text-primary-foreground translate-y-[-2px]" : "text-muted-foreground/60"
+                  }`}
+                >
                   <div className="relative">
-                    <Icon className="h-5 w-5 relative z-10" strokeWidth={isActive ? 2.5 : 2} />
+                    <Icon 
+                      className={`h-6 w-6 transition-all duration-300 ${isActive ? "scale-110" : "group-hover:scale-110 group-active:scale-90"}`} 
+                      strokeWidth={isActive ? 3 : 2} 
+                    />
                     {tab.key === "orders" && pendingCount > 0 && (
-                      <span className="absolute -top-1.5 -right-2 bg-amber-400 text-amber-900 text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center animate-pulse">{pendingCount}</span>
+                      <span className={`absolute -top-2 -right-2 bg-amber-400 text-amber-950 text-[10px] font-black min-w-[20px] h-5 px-1 rounded-full flex items-center justify-center ring-2 ${isActive ? "ring-primary" : "ring-background"} animate-bounce shadow-lg`}>
+                        {pendingCount}
+                      </span>
                     )}
                   </div>
-                  <span className={`text-[10px] relative z-10 ${isActive ? "font-bold" : "font-medium"}`}>{tab.label}</span>
+                  <span className={`text-[10px] mt-1 transition-all duration-300 ${isActive ? "font-black opacity-100 scale-100" : "font-bold opacity-0 scale-50"}`}>
+                    {tab.label}
+                  </span>
                 </button>
               );
             })}
-            {/* More button */}
-            <button onClick={() => setShowMoreSheet(!showMoreSheet)}
-              className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-colors relative ${
-                isBottomNavMore || showMoreSheet ? "text-primary" : "text-muted-foreground"
-              }`}>
-              {(isBottomNavMore || showMoreSheet) && <div className="absolute inset-0 bg-primary/10 rounded-xl" />}
-              <Menu className="h-5 w-5 relative z-10" strokeWidth={isBottomNavMore || showMoreSheet ? 2.5 : 2} />
-              <span className={`text-[10px] relative z-10 ${isBottomNavMore || showMoreSheet ? "font-bold" : "font-medium"}`}>Mais</span>
+
+            {/* More button - Premium version */}
+            <button 
+              onClick={() => setShowMoreSheet(!showMoreSheet)}
+              className={`group relative flex flex-col items-center justify-center w-full h-full transition-all duration-300 ${
+                (isBottomNavMore || showMoreSheet) ? "text-primary-foreground translate-y-[-2px]" : "text-muted-foreground/60"
+              }`}
+            >
+              <div className="relative">
+                <div className={`transition-all duration-300 ${showMoreSheet ? "rotate-180 scale-110" : "group-hover:scale-110"}`}>
+                  {showMoreSheet ? <X className="h-6 w-6" strokeWidth={3} /> : <Menu className="h-6 w-6" strokeWidth={2} />}
+                </div>
+              </div>
+              <span className={`text-[10px] mt-1 transition-all duration-300 ${(isBottomNavMore || showMoreSheet) ? "font-black opacity-100 scale-100" : "font-bold opacity-0 scale-50"}`}>
+                Mais
+              </span>
             </button>
-          </div>
-        </nav>
+          </nav>
+        </div>
       </main>
       <ProductTour steps={lojistaTourSteps} tourKey="lojista" />
     </div>
