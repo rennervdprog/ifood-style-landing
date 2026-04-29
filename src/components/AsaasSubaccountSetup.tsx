@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,17 @@ import { toast } from "sonner";
 
 interface Props {
   storeId: string;
+  initialData?: {
+    name?: string;
+    email?: string;
+    cpfCnpj?: string;
+    phone?: string;
+    postalCode?: string;
+    address?: string;
+    addressNumber?: string;
+    complement?: string;
+    province?: string;
+  };
 }
 
 type PixKeyType = "CPF" | "CNPJ" | "EMAIL" | "PHONE" | "EVP";
@@ -35,20 +46,38 @@ export default function AsaasSubaccountSetup({ storeId }: Props) {
   });
 
   const [form, setForm] = useState({
-    name: "",
-    email: "",
-    cpfCnpj: "",
+    name: initialData?.name || "",
+    email: initialData?.email || "",
+    cpfCnpj: initialData?.cpfCnpj || "",
     birthDate: "",
     companyType: "MEI" as "MEI" | "INDIVIDUAL" | "LIMITED" | "ASSOCIATION",
-    phone: "",
-    address: "",
-    addressNumber: "",
-    complement: "",
-    province: "",
-    postalCode: "",
-    pixAddressKey: "",
+    phone: initialData?.phone || "",
+    address: initialData?.address || "",
+    addressNumber: initialData?.addressNumber || "",
+    complement: initialData?.complement || "",
+    province: initialData?.province || "",
+    postalCode: initialData?.postalCode || "",
+    pixAddressKey: initialData?.cpfCnpj || "",
     pixAddressKeyType: "CPF" as PixKeyType,
   });
+
+  useEffect(() => {
+    if (initialData) {
+      setForm(f => ({
+        ...f,
+        name: f.name || initialData.name || "",
+        email: f.email || initialData.email || "",
+        cpfCnpj: f.cpfCnpj || initialData.cpfCnpj || "",
+        phone: f.phone || initialData.phone || "",
+        address: f.address || initialData.address || "",
+        addressNumber: f.addressNumber || initialData.addressNumber || "",
+        complement: f.complement || initialData.complement || "",
+        province: f.province || initialData.province || "",
+        postalCode: f.postalCode || initialData.postalCode || "",
+        pixAddressKey: f.pixAddressKey || initialData.cpfCnpj || "",
+      }));
+    }
+  }, [initialData]);
 
   const isCpf = form.cpfCnpj.replace(/\D/g, "").length === 11;
 
