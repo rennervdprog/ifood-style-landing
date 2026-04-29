@@ -8,14 +8,21 @@ import { Capacitor } from "@capacitor/core";
 import {
   Clock, CheckCircle2, ListOrdered, Bike, LayoutDashboard,
   Settings, Banknote, CreditCard, UtensilsCrossed, Plus, CircleDot,
-  BarChart3, Star, AlertTriangle, GraduationCap, Menu, VolumeX, Volume2, Bell
+   BarChart3, Star, AlertTriangle, GraduationCap, Menu, VolumeX, Volume2, Bell,
+   MoreHorizontal
 } from "lucide-react";
 
 import SignOutConfirm from "@/components/SignOutConfirm";
 import SimulationBanner from "@/components/SimulationBanner";
 import TrialExpiredGuard from "@/components/TrialExpiredGuard";
-import { useStorePlan } from "@/hooks/useStorePlan";
-import { AdminProvider, AdminContextType } from "./admin/AdminContext";
+ import { useStorePlan } from "@/hooks/useStorePlan";
+ import { AdminProvider, AdminContextType } from "./admin/AdminContext";
+ import {
+   Sheet,
+   SheetContent,
+   SheetHeader,
+   SheetTitle,
+ } from "@/components/ui/sheet";
 import { formatBRL } from "@/lib/utils";
 import { notifyOrderStatusChange } from "@/lib/orderNotifications";
 import { printThermalReceipt } from "@/lib/thermalPrint";
@@ -34,11 +41,29 @@ const AddonsTab = lazy(() => import("./admin/tabs/AddonsTab"));
 const BordasTab = lazy(() => import("./admin/tabs/BordasTab"));
 const HoursTab = lazy(() => import("./admin/tabs/HoursTab"));
 const DriversTab = lazy(() => import("./admin/tabs/DriversTab"));
-const TutoriaisTab = lazy(() => import("./admin/tabs/TutoriaisTab"));
+ const TutoriaisTab = lazy(() => import("./admin/tabs/TutoriaisTab"));
+ const AdminRefundPanel = lazy(() => import("@/components/AdminRefundPanel"));
 
 export type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_entrega" | "em_transito" | "entregue" | "finalizado";
 export type OrderTabKey = OrderStatus | "delivery";
-export type DashboardTabType = "dashboard" | "orders" | "menu" | "addons" | "bordas" | "hours" | "settings" | "finance" | "clients" | "reports" | "subscription" | "loyalty" | "drivers" | "refunds" | "tutoriais";
+ export type DashboardTabType = "dashboard" | "orders" | "menu" | "addons" | "bordas" | "hours" | "settings" | "finance" | "clients" | "reports" | "subscription" | "loyalty" | "drivers" | "refunds" | "tutoriais";
+ 
+ const NAV_ITEMS = [
+   { id: "dashboard", label: "Visão Geral", icon: LayoutDashboard, showInSidebar: true, showInBottomNav: true, showInMore: false },
+   { id: "orders", label: "Pedidos", icon: ListOrdered, showInSidebar: true, showInBottomNav: true, showInMore: false },
+   { id: "menu", label: "Cardápio", icon: UtensilsCrossed, showInSidebar: true, showInBottomNav: true, showInMore: false },
+   { id: "clients", label: "Clientes", icon: Star, showInSidebar: true, showInBottomNav: false, showInMore: true },
+   { id: "finance", label: "Financeiro", icon: Banknote, showInSidebar: true, showInBottomNav: false, showInMore: true },
+   { id: "refunds", label: "Reembolsos", icon: AlertTriangle, showInSidebar: true, showInBottomNav: false, showInMore: true },
+   { id: "reports", label: "Relatórios", icon: BarChart3, showInSidebar: true, showInBottomNav: false, showInMore: true },
+   { id: "loyalty", label: "Fidelidade", icon: CreditCard, showInSidebar: true, showInBottomNav: false, showInMore: true },
+   { id: "drivers", label: "Entregadores", icon: Bike, showInSidebar: true, showInBottomNav: false, showInMore: true },
+   { id: "tutoriais", label: "Tutoriais", icon: GraduationCap, showInSidebar: true, showInBottomNav: false, showInMore: true },
+   { id: "addons", label: "Complementos", icon: Plus, showInSidebar: false, showInBottomNav: false, showInMore: true },
+   { id: "bordas", label: "Bordas", icon: CircleDot, showInSidebar: false, showInBottomNav: false, showInMore: true },
+   { id: "hours", label: "Horários", icon: Clock, showInSidebar: false, showInBottomNav: false, showInMore: true },
+   { id: "settings", label: "Configurações", icon: Settings, showInSidebar: true, showInBottomNav: true, showInMore: false },
+ ];
 
 const ALERT_SOUND_URL = "https://actions.google.com/sounds/v1/alarms/beep_short.ogg";
 
