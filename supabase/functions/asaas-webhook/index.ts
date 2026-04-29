@@ -69,7 +69,50 @@ Deno.serve(async (req) => {
     const transferAuth = TransferAuthorizationSchema.safeParse(payload);
     if (transferAuth.success && transferAuth.data.type === "TRANSFER") {
       const transfer = transferAuth.data.transfer;
-      console.log(`[ASAAS-WH ${wId}] ✅ Autorização externa de transferência aprovada transfer_id=${transfer?.id || "unknown"} value=${transfer?.value ?? "unknown"} desc=${transfer?.description || ""}`);
+      const value = Number(transfer?.value ?? 0);
+      const description = String(transfer?.description || "");
+      const transferId = transfer?.id || "unknown";
+
+      // Service-role client for review-queue inserts (no RLS bypass needed otherwise)
+      const reviewClient = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      );
+
+      // SECURITY: only auto-approve transfers that match our system's payout pattern
+      // and stay below a hard ceiling. Anything else goes to manual review.
+      const MAX_AUTO_APPROVE = 5000; // R$5.000
+      // System-generated descriptions:
+      //   "Repasse pedido #<8 hex> - <store name>"
+      //   "Saque SK-XXXX ..." (driver withdrawals)
+      //   "Plano ..." / "Comissão ..." (platform charges to subaccounts)
+      const allowedDescriptionRe = /^(Repasse pedido #[0-9a-f]{8}\b|Saque SK-\d{3,}\b|Plano\b|Comiss[aã]o\b)/i;
+
+      const overCeiling = value > MAX_AUTO_APPROVE;
+      const badDescription = !allowedDescriptionRe.test(description);
+
+      if (overCeiling || badDescription) {
+        const reason = overCeiling
+          ? `value_above_ceiling (R$${value} > R$${MAX_AUTO_APPROVE})`
+          : `description_does_not_match_system_pattern`;
+        console.warn(`[ASAAS-WH ${wId}] ⚠️ TRANSFER pendente de revisão manual transfer_id=${transferId} value=${value} desc="${description}" reason=${reason}`);
+        try {
+          await reviewClient.from("asaas_transfer_review_queue").insert({
+            transfer_id: transferId,
+            value,
+            description,
+            reason,
+            payload,
+            status: "pending",
+          });
+        } catch (e) {
+          console.error(`[ASAAS-WH ${wId}] could not enqueue review:`, e);
+        }
+        // Reject the authorization — Asaas will hold the transfer.
+        return json({ status: "REJECTED", reason: "manual_review_required" }, 200);
+      }
+
+      console.log(`[ASAAS-WH ${wId}] ✅ TRANSFER auto-aprovado transfer_id=${transferId} value=${value} desc="${description}"`);
       return json({ status: "APPROVED" });
     }
 
