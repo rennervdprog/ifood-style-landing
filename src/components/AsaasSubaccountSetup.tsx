@@ -28,8 +28,10 @@ interface Props {
 
 type PixKeyType = "CPF" | "CNPJ" | "EMAIL" | "PHONE" | "EVP";
 
+const onlyDigits = (value: unknown) => String(value ?? "").replace(/[^0-9]/g, "");
+
 const isValidCpf = (value: string) => {
-  const cpf = value.replace(/\D/g, "");
+  const cpf = onlyDigits(value);
   if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
   const calc = (base: string, factor: number) => {
     const total = base.split("").reduce((sum, n) => sum + Number(n) * factor--, 0);
@@ -40,7 +42,7 @@ const isValidCpf = (value: string) => {
 };
 
 const isValidCnpj = (value: string) => {
-  const cnpj = value.replace(/\D/g, "");
+  const cnpj = onlyDigits(value);
   if (cnpj.length !== 14 || /^(\d)\1+$/.test(cnpj)) return false;
   const calc = (base: string, factors: number[]) => {
     const total = base.split("").reduce((sum, n, i) => sum + Number(n) * factors[i], 0);
@@ -72,13 +74,13 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
   });
 
   const [personType, setPersonType] = useState<"FISICA" | "JURIDICA">(
-    (initialData?.cpfCnpj?.replace(/\D/g, "").length || 0) === 14 ? "JURIDICA" : "FISICA"
+    (onlyDigits(initialData?.cpfCnpj).length || 0) === 14 ? "JURIDICA" : "FISICA"
   );
 
   const [form, setForm] = useState({
     name: initialData?.name || "",
     email: initialData?.email || "",
-    cpfCnpj: initialData?.cpfCnpj || "",
+    cpfCnpj: onlyDigits(initialData?.cpfCnpj),
     birthDate: "",
     companyType: "MEI" as "MEI" | "INDIVIDUAL" | "LIMITED" | "ASSOCIATION",
     incomeValue: "",
@@ -88,7 +90,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
     complement: initialData?.complement || "",
     province: initialData?.province || "",
     postalCode: initialData?.postalCode || "",
-    pixAddressKey: initialData?.cpfCnpj || "",
+    pixAddressKey: onlyDigits(initialData?.cpfCnpj),
     pixAddressKeyType: "CPF" as PixKeyType,
   });
 
@@ -98,14 +100,14 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
         ...f,
         name: f.name || initialData.name || "",
         email: f.email || initialData.email || "",
-        cpfCnpj: f.cpfCnpj || initialData.cpfCnpj || "",
+        cpfCnpj: f.cpfCnpj || onlyDigits(initialData.cpfCnpj),
         phone: f.phone || initialData.phone || "",
         address: f.address || initialData.address || "",
         addressNumber: f.addressNumber || initialData.addressNumber || "",
         complement: f.complement || initialData.complement || "",
         province: f.province || initialData.province || "",
         postalCode: f.postalCode || initialData.postalCode || "",
-        pixAddressKey: f.pixAddressKey || initialData.cpfCnpj || "",
+        pixAddressKey: f.pixAddressKey || onlyDigits(initialData.cpfCnpj),
       }));
     }
   }, [initialData]);
