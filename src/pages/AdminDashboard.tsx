@@ -1834,11 +1834,11 @@ const AdminDashboard = () => {
                         {/* Stats */}
                         <div className="grid grid-cols-3 gap-2">
                           <div className="bg-muted/50 rounded-xl p-2.5 text-center">
-                            <p className="text-sm font-black text-foreground">{formatCurrency(client.totalSpent)}</p>
+                            <p className="text-sm font-black text-foreground">{formatBRL(client.totalSpent)}</p>
                             <p className="text-[10px] text-muted-foreground">Total Gasto</p>
                           </div>
                           <div className="bg-muted/50 rounded-xl p-2.5 text-center">
-                            <p className="text-sm font-black text-foreground">{formatCurrency(client.ticketMedio)}</p>
+                            <p className="text-sm font-black text-foreground">{formatBRL(client.ticketMedio)}</p>
                             <p className="text-[10px] text-muted-foreground">Ticket Médio</p>
                           </div>
                           <div className="bg-muted/50 rounded-xl p-2.5 text-center">
@@ -2685,9 +2685,9 @@ const AdminDashboard = () => {
                         {/* KPI Cards with comparison */}
                         <div className="grid grid-cols-2 gap-3">
                           {[
-                            { label: "Receita Total", value: formatCurrency(totalRevenue), growth: revenueGrowth, color: "emerald" },
+                            { label: "Receita Total", value: formatBRL(totalRevenue), growth: revenueGrowth, color: "emerald" },
                             { label: "Pedidos", value: totalOrders.toString(), growth: orderGrowth, color: "blue" },
-                            { label: "Ticket Médio", value: formatCurrency(avgTicket), growth: ticketGrowth, color: "purple" },
+                            { label: "Ticket Médio", value: formatBRL(avgTicket), growth: ticketGrowth, color: "purple" },
                             { label: "Taxa Cancelamento", value: `${cancelRate.toFixed(1)}%`, growth: null, color: cancelRate > 5 ? "red" : "emerald" },
                           ].map((kpi) => (
                             <div key={kpi.label} className={`bg-card/60 backdrop-blur-sm rounded-2xl p-4 border border-border/30 relative overflow-hidden`}>
@@ -2716,7 +2716,7 @@ const AdminDashboard = () => {
                           <div className="bg-card/60 rounded-2xl p-4 border border-border/30">
                             <p className="text-[10px] text-muted-foreground font-semibold uppercase">📅 Melhor Dia</p>
                             <p className="text-lg font-black text-foreground mt-1">{bestDay?.dia || "—"}</p>
-                            <p className="text-[10px] text-muted-foreground">{bestDay ? `${formatCurrency(bestDay.vendas)}` : "Sem dados"}</p>
+                            <p className="text-[10px] text-muted-foreground">{bestDay ? `${formatBRL(bestDay.vendas)}` : "Sem dados"}</p>
                           </div>
                         </div>
 
@@ -2806,7 +2806,7 @@ const AdminDashboard = () => {
                                       <span className="text-xs text-muted-foreground">{p.name}</span>
                                       <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded">{p.value}x</span>
                                     </div>
-                                    <span className="text-xs font-bold text-foreground">{formatCurrency(p.total)}</span>
+                                    <span className="text-xs font-bold text-foreground">{formatBRL(p.total)}</span>
                                   </div>
                                 ))}
                               </div>
@@ -2830,7 +2830,7 @@ const AdminDashboard = () => {
                                       <span className="font-bold text-foreground">{name}</span>
                                       <div className="flex items-center gap-2">
                                         <span className="text-muted-foreground">{data.qty}x</span>
-                                        <span className="font-bold text-emerald-500">{formatCurrency(data.revenue)}</span>
+                                        <span className="font-bold text-emerald-500">{formatBRL(data.revenue)}</span>
                                       </div>
                                     </div>
                                     <div className="h-1.5 bg-muted rounded-full overflow-hidden">

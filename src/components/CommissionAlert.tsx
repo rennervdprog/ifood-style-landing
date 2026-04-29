@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AlertTriangle, QrCode, Copy, Loader2, CheckCircle2, X, ShieldAlert, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { formatCurrency, formatBRL } from "@/lib/utils";
+import { formatBRL, formatBRL } from "@/lib/utils";
 
 interface CommissionAlertProps {
   storeId: string;
