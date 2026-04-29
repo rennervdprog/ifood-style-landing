@@ -50,28 +50,27 @@
      };
    }
  
-   const distanceKm = haversineDistance(
-     storeCoords.lat, storeCoords.lng,
-     customerCoords.lat, customerCoords.lng
-   );
- 
-    const roundedDistance = Math.max(0, Math.ceil(distanceKm));
+    // 2. Calculate distance with high precision
+    const distanceKm = haversineDistance(storeCoords.lat, storeCoords.lng, customerCoords.lat, customerCoords.lng);
+    
+    // Use round(x, 1) for UI display and ceil(x) for pricing
+    const roundedDistance = Math.max(0, Math.round(distanceKm * 10) / 10);
+    const pricingDistance = Math.ceil(distanceKm);
+    
     let fee = Number(config.delivery_fee_base || 0);
   
-    if (roundedDistance > config.delivery_base_km) {
-      const extraKm = roundedDistance - config.delivery_base_km;
+    if (pricingDistance > config.delivery_base_km) {
+      const extraKm = pricingDistance - config.delivery_base_km;
       fee += extraKm * Number(config.delivery_fee_per_km || 0);
     }
 
-    const totalFee = fee + PLATFORM_FEE;
-  
     return {
-      fee: Math.round(totalFee * 100) / 100,
-      isRural: distanceKm > config.delivery_base_km,
-      distanceKm: Math.round(distanceKm * 10) / 10,
-       breakdown: roundedDistance <= config.delivery_base_km 
-         ? `Entrega: ${formatBRL(fee)} + Taxa operacional: ${formatBRL(PLATFORM_FEE)}`
-         : `Base ${formatBRL(config.delivery_fee_base)} + ${roundedDistance - config.delivery_base_km}km extras + Taxa operacional ${formatBRL(PLATFORM_FEE)}`,
+      fee: addMoney(fee, PLATFORM_FEE),
+      isRural: pricingDistance > config.delivery_base_km,
+      distanceKm: roundedDistance,
+      breakdown: pricingDistance <= config.delivery_base_km 
+        ? `Entrega: ${formatBRL(fee)} + Taxa operacional: ${formatBRL(PLATFORM_FEE)}`
+        : `Base ${formatBRL(config.delivery_fee_base)} + ${pricingDistance - config.delivery_base_km}km extras + Taxa operacional ${formatBRL(PLATFORM_FEE)}`,
     };
   }
  
