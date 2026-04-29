@@ -206,8 +206,9 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
             <Input type="email" value={form.email} onChange={(e) => update("email", e.target.value)} />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">CPF ou CNPJ *</Label>
-            <Input value={form.cpfCnpj} onChange={(e) => update("cpfCnpj", e.target.value)} placeholder="Só números" />
+            <Label className="text-xs">{isCpf ? "CPF *" : "CNPJ *"}</Label>
+            <Input value={formatPixKeyDisplay(form.cpfCnpj, isCpf ? "cpf" : "cnpj")} 
+                   onChange={(e) => update("cpfCnpj", e.target.value)} placeholder="000.000.000-00" />
           </div>
           {isCpf ? (
             <div className="space-y-1.5">
@@ -229,12 +230,12 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
             </div>
           )}
           <div className="space-y-1.5">
-            <Label className="text-xs">Telefone *</Label>
-            <Input value={form.phone} onChange={(e) => update("phone", e.target.value)} placeholder="(14) 99999-9999" />
+            <Label className="text-xs">Celular (WhatsApp) *</Label>
+            <Input value={formatPixKeyDisplay(form.phone, "phone")} onChange={(e) => update("phone", e.target.value)} placeholder="(14) 99999-9999" />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">CEP *</Label>
-            <Input value={form.postalCode} onChange={(e) => update("postalCode", e.target.value)} />
+            <Label className="text-xs">CEP (Só números) *</Label>
+            <Input value={form.postalCode} onChange={(e) => update("postalCode", e.target.value)} placeholder="00000000" maxLength={8} />
           </div>
           <div className="space-y-1.5 sm:col-span-2">
             <Label className="text-xs">Endereço *</Label>
@@ -274,8 +275,9 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Chave PIX *</Label>
-              <Input value={form.pixAddressKey} onChange={(e) => update("pixAddressKey", e.target.value)} />
+              <Label className="text-xs">Chave PIX ({form.pixAddressKeyType}) *</Label>
+              <Input value={formatPixKeyDisplay(form.pixAddressKey, form.pixAddressKeyType.toLowerCase())} 
+                     onChange={(e) => update("pixAddressKey", e.target.value)} />
             </div>
           </div>
         </div>
