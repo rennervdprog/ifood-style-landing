@@ -32,8 +32,7 @@ import StoreHoursManager from "@/components/StoreHoursManager";
 import AddonManager from "@/components/AddonManager";
 import StoreSettings from "@/components/StoreSettings";
 import TutoriaisPanel from "@/components/TutoriaisPanel";
-import StoreFinancePanel from "@/components/StoreFinancePanel";
-import StoreFinanceBasic from "@/components/StoreFinanceBasic";
+import FinanceCenter from "@/components/FinanceCenter";
 import StoreSubscription from "@/components/StoreSubscription";
 import { CashRegister } from "@/components/CashRegister";
 import CommissionAlert from "@/components/CommissionAlert";
@@ -2486,8 +2485,13 @@ const AdminDashboard = () => {
 
                 </div>
               )}
-              {dashboardTab === "finance" && storePlan.hasCommission && <StoreFinancePanel storeId={store.id} storeName={store.name} />}
-               {dashboardTab === "finance" && !storePlan.hasCommission && <StoreFinanceBasic storeId={store.id} storeName={store.name} />}
+              {dashboardTab === "finance" && (
+                <FinanceCenter 
+                  storeId={store.id} 
+                  storeName={store.name} 
+                  hasCommission={storePlan.hasCommission} 
+                />
+              )}
               {dashboardTab === "subscription" && <StoreSubscription storeId={store.id} storeName={store.name} />}
               {dashboardTab === "loyalty" && storePlan.allowLoyalty && <LoyaltyConfigPanel storeId={store.id} />}
               {dashboardTab === "loyalty" && !storePlan.allowLoyalty && (
