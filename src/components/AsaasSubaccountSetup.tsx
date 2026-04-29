@@ -323,24 +323,24 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
               </CardTitle>
             </CardHeader>
             <CardContent className="py-2 px-4 space-y-3">
-              <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-2"><ShieldCheck className="h-3 w-3" /> Dados Comerciais</span>
-                <span className={activationStatus.commercialInfo === "APPROVED" ? "text-green-600 font-bold" : "text-amber-600"}>
-                  {activationStatus.commercialInfo === "APPROVED" ? "Aprovado" : "Pendente"}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-2"><Banknote className="h-3 w-3" /> Dados Bancários</span>
-                <span className={activationStatus.bankAccount === "APPROVED" ? "text-green-600 font-bold" : "text-amber-600"}>
-                  {activationStatus.bankAccount === "APPROVED" ? "Aprovado" : "Pendente"}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-2"><FileText className="h-3 w-3" /> Documentos</span>
-                <span className={activationStatus.document === "APPROVED" ? "text-green-600 font-bold" : "text-amber-600"}>
-                  {activationStatus.document === "APPROVED" ? "Aprovado" : "Pendente"}
-                </span>
-              </div>
+               <div className="flex items-center justify-between text-xs">
+                 <span className="flex items-center gap-2"><ShieldCheck className="h-3 w-3" /> Dados Comerciais</span>
+                 <span className={activationStatus?.commercialInfo === "APPROVED" ? "text-green-600 font-bold" : "text-amber-600"}>
+                   {activationStatus?.commercialInfo === "APPROVED" ? "Aprovado" : "Pendente"}
+                 </span>
+               </div>
+               <div className="flex items-center justify-between text-xs">
+                 <span className="flex items-center gap-2"><Banknote className="h-3 w-3" /> Dados Bancários</span>
+                 <span className={activationStatus?.bankAccount === "APPROVED" ? "text-green-600 font-bold" : "text-amber-600"}>
+                   {activationStatus?.bankAccount === "APPROVED" ? "Aprovado" : "Pendente"}
+                 </span>
+               </div>
+               <div className="flex items-center justify-between text-xs">
+                 <span className="flex items-center gap-2"><FileText className="h-3 w-3" /> Documentos</span>
+                 <span className={activationStatus?.document === "APPROVED" ? "text-green-600 font-bold" : "text-amber-600"}>
+                   {activationStatus?.document === "APPROVED" ? "Aprovado" : "Pendente"}
+                 </span>
+               </div>
 
               <div className="pt-2">
                 <Button className="w-full text-xs h-8 bg-amber-600 hover:bg-amber-700" asChild>
