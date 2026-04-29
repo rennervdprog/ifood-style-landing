@@ -75,8 +75,9 @@
     };
   }
  
-import { formatBRL } from "@/lib/utils";
+import { formatBRL, addMoney } from "@/lib/utils";
 import { fetchCep } from "./cepLookup";
+import { geocodeAddressPrecise } from "./addressGeocoding";
 
 export interface DeliveryFeeConfig {
   city_name: string;
