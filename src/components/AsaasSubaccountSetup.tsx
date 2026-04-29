@@ -203,7 +203,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
               <Button 
                 type="button"
                 variant={isCpf ? "default" : "outline"}
-                className="flex-1"
+                className="flex-1 h-9 text-[11px] sm:text-xs"
                 onClick={() => update("cpfCnpj", "")}
               >
                 Pessoa Física (CPF)
@@ -211,7 +211,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
               <Button 
                 type="button"
                 variant={!isCpf ? "default" : "outline"}
-                className="flex-1"
+                className="flex-1 h-9 text-[11px] sm:text-xs"
                 onClick={() => update("cpfCnpj", "00000000000000")} // Force JURIDICA mode briefly then clean
               >
                 Pessoa Jurídica (CNPJ)
