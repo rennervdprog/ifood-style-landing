@@ -183,9 +183,9 @@ const plans = [
      description: "Fique com 100% do valor dos seus produtos. Gestão total e integração logística inteligente.",
     features: [
        "Todas as ferramentas inclusas",
-       "Zero comissão por venda (0%)",
-        "Emissão de Notas Fiscais inclusa",
-        "Relatórios 100% detalhados",
+      "Todas as ferramentas inclusas",
+      "Zero comissão por venda (0%)",
+      "Emissão de Notas Fiscais inclusa",
         "Integração com alerta para Motoboy",
        "Suporte VIP em 15 minutos",
        "ROI escalável e garantido",
@@ -687,10 +687,10 @@ const StoreDirectory = () => {
       {/* ══════ PLANS ══════ */}
       <section id="planos" className="py-20 px-4">
         <div className="mx-auto max-w-6xl">
-          <h2 className="text-3xl md:text-4xl font-bold text-center text-foreground mb-4">
+          <h2 className="text-3xl font-bold tracking-tight text-center text-foreground mb-4">
             Escolha o plano ideal para sua loja
           </h2>
-          <p className="text-center text-muted-foreground mb-4 max-w-2xl mx-auto">
+          <p className="text-center text-muted-foreground mb-4 max-w-2xl mx-auto text-base font-medium">
              Comissão a partir de <span className="font-bold text-primary">6%</span> — ou <span className="font-bold text-primary">zero</span> nos planos pagos.
             Todos incluem cardápio completo, PIX online e notificações.
           </p>
@@ -912,7 +912,7 @@ const StoreDirectory = () => {
 
       {/* ══════ FOOTER ══════ */}
       <footer className="py-8 text-center text-sm text-muted-foreground border-t border-border px-4">
-        <p className="font-semibold text-foreground mb-1">Itasuper</p>
+        <p className="font-semibold text-foreground mb-1">ItaSuper</p>
         <p>© {new Date().getFullYear()} — Todos os direitos reservados</p>
         <div className="mt-3 flex flex-wrap items-center justify-center gap-4 text-xs">
           <button onClick={() => navigate("/portal-parceiro")} className="hover:text-primary transition-colors">Login Parceiro</button>
