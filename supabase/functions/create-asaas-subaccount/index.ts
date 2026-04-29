@@ -105,7 +105,6 @@ Deno.serve(async (req) => {
       complement: body.complement || undefined,
       province: body.province,
       postalCode,
-      personType: inferredPersonType,
       incomeValue: body.incomeValue,
     };
     if (cpfCnpj.length === 11 && body.birthDate) subaccountPayload.birthDate = body.birthDate;
