@@ -114,7 +114,14 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
 
   const update = (k: string, v: string) => {
     let val = v;
-    if (k === "cpfCnpj") val = v.replace(/\D/g, "").slice(0, 14);
+    if (k === "cpfCnpj") {
+      val = v.replace(/\D/g, "");
+      val = val.slice(0, personType === "FISICA" ? 11 : 14);
+    }
+    if (k === "pixAddressKey" && (form.pixAddressKeyType === "CPF" || form.pixAddressKeyType === "CNPJ")) {
+      val = v.replace(/\D/g, "");
+      val = val.slice(0, form.pixAddressKeyType === "CPF" ? 11 : 14);
+    }
     if (k === "phone") val = v.replace(/\D/g, "").slice(0, 11);
     if (k === "postalCode") val = v.replace(/\D/g, "").slice(0, 8);
     
