@@ -86,9 +86,9 @@ Deno.serve(async (req) => {
       ? "https://sandbox.asaas.com/api/v3"
       : "https://api.asaas.com/v3";
 
-    const cpfCnpj = body.cpfCnpj.replace(/\D/g, "");
-    const phone = body.phone.replace(/\D/g, "");
-    const postalCode = body.postalCode.replace(/\D/g, "");
+    const cpfCnpj = body.cpfCnpj;
+    const phone = body.phone;
+    const postalCode = body.postalCode;
     const inferredPersonType = cpfCnpj.length === 11 ? "FISICA" : "JURIDICA";
 
     if ((inferredPersonType === "FISICA" && !body.birthDate) || (inferredPersonType === "JURIDICA" && !body.companyType)) {
@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
       email: body.email,
       cpfCnpj,
       phone,
-      mobilePhone: (body.mobilePhone || body.phone).replace(/\D/g, ""),
+      mobilePhone: body.mobilePhone || body.phone,
       address: body.address,
       addressNumber: body.addressNumber,
       complement: body.complement || undefined,
@@ -139,7 +139,7 @@ Deno.serve(async (req) => {
         body: JSON.stringify({
           type: body.pixAddressKeyType,
           // Asaas auto-detects key value for some types; for EVP it generates a random one
-          ...(body.pixAddressKeyType !== "EVP" ? { key: body.pixAddressKey } : {}),
+          ...(body.pixAddressKeyType !== "EVP" ? { key: body.pixAddressKeyType === "CPF" || body.pixAddressKeyType === "CNPJ" ? onlyDigits(body.pixAddressKey) : body.pixAddressKey } : {}),
         }),
       });
     } catch (e) {
