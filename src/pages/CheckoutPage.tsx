@@ -297,7 +297,18 @@ const CheckoutPage = () => {
     return null;
   }
 
-  const handleConfirm = async () => {
+   useEffect(() => {
+     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+       if (items.length > 0) {
+         e.preventDefault();
+         e.returnValue = "Você tem itens no carrinho. Deseja realmente sair?";
+       }
+     };
+     window.addEventListener("beforeunload", handleBeforeUnload);
+     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+   }, [items.length]);
+
+   const handleConfirm = async () => {
     if (isStoreClosed) {
       toast.error(`Loja fechada. ${storeStatus?.reason || ""}`);
       return;

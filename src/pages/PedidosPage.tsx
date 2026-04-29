@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
-import { ClipboardList, Clock, ChefHat, Truck, CheckCircle2, Lock, Copy, QrCode, XCircle, X, Loader2, Trash2, ShieldAlert, AlertCircle, TimerReset, RefreshCw, MessageCircle, Bell, AlertTriangle, Wallet } from "lucide-react";
+ import { ClipboardList, Clock, ChefHat, Truck, CheckCircle2, Lock, Copy, QrCode, XCircle, X, Loader2, Trash2, ShieldAlert, AlertCircle, TimerReset, RefreshCw, MessageCircle, Bell, AlertTriangle, Wallet, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { notifyOrderPreparing, notifyOrderOnTheWay, notifyOrderDelivered, pushNotifyNewOrder } from "@/lib/notifications";
 import OrderRating from "@/components/OrderRating";
@@ -301,9 +301,32 @@ const PedidosPage = () => {
     }
   };
 
-  const hasCompletedOrders = orders?.some((o: any) =>
-    ["entregue", "finalizado", "cancelado"].includes(o.status)
-  );
+   const hasCompletedOrders = orders?.some((o: any) =>
+     ["entregue", "finalizado", "cancelado"].includes(o.status)
+   );
+
+   if (isLoading || storeOrdersLoading) {
+     return (
+       <div className="min-h-screen bg-background pb-24">
+         <div className="p-4 space-y-4">
+           {[1, 2, 3].map((i) => (
+             <div key={i} className="bg-card rounded-2xl border border-border p-4 space-y-3">
+               <div className="flex justify-between items-center">
+                 <div className="h-4 w-24 bg-muted animate-pulse rounded" />
+                 <div className="h-6 w-20 bg-muted animate-pulse rounded-full" />
+               </div>
+               <div className="space-y-2">
+                 <div className="h-4 w-full bg-muted animate-pulse rounded" />
+                 <div className="h-4 w-2/3 bg-muted animate-pulse rounded" />
+               </div>
+               <div className="h-10 w-full bg-muted animate-pulse rounded-xl" />
+             </div>
+           ))}
+         </div>
+         <BottomNav />
+       </div>
+     );
+   }
 
   // Realtime subscription for CLIENT orders
   useEffect(() => {
@@ -750,17 +773,7 @@ const PedidosPage = () => {
         </header>
 
         <div className="px-4 py-4 space-y-3">
-          {storeOrdersLoading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="bg-card rounded-2xl p-4 border border-border animate-pulse space-y-2">
-                  <div className="h-4 bg-muted rounded w-1/2" />
-                  <div className="h-3 bg-muted rounded w-3/4" />
-                  <div className="h-4 bg-muted rounded w-1/4" />
-                </div>
-              ))}
-            </div>
-          ) : storeOrders && storeOrders.length > 0 ? (
+           {storeOrders && storeOrders.length > 0 ? (
             storeOrders.map((order: any) => {
               const config = statusConfig[order.status] || statusConfig.pendente;
               const StatusIcon = config.icon;
@@ -1258,12 +1271,24 @@ const PedidosPage = () => {
             </div>
             <h2 className="text-lg font-bold text-foreground mb-1">Nenhum pedido ainda</h2>
             <p className="text-sm text-muted-foreground mb-6">Explore as lojas e faça seu primeiro pedido!</p>
-            <button
-              onClick={() => navigate("/")}
-              className="bg-primary text-primary-foreground font-bold px-8 py-3 rounded-2xl text-sm shadow-lg"
-            >
-              Ver Restaurantes
-            </button>
+             <button
+               onClick={() => navigate("/")}
+               className="bg-primary text-primary-foreground font-bold px-8 py-3 rounded-2xl text-sm shadow-lg active:scale-95 transition-transform"
+             >
+               Ver Restaurantes
+             </button>
+             <div className="mt-8 pt-8 border-t border-border w-full">
+               <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mb-4">Recomendado para você</p>
+               <div className="bg-primary/5 rounded-2xl p-4 border border-primary/10 flex items-center gap-4 text-left" onClick={() => navigate("/")}>
+                 <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-primary/20">
+                   <Zap className="h-6 w-6 text-primary-foreground" />
+                 </div>
+                 <div>
+                   <h4 className="text-sm font-bold text-foreground">Primeira fome do dia?</h4>
+                   <p className="text-[11px] text-muted-foreground">Confira as lojas abertas agora em Itatinga.</p>
+                 </div>
+               </div>
+             </div>
           </div>
         )}
       </div>

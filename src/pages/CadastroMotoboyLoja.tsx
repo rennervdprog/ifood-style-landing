@@ -113,10 +113,10 @@ const CadastroMotoboyLoja = () => {
             <CheckCircle className="h-10 w-10 text-green-500" />
           </div>
           <div>
-            <h2 className="text-xl font-black text-foreground">Cadastro Realizado! 🎉</h2>
-            <p className="text-sm text-muted-foreground mt-2">
-              Sua conta foi criada com sucesso. Agora peça ao dono da loja para te adicionar como motoboy próprio.
-            </p>
+             <h2 className="text-xl font-black text-foreground">Cadastro Realizado! 🎉</h2>
+             <p className="text-sm text-muted-foreground mt-2">
+               Sua conta ainda está em análise aguarde. Agora peça ao dono da loja para te adicionar como motoboy próprio.
+             </p>
           </div>
           <div className="bg-primary/5 border border-primary/10 rounded-2xl p-4 flex items-start gap-3">
             <Mail className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />

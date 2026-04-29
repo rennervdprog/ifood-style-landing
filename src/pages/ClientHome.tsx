@@ -394,7 +394,7 @@ const ClientHomeContent = () => {
   const hasOrders = (recentOrders && recentOrders.length > 0);
 
   // All available stores for the city — always loaded so every client sees options
-  const { data: suggestedStores, isLoading: loadingStores } = useQuery({
+   const { data: suggestedStores, isLoading: loadingStores } = useQuery({
     queryKey: ["available-stores", profile?.city || "all"],
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke("public-store-catalog", {
@@ -429,7 +429,38 @@ const ClientHomeContent = () => {
     staleTime: 1000 * 60 * 5,
   });
 
-  const showSuggestions = searchFocused && !searchQuery && suggestedStores && suggestedStores.length > 0;
+   const showSuggestions = searchFocused && !searchQuery && suggestedStores && suggestedStores.length > 0;
+
+   if (loadingStores) {
+     return (
+       <div className="min-h-screen bg-slate-50 pb-24">
+         <div className="bg-primary pt-10 pb-24 px-5">
+           <div className="flex items-center justify-between mb-8">
+             <div className="h-10 w-32 bg-primary-foreground/20 animate-pulse rounded-lg" />
+             <div className="h-10 w-10 bg-primary-foreground/20 animate-pulse rounded-full" />
+           </div>
+           <div className="h-14 w-full bg-white animate-pulse rounded-2xl" />
+         </div>
+         <div className="px-5 -mt-16 space-y-8">
+           <div className="space-y-4">
+             <div className="h-6 w-32 bg-slate-200 animate-pulse rounded" />
+             <div className="flex gap-3 overflow-x-hidden">
+               {[1, 2, 3].map(i => (
+                 <div key={i} className="min-w-[140px] h-44 bg-white animate-pulse rounded-3xl border border-slate-100" />
+               ))}
+             </div>
+           </div>
+           <div className="space-y-4">
+             <div className="h-6 w-40 bg-slate-200 animate-pulse rounded" />
+             {[1, 2].map(i => (
+               <div key={i} className="h-24 w-full bg-white animate-pulse rounded-3xl border border-slate-100" />
+             ))}
+           </div>
+         </div>
+         <BottomNav />
+       </div>
+     );
+   }
 
   const lastStores = recentOrders
     ? Array.from(new Map(recentOrders.map((o: any) => [o.stores?.id, o.stores])).values()).filter(Boolean).slice(0, 5)

@@ -393,14 +393,13 @@ const StorePage = () => {
       {/* ===== HERO ===== */}
       <div className="relative h-56 md:h-64">
         {store?.image_url ? (
-          <img
-            src={store.image_url}
-            alt={store.name}
-            className={`w-full h-full object-cover ${!storeStatus.isOpen ? "grayscale brightness-75" : ""}`}
-            loading="eager"
-            decoding="async"
-            fetchPriority="high"
-          />
+             <img
+               src={store.image_url}
+               alt={store.name}
+               className={`w-full h-full object-cover ${!storeStatus.isOpen ? "grayscale brightness-75" : ""}`}
+               loading="lazy"
+               decoding="async"
+             />
         ) : (
           <div className={`w-full h-full bg-gradient-to-br from-primary/30 to-primary/5 ${!storeStatus.isOpen ? "grayscale" : ""}`} />
         )}
