@@ -199,34 +199,18 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
     enabled: !!storeId,
   });
 
-  const { data: minPayoutSetting } = useQuery({
-    queryKey: ["min-payout-amount"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("admin_settings")
-        .select("value")
-        .eq("key", "min_payout_amount")
-        .maybeSingle();
-      return Number(data?.value || 100);
-    },
-    staleTime: 1000 * 60 * 10,
-  });
-
-  const minPayout = minPayoutSetting ?? 100;
-
   // Fetch store owner profile to check PIX key + use plan commission rate
   const { data: storeData } = useQuery({
     queryKey: ["store-owner", storeId],
     queryFn: async () => {
       const [storeResult, planResult] = await Promise.all([
         supabase.from("stores").select("owner_id, commission_rate").eq("id", storeId).single(),
-        supabase.from("store_plans").select("commission_rate, plan_type").eq("store_id", storeId).eq("is_active", true).maybeSingle(),
+        supabase.from("store_plans").select("commission_rate").eq("store_id", storeId).eq("is_active", true).maybeSingle(),
       ]);
       if (storeResult.error) throw storeResult.error;
       return {
         ...storeResult.data,
         plan_commission_rate: planResult.data?.commission_rate,
-        plan_type: planResult.data?.plan_type,
       };
     },
     enabled: !!storeId,
@@ -379,10 +363,6 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
       return;
     }
     const chargeAmount = dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue;
-    if (chargeAmount < minPayout) {
-      toast.error(`Valor mínimo para cobrança é ${formatBRL(minPayout)}. Faltam ${formatBRL(minPayout - chargeAmount)}.`);
-      return;
-    }
     if (!SIMULATION_MODE) {
       recordPixAttempt(pixContextKey);
       if (isPixCooldownActive(pixContextKey)) {
@@ -570,7 +550,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
             <p className="text-2xl font-black text-emerald-400 mt-1 tracking-tight">
               {formatBRL(storePart)}
             </p>
-            <p className="text-[10px] text-emerald-400/60 mt-1">{(storeData as any)?.plan_type === 'fixed' ? '100% do subtotal (- R$1 PIX)' : `${100 - commissionPct}% do faturamento`}</p>
+            <p className="text-[10px] text-emerald-400/60 mt-1">85% do faturamento</p>
           </div>
         </div>
 
@@ -695,7 +675,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
           </div>
           <p className="text-2xl font-black text-emerald-400">{formatBRL(creditFromApp)}</p>
           <p className="text-[10px] text-muted-foreground mt-1">
-            Você recebeu {formatBRL(creditFromApp)} de {formatBRL(appSales)} em vendas pelo app. A taxa da plataforma ({commissionPct}% = {formatBRL(multiplyMoney(appSales, commissionRate))}) já foi descontada automaticamente.
+            Você recebeu {formatBRL(creditFromApp)} de {formatBRL(appSales)} em vendas pelo app. A taxa da plataforma (${commissionPct}% = {formatBRL({formatBRL(multiplyMoney(appSales, commissionRate))})}) já foi descontada automaticamente.
           </p>
           <div className="mt-2 rounded-xl bg-emerald-500/5 border border-emerald-500/10 p-2.5">
             <p className="text-[10px] text-emerald-400 font-semibold">✅ Valor já depositado na sua conta — nada a fazer</p>
@@ -713,9 +693,9 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
             </div>
             <p className="text-sm font-bold text-foreground">Taxa Pendente — Vendas Físicas</p>
           </div>
-          <p className="text-xs text-muted-foreground mb-1">Você recebeu o valor na hora (dinheiro/cartão). A taxa de {commissionPct}% da plataforma precisa ser repassada.</p>
+          <p className="text-xs text-muted-foreground mb-1">Você recebeu o valor na hora (dinheiro/cartão). A taxa de ${commissionPct}% da plataforma precisa ser repassada.</p>
           <p className="text-2xl font-black text-red-400">
-            {formatBRL((dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue))}
+            {formatBRL({formatBRL((dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue))})}
           </p>
 
           {safetyModeMs > 0 && (
@@ -755,41 +735,24 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
             </div>
           )}
 
-          {(dbComissaoPendente > 0 || commissionDue > 0) && (() => {
-            const pendingTotal = dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue;
-            const canPay = pendingTotal >= minPayout;
-            return canPay ? (
-              <Button
-                onClick={handleGenerateCommissionCharge}
-                disabled={generatingCharge || isPixBlocked || !hasPixKey || !hasDocument}
-                className="w-full mt-3 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-bold shadow-lg shadow-red-500/20 disabled:opacity-50"
-                size="lg"
-              >
-                {generatingCharge ? (
-                  <><Loader2 className="h-4 w-4 animate-spin" /> Gerando PIX...</>
-                ) : isPixBlocked ? (
-                  <><ShieldAlert className="h-4 w-4" /> Aguarde...</>
-                ) : !hasPixKey || !hasDocument ? (
-                  <><AlertCircle className="h-4 w-4" /> Dados incompletos</>
-                ) : (
-                  <><QrCode className="h-4 w-4" /> Cobrar Comissão via PIX</>
-                )}
-              </Button>
-            ) : (
-              <div className="mt-3 space-y-2">
-                <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-red-500 to-pink-500 rounded-full transition-all duration-500"
-                    style={{ width: `${Math.min(100, (pendingTotal / minPayout) * 100)}%` }}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground text-center">
-                  Cobrança disponível a partir de <strong className="text-foreground">{formatBRL(minPayout)}</strong>
-                  {" "}— faltam <strong className="text-red-400">{formatBRL(minPayout - pendingTotal)}</strong>
-                </p>
-              </div>
-            );
-          })()}
+          {(dbComissaoPendente > 0 || commissionDue > 0) && (
+            <Button
+              onClick={handleGenerateCommissionCharge}
+              disabled={generatingCharge || isPixBlocked || !hasPixKey || !hasDocument}
+              className="w-full mt-3 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-bold shadow-lg shadow-red-500/20 disabled:opacity-50"
+              size="lg"
+            >
+              {generatingCharge ? (
+                <><Loader2 className="h-4 w-4 animate-spin" /> Gerando PIX...</>
+              ) : isPixBlocked ? (
+                <><ShieldAlert className="h-4 w-4" /> Aguarde...</>
+              ) : !hasPixKey || !hasDocument ? (
+                <><AlertCircle className="h-4 w-4" /> Dados incompletos</>
+              ) : (
+                <><QrCode className="h-4 w-4" /> Cobrar Comissão via PIX</>
+              )}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -883,12 +846,12 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
         <div className="grid grid-cols-2 gap-3 text-center">
           <div>
             <p className="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">App (automático)</p>
-            <p className="text-sm font-black text-emerald-400 mt-1">{formatBRL(multiplyMoney(appSales, commissionRate))}</p>
+            <p className="text-sm font-black text-emerald-400 mt-1">{formatBRL({formatBRL(multiplyMoney(appSales, commissionRate))})}</p>
             <p className="text-[10px] text-muted-foreground">comissão já retida</p>
           </div>
           <div>
             <p className="text-[10px] text-red-400 font-semibold uppercase tracking-wider">Físico (a cobrar)</p>
-            <p className="text-sm font-black text-red-400 mt-1">{formatBRL((dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue))}</p>
+            <p className="text-sm font-black text-red-400 mt-1">{formatBRL({formatBRL((dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue))})}</p>
             <p className="text-[10px] text-muted-foreground">comissão pendente</p>
           </div>
         </div>
@@ -975,7 +938,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
                       <span className="text-[10px] text-muted-foreground">
                         {tx.transaction_kind === "commission_charge" ? "Cobrança" : "Repasse"}
                       </span>
-                      <span className="text-sm font-bold text-foreground">{formatBRL(Number(tx.amount))}</span>
+                      <span className="text-sm font-bold text-foreground">{formatBRL({formatBRL(Number(tx.amount))})}</span>
                     </div>
                     <div className="flex items-center justify-between mt-1">
                       <p className="text-[10px] text-muted-foreground">
@@ -1003,7 +966,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
           {activeOrders.filter(o => o.payment_method === "pix").map(order => (
             <div key={order.id} className="flex justify-between text-xs bg-blue-500/5 rounded-xl p-2.5">
               <span className="text-blue-400 font-semibold">#{order.id.substring(0, 6).toUpperCase()}</span>
-              <span className="text-foreground font-medium">{formatBRL(Number(order.subtotal))}</span>
+              <span className="text-foreground font-medium">{formatBRL({formatBRL(Number(order.subtotal))})}</span>
               <span className="text-muted-foreground capitalize">{order.status.replace(/_/g, " ")}</span>
             </div>
           ))}
