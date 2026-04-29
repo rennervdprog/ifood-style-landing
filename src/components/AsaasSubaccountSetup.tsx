@@ -46,6 +46,10 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
     staleTime: 60_000,
   });
 
+  const [personType, setPersonType] = useState<"FISICA" | "JURIDICA">(
+    (initialData?.cpfCnpj?.replace(/\D/g, "").length || 0) === 14 ? "JURIDICA" : "FISICA"
+  );
+
   const [form, setForm] = useState({
     name: initialData?.name || "",
     email: initialData?.email || "",
@@ -80,7 +84,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
     }
   }, [initialData]);
 
-  const isCpf = form.cpfCnpj.replace(/\D/g, "").length === 11;
+  const isCpf = personType === "FISICA";
 
   const update = (k: string, v: string) => {
     let val = v;
@@ -202,17 +206,23 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
             <div className="flex gap-2">
               <Button 
                 type="button"
-                variant={isCpf ? "default" : "outline"}
-                className="flex-1 h-9 text-[11px] sm:text-xs"
-                onClick={() => update("cpfCnpj", "")}
+                variant={personType === "FISICA" ? "default" : "outline"}
+                className={`flex-1 h-9 text-[11px] sm:text-xs ${personType === "FISICA" ? "bg-primary text-primary-foreground" : ""}`}
+                onClick={() => {
+                  setPersonType("FISICA");
+                  update("cpfCnpj", "");
+                }}
               >
                 Pessoa Física (CPF)
               </Button>
               <Button 
                 type="button"
-                variant={!isCpf ? "default" : "outline"}
-                className="flex-1 h-9 text-[11px] sm:text-xs"
-                onClick={() => update("cpfCnpj", "00000000000000")} // Force JURIDICA mode briefly then clean
+                variant={personType === "JURIDICA" ? "default" : "outline"}
+                className={`flex-1 h-9 text-[11px] sm:text-xs ${personType === "JURIDICA" ? "bg-primary text-primary-foreground" : ""}`}
+                onClick={() => {
+                  setPersonType("JURIDICA");
+                  update("cpfCnpj", "");
+                }}
               >
                 Pessoa Jurídica (CNPJ)
               </Button>
