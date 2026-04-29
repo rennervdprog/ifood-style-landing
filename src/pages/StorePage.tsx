@@ -36,6 +36,18 @@ interface MenuSection {
   sort_order: number;
 }
 
+const getPageScrollElement = (): HTMLElement => {
+  const root = document.getElementById("root");
+  if (root && root.scrollHeight > root.clientHeight + 1) {
+    const overflowY = window.getComputedStyle(root).overflowY;
+    if (["auto", "scroll", "overlay"].includes(overflowY)) return root;
+  }
+  return (document.scrollingElement as HTMLElement) || document.documentElement;
+};
+
+const isDocumentScrollElement = (element: HTMLElement) =>
+  element === document.documentElement || element === document.body || element === document.scrollingElement;
+
 const StorePage = () => {
   const { id, slug } = useParams<{ id?: string; slug?: string }>();
   const navigate = useNavigate();
@@ -258,15 +270,36 @@ const StorePage = () => {
     })
     .filter(Boolean) as (Product & { orderCount: number })[] || [];
 
+  const sectionProductsMap = useMemo(() => {
+    const map: Record<string, Product[]> = {};
+    sections?.forEach((section) => {
+      map[section.id] = [];
+    });
+    products?.forEach((product) => {
+      if (product.section_id && map[product.section_id]) {
+        map[product.section_id].push(product);
+      }
+    });
+    return map;
+  }, [sections, products]);
+
+  const visibleSections = useMemo(
+    () => (sections || []).filter((section) => (sectionProductsMap[section.id]?.length || 0) > 0),
+    [sections, sectionProductsMap]
+  );
+
   useEffect(() => {
-    if (sections && sections.length > 0 && !activeSection) {
-      setActiveSection(sections[0].id);
+    if (visibleSections.length > 0 && !activeSection) {
+      setActiveSection(visibleSections[0].id);
     }
-  }, [sections, activeSection]);
+  }, [visibleSections, activeSection]);
 
   // Auto-update active section based on scroll position
   useEffect(() => {
-    if (!sections || sections.length === 0) return;
+    if (visibleSections.length === 0) return;
+
+    const scrollElement = getPageScrollElement();
+    const documentScroll = isDocumentScrollElement(scrollElement);
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -284,19 +317,20 @@ const StorePage = () => {
         }
       },
       {
+        root: documentScroll ? null : scrollElement,
         // Ajustamos a margem para detectar melhor quando o título da seção chega no topo
         rootMargin: "-100px 0px -70% 0px",
         threshold: [0, 0.1, 0.5]
       }
     );
 
-    sections.forEach((s) => {
+    visibleSections.forEach((s) => {
       const el = sectionRefs.current[s.id];
       if (el) observer.observe(el);
     });
 
     return () => observer.disconnect();
-  }, [sections, products]);
+  }, [visibleSections]);
  
    // Scroll active category chip into view in the sticky nav
    useEffect(() => {
