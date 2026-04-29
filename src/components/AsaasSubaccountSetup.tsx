@@ -343,19 +343,21 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
                  </span>
                </div>
 
-              <div className="pt-2">
-                <Button className="w-full text-xs h-8 bg-amber-600 hover:bg-amber-700" asChild>
+              <div className="pt-2 space-y-2">
+                <p className="text-[10px] text-muted-foreground text-center">
+                  Envie os documentos exigidos diretamente aqui, sem precisar acessar o site do Asaas.
+                </p>
+                <Button variant="outline" className="w-full text-[11px] h-8" asChild>
                   <a href="https://www.asaas.com/childAccounts/list" target="_blank" rel="noopener noreferrer">
-                    Finalizar Ativação no Asaas <ExternalLink className="h-3 w-3 ml-2" />
+                    Abrir painel do Asaas (opcional) <ExternalLink className="h-3 w-3 ml-2" />
                   </a>
                 </Button>
-                <p className="text-[10px] text-muted-foreground mt-2 text-center">
-                  Você receberá um e-mail do Asaas para enviar as fotos dos documentos.
-                </p>
               </div>
             </CardContent>
           </Card>
         )}
+
+        {isPending && <AsaasDocumentsUpload storeId={storeId} />}
       </div>
     );
   }
