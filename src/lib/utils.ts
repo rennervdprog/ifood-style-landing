@@ -42,10 +42,9 @@ export function averageMoney(value: number | string | null | undefined, count: n
   return fromCents(Math.round(toCents(value) / count));
 }
 
-export function formatCurrency(value: number | string | null | undefined) {
-  return fromCents(toCents(value)).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
-
-export function formatBRL(value: number) {
-  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
+ export function formatBRL(value: number | string | null | undefined) {
+   const num = typeof value === "number" ? value : fromCents(toCents(value));
+   return num.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+ }
+ 
+ export const formatCurrency = formatBRL;
