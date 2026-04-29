@@ -1150,7 +1150,7 @@ const AdminDashboard = () => {
 
       {/* ── MORE BOTTOM SHEET (mobile) ── */}
       {showMoreSheet && (
-        <div className="fixed inset-x-0 bottom-0 z-[70] lg:hidden animate-fade-in">
+        <div className="fixed inset-x-0 bottom-0 z-[70] lg:hidden animate-in fade-in slide-in-from-bottom-4 duration-700">
           <div className="bg-card border-t border-border rounded-t-2xl pb-safe">
             <div className="flex justify-center pt-3 pb-2">
               <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
@@ -2044,7 +2044,7 @@ const AdminDashboard = () => {
                     return (
                       <div key={order.id}
                         style={{ animationDelay: `${index * 50}ms` }}
-                        className={`bg-card rounded-2xl overflow-hidden border transition-all duration-300 animate-fade-in ${
+                        className={`bg-card rounded-2xl overflow-hidden border transition-all duration-300 animate-in fade-in slide-in-from-bottom-4 duration-700 ${
                           batchSelected.has(order.id) ? "border-blue-500 ring-2 ring-blue-500/30" :
                           isDelayed ? "border-destructive/50 shadow-[0_0_12px_-4px] shadow-destructive/20" :
                           order.status === "pendente" ? "border-amber-400/40 shadow-amber-400/5 animate-pulse-border" : "border-border"
@@ -2157,7 +2157,7 @@ const AdminDashboard = () => {
                                 {isAddressExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                               </button>
                               {isAddressExpanded && (
-                                <div className="mt-1.5 bg-muted/30 rounded-lg p-2.5 text-xs text-muted-foreground space-y-0.5 animate-fade-in">
+                                <div className="mt-1.5 bg-muted/30 rounded-lg p-2.5 text-xs text-muted-foreground space-y-0.5 animate-in fade-in slide-in-from-bottom-4 duration-700">
                                   <p>{order.address_details}</p>
                                   <p className="text-muted-foreground/70">Taxa entrega: {formatBRL(Number(order.delivery_fee))}</p>
                                 </div>
@@ -2410,7 +2410,7 @@ const AdminDashboard = () => {
                     );
                   })
                 ) : (
-                  <div className="flex flex-col items-center justify-center py-24 text-center animate-fade-in">
+                  <div className="flex flex-col items-center justify-center py-24 text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
                     <div className={`w-20 h-20 rounded-3xl flex items-center justify-center mb-5 ${
                       activeTab === "pendente" ? "bg-amber-100 dark:bg-amber-500/10" :
                       activeTab === "preparando" ? "bg-orange-100 dark:bg-orange-500/10" :
