@@ -2863,9 +2863,6 @@ const AdminDashboard = () => {
                 <div className={`transition-all duration-300 ${showMoreSheet ? "rotate-90 scale-110" : ""}`}>
                   {showMoreSheet ? <X className="h-6 w-6" strokeWidth={2.5} /> : <Menu className="h-6 w-6" strokeWidth={2} />}
                 </div>
-                {refundsCount > 0 && !showMoreSheet && (
-                  <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full ring-2 ring-background" />
-                )}
               </div>
               <span className={`text-[11px] mt-1 transition-all duration-300 ${(isBottomNavMore || showMoreSheet) ? "font-black tracking-tight" : "font-bold"}`}>Mais</span>
             </button>
