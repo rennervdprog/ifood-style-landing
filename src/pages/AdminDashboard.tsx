@@ -34,6 +34,7 @@ import StoreSettings from "@/components/StoreSettings";
 import TutoriaisPanel from "@/components/TutoriaisPanel";
 import StoreFinancePanel from "@/components/StoreFinancePanel";
 import StoreFinanceBasic from "@/components/StoreFinanceBasic";
+import AsaasFinancialPanel from "@/components/AsaasFinancialPanel";
 import StoreSubscription from "@/components/StoreSubscription";
 import AsaasSubaccountSetup from "@/components/AsaasSubaccountSetup";
 import { CashRegister } from "@/components/CashRegister";
