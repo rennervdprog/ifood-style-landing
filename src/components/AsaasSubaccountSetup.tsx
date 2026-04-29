@@ -170,18 +170,6 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
          throw new Error(data.error || "Erro na comunicação com o servidor");
        }
 
-      if (error) {
-        console.error("Erro retornado pelo supabase.functions.invoke:", error);
-        setDebugInfo({
-          type: "InvokeError",
-          message: error.message,
-          status: (error as any).status,
-          name: error.name,
-          stack: error.stack
-        });
-        throw error;
-      }
-
       console.log("Resposta da Edge Function:", data);
 
       if ((data as any)?.error) {
