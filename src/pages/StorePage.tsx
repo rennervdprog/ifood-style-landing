@@ -304,23 +304,24 @@ const StorePage = () => {
      }
    }, [activeSection]);
  
-   const scrollToSection = (sectionId: string) => {
-     setActiveSection(sectionId);
-     const el = sectionRefs.current[sectionId];
-     if (!el) return;
- 
-      // Use direct window.scrollTo for better control with sticky header
-      const offset = 80; // Approximate height of the sticky nav + safety margin
-      const bodyRect = document.body.getBoundingClientRect().top;
-      const elementRect = el.getBoundingClientRect().top;
-      const elementPosition = elementRect - bodyRect;
-      const offsetPosition = elementPosition - offset;
+  const scrollToSection = (sectionId: string) => {
+    const el = sectionRefs.current[sectionId];
+    if (!el) return;
 
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: "smooth"
-      });
-   };
+    // Temporarily set active section to prevent observer from fighting the manual scroll
+    setActiveSection(sectionId);
+
+    const offset = 70; // Header height + padding
+    const bodyRect = document.body.getBoundingClientRect().top;
+    const elementRect = el.getBoundingClientRect().top;
+    const elementPosition = elementRect - bodyRect;
+    const offsetPosition = elementPosition - offset;
+
+    window.scrollTo({
+      top: offsetPosition,
+      behavior: "smooth"
+    });
+  };
 
   const productsBySection = (sectionId: string | null) =>
     products?.filter(p => p.section_id === sectionId) || [];
