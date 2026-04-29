@@ -112,9 +112,9 @@ const painPoints = [
  ];
 
 const plans = [
-   { name: "Comissão", price: "R$0", sub: "/mês", desc: "6% por pedido", icon: Rocket, tags: ["Sem mensalidade", "Todas as ferramentas"], subtitle: "Todas as ferramentas incluídas. Pague só quando vender.", popular: false },
-  { name: "Crescimento", price: "R$100", sub: "/mês", desc: "2,5% por pedido", icon: TrendingUp, tags: ["Comissão reduzida", "Todas as ferramentas"], subtitle: "Mesmas ferramentas, metade da comissão.", popular: true },
-  { name: "Essencial", price: "R$180", sub: "/mês", desc: "0% comissão", icon: Crown, tags: ["Zero comissão", "Lucro máximo"], subtitle: "Fique com 100% do pedido. Taxa PIX R$1 + entrega R$2.", popular: false },
+   { name: "Comissão", price: "R$0", sub: "/mês", desc: "6% + R$ 2 entrega", icon: Rocket, tags: ["Sem mensalidade", "Todas as ferramentas"], subtitle: "Todas as ferramentas incluídas. Pague só quando vender.", popular: false },
+  { name: "Crescimento", price: "R$100", sub: "/mês", desc: "2,5% + R$ 2 entrega", icon: TrendingUp, tags: ["Comissão reduzida", "Todas as ferramentas"], subtitle: "Mesmas ferramentas, metade da comissão.", popular: true },
+  { name: "Essencial", price: "R$180", sub: "/mês", desc: "0% comissão", icon: Crown, tags: ["Zero comissão", "Lucro máximo"], subtitle: "Fique com 100% do pedido. Taxa PIX R$ 1,99 + entrega R$ 2.", popular: false },
 ];
 
 const testimonials = [
@@ -127,7 +127,7 @@ const faqs = [
   { q: "Preciso baixar algum aplicativo?", a: "Não! Você gerencia tudo pelo navegador do celular ou computador. Seus clientes também pedem direto pelo link, sem instalar nada." },
   { q: "Como funciona o PIX automático?", a: "Quando o cliente escolhe PIX, geramos um QR Code automaticamente. Assim que ele paga, a confirmação é instantânea — sem precisar conferir extrato." },
   { q: "Posso trocar de plano depois?", a: "Sim! Você pode migrar entre planos a qualquer momento. Basta solicitar pelo painel da loja e o admin aprova a troca." },
-  { q: "O plano Essencial cobra alguma comissão?", a: "Não! Zero comissão. Você fica com 100% do pedido. Há apenas uma taxa PIX fixa de R$1 por transação e R$2 por entrega via plataforma." },
+  { q: "O plano Essencial cobra alguma comissão?", a: "Não! Zero comissão. Você fica com 100% do pedido. Há apenas uma taxa PIX fixa de R$ 1,99 por transação e R$ 2,00 por entrega via plataforma." },
   { q: "Como recebo os pedidos?", a: "Você recebe notificação sonora e push no celular em tempo real. O painel mostra todos os pedidos organizados para você gerenciar." },
 ];
 

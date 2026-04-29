@@ -444,7 +444,7 @@ const CadastroLojista = () => {
                       ))}
                     </div>
                     <p className="text-[10px] text-muted-foreground mt-1.5">
-                      💡 Mesma taxa operacional do Essencial: R$1 por pedido via PIX • R$2 na entrega (pago pelo cliente)
+                      💡 Mesma taxa operacional do Essencial: R$1,99 por pedido via PIX • R$2 na entrega (pago pelo cliente)
                     </p>
                   </button>
                 )}
@@ -482,7 +482,7 @@ const CadastroLojista = () => {
                     ))}
                   </div>
                   <p className="text-[10px] text-muted-foreground mt-1.5">
-                    💡 Pequena taxa operacional: R$1 por pedido via PIX • R$2 na entrega (pago pelo cliente na taxa de entrega)
+                    💡 Pequena taxa operacional: R$1,99 por pedido via PIX • R$2 na entrega (pago pelo cliente na taxa de entrega)
                   </p>
                 </button>
 
@@ -509,7 +509,7 @@ const CadastroLojista = () => {
                     </div>
                   </div>
                   <p className="text-[10px] font-bold text-emerald-500 mb-1">🎁 7 dias grátis para testar</p>
-                  <p className="text-[10px] font-semibold text-primary mb-2">+ 2,5% por pedido entregue</p>
+                  <p className="text-[10px] font-semibold text-primary mb-2">+ 2,5% por pedido • R$ 2 taxa entrega</p>
                   <div className="flex flex-wrap gap-1.5">
                     {["PIX integrado", "CRM completo", "Relatórios"].map(tag => (
                       <span key={tag} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">{tag}</span>
@@ -539,7 +539,7 @@ const CadastroLojista = () => {
                     </div>
                   </div>
                   <p className="text-[10px] font-bold text-emerald-500 mb-1">✅ Comece agora — sem mensalidade!</p>
-                   <p className="text-[10px] font-semibold text-primary mb-2">+ 6% por pedido entregue</p>
+                   <p className="text-[10px] font-semibold text-primary mb-2">+ 6% por pedido • R$ 2 taxa entrega</p>
                   <div className="flex flex-wrap gap-1.5">
                     {["Sem mensalidade", "Todos os recursos", "PIX integrado"].map(tag => (
                       <span key={tag} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{tag}</span>
