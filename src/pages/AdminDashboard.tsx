@@ -1549,7 +1549,7 @@ const AdminDashboard = () => {
                         const elapsedMin = Math.floor((Date.now() - new Date(order.created_at).getTime()) / 60000);
                         const sc = statusColors[order.status] || statusColors.pendente;
                          return (
-                           <OrderCard key={order.id} order={order} onStatusChange={(id, status) => { setDashboardTab("orders"); setActiveTab(status as OrderTabKey); updateOrderStatus(id, status); }} getClientName={getClientName} />
+                          <OrderCard key={order.id} order={order} onStatusChange={(id, status) => { setDashboardTab("orders"); setActiveTab(status as OrderTabKey); updateOrderStatus(id, status as OrderStatus); }} getClientName={getClientName} />
                          );
                        })}
                      </div>
@@ -1570,7 +1570,7 @@ const AdminDashboard = () => {
                   </div>
                   <div className="space-y-3">
                      {orders?.filter(o => o.status === "pendente").slice(0, 5).map((order: any) => (
-                       <OrderCard key={order.id} order={order} onStatusChange={(id, status) => { setActiveTab("preparando"); updateOrderStatus(id, status); }} getClientName={getClientName} paymentIcons={paymentIcons} paymentLabels={paymentLabels} getMainAction={getMainAction} />
+                        <OrderCard key={order.id} order={order} onStatusChange={(id, status) => { setActiveTab("preparando"); updateOrderStatus(id, status as OrderStatus); }} getClientName={getClientName} paymentIcons={paymentIcons} paymentLabels={paymentLabels} getMainAction={getMainAction} />
                      ))}
                   </div>
                 </div>
@@ -2025,7 +2025,7 @@ const AdminDashboard = () => {
                          </div>
  
                          <div className="p-4">
-                           <OrderCard key={order.id} order={order} onStatusChange={(id, status) => { if (status === "preparando" || status === "pronto_para_entrega") setActiveTab(status as any); updateOrderStatus(id, status); }} getClientName={getClientName} paymentIcons={paymentIcons} paymentLabels={paymentLabels} isOwnDelivery={isOwnDelivery} hasLinkedDrivers={hasLinkedDrivers} driversLoading={driversLoading} toggleBatchOrder={toggleBatchOrder} batchSelected={batchSelected} getMainAction={getMainAction} />
+                           <OrderCard key={order.id} order={order} onStatusChange={(id, status) => { if (status === "preparando" || status === "pronto_para_entrega") setActiveTab(status as any); updateOrderStatus(id, status as OrderStatus); }} getClientName={getClientName} paymentIcons={paymentIcons} paymentLabels={paymentLabels} isOwnDelivery={isOwnDelivery} hasLinkedDrivers={hasLinkedDrivers} driversLoading={driversLoading} toggleBatchOrder={toggleBatchOrder} batchSelected={batchSelected} getMainAction={getMainAction} />
                            {order.status === "entregue" && (
                              <div className="mt-2 flex items-center justify-between">
                                <span className="text-xs text-emerald-500 font-bold">Cliente confirmou entrega ✅</span>
