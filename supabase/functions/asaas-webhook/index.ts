@@ -329,7 +329,13 @@ Deno.serve(async (req) => {
             // Transfer store share via Asaas
             if (storeShare > 0) {
               const apiKey = Deno.env.get("ASAAS_API_KEY");
-              if (apiKey) {
+              if (!apiKey) {
+                // No API key — release lock so a manual replay can fix it later
+                await supabase.from("orders").update({
+                  store_payout_id: null,
+                  store_payout_error: "asaas_api_key_missing",
+                }).eq("id", externalReference);
+              } else {
                 const baseUrl = apiKey.startsWith("$aact_")
                   ? "https://api.asaas.com/v3"
                   : "https://sandbox.asaas.com/api/v3";
@@ -402,6 +408,11 @@ Deno.serve(async (req) => {
                   }).eq("id", externalReference);
                 }
               }
+            } else {
+              // No money to transfer — release the lock immediately
+              await supabase.from("orders").update({
+                store_payout_id: null,
+              }).eq("id", externalReference);
             }
 
             // Track commission for commission-based plans
