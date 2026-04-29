@@ -29,12 +29,19 @@
       };
     }
  
-   // KM based fee
-   // Use provided coordinates (GPS) or fall back to geocoding address
-   const customerCoords = config.customer_coords || await geocodeAddress(customerCep, config.customer_street || undefined, config.customer_number || undefined);
-   const storeCoords = storeCep ? await geocodeAddress(storeCep) : ITATINGA_CENTER;
- 
-   if (!customerCoords) {
+    // 1. Get accurate coordinates
+    const customerCoords = config.customer_coords || await geocodeAddressPrecise({
+      postalcode: customerCep,
+      street: config.customer_street && config.customer_number 
+        ? `${config.customer_street}, ${config.customer_number}` 
+        : config.customer_street || undefined
+    });
+    
+    const storeCoords = storeCep 
+      ? await geocodeAddressPrecise({ postalcode: storeCep }) 
+      : ITATINGA_CENTER;
+
+    if (!customerCoords || !storeCoords) {
      return {
        fee: config.delivery_fee_base,
        isRural: false,
@@ -43,33 +50,33 @@
      };
    }
  
-   const distanceKm = haversineDistance(
-     storeCoords.lat, storeCoords.lng,
-     customerCoords.lat, customerCoords.lng
-   );
- 
-    const roundedDistance = Math.max(0, Math.ceil(distanceKm));
+    // 2. Calculate distance with high precision
+    const distanceKm = haversineDistance(storeCoords.lat, storeCoords.lng, customerCoords.lat, customerCoords.lng);
+    
+    // Use round(x, 1) for UI display and ceil(x) for pricing
+    const roundedDistance = Math.max(0, Math.round(distanceKm * 10) / 10);
+    const pricingDistance = Math.ceil(distanceKm);
+    
     let fee = Number(config.delivery_fee_base || 0);
   
-    if (roundedDistance > config.delivery_base_km) {
-      const extraKm = roundedDistance - config.delivery_base_km;
+    if (pricingDistance > config.delivery_base_km) {
+      const extraKm = pricingDistance - config.delivery_base_km;
       fee += extraKm * Number(config.delivery_fee_per_km || 0);
     }
 
-    const totalFee = fee + PLATFORM_FEE;
-  
     return {
-      fee: Math.round(totalFee * 100) / 100,
-      isRural: distanceKm > config.delivery_base_km,
-      distanceKm: Math.round(distanceKm * 10) / 10,
-       breakdown: roundedDistance <= config.delivery_base_km 
-         ? `Entrega: ${formatBRL(fee)} + Taxa operacional: ${formatBRL(PLATFORM_FEE)}`
-         : `Base ${formatBRL(config.delivery_fee_base)} + ${roundedDistance - config.delivery_base_km}km extras + Taxa operacional ${formatBRL(PLATFORM_FEE)}`,
+      fee: addMoney(fee, PLATFORM_FEE),
+      isRural: pricingDistance > config.delivery_base_km,
+      distanceKm: roundedDistance,
+      breakdown: pricingDistance <= config.delivery_base_km 
+        ? `Entrega: ${formatBRL(fee)} + Taxa operacional: ${formatBRL(PLATFORM_FEE)}`
+        : `Base ${formatBRL(config.delivery_fee_base)} + ${pricingDistance - config.delivery_base_km}km extras + Taxa operacional ${formatBRL(PLATFORM_FEE)}`,
     };
   }
  
-import { formatBRL } from "@/lib/utils";
+import { formatBRL, addMoney } from "@/lib/utils";
 import { fetchCep } from "./cepLookup";
+import { geocodeAddressPrecise } from "./addressGeocoding";
 
 export interface DeliveryFeeConfig {
   city_name: string;
@@ -120,67 +127,15 @@ function haversineDistance(
   return R * c;
 }
 
- // Geocode an address using nominatim (returns lat/lng)
- async function geocodeAddress(cep: string, street?: string, number?: string): Promise<{ lat: number; lng: number } | null> {
-   // 1. Try CEP + Street + Number for high precision
-   if (street && number) {
-     try {
-       const query = encodeURIComponent(`${street}, ${number}, ${cep}, Brazil`);
-       const res = await fetch(
-         `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`,
-         { headers: { "User-Agent": "LovableDeliveryApp/1.0" } }
-       );
-       if (res.ok) {
-         const data = await res.json();
-         if (data.length > 0 && data[0].lat && data[0].lon) {
-           return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
-         }
-       }
-     } catch {}
-   }
- 
-   // 2. Fallback to BrasilAPI (v2 has coords for some CEPs)
-   const digits = cep.replace(/\D/g, "");
-   if (digits.length === 8) {
-     try {
-       const res = await fetch(`https://brasilapi.com.br/api/cep/v2/${digits}`);
-       if (res.ok) {
-         const data = await res.json();
-         if (data.location?.coordinates?.longitude && data.location?.coordinates?.latitude) {
-           return {
-             lat: data.location.coordinates.latitude,
-             lng: data.location.coordinates.longitude,
-           };
-         }
-         if (data.city) {
-           return geocodeByCity(data.city, data.state || "SP");
-         }
-       }
-     } catch {}
-   }
-   return null;
- }
- 
- async function geocodeByCity(city: string, state: string): Promise<{ lat: number; lng: number } | null> {
-   try {
-     const query = encodeURIComponent(`${city}, ${state}, Brazil`);
-     const res = await fetch(
-       `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`,
-       { headers: { "User-Agent": "LovableDeliveryApp/1.0" } }
-     );
-     if (!res.ok) return null;
-     const data = await res.json();
-     if (data.length > 0 && data[0].lat && data[0].lon) {
-       return {
-         lat: parseFloat(data[0].lat),
-         lng: parseFloat(data[0].lon),
-       };
-     }
-     return null;
-   } catch {
-     return null;
-   }
- }
+/**
+ * Geocode an address (DEPRECATED - Use geocodeAddressPrecise instead)
+ */
+async function geocodeAddress(cep: string, street?: string, number?: string): Promise<{ lat: number; lng: number } | null> {
+  return geocodeAddressPrecise({
+    postalcode: cep,
+    street: street && number ? `${street}, ${number}` : street || undefined
+  });
+}
 
 function isDistrictNeighborhood(bairro: string | undefined): boolean {
   if (!bairro) return false;
@@ -279,19 +234,19 @@ export interface DeliveryFeeResult {
       customerCoords.lat, customerCoords.lng
     );
 
-    const roundedDistance = Math.max(1, Math.ceil(distanceKm));
-    const fee = config.rural_base_fee + config.rural_per_km * roundedDistance;
-    const roundedFee = Math.round(fee * 100) / 100;
+    const pricingDistance = Math.ceil(distanceKm);
+    const fee = addMoney(config.rural_base_fee, config.rural_per_km * pricingDistance);
+    const roundedDistance = Math.round(distanceKm * 10) / 10;
 
     const label = isDistrict
       ? `Distrito ${customerAddr.bairro}`
       : customerAddr.localidade || "zona rural";
 
     return {
-      fee: roundedFee,
+      fee: fee,
       isRural: true,
       distanceKm: roundedDistance,
-      breakdown: `${label} (${roundedDistance}km da ${referenceLabel}): ${formatBRL(config.rural_base_fee)} + ${roundedDistance}km × ${formatBRL(config.rural_per_km)} = ${formatBRL(roundedFee)}`,
+      breakdown: `${label} (${roundedDistance}km da ${referenceLabel}): ${formatBRL(config.rural_base_fee)} + ${pricingDistance}km × ${formatBRL(config.rural_per_km)} = ${formatBRL(fee)}`,
     };
   }
 
