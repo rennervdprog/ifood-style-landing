@@ -38,9 +38,8 @@ interface MenuSection {
 
 const getPageScrollElement = (): HTMLElement => {
   const root = document.getElementById("root");
-  if (root && root.scrollHeight > root.clientHeight + 1) {
-    const overflowY = window.getComputedStyle(root).overflowY;
-    if (["auto", "scroll", "overlay"].includes(overflowY)) return root;
+  if (root && (document.body.classList.contains("native-app") || document.documentElement.classList.contains("native-app"))) {
+    return root;
   }
   return (document.scrollingElement as HTMLElement) || document.documentElement;
 };
@@ -299,7 +298,7 @@ const StorePage = () => {
     if (visibleSections.length === 0) return;
 
     const scrollElement = getPageScrollElement();
-    const documentScroll = isDocumentScrollElement(scrollElement);
+    const isWindow = scrollElement === document.documentElement || scrollElement === document.body || scrollElement === document.scrollingElement;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -317,9 +316,9 @@ const StorePage = () => {
         }
       },
       {
-        root: documentScroll ? null : scrollElement,
+        root: isWindow ? null : scrollElement,
         // Ajustamos a margem para detectar melhor quando o título da seção chega no topo
-        rootMargin: "-100px 0px -70% 0px",
+        rootMargin: "-120px 0px -70% 0px",
         threshold: [0, 0.1, 0.5]
       }
     );
@@ -349,18 +348,29 @@ const StorePage = () => {
       if (!target) return;
 
       const scrollElement = getPageScrollElement();
-      const documentScroll = isDocumentScrollElement(scrollElement);
-      const navHeight = navRef.current?.getBoundingClientRect().height || 0;
-      const extraGap = 12;
-      const currentScrollTop = documentScroll ? window.scrollY : scrollElement.scrollTop;
-      const containerTop = documentScroll ? 0 : scrollElement.getBoundingClientRect().top;
+      const isWindow = scrollElement === document.documentElement || scrollElement === document.body || scrollElement === document.scrollingElement;
+      
+      const navHeight = navRef.current?.offsetHeight || 60;
+      const extraGap = 16;
+      
+      const currentScrollTop = isWindow ? window.pageYOffset : scrollElement.scrollTop;
+      const containerTop = isWindow ? 0 : scrollElement.getBoundingClientRect().top;
       const targetTop = target.getBoundingClientRect().top - containerTop + currentScrollTop;
+      const finalPosition = Math.max(targetTop - navHeight - extraGap, 0);
 
       setActiveSection(sectionId);
-      scrollElement.scrollTo({
-        top: Math.max(targetTop - navHeight - extraGap, 0),
-        behavior: "smooth"
-      });
+
+      if (isWindow) {
+        window.scrollTo({
+          top: finalPosition,
+          behavior: "smooth"
+        });
+      } else {
+        scrollElement.scrollTo({
+          top: finalPosition,
+          behavior: "smooth"
+        });
+      }
     });
   }, []);
 
