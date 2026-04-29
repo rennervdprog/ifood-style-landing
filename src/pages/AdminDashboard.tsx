@@ -32,11 +32,8 @@ import StoreHoursManager from "@/components/StoreHoursManager";
 import AddonManager from "@/components/AddonManager";
 import StoreSettings from "@/components/StoreSettings";
 import TutoriaisPanel from "@/components/TutoriaisPanel";
-import StoreFinancePanel from "@/components/StoreFinancePanel";
-import StoreFinanceBasic from "@/components/StoreFinanceBasic";
-import AsaasFinancialPanel from "@/components/AsaasFinancialPanel";
-import StoreSubscription from "@/components/StoreSubscription";
-import AsaasSubaccountSetup from "@/components/AsaasSubaccountSetup";
+ import FinanceCenter from "@/components/FinanceCenter";
+ import StoreSubscription from "@/components/StoreSubscription";
 import { CashRegister } from "@/components/CashRegister";
 import CommissionAlert from "@/components/CommissionAlert";
 import PlatformSplitAlert from "@/components/PlatformSplitAlert";
@@ -2524,30 +2521,9 @@ const AdminDashboard = () => {
 
                 </div>
               )}
-              {dashboardTab === "finance" && (
-                <div className="space-y-4">
-                  <AsaasSubaccountSetup 
-                    storeId={store.id} 
-                    initialData={{
-                      name: myProfile?.full_name,
-                      email: user?.email,
-                      cpfCnpj: myProfile?.document,
-                      phone: myProfile?.whatsapp_number || myProfile?.phone,
-                      address: store?.address_street,
-                      addressNumber: store?.address_number,
-                      complement: store?.address_complement,
-                      province: store?.address_neighborhood,
-                      postalCode: store?.address_cep
-                    }}
-                  />
-                  {store.asaas_wallet_id && (
-                    <AsaasFinancialPanel storeId={store.id} />
-                  )}
-                  {storePlan.hasCommission
-                    ? <StoreFinancePanel storeId={store.id} storeName={store.name} />
-                    : <StoreFinanceBasic storeId={store.id} storeName={store.name} />}
-                </div>
-              )}
+               {dashboardTab === "finance" && (
+                 <FinanceCenter storeId={store.id} storePlan={storePlan} />
+               )}
               {dashboardTab === "subscription" && <StoreSubscription storeId={store.id} storeName={store.name} />}
               {dashboardTab === "loyalty" && storePlan.allowLoyalty && <LoyaltyConfigPanel storeId={store.id} />}
               {dashboardTab === "loyalty" && !storePlan.allowLoyalty && (
