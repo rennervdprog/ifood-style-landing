@@ -17,7 +17,8 @@ import {
 import AsaasSubaccountSetup from "./AsaasSubaccountSetup";
 import AsaasFinancialPanel from "./AsaasFinancialPanel";
 import StoreFinancePanel from "./StoreFinancePanel";
-import StoreFinanceBasic from "./StoreFinanceBasic";
+ import StoreFinanceBasic from "./StoreFinanceBasic";
+ import PaymentStatement from "./PaymentStatement";
 
 interface FinanceCenterProps {
   storeId: string;
@@ -111,13 +112,13 @@ export default function FinanceCenter({ storeId, storeName, hasCommission }: Fin
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="summary" className="mt-6 space-y-6">
-          {hasCommission ? (
-            <StoreFinancePanel storeId={storeId} storeName={storeName} />
-          ) : (
-            <StoreFinanceBasic storeId={storeId} storeName={storeName} />
-          )}
-        </TabsContent>
+         <TabsContent value="summary" className="mt-6 space-y-6">
+           {hasCommission ? (
+             <StoreFinancePanel storeId={storeId} storeName={storeName} hideHistory={true} />
+           ) : (
+             <StoreFinanceBasic storeId={storeId} storeName={storeName} hideHistory={true} />
+           )}
+         </TabsContent>
 
         <TabsContent value="balance" className="mt-6">
           {!store?.asaas_wallet_id ? (
@@ -127,17 +128,11 @@ export default function FinanceCenter({ storeId, storeName, hasCommission }: Fin
           )}
         </TabsContent>
 
-        <TabsContent value="history" className="mt-6">
-          <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
-            <CardContent className="p-0">
-              {hasCommission ? (
-                <StoreFinancePanel storeId={storeId} storeName={storeName} />
-              ) : (
-                <StoreFinanceBasic storeId={storeId} storeName={storeName} />
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+         <TabsContent value="history" className="mt-6">
+           <div className="space-y-6">
+             <PaymentStatement storeId={storeId} storeName={storeName} initialOpen={true} />
+           </div>
+         </TabsContent>
       </Tabs>
     </div>
   );

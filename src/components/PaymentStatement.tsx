@@ -10,10 +10,11 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-interface Props {
-  storeId: string;
-  storeName?: string;
-}
+ interface Props {
+   storeId: string;
+   storeName?: string;
+   initialOpen?: boolean;
+ }
 
 const statusMeta: Record<string, { label: string; icon: any; cls: string }> = {
   paid: { label: "Pago", icon: CheckCircle2, cls: "text-emerald-600 bg-emerald-500/10 border-emerald-500/20" },
@@ -35,8 +36,8 @@ const kindMeta: Record<string, { label: string; emoji: string; color: string }> 
 
 type FilterType = "all" | "paid" | "pending" | "failed";
 
-const PaymentStatement = ({ storeId, storeName }: Props) => {
-  const [open, setOpen] = useState(false);
+ const PaymentStatement = ({ storeId, storeName, initialOpen = false }: Props) => {
+   const [open, setOpen] = useState(initialOpen);
   const [filter, setFilter] = useState<FilterType>("all");
   const [selectedTx, setSelectedTx] = useState<any>(null);
   const [kindFilter, setKindFilter] = useState<string>("all");

@@ -26,10 +26,11 @@ import {
 } from "recharts";
 import PaymentStatement from "@/components/PaymentStatement";
 
-interface StoreFinanceBasicProps {
-  storeId: string;
-  storeName: string;
-}
+ interface StoreFinanceBasicProps {
+   storeId: string;
+   storeName: string;
+   hideHistory?: boolean;
+ }
 
 type DateFilter = "today" | "week" | "month";
 
@@ -102,7 +103,7 @@ const COLORS = {
 
 const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
 
-const StoreFinanceBasic = ({ storeId, storeName }: StoreFinanceBasicProps) => {
+ const StoreFinanceBasic = ({ storeId, storeName, hideHistory = false }: StoreFinanceBasicProps) => {
   const [dateFilter, setDateFilter] = useState<DateFilter>("week");
   const [chargeResult, setChargeResult] = useState<ChargeResult | null>(null);
   const [chargeError, setChargeError] = useState<string | null>(null);
@@ -499,7 +500,7 @@ const StoreFinanceBasic = ({ storeId, storeName }: StoreFinanceBasicProps) => {
   return (
     <div className="space-y-5">
       {/* Extrato financeiro completo */}
-      <PaymentStatement storeId={storeId} storeName={storeName} />
+       {!hideHistory && <PaymentStatement storeId={storeId} storeName={storeName} />}
 
       {/* Plan Info */}
       <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4">
