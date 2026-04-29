@@ -2442,6 +2442,8 @@ export type Database = {
           app_enabled: boolean
           app_subscribed: boolean
           asaas_account_id: string | null
+          asaas_activation_status: Json | null
+          asaas_documents_sent: boolean | null
           asaas_subaccount_api_key: string | null
           asaas_wallet_id: string | null
           categories: Database["public"]["Enums"]["store_category"][]
@@ -2485,6 +2487,8 @@ export type Database = {
           app_enabled?: boolean
           app_subscribed?: boolean
           asaas_account_id?: string | null
+          asaas_activation_status?: Json | null
+          asaas_documents_sent?: boolean | null
           asaas_subaccount_api_key?: string | null
           asaas_wallet_id?: string | null
           categories?: Database["public"]["Enums"]["store_category"][]
@@ -2528,6 +2532,8 @@ export type Database = {
           app_enabled?: boolean
           app_subscribed?: boolean
           asaas_account_id?: string | null
+          asaas_activation_status?: Json | null
+          asaas_documents_sent?: boolean | null
           asaas_subaccount_api_key?: string | null
           asaas_wallet_id?: string | null
           categories?: Database["public"]["Enums"]["store_category"][]
