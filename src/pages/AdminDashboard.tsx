@@ -2836,7 +2836,9 @@ const AdminDashboard = () => {
           <nav className="mx-auto max-w-md pointer-events-auto h-20 bg-card/80 backdrop-blur-2xl border border-border/40 shadow-[0_20px_50px_rgba(0,0,0,0.2)] rounded-[2.5rem] flex items-center justify-around px-2 relative overflow-hidden">
             {/* Active Indicator Background Slider */}
             <div 
-              className="absolute h-14 bg-primary rounded-full transition-all duration-500 cubic-bezier(0.34, 1.56, 0.64, 1)"
+              className="absolute h-14 bg-primary rounded-full transition-all duration-500"
+              style={{ 
+                transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
               style={{ 
                 width: `${100 / (bottomNavTabs.length + 1)}%`,
                 left: `${(bottomNavTabs.findIndex(t => t.key === dashboardTab) !== -1 ? bottomNavTabs.findIndex(t => t.key === dashboardTab) : bottomNavTabs.length) * (100 / (bottomNavTabs.length + 1))}%`,
