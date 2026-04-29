@@ -36,6 +36,18 @@ interface MenuSection {
   sort_order: number;
 }
 
+const getPageScrollElement = (): HTMLElement => {
+  const root = document.getElementById("root");
+  if (root && root.scrollHeight > root.clientHeight + 1) {
+    const overflowY = window.getComputedStyle(root).overflowY;
+    if (["auto", "scroll", "overlay"].includes(overflowY)) return root;
+  }
+  return (document.scrollingElement as HTMLElement) || document.documentElement;
+};
+
+const isDocumentScrollElement = (element: HTMLElement) =>
+  element === document.documentElement || element === document.body || element === document.scrollingElement;
+
 const StorePage = () => {
   const { id, slug } = useParams<{ id?: string; slug?: string }>();
   const navigate = useNavigate();
@@ -258,15 +270,36 @@ const StorePage = () => {
     })
     .filter(Boolean) as (Product & { orderCount: number })[] || [];
 
+  const sectionProductsMap = useMemo(() => {
+    const map: Record<string, Product[]> = {};
+    sections?.forEach((section) => {
+      map[section.id] = [];
+    });
+    products?.forEach((product) => {
+      if (product.section_id && map[product.section_id]) {
+        map[product.section_id].push(product);
+      }
+    });
+    return map;
+  }, [sections, products]);
+
+  const visibleSections = useMemo(
+    () => (sections || []).filter((section) => (sectionProductsMap[section.id]?.length || 0) > 0),
+    [sections, sectionProductsMap]
+  );
+
   useEffect(() => {
-    if (sections && sections.length > 0 && !activeSection) {
-      setActiveSection(sections[0].id);
+    if (visibleSections.length > 0 && !activeSection) {
+      setActiveSection(visibleSections[0].id);
     }
-  }, [sections, activeSection]);
+  }, [visibleSections, activeSection]);
 
   // Auto-update active section based on scroll position
   useEffect(() => {
-    if (!sections || sections.length === 0) return;
+    if (visibleSections.length === 0) return;
+
+    const scrollElement = getPageScrollElement();
+    const documentScroll = isDocumentScrollElement(scrollElement);
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -284,19 +317,20 @@ const StorePage = () => {
         }
       },
       {
+        root: documentScroll ? null : scrollElement,
         // Ajustamos a margem para detectar melhor quando o título da seção chega no topo
         rootMargin: "-100px 0px -70% 0px",
         threshold: [0, 0.1, 0.5]
       }
     );
 
-    sections.forEach((s) => {
+    visibleSections.forEach((s) => {
       const el = sectionRefs.current[s.id];
       if (el) observer.observe(el);
     });
 
     return () => observer.disconnect();
-  }, [sections, products]);
+  }, [visibleSections]);
  
    // Scroll active category chip into view in the sticky nav
    useEffect(() => {
@@ -310,28 +344,30 @@ const StorePage = () => {
    }, [activeSection]);
  
   const scrollToSection = useCallback((sectionId: string) => {
-    const el = sectionRefs.current[sectionId];
-    if (!el) {
-      console.warn(`Elemento da seção ${sectionId} não encontrado.`);
-      return;
-    }
+    window.requestAnimationFrame(() => {
+      const target = sectionRefs.current[sectionId] || document.getElementById(`menu-section-${sectionId}`);
+      if (!target) return;
 
-    // Define a seção ativa imediatamente para feedback visual instantâneo no menu
-    setActiveSection(sectionId);
+      const scrollElement = getPageScrollElement();
+      const documentScroll = isDocumentScrollElement(scrollElement);
+      const navHeight = navRef.current?.getBoundingClientRect().height || 0;
+      const extraGap = 12;
+      const currentScrollTop = documentScroll ? window.scrollY : scrollElement.scrollTop;
+      const containerTop = documentScroll ? 0 : scrollElement.getBoundingClientRect().top;
+      const targetTop = target.getBoundingClientRect().top - containerTop + currentScrollTop;
 
-    // O offset de 80px compensa o cabeçalho fixo (chips de categoria)
-    const offset = 80;
-    const elementPosition = el.getBoundingClientRect().top;
-    const offsetPosition = elementPosition + window.pageYOffset - offset;
-
-    window.scrollTo({
-      top: offsetPosition,
-      behavior: "smooth"
+      setActiveSection(sectionId);
+      scrollElement.scrollTo({
+        top: Math.max(targetTop - navHeight - extraGap, 0),
+        behavior: "smooth"
+      });
     });
   }, []);
 
-  const productsBySection = (sectionId: string | null) =>
-    products?.filter(p => p.section_id === sectionId) || [];
+  const productsBySection = useCallback(
+    (sectionId: string | null) => sectionId ? sectionProductsMap[sectionId] || [] : [],
+    [sectionProductsMap]
+  );
 
   const unsectionedProducts = products?.filter(p => !p.section_id) || [];
 
@@ -740,17 +776,22 @@ const StorePage = () => {
       })()}
 
       {/* ===== CATEGORY NAV ===== */}
-      {sections && sections.length > 0 && !filteredProducts && (
+      {visibleSections.length > 0 && !filteredProducts && (
         <div
           ref={navRef}
           className="sticky top-0 z-30 bg-background/95 backdrop-blur-md border-b border-border mt-4 shadow-sm"
         >
           <div className="flex overflow-x-auto gap-1.5 px-4 py-2.5 no-scrollbar">
-            {sections.map(s => (
+            {visibleSections.map(s => (
               <button
                 key={s.id}
+                type="button"
                 data-chip-id={s.id}
-                onClick={() => scrollToSection(s.id)}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  scrollToSection(s.id);
+                }}
                 className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all ${
                   activeSection === s.id
                     ? "bg-primary text-primary-foreground shadow-md scale-105"
@@ -809,12 +850,12 @@ const StorePage = () => {
           </div>
         ) : (
           <>
-            {sections?.map(section => {
+            {visibleSections.map(section => {
               const sectionProducts = productsBySection(section.id);
-              if (sectionProducts.length === 0) return null;
               return (
                 <div
                   key={section.id}
+                  id={`menu-section-${section.id}`}
                   ref={el => { sectionRefs.current[section.id] = el; }}
                   data-section-id={section.id}
                   className="scroll-mt-16"
