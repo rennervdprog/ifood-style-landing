@@ -2010,28 +2010,31 @@ const AdminDashboard = () => {
                               </span>
                             )}
                           </div>
-                          <div className="flex items-center gap-2">
-                            {["pendente", "preparando", "pronto_para_entrega"].includes(order.status) && (
-                              <span className={`flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                                isDelayed ? "bg-destructive/10 text-destructive" : 
-                                elapsedMin > 10 ? "bg-amber-500/10 text-amber-600 dark:text-amber-400" : 
-                                "bg-muted text-muted-foreground"
-                              }`}>
-                                <Timer className="h-2.5 w-2.5" />
-                                {elapsedMin}min
-                              </span>
-                            )}
-                           <div className="p-4">
-                             <OrderCard key={order.id} order={order} onStatusChange={(id, status) => { if (status === "preparando" || status === "pronto_para_entrega") setActiveTab(status as any); updateOrderStatus(id, status); }} getClientName={getClientName} paymentIcons={paymentIcons} paymentLabels={paymentLabels} isOwnDelivery={isOwnDelivery} hasLinkedDrivers={hasLinkedDrivers} driversLoading={driversLoading} toggleBatchOrder={toggleBatchOrder} batchSelected={batchSelected} getMainAction={getMainAction} />
-                             {order.status === "entregue" && (
-                               <div className="mt-2 flex items-center justify-between">
-                                 <span className="text-xs text-emerald-500 font-bold">Cliente confirmou entrega ✅</span>
-                                 {order.driver_id && (
-                                   <span className="text-[10px] text-muted-foreground">{getDriverName(order.driver_id)}</span>
-                                 )}
-                               </div>
+                           <div className="flex items-center gap-2 mr-2">
+                             {["pendente", "preparando", "pronto_para_entrega"].includes(order.status) && (
+                               <span className={`flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                                 isDelayed ? "bg-destructive/10 text-destructive" : 
+                                 elapsedMin > 10 ? "bg-amber-500/10 text-amber-600 dark:text-amber-400" : 
+                                 "bg-muted text-muted-foreground"
+                               }`}>
+                                 <Timer className="h-2.5 w-2.5" />
+                                 {elapsedMin}min
+                               </span>
                              )}
                            </div>
+                         </div>
+ 
+                         <div className="p-4">
+                           <OrderCard key={order.id} order={order} onStatusChange={(id, status) => { if (status === "preparando" || status === "pronto_para_entrega") setActiveTab(status as any); updateOrderStatus(id, status); }} getClientName={getClientName} paymentIcons={paymentIcons} paymentLabels={paymentLabels} isOwnDelivery={isOwnDelivery} hasLinkedDrivers={hasLinkedDrivers} driversLoading={driversLoading} toggleBatchOrder={toggleBatchOrder} batchSelected={batchSelected} getMainAction={getMainAction} />
+                           {order.status === "entregue" && (
+                             <div className="mt-2 flex items-center justify-between">
+                               <span className="text-xs text-emerald-500 font-bold">Cliente confirmou entrega ✅</span>
+                               {order.driver_id && (
+                                 <span className="text-[10px] text-muted-foreground">{getDriverName(order.driver_id)}</span>
+                               )}
+                             </div>
+                           )}
+                         </div>
 
                         {/* Collection Code */}
                         {(order.status === "pronto_para_entrega" || order.status === "saiu_entrega" || order.status === "em_transito") && (order as any).collection_code && !isOwnDelivery && (
