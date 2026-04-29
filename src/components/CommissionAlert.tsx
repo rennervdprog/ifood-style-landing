@@ -190,11 +190,14 @@ const CommissionAlert = ({ storeId, storeName, onGoToFinance }: CommissionAlertP
                   ? "⛔ Loja Suspensa — Comissão Pendente"
                   : "Comissão Pendente — Repasse Plataforma"}
               </h3>
-              <p className="text-[10px] text-muted-foreground mt-0.5">
-                {isBlocked
-                  ? "Sua loja foi suspensa por falta de pagamento da comissão. Pague para reativar."
-                  : "Você possui comissão pendente de vendas físicas (dinheiro/cartão). Efetue o repasse."}
-              </p>
+              <div className="text-[10px] text-muted-foreground mt-0.5 space-y-0.5">
+                <p>
+                  {isBlocked
+                    ? "Sua loja foi suspensa por falta de pagamento. Pague para reativar imediatamente."
+                    : "Você possui taxas e comissões pendentes de vendas físicas (dinheiro/cartão)."}
+                </p>
+                <p>O valor inclui a comissão sobre produtos e a taxa de entrega da plataforma.</p>
+              </div>
             </div>
           </div>
           {!isBlocked && !chargeResult && (

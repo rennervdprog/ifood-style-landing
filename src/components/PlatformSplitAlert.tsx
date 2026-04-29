@@ -90,9 +90,10 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
               <h3 className="font-bold text-sm text-foreground">
                 Repasse Pendente — Taxa Plataforma
               </h3>
-              <p className="text-[10px] text-muted-foreground mt-0.5">
-                Taxa de {formatBRL(splitPerOrder)} por pedido em dinheiro/cartão. Efetue o repasse via PIX.
-              </p>
+              <div className="text-[10px] text-muted-foreground mt-0.5 space-y-0.5">
+                <p>Taxa de {formatBRL(splitPerOrder)} por entrega + comissão (se houver) em pedidos físicos.</p>
+                <p>Efetue o repasse via PIX para manter sua conta regularizada.</p>
+              </div>
             </div>
           </div>
           {!pixData && (
@@ -113,9 +114,10 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
         {/* Info */}
         <div className="rounded-xl p-3 bg-blue-500/10 border border-blue-500/20 flex items-center gap-2">
           <Banknote className="h-4 w-4 text-blue-400" />
-          <p className="text-xs font-medium text-blue-400">
-            Cada pedido finalizado com pagamento físico (dinheiro/cartão) gera uma taxa de {formatBRL(splitPerOrder)} para a plataforma.
-          </p>
+          <div className="text-xs font-medium text-blue-400 space-y-1">
+            <p>Pedidos físicos (Dinheiro/Cartão) não descontam taxas automaticamente.</p>
+            <p>O valor acumulado inclui a taxa de entrega da plataforma ({formatBRL(splitPerOrder)}) e sua comissão por pedido.</p>
+          </div>
         </div>
 
         {/* QR Code result */}
