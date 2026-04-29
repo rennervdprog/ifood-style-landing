@@ -348,7 +348,7 @@ const AdminDashboard = () => {
   const { data: myProfile, isLoading: profileLoading } = useQuery({
     queryKey: ["my-profile-approval", user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("is_approved, role").eq("user_id", user!.id).maybeSingle();
+      const { data } = await supabase.from("profiles").select("*").eq("user_id", user!.id).maybeSingle();
       return data;
     },
     enabled: !!user,
@@ -2521,7 +2521,20 @@ const AdminDashboard = () => {
               )}
               {dashboardTab === "finance" && (
                 <div className="space-y-4">
-                  <AsaasSubaccountSetup storeId={store.id} />
+                  <AsaasSubaccountSetup 
+                    storeId={store.id} 
+                    initialData={{
+                      name: myProfile?.full_name,
+                      email: user?.email,
+                      cpfCnpj: myProfile?.document,
+                      phone: myProfile?.whatsapp_number || myProfile?.phone,
+                      address: store?.address_street,
+                      addressNumber: store?.address_number,
+                      complement: store?.address_complement,
+                      province: store?.address_neighborhood,
+                      postalCode: store?.address_cep
+                    }}
+                  />
                   {storePlan.hasCommission
                     ? <StoreFinancePanel storeId={store.id} storeName={store.name} />
                     : <StoreFinanceBasic storeId={store.id} storeName={store.name} />}
