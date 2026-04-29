@@ -24,6 +24,7 @@ import {
   AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip,
   ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar,
 } from "recharts";
+import PaymentStatement from "@/components/PaymentStatement";
 
 interface StoreFinanceBasicProps {
   storeId: string;
@@ -163,10 +164,19 @@ const StoreFinanceBasic = ({ storeId, storeName }: StoreFinanceBasicProps) => {
 
   const now = new Date();
   const dateRange = useMemo(() => {
+    const todayEnd = endOfDay(now);
     switch (dateFilter) {
-      case "today": return { start: startOfDay(now), end: endOfDay(now) };
-      case "week": return { start: startOfWeek(now, { weekStartsOn: 1 }), end: endOfWeek(now, { weekStartsOn: 1 }) };
-      case "month": return { start: startOfMonth(now), end: endOfMonth(now) };
+      case "today": return { start: startOfDay(now), end: todayEnd };
+      case "week": {
+        const start = new Date(now);
+        start.setDate(start.getDate() - 6);
+        return { start: startOfDay(start), end: todayEnd };
+      }
+      case "month": {
+        const start = new Date(now);
+        start.setDate(start.getDate() - 29);
+        return { start: startOfDay(start), end: todayEnd };
+      }
     }
   }, [dateFilter]);
 
@@ -177,8 +187,20 @@ const StoreFinanceBasic = ({ storeId, storeName }: StoreFinanceBasicProps) => {
         yesterday.setDate(yesterday.getDate() - 1);
         return { start: startOfDay(yesterday), end: endOfDay(yesterday) };
       }
-      case "week": return { start: subWeeks(dateRange.start, 1), end: subWeeks(dateRange.end, 1) };
-      case "month": return { start: subMonths(dateRange.start, 1), end: subMonths(dateRange.end, 1) };
+      case "week": {
+        const prevEnd = new Date(now);
+        prevEnd.setDate(prevEnd.getDate() - 7);
+        const prevStart = new Date(prevEnd);
+        prevStart.setDate(prevStart.getDate() - 6);
+        return { start: startOfDay(prevStart), end: endOfDay(prevEnd) };
+      }
+      case "month": {
+        const prevEnd = new Date(now);
+        prevEnd.setDate(prevEnd.getDate() - 30);
+        const prevStart = new Date(prevEnd);
+        prevStart.setDate(prevStart.getDate() - 29);
+        return { start: startOfDay(prevStart), end: endOfDay(prevEnd) };
+      }
     }
   }, [dateFilter, dateRange]);
 
@@ -476,6 +498,9 @@ const StoreFinanceBasic = ({ storeId, storeName }: StoreFinanceBasicProps) => {
 
   return (
     <div className="space-y-5">
+      {/* Extrato financeiro completo */}
+      <PaymentStatement storeId={storeId} storeName={storeName} />
+
       {/* Plan Info */}
       <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4">
         <div className="flex items-center gap-3">
