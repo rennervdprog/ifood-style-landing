@@ -71,20 +71,23 @@ export default function FinanceCenter({ storeId, storeName, hasCommission }: Fin
     );
   }
 
-  const isAsaasPending = store?.asaas_wallet_id && (
+  const isAsaasPending = store?.asaas_wallet_id && activationStatus && (
     activationStatus?.commercialInfo !== "APPROVED" || 
     activationStatus?.bankAccount !== "APPROVED" || 
     activationStatus?.document !== "APPROVED"
   );
 
+  // If it's a new subaccount just created but status is not yet available
+  const isJustCreated = store?.asaas_wallet_id && !activationStatus && !loadingStatus;
+
   return (
     <div className="space-y-6">
-      {isAsaasPending && (
-        <Alert className="border-amber-500/40 bg-amber-500/5">
-          <Clock className="h-5 w-5 text-amber-600" />
-          <AlertTitle className="text-amber-700 font-bold">Conta em Análise</AlertTitle>
+      {(isAsaasPending || isJustCreated) && (
+        <Alert className="border-amber-500/40 bg-amber-500/5 animate-in fade-in slide-in-from-top-4 duration-500">
+          <Clock className="h-5 w-5 text-amber-600 animate-pulse" />
+          <AlertTitle className="text-amber-700 font-bold">Sua conta ainda está em análise, aguarde</AlertTitle>
           <AlertDescription className="text-xs text-amber-600">
-            Sua conta Asaas ainda está em análise. Você já pode receber pagamentos, mas os saques serão liberados após a aprovação total. Aguarde a confirmação por e-mail.
+            Sua subconta Asaas está sendo processada. Você já pode receber pagamentos via PIX, mas a funcionalidade de saque será liberada assim que a análise for concluída.
           </AlertDescription>
         </Alert>
       )}
