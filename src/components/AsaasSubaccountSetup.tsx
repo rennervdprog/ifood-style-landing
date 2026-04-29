@@ -142,11 +142,11 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
       return;
     }
     if (personType === "FISICA" && cleanCpfCnpj.length !== 11) {
-      toast.error(`O campo CPF deve ter exatamente 11 dígitos (atualmente tem ${cleanCpfCnpj.length}).`);
+      toast.error(`O CPF deve ter 11 números. O sistema identificou ${cleanCpfCnpj.length} números.`);
       return;
     }
     if (personType === "JURIDICA" && cleanCpfCnpj.length !== 14) {
-      toast.error(`O campo CNPJ deve ter exatamente 14 dígitos (atualmente tem ${cleanCpfCnpj.length}).`);
+      toast.error(`O CNPJ deve ter 14 números. O sistema identificou ${cleanCpfCnpj.length} números.`);
       return;
     }
     if (documentIsCpf && !isValidCpf(cleanCpfCnpj)) {
