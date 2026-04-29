@@ -495,18 +495,25 @@ const comparisonRows = [
                       ))}
                     </ul>
 
-                    <Button
-                      onClick={handleCTA}
-                      className={`w-full rounded-2xl py-5 text-base font-semibold ${
-                        plan.highlight
-                          ? "shadow-lg shadow-primary/20"
-                          : ""
-                      }`}
-                      variant={plan.highlight ? "default" : "outline"}
-                    >
-                      {plan.price === "0" ? "Começar grátis" : "Escolher plano"}
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
+                     <Button
+                       onClick={isSoldOut ? undefined : handleCTA}
+                       disabled={isSoldOut}
+                       className={`w-full rounded-2xl py-5 text-base font-semibold ${
+                         plan.highlight
+                           ? "shadow-lg shadow-primary/20"
+                           : ""
+                       }`}
+                       variant={plan.highlight ? "default" : (isSoldOut ? "secondary" : "outline")}
+                     >
+                       {supporterLoading && isSupporter ? (
+                         <Loader2 className="h-4 w-4 animate-spin" />
+                       ) : (
+                         <>
+                           {isSoldOut ? "Esgotado" : (plan.price === "0" ? "Começar grátis" : "Escolher plano")}
+                           {!isSoldOut && <ArrowRight className="ml-2 h-4 w-4" />}
+                         </>
+                       )}
+                     </Button>
                   </CardContent>
                 </Card>
               );
