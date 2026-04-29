@@ -70,8 +70,8 @@ const steps = [
    { icon: CreditCard, title: "PIX Automático", desc: "Receba e confirme pagamentos instantaneamente sem conferir extratos." },
    { icon: Truck, title: "Gestão de Motoboy", desc: "Chame seus entregadores com alerta sonoro e rastreie o pedido em tempo real." },
    { icon: BarChart3, title: "Relatórios de Vendas", desc: "Saiba exatamente quanto vendeu, quais os produtos favoritos e seu lucro real." },
-   { icon: QrCode, title: "QR Code de Mesa", desc: "Autoatendimento moderno para seu balcão ou mesas, reduzindo filas e erros." },
-   { icon: Bell, title: "Alertas Sonoros", desc: "Notificações em tempo real para você preparar e enviar pedidos sem atrasos." },
+    { icon: CreditCard, title: "Pagamento Online", desc: "Receba via PIX com confirmação automática e instantânea no seu painel." },
+    { icon: Bell, title: "Alertas Sonoros", desc: "Notificações em tempo real para você preparar e enviar pedidos sem atrasos." },
    { icon: Package, title: "Impressão de Pedidos", desc: "Organize sua cozinha com a impressão automática de comandas e notas." },
    { icon: ShieldCheck, title: "Segurança Total", desc: "Plataforma estável e segura para processar seus pagamentos e dados." },
  ];
@@ -95,7 +95,7 @@ const plans = [
       description: "Ideal para quem está começando e quer testar sem risco. Pague apenas uma comissão de 6% sobre o que vender.",
     features: [
       "Cardápio digital ilimitado",
-      "QR Code exclusivo",
+      "Link exclusivo",
       "PIX automático",
       "Notificações em tempo real",
        "Gestão básica de pedidos",
