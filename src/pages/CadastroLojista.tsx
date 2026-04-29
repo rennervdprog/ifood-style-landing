@@ -102,9 +102,9 @@ const CadastroLojista = () => {
   const supporterRemaining = Math.max(0, 10 - supporterCount);
 
   const handleCepChange = (value: string) => {
-    const formatted = formatCep(value);
+    const digits = value.replace(/\D/g, "").slice(0, 8);
+    const formatted = formatCep(digits);
     setCep(formatted);
-    const digits = value.replace(/\D/g, "");
     if (digits.length === 8) {
       handleCepLookup(digits);
     }

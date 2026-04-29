@@ -9,6 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CheckCircle2, Loader2, Banknote, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+import { formatPixKeyDisplay, sanitizePixKeyForAsaas, validatePixKey } from "@/lib/pixFormat";
 
 interface Props {
   storeId: string;
@@ -81,12 +82,26 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
 
   const isCpf = form.cpfCnpj.replace(/\D/g, "").length === 11;
 
-  const update = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const update = (k: string, v: string) => {
+    let val = v;
+    if (k === "cpfCnpj") val = v.replace(/\D/g, "").slice(0, 14);
+    if (k === "phone") val = v.replace(/\D/g, "").slice(0, 11);
+    if (k === "postalCode") val = v.replace(/\D/g, "").slice(0, 8);
+    
+    setForm((f) => {
+      const next = { ...f, [k]: val };
+      if (k === "pixAddressKeyType") next.pixAddressKey = "";
+      return next;
+    });
+  };
 
   const submit = async () => {
-    // Quick client-side validation
-    if (!form.name || !form.email || !form.cpfCnpj || !form.phone || !form.address ||
-        !form.addressNumber || !form.province || !form.postalCode || !form.pixAddressKey) {
+    const cleanCpfCnpj = form.cpfCnpj.replace(/\D/g, "");
+    const cleanPhone = form.phone.replace(/\D/g, "");
+    const cleanCep = form.postalCode.replace(/\D/g, "");
+
+    if (!form.name || !form.email || cleanCpfCnpj.length < 11 || cleanPhone.length < 10 || !form.address ||
+        !form.addressNumber || !form.province || cleanCep.length !== 8 || !form.pixAddressKey) {
       toast.error("Preencha todos os campos obrigatórios.");
       return;
     }
@@ -94,6 +109,12 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
       toast.error("Data de nascimento é obrigatória para CPF.");
       return;
     }
+    const pixErr = validatePixKey(form.pixAddressKey, form.pixAddressKeyType.toLowerCase());
+    if (pixErr) {
+      toast.error(`Chave PIX: ${pixErr}`);
+      return;
+    }
+
     setSubmitting(true);
     try {
       const { data, error } = await supabase.functions.invoke("create-asaas-subaccount", {
@@ -101,17 +122,17 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
           store_id: storeId,
           name: form.name,
           email: form.email,
-          cpfCnpj: form.cpfCnpj,
+          cpfCnpj: cleanCpfCnpj,
           birthDate: isCpf ? form.birthDate : undefined,
           companyType: !isCpf ? form.companyType : undefined,
-          phone: form.phone,
-          mobilePhone: form.phone,
+          phone: cleanPhone,
+          mobilePhone: cleanPhone,
           address: form.address,
           addressNumber: form.addressNumber,
           complement: form.complement || undefined,
           province: form.province,
-          postalCode: form.postalCode,
-          pixAddressKey: form.pixAddressKey,
+          postalCode: cleanCep,
+          pixAddressKey: sanitizePixKeyForAsaas(form.pixAddressKey, form.pixAddressKeyType.toLowerCase()),
           pixAddressKeyType: form.pixAddressKeyType,
         },
       });
@@ -185,8 +206,9 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
             <Input type="email" value={form.email} onChange={(e) => update("email", e.target.value)} />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">CPF ou CNPJ *</Label>
-            <Input value={form.cpfCnpj} onChange={(e) => update("cpfCnpj", e.target.value)} placeholder="Só números" />
+            <Label className="text-xs">{isCpf ? "CPF *" : "CNPJ *"}</Label>
+            <Input value={formatPixKeyDisplay(form.cpfCnpj, isCpf ? "cpf" : "cnpj")} 
+                   onChange={(e) => update("cpfCnpj", e.target.value)} placeholder="000.000.000-00" />
           </div>
           {isCpf ? (
             <div className="space-y-1.5">
@@ -208,12 +230,12 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
             </div>
           )}
           <div className="space-y-1.5">
-            <Label className="text-xs">Telefone *</Label>
-            <Input value={form.phone} onChange={(e) => update("phone", e.target.value)} placeholder="(14) 99999-9999" />
+            <Label className="text-xs">Celular (WhatsApp) *</Label>
+            <Input value={formatPixKeyDisplay(form.phone, "phone")} onChange={(e) => update("phone", e.target.value)} placeholder="(14) 99999-9999" />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">CEP *</Label>
-            <Input value={form.postalCode} onChange={(e) => update("postalCode", e.target.value)} />
+            <Label className="text-xs">CEP (Só números) *</Label>
+            <Input value={form.postalCode} onChange={(e) => update("postalCode", e.target.value)} placeholder="00000000" maxLength={8} />
           </div>
           <div className="space-y-1.5 sm:col-span-2">
             <Label className="text-xs">Endereço *</Label>
@@ -253,8 +275,9 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Chave PIX *</Label>
-              <Input value={form.pixAddressKey} onChange={(e) => update("pixAddressKey", e.target.value)} />
+              <Label className="text-xs">Chave PIX ({form.pixAddressKeyType}) *</Label>
+              <Input value={formatPixKeyDisplay(form.pixAddressKey, form.pixAddressKeyType.toLowerCase())} 
+                     onChange={(e) => update("pixAddressKey", e.target.value)} />
             </div>
           </div>
         </div>
