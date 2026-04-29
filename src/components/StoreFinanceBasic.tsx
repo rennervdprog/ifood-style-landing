@@ -283,7 +283,7 @@ const StoreFinanceBasic = ({ storeId, storeName }: StoreFinanceBasicProps) => {
               </div>
               <p className="text-xs text-muted-foreground text-center">
                 PIX disponível a partir de <strong className="text-foreground">{formatBRL(minPayout)}</strong>
-                {" "}— faltam <strong className="text-destructive">{formatBRL({formatBRL((minPayout - pendingFee))})}</strong>
+                {" "}— faltam <strong className="text-destructive">{formatBRL((minPayout - pendingFee))})}</strong>
               </p>
             </div>
           ) : (
