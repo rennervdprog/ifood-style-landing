@@ -1453,7 +1453,7 @@ const AdminDashboard = () => {
               )}
 
                {/* ── KPI Cards ── */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
                 <GlanceCard
                   icon={ShoppingBag} label="Pedidos Pendentes" value={pendingCount}
                   subValue={preparingCount > 0 ? `+ ${preparingCount} em preparo` : "Sem pedidos novos"}
