@@ -269,31 +269,48 @@ const moreSheetItems: { key: DashboardTab; label: string; icon: React.ElementTyp
 // ── At-a-Glance Card Component ──
 const GlanceCard = ({ icon: Icon, label, value, subValue, color = "text-primary", trend, onClick, highlight }: {
   icon: React.ElementType; label: string; value: string | number; subValue?: string; color?: string; trend?: "up" | "down" | null; onClick?: () => void; highlight?: boolean;
-}) => (
-  <div onClick={onClick} className={`relative overflow-hidden rounded-2xl p-4 flex flex-col gap-2 transition-all duration-200 ${onClick ? "cursor-pointer active:scale-[0.97]" : ""} ${
-    highlight 
-      ? "bg-gradient-to-br from-primary/10 to-primary/5 border-2 border-primary/30 shadow-lg shadow-primary/5" 
-      : "bg-card border border-border hover:shadow-md hover:border-border/80"
-  }`}>
-    {highlight && <div className="absolute top-0 right-0 w-20 h-20 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />}
-    <div className="flex items-center justify-between">
-      <div className={`w-10 h-10 rounded-xl ${color.replace("text-", "bg-").replace("500", "500/15")} flex items-center justify-center`}>
-        <Icon className={`h-5 w-5 ${color}`} />
-      </div>
-      {trend && (
-        <div className={`flex items-center gap-0.5 text-xs font-bold px-2 py-1 rounded-full ${trend === "up" ? "text-emerald-600 bg-emerald-500/10" : "text-red-500 bg-red-500/10"}`}>
-          {trend === "up" ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-          {trend === "up" ? "↑" : "↓"}
+}) => {
+  const bgColor = color.includes("primary") ? "bg-primary/10" : color.replace("text-", "bg-").replace("500", "500/15");
+  
+  return (
+    <div onClick={onClick} className={`group relative overflow-hidden rounded-3xl p-5 flex flex-col gap-3 transition-all duration-300 ${onClick ? "cursor-pointer hover:-translate-y-1 active:scale-[0.97]" : ""} ${
+      highlight 
+        ? "bg-gradient-to-br from-primary/15 via-primary/5 to-background border-2 border-primary/30 shadow-xl shadow-primary/10" 
+        : "bg-card/50 backdrop-blur-sm border border-border/50 hover:bg-card hover:border-border hover:shadow-xl hover:shadow-foreground/5"
+    }`}>
+      {highlight && <div className="absolute -top-6 -right-6 w-24 h-24 bg-primary/10 rounded-full blur-2xl group-hover:bg-primary/20 transition-colors" />}
+      
+      <div className="flex items-center justify-between">
+        <div className={`w-12 h-12 rounded-2xl ${bgColor} flex items-center justify-center transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3`}>
+          <Icon className={`h-6 w-6 ${color}`} />
         </div>
-      )}
+        {trend && (
+          <div className={`flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full ${trend === "up" ? "text-emerald-500 bg-emerald-500/15" : "text-red-500 bg-red-500/15"}`}>
+            {trend === "up" ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+            {trend === "up" ? "Cresceu" : "Caiu"}
+          </div>
+        )}
+      </div>
+
+      <div>
+        <div className="flex items-baseline gap-1">
+          <p className="text-3xl font-black text-foreground tracking-tighter leading-none">{value}</p>
+          {highlight && <span className="relative flex h-2 w-2 mb-1">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+          </span>}
+        </div>
+        <p className="text-[11px] font-bold text-muted-foreground/80 uppercase tracking-widest mt-2">{label}</p>
+        {subValue && (
+          <div className="mt-1 flex items-center gap-1.5">
+            <div className="h-1 w-1 rounded-full bg-border" />
+            <p className="text-[10px] text-muted-foreground/70 font-medium">{subValue}</p>
+          </div>
+        )}
+      </div>
     </div>
-    <div>
-      <p className="text-2xl font-black text-foreground tracking-tight">{value}</p>
-      <p className="text-xs text-muted-foreground mt-0.5 font-medium">{label}</p>
-      {subValue && <p className="text-[10px] text-muted-foreground/70 mt-0.5 hidden sm:block">{subValue}</p>}
-    </div>
-  </div>
-);
+  );
+};
 
 // ── Client Filter type ──
 type ClientFilter = "all" | "loyal" | "inactive" | "location";
@@ -1133,7 +1150,7 @@ const AdminDashboard = () => {
 
       {/* ── MORE BOTTOM SHEET (mobile) ── */}
       {showMoreSheet && (
-        <div className="fixed inset-x-0 bottom-0 z-[70] lg:hidden animate-fade-in">
+        <div className="fixed inset-x-0 bottom-0 z-[70] lg:hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="bg-card border-t border-border rounded-t-2xl pb-safe">
             <div className="flex justify-center pt-3 pb-2">
               <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
@@ -1436,7 +1453,7 @@ const AdminDashboard = () => {
               )}
 
                {/* ── KPI Cards ── */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
                 <GlanceCard
                   icon={ShoppingBag} label="Pedidos Pendentes" value={pendingCount}
                   subValue={preparingCount > 0 ? `+ ${preparingCount} em preparo` : "Sem pedidos novos"}
@@ -2027,7 +2044,7 @@ const AdminDashboard = () => {
                     return (
                       <div key={order.id}
                         style={{ animationDelay: `${index * 50}ms` }}
-                        className={`bg-card rounded-2xl overflow-hidden border transition-all duration-300 animate-fade-in ${
+                        className={`bg-card rounded-2xl overflow-hidden border transition-all duration-300 animate-in fade-in slide-in-from-bottom-4 duration-500 ${
                           batchSelected.has(order.id) ? "border-blue-500 ring-2 ring-blue-500/30" :
                           isDelayed ? "border-destructive/50 shadow-[0_0_12px_-4px] shadow-destructive/20" :
                           order.status === "pendente" ? "border-amber-400/40 shadow-amber-400/5 animate-pulse-border" : "border-border"
@@ -2140,7 +2157,7 @@ const AdminDashboard = () => {
                                 {isAddressExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                               </button>
                               {isAddressExpanded && (
-                                <div className="mt-1.5 bg-muted/30 rounded-lg p-2.5 text-xs text-muted-foreground space-y-0.5 animate-fade-in">
+                                <div className="mt-1.5 bg-muted/30 rounded-lg p-2.5 text-xs text-muted-foreground space-y-0.5 animate-in fade-in slide-in-from-bottom-4 duration-500">
                                   <p>{order.address_details}</p>
                                   <p className="text-muted-foreground/70">Taxa entrega: {formatBRL(Number(order.delivery_fee))}</p>
                                 </div>
@@ -2393,7 +2410,7 @@ const AdminDashboard = () => {
                     );
                   })
                 ) : (
-                  <div className="flex flex-col items-center justify-center py-24 text-center animate-fade-in">
+                  <div className="flex flex-col items-center justify-center py-24 text-center animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div className={`w-20 h-20 rounded-3xl flex items-center justify-center mb-5 ${
                       activeTab === "pendente" ? "bg-amber-100 dark:bg-amber-500/10" :
                       activeTab === "preparando" ? "bg-orange-100 dark:bg-orange-500/10" :
