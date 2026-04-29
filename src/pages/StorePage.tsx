@@ -776,7 +776,7 @@ const StorePage = () => {
       })()}
 
       {/* ===== CATEGORY NAV ===== */}
-      {sections && sections.length > 0 && !filteredProducts && (
+      {visibleSections.length > 0 && !filteredProducts && (
         <div
           ref={navRef}
           className="sticky top-0 z-30 bg-background/95 backdrop-blur-md border-b border-border mt-4 shadow-sm"
