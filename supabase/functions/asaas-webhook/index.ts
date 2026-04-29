@@ -388,13 +388,16 @@ Deno.serve(async (req) => {
                     }).eq("id", externalReference);
                   } else {
                     console.error(`Auto-transfer failed for ${store.name}:`, JSON.stringify(transferData));
+                    // Release the lock so a future retry / manual replay can re-attempt
                     await supabase.from("orders").update({
+                      store_payout_id: null,
                       store_payout_error: JSON.stringify(transferData).substring(0, 500),
                     }).eq("id", externalReference);
                   }
                 } catch (transferErr) {
                   console.error(`Auto-transfer exception for ${store.name}:`, transferErr);
                   await supabase.from("orders").update({
+                    store_payout_id: null,
                     store_payout_error: String(transferErr).substring(0, 500),
                   }).eq("id", externalReference);
                 }
@@ -430,6 +433,11 @@ Deno.serve(async (req) => {
             }
           } else {
             console.warn(`Store ${order.store_id} owner has no PIX key, skipping auto-transfer`);
+            // Release the lock — no transfer attempted, so future runs can retry once PIX is configured
+            await supabase.from("orders").update({
+              store_payout_id: null,
+              store_payout_error: "owner_pix_key_missing",
+            }).eq("id", externalReference);
           }
         }
       } else {
