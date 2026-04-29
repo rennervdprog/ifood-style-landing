@@ -1839,11 +1839,23 @@ const AdminDashboard = () => {
                         <span className={`text-xl font-black ${preparingCount > 0 ? "text-orange-600 dark:text-orange-400" : "text-muted-foreground"}`}>{preparingCount}</span>
                         <span className="text-[9px] font-bold text-muted-foreground mt-0.5">Preparo</span>
                       </button>
-                      <button onClick={() => { setActiveTab("pronto_para_entrega"); setBatchSelected(new Set()); }}
-                        className={`flex flex-col items-center p-2.5 rounded-xl border transition-all ${
-                                <OrderCard key={order.id} order={order} showActions={false} />
-                  </div>
-                ) : null;
+                       <button onClick={() => { setActiveTab("pronto_para_entrega"); setBatchSelected(new Set()); }}
+                         className={`flex flex-col items-center p-2.5 rounded-xl border transition-all ${
+                           readyCount > 0 ? "bg-blue-50 dark:bg-blue-500/10 border-blue-300 dark:border-blue-500/30 shadow-sm" : "bg-card border-border"
+                         }`}>
+                         <span className={`text-xl font-black ${readyCount > 0 ? "text-blue-600 dark:text-blue-400" : "text-muted-foreground"}`}>{readyCount}</span>
+                         <span className="text-[9px] font-bold text-muted-foreground mt-0.5">Prontos</span>
+                       </button>
+                       <button onClick={() => { setActiveTab("delivery"); setBatchSelected(new Set()); }}
+                         className={`flex flex-col items-center p-2.5 rounded-xl border transition-all ${
+                           deliveryCount > 0 ? "bg-indigo-50 dark:bg-indigo-500/10 border-indigo-300 dark:border-indigo-500/30 shadow-sm" : "bg-card border-border"
+                         }`}>
+                         <span className={`text-xl font-black ${deliveryCount > 0 ? "text-indigo-600 dark:text-indigo-400" : "text-muted-foreground"}`}>{deliveryCount}</span>
+                         <span className="text-[9px] font-bold text-muted-foreground mt-0.5">Entrega</span>
+                       </button>
+                     </div>
+                   </div>
+                 ) : null;
               })()}
 
               {/* Order status tabs */}
@@ -2009,13 +2021,17 @@ const AdminDashboard = () => {
                                 {elapsedMin}min
                               </span>
                             )}
-                    <OrderCard key={order.id} order={order} onStatusChange={(id, status) => { if (status === "preparando" || status === "pronto_para_entrega") setActiveTab(status as any); updateOrderStatus(id, status); }} getClientName={getClientName} paymentIcons={paymentIcons} paymentLabels={paymentLabels} isOwnDelivery={isOwnDelivery} hasLinkedDrivers={hasLinkedDrivers} driversLoading={driversLoading} toggleBatchOrder={toggleBatchOrder} batchSelected={batchSelected} getMainAction={getMainAction} />
-                            <span className="text-xs text-emerald-500 font-bold">Cliente confirmou entrega ✅</span>
-                            {order.driver_id && (
-                              <span className="ml-auto text-[10px] text-muted-foreground">{getDriverName(order.driver_id)}</span>
-                            )}
-                          </div>
-                        )}
+                           <div className="p-4">
+                             <OrderCard key={order.id} order={order} onStatusChange={(id, status) => { if (status === "preparando" || status === "pronto_para_entrega") setActiveTab(status as any); updateOrderStatus(id, status); }} getClientName={getClientName} paymentIcons={paymentIcons} paymentLabels={paymentLabels} isOwnDelivery={isOwnDelivery} hasLinkedDrivers={hasLinkedDrivers} driversLoading={driversLoading} toggleBatchOrder={toggleBatchOrder} batchSelected={batchSelected} getMainAction={getMainAction} />
+                             {order.status === "entregue" && (
+                               <div className="mt-2 flex items-center justify-between">
+                                 <span className="text-xs text-emerald-500 font-bold">Cliente confirmou entrega ✅</span>
+                                 {order.driver_id && (
+                                   <span className="text-[10px] text-muted-foreground">{getDriverName(order.driver_id)}</span>
+                                 )}
+                               </div>
+                             )}
+                           </div>
 
                         {/* Collection Code */}
                         {(order.status === "pronto_para_entrega" || order.status === "saiu_entrega" || order.status === "em_transito") && (order as any).collection_code && !isOwnDelivery && (
