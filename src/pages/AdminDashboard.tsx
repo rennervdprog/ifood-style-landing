@@ -149,13 +149,13 @@ const AdminDashboard = () => {
            orderId: order.id,
            storeName: store.name,
            storeId: store.id,
-           clientId: order.user_id,
-           clientPhone: order.customer_phone || "",
-           clientName: order.customer_name || "Cliente",
+           clientId: order.client_id,
+           clientPhone: (order as any).client_phone || "",
+           clientName: (order as any).client_name || "Cliente",
            totalPrice: Number(order.total_price),
-           addressDetails: order.delivery_address,
+           addressDetails: order.address_details,
            paymentMethod: order.payment_method
-         });
+         } as any);
        }
      } catch (err) {
        toast.error("Erro ao atualizar status");
