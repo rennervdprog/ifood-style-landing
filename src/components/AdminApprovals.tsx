@@ -137,6 +137,12 @@ const AdminApprovals = () => {
       if (error) { toast.error(error.message); return; }
 
       if (approve) {
+        await supabase.rpc("log_admin_action", {
+          _action: "approve_partner",
+          _target_type: profile.role,
+          _target_id: profile.user_id,
+          _details: { full_name: profile.full_name }
+        });
         try {
           const { data: freshProfile } = await supabase.from("profiles").select("*").eq("user_id", profile.user_id).single();
           const { error: syncError } = await supabase.functions.invoke("sync-to-external", {
@@ -162,6 +168,12 @@ const AdminApprovals = () => {
           toast.info("WhatsApp aberto com mensagem de aprovação!");
         }
       } else {
+        await supabase.rpc("log_admin_action", {
+          _action: "reject_partner",
+          _target_type: profile.role,
+          _target_id: profile.user_id,
+          _details: { full_name: profile.full_name }
+        });
         toast.success("Parceiro recusado.");
       }
       queryClient.invalidateQueries({ queryKey: ["admin-pending-profiles"] });

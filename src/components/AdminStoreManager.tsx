@@ -124,6 +124,15 @@ const AdminStoreManager = () => {
         .update({ commission_rate: planForm.commission_rate })
         .eq("id", editingPlan);
 
+      await supabase.rpc("log_admin_action", {
+        _action: "change_plan",
+        _target_type: "store",
+        _target_id: editingPlan,
+        _details: {
+          old: existing ? { plan_type: existing.plan_type, monthly_fee: existing.monthly_fee, commission_rate: existing.commission_rate } : null,
+          new: planForm
+        }
+      });
       toast.success("Plano atualizado com sucesso!");
       queryClient.invalidateQueries({ queryKey: ["admin-store-plans"] });
       queryClient.invalidateQueries({ queryKey: ["admin-stores-list"] });

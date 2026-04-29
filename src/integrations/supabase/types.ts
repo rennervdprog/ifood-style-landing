@@ -93,6 +93,36 @@ export type Database = {
           },
         ]
       }
+      admin_logs: {
+        Row: {
+          action: string
+          admin_user_id: string
+          created_at: string
+          details: Json | null
+          id: string
+          target_id: string | null
+          target_type: string
+        }
+        Insert: {
+          action: string
+          admin_user_id: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          target_id?: string | null
+          target_type: string
+        }
+        Update: {
+          action?: string
+          admin_user_id?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          target_id?: string | null
+          target_type?: string
+        }
+        Relationships: []
+      }
       admin_settings: {
         Row: {
           id: string
@@ -3111,6 +3141,15 @@ export type Database = {
         Returns: boolean
       }
       is_test_store: { Args: { _store_id: string }; Returns: boolean }
+      log_admin_action: {
+        Args: {
+          _action: string
+          _details?: Json
+          _target_id: string
+          _target_type: string
+        }
+        Returns: string
+      }
       mark_all_store_driver_earnings_paid: {
         Args: { _driver_user_id: string; _store_id: string }
         Returns: number

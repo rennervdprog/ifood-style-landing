@@ -21,16 +21,17 @@ import { toast } from "sonner";
 import {
   ArrowLeft, DollarSign, ShoppingBag, TrendingUp, Clock,
   Store, Copy, AlertTriangle, Users, Bike, Wallet, CheckCircle2, Banknote, XCircle, Bell, Trash2, QrCode, Loader2, ArrowUpRight, ArrowDownRight, Settings,
-  LayoutDashboard, Shield, Ticket, RefreshCw, Truck, Menu, X, MapPin, Eye, Scale, Search, FileText, Mail, Phone, User, Download, Calendar, CreditCard, Receipt, ChevronDown, ChevronUp, Percent, Crown, Handshake, FlaskConical, Link as LinkIcon, Megaphone
+   LayoutDashboard, Shield, Ticket, RefreshCw, Truck, Menu, X, MapPin, Eye, Scale, Search, FileText, Mail, Phone, User, Download, Calendar, CreditCard, Receipt, ChevronDown, ChevronUp, Percent, Crown, Handshake, FlaskConical, Link as LinkIcon, Megaphone
 } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
+ import { Switch } from "@/components/ui/switch";
+ import { Badge } from "@/components/ui/badge";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
 } from "recharts";
 import { addMoney, multiplyMoney, subtractMoney, sumMoney, formatBRL } from "@/lib/utils";
 
 type DateFilter = "today" | "yesterday" | "week";
-type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamentos" | "saques" | "sync" | "coupons" | "entrega" | "cidades" | "juridico" | "planos" | "moderadores" | "socios" | "test_finance" | "links" | "broadcast";
+ type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamentos" | "saques" | "sync" | "coupons" | "entrega" | "cidades" | "juridico" | "planos" | "moderadores" | "socios" | "test_finance" | "links" | "broadcast" | "logs";
 
 const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; group: string }[] = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, group: "Principal" },
@@ -50,6 +51,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
   { key: "links", label: "Página /links", icon: LinkIcon, group: "Sistema" },
   { key: "broadcast", label: "Notificações", icon: Megaphone, group: "Sistema" },
   { key: "sync", label: "Sincronizar", icon: RefreshCw, group: "Sistema" },
+  { key: "logs", label: "Logs", icon: FileText, group: "Sistema" },
 ];
 
 const SuperAdminDashboard = () => {
@@ -150,6 +152,20 @@ const SuperAdminDashboard = () => {
       return data;
     },
     enabled: isAdmin && activeTab === "financeiro",
+  });
+
+  const { data: adminLogs, isLoading: logsLoading } = useQuery({
+    queryKey: ["admin-logs"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("admin_logs")
+        .select("*, profiles:admin_user_id(full_name)")
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: isAdmin && activeTab === "logs",
   });
 
   const { data: stores } = useQuery({
@@ -815,6 +831,57 @@ const SuperAdminDashboard = () => {
             {activeTab === "test_finance" && <TestStoreFinancePanel />}
             {activeTab === "links" && <AppLinksManager />}
             {activeTab === "broadcast" && <AdminBroadcastPush />}
+            {activeTab === "logs" && (
+              <div className="space-y-4">
+                <div className="bg-card rounded-xl border border-border overflow-hidden">
+                  <div className="p-4 border-b border-border bg-muted/30">
+                    <h3 className="font-bold flex items-center gap-2">
+                      <FileText className="h-4 w-4" /> Histórico de Ações Administrativas
+                    </h3>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm">
+                      <thead className="bg-muted/50 text-muted-foreground uppercase text-[10px] font-bold">
+                        <tr>
+                          <th className="px-4 py-3">Data</th>
+                          <th className="px-4 py-3">Admin</th>
+                          <th className="px-4 py-3">Ação</th>
+                          <th className="px-4 py-3">Alvo</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {logsLoading ? (
+                          <tr><td colSpan={4} className="px-4 py-8 text-center"><Loader2 className="h-5 w-5 animate-spin mx-auto text-muted-foreground" /></td></tr>
+                        ) : adminLogs?.map((log) => (
+                          <tr key={log.id} className="hover:bg-muted/30 transition-colors">
+                            <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
+                              {new Date(log.created_at).toLocaleString('pt-BR')}
+                            </td>
+                            <td className="px-4 py-3 font-medium">
+                              {log.profiles?.full_name || "Admin"}
+                            </td>
+                            <td className="px-4 py-3">
+                              <Badge variant="outline" className="text-[10px] font-bold uppercase">
+                                {log.action}
+                              </Badge>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex flex-col">
+                                <span className="text-xs font-bold capitalize">{log.target_type}</span>
+                                <span className="text-[10px] text-muted-foreground font-mono">{log.target_id?.substring(0, 8)}...</span>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                        {!logsLoading && (!adminLogs || adminLogs.length === 0) && (
+                          <tr><td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">Nenhum log encontrado.</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
             {activeTab === "saques" && (
               <SaquesTab
                 withdrawalRequests={withdrawalRequests}
