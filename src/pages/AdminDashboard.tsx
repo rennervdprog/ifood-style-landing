@@ -243,22 +243,25 @@ const AdminDashboard = () => {
               <div className="p-6">
                 <h1 className="text-xl font-black text-primary italic">ItaSuper Painel</h1>
               </div>
-              <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
-                {[
-                  { key: "dashboard", label: "Visão Geral", icon: LayoutDashboard },
-                  { key: "orders", label: "Pedidos", icon: ListOrdered },
-                  { key: "menu", label: "Cardápio", icon: UtensilsCrossed },
-                  { key: "clients", label: "Clientes", icon: Star },
-                  { key: "finance", label: "Financeiro", icon: Banknote },
-                  { key: "settings", label: "Configurações", icon: Settings },
-                ].map(item => (
-                  <button key={item.key} onClick={() => handleTabChange(item.key as any)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-colors ${dashboardTab === item.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}>
-                    <item.icon className="h-5 w-5" />
-                    {item.label}
-                  </button>
-                ))}
-              </nav>
+               <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
+                 {sidebarItems.map(item => (
+                   <button 
+                     key={item.id} 
+                     onClick={() => handleTabChange(item.id as any)}
+                     className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-colors ${dashboardTab === item.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
+                   >
+                     <div className="flex items-center gap-3">
+                       <item.icon className="h-5 w-5" />
+                       {item.label}
+                     </div>
+                     {item.id === "refunds" && pendingRefundsCount > 0 && (
+                       <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] text-white animate-pulse">
+                         {pendingRefundsCount}
+                       </span>
+                     )}
+                   </button>
+                 ))}
+               </nav>
             </div>
           </aside>
 
@@ -285,23 +288,57 @@ const AdminDashboard = () => {
               </Suspense>
             </div>
 
-            {/* Bottom Nav (Mobile) */}
-            <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border lg:hidden pb-safe">
-              <div className="flex items-center justify-around h-16">
-                {[
-                  { key: "dashboard", label: "Início", icon: LayoutDashboard },
-                  { key: "orders", label: "Pedidos", icon: ListOrdered },
-                  { key: "menu", label: "Menu", icon: UtensilsCrossed },
-                  { key: "settings", label: "Ajustes", icon: Settings },
-                ].map(tab => (
-                  <button key={tab.key} onClick={() => handleTabChange(tab.key as any)}
-                    className={`flex flex-col items-center gap-1 px-4 ${dashboardTab === tab.key ? "text-primary" : "text-muted-foreground"}`}>
-                    <tab.icon className="h-5 w-5" />
-                    <span className="text-[10px] font-bold">{tab.label}</span>
-                  </button>
-                ))}
-              </div>
-            </nav>
+             {/* Bottom Nav (Mobile) */}
+             <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border lg:hidden pb-safe">
+               <div className="flex items-center justify-around h-16">
+                 {bottomNavItems.map(tab => (
+                   <button key={tab.id} onClick={() => handleTabChange(tab.id as any)}
+                     className={`flex flex-col items-center gap-1 px-4 ${dashboardTab === tab.id ? "text-primary" : "text-muted-foreground"}`}>
+                     <tab.icon className="h-5 w-5" />
+                     <span className="text-[10px] font-bold">{tab.label}</span>
+                   </button>
+                 ))}
+                 
+                 {moreItems.length > 0 && (
+                   <button onClick={() => setShowMoreSheet(true)}
+                     className={`flex flex-col items-center gap-1 px-4 relative ${moreItems.some(i => i.id === dashboardTab) ? "text-primary" : "text-muted-foreground"}`}>
+                     <div className="relative">
+                       <MoreHorizontal className="h-5 w-5" />
+                       {pendingRefundsCount > 0 && (
+                         <span className="absolute -top-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full bg-red-500 animate-pulse" />
+                       )}
+                     </div>
+                     <span className="text-[10px] font-bold">Mais</span>
+                   </button>
+                 )}
+               </div>
+             </nav>
+ 
+             {/* More Sheet */}
+             <Sheet open={showMoreSheet} onOpenChange={setShowMoreSheet}>
+               <SheetContent side="bottom" className="rounded-t-3xl max-h-[80vh] overflow-y-auto">
+                 <SheetHeader className="mb-4">
+                   <SheetTitle className="text-left font-black italic text-primary">Mais Opções</SheetTitle>
+                 </SheetHeader>
+                 <div className="grid grid-cols-3 gap-4 pb-8">
+                   {moreItems.map(item => (
+                     <button 
+                       key={item.id} 
+                       onClick={() => handleTabChange(item.id as any)}
+                       className={`flex flex-col items-center gap-2 p-3 rounded-2xl transition-colors relative ${dashboardTab === item.id ? "bg-primary/10 text-primary" : "bg-accent/50 text-muted-foreground"}`}
+                     >
+                       <item.icon className="h-6 w-6" />
+                       <span className="text-[10px] font-bold text-center">{item.label}</span>
+                       {item.id === "refunds" && pendingRefundsCount > 0 && (
+                         <span className="absolute top-2 right-4 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[8px] text-white">
+                           {pendingRefundsCount}
+                         </span>
+                       )}
+                     </button>
+                   ))}
+                 </div>
+               </SheetContent>
+             </Sheet>
           </main>
         </div>
       </TrialExpiredGuard>
