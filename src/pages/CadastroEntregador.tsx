@@ -237,10 +237,10 @@ const CadastroEntregador = () => {
             <CheckCircle className="h-10 w-10 text-green-500" />
           </div>
           <div>
-            <h2 className="text-xl font-black text-foreground">Cadastro Enviado! 🎉</h2>
-            <p className="text-sm text-muted-foreground mt-2">
-              Seu cadastro foi enviado e está em análise. Seus documentos serão verificados pelo administrador.
-            </p>
+             <h2 className="text-xl font-black text-foreground">Cadastro Enviado! 🎉</h2>
+             <p className="text-sm text-muted-foreground mt-2">
+               Sua conta ainda está em análise aguarde. Seus documentos serão verificados pelo administrador.
+             </p>
           </div>
           <div className="bg-primary/5 border border-primary/10 rounded-2xl p-4 flex items-start gap-3">
             <Mail className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
