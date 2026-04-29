@@ -73,7 +73,7 @@ const plans = [
     highlight: false,
     badge: null,
     commission: "6% + R$2",
-    commissionLabel: "por entrega",
+    commissionLabel: "por entrega (pago pelo cliente)",
     color: "from-emerald-500 to-emerald-600",
     lightBg: "bg-emerald-50",
     textColor: "text-emerald-600",
@@ -84,7 +84,7 @@ const plans = [
       { text: "WhatsApp de atualização", included: true },
       { text: "Gestão de pedidos básica", included: true },
       { text: "PIX automático", included: true },
-      { text: "Taxa entrega plataforma: R$ 2,00", included: true },
+      { text: "Taxa entrega plataforma: R$ 2,00 (pago pelo cliente)", included: true },
       { text: "Relatórios avançados", included: false },
       { text: "Emissão de Notas", included: false },
     ],
@@ -100,7 +100,7 @@ const plans = [
     highlight: false,
     badge: null,
     commission: "2,5% + R$2",
-    commissionLabel: "por entrega",
+    commissionLabel: "por entrega (pago pelo cliente)",
     color: "from-blue-500 to-blue-600",
     lightBg: "bg-blue-50",
     textColor: "text-blue-600",
@@ -142,7 +142,7 @@ const plans = [
     ],
     extraFees: [
       { label: "Taxa PIX", value: "R$ 1,99/transação" },
-      { label: "Taxa entrega plataforma", value: "R$ 2,00 (pago pelo cliente)" },
+      { label: "Taxa entrega plataforma", value: "R$ 2,00 (pago pelo cliente somado à sua taxa)" },
     ],
     extraNote: "A taxa de entrega é somada à definida por você. Ex: Lojista define R$ 3, no cliente aparece R$ 5 (R$ 3 seu + R$ 2 plataforma).",
   },
@@ -170,7 +170,7 @@ const plans = [
     ],
     extraFees: [
       { label: "Taxa PIX", value: "R$ 1,99/transação" },
-      { label: "Taxa entrega plataforma", value: "R$ 2,00 (pago pelo cliente)" },
+      { label: "Taxa entrega plataforma", value: "R$ 2,00 (pago pelo cliente somado à sua taxa)" },
     ],
     extraNote: "A taxa de entrega é somada à definida por você. Ex: Lojista define R$ 3, no cliente aparece R$ 5 (R$ 3 seu + R$ 2 plataforma).",
   },
@@ -211,7 +211,7 @@ const faqs = [
   { q: "Preciso baixar algum aplicativo?", a: "Não! Você gerencia tudo pelo navegador do celular ou computador. Seus clientes também pedem direto pelo link, sem instalar nada." },
   { q: "Como funciona o PIX automático?", a: "Quando o cliente escolhe PIX, geramos um QR Code automaticamente. Assim que ele paga, a confirmação é instantânea — sem precisar conferir extrato." },
   { q: "Posso trocar de plano depois?", a: "Sim! Você pode migrar entre planos a qualquer momento. Basta solicitar pelo painel da loja e o admin aprova a troca." },
-  { q: "O plano Essencial cobra alguma comissão?", a: "Não! Zero comissão. Você fica com 100% do pedido. Há apenas uma taxa PIX fixa de R$ 1,99 por transação e R$ 2,00 por entrega via plataforma." },
+  { q: "O plano Essencial cobra alguma comissão?", a: "Não! Zero comissão. Você fica com 100% do pedido. Há apenas uma taxa PIX fixa de R$ 1,99 por transação e R$ 2,00 por entrega via plataforma (valor pago pelo cliente somado à sua taxa)." },
   { q: "Como recebo os pedidos?", a: "Você recebe notificação sonora e push no celular em tempo real. O painel mostra todos os pedidos organizados para você gerenciar." },
 ];
 
@@ -676,7 +676,7 @@ function ROICalculator() {
 
   const revenue = orders * ticket;
   const commissionCost = revenue * 0.06;
-  const fixedCost = 180 + orders * 2 + orders * 1; // R$180 + R$2 delivery + R$1 PIX per order
+  const fixedCost = 180 + orders * 2 + orders * 1.99; // R$180 + R$2 delivery + R$1.99 PIX per order
   const savings = commissionCost - fixedCost;
 
   return (
