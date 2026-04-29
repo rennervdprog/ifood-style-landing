@@ -187,16 +187,29 @@ async function confirmAndSplit(supabase: any, orderId: string, paymentId: string
             } else {
               console.error(`[confirm-order-payment] split failed:`, JSON.stringify(tData));
               await supabase.from("orders").update({
+                store_payout_id: null,
                 store_payout_error: JSON.stringify(tData).substring(0, 500),
               }).eq("id", orderId);
             }
           } catch (e) {
             console.error("[confirm-order-payment] split exception:", e);
             await supabase.from("orders").update({
+              store_payout_id: null,
               store_payout_error: String(e).substring(0, 500),
             }).eq("id", orderId);
           }
+        } else {
+          // No API key — release lock for later retry
+          await supabase.from("orders").update({
+            store_payout_id: null,
+            store_payout_error: "asaas_api_key_missing",
+          }).eq("id", orderId);
         }
+      } else {
+        // Nothing to transfer — release the lock
+        await supabase.from("orders").update({
+          store_payout_id: null,
+        }).eq("id", orderId);
       }
 
       if (commissionAmount > 0) {
@@ -222,6 +235,10 @@ async function confirmAndSplit(supabase: any, orderId: string, paymentId: string
       }
     } else {
       console.warn(`[confirm-order-payment] Store ${order.store_id} owner has no PIX key — split skipped`);
+      await supabase.from("orders").update({
+        store_payout_id: null,
+        store_payout_error: "owner_pix_key_missing",
+      }).eq("id", orderId);
     }
   }
 
