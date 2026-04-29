@@ -1548,10 +1548,12 @@ const AdminDashboard = () => {
                       {delayedOrders.map((order: any) => {
                         const elapsedMin = Math.floor((Date.now() - new Date(order.created_at).getTime()) / 60000);
                         const sc = statusColors[order.status] || statusColors.pendente;
-                        return (
-                          <OrderCard key={order.id} order={order} onStatusChange={(id, status) => { setDashboardTab("orders"); setActiveTab(status as OrderTabKey); updateOrderStatus(id, status); }} getClientName={getClientName} />
-                    </div>
-                  )}
+                         return (
+                           <OrderCard key={order.id} order={order} onStatusChange={(id, status) => { setDashboardTab("orders"); setActiveTab(status as OrderTabKey); updateOrderStatus(id, status); }} getClientName={getClientName} />
+                         );
+                       })}
+                     </div>
+                   )}
                 </div>
               )}
 
@@ -1567,12 +1569,9 @@ const AdminDashboard = () => {
                     <span className="bg-amber-500 text-white text-[11px] font-black px-2 py-0.5 rounded-full">{pendingCount}</span>
                   </div>
                   <div className="space-y-3">
-                    {orders?.filter(o => o.status === "pendente").slice(0, 5).map((order: any) => (
-                      <OrderCard key={order.id} order={order} onStatusChange={(id, status) => { setActiveTab("preparando"); updateOrderStatus(id, status); }} getClientName={getClientName} paymentIcons={paymentIcons} paymentLabels={paymentLabels} getMainAction={getMainAction} />
-                    ))}
-                        </button>
-                      </div>
-                    ))}
+                     {orders?.filter(o => o.status === "pendente").slice(0, 5).map((order: any) => (
+                       <OrderCard key={order.id} order={order} onStatusChange={(id, status) => { setActiveTab("preparando"); updateOrderStatus(id, status); }} getClientName={getClientName} paymentIcons={paymentIcons} paymentLabels={paymentLabels} getMainAction={getMainAction} />
+                     ))}
                   </div>
                 </div>
               )}
@@ -1648,9 +1647,22 @@ const AdminDashboard = () => {
                         </div>
                         <p className="text-sm font-black text-emerald-500">{formatBRL(client.totalSpent)}</p>
                       </div>
-                    ))}
-                          <OrderCard key={order.id} order={order} showActions={false} onStatusChange={() => { setDashboardTab("orders"); setActiveTab(order.status as OrderStatus); }} getClientName={getClientName} />
-                    <Store className="h-12 w-12 text-muted-foreground/50" />
+                     ))}
+                   </div>
+                 </div>
+               )}
+ 
+               {/* ── Empty State ── */}
+               {orders?.filter(o => {
+                 const date = new Date(o.created_at);
+                 const today = new Date();
+                 return date.getDate() === today.getDate() && 
+                        date.getMonth() === today.getMonth() && 
+                        date.getFullYear() === today.getFullYear();
+               }).length === 0 && (
+                 <div className="flex flex-col items-center justify-center py-12 px-4 text-center bg-card border border-border rounded-3xl">
+                   <div className="w-20 h-20 bg-muted/50 rounded-full flex items-center justify-center mb-4">
+                     <Store className="h-12 w-12 text-muted-foreground/50" />
                   </div>
                   <h3 className="text-lg font-black text-foreground mb-2">Tudo tranquilo por aqui! 😌</h3>
                   <p className="text-sm text-muted-foreground max-w-xs">Nenhum pedido ainda hoje. Compartilhe o link da sua loja para começar a receber pedidos!</p>
