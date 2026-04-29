@@ -24,10 +24,11 @@ import {
 } from "recharts";
 import PaymentStatement from "@/components/PaymentStatement";
 
-interface StoreFinancePanelProps {
-  storeId: string;
-  storeName: string;
-}
+ interface StoreFinancePanelProps {
+   storeId: string;
+   storeName: string;
+   hideHistory?: boolean;
+ }
 
 type DateFilter = "today" | "week" | "month" | "custom";
 
@@ -105,7 +106,7 @@ const NEON_COLORS = {
 
 const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
 
-const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
+ const StoreFinancePanel = ({ storeId, storeName, hideHistory = false }: StoreFinancePanelProps) => {
   const [dateFilter, setDateFilter] = useState<DateFilter>("week");
   const [generatingCharge, setGeneratingCharge] = useState(false);
   const [chargeResult, setChargeResult] = useState<ChargeResult | null>(null);
@@ -529,7 +530,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
   return (
     <div className="space-y-6">
       {/* Extrato financeiro completo */}
-      <PaymentStatement storeId={storeId} storeName={storeName} />
+       {!hideHistory && <PaymentStatement storeId={storeId} storeName={storeName} />}
 
       {/* Date filter bar */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1">
