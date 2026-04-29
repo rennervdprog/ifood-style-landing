@@ -2839,7 +2839,6 @@ const AdminDashboard = () => {
               className="absolute h-14 bg-primary rounded-full transition-all duration-500"
               style={{ 
                 transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
-              style={{ 
                 width: `${100 / (bottomNavTabs.length + 1)}%`,
                 left: `${(bottomNavTabs.findIndex(t => t.key === dashboardTab) !== -1 ? bottomNavTabs.findIndex(t => t.key === dashboardTab) : bottomNavTabs.length) * (100 / (bottomNavTabs.length + 1))}%`,
                 opacity: (bottomNavTabs.some(t => t.key === dashboardTab) || isBottomNavMore) ? 1 : 0,
