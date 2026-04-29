@@ -19,14 +19,16 @@ import {
   Gift,
   Truck,
   X,
-  BadgePercent,
-  Crown,
-  Rocket,
-  Sparkles,
-  Package,
-  Globe,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
+   BadgePercent,
+   Crown,
+   Rocket,
+   Sparkles,
+   Package,
+   Globe,
+   Loader2,
+ } from "lucide-react";
+ import { Button } from "@/components/ui/button";
+ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 
