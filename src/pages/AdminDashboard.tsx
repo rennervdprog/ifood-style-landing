@@ -77,7 +77,6 @@ const AdminDashboard = () => {
 
   const [activeTab, setActiveTab] = useState<OrderTabKey>("pendente");
   const [dashboardTab, setDashboardTab] = useState<DashboardTabType>("dashboard");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showMoreSheet, setShowMoreSheet] = useState(false);
   const [showDelayedPanel, setShowDelayedPanel] = useState(false);
   const [batchSelected, setBatchSelected] = useState<Set<string>>(new Set());
@@ -214,7 +213,6 @@ const AdminDashboard = () => {
 
   const handleTabChange = (tab: DashboardTabType) => {
     setDashboardTab(tab);
-    setSidebarOpen(false);
     setShowMoreSheet(false);
   };
 
