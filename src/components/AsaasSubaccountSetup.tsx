@@ -140,10 +140,10 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
         if (data) {
           setForm((f) => ({
             ...f,
-            address: f.address || data.street || "",
-            province: f.province || data.neighborhood || "",
-            city: data.city || "",
-            state: data.state || "",
+            address: f.address || data.logradouro || "",
+            province: f.province || data.bairro || "",
+            city: data.localidade || "",
+            state: data.uf || "",
           }));
         }
       }).catch(() => {});
