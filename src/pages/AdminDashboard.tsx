@@ -1537,6 +1537,25 @@ const AdminDashboard = () => {
                 <ArrowUpRight className="h-5 w-5 text-primary flex-shrink-0" />
               </button>
 
+              {store && !store.asaas_wallet_id && (
+                <button
+                  onClick={() => setDashboardTab("finance")}
+                  className="w-full bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent border-2 border-amber-500/30 rounded-2xl p-4 flex items-center gap-3 hover:shadow-lg hover:border-amber-500/50 active:scale-[0.99] transition-all text-left animate-fade-in"
+                >
+                  <div className="w-12 h-12 bg-amber-500/15 rounded-2xl flex items-center justify-center flex-shrink-0">
+                    <Banknote className="h-6 w-6 text-amber-500" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-black text-foreground text-sm flex items-center gap-2">
+                      ⚡ Recebimento Automático
+                      <span className="text-[10px] font-bold bg-amber-500 text-white px-2 py-0.5 rounded-full">PENDENTE</span>
+                    </h3>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">Ative o split do Asaas para receber seu lucro direto na conta, sem esperar repasses.</p>
+                  </div>
+                  <ArrowUpRight className="h-5 w-5 text-amber-500 flex-shrink-0" />
+                </button>
+              )}
+
               {delayedOrders.length > 0 && (
                 <div className="bg-red-500/5 border-2 border-red-500/20 rounded-2xl overflow-hidden">
                   <button onClick={() => setShowDelayedPanel(!showDelayedPanel)} className="w-full flex items-center justify-between p-4">
