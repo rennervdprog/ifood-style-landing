@@ -15,7 +15,7 @@ const PoliticaPrivacidade = () => {
 
       <div className="flex-1 px-4 py-6 max-w-2xl mx-auto">
         <div className="prose prose-sm dark:prose-invert max-w-none space-y-6">
-           <p className="text-xs text-muted-foreground">Última atualização: 24 de Abril de 2026 — Versão 3.1</p>
+            <p className="text-xs text-muted-foreground">Última atualização: 29 de Abril de 2026 — Versão 3.2</p>
 
           <p className="text-sm text-muted-foreground">
             Esta Política de Privacidade descreve como o <strong className="text-foreground">ItaSuper</strong> coleta, utiliza, armazena e protege 

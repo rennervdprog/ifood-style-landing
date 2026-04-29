@@ -15,7 +15,7 @@ const TermosDeUso = () => {
 
       <div className="flex-1 px-4 py-6 max-w-2xl mx-auto">
         <div className="prose prose-sm dark:prose-invert max-w-none space-y-6">
-           <p className="text-xs text-muted-foreground">Última atualização: 24 de Abril de 2026 — Versão 3.1</p>
+            <p className="text-xs text-muted-foreground">Última atualização: 29 de Abril de 2026 — Versão 3.2</p>
 
           <h2 className="text-lg font-bold text-foreground">1. Identificação da Plataforma</h2>
            <p className="text-sm text-muted-foreground">
@@ -109,9 +109,9 @@ const TermosDeUso = () => {
             5.1. O ItaSuper oferece três planos para lojistas:
           </p>
           <ul className="text-sm text-muted-foreground list-disc pl-4 space-y-2">
-              <li><strong className="text-foreground">Essencial (R$ 180/mês):</strong> 0% comissão. Taxas operacionais: <strong className="text-foreground">R$ 1,99 por pedido PIX</strong> e <strong className="text-foreground">R$ 2,00 por entrega</strong> (somada à taxa do lojista e paga pelo cliente).</li>
-              <li><strong className="text-foreground">Crescimento (R$ 100/mês + 2,5% por pedido):</strong> Taxas operacionais: <strong className="text-foreground">R$ 1,99 por pedido PIX</strong> e <strong className="text-foreground">R$ 2,00 por entrega</strong> (paga pelo cliente).</li>
-              <li><strong className="text-foreground">Comissão (6% por pedido):</strong> Sem mensalidade. Taxas operacionais: <strong className="text-foreground">R$ 1,99 por pedido PIX</strong> e <strong className="text-foreground">R$ 2,00 por entrega</strong> (paga pelo cliente).</li>
+              <li><strong className="text-foreground">Essencial (R$ 180/mês):</strong> 0% comissão sobre produtos. Taxas operacionais: <strong className="text-foreground">R$ 1,99 por pedido PIX</strong> e <strong className="text-foreground">R$ 2,00 adicionais por entrega</strong> (valor somado à taxa base do lojista e pago integralmente pelo cliente final).</li>
+              <li><strong className="text-foreground">Crescimento (R$ 100/mês + 2,5% por pedido):</strong> Taxas operacionais: <strong className="text-foreground">R$ 1,99 por pedido PIX</strong> e <strong className="text-foreground">R$ 2,00 adicionais por entrega</strong> (pago pelo cliente).</li>
+              <li><strong className="text-foreground">Comissão (6% por pedido):</strong> Sem mensalidade. Taxas operacionais: <strong className="text-foreground">R$ 1,99 por pedido PIX</strong> e <strong className="text-foreground">R$ 2,00 adicionais por entrega</strong> (pago pelo cliente).</li>
              <li><strong className="text-foreground">Apoiador:</strong> Plano especial destinado a parceiros estratégicos com condições diferenciadas de suporte e visibilidade.</li>
           </ul>
           <p className="text-sm text-muted-foreground">
@@ -174,7 +174,7 @@ const TermosDeUso = () => {
 
           <h2 className="text-lg font-bold text-foreground">9. Pagamentos e Comissões</h2>
           <p className="text-sm text-muted-foreground">
-             9.1. No plano Comissão, a Plataforma cobra <strong className="text-foreground">6% sobre o subtotal</strong> de cada pedido. No plano Crescimento, a comissão é de <strong className="text-foreground">2,5% sobre o subtotal</strong>. No plano Essencial, não há comissão sobre o subtotal.
+              9.1. No plano Comissão, a Plataforma cobra <strong className="text-foreground">6% sobre o subtotal</strong> de cada pedido. No plano Crescimento, a comissão é de <strong className="text-foreground">2,5% sobre o subtotal</strong>. No plano Essencial, não há comissão sobre o subtotal dos produtos.
           </p>
           <p className="text-sm text-muted-foreground">
             9.2. Para pagamentos via PIX online, o processamento é feito pelos gateways Asaas e/ou Mercado Pago. A comissão da Plataforma (quando aplicável ao plano) é calculada e registrada automaticamente.
@@ -187,10 +187,10 @@ const TermosDeUso = () => {
              9.4. A taxa de entrega é calculada automaticamente com base no bairro ou distância do cliente em relação ao estabelecimento. A plataforma opera em todo o território nacional, permitindo que cada lojista configure suas próprias regras de cobrança.
           </p>
           <p className="text-sm text-muted-foreground">
-             9.5. No plano Essencial, à taxa de entrega definida pelo lojista, a plataforma soma automaticamente R$ 2,00 (dois reais) referentes à taxa operacional de intermediação da entrega, valor este pago pelo cliente final.
+              9.5. Em todos os planos (Essencial, Crescimento e Comissão), à taxa de entrega definida pelo lojista, a plataforma soma automaticamente R$ 2,00 (dois reais) referentes à taxa operacional de intermediação da entrega, valor este pago pelo cliente final no ato do checkout.
           </p>
           <p className="text-sm text-muted-foreground">
-            9.6. No plano Essencial, é cobrada uma taxa fixa de R$ 1,00 por pedido pago via PIX como taxa operacional de processamento. Pedidos pagos em dinheiro ou cartão não possuem esta taxa.
+            9.6. Para pedidos pagos via PIX, é cobrada uma taxa fixa de processamento de R$ 1,99 por transação. Pedidos pagos em dinheiro ou cartão não possuem esta taxa de processamento, mas geram o débito da comissão e da taxa de entrega plataforma para repasse posterior.
           </p>
           <p className="text-sm text-muted-foreground">
             9.7. Entregadores da plataforma acumulam ganhos por entrega e podem solicitar saque via PIX pelo painel, sujeito à aprovação do administrador.
