@@ -181,7 +181,6 @@ const plans = [
     borderColor: "border-primary/30",
      description: "Fique com 100% do valor dos seus produtos. Gestão total e integração logística inteligente.",
     features: [
-       "Todas as ferramentas inclusas",
       "Todas as ferramentas inclusas",
       "Zero comissão por venda (0%)",
       "Emissão de Notas Fiscais inclusa",
