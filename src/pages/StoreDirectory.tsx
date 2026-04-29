@@ -690,7 +690,7 @@ const StoreDirectory = () => {
             Escolha o plano ideal para sua loja
           </h2>
           <p className="text-center text-muted-foreground mb-4 max-w-2xl mx-auto text-base font-medium">
-             Comissão a partir de <span className="font-bold text-primary">6%</span> — ou <span className="font-bold text-primary">zero</span> nos planos pagos.
+             Comissão a partir de <span className="font-bold text-primary">6%</span> — ou <span className="font-bold text-primary">zero</span> nos planos Apoiador e Essencial.
             Todos incluem cardápio completo, PIX online e notificações.
           </p>
           <div className="flex justify-center mb-14">
@@ -821,11 +821,11 @@ const StoreDirectory = () => {
 
            {/* Trust strip */}
            <div className="mt-12 grid sm:grid-cols-3 gap-4 max-w-3xl mx-auto">
-             <div className="text-center rounded-2xl border border-border bg-card p-5">
-               <ShieldCheck className="h-5 w-5 text-primary mx-auto mb-2" />
-               <p className="text-sm font-bold text-foreground">Sem comissão nos planos pagos</p>
-               <p className="text-xs text-muted-foreground mt-1">Fique com 100% do valor dos seus produtos</p>
-             </div>
+            <div className="text-center rounded-2xl border border-border bg-card p-5">
+              <ShieldCheck className="h-5 w-5 text-primary mx-auto mb-2" />
+              <p className="text-sm font-bold text-foreground">Sem comissão nos principais planos</p>
+              <p className="text-xs text-muted-foreground mt-1">Fique com 100% do valor dos seus produtos</p>
+            </div>
              <div className="text-center rounded-2xl border border-border bg-card p-5">
                <Zap className="h-5 w-5 text-primary mx-auto mb-2" />
                <p className="text-sm font-bold text-foreground">Pronto em 10 minutos</p>
