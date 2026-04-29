@@ -310,8 +310,8 @@ const PerfilPage = () => {
       if (error) throw error;
       if (neighborhood && calculatedFee !== null) setNeighborhood(neighborhood, calculatedFee);
       toast.success("Endereço salvo!");
-      queryClient.invalidateQueries({ queryKey: ["my-profile", user?.id] });
-      queryClient.invalidateQueries({ queryKey: ["my-profile-checkout", user?.id] });
+       queryClient.invalidateQueries({ queryKey: ["my-profile", user?.id] });
+       queryClient.invalidateQueries({ queryKey: ["my-profile-checkout", user?.id] });
     } catch (err: any) { toast.error(err.message || "Erro ao salvar."); } finally { setSavingAddress(false); }
   };
 
