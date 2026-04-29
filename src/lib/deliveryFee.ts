@@ -234,19 +234,19 @@ export interface DeliveryFeeResult {
       customerCoords.lat, customerCoords.lng
     );
 
-    const roundedDistance = Math.max(1, Math.ceil(distanceKm));
-    const fee = config.rural_base_fee + config.rural_per_km * roundedDistance;
-    const roundedFee = Math.round(fee * 100) / 100;
+    const pricingDistance = Math.ceil(distanceKm);
+    const fee = addMoney(config.rural_base_fee, config.rural_per_km * pricingDistance);
+    const roundedDistance = Math.round(distanceKm * 10) / 10;
 
     const label = isDistrict
       ? `Distrito ${customerAddr.bairro}`
       : customerAddr.localidade || "zona rural";
 
     return {
-      fee: roundedFee,
+      fee: fee,
       isRural: true,
       distanceKm: roundedDistance,
-      breakdown: `${label} (${roundedDistance}km da ${referenceLabel}): ${formatBRL(config.rural_base_fee)} + ${roundedDistance}km × ${formatBRL(config.rural_per_km)} = ${formatBRL(roundedFee)}`,
+      breakdown: `${label} (${roundedDistance}km da ${referenceLabel}): ${formatBRL(config.rural_base_fee)} + ${pricingDistance}km × ${formatBRL(config.rural_per_km)} = ${formatBRL(fee)}`,
     };
   }
 
