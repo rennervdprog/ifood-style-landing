@@ -349,6 +349,15 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
             </div>
           )}
           <div className="space-y-1.5">
+            <Label className="text-xs">{isCpf ? "Renda mensal *" : "Faturamento mensal *"}</Label>
+            <Input
+              inputMode="decimal"
+              value={form.incomeValue}
+              onChange={(e) => update("incomeValue", e.target.value.replace(/[^\d,.]/g, ""))}
+              placeholder="2500,00"
+            />
+          </div>
+          <div className="space-y-1.5">
             <Label className="text-xs">Celular (WhatsApp) *</Label>
             <Input value={formatPixKeyDisplay(form.phone, "phone")} onChange={(e) => update("phone", e.target.value)} placeholder="(14) 99999-9999" />
           </div>
