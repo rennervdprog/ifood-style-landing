@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.auto-withdraw-subaccounts]
 verify_jwt = false
+
+[functions.asaas-financial-panel]
+verify_jwt = false
