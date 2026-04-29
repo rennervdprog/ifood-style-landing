@@ -2540,6 +2540,9 @@ const AdminDashboard = () => {
                       postalCode: store?.address_cep
                     }}
                   />
+                  {store.asaas_wallet_id && (
+                    <AsaasFinancialPanel storeId={store.id} />
+                  )}
                   {storePlan.hasCommission
                     ? <StoreFinancePanel storeId={store.id} storeName={store.name} />
                     : <StoreFinanceBasic storeId={store.id} storeName={store.name} />}
