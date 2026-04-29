@@ -29,12 +29,19 @@
       };
     }
  
-   // KM based fee
-   // Use provided coordinates (GPS) or fall back to geocoding address
-   const customerCoords = config.customer_coords || await geocodeAddress(customerCep, config.customer_street || undefined, config.customer_number || undefined);
-   const storeCoords = storeCep ? await geocodeAddress(storeCep) : ITATINGA_CENTER;
- 
-   if (!customerCoords) {
+    // 1. Get accurate coordinates
+    const customerCoords = config.customer_coords || await geocodeAddressPrecise({
+      postalcode: customerCep,
+      street: config.customer_street && config.customer_number 
+        ? `${config.customer_street}, ${config.customer_number}` 
+        : config.customer_street || undefined
+    });
+    
+    const storeCoords = storeCep 
+      ? await geocodeAddressPrecise({ postalcode: storeCep }) 
+      : ITATINGA_CENTER;
+
+    if (!customerCoords || !storeCoords) {
      return {
        fee: config.delivery_fee_base,
        isRural: false,
