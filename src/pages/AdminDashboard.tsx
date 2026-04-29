@@ -42,7 +42,7 @@ import PizzaBorderManager from "@/components/PizzaBorderManager";
 import { printThermalReceipt } from "@/lib/thermalPrint";
 import { requestNotificationPermission, notifyNewOrder, pushNotifyDeliveryAvailable } from "@/lib/notifications";
 import { sendPushNotification } from "@/lib/firebase";
-  import { addMoney, averageMoney, sumMoney } from "@/lib/utils";
+   import { addMoney, averageMoney, formatBRL, sumMoney } from "@/lib/utils";
  import { statusColors } from "@/lib/orderStatus";
  import { OrderCard } from "@/components/OrderCard";
 import ProductTour, { lojistaTourSteps } from "@/components/ProductTour";
