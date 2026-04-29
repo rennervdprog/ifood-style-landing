@@ -215,6 +215,21 @@ Deno.serve(async (req) => {
       return json({ error: "Erro ao gerar PIX. Tente novamente." }, 500);
     }
 
+    // Persist asaas_payment_id and flag whether the native split was applied,
+    // so the webhook / polling endpoint can skip the manual /transfers call
+    // and avoid double-paying the store.
+    try {
+      await supabase
+        .from("orders")
+        .update({
+          asaas_payment_id: paymentData.id,
+          asaas_split_native: !!(splitArray && splitArray.length > 0),
+        })
+        .eq("id", order_id);
+    } catch (e) {
+      console.warn("Could not persist asaas_payment_id/split flag:", e);
+    }
+
     // Step 3: Get QR code
     const pixRes = await fetch(`${baseUrl}/payments/${paymentData.id}/pixQrCode`, {
       headers: { "access_token": ASAAS_API_KEY },

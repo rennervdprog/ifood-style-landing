@@ -23,7 +23,7 @@ function getServiceRoleKey() {
 async function confirmAndSplit(supabase: any, orderId: string, paymentId: string | null) {
   const { data: order } = await supabase
     .from("orders")
-    .select("id, status, store_id, subtotal, delivery_fee, payment_method, store_payout_id")
+    .select("id, status, store_id, subtotal, delivery_fee, payment_method, store_payout_id, asaas_split_native")
     .eq("id", orderId)
     .single();
 
@@ -42,9 +42,30 @@ async function confirmAndSplit(supabase: any, orderId: string, paymentId: string
     }
   }
 
+  // Native-split guard — Asaas already routed the platform/store cut.
+  if (order.asaas_split_native === true) {
+    return { confirmed: true, reason: "native_split", payment_id: paymentId };
+  }
+
   // Skip split if already done
   if (order.store_payout_id) {
     return { confirmed: true, reason: "already_split", status: "pendente", payout_id: order.store_payout_id };
+  }
+
+  // Optimistic lock — only one caller may proceed past this point.
+  const lockSentinel = `LOCK:cop:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
+  const { data: lockRows, error: lockErr } = await supabase
+    .from("orders")
+    .update({ store_payout_id: lockSentinel })
+    .eq("id", orderId)
+    .is("store_payout_id", null)
+    .select("id");
+  if (lockErr) {
+    console.error("[confirm-order-payment] lock error:", lockErr);
+    return { confirmed: true, reason: "lock_error" };
+  }
+  if (!lockRows || lockRows.length === 0) {
+    return { confirmed: true, reason: "already_locked", payment_id: paymentId };
   }
 
   // ── Auto-transfer store share via Asaas (mirrors asaas-webhook logic) ──
@@ -166,16 +187,29 @@ async function confirmAndSplit(supabase: any, orderId: string, paymentId: string
             } else {
               console.error(`[confirm-order-payment] split failed:`, JSON.stringify(tData));
               await supabase.from("orders").update({
+                store_payout_id: null,
                 store_payout_error: JSON.stringify(tData).substring(0, 500),
               }).eq("id", orderId);
             }
           } catch (e) {
             console.error("[confirm-order-payment] split exception:", e);
             await supabase.from("orders").update({
+              store_payout_id: null,
               store_payout_error: String(e).substring(0, 500),
             }).eq("id", orderId);
           }
+        } else {
+          // No API key — release lock for later retry
+          await supabase.from("orders").update({
+            store_payout_id: null,
+            store_payout_error: "asaas_api_key_missing",
+          }).eq("id", orderId);
         }
+      } else {
+        // Nothing to transfer — release the lock
+        await supabase.from("orders").update({
+          store_payout_id: null,
+        }).eq("id", orderId);
       }
 
       if (commissionAmount > 0) {
@@ -201,6 +235,10 @@ async function confirmAndSplit(supabase: any, orderId: string, paymentId: string
       }
     } else {
       console.warn(`[confirm-order-payment] Store ${order.store_id} owner has no PIX key — split skipped`);
+      await supabase.from("orders").update({
+        store_payout_id: null,
+        store_payout_error: "owner_pix_key_missing",
+      }).eq("id", orderId);
     }
   }
 

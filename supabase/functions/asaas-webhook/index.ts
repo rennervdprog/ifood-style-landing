@@ -69,7 +69,50 @@ Deno.serve(async (req) => {
     const transferAuth = TransferAuthorizationSchema.safeParse(payload);
     if (transferAuth.success && transferAuth.data.type === "TRANSFER") {
       const transfer = transferAuth.data.transfer;
-      console.log(`[ASAAS-WH ${wId}] ✅ Autorização externa de transferência aprovada transfer_id=${transfer?.id || "unknown"} value=${transfer?.value ?? "unknown"} desc=${transfer?.description || ""}`);
+      const value = Number(transfer?.value ?? 0);
+      const description = String(transfer?.description || "");
+      const transferId = transfer?.id || "unknown";
+
+      // Service-role client for review-queue inserts (no RLS bypass needed otherwise)
+      const reviewClient = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      );
+
+      // SECURITY: only auto-approve transfers that match our system's payout pattern
+      // and stay below a hard ceiling. Anything else goes to manual review.
+      const MAX_AUTO_APPROVE = 5000; // R$5.000
+      // System-generated descriptions:
+      //   "Repasse pedido #<8 hex> - <store name>"
+      //   "Saque SK-XXXX ..." (driver withdrawals)
+      //   "Plano ..." / "Comissão ..." (platform charges to subaccounts)
+      const allowedDescriptionRe = /^(Repasse pedido #[0-9a-f]{8}\b|Saque SK-\d{3,}\b|Plano\b|Comiss[aã]o\b)/i;
+
+      const overCeiling = value > MAX_AUTO_APPROVE;
+      const badDescription = !allowedDescriptionRe.test(description);
+
+      if (overCeiling || badDescription) {
+        const reason = overCeiling
+          ? `value_above_ceiling (R$${value} > R$${MAX_AUTO_APPROVE})`
+          : `description_does_not_match_system_pattern`;
+        console.warn(`[ASAAS-WH ${wId}] ⚠️ TRANSFER pendente de revisão manual transfer_id=${transferId} value=${value} desc="${description}" reason=${reason}`);
+        try {
+          await reviewClient.from("asaas_transfer_review_queue").insert({
+            transfer_id: transferId,
+            value,
+            description,
+            reason,
+            payload,
+            status: "pending",
+          });
+        } catch (e) {
+          console.error(`[ASAAS-WH ${wId}] could not enqueue review:`, e);
+        }
+        // Reject the authorization — Asaas will hold the transfer.
+        return json({ status: "REJECTED", reason: "manual_review_required" }, 200);
+      }
+
+      console.log(`[ASAAS-WH ${wId}] ✅ TRANSFER auto-aprovado transfer_id=${transferId} value=${value} desc="${description}"`);
       return json({ status: "APPROVED" });
     }
 
@@ -101,6 +144,30 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    // ── IDEMPOTENCY GUARD ──────────────────────────────────────────────
+    // Asaas can re-deliver the same event. Use a unique (payment_id, event)
+    // row as a lock: the INSERT only succeeds the first time; on a retry
+    // it fails with a 23505 (unique_violation) and we short-circuit.
+    {
+      const { error: idemErr } = await supabase
+        .from("asaas_webhook_events")
+        .insert({
+          payment_id: paymentId,
+          event,
+          external_reference: externalReference,
+          payload,
+        });
+      if (idemErr) {
+        // Postgres unique_violation → already processed
+        // (other errors should not block the response either, but we log)
+        if ((idemErr as any).code === "23505") {
+          console.log(`[ASAAS-WH ${wId}] ⏭️ duplicate event payment_id=${paymentId} event=${event} — skipping`);
+          return json({ received: true, duplicate: true });
+        }
+        console.warn(`[ASAAS-WH ${wId}] could not record idempotency row:`, idemErr);
+      }
+    }
+
     // Determine if this is an order payment or a financial transaction
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(externalReference);
 
@@ -109,7 +176,7 @@ Deno.serve(async (req) => {
         // This is an order payment
         const { data: order, error: fetchError } = await supabase
           .from("orders")
-          .select("id, status, store_id, subtotal, delivery_fee, payment_method")
+          .select("id, status, store_id, subtotal, delivery_fee, payment_method, asaas_split_native, store_payout_id")
           .eq("id", externalReference)
           .single();
 
@@ -126,7 +193,8 @@ Deno.serve(async (req) => {
               status: "pendente" as any,
               confirmed_at: new Date().toISOString(),
             })
-            .eq("id", externalReference);
+            .eq("id", externalReference)
+            .eq("status", "aguardando_pagamento" as any); // race-safe transition
           if (updateError) {
             console.error("Error updating order:", updateError);
           } else {
@@ -136,15 +204,38 @@ Deno.serve(async (req) => {
           console.log(`Order ${externalReference} status=${order.status} (already past aguardando_pagamento) — will still attempt payout if pending`);
         }
 
-        // Re-fetch to check payout state
-        const { data: payoutCheck } = await supabase
-          .from("orders")
-          .select("store_payout_id")
-          .eq("id", externalReference)
-          .maybeSingle();
-        if (payoutCheck?.store_payout_id) {
-          console.log(`Order ${externalReference} already split (transfer ${payoutCheck.store_payout_id}) — skipping`);
+        // ── SPLIT-NATIVO GUARD ──
+        // If the PIX charge was created with Asaas' native `split` array,
+        // the platform's share is already routed by Asaas. We MUST NOT also
+        // send a manual /transfers — that would pay the store twice.
+        if ((order as any).asaas_split_native === true) {
+          console.log(`[ASAAS-WH ${wId}] order ${externalReference} used native split — skipping manual transfer & commission accrual`);
+          return json({ received: true, native_split: true });
+        }
+
+        if ((order as any).store_payout_id) {
+          console.log(`Order ${externalReference} already split (transfer ${(order as any).store_payout_id}) — skipping`);
           return json({ received: true, already_processed: true, split_already_done: true });
+        }
+
+        // ── OPTIMISTIC LOCK ──
+        // Reserve the payout slot before calling Asaas. If another worker
+        // (or the polling endpoint) wins the race, our UPDATE affects 0
+        // rows and we bail out without firing /transfers.
+        const lockSentinel = `LOCK:${wId}:${Date.now()}`;
+        const { data: lockRows, error: lockErr } = await supabase
+          .from("orders")
+          .update({ store_payout_id: lockSentinel })
+          .eq("id", externalReference)
+          .is("store_payout_id", null)
+          .select("id");
+        if (lockErr) {
+          console.error(`[ASAAS-WH ${wId}] payout lock error:`, lockErr);
+          return json({ received: true, lock_error: true });
+        }
+        if (!lockRows || lockRows.length === 0) {
+          console.log(`[ASAAS-WH ${wId}] payout already locked/processed for order ${externalReference} — skipping`);
+          return json({ received: true, already_locked: true });
         }
 
         // ── Auto-transfer store share to owner's PIX key ──
@@ -238,7 +329,13 @@ Deno.serve(async (req) => {
             // Transfer store share via Asaas
             if (storeShare > 0) {
               const apiKey = Deno.env.get("ASAAS_API_KEY");
-              if (apiKey) {
+              if (!apiKey) {
+                // No API key — release lock so a manual replay can fix it later
+                await supabase.from("orders").update({
+                  store_payout_id: null,
+                  store_payout_error: "asaas_api_key_missing",
+                }).eq("id", externalReference);
+              } else {
                 const baseUrl = apiKey.startsWith("$aact_")
                   ? "https://api.asaas.com/v3"
                   : "https://sandbox.asaas.com/api/v3";
@@ -297,17 +394,25 @@ Deno.serve(async (req) => {
                     }).eq("id", externalReference);
                   } else {
                     console.error(`Auto-transfer failed for ${store.name}:`, JSON.stringify(transferData));
+                    // Release the lock so a future retry / manual replay can re-attempt
                     await supabase.from("orders").update({
+                      store_payout_id: null,
                       store_payout_error: JSON.stringify(transferData).substring(0, 500),
                     }).eq("id", externalReference);
                   }
                 } catch (transferErr) {
                   console.error(`Auto-transfer exception for ${store.name}:`, transferErr);
                   await supabase.from("orders").update({
+                    store_payout_id: null,
                     store_payout_error: String(transferErr).substring(0, 500),
                   }).eq("id", externalReference);
                 }
               }
+            } else {
+              // No money to transfer — release the lock immediately
+              await supabase.from("orders").update({
+                store_payout_id: null,
+              }).eq("id", externalReference);
             }
 
             // Track commission for commission-based plans
@@ -339,6 +444,11 @@ Deno.serve(async (req) => {
             }
           } else {
             console.warn(`Store ${order.store_id} owner has no PIX key, skipping auto-transfer`);
+            // Release the lock — no transfer attempted, so future runs can retry once PIX is configured
+            await supabase.from("orders").update({
+              store_payout_id: null,
+              store_payout_error: "owner_pix_key_missing",
+            }).eq("id", externalReference);
           }
         }
       } else {

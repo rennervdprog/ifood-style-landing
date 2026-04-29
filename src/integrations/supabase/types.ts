@@ -264,6 +264,72 @@ export type Database = {
         }
         Relationships: []
       }
+      asaas_transfer_review_queue: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          payload: Json | null
+          reason: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          transfer_id: string | null
+          value: number | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          payload?: Json | null
+          reason: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          transfer_id?: string | null
+          value?: number | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          payload?: Json | null
+          reason?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          transfer_id?: string | null
+          value?: number | null
+        }
+        Relationships: []
+      }
+      asaas_webhook_events: {
+        Row: {
+          event: string
+          external_reference: string | null
+          id: string
+          payload: Json | null
+          payment_id: string
+          processed_at: string
+        }
+        Insert: {
+          event: string
+          external_reference?: string | null
+          id?: string
+          payload?: Json | null
+          payment_id: string
+          processed_at?: string
+        }
+        Update: {
+          event?: string
+          external_reference?: string | null
+          id?: string
+          payload?: Json | null
+          payment_id?: string
+          processed_at?: string
+        }
+        Relationships: []
+      }
       banners: {
         Row: {
           created_at: string
@@ -1438,6 +1504,8 @@ export type Database = {
         Row: {
           address_details: string
           app_fee: number
+          asaas_payment_id: string | null
+          asaas_split_native: boolean
           assigned_driver_id: string | null
           change_for: number | null
           client_id: string
@@ -1460,6 +1528,9 @@ export type Database = {
           settlement_code: string | null
           status: Database["public"]["Enums"]["order_status"]
           store_id: string
+          store_payout_at: string | null
+          store_payout_error: string | null
+          store_payout_id: string | null
           subtotal: number
           total_price: number
           visible_to_client: boolean
@@ -1467,6 +1538,8 @@ export type Database = {
         Insert: {
           address_details: string
           app_fee?: number
+          asaas_payment_id?: string | null
+          asaas_split_native?: boolean
           assigned_driver_id?: string | null
           change_for?: number | null
           client_id: string
@@ -1489,6 +1562,9 @@ export type Database = {
           settlement_code?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           store_id: string
+          store_payout_at?: string | null
+          store_payout_error?: string | null
+          store_payout_id?: string | null
           subtotal: number
           total_price: number
           visible_to_client?: boolean
@@ -1496,6 +1572,8 @@ export type Database = {
         Update: {
           address_details?: string
           app_fee?: number
+          asaas_payment_id?: string | null
+          asaas_split_native?: boolean
           assigned_driver_id?: string | null
           change_for?: number | null
           client_id?: string
@@ -1518,6 +1596,9 @@ export type Database = {
           settlement_code?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           store_id?: string
+          store_payout_at?: string | null
+          store_payout_error?: string | null
+          store_payout_id?: string | null
           subtotal?: number
           total_price?: number
           visible_to_client?: boolean
