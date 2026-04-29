@@ -184,7 +184,7 @@ const CartPage = () => {
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground flex items-center gap-1">
-              <Truck className="h-3 w-3" /> Entrega
+              <Truck className="h-3 w-3" /> Taxa operacional
             </span>
             <span className="font-semibold text-foreground">
               {neighborhood ? `${formatBRL(neighborhoodFee)}` : "Calculado no checkout"}

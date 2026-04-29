@@ -25,7 +25,7 @@
         fee: totalFee,
         isRural: false,
         distanceKm: null,
-        breakdown: `Entrega: ${formatBRL(config.own_delivery_fee)} + Taxa Operacional: ${formatBRL(PLATFORM_FEE)}`,
+        breakdown: `Entrega: ${formatBRL(config.own_delivery_fee)} + Taxa operacional: ${formatBRL(PLATFORM_FEE)}`,
       };
     }
  
@@ -62,9 +62,9 @@
       fee: Math.round(totalFee * 100) / 100,
       isRural: distanceKm > config.delivery_base_km,
       distanceKm: Math.round(distanceKm * 10) / 10,
-      breakdown: roundedDistance <= config.delivery_base_km 
-        ? `Entrega: ${formatBRL(fee)} + Taxa Operacional: ${formatBRL(PLATFORM_FEE)}`
-        : `Base ${formatBRL(config.delivery_fee_base)} + ${roundedDistance - config.delivery_base_km}km extras + Taxa Operacional ${formatBRL(PLATFORM_FEE)}`,
+       breakdown: roundedDistance <= config.delivery_base_km 
+         ? `Entrega: ${formatBRL(fee)} + Taxa operacional: ${formatBRL(PLATFORM_FEE)}`
+         : `Base ${formatBRL(config.delivery_fee_base)} + ${roundedDistance - config.delivery_base_km}km extras + Taxa operacional ${formatBRL(PLATFORM_FEE)}`,
     };
   }
  

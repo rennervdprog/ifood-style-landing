@@ -243,7 +243,7 @@ const CheckoutPage = () => {
           if (cancelled) return;
           const feeWithSplit = result.fee + effectivePlatformSplit;
           setCalculatedDeliveryFee(feeWithSplit);
-          setFeeBreakdown(result.breakdown + (effectivePlatformSplit > 0 ? ` + Taxa plataforma: ${formatBRL(effectivePlatformSplit)}` : ""));
+          setFeeBreakdown(result.breakdown + (effectivePlatformSplit > 0 ? ` + Taxa operacional: ${formatBRL(effectivePlatformSplit)}` : ""));
           if (activeNeighborhood) setNeighborhood(activeNeighborhood, feeWithSplit);
           setCalculatingFee(false);
         }).catch(() => {
@@ -547,7 +547,7 @@ const CheckoutPage = () => {
               >
                 <Truck className={`h-6 w-6 ${!isPickup ? "text-primary" : "text-muted-foreground"}`} />
                 <div className="text-center">
-                  <span className={`text-sm font-bold block ${!isPickup ? "text-primary" : "text-foreground"}`}>Entrega</span>
+                <span className={`text-sm font-bold block ${!isPickup ? "text-primary" : "text-foreground"}`}>Taxa operacional</span>
                   <span className="text-[10px] text-muted-foreground">Receba em casa</span>
                 </div>
               </button>
@@ -970,7 +970,7 @@ const CheckoutPage = () => {
               {!isPickup && (
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground flex items-center gap-1">
-                  <Truck className="h-3 w-3" /> Entrega
+                  <Truck className="h-3 w-3" /> Taxa operacional
                 </span>
                 <span className={`font-semibold ${couponType === "free_shipping" ? "text-green-600 line-through" : "text-foreground"}`}>
                   {calculatingFee ? "..." : `${formatBRL(activeDeliveryFee)}`}
