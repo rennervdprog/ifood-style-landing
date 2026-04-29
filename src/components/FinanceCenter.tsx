@@ -130,7 +130,7 @@ export default function FinanceCenter({ storeId, storeName, hasCommission }: Fin
 
          <TabsContent value="history" className="mt-6">
            <div className="space-y-6">
-             <PaymentStatement storeId={storeId} storeName={storeName} />
+             <PaymentStatement storeId={storeId} storeName={storeName} initialOpen={true} />
            </div>
          </TabsContent>
       </Tabs>
