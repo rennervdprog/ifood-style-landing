@@ -7,7 +7,7 @@ const FinanceTab = () => {
   if (!store) return null;
   return (
     <div className="p-4 lg:p-6 max-w-5xl mx-auto">
-      <FinanceCenter storeId={store.id} />
+       <FinanceCenter storeId={store.id} storePlan={null} />
     </div>
   );
 };
