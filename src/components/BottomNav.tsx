@@ -97,41 +97,44 @@ const BottomNav = memo(() => {
    if (isPartnerApp && !user) return null;
    if (tabs.length === 0) return null;
  
-   return (
-     <nav className="fixed bottom-4 left-4 right-4 z-50">
-       <div className="mx-auto max-w-md bg-card/80 backdrop-blur-xl border border-white/20 shadow-2xl rounded-3xl p-2 flex items-center justify-around transition-all duration-300">
-         {tabs.map((tab) => {
-           const active = isActive(tab.path);
-           return (
-             <button
-               key={tab.path}
-               onClick={() => navigate(tab.path)}
-               data-tour={tab.label === "Pedidos" ? "nav-pedidos" : undefined}
-               className={`relative flex flex-col items-center justify-center py-2 px-4 transition-all duration-300 rounded-2xl group ${
-                 active 
-                   ? "text-primary scale-110" 
-                   : "text-muted-foreground hover:text-foreground hover:bg-white/10"
-               }`}
-             >
-               {active && (
-                 <span className="absolute inset-0 bg-primary/10 rounded-2xl blur-sm" />
-               )}
-               <tab.icon 
-                 className={`h-6 w-6 transition-transform duration-300 ${active ? "animate-bounce-subtle" : "group-hover:scale-110"}`} 
-                 strokeWidth={active ? 2.5 : 2} 
-               />
-               <span className={`text-[10px] font-bold mt-1 transition-all duration-300 ${active ? "opacity-100" : "opacity-70"}`}>
-                 {tab.label}
-               </span>
-               {active && (
-                 <span className="absolute -bottom-1 w-1 h-1 bg-primary rounded-full animate-pulse" />
-               )}
-             </button>
-           );
-         })}
-       </div>
-     </nav>
-   );
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-t border-border/40 safe-area-bottom shadow-[0_-8px_30px_rgb(0,0,0,0.04)]">
+      <div className="mx-auto max-w-md h-16 flex items-stretch justify-around px-2">
+        {tabs.map((tab) => {
+          const active = isActive(tab.path);
+          return (
+            <button
+              key={tab.path}
+              onClick={() => navigate(tab.path)}
+              data-tour={tab.label === "Pedidos" ? "nav-pedidos" : undefined}
+              className={`relative flex-1 flex flex-col items-center justify-center transition-all duration-200 group active:scale-95 ${
+                active 
+                  ? "text-primary" 
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <div className={`p-1.5 rounded-xl transition-all duration-300 ${
+                active ? "bg-primary/10" : "group-hover:bg-accent/50"
+              }`}>
+                <tab.icon 
+                  className={`h-5 w-5 transition-transform duration-300 ${active ? "scale-110" : "group-hover:scale-105"}`} 
+                  strokeWidth={active ? 2.5 : 2} 
+                />
+              </div>
+              <span className={`text-[11px] font-medium mt-1 transition-all duration-200 ${
+                active ? "opacity-100 font-bold tracking-tight" : "opacity-70"
+              }`}>
+                {tab.label}
+              </span>
+              {active && (
+                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-full shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </nav>
+  );
 });
 
 BottomNav.displayName = "BottomNav";
