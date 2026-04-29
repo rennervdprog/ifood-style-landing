@@ -11,8 +11,8 @@ import {
   Award, Sparkles, ChevronDown,
   ShoppingBag, Truck, Crown, BadgePercent,
    Bell, QrCode, Utensils, Gift, MessageCircle, Shield, Check,
-   Navigation, UserCheck, SmartphoneNfc,
-} from "lucide-react";
+    Navigation, UserCheck, SmartphoneNfc, Info,
+  } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -124,8 +124,7 @@ const plans = [
     features: [
       "Tudo do plano Comissão",
        "Comissão reduzida para 2,5%",
-       "Sem taxa PIX ou entrega",
-      "Suporte prioritário",
+        "Suporte prioritário",
       "Relatórios avançados",
       "Banners ilimitados",
       "Agendamento de pedidos",
@@ -183,9 +182,9 @@ const plans = [
      description: "Fique com 100% do valor dos seus produtos. Gestão total e integração logística inteligente.",
     features: [
        "Todas as ferramentas inclusas",
-       "Zero comissão por venda (0%)",
-        "Emissão de Notas Fiscais inclusa",
-        "Relatórios 100% detalhados",
+      "Todas as ferramentas inclusas",
+      "Zero comissão por venda (0%)",
+      "Emissão de Notas Fiscais inclusa",
         "Integração com alerta para Motoboy",
        "Suporte VIP em 15 minutos",
        "ROI escalável e garantido",
@@ -326,11 +325,11 @@ const Navbar = ({ onNavigate, isLoggedIn }: { onNavigate: (path: string) => void
             </Button>
           ) : (
             <>
-              <button onClick={() => { setOpen(false); onNavigate("/portal-parceiro"); }} className="block w-full text-left py-3 text-sm font-semibold text-primary">
+              <button onClick={() => { setOpen(false); onNavigate("/portal-parceiro"); }} className="block w-full text-left py-3 text-sm font-semibold text-muted-foreground hover:text-primary transition-colors">
                 Já sou parceiro
               </button>
               <Button className="w-full rounded-full font-bold mt-2" onClick={() => { setOpen(false); onNavigate("/cadastro-lojista"); }}>
-                Cadastrar minha loja
+                Criar minha loja grátis
               </Button>
             </>
           )}
@@ -443,7 +442,7 @@ const StoreDirectory = () => {
             Plataforma disponível para todo o Brasil 🇧🇷
           </div>
 
-          <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black tracking-tighter text-foreground leading-[0.95] mb-8 opacity-100 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+          <h1 className="text-5xl lg:text-7xl font-black tracking-tighter text-foreground leading-[0.95] mb-8 opacity-100 animate-in fade-in slide-in-from-bottom-4 duration-1000">
             O sistema de delivery <br className="hidden md:block" />
             mais <span className="text-primary italic underline decoration-primary/20">profissional</span> do Brasil.
           </h1>
@@ -465,8 +464,8 @@ const StoreDirectory = () => {
 
           {/* Honest launch badge instead of fake numbers */}
           <div className="mt-10 inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-4 py-2 text-sm font-semibold text-primary">
-            <Sparkles className="h-4 w-4" />
-            Plataforma em lançamento • Seja um dos primeiros lojistas
+            <ShieldCheck className="h-4 w-4" />
+            Delivery próprio • Sem depender de iFood ou Rappi 🇧🇷
           </div>
 
           {/* Trust badges */}
@@ -509,19 +508,19 @@ const StoreDirectory = () => {
       </section>
 
        {/* ══════ MOTOBOY SYSTEM SECTION ══════ */}
-       <section className="py-24 px-4 bg-slate-900 text-white overflow-hidden relative">
-         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-[100px] rounded-full -translate-y-1/2 translate-x-1/2" />
-         <div className="absolute bottom-0 left-0 w-64 h-64 bg-orange-600/10 blur-[100px] rounded-full translate-y-1/2 -translate-x-1/2" />
-         
+       <section className="py-20 px-4 bg-gradient-to-br from-background via-primary/5 to-background text-foreground overflow-hidden relative border-t border-border">
          <div className="mx-auto max-w-6xl relative z-10">
            <div className="text-center mb-16">
-             <div className="inline-flex items-center gap-2 rounded-full bg-primary/20 border border-primary/30 px-4 py-1.5 text-xs font-bold text-primary mb-4">
+             <div className="inline-flex items-center gap-2 rounded-full bg-primary/20 border border-primary/30 px-4 py-1.5 text-xs font-bold text-primary mb-2">
                <Truck className="h-4 w-4" /> LOGÍSTICA INTEGRADA
              </div>
-             <h2 className="text-3xl md:text-5xl font-black mb-6 tracking-tighter">
+             <h2 className="text-3xl font-bold tracking-tight mb-2">
                Sistema de Motoboy <span className="text-primary italic">Integrado</span> 🛵
              </h2>
-             <p className="text-slate-400 max-w-2xl mx-auto text-lg">
+             <div className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold mb-4">
+               Disponível nos planos Crescimento, Apoiadores e Essencial
+             </div>
+             <p className="text-muted-foreground max-w-2xl mx-auto text-base font-medium">
                Sua logística sob controle absoluto. Da cozinha à porta do cliente, tudo conectado em tempo real para uma operação sem falhas.
              </p>
            </div>
@@ -529,13 +528,13 @@ const StoreDirectory = () => {
            <div className="grid lg:grid-cols-2 gap-16 items-center">
              <div className="space-y-6">
                {motoboyWorkflow.map((item, i) => (
-                 <div key={i} className="flex gap-5 p-6 rounded-[2rem] bg-white/5 border border-white/10 hover:bg-white/10 transition-all group">
+                 <div key={i} className="flex gap-5 p-6 rounded-[2rem] bg-card border border-border hover:shadow-md transition-all group">
                    <div className={`w-14 h-14 rounded-2xl ${item.color} flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform`}>
                      <item.icon className={`h-7 w-7 ${item.iconColor}`} />
                    </div>
                    <div>
-                     <h3 className="font-bold text-xl mb-2">{item.title}</h3>
-                     <p className="text-slate-400 leading-relaxed">{item.desc}</p>
+                     <h3 className="font-semibold text-lg mb-2">{item.title}</h3>
+                     <p className="text-muted-foreground leading-relaxed text-base font-medium">{item.desc}</p>
                    </div>
                  </div>
                ))}
@@ -687,10 +686,10 @@ const StoreDirectory = () => {
       {/* ══════ PLANS ══════ */}
       <section id="planos" className="py-20 px-4">
         <div className="mx-auto max-w-6xl">
-          <h2 className="text-3xl md:text-4xl font-bold text-center text-foreground mb-4">
+          <h2 className="text-3xl font-bold tracking-tight text-center text-foreground mb-4">
             Escolha o plano ideal para sua loja
           </h2>
-          <p className="text-center text-muted-foreground mb-4 max-w-2xl mx-auto">
+          <p className="text-center text-muted-foreground mb-4 max-w-2xl mx-auto text-base font-medium">
              Comissão a partir de <span className="font-bold text-primary">6%</span> — ou <span className="font-bold text-primary">zero</span> nos planos pagos.
             Todos incluem cardápio completo, PIX online e notificações.
           </p>
@@ -724,7 +723,7 @@ const StoreDirectory = () => {
                     <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${plan.color} flex items-center justify-center mb-4`}>
                       <Icon className="h-6 w-6 text-primary-foreground" />
                     </div>
-                    <h3 className="text-xl font-bold text-foreground">{plan.name}</h3>
+                    <h3 className="text-lg font-semibold text-foreground">{plan.name}</h3>
                     <p className="text-xs text-muted-foreground mt-1 mb-4">{plan.tagline}</p>
 
                     <div className="mb-2">
@@ -761,7 +760,8 @@ const StoreDirectory = () => {
                           </p>
                         ))}
                         {(plan as any).extraNote && (
-                          <p className="text-[10px] italic text-muted-foreground/80 mt-1 leading-tight">
+                          <p className="text-xs italic text-muted-foreground/80 mt-1 leading-tight flex items-start gap-1">
+                            <Info className="h-3 w-3 mt-0.5 shrink-0" />
                             {(plan as any).extraNote}
                           </p>
                         )}
@@ -784,7 +784,7 @@ const StoreDirectory = () => {
                       className={`w-full rounded-2xl py-5 text-base font-semibold ${plan.highlight ? "shadow-lg shadow-primary/20" : ""}`}
                       variant={plan.highlight ? "default" : "outline"}
                     >
-                      {plan.price === "0" ? "Começar grátis" : "Escolher plano"}
+                      Criar minha loja grátis
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </CardContent>
@@ -798,55 +798,55 @@ const StoreDirectory = () => {
        {/* ══════ BENEFITS BY SEGMENT ══════ */}
        <section className="py-24 px-4 bg-muted/30">
          <div className="mx-auto max-w-6xl">
-           <div className="text-center mb-16">
-             <h2 className="text-3xl md:text-5xl font-black text-foreground mb-4">
-               Feito para o seu negócio 🚀
-             </h2>
-             <p className="text-muted-foreground text-lg max-w-xl mx-auto font-medium">
-               Seja qual for o seu segmento, a ItaSuper se adapta perfeitamente à sua rotina.
-             </p>
-           </div>
-           <div className="grid sm:grid-cols-3 gap-8">
-             {benefits.map((b) => (
-               <Card key={b.segment} className="rounded-[2.5rem] border-none bg-card p-4 hover:shadow-2xl transition-all duration-300">
-                 <CardContent className="pt-6">
-                   <div className="text-5xl mb-6">{b.icon}</div>
-                   <p className="text-xs font-black text-primary uppercase tracking-[0.2em] mb-4">{b.segment}</p>
-                   <h3 className="text-xl font-bold text-foreground mb-4 leading-tight">{b.headline}</h3>
-                   <p className="text-muted-foreground leading-relaxed font-medium">{b.text}</p>
-                 </CardContent>
-               </Card>
-             ))}
-           </div>
+            <div className="text-center mb-16">
+              <h2 className="text-3xl font-bold tracking-tight text-foreground mb-4">
+                Feito para o seu negócio 🚀
+              </h2>
+              <p className="text-muted-foreground text-base max-w-xl mx-auto font-medium">
+                Seja qual for o seu segmento, a ItaSuper se adapta perfeitamente à sua rotina.
+              </p>
+            </div>
+            <div className="grid sm:grid-cols-3 gap-8">
+              {benefits.map((b) => (
+                <Card key={b.segment} className="rounded-[2.5rem] border-none bg-card p-4 hover:shadow-2xl transition-all duration-300">
+                  <CardContent className="pt-6">
+                    <div className="text-5xl mb-6">{b.icon}</div>
+                    <p className="text-sm font-medium text-muted-foreground uppercase tracking-[0.2em] mb-4">{b.segment}</p>
+                    <h3 className="text-lg font-semibold text-foreground mb-4 leading-tight">{b.headline}</h3>
+                    <p className="text-muted-foreground leading-relaxed font-medium text-base">{b.text}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
 
-          {/* Aggregated trust strip */}
-          <div className="mt-12 grid sm:grid-cols-3 gap-4 max-w-3xl mx-auto">
-            <div className="text-center rounded-2xl border border-border bg-card p-5">
-              <Star className="h-5 w-5 text-primary mx-auto mb-2 fill-primary" />
-              <p className="text-sm font-bold text-foreground">Avaliação média 4.8/5</p>
-              <p className="text-xs text-muted-foreground mt-1">de lojistas ativos na plataforma</p>
-            </div>
-            <div className="text-center rounded-2xl border border-border bg-card p-5">
-              <CheckCircle2 className="h-5 w-5 text-primary mx-auto mb-2" />
-              <p className="text-sm font-bold text-foreground">98% recomendam</p>
-              <p className="text-xs text-muted-foreground mt-1">para outros donos de loja</p>
-            </div>
-            <div className="text-center rounded-2xl border border-border bg-card p-5">
-              <Clock className="h-5 w-5 text-primary mx-auto mb-2" />
-              <p className="text-sm font-bold text-foreground">10 min para começar</p>
-              <p className="text-xs text-muted-foreground mt-1">do cadastro ao 1º pedido</p>
-            </div>
-          </div>
+           {/* Trust strip */}
+           <div className="mt-12 grid sm:grid-cols-3 gap-4 max-w-3xl mx-auto">
+             <div className="text-center rounded-2xl border border-border bg-card p-5">
+               <ShieldCheck className="h-5 w-5 text-primary mx-auto mb-2" />
+               <p className="text-sm font-bold text-foreground">Sem comissão nos planos pagos</p>
+               <p className="text-xs text-muted-foreground mt-1">Fique com 100% do valor dos seus produtos</p>
+             </div>
+             <div className="text-center rounded-2xl border border-border bg-card p-5">
+               <Zap className="h-5 w-5 text-primary mx-auto mb-2" />
+               <p className="text-sm font-bold text-foreground">Pronto em 10 minutos</p>
+               <p className="text-xs text-muted-foreground mt-1">Do cadastro ao cardápio publicado no mesmo dia</p>
+             </div>
+             <div className="text-center rounded-2xl border border-border bg-card p-5">
+               <Globe className="h-5 w-5 text-primary mx-auto mb-2" />
+               <p className="text-sm font-bold text-foreground">Funciona em todo o Brasil</p>
+               <p className="text-xs text-muted-foreground mt-1">Cardápio digital acessível por link ou QR Code</p>
+             </div>
+           </div>
         </div>
       </section>
 
       {/* ══════ FAQ ══════ */}
       <section className="py-20 px-4">
         <div className="mx-auto max-w-3xl">
-          <h2 className="text-3xl font-bold text-center text-foreground mb-4">
+          <h2 className="text-3xl font-bold tracking-tight text-center text-foreground mb-4">
             Perguntas frequentes
           </h2>
-          <p className="text-center text-muted-foreground mb-12">
+          <p className="text-center text-muted-foreground mb-12 text-base font-medium">
             Tire suas dúvidas antes de começar.
           </p>
           <div className="space-y-3">
@@ -878,10 +878,10 @@ const StoreDirectory = () => {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
             <Shield className="h-8 w-8 text-primary" />
           </div>
-          <h2 className="text-2xl font-bold text-foreground mb-3">
+          <h2 className="text-3xl font-bold tracking-tight text-foreground mb-3">
             Sem risco. Sem surpresas.
           </h2>
-          <p className="text-muted-foreground max-w-lg mx-auto leading-relaxed">
+          <p className="text-muted-foreground max-w-lg mx-auto leading-relaxed text-base font-medium">
             Comece pelo plano Comissão (grátis) e migre quando quiser.
             Sem fidelidade, sem multa, sem pegadinha. Cancele a qualquer momento.
           </p>
@@ -892,16 +892,16 @@ const StoreDirectory = () => {
       <section className="relative py-20 px-4 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/20 pointer-events-none" />
         <div className="relative mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+          <h2 className="text-3xl font-bold tracking-tight text-foreground mb-4">
             Seu cardápio digital pronto em 5 minutos
           </h2>
-          <p className="text-muted-foreground mb-8 leading-relaxed">
+          <p className="text-muted-foreground mb-8 leading-relaxed text-base font-medium">
             Cadastre sua loja agora e comece a receber pedidos pelo celular ainda hoje.
             <span className="block mt-1 font-semibold text-primary">É grátis para começar!</span>
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button size="lg" onClick={handleCTA} className="text-base px-8 py-6 rounded-2xl shadow-lg shadow-primary/20">
-              Criar meu cardápio grátis <ArrowRight className="ml-2 h-5 w-5" />
+              Criar minha loja grátis <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <Button size="lg" variant="outline" onClick={handleWhatsApp} className="text-base px-8 py-6 rounded-2xl">
               <MessageCircle className="mr-2 h-5 w-5" /> Falar no WhatsApp
@@ -912,7 +912,7 @@ const StoreDirectory = () => {
 
       {/* ══════ FOOTER ══════ */}
       <footer className="py-8 text-center text-sm text-muted-foreground border-t border-border px-4">
-        <p className="font-semibold text-foreground mb-1">Itasuper</p>
+        <p className="font-semibold text-foreground mb-1">ItaSuper</p>
         <p>© {new Date().getFullYear()} — Todos os direitos reservados</p>
         <div className="mt-3 flex flex-wrap items-center justify-center gap-4 text-xs">
           <button onClick={() => navigate("/portal-parceiro")} className="hover:text-primary transition-colors">Login Parceiro</button>
