@@ -96,8 +96,8 @@ const AdminDashboard = () => {
 
   const isApproved = profile?.is_approved ?? false;
 
-  const { data: store, isLoading: storeLoading } = useQuery({
-    queryKey: ["admin-store", user?.id, simulateStoreId],
+   const { data: store, isLoading: storeLoading } = useQuery({
+     queryKey: ["admin-store", user?.id, simulateStoreId],
     queryFn: async () => {
       if (simulateStoreId) {
         const { data } = await supabase.from("stores").select("*").eq("id", simulateStoreId).maybeSingle();
@@ -109,9 +109,24 @@ const AdminDashboard = () => {
     enabled: !!user,
   });
 
-  const storePlan = useStorePlan(store?.id);
-
-  const { data: orders } = useQuery({
+   const storePlan = useStorePlan(store?.id);
+ 
+   const { data: pendingRefundsCount = 0 } = useQuery({
+     queryKey: ["admin-pending-refunds", store?.id],
+     queryFn: async () => {
+       const { count, error } = await supabase
+         .from("refund_requests")
+         .select("*", { count: 'exact', head: true })
+         .eq("store_id", store!.id)
+         .eq("status", "pending");
+       if (error) throw error;
+       return count || 0;
+     },
+     enabled: !!store?.id,
+     refetchInterval: 30000,
+   });
+ 
+   const { data: orders } = useQuery({
     queryKey: ["admin-orders", store?.id],
     queryFn: async () => {
       const { data } = await supabase.from("orders").select("*, order_items(*, products(*))").eq("store_id", store!.id).order("created_at", { ascending: false }).limit(100);
@@ -189,24 +204,29 @@ const AdminDashboard = () => {
     setShowMoreSheet(false);
   };
 
-  const renderTab = () => {
-    switch (dashboardTab) {
-      case "dashboard": return <DashboardTab />;
-      case "orders": return <OrdersTab />;
-      case "reports": return <ReportsTab />;
-      case "finance": return <FinanceTab />;
-      case "clients": return <ClientsTab />;
-      case "loyalty": return <LoyaltyTab />;
-      case "settings": return <SettingsTab />;
-      case "menu": return <MenuTab />;
-      case "addons": return <AddonsTab />;
-      case "bordas": return <BordasTab />;
-      case "hours": return <HoursTab />;
-      case "drivers": return <DriversTab />;
-      case "tutoriais": return <TutoriaisTab />;
-      default: return <DashboardTab />;
-    }
-  };
+   const renderTab = () => {
+     switch (dashboardTab) {
+       case "dashboard": return <DashboardTab />;
+       case "orders": return <OrdersTab />;
+       case "reports": return <ReportsTab />;
+       case "finance": return <FinanceTab />;
+       case "clients": return <ClientsTab />;
+       case "loyalty": return <LoyaltyTab />;
+       case "settings": return <SettingsTab />;
+       case "menu": return <MenuTab />;
+       case "addons": return <AddonsTab />;
+       case "bordas": return <BordasTab />;
+       case "hours": return <HoursTab />;
+       case "drivers": return <DriversTab />;
+       case "tutoriais": return <TutoriaisTab />;
+       case "refunds": return <AdminRefundPanel storeId={store?.id || ""} />;
+       default: return <DashboardTab />;
+     }
+   };
+ 
+   const sidebarItems = useMemo(() => NAV_ITEMS.filter(i => i.showInSidebar), []);
+   const bottomNavItems = useMemo(() => NAV_ITEMS.filter(i => i.showInBottomNav), []);
+   const moreItems = useMemo(() => NAV_ITEMS.filter(i => i.showInMore), []);
 
   return (
     <AdminProvider value={contextValue}>
