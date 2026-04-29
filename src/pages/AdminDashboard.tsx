@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef, useCallback, useMemo, memo } from "react";
 import { getOrderItemDisplayName } from "@/lib/orderItemName";
-import { formatBRL } from "@/lib/utils";
 import SimulationBanner from "@/components/SimulationBanner";
 import SignOutConfirm from "@/components/SignOutConfirm";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -43,7 +42,7 @@ import PizzaBorderManager from "@/components/PizzaBorderManager";
 import { printThermalReceipt } from "@/lib/thermalPrint";
 import { requestNotificationPermission, notifyNewOrder, pushNotifyDeliveryAvailable } from "@/lib/notifications";
 import { sendPushNotification } from "@/lib/firebase";
- import { addMoney, averageMoney, formatBRL, sumMoney } from "@/lib/utils";
+  import { addMoney, averageMoney, sumMoney } from "@/lib/utils";
  import { statusColors } from "@/lib/orderStatus";
  import { OrderCard } from "@/components/OrderCard";
 import ProductTour, { lojistaTourSteps } from "@/components/ProductTour";
