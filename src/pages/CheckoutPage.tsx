@@ -297,7 +297,7 @@ const CheckoutPage = () => {
     return null;
   }
 
-  const handleConfirm = async () => {
+   const handleConfirm = async () => {
     if (isStoreClosed) {
       toast.error(`Loja fechada. ${storeStatus?.reason || ""}`);
       return;
