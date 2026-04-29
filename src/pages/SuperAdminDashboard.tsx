@@ -3092,9 +3092,9 @@ const PagamentosSplitTab = ({ stores }: { stores: any[] }) => {
                       <div key={record.id || idx} className="p-4 space-y-2">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${statusColors[record.status] || "bg-muted text-muted-foreground"}`}>
-                              {statusLabels[record.status] || record.status}
-                            </span>
+                             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${globalStatusColors[record.status]?.bg} ${globalStatusColors[record.status]?.text} || "bg-muted text-muted-foreground"}`}>
+                               {globalStatusColors[record.status]?.label || record.status}
+                             </span>
                             <span className="text-xs font-bold text-foreground">
                               {kindLabels[record.transaction_kind] || record.transaction_kind}
                             </span>
