@@ -165,7 +165,8 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
       console.log("Resposta da Edge Function:", data);
 
       if ((data as any)?.error) {
-        console.error("Erro retornado pelo Asaas:", (data as any).error);
+        console.error("Erro de lógica retornado pela função:", (data as any).error);
+        setDebugInfo(data);
         throw new Error((data as any).error);
       }
 
