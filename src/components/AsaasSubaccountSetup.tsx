@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckCircle2, Loader2, Banknote, ShieldCheck } from "lucide-react";
+ import { CheckCircle2, Loader2, Banknote, ShieldCheck, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { formatPixKeyDisplay, sanitizePixKeyForAsaas, validatePixKey } from "@/lib/pixFormat";
 
@@ -348,17 +348,33 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
           {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
           Criar subconta e ativar split automático
         </Button>
-        {(lastError || debugInfo) && (
-          <div className="mt-4 p-3 rounded bg-slate-50 border border-slate-200 text-[10px] font-mono overflow-auto max-h-40">
-            <p className="font-bold text-red-700 mb-1">Log de Erro (Debug):</p>
-            <p className="text-red-600 mb-2">{lastError}</p>
-            {debugInfo && (
-              <pre className="text-slate-600">
-                {JSON.stringify(debugInfo, null, 2)}
-              </pre>
-            )}
-          </div>
-        )}
+         {(lastError || debugInfo) && (
+           <div className="mt-4 p-3 rounded bg-slate-50 border border-slate-200 text-[10px] font-mono overflow-hidden">
+             <div className="flex justify-between items-center mb-2">
+               <p className="font-bold text-red-700">Log de Erro (Debug):</p>
+               <Button 
+                 variant="outline" 
+                 size="sm" 
+                 className="h-7 px-2 text-[10px]"
+                 onClick={() => {
+                   const text = `${lastError}\n\n${JSON.stringify(debugInfo, null, 2)}`;
+                   navigator.clipboard.writeText(text);
+                   toast.success("Copiado!");
+                 }}
+               >
+                 <Copy className="h-3 w-3 mr-1" /> Copiar
+               </Button>
+             </div>
+             <div className="max-h-40 overflow-auto">
+               <p className="text-red-600 mb-2">{lastError}</p>
+               {debugInfo && (
+                 <pre className="text-slate-600 whitespace-pre-wrap">
+                   {JSON.stringify(debugInfo, null, 2)}
+                 </pre>
+               )}
+             </div>
+           </div>
+         )}
       </CardContent>
     </Card>
   );
