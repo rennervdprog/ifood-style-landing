@@ -773,17 +773,7 @@ const PedidosPage = () => {
         </header>
 
         <div className="px-4 py-4 space-y-3">
-          {storeOrdersLoading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="bg-card rounded-2xl p-4 border border-border animate-pulse space-y-2">
-                  <div className="h-4 bg-muted rounded w-1/2" />
-                  <div className="h-3 bg-muted rounded w-3/4" />
-                  <div className="h-4 bg-muted rounded w-1/4" />
-                </div>
-              ))}
-            </div>
-          ) : storeOrders && storeOrders.length > 0 ? (
+           {storeOrders && storeOrders.length > 0 ? (
             storeOrders.map((order: any) => {
               const config = statusConfig[order.status] || statusConfig.pendente;
               const StatusIcon = config.icon;

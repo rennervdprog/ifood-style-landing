@@ -331,8 +331,8 @@ const CadastroLojista = () => {
         }
       }
 
-      toast.success("Cadastro realizado com sucesso!");
-      navigate("/admin", { replace: true });
+       toast.success("Cadastro realizado com sucesso! Sua conta está em análise aguarde.");
+       navigate("/admin", { replace: true });
     } catch (err: any) {
       toast.error(err.message || "Erro ao cadastrar.");
     } finally {
