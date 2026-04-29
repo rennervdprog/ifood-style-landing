@@ -159,6 +159,9 @@ Deno.serve(async (req) => {
         asaas_wallet_id: walletId,
         asaas_subaccount_api_key: apiKey,
         asaas_account_id: accData.id || null,
+        asaas_pix_key: body.pixAddressKey,
+        asaas_pix_key_type: body.pixAddressKeyType,
+        asaas_auto_withdraw_enabled: true,
       })
       .eq("id", body.store_id);
 
