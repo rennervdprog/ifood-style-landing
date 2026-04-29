@@ -148,12 +148,12 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
        console.log("Chamando edge function create-asaas-subaccount manualmente via fetch...");
        
        const { data: { session } } = await supabase.auth.getSession();
-       const response = await fetch("https://lktzrqjvqoojlrhqnxuz.supabase.co/functions/v1/create-asaas-subaccount", {
+        const response = await fetch("https://qkjhguziuchqsbxzruea.supabase.co/functions/v1/create-asaas-subaccount", {
          method: 'POST',
          headers: {
            'Content-Type': 'application/json',
            'Authorization': `Bearer ${session?.access_token}`,
-            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxrdHpycWp2cW9vamxyaHFueHV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4OTU5MTksImV4cCI6MjA5MDQ3MTkxOX0.CGxwer8G6zfGkZ7tY6X5roUzm7yD-EM1YKZ_3moGB44'
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFramhndXppdWNocXNieHpydWVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDg4NTUsImV4cCI6MjA5MDYyNDg1NX0.2sTeKchqAEN2gCqnH1_Zn9cJmUSmZgryt05A66tgm2Y'
          },
          body: JSON.stringify(payload)
        });
