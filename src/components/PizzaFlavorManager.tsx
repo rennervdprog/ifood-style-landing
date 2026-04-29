@@ -21,7 +21,7 @@ interface PizzaConfig {
 
 const DEFAULT_SIZES = ["Brotinho", "Média", "Grande", "Família"];
 
-const formatCurrency = (cents: number): string => {
+const formatBRL = (cents: number): string => {
   if (!cents) return "";
   return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 };
@@ -181,7 +181,7 @@ const PizzaFlavorManager = ({ storeId }: PizzaFlavorManagerProps) => {
                     type="text"
                     inputMode="numeric"
                     placeholder="R$ 0,00"
-                    value={newPrices[size] ? formatCurrency(newPrices[size]) : ""}
+                    value={newPrices[size] ? formatBRL(newPrices[size]) : ""}
                     onChange={(e) => setNewPrices({ ...newPrices, [size]: parseCurrencyInput(e.target.value) })}
                     className="w-full bg-muted text-foreground px-3 py-1.5 rounded-lg text-xs border border-border focus:border-primary focus:outline-none"
                   />
@@ -255,7 +255,7 @@ const PizzaFlavorManager = ({ storeId }: PizzaFlavorManagerProps) => {
                   type="text"
                   inputMode="numeric"
                   placeholder="R$ 0,00"
-                  value={flavor.prices[size] ? formatCurrency(flavor.prices[size]) : ""}
+                  value={flavor.prices[size] ? formatBRL(flavor.prices[size]) : ""}
                   onChange={(e) => {
                     const cents = parseCurrencyInput(e.target.value);
                     // Optimistic local update then save

@@ -28,7 +28,8 @@ import {
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
 } from "recharts";
-import { addMoney, multiplyMoney, subtractMoney, sumMoney, formatBRL } from "@/lib/utils";
+ import { addMoney, multiplyMoney, subtractMoney, sumMoney, formatBRL } from "@/lib/utils";
+ import { statusColors as globalStatusColors } from "@/lib/orderStatus";
 
 type DateFilter = "today" | "yesterday" | "week";
  type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamentos" | "saques" | "sync" | "coupons" | "entrega" | "cidades" | "juridico" | "planos" | "moderadores" | "socios" | "test_finance" | "links" | "broadcast" | "logs";
@@ -3003,14 +3004,6 @@ const PagamentosSplitTab = ({ stores }: { stores: any[] }) => {
   };
 
   const kindLabels: Record<string, string> = { store_payout: "Repasse", commission_charge: "Comissão", driver_payout: "Repasse Motoboy" };
-  const statusColors: Record<string, string> = {
-    pending: "bg-amber-500/10 text-amber-500",
-    approved: "bg-blue-500/10 text-blue-500",
-    paid: "bg-emerald-500/10 text-emerald-600",
-    failed: "bg-destructive/10 text-destructive",
-    cancelled: "bg-muted text-muted-foreground",
-  };
-  const statusLabels: Record<string, string> = { pending: "Pendente", approved: "Aprovado", paid: "Pago", failed: "Falhou", cancelled: "Cancelado" };
 
   if (isLoading) {
     return (
@@ -3099,9 +3092,9 @@ const PagamentosSplitTab = ({ stores }: { stores: any[] }) => {
                       <div key={record.id || idx} className="p-4 space-y-2">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${statusColors[record.status] || "bg-muted text-muted-foreground"}`}>
-                              {statusLabels[record.status] || record.status}
-                            </span>
+                             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${globalStatusColors[record.status]?.bg} ${globalStatusColors[record.status]?.text} || "bg-muted text-muted-foreground"}`}>
+                               {globalStatusColors[record.status]?.label || record.status}
+                             </span>
                             <span className="text-xs font-bold text-foreground">
                               {kindLabels[record.transaction_kind] || record.transaction_kind}
                             </span>

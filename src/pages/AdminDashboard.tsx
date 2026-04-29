@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef, useCallback, useMemo, memo } from "react";
 import { getOrderItemDisplayName } from "@/lib/orderItemName";
-import { formatBRL } from "@/lib/utils";
 import SimulationBanner from "@/components/SimulationBanner";
 import SignOutConfirm from "@/components/SignOutConfirm";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -43,7 +42,9 @@ import PizzaBorderManager from "@/components/PizzaBorderManager";
 import { printThermalReceipt } from "@/lib/thermalPrint";
 import { requestNotificationPermission, notifyNewOrder, pushNotifyDeliveryAvailable } from "@/lib/notifications";
 import { sendPushNotification } from "@/lib/firebase";
-import { addMoney, averageMoney, formatCurrency, sumMoney } from "@/lib/utils";
+   import { addMoney, averageMoney, formatBRL, sumMoney } from "@/lib/utils";
+ import { statusColors } from "@/lib/orderStatus";
+ import { OrderCard } from "@/components/OrderCard";
 import ProductTour, { lojistaTourSteps } from "@/components/ProductTour";
 import { useStorePlan } from "@/hooks/useStorePlan";
 import StoreDriverManager from "@/components/StoreDriverManager";
@@ -74,17 +75,6 @@ type RequiredAddonHighlight = {
 const ALERT_SOUND_URL = "https://actions.google.com/sounds/v1/alarms/beep_short.ogg";
 const CASH_REGISTER_SOUND_URL = "https://actions.google.com/sounds/v1/office/cash_register.ogg";
 
-// Semantic color system
-const statusColors: Record<string, { bg: string; text: string; border: string; label: string }> = {
-  pendente: { bg: "bg-amber-500/10", text: "text-amber-600 dark:text-amber-400", border: "border-amber-500/30", label: "Novo Pedido" },
-  preparando: { bg: "bg-amber-500/10", text: "text-amber-600 dark:text-amber-400", border: "border-amber-500/30", label: "Em Preparo" },
-  pronto_para_entrega: { bg: "bg-blue-500/10", text: "text-blue-600 dark:text-blue-400", border: "border-blue-500/30", label: "Pronto" },
-  saiu_entrega: { bg: "bg-blue-500/10", text: "text-blue-600 dark:text-blue-400", border: "border-blue-500/30", label: "Saiu Entrega" },
-  em_transito: { bg: "bg-blue-500/10", text: "text-blue-600 dark:text-blue-400", border: "border-blue-500/30", label: "Em Trânsito" },
-  entregue: { bg: "bg-emerald-500/10", text: "text-emerald-600 dark:text-emerald-400", border: "border-emerald-500/30", label: "Entregue" },
-  finalizado: { bg: "bg-emerald-500/10", text: "text-emerald-600 dark:text-emerald-400", border: "border-emerald-500/30", label: "Finalizado" },
-  cancelado: { bg: "bg-red-500/10", text: "text-red-600 dark:text-red-400", border: "border-red-500/30", label: "Cancelado" },
-};
 
 const orderTabs: { status: OrderStatus | "delivery"; label: string; icon: React.ElementType; mergedStatuses?: OrderStatus[] }[] = [
   { status: "pendente", label: "Novos", icon: Clock },
@@ -1559,57 +1549,7 @@ const AdminDashboard = () => {
                         const elapsedMin = Math.floor((Date.now() - new Date(order.created_at).getTime()) / 60000);
                         const sc = statusColors[order.status] || statusColors.pendente;
                         return (
-                          <div key={order.id} className="bg-card border border-red-500/20 rounded-xl p-3 space-y-2">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-black text-foreground">#{order.id.slice(0, 8).toUpperCase()}</span>
-                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${sc.bg} ${sc.text}`}>{sc.label}</span>
-                              </div>
-                              <span className="text-xs font-bold text-red-500 bg-red-500/10 px-2 py-0.5 rounded-full">⏱️ {elapsedMin} min</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                              <span>{getClientName(order.client_id)}</span><span>•</span>
-                              <span>{paymentIcons[order.payment_method]} {paymentLabels[order.payment_method] || order.payment_method}</span><span>•</span>
-                              <span className="font-bold text-foreground">{formatBRL(Number(order.total_price))}</span>
-                            </div>
-                            <div className="bg-muted/50 rounded-lg px-2.5 py-1.5 space-y-0.5">
-                              {order.order_items?.slice(0, 4).map((item: any) => (
-                                <div key={item.id} className="flex justify-between text-xs">
-                                  <span className="text-foreground"><span className="text-primary font-bold">{item.quantity}x</span> {getOrderItemDisplayName(item)}</span>
-                                  <span className="text-muted-foreground">{formatBRL(item.unit_price * item.quantity)}</span>
-                                </div>
-                              ))}
-                              {(order.order_items?.length || 0) > 4 && <p className="text-[10px] text-muted-foreground">+{order.order_items.length - 4} itens...</p>}
-                            </div>
-                            <div className="flex gap-2">
-                              {order.status === "pendente" && (
-                                <button onClick={() => {
-                                  setDashboardTab("orders");
-                                  setActiveTab("preparando");
-                                  updateOrderStatus(order.id, "preparando");
-                                }}
-                                  className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2.5 rounded-xl text-xs active:scale-[0.98] transition-transform">
-                                  {order.payment_method === "pix" ? "🍳 PRODUZIR" : "✓ ACEITAR"}
-                                </button>
-                              )}
-                              {order.status === "preparando" && (
-                                <button onClick={() => {
-                                  setDashboardTab("orders");
-                                  setActiveTab("pronto_para_entrega");
-                                  updateOrderStatus(order.id, "pronto_para_entrega" as OrderStatus);
-                                }}
-                                  className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2.5 rounded-xl text-xs active:scale-[0.98] transition-transform">
-                                  🔔 MARCAR PRONTO
-                                </button>
-                              )}
-                              {getClientWhatsApp(order.client_id) && (
-                                <WhatsAppButton number={getClientWhatsApp(order.client_id)} message={`Olá! Sobre seu pedido #${order.id.slice(0, 8).toUpperCase()}, estamos cuidando dele!`} />
-                              )}
-                              
-                            </div>
-                          </div>
-                        );
-                      })}
+                          <OrderCard key={order.id} order={order} onStatusChange={(id, status) => { setDashboardTab("orders"); setActiveTab(status as OrderTabKey); updateOrderStatus(id, status); }} getClientName={getClientName} />
                     </div>
                   )}
                 </div>
@@ -1628,45 +1568,8 @@ const AdminDashboard = () => {
                   </div>
                   <div className="space-y-3">
                     {orders?.filter(o => o.status === "pendente").slice(0, 5).map((order: any) => (
-                      <div key={order.id} className="bg-card border-2 border-amber-500/30 rounded-2xl p-4 hover:shadow-lg hover:shadow-amber-500/5 transition-all">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-2">
-                            <span className="text-base font-black text-foreground">#{order.id.slice(0, 8).toUpperCase()}</span>
-                            <span className="text-[10px] text-muted-foreground">
-                              {new Date(order.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                            </span>
-                          </div>
-                          <p className="text-xl font-black text-emerald-500">{formatBRL(Number(order.total_price))}</p>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3 flex-wrap">
-                          <div className="flex items-center gap-1"><User className="h-3 w-3" /><span className="font-medium">{getClientName(order.client_id)}</span></div>
-                          <span>•</span>
-                          <div className="flex items-center gap-1"><MapPin className="h-3 w-3" /><span>{order.neighborhood}</span></div>
-                          <span>•</span>
-                          <span className="font-medium">{paymentIcons[order.payment_method]} {paymentLabels[order.payment_method] || order.payment_method}</span>
-                        </div>
-                        <div className="bg-muted/40 rounded-xl px-3 py-2.5 mb-3 space-y-1">
-                          {order.order_items?.map((item: any) => (
-                            <div key={item.id} className="text-sm text-foreground flex justify-between">
-                              <span><span className="text-primary font-bold">{item.quantity}x</span> {getOrderItemDisplayName(item)}</span>
-                              <span className="text-muted-foreground text-xs">{formatBRL(item.unit_price * item.quantity)}</span>
-                            </div>
-                          ))}
-                        </div>
-                        {order.payment_method === "pix" && (
-                          <div className="text-center mb-3">
-                            <span className="text-[11px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-3 py-1 rounded-lg font-bold inline-flex items-center gap-1">
-                              <CheckCircle2 className="h-3 w-3" /> PIX Confirmado
-                            </span>
-                          </div>
-                        )}
-                        <button onClick={() => updateOrderStatus(order.id, "preparando")}
-                          className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3.5 rounded-xl text-sm active:scale-[0.98] transition-all shadow-lg shadow-emerald-500/20 h-12">
-                          {order.payment_method === "pix" ? "🍳 COMEÇAR PRODUÇÃO" : "✓ ACEITAR PEDIDO"}
-                        </button>
-                        <button onClick={() => handleCancelOrder(order)}
-                          className="w-full text-center text-xs text-muted-foreground hover:text-red-500 py-1.5 mt-1 transition-colors">
-                          Recusar pedido
+                      <OrderCard key={order.id} order={order} onStatusChange={(id, status) => { setActiveTab("preparando"); updateOrderStatus(id, status); }} getClientName={getClientName} paymentIcons={paymentIcons} paymentLabels={paymentLabels} getMainAction={getMainAction} />
+                    ))}
                         </button>
                       </div>
                     ))}
@@ -1746,14 +1649,7 @@ const AdminDashboard = () => {
                         <p className="text-sm font-black text-emerald-500">{formatBRL(client.totalSpent)}</p>
                       </div>
                     ))}
-                  </div>
-                </div>
-              )}
-
-              {/* ── Empty state ── */}
-              {pendingCount === 0 && preparingCount === 0 && readyCount === 0 && todayCount === 0 && clientAnalytics.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <div className="w-24 h-24 bg-muted/50 rounded-3xl flex items-center justify-center mb-5">
+                          <OrderCard key={order.id} order={order} showActions={false} onStatusChange={() => { setDashboardTab("orders"); setActiveTab(order.status as OrderStatus); }} getClientName={getClientName} />
                     <Store className="h-12 w-12 text-muted-foreground/50" />
                   </div>
                   <h3 className="text-lg font-black text-foreground mb-2">Tudo tranquilo por aqui! 😌</h3>
@@ -1843,11 +1739,11 @@ const AdminDashboard = () => {
                         {/* Stats */}
                         <div className="grid grid-cols-3 gap-2">
                           <div className="bg-muted/50 rounded-xl p-2.5 text-center">
-                            <p className="text-sm font-black text-foreground">{formatCurrency(client.totalSpent)}</p>
+                            <p className="text-sm font-black text-foreground">{formatBRL(client.totalSpent)}</p>
                             <p className="text-[10px] text-muted-foreground">Total Gasto</p>
                           </div>
                           <div className="bg-muted/50 rounded-xl p-2.5 text-center">
-                            <p className="text-sm font-black text-foreground">{formatCurrency(client.ticketMedio)}</p>
+                            <p className="text-sm font-black text-foreground">{formatBRL(client.ticketMedio)}</p>
                             <p className="text-[10px] text-muted-foreground">Ticket Médio</p>
                           </div>
                           <div className="bg-muted/50 rounded-xl p-2.5 text-center">
@@ -1933,19 +1829,7 @@ const AdminDashboard = () => {
                       </button>
                       <button onClick={() => { setActiveTab("pronto_para_entrega"); setBatchSelected(new Set()); }}
                         className={`flex flex-col items-center p-2.5 rounded-xl border transition-all ${
-                          readyCount > 0 ? "bg-blue-50 dark:bg-blue-500/10 border-blue-300 dark:border-blue-500/30 shadow-sm" : "bg-card border-border"
-                        }`}>
-                        <span className={`text-xl font-black ${readyCount > 0 ? "text-blue-600 dark:text-blue-400" : "text-muted-foreground"}`}>{readyCount}</span>
-                        <span className="text-[9px] font-bold text-muted-foreground mt-0.5">Prontos</span>
-                      </button>
-                      <button onClick={() => { setActiveTab("delivery"); setBatchSelected(new Set()); }}
-                        className={`flex flex-col items-center p-2.5 rounded-xl border transition-all ${
-                          deliveryCount > 0 ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-300 dark:border-emerald-500/30 shadow-sm" : "bg-card border-border"
-                        }`}>
-                        <span className={`text-xl font-black ${deliveryCount > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}`}>{deliveryCount}</span>
-                        <span className="text-[9px] font-bold text-muted-foreground mt-0.5">Entrega</span>
-                      </button>
-                    </div>
+                                <OrderCard key={order.id} order={order} showActions={false} />
                   </div>
                 ) : null;
               })()}
@@ -2113,187 +1997,7 @@ const AdminDashboard = () => {
                                 {elapsedMin}min
                               </span>
                             )}
-                            <span className="text-[10px] text-muted-foreground">
-                              {new Date(order.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Critical info: ID + Value */}
-                        <div className="px-3 pt-2.5 pb-1.5 flex items-start justify-between">
-                          <div>
-                            <p className="text-base font-black text-foreground">#{order.id.slice(0, 8).toUpperCase()}</p>
-                            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap text-[11px] text-muted-foreground">
-                              <span>{getClientName(order.client_id)}</span>
-                              <span className="text-muted-foreground/40">•</span>
-                              <span>{order.neighborhood}</span>
-                              <span className="text-muted-foreground/40">•</span>
-                              <span>{paymentIcons[order.payment_method]}</span>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xl font-black text-emerald-500">{formatBRL(Number(order.total_price))}</p>
-                            {order.payment_method === "pix" && (
-                              <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded">PIX PAGO</span>
-                            )}
-                          </div>
-                        </div>
-
-                        <RequiredAddonHighlights highlights={getRequiredAddonHighlights(order)} />
-
-                        {/* Items - compact */}
-                        <div className="mx-3 mb-2 bg-muted/50 rounded-xl px-3 py-2 space-y-0.5">
-                          {order.order_items?.map((item: any) => (
-                            <div key={item.id} className="text-sm text-foreground">
-                              <span className="text-primary font-bold">{item.quantity}x</span> {getOrderItemDisplayName(item)}
-                            </div>
-                          ))}
-                          {order.order_items?.map((item: any) => {
-                            const addons = parseOrderAddons(item.addons);
-                            if (!addons || addons.length === 0) return null;
-                            const optionalAddons = addons.filter((a: any) => !a.required);
-                            return (
-                               <div key={`addons-${item.id}`} className="pl-3 space-y-1 mt-1">
-                                 {optionalAddons.length > 0 && (
-                                   <div className="text-[11px] text-muted-foreground">
-                                     {optionalAddons.map((a: any, idx: number) => (
-                                       <span key={idx}>+ {a.name}{a.price > 0 ? ` (${formatBRL(Number(a.price))})` : ""}{idx < optionalAddons.length - 1 ? ", " : ""}</span>
-                                     ))}
-                                   </div>
-                                 )}
-                               </div>
-                            );
-                          })}
-                          {order.order_items?.map((item: any) => {
-                            if (!item.observations) return null;
-                            return <div key={`obs-${item.id}`} className="pl-5 text-[11px] text-muted-foreground italic">📝 {item.observations}</div>;
-                          })}
-                          {order.payment_method === "dinheiro" && (order as any).needs_change && Number((order as any).change_for) > 0 && (
-                            <div className="flex items-center gap-1 pt-1 border-t border-border">
-                              <Banknote className="h-3 w-3 text-amber-500" />
-                              <span className="text-[10px] text-amber-500 font-bold">Troco: {formatBRL(Number((order as any).change_for) - Number(order.total_price))}</span>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Address / Pickup badge */}
-                        <div className="mx-3 mb-2">
-                          {order.neighborhood === "RETIRADA" ? (
-                            <div className="flex items-center gap-1.5 bg-violet-500/10 border border-violet-500/20 rounded-xl px-3 py-2">
-                              <Store className="h-3.5 w-3.5 text-violet-500" />
-                              <span className="text-xs font-bold text-violet-600 dark:text-violet-400">🏪 Retirada na loja</span>
-                            </div>
-                          ) : (
-                            <>
-                              <button onClick={() => toggleAddress(order.id)}
-                                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground w-full">
-                                <MapPin className="h-3 w-3" />
-                                <span className="truncate flex-1 text-left">{order.neighborhood}</span>
-                                {isAddressExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                              </button>
-                              {isAddressExpanded && (
-                                <div className="mt-1.5 bg-muted/30 rounded-lg p-2.5 text-xs text-muted-foreground space-y-0.5 animate-fade-in">
-                                  <p>{order.address_details}</p>
-                                  <p className="text-muted-foreground/70">Taxa entrega: {formatBRL(Number(order.delivery_fee))}</p>
-                                </div>
-                              )}
-                            </>
-                          )}
-                        </div>
-
-                        {/* Driver status - Platform mode (not for pickup orders) */}
-                        {order.neighborhood !== "RETIRADA" && order.status === "pronto_para_entrega" && !order.driver_id && !isOwnDelivery && (
-                          <div className="mx-3 mb-2 bg-amber-500/5 border border-amber-500/20 rounded-xl px-3 py-2">
-                            <div className="flex items-center gap-1.5 mb-1">
-                              <Loader2 className="h-3.5 w-3.5 text-amber-500 animate-spin" />
-                              <span className="text-xs text-amber-600 dark:text-amber-400 font-semibold">Aguardando entregador</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <span className={`w-2 h-2 rounded-full ${(onlineDrivers?.length || 0) > 0 ? "bg-emerald-500 animate-pulse" : "bg-destructive"}`} />
-                              <span className="text-[10px] text-muted-foreground">
-                                {(onlineDrivers?.length || 0) > 0 ? `${onlineDrivers?.length} entregador(es) online` : "Nenhum entregador online"}
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                        {order.neighborhood !== "RETIRADA" && order.status === "pronto_para_entrega" && isOwnDelivery && !order.driver_id && (
-                          <div className="mx-3 mb-2 bg-blue-500/5 border border-blue-500/20 rounded-xl px-3 py-2 space-y-2">
-                            <div className="flex items-center gap-1.5">
-                              <Loader2 className="h-3.5 w-3.5 text-blue-500 animate-spin" />
-                              <span className="text-xs text-blue-600 dark:text-blue-400 font-semibold">
-                                {(order as any).assigned_driver_id
-                                  ? `🎯 Designado para ${getDriverName((order as any).assigned_driver_id)}`
-                                  : "🛵 Aberto — qualquer motoboy pode aceitar"}
-                              </span>
-                            </div>
-                            {linkedStoreDrivers && linkedStoreDrivers.length > 1 && (
-                              <select
-                                value={(order as any).assigned_driver_id || ""}
-                                onChange={async (e) => {
-                                  const target = e.target.value || null;
-                                  try {
-                                    const { error } = await supabase.rpc("store_assign_order_driver" as any, {
-                                      _order_id: order.id,
-                                      _driver_user_id: target,
-                                    });
-                                    if (error) throw error;
-                                    toast.success(target ? "Pedido designado!" : "Pedido liberado para todos.");
-                                    queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
-                                  } catch (err: any) {
-                                    toast.error(err.message || "Erro ao designar motoboy");
-                                  }
-                                }}
-                                className="w-full text-xs px-2 py-1.5 rounded-lg bg-background border border-border focus:ring-2 focus:ring-primary"
-                              >
-                                <option value="">🌐 Liberar para todos</option>
-                                {linkedStoreDrivers.map((d: any) => (
-                                  <option key={d.user_id} value={d.user_id}>
-                                    🎯 Enviar para {d.full_name}
-                                  </option>
-                                ))}
-                              </select>
-                            )}
-                            {linkedStoreDrivers && linkedStoreDrivers.length > 0 && (
-                              <p className="text-[10px] text-muted-foreground">
-                                {linkedStoreDrivers.length} motoboy(s) vinculado(s)
-                              </p>
-                            )}
-                          </div>
-                        )}
-                        {order.neighborhood !== "RETIRADA" && order.status === "pronto_para_entrega" && isOwnDelivery && order.driver_id && (
-                          <div className="mx-3 mb-2 flex items-center gap-1.5 bg-emerald-500/5 border border-emerald-500/20 rounded-xl px-3 py-2">
-                            <Bike className="h-3.5 w-3.5 text-emerald-500" />
-                            <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">🏍️ {getDriverName(order.driver_id)} aceitou o pedido</span>
-                          </div>
-                        )}
-                        {order.status === "saiu_entrega" && isOwnDelivery && (
-                          <div className="mx-3 mb-2 flex items-center gap-1.5 bg-blue-500/5 border border-blue-500/20 rounded-xl px-3 py-2">
-                            <Truck className="h-3.5 w-3.5 text-blue-500" />
-                            <span className="text-xs text-blue-600 dark:text-blue-400 font-semibold">🛵 {order.driver_id ? getDriverName(order.driver_id) : "Motoboy"} está entregando</span>
-                          </div>
-                        )}
-                        {order.driver_id && (order.status === "em_transito" || (order.status === "saiu_entrega" && !isOwnDelivery)) && (
-                          <div className="mx-3 mb-2 flex items-center gap-1.5 bg-blue-500/5 border border-blue-500/20 rounded-xl px-3 py-2">
-                            <Truck className="h-3.5 w-3.5 text-blue-500" />
-                            <span className="text-xs text-blue-600 dark:text-blue-400 font-semibold">🛵 {getDriverName(order.driver_id)} entregando</span>
-                          </div>
-                        )}
-
-                        {/* Delivery PIN for own delivery (store driver flow) */}
-                        {isOwnDelivery && hasLinkedDrivers && (order as any).delivery_pin && ["saiu_entrega", "em_transito"].includes(order.status) && (
-                          <div className="mx-3 mb-2 bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3 text-center">
-                            <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold mb-1">🔐 PIN de Entrega (cliente confirma)</p>
-                            <p className="text-3xl font-black text-emerald-600 dark:text-emerald-400 tracking-[0.3em]">{(order as any).delivery_pin}</p>
-                            {order.driver_id && (
-                              <p className="text-[10px] text-muted-foreground mt-1">Motoboy: {getDriverName(order.driver_id)}</p>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Delivery confirmed by client */}
-                        {isOwnDelivery && (order as any).delivery_confirmed_by_client && ["entregue", "finalizado"].includes(order.status) && (
-                          <div className="mx-3 mb-2 flex items-center gap-1.5 bg-emerald-500/5 border border-emerald-500/20 rounded-xl px-3 py-2">
-                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                    <OrderCard key={order.id} order={order} onStatusChange={(id, status) => { if (status === "preparando" || status === "pronto_para_entrega") setActiveTab(status as any); updateOrderStatus(id, status); }} getClientName={getClientName} paymentIcons={paymentIcons} paymentLabels={paymentLabels} isOwnDelivery={isOwnDelivery} hasLinkedDrivers={hasLinkedDrivers} driversLoading={driversLoading} toggleBatchOrder={toggleBatchOrder} batchSelected={batchSelected} getMainAction={getMainAction} />
                             <span className="text-xs text-emerald-500 font-bold">Cliente confirmou entrega ✅</span>
                             {order.driver_id && (
                               <span className="ml-auto text-[10px] text-muted-foreground">{getDriverName(order.driver_id)}</span>
@@ -2694,9 +2398,9 @@ const AdminDashboard = () => {
                         {/* KPI Cards with comparison */}
                         <div className="grid grid-cols-2 gap-3">
                           {[
-                            { label: "Receita Total", value: formatCurrency(totalRevenue), growth: revenueGrowth, color: "emerald" },
+                            { label: "Receita Total", value: formatBRL(totalRevenue), growth: revenueGrowth, color: "emerald" },
                             { label: "Pedidos", value: totalOrders.toString(), growth: orderGrowth, color: "blue" },
-                            { label: "Ticket Médio", value: formatCurrency(avgTicket), growth: ticketGrowth, color: "purple" },
+                            { label: "Ticket Médio", value: formatBRL(avgTicket), growth: ticketGrowth, color: "purple" },
                             { label: "Taxa Cancelamento", value: `${cancelRate.toFixed(1)}%`, growth: null, color: cancelRate > 5 ? "red" : "emerald" },
                           ].map((kpi) => (
                             <div key={kpi.label} className={`bg-card/60 backdrop-blur-sm rounded-2xl p-4 border border-border/30 relative overflow-hidden`}>
@@ -2725,7 +2429,7 @@ const AdminDashboard = () => {
                           <div className="bg-card/60 rounded-2xl p-4 border border-border/30">
                             <p className="text-[10px] text-muted-foreground font-semibold uppercase">📅 Melhor Dia</p>
                             <p className="text-lg font-black text-foreground mt-1">{bestDay?.dia || "—"}</p>
-                            <p className="text-[10px] text-muted-foreground">{bestDay ? `${formatCurrency(bestDay.vendas)}` : "Sem dados"}</p>
+                            <p className="text-[10px] text-muted-foreground">{bestDay ? `${formatBRL(bestDay.vendas)}` : "Sem dados"}</p>
                           </div>
                         </div>
 
@@ -2815,7 +2519,7 @@ const AdminDashboard = () => {
                                       <span className="text-xs text-muted-foreground">{p.name}</span>
                                       <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded">{p.value}x</span>
                                     </div>
-                                    <span className="text-xs font-bold text-foreground">{formatCurrency(p.total)}</span>
+                                    <span className="text-xs font-bold text-foreground">{formatBRL(p.total)}</span>
                                   </div>
                                 ))}
                               </div>
@@ -2839,7 +2543,7 @@ const AdminDashboard = () => {
                                       <span className="font-bold text-foreground">{name}</span>
                                       <div className="flex items-center gap-2">
                                         <span className="text-muted-foreground">{data.qty}x</span>
-                                        <span className="font-bold text-emerald-500">{formatCurrency(data.revenue)}</span>
+                                        <span className="font-bold text-emerald-500">{formatBRL(data.revenue)}</span>
                                       </div>
                                     </div>
                                     <div className="h-1.5 bg-muted rounded-full overflow-hidden">

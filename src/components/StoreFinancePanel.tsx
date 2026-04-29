@@ -1,10 +1,11 @@
 import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Copy, Download, ArrowUpRight, ArrowDownRight, Smartphone, Banknote, Receipt, Calendar, Loader2, X, CheckCircle2, RotateCcw, AlertCircle, TimerReset } from "lucide-react";
+ import { Copy, Download, ArrowUpRight, ArrowDownRight, Smartphone, Banknote, Receipt, Calendar, Loader2, X, CheckCircle2, RotateCcw, AlertCircle, TimerReset, QrCode } from "lucide-react";
 import { toast } from "sonner";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, endOfDay, subWeeks } from "date-fns";
-import { Button } from "@/components/ui/button";
+ import { Button } from "@/components/ui/button";
+ import { Card, CardContent } from "@/components/ui/card";
 import { formatBRL, multiplyMoney, sumMoney, averageMoney } from "@/lib/utils";
 import { usePixCharge, getPendingChargeRemainingMs, formatCountdown, getTransactionStatusMeta, PIX_CHARGE_TTL_MS, mapTransactionToChargeResult, FinancialTransaction, ChargeResult } from "@/hooks/usePixCharge";
 import PaymentStatement from "@/components/PaymentStatement";
