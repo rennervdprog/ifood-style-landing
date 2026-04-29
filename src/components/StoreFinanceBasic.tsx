@@ -283,7 +283,7 @@ const StoreFinanceBasic = ({ storeId, storeName }: StoreFinanceBasicProps) => {
               </div>
               <p className="text-xs text-muted-foreground text-center">
                 PIX disponível a partir de <strong className="text-foreground">{formatBRL(minPayout)}</strong>
-                {" "}— faltam <strong className="text-destructive">{formatBRL((minPayout - pendingFee)))}</strong>
+                {" "}— faltam <strong className="text-destructive">{formatBRL({formatBRL((minPayout - pendingFee))})}</strong>
               </p>
             </div>
           ) : (
@@ -334,7 +334,7 @@ const StoreFinanceBasic = ({ storeId, storeName }: StoreFinanceBasicProps) => {
           </button>
         ))}
         <span className="text-[10px] text-muted-foreground ml-auto">
-          {format(dateRange.start, "dd/MM", { locale: ptBR )} — {format(dateRange.end, "dd/MM", { locale: ptBR )}
+          {format(dateRange.start, "dd/MM", { locale: ptBR })} — {format(dateRange.end, "dd/MM", { locale: ptBR })}
         </span>
       </div>
 

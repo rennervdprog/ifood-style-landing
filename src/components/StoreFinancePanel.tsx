@@ -452,7 +452,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
 
   const copyToClipboard = () => {
     const text = `📊 Resumo Financeiro ItaSuper - ${storeName}\n` +
-      `Período: ${format(dateRange.start, "dd/MM", { locale: ptBR )} a ${format(dateRange.end, "dd/MM/yyyy", { locale: ptBR )}\n\n` +
+      `Período: ${format(dateRange.start, "dd/MM", { locale: ptBR })} a ${format(dateRange.end, "dd/MM/yyyy", { locale: ptBR })}\n\n` +
       `💰 Vendas Totais: ${formatBRL(totalSales)}\n` +
       `📱 Comissão Total (${commissionPct}%): ${formatBRL(totalCommission)}\n\n` +
       `--- Vendas via App (Split Automático ✅) ---\n` +
@@ -524,7 +524,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
           </button>
         ))}
         <span className="text-[10px] text-muted-foreground ml-auto whitespace-nowrap">
-          {format(dateRange.start, "dd/MM", { locale: ptBR )} — {format(dateRange.end, "dd/MM", { locale: ptBR )}
+          {format(dateRange.start, "dd/MM", { locale: ptBR })} — {format(dateRange.end, "dd/MM", { locale: ptBR })}
         </span>
       </div>
 
@@ -675,7 +675,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
           </div>
           <p className="text-2xl font-black text-emerald-400">{formatBRL(creditFromApp)}</p>
           <p className="text-[10px] text-muted-foreground mt-1">
-            Você recebeu {formatBRL(creditFromApp)} de {formatBRL(appSales)} em vendas pelo app. A taxa da plataforma (${commissionPct}% = {formatBRL(multiplyMoney(appSales, commissionRate)))}) já foi descontada automaticamente.
+            Você recebeu {formatBRL(creditFromApp)} de {formatBRL(appSales)} em vendas pelo app. A taxa da plataforma (${commissionPct}% = {formatBRL({formatBRL(multiplyMoney(appSales, commissionRate))})}) já foi descontada automaticamente.
           </p>
           <div className="mt-2 rounded-xl bg-emerald-500/5 border border-emerald-500/10 p-2.5">
             <p className="text-[10px] text-emerald-400 font-semibold">✅ Valor já depositado na sua conta — nada a fazer</p>
@@ -695,7 +695,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
           </div>
           <p className="text-xs text-muted-foreground mb-1">Você recebeu o valor na hora (dinheiro/cartão). A taxa de ${commissionPct}% da plataforma precisa ser repassada.</p>
           <p className="text-2xl font-black text-red-400">
-            {formatBRL((dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue)))}
+            {formatBRL({formatBRL((dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue))})}
           </p>
 
           {safetyModeMs > 0 && (
@@ -846,12 +846,12 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
         <div className="grid grid-cols-2 gap-3 text-center">
           <div>
             <p className="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">App (automático)</p>
-            <p className="text-sm font-black text-emerald-400 mt-1">{formatBRL(multiplyMoney(appSales, commissionRate)))}</p>
+            <p className="text-sm font-black text-emerald-400 mt-1">{formatBRL({formatBRL(multiplyMoney(appSales, commissionRate))})}</p>
             <p className="text-[10px] text-muted-foreground">comissão já retida</p>
           </div>
           <div>
             <p className="text-[10px] text-red-400 font-semibold uppercase tracking-wider">Físico (a cobrar)</p>
-            <p className="text-sm font-black text-red-400 mt-1">{formatBRL((dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue)))}</p>
+            <p className="text-sm font-black text-red-400 mt-1">{formatBRL({formatBRL((dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue))})}</p>
             <p className="text-[10px] text-muted-foreground">comissão pendente</p>
           </div>
         </div>
@@ -938,7 +938,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
                       <span className="text-[10px] text-muted-foreground">
                         {tx.transaction_kind === "commission_charge" ? "Cobrança" : "Repasse"}
                       </span>
-                      <span className="text-sm font-bold text-foreground">{formatBRL(Number(tx.amount)))}</span>
+                      <span className="text-sm font-bold text-foreground">{formatBRL({formatBRL(Number(tx.amount))})}</span>
                     </div>
                     <div className="flex items-center justify-between mt-1">
                       <p className="text-[10px] text-muted-foreground">
@@ -953,7 +953,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
                   </div>
                 </div>
               );
-            )}
+            })}
           </div>
         </div>
       )}
@@ -966,7 +966,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
           {activeOrders.filter(o => o.payment_method === "pix").map(order => (
             <div key={order.id} className="flex justify-between text-xs bg-blue-500/5 rounded-xl p-2.5">
               <span className="text-blue-400 font-semibold">#{order.id.substring(0, 6).toUpperCase()}</span>
-              <span className="text-foreground font-medium">{formatBRL(Number(order.subtotal)))}</span>
+              <span className="text-foreground font-medium">{formatBRL({formatBRL(Number(order.subtotal))})}</span>
               <span className="text-muted-foreground capitalize">{order.status.replace(/_/g, " ")}</span>
             </div>
           ))}
@@ -1016,7 +1016,7 @@ const StoreFinancePanel = ({ storeId, storeName }: StoreFinancePanelProps) => {
                   </div>
                 </div>
               );
-            )}
+            })}
           </div>
         </div>
       ) : (
