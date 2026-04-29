@@ -11,8 +11,8 @@ import {
   Award, Sparkles, ChevronDown,
   ShoppingBag, Truck, Crown, BadgePercent,
    Bell, QrCode, Utensils, Gift, MessageCircle, Shield, Check,
-   Navigation, UserCheck, SmartphoneNfc,
-} from "lucide-react";
+    Navigation, UserCheck, SmartphoneNfc, Info,
+  } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -326,11 +326,11 @@ const Navbar = ({ onNavigate, isLoggedIn }: { onNavigate: (path: string) => void
             </Button>
           ) : (
             <>
-              <button onClick={() => { setOpen(false); onNavigate("/portal-parceiro"); }} className="block w-full text-left py-3 text-sm font-semibold text-primary">
+              <button onClick={() => { setOpen(false); onNavigate("/portal-parceiro"); }} className="block w-full text-left py-3 text-sm font-semibold text-muted-foreground hover:text-primary transition-colors">
                 Já sou parceiro
               </button>
               <Button className="w-full rounded-full font-bold mt-2" onClick={() => { setOpen(false); onNavigate("/cadastro-lojista"); }}>
-                Cadastrar minha loja
+                Criar minha loja grátis
               </Button>
             </>
           )}
@@ -443,7 +443,7 @@ const StoreDirectory = () => {
             Plataforma disponível para todo o Brasil 🇧🇷
           </div>
 
-          <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black tracking-tighter text-foreground leading-[0.95] mb-8 opacity-100 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+          <h1 className="text-5xl lg:text-7xl font-black tracking-tighter text-foreground leading-[0.95] mb-8 opacity-100 animate-in fade-in slide-in-from-bottom-4 duration-1000">
             O sistema de delivery <br className="hidden md:block" />
             mais <span className="text-primary italic underline decoration-primary/20">profissional</span> do Brasil.
           </h1>
@@ -465,8 +465,8 @@ const StoreDirectory = () => {
 
           {/* Honest launch badge instead of fake numbers */}
           <div className="mt-10 inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-4 py-2 text-sm font-semibold text-primary">
-            <Sparkles className="h-4 w-4" />
-            Plataforma em lançamento • Seja um dos primeiros lojistas
+            <ShieldCheck className="h-4 w-4" />
+            Delivery próprio • Sem depender de iFood ou Rappi 🇧🇷
           </div>
 
           {/* Trust badges */}
@@ -509,19 +509,19 @@ const StoreDirectory = () => {
       </section>
 
        {/* ══════ MOTOBOY SYSTEM SECTION ══════ */}
-       <section className="py-24 px-4 bg-slate-900 text-white overflow-hidden relative">
-         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-[100px] rounded-full -translate-y-1/2 translate-x-1/2" />
-         <div className="absolute bottom-0 left-0 w-64 h-64 bg-orange-600/10 blur-[100px] rounded-full translate-y-1/2 -translate-x-1/2" />
-         
+       <section className="py-20 px-4 bg-gradient-to-br from-background via-primary/5 to-background text-foreground overflow-hidden relative border-t border-border">
          <div className="mx-auto max-w-6xl relative z-10">
            <div className="text-center mb-16">
-             <div className="inline-flex items-center gap-2 rounded-full bg-primary/20 border border-primary/30 px-4 py-1.5 text-xs font-bold text-primary mb-4">
+             <div className="inline-flex items-center gap-2 rounded-full bg-primary/20 border border-primary/30 px-4 py-1.5 text-xs font-bold text-primary mb-2">
                <Truck className="h-4 w-4" /> LOGÍSTICA INTEGRADA
              </div>
-             <h2 className="text-3xl md:text-5xl font-black mb-6 tracking-tighter">
+             <h2 className="text-3xl font-bold tracking-tight mb-2">
                Sistema de Motoboy <span className="text-primary italic">Integrado</span> 🛵
              </h2>
-             <p className="text-slate-400 max-w-2xl mx-auto text-lg">
+             <div className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold mb-4">
+               Disponível nos planos Crescimento, Apoiadores e Essencial
+             </div>
+             <p className="text-muted-foreground max-w-2xl mx-auto text-base font-medium">
                Sua logística sob controle absoluto. Da cozinha à porta do cliente, tudo conectado em tempo real para uma operação sem falhas.
              </p>
            </div>
@@ -529,13 +529,13 @@ const StoreDirectory = () => {
            <div className="grid lg:grid-cols-2 gap-16 items-center">
              <div className="space-y-6">
                {motoboyWorkflow.map((item, i) => (
-                 <div key={i} className="flex gap-5 p-6 rounded-[2rem] bg-white/5 border border-white/10 hover:bg-white/10 transition-all group">
+                 <div key={i} className="flex gap-5 p-6 rounded-[2rem] bg-card border border-border hover:shadow-md transition-all group">
                    <div className={`w-14 h-14 rounded-2xl ${item.color} flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform`}>
                      <item.icon className={`h-7 w-7 ${item.iconColor}`} />
                    </div>
                    <div>
-                     <h3 className="font-bold text-xl mb-2">{item.title}</h3>
-                     <p className="text-slate-400 leading-relaxed">{item.desc}</p>
+                     <h3 className="font-semibold text-lg mb-2">{item.title}</h3>
+                     <p className="text-muted-foreground leading-relaxed text-base font-medium">{item.desc}</p>
                    </div>
                  </div>
                ))}
