@@ -144,6 +144,30 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    // ── IDEMPOTENCY GUARD ──────────────────────────────────────────────
+    // Asaas can re-deliver the same event. Use a unique (payment_id, event)
+    // row as a lock: the INSERT only succeeds the first time; on a retry
+    // it fails with a 23505 (unique_violation) and we short-circuit.
+    {
+      const { error: idemErr } = await supabase
+        .from("asaas_webhook_events")
+        .insert({
+          payment_id: paymentId,
+          event,
+          external_reference: externalReference,
+          payload,
+        });
+      if (idemErr) {
+        // Postgres unique_violation → already processed
+        // (other errors should not block the response either, but we log)
+        if ((idemErr as any).code === "23505") {
+          console.log(`[ASAAS-WH ${wId}] ⏭️ duplicate event payment_id=${paymentId} event=${event} — skipping`);
+          return json({ received: true, duplicate: true });
+        }
+        console.warn(`[ASAAS-WH ${wId}] could not record idempotency row:`, idemErr);
+      }
+    }
+
     // Determine if this is an order payment or a financial transaction
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(externalReference);
 
@@ -152,7 +176,7 @@ Deno.serve(async (req) => {
         // This is an order payment
         const { data: order, error: fetchError } = await supabase
           .from("orders")
-          .select("id, status, store_id, subtotal, delivery_fee, payment_method")
+          .select("id, status, store_id, subtotal, delivery_fee, payment_method, asaas_split_native, store_payout_id")
           .eq("id", externalReference)
           .single();
 
@@ -169,7 +193,8 @@ Deno.serve(async (req) => {
               status: "pendente" as any,
               confirmed_at: new Date().toISOString(),
             })
-            .eq("id", externalReference);
+            .eq("id", externalReference)
+            .eq("status", "aguardando_pagamento" as any); // race-safe transition
           if (updateError) {
             console.error("Error updating order:", updateError);
           } else {
@@ -179,15 +204,38 @@ Deno.serve(async (req) => {
           console.log(`Order ${externalReference} status=${order.status} (already past aguardando_pagamento) — will still attempt payout if pending`);
         }
 
-        // Re-fetch to check payout state
-        const { data: payoutCheck } = await supabase
-          .from("orders")
-          .select("store_payout_id")
-          .eq("id", externalReference)
-          .maybeSingle();
-        if (payoutCheck?.store_payout_id) {
-          console.log(`Order ${externalReference} already split (transfer ${payoutCheck.store_payout_id}) — skipping`);
+        // ── SPLIT-NATIVO GUARD ──
+        // If the PIX charge was created with Asaas' native `split` array,
+        // the platform's share is already routed by Asaas. We MUST NOT also
+        // send a manual /transfers — that would pay the store twice.
+        if ((order as any).asaas_split_native === true) {
+          console.log(`[ASAAS-WH ${wId}] order ${externalReference} used native split — skipping manual transfer & commission accrual`);
+          return json({ received: true, native_split: true });
+        }
+
+        if ((order as any).store_payout_id) {
+          console.log(`Order ${externalReference} already split (transfer ${(order as any).store_payout_id}) — skipping`);
           return json({ received: true, already_processed: true, split_already_done: true });
+        }
+
+        // ── OPTIMISTIC LOCK ──
+        // Reserve the payout slot before calling Asaas. If another worker
+        // (or the polling endpoint) wins the race, our UPDATE affects 0
+        // rows and we bail out without firing /transfers.
+        const lockSentinel = `LOCK:${wId}:${Date.now()}`;
+        const { data: lockRows, error: lockErr } = await supabase
+          .from("orders")
+          .update({ store_payout_id: lockSentinel })
+          .eq("id", externalReference)
+          .is("store_payout_id", null)
+          .select("id");
+        if (lockErr) {
+          console.error(`[ASAAS-WH ${wId}] payout lock error:`, lockErr);
+          return json({ received: true, lock_error: true });
+        }
+        if (!lockRows || lockRows.length === 0) {
+          console.log(`[ASAAS-WH ${wId}] payout already locked/processed for order ${externalReference} — skipping`);
+          return json({ received: true, already_locked: true });
         }
 
         // ── Auto-transfer store share to owner's PIX key ──
