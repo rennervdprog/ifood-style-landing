@@ -146,10 +146,10 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
     isFixedPlan,
     isItatingaFixed: isFixedPlan, // backward compat
     pixOperationalFee: isFixedPlan
-      ? ((data?.plan as any)?.pix_operational_fee_override ?? data?.feeConfig?.pix_operational_fee ?? DEFAULT_DELIVERY_FEE_CONFIG.pix_operational_fee)
+      ? ((data?.plan as any)?.pix_operational_fee_override ?? 1.99)
       : 0,
-    platformDeliverySplit: isFixedPlan && data?.deliveryMode === "own"
-      ? ((data?.plan as any)?.platform_delivery_split_override ?? data?.feeConfig?.platform_split ?? DEFAULT_DELIVERY_FEE_CONFIG.platform_split)
+    platformDeliverySplit: data?.deliveryMode === "own"
+      ? ((data?.plan as any)?.platform_delivery_split_override ?? 2.00)
       : 0,
     driverDeliverySplit: isFixedPlan ? (data?.feeConfig?.driver_split ?? DEFAULT_DELIVERY_FEE_CONFIG.driver_split) : 0,
     isLoading,
