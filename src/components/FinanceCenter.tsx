@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
+ import { Card, CardContent } from "@/components/ui/card";
+ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { 
@@ -79,7 +80,12 @@ export default function FinanceCenter({ storeId, storeName, hasCommission }: Fin
   );
 
   // If it's a new subaccount just created but status is not yet available
-  const isJustCreated = store?.asaas_wallet_id && !activationStatus && !loadingStatus;
+   const isJustCreated = store?.asaas_wallet_id && !activationStatus && !loadingStatus;
+ 
+   const hasSubaccount = !!store?.asaas_wallet_id;
+ 
+   // Check if basic Asaas info is missing to show the setup button
+   const needsAsaasConfig = !hasSubaccount;
 
   return (
     <div className="space-y-6">
@@ -94,39 +100,63 @@ export default function FinanceCenter({ storeId, storeName, hasCommission }: Fin
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 bg-muted/50 p-1 rounded-xl h-12">
-          <TabsTrigger value="summary" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+         <TabsList className={`grid w-full bg-muted/50 p-1 rounded-xl h-12 ${needsAsaasConfig ? 'grid-cols-2' : 'grid-cols-3'}`}>
+           <TabsTrigger value="summary" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all">
             <LayoutDashboard className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">Resumo</span>
             <span className="sm:hidden text-[10px]">Resumo</span>
           </TabsTrigger>
-          <TabsTrigger value="balance" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
-            <Wallet className="h-4 w-4 mr-2" />
-            <span className="hidden sm:inline">Saldo Asaas</span>
-            <span className="sm:hidden text-[10px]">Saldo</span>
-          </TabsTrigger>
-          <TabsTrigger value="history" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+           {!needsAsaasConfig && (
+             <TabsTrigger value="balance" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all">
+               <Wallet className="h-4 w-4 mr-2" />
+               <span className="hidden sm:inline">Saldo Asaas</span>
+               <span className="sm:hidden text-[10px]">Saldo</span>
+             </TabsTrigger>
+           )}
+           <TabsTrigger value="history" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all">
             <Receipt className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">Extrato</span>
             <span className="sm:hidden text-[10px]">Extrato</span>
           </TabsTrigger>
         </TabsList>
 
-         <TabsContent value="summary" className="mt-6 space-y-6">
-           {hasCommission ? (
-             <StoreFinancePanel storeId={storeId} storeName={storeName} hideHistory={true} />
+          <TabsContent value="summary" className="mt-6 space-y-6">
+            {needsAsaasConfig && (
+              <Card className="border-amber-200 bg-amber-50/30">
+                <CardContent className="pt-6 pb-6 text-center space-y-4">
+                  <div className="mx-auto w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
+                    <Wallet className="h-6 w-6 text-amber-600" />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="font-bold text-amber-900">Configuração Pendente</h3>
+                    <p className="text-sm text-amber-700 max-w-[280px] mx-auto">
+                      Identificamos que sua conta ainda não possui o PIX integrado via Asaas. Configure agora para receber direto na sua conta.
+                    </p>
+                  </div>
+                  <Button 
+                    className="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold h-11"
+                    onClick={() => setActiveTab("balance")}
+                  >
+                    Configurar Conta Asaas
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+ 
+            {hasCommission ? (
+              <StoreFinancePanel storeId={storeId} storeName={storeName} hideHistory={true} />
+            ) : (
+              <StoreFinanceBasic storeId={storeId} storeName={storeName} hideHistory={true} />
+            )}
+          </TabsContent>
+ 
+         <TabsContent value="balance" className="mt-6">
+           {!store?.asaas_wallet_id ? (
+             <AsaasSubaccountSetup storeId={storeId} />
            ) : (
-             <StoreFinanceBasic storeId={storeId} storeName={storeName} hideHistory={true} />
+             <AsaasFinancialPanel storeId={storeId} />
            )}
          </TabsContent>
-
-        <TabsContent value="balance" className="mt-6">
-          {!store?.asaas_wallet_id ? (
-            <AsaasSubaccountSetup storeId={storeId} />
-          ) : (
-            <AsaasFinancialPanel storeId={storeId} />
-          )}
-        </TabsContent>
 
          <TabsContent value="history" className="mt-6">
            <div className="space-y-6">
