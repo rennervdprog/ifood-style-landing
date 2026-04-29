@@ -28,6 +28,29 @@ interface Props {
 
 type PixKeyType = "CPF" | "CNPJ" | "EMAIL" | "PHONE" | "EVP";
 
+const isValidCpf = (value: string) => {
+  const cpf = value.replace(/\D/g, "");
+  if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
+  const calc = (base: string, factor: number) => {
+    const total = base.split("").reduce((sum, n) => sum + Number(n) * factor--, 0);
+    const digit = (total * 10) % 11;
+    return digit === 10 ? 0 : digit;
+  };
+  return calc(cpf.slice(0, 9), 10) === Number(cpf[9]) && calc(cpf.slice(0, 10), 11) === Number(cpf[10]);
+};
+
+const isValidCnpj = (value: string) => {
+  const cnpj = value.replace(/\D/g, "");
+  if (cnpj.length !== 14 || /^(\d)\1+$/.test(cnpj)) return false;
+  const calc = (base: string, factors: number[]) => {
+    const total = base.split("").reduce((sum, n, i) => sum + Number(n) * factors[i], 0);
+    const rest = total % 11;
+    return rest < 2 ? 0 : 11 - rest;
+  };
+  return calc(cnpj.slice(0, 12), [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]) === Number(cnpj[12]) &&
+    calc(cnpj.slice(0, 13), [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]) === Number(cnpj[13]);
+};
+
 export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
   const qc = useQueryClient();
   const [submitting, setSubmitting] = useState(false);
@@ -58,6 +81,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
     cpfCnpj: initialData?.cpfCnpj || "",
     birthDate: "",
     companyType: "MEI" as "MEI" | "INDIVIDUAL" | "LIMITED" | "ASSOCIATION",
+    incomeValue: "",
     phone: initialData?.phone || "",
     address: initialData?.address || "",
     addressNumber: initialData?.addressNumber || "",
@@ -105,28 +129,32 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
     const cleanCpfCnpj = form.cpfCnpj.replace(/\D/g, "");
     const cleanPhone = form.phone.replace(/\D/g, "");
     const cleanCep = form.postalCode.replace(/\D/g, "");
-
-    console.log("Campos para auditoria:", {
-      name: form.name,
-      email: form.email,
-      cpfCnpj: cleanCpfCnpj,
-      phone: cleanPhone,
-      address: form.address,
-      addressNumber: form.addressNumber,
-      province: form.province,
-      postalCode: cleanCep,
-      birthDate: form.birthDate,
-      personType: personType,
-      pixKey: form.pixAddressKey
-    });
+    const cleanIncomeValue = Number(String(form.incomeValue).replace(/\./g, "").replace(",", "."));
+    const documentIsCpf = cleanCpfCnpj.length === 11;
 
     if (!form.name || !form.email || cleanCpfCnpj.length < 11 || cleanPhone.length < 10 || !form.address ||
         !form.addressNumber || !form.province || cleanCep.length !== 8 || !form.pixAddressKey) {
       toast.error("Preencha todos os campos obrigatórios.");
       return;
     }
-    if (isCpf && !form.birthDate) {
+    if ((personType === "FISICA" && cleanCpfCnpj.length !== 11) || (personType === "JURIDICA" && cleanCpfCnpj.length !== 14)) {
+      toast.error(personType === "FISICA" ? "CPF deve ter 11 dígitos." : "CNPJ deve ter 14 dígitos.");
+      return;
+    }
+    if (documentIsCpf && !isValidCpf(cleanCpfCnpj)) {
+      toast.error("CPF inválido. Confira os números digitados.");
+      return;
+    }
+    if (!documentIsCpf && !isValidCnpj(cleanCpfCnpj)) {
+      toast.error("CNPJ inválido. Confira os números digitados.");
+      return;
+    }
+    if (documentIsCpf && !form.birthDate) {
       toast.error("Data de nascimento é obrigatória para CPF.");
+      return;
+    }
+    if (!Number.isFinite(cleanIncomeValue) || cleanIncomeValue <= 0) {
+      toast.error(documentIsCpf ? "Informe a renda mensal." : "Informe o faturamento mensal.");
       return;
     }
     const pixErr = validatePixKey(form.pixAddressKey, form.pixAddressKeyType.toLowerCase());
@@ -141,9 +169,10 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
       name: form.name,
       email: form.email,
       cpfCnpj: cleanCpfCnpj,
-      birthDate: isCpf ? form.birthDate : undefined,
-      personType: personType,
-      companyType: !isCpf ? form.companyType : undefined,
+      birthDate: documentIsCpf ? form.birthDate : undefined,
+      personType: documentIsCpf ? "FISICA" : "JURIDICA",
+      companyType: !documentIsCpf ? form.companyType : undefined,
+      incomeValue: cleanIncomeValue,
       phone: cleanPhone,
       mobilePhone: cleanPhone,
       address: form.address,
