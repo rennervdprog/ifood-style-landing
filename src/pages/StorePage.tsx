@@ -264,34 +264,39 @@ const StorePage = () => {
     }
   }, [sections, activeSection]);
 
-   // Auto-update active section based on scroll position
-   useEffect(() => {
-     if (!sections || sections.length === 0) return;
- 
-     const observer = new IntersectionObserver(
-       (entries) => {
-         const visible = entries
-           .filter((e) => e.isIntersecting)
-           .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
- 
-         if (visible.length > 0) {
-           const id = visible[0].target.getAttribute("data-section-id");
-           if (id) setActiveSection(id);
-         }
-       },
-       {
-         rootMargin: "-120px 0px -60% 0px",
-         threshold: 0,
-       }
-     );
- 
-     sections.forEach((s) => {
-       const el = sectionRefs.current[s.id];
-       if (el) observer.observe(el);
-     });
- 
-     return () => observer.disconnect();
-   }, [sections, products]);
+  // Auto-update active section based on scroll position
+  useEffect(() => {
+    if (!sections || sections.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // Encontra a seção que está mais próxima do topo da viewport (respeitando a margem do cabeçalho)
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => {
+            // Preferimos a que está mais próxima do topo
+            return Math.abs(a.boundingClientRect.top - 100) - Math.abs(b.boundingClientRect.top - 100);
+          });
+
+        if (visible.length > 0) {
+          const id = visible[0].target.getAttribute("data-section-id");
+          if (id) setActiveSection(id);
+        }
+      },
+      {
+        // Ajustamos a margem para detectar melhor quando o título da seção chega no topo
+        rootMargin: "-100px 0px -70% 0px",
+        threshold: [0, 0.1, 0.5]
+      }
+    );
+
+    sections.forEach((s) => {
+      const el = sectionRefs.current[s.id];
+      if (el) observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, [sections, products]);
  
    // Scroll active category chip into view in the sticky nav
    useEffect(() => {
@@ -304,24 +309,26 @@ const StorePage = () => {
      }
    }, [activeSection]);
  
-  const scrollToSection = (sectionId: string) => {
+  const scrollToSection = useCallback((sectionId: string) => {
     const el = sectionRefs.current[sectionId];
-    if (!el) return;
+    if (!el) {
+      console.warn(`Elemento da seção ${sectionId} não encontrado.`);
+      return;
+    }
 
-    // Temporarily set active section to prevent observer from fighting the manual scroll
+    // Define a seção ativa imediatamente para feedback visual instantâneo no menu
     setActiveSection(sectionId);
 
-    const offset = 70; // Header height + padding
-    const bodyRect = document.body.getBoundingClientRect().top;
-    const elementRect = el.getBoundingClientRect().top;
-    const elementPosition = elementRect - bodyRect;
-    const offsetPosition = elementPosition - offset;
+    // O offset de 80px compensa o cabeçalho fixo (chips de categoria)
+    const offset = 80;
+    const elementPosition = el.getBoundingClientRect().top;
+    const offsetPosition = elementPosition + window.pageYOffset - offset;
 
     window.scrollTo({
       top: offsetPosition,
       behavior: "smooth"
     });
-  };
+  }, []);
 
   const productsBySection = (sectionId: string | null) =>
     products?.filter(p => p.section_id === sectionId) || [];
