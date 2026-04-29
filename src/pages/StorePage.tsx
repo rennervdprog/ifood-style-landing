@@ -309,8 +309,17 @@ const StorePage = () => {
      const el = sectionRefs.current[sectionId];
      if (!el) return;
  
-     // Use standard scrollIntoView with offset handled by CSS scroll-mt-16
-     el.scrollIntoView({ behavior: "smooth", block: "start" });
+      // Use direct window.scrollTo for better control with sticky header
+      const offset = 80; // Approximate height of the sticky nav + safety margin
+      const bodyRect = document.body.getBoundingClientRect().top;
+      const elementRect = el.getBoundingClientRect().top;
+      const elementPosition = elementRect - bodyRect;
+      const offsetPosition = elementPosition - offset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth"
+      });
    };
 
   const productsBySection = (sectionId: string | null) =>
