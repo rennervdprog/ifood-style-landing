@@ -276,19 +276,49 @@ const AdminDashboard = () => {
     audioRef.current.play().catch(() => {});
   };
 
-  const contextValue: AdminContextType = {
-    store, orders, todayTotal, todayCount, pendingCount, preparingCount, readyCount,
-    avgDeliveryTime: 0, clientAnalytics: [], isApproved, profileLoading, storeLoading,
-    isOwnDelivery: store?.delivery_mode === "own", hasLinkedDrivers: false,
-    driversLoading: false, onlineDrivers: [], activeTab, setActiveTab,
-    dashboardTab, setDashboardTab, updateOrderStatus, toggleStoreOpen,
-    getClientName: (id) => id.slice(0, 8), getDriverName: (id) => "Motoboy",
-    getMainAction: (status: string) => null,
-    paymentIcons: { pix: "⚡", cartao: "💳", dinheiro: "💵" },
-    paymentLabels: { pix: "PIX", cartao: "Cartão", dinheiro: "Dinheiro" },
-    storePlan, allHoursClosed: false, delayedOrders: [], showDelayedPanel,
-    setShowDelayedPanel, toggleBatchOrder: () => {}, batchSelected, setBatchSelected
-  };
+   const contextValue = useMemo<AdminContextType>(() => ({
+     store, 
+     orders, 
+     todayTotal, 
+     todayCount, 
+     pendingCount, 
+     preparingCount, 
+     readyCount,
+     avgDeliveryTime, 
+     clientAnalytics, 
+     isApproved, 
+     profileLoading, 
+     storeLoading: storeLoading || ordersLoading,
+     isOwnDelivery: store?.delivery_mode === "own", 
+     hasLinkedDrivers,
+     driversLoading, 
+     onlineDrivers: [], 
+     activeTab, 
+     setActiveTab,
+     dashboardTab, 
+     setDashboardTab, 
+     updateOrderStatus, 
+     toggleStoreOpen,
+     getClientName, 
+     getDriverName: (id) => "Motoboy",
+     getMainAction,
+     paymentIcons: { pix: "⚡", cartao: "💳", dinheiro: "💵" },
+     paymentLabels: { pix: "PIX", cartao: "Cartão", dinheiro: "Dinheiro" },
+     storePlan, 
+     allHoursClosed, 
+     delayedOrders, 
+     showDelayedPanel,
+     setShowDelayedPanel, 
+     toggleBatchOrder: () => {}, 
+     batchSelected, 
+     setBatchSelected
+   }), [
+     store, orders, todayTotal, todayCount, pendingCount, preparingCount, readyCount,
+     avgDeliveryTime, clientAnalytics, isApproved, profileLoading, storeLoading, ordersLoading,
+     hasLinkedDrivers, driversLoading, activeTab, dashboardTab, updateOrderStatus, 
+     toggleStoreOpen, getClientName, getMainAction, storePlan, allHoursClosed, 
+     delayedOrders, showDelayedPanel, batchSelected
+   ]);
 
   const handleTabChange = (tab: DashboardTabType) => {
     setDashboardTab(tab);
