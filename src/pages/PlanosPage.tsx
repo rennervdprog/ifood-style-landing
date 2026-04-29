@@ -19,14 +19,16 @@ import {
   Gift,
   Truck,
   X,
-  BadgePercent,
-  Crown,
-  Rocket,
-  Sparkles,
-  Package,
-  Globe,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
+   BadgePercent,
+   Crown,
+   Rocket,
+   Sparkles,
+   Package,
+   Globe,
+   Loader2,
+ } from "lucide-react";
+ import { Button } from "@/components/ui/button";
+ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 
@@ -231,9 +233,28 @@ const comparisonRows = [
   { feature: "Prioridade em novidades", commission: false, hybrid: false, fixed: true },
 ];
 
-export default function PlanosPage() {
-  const navigate = useNavigate();
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
+ export default function PlanosPage() {
+   const navigate = useNavigate();
+   const [openFaq, setOpenFaq] = useState<number | null>(null);
+   const [supporterCount, setSupporterCount] = useState<number | null>(null);
+   const [supporterLoading, setSupporterLoading] = useState(true);
+ 
+   useEffect(() => {
+     const fetchSupporterCount = async () => {
+       try {
+         const { data, error } = await supabase.rpc("count_supporter_plans");
+         if (!error && typeof data === "number") {
+           setSupporterCount(data);
+         }
+       } catch (err) {
+         console.error("Error fetching supporter count:", err);
+       } finally {
+         setSupporterLoading(false);
+       }
+     };
+ 
+     fetchSupporterCount();
+   }, []);
 
   const statsRef = useInView(0.3);
   const storesCount = useCountUp(50, 2000, statsRef.visible);
@@ -396,22 +417,32 @@ export default function PlanosPage() {
           </p>
 
           <div className="grid md:grid-cols-3 gap-6 items-start">
-            {plans.map((plan) => {
-              const Icon = plan.icon;
-              return (
-                <Card
-                  key={plan.id}
-                  className={`relative flex flex-col rounded-3xl transition-all hover:shadow-xl ${
-                    plan.highlight
-                      ? "border-2 border-primary shadow-lg shadow-primary/10 ring-2 ring-primary/10 scale-[1.02]"
-                      : "border-border hover:border-primary/30"
-                  }`}
-                >
-                  {plan.badge && (
-                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs font-bold px-5 py-1.5 rounded-full shadow-md whitespace-nowrap">
-                      {plan.badge}
-                    </div>
-                  )}
+             {plans.map((plan) => {
+               const Icon = plan.icon;
+               const isSupporter = plan.id === "supporter";
+               const remaining = isSupporter && supporterCount !== null ? Math.max(0, 10 - supporterCount) : null;
+               const isSoldOut = isSupporter && remaining === 0;
+               
+               const planBadge = isSupporter 
+                 ? (supporterLoading 
+                     ? "🚀 Carregando vagas..." 
+                     : (isSoldOut ? "❌ Vagas esgotadas" : `🚀 Restam ${remaining} vagas`))
+                 : plan.badge;
+ 
+               return (
+                 <Card
+                   key={plan.id}
+                   className={`relative flex flex-col rounded-3xl transition-all hover:shadow-xl ${
+                     plan.highlight
+                       ? "border-2 border-primary shadow-lg shadow-primary/10 ring-2 ring-primary/10 scale-[1.02]"
+                       : "border-border hover:border-primary/30"
+                   }`}
+                 >
+                   {planBadge && (
+                     <div className={`absolute -top-3.5 left-1/2 -translate-x-1/2 ${isSoldOut ? 'bg-muted-foreground' : 'bg-primary'} text-primary-foreground text-xs font-bold px-5 py-1.5 rounded-full shadow-md whitespace-nowrap transition-colors`}>
+                       {planBadge}
+                     </div>
+                   )}
 
                   <CardContent className="flex flex-col flex-1 p-6 pt-8">
                     {/* Header */}
@@ -464,18 +495,25 @@ export default function PlanosPage() {
                       ))}
                     </ul>
 
-                    <Button
-                      onClick={handleCTA}
-                      className={`w-full rounded-2xl py-5 text-base font-semibold ${
-                        plan.highlight
-                          ? "shadow-lg shadow-primary/20"
-                          : ""
-                      }`}
-                      variant={plan.highlight ? "default" : "outline"}
-                    >
-                      {plan.price === "0" ? "Começar grátis" : "Escolher plano"}
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
+                     <Button
+                       onClick={isSoldOut ? undefined : handleCTA}
+                       disabled={isSoldOut}
+                       className={`w-full rounded-2xl py-5 text-base font-semibold ${
+                         plan.highlight
+                           ? "shadow-lg shadow-primary/20"
+                           : ""
+                       }`}
+                       variant={plan.highlight ? "default" : (isSoldOut ? "secondary" : "outline")}
+                     >
+                       {supporterLoading && isSupporter ? (
+                         <Loader2 className="h-4 w-4 animate-spin" />
+                       ) : (
+                         <>
+                           {isSoldOut ? "Esgotado" : (plan.price === "0" ? "Começar grátis" : "Escolher plano")}
+                           {!isSoldOut && <ArrowRight className="ml-2 h-4 w-4" />}
+                         </>
+                       )}
+                     </Button>
                   </CardContent>
                 </Card>
               );
