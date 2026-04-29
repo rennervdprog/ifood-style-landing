@@ -128,6 +128,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
       email: form.email,
       cpfCnpj: cleanCpfCnpj,
       birthDate: isCpf ? form.birthDate : undefined,
+      personType: personType,
       companyType: !isCpf ? form.companyType : undefined,
       phone: cleanPhone,
       mobilePhone: cleanPhone,
