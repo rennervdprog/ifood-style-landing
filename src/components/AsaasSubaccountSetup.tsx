@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
- import { CheckCircle2, Loader2, Banknote, ShieldCheck, Copy } from "lucide-react";
+ import { CheckCircle2, Loader2, Banknote, ShieldCheck, Copy, AlertCircle, FileText, ExternalLink, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { formatPixKeyDisplay, sanitizePixKeyForAsaas, validatePixKey } from "@/lib/pixFormat";
 
@@ -236,6 +236,28 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
   };
 
 
+  const { data: activationStatus, isLoading: loadingStatus, refetch: refetchStatus } = useQuery({
+    queryKey: ["asaas-activation-status", storeId],
+    queryFn: async () => {
+      if (!store?.asaas_wallet_id) return null;
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch("https://qkjhguziuchqsbxzruea.supabase.co/functions/v1/get-asaas-subaccount-status", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.access_token}`,
+          apikey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFramhndXppdWNocXNieHpydWVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDg4NTUsImV4cCI6MjA5MDYyNDg1NX0.2sTeKchqAEN2gCqnH1_Zn9cJmUSmZgryt05A66tgm2Y",
+        },
+        body: JSON.stringify({ store_id: storeId }),
+      });
+      if (!response.ok) return null;
+      const data = await response.json();
+      return data.status;
+    },
+    enabled: !!store?.asaas_wallet_id,
+    refetchInterval: 30000,
+  });
+
   if (isLoading) {
     return (
       <Card>
@@ -247,19 +269,72 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
   }
 
   if (store?.asaas_wallet_id) {
+    const isPending = activationStatus?.commercialInfo !== "APPROVED" || 
+                     activationStatus?.bankAccount !== "APPROVED" || 
+                     activationStatus?.document !== "APPROVED";
+
     return (
-      <Alert className="border-green-500/40 bg-green-500/5">
-        <CheckCircle2 className="h-5 w-5 text-green-600" />
-        <AlertTitle className="text-green-700 dark:text-green-400">
-          Split automático ativo
-        </AlertTitle>
-        <AlertDescription className="text-xs">
-          Sua subconta Asaas está conectada. A cada PIX recebido, sua parte cai
-          direto na sua conta — só a comissão da plataforma vai pra ItaSuper.
-          <br />
-          <span className="text-muted-foreground">Wallet: <code className="text-[10px]">{store.asaas_wallet_id}</code></span>
-        </AlertDescription>
-      </Alert>
+      <div className="space-y-4">
+        <Alert className={isPending ? "border-amber-500/40 bg-amber-500/5" : "border-green-500/40 bg-green-500/5"}>
+          {isPending ? <AlertCircle className="h-5 w-5 text-amber-600" /> : <CheckCircle2 className="h-5 w-5 text-green-600" />}
+          <AlertTitle className={isPending ? "text-amber-700" : "text-green-700"}>
+            {isPending ? "Subconta em análise / Pendente" : "Subconta 100% Ativa"}
+          </AlertTitle>
+          <AlertDescription className="text-xs">
+            {isPending 
+              ? "Sua subconta já recebe pagamentos, mas você precisa completar a ativação para realizar saques."
+              : "Tudo pronto! Seus recebimentos e saques estão liberados."}
+            <br />
+            <span className="text-muted-foreground">Wallet: <code className="text-[10px]">{store.asaas_wallet_id}</code></span>
+          </AlertDescription>
+        </Alert>
+
+        {isPending && activationStatus && (
+          <Card className="border-amber-200">
+            <CardHeader className="py-3 px-4">
+              <CardTitle className="text-sm flex items-center justify-between">
+                Situação da Ativação
+                <Button variant="ghost" size="sm" onClick={() => refetchStatus()} disabled={loadingStatus}>
+                  <RefreshCw className={`h-3 w-3 ${loadingStatus ? "animate-spin" : ""}`} />
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="py-2 px-4 space-y-3">
+              <div className="flex items-center justify-between text-xs">
+                <span className="flex items-center gap-2"><ShieldCheck className="h-3 w-3" /> Dados Comerciais</span>
+                <span className={activationStatus.commercialInfo === "APPROVED" ? "text-green-600 font-bold" : "text-amber-600"}>
+                  {activationStatus.commercialInfo === "APPROVED" ? "Aprovado" : "Pendente"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="flex items-center gap-2"><Banknote className="h-3 w-3" /> Dados Bancários</span>
+                <span className={activationStatus.bankAccount === "APPROVED" ? "text-green-600 font-bold" : "text-amber-600"}>
+                  {activationStatus.bankAccount === "APPROVED" ? "Aprovado" : "Pendente"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="flex items-center gap-2"><FileText className="h-3 w-3" /> Documentos</span>
+                <span className={activationStatus.document === "APPROVED" ? "text-green-600 font-bold" : "text-amber-600"}>
+                  {activationStatus.document === "APPROVED" ? "Aprovado" : "Pendente"}
+                </span>
+              </div>
+
+              <div className="pt-2">
+                <Button className="w-full text-xs h-8 bg-amber-600 hover:bg-amber-700" asChild>
+                  <a href="https://www.asaas.com/childAccounts/list" target="_blank" rel="noopener noreferrer">
+                    Finalizar Ativação no Asaas <ExternalLink className="h-3 w-3 ml-2" />
+                  </a>
+                </Button>
+                <p className="text-[10px] text-muted-foreground mt-2 text-center">
+                  Você receberá um e-mail do Asaas para enviar as fotos dos documentos.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    );
+  }
     );
   }
 
