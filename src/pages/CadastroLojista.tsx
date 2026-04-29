@@ -444,7 +444,7 @@ const CadastroLojista = () => {
                       ))}
                     </div>
                     <p className="text-[10px] text-muted-foreground mt-1.5">
-                      💡 Mesma taxa operacional do Essencial: R$1,99 por pedido via PIX • R$2 na entrega (pago pelo cliente)
+                      💡 Mesma taxa operacional do Essencial: R$1,99 por pedido via PIX • R$2 na entrega (pago pelo cliente somado à sua taxa)
                     </p>
                   </button>
                 )}
@@ -482,7 +482,7 @@ const CadastroLojista = () => {
                     ))}
                   </div>
                   <p className="text-[10px] text-muted-foreground mt-1.5">
-                    💡 Pequena taxa operacional: R$1,99 por pedido via PIX • R$2 na entrega (pago pelo cliente na taxa de entrega)
+                    💡 Pequena taxa operacional: R$1,99 por pedido via PIX • R$2 na entrega (pago pelo cliente somado à sua taxa)
                   </p>
                 </button>
 
@@ -509,7 +509,7 @@ const CadastroLojista = () => {
                     </div>
                   </div>
                   <p className="text-[10px] font-bold text-emerald-500 mb-1">🎁 7 dias grátis para testar</p>
-                  <p className="text-[10px] font-semibold text-primary mb-2">+ 2,5% por pedido • R$ 2 taxa entrega</p>
+                  <p className="text-[10px] font-semibold text-primary mb-2">+ 2,5% por pedido • R$ 2 na entrega (pago pelo cliente somado à sua taxa)</p>
                   <div className="flex flex-wrap gap-1.5">
                     {["PIX integrado", "CRM completo", "Relatórios"].map(tag => (
                       <span key={tag} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">{tag}</span>
@@ -539,7 +539,7 @@ const CadastroLojista = () => {
                     </div>
                   </div>
                   <p className="text-[10px] font-bold text-emerald-500 mb-1">✅ Comece agora — sem mensalidade!</p>
-                   <p className="text-[10px] font-semibold text-primary mb-2">+ 6% por pedido • R$ 2 taxa entrega</p>
+                   <p className="text-[10px] font-semibold text-primary mb-2">+ 6% por pedido • R$ 2 na entrega (pago pelo cliente somado à sua taxa)</p>
                   <div className="flex flex-wrap gap-1.5">
                     {["Sem mensalidade", "Todos os recursos", "PIX integrado"].map(tag => (
                       <span key={tag} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{tag}</span>
@@ -550,13 +550,13 @@ const CadastroLojista = () => {
                 {selectedPlan && (
                   <div className="rounded-xl bg-muted/50 p-3 text-xs text-muted-foreground">
                     {selectedPlan === "supporter" ? (
-                      <p><strong className="text-foreground">Apoiadores (Lançamento):</strong> R$130/mês com as <strong className="text-foreground">mesmas regras do Essencial</strong> (zero comissão, todas as ferramentas, R$1 por pedido PIX, R$2 na entrega paga pelo cliente). Preço de lançamento limitado às primeiras 10 lojas — congelado para sempre enquanto a assinatura estiver ativa.</p>
+                      <p><strong className="text-foreground">Apoiadores (Lançamento):</strong> R$130/mês com as <strong className="text-foreground">mesmas regras do Essencial</strong> (zero comissão, todas as ferramentas, R$1,99 por pedido PIX, R$2 na entrega paga pelo cliente somado à taxa do lojista). Preço de lançamento limitado às primeiras 10 lojas — congelado para sempre enquanto a assinatura estiver ativa.</p>
                     ) : selectedPlan === "fixed" ? (
-                      <p><strong className="text-foreground">Essencial:</strong> R$180/mês sem comissão por pedido. Inclui uma pequena taxa operacional de <strong className="text-foreground">R$1 por pedido pago via PIX</strong> (pedidos em dinheiro/cartão não pagam) e <strong className="text-foreground">R$2 na taxa de entrega (pago pelo cliente)</strong>. Valores acumulam no painel para repasse semanal. Todas as ferramentas inclusas.</p>
+                      <p><strong className="text-foreground">Essencial:</strong> R$180/mês sem comissão por pedido. Inclui uma pequena taxa operacional de <strong className="text-foreground">R$1,99 por pedido pago via PIX</strong> (pedidos em dinheiro/cartão não pagam) e <strong className="text-foreground">R$2 na taxa de entrega (pago pelo cliente somado à sua taxa)</strong>. Valores acumulam no painel para repasse semanal. Todas as ferramentas inclusas.</p>
                     ) : selectedPlan === "hybrid" ? (
-                      <p><strong className="text-foreground">Crescimento:</strong> Mensalidade de R$100 + 2,5% por pedido. PIX integrado com split automático e painel financeiro completo com CRM.</p>
+                      <p><strong className="text-foreground">Crescimento:</strong> Mensalidade de R$100 + 2,5% por pedido. Inclui taxa de <strong className="text-foreground">R$2 na entrega (pago pelo cliente somado à sua taxa)</strong>. PIX integrado com split automático e painel financeiro completo com CRM.</p>
                     ) : (
-                       <p><strong className="text-foreground">Comissão:</strong> R$0/mês + 6% por pedido. Sem custo fixo, ideal para quem está começando. Todas as ferramentas inclusas.</p>
+                       <p><strong className="text-foreground">Comissão:</strong> R$0/mês + 6% por pedido. Inclui taxa de <strong className="text-foreground">R$2 na entrega (pago pelo cliente somado à sua taxa)</strong>. Sem custo fixo, ideal para quem está começando. Todas as ferramentas inclusas.</p>
                     )}
                   </div>
                 )}
