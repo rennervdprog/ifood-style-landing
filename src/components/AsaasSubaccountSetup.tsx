@@ -290,10 +290,11 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
     );
   }
 
-  if (store?.asaas_wallet_id) {
-    const isPending = activationStatus?.commercialInfo !== "APPROVED" || 
-                     activationStatus?.bankAccount !== "APPROVED" || 
-                     activationStatus?.document !== "APPROVED";
+   if (store?.asaas_wallet_id) {
+     const isPending = !activationStatus || 
+                      activationStatus?.commercialInfo !== "APPROVED" || 
+                      activationStatus?.bankAccount !== "APPROVED" || 
+                      activationStatus?.document !== "APPROVED";
 
     return (
       <div className="space-y-4">
@@ -311,7 +312,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
           </AlertDescription>
         </Alert>
 
-        {isPending && activationStatus && (
+         {isPending && (
           <Card className="border-amber-200">
             <CardHeader className="py-3 px-4">
               <CardTitle className="text-sm flex items-center justify-between">
