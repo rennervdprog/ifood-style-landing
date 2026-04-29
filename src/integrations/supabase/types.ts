@@ -3081,6 +3081,7 @@ export type Database = {
         Args: { _store_id: string }
         Returns: number
       }
+      get_order_client_name: { Args: { _order_id: string }; Returns: string }
       get_owned_store_ids: { Args: { _user_id: string }; Returns: string[] }
       get_page_view_stats: { Args: { _page?: string }; Returns: Json }
       get_store_commission_rate: {
