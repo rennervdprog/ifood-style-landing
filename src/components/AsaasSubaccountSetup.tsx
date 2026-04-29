@@ -106,6 +106,20 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
     const cleanPhone = form.phone.replace(/\D/g, "");
     const cleanCep = form.postalCode.replace(/\D/g, "");
 
+    console.log("Campos para auditoria:", {
+      name: form.name,
+      email: form.email,
+      cpfCnpj: cleanCpfCnpj,
+      phone: cleanPhone,
+      address: form.address,
+      addressNumber: form.addressNumber,
+      province: form.province,
+      postalCode: cleanCep,
+      birthDate: form.birthDate,
+      personType: personType,
+      pixKey: form.pixAddressKey
+    });
+
     if (!form.name || !form.email || cleanCpfCnpj.length < 11 || cleanPhone.length < 10 || !form.address ||
         !form.addressNumber || !form.province || cleanCep.length !== 8 || !form.pixAddressKey) {
       toast.error("Preencha todos os campos obrigatórios.");
