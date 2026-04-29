@@ -3131,30 +3131,18 @@ export type Database = {
         Args: { _page: string; _visitor_hash?: string }
         Returns: undefined
       }
-      register_as_lojista:
-        | {
-            Args: {
-              _avatar_url?: string
-              _document: string
-              _full_name: string
-              _store_category: Database["public"]["Enums"]["store_category"]
-              _store_name: string
-              _whatsapp?: string
-            }
-            Returns: string
-          }
-        | {
-            Args: {
-              _avatar_url?: string
-              _document: string
-              _full_name: string
-              _selected_plan?: string
-              _store_category: Database["public"]["Enums"]["store_category"]
-              _store_name: string
-              _whatsapp?: string
-            }
-            Returns: string
-          }
+      register_as_lojista: {
+        Args: {
+          _avatar_url?: string
+          _document: string
+          _full_name: string
+          _selected_plan?: string
+          _store_category: Database["public"]["Enums"]["store_category"]
+          _store_name: string
+          _whatsapp?: string
+        }
+        Returns: string
+      }
       register_as_motoboy:
         | {
             Args: {
@@ -3258,7 +3246,7 @@ export type Database = {
         | "docerias"
         | "restaurante"
         | "esfihas"
-      store_plan_type: "fixed" | "hybrid" | "commission_only"
+      store_plan_type: "fixed" | "hybrid" | "commission_only" | "supporter"
       store_status: "analise" | "ativo" | "bloqueado"
       wallet_transaction_type: "credit" | "debit"
     }
@@ -3438,7 +3426,7 @@ export const Constants = {
         "restaurante",
         "esfihas",
       ],
-      store_plan_type: ["fixed", "hybrid", "commission_only"],
+      store_plan_type: ["fixed", "hybrid", "commission_only", "supporter"],
       store_status: ["analise", "ativo", "bloqueado"],
       wallet_transaction_type: ["credit", "debit"],
     },
