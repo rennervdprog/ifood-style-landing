@@ -23,9 +23,9 @@ interface Props {
 }
 
 const planLabels: Record<StorePlanType, string> = {
-  fixed: "Essencial",
-  hybrid: "Crescimento",
-  commission_only: "Comissão Pura",
+   fixed: "Essencial",
+   hybrid: "Crescimento",
+   commission_only: "Comissão",
 };
 
 const planSubtitles: Record<StorePlanType, string> = {
@@ -71,7 +71,7 @@ const planOptions: { type: StorePlanType; label: string; fee: number; rate: numb
   },
   {
     type: "commission_only",
-    label: "Comissão Pura",
+    label: "Comissão",
     fee: 0,
     rate: 6,
     tagline: "Para começar sem investimento",

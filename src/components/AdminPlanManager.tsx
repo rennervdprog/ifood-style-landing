@@ -19,12 +19,12 @@ type DisplayPlan = PlanType | "supporter";
 const SUPPORTER_FEE = 130;
 const SUPPORTER_LIMIT = 10;
 
-const planLabels: Record<DisplayPlan, string> = {
-  supporter: "Apoiador (Vitalício)",
-  fixed: "Plano Fixo",
-  hybrid: "Assinatura + Taxa",
-  commission_only: "Comissão",
-};
+ const planLabels: Record<DisplayPlan, string> = {
+   supporter: "Apoiadores",
+   fixed: "Essencial",
+   hybrid: "Crescimento",
+   commission_only: "Comissão",
+ };
 
 const planColors: Record<DisplayPlan, string> = {
   supporter: "bg-pink-500/10 text-pink-700 dark:text-pink-400 border-pink-500/30",
