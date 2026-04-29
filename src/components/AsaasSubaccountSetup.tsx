@@ -170,12 +170,24 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
 
         if (invokeError) {
           console.error("Erro na chamada da função:", invokeError);
-          setDebugInfo({
-            type: "InvokeError",
-            message: invokeError.message,
-            details: invokeError
-          });
-          throw invokeError;
+          
+          // Tentar extrair o corpo do erro se for um erro de HTTP
+          let errorDetail = invokeError.message;
+          if (invokeError instanceof Error && 'context' in invokeError) {
+            try {
+              const response = (invokeError as any).context;
+              if (response && typeof response.json === 'function') {
+                const body = await response.json();
+                errorDetail = body.error || body.message || errorDetail;
+                setDebugInfo(body);
+              }
+            } catch (e) {
+              console.error("Não foi possível ler o corpo do erro:", e);
+            }
+          }
+          
+          setLastError(errorDetail);
+          throw new Error(errorDetail);
         }
 
       console.log("Resposta da Edge Function:", data);

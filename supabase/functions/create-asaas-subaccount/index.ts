@@ -18,8 +18,9 @@ const BodySchema = z.object({
   name: z.string().min(3).max(120),
   email: z.string().email(),
   cpfCnpj: z.string().min(11).max(18),
-  birthDate: z.string().optional(), // yyyy-mm-dd, required for CPF
-  companyType: z.enum(["MEI", "INDIVIDUAL", "LIMITED", "ASSOCIATION"]).optional(),
+  birthDate: z.string().optional().or(z.literal("")), // yyyy-mm-dd, required for CPF
+  personType: z.enum(["FISICA", "JURIDICA"]).optional(),
+  companyType: z.enum(["MEI", "INDIVIDUAL", "LIMITED", "ASSOCIATION"]).optional().or(z.literal("")),
   phone: z.string().min(10).max(15),
   mobilePhone: z.string().min(10).max(15).optional(),
   address: z.string().min(3).max(120),
