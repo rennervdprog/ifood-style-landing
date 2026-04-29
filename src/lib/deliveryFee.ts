@@ -12,19 +12,22 @@
  /**
   * Calculate delivery fee for a store that manages its own delivery.
   */
- export async function calculateStoreOwnDeliveryFee(
-   customerCep: string,
-   storeCep: string,
-   config: StoreDeliveryConfig
- ): Promise<DeliveryFeeResult> {
-   if (config.delivery_fee_type === 'fixed') {
-     return {
-       fee: config.own_delivery_fee,
-       isRural: false,
-       distanceKm: null,
-       breakdown: `Taxa fixa: ${formatBRL(config.own_delivery_fee)}`,
-     };
-   }
+  export async function calculateStoreOwnDeliveryFee(
+    customerCep: string,
+    storeCep: string,
+    config: StoreDeliveryConfig
+  ): Promise<DeliveryFeeResult> {
+    const PLATFORM_FEE = 2.0; // Taxa fixa da plataforma cobrada do cliente
+
+    if (config.delivery_fee_type === 'fixed') {
+      const totalFee = Number(config.own_delivery_fee || 0) + PLATFORM_FEE;
+      return {
+        fee: totalFee,
+        isRural: false,
+        distanceKm: null,
+        breakdown: `Entrega: ${formatBRL(config.own_delivery_fee)} + Taxa Operacional: ${formatBRL(PLATFORM_FEE)}`,
+      };
+    }
  
    // KM based fee
    // Use provided coordinates (GPS) or fall back to geocoding address
@@ -45,23 +48,25 @@
      customerCoords.lat, customerCoords.lng
    );
  
-   const roundedDistance = Math.max(0, Math.ceil(distanceKm));
-   let fee = config.delivery_fee_base;
- 
-   if (roundedDistance > config.delivery_base_km) {
-     const extraKm = roundedDistance - config.delivery_base_km;
-     fee += extraKm * config.delivery_fee_per_km;
-   }
- 
-   return {
-     fee: Math.round(fee * 100) / 100,
-     isRural: distanceKm > config.delivery_base_km,
-     distanceKm: Math.round(distanceKm * 10) / 10,
-     breakdown: roundedDistance <= config.delivery_base_km 
-       ? `Até ${config.delivery_base_km}km: ${formatBRL(config.delivery_fee_base)}`
-       : `Base ${formatBRL(config.delivery_fee_base)} + ${roundedDistance - config.delivery_base_km}km extras (${formatBRL(config.delivery_fee_per_km)}/km)`,
-   };
- }
+    const roundedDistance = Math.max(0, Math.ceil(distanceKm));
+    let fee = Number(config.delivery_fee_base || 0);
+  
+    if (roundedDistance > config.delivery_base_km) {
+      const extraKm = roundedDistance - config.delivery_base_km;
+      fee += extraKm * Number(config.delivery_fee_per_km || 0);
+    }
+
+    const totalFee = fee + PLATFORM_FEE;
+  
+    return {
+      fee: Math.round(totalFee * 100) / 100,
+      isRural: distanceKm > config.delivery_base_km,
+      distanceKm: Math.round(distanceKm * 10) / 10,
+      breakdown: roundedDistance <= config.delivery_base_km 
+        ? `Entrega: ${formatBRL(fee)} + Taxa Operacional: ${formatBRL(PLATFORM_FEE)}`
+        : `Base ${formatBRL(config.delivery_fee_base)} + ${roundedDistance - config.delivery_base_km}km extras + Taxa Operacional ${formatBRL(PLATFORM_FEE)}`,
+    };
+  }
  
 import { formatBRL } from "@/lib/utils";
 import { fetchCep } from "./cepLookup";
