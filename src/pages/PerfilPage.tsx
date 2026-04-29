@@ -128,14 +128,14 @@ const PerfilPage = () => {
     },
   });
 
-  const { data: orderCount } = useQuery({
-    queryKey: ["my-order-count", user?.id],
-    queryFn: async () => {
-      const { count } = await supabase.from("orders").select("id", { count: "exact", head: true }).eq("client_id", user!.id);
-      return count || 0;
-    },
-    enabled: !!user,
-  });
+   const { data: orderCount, isLoading: loadingOrders } = useQuery({
+     queryKey: ["my-order-count", user?.id],
+     queryFn: async () => {
+       const { count } = await supabase.from("orders").select("id", { count: "exact", head: true }).eq("client_id", user!.id);
+       return count || 0;
+     },
+     enabled: !!user,
+   });
 
   /* ── Local state ── */
   const [calculatedFee, setCalculatedFee] = useState<number | null>(null);
@@ -380,7 +380,25 @@ const PerfilPage = () => {
   };
 
   /* ── Not logged in ── */
-  if (!user) {
+   if (loadingOrders) {
+     return (
+       <div className="min-h-screen bg-background pb-32">
+         <div className="bg-primary/5 pt-12 pb-8 px-6 space-y-4">
+           <div className="w-20 h-20 rounded-3xl bg-muted animate-pulse mx-auto" />
+           <div className="h-6 w-40 bg-muted animate-pulse mx-auto rounded" />
+           <div className="h-4 w-60 bg-muted animate-pulse mx-auto rounded" />
+         </div>
+         <div className="px-4 -mt-6 space-y-4">
+           {[1, 2, 3].map(i => (
+             <div key={i} className="h-16 w-full bg-card animate-pulse rounded-2xl border border-border" />
+           ))}
+         </div>
+         <BottomNav />
+       </div>
+     );
+   }
+
+   if (!user) {
     return (
       <div className="min-h-screen bg-background pb-32 overflow-y-auto">
         <div className="flex flex-col items-center justify-center py-24 text-center px-6">
