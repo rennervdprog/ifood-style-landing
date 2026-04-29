@@ -43,7 +43,9 @@ import PizzaBorderManager from "@/components/PizzaBorderManager";
 import { printThermalReceipt } from "@/lib/thermalPrint";
 import { requestNotificationPermission, notifyNewOrder, pushNotifyDeliveryAvailable } from "@/lib/notifications";
 import { sendPushNotification } from "@/lib/firebase";
-import { addMoney, averageMoney, formatCurrency, sumMoney } from "@/lib/utils";
+ import { addMoney, averageMoney, formatBRL, sumMoney } from "@/lib/utils";
+ import { statusColors } from "@/lib/orderStatus";
+ import { OrderCard } from "@/components/OrderCard";
 import ProductTour, { lojistaTourSteps } from "@/components/ProductTour";
 import { useStorePlan } from "@/hooks/useStorePlan";
 import StoreDriverManager from "@/components/StoreDriverManager";
@@ -74,17 +76,6 @@ type RequiredAddonHighlight = {
 const ALERT_SOUND_URL = "https://actions.google.com/sounds/v1/alarms/beep_short.ogg";
 const CASH_REGISTER_SOUND_URL = "https://actions.google.com/sounds/v1/office/cash_register.ogg";
 
-// Semantic color system
-const statusColors: Record<string, { bg: string; text: string; border: string; label: string }> = {
-  pendente: { bg: "bg-amber-500/10", text: "text-amber-600 dark:text-amber-400", border: "border-amber-500/30", label: "Novo Pedido" },
-  preparando: { bg: "bg-amber-500/10", text: "text-amber-600 dark:text-amber-400", border: "border-amber-500/30", label: "Em Preparo" },
-  pronto_para_entrega: { bg: "bg-blue-500/10", text: "text-blue-600 dark:text-blue-400", border: "border-blue-500/30", label: "Pronto" },
-  saiu_entrega: { bg: "bg-blue-500/10", text: "text-blue-600 dark:text-blue-400", border: "border-blue-500/30", label: "Saiu Entrega" },
-  em_transito: { bg: "bg-blue-500/10", text: "text-blue-600 dark:text-blue-400", border: "border-blue-500/30", label: "Em Trânsito" },
-  entregue: { bg: "bg-emerald-500/10", text: "text-emerald-600 dark:text-emerald-400", border: "border-emerald-500/30", label: "Entregue" },
-  finalizado: { bg: "bg-emerald-500/10", text: "text-emerald-600 dark:text-emerald-400", border: "border-emerald-500/30", label: "Finalizado" },
-  cancelado: { bg: "bg-red-500/10", text: "text-red-600 dark:text-red-400", border: "border-red-500/30", label: "Cancelado" },
-};
 
 const orderTabs: { status: OrderStatus | "delivery"; label: string; icon: React.ElementType; mergedStatuses?: OrderStatus[] }[] = [
   { status: "pendente", label: "Novos", icon: Clock },
