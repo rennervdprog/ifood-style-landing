@@ -13,22 +13,24 @@ const json = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
+const onlyDigits = (value: unknown) => String(value ?? "").replace(/[^0-9]/g, "");
+
 const BodySchema = z.object({
   store_id: z.string().uuid(),
   name: z.string().min(3).max(120),
   email: z.string().email(),
-  cpfCnpj: z.string().min(11).max(18),
+  cpfCnpj: z.string().transform(onlyDigits).refine((v) => v.length === 11 || v.length === 14, "CPF/CNPJ deve conter 11 ou 14 números"),
   birthDate: z.string().optional().or(z.literal("")), // yyyy-mm-dd, required for CPF
   personType: z.enum(["FISICA", "JURIDICA"]).optional(),
   companyType: z.enum(["MEI", "INDIVIDUAL", "LIMITED", "ASSOCIATION"]).optional().or(z.literal("")),
   incomeValue: z.number().positive(),
-  phone: z.string().min(10).max(15),
-  mobilePhone: z.string().min(10).max(15).optional(),
+  phone: z.string().transform(onlyDigits).refine((v) => v.length >= 10 && v.length <= 11, "Telefone deve conter 10 ou 11 números"),
+  mobilePhone: z.string().optional().transform((v) => onlyDigits(v)),
   address: z.string().min(3).max(120),
   addressNumber: z.string().min(1).max(20),
   complement: z.string().max(120).optional(),
   province: z.string().min(2).max(120), // bairro
-  postalCode: z.string().min(8).max(9),
+  postalCode: z.string().transform(onlyDigits).refine((v) => v.length === 8, "CEP deve conter 8 números"),
   // PIX key for withdrawals (any bank)
   pixAddressKey: z.string().min(1).max(120),
   pixAddressKeyType: z.enum(["CPF", "CNPJ", "EMAIL", "PHONE", "EVP"]),
