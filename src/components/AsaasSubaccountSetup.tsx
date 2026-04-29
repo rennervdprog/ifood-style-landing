@@ -335,8 +335,6 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
       </div>
     );
   }
-    );
-  }
 
   return (
     <Card>
