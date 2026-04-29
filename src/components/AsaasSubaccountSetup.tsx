@@ -31,6 +31,8 @@ type PixKeyType = "CPF" | "CNPJ" | "EMAIL" | "PHONE" | "EVP";
 export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
   const qc = useQueryClient();
   const [submitting, setSubmitting] = useState(false);
+  const [lastError, setLastError] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<any>(null);
 
   const { data: store, isLoading } = useQuery({
     queryKey: ["store-asaas", storeId],
@@ -140,7 +142,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
 
     console.log("Iniciando criação de subconta Asaas:", payload);
 
-    try {
+    setLastError(null); setDebugInfo(null); try {
       const { data, error } = await supabase.functions.invoke("create-asaas-subaccount", {
         body: payload,
       });
@@ -161,7 +163,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
       qc.invalidateQueries({ queryKey: ["store-asaas", storeId] });
     } catch (e: any) {
       console.error("Erro ao criar subconta:", e);
-      toast.error(e?.message || "Falha ao criar subconta.");
+      setLastError(e?.message || "Erro desconhecido"); toast.error(e?.message || "Falha ao criar subconta.");
     } finally {
       setSubmitting(false);
     }
@@ -335,6 +337,17 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
           {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
           Criar subconta e ativar split automático
         </Button>
+        {(lastError || debugInfo) && (
+          <div className="mt-4 p-3 rounded bg-slate-50 border border-slate-200 text-[10px] font-mono overflow-auto max-h-40">
+            <p className="font-bold text-red-700 mb-1">Log de Erro (Debug):</p>
+            <p className="text-red-600 mb-2">{lastError}</p>
+            {debugInfo && (
+              <pre className="text-slate-600">
+                {JSON.stringify(debugInfo, null, 2)}
+              </pre>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
