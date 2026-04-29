@@ -116,13 +116,13 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
 
   const update = (k: string, v: string) => {
     let val = v;
-    if (k === "cpfCnpj") val = v.replace(/\D/g, "").slice(0, 14);
+    if (k === "cpfCnpj") val = onlyDigits(v).slice(0, personType === "FISICA" ? 11 : 14);
     if (k === "pixAddressKey" && (form.pixAddressKeyType === "CPF" || form.pixAddressKeyType === "CNPJ")) {
-      val = v.replace(/\D/g, "");
+      val = onlyDigits(v);
       val = val.slice(0, form.pixAddressKeyType === "CPF" ? 11 : 14);
     }
-    if (k === "phone") val = v.replace(/\D/g, "").slice(0, 11);
-    if (k === "postalCode") val = v.replace(/\D/g, "").slice(0, 8);
+    if (k === "phone") val = onlyDigits(v).slice(0, 11);
+    if (k === "postalCode") val = onlyDigits(v).slice(0, 8);
     
     setForm((f) => {
       const next = { ...f, [k]: val };
@@ -132,9 +132,9 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
   };
 
   const submit = async () => {
-    const cleanCpfCnpj = form.cpfCnpj.replace(/\D/g, "");
-    const cleanPhone = form.phone.replace(/\D/g, "");
-    const cleanCep = form.postalCode.replace(/\D/g, "");
+    const cleanCpfCnpj = onlyDigits(form.cpfCnpj).slice(0, personType === "FISICA" ? 11 : 14);
+    const cleanPhone = onlyDigits(form.phone);
+    const cleanCep = onlyDigits(form.postalCode);
     const cleanIncomeValue = Number(String(form.incomeValue).replace(/\./g, "").replace(",", "."));
     const documentIsCpf = cleanCpfCnpj.length === 11;
 
@@ -167,7 +167,8 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
       toast.error(documentIsCpf ? "Informe a renda mensal." : "Informe o faturamento mensal.");
       return;
     }
-    const pixErr = validatePixKey(form.pixAddressKey, form.pixAddressKeyType.toLowerCase());
+    const cleanPixAddressKey = sanitizePixKeyForAsaas(form.pixAddressKey, form.pixAddressKeyType.toLowerCase());
+    const pixErr = validatePixKey(cleanPixAddressKey, form.pixAddressKeyType.toLowerCase());
     if (pixErr) {
       toast.error(`Chave PIX: ${pixErr}`);
       return;
@@ -190,7 +191,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
       complement: form.complement || undefined,
       province: form.province,
       postalCode: cleanCep,
-      pixAddressKey: sanitizePixKeyForAsaas(form.pixAddressKey, form.pixAddressKeyType.toLowerCase()),
+      pixAddressKey: cleanPixAddressKey,
       pixAddressKeyType: form.pixAddressKeyType,
     };
 
