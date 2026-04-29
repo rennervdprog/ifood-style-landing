@@ -77,7 +77,6 @@ const AdminDashboard = () => {
 
   const [activeTab, setActiveTab] = useState<OrderTabKey>("pendente");
   const [dashboardTab, setDashboardTab] = useState<DashboardTabType>("dashboard");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showMoreSheet, setShowMoreSheet] = useState(false);
   const [showDelayedPanel, setShowDelayedPanel] = useState(false);
   const [batchSelected, setBatchSelected] = useState<Set<string>>(new Set());
@@ -214,7 +213,6 @@ const AdminDashboard = () => {
 
   const handleTabChange = (tab: DashboardTabType) => {
     setDashboardTab(tab);
-    setSidebarOpen(false);
     setShowMoreSheet(false);
   };
 
@@ -248,11 +246,8 @@ const AdminDashboard = () => {
         <div className="min-h-screen bg-background flex">
           <SimulationBanner />
           
-          {/* Sidebar Overlay */}
-          {sidebarOpen && <div className="fixed inset-0 bg-black/60 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
-
-          {/* Sidebar */}
-          <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border transform transition-transform lg:relative lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
+           {/* Sidebar (Desktop only) */}
+           <aside className="hidden lg:flex lg:flex-col w-64 bg-card border-r border-border sticky top-0 h-screen">
             <div className="flex flex-col h-full">
               <div className="p-6">
                 <h1 className="text-xl font-black text-primary italic">ItaSuper Painel</h1>
@@ -281,13 +276,8 @@ const AdminDashboard = () => {
 
           {/* Main */}
           <main className="flex-1 flex flex-col min-w-0">
-            <header className="sticky top-0 z-30 bg-card/95 backdrop-blur border-b border-border px-4 py-3 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 rounded-xl hover:bg-accent">
-                  <Menu className="h-5 w-5" />
-                </button>
-                <h2 className="font-bold truncate">{store?.name || "Carregando..."}</h2>
-              </div>
+             <header className="sticky top-0 z-30 bg-card/95 backdrop-blur border-b border-border px-4 py-3 flex items-center justify-between">
+               <h2 className="font-bold truncate">{store?.name || "Carregando..."}</h2>
               <div className="flex items-center gap-2">
                 {showSoundPrompt && !soundEnabled && !Capacitor.isNativePlatform() && (
                   <button onClick={activateSound} className="bg-amber-400 text-amber-900 px-3 py-1.5 rounded-xl text-[10px] font-black animate-pulse">ATIVAR ALERTAS</button>
