@@ -114,7 +114,19 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
 
   const update = (k: string, v: string) => {
     let val = v;
-    if (k === "cpfCnpj") val = v.replace(/\D/g, "").slice(0, 14);
+    if (k === "cpfCnpj") {
+      val = v.replace(/\D/g, "");
+      // Se colou 14 dígitos, muda para Jurídica automaticamente
+      if (val.length === 14 && personType === "FISICA") setPersonType("JURIDICA");
+      // Se colou 11 dígitos e estava em jurídica, volta para Física
+      if (val.length === 11 && personType === "JURIDICA") setPersonType("FISICA");
+      
+      val = val.slice(0, (val.length > 11 || personType === "JURIDICA") ? 14 : 11);
+    }
+    if (k === "pixAddressKey" && (form.pixAddressKeyType === "CPF" || form.pixAddressKeyType === "CNPJ")) {
+      val = v.replace(/\D/g, "");
+      val = val.slice(0, form.pixAddressKeyType === "CPF" ? 11 : 14);
+    }
     if (k === "phone") val = v.replace(/\D/g, "").slice(0, 11);
     if (k === "postalCode") val = v.replace(/\D/g, "").slice(0, 8);
     
@@ -137,8 +149,12 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
       toast.error("Preencha todos os campos obrigatórios.");
       return;
     }
-    if ((personType === "FISICA" && cleanCpfCnpj.length !== 11) || (personType === "JURIDICA" && cleanCpfCnpj.length !== 14)) {
-      toast.error(personType === "FISICA" ? "CPF deve ter 11 dígitos." : "CNPJ deve ter 14 dígitos.");
+    if (personType === "FISICA" && cleanCpfCnpj.length !== 11) {
+      toast.error(`O campo CPF deve ter exatamente 11 dígitos (atualmente tem ${cleanCpfCnpj.length}).`);
+      return;
+    }
+    if (personType === "JURIDICA" && cleanCpfCnpj.length !== 14) {
+      toast.error(`O campo CNPJ deve ter exatamente 14 dígitos (atualmente tem ${cleanCpfCnpj.length}).`);
       return;
     }
     if (documentIsCpf && !isValidCpf(cleanCpfCnpj)) {
