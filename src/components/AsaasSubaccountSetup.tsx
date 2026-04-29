@@ -184,8 +184,6 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
       pixAddressKeyType: form.pixAddressKeyType,
     };
 
-    console.log("Iniciando criação de subconta Asaas:", payload);
-
     setLastError(null);
     setDebugInfo(null);
     try {
@@ -196,7 +194,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
          headers: {
            "Content-Type": "application/json",
            Authorization: `Bearer ${session?.access_token}`,
-           apikey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXJhYmFzZSIsInJlZiI6InFramhndXppdWNocXNieHpydWVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDg4NTUsImV4cCI6MjA5MDYyNDg1NX0.2sTeKchqAEN2gCqnH1_Zn9cJmUSmZgryt05A66tgm2Y",
+            apikey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFramhndXppdWNocXNieHpydWVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDg4NTUsImV4cCI6MjA5MDYyNDg1NX0.2sTeKchqAEN2gCqnH1_Zn9cJmUSmZgryt05A66tgm2Y",
          },
          body: JSON.stringify(payload),
        });
