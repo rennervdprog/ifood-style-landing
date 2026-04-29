@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
  import { CheckCircle2, Loader2, Banknote, ShieldCheck, Copy, AlertCircle, FileText, ExternalLink, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { formatPixKeyDisplay, sanitizePixKeyForAsaas, validatePixKey } from "@/lib/pixFormat";
+import { fetchCep } from "@/lib/cepLookup";
 
 interface Props {
   storeId: string;
@@ -90,6 +91,9 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
     complement: initialData?.complement || "",
     province: initialData?.province || "",
     postalCode: initialData?.postalCode || "",
+    city: "",
+    state: "",
+    site: "",
     pixAddressKey: onlyDigits(initialData?.cpfCnpj),
     pixAddressKeyType: "CPF" as PixKeyType,
   });
@@ -129,6 +133,21 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
       if (k === "pixAddressKeyType") next.pixAddressKey = "";
       return next;
     });
+
+    // Auto-busca de CEP quando completar 8 dígitos
+    if (k === "postalCode" && val.length === 8) {
+      fetchCep(val).then((data) => {
+        if (data) {
+          setForm((f) => ({
+            ...f,
+            address: f.address || data.logradouro || "",
+            province: f.province || data.bairro || "",
+            city: data.localidade || "",
+            state: data.uf || "",
+          }));
+        }
+      }).catch(() => {});
+    }
   };
 
   const submit = async () => {
@@ -191,6 +210,9 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
       complement: form.complement || undefined,
       province: form.province,
       postalCode: cleanCep,
+      city: form.city || undefined,
+      state: form.state || undefined,
+      site: form.site || undefined,
       pixAddressKey: cleanPixAddressKey,
       pixAddressKeyType: form.pixAddressKeyType,
     };
@@ -452,6 +474,18 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
             <Label className="text-xs">Bairro *</Label>
             <Input value={form.province} onChange={(e) => update("province", e.target.value)} />
           </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Cidade *</Label>
+            <Input value={form.city} onChange={(e) => update("city", e.target.value)} placeholder="Itatinga" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Estado (UF) *</Label>
+            <Input value={form.state} onChange={(e) => update("state", e.target.value.toUpperCase().slice(0, 2))} placeholder="SP" maxLength={2} />
+          </div>
+          <div className="space-y-1.5 sm:col-span-2">
+            <Label className="text-xs">Site da loja (opcional)</Label>
+            <Input value={form.site} onChange={(e) => update("site", e.target.value)} placeholder="https://minhaloja.com.br" />
+          </div>
         </div>
 
         <div className="rounded-lg border border-border p-3 space-y-3 bg-muted/30">
@@ -485,6 +519,22 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
           {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
           Criar subconta e ativar split automático
         </Button>
+
+        <Alert className="border-blue-500/30 bg-blue-500/5">
+          <FileText className="h-4 w-4 text-blue-600" />
+          <AlertTitle className="text-blue-700 text-xs">Após criar a subconta</AlertTitle>
+          <AlertDescription className="text-[11px] space-y-1">
+            O Asaas vai te pedir <strong>uma única vez</strong> os documentos abaixo (regra do Banco Central):
+            <ul className="list-disc pl-4 mt-1 space-y-0.5">
+              <li>RG ou CNH (frente e verso)</li>
+              <li>Selfie segurando o documento</li>
+              <li>Comprovante de residência (até 90 dias)</li>
+              {!isCpf && <li>Cartão CNPJ / Contrato Social</li>}
+            </ul>
+            <p className="mt-1">Você receberá um e-mail e poderá enviar tudo pelo celular em 2 minutos.</p>
+          </AlertDescription>
+        </Alert>
+
          {(lastError || debugInfo) && (
            <div className="mt-4 p-3 rounded bg-slate-50 border border-slate-200 text-[10px] font-mono overflow-hidden">
              <div className="flex justify-between items-center mb-2">

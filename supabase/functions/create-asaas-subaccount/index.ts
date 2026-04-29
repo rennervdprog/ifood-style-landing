@@ -31,6 +31,9 @@ const BodySchema = z.object({
   complement: z.string().max(120).optional(),
   province: z.string().min(2).max(120), // bairro
   postalCode: z.string().transform(onlyDigits).refine((v) => v.length === 8, "CEP deve conter 8 números"),
+  city: z.string().max(120).optional().or(z.literal("")),
+  state: z.string().max(2).optional().or(z.literal("")),
+  site: z.string().max(255).optional().or(z.literal("")),
   // PIX key for withdrawals (any bank)
   pixAddressKey: z.string().min(1).max(120),
   pixAddressKeyType: z.enum(["CPF", "CNPJ", "EMAIL", "PHONE", "EVP"]),
@@ -109,6 +112,9 @@ Deno.serve(async (req) => {
       postalCode,
       incomeValue: body.incomeValue,
     };
+    if (body.city) subaccountPayload.city = body.city;
+    if (body.state) subaccountPayload.state = body.state;
+    if (body.site) subaccountPayload.site = body.site;
     if (cpfCnpj.length === 11 && body.birthDate) subaccountPayload.birthDate = body.birthDate;
     if (cpfCnpj.length === 14 && body.companyType) subaccountPayload.companyType = body.companyType;
 
