@@ -86,7 +86,7 @@ export const DEFAULT_DELIVERY_FEE_CONFIG: DeliveryFeeConfig = {
   rural_per_km: 0.6,
   driver_split: 4.0,
   platform_split: 2.0,
-  pix_operational_fee: 1.0,
+  pix_operational_fee: 1.99,
 };
 
 // Centro de Itatinga - coordenadas fixas de referência
