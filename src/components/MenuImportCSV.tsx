@@ -425,7 +425,7 @@ export default function MenuImportCSV({ storeId }: MenuImportCSVProps) {
           <textarea
             value={pasteText}
             onChange={(e) => setPasteText(e.target.value)}
-            placeholder="Cole aqui o texto do cardápio do Anota Aí, iFood, ou qualquer outro..."
+             placeholder="Cole aqui o texto do cardápio do Anota Aí ou qualquer outro..."
             className="w-full h-32 bg-secondary text-foreground text-xs px-3 py-2 rounded-lg border border-border focus:border-primary focus:outline-none resize-none"
           />
 
