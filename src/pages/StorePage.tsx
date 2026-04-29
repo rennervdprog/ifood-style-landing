@@ -782,11 +782,16 @@ const StorePage = () => {
           className="sticky top-0 z-30 bg-background/95 backdrop-blur-md border-b border-border mt-4 shadow-sm"
         >
           <div className="flex overflow-x-auto gap-1.5 px-4 py-2.5 no-scrollbar">
-            {sections.map(s => (
+            {visibleSections.map(s => (
               <button
                 key={s.id}
+                type="button"
                 data-chip-id={s.id}
-                onClick={() => scrollToSection(s.id)}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  scrollToSection(s.id);
+                }}
                 className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all ${
                   activeSection === s.id
                     ? "bg-primary text-primary-foreground shadow-md scale-105"
@@ -845,12 +850,12 @@ const StorePage = () => {
           </div>
         ) : (
           <>
-            {sections?.map(section => {
+            {visibleSections.map(section => {
               const sectionProducts = productsBySection(section.id);
-              if (sectionProducts.length === 0) return null;
               return (
                 <div
                   key={section.id}
+                  id={`menu-section-${section.id}`}
                   ref={el => { sectionRefs.current[section.id] = el; }}
                   data-section-id={section.id}
                   className="scroll-mt-16"
