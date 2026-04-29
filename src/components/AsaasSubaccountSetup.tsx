@@ -114,15 +114,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
 
   const update = (k: string, v: string) => {
     let val = v;
-    if (k === "cpfCnpj") {
-      val = v.replace(/\D/g, "");
-      // Se colou 14 dígitos, muda para Jurídica automaticamente
-      if (val.length === 14 && personType === "FISICA") setPersonType("JURIDICA");
-      // Se colou 11 dígitos e estava em jurídica, volta para Física
-      if (val.length === 11 && personType === "JURIDICA") setPersonType("FISICA");
-      
-      val = val.slice(0, (val.length > 11 || personType === "JURIDICA") ? 14 : 11);
-    }
+    if (k === "cpfCnpj") val = v.replace(/\D/g, "").slice(0, 14);
     if (k === "pixAddressKey" && (form.pixAddressKeyType === "CPF" || form.pixAddressKeyType === "CNPJ")) {
       val = v.replace(/\D/g, "");
       val = val.slice(0, form.pixAddressKeyType === "CPF" ? 11 : 14);
