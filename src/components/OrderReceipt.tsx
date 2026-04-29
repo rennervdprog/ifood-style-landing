@@ -169,7 +169,7 @@ const OrderReceipt = forwardRef<HTMLDivElement, OrderReceiptProps>(
             <span>{formatBRL(Number(order.subtotal))}</span>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span>Entrega:</span>
+            <span>Taxa operacional:</span>
             <span>{formatBRL(Number(order.delivery_fee))}</span>
           </div>
           <div
