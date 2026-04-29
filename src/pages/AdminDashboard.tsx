@@ -136,17 +136,31 @@ const AdminDashboard = () => {
     refetchInterval: 10000,
   });
 
-  const updateOrderStatus = async (id: string, status: OrderStatus) => {
-    try {
-      const { error } = await supabase.from("orders").update({ status }).eq("id", id);
-      if (error) throw error;
-      toast.success("Status atualizado!");
-      queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
-      notifyOrderStatusChange(id, status);
-    } catch (err) {
-      toast.error("Erro ao atualizar status");
-    }
-  };
+   const updateOrderStatus = async (id: string, status: OrderStatus) => {
+     try {
+       const { error } = await supabase.from("orders").update({ status }).eq("id", id);
+       if (error) throw error;
+       toast.success("Status atualizado!");
+       queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+       
+       const order = orders?.find(o => o.id === id);
+       if (order && store) {
+         notifyOrderStatusChange(status, {
+           orderId: order.id,
+           storeName: store.name,
+           storeId: store.id,
+           clientId: order.user_id,
+           clientPhone: order.customer_phone || "",
+           clientName: order.customer_name || "Cliente",
+           totalPrice: Number(order.total_price),
+           addressDetails: order.delivery_address,
+           paymentMethod: order.payment_method
+         });
+       }
+     } catch (err) {
+       toast.error("Erro ao atualizar status");
+     }
+   };
 
   const toggleStoreOpen = async () => {
     if (!store) return;
