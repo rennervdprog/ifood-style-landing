@@ -344,28 +344,30 @@ const StorePage = () => {
    }, [activeSection]);
  
   const scrollToSection = useCallback((sectionId: string) => {
-    const el = sectionRefs.current[sectionId];
-    if (!el) {
-      console.warn(`Elemento da seção ${sectionId} não encontrado.`);
-      return;
-    }
+    window.requestAnimationFrame(() => {
+      const target = sectionRefs.current[sectionId] || document.getElementById(`menu-section-${sectionId}`);
+      if (!target) return;
 
-    // Define a seção ativa imediatamente para feedback visual instantâneo no menu
-    setActiveSection(sectionId);
+      const scrollElement = getPageScrollElement();
+      const documentScroll = isDocumentScrollElement(scrollElement);
+      const navHeight = navRef.current?.getBoundingClientRect().height || 0;
+      const extraGap = 12;
+      const currentScrollTop = documentScroll ? window.scrollY : scrollElement.scrollTop;
+      const containerTop = documentScroll ? 0 : scrollElement.getBoundingClientRect().top;
+      const targetTop = target.getBoundingClientRect().top - containerTop + currentScrollTop;
 
-    // O offset de 80px compensa o cabeçalho fixo (chips de categoria)
-    const offset = 80;
-    const elementPosition = el.getBoundingClientRect().top;
-    const offsetPosition = elementPosition + window.pageYOffset - offset;
-
-    window.scrollTo({
-      top: offsetPosition,
-      behavior: "smooth"
+      setActiveSection(sectionId);
+      scrollElement.scrollTo({
+        top: Math.max(targetTop - navHeight - extraGap, 0),
+        behavior: "smooth"
+      });
     });
   }, []);
 
-  const productsBySection = (sectionId: string | null) =>
-    products?.filter(p => p.section_id === sectionId) || [];
+  const productsBySection = useCallback(
+    (sectionId: string | null) => sectionId ? sectionProductsMap[sectionId] || [] : [],
+    [sectionProductsMap]
+  );
 
   const unsectionedProducts = products?.filter(p => !p.section_id) || [];
 
