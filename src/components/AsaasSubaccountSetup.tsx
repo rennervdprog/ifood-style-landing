@@ -145,22 +145,30 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
     setLastError(null);
     setDebugInfo(null);
     try {
-      console.log("Chamando edge function create-asaas-subaccount...");
-      const { data, error } = await supabase.functions.invoke("create-asaas-subaccount", {
-        body: payload,
-      });
-
-      if (error) {
-        console.error("Erro retornado pelo supabase.functions.invoke:", error);
-        setDebugInfo({
-          type: "InvokeError",
-          message: error.message,
-          status: (error as any).status,
-          name: error.name,
-          stack: error.stack
-        });
-        throw error;
-      }
+       console.log("Chamando edge function create-asaas-subaccount manualmente via fetch...");
+       
+       const { data: { session } } = await supabase.auth.getSession();
+       const response = await fetch("https://lktzrqjvqoojlrhqnxuz.supabase.co/functions/v1/create-asaas-subaccount", {
+         method: 'POST',
+         headers: {
+           'Content-Type': 'application/json',
+           'Authorization': `Bearer ${session?.access_token}`,
+           'apikey': (supabase as any).supabaseKey
+         },
+         body: JSON.stringify(payload)
+       });
+ 
+       const data = await response.json();
+ 
+       if (!response.ok) {
+         console.error("Erro retornado pelo fetch:", data);
+         setDebugInfo({
+           type: "FetchError",
+           status: response.status,
+           data
+         });
+         throw new Error(data.error || "Erro na comunicação com o servidor");
+       }
 
       console.log("Resposta da Edge Function:", data);
 

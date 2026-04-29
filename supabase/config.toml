@@ -1,3 +1,5 @@
+ [functions.create-asaas-subaccount]
+ verify_jwt = false
 project_id = "lktzrqjvqoojlrhqnxuz"
 
 [functions.zapi-webhook]
