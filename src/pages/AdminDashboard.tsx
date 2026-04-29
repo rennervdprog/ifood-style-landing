@@ -125,10 +125,15 @@ const AdminDashboard = () => {
      refetchInterval: 30000,
    });
  
-   const { data: orders } = useQuery({
+   const { data: orders, isLoading: ordersLoading } = useQuery({
     queryKey: ["admin-orders", store?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("orders").select("*, order_items(*, products(*))").eq("store_id", store!.id).order("created_at", { ascending: false }).limit(100);
+      const { data } = await supabase
+        .from("orders")
+        .select("*, client:profiles!client_id(full_name, phone), order_items(*, products(*))")
+        .eq("store_id", store!.id)
+        .order("created_at", { ascending: false })
+        .limit(100);
       return data;
     },
     enabled: !!store?.id,
@@ -173,10 +178,84 @@ const AdminDashboard = () => {
     }
   };
 
-  const pendingCount = orders?.filter(o => o.status === "pendente").length || 0;
-  const preparingCount = orders?.filter(o => o.status === "preparando").length || 0;
-  const readyCount = orders?.filter(o => o.status === "pronto_para_entrega").length || 0;
-  
+   const pendingCount = useMemo(() => orders?.filter(o => o.status === "pendente").length || 0, [orders]);
+   const preparingCount = useMemo(() => orders?.filter(o => o.status === "preparando").length || 0, [orders]);
+   const readyCount = useMemo(() => orders?.filter(o => o.status === "pronto_para_entrega").length || 0, [orders]);
+
+   const delayedOrders = useMemo(() => {
+     if (!orders) return [];
+     return orders.filter(o => 
+       ["pendente", "preparando", "pronto_para_entrega"].includes(o.status) && 
+       (Date.now() - new Date(o.created_at).getTime()) / 60000 > 20
+     );
+   }, [orders]);
+
+   const clientAnalytics = useMemo(() => {
+     if (!orders) return [];
+     const clientsMap = new Map();
+     orders.forEach(o => {
+       if (!clientsMap.has(o.client_id)) {
+         clientsMap.set(o.client_id, {
+           id: o.client_id,
+           name: (o as any).client?.full_name || "Cliente #" + o.client_id.slice(0, 4),
+           totalOrders: 1,
+           totalSpent: Number(o.total_price)
+         });
+       } else {
+         const c = clientsMap.get(o.client_id);
+         c.totalOrders++;
+         c.totalSpent += Number(o.total_price);
+       }
+     });
+     return Array.from(clientsMap.values());
+   }, [orders]);
+
+   const avgDeliveryTime = useMemo(() => {
+     const finished = orders?.filter(o => o.status === "finalizado" && o.confirmed_at) || [];
+     if (finished.length === 0) return 0;
+     const totalTime = finished.reduce((acc, o) => {
+       const start = new Date(o.created_at).getTime();
+       const end = new Date(o.confirmed_at).getTime();
+       return acc + (end - start);
+     }, 0);
+     return Math.round(totalTime / finished.length / 60000);
+   }, [orders]);
+
+   const { data: hasLinkedDrivers = false, isLoading: driversLoading } = useQuery({
+     queryKey: ["admin-has-drivers", store?.id],
+     queryFn: async () => {
+       const { count } = await supabase.from("store_drivers").select("*", { count: 'exact', head: true }).eq("store_id", store!.id);
+       return (count || 0) > 0;
+     },
+     enabled: !!store?.id,
+   });
+
+   const { data: allHoursClosed = false } = useQuery({
+     queryKey: ["admin-store-hours", store?.id],
+     queryFn: async () => {
+       const { data } = await supabase.from("opening_hours").select("*").eq("store_id", store!.id);
+       if (!data || data.length === 0) return true;
+       return !data.some((h: any) => h.is_open);
+     },
+     enabled: !!store?.id,
+   });
+
+   const getClientName = useCallback((clientId: string) => {
+     const order = orders?.find(o => o.client_id === clientId);
+     return (order as any)?.client?.full_name || "Cliente #" + clientId.slice(0, 4);
+   }, [orders]);
+
+   const getMainAction = useCallback((status: string, order: any) => {
+     switch (status) {
+       case "pendente": return { label: "Aceitar Pedido", next: "preparando", emoji: "👨‍🍳" };
+       case "preparando": return { label: "Marcar como Pronto", next: "pronto_para_entrega", emoji: "📦" };
+       case "pronto_para_entrega": return { label: "Despachar", next: "saiu_entrega", emoji: "🛵" };
+       case "saiu_entrega": 
+       case "em_transito": return { label: "Finalizar Pedido", next: "finalizado", emoji: "🏁" };
+       default: return null;
+     }
+   }, []);
+
   const todayTotal = useMemo(() => {
     const today = new Date().toDateString();
     return orders?.filter(o => new Date(o.created_at).toDateString() === today && o.status !== "cancelado")
