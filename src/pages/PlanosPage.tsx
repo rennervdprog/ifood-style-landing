@@ -233,9 +233,28 @@ const comparisonRows = [
   { feature: "Prioridade em novidades", commission: false, hybrid: false, fixed: true },
 ];
 
-export default function PlanosPage() {
-  const navigate = useNavigate();
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
+ export default function PlanosPage() {
+   const navigate = useNavigate();
+   const [openFaq, setOpenFaq] = useState<number | null>(null);
+   const [supporterCount, setSupporterCount] = useState<number | null>(null);
+   const [supporterLoading, setSupporterLoading] = useState(true);
+ 
+   useEffect(() => {
+     const fetchSupporterCount = async () => {
+       try {
+         const { data, error } = await supabase.rpc("count_supporter_plans");
+         if (!error && typeof data === "number") {
+           setSupporterCount(data);
+         }
+       } catch (err) {
+         console.error("Error fetching supporter count:", err);
+       } finally {
+         setSupporterLoading(false);
+       }
+     };
+ 
+     fetchSupporterCount();
+   }, []);
 
   const statsRef = useInView(0.3);
   const storesCount = useCountUp(50, 2000, statsRef.visible);
