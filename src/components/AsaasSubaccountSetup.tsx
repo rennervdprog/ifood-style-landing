@@ -190,34 +190,23 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
     setDebugInfo(null);
     try {
        console.log("Chamando edge function create-asaas-subaccount manualmente via fetch...");
-       
        const { data: { session } } = await supabase.auth.getSession();
-        console.log("Chamando edge function via cliente nativo...");
-        const { data, error: invokeError } = await supabase.functions.invoke("create-asaas-subaccount", {
-          body: payload,
-        });
+       const response = await fetch("https://qkjhguziuchqsbxzruea.supabase.co/functions/v1/create-asaas-subaccount", {
+         method: "POST",
+         headers: {
+           "Content-Type": "application/json",
+           Authorization: `Bearer ${session?.access_token}`,
+           apikey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXJhYmFzZSIsInJlZiI6InFramhndXppdWNocXNieHpydWVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDg4NTUsImV4cCI6MjA5MDYyNDg1NX0.2sTeKchqAEN2gCqnH1_Zn9cJmUSmZgryt05A66tgm2Y",
+         },
+         body: JSON.stringify(payload),
+       });
+       const data = await response.json();
 
-        if (invokeError) {
-          console.error("Erro na chamada da função:", invokeError);
-          
-          // Tentar extrair o corpo do erro se for um erro de HTTP
-          let errorDetail = invokeError.message;
-          if (invokeError instanceof Error && 'context' in invokeError) {
-            try {
-              const response = (invokeError as any).context;
-              if (response && typeof response.json === 'function') {
-                const body = await response.json();
-                errorDetail = body.error || body.message || errorDetail;
-                setDebugInfo(body);
-              }
-            } catch (e) {
-              console.error("Não foi possível ler o corpo do erro:", e);
-            }
-          }
-          
-          setLastError(errorDetail);
-          throw new Error(errorDetail);
-        }
+       if (!response.ok) {
+         console.error("Erro retornado pela função:", data);
+         setDebugInfo(data);
+         throw new Error((data as any)?.error || "Erro na comunicação com o servidor.");
+       }
 
       console.log("Resposta da Edge Function:", data);
 
