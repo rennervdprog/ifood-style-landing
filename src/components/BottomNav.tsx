@@ -98,27 +98,40 @@ const BottomNav = memo(() => {
    if (tabs.length === 0) return null;
  
    return (
-     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border pb-safe">
-      <div className="flex items-center justify-around h-16">
-        {tabs.map((tab) => {
-          const active = isActive(tab.path);
-          return (
-            <button
-              key={tab.path}
-              onClick={() => navigate(tab.path)}
-              data-tour={tab.label === "Pedidos" ? "nav-pedidos" : undefined}
-              className={`flex flex-col items-center gap-0.5 px-4 py-2 transition-colors ${
-                active ? "text-primary" : "text-muted-foreground"
-              }`}
-            >
-              <tab.icon className="h-5 w-5" strokeWidth={active ? 2.5 : 2} />
-              <span className="text-[10px] font-bold">{tab.label}</span>
-            </button>
-          );
-        })}
-      </div>
-    </nav>
-  );
+     <nav className="fixed bottom-4 left-4 right-4 z-50">
+       <div className="mx-auto max-w-md bg-card/80 backdrop-blur-xl border border-white/20 shadow-2xl rounded-3xl p-2 flex items-center justify-around transition-all duration-300">
+         {tabs.map((tab) => {
+           const active = isActive(tab.path);
+           return (
+             <button
+               key={tab.path}
+               onClick={() => navigate(tab.path)}
+               data-tour={tab.label === "Pedidos" ? "nav-pedidos" : undefined}
+               className={`relative flex flex-col items-center justify-center py-2 px-4 transition-all duration-300 rounded-2xl group ${
+                 active 
+                   ? "text-primary scale-110" 
+                   : "text-muted-foreground hover:text-foreground hover:bg-white/10"
+               }`}
+             >
+               {active && (
+                 <span className="absolute inset-0 bg-primary/10 rounded-2xl blur-sm" />
+               )}
+               <tab.icon 
+                 className={`h-6 w-6 transition-transform duration-300 ${active ? "animate-bounce-subtle" : "group-hover:scale-110"}`} 
+                 strokeWidth={active ? 2.5 : 2} 
+               />
+               <span className={`text-[10px] font-bold mt-1 transition-all duration-300 ${active ? "opacity-100" : "opacity-70"}`}>
+                 {tab.label}
+               </span>
+               {active && (
+                 <span className="absolute -bottom-1 w-1 h-1 bg-primary rounded-full animate-pulse" />
+               )}
+             </button>
+           );
+         })}
+       </div>
+     </nav>
+   );
 });
 
 BottomNav.displayName = "BottomNav";

@@ -22,39 +22,42 @@ interface Props {
 }
 
 const CategoryScroll = memo(({ selected, onSelect }: Props) => {
-  return (
-    <div className="flex gap-3 overflow-x-auto hide-scrollbar py-4 px-4">
-      {categories.map((cat) => {
-        const active = selected === cat.value;
-        return (
-          <button
-            key={cat.value}
-            onClick={() => onSelect(cat.value)}
-            className={`flex flex-col items-center gap-1.5 min-w-[64px] transition-all ${
-              active ? "scale-105" : ""
-            }`}
-          >
-            <div
-              className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-colors ${
-                active
-                  ? "bg-primary text-primary-foreground shadow-md"
-                  : "bg-muted text-muted-foreground"
-              }`}
-            >
-              <cat.icon className="h-6 w-6" />
-            </div>
-            <span
-              className={`text-[11px] font-bold ${
-                active ? "text-primary" : "text-muted-foreground"
-              }`}
-            >
-              {cat.label}
-            </span>
-          </button>
-        );
-      })}
-    </div>
-  );
+   return (
+     <div className="flex gap-4 overflow-x-auto hide-scrollbar py-6 px-4">
+       {categories.map((cat) => {
+         const active = selected === cat.value;
+         return (
+           <button
+             key={cat.value}
+             onClick={() => onSelect(cat.value)}
+             className={`flex flex-col items-center gap-2 min-w-[70px] transition-all duration-300 ${
+               active ? "scale-110" : "hover:scale-105"
+             }`}
+           >
+             <div
+               className={`w-16 h-16 rounded-[1.5rem] flex items-center justify-center transition-all duration-300 relative group overflow-hidden ${
+                 active
+                   ? "bg-primary text-white shadow-xl shadow-primary/30 ring-4 ring-primary/10"
+                   : "bg-card border border-border text-muted-foreground hover:border-primary/20 hover:bg-muted/50"
+               }`}
+             >
+               {active && (
+                 <span className="absolute inset-0 bg-gradient-to-tr from-black/10 to-transparent pointer-events-none" />
+               )}
+               <cat.icon className={`h-7 w-7 transition-transform duration-300 ${active ? "animate-bounce-subtle" : "group-hover:scale-110"}`} />
+             </div>
+             <span
+               className={`text-[10px] uppercase tracking-wider font-black transition-colors ${
+                 active ? "text-primary" : "text-muted-foreground"
+               }`}
+             >
+               {cat.label}
+             </span>
+           </button>
+         );
+       })}
+     </div>
+   );
 });
 
 CategoryScroll.displayName = "CategoryScroll";
