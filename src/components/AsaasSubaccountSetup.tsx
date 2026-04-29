@@ -142,20 +142,31 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
 
     console.log("Iniciando criação de subconta Asaas:", payload);
 
-    setLastError(null); setDebugInfo(null); try {
+    setLastError(null);
+    setDebugInfo(null);
+    try {
+      console.log("Chamando edge function create-asaas-subaccount...");
       const { data, error } = await supabase.functions.invoke("create-asaas-subaccount", {
         body: payload,
       });
 
       if (error) {
-        console.error("Erro no invoke da Edge Function:", error);
+        console.error("Erro retornado pelo supabase.functions.invoke:", error);
+        setDebugInfo({
+          type: "InvokeError",
+          message: error.message,
+          status: (error as any).status,
+          name: error.name,
+          stack: error.stack
+        });
         throw error;
       }
 
       console.log("Resposta da Edge Function:", data);
 
       if ((data as any)?.error) {
-        console.error("Erro retornado pelo Asaas:", (data as any).error);
+        console.error("Erro de lógica retornado pela função:", (data as any).error);
+        setDebugInfo(data);
         throw new Error((data as any).error);
       }
 
