@@ -1436,55 +1436,6 @@ const AdminDashboard = () => {
                 <PlatformSplitAlert storeId={store.id} storeName={store.name} splitPerOrder={storePlan.platformDeliverySplit} onGoToFinance={() => setDashboardTab("finance")} />
               )}
 
-               {/* ── Delivery Mode Status ── */}
-               {isOwnDelivery && (
-                 <div className="md:col-span-2 lg:col-span-4 grid sm:grid-cols-2 gap-3">
-                   <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 flex flex-col justify-between gap-4">
-                     <div className="flex items-start gap-3">
-                       <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                         <Navigation className="h-5 w-5 text-primary" />
-                       </div>
-                       <div className="min-w-0">
-                         <p className="text-sm font-black text-foreground">Modo de Entrega</p>
-                         <p className="text-[10px] text-muted-foreground mt-0.5 leading-relaxed">
-                           Calculado por {store.delivery_fee_type === "fixed" ? "Taxa Fixa" : "Quilometragem (KM)"}
-                         </p>
-                       </div>
-                     </div>
-                     <button 
-                       onClick={() => setDashboardTab("settings")}
-                       className="w-full px-4 py-2.5 bg-primary text-primary-foreground text-xs font-bold rounded-xl hover:bg-primary/90 transition-all active:scale-95 shadow-sm flex items-center justify-center gap-2"
-                     >
-                       <Settings className="h-3.5 w-3.5" />
-                       Configurar no Painel
-                     </button>
-                   </div>
-
-                   <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between gap-4">
-                     <div className="flex items-start gap-3">
-                       <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center shrink-0">
-                         <Bike className="h-5 w-5 text-primary" />
-                       </div>
-                       <div className="min-w-0">
-                         <p className="text-sm font-black text-white">Sistema de Motoboy</p>
-                         <p className="text-[10px] text-slate-400 mt-0.5 leading-relaxed">
-                           {(onlineDrivers?.length || 0) > 0 
-                             ? `${onlineDrivers?.length} motoboy(s) online agora` 
-                             : "Nenhum motoboy online no momento"}
-                         </p>
-                       </div>
-                     </div>
-                     <button 
-                       onClick={() => setDashboardTab("drivers")}
-                       className="w-full px-4 py-2.5 bg-slate-800 text-white text-xs font-bold rounded-xl hover:bg-slate-700 transition-all active:scale-95 border border-white/5 flex items-center justify-center gap-2"
-                     >
-                       <Users className="h-3.5 w-3.5 text-primary" />
-                       Gerenciar Equipe
-                     </button>
-                   </div>
-                 </div>
-               )}
-
                {/* ── KPI Cards ── */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
                 <GlanceCard
@@ -1537,23 +1488,57 @@ const AdminDashboard = () => {
                 <ArrowUpRight className="h-5 w-5 text-primary flex-shrink-0" />
               </button>
 
+              {/* Banner de Prioridade: Split Asaas */}
               {store && !store.asaas_wallet_id && (
                 <button
                   onClick={() => setDashboardTab("finance")}
-                  className="w-full bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent border-2 border-amber-500/30 rounded-2xl p-4 flex items-center gap-3 hover:shadow-lg hover:border-amber-500/50 active:scale-[0.99] transition-all text-left animate-fade-in"
+                  className="w-full bg-gradient-to-br from-amber-500/20 via-amber-500/10 to-transparent border-2 border-amber-500/40 rounded-2xl p-4 flex items-center gap-4 hover:shadow-xl hover:border-amber-500/60 active:scale-[0.98] transition-all text-left animate-pulse"
                 >
-                  <div className="w-12 h-12 bg-amber-500/15 rounded-2xl flex items-center justify-center flex-shrink-0">
-                    <Banknote className="h-6 w-6 text-amber-500" />
+                  <div className="w-14 h-14 bg-amber-500 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-amber-500/20">
+                    <Banknote className="h-7 w-7 text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-black text-foreground text-sm flex items-center gap-2">
-                      ⚡ Recebimento Automático
-                      <span className="text-[10px] font-bold bg-amber-500 text-white px-2 py-0.5 rounded-full">PENDENTE</span>
-                    </h3>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">Ative o split do Asaas para receber seu lucro direto na conta, sem esperar repasses.</p>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-black text-foreground text-base">⚡ Ativar Recebimento Automático</h3>
+                      <span className="text-[10px] font-black bg-amber-500 text-white px-2 py-0.5 rounded-full shadow-sm">PRIORIDADE</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-snug">Configure seu split do Asaas para receber suas vendas na hora, direto na sua conta bancária.</p>
                   </div>
-                  <ArrowUpRight className="h-5 w-5 text-amber-500 flex-shrink-0" />
+                  <ArrowUpRight className="h-6 w-6 text-amber-500 flex-shrink-0" />
                 </button>
+              )}
+
+              {/* ── Delivery & Team Status (Moved down and made more compact) ── */}
+              {isOwnDelivery && (
+                <div className="grid grid-cols-2 gap-2">
+                  <button 
+                    onClick={() => setDashboardTab("settings")}
+                    className="bg-card border border-border rounded-xl p-3 flex items-center gap-2.5 hover:bg-accent transition-colors text-left"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                      <Navigation className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-black text-foreground truncate">Modo Entrega</p>
+                      <p className="text-[9px] text-muted-foreground truncate">Configurar taxas</p>
+                    </div>
+                  </button>
+
+                  <button 
+                    onClick={() => setDashboardTab("drivers")}
+                    className="bg-slate-900 border border-slate-800 rounded-xl p-3 flex items-center gap-2.5 hover:bg-slate-800 transition-colors text-left"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center shrink-0">
+                      <Bike className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-black text-white truncate">Equipe Motoboy</p>
+                      <p className="text-[9px] text-slate-400 truncate">
+                        {(onlineDrivers?.length || 0)} online
+                      </p>
+                    </div>
+                  </button>
+                </div>
               )}
 
               {delayedOrders.length > 0 && (
