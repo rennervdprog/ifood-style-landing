@@ -160,9 +160,17 @@ export default function AsaasDocumentsUpload({ storeId }: { storeId: string }) {
             permanente da conta e perda dos pagamentos pendentes.
           </AlertDescription>
         </Alert>
-        <p className="text-[11px] text-muted-foreground">
-          Envie os documentos solicitados aqui mesmo no app. Aceitamos JPG, PNG ou PDF (máx. 10MB).
-        </p>
+         <div className="p-3 bg-muted/40 rounded-xl space-y-2">
+           <p className="text-[11px] font-bold text-foreground flex items-center gap-1">
+             <Info className="h-3 w-3" /> Dicas para aprovação rápida:
+           </p>
+           <ul className="text-[10px] text-muted-foreground space-y-1 ml-4 list-disc">
+             <li>Fotos nítidas e sem reflexo de luz.</li>
+             <li>Documento deve estar inteiro na foto (bordas visíveis).</li>
+             <li>Selfie deve ser feita em local bem iluminado.</li>
+             <li>O documento na selfie deve estar legível.</li>
+           </ul>
+         </div>
 
         {docs.map((doc) => {
           const status = STATUS_LABELS[doc.status] || { label: doc.status, color: "text-muted-foreground" };
