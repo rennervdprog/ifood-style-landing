@@ -24,6 +24,10 @@ export const initSentry = () => {
   console.log("[Sentry] Monitoramento de erros inicializado.");
 };
 
+export const setUser = (user: { id: string; email?: string } | null) => {
+  Sentry.setUser(user);
+};
+
 export const logError = (error: any, context?: Record<string, any>) => {
   console.error("[Log] Error captured:", error, context);
   Sentry.captureException(error, { extra: context });
