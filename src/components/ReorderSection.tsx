@@ -69,7 +69,7 @@ const ReorderSection = () => {
           >
             <div className="flex items-center gap-2">
               {order.stores?.image_url ? (
-                <img src={order.stores.image_url} className="w-8 h-8 rounded-lg object-cover" alt="" />
+                <img loading="lazy" decoding="async" src={order.stores.image_url} className="w-8 h-8 rounded-lg object-cover" alt="" />
               ) : (
                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
                   <ShoppingBag className="h-4 w-4 text-primary" />

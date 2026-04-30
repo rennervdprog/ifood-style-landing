@@ -872,7 +872,7 @@ const ProductFormInline = ({
           <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/webp" onChange={handleFileSelect} className="hidden" />
           {localForm.image_url ? (
             <div className="flex items-center gap-2 bg-background rounded-lg px-3 py-2 border border-border">
-              <img src={localForm.image_url} alt="" className="w-8 h-8 rounded object-cover" />
+              <img loading="lazy" decoding="async" src={localForm.image_url} alt="" className="w-8 h-8 rounded object-cover" />
               <button type="button" onClick={() => setLocalForm((prev) => ({ ...prev, image_url: "" }))} className="text-destructive text-xs hover:underline">Remover</button>
               <button type="button" onClick={() => fileInputRef.current?.click()} className="text-primary text-xs hover:underline">Trocar</button>
             </div>
@@ -947,7 +947,7 @@ const ProductCard = ({
     <div className={`bg-background rounded-xl p-3 border border-border transition-all ${!product.is_available ? "opacity-50" : ""} ${isMoving ? "ring-2 ring-primary" : ""}`}>
       <div className="flex items-start gap-3">
         {product.image_url ? (
-          <img src={product.image_url} alt={product.name} className="w-14 h-14 rounded-lg object-cover flex-shrink-0" />
+          <img loading="lazy" decoding="async" src={product.image_url} alt={product.name} className="w-14 h-14 rounded-lg object-cover flex-shrink-0" />
         ) : (
           <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
             <Package className="h-5 w-5 text-muted-foreground/50" />

@@ -308,7 +308,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
       <DialogContent className="max-w-lg p-0 gap-0 max-h-[90vh] overflow-y-auto rounded-2xl" onOpenAutoFocus={(e) => e.preventDefault()}>
         {/* Product image */}
         {product.image_url ? (
-          <img src={product.image_url} alt={product.name} className="w-full h-56 object-cover rounded-t-2xl" />
+          <img loading="lazy" decoding="async" src={product.image_url} alt={product.name} className="w-full h-56 object-cover rounded-t-2xl" />
         ) : (
           <div className="w-full h-56 bg-muted flex items-center justify-center rounded-t-2xl">
             <span className="text-6xl">{emoji}</span>

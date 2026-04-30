@@ -524,7 +524,7 @@ const ClientHomeContent = () => {
                   <button key={store.id} onClick={() => goToStore(store)}
                     className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-muted/50 transition-colors text-left">
                     {store.image_url ? (
-                      <img src={store.image_url} className="w-10 h-10 rounded-lg object-cover" alt="" />
+                      <img loading="lazy" decoding="async" src={store.image_url} className="w-10 h-10 rounded-lg object-cover" alt="" />
                     ) : (
                       <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                         <Store className="h-4 w-4 text-primary" />
@@ -560,7 +560,7 @@ const ClientHomeContent = () => {
                   <button key={store.id} onClick={() => goToStore(store)}
                     className="w-full flex items-center gap-3 p-3 bg-card border border-border rounded-xl hover:bg-muted/50 transition-colors text-left">
                     {store.image_url ? (
-                      <img src={store.image_url} className="w-12 h-12 rounded-xl object-cover" alt="" />
+                      <img loading="lazy" decoding="async" src={store.image_url} className="w-12 h-12 rounded-xl object-cover" alt="" />
                     ) : (
                       <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
                         <Store className="h-5 w-5 text-primary" />
@@ -593,7 +593,7 @@ const ClientHomeContent = () => {
             <div className="bg-card border border-border rounded-2xl p-4">
               <div className="flex items-center gap-3 mb-3">
                 {lastOrder.stores?.image_url ? (
-                  <img src={lastOrder.stores.image_url} className="w-10 h-10 rounded-xl object-cover" alt="" />
+                  <img loading="lazy" decoding="async" src={lastOrder.stores.image_url} className="w-10 h-10 rounded-xl object-cover" alt="" />
                 ) : (
                   <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
                     <ShoppingBag className="h-5 w-5 text-primary" />
@@ -640,7 +640,7 @@ const ClientHomeContent = () => {
                 <button key={store.id} onClick={() => goToStore(store)}
                   className="flex-shrink-0 w-28 flex flex-col items-center gap-2 p-3 bg-card border border-border rounded-2xl hover:bg-muted/50 transition-colors">
                   {store.image_url ? (
-                    <img src={store.image_url} className="w-14 h-14 rounded-xl object-cover" alt="" />
+                    <img loading="lazy" decoding="async" src={store.image_url} className="w-14 h-14 rounded-xl object-cover" alt="" />
                   ) : (
                     <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center">
                       <Store className="h-6 w-6 text-primary" />
@@ -664,7 +664,7 @@ const ClientHomeContent = () => {
                 <div key={order.id} className="flex-shrink-0 w-44 bg-card border border-border rounded-2xl p-3 space-y-2">
                   <div className="flex items-center gap-2">
                     {order.stores?.image_url ? (
-                      <img src={order.stores.image_url} className="w-8 h-8 rounded-lg object-cover" alt="" />
+                      <img loading="lazy" decoding="async" src={order.stores.image_url} className="w-8 h-8 rounded-lg object-cover" alt="" />
                     ) : (
                       <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
                         <ShoppingBag className="h-4 w-4 text-primary" />
@@ -730,7 +730,7 @@ const ClientHomeContent = () => {
                     className="bg-card border border-border rounded-2xl p-3 flex flex-col gap-2 text-left hover:bg-muted/50 transition-colors"
                   >
                     {store.image_url ? (
-                      <img src={store.image_url} className="w-full h-20 rounded-xl object-cover" alt={store.name} loading="lazy" />
+                      <img loading="lazy" decoding="async" src={store.image_url} className="w-full h-20 rounded-xl object-cover" alt={store.name} loading="lazy" />
                     ) : (
                       <div className="w-full h-20 rounded-xl bg-primary/10 flex items-center justify-center">
                         <Store className="h-7 w-7 text-primary" />

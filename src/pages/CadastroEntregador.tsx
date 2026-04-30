@@ -462,7 +462,7 @@ const CadastroEntregador = () => {
                   <p className="text-xs font-bold text-foreground mb-2">📸 Selfie (câmera ao vivo)</p>
                   {selfiePreview ? (
                     <div className="relative">
-                      <img src={selfiePreview} alt="Selfie" className="w-full h-48 object-cover rounded-2xl border border-border" />
+                      <img loading="lazy" decoding="async" src={selfiePreview} alt="Selfie" className="w-full h-48 object-cover rounded-2xl border border-border" />
                       <button
                         type="button"
                         onClick={() => { setSelfieFile(null); setSelfiePreview(null); }}
@@ -596,7 +596,7 @@ const DocumentUpload = ({ label, preview, onSelect, onClear }: {
       <p className="text-xs font-bold text-foreground mb-2">{label}</p>
       {preview ? (
         <div className="relative">
-          <img src={preview} alt={label} className="w-full h-44 object-cover rounded-2xl border border-border" />
+          <img loading="lazy" decoding="async" src={preview} alt={label} className="w-full h-44 object-cover rounded-2xl border border-border" />
           <button
             type="button"
             onClick={onClear}
