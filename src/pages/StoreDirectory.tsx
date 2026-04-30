@@ -729,10 +729,83 @@ const StoreDirectory = () => {
             {plans.map((plan) => {
               const Icon = plan.icon;
               return (
-                <Card
-                  key={plan.id}
-                  className={`relative flex flex-col rounded-3xl overflow-visible transition-all hover:shadow-xl ${
-                    plan.highlight
+        <Card
+          key={plan.id}
+          className={`relative flex flex-col rounded-[2.5rem] overflow-visible transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 border-2 ${
+            plan.highlight
+              ? "border-primary shadow-2xl shadow-primary/10 scale-105 z-10"
+              : "border-border shadow-lg"
+          }`}
+        >
+          {plan.badge && (
+            <div className="absolute -top-4 left-1/2 -translate-x-1/2 whitespace-nowrap px-4 py-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-widest shadow-lg z-20">
+              {plan.badge}
+            </div>
+          )}
+          <CardContent className="p-8 flex flex-col flex-1 h-full">
+            <div className="flex items-center gap-4 mb-8">
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center bg-gradient-to-br ${plan.color} text-white shadow-lg`}>
+                <Icon className="h-7 w-7" />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-foreground">{plan.name}</h3>
+                <p className="text-[11px] text-muted-foreground font-bold uppercase tracking-tight">{plan.tagline}</p>
+              </div>
+            </div>
+
+            <div className="mb-8 p-6 rounded-3xl bg-muted/30 border border-border/50">
+               <div className="flex items-baseline gap-1">
+                 <span className="text-sm font-bold text-muted-foreground leading-none">R$</span>
+                 <span className="text-5xl font-black text-foreground leading-none tracking-tighter">{plan.price}</span>
+                 <span className="text-sm font-bold text-muted-foreground">{plan.period}</span>
+               </div>
+               <div className="mt-4 pt-4 border-t border-border/50">
+                 <div className="flex items-center gap-2">
+                    <BadgePercent className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-black text-foreground">{plan.commission}</span>
+                 </div>
+                 <p className="text-[10px] text-muted-foreground font-medium ml-6">{plan.commissionLabel}</p>
+               </div>
+            </div>
+
+            <p className="text-sm text-muted-foreground mb-8 font-medium leading-relaxed">{plan.description}</p>
+
+            <ul className="space-y-4 mb-10">
+              {plan.features.map((f, i) => (
+                <li key={i} className="flex items-start gap-3 text-sm font-bold text-foreground/80 group">
+                  <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-primary group-hover:text-white transition-colors">
+                    <Check className="h-3 w-3" />
+                  </div>
+                  {f}
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-auto space-y-4">
+              <Button 
+                onClick={handleCTA}
+                className={`w-full py-7 rounded-2xl text-base font-black transition-all ${
+                  plan.highlight 
+                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-primary/40" 
+                    : "bg-foreground text-background hover:bg-foreground/90"
+                }`}
+              >
+                {plan.id === "commission_only" ? "Começar grátis" : "Testar grátis"}
+              </Button>
+              
+              {plan.extraFees && plan.extraFees.length > 0 && (
+                <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10 space-y-2">
+                  {plan.extraFees.map((fee, i) => (
+                    <div key={i} className="flex justify-between items-center gap-2">
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase">{fee.label}</span>
+                      <span className="text-[10px] font-black text-primary">{fee.value}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
                       ? "border-2 border-primary shadow-lg shadow-primary/10 ring-2 ring-primary/10 scale-[1.02]"
                       : "border-border hover:border-primary/30"
                   }`}
