@@ -2338,6 +2338,7 @@ const AdminDashboard = () => {
                     storeId={store.id} 
                     storeName={store.name} 
                     hasCommission={storePlan.hasCommission} 
+                    isPlatformAdmin={isPlatformAdmin}
                   />
                 )}
                 {dashboardTab === "subscription" && (
