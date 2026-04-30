@@ -77,8 +77,10 @@ function AsaasFinancialPanelInner({ storeId }: { storeId: string }) {
   const [data, setData] = useState<SummaryResponse | null>(null);
 
   // Editable PIX form
-  const [pixKey, setPixKey] = useState("");
-  const [pixType, setPixType] = useState<"CPF" | "CNPJ" | "EMAIL" | "PHONE" | "EVP">("EVP");
+   const [pixKey, setPixKey] = useState(data?.config.pixAddressKey || "");
+   const [pixType, setPixType] = useState<"CPF" | "CNPJ" | "EMAIL" | "PHONE" | "EVP">(data?.config.pixAddressKeyType as any || "EVP");
+   const [autoWithdraw, setAutoWithdraw] = useState(data?.config.autoWithdrawEnabled || false);
+   const [minWithdraw, setMinWithdraw] = useState(String(data?.config.minWithdrawAmount || 5));
 
   const callPanel = useCallback(
     async (payload: Record<string, unknown>) => {
@@ -126,8 +128,31 @@ function AsaasFinancialPanelInner({ storeId }: { storeId: string }) {
       });
       toast.success("Chave PIX atualizada!");
       await loadSummary();
+      toast.success("Chave PIX atualizada!");
     } catch (e: any) {
       toast.error(e.message || "Erro ao atualizar chave PIX.");
+    } finally {
+      setActing(null);
+    }
+  };
+
+  const handleUpdateWithdrawConfig = async () => {
+    const val = Number(minWithdraw.replace(",", "."));
+    if (isNaN(val) || val < 5) {
+      toast.error("Mínimo de saque deve ser R$ 5,00.");
+      return;
+    }
+    setActing("config");
+    try {
+      await callPanel({
+        action: "update-withdraw-config",
+        autoWithdrawEnabled: autoWithdraw,
+        minWithdrawAmount: val,
+      });
+      toast.success("Configurações salvas!");
+      await loadSummary();
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao salvar configurações.");
     } finally {
       setActing(null);
     }
@@ -230,10 +255,10 @@ function AsaasFinancialPanelInner({ storeId }: { storeId: string }) {
             <KeyRound className="h-4 w-4" /> Chave PIX para receber
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid grid-cols-3 gap-2">
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="col-span-1">
-              <Label className="text-xs">Tipo</Label>
+              <Label className="text-xs">Tipo de Chave</Label>
               <Select value={pixType} onValueChange={(v) => setPixType(v as typeof pixType)}>
                 <SelectTrigger className="h-9 text-sm">
                   <SelectValue />
@@ -243,23 +268,22 @@ function AsaasFinancialPanelInner({ storeId }: { storeId: string }) {
                   <SelectItem value="CNPJ">CNPJ</SelectItem>
                   <SelectItem value="EMAIL">E-mail</SelectItem>
                   <SelectItem value="PHONE">Celular</SelectItem>
-                  <SelectItem value="EVP">Aleatória</SelectItem>
+                  <SelectItem value="EVP">Chave Aleatória (EVP)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="col-span-2">
-              <Label className="text-xs">Chave</Label>
+              <Label className="text-xs">Sua Chave PIX</Label>
               <Input
                 value={pixKey}
                 onChange={(e) => setPixKey(e.target.value)}
-                placeholder="Sua chave PIX"
+                placeholder="Informe sua chave"
                 className="h-9 text-sm"
               />
             </div>
           </div>
           <Button
             size="sm"
-            variant="outline"
             className="w-full"
             onClick={handleUpdatePix}
             disabled={acting === "pix"}
@@ -267,11 +291,53 @@ function AsaasFinancialPanelInner({ storeId }: { storeId: string }) {
             {acting === "pix" ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : null}
-            Salvar chave PIX
+            Salvar Chave PIX
           </Button>
-          <p className="text-[11px] text-muted-foreground">
-            É para essa chave que o saldo será enviado nos saques (manual ou automático).
-          </p>
+        </CardContent>
+      </Card>
+
+      {/* CONFIGURAÇÃO DE SAQUE */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <RefreshCw className="h-4 w-4" /> Configuração de Saque
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label className="text-sm font-medium">Saque automático</Label>
+              <p className="text-[11px] text-muted-foreground">O saldo é enviado diariamente às 16h.</p>
+            </div>
+            <Button
+              variant={autoWithdraw ? "default" : "outline"}
+              size="sm"
+              onClick={() => setAutoWithdraw(!autoWithdraw)}
+            >
+              {autoWithdraw ? "Ligado" : "Desligado"}
+            </Button>
+          </div>
+          
+          <div className="space-y-2">
+            <Label className="text-xs">Valor mínimo para saque (R$)</Label>
+            <Input
+              value={minWithdraw}
+              onChange={(e) => setMinWithdraw(e.target.value)}
+              className="h-9"
+              type="number"
+            />
+          </div>
+
+          <Button
+            size="sm"
+            variant="secondary"
+            className="w-full"
+            onClick={handleUpdateWithdrawConfig}
+            disabled={acting === "config"}
+          >
+            {acting === "config" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+            Salvar Configurações
+          </Button>
         </CardContent>
       </Card>
 
