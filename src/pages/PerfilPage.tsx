@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, SUPABASE_URL } from "@/integrations/supabase/client";
 import { isCapacitorNative } from "@/lib/capacitorNative";
 import BottomNav from "@/components/BottomNav";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
