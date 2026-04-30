@@ -718,6 +718,37 @@ const DriverDashboard = () => {
 
   const [settlementCodeInput, setSettlementCodeInput] = useState("");
   const [confirmingReturn, setConfirmingReturn] = useState(false);
+  const [acceptingInvite, setAcceptingInvite] = useState<string | null>(null);
+
+  const acceptInvitation = async (linkId: string) => {
+    setAcceptingInvite(linkId);
+    const { error } = await supabase
+      .from("store_drivers")
+      .update({ status: 'accepted' } as any)
+      .eq("id", linkId);
+    
+    if (error) {
+      toast.error("Erro ao aceitar convite.");
+    } else {
+      toast.success("Convite aceito! Agora você faz parte desta loja.");
+      queryClient.invalidateQueries({ queryKey: ["store-driver-links", user?.id] });
+    }
+    setAcceptingInvite(null);
+  };
+
+  const rejectInvitation = async (linkId: string) => {
+    const { error } = await supabase
+      .from("store_drivers")
+      .delete()
+      .eq("id", linkId);
+    
+    if (error) {
+      toast.error("Erro ao recusar convite.");
+    } else {
+      toast.success("Convite recusado.");
+      queryClient.invalidateQueries({ queryKey: ["store-driver-links", user?.id] });
+    }
+  };
 
   const confirmStoreReturn = async (orderId: string) => {
     if (!settlementCodeInput || settlementCodeInput.length !== 4) { toast.error("Digite o código de 4 dígitos fornecido pelo lojista."); return; }
@@ -994,6 +1025,44 @@ const DriverDashboard = () => {
             />
           ) : (
             <div className="px-4 py-4 space-y-5">
+              {/* ─── Store Invitations ─── */}
+              {pendingStoreLinks.length > 0 && (
+                <div className="space-y-3">
+                  <SectionHeader icon={Bell}>Convites de Loja</SectionHeader>
+                  {pendingStoreLinks.map((link: any) => (
+                    <div key={link.id} className="bg-card border-2 border-primary/20 rounded-2xl p-4 shadow-lg shadow-primary/5 animate-in fade-in slide-in-from-top-4 duration-500">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                          <Store className="h-6 w-6 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Novo convite de:</p>
+                          <p className="text-lg font-black text-foreground truncate">{link.stores?.name}</p>
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Esta loja quer que você faça parte da equipe de entregadores deles. Você poderá ver e aceitar pedidos exclusivos desta loja.
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => acceptInvitation(link.id)}
+                          disabled={!!acceptingInvite}
+                          className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 rounded-xl text-sm active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                        >
+                          {acceptingInvite === link.id ? "Aceitando..." : "ACEITAR"}
+                        </button>
+                        <button
+                          onClick={() => rejectInvitation(link.id)}
+                          className="px-4 bg-muted hover:bg-destructive/10 text-muted-foreground hover:text-destructive font-bold py-3 rounded-xl text-sm active:scale-[0.98] transition-all"
+                        >
+                          RECUSAR
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {/* Quick Stats Row */}
               <div className="grid grid-cols-4 gap-2">
                 <StatCard icon={DollarSign} label="Hoje" value={`R$${todayEarnings.toFixed(0)}`} accent="green" />
