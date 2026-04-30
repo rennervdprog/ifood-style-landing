@@ -560,6 +560,10 @@ const DriverDashboard = () => {
   };
 
   const acceptOrder = async (orderId: string) => {
+    if (myDelivery) {
+      toast.error("Você já tem uma entrega ativa. Finalize-a antes de aceitar outra.");
+      return;
+    }
     // Optimistic UI: remove order from available list immediately so it disappears instantly
     const previousAvailable = queryClient.getQueryData<any[]>(["driver-available-orders"]);
     const acceptedOrder = (availableOrders || []).find((o: any) => o.id === orderId);
