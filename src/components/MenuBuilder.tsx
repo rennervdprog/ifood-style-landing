@@ -540,6 +540,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
       showLinkAddon={showLinkAddonFor === product.id}
       setShowLinkAddon={(v) => setShowLinkAddonFor(v ? product.id : null)}
       onToggleAvailable={() => toggleProductAvailable(product.id, product.is_available)}
+      onToggleOutOfStock={() => toggleProductOutOfStock(product.id, (product as any).metadata)}
       onDelete={() => deleteProductConfirm(product.id, product.name)}
       onEdit={() => {
         setEditingProduct(product.id);
@@ -587,6 +588,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
           <p className="text-xs text-muted-foreground">
             <span className="text-primary font-bold">{activeCount} ativos</span>
             {pausedCount > 0 && <span className="text-yellow-600 dark:text-yellow-400"> · {pausedCount} pausados</span>}
+            {outOfStockCount > 0 && <span className="text-destructive"> · {outOfStockCount} esgotado{outOfStockCount > 1 ? "s" : ""}</span>}
             {" · "}{sections?.length || 0} {(sections?.length || 0) === 1 ? "seção" : "seções"}
           </p>
         </div>
