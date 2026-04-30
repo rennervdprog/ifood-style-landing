@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
- import { CheckCircle2, Loader2, Banknote, ShieldCheck, Copy, AlertCircle, FileText, ExternalLink, RefreshCw } from "lucide-react";
+  import { CheckCircle2, Loader2, Banknote, ShieldCheck, Copy, AlertCircle, FileText, ExternalLink, RefreshCw, User, MapPin, Landmark, ArrowRight, Wallet, Info } from "lucide-react";
 import { toast } from "sonner";
 import { formatPixKeyDisplay, sanitizePixKeyForAsaas, validatePixKey } from "@/lib/pixFormat";
 import { fetchCep } from "@/lib/cepLookup";
@@ -57,6 +57,7 @@ const isValidCnpj = (value: string) => {
 
 export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
   const qc = useQueryClient();
+  const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
   const [debugInfo, setDebugInfo] = useState<any>(null);
@@ -362,225 +363,292 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
     );
   }
 
+  const renderStepIndicator = () => (
+    <div className="flex items-center justify-between mb-8 px-2">
+      {[1, 2, 3].map((s) => (
+        <div key={s} className="flex flex-col items-center gap-2 flex-1 relative">
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold z-10 transition-colors ${
+            step >= s ? "bg-primary text-white" : "bg-muted text-muted-foreground"
+          }`}>
+            {step > s ? <CheckCircle2 className="h-4 w-4" /> : s}
+          </div>
+          <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            {s === 1 ? "Dados" : s === 2 ? "Endereço" : "Financeiro"}
+          </span>
+          {s < 3 && (
+            <div className={`absolute top-4 left-[60%] w-[80%] h-[2px] -z-0 ${
+              step > s ? "bg-primary" : "bg-muted"
+            }`} />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Banknote className="h-5 w-5 text-primary" />
-          Receba PIX direto na sua conta (split automático)
-        </CardTitle>
-        <CardDescription className="text-xs">
-          Crie sua subconta Asaas <strong>grátis</strong>. A cada venda PIX,
-          sua parte vai direto pra sua conta bancária — sem precisar esperar repasse.
-          Você não precisa criar conta no site do Asaas, fazemos tudo aqui.
+    <Card className="overflow-hidden border-none shadow-xl bg-gradient-to-b from-background to-muted/20">
+      <CardHeader className="bg-primary/5 border-b border-primary/10 pb-8">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="p-2 bg-primary/10 rounded-xl">
+            <Banknote className="h-6 w-6 text-primary" />
+          </div>
+          <CardTitle className="text-xl font-bold tracking-tight">
+            Configuração da Subconta
+          </CardTitle>
+        </div>
+        <CardDescription className="text-sm">
+          Ative o recebimento direto e split automático via Asaas.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <Alert className="border-primary/30 bg-primary/5">
-          <ShieldCheck className="h-4 w-4 text-primary" />
-          <AlertDescription className="text-xs">
-            <strong>100% gratuito.</strong> Sem mensalidade. Sem taxa de criação.
-            Você só paga as taxas normais de PIX (R$ 1,99 por recebimento, padrão Asaas).
-          </AlertDescription>
-        </Alert>
+      
+      <CardContent className="pt-8 space-y-6">
+        {renderStepIndicator()}
 
-        <Alert className="border-red-500/40 bg-red-500/5">
-          <AlertCircle className="h-4 w-4 text-red-600" />
-          <AlertTitle className="text-red-700 text-sm font-bold">⚠️ Atenção: use SEMPRE dados reais</AlertTitle>
-          <AlertDescription className="text-xs text-red-700/90 mt-1 space-y-1">
-            <p>
-              Todos os dados informados abaixo (nome, CPF/CNPJ, endereço, telefone, chave PIX, faturamento)
-              são enviados ao banco <strong>Asaas</strong> e validados junto à <strong>Receita Federal</strong>.
-            </p>
-            <p>
-              Dados <strong>falsos, de terceiros ou inconsistentes</strong> resultam em reprovação automática,
-              bloqueio da conta e impossibilidade de receber pagamentos. Não há como corrigir depois.
-            </p>
-          </AlertDescription>
-        </Alert>
+        {step === 1 && (
+          <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+            <div className="space-y-4">
+              <div className="flex p-1 bg-muted rounded-xl gap-1">
+                <Button 
+                  type="button"
+                  variant={personType === "FISICA" ? "default" : "ghost"}
+                  className="flex-1 rounded-lg h-10"
+                  onClick={() => setPersonType("FISICA")}
+                >
+                  <User className="h-4 w-4 mr-2" /> Pessoa Física
+                </Button>
+                <Button 
+                  type="button"
+                  variant={personType === "JURIDICA" ? "default" : "ghost"}
+                  className="flex-1 rounded-lg h-10"
+                  onClick={() => setPersonType("JURIDICA")}
+                >
+                  <Landmark className="h-4 w-4 mr-2" /> Pessoa Jurídica
+                </Button>
+              </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1.5 sm:col-span-2">
-            <Label className="text-xs">Tipo de Documento *</Label>
-            <div className="flex gap-2">
-              <Button 
-                type="button"
-                variant={personType === "FISICA" ? "default" : "outline"}
-                className={`flex-1 h-9 text-[11px] sm:text-xs ${personType === "FISICA" ? "bg-primary text-primary-foreground" : ""}`}
-                onClick={() => {
-                  setPersonType("FISICA");
-                  update("cpfCnpj", "");
-                }}
-              >
-                Pessoa Física (CPF)
+              <div className="grid gap-4">
+                <div className="space-y-2">
+                  <Label>{isCpf ? "Nome completo" : "Razão social"}</Label>
+                  <Input value={form.name} onChange={(e) => update("name", e.target.value)} placeholder={isCpf ? "Como no RG/CNH" : "Como no Cartão CNPJ"} />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>{isCpf ? "CPF" : "CNPJ"}</Label>
+                    <Input value={formatPixKeyDisplay(form.cpfCnpj, isCpf ? "cpf" : "cnpj")} 
+                           onChange={(e) => update("cpfCnpj", e.target.value)} placeholder="000.000.000-00" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>E-mail comercial</Label>
+                    <Input type="email" value={form.email} onChange={(e) => update("email", e.target.value)} placeholder="vendas@loja.com" />
+                  </div>
+                </div>
+
+                {isCpf ? (
+                  <div className="space-y-2">
+                    <Label>Data de nascimento</Label>
+                    <Input type="date" value={form.birthDate} onChange={(e) => update("birthDate", e.target.value)} />
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Label>Tipo de empresa</Label>
+                    <Select value={form.companyType} onValueChange={(v) => update("companyType", v)}>
+                      <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="MEI">MEI - Microempreendedor Individual</SelectItem>
+                        <SelectItem value="INDIVIDUAL">Empresário Individual</SelectItem>
+                        <SelectItem value="LIMITED">LTDA - Sociedade Limitada</SelectItem>
+                        <SelectItem value="ASSOCIATION">Associação / Sem fins lucrativos</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>{isCpf ? "Renda mensal" : "Faturamento mensal"}</Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-bold">R$</span>
+                      <Input className="pl-9" inputMode="decimal" value={form.incomeValue} onChange={(e) => update("incomeValue", e.target.value)} placeholder="0,00" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>WhatsApp</Label>
+                    <Input value={formatPixKeyDisplay(form.phone, "phone")} onChange={(e) => update("phone", e.target.value)} placeholder="(00) 00000-0000" />
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <Button className="w-full h-12 text-base font-bold" onClick={() => {
+              if (!form.name || !form.email || !form.cpfCnpj) {
+                toast.error("Preencha os campos básicos para continuar.");
+                return;
+              }
+              setStep(2);
+            }}>
+              Continuar para Endereço <ArrowRight className="h-5 w-5 ml-2" />
+            </Button>
+          </div>
+        )}
+
+        {step === 2 && (
+          <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+            <div className="grid gap-4">
+              <div className="space-y-2">
+                <Label>CEP</Label>
+                <Input value={form.postalCode} onChange={(e) => update("postalCode", e.target.value)} placeholder="00000-000" maxLength={9} />
+              </div>
+
+              <div className="grid grid-cols-4 gap-4">
+                <div className="col-span-3 space-y-2">
+                  <Label>Endereço</Label>
+                  <Input value={form.address} onChange={(e) => update("address", e.target.value)} placeholder="Rua, Avenida..." />
+                </div>
+                <div className="col-span-1 space-y-2">
+                  <Label>Nº</Label>
+                  <Input value={form.addressNumber} onChange={(e) => update("addressNumber", e.target.value)} placeholder="123" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Bairro</Label>
+                  <Input value={form.province} onChange={(e) => update("province", e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Complemento</Label>
+                  <Input value={form.complement} onChange={(e) => update("complement", e.target.value)} placeholder="Apto, Sala..." />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-4 gap-4">
+                <div className="col-span-3 space-y-2">
+                  <Label>Cidade</Label>
+                  <Input value={form.city} onChange={(e) => update("city", e.target.value)} />
+                </div>
+                <div className="col-span-1 space-y-2">
+                  <Label>UF</Label>
+                  <Input value={form.state} onChange={(e) => update("state", e.target.value.toUpperCase())} maxLength={2} />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1 h-12" onClick={() => setStep(1)}>Voltar</Button>
+              <Button className="flex-[2] h-12 text-base font-bold" onClick={() => {
+                 if (!form.postalCode || !form.address || !form.addressNumber) {
+                   toast.error("Preencha os campos obrigatórios de endereço.");
+                   return;
+                 }
+                 setStep(3);
+              }}>
+                Dados Bancários <ArrowRight className="h-5 w-5 ml-2" />
               </Button>
-              <Button 
-                type="button"
-                variant={personType === "JURIDICA" ? "default" : "outline"}
-                className={`flex-1 h-9 text-[11px] sm:text-xs ${personType === "JURIDICA" ? "bg-primary text-primary-foreground" : ""}`}
-                onClick={() => {
-                  setPersonType("JURIDICA");
-                  update("cpfCnpj", "");
-                }}
-              >
-                Pessoa Jurídica (CNPJ)
-              </Button>
             </div>
           </div>
+        )}
 
-          <div className="space-y-1.5">
-            <Label className="text-xs">{isCpf ? "Nome completo *" : "Razão social *"}</Label>
-            <Input value={form.name} onChange={(e) => update("name", e.target.value)} placeholder={isCpf ? "Seu nome" : "Nome da empresa"} />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Email *</Label>
-            <Input type="email" value={form.email} onChange={(e) => update("email", e.target.value)} />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">{isCpf ? "CPF *" : "CNPJ *"}</Label>
-            <Input value={formatPixKeyDisplay(form.cpfCnpj, isCpf ? "cpf" : "cnpj")} 
-                   onChange={(e) => update("cpfCnpj", e.target.value)} placeholder="000.000.000-00" />
-          </div>
-          {isCpf ? (
-            <div className="space-y-1.5">
-              <Label className="text-xs">Data de nascimento *</Label>
-              <Input type="date" value={form.birthDate} onChange={(e) => update("birthDate", e.target.value)} />
+        {step === 3 && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+            <Alert className="border-primary/20 bg-primary/5">
+              <Info className="h-4 w-4 text-primary" />
+              <AlertDescription className="text-xs">
+                Informe a chave PIX onde você deseja receber seus saques. Pode ser de qualquer banco.
+              </AlertDescription>
+            </Alert>
+
+            <div className="space-y-4 p-4 border rounded-2xl bg-muted/30">
+              <div className="space-y-2">
+                <Label>Tipo de chave PIX</Label>
+                <Select value={form.pixAddressKeyType} onValueChange={(v) => update("pixAddressKeyType", v)}>
+                  <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="CPF">CPF</SelectItem>
+                    <SelectItem value="CNPJ">CNPJ</SelectItem>
+                    <SelectItem value="EMAIL">E-mail</SelectItem>
+                    <SelectItem value="PHONE">Celular</SelectItem>
+                    <SelectItem value="EVP">Chave Aleatória (EVP)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Sua Chave PIX</Label>
+                <Input 
+                  value={formatPixKeyDisplay(form.pixAddressKey, form.pixAddressKeyType.toLowerCase())} 
+                  onChange={(e) => update("pixAddressKey", e.target.value)} 
+                  placeholder="Digite sua chave aqui"
+                  className="h-11"
+                />
+              </div>
             </div>
-          ) : (
-            <div className="space-y-1.5">
-              <Label className="text-xs">Tipo de empresa *</Label>
-              <Select value={form.companyType} onValueChange={(v) => update("companyType", v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="MEI">MEI</SelectItem>
-                  <SelectItem value="INDIVIDUAL">Empresário Individual</SelectItem>
-                  <SelectItem value="LIMITED">LTDA</SelectItem>
-                  <SelectItem value="ASSOCIATION">Associação</SelectItem>
-                </SelectContent>
-              </Select>
+
+            <div className="space-y-4">
+              <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20">
+                <div className="flex gap-3">
+                  <AlertCircle className="h-5 w-5 text-amber-600 shrink-0" />
+                  <div className="space-y-1">
+                    <p className="text-xs font-bold text-amber-900 uppercase tracking-tight">Verificação de Segurança</p>
+                    <p className="text-[11px] text-amber-800 leading-relaxed">
+                      Ao clicar abaixo, seus dados serão validados pelo Asaas e pela Receita Federal. 
+                      Use apenas dados <strong>reais</strong>.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <Button variant="outline" className="flex-1 h-12" onClick={() => setStep(2)}>Voltar</Button>
+                <Button className="flex-[2] h-12 text-base font-bold bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20" onClick={submit} disabled={submitting}>
+                  {submitting ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <ShieldCheck className="h-5 w-5 mr-2" />}
+                  Ativar Minha Conta
+                </Button>
+              </div>
             </div>
-          )}
-          <div className="space-y-1.5">
-            <Label className="text-xs">{isCpf ? "Renda mensal *" : "Faturamento mensal *"}</Label>
-            <Input
-              inputMode="decimal"
-              value={form.incomeValue}
-              onChange={(e) => update("incomeValue", e.target.value.replace(/[^\d,.]/g, ""))}
-              placeholder="2500,00"
-            />
           </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Celular (WhatsApp) *</Label>
-            <Input value={formatPixKeyDisplay(form.phone, "phone")} onChange={(e) => update("phone", e.target.value)} placeholder="(14) 99999-9999" />
+        )}
+
+        {/* Footer info always visible */}
+        <div className="pt-6 border-t border-border mt-4 flex items-center justify-center gap-6">
+          <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+            <ShieldCheck className="h-3 w-3 text-primary" /> 100% Seguro
           </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">CEP (Só números) *</Label>
-            <Input value={form.postalCode} onChange={(e) => update("postalCode", e.target.value)} placeholder="00000000" maxLength={8} />
+          <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+            <Landmark className="h-3 w-3 text-primary" /> Homologado Asaas
           </div>
-          <div className="space-y-1.5 sm:col-span-2">
-            <Label className="text-xs">Endereço *</Label>
-            <Input value={form.address} onChange={(e) => update("address", e.target.value)} placeholder="Rua, avenida..." />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Número *</Label>
-            <Input value={form.addressNumber} onChange={(e) => update("addressNumber", e.target.value)} />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Complemento</Label>
-            <Input value={form.complement} onChange={(e) => update("complement", e.target.value)} />
-          </div>
-          <div className="space-y-1.5 sm:col-span-2">
-            <Label className="text-xs">Bairro *</Label>
-            <Input value={form.province} onChange={(e) => update("province", e.target.value)} />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Cidade *</Label>
-            <Input value={form.city} onChange={(e) => update("city", e.target.value)} placeholder="Itatinga" />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Estado (UF) *</Label>
-            <Input value={form.state} onChange={(e) => update("state", e.target.value.toUpperCase().slice(0, 2))} placeholder="SP" maxLength={2} />
-          </div>
-          <div className="space-y-1.5 sm:col-span-2">
-            <Label className="text-xs">Site da loja (opcional)</Label>
-            <Input value={form.site} onChange={(e) => update("site", e.target.value)} placeholder="https://minhaloja.com.br" />
+          <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+            <CheckCircle2 className="h-3 w-3 text-primary" /> Grátis
           </div>
         </div>
 
-        <div className="rounded-lg border border-border p-3 space-y-3 bg-muted/30">
-          <p className="text-xs font-bold text-foreground">Chave PIX para saques</p>
-          <p className="text-[11px] text-muted-foreground">
-            Aqui você cadastra a chave PIX onde quer sacar o dinheiro depois (qualquer banco — Itaú, Nubank, etc).
-          </p>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Tipo de chave *</Label>
-              <Select value={form.pixAddressKeyType} onValueChange={(v) => update("pixAddressKeyType", v)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="CPF">CPF</SelectItem>
-                  <SelectItem value="CNPJ">CNPJ</SelectItem>
-                  <SelectItem value="EMAIL">Email</SelectItem>
-                  <SelectItem value="PHONE">Celular</SelectItem>
-                  <SelectItem value="EVP">Aleatória</SelectItem>
-                </SelectContent>
-              </Select>
+        {(lastError || debugInfo) && (
+          <div className="mt-4 p-3 rounded bg-slate-50 border border-slate-200 text-[10px] font-mono overflow-hidden">
+            <div className="flex justify-between items-center mb-2">
+              <p className="font-bold text-red-700">Log de Erro (Debug):</p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-7 px-2 text-[10px]"
+                onClick={() => {
+                  const text = `${lastError}\n\n${JSON.stringify(debugInfo, null, 2)}`;
+                  navigator.clipboard.writeText(text);
+                  toast.success("Copiado!");
+                }}
+              >
+                <Copy className="h-3 w-3 mr-1" /> Copiar
+              </Button>
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Chave PIX ({form.pixAddressKeyType}) *</Label>
-              <Input value={formatPixKeyDisplay(form.pixAddressKey, form.pixAddressKeyType.toLowerCase())} 
-                     onChange={(e) => update("pixAddressKey", e.target.value)} />
+            <div className="max-h-40 overflow-auto">
+              <p className="text-red-600 mb-2">{lastError}</p>
+              {debugInfo && (
+                <pre className="text-slate-600 whitespace-pre-wrap">
+                  {JSON.stringify(debugInfo, null, 2)}
+                </pre>
+              )}
             </div>
           </div>
-        </div>
-
-        <Button onClick={submit} disabled={submitting} className="w-full">
-          {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-          Criar subconta e ativar split automático
-        </Button>
-
-        <Alert className="border-blue-500/30 bg-blue-500/5">
-          <FileText className="h-4 w-4 text-blue-600" />
-          <AlertTitle className="text-blue-700 text-xs">Após criar a subconta</AlertTitle>
-          <AlertDescription className="text-[11px] space-y-1">
-            O Asaas vai te pedir <strong>uma única vez</strong> os documentos abaixo (regra do Banco Central):
-            <ul className="list-disc pl-4 mt-1 space-y-0.5">
-              <li>RG ou CNH (frente e verso)</li>
-              <li>Selfie segurando o documento</li>
-              <li>Comprovante de residência (até 90 dias)</li>
-              {!isCpf && <li>Cartão CNPJ / Contrato Social</li>}
-            </ul>
-            <p className="mt-1">Você receberá um e-mail e poderá enviar tudo pelo celular em 2 minutos.</p>
-          </AlertDescription>
-        </Alert>
-
-         {(lastError || debugInfo) && (
-           <div className="mt-4 p-3 rounded bg-slate-50 border border-slate-200 text-[10px] font-mono overflow-hidden">
-             <div className="flex justify-between items-center mb-2">
-               <p className="font-bold text-red-700">Log de Erro (Debug):</p>
-               <Button 
-                 variant="outline" 
-                 size="sm" 
-                 className="h-7 px-2 text-[10px]"
-                 onClick={() => {
-                   const text = `${lastError}\n\n${JSON.stringify(debugInfo, null, 2)}`;
-                   navigator.clipboard.writeText(text);
-                   toast.success("Copiado!");
-                 }}
-               >
-                 <Copy className="h-3 w-3 mr-1" /> Copiar
-               </Button>
-             </div>
-             <div className="max-h-40 overflow-auto">
-               <p className="text-red-600 mb-2">{lastError}</p>
-               {debugInfo && (
-                 <pre className="text-slate-600 whitespace-pre-wrap">
-                   {JSON.stringify(debugInfo, null, 2)}
-                 </pre>
-               )}
-             </div>
-           </div>
-         )}
+        )}
       </CardContent>
     </Card>
   );
