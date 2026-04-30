@@ -1,0 +1,387 @@
+import { memo, useRef, useState, useEffect } from "react";
+import { formatBRL } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { compressImage } from "@/lib/compressImage";
+import {
+  Trash2, Edit2, Package, Pause, Play, ArrowRightLeft, Link2, X, Upload, Loader2,
+} from "lucide-react";
+import CategoryProductFields from "@/components/CategoryProductFields";
+
+// ---------- Upload helper ----------
+const uploadProductImage = async (file: File): Promise<string | null> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) { toast.error("Faça login primeiro"); return null; }
+  const ext = file.name.split(".").pop()?.toLowerCase() || "png";
+  if (!["png", "jpg", "jpeg", "webp"].includes(ext)) { toast.error("Use PNG, JPG ou WEBP."); return null; }
+  if (file.size > 5 * 1024 * 1024) { toast.error("Máx 5MB"); return null; }
+  const compressed = await compressImage(file).catch(() => file);
+  const finalExt = compressed.type === "image/png" ? "png" : "jpg";
+  const filePath = `${user.id}/products/${Date.now()}.${finalExt}`;
+  const { error } = await supabase.storage.from("store-assets").upload(filePath, compressed, { upsert: true });
+  if (error) { toast.error("Erro ao enviar imagem"); return null; }
+  const { data: urlData } = supabase.storage.from("store-assets").getPublicUrl(filePath);
+  return urlData.publicUrl;
+};
+
+// ---------- Price helpers ----------
+const formatPriceInput = (value: string) => {
+  const digits = value.replace(/\D/g, "");
+  if (!digits) return "";
+  return (Number(digits) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+};
+const normalizePriceInput = (value: string) => {
+  const digits = value.replace(/\D/g, "");
+  if (!digits) return "";
+  return (Number(digits) / 100).toFixed(2);
+};
+
+// ---------- Product Form (estado 100% local) ----------
+export interface ProductFormData {
+  name: string;
+  price: string;
+  description: string;
+  image_url: string;
+  metadata: Record<string, any>;
+}
+const EMPTY_FORM: ProductFormData = { name: "", price: "", description: "", image_url: "", metadata: {} };
+
+interface ProductFormInlineProps {
+  initial?: ProductFormData;
+  onSave: (data: ProductFormData) => void;
+  onCancel: () => void;
+  storeCategory?: string;
+  storeId?: string;
+}
+
+export const ProductFormInline = ({ initial, onSave, onCancel, storeCategory, storeId }: ProductFormInlineProps) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [form, setForm] = useState<ProductFormData>(initial || EMPTY_FORM);
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const url = await uploadProductImage(file);
+    if (url) setForm((prev) => ({ ...prev, image_url: url }));
+    setUploading(false);
+  };
+
+  return (
+    <div className="bg-secondary/50 border border-border rounded-xl p-4 space-y-3">
+      <input
+        type="text"
+        placeholder="Nome do produto *"
+        value={form.name}
+        onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+        className="w-full bg-background text-foreground px-3 py-2.5 rounded-lg text-sm border border-border focus:border-primary focus:outline-none font-medium"
+      />
+      <div className="flex gap-2">
+        <input
+          type="text"
+          placeholder="Preço *"
+          value={formatPriceInput(form.price)}
+          onChange={(e) => setForm((p) => ({ ...p, price: normalizePriceInput(e.target.value) }))}
+          className="w-1/3 bg-background text-foreground px-3 py-2.5 rounded-lg text-sm border border-border focus:border-primary focus:outline-none"
+          inputMode="numeric"
+        />
+        <div className="flex-1">
+          <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/webp" onChange={handleFileSelect} className="hidden" />
+          {form.image_url ? (
+            <div className="flex items-center gap-2 bg-background rounded-lg px-3 py-2 border border-border">
+              <img loading="lazy" decoding="async" src={form.image_url} alt="" className="w-8 h-8 rounded object-cover" />
+              <button type="button" onClick={() => setForm((p) => ({ ...p, image_url: "" }))} className="text-destructive text-xs hover:underline">Remover</button>
+              <button type="button" onClick={() => fileInputRef.current?.click()} className="text-primary text-xs hover:underline">Trocar</button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="w-full flex items-center justify-center gap-2 bg-background text-muted-foreground px-3 py-2.5 rounded-lg text-sm border border-dashed border-border hover:border-primary hover:text-primary transition-colors"
+            >
+              {uploading ? <><Loader2 className="h-4 w-4 animate-spin" /> Enviando...</> : <><Upload className="h-4 w-4" /> Foto</>}
+            </button>
+          )}
+        </div>
+      </div>
+      <input
+        type="text"
+        placeholder="Descrição (opcional)"
+        value={form.description}
+        onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
+        className="w-full bg-background text-foreground px-3 py-2.5 rounded-lg text-sm border border-border focus:border-primary focus:outline-none"
+      />
+
+      {storeCategory && (
+        <CategoryProductFields
+          category={storeCategory}
+          metadata={form.metadata || {}}
+          onChange={(metadata: Record<string, any>) => setForm((p) => ({ ...p, metadata }))}
+          storeId={storeId}
+        />
+      )}
+
+      <div className="flex gap-2 pt-1">
+        <button type="button" onClick={() => onSave(form)} className="flex-1 bg-primary text-primary-foreground py-2.5 rounded-lg text-sm font-bold hover:bg-primary/90 transition-colors">
+          Salvar Produto
+        </button>
+        <button type="button" onClick={onCancel} className="px-4 py-2.5 text-muted-foreground text-sm hover:text-foreground transition-colors">
+          Cancelar
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ---------- Product Card ----------
+interface ProductCardProps {
+  product: any;
+  sections: any[];
+  addonGroups: any[];
+  linkedGroups: any[];
+  storeAddonGroups: any[];
+  linkedGroupIds: string[];
+  selected: boolean;
+  onToggleSelect: () => void;
+  onLinkGroup: (gId: string) => void;
+  onUnlinkGroup: (gId: string) => void;
+  showLinkAddon: boolean;
+  setShowLinkAddon: (v: boolean) => void;
+  onToggleAvailable: () => void;
+  onDelete: () => void;
+  onEdit: () => void;
+  isEditing: boolean;
+  initialEditForm?: ProductFormData;
+  onSaveEdit: (data: ProductFormData) => void;
+  onCancelEdit: () => void;
+  showAddonForm: boolean;
+  setShowAddonForm: (v: boolean) => void;
+  addonGroupForm: { name: string; min_select: string; max_select: string };
+  setAddonGroupForm: (f: any) => void;
+  onAddAddonGroup: () => void;
+  onDeleteAddonGroup: (id: string) => void;
+  showAddonItemForm: string | null;
+  setShowAddonItemForm: (v: string | null) => void;
+  addonItemForm: { name: string; price: string };
+  setAddonItemForm: (f: any) => void;
+  onAddAddonItem: (groupId: string) => void;
+  onDeleteAddonItem?: (id: string) => void;
+  storeCategory?: string;
+  storeId?: string;
+  isMoving: boolean;
+  onStartMove: () => void;
+  onCancelMove: () => void;
+  onMoveProduct: (productId: string, targetSectionId: string | null) => void;
+}
+
+const ProductCardImpl = (props: ProductCardProps) => {
+  const {
+    product, sections, addonGroups, linkedGroups, storeAddonGroups, linkedGroupIds,
+    selected, onToggleSelect, onLinkGroup, onUnlinkGroup, showLinkAddon, setShowLinkAddon,
+    onToggleAvailable, onDelete, onEdit, isEditing, initialEditForm, onSaveEdit, onCancelEdit,
+    showAddonForm, setShowAddonForm, addonGroupForm, setAddonGroupForm,
+    onAddAddonGroup, onDeleteAddonGroup, showAddonItemForm, setShowAddonItemForm,
+    addonItemForm, setAddonItemForm, onAddAddonItem, onDeleteAddonItem,
+    storeCategory, storeId, isMoving, onStartMove, onCancelMove, onMoveProduct,
+  } = props;
+
+  if (isEditing) {
+    return (
+      <ProductFormInline
+        initial={initialEditForm}
+        onSave={onSaveEdit}
+        onCancel={onCancelEdit}
+        storeCategory={storeCategory}
+        storeId={storeId}
+      />
+    );
+  }
+
+  return (
+    <div className={`bg-background rounded-xl p-3 border transition-all ${selected ? "border-primary ring-1 ring-primary" : "border-border"} ${!product.is_available ? "opacity-60" : ""} ${isMoving ? "ring-2 ring-primary" : ""}`}>
+      <div className="flex items-start gap-2">
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={onToggleSelect}
+          className="mt-1 h-4 w-4 accent-primary cursor-pointer flex-shrink-0"
+          aria-label="Selecionar produto"
+        />
+        {product.image_url ? (
+          <img loading="lazy" decoding="async" src={product.image_url} alt={product.name} className="w-14 h-14 rounded-lg object-cover flex-shrink-0" />
+        ) : (
+          <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+            <Package className="h-5 w-5 text-muted-foreground/50" />
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <h4 className="text-sm font-bold text-foreground truncate">{product.name}</h4>
+            {!product.is_available && (
+              <span className="text-[9px] font-black uppercase bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 px-1.5 py-0.5 rounded">Pausado</span>
+            )}
+          </div>
+          {product.description && <p className="text-xs text-muted-foreground line-clamp-1">{product.description}</p>}
+          <div className="flex items-center justify-between mt-1">
+            <span className="text-sm font-black text-primary">{formatBRL(Number(product.price))}</span>
+            <div className="flex items-center gap-0.5 flex-shrink-0">
+              <button onClick={onStartMove} className="p-1.5 rounded-lg hover:bg-muted transition-colors" title="Mover para outra seção">
+                <ArrowRightLeft className={`h-3.5 w-3.5 ${isMoving ? "text-primary" : "text-muted-foreground"}`} />
+              </button>
+              <button onClick={onToggleAvailable} className="p-1.5 rounded-lg hover:bg-muted transition-colors" title={product.is_available ? "Pausar" : "Reativar"}>
+                {product.is_available ? <Pause className="h-3.5 w-3.5 text-yellow-500" /> : <Play className="h-3.5 w-3.5 text-primary" />}
+              </button>
+              <button onClick={onEdit} className="p-1.5 rounded-lg hover:bg-muted transition-colors" title="Editar">
+                <Edit2 className="h-3.5 w-3.5 text-muted-foreground" />
+              </button>
+              <button onClick={onDelete} className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors" title="Excluir">
+                <Trash2 className="h-3.5 w-3.5 text-destructive/70" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Move to section picker */}
+      {isMoving && sections && sections.length > 0 && (
+        <div className="mt-3 bg-primary/5 border border-primary/20 rounded-lg p-3 space-y-1.5">
+          <p className="text-xs font-bold text-primary">Mover para:</p>
+          <div className="flex flex-wrap gap-1.5">
+            {product.section_id && (
+              <button onClick={() => onMoveProduct(product.id, null)} className="text-xs bg-muted text-muted-foreground px-3 py-1.5 rounded-lg hover:bg-muted/80 transition-colors">
+                Sem Seção
+              </button>
+            )}
+            {sections.filter((s: any) => s.id !== product.section_id).map((s: any) => (
+              <button key={s.id} onClick={() => onMoveProduct(product.id, s.id)} className="text-xs bg-primary/10 text-primary px-3 py-1.5 rounded-lg hover:bg-primary/20 transition-colors font-medium">
+                {s.name}
+              </button>
+            ))}
+          </div>
+          <button onClick={onCancelMove} className="text-xs text-muted-foreground hover:text-foreground mt-1">Cancelar</button>
+        </div>
+      )}
+
+      {/* Linked addon groups */}
+      {linkedGroups && linkedGroups.length > 0 && (
+        <div className="mt-2 pl-2 border-l-2 border-primary/30 space-y-1">
+          <span className="text-[10px] text-primary font-bold uppercase">🔗 Vinculados</span>
+          {linkedGroups.map((group: any) => (
+            <div key={group.id} className="text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-foreground/80 font-bold">{group.name}</span>
+                <div className="flex items-center gap-1">
+                  <span className="text-muted-foreground/70">{group.min_select > 0 ? `mín ${group.min_select}` : "opcional"}, máx {group.max_select}</span>
+                  <button onClick={() => onUnlinkGroup(group.id)} className="text-yellow-500 p-0.5"><X className="h-3 w-3" /></button>
+                </div>
+              </div>
+              {group.addon_items?.map((item: any) => (
+                <div key={item.id} className="flex items-center justify-between pl-2 py-0.5">
+                  <span className="text-muted-foreground">{item.name}</span>
+                  <span className="text-muted-foreground/70">+{formatBRL(Number(item.price))}</span>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Direct addon groups */}
+      {addonGroups.length > 0 && (
+        <div className="mt-2 pl-2 border-l-2 border-border space-y-1">
+          {addonGroups.map((group: any) => (
+            <div key={group.id} className="text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-foreground/80 font-bold">{group.name}</span>
+                <div className="flex items-center gap-1">
+                  <span className="text-muted-foreground/70">{group.min_select > 0 ? `mín ${group.min_select}` : "opcional"}, máx {group.max_select}</span>
+                  <button onClick={() => onDeleteAddonGroup(group.id)} className="text-destructive/70 p-0.5"><Trash2 className="h-3 w-3" /></button>
+                </div>
+              </div>
+              {group.addon_items?.map((item: any) => (
+                <div key={item.id} className="flex items-center justify-between pl-2 py-0.5">
+                  <span className="text-muted-foreground">{item.name}</span>
+                  <div className="flex items-center gap-1">
+                    <span className="text-muted-foreground/70">+{formatBRL(Number(item.price))}</span>
+                    <button onClick={() => onDeleteAddonItem?.(item.id)} className="text-destructive/70 p-0.5"><X className="h-2.5 w-2.5" /></button>
+                  </div>
+                </div>
+              ))}
+              {showAddonItemForm === group.id ? (
+                <div className="flex gap-1 mt-1">
+                  <input type="text" placeholder="Nome" value={addonItemForm.name}
+                    onChange={(e: any) => setAddonItemForm({ ...addonItemForm, name: e.target.value })}
+                    className="flex-1 bg-muted text-foreground px-2 py-1 rounded text-xs border border-border focus:outline-none" autoFocus />
+                  <input type="number" placeholder="R$" value={addonItemForm.price}
+                    onChange={(e: any) => setAddonItemForm({ ...addonItemForm, price: e.target.value })}
+                    className="w-16 bg-muted text-foreground px-2 py-1 rounded text-xs border border-border focus:outline-none" step="0.50" />
+                  <button onClick={() => onAddAddonItem(group.id)} className="bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-bold">+</button>
+                  <button onClick={() => setShowAddonItemForm(null)} className="text-muted-foreground px-1 text-xs">✕</button>
+                </div>
+              ) : (
+                <button onClick={() => setShowAddonItemForm(group.id)} className="text-primary text-xs mt-0.5 hover:underline">+ adicional</button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Link / Create addon */}
+      {showLinkAddon ? (
+        <div className="mt-2 bg-primary/5 border border-primary/20 rounded-lg p-2 space-y-1">
+          <p className="text-xs text-primary font-bold">🔗 Vincular Grupo</p>
+          {storeAddonGroups.filter((g: any) => !linkedGroupIds.includes(g.id)).length > 0 ? (
+            storeAddonGroups.filter((g: any) => !linkedGroupIds.includes(g.id)).map((g: any) => (
+              <button key={g.id} onClick={() => { onLinkGroup(g.id); setShowLinkAddon(false); }}
+                className="w-full text-left bg-background hover:bg-muted text-foreground px-3 py-2 rounded-lg text-xs transition-colors border border-border">
+                <span className="font-bold">{g.name}</span>
+                <span className="text-muted-foreground ml-2">({(g.addon_items as any[])?.length || 0} itens)</span>
+              </button>
+            ))
+          ) : (
+            <p className="text-xs text-muted-foreground py-2">Nenhum grupo disponível. Crie na aba "Adicionais".</p>
+          )}
+          <button onClick={() => setShowLinkAddon(false)} className="text-muted-foreground text-xs">Cancelar</button>
+        </div>
+      ) : null}
+
+      {/* Action row */}
+      <div className="mt-2 flex gap-3">
+        <button onClick={() => setShowLinkAddon(true)} className="text-xs text-primary hover:underline flex items-center gap-1" title="Reusa um grupo já criado, compartilhado entre vários produtos">
+          <Link2 className="h-3 w-3" /> Vincular grupo
+        </button>
+        {showAddonForm ? (
+          <div className="flex-1 bg-muted/30 rounded-lg p-2 space-y-1">
+            <input type="text" placeholder="Nome do grupo (ex: Molhos)" value={addonGroupForm.name}
+              onChange={(e) => setAddonGroupForm({ ...addonGroupForm, name: e.target.value })}
+              className="w-full bg-background text-foreground px-2 py-1.5 rounded text-xs border border-border focus:outline-none" autoFocus />
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <label className="text-[10px] text-muted-foreground">Mín</label>
+                <input type="number" value={addonGroupForm.min_select}
+                  onChange={(e) => setAddonGroupForm({ ...addonGroupForm, min_select: e.target.value })}
+                  className="w-full bg-background text-foreground px-2 py-1 rounded text-xs border border-border" />
+              </div>
+              <div className="flex-1">
+                <label className="text-[10px] text-muted-foreground">Máx</label>
+                <input type="number" value={addonGroupForm.max_select}
+                  onChange={(e) => setAddonGroupForm({ ...addonGroupForm, max_select: e.target.value })}
+                  className="w-full bg-background text-foreground px-2 py-1 rounded text-xs border border-border" />
+              </div>
+            </div>
+            <div className="flex gap-1">
+              <button onClick={onAddAddonGroup} className="flex-1 bg-primary text-primary-foreground py-1.5 rounded text-xs font-bold">Criar</button>
+              <button onClick={() => setShowAddonForm(false)} className="px-3 text-muted-foreground text-xs">Cancelar</button>
+            </div>
+          </div>
+        ) : (
+          <button onClick={() => setShowAddonForm(true)} className="text-xs text-muted-foreground hover:underline" title="Cria adicionais exclusivos só deste produto">+ Grupo exclusivo</button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export const ProductCard = memo(ProductCardImpl);
