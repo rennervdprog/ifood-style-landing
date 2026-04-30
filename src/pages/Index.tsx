@@ -660,7 +660,7 @@ const Index = () => {
            <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
              <div className="col-span-1 md:col-span-2">
                <div className="flex items-center gap-3 mb-6">
-                 <img loading="lazy" decoding="async" src="/itasuper-logo.jpg" alt="ItaSuper" className="w-12 h-12 rounded-2xl" />
+                 <img loading="lazy" decoding="async" src="/logo-itasuper-128.webp" alt="ItaSuper" className="w-12 h-12 rounded-2xl" />
                  <span className="text-2xl font-black text-primary">ItaSuper</span>
                </div>
                <p className="text-muted-foreground text-lg font-medium leading-relaxed max-w-md">
