@@ -97,9 +97,10 @@ Deno.serve(async (req) => {
       ]);
 
       return json({
-        success: true,
-        balance: Number(balData?.balance ?? 0),
-        payments: Array.isArray(paymentsData?.data) ? paymentsData.data : [],
+         success: true,
+         balance: Number(balData?.balance ?? 0),
+         totalBalance: Number(balData?.totalBalance ?? 0),
+         payments: Array.isArray(paymentsData?.data) ? paymentsData.data : [],
         transfers: Array.isArray(transfersData?.data) ? transfersData.data : [],
         config: {
           pixAddressKey: store.asaas_pix_key,
