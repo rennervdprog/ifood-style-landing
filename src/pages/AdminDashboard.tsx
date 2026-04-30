@@ -25,7 +25,8 @@ import {
   ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar,
 } from "recharts";
 import { openWhatsApp } from "@/lib/whatsapp";
-import WhatsAppButton from "@/components/WhatsAppButton";
+ import WhatsAppButton from "@/components/WhatsAppButton";
+ import MenuBuilder from "@/components/MenuBuilder";
 import { notifyOrderStatusChange } from "@/lib/orderNotifications";
 // Tabs carregadas sob demanda — só baixa o JS quando o lojista abrir a aba
 const TutoriaisTab = lazy(() => import("./admin/tabs/TutoriaisTab"));
