@@ -180,6 +180,7 @@ const DriverDashboard = () => {
         .eq("status", "pronto_para_entrega" as any)
         .is("driver_id", null)
         .neq("neighborhood", "RETIRADA")
+        .or(`assigned_driver_id.is.null,assigned_driver_id.eq.${user?.id ?? "00000000-0000-0000-0000-000000000000"}`)
         .order("created_at", { ascending: true });
       if (error) throw error;
       return data;
