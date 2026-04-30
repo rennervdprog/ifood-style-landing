@@ -49,74 +49,34 @@ import { useStorePlan } from "@/hooks/useStorePlan";
 import StoreDriverManager from "@/components/StoreDriverManager";
 import TrialExpiredGuard from "@/components/TrialExpiredGuard";
 import AdminRefundPanel from "@/components/AdminRefundPanel";
-
-type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_entrega" | "em_transito" | "entregue" | "finalizado";
-type OrderTabKey = OrderStatus | "delivery";
-type DashboardTab = "dashboard" | "orders" | "menu" | "addons" | "bordas" | "hours" | "settings" | "finance" | "clients" | "reports" | "subscription" | "loyalty" | "drivers" | "refunds" | "tutoriais" | "cash_register";
-type StoreAddonGroup = {
-  id: string;
-  name: string;
-  min_select: number;
-  product_id: string | null;
-  addon_items?: Array<{ name: string | null }> | null;
-};
-type StoreAddonLink = {
-  addon_group_id: string;
-  product_id: string;
-};
-type RequiredAddonHighlight = {
-  itemId: string;
-  itemName: string;
-  groupName: string;
-  addonName: string;
-};
-
-const ALERT_SOUND_URL = "https://actions.google.com/sounds/v1/alarms/beep_short.ogg";
-const CASH_REGISTER_SOUND_URL = "https://actions.google.com/sounds/v1/office/cash_register.ogg";
-
-// Semantic color system
-const statusColors: Record<string, { bg: string; text: string; border: string; label: string }> = {
-  pendente: { bg: "bg-amber-500/10", text: "text-amber-600 dark:text-amber-400", border: "border-amber-500/30", label: "Novo Pedido" },
-  preparando: { bg: "bg-amber-500/10", text: "text-amber-600 dark:text-amber-400", border: "border-amber-500/30", label: "Em Preparo" },
-  pronto_para_entrega: { bg: "bg-blue-500/10", text: "text-blue-600 dark:text-blue-400", border: "border-blue-500/30", label: "Pronto" },
-  saiu_entrega: { bg: "bg-blue-500/10", text: "text-blue-600 dark:text-blue-400", border: "border-blue-500/30", label: "Saiu Entrega" },
-  em_transito: { bg: "bg-blue-500/10", text: "text-blue-600 dark:text-blue-400", border: "border-blue-500/30", label: "Em Trânsito" },
-  entregue: { bg: "bg-emerald-500/10", text: "text-emerald-600 dark:text-emerald-400", border: "border-emerald-500/30", label: "Entregue" },
-  finalizado: { bg: "bg-emerald-500/10", text: "text-emerald-600 dark:text-emerald-400", border: "border-emerald-500/30", label: "Finalizado" },
-  cancelado: { bg: "bg-red-500/10", text: "text-red-600 dark:text-red-400", border: "border-red-500/30", label: "Cancelado" },
-};
-
-const orderTabs: { status: OrderStatus | "delivery"; label: string; icon: React.ElementType; mergedStatuses?: OrderStatus[] }[] = [
-  { status: "pendente", label: "Novos", icon: Clock },
-  { status: "preparando", label: "Preparando", icon: ChefHat },
-  { status: "pronto_para_entrega", label: "Pronto", icon: Package },
-  { status: "delivery" as any, label: "Entregando", icon: Truck, mergedStatuses: ["saiu_entrega", "em_transito"] },
-  { status: "entregue", label: "Entregue", icon: CheckCircle2 },
-  { status: "finalizado", label: "Finalizados", icon: CheckCircle2 },
-];
-
-const paymentLabels: Record<string, string> = { pix: "PIX", cartao: "Cartão", dinheiro: "Dinheiro" };
-const paymentIcons: Record<string, string> = { pix: "⚡", cartao: "💳", dinheiro: "💵" };
-
-const parseOrderAddons = (rawAddons: unknown): any[] => {
-  if (Array.isArray(rawAddons)) return rawAddons;
-  if (typeof rawAddons === "string") {
-    try {
-      const parsed = JSON.parse(rawAddons);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
-  }
-  return [];
-};
-
-const normalizeAddonName = (name: string) =>
-  name
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim()
-    .toLowerCase();
+import {
+  ALERT_SOUND_URL,
+  CASH_REGISTER_SOUND_URL,
+  statusColors,
+  orderTabs,
+  paymentLabels,
+  paymentIcons,
+  baseSidebarItems,
+  bottomNavTabs,
+  moreSheetItems,
+} from "./admin/constants";
+import {
+  parseOrderAddons,
+  normalizeAddonName,
+  pad2,
+  parseDashboardDate,
+  toLocalDateKey,
+  formatDateKeyPtBR,
+  getPeriodDateKeys,
+} from "./admin/helpers";
+import type {
+  OrderStatus,
+  OrderTabKey,
+  DashboardTab,
+  StoreAddonGroup,
+  StoreAddonLink,
+  RequiredAddonHighlight,
+} from "./admin/types";
 
 const RequiredAddonHighlights = ({ highlights }: { highlights: RequiredAddonHighlight[] }) => {
   if (highlights.length === 0) return null;
@@ -138,132 +98,6 @@ const RequiredAddonHighlights = ({ highlights }: { highlights: RequiredAddonHigh
     </div>
   );
 };
-
-const pad2 = (value: number) => String(value).padStart(2, "0");
-
-function parseDashboardDate(dateStr?: string | null): Date | null {
-  if (!dateStr) return null;
-
-  const dmy = dateStr.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})$/);
-  if (dmy) {
-    let [, d, m, y] = dmy;
-    let yearNum = parseInt(y, 10);
-    if (yearNum < 100) yearNum += 2000;
-
-    const dayNum = parseInt(d, 10);
-    const monthNum = parseInt(m, 10);
-    if (monthNum < 1 || monthNum > 12 || dayNum < 1 || dayNum > 31) return null;
-
-    const result = new Date(Date.UTC(yearNum, monthNum - 1, dayNum));
-    if (result.getUTCDate() !== dayNum || result.getUTCMonth() !== monthNum - 1) return null;
-    return result;
-  }
-
-  const iso = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (iso) {
-    const yearNum = parseInt(iso[1], 10);
-    const monthNum = parseInt(iso[2], 10);
-    const dayNum = parseInt(iso[3], 10);
-    const result = new Date(Date.UTC(yearNum, monthNum - 1, dayNum));
-    if (result.getUTCDate() !== dayNum || result.getUTCMonth() !== monthNum - 1) return null;
-    return result;
-  }
-
-  const isoDateTime = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d+))?)?(Z|[+-]\d{2}:?\d{2,4})?$/);
-  if (isoDateTime) {
-    const [, y, m, d, hh, mm, ss = "0", ms = "0", tz] = isoDateTime;
-    const yearNum = parseInt(y, 10);
-    const monthNum = parseInt(m, 10);
-    const dayNum = parseInt(d, 10);
-    const hourNum = parseInt(hh, 10);
-    const minuteNum = parseInt(mm, 10);
-    const secondNum = parseInt(ss, 10);
-    const milliNum = parseInt((ms || "0").slice(0, 3).padEnd(3, "0"), 10);
-
-    if (tz === "Z") {
-      return new Date(Date.UTC(yearNum, monthNum - 1, dayNum, hourNum, minuteNum, secondNum, milliNum));
-    }
-
-    if (tz) {
-      const sign = tz.startsWith("-") ? -1 : 1;
-      const clean = tz.slice(1).replace(":", "");
-      const offsetHours = parseInt(clean.slice(0, 2), 10);
-      const offsetMinutes = parseInt(clean.slice(2, 4) || "0", 10);
-      const offsetTotalMinutes = sign * (offsetHours * 60 + offsetMinutes);
-      const utcMillis = Date.UTC(yearNum, monthNum - 1, dayNum, hourNum, minuteNum, secondNum, milliNum) - offsetTotalMinutes * 60 * 1000;
-      return new Date(utcMillis);
-    }
-
-    return new Date(yearNum, monthNum - 1, dayNum, hourNum, minuteNum, secondNum, milliNum);
-  }
-
-  return null;
-}
-
-const toLocalDateKey = (date: Date) => {
-  const y = date.getFullYear();
-  const m = pad2(date.getMonth() + 1);
-  const d = pad2(date.getDate());
-  return `${y}-${m}-${d}`;
-};
-
-const formatDateKeyPtBR = (dateKey: string) => {
-  const iso = dateKey.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  return iso ? `${iso[3]}/${iso[2]}/${iso[1]}` : dateKey;
-};
-
-const getPeriodDateKeys = (days: number, offsetDays = 0) => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  return Array.from({ length: days }, (_, i) => {
-    const d = new Date(today);
-    d.setDate(today.getDate() - (days - 1 - i + offsetDays));
-    return toLocalDateKey(d);
-  });
-};
-const baseSidebarItems: { key: DashboardTab; label: string; icon: React.ElementType; pizzaOnly?: boolean }[] = [
-  { key: "dashboard", label: "Visão Geral", icon: LayoutDashboard },
-  { key: "orders", label: "Pedidos", icon: ListOrdered },
-  { key: "clients", label: "Clientes", icon: Users },
-  { key: "menu", label: "Cardápio", icon: UtensilsCrossed },
-  
-  { key: "addons", label: "Adicionais", icon: Plus },
-  { key: "bordas", label: "Bordas", icon: CircleDot, pizzaOnly: true },
-  { key: "hours", label: "Horários", icon: Clock },
-   { key: "finance", label: "Financeiro", icon: Coins },
-   // { key: "cash_register", label: "Caixa (PDV)", icon: Banknote },
-  { key: "reports", label: "Relatórios", icon: BarChart3 },
-  { key: "subscription", label: "Assinatura", icon: CreditCard },
-  { key: "loyalty", label: "Fidelidade", icon: Star },
-  { key: "drivers", label: "Motoboys", icon: Bike },
-  { key: "refunds", label: "Reembolsos", icon: AlertTriangle },
-  { key: "tutoriais", label: "Tutoriais", icon: GraduationCap },
-  { key: "settings", label: "Configurações", icon: Settings },
-];
-
-// Bottom nav tabs (mobile)
-const bottomNavTabs: { key: DashboardTab; label: string; icon: React.ElementType }[] = [
-  { key: "dashboard", label: "Início", icon: LayoutDashboard },
-  { key: "orders", label: "Pedidos", icon: ListOrdered },
-  { key: "menu", label: "Cardápio", icon: UtensilsCrossed },
-  { key: "clients", label: "Clientes", icon: Users },
-];
-
-// "More" sheet items
-const moreSheetItems: { key: DashboardTab; label: string; icon: React.ElementType; pizzaOnly?: boolean }[] = [
-  { key: "addons", label: "Adicionais", icon: Plus },
-  { key: "bordas", label: "Bordas", icon: CircleDot, pizzaOnly: true },
-  { key: "hours", label: "Horários", icon: Clock },
-   { key: "finance", label: "Financeiro", icon: Coins },
-   // { key: "cash_register", label: "Caixa (PDV)", icon: Banknote },
-  { key: "reports", label: "Relatórios", icon: BarChart3 },
-  { key: "subscription", label: "Assinatura", icon: CreditCard },
-  { key: "loyalty", label: "Fidelidade", icon: Star },
-  { key: "drivers", label: "Motoboys", icon: Bike },
-  { key: "tutoriais", label: "Tutoriais", icon: GraduationCap },
-  { key: "settings", label: "Configurações", icon: Settings },
-];
 
 // ── At-a-Glance Card Component ──
 const GlanceCard = ({ icon: Icon, label, value, subValue, color = "text-primary", trend, onClick, highlight }: {
