@@ -27,11 +27,21 @@ function reconnectRealtime() {
     supabase.realtime.disconnect();
     supabase.realtime.connect();
 
-    channels.forEach((channel) => {
-      const state = (channel as any).state;
-      if (state === "joined" || state === "joining") return;
-      channel.subscribe();
-    });
+    // After a hard disconnect, ALL channels need to rejoin — not just the closed ones.
+    // We give the socket a brief moment to come back up before re-subscribing.
+    setTimeout(() => {
+      supabase.getChannels().forEach((channel) => {
+        try {
+          const state = (channel as any).state;
+          if (state === "joined") return;
+          channel.subscribe();
+        } catch {}
+      });
+      // Bump focus state — React Query will refetch any stale query that has
+      // a window-focus listener attached, ensuring UI catches up to truth.
+      focusManager.setFocused(false);
+      focusManager.setFocused(true);
+    }, 300);
   } catch (e) {
     console.warn("[CapLifecycle] Realtime reconnect error:", e);
   }
