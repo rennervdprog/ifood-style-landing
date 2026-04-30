@@ -49,7 +49,8 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
 
   const minPayout = minPayoutSetting ?? 100;
   const pendingFee = Number(storeBalance?.repasse_pendente || 0);
-  const canPay = pendingFee >= minPayout;
+  // Allow voluntary payment for any pending amount >= R$ 5 (backend minimum)
+  const canPay = pendingFee >= 5;
 
   if (dismissed || pendingFee <= 0) return null;
 

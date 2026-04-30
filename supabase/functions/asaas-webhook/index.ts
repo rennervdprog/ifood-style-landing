@@ -493,13 +493,39 @@ Deno.serve(async (req) => {
 
             console.log(`Store ${txData.store_id} subscription activated, next billing: ${nextMonth.toISOString()}`);
           } else if (isPlatformFee && txData?.store_id) {
-            // Platform fee paid — clear repasse_pendente
+            // Platform fee paid — subtract paid amount from repasse_pendente (avoid losing accruals
+            // that occurred between charge generation and payment confirmation)
+            const paidAmount = Number(txData.amount) || 0;
+            const { data: balRow } = await supabase
+              .from("store_balances")
+              .select("repasse_pendente")
+              .eq("store_id", txData.store_id)
+              .single();
+
+            const currentPending = Number(balRow?.repasse_pendente || 0);
+            const newPending = Math.max(0, currentPending - paidAmount);
+
             await supabase
               .from("store_balances")
-              .update({ repasse_pendente: 0, updated_at: new Date().toISOString() })
+              .update({ repasse_pendente: newPending, updated_at: new Date().toISOString() })
               .eq("store_id", txData.store_id);
 
-            console.log(`Store ${txData.store_id} platform fee R$${txData.amount} paid, repasse_pendente cleared`);
+            // Reactivate store if blocked
+            await supabase
+              .from("stores")
+              .update({ status: "ativo" })
+              .eq("id", txData.store_id)
+              .eq("status", "bloqueado");
+
+            // Resolve any open repasse_overdue alert
+            await supabase
+              .from("compliance_alerts")
+              .update({ is_resolved: true, resolved_at: new Date().toISOString() })
+              .eq("store_id", txData.store_id)
+              .eq("alert_type", "repasse_overdue")
+              .eq("is_resolved", false);
+
+            console.log(`Store ${txData.store_id} platform fee R$${paidAmount} paid; repasse_pendente: ${currentPending} -> ${newPending}`);
           } else if (txData?.transaction_kind === "commission_charge" && txData.store_id) {
             // Commission charge paid
             const paidAmount = Number(txData.amount) || 0;

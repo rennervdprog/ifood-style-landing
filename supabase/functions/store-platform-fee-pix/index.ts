@@ -8,7 +8,7 @@ const corsHeaders = {
 
 const BodySchema = z.object({
   store_id: z.string().uuid(),
-  amount: z.number().positive().max(50000),
+  amount: z.number().min(5).max(50000),
 });
 
 Deno.serve(async (req) => {
@@ -87,8 +87,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (Math.abs(amount - pendingAmount) > 0.01) {
-      return new Response(JSON.stringify({ error: "Valor informado não confere com o saldo pendente." }), {
+    // Allow partial payments: amount can be <= pending. Cap at pending to avoid overpaying.
+    if (amount - pendingAmount > 0.01) {
+      return new Response(JSON.stringify({ error: `Valor maior que o saldo pendente (R$ ${pendingAmount.toFixed(2)}).` }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
