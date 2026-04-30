@@ -122,18 +122,21 @@ const DriverDashboard = () => {
     enabled: !!user,
   });
 
-  // Detect if user is a store driver (not platform driver)
-  const { data: storeDriverLinks, isFetched: hasResolvedStoreDriverLinks } = useQuery({
-    queryKey: ["store-driver-links", user?.id],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("store_drivers")
-        .select("store_id")
-        .eq("driver_user_id", user!.id);
-      return data || [];
-    },
-    enabled: !!user,
-  });
+   // Detect if user is a store driver (not platform driver) - Filter by accepted status
+   const { data: storeDriverLinks, isFetched: hasResolvedStoreDriverLinks } = useQuery({
+     queryKey: ["store-driver-links", user?.id],
+     queryFn: async () => {
+       const { data } = await supabase
+         .from("store_drivers")
+         .select("id, store_id, status, stores(name)")
+         .eq("driver_user_id", user!.id);
+       return data || [];
+     },
+     enabled: !!user,
+   });
+
+   const acceptedStoreLinks = useMemo(() => (storeDriverLinks || []).filter((l: any) => l.status === 'accepted'), [storeDriverLinks]);
+   const pendingStoreLinks = useMemo(() => (storeDriverLinks || []).filter((l: any) => l.status === 'pending'), [storeDriverLinks]);
 
   // Check if user has a platform drivers entry
   const { data: platformDriverEntry, isFetched: hasResolvedPlatformDriverEntry } = useQuery({
@@ -150,12 +153,12 @@ const DriverDashboard = () => {
   });
 
   const hasResolvedDriverMode = hasResolvedStoreDriverLinks && hasResolvedPlatformDriverEntry;
-  const isStoreDriver = (storeDriverLinks?.length || 0) > 0;
+   const isStoreDriver = (acceptedStoreLinks?.length || 0) > 0;
   const hasPlatformDriverEntry = !!platformDriverEntry;
   // Store motoboy = has role motoboy, no platform drivers entry, and no store link yet
-  const isStoreMotoboyWaiting = (driverProfile as any)?.role === "motoboy" && !hasPlatformDriverEntry && !isStoreDriver;
+   const isStoreMotoboyWaiting = (driverProfile as any)?.role === "motoboy" && !hasPlatformDriverEntry && !isStoreDriver && pendingStoreLinks.length === 0;
   const isPlatformDriver = Boolean((driverProfile as any)?.role === "motoboy" && hasPlatformDriverEntry && !isStoreDriver);
-  const linkedStoreIds = useMemo(() => (storeDriverLinks || []).map((l: any) => l.store_id), [storeDriverLinks]);
+   const linkedStoreIds = useMemo(() => acceptedStoreLinks.map((l: any) => l.store_id), [acceptedStoreLinks]);
 
   useEffect(() => {
     if (driverProfile) {
