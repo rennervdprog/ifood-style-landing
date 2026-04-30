@@ -126,6 +126,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(newSession);
       setLoading(false);
 
+      if (newSession?.user) {
+        setSentryUser({ id: newSession.user.id, email: newSession.user.email });
+      } else {
+        setSentryUser(null);
+      }
+
       if (previousUserId && previousUserId !== nextUserId) {
         if (isCapacitorNative()) {
           resetPushRegistrationState();
