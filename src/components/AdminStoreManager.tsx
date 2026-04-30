@@ -60,7 +60,7 @@ const AdminStoreManager = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("store_plans")
-        .select("*");
+        .select("id, store_id, plan_type, monthly_fee, commission_rate, next_billing_date");
       if (error) throw error;
       return data || [];
     },
