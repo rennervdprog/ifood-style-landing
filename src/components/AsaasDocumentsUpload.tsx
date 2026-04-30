@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Upload, CheckCircle2, AlertCircle, FileText, RefreshCw } from "lucide-react";
+import { Loader2, Upload, CheckCircle2, AlertCircle, FileText, RefreshCw, Info } from "lucide-react";
 import { toast } from "sonner";
 
 interface AsaasDocument {
