@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { isCapacitorNative, hasPendingPushNavigation } from "@/lib/capacitorNative";
 import { persistCapacitorAppMode } from "@/lib/capacitorAppMode";
@@ -237,9 +238,22 @@ const PartnerLogin = () => {
             </>
           )}
 
-          <div className="mt-8 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-            <Shield className="h-3.5 w-3.5" />
-            <span>Área exclusiva para parceiros ItaSuper</span>
+          <div className="mt-12 text-center space-y-4">
+            <div className="flex items-center justify-center gap-2 text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">
+              <Shield className="h-3 w-3" />
+              <span>Área exclusiva para parceiros ItaSuper</span>
+            </div>
+            
+            <div className="pt-6 border-t border-border/50">
+              <div className="flex items-center justify-center gap-3 text-[10px] font-medium text-muted-foreground">
+                <Link to="/termos-de-uso" className="hover:text-primary transition-colors">Termos de Uso</Link>
+                <div className="w-1 h-1 rounded-full bg-border" />
+                <Link to="/politica-de-privacidade" className="hover:text-primary transition-colors">Política de Privacidade</Link>
+              </div>
+              <p className="text-[10px] text-muted-foreground/50 mt-2">
+                © {new Date().getFullYear()} ItaSuper — Todos os direitos reservados
+              </p>
+            </div>
           </div>
         </div>
       </div>
