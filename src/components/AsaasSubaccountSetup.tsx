@@ -57,6 +57,7 @@ const isValidCnpj = (value: string) => {
 
 export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
   const qc = useQueryClient();
+  const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
   const [debugInfo, setDebugInfo] = useState<any>(null);
