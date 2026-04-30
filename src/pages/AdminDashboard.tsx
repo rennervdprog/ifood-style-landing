@@ -27,8 +27,6 @@ import {
 import { openWhatsApp } from "@/lib/whatsapp";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import { notifyOrderStatusChange } from "@/lib/orderNotifications";
-import MenuBuilder from "@/components/MenuBuilder";
-import StoreHoursManager from "@/components/StoreHoursManager";
 import TutoriaisTab from "./admin/tabs/TutoriaisTab";
 import SubscriptionTab from "./admin/tabs/SubscriptionTab";
 import LoyaltyTab from "./admin/tabs/LoyaltyTab";
@@ -49,10 +47,8 @@ import { addMoney, averageMoney, formatCurrency, sumMoney } from "@/lib/utils";
 import ProductTour, { lojistaTourSteps } from "@/components/ProductTour";
 import { useStorePlan } from "@/hooks/useStorePlan";
 import TrialExpiredGuard from "@/components/TrialExpiredGuard";
-import TutoriaisTab from "./admin/tabs/TutoriaisTab";
-import SubscriptionTab from "./admin/tabs/SubscriptionTab";
-import LoyaltyTab from "./admin/tabs/LoyaltyTab";
-import RefundsTab from "./admin/tabs/RefundsTab";
+import CommissionAlert from "@/components/CommissionAlert";
+import PlatformSplitAlert from "@/components/PlatformSplitAlert";
 import {
   ALERT_SOUND_URL,
   CASH_REGISTER_SOUND_URL,
