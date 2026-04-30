@@ -910,17 +910,26 @@ const StoreDirectory = () => {
       </section>
 
       {/* ══════ FOOTER ══════ */}
-      <footer className="py-8 text-center text-sm text-muted-foreground border-t border-border px-4">
-        <p className="font-semibold text-foreground mb-1">ItaSuper</p>
-        <p>© {new Date().getFullYear()} — Todos os direitos reservados</p>
-        <div className="mt-3 flex flex-wrap items-center justify-center gap-4 text-xs">
-          <button onClick={() => navigate("/portal-parceiro")} className="hover:text-primary transition-colors">Login Parceiro</button>
-          <span>•</span>
-          <button onClick={() => navigate("/cadastro-lojista")} className="hover:text-primary transition-colors">Cadastro Lojista</button>
-          <span>•</span>
-          <a href="/termos-de-uso" className="hover:text-primary transition-colors">Termos</a>
-          <span>•</span>
-          <a href="/politica-de-privacidade" className="hover:text-primary transition-colors">Política</a>
+      <footer className="py-12 bg-card border-t border-border px-4">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+              <Zap className="h-4 w-4 text-primary-foreground" />
+            </div>
+            <span className="text-lg font-black text-foreground tracking-tight">ItaSuper</span>
+          </div>
+
+          <div className="flex flex-col items-center md:items-end gap-3">
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm font-medium text-muted-foreground">
+              <button onClick={() => navigate("/portal-parceiro")} className="hover:text-primary transition-colors">Login Parceiro</button>
+              <button onClick={() => navigate("/cadastro-lojista")} className="hover:text-primary transition-colors">Cadastro Lojista</button>
+              <button onClick={() => navigate("/termos-de-uso")} className="hover:text-primary transition-colors">Termos de Uso</button>
+              <button onClick={() => navigate("/politica-de-privacidade")} className="hover:text-primary transition-colors">Política de Privacidade</button>
+            </div>
+            <p className="text-[11px] text-muted-foreground/60 font-medium uppercase tracking-widest">
+              © {new Date().getFullYear()} ItaSuper — Todos os direitos reservados
+            </p>
+          </div>
         </div>
       </footer>
     </div>
