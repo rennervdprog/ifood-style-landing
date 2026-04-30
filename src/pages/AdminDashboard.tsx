@@ -2319,39 +2319,16 @@ const AdminDashboard = () => {
           {/* ══════ OTHER TABS ══════ */}
           {!["dashboard", "orders", "clients"].includes(dashboardTab) && store && (
             <div className="p-4 lg:p-6 max-w-6xl mx-auto">
-              {dashboardTab === "menu" && <MenuBuilder storeId={store.id} storeCategory={store.category} />}
-              {dashboardTab === "cash_register" && <CashRegister storeId={store.id} />}
+              {dashboardTab === "menu" && <MenuTab storeId={store.id} storeCategory={store.category} />}
+              {dashboardTab === "cash_register" && <CashRegisterTab storeId={store.id} />}
               {dashboardTab === "tutoriais" && <TutoriaisTab />}
               
-              {dashboardTab === "addons" && <AddonManager storeId={store.id} />}
-              {dashboardTab === "bordas" && store.category === "pizzas" && <PizzaBorderManager storeId={store.id} />}
-              {dashboardTab === "hours" && <StoreHoursManager storeId={store.id} forceClosed={(store as any).force_closed || false} />}
-              {dashboardTab === "settings" && (
-                <div className="space-y-6">
-                  <StoreSettings storeId={store.id} storeName={store.name} storeCategory={store.category}
-                    storeCategories={(store as any).categories || null}
-                    storeImageUrl={store.image_url} storeIsOpen={store.is_open}
-                    forceClosed={(store as any).force_closed || false} storeSlug={(store as any).slug || null}
-                    storeAddressStreet={(store as any).address_street || null}
-                    storeAddressNumber={(store as any).address_number || null}
-                    storeAddressComplement={(store as any).address_complement || null}
-                    storeAddressNeighborhood={(store as any).address_neighborhood || null}
-                    storeAddressReference={(store as any).address_reference || null}
-                    storeAddressCity={(store as any).address_city || null}
-                    storeAddressState={(store as any).address_state || null}
-                    storeAddressCep={(store as any).address_cep || null}
-                     storeDeliveryMode={(store as any).delivery_mode || "platform"}
-                     storeOwnDeliveryFee={(store as any).own_delivery_fee || 0}
-                     storeDeliveryFeeType={(store as any).delivery_fee_type || "fixed"}
-                     storeDeliveryBaseKm={(store as any).delivery_base_km || 0}
-                     storeDeliveryFeeBase={(store as any).delivery_fee_base || 0}
-                     storeDeliveryFeePerKm={(store as any).delivery_fee_per_km || 0}
-                     storeSettings={(store as any).settings || null} />
-
-                </div>
-              )}
+              {dashboardTab === "addons" && <AddonsTab storeId={store.id} />}
+              {dashboardTab === "bordas" && <BordasTab storeId={store.id} category={store.category} />}
+              {dashboardTab === "hours" && <HoursTab storeId={store.id} forceClosed={(store as any).force_closed || false} />}
+              {dashboardTab === "settings" && <SettingsTab store={store} />}
               {dashboardTab === "finance" && (
-                <FinanceCenter 
+                <FinanceTab 
                   storeId={store.id} 
                   storeName={store.name} 
                   hasCommission={storePlan.hasCommission} 
@@ -2363,7 +2340,7 @@ const AdminDashboard = () => {
               {dashboardTab === "loyalty" && (
                 <LoyaltyTab storeId={store.id} allowLoyalty={storePlan.allowLoyalty} />
               )}
-              {dashboardTab === "drivers" && store && <StoreDriverManager storeId={store.id} />}
+              {dashboardTab === "drivers" && store && <DriversTab storeId={store.id} />}
               {dashboardTab === "refunds" && store && <RefundsTab storeId={store.id} />}
               {dashboardTab === "reports" && (
                 <div className="space-y-6">
