@@ -50,11 +50,13 @@ const PageLoader = () => (
   </div>
 );
 
+const APP_VERSION = "1.2.59";
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 2,        // 2 min — avoid refetch on re-mount
-      gcTime: 1000 * 60 * 10,          // keep cache 10 min after unmount
+      staleTime: 1000 * 30,           // 30 sec — more aggressive refresh
+      gcTime: 1000 * 60 * 5,          // 5 min cache
       refetchOnWindowFocus: true,
       refetchOnReconnect: true,
       retry: 1,
@@ -122,6 +124,22 @@ const PushNavigator = () => {
 };
 
 const App = () => {
+  // Anti-cache logic: force reload and cache clear if version mismatch
+  useEffect(() => {
+    const storedVersion = localStorage.getItem("app_version");
+    if (storedVersion && storedVersion !== APP_VERSION) {
+      console.log(`[Cache] Version mismatch: ${storedVersion} -> ${APP_VERSION}. Clearing cache...`);
+      // Clear specific caches but preserve some essential local state if needed
+      // For safety and to solve user's complaint, we clear all
+      localStorage.clear();
+      queryClient.clear();
+      localStorage.setItem("app_version", APP_VERSION);
+      window.location.reload();
+    } else if (!storedVersion) {
+      localStorage.setItem("app_version", APP_VERSION);
+    }
+  }, []);
+
   useEffect(() => {
     // ⚡ Fire-and-forget: don't chain these, run in parallel so first paint
     // is never blocked by native setup or auto-update checks.
