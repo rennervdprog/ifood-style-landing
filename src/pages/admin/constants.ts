@@ -63,4 +63,9 @@ export const moreSheetItems: { key: DashboardTab; label: string; icon: React.Ele
   { key: "hours", label: "Horários", icon: Clock },
   { key: "finance", label: "Financeiro", icon: Coins },
   { key: "reports", label: "Relatórios", icon: BarChart3 },
+  { key: "subscription", label: "Assinatura", icon: CreditCard },
+  { key: "loyalty", label: "Fidelidade", icon: Star },
+  { key: "drivers", label: "Motoboys", icon: Bike },
+  { key: "tutoriais", label: "Tutoriais", icon: GraduationCap },
+  { key: "settings", label: "Configurações", icon: Settings },
 ];
