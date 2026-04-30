@@ -17,10 +17,13 @@ const onlyDigits = (v: unknown) => String(v ?? "").replace(/[^0-9]/g, "");
 
 const ActionSchema = z.object({
   store_id: z.string().uuid(),
-  action: z.enum(["summary", "update-pix", "withdraw-now"]),
+   action: z.enum(["summary", "update-pix", "withdraw-now", "update-withdraw-config"]),
   // update-pix payload
   pixAddressKey: z.string().optional(),
   pixAddressKeyType: z.enum(["CPF", "CNPJ", "EMAIL", "PHONE", "EVP"]).optional(),
+   // update-withdraw-config payload
+   autoWithdrawEnabled: z.boolean().optional(),
+   minWithdrawAmount: z.number().optional(),
 });
 
 Deno.serve(async (req) => {
@@ -197,6 +200,24 @@ Deno.serve(async (req) => {
         transferId: tData.id,
         value: balance,
       });
+    }
+
+    // ---------- ACTION: update-withdraw-config ----------
+    if (body.action === "update-withdraw-config") {
+      const { error: updErr } = await admin
+        .from("stores")
+        .update({
+          asaas_auto_withdraw_enabled: body.autoWithdrawEnabled,
+          asaas_min_withdraw_amount: body.minWithdrawAmount,
+        })
+        .eq("id", body.store_id);
+
+      if (updErr) {
+        console.error("DB update error:", updErr);
+        return json({ error: "Erro ao salvar configurações de saque." }, 500);
+      }
+
+      return json({ success: true, message: "Configurações de saque atualizadas!" });
     }
 
     return json({ error: "Ação inválida." }, 400);
