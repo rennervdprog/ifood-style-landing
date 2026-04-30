@@ -63,7 +63,14 @@ export const ProductFormInline = ({ initial, onSave, onCancel, storeCategory, st
     if (!file) return;
     setUploading(true);
     const url = await uploadProductImage(file);
-    if (url) setForm((prev) => ({ ...prev, image_url: url }));
+    if (url) {
+      const updatedForm = { ...form, image_url: url };
+      setForm(updatedForm);
+      // Se estiver editando um produto já existente, salva automaticamente
+      if (initial) {
+        onSave(updatedForm);
+      }
+    }
     setUploading(false);
   };
 
