@@ -18,7 +18,7 @@ import {
   Menu, X, LayoutDashboard, CircleDot, TrendingUp, BarChart3,
   Users, Timer, Star, ShoppingBag, ArrowUpRight, ArrowDownRight,
    Filter, UserCheck, UserX, MapPinned, Repeat, Heart, AlertTriangle, LogOut, User, Shield, Navigation,
-  Calendar, Download, GraduationCap
+  Calendar, Download, GraduationCap, ChevronRight
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip,
