@@ -933,6 +933,7 @@ const AdminDashboard = () => {
             totalPrice: Number(order.total_price),
             addressDetails: order.address_details,
             items,
+            deliveryPin: order.delivery_pin,
             paymentMethod: order.payment_method,
           }, { zapiEnabled: !!storeSettings.zapi_enabled });
         } catch (e) { console.warn("notify error", e); }
@@ -1045,6 +1046,7 @@ const AdminDashboard = () => {
           totalPrice: Number(order.total_price),
           addressDetails: order.address_details,
           items,
+          deliveryPin: order.delivery_pin,
           paymentMethod: order.payment_method,
         }, { zapiEnabled: !!storeSettings.zapi_enabled });
       }
