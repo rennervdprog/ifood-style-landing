@@ -48,7 +48,7 @@ const AdminStoreManager = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("stores")
-        .select("*")
+        .select("id, name, status, image_url, category, created_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data || [];
