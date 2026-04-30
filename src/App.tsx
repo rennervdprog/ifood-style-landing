@@ -51,7 +51,7 @@ const PageLoader = () => (
   </div>
 );
 
-const APP_VERSION = "1.2.61";
+const APP_VERSION = "1.2.62";
 
 const queryClient = new QueryClient({
   defaultOptions: {
