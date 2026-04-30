@@ -210,6 +210,11 @@ function AsaasFinancialPanelInner({ storeId }: { storeId: string }) {
                 <Wallet className="h-3.5 w-3.5" /> Saldo disponível na sua subconta
               </p>
               <p className="text-3xl font-bold mt-1">{fmtMoney(data.balance)}</p>
+              {data.totalBalance !== undefined && data.totalBalance > data.balance && (
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  Total (com pendentes): {fmtMoney(data.totalBalance)}
+                </p>
+              )}
               {data.config.lastWithdrawAt && (
                 <p className="text-[11px] text-muted-foreground mt-1">
                   Último saque: {fmtDate(data.config.lastWithdrawAt)}
