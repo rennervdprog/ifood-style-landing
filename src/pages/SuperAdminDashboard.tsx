@@ -1779,6 +1779,10 @@ const FinanceTab = ({
           className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${financeSubTab === "drivers" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
           <Bike className="h-3.5 w-3.5" /> Entregadores
         </button>
+        <button onClick={() => setFinanceSubTab("subaccounts")}
+          className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${financeSubTab === "subaccounts" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
+          <Shield className="h-3.5 w-3.5" /> Subcontas (Admin)
+        </button>
       </div>
 
       {/* Store filter */}
@@ -1797,6 +1801,8 @@ const FinanceTab = ({
             <div key={i} className="h-28 bg-card rounded-2xl animate-pulse border border-border" />
           ))}
         </div>
+      ) : financeSubTab === "subaccounts" ? (
+        <AdminSubaccountsTab />
       ) : financeSubTab === "stores" ? (
         storeSettlement.length > 0 ? (
           <div className="space-y-3">
