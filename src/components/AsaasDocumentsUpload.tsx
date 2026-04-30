@@ -152,6 +152,14 @@ export default function AsaasDocumentsUpload({ storeId }: { storeId: string }) {
             </AlertDescription>
           </Alert>
         )}
+        <Alert className="border-red-500/40 bg-red-500/5">
+          <AlertCircle className="h-4 w-4 text-red-600" />
+          <AlertDescription className="text-xs text-red-700">
+            <strong>Envie apenas documentos reais e legíveis.</strong> Todos os arquivos passam por
+            análise do Asaas. Documentos falsos, editados ou de terceiros resultam em bloqueio
+            permanente da conta e perda dos pagamentos pendentes.
+          </AlertDescription>
+        </Alert>
         <p className="text-[11px] text-muted-foreground">
           Envie os documentos solicitados aqui mesmo no app. Aceitamos JPG, PNG ou PDF (máx. 10MB).
         </p>
