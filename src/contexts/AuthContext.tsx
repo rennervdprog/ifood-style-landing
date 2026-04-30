@@ -6,6 +6,7 @@ import { registerGoNativePlayer } from "@/lib/gonative";
 import { registerCapacitorPush, isCapacitorNative, reclaimStoredToken, resetPushRegistrationState } from "@/lib/capacitorNative";
 import { clearStoredPushState } from "@/lib/pushSession";
 import { getDeviceId } from "@/lib/deviceSession";
+import { setUser as setSentryUser } from "@/lib/sentry";
 import { toast } from "sonner";
 
 interface AuthContextType {
