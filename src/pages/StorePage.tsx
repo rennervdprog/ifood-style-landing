@@ -707,7 +707,7 @@ const StorePage = () => {
                 }`}
               >
                 {product.image_url ? (
-                  <img loading="lazy" decoding="async" src={product.image_url} alt={product.name} className="w-full h-24 object-cover" loading="lazy" />
+                  <img loading="lazy" decoding="async" src={product.image_url} alt={product.name} className="w-full h-24 object-cover" />
                 ) : (
                   <div className="w-full h-24 bg-muted flex items-center justify-center"><span className="text-2xl">🍴</span></div>
                 )}
@@ -749,7 +749,7 @@ const StorePage = () => {
                   🔥 {product.orderCount}x
                 </span>
                 {product.image_url ? (
-                  <img loading="lazy" decoding="async" src={product.image_url} alt={product.name} className="w-full h-24 object-cover" loading="lazy" />
+                  <img loading="lazy" decoding="async" src={product.image_url} alt={product.name} className="w-full h-24 object-cover" />
                 ) : (
                   <div className="w-full h-24 bg-muted flex items-center justify-center"><span className="text-2xl">🍴</span></div>
                 )}

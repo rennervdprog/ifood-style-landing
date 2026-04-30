@@ -730,7 +730,7 @@ const ClientHomeContent = () => {
                     className="bg-card border border-border rounded-2xl p-3 flex flex-col gap-2 text-left hover:bg-muted/50 transition-colors"
                   >
                     {store.image_url ? (
-                      <img loading="lazy" decoding="async" src={store.image_url} className="w-full h-20 rounded-xl object-cover" alt={store.name} loading="lazy" />
+                      <img loading="lazy" decoding="async" src={store.image_url} className="w-full h-20 rounded-xl object-cover" alt={store.name} />
                     ) : (
                       <div className="w-full h-20 rounded-xl bg-primary/10 flex items-center justify-center">
                         <Store className="h-7 w-7 text-primary" />
