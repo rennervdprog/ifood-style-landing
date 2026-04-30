@@ -344,16 +344,21 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
                  </span>
                </div>
 
-              <div className="pt-2 space-y-2">
-                <p className="text-[10px] text-muted-foreground text-center">
-                  Envie os documentos exigidos diretamente aqui, sem precisar acessar o site do Asaas.
-                </p>
-                <Button variant="outline" className="w-full text-[11px] h-8" asChild>
-                  <a href="https://www.asaas.com/childAccounts/list" target="_blank" rel="noopener noreferrer">
-                    Abrir painel do Asaas (opcional) <ExternalLink className="h-3 w-3 ml-2" />
-                  </a>
-                </Button>
-              </div>
+               {(!activationStatus || activationStatus.document !== "APPROVED") && (
+                 <div className="pt-2 space-y-2">
+                   <p className="text-[11px] font-semibold text-amber-800 bg-amber-100/50 p-2 rounded-lg text-center">
+                     ⚠️ Existem pendências de documentos. Utilize o painel abaixo para enviar os arquivos necessários.
+                   </p>
+                 </div>
+               )}
+
+               <div className="pt-2">
+                 <Button variant="ghost" className="w-full text-[10px] h-7 text-muted-foreground hover:text-primary" asChild>
+                   <a href="https://www.asaas.com/childAccounts/list" target="_blank" rel="noopener noreferrer">
+                     Ver no site do Asaas (opcional) <ExternalLink className="h-3 w-3 ml-1.5" />
+                   </a>
+                 </Button>
+               </div>
             </CardContent>
           </Card>
         )}
