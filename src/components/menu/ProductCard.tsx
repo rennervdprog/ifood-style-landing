@@ -58,12 +58,27 @@ export const ProductFormInline = ({ initial, onSave, onCancel, storeCategory, st
   const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState<ProductFormData>(initial || EMPTY_FORM);
 
+  const handleRemoveImage = () => {
+    const updatedForm = { ...form, image_url: "" };
+    setForm(updatedForm);
+    if (initial) {
+      onSave(updatedForm);
+    }
+  };
+
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
     const url = await uploadProductImage(file);
-    if (url) setForm((prev) => ({ ...prev, image_url: url }));
+    if (url) {
+      const updatedForm = { ...form, image_url: url };
+      setForm(updatedForm);
+      // Se estiver editando um produto já existente, salva automaticamente
+      if (initial) {
+        onSave(updatedForm);
+      }
+    }
     setUploading(false);
   };
 
@@ -90,7 +105,7 @@ export const ProductFormInline = ({ initial, onSave, onCancel, storeCategory, st
           {form.image_url ? (
             <div className="flex items-center gap-2 bg-background rounded-lg px-3 py-2 border border-border">
               <img loading="lazy" decoding="async" src={form.image_url} alt="" className="w-8 h-8 rounded object-cover" />
-              <button type="button" onClick={() => setForm((p) => ({ ...p, image_url: "" }))} className="text-destructive text-xs hover:underline">Remover</button>
+              <button type="button" onClick={handleRemoveImage} className="text-destructive text-xs hover:underline">Remover</button>
               <button type="button" onClick={() => fileInputRef.current?.click()} className="text-primary text-xs hover:underline">Trocar</button>
             </div>
           ) : (

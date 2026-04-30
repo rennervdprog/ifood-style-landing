@@ -181,9 +181,26 @@ type PizzaPriceMode = "maior" | "media" | "soma";
       .from("store-assets")
       .getPublicUrl(filePath);
 
-    setImageUrl(urlData.publicUrl);
-    setUploading(false);
-    toast.success("Imagem carregada!");
+    const newImageUrl = urlData.publicUrl;
+    setImageUrl(newImageUrl);
+    
+    // Auto-save the image to the database
+    try {
+      const { error: updateError } = await supabase
+        .from("stores")
+        .update({ image_url: newImageUrl })
+        .eq("id", storeId);
+
+      if (updateError) throw updateError;
+      
+      queryClient.invalidateQueries({ queryKey: ["my-store"] });
+      toast.success("Logo atualizada automaticamente!");
+    } catch (err) {
+      console.error("Error auto-saving logo:", err);
+      toast.error("Erro ao salvar logo automaticamente.");
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleSave = async () => {
