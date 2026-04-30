@@ -28,8 +28,8 @@ export default defineConfig(({ mode }) => ({
         globPatterns: ["index.html", "manifest.webmanifest", "icon-*.png", "robots.txt"],
         // Keep total precache budget tight
         maximumFileSizeToCacheInBytes: 3_000_000,
-        skipWaiting: false,
-        clientsClaim: false,
+        skipWaiting: true,
+        clientsClaim: true,
         cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
@@ -54,11 +54,10 @@ export default defineConfig(({ mode }) => ({
           },
           {
             urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
-            handler: "NetworkFirst",
+            handler: "NetworkOnly",
             options: {
               cacheName: "supabase-api",
-              expiration: { maxEntries: 50, maxAgeSeconds: 300 },
-              networkTimeoutSeconds: 3,
+              expiration: { maxEntries: 0, maxAgeSeconds: 0 },
             },
           },
         ],
