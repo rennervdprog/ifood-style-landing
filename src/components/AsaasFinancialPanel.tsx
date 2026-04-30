@@ -19,9 +19,12 @@ import {
   Send,
   KeyRound,
   ArrowDownCircle,
-  ArrowUpCircle,
-  Loader2,
-} from "lucide-react";
+   ArrowUpCircle,
+   Loader2,
+   FileText,
+   AlertCircle,
+ } from "lucide-react";
+ import AsaasDocumentsUpload from "./AsaasDocumentsUpload";
 
 interface AsaasPayment {
   id: string;
@@ -74,8 +77,9 @@ const fmtDate = (iso?: string | null) => {
 
 function AsaasFinancialPanelInner({ storeId }: { storeId: string }) {
   const [loading, setLoading] = useState(true);
-  const [acting, setActing] = useState<string | null>(null);
-  const [data, setData] = useState<SummaryResponse | null>(null);
+   const [acting, setActing] = useState<string | null>(null);
+   const [data, setData] = useState<SummaryResponse | null>(null);
+   const [showDocs, setShowDocs] = useState(false);
 
   // Editable PIX form
    const [pixKey, setPixKey] = useState(data?.config.pixAddressKey || "");
@@ -199,9 +203,37 @@ function AsaasFinancialPanelInner({ storeId }: { storeId: string }) {
     );
   }
 
-  return (
-    <div className="space-y-4">
-      {/* SALDO */}
+   if (showDocs) {
+     return (
+       <div className="space-y-4">
+         <Button 
+           variant="ghost" 
+           size="sm" 
+           onClick={() => setShowDocs(false)}
+           className="mb-2"
+         >
+           ← Voltar ao painel
+         </Button>
+         <AsaasDocumentsUpload storeId={storeId} />
+       </div>
+     );
+   }
+
+   return (
+     <div className="space-y-4">
+       <Button
+         variant="outline"
+         className="w-full border-amber-200 bg-amber-50/50 text-amber-800 hover:bg-amber-100/50 h-10 flex items-center justify-between px-4 group"
+         onClick={() => setShowDocs(true)}
+       >
+         <div className="flex items-center gap-2">
+           <FileText className="h-4 w-4 text-amber-600" />
+           <span className="text-sm font-medium">Ver Pendências de Documentos</span>
+         </div>
+         <AlertCircle className="h-4 w-4 text-amber-500 group-hover:scale-110 transition-transform" />
+       </Button>
+
+       {/* SALDO */}
       <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/30">
         <CardContent className="p-5">
           <div className="flex items-start justify-between gap-3">
