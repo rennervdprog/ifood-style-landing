@@ -54,8 +54,8 @@ const queryClient = new QueryClient({
     queries: {
       staleTime: 1000 * 60 * 2,        // 2 min — avoid refetch on re-mount
       gcTime: 1000 * 60 * 10,          // keep cache 10 min after unmount
-      refetchOnWindowFocus: false,
-      refetchOnReconnect: false,
+      refetchOnWindowFocus: true,
+      refetchOnReconnect: true,
       retry: 1,
     },
   },
