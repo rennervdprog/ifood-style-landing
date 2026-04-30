@@ -691,6 +691,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
 
             <button
               onClick={() => {
+                if (isOutOfStock) return;
                 if (!allRequiredMet) {
                   setShowRequiredWarning(true);
                   setTimeout(() => setShowRequiredWarning(false), 3000);
@@ -700,14 +701,19 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
                 onClose();
                 resetState();
               }}
+              disabled={isOutOfStock}
               className={`flex-1 py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95 ${
-                allRequiredMet
+                isOutOfStock
+                  ? "bg-destructive text-destructive-foreground opacity-90 cursor-not-allowed"
+                  : allRequiredMet
                   ? "bg-primary text-primary-foreground shadow-lg"
                   : "bg-muted text-muted-foreground"
               }`}
             >
               <ShoppingCart className="h-4 w-4" />
-              {!allRequiredMet
+              {isOutOfStock
+                ? "Esgotado"
+                : !allRequiredMet
                 ? "Complete as opções"
                 : `Adicionar • ${formatBRL(lineTotal)}`
               }
