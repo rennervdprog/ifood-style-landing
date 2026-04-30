@@ -45,11 +45,11 @@ jobs:
     if: ${{ github.event.inputs.app_type == 'cliente' || github.event.inputs.app_type == 'both' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
-      - uses: android-actions/setup-android@v3
+      - uses: android-actions/setup-android@v4
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: '22'
 
@@ -180,7 +180,7 @@ jobs:
       - name: Build Debug APK
         run: cd android && ./gradlew --version && ./gradlew assembleDebug
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: itasuper-cliente-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
@@ -190,11 +190,11 @@ jobs:
     if: ${{ github.event.inputs.app_type == 'parceiro' || github.event.inputs.app_type == 'both' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
-      - uses: android-actions/setup-android@v3
+      - uses: android-actions/setup-android@v4
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: '22'
 
