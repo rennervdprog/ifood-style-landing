@@ -6,6 +6,7 @@ import { registerGoNativePlayer } from "@/lib/gonative";
 import { registerCapacitorPush, isCapacitorNative, reclaimStoredToken, resetPushRegistrationState } from "@/lib/capacitorNative";
 import { clearStoredPushState } from "@/lib/pushSession";
 import { getDeviceId } from "@/lib/deviceSession";
+import { setUser as setSentryUser } from "@/lib/sentry";
 import { toast } from "sonner";
 
 interface AuthContextType {
@@ -96,8 +97,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(false);
       sessionRestoredRef.current = true;
 
-      // If already logged in, register device and start checking
       if (restoredSession?.user) {
+        setSentryUser({ id: restoredSession.user.id, email: restoredSession.user.email });
         registerDevice().then(() => startDeviceCheck());
       }
     });
@@ -124,6 +125,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       currentUserIdRef.current = nextUserId;
       setSession(newSession);
       setLoading(false);
+
+      if (newSession?.user) {
+        setSentryUser({ id: newSession.user.id, email: newSession.user.email });
+      } else {
+        setSentryUser(null);
+      }
 
       if (previousUserId && previousUserId !== nextUserId) {
         if (isCapacitorNative()) {
