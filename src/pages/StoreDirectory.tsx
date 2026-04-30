@@ -511,19 +511,55 @@ const StoreDirectory = () => {
                <div className="aspect-square bg-gradient-to-br from-primary to-orange-600 rounded-[3rem] p-1 shadow-2xl overflow-hidden group">
                  <div className="w-full h-full bg-card rounded-[2.8rem] flex items-center justify-center p-8 overflow-hidden">
                     <div className="relative w-full aspect-[9/16] max-w-[280px] bg-background border-[8px] border-muted rounded-[2.5rem] shadow-2xl overflow-hidden transform group-hover:scale-105 transition-transform duration-700">
-                       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-6 bg-muted rounded-b-2xl" />
-                       <div className="p-4 pt-8">
-                          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 animate-bounce-subtle">
-                            <ShoppingBag className="text-primary h-6 w-6" />
+                      {/* Notch */}
+                      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-6 bg-muted rounded-b-2xl z-10" />
+
+                      {/* Header do app */}
+                      <div className="bg-primary px-4 pt-8 pb-3 flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
+                          <ShoppingBag className="text-white h-4 w-4" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-[10px] text-white/70 leading-none">ItaSuper</p>
+                          <p className="text-xs font-bold text-white leading-tight">Novo pedido!</p>
+                        </div>
+                        <div className="relative">
+                          <Bell className="text-white h-4 w-4" />
+                          <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                        </div>
+                      </div>
+
+                      {/* Card do pedido */}
+                      <div className="p-3 space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-bold text-foreground">Pedido #1247</span>
+                          <span className="text-[9px] font-bold text-emerald-600 bg-emerald-500/10 px-1.5 py-0.5 rounded-full">PIX PAGO</span>
+                        </div>
+
+                        <div className="bg-muted/50 rounded-xl p-2.5 space-y-1.5">
+                          <div className="flex justify-between text-[10px]">
+                            <span className="text-foreground font-medium">2x Pizza Calabresa</span>
+                            <span className="font-bold text-foreground">R$ 90,00</span>
                           </div>
-                          <div className="space-y-3">
-                            <div className="h-4 w-full bg-muted rounded-full" />
-                            <div className="h-4 w-3/4 bg-muted rounded-full" />
-                            <div className="h-20 w-full bg-muted rounded-2xl" />
-                            <div className="h-4 w-full bg-primary/20 rounded-full" />
-                            <div className="h-12 w-full bg-primary rounded-xl" />
+                          <div className="flex justify-between text-[10px]">
+                            <span className="text-foreground font-medium">1x Coca 2L</span>
+                            <span className="font-bold text-foreground">R$ 12,00</span>
                           </div>
-                       </div>
+                          <div className="border-t border-border pt-1.5 flex justify-between text-[10px]">
+                            <span className="font-bold text-foreground">Total</span>
+                            <span className="font-black text-primary">R$ 102,00</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-1.5 text-[9px] text-muted-foreground">
+                          <MapPin className="h-3 w-3 text-primary shrink-0 mt-0.5" />
+                          <span className="leading-tight">R. das Flores, 123<br/>Centro · 2,4 km</span>
+                        </div>
+
+                        <button className="w-full bg-primary text-white text-[10px] font-bold py-2 rounded-lg shadow-md">
+                          Aceitar pedido
+                        </button>
+                      </div>
                     </div>
                  </div>
                </div>
