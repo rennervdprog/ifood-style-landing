@@ -608,13 +608,10 @@ const AdminDashboard = () => {
        if ("vibrate" in navigator) {
          navigator.vibrate([300, 100, 300, 100, 500]);
        }
-     } catch (err) {
-       console.warn("[Admin] Alert sound blocked by browser:", err);
-     }
-   }, [soundEnabled, soundMuted]);
-    audioRef.current.currentTime = 0;
-    audioRef.current.play().catch(() => {});
-  }, [soundEnabled, soundMuted]);
+       } catch (err) {
+         console.warn("[Admin] Alert sound blocked by browser:", err);
+       }
+     }, [soundEnabled, soundMuted]);
 
   const activateSound = useCallback(() => {
     const audio = new Audio(ALERT_SOUND_URL);
