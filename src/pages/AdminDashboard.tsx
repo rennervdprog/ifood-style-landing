@@ -49,74 +49,34 @@ import { useStorePlan } from "@/hooks/useStorePlan";
 import StoreDriverManager from "@/components/StoreDriverManager";
 import TrialExpiredGuard from "@/components/TrialExpiredGuard";
 import AdminRefundPanel from "@/components/AdminRefundPanel";
-
-type OrderStatus = "pendente" | "preparando" | "pronto_para_entrega" | "saiu_entrega" | "em_transito" | "entregue" | "finalizado";
-type OrderTabKey = OrderStatus | "delivery";
-type DashboardTab = "dashboard" | "orders" | "menu" | "addons" | "bordas" | "hours" | "settings" | "finance" | "clients" | "reports" | "subscription" | "loyalty" | "drivers" | "refunds" | "tutoriais" | "cash_register";
-type StoreAddonGroup = {
-  id: string;
-  name: string;
-  min_select: number;
-  product_id: string | null;
-  addon_items?: Array<{ name: string | null }> | null;
-};
-type StoreAddonLink = {
-  addon_group_id: string;
-  product_id: string;
-};
-type RequiredAddonHighlight = {
-  itemId: string;
-  itemName: string;
-  groupName: string;
-  addonName: string;
-};
-
-const ALERT_SOUND_URL = "https://actions.google.com/sounds/v1/alarms/beep_short.ogg";
-const CASH_REGISTER_SOUND_URL = "https://actions.google.com/sounds/v1/office/cash_register.ogg";
-
-// Semantic color system
-const statusColors: Record<string, { bg: string; text: string; border: string; label: string }> = {
-  pendente: { bg: "bg-amber-500/10", text: "text-amber-600 dark:text-amber-400", border: "border-amber-500/30", label: "Novo Pedido" },
-  preparando: { bg: "bg-amber-500/10", text: "text-amber-600 dark:text-amber-400", border: "border-amber-500/30", label: "Em Preparo" },
-  pronto_para_entrega: { bg: "bg-blue-500/10", text: "text-blue-600 dark:text-blue-400", border: "border-blue-500/30", label: "Pronto" },
-  saiu_entrega: { bg: "bg-blue-500/10", text: "text-blue-600 dark:text-blue-400", border: "border-blue-500/30", label: "Saiu Entrega" },
-  em_transito: { bg: "bg-blue-500/10", text: "text-blue-600 dark:text-blue-400", border: "border-blue-500/30", label: "Em Trânsito" },
-  entregue: { bg: "bg-emerald-500/10", text: "text-emerald-600 dark:text-emerald-400", border: "border-emerald-500/30", label: "Entregue" },
-  finalizado: { bg: "bg-emerald-500/10", text: "text-emerald-600 dark:text-emerald-400", border: "border-emerald-500/30", label: "Finalizado" },
-  cancelado: { bg: "bg-red-500/10", text: "text-red-600 dark:text-red-400", border: "border-red-500/30", label: "Cancelado" },
-};
-
-const orderTabs: { status: OrderStatus | "delivery"; label: string; icon: React.ElementType; mergedStatuses?: OrderStatus[] }[] = [
-  { status: "pendente", label: "Novos", icon: Clock },
-  { status: "preparando", label: "Preparando", icon: ChefHat },
-  { status: "pronto_para_entrega", label: "Pronto", icon: Package },
-  { status: "delivery" as any, label: "Entregando", icon: Truck, mergedStatuses: ["saiu_entrega", "em_transito"] },
-  { status: "entregue", label: "Entregue", icon: CheckCircle2 },
-  { status: "finalizado", label: "Finalizados", icon: CheckCircle2 },
-];
-
-const paymentLabels: Record<string, string> = { pix: "PIX", cartao: "Cartão", dinheiro: "Dinheiro" };
-const paymentIcons: Record<string, string> = { pix: "⚡", cartao: "💳", dinheiro: "💵" };
-
-const parseOrderAddons = (rawAddons: unknown): any[] => {
-  if (Array.isArray(rawAddons)) return rawAddons;
-  if (typeof rawAddons === "string") {
-    try {
-      const parsed = JSON.parse(rawAddons);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
-  }
-  return [];
-};
-
-const normalizeAddonName = (name: string) =>
-  name
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim()
-    .toLowerCase();
+import {
+  ALERT_SOUND_URL,
+  CASH_REGISTER_SOUND_URL,
+  statusColors,
+  orderTabs,
+  paymentLabels,
+  paymentIcons,
+  baseSidebarItems,
+  bottomNavTabs,
+  moreSheetItems,
+} from "./admin/constants";
+import {
+  parseOrderAddons,
+  normalizeAddonName,
+  pad2,
+  parseDashboardDate,
+  toLocalDateKey,
+  formatDateKeyPtBR,
+  getPeriodDateKeys,
+} from "./admin/helpers";
+import type {
+  OrderStatus,
+  OrderTabKey,
+  DashboardTab,
+  StoreAddonGroup,
+  StoreAddonLink,
+  RequiredAddonHighlight,
+} from "./admin/types";
 
 const RequiredAddonHighlights = ({ highlights }: { highlights: RequiredAddonHighlight[] }) => {
   if (highlights.length === 0) return null;
