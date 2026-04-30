@@ -253,61 +253,61 @@ const DriverDashboard = () => {
       if (error) throw error;
       return data;
     },
-     enabled: !!user,
-   // ── REALTIME FOR DRIVER ──
-   useEffect(() => {
-     if (!user || !isOnline) return;
-
-     const channel = supabase.channel(`driver-realtime-${user.id}`)
-       .on(
-         "postgres_changes",
-         {
-           event: "*",
-           schema: "public",
-           table: "orders"
-         },
-         (payload) => {
-           const updated = payload.new as any;
-           const previous = payload.old as any;
-
-           // Refresh available orders if a new one is ready or was picked up
-           if (payload.eventType === "INSERT" || (payload.eventType === "UPDATE" && (updated.status === "pronto_para_entrega" || previous?.status === "pronto_para_entrega"))) {
-             refetchAvailable();
-           }
-
-           // Refresh current delivery if it's mine
-           if (updated?.driver_id === user.id || previous?.driver_id === user.id) {
-             refetchMyDelivery();
-             refetchPendingReturn();
-             
-             if (payload.eventType === "UPDATE" && updated.status === "finalizado" && previous?.status !== "finalizado") {
-               queryClient.invalidateQueries({ queryKey: ["driver-balance", user.id] });
-               queryClient.invalidateQueries({ queryKey: ["driver-earnings", user.id] });
-               queryClient.invalidateQueries({ queryKey: ["driver-history", user.id] });
-             }
-           }
-
-           // New available order alert
-           if (payload.eventType === "INSERT" && updated.status === "pronto_para_entrega" && !updated.driver_id) {
-             playAlert();
-             toast.info("🚴 Nova entrega disponível!");
-           }
-         }
-       )
-       .subscribe((status) => {
-         setRealtimeConnected(status === "SUBSCRIBED");
-         if (status === "SUBSCRIBED") {
-           refetchAvailable();
-           refetchMyDelivery();
-         }
-       });
-
-     return () => {
-       supabase.removeChannel(channel);
-     };
-   }, [user, isOnline, refetchAvailable, refetchMyDelivery, refetchPendingReturn, playAlert, queryClient]);
-
+      enabled: !!user,
   });
+
+  // ── REALTIME FOR DRIVER ──
+  useEffect(() => {
+    if (!user || !isOnline) return;
+
+    const channel = supabase.channel(`driver-realtime-${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "orders"
+        },
+        (payload) => {
+          const updated = payload.new as any;
+          const previous = payload.old as any;
+
+          // Refresh available orders if a new one is ready or was picked up
+          if (payload.eventType === "INSERT" || (payload.eventType === "UPDATE" && (updated.status === "pronto_para_entrega" || previous?.status === "pronto_para_entrega"))) {
+            refetchAvailable();
+          }
+
+          // Refresh current delivery if it's mine
+          if (updated?.driver_id === user.id || previous?.driver_id === user.id) {
+            refetchMyDelivery();
+            refetchPendingReturn();
+            
+            if (payload.eventType === "UPDATE" && updated.status === "finalizado" && previous?.status !== "finalizado") {
+              queryClient.invalidateQueries({ queryKey: ["driver-balance", user.id] });
+              queryClient.invalidateQueries({ queryKey: ["driver-earnings", user.id] });
+              queryClient.invalidateQueries({ queryKey: ["driver-history", user.id] });
+            }
+          }
+
+          // New available order alert
+          if (payload.eventType === "INSERT" && updated.status === "pronto_para_entrega" && !updated.driver_id) {
+            playAlert();
+            toast.info("🚴 Nova entrega disponível!");
+          }
+        }
+      )
+      .subscribe((status) => {
+        setRealtimeConnected(status === "SUBSCRIBED");
+        if (status === "SUBSCRIBED") {
+          refetchAvailable();
+          refetchMyDelivery();
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, isOnline, refetchAvailable, refetchMyDelivery, refetchPendingReturn, playAlert, queryClient]);
 
   const { data: openPlatformStores } = useQuery({
     queryKey: ["open-platform-stores"],
