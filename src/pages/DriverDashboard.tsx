@@ -180,6 +180,7 @@ const DriverDashboard = () => {
         .eq("status", "pronto_para_entrega" as any)
         .is("driver_id", null)
         .neq("neighborhood", "RETIRADA")
+        .or(`assigned_driver_id.is.null,assigned_driver_id.eq.${user?.id ?? "00000000-0000-0000-0000-000000000000"}`)
         .order("created_at", { ascending: true });
       if (error) throw error;
       return data;
@@ -559,6 +560,10 @@ const DriverDashboard = () => {
   };
 
   const acceptOrder = async (orderId: string) => {
+    if (myDelivery) {
+      toast.error("Você já tem uma entrega ativa. Finalize-a antes de aceitar outra.");
+      return;
+    }
     // Optimistic UI: remove order from available list immediately so it disappears instantly
     const previousAvailable = queryClient.getQueryData<any[]>(["driver-available-orders"]);
     const acceptedOrder = (availableOrders || []).find((o: any) => o.id === orderId);

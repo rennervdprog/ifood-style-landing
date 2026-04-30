@@ -2119,6 +2119,12 @@ const AdminDashboard = () => {
                               <span className="text-muted-foreground/40">•</span>
                               <span>{paymentIcons[order.payment_method]}</span>
                             </div>
+                            {order.driver_id && (
+                              <div className="flex items-center gap-1 mt-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                <Bike className="h-3 w-3" />
+                                <span>Motoboy: {getDriverName(order.driver_id)}</span>
+                              </div>
+                            )}
                           </div>
                           <div className="text-right">
                             <p className="text-xl font-black text-emerald-500">{formatBRL(Number(order.total_price))}</p>
