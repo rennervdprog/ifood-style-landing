@@ -675,8 +675,18 @@ const StoreDirectory = () => {
             ))}
           </div>
         </div>
-      </section>
-
+       </section>
+ 
+       <section className="py-20 px-4 bg-background">
+         <div className="mx-auto max-w-5xl">
+           <Card className="border-dashed border-2 bg-muted/20 h-64 flex items-center justify-center">
+             <CardContent className="text-muted-foreground text-center">
+               <p className="font-medium italic">Seção futura disponível em breve</p>
+             </CardContent>
+           </Card>
+         </div>
+       </section>
+ 
        {/* ══════ VALUE GUARANTEES (replaces fake stats) ══════ */}
        <section className="py-24 px-4 bg-muted/20 border-y border-border">
          <div className="mx-auto max-w-6xl">
