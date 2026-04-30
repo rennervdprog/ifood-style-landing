@@ -27,18 +27,18 @@ import {
 import { openWhatsApp } from "@/lib/whatsapp";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import { notifyOrderStatusChange } from "@/lib/orderNotifications";
-import MenuBuilder from "@/components/MenuBuilder";
-import StoreHoursManager from "@/components/StoreHoursManager";
-import AddonManager from "@/components/AddonManager";
-import StoreSettings from "@/components/StoreSettings";
-import TutoriaisPanel from "@/components/TutoriaisPanel";
-import FinanceCenter from "@/components/FinanceCenter";
-import StoreSubscription from "@/components/StoreSubscription";
-import { CashRegister } from "@/components/CashRegister";
-import CommissionAlert from "@/components/CommissionAlert";
-import PlatformSplitAlert from "@/components/PlatformSplitAlert";
-import LoyaltyConfigPanel from "@/components/LoyaltyConfigPanel";
-import PizzaBorderManager from "@/components/PizzaBorderManager";
+import TutoriaisTab from "./admin/tabs/TutoriaisTab";
+import SubscriptionTab from "./admin/tabs/SubscriptionTab";
+import LoyaltyTab from "./admin/tabs/LoyaltyTab";
+import RefundsTab from "./admin/tabs/RefundsTab";
+import MenuTab from "./admin/tabs/MenuTab";
+import CashRegisterTab from "./admin/tabs/CashRegisterTab";
+import AddonsTab from "./admin/tabs/AddonsTab";
+import BordasTab from "./admin/tabs/BordasTab";
+import HoursTab from "./admin/tabs/HoursTab";
+import FinanceTab from "./admin/tabs/FinanceTab";
+import DriversTab from "./admin/tabs/DriversTab";
+import SettingsTab from "./admin/tabs/SettingsTab";
 
 import { printThermalReceipt } from "@/lib/thermalPrint";
 import { requestNotificationPermission, notifyNewOrder, pushNotifyDeliveryAvailable } from "@/lib/notifications";
@@ -46,13 +46,9 @@ import { sendPushNotification } from "@/lib/firebase";
 import { addMoney, averageMoney, formatCurrency, sumMoney } from "@/lib/utils";
 import ProductTour, { lojistaTourSteps } from "@/components/ProductTour";
 import { useStorePlan } from "@/hooks/useStorePlan";
-import StoreDriverManager from "@/components/StoreDriverManager";
 import TrialExpiredGuard from "@/components/TrialExpiredGuard";
-import AdminRefundPanel from "@/components/AdminRefundPanel";
-import TutoriaisTab from "./admin/tabs/TutoriaisTab";
-import SubscriptionTab from "./admin/tabs/SubscriptionTab";
-import LoyaltyTab from "./admin/tabs/LoyaltyTab";
-import RefundsTab from "./admin/tabs/RefundsTab";
+import CommissionAlert from "@/components/CommissionAlert";
+import PlatformSplitAlert from "@/components/PlatformSplitAlert";
 import {
   ALERT_SOUND_URL,
   CASH_REGISTER_SOUND_URL,
@@ -2323,39 +2319,16 @@ const AdminDashboard = () => {
           {/* ══════ OTHER TABS ══════ */}
           {!["dashboard", "orders", "clients"].includes(dashboardTab) && store && (
             <div className="p-4 lg:p-6 max-w-6xl mx-auto">
-              {dashboardTab === "menu" && <MenuBuilder storeId={store.id} storeCategory={store.category} />}
-              {dashboardTab === "cash_register" && <CashRegister storeId={store.id} />}
+              {dashboardTab === "menu" && <MenuTab storeId={store.id} storeCategory={store.category} />}
+              {dashboardTab === "cash_register" && <CashRegisterTab storeId={store.id} />}
               {dashboardTab === "tutoriais" && <TutoriaisTab />}
               
-              {dashboardTab === "addons" && <AddonManager storeId={store.id} />}
-              {dashboardTab === "bordas" && store.category === "pizzas" && <PizzaBorderManager storeId={store.id} />}
-              {dashboardTab === "hours" && <StoreHoursManager storeId={store.id} forceClosed={(store as any).force_closed || false} />}
-              {dashboardTab === "settings" && (
-                <div className="space-y-6">
-                  <StoreSettings storeId={store.id} storeName={store.name} storeCategory={store.category}
-                    storeCategories={(store as any).categories || null}
-                    storeImageUrl={store.image_url} storeIsOpen={store.is_open}
-                    forceClosed={(store as any).force_closed || false} storeSlug={(store as any).slug || null}
-                    storeAddressStreet={(store as any).address_street || null}
-                    storeAddressNumber={(store as any).address_number || null}
-                    storeAddressComplement={(store as any).address_complement || null}
-                    storeAddressNeighborhood={(store as any).address_neighborhood || null}
-                    storeAddressReference={(store as any).address_reference || null}
-                    storeAddressCity={(store as any).address_city || null}
-                    storeAddressState={(store as any).address_state || null}
-                    storeAddressCep={(store as any).address_cep || null}
-                     storeDeliveryMode={(store as any).delivery_mode || "platform"}
-                     storeOwnDeliveryFee={(store as any).own_delivery_fee || 0}
-                     storeDeliveryFeeType={(store as any).delivery_fee_type || "fixed"}
-                     storeDeliveryBaseKm={(store as any).delivery_base_km || 0}
-                     storeDeliveryFeeBase={(store as any).delivery_fee_base || 0}
-                     storeDeliveryFeePerKm={(store as any).delivery_fee_per_km || 0}
-                     storeSettings={(store as any).settings || null} />
-
-                </div>
-              )}
+              {dashboardTab === "addons" && <AddonsTab storeId={store.id} />}
+              {dashboardTab === "bordas" && <BordasTab storeId={store.id} category={store.category} />}
+              {dashboardTab === "hours" && <HoursTab storeId={store.id} forceClosed={(store as any).force_closed || false} />}
+              {dashboardTab === "settings" && <SettingsTab store={store} />}
               {dashboardTab === "finance" && (
-                <FinanceCenter 
+                <FinanceTab 
                   storeId={store.id} 
                   storeName={store.name} 
                   hasCommission={storePlan.hasCommission} 
@@ -2367,7 +2340,7 @@ const AdminDashboard = () => {
               {dashboardTab === "loyalty" && (
                 <LoyaltyTab storeId={store.id} allowLoyalty={storePlan.allowLoyalty} />
               )}
-              {dashboardTab === "drivers" && store && <StoreDriverManager storeId={store.id} />}
+              {dashboardTab === "drivers" && store && <DriversTab storeId={store.id} />}
               {dashboardTab === "refunds" && store && <RefundsTab storeId={store.id} />}
               {dashboardTab === "reports" && (
                 <div className="space-y-6">
