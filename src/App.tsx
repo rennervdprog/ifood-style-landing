@@ -42,6 +42,7 @@ const PoliticaPrivacidade = lazy(() => import("./pages/PoliticaPrivacidade"));
 const PlanosPage = lazy(() => import("./pages/PlanosPage"));
 const ModeradorDashboard = lazy(() => import("./pages/ModeradorDashboard"));
 const LinksPage = lazy(() => import("./pages/LinksPage"));
+ const DownloadApp = lazy(() => import("./pages/DownloadApp"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const PageLoader = () => (
@@ -277,6 +278,7 @@ const App = () => {
                 <Route path="/planos" element={<PlanosPage />} />
                 <Route path="/moderador" element={<ModeradorDashboard />} />
                 <Route path="/links" element={<LinksPage />} />
+                 <Route path="/download" element={<DownloadApp />} />
                 {/* Client store access via slug - must be last */}
                 <Route path="/:slug" element={<StorePage />} />
                 <Route path="*" element={<NotFound />} />
