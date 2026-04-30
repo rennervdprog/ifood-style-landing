@@ -345,7 +345,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
 
     const channels = linkedStoreIds.map((storeId) =>
       supabase
-        .channel(`store-driver-rt-${storeId}`)
+        .channel(`store-driver-rt-${storeId}-${user.id}`)
         .on(
           "postgres_changes",
           {
