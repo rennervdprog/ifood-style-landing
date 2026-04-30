@@ -430,10 +430,9 @@ const StoreDirectory = () => {
       <Navbar onNavigate={navigate} isLoggedIn={!!user} />
 
       {/* ══════ HERO ══════ */}
-      <section id="hero" className="relative py-20 md:py-28 px-4 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/20 pointer-events-none" />
-        <div className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-40 -left-40 w-[400px] h-[400px] rounded-full bg-accent/30 blur-3xl pointer-events-none" />
+       <section id="hero" className="relative py-24 md:py-32 px-4 overflow-hidden border-b border-border">
+         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.08),transparent_50%),radial-gradient(circle_at_bottom_left,hsl(var(--accent)/0.3),transparent_50%)] pointer-events-none" />
+         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-primary/[0.03] rounded-full blur-[120px] pointer-events-none" />
 
         <div className="relative mx-auto max-w-5xl text-center">
           <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-semibold text-primary mb-8 animate-fade-in">
@@ -441,17 +440,17 @@ const StoreDirectory = () => {
             Plataforma disponível para todo o Brasil 🇧🇷
           </div>
 
-          <h1 className="text-5xl lg:text-7xl font-black tracking-tighter text-foreground leading-[0.95] mb-8 opacity-100 animate-in fade-in slide-in-from-bottom-4 duration-1000">
-            O sistema de delivery <br className="hidden md:block" />
-            mais <span className="text-primary italic underline decoration-primary/20">profissional</span> do Brasil.
-          </h1>
+           <h1 className="text-6xl lg:text-8xl font-black tracking-tight text-foreground leading-[0.9] mb-8 animate-in fade-in slide-in-from-bottom-6 duration-1000">
+             O delivery que <br className="hidden md:block" />
+             te dá <span className="text-primary relative inline-block">liberdade<span className="absolute -bottom-2 left-0 w-full h-3 bg-primary/20 -z-10 rounded-full" /></span>.
+           </h1>
 
-          <p className="text-lg md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-12 leading-tight font-medium animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-200">
-            Gestão de pedidos com <span className="text-foreground font-bold underline decoration-primary/30">emissão de nota</span>, sistema de motoboys integrado e <span className="text-foreground font-bold underline decoration-primary/30">relatórios 100% detalhados</span>. Escala seu negócio com lucro real.
+           <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto mb-12 leading-relaxed font-medium animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
+             Cardápio digital, gestão de motoboys e <span className="text-foreground font-bold">PIX automático</span>. Tudo o que você precisa para vender sem depender das taxas dos grandes apps.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button size="lg" onClick={handleCTA} className="text-base px-8 py-6 rounded-2xl shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all">
+           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-in fade-in zoom-in-95 duration-1000 delay-300">
+             <Button size="lg" onClick={handleCTA} className="text-lg px-10 py-7 rounded-2xl shadow-2xl shadow-primary/20 hover:shadow-primary/40 transition-all hover:-translate-y-1 active:scale-95 font-black">
               <Store className="mr-2 h-5 w-5" />
               Criar minha loja grátis
               <ArrowRight className="ml-2 h-5 w-5" />
@@ -483,28 +482,55 @@ const StoreDirectory = () => {
         </div>
       </section>
 
-      {/* ══════ PAIN POINTS ══════ */}
-      <section id="vantagens" className="py-16 px-4 border-y border-border bg-muted/30">
-        <div className="mx-auto max-w-5xl">
-          <h2 className="text-2xl md:text-3xl font-bold text-center text-foreground mb-4">
-            Você ainda faz isso? 🤔
-          </h2>
-          <p className="text-center text-muted-foreground mb-10 max-w-xl mx-auto">
-            Se identificou com algum desses problemas? Tem solução.
-          </p>
-          <div className="grid sm:grid-cols-2 gap-4">
-            {painPoints.map((item) => (
-              <div key={item.pain} className="group flex gap-4 items-start rounded-2xl border border-border bg-card p-5 hover:shadow-md transition-shadow">
-                <span className="text-3xl flex-shrink-0">{item.emoji}</span>
-                <div>
-                  <p className="text-sm text-muted-foreground line-through mb-1">{item.pain}</p>
-                  <p className="text-sm font-semibold text-primary">{item.solution}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+       {/* ══════ PAIN POINTS ══════ */}
+       <section id="vantagens" className="py-24 px-4 bg-muted/30">
+         <div className="mx-auto max-w-6xl">
+           <div className="grid lg:grid-cols-2 gap-16 items-center">
+             <div>
+               <h2 className="text-4xl md:text-5xl font-black text-foreground mb-6 leading-none">
+                 Cansado de <br /> perder dinheiro?
+               </h2>
+               <p className="text-xl text-muted-foreground mb-8 font-medium">
+                 O WhatsApp não foi feito para gerenciar delivery. O ItaSuper foi criado para resolver a bagunça da sua operação.
+               </p>
+               <div className="space-y-4">
+                 {painPoints.map((item) => (
+                   <div key={item.pain} className="group flex gap-5 items-center rounded-3xl border border-border bg-card p-6 hover:border-primary/30 transition-all">
+                     <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center text-3xl shrink-0 group-hover:scale-110 transition-transform">
+                       {item.emoji}
+                     </div>
+                     <div>
+                       <p className="text-sm text-muted-foreground line-through mb-1">{item.pain}</p>
+                       <p className="text-base font-bold text-primary">{item.solution}</p>
+                     </div>
+                   </div>
+                 ))}
+               </div>
+             </div>
+             <div className="relative">
+               <div className="aspect-square bg-gradient-to-br from-primary to-orange-600 rounded-[3rem] p-1 shadow-2xl overflow-hidden group">
+                 <div className="w-full h-full bg-card rounded-[2.8rem] flex items-center justify-center p-8 overflow-hidden">
+                    <div className="relative w-full aspect-[9/16] max-w-[280px] bg-background border-[8px] border-muted rounded-[2.5rem] shadow-2xl overflow-hidden transform group-hover:scale-105 transition-transform duration-700">
+                       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-6 bg-muted rounded-b-2xl" />
+                       <div className="p-4 pt-8">
+                          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 animate-bounce-subtle">
+                            <ShoppingBag className="text-primary h-6 w-6" />
+                          </div>
+                          <div className="space-y-3">
+                            <div className="h-4 w-full bg-muted rounded-full" />
+                            <div className="h-4 w-3/4 bg-muted rounded-full" />
+                            <div className="h-20 w-full bg-muted rounded-2xl" />
+                            <div className="h-4 w-full bg-primary/20 rounded-full" />
+                            <div className="h-12 w-full bg-primary rounded-xl" />
+                          </div>
+                       </div>
+                    </div>
+                 </div>
+               </div>
+             </div>
+           </div>
+         </div>
+       </section>
 
        {/* ══════ MOTOBOY SYSTEM SECTION ══════ */}
        <section className="py-20 px-4 bg-gradient-to-br from-background via-primary/5 to-background text-foreground overflow-hidden relative border-t border-border">
