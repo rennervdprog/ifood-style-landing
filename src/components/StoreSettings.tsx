@@ -1,3 +1,4 @@
+import { compressImage } from "@/lib/compressImage";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -159,19 +160,15 @@ type PizzaPriceMode = "maior" | "media" | "soma";
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error("Imagem muito grande. Máximo 2MB.");
-      return;
-    }
-
     setUploading(true);
-    const ext = file.name.split(".").pop();
-    // Path: userId/logo_timestamp.ext (matches RLS policy)
+    const compressed = await compressImage(file, { maxDim: 800, quality: 0.8, forceWebp: true }).catch(() => file);
+    
+    const ext = compressed.type === "image/webp" ? "webp" : (compressed.type === "image/png" ? "png" : "jpg");
     const filePath = `${user.id}/logo_${Date.now()}.${ext}`;
 
     const { error: uploadError } = await supabase.storage
       .from("store-assets")
-      .upload(filePath, file, { upsert: true });
+      .upload(filePath, compressed, { upsert: true });
 
     if (uploadError) {
       console.error("Upload error:", uploadError);

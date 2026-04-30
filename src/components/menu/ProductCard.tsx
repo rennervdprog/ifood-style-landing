@@ -14,9 +14,8 @@ const uploadProductImage = async (file: File): Promise<string | null> => {
   if (!user) { toast.error("Faça login primeiro"); return null; }
   const ext = file.name.split(".").pop()?.toLowerCase() || "png";
   if (!["png", "jpg", "jpeg", "webp"].includes(ext)) { toast.error("Use PNG, JPG ou WEBP."); return null; }
-  if (file.size > 5 * 1024 * 1024) { toast.error("Máx 5MB"); return null; }
-  const compressed = await compressImage(file).catch(() => file);
-  const finalExt = compressed.type === "image/png" ? "png" : "jpg";
+  const compressed = await compressImage(file, { maxDim: 1024, quality: 0.75, forceWebp: true }).catch(() => file);
+  const finalExt = compressed.type === "image/webp" ? "webp" : (compressed.type === "image/png" ? "png" : "jpg");
   const filePath = `${user.id}/products/${Date.now()}.${finalExt}`;
   const { error } = await supabase.storage.from("store-assets").upload(filePath, compressed, { upsert: true });
   if (error) { toast.error("Erro ao enviar imagem"); return null; }
