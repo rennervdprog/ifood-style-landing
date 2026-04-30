@@ -49,6 +49,10 @@ import { useStorePlan } from "@/hooks/useStorePlan";
 import StoreDriverManager from "@/components/StoreDriverManager";
 import TrialExpiredGuard from "@/components/TrialExpiredGuard";
 import AdminRefundPanel from "@/components/AdminRefundPanel";
+import TutoriaisTab from "./admin/tabs/TutoriaisTab";
+import SubscriptionTab from "./admin/tabs/SubscriptionTab";
+import LoyaltyTab from "./admin/tabs/LoyaltyTab";
+import RefundsTab from "./admin/tabs/RefundsTab";
 import {
   ALERT_SOUND_URL,
   CASH_REGISTER_SOUND_URL,
@@ -2321,7 +2325,7 @@ const AdminDashboard = () => {
             <div className="p-4 lg:p-6 max-w-6xl mx-auto">
               {dashboardTab === "menu" && <MenuBuilder storeId={store.id} storeCategory={store.category} />}
               {dashboardTab === "cash_register" && <CashRegister storeId={store.id} />}
-              {dashboardTab === "tutoriais" && <TutoriaisPanel />}
+              {dashboardTab === "tutoriais" && <TutoriaisTab />}
               
               {dashboardTab === "addons" && <AddonManager storeId={store.id} />}
               {dashboardTab === "bordas" && store.category === "pizzas" && <PizzaBorderManager storeId={store.id} />}
@@ -2357,27 +2361,14 @@ const AdminDashboard = () => {
                   hasCommission={storePlan.hasCommission} 
                 />
               )}
-              {dashboardTab === "subscription" && <StoreSubscription storeId={store.id} storeName={store.name} />}
-              {dashboardTab === "loyalty" && storePlan.allowLoyalty && <LoyaltyConfigPanel storeId={store.id} />}
-              {dashboardTab === "loyalty" && !storePlan.allowLoyalty && (
-                <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <Star className="h-12 w-12 text-muted-foreground/30 mb-4" />
-                  <h3 className="text-base font-bold text-foreground mb-1">Programa de Fidelidade</h3>
-                  <p className="text-sm text-muted-foreground max-w-xs">
-                    Disponível nos planos Crescimento e Comissão. Faça upgrade para fidelizar seus clientes!
-                  </p>
-                </div>
+              {dashboardTab === "subscription" && (
+                <SubscriptionTab storeId={store.id} storeName={store.name} />
+              )}
+              {dashboardTab === "loyalty" && (
+                <LoyaltyTab storeId={store.id} allowLoyalty={storePlan.allowLoyalty} />
               )}
               {dashboardTab === "drivers" && store && <StoreDriverManager storeId={store.id} />}
-              {dashboardTab === "refunds" && store && (
-                <div className="space-y-4">
-                  <div>
-                    <h2 className="text-lg font-black text-foreground">Solicitações de Reembolso</h2>
-                    <p className="text-xs text-muted-foreground">Gerencie pedidos de reembolso e disputas dos clientes</p>
-                  </div>
-                  <AdminRefundPanel storeId={store.id} />
-                </div>
-              )}
+              {dashboardTab === "refunds" && store && <RefundsTab storeId={store.id} />}
               {dashboardTab === "reports" && (
                 <div className="space-y-6">
                   <h3 className="text-lg font-bold text-foreground">Relatórios Avançados</h3>
