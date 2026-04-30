@@ -15,7 +15,7 @@ const TermosDeUso = () => {
 
       <div className="flex-1 px-4 py-6 max-w-2xl mx-auto">
         <div className="prose prose-sm dark:prose-invert max-w-none space-y-6">
-            <p className="text-xs text-muted-foreground">Última atualização: 29 de Abril de 2026 — Versão 3.2</p>
+            <p className="text-xs text-muted-foreground">Última atualização: 30 de Abril de 2026 — Versão 3.3</p>
 
           <h2 className="text-lg font-bold text-foreground">1. Identificação da Plataforma</h2>
            <p className="text-sm text-muted-foreground">
@@ -33,6 +33,10 @@ const TermosDeUso = () => {
             <li><strong className="text-foreground">Entregador da Plataforma:</strong> Pessoa física cadastrada e aprovada pela Plataforma para realizar entregas de pedidos em geral, podendo atender múltiplas lojas.</li>
             <li><strong className="text-foreground">Motoboy de Loja (Motoboy Próprio):</strong> Pessoa física cadastrada e vinculada exclusivamente a uma loja específica pelo seu dono, realizando apenas entregas daquela loja.</li>
             <li><strong className="text-foreground">Pedido:</strong> Solicitação de compra realizada pelo Cliente através da Plataforma.</li>
+            <li><strong className="text-foreground">Designação de Entregador:</strong> Recurso pelo qual o Lojista atribui um pedido a um motoboy específico (próprio ou da plataforma), tornando o pedido invisível aos demais entregadores.</li>
+            <li><strong className="text-foreground">Código PIN de Entrega:</strong> Código numérico de 4 dígitos gerado pela Plataforma que o Cliente fornece ao Entregador no ato da entrega para confirmar o recebimento do pedido.</li>
+            <li><strong className="text-foreground">Código de Coleta:</strong> Código gerado pela Plataforma para autenticar a coleta do pedido pelo Entregador junto ao Lojista.</li>
+            <li><strong className="text-foreground">Acerto Financeiro:</strong> Procedimento periódico em que Lojista e Entregador conciliam valores recebidos em dinheiro/cartão na entrega, autenticado por código.</li>
             <li><strong className="text-foreground">Cardápio Digital:</strong> Funcionalidade que permite lojistas gerenciar e exibir seu cardápio online, com categorias (seções), produtos, adicionais e personalização de pizza meio a meio.</li>
             <li><strong className="text-foreground">Programa de Fidelidade:</strong> Sistema de pontos acumulados por pedidos que podem ser resgatados como desconto em compras futuras na mesma loja.</li>
             <li><strong className="text-foreground">Carteira Digital (Wallet):</strong> Saldo virtual do cliente dentro da Plataforma, utilizado para pagamentos e reembolsos.</li>
@@ -59,6 +63,9 @@ const TermosDeUso = () => {
           <p className="text-sm text-muted-foreground">
             3.4. Para motoboys de loja, o cadastro é feito de forma simplificada (nome, e-mail, telefone e veículo), 
             e a vinculação à loja é realizada pelo dono do estabelecimento.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            3.4.1. <strong className="text-foreground">Veracidade obrigatória dos dados financeiros:</strong> Todos os dados informados pelo Lojista no cadastro da subconta de pagamento (Asaas) — nome completo, CPF/CNPJ, data de nascimento, endereço, telefone, chave PIX e documentos enviados (RG, CNH, comprovante de residência, contrato social) — devem ser <strong className="text-foreground">reais, atuais e correspondentes ao titular da conta</strong>. Dados falsos, divergentes ou de terceiros configuram fraude (Art. 171 do Código Penal), acarretam reprovação imediata pelo gateway de pagamento, suspensão da loja e podem ser comunicados às autoridades competentes.
           </p>
           <p className="text-sm text-muted-foreground">
             3.5. O Usuário deve ter pelo menos 18 anos ou possuir autorização dos responsáveis legais, nos termos 
@@ -93,6 +100,8 @@ const TermosDeUso = () => {
             <li><strong className="text-foreground">Cupons de desconto:</strong> cupons percentuais ou de valor fixo, com regras de valor mínimo, limite de uso e exclusividade para primeiro pedido.</li>
             <li><strong className="text-foreground">Banners promocionais:</strong> lojistas podem criar banners para destaque de produtos ou promoções.</li>
             <li><strong className="text-foreground">Sistema de entrega:</strong> entregadores da plataforma ou motoboys próprios da loja, com rastreamento em tempo real via GPS, código PIN de confirmação e cálculo automático de taxa de entrega por bairro/distância.</li>
+            <li><strong className="text-foreground">Designação de entregador:</strong> o lojista pode atribuir um pedido a um motoboy específico; uma vez designado, o pedido deixa de aparecer para os demais entregadores.</li>
+            <li><strong className="text-foreground">Identificação do entregador no histórico:</strong> o lojista visualiza o nome do entregador responsável por cada pedido em todos os estágios e no histórico de entregas finalizadas.</li>
             <li><strong className="text-foreground">Notificações em tempo real:</strong> push notifications e alertas sonoros para novos pedidos e atualizações de status.</li>
             <li><strong className="text-foreground">Relatórios financeiros:</strong> painel com receita bruta, pedidos, ticket médio, métodos de pagamento e filtros por período (7 dias, 30 dias, personalizado).</li>
             <li><strong className="text-foreground">Relatórios avançados:</strong> produtos mais vendidos, horários de pico, gráficos comparativos (disponível nos planos Crescimento e Essencial).</li>
@@ -162,6 +171,8 @@ const TermosDeUso = () => {
             <li>Compartilhar localização em tempo real durante entregas ativas.</li>
             <li>Realizar acerto financeiro com o lojista quando aplicável (pedidos em dinheiro/cartão).</li>
             <li>Selecionar a cidade de atuação dentre as disponíveis na Plataforma.</li>
+            <li><strong className="text-foreground">Realizar apenas uma entrega ativa por vez:</strong> entregadores da plataforma só podem aceitar um novo pedido após finalizar a entrega em andamento, garantindo qualidade e tempo de entrega adequados.</li>
+            <li>Respeitar a designação de entregador feita pelo lojista — pedidos atribuídos a um motoboy específico não podem ser aceitos por outros.</li>
           </ul>
           <p className="text-sm text-muted-foreground">
             8.2. <strong className="text-foreground">Motoboys de Loja (Próprios)</strong> devem:
@@ -170,6 +181,7 @@ const TermosDeUso = () => {
             <li>Estar vinculados a uma loja específica pelo dono do estabelecimento.</li>
             <li>Realizar apenas entregas da loja à qual estão vinculados.</li>
             <li>Seguir as mesmas regras de conduta e segurança dos entregadores da plataforma.</li>
+            <li>Podem realizar múltiplas entregas simultâneas em rota (multi-stop), conforme organização da loja.</li>
           </ul>
 
           <h2 className="text-lg font-bold text-foreground">9. Pagamentos e Comissões</h2>
@@ -178,6 +190,9 @@ const TermosDeUso = () => {
           </p>
           <p className="text-sm text-muted-foreground">
             9.2. Para pagamentos via PIX online, o processamento é feito pelos gateways Asaas e/ou Mercado Pago. A comissão da Plataforma (quando aplicável ao plano) é calculada e registrada automaticamente.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            9.2.1. <strong className="text-foreground">Split automático de pagamentos:</strong> nos pedidos pagos via PIX online com subconta Asaas configurada, o valor é automaticamente dividido (split) no momento da liquidação entre Lojista, Plataforma e taxa de entrega, dispensando repasses manuais. Para lojas sem subconta ativa, o repasse ocorre por processo manual administrativo.
           </p>
           <p className="text-sm text-muted-foreground">
             9.3. Para pagamentos em dinheiro ou cartão na entrega, a comissão (quando aplicável) é registrada como débito pendente 
@@ -256,8 +271,7 @@ const TermosDeUso = () => {
 
           <h2 className="text-lg font-bold text-foreground">15. Área de Atuação</h2>
           <p className="text-sm text-muted-foreground">
-            15.1. Atualmente, a Plataforma opera na cidade de <strong className="text-foreground">Itatinga/SP</strong> e região. A expansão para outras 
-            cidades será comunicada previamente.
+            15.1. A Plataforma opera em <strong className="text-foreground">todo o território nacional brasileiro</strong>, permitindo que cada lojista configure suas próprias regras de cobrança de entrega (por bairro ou por distância). A sede administrativa e o foro de eleição da Plataforma é a comarca de <strong className="text-foreground">Itatinga/SP</strong>.
           </p>
 
           <h2 className="text-lg font-bold text-foreground">16. Legislação Aplicável</h2>

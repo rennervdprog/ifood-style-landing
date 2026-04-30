@@ -15,7 +15,7 @@ const PoliticaPrivacidade = () => {
 
       <div className="flex-1 px-4 py-6 max-w-2xl mx-auto">
         <div className="prose prose-sm dark:prose-invert max-w-none space-y-6">
-            <p className="text-xs text-muted-foreground">Última atualização: 29 de Abril de 2026 — Versão 3.2</p>
+            <p className="text-xs text-muted-foreground">Última atualização: 30 de Abril de 2026 — Versão 3.3</p>
 
           <p className="text-sm text-muted-foreground">
             Esta Política de Privacidade descreve como o <strong className="text-foreground">ItaSuper</strong> coleta, utiliza, armazena e protege 
@@ -61,6 +61,7 @@ const PoliticaPrivacidade = () => {
             <li>Slug personalizado para URL da loja</li>
              <li>Plano contratado e dados de assinatura (Essencial R$180/mês, Crescimento R$100/mês + 2,5%, Comissão 6% ou Apoiador)</li>
             <li>Dados de subconta nos gateways de pagamento (Asaas e/ou Mercado Pago) para processamento de transações PIX</li>
+            <li><strong className="text-foreground">Documentos de identificação para o gateway de pagamento (Asaas):</strong> imagens de RG/CNH, comprovante de residência e contrato social (quando pessoa jurídica), enviados ao Asaas para verificação obrigatória de identidade conforme regulamentação do Banco Central. Estes documentos devem ser reais e correspondentes ao titular.</li>
             <li>Configurações operacionais: horários de funcionamento por dia da semana, modo de entrega (plataforma/próprio), taxa de entrega própria, configurações de fidelidade</li>
             <li>Credenciais de integração WhatsApp (Z-API) quando ativada: instance ID, token e client token — armazenados em tabela protegida com acesso restrito ao próprio lojista</li>
             <li>Histórico financeiro: comissões, mensalidades, transações PIX, saldos pendentes</li>
@@ -87,6 +88,7 @@ const PoliticaPrivacidade = () => {
             <li>Telefone/WhatsApp</li>
             <li>Tipo e modelo do veículo</li>
             <li>Vinculação à loja (realizada pelo dono do estabelecimento)</li>
+            <li>Identificação do motoboy responsável é exibida ao lojista em cada pedido (atual e histórico) para fins de rastreabilidade operacional.</li>
           </ul>
 
           <h2 className="text-lg font-bold text-foreground">3. Base Legal para o Tratamento (Art. 7º LGPD)</h2>
@@ -124,6 +126,7 @@ const PoliticaPrivacidade = () => {
           <p className="text-sm text-muted-foreground">Compartilhamos dados pessoais apenas com:</p>
           <ul className="text-sm text-muted-foreground list-disc pl-4 space-y-1">
             <li><strong className="text-foreground">Asaas e Mercado Pago (processadores de pagamento):</strong> CPF/CNPJ, nome, e-mail, data de nascimento, telefone e chave PIX do Lojista para criação de subconta e processamento de transações PIX.</li>
+            <li><strong className="text-foreground">Asaas (KYC e split de pagamentos):</strong> documentos de identificação (RG/CNH, comprovante de residência, contrato social) enviados pelo lojista são repassados ao Asaas exclusivamente para verificação de identidade (KYC) e habilitação de split automático de pagamentos, conforme exigência regulatória do Banco Central.</li>
             <li><strong className="text-foreground">Lojista:</strong> nome, endereço de entrega, telefone e bairro do Cliente para preparação e entrega do pedido.</li>
             <li><strong className="text-foreground">Entregador:</strong> nome, endereço, telefone e coordenadas do Cliente para realização da entrega e cálculo de rota.</li>
             <li><strong className="text-foreground">Cliente:</strong> localização em tempo real do entregador durante a entrega ativa (latitude, longitude).</li>
