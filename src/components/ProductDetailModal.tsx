@@ -225,6 +225,8 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
 
   if (!product) return null;
 
+  const isOutOfStock = !!(product as any).metadata?.out_of_stock;
+
   // Build extra info for cart
   const buildCartAddons = (): CartAddon[] => {
     const list = [...selectedAddonsList];
