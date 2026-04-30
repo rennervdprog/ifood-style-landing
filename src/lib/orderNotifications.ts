@@ -15,6 +15,7 @@ interface OrderNotifyParams {
   clientPhone: string;
   clientName: string;
   totalPrice: number;
+  deliveryPin?: string;
   addressDetails?: string;
   items?: string;
   paymentMethod?: string;
@@ -32,7 +33,8 @@ const STATUS_MESSAGES: Record<string, {
       `✅ *${p.storeName}* informa: Seu pedido foi aceito! 🍔\n\n` +
       `${p.items ? p.items + "\n\n" : ""}` +
       `💰 Total: ${formatBRL(p.totalPrice)}\n` +
-      `Pedido: #${p.orderId.slice(0, 8).toUpperCase()}`,
+      `Pedido: #${p.orderId.slice(0, 8).toUpperCase()}` +
+      `${p.deliveryPin ? `\n🔑 *PIN de Segurança: ${p.deliveryPin}*` : ""}`,
   },
   pronto_para_entrega: {
     pushTitle: "📦 Pedido pronto!",
