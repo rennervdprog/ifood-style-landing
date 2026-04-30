@@ -595,9 +595,23 @@ const AdminDashboard = () => {
   }, [clientAnalytics, clientFilter, clientSearch]);
 
   // ── SOUND SYSTEM ──
-  const playAlert = useCallback(() => {
-    if (!soundEnabled || soundMuted) return;
-    if (!audioRef.current) { audioRef.current = new Audio(ALERT_SOUND_URL); audioRef.current.volume = 1.0; }
+   const playAlert = useCallback(async () => {
+     if (!soundEnabled || soundMuted) return;
+     try {
+       if (!audioRef.current) {
+         audioRef.current = new Audio(ALERT_SOUND_URL);
+         audioRef.current.volume = 1.0;
+       }
+       await audioRef.current.play();
+       
+       // Vibration on native devices or supported browsers
+       if ("vibrate" in navigator) {
+         navigator.vibrate([300, 100, 300, 100, 500]);
+       }
+     } catch (err) {
+       console.warn("[Admin] Alert sound blocked by browser:", err);
+     }
+   }, [soundEnabled, soundMuted]);
     audioRef.current.currentTime = 0;
     audioRef.current.play().catch(() => {});
   }, [soundEnabled, soundMuted]);
