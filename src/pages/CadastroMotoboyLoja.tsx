@@ -166,12 +166,12 @@ const CadastroMotoboyLoja = () => {
             <Store className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
             <div>
               <p className="text-xs font-bold text-foreground mb-1">Como funciona?</p>
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
-                1. Cadastre-se aqui com seus dados básicos{"\n"}
-                2. Informe seu telefone ao dono da loja{"\n"}
-                3. O dono da loja vai te adicionar como motoboy próprio{"\n"}
-                4. Acesse o painel de entregas e veja apenas os pedidos da sua loja
-              </p>
+              <ol className="text-[11px] text-muted-foreground leading-relaxed list-decimal list-inside space-y-1">
+                <li>Cadastre-se aqui com seus dados básicos</li>
+                <li>Informe seu telefone ao dono da loja</li>
+                <li>O dono da loja vai te adicionar como motoboy próprio</li>
+                <li>Acesse o painel de entregas e veja apenas os pedidos da sua loja</li>
+              </ol>
             </div>
           </div>
         </div>
