@@ -700,17 +700,25 @@ const StorePage = () => {
                 key={`reorder-${product.id}`}
                 onClick={() => {
                   if (!storeStatus.isOpen) { toast.error(`Loja fechada. ${storeStatus.reason}`); return; }
+                  if ((product as any).metadata?.out_of_stock) { toast.error("Produto esgotado"); return; }
                   setSelectedProduct(product);
                 }}
                 className={`flex-shrink-0 w-36 bg-card rounded-xl border border-border overflow-hidden text-left transition-all ${
-                  !storeStatus.isOpen ? "opacity-50" : "hover:shadow-lg hover:border-primary/20 active:scale-[0.97]"
+                  !storeStatus.isOpen || (product as any).metadata?.out_of_stock ? "opacity-60" : "hover:shadow-lg hover:border-primary/20 active:scale-[0.97]"
                 }`}
               >
-                {product.image_url ? (
-                  <img loading="lazy" decoding="async" src={product.image_url} alt={product.name} className="w-full h-24 object-cover" />
-                ) : (
-                  <div className="w-full h-24 bg-muted flex items-center justify-center"><span className="text-2xl">🍴</span></div>
-                )}
+                <div className="relative">
+                  {(product as any).metadata?.out_of_stock && (
+                    <div className="absolute inset-0 z-10 bg-black/55 flex items-center justify-center">
+                      <span className="text-[9px] font-black uppercase text-white bg-destructive px-1.5 py-0.5 rounded tracking-wider">Esgotado</span>
+                    </div>
+                  )}
+                  {product.image_url ? (
+                    <img loading="lazy" decoding="async" src={product.image_url} alt={product.name} className={`w-full h-24 object-cover ${(product as any).metadata?.out_of_stock ? "grayscale" : ""}`} />
+                  ) : (
+                    <div className="w-full h-24 bg-muted flex items-center justify-center"><span className="text-2xl">🍴</span></div>
+                  )}
+                </div>
                 <div className="p-2">
                   <p className="text-xs font-bold text-foreground line-clamp-1">
                     {product.name}
@@ -739,20 +747,28 @@ const StorePage = () => {
                 key={`popular-${product.id}`}
                 onClick={() => {
                   if (!storeStatus.isOpen) { toast.error(`Loja fechada. ${storeStatus.reason}`); return; }
+                  if ((product as any).metadata?.out_of_stock) { toast.error("Produto esgotado"); return; }
                   setSelectedProduct(product);
                 }}
                 className={`flex-shrink-0 w-36 bg-card rounded-xl border border-border overflow-hidden text-left transition-all relative ${
-                  !storeStatus.isOpen ? "opacity-50" : "hover:shadow-lg hover:border-primary/20 active:scale-[0.97]"
+                  !storeStatus.isOpen || (product as any).metadata?.out_of_stock ? "opacity-60" : "hover:shadow-lg hover:border-primary/20 active:scale-[0.97]"
                 }`}
               >
                 <span className="absolute top-1.5 right-1.5 bg-primary/90 text-primary-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-full z-10">
                   🔥 {product.orderCount}x
                 </span>
-                {product.image_url ? (
-                  <img loading="lazy" decoding="async" src={product.image_url} alt={product.name} className="w-full h-24 object-cover" />
-                ) : (
-                  <div className="w-full h-24 bg-muted flex items-center justify-center"><span className="text-2xl">🍴</span></div>
-                )}
+                <div className="relative">
+                  {(product as any).metadata?.out_of_stock && (
+                    <div className="absolute inset-0 z-10 bg-black/55 flex items-center justify-center">
+                      <span className="text-[9px] font-black uppercase text-white bg-destructive px-1.5 py-0.5 rounded tracking-wider">Esgotado</span>
+                    </div>
+                  )}
+                  {product.image_url ? (
+                    <img loading="lazy" decoding="async" src={product.image_url} alt={product.name} className={`w-full h-24 object-cover ${(product as any).metadata?.out_of_stock ? "grayscale" : ""}`} />
+                  ) : (
+                    <div className="w-full h-24 bg-muted flex items-center justify-center"><span className="text-2xl">🍴</span></div>
+                  )}
+                </div>
                 <div className="p-2">
                   <p className="text-xs font-bold text-foreground line-clamp-1">
                     {product.name}
