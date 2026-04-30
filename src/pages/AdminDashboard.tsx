@@ -18,7 +18,7 @@ import {
   Menu, X, LayoutDashboard, CircleDot, TrendingUp, BarChart3,
   Users, Timer, Star, ShoppingBag, ArrowUpRight, ArrowDownRight,
    Filter, UserCheck, UserX, MapPinned, Repeat, Heart, AlertTriangle, LogOut, User, Shield, Navigation,
-  Calendar, Download, GraduationCap
+  Calendar, Download, GraduationCap, ChevronRight
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip,
@@ -1414,6 +1414,29 @@ const AdminDashboard = () => {
                   {storePlan.planType === "commission_only" && `Comissão ${storePlan.commissionRate}%`}
                 </div>
               </div>
+
+              {!(store as any).asaas_wallet_id && (
+                <button
+                  onClick={() => setDashboardTab("finance")}
+                  className="w-full text-left bg-gradient-to-br from-red-500/15 via-red-500/5 to-transparent border-2 border-red-500/40 rounded-2xl p-4 flex items-start gap-3 active:scale-[0.99] transition-transform shadow-lg shadow-red-500/10"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500 text-white flex-shrink-0">
+                    <AlertTriangle className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-black text-red-600 dark:text-red-400 text-sm">
+                      🚨 Configure sua conta de recebimento (prioridade)
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                      Você ainda não criou sua subconta Asaas. <strong>Sem ela, você não recebe os pagamentos PIX</strong> dos pedidos.
+                      Leva 2 minutos e é gratuito.
+                    </p>
+                    <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-white bg-red-500 px-3 py-1.5 rounded-lg">
+                      Configurar agora <ChevronRight className="h-3 w-3" />
+                    </span>
+                  </div>
+                </button>
+              )}
 
               {allHoursClosed && (
                 <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-start gap-3">
