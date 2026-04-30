@@ -728,163 +728,107 @@ const StoreDirectory = () => {
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
             {plans.map((plan) => {
               const Icon = plan.icon;
+              const badgeText = plan.id === "supporter" && supporterTaken !== null
+                ? `🚀 Lançamento • ${Math.max(0, 10 - supporterTaken)} vagas`
+                : plan.badge;
+
               return (
-        <Card
-          key={plan.id}
-          className={`relative flex flex-col rounded-[2.5rem] overflow-visible transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 border-2 ${
-            plan.highlight
-              ? "border-primary shadow-2xl shadow-primary/10 scale-105 z-10"
-              : "border-border shadow-lg"
-          }`}
-        >
-          {plan.badge && (
-            <div className="absolute -top-4 left-1/2 -translate-x-1/2 whitespace-nowrap px-4 py-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-widest shadow-lg z-20">
-              {plan.badge}
-            </div>
-          )}
-          <CardContent className="p-8 flex flex-col flex-1 h-full">
-            <div className="flex items-center gap-4 mb-8">
-              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center bg-gradient-to-br ${plan.color} text-white shadow-lg`}>
-                <Icon className="h-7 w-7" />
-              </div>
-              <div>
-                <h3 className="text-xl font-black text-foreground">{plan.name}</h3>
-                <p className="text-[11px] text-muted-foreground font-bold uppercase tracking-tight">{plan.tagline}</p>
-              </div>
-            </div>
-
-            <div className="mb-8 p-6 rounded-3xl bg-muted/30 border border-border/50">
-               <div className="flex items-baseline gap-1">
-                 <span className="text-sm font-bold text-muted-foreground leading-none">R$</span>
-                 <span className="text-5xl font-black text-foreground leading-none tracking-tighter">{plan.price}</span>
-                 <span className="text-sm font-bold text-muted-foreground">{plan.period}</span>
-               </div>
-               <div className="mt-4 pt-4 border-t border-border/50">
-                 <div className="flex items-center gap-2">
-                    <BadgePercent className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-black text-foreground">{plan.commission}</span>
-                 </div>
-                 <p className="text-[10px] text-muted-foreground font-medium ml-6">{plan.commissionLabel}</p>
-               </div>
-            </div>
-
-            <p className="text-sm text-muted-foreground mb-8 font-medium leading-relaxed">{plan.description}</p>
-
-            <ul className="space-y-4 mb-10">
-              {plan.features.map((f, i) => (
-                <li key={i} className="flex items-start gap-3 text-sm font-bold text-foreground/80 group">
-                  <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-primary group-hover:text-white transition-colors">
-                    <Check className="h-3 w-3" />
-                  </div>
-                  {f}
-                </li>
-              ))}
-            </ul>
-
-            <div className="mt-auto space-y-4">
-              <Button 
-                onClick={handleCTA}
-                className={`w-full py-7 rounded-2xl text-base font-black transition-all ${
-                  plan.highlight 
-                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-primary/40" 
-                    : "bg-foreground text-background hover:bg-foreground/90"
-                }`}
-              >
-                {plan.id === "commission_only" ? "Começar grátis" : "Testar grátis"}
-              </Button>
-              
-              {plan.extraFees && plan.extraFees.length > 0 && (
-                <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10 space-y-2">
-                  {plan.extraFees.map((fee, i) => (
-                    <div key={i} className="flex justify-between items-center gap-2">
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase">{fee.label}</span>
-                      <span className="text-[10px] font-black text-primary">{fee.value}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-                      ? "border-2 border-primary shadow-lg shadow-primary/10 ring-2 ring-primary/10 scale-[1.02]"
-                      : "border-border hover:border-primary/30"
+                <Card
+                  key={plan.id}
+                  className={`relative flex flex-col rounded-[2.5rem] overflow-visible transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 border-2 ${
+                    plan.highlight
+                      ? "border-primary shadow-2xl shadow-primary/10 scale-105 z-10"
+                      : "border-border shadow-lg"
                   }`}
                 >
-                  {plan.badge && (
-                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs font-bold px-5 py-1.5 rounded-full shadow-md whitespace-nowrap">
-                      {plan.id === "supporter" && supporterTaken !== null
-                        ? `🚀 Lançamento • ${Math.max(0, 10 - supporterTaken)} vagas restantes`
-                        : plan.badge}
+                  {badgeText && (
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 whitespace-nowrap px-4 py-1.5 rounded-full bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-widest shadow-lg z-20">
+                      {badgeText}
                     </div>
                   )}
-                  <CardContent className="flex flex-col flex-1 p-6 pt-8">
-                    <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${plan.color} flex items-center justify-center mb-4`}>
-                      <Icon className="h-6 w-6 text-primary-foreground" />
+                  <CardContent className="p-8 flex flex-col flex-1 h-full">
+                    <div className="flex items-center gap-4 mb-8">
+                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center bg-gradient-to-br ${plan.color} text-white shadow-lg`}>
+                        <Icon className="h-7 w-7" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-black text-foreground">{plan.name}</h3>
+                        <p className="text-[11px] text-muted-foreground font-bold uppercase tracking-tight">{plan.tagline}</p>
+                      </div>
                     </div>
-                    <h3 className="text-lg font-semibold text-foreground">{plan.name}</h3>
-                    <p className="text-xs text-muted-foreground mt-1 mb-4">{plan.tagline}</p>
 
-                    <div className="mb-2">
-                      <span className="text-4xl font-extrabold text-foreground">R$ {plan.price}</span>
-                      <span className="text-muted-foreground text-sm">{plan.period}</span>
-                    </div>
-
-                    <div className={`inline-flex items-center rounded-xl ${plan.lightBg} px-3 py-2 text-sm font-bold ${plan.textColor} mb-2 w-fit`}>
-                      <BadgePercent className="h-4 w-4 mr-1.5" />
-                      {plan.commission} {plan.commissionLabel}
+                    <div className="mb-8 p-6 rounded-3xl bg-muted/30 border border-border/50">
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-sm font-bold text-muted-foreground leading-none">R$</span>
+                        <span className="text-5xl font-black text-foreground leading-none tracking-tighter">{plan.price}</span>
+                        <span className="text-sm font-bold text-muted-foreground">{plan.period}</span>
+                      </div>
+                      <div className="mt-4 pt-4 border-t border-border/50">
+                        <div className="flex items-center gap-2">
+                          <BadgePercent className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-black text-foreground">{plan.commission}</span>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground font-medium ml-6">{plan.commissionLabel}</p>
+                      </div>
                     </div>
 
                     {plan.id === "supporter" && supporterTaken !== null && (
-                      <div className="mb-3">
-                        <div className="flex items-center justify-between text-xs font-semibold mb-1">
-                          <span className="text-primary">{supporterTaken}/10 vagas preenchidas</span>
-                          <span className="text-muted-foreground">{Math.max(0, 10 - supporterTaken)} restantes</span>
+                      <div className="mb-6">
+                        <div className="flex items-center justify-between text-[10px] font-black uppercase mb-1">
+                          <span className="text-primary">{supporterTaken}/10 preenchidas</span>
+                          <span className="text-muted-foreground">{Math.max(0, 10 - supporterTaken)} restam</span>
                         </div>
                         <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
                           <div
-                            className="h-full bg-gradient-to-r from-primary to-orange-600 transition-all"
+                            className="h-full bg-primary transition-all duration-1000"
                             style={{ width: `${Math.min(100, (supporterTaken / 10) * 100)}%` }}
                           />
                         </div>
                       </div>
                     )}
 
-                    {plan.extraFees.length > 0 && (
-                      <div className="space-y-1 mb-4">
-                        {plan.extraFees.map((fee) => (
-                          <p key={fee.label} className="text-xs text-muted-foreground flex items-center gap-1">
-                            <span className="w-1 h-1 rounded-full bg-muted-foreground" />
-                            {fee.label}: <span className="font-semibold">{fee.value}</span>
-                          </p>
-                        ))}
-                        {(plan as any).extraNote && (
-                          <p className="text-xs italic text-muted-foreground/80 mt-1 leading-tight flex items-start gap-1">
-                            <Info className="h-3 w-3 mt-0.5 shrink-0" />
-                            {(plan as any).extraNote}
-                          </p>
-                        )}
-                      </div>
-                    )}
+                    <p className="text-sm text-muted-foreground mb-8 font-medium leading-relaxed">{plan.description}</p>
 
-                    <p className="text-sm text-muted-foreground mb-6 leading-relaxed">{plan.description}</p>
-
-                    <ul className="space-y-2.5 flex-1 mb-6">
-                      {plan.features.map((f) => (
-                        <li key={f} className="flex items-start gap-2 text-sm text-foreground">
-                          <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                    <ul className="space-y-4 mb-10">
+                      {plan.features.map((f, i) => (
+                        <li key={i} className="flex items-start gap-3 text-sm font-bold text-foreground/80 group">
+                          <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-primary group-hover:text-white transition-colors">
+                            <Check className="h-3 w-3" />
+                          </div>
                           {f}
                         </li>
                       ))}
                     </ul>
 
-                    <Button
-                      onClick={handleCTA}
-                      className={`w-full rounded-2xl py-5 text-base font-semibold ${plan.highlight ? "shadow-lg shadow-primary/20" : ""}`}
-                      variant={plan.highlight ? "default" : "outline"}
-                    >
-                      Criar minha loja grátis
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
+                    <div className="mt-auto space-y-4">
+                      <Button
+                        onClick={handleCTA}
+                        className={`w-full py-7 rounded-2xl text-base font-black transition-all ${
+                          plan.highlight
+                            ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-primary/40"
+                            : "bg-foreground text-background hover:bg-foreground/90"
+                        }`}
+                      >
+                        {plan.id === "commission_only" ? "Começar grátis" : "Testar grátis"}
+                      </Button>
+
+                      {plan.extraFees && plan.extraFees.length > 0 && (
+                        <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10 space-y-2">
+                          {plan.extraFees.map((fee, i) => (
+                            <div key={i} className="flex justify-between items-center gap-2">
+                              <span className="text-[10px] font-bold text-muted-foreground uppercase">{fee.label}</span>
+                              <span className="text-[10px] font-black text-primary">{fee.value}</span>
+                            </div>
+                          ))}
+                          {(plan as any).extraNote && (
+                            <p className="text-[9px] italic text-muted-foreground/80 mt-1 leading-tight flex items-start gap-1">
+                              <Info className="h-2.5 w-2.5 mt-0.5 shrink-0" />
+                              {(plan as any).extraNote}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               );
