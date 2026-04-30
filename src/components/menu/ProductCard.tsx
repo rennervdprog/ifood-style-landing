@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { compressImage } from "@/lib/compressImage";
 import {
-  Trash2, Edit2, Package, Pause, Play, ArrowRightLeft, Link2, X, Upload, Loader2,
+  Trash2, Edit2, Package, PackageX, Pause, Play, ArrowRightLeft, Link2, X, Upload, Loader2,
 } from "lucide-react";
 import CategoryProductFields from "@/components/CategoryProductFields";
 
@@ -150,6 +150,7 @@ interface ProductCardProps {
   showLinkAddon: boolean;
   setShowLinkAddon: (v: boolean) => void;
   onToggleAvailable: () => void;
+  onToggleOutOfStock: () => void;
   onDelete: () => void;
   onEdit: () => void;
   isEditing: boolean;
@@ -180,12 +181,14 @@ const ProductCardImpl = (props: ProductCardProps) => {
   const {
     product, sections, addonGroups, linkedGroups, storeAddonGroups, linkedGroupIds,
     selected, onToggleSelect, onLinkGroup, onUnlinkGroup, showLinkAddon, setShowLinkAddon,
-    onToggleAvailable, onDelete, onEdit, isEditing, initialEditForm, onSaveEdit, onCancelEdit,
+    onToggleAvailable, onToggleOutOfStock, onDelete, onEdit, isEditing, initialEditForm, onSaveEdit, onCancelEdit,
     showAddonForm, setShowAddonForm, addonGroupForm, setAddonGroupForm,
     onAddAddonGroup, onDeleteAddonGroup, showAddonItemForm, setShowAddonItemForm,
     addonItemForm, setAddonItemForm, onAddAddonItem, onDeleteAddonItem,
     storeCategory, storeId, isMoving, onStartMove, onCancelMove, onMoveProduct,
   } = props;
+
+  const isOOS = !!product?.metadata?.out_of_stock;
 
   if (isEditing) {
     return (
@@ -200,7 +203,7 @@ const ProductCardImpl = (props: ProductCardProps) => {
   }
 
   return (
-    <div className={`bg-background rounded-xl p-3 border transition-all ${selected ? "border-primary ring-1 ring-primary" : "border-border"} ${!product.is_available ? "opacity-60" : ""} ${isMoving ? "ring-2 ring-primary" : ""}`}>
+    <div className={`bg-background rounded-xl p-3 border transition-all ${selected ? "border-primary ring-1 ring-primary" : isOOS ? "border-destructive/40" : "border-border"} ${!product.is_available ? "opacity-60" : ""} ${isMoving ? "ring-2 ring-primary" : ""}`}>
       <div className="flex items-start gap-2">
         <input
           type="checkbox"
@@ -222,6 +225,9 @@ const ProductCardImpl = (props: ProductCardProps) => {
             {!product.is_available && (
               <span className="text-[9px] font-black uppercase bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 px-1.5 py-0.5 rounded">Pausado</span>
             )}
+            {isOOS && product.is_available && (
+              <span className="text-[9px] font-black uppercase bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded">Esgotado</span>
+            )}
           </div>
           {product.description && <p className="text-xs text-muted-foreground line-clamp-1">{product.description}</p>}
           <div className="flex items-center justify-between mt-1">
@@ -232,6 +238,11 @@ const ProductCardImpl = (props: ProductCardProps) => {
               </button>
               <button onClick={onToggleAvailable} className="p-1.5 rounded-lg hover:bg-muted transition-colors" title={product.is_available ? "Pausar" : "Reativar"}>
                 {product.is_available ? <Pause className="h-3.5 w-3.5 text-yellow-500" /> : <Play className="h-3.5 w-3.5 text-primary" />}
+              </button>
+              <button onClick={onToggleOutOfStock} className="p-1.5 rounded-lg hover:bg-muted transition-colors" title={isOOS ? "Repor estoque (disponível)" : "Marcar como esgotado"}>
+                {isOOS
+                  ? <Package className="h-3.5 w-3.5 text-primary" />
+                  : <PackageX className="h-3.5 w-3.5 text-destructive" />}
               </button>
               <button onClick={onEdit} className="p-1.5 rounded-lg hover:bg-muted transition-colors" title="Editar">
                 <Edit2 className="h-3.5 w-3.5 text-muted-foreground" />

@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   Plus, Trash2, Edit2, ChevronDown, ChevronUp, GripVertical,
-  Package, Save, X, Loader2, ArrowUp, ArrowDown, Search, Pause, Play, ArrowRightLeft, Layers, CheckSquare, Square,
+  Package, PackageX, Save, X, Loader2, ArrowUp, ArrowDown, Search, Pause, Play, ArrowRightLeft, Layers, CheckSquare, Square,
 } from "lucide-react";
 import { ProductCard, ProductFormInline, ProductFormData } from "@/components/menu/ProductCard";
 import { ConfirmDialog } from "@/components/menu/ConfirmDialog";
@@ -296,6 +296,15 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
     invalidateProducts();
   };
 
+  const toggleProductOutOfStock = async (id: string, currentMeta: any) => {
+    const isOOS = !!currentMeta?.out_of_stock;
+    const newMeta = { ...(currentMeta || {}), out_of_stock: !isOOS };
+    const { error } = await supabase.from("products").update({ metadata: newMeta } as any).eq("id", id);
+    if (error) { toast.error("Erro"); return; }
+    toast.success(isOOS ? "Produto disponível novamente!" : "Produto marcado como esgotado");
+    invalidateProducts();
+  };
+
   const deleteProductConfirm = (id: string, name: string) => {
     setConfirmState({
       title: "Excluir produto?",
@@ -440,6 +449,24 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
     invalidateProducts();
   };
 
+  const bulkOutOfStock = async (value: boolean) => {
+    if (selectedIds.size === 0) return;
+    setBulkBusy(true);
+    const ids = Array.from(selectedIds);
+    // metadata é jsonb — precisa preservar campos atuais por produto
+    const targets = (products || []).filter((p: any) => ids.includes(p.id));
+    const results = await Promise.all(targets.map((p: any) =>
+      supabase.from("products").update({
+        metadata: { ...((p.metadata as any) || {}), out_of_stock: value },
+      } as any).eq("id", p.id)
+    ));
+    setBulkBusy(false);
+    if (results.some(r => r.error)) { toast.error("Erro em alguns itens"); }
+    else toast.success(`${ids.length} ${value ? "marcado" : "desmarcado"}${ids.length > 1 ? "s" : ""} como esgotado!`);
+    clearSelection();
+    invalidateProducts();
+  };
+
   const bulkDeleteConfirm = () => {
     if (selectedIds.size === 0) return;
     const n = selectedIds.size;
@@ -489,6 +516,10 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
   const totalProducts = products?.length || 0;
   const activeCount = useMemo(() => (products || []).filter((p: any) => p.is_available).length, [products]);
   const pausedCount = totalProducts - activeCount;
+  const outOfStockCount = useMemo(
+    () => (products || []).filter((p: any) => p.is_available && p.metadata?.out_of_stock).length,
+    [products]
+  );
 
   const unsectionedProducts = productsBySection.get(null) || [];
 
@@ -509,6 +540,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
       showLinkAddon={showLinkAddonFor === product.id}
       setShowLinkAddon={(v) => setShowLinkAddonFor(v ? product.id : null)}
       onToggleAvailable={() => toggleProductAvailable(product.id, product.is_available)}
+      onToggleOutOfStock={() => toggleProductOutOfStock(product.id, (product as any).metadata)}
       onDelete={() => deleteProductConfirm(product.id, product.name)}
       onEdit={() => {
         setEditingProduct(product.id);
@@ -556,6 +588,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
           <p className="text-xs text-muted-foreground">
             <span className="text-primary font-bold">{activeCount} ativos</span>
             {pausedCount > 0 && <span className="text-yellow-600 dark:text-yellow-400"> · {pausedCount} pausados</span>}
+            {outOfStockCount > 0 && <span className="text-destructive"> · {outOfStockCount} esgotado{outOfStockCount > 1 ? "s" : ""}</span>}
             {" · "}{sections?.length || 0} {(sections?.length || 0) === 1 ? "seção" : "seções"}
           </p>
         </div>
@@ -612,6 +645,12 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
             </button>
             <button disabled={bulkBusy} onClick={() => bulkAvailable(true)} className="bg-primary-foreground/15 hover:bg-primary-foreground/25 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 disabled:opacity-50">
               <Play className="h-3.5 w-3.5" /> Reativar
+            </button>
+            <button disabled={bulkBusy} onClick={() => bulkOutOfStock(true)} className="bg-destructive/80 hover:bg-destructive px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 disabled:opacity-50">
+              <PackageX className="h-3.5 w-3.5" /> Esgotar
+            </button>
+            <button disabled={bulkBusy} onClick={() => bulkOutOfStock(false)} className="bg-primary-foreground/15 hover:bg-primary-foreground/25 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 disabled:opacity-50">
+              <Package className="h-3.5 w-3.5" /> Repor
             </button>
             <button disabled={bulkBusy} onClick={() => setMoveBulkOpen(true)} className="bg-primary-foreground/15 hover:bg-primary-foreground/25 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 disabled:opacity-50">
               <ArrowRightLeft className="h-3.5 w-3.5" /> Mover

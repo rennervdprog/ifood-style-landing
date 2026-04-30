@@ -700,17 +700,25 @@ const StorePage = () => {
                 key={`reorder-${product.id}`}
                 onClick={() => {
                   if (!storeStatus.isOpen) { toast.error(`Loja fechada. ${storeStatus.reason}`); return; }
+                  if ((product as any).metadata?.out_of_stock) { toast.error("Produto esgotado"); return; }
                   setSelectedProduct(product);
                 }}
                 className={`flex-shrink-0 w-36 bg-card rounded-xl border border-border overflow-hidden text-left transition-all ${
-                  !storeStatus.isOpen ? "opacity-50" : "hover:shadow-lg hover:border-primary/20 active:scale-[0.97]"
+                  !storeStatus.isOpen || (product as any).metadata?.out_of_stock ? "opacity-60" : "hover:shadow-lg hover:border-primary/20 active:scale-[0.97]"
                 }`}
               >
-                {product.image_url ? (
-                  <img loading="lazy" decoding="async" src={product.image_url} alt={product.name} className="w-full h-24 object-cover" />
-                ) : (
-                  <div className="w-full h-24 bg-muted flex items-center justify-center"><span className="text-2xl">🍴</span></div>
-                )}
+                <div className="relative">
+                  {(product as any).metadata?.out_of_stock && (
+                    <div className="absolute inset-0 z-10 bg-black/55 flex items-center justify-center">
+                      <span className="text-[9px] font-black uppercase text-white bg-destructive px-1.5 py-0.5 rounded tracking-wider">Esgotado</span>
+                    </div>
+                  )}
+                  {product.image_url ? (
+                    <img loading="lazy" decoding="async" src={product.image_url} alt={product.name} className={`w-full h-24 object-cover ${(product as any).metadata?.out_of_stock ? "grayscale" : ""}`} />
+                  ) : (
+                    <div className="w-full h-24 bg-muted flex items-center justify-center"><span className="text-2xl">🍴</span></div>
+                  )}
+                </div>
                 <div className="p-2">
                   <p className="text-xs font-bold text-foreground line-clamp-1">
                     {product.name}
@@ -739,20 +747,28 @@ const StorePage = () => {
                 key={`popular-${product.id}`}
                 onClick={() => {
                   if (!storeStatus.isOpen) { toast.error(`Loja fechada. ${storeStatus.reason}`); return; }
+                  if ((product as any).metadata?.out_of_stock) { toast.error("Produto esgotado"); return; }
                   setSelectedProduct(product);
                 }}
                 className={`flex-shrink-0 w-36 bg-card rounded-xl border border-border overflow-hidden text-left transition-all relative ${
-                  !storeStatus.isOpen ? "opacity-50" : "hover:shadow-lg hover:border-primary/20 active:scale-[0.97]"
+                  !storeStatus.isOpen || (product as any).metadata?.out_of_stock ? "opacity-60" : "hover:shadow-lg hover:border-primary/20 active:scale-[0.97]"
                 }`}
               >
                 <span className="absolute top-1.5 right-1.5 bg-primary/90 text-primary-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-full z-10">
                   🔥 {product.orderCount}x
                 </span>
-                {product.image_url ? (
-                  <img loading="lazy" decoding="async" src={product.image_url} alt={product.name} className="w-full h-24 object-cover" />
-                ) : (
-                  <div className="w-full h-24 bg-muted flex items-center justify-center"><span className="text-2xl">🍴</span></div>
-                )}
+                <div className="relative">
+                  {(product as any).metadata?.out_of_stock && (
+                    <div className="absolute inset-0 z-10 bg-black/55 flex items-center justify-center">
+                      <span className="text-[9px] font-black uppercase text-white bg-destructive px-1.5 py-0.5 rounded tracking-wider">Esgotado</span>
+                    </div>
+                  )}
+                  {product.image_url ? (
+                    <img loading="lazy" decoding="async" src={product.image_url} alt={product.name} className={`w-full h-24 object-cover ${(product as any).metadata?.out_of_stock ? "grayscale" : ""}`} />
+                  ) : (
+                    <div className="w-full h-24 bg-muted flex items-center justify-center"><span className="text-2xl">🍴</span></div>
+                  )}
+                </div>
                 <div className="p-2">
                   <p className="text-xs font-bold text-foreground line-clamp-1">
                     {product.name}
@@ -994,6 +1010,8 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory }: Product
   const cat = storeCategory || "";
   const isBeverage = !!meta.is_beverage;
   const emoji = categoryEmoji[cat] || "🍴";
+  const isOutOfStock = !!meta.out_of_stock;
+  const isBlocked = disabled || isOutOfStock;
 
   // ===== PIZZA =====
   // ===== FARMACIA =====
@@ -1004,6 +1022,7 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory }: Product
 
   // CTA label
   const ctaLabel = (() => {
+    if (isOutOfStock) return "Esgotado";
     if (disabled) return "Indisponível";
     if (isPharmacy && meta.requires_prescription) return "Ver detalhes";
     return "Adicionar";
@@ -1016,9 +1035,10 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory }: Product
 
   return (
     <button
-      onClick={onClick}
+      onClick={isOutOfStock ? undefined : onClick}
+      disabled={isOutOfStock}
       className={`w-full flex gap-3 bg-card rounded-2xl p-3 border border-border text-left transition-all group ${
-        disabled ? "opacity-50" : "hover:shadow-lg hover:border-primary/20 active:scale-[0.98]"
+        isBlocked ? "opacity-60" : "hover:shadow-lg hover:border-primary/20 active:scale-[0.98]"
       }`}
     >
       <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
@@ -1192,7 +1212,9 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory }: Product
             {priceDisplay}
           </span>
           <span className={`text-[10px] font-bold px-2 py-1 rounded-full transition-colors ${
-            disabled
+            isOutOfStock
+              ? "bg-destructive text-destructive-foreground"
+              : disabled
               ? "bg-muted text-muted-foreground"
               : "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground"
           }`}>
@@ -1202,19 +1224,26 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory }: Product
       </div>
 
       {/* Image */}
-      <div className="flex-shrink-0">
+      <div className="flex-shrink-0 relative">
+        {isOutOfStock && (
+          <div className="absolute inset-0 z-10 rounded-xl bg-black/55 flex items-center justify-center">
+            <span className="text-[10px] font-black uppercase text-white bg-destructive px-2 py-1 rounded shadow-lg tracking-wider">
+              Esgotado
+            </span>
+          </div>
+        )}
         {product.image_url ? (
           <img
             src={product.image_url}
             alt={product.name}
-            className="w-24 h-24 rounded-xl object-cover shadow-sm group-hover:shadow-md transition-shadow"
+            className={`w-24 h-24 rounded-xl object-cover shadow-sm group-hover:shadow-md transition-shadow ${isOutOfStock ? "grayscale" : ""}`}
             loading="lazy"
             decoding="async"
             width={96}
             height={96}
           />
         ) : (
-          <div className="w-24 h-24 rounded-xl bg-muted flex items-center justify-center">
+          <div className={`w-24 h-24 rounded-xl bg-muted flex items-center justify-center ${isOutOfStock ? "grayscale" : ""}`}>
             <span className="text-3xl">{emoji}</span>
           </div>
         )}
