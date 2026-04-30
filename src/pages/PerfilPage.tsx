@@ -362,7 +362,7 @@ const PerfilPage = () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Sessão expirada");
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-account`, {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/delete-account`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
         body: JSON.stringify({ reason: deleteReason || "Solicitação do usuário" }),
