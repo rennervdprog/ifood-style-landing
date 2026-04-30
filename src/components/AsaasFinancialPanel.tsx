@@ -50,6 +50,7 @@ interface AsaasTransfer {
 interface SummaryResponse {
   success: boolean;
   balance: number;
+  totalBalance?: number;
   payments: AsaasPayment[];
   transfers: AsaasTransfer[];
   config: {
