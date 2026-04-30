@@ -2342,6 +2342,7 @@ export type Database = {
           driver_user_id: string
           id: string
           payment_mode: string
+          status: Database["public"]["Enums"]["store_driver_status"] | null
           store_id: string
         }
         Insert: {
@@ -2349,6 +2350,7 @@ export type Database = {
           driver_user_id: string
           id?: string
           payment_mode?: string
+          status?: Database["public"]["Enums"]["store_driver_status"] | null
           store_id: string
         }
         Update: {
@@ -2356,6 +2358,7 @@ export type Database = {
           driver_user_id?: string
           id?: string
           payment_mode?: string
+          status?: Database["public"]["Enums"]["store_driver_status"] | null
           store_id?: string
         }
         Relationships: [
@@ -3405,6 +3408,7 @@ export type Database = {
         | "docerias"
         | "restaurante"
         | "esfihas"
+      store_driver_status: "pending" | "accepted" | "rejected"
       store_plan_type: "fixed" | "hybrid" | "commission_only" | "supporter"
       store_status: "analise" | "ativo" | "bloqueado"
       wallet_transaction_type: "credit" | "debit"
@@ -3585,6 +3589,7 @@ export const Constants = {
         "restaurante",
         "esfihas",
       ],
+      store_driver_status: ["pending", "accepted", "rejected"],
       store_plan_type: ["fixed", "hybrid", "commission_only", "supporter"],
       store_status: ["analise", "ativo", "bloqueado"],
       wallet_transaction_type: ["credit", "debit"],

@@ -25,9 +25,9 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
     queryKey: ["store-drivers", storeId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("store_drivers")
-        .select("id, driver_user_id, created_at, payment_mode" as any)
-        .eq("store_id", storeId);
+         .from("store_drivers")
+         .select("id, driver_user_id, created_at, payment_mode, status" as any)
+         .eq("store_id", storeId);
       if (error) throw error;
 
       // Fetch driver profiles
@@ -324,7 +324,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
         )}
 
         {storeDrivers?.map(sd => (
-          <div key={sd.id} className="bg-card border border-border rounded-xl p-3 space-y-3">
+           <div key={sd.id} className={`bg-card border rounded-xl p-3 space-y-3 ${sd.status === 'rejected' ? 'opacity-50' : ''} ${sd.status === 'pending' ? 'border-amber-500/30 bg-amber-500/5' : 'border-border'}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="relative w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -337,18 +337,26 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
                   />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-foreground flex items-center gap-2">
-                    {sd.profile?.full_name || "Motoboy"}
-                    <span
-                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                        sd.is_online
-                          ? "bg-emerald-500/15 text-emerald-600"
-                          : "bg-muted text-muted-foreground"
-                      }`}
-                    >
-                      {sd.is_online ? "ONLINE" : "OFFLINE"}
-                    </span>
-                  </p>
+                   <div className="flex flex-col">
+                     <p className="text-sm font-bold text-foreground flex items-center gap-2">
+                       {sd.profile?.full_name || "Motoboy"}
+                       <span
+                         className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                           sd.is_online
+                             ? "bg-emerald-500/15 text-emerald-600"
+                             : "bg-muted text-muted-foreground"
+                         }`}
+                       >
+                         {sd.is_online ? "ONLINE" : "OFFLINE"}
+                       </span>
+                     </p>
+                     {sd.status === 'pending' && (
+                       <span className="text-[10px] font-black text-amber-600 uppercase">Aguardando Aceite</span>
+                     )}
+                     {sd.status === 'rejected' && (
+                       <span className="text-[10px] font-black text-red-600 uppercase">Recusou Convite</span>
+                     )}
+                   </div>
                   <p className="text-[11px] text-muted-foreground">
                     {sd.profile?.phone || sd.profile?.whatsapp_number || "Sem telefone"} • {sd.profile?.vehicle || "—"}
                   </p>

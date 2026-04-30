@@ -122,18 +122,21 @@ const DriverDashboard = () => {
     enabled: !!user,
   });
 
-  // Detect if user is a store driver (not platform driver)
-  const { data: storeDriverLinks, isFetched: hasResolvedStoreDriverLinks } = useQuery({
-    queryKey: ["store-driver-links", user?.id],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("store_drivers")
-        .select("store_id")
-        .eq("driver_user_id", user!.id);
-      return data || [];
-    },
-    enabled: !!user,
-  });
+   // Detect if user is a store driver (not platform driver) - Filter by accepted status
+   const { data: storeDriverLinks, isFetched: hasResolvedStoreDriverLinks } = useQuery({
+     queryKey: ["store-driver-links", user?.id],
+     queryFn: async () => {
+       const { data } = await supabase
+         .from("store_drivers")
+         .select("id, store_id, status, stores(name)")
+         .eq("driver_user_id", user!.id);
+       return data || [];
+     },
+     enabled: !!user,
+   });
+
+   const acceptedStoreLinks = useMemo(() => (storeDriverLinks || []).filter((l: any) => l.status === 'accepted'), [storeDriverLinks]);
+   const pendingStoreLinks = useMemo(() => (storeDriverLinks || []).filter((l: any) => l.status === 'pending'), [storeDriverLinks]);
 
   // Check if user has a platform drivers entry
   const { data: platformDriverEntry, isFetched: hasResolvedPlatformDriverEntry } = useQuery({
@@ -150,12 +153,12 @@ const DriverDashboard = () => {
   });
 
   const hasResolvedDriverMode = hasResolvedStoreDriverLinks && hasResolvedPlatformDriverEntry;
-  const isStoreDriver = (storeDriverLinks?.length || 0) > 0;
+   const isStoreDriver = (acceptedStoreLinks?.length || 0) > 0;
   const hasPlatformDriverEntry = !!platformDriverEntry;
   // Store motoboy = has role motoboy, no platform drivers entry, and no store link yet
-  const isStoreMotoboyWaiting = (driverProfile as any)?.role === "motoboy" && !hasPlatformDriverEntry && !isStoreDriver;
+   const isStoreMotoboyWaiting = (driverProfile as any)?.role === "motoboy" && !hasPlatformDriverEntry && !isStoreDriver && pendingStoreLinks.length === 0;
   const isPlatformDriver = Boolean((driverProfile as any)?.role === "motoboy" && hasPlatformDriverEntry && !isStoreDriver);
-  const linkedStoreIds = useMemo(() => (storeDriverLinks || []).map((l: any) => l.store_id), [storeDriverLinks]);
+   const linkedStoreIds = useMemo(() => acceptedStoreLinks.map((l: any) => l.store_id), [acceptedStoreLinks]);
 
   useEffect(() => {
     if (driverProfile) {
@@ -811,28 +814,95 @@ const DriverDashboard = () => {
     );
   }
 
-  // Store motoboy waiting for store owner to link them
-  if (isStoreMotoboyWaiting) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center text-center px-6">
-        <div className="w-20 h-20 bg-amber-500/10 rounded-3xl flex items-center justify-center mb-5">
-          <Store className="h-10 w-10 text-amber-500" />
-        </div>
-        <h1 className="text-xl font-black text-foreground mb-2">Aguardando Vinculação 🔗</h1>
-        <p className="text-sm text-muted-foreground max-w-xs mb-3">
-          Sua conta foi criada com sucesso! Agora peça ao <span className="font-bold text-foreground">dono da loja</span> para te adicionar como motoboy próprio no painel dele.
-        </p>
-        <div className="bg-primary/5 border border-primary/10 rounded-2xl p-4 max-w-xs mb-6">
-          <p className="text-xs text-muted-foreground">
-            📲 Assim que o lojista vincular seu cadastro, esta tela será atualizada automaticamente.
-          </p>
-        </div>
-        <button onClick={() => window.location.reload()} className="bg-primary text-primary-foreground font-bold px-5 py-3 rounded-xl text-sm">
-          Verificar Status
-        </button>
-      </div>
-    );
-  }
+   const handleStoreInvitation = async (linkId: string, status: 'accepted' | 'rejected') => {
+     const { error } = await supabase
+       .from("store_drivers")
+       .update({ status } as any)
+       .eq("id", linkId);
+     
+     if (error) {
+       toast.error("Erro ao processar convite.");
+     } else {
+       toast.success(status === 'accepted' ? "Convite aceito!" : "Convite recusado.");
+       queryClient.invalidateQueries({ queryKey: ["store-driver-links", user?.id] });
+     }
+   };
+
+   // Store motoboy waiting or invitations
+   if (isStoreMotoboyWaiting || pendingStoreLinks.length > 0) {
+     return (
+       <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 py-12">
+         {pendingStoreLinks.length > 0 ? (
+           <div className="w-full max-w-sm space-y-6">
+             <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center mx-auto mb-2">
+               <Bike className="h-10 w-10 text-primary" />
+             </div>
+             <div className="text-center">
+               <h1 className="text-xl font-black text-foreground mb-2">Convites de Lojas 🏢</h1>
+               <p className="text-sm text-muted-foreground">
+                 Você recebeu convites para trabalhar como motoboy próprio nas seguintes lojas:
+               </p>
+             </div>
+             
+             <div className="space-y-3">
+               {pendingStoreLinks.map((link: any) => (
+                 <div key={link.id} className="bg-card border border-border rounded-2xl p-4 space-y-4 shadow-sm">
+                   <div className="flex items-center gap-3">
+                     <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                       <Store className="h-5 w-5 text-primary" />
+                     </div>
+                     <div className="text-left">
+                       <p className="font-bold text-foreground">{(link.stores as any)?.name || "Loja"}</p>
+                       <p className="text-[10px] text-muted-foreground uppercase font-black">Convite Pendente</p>
+                     </div>
+                   </div>
+                   
+                   <div className="grid grid-cols-2 gap-2">
+                     <button 
+                       onClick={() => handleStoreInvitation(link.id, 'rejected')}
+                       className="py-2.5 rounded-xl border border-red-500/20 bg-red-500/5 text-red-500 text-xs font-bold hover:bg-red-500/10 transition-colors"
+                     >
+                       Recusar
+                     </button>
+                     <button 
+                       onClick={() => handleStoreInvitation(link.id, 'accepted')}
+                       className="py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-lg shadow-primary/20 active:scale-95 transition-all"
+                     >
+                       Aceitar
+                     </button>
+                   </div>
+                 </div>
+               ))}
+             </div>
+
+             <p className="text-[11px] text-muted-foreground text-center">
+               Ao aceitar, você poderá ver e realizar as entregas exclusivas desta loja.
+             </p>
+           </div>
+         ) : (
+           <div className="text-center space-y-6">
+             <div className="w-20 h-20 bg-amber-500/10 rounded-3xl flex items-center justify-center mx-auto mb-2">
+               <Store className="h-10 w-10 text-amber-500" />
+             </div>
+             <div>
+               <h1 className="text-xl font-black text-foreground mb-2">Aguardando Vinculação 🔗</h1>
+               <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+                 Sua conta foi criada! Agora peça ao <span className="font-bold text-foreground">dono da loja</span> para te adicionar como motoboy no painel dele usando seu telefone ou e-mail.
+               </p>
+             </div>
+             <div className="bg-primary/5 border border-primary/10 rounded-2xl p-4 max-w-xs mx-auto">
+               <p className="text-[11px] text-muted-foreground">
+                 📲 Assim que o lojista te convidar, você verá o convite aqui para aceitar e começar a trabalhar.
+               </p>
+             </div>
+             <button onClick={() => window.location.reload()} className="bg-primary text-primary-foreground font-bold px-8 py-3.5 rounded-2xl text-sm shadow-lg shadow-primary/20 active:scale-95 transition-all">
+               Verificar Convites
+             </button>
+           </div>
+         )}
+       </div>
+     );
+   }
 
   const driverFirstName = (driverProfile as any)?.full_name?.split(" ")[0] || "Entregador";
   const tabs = isStoreDriver
