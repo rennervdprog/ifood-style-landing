@@ -1,5 +1,6 @@
 import { formatBRL } from "@/lib/utils";
 import { useParams, useNavigate } from "react-router-dom";
+import NotFound from "@/pages/NotFound";
 import PizzaHalfHalfModal from "@/components/PizzaHalfHalfModal";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -420,11 +421,22 @@ const StorePage = () => {
   const totalProducts = products?.length || 0;
 
   if (!storeLoading && !store && (id || slug)) {
+    // Acessou via slug e não existe → tratar como rota inválida (evita catch-all confuso)
+    if (slug && !id) {
+      return <NotFound />;
+    }
+    // Acessou via id real (link de loja) → loja realmente indisponível
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center text-center px-6">
         <span className="text-5xl mb-4">🔒</span>
         <h1 className="text-xl font-bold text-foreground mb-2">Loja indisponível</h1>
         <p className="text-sm text-muted-foreground mb-6">Esta loja não está ativa no momento.</p>
+        <button
+          onClick={() => navigate("/")}
+          className="bg-primary text-primary-foreground rounded-2xl py-3 px-6 font-semibold hover:bg-primary/90 transition-colors"
+        >
+          Ver outras lojas
+        </button>
       </div>
     );
   }
