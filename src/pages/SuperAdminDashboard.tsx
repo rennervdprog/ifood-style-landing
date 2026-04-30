@@ -14,6 +14,7 @@ import TestStoreFinancePanel from "@/components/TestStoreFinancePanel";
 import AppLinksManager from "@/components/AppLinksManager";
 import AdminBroadcastPush from "@/components/AdminBroadcastPush";
 import PageViewsCard from "@/components/PageViewsCard";
+import { AdminSubaccountsTab } from "@/components/AdminSubaccountsTab";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -62,7 +63,7 @@ const SuperAdminDashboard = () => {
   const [dateFilter, setDateFilter] = useState<DateFilter>("today");
   const [activeTab, setActiveTab] = useState<AdminTab>("dashboard");
   const [financeFilter, setFinanceFilter] = useState<"week" | "month">("week");
-  const [financeSubTab, setFinanceSubTab] = useState<"stores" | "drivers">("stores");
+  const [financeSubTab, setFinanceSubTab] = useState<"stores" | "drivers" | "subaccounts">("stores");
   const [selectedStore, setSelectedStore] = useState<string>("all");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showMoreSheet, setShowMoreSheet] = useState(false);
@@ -1163,7 +1164,7 @@ const FinanceTab = ({
   storeSettlement: any[]; driverSettlement: any[];
   financeTotals: { totalVolume: number; grossProfit: number; totalDriverFees: number };
   financeFilter: "week" | "month"; setFinanceFilter: (f: "week" | "month") => void;
-  financeSubTab: "stores" | "drivers"; setFinanceSubTab: (t: "stores" | "drivers") => void;
+  financeSubTab: "stores" | "drivers" | "subaccounts"; setFinanceSubTab: (t: "stores" | "drivers" | "subaccounts") => void;
   selectedStore: string; setSelectedStore: (s: string) => void;
   stores: any[]; loading: boolean; generateStoreWhatsApp: (entry: any) => void;
   storeBalances: any[]; queryClient: any; withdrawalRequests: any[];
