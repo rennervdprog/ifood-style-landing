@@ -48,7 +48,8 @@ const STATUS_MESSAGES: Record<string, {
     pushBody: (p) => `Seu pedido #${p.orderId.slice(0, 8).toUpperCase()} saiu para entrega!`,
     whatsApp: (p) =>
       `🛵 *${p.storeName}* informa: Seu pedido #${p.orderId.slice(0, 8).toUpperCase()} saiu para entrega! 🚀\n` +
-      `${p.addressDetails ? `Endereço: ${p.addressDetails}` : ""}`,
+      `${p.addressDetails ? `Endereço: ${p.addressDetails}` : ""}` +
+      `${p.deliveryPin ? `\n\n🔑 *PIN de Segurança: ${p.deliveryPin}*` : ""}`,
   },
   em_transito: {
     pushTitle: "🛵 Entregador a caminho!",
