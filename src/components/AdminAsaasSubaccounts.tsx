@@ -33,15 +33,17 @@ const AdminAsaasSubaccounts = () => {
     },
   });
 
-  const getStatusColor = (status: any) => {
-    if (!status) return "bg-gray-500/20 text-gray-600";
-    if (status.commercialInfo === "APPROVED" && status.bankAccount === "APPROVED") return "bg-green-500/20 text-green-600";
+  const getStatusColor = (statusJson: any) => {
+    const status = statusJson as any;
+    if (!status) return "bg-slate-500/20 text-slate-600";
+    if (status?.commercialInfo === "APPROVED" && status?.bankAccount === "APPROVED") return "bg-green-500/20 text-green-600";
     return "bg-amber-500/20 text-amber-600";
   };
 
-  const getStatusLabel = (status: any) => {
+  const getStatusLabel = (statusJson: any) => {
+    const status = statusJson as any;
     if (!status) return "Não Verificado";
-    if (status.commercialInfo === "APPROVED" && status.bankAccount === "APPROVED" && status.document === "APPROVED") return "Totalmente Aprovada";
+    if (status?.commercialInfo === "APPROVED" && status?.bankAccount === "APPROVED" && status?.document === "APPROVED") return "Totalmente Aprovada";
     return "Pendente / Em Análise";
   };
 
@@ -97,8 +99,8 @@ const AdminAsaasSubaccounts = () => {
                   <span className="text-muted-foreground flex items-center gap-1.5">
                     <Clock className="h-3 w-3" /> Info. Comercial:
                   </span>
-                  <Badge variant="ghost" className="h-5 px-1.5 text-[10px]">
-                    {store.asaas_activation_status?.commercialInfo || "PENDENTE"}
+                  <Badge variant="outline" className="h-5 px-1.5 text-[10px] border-none bg-muted">
+                    {(store.asaas_activation_status as any)?.commercialInfo || "PENDENTE"}
                   </Badge>
                 </div>
 
@@ -106,8 +108,8 @@ const AdminAsaasSubaccounts = () => {
                   <span className="text-muted-foreground flex items-center gap-1.5">
                     <Wallet className="h-3 w-3" /> Conta Bancária:
                   </span>
-                  <Badge variant="ghost" className="h-5 px-1.5 text-[10px]">
-                    {store.asaas_activation_status?.bankAccount || "PENDENTE"}
+                  <Badge variant="outline" className="h-5 px-1.5 text-[10px] border-none bg-muted">
+                    {(store.asaas_activation_status as any)?.bankAccount || "PENDENTE"}
                   </Badge>
                 </div>
               </div>
