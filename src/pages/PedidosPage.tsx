@@ -308,7 +308,7 @@ const PedidosPage = () => {
   // Realtime subscription for CLIENT orders
   useEffect(() => {
     if (!user) return;
-    const channel = supabase.channel("orders-realtime");
+    const channel = supabase.channel(`orders-realtime-client-${user.id}`);
 
     channel.on(
       "postgres_changes",
@@ -325,16 +325,22 @@ const PedidosPage = () => {
         if (payload.eventType === "INSERT") {
           queryClient.invalidateQueries({ queryKey: ["orders", user.id] });
         } else if (payload.eventType === "UPDATE") {
-          queryClient.setQueryData(["orders", user.id, storeFilter], (old: any[] | undefined) => {
-            if (!old) return old;
-            const exists = old.findIndex((o: any) => o.id === updated.id);
-            if (exists >= 0) {
-              const copy = [...old];
-              copy[exists] = { ...copy[exists], ...updated };
-              return copy;
+          // Patch every cached variant (different storeFilter values share base key)
+          queryClient.setQueriesData<any[] | undefined>(
+            { queryKey: ["orders", user.id] },
+            (old) => {
+              if (!old) return old;
+              const exists = old.findIndex((o: any) => o.id === updated.id);
+              if (exists >= 0) {
+                const copy = [...old];
+                copy[exists] = { ...copy[exists], ...updated };
+                return copy;
+              }
+              return old;
             }
-            return old;
-          });
+          );
+          // Safety net: invalidate so any new joined data (items, store) is fetched
+          queryClient.invalidateQueries({ queryKey: ["orders", user.id] });
         }
 
         if (payload.eventType !== "UPDATE") return;
@@ -369,7 +375,7 @@ const PedidosPage = () => {
   // Realtime subscription for LOJISTA store orders
   useEffect(() => {
     if (!ownStore?.id || !isLojista) return;
-    const channel = supabase.channel(`store-orders-realtime-${ownStore.id}`);
+    const channel = supabase.channel(`store-orders-realtime-${ownStore.id}-${user?.id || "anon"}`);
 
     channel.on(
       "postgres_changes",

@@ -431,7 +431,7 @@ const DriverDashboard = () => {
   useEffect(() => {
     if (!user || !isOnline) return;
     const channel = supabase
-      .channel("driver-orders-realtime")
+      .channel(`driver-orders-rt-${user.id}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, (payload) => {
         const nextOrder = payload.new as any;
         const prevOrder = payload.old as any;
@@ -465,7 +465,7 @@ const DriverDashboard = () => {
   useEffect(() => {
     if (!user) return;
     const channel = supabase
-      .channel("driver-balance-realtime")
+      .channel(`driver-balance-rt-${user.id}`)
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "driver_balances" }, () => {
         queryClient.invalidateQueries({ queryKey: ["driver-balance", user.id] });
         queryClient.invalidateQueries({ queryKey: ["driver-earnings", user.id] });
