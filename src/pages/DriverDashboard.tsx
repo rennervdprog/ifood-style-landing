@@ -177,16 +177,15 @@ const DriverDashboard = () => {
    const { data: availableOrders, isLoading: loadingAvailable, refetch: refetchAvailable } = useQuery({
     queryKey: ["driver-available-orders"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("orders")
-        .select("*, stores(name), order_items(*, products(name))")
-        .eq("status", "pronto_para_entrega" as any)
-        .is("driver_id", null)
-        .neq("neighborhood", "RETIRADA")
-        .or(`assigned_driver_id.is.null,assigned_driver_id.eq.${user?.id ?? "00000000-0000-0000-0000-000000000000"}`)
-        .order("created_at", { ascending: true });
-      if (error) throw error;
-      return data;
+      const url = `${SUPABASE_URL}/rest/v1/orders?status=eq.pronto_para_entrega&driver_id=is.null&neighborhood=neq.RETIRADA&order=created_at.asc&select=*,stores(name),order_items(*,products(name))`;
+      const response = await fetch(url, {
+        headers: {
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+        }
+      });
+      if (!response.ok) throw new Error("Erro ao buscar entregas");
+      return response.json();
     },
      enabled: !!user && isOnline,
   });
