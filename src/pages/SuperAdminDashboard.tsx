@@ -14,6 +14,7 @@ import TestStoreFinancePanel from "@/components/TestStoreFinancePanel";
 import AppLinksManager from "@/components/AppLinksManager";
 import AdminBroadcastPush from "@/components/AdminBroadcastPush";
 import PageViewsCard from "@/components/PageViewsCard";
+import { AdminSubaccountsTab } from "@/components/AdminSubaccountsTab";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -62,7 +63,7 @@ const SuperAdminDashboard = () => {
   const [dateFilter, setDateFilter] = useState<DateFilter>("today");
   const [activeTab, setActiveTab] = useState<AdminTab>("dashboard");
   const [financeFilter, setFinanceFilter] = useState<"week" | "month">("week");
-  const [financeSubTab, setFinanceSubTab] = useState<"stores" | "drivers">("stores");
+  const [financeSubTab, setFinanceSubTab] = useState<"stores" | "drivers" | "subaccounts">("stores");
   const [selectedStore, setSelectedStore] = useState<string>("all");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showMoreSheet, setShowMoreSheet] = useState(false);
@@ -1163,7 +1164,7 @@ const FinanceTab = ({
   storeSettlement: any[]; driverSettlement: any[];
   financeTotals: { totalVolume: number; grossProfit: number; totalDriverFees: number };
   financeFilter: "week" | "month"; setFinanceFilter: (f: "week" | "month") => void;
-  financeSubTab: "stores" | "drivers"; setFinanceSubTab: (t: "stores" | "drivers") => void;
+  financeSubTab: "stores" | "drivers" | "subaccounts"; setFinanceSubTab: (t: "stores" | "drivers" | "subaccounts") => void;
   selectedStore: string; setSelectedStore: (s: string) => void;
   stores: any[]; loading: boolean; generateStoreWhatsApp: (entry: any) => void;
   storeBalances: any[]; queryClient: any; withdrawalRequests: any[];
@@ -1778,6 +1779,10 @@ const FinanceTab = ({
           className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${financeSubTab === "drivers" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
           <Bike className="h-3.5 w-3.5" /> Entregadores
         </button>
+        <button onClick={() => setFinanceSubTab("subaccounts")}
+          className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${financeSubTab === "subaccounts" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
+          <Shield className="h-3.5 w-3.5" /> Subcontas (Admin)
+        </button>
       </div>
 
       {/* Store filter */}
@@ -1796,6 +1801,8 @@ const FinanceTab = ({
             <div key={i} className="h-28 bg-card rounded-2xl animate-pulse border border-border" />
           ))}
         </div>
+      ) : financeSubTab === "subaccounts" ? (
+        <AdminSubaccountsTab />
       ) : financeSubTab === "stores" ? (
         storeSettlement.length > 0 ? (
           <div className="space-y-3">
