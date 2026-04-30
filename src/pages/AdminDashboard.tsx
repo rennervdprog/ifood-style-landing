@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback, useMemo, memo } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo, memo, lazy, Suspense } from "react";
 import { getOrderItemDisplayName } from "@/lib/orderItemName";
 import { formatBRL } from "@/lib/utils";
 import SimulationBanner from "@/components/SimulationBanner";
@@ -27,18 +27,25 @@ import {
 import { openWhatsApp } from "@/lib/whatsapp";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import { notifyOrderStatusChange } from "@/lib/orderNotifications";
-import TutoriaisTab from "./admin/tabs/TutoriaisTab";
-import SubscriptionTab from "./admin/tabs/SubscriptionTab";
-import LoyaltyTab from "./admin/tabs/LoyaltyTab";
-import RefundsTab from "./admin/tabs/RefundsTab";
-import MenuTab from "./admin/tabs/MenuTab";
-import CashRegisterTab from "./admin/tabs/CashRegisterTab";
-import AddonsTab from "./admin/tabs/AddonsTab";
-import BordasTab from "./admin/tabs/BordasTab";
-import HoursTab from "./admin/tabs/HoursTab";
-import FinanceTab from "./admin/tabs/FinanceTab";
-import DriversTab from "./admin/tabs/DriversTab";
-import SettingsTab from "./admin/tabs/SettingsTab";
+// Tabs carregadas sob demanda — só baixa o JS quando o lojista abrir a aba
+const TutoriaisTab = lazy(() => import("./admin/tabs/TutoriaisTab"));
+const SubscriptionTab = lazy(() => import("./admin/tabs/SubscriptionTab"));
+const LoyaltyTab = lazy(() => import("./admin/tabs/LoyaltyTab"));
+const RefundsTab = lazy(() => import("./admin/tabs/RefundsTab"));
+const MenuTab = lazy(() => import("./admin/tabs/MenuTab"));
+const CashRegisterTab = lazy(() => import("./admin/tabs/CashRegisterTab"));
+const AddonsTab = lazy(() => import("./admin/tabs/AddonsTab"));
+const BordasTab = lazy(() => import("./admin/tabs/BordasTab"));
+const HoursTab = lazy(() => import("./admin/tabs/HoursTab"));
+const FinanceTab = lazy(() => import("./admin/tabs/FinanceTab"));
+const DriversTab = lazy(() => import("./admin/tabs/DriversTab"));
+const SettingsTab = lazy(() => import("./admin/tabs/SettingsTab"));
+
+const TabFallback = () => (
+  <div className="flex items-center justify-center py-12">
+    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+  </div>
+);
 
 import { printThermalReceipt } from "@/lib/thermalPrint";
 import { requestNotificationPermission, notifyNewOrder, pushNotifyDeliveryAvailable } from "@/lib/notifications";
@@ -2319,29 +2326,30 @@ const AdminDashboard = () => {
           {/* ══════ OTHER TABS ══════ */}
           {!["dashboard", "orders", "clients"].includes(dashboardTab) && store && (
             <div className="p-4 lg:p-6 max-w-6xl mx-auto">
-              {dashboardTab === "menu" && <MenuTab storeId={store.id} storeCategory={store.category} />}
-              {dashboardTab === "cash_register" && <CashRegisterTab storeId={store.id} />}
-              {dashboardTab === "tutoriais" && <TutoriaisTab />}
-              
-              {dashboardTab === "addons" && <AddonsTab storeId={store.id} />}
-              {dashboardTab === "bordas" && <BordasTab storeId={store.id} category={store.category} />}
-              {dashboardTab === "hours" && <HoursTab storeId={store.id} forceClosed={(store as any).force_closed || false} />}
-              {dashboardTab === "settings" && <SettingsTab store={store} />}
-              {dashboardTab === "finance" && (
-                <FinanceTab 
-                  storeId={store.id} 
-                  storeName={store.name} 
-                  hasCommission={storePlan.hasCommission} 
-                />
-              )}
-              {dashboardTab === "subscription" && (
-                <SubscriptionTab storeId={store.id} storeName={store.name} />
-              )}
-              {dashboardTab === "loyalty" && (
-                <LoyaltyTab storeId={store.id} allowLoyalty={storePlan.allowLoyalty} />
-              )}
-              {dashboardTab === "drivers" && store && <DriversTab storeId={store.id} />}
-              {dashboardTab === "refunds" && store && <RefundsTab storeId={store.id} />}
+              <Suspense fallback={<TabFallback />}>
+                {dashboardTab === "menu" && <MenuTab storeId={store.id} storeCategory={store.category} />}
+                {dashboardTab === "cash_register" && <CashRegisterTab storeId={store.id} />}
+                {dashboardTab === "tutoriais" && <TutoriaisTab />}
+                {dashboardTab === "addons" && <AddonsTab storeId={store.id} />}
+                {dashboardTab === "bordas" && <BordasTab storeId={store.id} category={store.category} />}
+                {dashboardTab === "hours" && <HoursTab storeId={store.id} forceClosed={(store as any).force_closed || false} />}
+                {dashboardTab === "settings" && <SettingsTab store={store} />}
+                {dashboardTab === "finance" && (
+                  <FinanceTab 
+                    storeId={store.id} 
+                    storeName={store.name} 
+                    hasCommission={storePlan.hasCommission} 
+                  />
+                )}
+                {dashboardTab === "subscription" && (
+                  <SubscriptionTab storeId={store.id} storeName={store.name} />
+                )}
+                {dashboardTab === "loyalty" && (
+                  <LoyaltyTab storeId={store.id} allowLoyalty={storePlan.allowLoyalty} />
+                )}
+                {dashboardTab === "drivers" && store && <DriversTab storeId={store.id} />}
+                {dashboardTab === "refunds" && store && <RefundsTab storeId={store.id} />}
+              </Suspense>
               {dashboardTab === "reports" && (
                 <div className="space-y-6">
                   <h3 className="text-lg font-bold text-foreground">Relatórios Avançados</h3>

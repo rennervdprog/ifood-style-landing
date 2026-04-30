@@ -31,7 +31,7 @@ const AppHeader = memo(() => {
        <div className="flex items-center justify-between px-6 h-16">
          <div className="flex items-center gap-3 group cursor-pointer" onClick={() => navigate("/")}>
            <div className="relative">
-             <img src="/itasuper-logo.jpg" alt="ItaSuper" className="w-10 h-10 rounded-2xl shadow-lg group-hover:scale-105 transition-transform duration-300" width={40} height={40} loading="eager" />
+             <img src="/logo-itasuper-128.webp" alt="ItaSuper" className="w-10 h-10 rounded-2xl shadow-lg group-hover:scale-105 transition-transform duration-300" width={40} height={40} loading="eager" />
              <span className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full animate-pulse" />
            </div>
            <span className="text-xl font-black tracking-tighter text-foreground group-hover:text-primary transition-colors">Ita<span className="text-primary">Super</span></span>

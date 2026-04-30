@@ -304,7 +304,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
                           }`}
                         >
                           {product.image_url ? (
-                            <img src={product.image_url} alt={product.name} className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
+                            <img loading="lazy" decoding="async" src={product.image_url} alt={product.name} className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
                           ) : (
                             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
                               isSelected ? "border-primary bg-primary" : "border-muted-foreground/40"

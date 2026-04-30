@@ -417,7 +417,7 @@ const NotificationSection = () => {
         <div className="relative">
           <div className="w-28 h-28 rounded-full bg-muted border-4 border-border overflow-hidden flex items-center justify-center">
             {imageUrl ? (
-              <img src={imageUrl} alt="Logo" className="w-full h-full object-cover" />
+              <img loading="lazy" decoding="async" src={imageUrl} alt="Logo" className="w-full h-full object-cover" />
             ) : (
               <Store className="h-10 w-10 text-muted-foreground/70" />
             )}

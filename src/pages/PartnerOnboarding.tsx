@@ -643,7 +643,7 @@ const PartnerOnboarding = () => {
               <button onClick={() => fileInputRef.current?.click()}
                 className="relative w-24 h-24 rounded-2xl bg-muted border-2 border-dashed border-border hover:border-primary/50 transition-colors flex items-center justify-center overflow-hidden">
                 {imagePreview ? (
-                  <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                  <img loading="lazy" decoding="async" src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
                 ) : (
                   <div className="flex flex-col items-center gap-1">
                     <Camera className="h-6 w-6 text-muted-foreground" />

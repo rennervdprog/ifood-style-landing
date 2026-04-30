@@ -495,7 +495,7 @@ const StorePage = () => {
           <div className="flex items-start gap-4">
             <div className="w-18 h-18 rounded-2xl bg-muted border-2 border-card shadow-lg flex-shrink-0 overflow-hidden -mt-12 w-[72px] h-[72px]">
               {store?.image_url ? (
-                <img src={store.image_url} alt={store?.name} className="w-full h-full object-cover" />
+                <img loading="lazy" decoding="async" src={store.image_url} alt={store?.name} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-primary/10">
                   <span className="text-3xl">🍽️</span>
@@ -707,7 +707,7 @@ const StorePage = () => {
                 }`}
               >
                 {product.image_url ? (
-                  <img src={product.image_url} alt={product.name} className="w-full h-24 object-cover" loading="lazy" />
+                  <img loading="lazy" decoding="async" src={product.image_url} alt={product.name} className="w-full h-24 object-cover" />
                 ) : (
                   <div className="w-full h-24 bg-muted flex items-center justify-center"><span className="text-2xl">🍴</span></div>
                 )}
@@ -749,7 +749,7 @@ const StorePage = () => {
                   🔥 {product.orderCount}x
                 </span>
                 {product.image_url ? (
-                  <img src={product.image_url} alt={product.name} className="w-full h-24 object-cover" loading="lazy" />
+                  <img loading="lazy" decoding="async" src={product.image_url} alt={product.name} className="w-full h-24 object-cover" />
                 ) : (
                   <div className="w-full h-24 bg-muted flex items-center justify-center"><span className="text-2xl">🍴</span></div>
                 )}

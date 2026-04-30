@@ -48,7 +48,7 @@ const AdminStoreManager = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("stores")
-        .select("*")
+        .select("id, name, status, image_url, category, created_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data || [];
@@ -283,7 +283,7 @@ const AdminStoreManager = () => {
                 <div className="p-4 pb-2">
                   <div className="flex items-center gap-3">
                     {store.image_url ? (
-                      <img src={store.image_url} alt={store.name} className="w-11 h-11 rounded-xl object-cover shrink-0" />
+                      <img loading="lazy" decoding="async" src={store.image_url} alt={store.name} className="w-11 h-11 rounded-xl object-cover shrink-0" />
                     ) : (
                       <div className="w-11 h-11 rounded-xl bg-muted flex items-center justify-center shrink-0">
                         <Store className="h-5 w-5 text-muted-foreground" />

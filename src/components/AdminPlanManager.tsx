@@ -69,7 +69,9 @@ export default function AdminPlanManager() {
   const { data: stores } = useQuery({
     queryKey: ["admin-all-stores"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("stores").select("*");
+      const { data, error } = await supabase
+        .from("stores")
+        .select("id, name, status, address_city");
       if (error) throw error;
       return data;
     },

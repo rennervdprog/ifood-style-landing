@@ -113,6 +113,8 @@ export default defineConfig(({ mode }) => ({
     minify: "esbuild",
     target: "es2020",
     reportCompressedSize: false,
+    // Em produção, esbuild remove console.log/info/warn (mantém console.error)
+    // e debugger statements. Reduz bundle e mantém DevTools limpo no APK.
     rollupOptions: {
       output: {
         manualChunks: {
@@ -133,6 +135,10 @@ export default defineConfig(({ mode }) => ({
       },
     },
     chunkSizeWarningLimit: 500,
+  },
+  esbuild: {
+    pure: mode === "production" ? ["console.log", "console.info", "console.warn", "console.debug"] : [],
+    drop: mode === "production" ? ["debugger"] : [],
   },
   resolve: {
     alias: {
