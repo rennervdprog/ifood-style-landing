@@ -646,6 +646,12 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
             <button disabled={bulkBusy} onClick={() => bulkAvailable(true)} className="bg-primary-foreground/15 hover:bg-primary-foreground/25 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 disabled:opacity-50">
               <Play className="h-3.5 w-3.5" /> Reativar
             </button>
+            <button disabled={bulkBusy} onClick={() => bulkOutOfStock(true)} className="bg-destructive/80 hover:bg-destructive px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 disabled:opacity-50">
+              <PackageX className="h-3.5 w-3.5" /> Esgotar
+            </button>
+            <button disabled={bulkBusy} onClick={() => bulkOutOfStock(false)} className="bg-primary-foreground/15 hover:bg-primary-foreground/25 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 disabled:opacity-50">
+              <Package className="h-3.5 w-3.5" /> Repor
+            </button>
             <button disabled={bulkBusy} onClick={() => setMoveBulkOpen(true)} className="bg-primary-foreground/15 hover:bg-primary-foreground/25 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 disabled:opacity-50">
               <ArrowRightLeft className="h-3.5 w-3.5" /> Mover
             </button>
