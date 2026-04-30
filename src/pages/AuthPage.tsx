@@ -549,13 +549,25 @@ const AuthPage = () => {
              </p>
         </div>
 
-        <div className="relative z-10 space-y-3">
-          {["Pedidos em tempo real", "Pagamento seguro", "Rastreie sua entrega"].map((text) => (
-            <div key={text} className="flex items-center gap-2.5">
-              <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" />
-              <span className="text-white/70 text-xs">{text}</span>
+        <div className="relative z-10">
+          <div className="space-y-3 mb-12">
+            {["Pedidos em tempo real", "Pagamento seguro", "Rastreie sua entrega"].map((text) => (
+              <div key={text} className="flex items-center gap-2.5">
+                <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" />
+                <span className="text-white/70 text-xs">{text}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="pt-8 border-t border-white/5 space-y-2">
+            <p className="text-[10px] text-white/30 uppercase tracking-widest font-medium">
+              © {new Date().getFullYear()} ItaSuper — Todos os direitos reservados
+            </p>
+            <div className="flex gap-4 text-[10px] text-white/40">
+              <Link to="/termos-de-uso" className="hover:text-white transition-colors">Termos de Uso</Link>
+              <Link to="/politica-de-privacidade" className="hover:text-white transition-colors">Política de Privacidade</Link>
             </div>
-          ))}
+          </div>
         </div>
       </div>
 
@@ -589,15 +601,16 @@ const AuthPage = () => {
               {formContent}
             </div>
 
-             <div className="md:hidden text-center space-y-2 mt-8">
-               <p className="text-xs text-slate-400">
-                 Itasuper todos os direitos reservado
-               </p>
-               <div className="flex items-center justify-center gap-3 text-[10px] text-slate-400">
-                 <Link to="/termos-de-uso" className="hover:text-primary underline">termos</Link>
-                 <Link to="/politica-de-privacidade" className="hover:text-primary underline">politica</Link>
-               </div>
-             </div>
+            <div className="md:hidden mt-auto pt-10 text-center space-y-3">
+              <div className="flex items-center justify-center gap-4 text-[11px] font-medium text-slate-400">
+                <Link to="/termos-de-uso" className="hover:text-primary transition-colors underline-offset-4 underline decoration-slate-200">Termos de Uso</Link>
+                <div className="w-1 h-1 rounded-full bg-slate-300" />
+                <Link to="/politica-de-privacidade" className="hover:text-primary transition-colors underline-offset-4 underline decoration-slate-200">Política de Privacidade</Link>
+              </div>
+              <p className="text-[10px] text-slate-400 font-medium uppercase tracking-tighter opacity-70">
+                © {new Date().getFullYear()} ItaSuper — Todos os direitos reservados
+              </p>
+            </div>
           </div>
         </div>
       </div>
