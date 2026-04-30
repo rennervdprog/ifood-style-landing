@@ -97,8 +97,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(false);
       sessionRestoredRef.current = true;
 
-      // If already logged in, register device and start checking
       if (restoredSession?.user) {
+        setSentryUser({ id: restoredSession.user.id, email: restoredSession.user.email });
         registerDevice().then(() => startDeviceCheck());
       }
     });
