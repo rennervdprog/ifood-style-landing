@@ -25,9 +25,13 @@ interface FinanceCenterProps {
   storeId: string;
   storeName: string;
   hasCommission: boolean;
+  isPlatformAdmin?: boolean;
 }
 
-export default function FinanceCenter({ storeId, storeName, hasCommission }: FinanceCenterProps) {
+export default function FinanceCenter({ storeId, storeName, hasCommission, isPlatformAdmin }: FinanceCenterProps) {
+  const [activeTab, setActiveTab] = useState("summary");
+  const [showAdminSubaccounts, setShowAdminSubaccounts] = useState(false);
+import AdminAsaasSubaccounts from "./AdminAsaasSubaccounts";
   const [activeTab, setActiveTab] = useState("summary");
 
   const { data: store, isLoading: loadingStore } = useQuery({
@@ -113,12 +117,24 @@ export default function FinanceCenter({ storeId, storeName, hasCommission }: Fin
                <span className="sm:hidden text-[10px]">Saldo</span>
              </TabsTrigger>
            )}
-           <TabsTrigger value="history" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all">
+          <TabsTrigger value="history" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all">
             <Receipt className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">Extrato</span>
             <span className="sm:hidden text-[10px]">Extrato</span>
           </TabsTrigger>
+          {isPlatformAdmin && (
+            <TabsTrigger value="admin-subaccounts" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all">
+              <Shield className="h-4 w-4 mr-2" />
+              <span className="hidden sm:inline">Subcontas (Admin)</span>
+              <span className="sm:hidden text-[10px]">Subcontas</span>
+            </TabsTrigger>
+          )}
         </TabsList>
+         {isPlatformAdmin && (
+           <TabsContent value="admin-subaccounts" className="mt-6">
+             <AdminAsaasSubaccounts />
+           </TabsContent>
+         )}
 
           <TabsContent value="summary" className="mt-6 space-y-6">
             {needsAsaasConfig && (
