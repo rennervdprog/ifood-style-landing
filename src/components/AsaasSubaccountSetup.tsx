@@ -384,6 +384,21 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
           </AlertDescription>
         </Alert>
 
+        <Alert className="border-red-500/40 bg-red-500/5">
+          <AlertCircle className="h-4 w-4 text-red-600" />
+          <AlertTitle className="text-red-700 text-sm font-bold">⚠️ Atenção: use SEMPRE dados reais</AlertTitle>
+          <AlertDescription className="text-xs text-red-700/90 mt-1 space-y-1">
+            <p>
+              Todos os dados informados abaixo (nome, CPF/CNPJ, endereço, telefone, chave PIX, faturamento)
+              são enviados ao banco <strong>Asaas</strong> e validados junto à <strong>Receita Federal</strong>.
+            </p>
+            <p>
+              Dados <strong>falsos, de terceiros ou inconsistentes</strong> resultam em reprovação automática,
+              bloqueio da conta e impossibilidade de receber pagamentos. Não há como corrigir depois.
+            </p>
+          </AlertDescription>
+        </Alert>
+
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1.5 sm:col-span-2">
             <Label className="text-xs">Tipo de Documento *</Label>
