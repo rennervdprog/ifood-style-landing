@@ -345,7 +345,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
 
     const channels = linkedStoreIds.map((storeId) =>
       supabase
-        .channel(`store-driver-rt-${storeId}`)
+        .channel(`store-driver-rt-${storeId}-${user.id}`)
         .on(
           "postgres_changes",
           {
@@ -678,25 +678,9 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   // Block accepting new orders while driver has any active (non-finalized) deliveries
   const hasActiveRoutes = totalActive > 0;
 
-  // Realtime subscription for instant order updates
-  useEffect(() => {
-    if (!user || linkedStoreIds.length === 0) return;
-
-    const channel = supabase
-      .channel("store-driver-orders-rt")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "orders" },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["store-driver-available"] });
-          queryClient.invalidateQueries({ queryKey: ["store-driver-my-deliveries"] });
-          queryClient.invalidateQueries({ queryKey: ["store-driver-count"] });
-        }
-      )
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [user, linkedStoreIds, queryClient]);
+  // (Listener Realtime duplicado removido — consolidado no listener por loja
+  // declarado mais acima nesta página, que faz updates de cache mais precisos
+  // por store_id, evitando dois canais competindo pela mesma tabela.)
 
   // GPS tracking for store drivers
   useEffect(() => {

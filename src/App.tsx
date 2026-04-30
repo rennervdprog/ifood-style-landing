@@ -15,6 +15,7 @@ import DebugOverlay from "@/components/DebugOverlay";
 import { initCapacitorNative, isCapacitorNative, consumePendingPushNavigation } from "@/lib/capacitorNative";
 import { initCapacitorLifecycle } from "@/lib/capacitorLifecycle";
 import { initAutoUpdate } from "@/lib/capacitorAutoUpdate";
+import { supabase } from "@/integrations/supabase/client";
 import CapacitorRouteGuard from "@/components/CapacitorRouteGuard";
 import StoreAppGuard from "@/components/StoreAppGuard";
 
@@ -129,6 +130,46 @@ const App = () => {
     // Auto-update inicia imediatamente — agenda interno usa 1s antes do 1º check
     try { initAutoUpdate(); } catch {}
 
+    // 🌐 WEB / PWA: quando a aba volta a ficar visível ou o navegador reconecta,
+    // o WebSocket do Supabase costuma estar morto silenciosamente. Forçamos
+    // reconexão de canais e refetch de queries para alinhar a UI ao banco.
+    const handleVisibility = () => {
+      if (document.visibilityState !== "visible") return;
+      try {
+        const channels = supabase.getChannels();
+        if (channels.length > 0) {
+          supabase.realtime.disconnect();
+          supabase.realtime.connect();
+          setTimeout(() => {
+            supabase.getChannels().forEach((c) => {
+              try {
+                const state = (c as any).state;
+                if (state !== "joined") c.subscribe();
+              } catch {}
+            });
+          }, 250);
+        }
+        queryClient.invalidateQueries();
+      } catch {}
+    };
+    const handleOnline = () => {
+      try {
+        supabase.realtime.disconnect();
+        supabase.realtime.connect();
+        setTimeout(() => {
+          supabase.getChannels().forEach((c) => {
+            try {
+              const state = (c as any).state;
+              if (state !== "joined") c.subscribe();
+            } catch {}
+          });
+        }, 250);
+        queryClient.invalidateQueries();
+      } catch {}
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("online", handleOnline);
+
     // 🚀 Prefetch das rotas mais usadas em apps Capacitor durante o tempo ocioso.
     // Evita "tela laranja de carregamento" quando o usuário entra em /pedidos
     // pela primeira vez — o chunk já está em cache.
@@ -147,6 +188,11 @@ const App = () => {
         setTimeout(prefetch, 1500);
       }
     }
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("online", handleOnline);
+    };
   }, []);
 
   return (

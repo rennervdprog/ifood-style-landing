@@ -396,11 +396,11 @@ const AdminDashboard = () => {
 
   // Realtime drivers
   useEffect(() => {
-    const ch = supabase.channel("drivers-online-realtime")
+    const ch = supabase.channel(`drivers-online-rt-${store?.id || "global"}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "drivers" }, () => queryClient.invalidateQueries({ queryKey: ["online-drivers-count"] }))
       .subscribe((status) => setRealtimeDriversConnected(status === "SUBSCRIBED"));
     return () => { supabase.removeChannel(ch); };
-  }, [queryClient]);
+  }, [queryClient, store?.id]);
 
   const driverIds = [...new Set(orders?.map(o => o.driver_id).filter(Boolean) || [])] as string[];
   const { data: driverProfiles } = useQuery({
@@ -630,7 +630,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     if (!store) return;
     const channel = supabase
-      .channel("admin-orders-realtime")
+      .channel(`admin-orders-rt-${store.id}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `store_id=eq.${store.id}` }, (payload) => {
         const updated = payload.new as any;
         const previous = payload.old as any;
