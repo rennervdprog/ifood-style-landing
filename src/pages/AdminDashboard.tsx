@@ -25,7 +25,8 @@ import {
   ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar,
 } from "recharts";
 import { openWhatsApp } from "@/lib/whatsapp";
-import WhatsAppButton from "@/components/WhatsAppButton";
+ import WhatsAppButton from "@/components/WhatsAppButton";
+ import MenuBuilder from "@/components/MenuBuilder";
 import { notifyOrderStatusChange } from "@/lib/orderNotifications";
 // Tabs carregadas sob demanda — só baixa o JS quando o lojista abrir a aba
 const TutoriaisTab = lazy(() => import("./admin/tabs/TutoriaisTab"));
@@ -595,12 +596,23 @@ const AdminDashboard = () => {
   }, [clientAnalytics, clientFilter, clientSearch]);
 
   // ── SOUND SYSTEM ──
-  const playAlert = useCallback(() => {
-    if (!soundEnabled || soundMuted) return;
-    if (!audioRef.current) { audioRef.current = new Audio(ALERT_SOUND_URL); audioRef.current.volume = 1.0; }
-    audioRef.current.currentTime = 0;
-    audioRef.current.play().catch(() => {});
-  }, [soundEnabled, soundMuted]);
+   const playAlert = useCallback(async () => {
+     if (!soundEnabled || soundMuted) return;
+     try {
+       if (!audioRef.current) {
+         audioRef.current = new Audio(ALERT_SOUND_URL);
+         audioRef.current.volume = 1.0;
+       }
+       await audioRef.current.play();
+       
+       // Vibration on native devices or supported browsers
+       if ("vibrate" in navigator) {
+         navigator.vibrate([300, 100, 300, 100, 500]);
+       }
+       } catch (err) {
+         console.warn("[Admin] Alert sound blocked by browser:", err);
+       }
+     }, [soundEnabled, soundMuted]);
 
   const activateSound = useCallback(() => {
     const audio = new Audio(ALERT_SOUND_URL);
@@ -1552,33 +1564,20 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              {/* ── Top Clients ── */}
-              {clientAnalytics.length > 0 && (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-black text-foreground text-base">Top Clientes</h3>
-                    <button onClick={() => setDashboardTab("clients")} className="text-xs text-primary font-bold hover:underline flex items-center gap-1">
-                      Ver todos <ArrowUpRight className="h-3 w-3" />
-                    </button>
-                  </div>
-                  <div className="grid gap-2">
-                    {clientAnalytics.slice(0, 5).map((client, i) => (
-                      <div key={client.clientId} className="bg-card border border-border rounded-2xl p-3 flex items-center justify-between hover:shadow-sm transition-shadow">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-xs font-black text-primary">
-                            {i + 1}º
-                          </div>
-                          <div>
-                            <p className="text-sm font-bold text-foreground">{client.name}</p>
-                            <p className="text-[10px] text-muted-foreground">{client.totalOrders} pedidos • {client.neighborhood || "—"}</p>
-                          </div>
-                        </div>
-                        <p className="text-sm font-black text-emerald-500">{formatBRL(client.totalSpent)}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+               {/* ── Menu/Catalog Card ── */}
+               <div className="space-y-3">
+                 <div className="flex items-center justify-between">
+                   <h3 className="font-black text-foreground text-base">Visualização do Cardápio</h3>
+                   <button onClick={() => setDashboardTab("menu")} className="text-xs text-primary font-bold hover:underline flex items-center gap-1">
+                     Gerenciar itens <ChevronRight className="h-3 w-3" />
+                   </button>
+                 </div>
+                 <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-sm">
+                   <div className="p-1">
+                     <MenuBuilder storeId={store.id} storeCategory={store.category} />
+                   </div>
+                 </div>
+               </div>
 
               {/* ── Empty state ── */}
               {pendingCount === 0 && preparingCount === 0 && readyCount === 0 && todayCount === 0 && clientAnalytics.length === 0 && (
