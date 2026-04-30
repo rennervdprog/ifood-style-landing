@@ -933,6 +933,7 @@ const AdminDashboard = () => {
             totalPrice: Number(order.total_price),
             addressDetails: order.address_details,
             items,
+            deliveryPin: order.delivery_pin,
             paymentMethod: order.payment_method,
           }, { zapiEnabled: !!storeSettings.zapi_enabled });
         } catch (e) { console.warn("notify error", e); }
@@ -1045,6 +1046,7 @@ const AdminDashboard = () => {
           totalPrice: Number(order.total_price),
           addressDetails: order.address_details,
           items,
+          deliveryPin: order.delivery_pin,
           paymentMethod: order.payment_method,
         }, { zapiEnabled: !!storeSettings.zapi_enabled });
       }
@@ -2244,7 +2246,7 @@ const AdminDashboard = () => {
                         )}
 
                         {/* Delivery PIN for own delivery (store driver flow) */}
-                        {isOwnDelivery && hasLinkedDrivers && (order as any).delivery_pin && ["saiu_entrega", "em_transito"].includes(order.status) && (
+                        {isOwnDelivery && hasLinkedDrivers && (order as any).delivery_pin && ["preparando", "pronto_para_entrega", "saiu_entrega", "em_transito"].includes(order.status) && (
                           <div className="mx-3 mb-2 bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3 text-center">
                             <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold mb-1">🔐 PIN de Entrega (cliente confirma)</p>
                             <p className="text-3xl font-black text-emerald-600 dark:text-emerald-400 tracking-[0.3em]">{(order as any).delivery_pin}</p>
