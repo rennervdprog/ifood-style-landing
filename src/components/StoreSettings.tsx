@@ -170,10 +170,6 @@ type PizzaPriceMode = "maior" | "media" | "soma";
       .from("store-assets")
       .upload(filePath, compressed, { upsert: true });
 
-    const { error: uploadError } = await supabase.storage
-      .from("store-assets")
-      .upload(filePath, file, { upsert: true });
-
     if (uploadError) {
       console.error("Upload error:", uploadError);
       toast.error("Erro ao subir imagem. Verifique sua conexão ou tente um arquivo menor (até 2MB).");
