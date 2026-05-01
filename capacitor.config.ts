@@ -6,7 +6,7 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   android: {
     allowMixedContent: true,
-    webContentsDebuggingEnabled: true,
+    webContentsDebuggingEnabled: false,
   },
    // ===============================================================
    // 🚀 MODO NATIVO HÍBRIDO (OFFLINE-FIRST)
