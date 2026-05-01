@@ -168,10 +168,12 @@ const OrderReceipt = forwardRef<HTMLDivElement, OrderReceiptProps>(
             <span>Subtotal:</span>
             <span>{formatBRL(Number(order.subtotal))}</span>
           </div>
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span>Taxa operacional:</span>
-            <span>{formatBRL(Number(order.delivery_fee))}</span>
-          </div>
+          {Number(order.delivery_fee) > 0 && (
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span>Taxa operacional:</span>
+              <span>{formatBRL(Number(order.delivery_fee))}</span>
+            </div>
+          )}
           <div
             style={{
               display: "flex",
