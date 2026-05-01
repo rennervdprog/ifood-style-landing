@@ -519,11 +519,11 @@ const StorePage = () => {
       </div>
 
       {/* ===== STORE INFO ===== */}
-      <div className="relative -mt-16 mx-4 z-10">
-        <div className="bg-card rounded-2xl border border-border shadow-xl overflow-hidden">
-          <div className="p-5 pb-0">
-            <div className="flex items-start gap-4">
-               <div className="w-[84px] h-[84px] rounded-2xl bg-card border-[3px] border-card shadow-xl flex-shrink-0 overflow-hidden -mt-14 relative z-[55]">
+      <div className="relative -mt-12 mx-4 z-10">
+        <div className="bg-card rounded-2xl border border-border shadow-xl overflow-visible">
+          <div className="p-5 pb-0 relative">
+            <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start sm:gap-4">
+              <div className="w-[100px] h-[100px] rounded-full bg-card border-[4px] border-card shadow-2xl flex-shrink-0 overflow-hidden -mt-[70px] relative z-[55] mx-auto sm:mx-0">
                 {store?.image_url ? (
                   <img loading="lazy" decoding="async" src={store.image_url} alt={store?.name} className="w-full h-full object-cover" />
                 ) : (
@@ -532,10 +532,10 @@ const StorePage = () => {
                   </div>
                 )}
               </div>
-              <div className="flex-1 min-w-0 flex flex-col pt-1">
-                <h1 className="text-xl sm:text-2xl font-black text-foreground break-words leading-tight">{store?.name}</h1>
-                <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                  <span className="text-[10px] font-black text-muted-foreground uppercase tracking-wider bg-muted/80 px-2 py-0.5 rounded-md border border-border/50">
+              <div className="flex-1 min-w-0 flex flex-col pt-1 text-center sm:text-left">
+                <h1 className="text-xl sm:text-2xl font-black text-foreground break-words leading-tight mt-1 sm:mt-0">{store?.name}</h1>
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-1.5">
+                  <span className="text-[10px] font-black text-muted-foreground uppercase tracking-wider bg-muted/80 px-2.5 py-1 rounded-md border border-border/50">
                     {store?.category}
                   </span>
                   {store?.rating && store.rating > 0 && (
@@ -549,7 +549,7 @@ const StorePage = () => {
             </div>
 
             {hasConfiguredHours && (
-              <div className="mt-3.5">
+              <div className="mt-4 flex justify-center sm:justify-start">
                 <span className={`inline-flex items-center gap-1.5 text-[11px] font-black px-3 py-1 rounded-full border ${
                   storeStatus.isOpen
                     ? "bg-green-500/10 text-green-600 border-green-500/20"
