@@ -396,7 +396,13 @@ jobs:
             server: {
               androidScheme: 'https',
               hostname: 'localhost',
-              allowNavigation: ['*']
+              allowNavigation: [
+                'app.itasuper.com.br', 
+                'lktzrqjvqoojlrhqnxuz.supabase.co', 
+                'api.asaas.com.br', 
+                'nominatim.openstreetmap.org'
+              ],
+              cleartext: false
             },
             plugins: {
               SplashScreen: {
