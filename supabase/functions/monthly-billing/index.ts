@@ -25,12 +25,19 @@ Deno.serve(async (req) => {
   // Auth: accept the EXTERNAL service key (used by pg_cron / admin),
   // the EXTERNAL anon key (used by user-triggered admin calls), the legacy
   // Lovable Cloud keys (back-compat), or a valid admin user JWT.
-  const authHeader = req.headers.get("Authorization");
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const externalAnon = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFramhndXppdWNocXNieHpydWVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDg4NTUsImV4cCI6MjA5MDYyNDg1NX0.2sTeKchqAEN2gCqnH1_Zn9cJmUSmZgryt05A66tgm2Y";
-  const token = authHeader?.replace("Bearer ", "");
-  let isAdminCaller = !!token && (token === anonKey || token === serviceKey || token === EXTERNAL_KEY || token === externalAnon);
+   const authHeader = req.headers.get("Authorization");
+   const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+   const externalAnon = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFramhndXppdWNocXNieHpydWVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDg4NTUsImV4cCI6MjA5MDYyNDg1NX0.2sTeKchqAEN2gCqnH1_Zn9cJmUSmZgryt05A66tgm2Y";
+   const token = authHeader?.replace("Bearer ", "");
+   
+   // Use EXTERNAL_KEY for direct auth matches if provided
+   let isAdminCaller = !!token && (
+     token === anonKey || 
+     token === serviceKey || 
+     token === EXTERNAL_KEY || 
+     token === externalAnon
+   );
 
   if (!isAdminCaller && token) {
     // Try as a user JWT against the external project
