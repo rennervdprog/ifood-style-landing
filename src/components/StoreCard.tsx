@@ -39,7 +39,7 @@ const CATEGORY_GRADIENTS: Record<string, string> = {
   docerias: "from-fuchsia-500/20 via-pink-400/10 to-rose-300/5",
 };
 
-const StoreCard = memo(({ id, name, category, image_url, is_open, rating, statusReason, slug }: StoreCardProps & { is_open: boolean }) => {
+const StoreCard = memo(({ id, name, category, image_url, is_open, rating, statusReason, slug }: StoreCardProps) => {
   const navigate = useNavigate();
   const icon = CATEGORY_ICONS[category] || "🍽️";
   const gradient = CATEGORY_GRADIENTS[category] || "from-primary/20 via-primary/10 to-primary/5";
