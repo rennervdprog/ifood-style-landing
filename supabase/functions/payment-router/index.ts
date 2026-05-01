@@ -1265,13 +1265,17 @@ async function routePixCreation(params: {
     // Efí failed → fallback to Asaas then Mercado Pago
     if (hasAsaasCredentials()) {
       console.warn("Efí Bank failed, falling back to Asaas");
-      const asaasResult = await createAsaasPix({
+      const asaasResult = await createAsaasPix(serviceClient, {
         amount: params.amount,
         description: params.description,
         payerCpf: params.payerCpf,
         payerName: `${params.payerFirstName} ${params.payerLastName}`.trim(),
         externalReference: params.externalReference,
         expiresAt: params.expiresAt,
+        orderId: params.orderId,
+        storeId: params.storeId,
+        subtotal: params.subtotal,
+        deliveryFee: params.deliveryFee,
       });
       if (asaasResult.ok) {
         const resp: StandardPixResponse = {
