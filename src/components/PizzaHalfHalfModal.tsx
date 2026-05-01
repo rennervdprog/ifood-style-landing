@@ -59,7 +59,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
   const [observations, setObservations] = useState("");
   const [quantity, setQuantity] = useState(1);
 
-  const { data: borders = [] } = useQuery({
+  const { data: borders = [], isLoading: bordersLoading } = useQuery({
     queryKey: ["pizza-borders", storeId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -73,6 +73,9 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
     },
     enabled: open && !!storeId,
   });
+
+  const hasBorders = borders.length > 0;
+  const totalSteps = hasBorders ? 3 : 2;
 
   const reset = () => {
     setStep(1);
@@ -117,16 +120,13 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
 
   const handleAdd = () => {
     if (!p1 || !p2) return;
-    const borderName = selectedBorder?.name || "Borda Tradicional";
     const name = `Pizza Meio a Meio: ${p1.name} / ${p2.name}`;
     const addons: CartAddon[] = [
       { name: `½ ${p1.name}`, price: 0 },
       { name: `½ ${p2.name}`, price: 0 },
     ];
-    if (selectedBorder && selectedBorder.price > 0) {
-      addons.push({ name: `Borda: ${borderName}`, price: borderPrice });
-    } else {
-      addons.push({ name: `Borda: ${borderName}`, price: 0 });
+    if (selectedBorder) {
+      addons.push({ name: `Borda: ${selectedBorder.name}`, price: borderPrice });
     }
     onAdd(
       {
@@ -136,7 +136,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
         description: null,
         price: unitPrice,
         image_url: null,
-        metadata: { is_half_half: true, border: borderName, half2_id: p2.id },
+        metadata: { is_half_half: true, border: selectedBorder?.name || null, half2_id: p2.id },
       },
       addons,
       observations,
@@ -180,7 +180,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
   const canAdvance = () => {
     if (step === 1) return !!product1Id;
     if (step === 2) return !!product2Id;
-    if (step === 3) return !!selectedBorderId;
+    if (step === 3) return hasBorders ? !!selectedBorderId : true;
     return false;
   };
 
@@ -194,6 +194,10 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
     if (step === 2) { setProduct2Id(null); setStep(1); }
     else if (step === 3) { setSelectedBorderId(null); setStep(2); }
   };
+
+  // If the store has no borders configured, treat step 2 as the final step
+  // and let the user finalize the order from there (no border step at all).
+  const isFinalStep = step === 3 || (step === 2 && !hasBorders && !bordersLoading);
 
   if (!open) return null;
 
@@ -222,7 +226,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
       {/* Progress bar + step label */}
       <div className="px-4 pt-4 pb-2 bg-background">
         <div className="flex gap-2 mb-2">
-          {[1, 2, 3].map(s => (
+          {Array.from({ length: totalSteps }, (_, i) => i + 1).map(s => (
             <div
               key={s}
               className={`flex-1 h-1.5 rounded-full transition-all ${
@@ -236,7 +240,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
             {step === 3 ? <Circle className="h-5 w-5 text-primary" /> : <Pizza className="h-5 w-5 text-primary" />}
           </div>
           <div>
-            <p className="text-sm font-bold text-foreground">Etapa {step} de 3</p>
+            <p className="text-sm font-bold text-foreground">Etapa {step} de {totalSteps}</p>
             <p className="text-xs text-muted-foreground font-medium">{stepLabels[step]}</p>
           </div>
         </div>
@@ -331,11 +335,27 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
             {pizzaProducts.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-12">Nenhum sabor cadastrado ainda.</p>
             )}
+
+            {/* When the store has no borders, show observations on step 2 (final step) */}
+            {step === 2 && !hasBorders && !bordersLoading && product2Id && (
+              <div className="pt-4">
+                <label className="text-sm font-bold text-foreground mb-1.5 block">Observações</label>
+                <Textarea
+                  placeholder="Ex: Sem cebola..."
+                  value={observations}
+                  onChange={(e) => setObservations(e.target.value)}
+                  className="resize-none h-20 rounded-xl"
+                  maxLength={200}
+                  autoFocus={false}
+                  tabIndex={-1}
+                />
+              </div>
+            )}
           </div>
         )}
 
-        {/* Step 3: borders + observations */}
-        {step === 3 && (
+        {/* Step 3: borders + observations (only shown when store has borders) */}
+        {step === 3 && hasBorders && (
           <div className="space-y-4 pt-2">
             <div className="space-y-2">
               {borders.length === 0 ? (
@@ -389,7 +409,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
 
       {/* Fixed bottom bar - above BottomNav */}
       <div className="fixed bottom-16 left-0 right-0 z-30 bg-background border-t px-4 py-3">
-        {step < 3 ? (
+        {!isFinalStep ? (
           <div className="flex items-center gap-3">
             {step > 1 && (
               <button
@@ -438,9 +458,9 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
             </div>
             <button
               onClick={handleAdd}
-              disabled={!selectedBorderId}
+              disabled={hasBorders && !selectedBorderId}
               className={`w-full py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${
-                selectedBorderId
+                (!hasBorders || selectedBorderId)
                   ? "bg-primary text-primary-foreground shadow-lg"
                   : "bg-muted text-muted-foreground cursor-not-allowed"
               }`}
