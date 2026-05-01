@@ -570,11 +570,11 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
     closeAndReset();
   };
 
-  const primaryLabel = useMemo(() => {
-    if (totalSteps === 2 && step === 1) return "Próximo: Personalizar";
-    if (isOutOfStock) return "Esgotado";
-    return `Adicionar • ${formatBRL(lineTotal)}`;
-  }, [totalSteps, step, isOutOfStock, lineTotal]);
+  const primaryLabel = totalSteps === 2 && step === 1
+    ? "Próximo: Personalizar"
+    : isOutOfStock
+      ? "Esgotado"
+      : `Adicionar • ${formatBRL(lineTotal)}`;
 
   const primaryEnabled = totalSteps === 2 && step === 1 ? !isOutOfStock : allRequiredMet && !isOutOfStock;
 
