@@ -6,7 +6,7 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   android: {
     allowMixedContent: true,
-    webContentsDebuggingEnabled: false,
+    webContentsDebuggingEnabled: true,
   },
    // ===============================================================
    // 🚀 MODO NATIVO HÍBRIDO (OFFLINE-FIRST)
@@ -18,14 +18,13 @@ const config: CapacitorConfig = {
   server: {
     androidScheme: 'https',
     url: 'https://www.itasuper.com.br',
-    cleartext: true,
+    cleartext: false,
     // Permitir todas as navegações dentro do WebView para evitar que abra o navegador externo
     allowNavigation: [
       'www.itasuper.com.br',
       '*.supabase.co',
       'qkjhguziuchqsbxzruea.supabase.co',
       'lktzrqjvqoojlrhqnxuz.supabase.co',
-      '*'
     ]
   },
   plugins: {
