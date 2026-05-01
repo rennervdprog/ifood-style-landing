@@ -585,6 +585,369 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
   );
 }
 
+function FullControlPanel({ plan, storeName, currentDisplay, onChange }: {
+  plan: any;
+  storeName: string;
+  currentDisplay: DisplayPlan;
+  onChange: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const [editing, setEditing] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [pausing, setPausing] = useState(false);
+  const [savingDates, setSavingDates] = useState(false);
+
+  const toDateInput = (iso: string | null | undefined) => {
+    if (!iso) return "";
+    return new Date(iso).toISOString().slice(0, 10);
+  };
+
+  const [trialEnds, setTrialEnds] = useState(toDateInput(plan.trial_ends_at));
+  const [nextBilling, setNextBilling] = useState(toDateInput(plan.next_billing_date));
+  const [lastBilled, setLastBilled] = useState(toDateInput(plan.last_billed_at));
+  const [startedAt, setStartedAt] = useState(toDateInput(plan.started_at));
+
+  const isPaused = plan.is_active === false;
+
+  const logAdmin = async (action: string, details: any) => {
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return;
+      await supabase.from("admin_logs" as any).insert({
+        admin_user_id: u.user.id,
+        action,
+        target_type: "store_plan",
+        target_id: plan.store_id,
+        details,
+      } as any);
+    } catch (err) {
+      console.warn("admin_logs insert failed:", err);
+    }
+  };
+
+  const handleSaveDates = async () => {
+    setSavingDates(true);
+    try {
+      const patch: any = {
+        trial_ends_at: trialEnds ? new Date(trialEnds).toISOString() : null,
+        next_billing_date: nextBilling ? new Date(nextBilling).toISOString() : null,
+        last_billed_at: lastBilled ? new Date(lastBilled).toISOString() : null,
+        started_at: startedAt ? new Date(startedAt).toISOString() : null,
+      };
+      const { error } = await supabase
+        .from("store_plans")
+        .update(patch)
+        .eq("id", plan.id);
+      if (error) throw error;
+
+      await logAdmin("plan_dates_updated", {
+        store_name: storeName,
+        before: {
+          trial_ends_at: plan.trial_ends_at,
+          next_billing_date: plan.next_billing_date,
+          last_billed_at: plan.last_billed_at,
+          started_at: plan.started_at,
+        },
+        after: patch,
+      });
+
+      toast.success("Datas atualizadas e registradas no log.");
+      setEditing(false);
+      onChange();
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao salvar datas.");
+    } finally {
+      setSavingDates(false);
+    }
+  };
+
+  const handleTogglePause = async () => {
+    setPausing(true);
+    try {
+      const newActive = !plan.is_active === false ? false : !plan.is_active; // toggle
+      const target = !plan.is_active; // if currently inactive -> reactivate
+      const { error } = await supabase
+        .from("store_plans")
+        .update({ is_active: target })
+        .eq("id", plan.id);
+      if (error) throw error;
+
+      await logAdmin(target ? "plan_reactivated" : "plan_paused", {
+        store_name: storeName,
+      });
+
+      toast.success(target ? "Cobrança reativada." : "Cobrança pausada.");
+      onChange();
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao alterar status.");
+    } finally {
+      setPausing(false);
+    }
+  };
+
+  const handleGenerateCharge = async () => {
+    if (!confirm(`Gerar cobrança imediata de R$ ${Number(plan.monthly_fee).toFixed(2)} para "${storeName}"?`)) return;
+    setGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("monthly-billing", {
+        body: { store_id: plan.store_id, force: true },
+      });
+      if (error) throw error;
+      const billed = (data as any)?.billed ?? 0;
+      if (billed > 0) {
+        toast.success(`Cobrança gerada para "${storeName}"!`);
+        await logAdmin("manual_charge_generated", {
+          store_name: storeName,
+          amount: plan.monthly_fee,
+          response: data,
+        });
+        onChange();
+      } else {
+        toast.warning((data as any)?.message || "Nenhuma cobrança gerada. Verifique se a loja está ativa e tem subconta Asaas.");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao gerar cobrança.");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const fmtDate = (iso: string | null | undefined) =>
+    iso ? new Date(iso).toLocaleDateString("pt-BR") : "—";
+
+  return (
+    <div className="bg-muted/30 rounded-xl p-3 space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Settings2 className="h-4 w-4 text-primary" />
+          <p className="text-xs font-bold text-foreground uppercase tracking-widest">Controle Total</p>
+        </div>
+        {isPaused ? (
+          <Badge className="bg-destructive/10 text-destructive border-destructive/30 border text-[10px]">
+            ⏸ Cobrança pausada
+          </Badge>
+        ) : (
+          <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30 border text-[10px]">
+            ▶ Ativa
+          </Badge>
+        )}
+      </div>
+
+      {/* Datas (read-only ou edit) */}
+      {!editing ? (
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <div className="bg-background rounded-lg p-2">
+            <p className="text-[9px] uppercase text-muted-foreground font-semibold">Início</p>
+            <p className="font-bold text-foreground">{fmtDate(plan.started_at)}</p>
+          </div>
+          <div className="bg-background rounded-lg p-2">
+            <p className="text-[9px] uppercase text-muted-foreground font-semibold">Fim do trial</p>
+            <p className="font-bold text-foreground">{fmtDate(plan.trial_ends_at)}</p>
+          </div>
+          <div className="bg-background rounded-lg p-2">
+            <p className="text-[9px] uppercase text-muted-foreground font-semibold">Última cobrança</p>
+            <p className="font-bold text-foreground">{fmtDate(plan.last_billed_at)}</p>
+          </div>
+          <div className="bg-background rounded-lg p-2">
+            <p className="text-[9px] uppercase text-muted-foreground font-semibold">Próxima cobrança</p>
+            <p className="font-bold text-primary">{fmtDate(plan.next_billing_date)}</p>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <div>
+            <label className="text-[9px] uppercase text-muted-foreground font-semibold">Início</label>
+            <input
+              type="date"
+              value={startedAt}
+              onChange={(e) => setStartedAt(e.target.value)}
+              className="w-full bg-background border border-border rounded-lg px-2 py-1.5 text-xs text-foreground mt-1"
+            />
+          </div>
+          <div>
+            <label className="text-[9px] uppercase text-muted-foreground font-semibold">Fim do trial</label>
+            <input
+              type="date"
+              value={trialEnds}
+              onChange={(e) => setTrialEnds(e.target.value)}
+              className="w-full bg-background border border-border rounded-lg px-2 py-1.5 text-xs text-foreground mt-1"
+            />
+          </div>
+          <div>
+            <label className="text-[9px] uppercase text-muted-foreground font-semibold">Última cobrança</label>
+            <input
+              type="date"
+              value={lastBilled}
+              onChange={(e) => setLastBilled(e.target.value)}
+              className="w-full bg-background border border-border rounded-lg px-2 py-1.5 text-xs text-foreground mt-1"
+            />
+          </div>
+          <div>
+            <label className="text-[9px] uppercase text-muted-foreground font-semibold">Próxima cobrança</label>
+            <input
+              type="date"
+              value={nextBilling}
+              onChange={(e) => setNextBilling(e.target.value)}
+              className="w-full bg-background border border-border rounded-lg px-2 py-1.5 text-xs text-foreground mt-1"
+            />
+          </div>
+        </div>
+      )}
+
+      {currentDisplay === "supporter" && (
+        <p className="text-[10px] text-pink-600 font-semibold">
+          ⭐ Plano vitalício • Preço travado em R$ {SUPPORTER_FEE}
+        </p>
+      )}
+
+      {/* Action buttons */}
+      <div className="grid grid-cols-2 gap-2">
+        {editing ? (
+          <>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setEditing(false);
+                setTrialEnds(toDateInput(plan.trial_ends_at));
+                setNextBilling(toDateInput(plan.next_billing_date));
+                setLastBilled(toDateInput(plan.last_billed_at));
+                setStartedAt(toDateInput(plan.started_at));
+              }}
+              disabled={savingDates}
+              className="text-xs"
+            >
+              Cancelar
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleSaveDates}
+              disabled={savingDates}
+              className="text-xs"
+            >
+              {savingDates ? <Loader2 className="h-3 w-3 animate-spin" /> : "Salvar datas"}
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setEditing(true)}
+              className="text-xs"
+            >
+              <Calendar className="h-3 w-3 mr-1" /> Editar datas
+            </Button>
+            <Button
+              size="sm"
+              variant={isPaused ? "default" : "outline"}
+              onClick={handleTogglePause}
+              disabled={pausing}
+              className={`text-xs ${!isPaused ? "border-amber-500/40 text-amber-600 hover:bg-amber-500/10" : ""}`}
+            >
+              {pausing ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : isPaused ? (
+                <><Play className="h-3 w-3 mr-1" /> Reativar</>
+              ) : (
+                <><Pause className="h-3 w-3 mr-1" /> Pausar</>
+              )}
+            </Button>
+          </>
+        )}
+      </div>
+
+      {!editing && Number(plan.monthly_fee) > 0 && (
+        <Button
+          size="sm"
+          onClick={handleGenerateCharge}
+          disabled={generating || isPaused}
+          className="w-full text-xs bg-primary"
+        >
+          {generating ? (
+            <><Loader2 className="h-3 w-3 animate-spin mr-1" /> Gerando...</>
+          ) : (
+            <><Send className="h-3 w-3 mr-1" /> Gerar cobrança agora (R$ {Number(plan.monthly_fee).toFixed(0)})</>
+          )}
+        </Button>
+      )}
+
+      {/* Billing history */}
+      <div>
+        <button
+          onClick={() => setShowHistory((s) => !s)}
+          className="w-full flex items-center justify-between text-xs font-bold text-muted-foreground py-2 hover:text-foreground"
+        >
+          <span className="flex items-center gap-1">
+            <History className="h-3 w-3" /> Histórico de cobranças
+          </span>
+          {showHistory ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+        </button>
+        {showHistory && <BillingHistoryInline storeId={plan.store_id} />}
+      </div>
+    </div>
+  );
+}
+
+function BillingHistoryInline({ storeId }: { storeId: string }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["store-billing-history", storeId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("financial_transactions")
+        .select("id, reference_code, amount, status, created_at, settled_at, transaction_kind, metadata")
+        .eq("store_id", storeId)
+        .eq("transaction_kind", "commission_charge")
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-3">
+        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!data || data.length === 0) {
+    return <p className="text-[11px] text-muted-foreground py-2 text-center">Nenhuma cobrança registrada.</p>;
+  }
+
+  const statusColor = (s: string) =>
+    s === "paid" || s === "settled" || s === "confirmed"
+      ? "text-emerald-600 bg-emerald-500/10 border-emerald-500/30"
+      : s === "pending"
+        ? "text-amber-600 bg-amber-500/10 border-amber-500/30"
+        : s === "overdue" || s === "failed" || s === "cancelled"
+          ? "text-destructive bg-destructive/10 border-destructive/30"
+          : "text-muted-foreground bg-muted border-border";
+
+  return (
+    <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
+      {data.map((row: any) => (
+        <div key={row.id} className="flex items-center justify-between bg-background rounded-lg p-2 border border-border/50">
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-bold text-foreground truncate">{row.reference_code}</p>
+            <p className="text-[10px] text-muted-foreground">
+              {new Date(row.created_at).toLocaleDateString("pt-BR")}
+              {row.settled_at && ` • pago ${new Date(row.settled_at).toLocaleDateString("pt-BR")}`}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs font-bold text-foreground">R$ {Number(row.amount).toFixed(2)}</p>
+            <Badge className={`border text-[9px] ${statusColor(row.status)}`}>{row.status}</Badge>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function PlanChangeRequestCard({ request, storeName, onProcessed }: {
   request: any; storeName: string; onProcessed: () => void;
 }) {
