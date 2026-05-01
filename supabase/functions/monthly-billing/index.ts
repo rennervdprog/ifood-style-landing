@@ -1,5 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+const EXTERNAL_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFramhndXppdWNocXNieHpydWVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDg4NTUsImV4cCI6MjA5MDYyNDg1NX0.2sTeKchqAEN2gCqnH1_Zn9cJmUSmZgryt05A66tgm2Y";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -30,7 +32,7 @@ Deno.serve(async (req) => {
   const apikeyHeader = req.headers.get("apikey") || "";
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-  const externalAnon = Deno.env.get("EXTERNAL_SUPABASE_ANON_KEY") || anonKey;
+  const externalAnon = Deno.env.get("EXTERNAL_SUPABASE_ANON_KEY") || anonKey || EXTERNAL_ANON_KEY;
   const token = authHeader?.replace("Bearer ", "") || apikeyHeader;
 
   let isAdminCaller = !!token && (token === serviceKey || token === EXTERNAL_KEY);
