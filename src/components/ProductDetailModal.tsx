@@ -699,19 +699,20 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
             />
           </div>
 
-          {/* Quantity + Add button */}
-          <div className="flex items-center gap-4 pt-2">
-            <div className="flex items-center gap-3 bg-muted rounded-xl px-3 py-2">
+          {/* RODAPÉ FIXO */}
+          <div className="absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-md border-t p-4 flex items-center gap-4 z-[50] pb-8 md:pb-4">
+            <div className="flex items-center gap-1 bg-muted rounded-2xl p-1 border border-muted-foreground/10">
               <button
                 onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                className="w-8 h-8 rounded-full bg-background flex items-center justify-center active:scale-90 transition-transform"
+                className="w-10 h-10 rounded-xl bg-background shadow-sm flex items-center justify-center active:scale-90 transition-transform disabled:opacity-50"
+                disabled={quantity <= 1}
               >
                 <Minus className="h-4 w-4" />
               </button>
-              <span className="font-black text-lg w-6 text-center">{quantity}</span>
+              <span className="font-bold text-lg w-10 text-center">{quantity}</span>
               <button
                 onClick={() => setQuantity(q => q + 1)}
-                className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center active:scale-90 transition-transform"
+                className="w-10 h-10 rounded-xl bg-primary text-primary-foreground shadow-sm flex items-center justify-center active:scale-90 transition-transform"
               >
                 <Plus className="h-4 w-4" />
               </button>
@@ -730,23 +731,15 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
                 resetState();
               }}
               disabled={isOutOfStock}
-              className={`flex-1 py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95 ${
-                isOutOfStock
-                  ? "bg-destructive text-destructive-foreground opacity-90 cursor-not-allowed"
-                  : allRequiredMet
-                  ? "bg-primary text-primary-foreground shadow-lg"
-                  : "bg-muted text-muted-foreground"
+              className={`flex-1 h-12 rounded-2xl font-bold text-base flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg ${
+                allRequiredMet ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
               }`}
             >
-              <ShoppingCart className="h-4 w-4" />
-              {isOutOfStock
-                ? "Esgotado"
-                : !allRequiredMet
-                ? "Complete as opções"
-                : `Adicionar • ${formatBRL(lineTotal)}`
-              }
+              <ShoppingCart className="h-5 w-5" />
+              {isOutOfStock ? "Esgotado" : `Adicionar • ${formatBRL(lineTotal)}`}
             </button>
           </div>
+        </div>
         </div>
       </DialogContent>
     </Dialog>
