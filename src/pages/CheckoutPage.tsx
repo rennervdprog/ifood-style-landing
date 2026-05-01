@@ -241,10 +241,9 @@ const CheckoutPage = () => {
   
         calculateStoreOwnDeliveryFee(customerCep, storeCep, ownConfig).then((result) => {
           if (cancelled) return;
-          const feeWithSplit = result.fee + effectivePlatformSplit;
-          setCalculatedDeliveryFee(feeWithSplit);
-          setFeeBreakdown(result.breakdown + (effectivePlatformSplit > 0 ? ` + Taxa operacional: ${formatBRL(effectivePlatformSplit)}` : ""));
-          if (activeNeighborhood) setNeighborhood(activeNeighborhood, feeWithSplit);
+          setCalculatedDeliveryFee(result.fee);
+          setFeeBreakdown(result.breakdown);
+          if (activeNeighborhood) setNeighborhood(activeNeighborhood, result.fee);
           setCalculatingFee(false);
         }).catch(() => {
           if (cancelled) return;
