@@ -163,8 +163,8 @@ const PerfilPage = () => {
   const [fullName, setFullName] = useState("");
   const [document, setDocument] = useState("");
   const [savingPersonal, setSavingPersonal] = useState(false);
-  const [personalLoaded, setPersonalLoaded] = useState(false);
-  const [appVersion, setAppVersion] = useState("1.2.70");
+   const [personalLoaded, setPersonalLoaded] = useState(false);
+   const [appVersion, setAppVersion] = useState("1.2.71");
 
   /* ── Effects ── */
   useEffect(() => {
