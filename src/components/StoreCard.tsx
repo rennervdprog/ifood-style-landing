@@ -66,7 +66,7 @@ const StoreCard = memo(({ id, name, category, image_url, is_open, rating, status
         )}
 
         {/* Badges Overlay */}
-        <div className="absolute inset-x-0 top-0 p-4 flex justify-between items-start z-10">
+        <div className="absolute inset-x-0 top-0 p-4 flex justify-start items-start z-10">
           {is_open ? (
             <div className={`px-3 py-1.5 rounded-full text-[10px] font-black backdrop-blur-md border border-white/20 shadow-lg ${
               category === "farmacias" ? "bg-teal-500/80 text-white" : "bg-primary text-black"
@@ -77,13 +77,6 @@ const StoreCard = memo(({ id, name, category, image_url, is_open, rating, status
             <div className="px-3 py-1.5 rounded-full text-[10px] font-black bg-black/60 text-white/90 backdrop-blur-md border border-white/10 flex items-center gap-1">
               <Clock className="h-3 w-3" />
               FECHADO
-            </div>
-          )}
-
-          {rating && (
-            <div className="flex items-center gap-1 bg-white/95 dark:bg-black/60 px-2.5 py-1 rounded-full border border-white/20 shadow-md backdrop-blur-md">
-              <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-              <span className="text-[10px] font-black text-foreground">{rating.toFixed(1)}</span>
             </div>
           )}
         </div>
