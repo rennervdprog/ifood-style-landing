@@ -1,5 +1,6 @@
+ import { useEffect } from "react";
 import { formatBRL } from "@/lib/utils";
-import { useState } from "react";
+ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -41,6 +42,23 @@ const PizzaBorderManager = ({ storeId }: PizzaBorderManagerProps) => {
   });
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["pizza-borders", storeId] });
+
+  // Auto-create "Borda Tradicional" if the list is empty
+  useEffect(() => {
+    const createDefaultBorder = async () => {
+      if (!isLoading && borders.length === 0 && storeId) {
+        const { error } = await supabase.from("pizza_borders").insert({
+          store_id: storeId,
+          name: "Borda Tradicional",
+          price: 0,
+          sort_order: 0,
+          is_available: true
+        });
+        if (!error) invalidate();
+      }
+    };
+    createDefaultBorder();
+  }, [borders.length, isLoading, storeId]);
 
   const addBorder = async () => {
     if (!newName.trim()) return;
