@@ -120,16 +120,13 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
 
   const handleAdd = () => {
     if (!p1 || !p2) return;
-    const borderName = selectedBorder?.name || "Borda Tradicional";
     const name = `Pizza Meio a Meio: ${p1.name} / ${p2.name}`;
     const addons: CartAddon[] = [
       { name: `½ ${p1.name}`, price: 0 },
       { name: `½ ${p2.name}`, price: 0 },
     ];
-    if (selectedBorder && selectedBorder.price > 0) {
-      addons.push({ name: `Borda: ${borderName}`, price: borderPrice });
-    } else {
-      addons.push({ name: `Borda: ${borderName}`, price: 0 });
+    if (selectedBorder) {
+      addons.push({ name: `Borda: ${selectedBorder.name}`, price: borderPrice });
     }
     onAdd(
       {
@@ -139,7 +136,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
         description: null,
         price: unitPrice,
         image_url: null,
-        metadata: { is_half_half: true, border: borderName, half2_id: p2.id },
+        metadata: { is_half_half: true, border: selectedBorder?.name || null, half2_id: p2.id },
       },
       addons,
       observations,
