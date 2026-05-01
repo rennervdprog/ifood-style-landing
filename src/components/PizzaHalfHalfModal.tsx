@@ -412,7 +412,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
 
       {/* Fixed bottom bar - above BottomNav */}
       <div className="fixed bottom-16 left-0 right-0 z-30 bg-background border-t px-4 py-3">
-        {step < 3 ? (
+        {!isFinalStep ? (
           <div className="flex items-center gap-3">
             {step > 1 && (
               <button
@@ -461,9 +461,9 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
             </div>
             <button
               onClick={handleAdd}
-              disabled={!selectedBorderId}
+              disabled={hasBorders && !selectedBorderId}
               className={`w-full py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${
-                selectedBorderId
+                (!hasBorders || selectedBorderId)
                   ? "bg-primary text-primary-foreground shadow-lg"
                   : "bg-muted text-muted-foreground cursor-not-allowed"
               }`}
