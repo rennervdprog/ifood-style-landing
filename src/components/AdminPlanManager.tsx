@@ -341,27 +341,16 @@ export default function AdminPlanManager() {
 
               {isExpanded && (
                 <div className="border-t border-border p-4 space-y-4">
-                  {/* Current plan info */}
+                  {/* Controle Total: datas, pause, gerar cobrança, histórico */}
                   {plan && currentDisplay && (
-                    <div className="bg-muted/30 rounded-xl p-3 space-y-1">
-                      <p className="text-xs text-muted-foreground font-semibold">Plano atual</p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-bold text-foreground">{planLabels[currentDisplay]}</span>
-                        <span className="text-xs text-muted-foreground">
-                          Desde {new Date(plan.started_at).toLocaleDateString("pt-BR")}
-                        </span>
-                      </div>
-                      {plan.next_billing_date && (
-                        <p className="text-[10px] text-muted-foreground">
-                          Próxima cobrança: {new Date(plan.next_billing_date).toLocaleDateString("pt-BR")}
-                        </p>
-                      )}
-                      {currentDisplay === "supporter" && (
-                        <p className="text-[10px] text-pink-600 font-semibold">
-                          ⭐ Plano vitalício • Preço travado em R$ {SUPPORTER_FEE}
-                        </p>
-                      )}
-                    </div>
+                    <FullControlPanel
+                      plan={plan}
+                      storeName={store.name}
+                      currentDisplay={currentDisplay}
+                      onChange={() => {
+                        queryClient.invalidateQueries({ queryKey: ["admin-store-plans"] });
+                      }}
+                    />
                   )}
 
                   {/* Plan selection buttons */}
