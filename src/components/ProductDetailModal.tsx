@@ -165,7 +165,11 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
     (isCafe && isCakeLike && cafeFlavors.length > 0);
 
   const hasAnyRequired = requiredAddonGroups.length > 0 || hasSyntheticRequired;
-  const totalSteps = hasAnyRequired ? 2 : 1;
+  const calculateTotalSteps = () => {
+    if (requiredAddonGroups.length > 0 || hasSyntheticRequired) return 2;
+    return 1;
+  };
+  const totalSteps = calculateTotalSteps();
 
   // Nome do primeiro grupo obrigatório (para texto do botão)
   const firstRequiredGroupName = useMemo(() => {
@@ -604,11 +608,11 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
     resetState();
   };
 
-  const primaryLabel = totalSteps === 2 && step === 1
-    ? `Próximo: ${firstRequiredGroupName}`
-    : isOutOfStock
-      ? "Esgotado"
-      : `Adicionar • ${formatBRL(lineTotal)}`;
+  const primaryLabel = useMemo(() => {
+    if (totalSteps === 2 && step === 1) return "Próximo: Personalizar";
+    if (isOutOfStock) return "Esgotado";
+    return `Adicionar • ${formatBRL(lineTotal)}`;
+  }, [totalSteps, step, isOutOfStock, lineTotal]);
 
   const primaryEnabled = totalSteps === 2 && step === 1
     ? true
