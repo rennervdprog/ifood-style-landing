@@ -59,7 +59,8 @@ const StorePage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [showHours, setShowHours] = useState(false);
-  const [showHalfHalf, setShowHalfHalf] = useState(false);
+   const [showHalfHalf, setShowHalfHalf] = useState(false);
+   const [scrolled, setScrolled] = useState(false);
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const pageRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLDivElement>(null);
@@ -135,7 +136,20 @@ const StorePage = () => {
   }, [store]);
 
   const storeId = store?.id || id;
-  const storePlan = useStorePlan(storeId);
+   const storePlan = useStorePlan(storeId);
+
+   // Track scroll to show name in header
+   useEffect(() => {
+     const handleScroll = () => {
+       const isScrolled = window.scrollY > 150;
+       if (isScrolled !== scrolled) {
+         setScrolled(isScrolled);
+       }
+     };
+
+     window.addEventListener("scroll", handleScroll, { passive: true });
+     return () => window.removeEventListener("scroll", handleScroll);
+   }, [scrolled]);
 
   const { data: storeHours } = useQuery({
     queryKey: ["store-hours", storeId],
@@ -259,8 +273,8 @@ const StorePage = () => {
 
   const hasConfiguredHours = Array.isArray(storeHours) && storeHours.length > 0;
   const statusLabel = hasConfiguredHours
-    ? `● ${storeStatus.reason || (storeStatus.isOpen ? "Aberto" : "Fechado")}`
-    : "● Horário não informado";
+    ? `${storeStatus.reason || (storeStatus.isOpen ? "Aberto" : "Fechado")}`
+    : "Horário não informado";
 
   const reorderProductsList = products?.filter(p => reorderProducts?.includes(p.id)) || [];
   const popularProductsList = popularProducts
@@ -458,24 +472,39 @@ const StorePage = () => {
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
 
-        {/* Top bar */}
-        <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 z-10">
-          <div>
+        {/* Sticky Header Top Bar */}
+        <div className={`fixed top-0 left-0 right-0 flex items-center justify-between p-4 z-50 transition-all duration-300 ${
+          scrolled ? "bg-background/95 backdrop-blur-md border-b border-border shadow-sm py-2" : "bg-transparent"
+        }`}>
+          <div className="flex items-center gap-3 min-w-0">
             {!getStoreAppSlug() && (
               <button
                 onClick={() => navigate("/cliente")}
-                className="w-10 h-10 bg-card/90 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg border border-border/50"
+                className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
+                  scrolled ? "bg-muted text-foreground" : "bg-card/90 backdrop-blur-md shadow-lg border border-border/50 text-foreground"
+                }`}
               >
-                <ArrowLeft className="h-5 w-5 text-foreground" />
+                <ArrowLeft className="h-5 w-5" />
               </button>
+            )}
+            {scrolled && (
+              <div className="flex flex-col min-w-0 animate-in fade-in slide-in-from-left-2 duration-300">
+                <h2 className="text-sm font-black text-foreground truncate">{store?.name}</h2>
+                <div className="flex items-center gap-1.5">
+                  <div className={`w-1.5 h-1.5 rounded-full ${storeStatus.isOpen ? "bg-green-500" : "bg-destructive"}`} />
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase">{storeStatus.isOpen ? "Aberto" : "Fechado"}</span>
+                </div>
+              </div>
             )}
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowSearch(!showSearch)}
-              className="w-10 h-10 bg-card/90 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg border border-border/50"
+              className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
+                scrolled ? "bg-muted text-foreground" : "bg-card/90 backdrop-blur-md shadow-lg border border-border/50 text-foreground"
+              }`}
             >
-              <Search className="h-5 w-5 text-foreground" />
+              <Search className="h-4 w-4" />
             </button>
             {ownerProfile?.whatsapp_number && (
               <WhatsAppButton
@@ -491,157 +520,178 @@ const StorePage = () => {
 
       {/* ===== STORE INFO ===== */}
       <div className="relative -mt-16 mx-4 z-10">
-        <div className="bg-card rounded-2xl border border-border shadow-xl p-5">
-          <div className="flex items-start gap-4">
-            <div className="w-18 h-18 rounded-2xl bg-muted border-2 border-card shadow-lg flex-shrink-0 overflow-hidden -mt-12 w-[72px] h-[72px]">
-              {store?.image_url ? (
-                <img loading="lazy" decoding="async" src={store.image_url} alt={store?.name} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-primary/10">
-                  <span className="text-3xl">🍽️</span>
-                </div>
-              )}
-            </div>
-            <div className="flex-1 min-w-0 pt-1 flex flex-col">
-              <h1 className="text-xl sm:text-2xl font-black text-foreground break-words leading-tight">{store?.name}</h1>
-              <div className="flex flex-wrap items-center gap-2 mt-2">
-                <span className="text-xs font-black text-muted-foreground uppercase tracking-widest bg-muted/50 px-2.5 py-1 rounded-lg border border-border/50">
-                  {store?.category}
-                </span>
-                {store?.rating && store.rating > 0 && (
-                  <div className="flex items-center gap-1 bg-amber-400/10 px-2.5 py-1 rounded-lg border border-amber-400/20">
-                    <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                    <span className="text-xs font-black text-amber-600 dark:text-amber-400">{store.rating}</span>
+        <div className="bg-card rounded-2xl border border-border shadow-xl overflow-hidden">
+          <div className="p-5 pb-0">
+            <div className="flex items-start gap-4">
+              <div className="w-[72px] h-[72px] rounded-2xl bg-muted border-2 border-card shadow-lg flex-shrink-0 overflow-hidden -mt-12">
+                {store?.image_url ? (
+                  <img loading="lazy" decoding="async" src={store.image_url} alt={store?.name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-primary/10">
+                    <span className="text-3xl">🍽️</span>
                   </div>
                 )}
               </div>
-            </div>
-          </div>
-
-          {hasConfiguredHours && (
-            <div className="mt-3">
-              <span className={`inline-flex items-center text-xs font-black px-3 py-1.5 rounded-xl border ${
-                storeStatus.isOpen
-                  ? "bg-green-500/10 text-green-600 border-green-500/20"
-                  : "bg-destructive/10 text-destructive border-destructive/20"
-              }`}>
-                {statusLabel}
-              </span>
-            </div>
-          )}
-
-          {/* Address + Maps button */}
-          {store?.address_neighborhood && (
-            <div className="mt-3 pt-3 border-t border-border flex items-center gap-2 text-muted-foreground">
-              <MapPin className="h-3.5 w-3.5 flex-shrink-0 text-primary" />
-              <span className="text-xs truncate flex-1">
-                {[store.address_street, store.address_number, store.address_neighborhood, store.address_city]
-                  .filter(Boolean)
-                  .join(", ")}
-              </span>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const addr = encodeURIComponent(
-                    [store.address_street, store.address_number, store.address_neighborhood, store.address_city, store.address_state]
-                      .filter(Boolean)
-                      .join(", ")
-                  );
-                  window.open(`https://www.google.com/maps/search/?api=1&query=${addr}`, "_blank");
-                }}
-                className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-full text-[10px] font-bold hover:bg-primary/20 transition-colors flex-shrink-0"
-              >
-                <Navigation className="h-3 w-3" />
-                Maps
-              </button>
-            </div>
-          )}
-
-          {/* Opening Hours */}
-          <div className="mt-3 pt-3 border-t border-border">
-            <button
-              onClick={() => setShowHours(!showHours)}
-              className="flex items-center justify-between w-full"
-            >
-            <div className="flex items-center gap-1.5">
-              <Clock className="h-3.5 w-3.5 text-primary" />
-              <span className="text-xs font-bold text-foreground">Horários de funcionamento</span>
-            </div>
-              {showHours ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />}
-            </button>
-            {showHours && hasConfiguredHours && (
-              <div className="grid grid-cols-1 gap-0.5 mt-2">
-                {[0, 1, 2, 3, 4, 5, 6].map(day => {
-                  const dayNames = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
-                  const h = storeHours.find((hr: any) => hr.day_of_week === day);
-                  const now = new Date();
-                  const isToday = now.getDay() === day;
-                  return (
-                    <div key={day} className={`flex items-center justify-between px-2 py-1 rounded-md text-xs ${isToday ? "bg-primary/5 font-bold" : ""}`}>
-                      <span className={`${isToday ? "text-primary" : "text-muted-foreground"} w-8`}>{dayNames[day]}</span>
-                      {h && !h.is_closed_all_day ? (
-                        <span className={isToday ? "text-foreground" : "text-muted-foreground"}>
-                          {String(h.open_time).slice(0, 5)} - {String(h.close_time).slice(0, 5)}
-                        </span>
-                      ) : (
-                        <span className="text-destructive/70">Fechado</span>
-                      )}
+              <div className="flex-1 min-w-0 pt-1 flex flex-col">
+                <h1 className="text-xl sm:text-2xl font-black text-foreground break-words leading-tight">{store?.name}</h1>
+                <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                  <span className="text-[10px] font-black text-muted-foreground uppercase tracking-wider bg-muted/80 px-2 py-0.5 rounded-md border border-border/50">
+                    {store?.category}
+                  </span>
+                  {store?.rating && store.rating > 0 && (
+                    <div className="flex items-center gap-1 bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/20">
+                      <Star className="h-2.5 w-2.5 fill-amber-400 text-amber-400" />
+                      <span className="text-[10px] font-black text-amber-600 dark:text-amber-400">{store.rating}</span>
                     </div>
-                  );
-                })}
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {hasConfiguredHours && (
+              <div className="mt-3.5">
+                <span className={`inline-flex items-center gap-1.5 text-[11px] font-black px-3 py-1 rounded-full border ${
+                  storeStatus.isOpen
+                    ? "bg-green-500/10 text-green-600 border-green-500/20"
+                    : "bg-destructive/10 text-destructive border-destructive/20"
+                }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${storeStatus.isOpen ? "bg-green-500 animate-pulse" : "bg-destructive"}`} />
+                  {statusLabel}
+                </span>
               </div>
             )}
-            {showHours && !hasConfiguredHours && (
-              <p className="text-xs text-muted-foreground mt-2">
-                Esta loja ainda não informou os horários de funcionamento.
-              </p>
-            )}
-          </div>
 
-          {/* Payment Methods */}
-          <div className="mt-3 pt-3 border-t border-border">
-            <div className="flex items-center gap-1.5 mb-2">
-              <CreditCard className="h-3.5 w-3.5 text-primary" />
-              <span className="text-xs font-bold text-foreground">Formas de pagamento</span>
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {storePlan.allowPix && (
-                <span className="flex items-center gap-1 bg-muted px-2.5 py-1 rounded-full text-[10px] font-medium text-muted-foreground">
-                  <QrCode className="h-3 w-3" />
-                  Pix
-                </span>
-              )}
-              <span className="flex items-center gap-1 bg-muted px-2.5 py-1 rounded-full text-[10px] font-medium text-muted-foreground">
-                <Banknote className="h-3 w-3" />
-                Dinheiro
-              </span>
-              <span className="flex items-center gap-1 bg-muted px-2.5 py-1 rounded-full text-[10px] font-medium text-muted-foreground">
-                <CreditCard className="h-3 w-3" />
-                Cartão na entrega
-              </span>
+            {/* Address + Maps button */}
+            {store?.address_neighborhood && (
+              <div className="mt-4 pt-4 border-t border-border/50">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-2.5 min-w-0">
+                    <div className="mt-0.5 w-7 h-7 rounded-full bg-primary/5 flex items-center justify-center flex-shrink-0">
+                      <MapPin className="h-3.5 w-3.5 text-primary" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">Endereço</p>
+                      <p className="text-[11px] text-foreground font-medium leading-relaxed truncate">
+                        {[store.address_street, store.address_number, store.address_neighborhood, store.address_city]
+                          .filter(Boolean)
+                          .join(", ")}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const addr = encodeURIComponent(
+                        [store.address_street, store.address_number, store.address_neighborhood, store.address_city, store.address_state]
+                          .filter(Boolean)
+                          .join(", ")
+                      );
+                      window.open(`https://www.google.com/maps/search/?api=1&query=${addr}`, "_blank");
+                    }}
+                    className="flex items-center gap-1.5 bg-primary text-primary-foreground px-3 py-1.5 rounded-lg text-[10px] font-black hover:bg-primary/90 transition-all shadow-sm flex-shrink-0"
+                  >
+                    <Navigation className="h-3 w-3" />
+                    MAPS
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Info Tabs / Expandables */}
+            <div className="mt-4 space-y-2 pb-4">
+              {/* Opening Hours */}
+              <div className="bg-muted/30 rounded-xl overflow-hidden border border-border/30">
+                <button
+                  onClick={() => setShowHours(!showHours)}
+                  className="flex items-center justify-between w-full p-3 transition-colors hover:bg-muted/50"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Clock className="h-3.5 w-3.5 text-primary" />
+                    <span className="text-[11px] font-black text-foreground uppercase tracking-wider">Horários</span>
+                  </div>
+                  {showHours ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />}
+                </button>
+                {showHours && (
+                  <div className="px-3 pb-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                    {hasConfiguredHours ? (
+                      <div className="grid grid-cols-1 gap-0.5">
+                        {[0, 1, 2, 3, 4, 5, 6].map(day => {
+                          const dayNames = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+                          const h = storeHours.find((hr: any) => hr.day_of_week === day);
+                          const now = new Date();
+                          const isToday = now.getDay() === day;
+                          return (
+                            <div key={day} className={`flex items-center justify-between px-2 py-1.5 rounded-lg text-[11px] ${isToday ? "bg-primary/10 font-bold" : ""}`}>
+                              <span className={`${isToday ? "text-primary" : "text-muted-foreground"} w-10`}>{dayNames[day]}</span>
+                              {h && !h.is_closed_all_day ? (
+                                <span className={isToday ? "text-foreground" : "text-muted-foreground font-medium"}>
+                                  {String(h.open_time).slice(0, 5)} - {String(h.close_time).slice(0, 5)}
+                                </span>
+                              ) : (
+                                <span className="text-destructive/70 font-medium italic">Fechado</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-muted-foreground text-center py-2 italic">
+                        Horários não informados.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Payment Methods */}
+              <div className="bg-muted/30 rounded-xl p-3 border border-border/30">
+                <div className="flex items-center gap-2.5 mb-2.5">
+                  <CreditCard className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-[11px] font-black text-foreground uppercase tracking-wider">Pagamento</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {storePlan.allowPix && (
+                    <span className="flex items-center gap-1.5 bg-card px-2.5 py-1.5 rounded-lg text-[10px] font-bold text-muted-foreground border border-border/50 shadow-sm">
+                      <QrCode className="h-3 w-3 text-primary" />
+                      PIX
+                    </span>
+                  )}
+                  <span className="flex items-center gap-1.5 bg-card px-2.5 py-1.5 rounded-lg text-[10px] font-bold text-muted-foreground border border-border/50 shadow-sm">
+                    <Banknote className="h-3 w-3 text-primary" />
+                    DINHEIRO
+                  </span>
+                  <span className="flex items-center gap-1.5 bg-card px-2.5 py-1.5 rounded-lg text-[10px] font-bold text-muted-foreground border border-border/50 shadow-sm">
+                    <CreditCard className="h-3 w-3 text-primary" />
+                    CARTÃO
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 
           {/* Loyalty */}
-          {store && <LoyaltyBanner storeId={store.id} storeName={store.name} />}
+          {store && <div className="px-5"><LoyaltyBanner storeId={store.id} storeName={store.name} /></div>}
 
-          {/* Stats row */}
-          <div className="mt-3 pt-3 border-t border-border flex items-center gap-4">
-            <div className="text-center flex-1">
-              <p className="text-lg font-black text-foreground">{totalProducts}</p>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Itens</p>
+          {/* Stats bar */}
+          <div className="bg-muted/50 mt-2 px-5 py-4 flex items-center justify-around border-t border-border/50">
+            <div className="flex flex-col items-center">
+              <span className="text-lg font-black text-foreground leading-none">{totalProducts}</span>
+              <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mt-1">Produtos</span>
             </div>
-            <div className="w-px h-8 bg-border" />
-            <div className="text-center flex-1">
-              <p className="text-lg font-black text-foreground">{sections?.length || 0}</p>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Categorias</p>
+            <div className="w-px h-6 bg-border/80" />
+            <div className="flex flex-col items-center">
+              <span className="text-lg font-black text-foreground leading-none">{sections?.length || 0}</span>
+              <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mt-1">Categorias</span>
             </div>
             {store?.rating && store.rating > 0 && (
               <>
-                <div className="w-px h-8 bg-border" />
-                <div className="text-center flex-1">
-                  <p className="text-lg font-black text-foreground">{store.rating}</p>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Nota</p>
+                <div className="w-px h-6 bg-border/80" />
+                <div className="flex flex-col items-center">
+                  <span className="text-lg font-black text-amber-500 leading-none flex items-center gap-1">
+                    {store.rating}
+                    <Star className="h-3 w-3 fill-amber-500" />
+                  </span>
+                  <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mt-1">Avaliação</span>
                 </div>
               </>
             )}
@@ -820,7 +870,9 @@ const StorePage = () => {
       {visibleSections.length > 0 && !filteredProducts && (
         <div
           ref={navRef}
-          className="sticky top-0 z-30 bg-background/95 backdrop-blur-md border-b border-border mt-4 shadow-sm"
+          className={`sticky z-30 bg-background/95 backdrop-blur-md border-b border-border mt-4 shadow-sm transition-all duration-300 ${
+            scrolled ? "top-[56px]" : "top-0"
+          }`}
         >
           <div className="flex overflow-x-auto gap-1.5 px-4 py-2.5 no-scrollbar">
             {visibleSections.map(s => (
