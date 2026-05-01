@@ -81,7 +81,13 @@ jobs:
             server: {
               androidScheme: 'https',
               hostname: 'localhost',
-              allowNavigation: ['*']
+              allowNavigation: [
+                'app.itasuper.com.br', 
+                'lktzrqjvqoojlrhqnxuz.supabase.co', 
+                'api.asaas.com.br', 
+                'nominatim.openstreetmap.org'
+              ],
+              cleartext: false
             },
             plugins: {
               SplashScreen: {
@@ -125,16 +131,14 @@ jobs:
           STRINGS_FILE="android/app/src/main/res/values/strings.xml"
           APP_NAME="$APP_NAME" STRINGS_FILE="$STRINGS_FILE" python3 -c "from pathlib import Path; import os, re; path = Path(os.environ['STRINGS_FILE']); text = path.read_text(); app_name = os.environ['APP_NAME']; text = re.sub(r'(<string name=\"app_name\">).*?(</string>)', rf'\\1{app_name}\\2', text); text = re.sub(r'(<string name=\"title_activity_main\">).*?(</string>)', rf'\\1{app_name}\\2', text); path.write_text(text); print(f'✅ Android labels updated to: {app_name}')"
 
-      - name: Inject location & camera permissions
+      - name: Inject location, background & push permissions
         run: |
           MANIFEST="android/app/src/main/AndroidManifest.xml"
-          # Add permissions before <application> tag if not already present
-          if ! grep -q "ACCESS_FINE_LOCATION" "$MANIFEST"; then
-            sed -i 's|<application|<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n    <application|' "$MANIFEST"
-            echo "✅ Location permissions injected"
-          else
-            echo "ℹ️ Location permissions already present"
-          fi
+          PERMISSIONS='<uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n    <uses-permission android:name="android.permission.WAKE_LOCK" />\n    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />\n    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />'
+          # Add permissions before <application
+          sed -i "s|<application|<PERMISSIONS_BLOCK\n    <application|" "$MANIFEST"
+          sed -i "s|<PERMISSIONS_BLOCK|${PERMISSIONS}|" "$MANIFEST"
+          echo "✅ All required permissions injected"
 
       - name: Inject ItaSuper Cliente icon
         run: |
@@ -226,7 +230,13 @@ jobs:
             server: {
               androidScheme: 'https',
               hostname: 'localhost',
-              allowNavigation: ['*']
+              allowNavigation: [
+                'app.itasuper.com.br', 
+                'lktzrqjvqoojlrhqnxuz.supabase.co', 
+                'api.asaas.com.br', 
+                'nominatim.openstreetmap.org'
+              ],
+              cleartext: false
             },
             plugins: {
               SplashScreen: {
