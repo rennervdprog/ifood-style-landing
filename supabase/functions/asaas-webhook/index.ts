@@ -75,8 +75,8 @@ Deno.serve(async (req) => {
 
       // Service-role client for review-queue inserts (no RLS bypass needed otherwise)
       const reviewClient = createClient(
-        Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+        Deno.env.get("EXTERNAL_SUPABASE_URL")!,
+        Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY")!
       );
 
       // SECURITY: only auto-approve transfers that match our system's payout pattern
@@ -140,8 +140,8 @@ Deno.serve(async (req) => {
 
     // Use service role to bypass RLS
     const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      Deno.env.get("EXTERNAL_SUPABASE_URL")!,
+      Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY")!
     );
 
     // ── IDEMPOTENCY GUARD ──────────────────────────────────────────────
