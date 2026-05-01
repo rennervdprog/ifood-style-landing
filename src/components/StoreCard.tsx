@@ -96,20 +96,28 @@ const StoreCard = memo(({ id, name, category, image_url, is_open, rating, status
         </div>
       </div>
 
-      <div className="p-5 flex flex-col flex-1 gap-3">
-        <div className="space-y-1.5">
-          <h3 className={`font-black text-lg sm:text-xl leading-tight transition-colors line-clamp-1 ${!is_open ? "text-muted-foreground" : "text-foreground group-hover:text-primary"}`}>
-            {name}
-          </h3>
+      <div className="p-5 flex flex-col flex-1 gap-4">
+        <div className="space-y-3">
+          <div className="flex items-start justify-between gap-2">
+            <h3 className={`font-black text-xl leading-tight transition-colors flex-1 ${!is_open ? "text-muted-foreground" : "text-foreground group-hover:text-primary"}`}>
+              {name}
+            </h3>
+            {rating && (
+              <div className="flex items-center gap-1 bg-amber-400/10 px-2 py-0.5 rounded-lg shrink-0">
+                <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                <span className="text-[11px] font-black text-amber-600 dark:text-amber-400">{rating.toFixed(1)}</span>
+              </div>
+            )}
+          </div>
           
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex items-center gap-1.5 text-[11px] font-black text-muted-foreground uppercase tracking-tight">
-              <Clock className="h-3.5 w-3.5 text-primary" />
+          <div className="flex items-center gap-3 flex-wrap pt-1 border-t border-border/40">
+            <div className="flex items-center gap-1.5 text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+              <Clock className="h-3 w-3 text-primary" />
               <span>30-45 min</span>
             </div>
-            <span className="w-1 h-1 rounded-full bg-border" />
-            <div className="flex items-center gap-1.5 text-[11px] font-black text-muted-foreground uppercase tracking-tight">
-              <MapPin className="h-3.5 w-3.5 text-primary" />
+            <span className="w-1 h-1 rounded-full bg-border/60" />
+            <div className="flex items-center gap-1.5 text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+              <MapPin className="h-3 w-3 text-primary" />
               <span>1.2 km</span>
             </div>
           </div>
