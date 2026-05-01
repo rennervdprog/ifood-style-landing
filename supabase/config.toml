@@ -15,6 +15,9 @@ verify_jwt = false
 [functions.confirm-order-payment]
 verify_jwt = false
 
+[functions.monthly-billing]
+verify_jwt = false
+
 [functions.auto-withdraw-subaccounts]
 verify_jwt = false
 
