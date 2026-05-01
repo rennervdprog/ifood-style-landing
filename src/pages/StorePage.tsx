@@ -523,7 +523,7 @@ const StorePage = () => {
         <div className="bg-card rounded-2xl border border-border shadow-xl overflow-hidden">
           <div className="p-5 pb-0">
             <div className="flex items-start gap-4">
-               <div className="w-[84px] h-[84px] rounded-2xl bg-muted border-[3px] border-card shadow-xl flex-shrink-0 overflow-hidden -mt-14 relative">
+               <div className="w-[84px] h-[84px] rounded-2xl bg-muted border-[3px] border-card shadow-xl flex-shrink-0 overflow-hidden -mt-14 relative z-20">
                 {store?.image_url ? (
                   <img loading="lazy" decoding="async" src={store.image_url} alt={store?.name} className="w-full h-full object-cover" />
                 ) : (
