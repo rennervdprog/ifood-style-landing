@@ -2,7 +2,7 @@ import { formatBRL } from "@/lib/utils";
 import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogPortal, DialogOverlay } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Minus, Plus, ShoppingCart, Pizza, AlertTriangle, X, ArrowLeft } from "lucide-react";
@@ -616,12 +616,14 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) { onClose(); resetState(); } }}>
-      <DialogContent
-        className="p-0 gap-0 border-none bg-background shadow-2xl overflow-hidden fixed inset-0 z-[110]
-                   w-screen h-[100dvh] max-w-none rounded-none translate-x-0 translate-y-0
-                   md:w-full md:max-w-lg md:h-auto md:max-h-[90vh] md:rounded-3xl md:left-[50%] md:top-[50%] md:translate-x-[-50%] md:translate-y-[-50%]"
-        onOpenAutoFocus={(e) => e.preventDefault()}
-      >
+      <DialogPortal>
+        <DialogOverlay className="z-[100]" />
+        <DialogContent
+          className="p-0 gap-0 border-none bg-background shadow-2xl overflow-hidden fixed inset-0 z-[110]
+                     w-screen h-[100dvh] max-w-none rounded-none translate-x-0 translate-y-0
+                     md:w-full md:max-w-lg md:h-auto md:max-h-[90vh] md:rounded-3xl md:left-[50%] md:top-[50%] md:translate-x-[-50%] md:translate-y-[-50%]"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+        >
         <div className="flex flex-col h-full md:h-[90vh] relative bg-background">
           {/* HEADER COM STEPPER */}
           <div className="sticky top-0 z-[55] bg-background/95 backdrop-blur-md border-b">
@@ -700,7 +702,8 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
             </button>
           </div>
         </div>
-      </DialogContent>
+        </DialogContent>
+      </DialogPortal>
     </Dialog>
   );
 };
