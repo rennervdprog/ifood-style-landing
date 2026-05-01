@@ -263,7 +263,7 @@ const CheckoutPage = () => {
      let cancelled = false;
      setCalculatingFee(true);
  
-      const deliveryConfigWithPlatform = {
+      const deliveryConfigWithPlatform: any = {
         ...config,
         // Ensure we use the latest platform split from the store plan or admin settings
         platform_split: storePlan.platformDeliverySplit ?? config.platform_split ?? 2.0

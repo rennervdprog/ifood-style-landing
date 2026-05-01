@@ -6,7 +6,8 @@
    own_delivery_fee: number;
    customer_street?: string | null;
    customer_number?: string | null;
-   customer_coords?: { lat: number; lng: number } | null;
+    customer_coords?: { lat: number; lng: number } | null;
+    platform_split?: number;
  }
  
  /**
