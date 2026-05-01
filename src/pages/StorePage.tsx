@@ -59,7 +59,8 @@ const StorePage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [showHours, setShowHours] = useState(false);
-  const [showHalfHalf, setShowHalfHalf] = useState(false);
+   const [showHalfHalf, setShowHalfHalf] = useState(false);
+   const [scrolled, setScrolled] = useState(false);
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const pageRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLDivElement>(null);
