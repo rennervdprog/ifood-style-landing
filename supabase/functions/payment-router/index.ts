@@ -1344,13 +1344,17 @@ async function routePixCreation(params: {
     if (mpResult.suspended) {
       if (hasAsaasCredentials()) {
         console.warn("Mercado Pago suspended, falling back to Asaas");
-        const asaasResult = await createAsaasPix({
+        const asaasResult = await createAsaasPix(serviceClient, {
           amount: params.amount,
           description: params.description,
           payerCpf: params.payerCpf,
           payerName: `${params.payerFirstName} ${params.payerLastName}`.trim(),
           externalReference: params.externalReference,
           expiresAt: params.expiresAt,
+          orderId: params.orderId,
+          storeId: params.storeId,
+          subtotal: params.subtotal,
+          deliveryFee: params.deliveryFee,
         });
         if (asaasResult.ok) {
           const resp: StandardPixResponse = {
