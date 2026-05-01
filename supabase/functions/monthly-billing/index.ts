@@ -17,20 +17,47 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Auth: require service role key or anon key via Authorization header
+  // 🔁 EXTERNAL DB: this project keeps stores/plans/financial_transactions
+  // in the external Supabase project (qkjhguziuchqsbxzruea), NOT Lovable Cloud.
+  const EXTERNAL_URL = Deno.env.get("EXTERNAL_SUPABASE_URL")!;
+  const EXTERNAL_KEY = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY")!;
+
+  // Auth: accept the EXTERNAL service key (used by pg_cron / admin),
+  // the EXTERNAL anon key (used by user-triggered admin calls), the legacy
+  // Lovable Cloud keys (back-compat), or a valid admin user JWT.
   const authHeader = req.headers.get("Authorization");
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const externalAnon = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFramhndXppdWNocXNieHpydWVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDg4NTUsImV4cCI6MjA5MDYyNDg1NX0.2sTeKchqAEN2gCqnH1_Zn9cJmUSmZgryt05A66tgm2Y";
   const token = authHeader?.replace("Bearer ", "");
-  if (!token || (token !== anonKey && token !== serviceKey)) {
+  let isAdminCaller = !!token && (token === anonKey || token === serviceKey || token === EXTERNAL_KEY || token === externalAnon);
+
+  if (!isAdminCaller && token) {
+    // Try as a user JWT against the external project
+    try {
+      const userClient = createClient(EXTERNAL_URL, externalAnon, {
+        global: { headers: { Authorization: `Bearer ${token}` } },
+      });
+      const { data: u } = await userClient.auth.getUser(token);
+      if (u?.user) {
+        const adminClient = createClient(EXTERNAL_URL, EXTERNAL_KEY);
+        const { data: role } = await adminClient
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", u.user.id)
+          .eq("role", "admin")
+          .maybeSingle();
+        isAdminCaller = !!role;
+      }
+    } catch (_) {}
+  }
+
+  if (!isAdminCaller) {
     return json({ error: "Unauthorized" }, 401);
   }
 
   try {
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    const supabase = createClient(EXTERNAL_URL, EXTERNAL_KEY);
 
     const ASAAS_API_KEY = Deno.env.get("ASAAS_API_KEY");
     if (!ASAAS_API_KEY) {
@@ -108,19 +135,76 @@ Deno.serve(async (req) => {
             : "Plano Crescimento";
         const description = `${planLabel} - ${store.name} - ${referenceCode}`;
 
+        // Resolve Asaas customer for this store
+        let customerId: string | null = store.asaas_account_id || null;
+
+        if (!customerId) {
+          // Look up store owner profile to create/find a customer
+          const { data: ownerProfile } = await supabase
+            .from("profiles")
+            .select("full_name, email, document")
+            .eq("user_id", store.owner_id)
+            .maybeSingle();
+
+          let cleanCpf = String(ownerProfile?.document || "").replace(/\D/g, "");
+          const isSandbox = !ASAAS_API_KEY.startsWith("$aact_");
+          if (isSandbox && cleanCpf.length < 11) cleanCpf = "52998224725";
+
+          // PRODUCTION requires a valid CPF/CNPJ — fail early with a clear message
+          if (!isSandbox && cleanCpf.length < 11) {
+            console.error(`[monthly-billing] Store ${store.name} owner has no CPF/CNPJ — cannot bill`);
+            failed++;
+            results.push({
+              store: store.name,
+              error: "CPF/CNPJ do dono da loja não cadastrado. Peça ao lojista para preencher o documento no perfil.",
+              owner_id: store.owner_id,
+            });
+            continue;
+          }
+
+          if (cleanCpf.length >= 11) {
+            const searchRes = await fetch(`${asaasBaseUrl}/customers?cpfCnpj=${cleanCpf}`, {
+              headers: { "access_token": ASAAS_API_KEY },
+            });
+            if (searchRes.ok) {
+              const sd = await searchRes.json();
+              if (sd.data?.length > 0) customerId = sd.data[0].id;
+            }
+          }
+
+          if (!customerId) {
+            const customerEmail = ownerProfile?.email || `lojista-${(store.owner_id || "").substring(0, 8)}@itasuper.com`;
+            const cBody: Record<string, unknown> = {
+              name: ownerProfile?.full_name || store.name || "Lojista",
+              email: customerEmail,
+            };
+            if (cleanCpf.length >= 11) cBody.cpfCnpj = cleanCpf;
+
+            const createRes = await fetch(`${asaasBaseUrl}/customers`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "access_token": ASAAS_API_KEY },
+              body: JSON.stringify(cBody),
+            });
+            const cData = await createRes.json();
+            if (!createRes.ok) {
+              console.error(`Asaas customer create failed for ${store.name}:`, JSON.stringify(cData));
+              failed++;
+              results.push({ store: store.name, error: cData });
+              continue;
+            }
+            customerId = cData.id;
+          }
+        }
+
         // Create Asaas charge
         const chargeBody: any = {
+          customer: customerId,
           billingType: "PIX",
           value: Number(plan.monthly_fee),
           dueDate: dueDateStr,
           description: description.substring(0, 256),
           externalReference: referenceCode,
         };
-
-        // If store has Asaas sub-account, charge the sub-account customer
-        if (store.asaas_account_id) {
-          chargeBody.customer = store.asaas_account_id;
-        }
 
         const chargeResponse = await fetch(`${asaasBaseUrl}/payments`, {
           method: "POST",

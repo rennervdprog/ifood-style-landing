@@ -75,8 +75,8 @@ Deno.serve(async (req) => {
 
       // Service-role client for review-queue inserts (no RLS bypass needed otherwise)
       const reviewClient = createClient(
-        Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+        Deno.env.get("EXTERNAL_SUPABASE_URL")!,
+        Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY")!
       );
 
       // SECURITY: only auto-approve transfers that match our system's payout pattern
@@ -140,8 +140,8 @@ Deno.serve(async (req) => {
 
     // Use service role to bypass RLS
     const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      Deno.env.get("EXTERNAL_SUPABASE_URL")!,
+      Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY")!
     );
 
     // ── IDEMPOTENCY GUARD ──────────────────────────────────────────────
@@ -452,9 +452,10 @@ Deno.serve(async (req) => {
           }
         }
       } else {
-        // This is a financial transaction (commission charge, platform fee, subscription, etc.)
+        // This is a financial transaction (commission charge, platform fee, subscription, monthly billing, etc.)
         const isPlatformFee = externalReference.startsWith("TAXA-");
         const isSubscription = externalReference.startsWith("#ASSIN-");
+        const isMonthlyBilling = externalReference.startsWith("#MENS-");
 
         const { data: txData, error: txError } = await supabase
           .from("financial_transactions")
@@ -474,7 +475,7 @@ Deno.serve(async (req) => {
         } else {
           console.log(`Financial transaction ${externalReference} confirmed via Asaas`);
 
-          if (isSubscription && txData?.store_id) {
+          if ((isSubscription || isMonthlyBilling) && txData?.store_id) {
             // Plan subscription paid — clear trial, set billing dates based on payment date
             const now = new Date();
             const nextMonth = new Date(now);
@@ -491,7 +492,14 @@ Deno.serve(async (req) => {
               .eq("store_id", txData.store_id)
               .eq("is_active", true);
 
-            console.log(`Store ${txData.store_id} subscription activated, next billing: ${nextMonth.toISOString()}`);
+            console.log(`Store ${txData.store_id} ${isMonthlyBilling ? "monthly fee" : "subscription"} paid, next billing: ${nextMonth.toISOString()}`);
+
+            // Reactivate store if blocked for late fee
+            await supabase
+              .from("stores")
+              .update({ status: "ativo" })
+              .eq("id", txData.store_id)
+              .eq("status", "bloqueado");
           } else if (isPlatformFee && txData?.store_id) {
             // Platform fee paid — subtract paid amount from repasse_pendente (avoid losing accruals
             // that occurred between charge generation and payment confirmation)
