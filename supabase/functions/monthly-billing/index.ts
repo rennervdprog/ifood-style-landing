@@ -150,6 +150,18 @@ Deno.serve(async (req) => {
           const isSandbox = !ASAAS_API_KEY.startsWith("$aact_");
           if (isSandbox && cleanCpf.length < 11) cleanCpf = "52998224725";
 
+          // PRODUCTION requires a valid CPF/CNPJ — fail early with a clear message
+          if (!isSandbox && cleanCpf.length < 11) {
+            console.error(`[monthly-billing] Store ${store.name} owner has no CPF/CNPJ — cannot bill`);
+            failed++;
+            results.push({
+              store: store.name,
+              error: "CPF/CNPJ do dono da loja não cadastrado. Peça ao lojista para preencher o documento no perfil.",
+              owner_id: store.owner_id,
+            });
+            continue;
+          }
+
           if (cleanCpf.length >= 11) {
             const searchRes = await fetch(`${asaasBaseUrl}/customers?cpfCnpj=${cleanCpf}`, {
               headers: { "access_token": ASAAS_API_KEY },
