@@ -1144,7 +1144,17 @@ async function routePixCreation(params: {
   externalReference: string;
   idempotencyKey: string;
   expiresAt?: string;
+  orderId?: string;
+  storeId?: string;
+  subtotal?: number;
+  deliveryFee?: number;
 }): Promise<Response> {
+  // Get service role supabase client to allow RPC call
+  const serviceClient = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SERVICE_ROLE_KEY")!,
+  );
+
   const provider = await getActiveProviderFromDB();
   console.log(`[Route] 🎯 Active provider: ${provider} | hasAsaas=${hasAsaasCredentials()} hasMP=${hasMpCredentials()} hasEfi=${hasEfiCredentials()}`);
 
