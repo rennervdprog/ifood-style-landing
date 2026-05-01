@@ -22,22 +22,15 @@ Deno.serve(async (req) => {
   const EXTERNAL_URL = Deno.env.get("EXTERNAL_SUPABASE_URL")!;
   const EXTERNAL_KEY = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY")!;
 
-  // Auth: accept the EXTERNAL service key (used by pg_cron / admin),
-  // the EXTERNAL anon key (used by user-triggered admin calls), the legacy
-  // Lovable Cloud keys (back-compat), or a valid admin user JWT.
-   const authHeader = req.headers.get("Authorization");
-   const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
-   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-   const externalAnon = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFramhndXppdWNocXNieHpydWVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDg4NTUsImV4cCI6MjA5MDYyNDg1NX0.2sTeKchqAEN2gCqnH1_Zn9cJmUSmZgryt05A66tgm2Y";
-   const token = authHeader?.replace("Bearer ", "");
-   
-   // Use EXTERNAL_KEY for direct auth matches if provided
-   let isAdminCaller = !!token && (
-     token === anonKey || 
-     token === serviceKey || 
-     token === EXTERNAL_KEY || 
-     token === externalAnon
-   );
+  // Auth: accept service keys for scheduled jobs, or a real external admin JWT
+  // for the admin panel. Do NOT accept anon keys as admin credentials.
+  const authHeader = req.headers.get("Authorization");
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+  const externalAnon = Deno.env.get("EXTERNAL_SUPABASE_ANON_KEY") || anonKey;
+  const token = authHeader?.replace("Bearer ", "") || "";
+
+  let isAdminCaller = !!token && (token === serviceKey || token === EXTERNAL_KEY);
 
   if (!isAdminCaller && token) {
     // Try as a user JWT against the external project
@@ -48,15 +41,24 @@ Deno.serve(async (req) => {
       const { data: u } = await userClient.auth.getUser(token);
       if (u?.user) {
         const adminClient = createClient(EXTERNAL_URL, EXTERNAL_KEY);
-        const { data: role } = await adminClient
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", u.user.id)
-          .eq("role", "admin")
-          .maybeSingle();
-        isAdminCaller = !!role;
+        const { data: isPlatformAdmin, error: rpcError } = await adminClient
+          .rpc("is_platform_admin", { _user_id: u.user.id });
+
+        if (!rpcError) {
+          isAdminCaller = !!isPlatformAdmin;
+        } else {
+          const { data: role } = await adminClient
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", u.user.id)
+            .eq("role", "admin")
+            .maybeSingle();
+          isAdminCaller = !!role;
+        }
       }
-    } catch (_) {}
+    } catch (authError) {
+      console.warn("[monthly-billing] admin auth failed", authError);
+    }
   }
 
   if (!isAdminCaller) {
