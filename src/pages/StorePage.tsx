@@ -529,7 +529,6 @@ const StorePage = () => {
               </span>
             </div>
           )}
-          </div>
 
           {/* Address + Maps button */}
           {store?.address_neighborhood && (
