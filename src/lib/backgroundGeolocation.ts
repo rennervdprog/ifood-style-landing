@@ -60,7 +60,7 @@ export async function startBackgroundTracking(orderId?: string): Promise<boolean
   currentOrderId = orderId || null;
 
   try {
-    const { BackgroundGeolocation } = await import("@capacitor-community/background-geolocation");
+    const { default: BackgroundGeolocation } = await import("@capacitor-community/background-geolocation");
 
     watcherId = await BackgroundGeolocation.addWatcher(
       {
@@ -112,7 +112,7 @@ export function setBackgroundTrackingOrderId(orderId: string | null) {
 export async function stopBackgroundTracking(): Promise<void> {
   if (!watcherId) return;
   try {
-    const { BackgroundGeolocation } = await import("@capacitor-community/background-geolocation");
+    const { default: BackgroundGeolocation } = await import("@capacitor-community/background-geolocation");
     await BackgroundGeolocation.removeWatcher({ id: watcherId });
     console.log("[BgGeo] 🛑 Rastreamento em background parado.");
   } catch (e) {
