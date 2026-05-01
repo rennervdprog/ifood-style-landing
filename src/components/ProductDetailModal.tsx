@@ -503,15 +503,9 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
               </div>
             )}
 
-            {/* Price - hidden for pizza with sizes */}
-            {!hasSizes && (
-              <p className="text-lg font-black text-primary mt-2">{formatBRL(product.price)}</p>
-            )}
-          </DialogHeader>
-
           {/* ===== PIZZA SIZE SELECTOR ===== */}
           {hasSizes && (
-            <div className="bg-muted/50 rounded-xl p-4">
+            <div className="bg-muted/30 rounded-2xl p-4">
               <div className="flex items-center gap-2 mb-3">
                 <Pizza className="h-4 w-4 text-primary" />
                 <h4 className="font-bold text-sm text-foreground">Escolha o tamanho</h4>
