@@ -431,7 +431,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
       </div>
 
        {/* Fixed bottom bar */}
-       <div className="fixed bottom-0 left-0 right-0 z-30 bg-background border-t px-4 py-3 pb-safe-area-bottom">
+       <div className="fixed bottom-0 left-0 right-0 z-[110] bg-background border-t px-4 py-3 pb-8 md:pb-4 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
         {!isFinalStep ? (
           <div className="flex items-center gap-3">
             {step > 1 && (
