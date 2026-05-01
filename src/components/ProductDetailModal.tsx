@@ -311,41 +311,38 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
         className="max-w-lg p-0 gap-0 max-h-[90vh] overflow-y-auto rounded-3xl border-none bg-background shadow-2xl animate-in slide-in-from-bottom-4 duration-300" 
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
-        <div className="relative">
-          {/* Botão Fechar Customizado */}
+        {/* LAYOUT HERO: Imagem do produto em destaque */}
+        <div className="relative w-full aspect-video overflow-hidden">
           <DialogClose className="absolute right-4 top-4 z-50 rounded-full bg-black/40 p-2 text-white backdrop-blur-md transition-all hover:bg-black/60 active:scale-90">
             <X className="h-6 w-6" />
             <span className="sr-only">Fechar</span>
           </DialogClose>
 
-          {/* Product image */}
-          <div className="relative w-full aspect-[16/9] overflow-hidden">
-            {product.image_url ? (
-              <img 
-                loading="lazy" 
-                decoding="async" 
-                src={product.image_url} 
-                alt={product.name} 
-                className="w-full h-full object-cover" 
-              />
-            ) : (
-              <div className="w-full h-full bg-muted flex items-center justify-center">
-                <span className="text-7xl">{emoji}</span>
-              </div>
-            )}
-            {/* Gradiente na base da imagem */}
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-60" />
-          </div>
+          {product.image_url ? (
+            <img 
+              loading="lazy" 
+              decoding="async" 
+              src={product.image_url} 
+              alt={product.name} 
+              className="w-full h-full object-cover" 
+            />
+          ) : (
+            <div className="w-full h-full bg-muted flex items-center justify-center">
+              <span className="text-7xl">{emoji}</span>
+            </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-60" />
         </div>
 
-        <div className="px-5 pb-24 pt-4 space-y-6">
-          <DialogHeader className="text-left space-y-1">
-            <DialogTitle className="text-3xl font-bold tracking-tight text-foreground leading-tight">
+        {/* CONTEÚDO: Título, Preço e Descrição */}
+        <div className="p-6 space-y-6">
+          <DialogHeader className="text-left space-y-2">
+            <DialogTitle className="text-3xl font-extrabold tracking-tight text-foreground leading-tight">
               {product.name}
             </DialogTitle>
             
             {!hasSizes && (
-              <div className="flex items-baseline gap-2 mt-1">
+              <div className="flex items-baseline gap-2">
                 <span className="text-2xl font-black text-primary">
                   {formatBRL(product.price)}
                 </span>
@@ -353,7 +350,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
             )}
 
             {product.description && (
-              <p className="text-base text-muted-foreground font-medium leading-relaxed pt-1">
+              <p className="text-base text-muted-foreground font-medium leading-relaxed">
                 {product.description}
               </p>
             )}
