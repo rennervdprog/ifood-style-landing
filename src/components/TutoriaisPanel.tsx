@@ -607,27 +607,6 @@ const TutoriaisPanel = () => {
         </div>
       </div>
 
-      {/* Filtros por categoria */}
-      <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
-        {CATEGORIES.map((cat) => {
-          const Icon = cat.icon;
-          const isActive = activeCategory === cat.id;
-          return (
-            <button
-              key={cat.id}
-              onClick={() => setActiveCategory(cat.id)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex-shrink-0 ${
-                isActive
-                  ? "bg-primary text-primary-foreground shadow-md"
-                  : "bg-card border border-border text-foreground hover:bg-muted/40"
-              }`}
-            >
-              <Icon className="h-3.5 w-3.5" />
-              {cat.label}
-            </button>
-          );
-        })}
-      </div>
 
       {/* Sections list */}
       <div className="space-y-3">
