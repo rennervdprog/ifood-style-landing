@@ -2,7 +2,7 @@ import { formatBRL } from "@/lib/utils";
 import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogPortal, DialogOverlay } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Minus, Plus, ShoppingCart, Pizza, AlertTriangle, X, ArrowLeft } from "lucide-react";
@@ -616,13 +616,15 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) { onClose(); resetState(); } }}>
-      <DialogContent
-        className="p-0 gap-0 border-none bg-background shadow-2xl overflow-hidden
-                   w-screen h-[100dvh] max-w-none rounded-none fixed inset-0 z-[110] translate-x-0 translate-y-0
-                   md:w-full md:max-w-lg md:h-auto md:max-h-[90vh] md:rounded-3xl md:left-[50%] md:top-[50%] md:translate-x-[-50%] md:translate-y-[-50%]"
-        onOpenAutoFocus={(e) => e.preventDefault()}
-      >
-        <div className="flex flex-col h-full md:h-[90vh] relative bg-background">
+      <DialogPortal>
+        <DialogOverlay className="z-[100]" />
+        <DialogContent
+          className="p-0 gap-0 border-none bg-background shadow-2xl overflow-hidden
+                     w-full h-full max-w-none rounded-none fixed inset-0 z-[110] flex flex-col outline-none
+                     md:w-full md:max-w-lg md:h-auto md:max-h-[90vh] md:rounded-3xl md:left-[50%] md:top-[50%] md:translate-x-[-50%] md:translate-y-[-50%]"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+        >
+          <div className="flex flex-col h-full relative bg-background overflow-hidden">
           {/* HEADER COM STEPPER */}
           <div className="sticky top-0 z-[55] bg-background/95 backdrop-blur-md border-b">
             <div className="flex items-center gap-3 px-4 py-3">
@@ -668,7 +670,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
           </div>
 
           {/* RODAPÉ STICKY */}
-          <div className="absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-md border-t p-4 flex items-center gap-3 z-[60] pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <div className="sticky bottom-0 left-0 right-0 bg-background/95 backdrop-blur-md border-t p-4 flex items-center gap-3 z-[60] pb-[max(1rem,env(safe-area-inset-bottom))]">
             <div className="flex items-center gap-1 bg-muted rounded-2xl p-1 border border-muted-foreground/10 flex-shrink-0">
               <button
                 onClick={() => setQuantity(q => Math.max(1, q - 1))}
@@ -699,8 +701,9 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
               <span className="truncate">{primaryLabel}</span>
             </button>
           </div>
-        </div>
-      </DialogContent>
+          </div>
+        </DialogContent>
+      </DialogPortal>
     </Dialog>
   );
 };
