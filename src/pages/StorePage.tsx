@@ -473,7 +473,7 @@ const StorePage = () => {
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
 
         {/* Sticky Header Top Bar */}
-        <div className={`fixed top-0 left-0 right-0 flex items-center justify-between p-4 z-50 transition-all duration-300 ${
+        <div className={`fixed top-0 left-0 right-0 flex items-center justify-between p-4 z-[60] transition-all duration-300 ${
           scrolled ? "bg-background/95 backdrop-blur-md border-b border-border shadow-sm py-2" : "bg-transparent"
         }`}>
           <div className="flex items-center gap-3 min-w-0">
@@ -870,8 +870,8 @@ const StorePage = () => {
       {visibleSections.length > 0 && !filteredProducts && (
         <div
           ref={navRef}
-          className={`sticky z-30 bg-background/95 backdrop-blur-md border-b border-border mt-4 shadow-sm transition-all duration-300 ${
-            scrolled ? "top-[56px]" : "top-0"
+          className={`sticky z-[50] bg-background border-b border-border mt-4 shadow-sm transition-all duration-300 ${
+            scrolled ? "top-[64px]" : "top-0"
           }`}
         >
           <div className="flex overflow-x-auto gap-1.5 px-4 py-2.5 no-scrollbar">
