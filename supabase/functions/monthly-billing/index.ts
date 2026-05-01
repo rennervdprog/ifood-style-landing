@@ -19,16 +19,19 @@ Deno.serve(async (req) => {
 
   // 🔁 EXTERNAL DB: this project keeps stores/plans/financial_transactions
   // in the external Supabase project (qkjhguziuchqsbxzruea), NOT Lovable Cloud.
-  const EXTERNAL_URL = Deno.env.get("EXTERNAL_SUPABASE_URL")!;
-  const EXTERNAL_KEY = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY")!;
+  const EXTERNAL_URL = Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!;
+  const EXTERNAL_KEY = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY")
+    || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY")
+    || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
   // Auth: accept service keys for scheduled jobs, or a real external admin JWT
   // for the admin panel. Do NOT accept anon keys as admin credentials.
   const authHeader = req.headers.get("Authorization");
+  const apikeyHeader = req.headers.get("apikey") || "";
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
   const externalAnon = Deno.env.get("EXTERNAL_SUPABASE_ANON_KEY") || anonKey;
-  const token = authHeader?.replace("Bearer ", "") || "";
+  const token = authHeader?.replace("Bearer ", "") || apikeyHeader;
 
   let isAdminCaller = !!token && (token === serviceKey || token === EXTERNAL_KEY);
 
