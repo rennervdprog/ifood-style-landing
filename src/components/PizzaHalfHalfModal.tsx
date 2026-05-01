@@ -338,6 +338,22 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
             {pizzaProducts.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-12">Nenhum sabor cadastrado ainda.</p>
             )}
+
+            {/* When the store has no borders, show observations on step 2 (final step) */}
+            {step === 2 && !hasBorders && !bordersLoading && product2Id && (
+              <div className="pt-4">
+                <label className="text-sm font-bold text-foreground mb-1.5 block">Observações</label>
+                <Textarea
+                  placeholder="Ex: Sem cebola..."
+                  value={observations}
+                  onChange={(e) => setObservations(e.target.value)}
+                  className="resize-none h-20 rounded-xl"
+                  maxLength={200}
+                  autoFocus={false}
+                  tabIndex={-1}
+                />
+              </div>
+            )}
           </div>
         )}
 
