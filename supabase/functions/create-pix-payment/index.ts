@@ -161,6 +161,13 @@ Deno.serve(async (req) => {
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + 1);
 
+    // Security check: Verify amount matches order total in DB
+    const orderTotal = Number(order.total_price);
+    if (Math.abs(orderTotal - Number(amount)) > 0.01) {
+      console.error(`[Security] Amount mismatch: order=${orderTotal}, received=${amount}`);
+      return json({ error: "O valor do pagamento não coincide com o total do pedido." }, 400);
+    }
+
     // Step 2a: Compute split (only if store has Asaas subaccount configured)
     let splitArray: Array<{ walletId: string; fixedValue: number }> | undefined;
     try {
@@ -176,16 +183,17 @@ Deno.serve(async (req) => {
       if (!splitErr && splitInfo && (splitInfo as any).has_split) {
         const platformAmount = Number((splitInfo as any).platform_amount || 0);
         const storeWalletId = (splitInfo as any).store_wallet_id as string | null;
-        // Asaas split: list of recipients other than the master account.
-        // We send the STORE's portion to the store wallet; platform keeps the rest.
+        
         const total = Number(amount);
-        const storeAmount = Math.max(0, +(total - platformAmount).toFixed(2));
+        // Round everything to 2 decimals for safety
+        const storeAmount = Math.max(0, Number((total - platformAmount).toFixed(2)));
+        
         if (storeWalletId && storeAmount > 0 && storeAmount < total) {
           splitArray = [{ walletId: storeWalletId, fixedValue: storeAmount }];
           console.log(`[Split] order=${order_id} platform=${platformAmount} store=${storeAmount} wallet=${storeWalletId}`);
         }
       } else {
-        console.log(`[Split] no split for order ${order_id} (fallback to legacy flow)`);
+        console.log(`[Split] no split for order ${order_id} (fallback to legacy flow or wallet missing)`);
       }
     } catch (e) {
       console.warn("Split computation failed, proceeding without split:", e);

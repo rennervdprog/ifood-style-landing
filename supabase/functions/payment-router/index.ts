@@ -186,7 +186,11 @@ function isValidCpf(cpf: string): boolean {
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-async function createAsaasPix(params: {
+async function createAsaasPix(supabase: any, params: {
+  orderId?: string;
+  storeId?: string;
+  subtotal?: number;
+  deliveryFee?: number;
   amount: number;
   description: string;
   payerCpf: string;
@@ -308,6 +312,33 @@ async function createAsaasPix(params: {
       console.log(`[Asaas] Customer created: ${customerId}`);
     }
 
+    // Step 2a: Compute split (same logic as create-pix-payment)
+    let splitArray: Array<{ walletId: string; fixedValue: number }> | undefined;
+    if (params.orderId && params.storeId) {
+      try {
+        const { data: splitInfo, error: splitErr } = await supabase.rpc(
+          "get_asaas_split_for_order",
+          {
+            _store_id: params.storeId,
+            _subtotal: params.subtotal || 0,
+            _delivery_fee: params.deliveryFee || 0,
+            _payment_method: "pix",
+          }
+        );
+        if (!splitErr && splitInfo && (splitInfo as any).has_split) {
+          const platformAmount = Number((splitInfo as any).platform_amount || 0);
+          const storeWalletId = (splitInfo as any).store_wallet_id as string | null;
+          const total = Number(params.amount);
+          const storeAmount = Math.max(0, Number((total - platformAmount).toFixed(2)));
+          if (storeWalletId && storeAmount > 0 && storeAmount < total) {
+            splitArray = [{ walletId: storeWalletId, fixedValue: storeAmount }];
+          }
+        }
+      } catch (e) {
+        console.warn("[Router] Split computation failed:", e);
+      }
+    }
+
     // Step 2: Create payment
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + 1);
@@ -321,6 +352,11 @@ async function createAsaasPix(params: {
       description: params.description.substring(0, 500),
       externalReference: params.externalReference,
     };
+
+    if (splitArray?.length) {
+      paymentBody.split = splitArray;
+      console.log(`[Router] Applied split to Asaas payment: ${JSON.stringify(splitArray)}`);
+    }
 
     console.log(`[Asaas] Creating PIX payment: R$${params.amount}, ref=${params.externalReference}`);
     const paymentRes = await fetch(`${baseUrl}/payments`, {
@@ -811,6 +847,13 @@ async function handleOrderPix(
   const idempotencyKey = `pix-${order_id}-${Date.now()}`;
   console.log(`[OrderPix] 🚀 Routing to provider…`);
 
+  // Security check: Verify amount matches order total in DB
+  const orderTotal = Number(order.total_price);
+  if (Math.abs(orderTotal - amount) > 0.01) {
+    console.error(`[Router Security] Amount mismatch: order=${orderTotal}, received=${amount}`);
+    return json({ error: "O valor do pagamento não coincide com o total do pedido." }, 400);
+  }
+
   return await routePixCreation({
     amount,
     description: desc,
@@ -821,6 +864,11 @@ async function handleOrderPix(
     externalReference: order_id,
     idempotencyKey,
     expiresAt,
+    // Pass order info for split calculation
+    orderId: order.id,
+    storeId: order.store_id,
+    subtotal: Number(order.subtotal || 0),
+    deliveryFee: Number(order.delivery_fee || 0),
   });
 }
 
@@ -1096,7 +1144,17 @@ async function routePixCreation(params: {
   externalReference: string;
   idempotencyKey: string;
   expiresAt?: string;
+  orderId?: string;
+  storeId?: string;
+  subtotal?: number;
+  deliveryFee?: number;
 }): Promise<Response> {
+  // Get service role supabase client to allow RPC call
+  const serviceClient = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SERVICE_ROLE_KEY")!,
+  );
+
   const provider = await getActiveProviderFromDB();
   console.log(`[Route] 🎯 Active provider: ${provider} | hasAsaas=${hasAsaasCredentials()} hasMP=${hasMpCredentials()} hasEfi=${hasEfiCredentials()}`);
 
@@ -1112,13 +1170,17 @@ async function routePixCreation(params: {
 
   // ── Asaas (primary) ──
   if (provider === "ASAAS") {
-    const asaasResult = await createAsaasPix({
+    const asaasResult = await createAsaasPix(serviceClient, {
       amount: params.amount,
       description: params.description,
       payerCpf: params.payerCpf,
       payerName: `${params.payerFirstName} ${params.payerLastName}`.trim(),
       externalReference: params.externalReference,
       expiresAt: params.expiresAt,
+      orderId: params.orderId,
+      storeId: params.storeId,
+      subtotal: params.subtotal,
+      deliveryFee: params.deliveryFee,
     });
 
     if (asaasResult.ok) {
@@ -1203,13 +1265,17 @@ async function routePixCreation(params: {
     // Efí failed → fallback to Asaas then Mercado Pago
     if (hasAsaasCredentials()) {
       console.warn("Efí Bank failed, falling back to Asaas");
-      const asaasResult = await createAsaasPix({
+      const asaasResult = await createAsaasPix(serviceClient, {
         amount: params.amount,
         description: params.description,
         payerCpf: params.payerCpf,
         payerName: `${params.payerFirstName} ${params.payerLastName}`.trim(),
         externalReference: params.externalReference,
         expiresAt: params.expiresAt,
+        orderId: params.orderId,
+        storeId: params.storeId,
+        subtotal: params.subtotal,
+        deliveryFee: params.deliveryFee,
       });
       if (asaasResult.ok) {
         const resp: StandardPixResponse = {
@@ -1278,13 +1344,17 @@ async function routePixCreation(params: {
     if (mpResult.suspended) {
       if (hasAsaasCredentials()) {
         console.warn("Mercado Pago suspended, falling back to Asaas");
-        const asaasResult = await createAsaasPix({
+        const asaasResult = await createAsaasPix(serviceClient, {
           amount: params.amount,
           description: params.description,
           payerCpf: params.payerCpf,
           payerName: `${params.payerFirstName} ${params.payerLastName}`.trim(),
           externalReference: params.externalReference,
           expiresAt: params.expiresAt,
+          orderId: params.orderId,
+          storeId: params.storeId,
+          subtotal: params.subtotal,
+          deliveryFee: params.deliveryFee,
         });
         if (asaasResult.ok) {
           const resp: StandardPixResponse = {
