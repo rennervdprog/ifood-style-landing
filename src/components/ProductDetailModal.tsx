@@ -308,10 +308,10 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) { onClose(); resetState(); } }}>
       <DialogContent 
-        className="max-w-lg p-0 gap-0 max-h-[95vh] overflow-y-auto rounded-t-3xl border-none bg-background shadow-2xl animate-in slide-in-from-bottom-4 duration-300 md:rounded-3xl" 
+        className="max-w-lg p-0 gap-0 max-h-[90vh] overflow-hidden rounded-t-3xl border-none bg-background shadow-2xl animate-in slide-in-from-bottom-4 duration-300 md:rounded-3xl" 
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
-        <div className="flex flex-col h-full relative">
+        <div className="flex flex-col h-[90vh] relative">
           {/* IMAGEM HERO */}
           <div className="relative w-full aspect-video overflow-hidden flex-shrink-0">
             <DialogClose className="absolute right-4 top-4 z-[60] rounded-full bg-black/40 p-2 text-white backdrop-blur-sm transition-all hover:bg-black/60 active:scale-90 shadow-lg border border-white/10">
