@@ -118,9 +118,9 @@ const TermosDeUso = () => {
             5.1. O ItaSuper oferece três planos para lojistas:
           </p>
           <ul className="text-sm text-muted-foreground list-disc pl-4 space-y-2">
-              <li><strong className="text-foreground">Essencial (R$ 180/mês):</strong> 0% comissão sobre produtos. Taxas operacionais: <strong className="text-foreground">R$ 1,99 por pedido PIX</strong> e <strong className="text-foreground">R$ 2,00 adicionais por entrega</strong> (valor somado à taxa base do lojista e pago integralmente pelo cliente final).</li>
-              <li><strong className="text-foreground">Crescimento (R$ 100/mês + 2,5% por pedido):</strong> Taxas operacionais: <strong className="text-foreground">R$ 1,99 por pedido PIX</strong> e <strong className="text-foreground">R$ 2,00 adicionais por entrega</strong> (pago pelo cliente).</li>
-              <li><strong className="text-foreground">Comissão (6% por pedido):</strong> Sem mensalidade. Taxas operacionais: <strong className="text-foreground">R$ 1,99 por pedido PIX</strong> e <strong className="text-foreground">R$ 2,00 adicionais por entrega</strong> (pago pelo cliente).</li>
+              <li><strong className="text-foreground">Essencial (R$ 180/mês):</strong> 0% comissão sobre produtos. Taxas operacionais: <strong className="text-foreground">R$ 1,99 por pedido PIX (descontado do lojista)</strong> e <strong className="text-foreground">R$ 2,00 adicionais por entrega</strong> (valor somado à taxa base do lojista e pago pelo cliente final).</li>
+              <li><strong className="text-foreground">Crescimento (R$ 100/mês + 2,5% por pedido):</strong> Taxas operacionais: <strong className="text-foreground">R$ 1,99 por pedido PIX (descontado do lojista)</strong> e <strong className="text-foreground">R$ 2,00 adicionais por entrega</strong> (pago pelo cliente).</li>
+              <li><strong className="text-foreground">Comissão (6% por pedido):</strong> Sem mensalidade. Taxas operacionais: <strong className="text-foreground">R$ 1,99 por pedido PIX (descontado do lojista)</strong> e <strong className="text-foreground">R$ 2,00 adicionais por entrega</strong> (pago pelo cliente).</li>
              <li><strong className="text-foreground">Apoiador:</strong> Plano especial destinado a parceiros estratégicos com condições diferenciadas de suporte e visibilidade.</li>
           </ul>
           <p className="text-sm text-muted-foreground">
