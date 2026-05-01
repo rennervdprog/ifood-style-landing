@@ -56,19 +56,6 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
   const [product1Id, setProduct1Id] = useState<string | null>(null);
   const [product2Id, setProduct2Id] = useState<string | null>(null);
   const [selectedBorderId, setSelectedBorderId] = useState<string | null>(null);
-
-  // Auto-select "Tradicional" border by default when borders are loaded
-  useEffect(() => {
-    if (open && borders.length > 0 && !selectedBorderId) {
-      const tradicional = borders.find(b => 
-        b.name.toLowerCase().includes("tradicional") || b.price === 0
-      );
-      if (tradicional) {
-        setSelectedBorderId(tradicional.id);
-      }
-    }
-  }, [borders, open, selectedBorderId]);
-
   const [observations, setObservations] = useState("");
   const [quantity, setQuantity] = useState(1);
 
@@ -86,6 +73,18 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
     },
     enabled: open && !!storeId,
   });
+
+  // Auto-select "Tradicional" border by default when borders are loaded
+  useEffect(() => {
+    if (open && borders.length > 0 && !selectedBorderId) {
+      const tradicional = borders.find(b => 
+        b.name.toLowerCase().includes("tradicional") || b.price === 0
+      );
+      if (tradicional) {
+        setSelectedBorderId(tradicional.id);
+      }
+    }
+  }, [borders, open, selectedBorderId]);
 
   const hasBorders = borders.length > 0;
   const totalSteps = hasBorders ? 3 : 2;
