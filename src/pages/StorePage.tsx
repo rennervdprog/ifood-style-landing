@@ -502,30 +502,33 @@ const StorePage = () => {
                 </div>
               )}
             </div>
-            <div className="flex-1 min-w-0 pt-1">
-              <h1 className="text-xl font-black text-foreground truncate">{store?.name}</h1>
-              <div className="flex flex-wrap items-center gap-2 mt-1">
-                <span className="text-xs text-muted-foreground capitalize bg-muted px-2 py-0.5 rounded-full">
+            <div className="flex-1 min-w-0 pt-1 flex flex-col">
+              <h1 className="text-xl sm:text-2xl font-black text-foreground break-words leading-tight">{store?.name}</h1>
+              <div className="flex flex-wrap items-center gap-2 mt-2">
+                <span className="text-xs font-black text-muted-foreground uppercase tracking-widest bg-muted/50 px-2.5 py-1 rounded-lg border border-border/50">
                   {store?.category}
                 </span>
                 {store?.rating && store.rating > 0 && (
-                  <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 rounded-full">
+                  <div className="flex items-center gap-1 bg-amber-400/10 px-2.5 py-1 rounded-lg border border-amber-400/20">
                     <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                    <span className="text-xs font-bold text-amber-700 dark:text-amber-400">{store.rating}</span>
+                    <span className="text-xs font-black text-amber-600 dark:text-amber-400">{store.rating}</span>
                   </div>
                 )}
               </div>
             </div>
-            {hasConfiguredHours && (
-              <span className={`text-xs font-bold px-3 py-1.5 rounded-full mt-1 ${
+          </div>
+
+          {hasConfiguredHours && (
+            <div className="mt-3">
+              <span className={`inline-flex items-center text-xs font-black px-3 py-1.5 rounded-xl border ${
                 storeStatus.isOpen
-                  ? "bg-green-100 text-green-800"
-                  : "bg-destructive/10 text-destructive"
+                  ? "bg-green-500/10 text-green-600 border-green-500/20"
+                  : "bg-destructive/10 text-destructive border-destructive/20"
               }`}>
                 {statusLabel}
               </span>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Address + Maps button */}
           {store?.address_neighborhood && (
