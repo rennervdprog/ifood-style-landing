@@ -229,7 +229,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
       {/* Progress bar + step label */}
       <div className="px-4 pt-4 pb-2 bg-background">
         <div className="flex gap-2 mb-2">
-          {[1, 2, 3].map(s => (
+          {Array.from({ length: totalSteps }, (_, i) => i + 1).map(s => (
             <div
               key={s}
               className={`flex-1 h-1.5 rounded-full transition-all ${
@@ -243,7 +243,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
             {step === 3 ? <Circle className="h-5 w-5 text-primary" /> : <Pizza className="h-5 w-5 text-primary" />}
           </div>
           <div>
-            <p className="text-sm font-bold text-foreground">Etapa {step} de 3</p>
+            <p className="text-sm font-bold text-foreground">Etapa {step} de {totalSteps}</p>
             <p className="text-xs text-muted-foreground font-medium">{stepLabels[step]}</p>
           </div>
         </div>
