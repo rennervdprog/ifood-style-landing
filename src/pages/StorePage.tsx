@@ -472,24 +472,39 @@ const StorePage = () => {
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
 
-        {/* Top bar */}
-        <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 z-10">
-          <div>
+        {/* Sticky Header Top Bar */}
+        <div className={`fixed top-0 left-0 right-0 flex items-center justify-between p-4 z-50 transition-all duration-300 ${
+          scrolled ? "bg-background/95 backdrop-blur-md border-b border-border shadow-sm py-2" : "bg-transparent"
+        }`}>
+          <div className="flex items-center gap-3 min-w-0">
             {!getStoreAppSlug() && (
               <button
                 onClick={() => navigate("/cliente")}
-                className="w-10 h-10 bg-card/90 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg border border-border/50"
+                className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
+                  scrolled ? "bg-muted text-foreground" : "bg-card/90 backdrop-blur-md shadow-lg border border-border/50 text-foreground"
+                }`}
               >
-                <ArrowLeft className="h-5 w-5 text-foreground" />
+                <ArrowLeft className="h-5 w-5" />
               </button>
+            )}
+            {scrolled && (
+              <div className="flex flex-col min-w-0 animate-in fade-in slide-in-from-left-2 duration-300">
+                <h2 className="text-sm font-black text-foreground truncate">{store?.name}</h2>
+                <div className="flex items-center gap-1.5">
+                  <div className={`w-1.5 h-1.5 rounded-full ${storeStatus.isOpen ? "bg-green-500" : "bg-destructive"}`} />
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase">{storeStatus.isOpen ? "Aberto" : "Fechado"}</span>
+                </div>
+              </div>
             )}
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowSearch(!showSearch)}
-              className="w-10 h-10 bg-card/90 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg border border-border/50"
+              className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
+                scrolled ? "bg-muted text-foreground" : "bg-card/90 backdrop-blur-md shadow-lg border border-border/50 text-foreground"
+              }`}
             >
-              <Search className="h-5 w-5 text-foreground" />
+              <Search className="h-4 w-4" />
             </button>
             {ownerProfile?.whatsapp_number && (
               <WhatsAppButton
