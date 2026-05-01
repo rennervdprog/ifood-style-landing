@@ -643,18 +643,18 @@ const TutoriaisPanel = () => {
                     </div>
                   )}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-foreground text-sm truncate">{section.title}</h3>
+                <div className="flex-1 min-w-0 py-1">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <h3 className="font-black text-foreground text-base tracking-tight truncate">{section.title}</h3>
                   </div>
-                  <p className="text-[11px] text-muted-foreground line-clamp-1">{section.shortDesc}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                      <PlayCircle className="h-3 w-3" />
-                      {section.steps.length} passos
+                  <p className="text-xs text-muted-foreground leading-relaxed line-clamp-1">{section.shortDesc}</p>
+                  <div className="flex items-center gap-3 mt-1.5">
+                    <span className="text-[10px] font-bold text-muted-foreground flex items-center gap-1 bg-muted/50 px-1.5 py-0.5 rounded-md">
+                      <PlayCircle className="h-3 w-3 text-primary" />
+                      {section.steps.length} etapas
                     </span>
-                    <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
+                    <span className="text-[10px] font-bold text-muted-foreground flex items-center gap-1 bg-muted/50 px-1.5 py-0.5 rounded-md">
+                      <Clock className="h-3 w-3 text-primary" />
                       {section.estimatedMinutes} min
                     </span>
                   </div>
@@ -675,14 +675,18 @@ const TutoriaisPanel = () => {
                       <div key={stepKey} className="bg-card rounded-xl border border-border overflow-hidden">
                         <button
                           onClick={() => setOpenStep(stepOpen ? null : stepKey)}
-                          className="w-full flex items-center gap-3 p-3 text-left hover:bg-muted/20 transition-colors"
+                          className={`w-full flex items-center gap-3 p-4 text-left transition-all ${
+                            stepOpen ? "bg-primary/5" : "hover:bg-muted/20"
+                          }`}
                         >
-                          <div className={`w-7 h-7 rounded-full ${section.bgColor} ${section.color} flex items-center justify-center text-xs font-black flex-shrink-0`}>
+                          <div className={`w-8 h-8 rounded-xl ${section.bgColor} ${section.color} flex items-center justify-center text-xs font-black flex-shrink-0 shadow-sm`}>
                             {idx + 1}
                           </div>
-                          <span className="flex-1 text-sm font-bold text-foreground">{step.title}</span>
+                          <span className={`flex-1 text-sm font-black tracking-tight ${stepOpen ? "text-primary" : "text-foreground"}`}>
+                            {step.title}
+                          </span>
                           {stepOpen ? (
-                            <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                            <ChevronUp className="h-4 w-4 text-primary flex-shrink-0" />
                           ) : (
                             <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                           )}
