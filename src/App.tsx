@@ -32,7 +32,10 @@ const AuthPage = lazy(() => import("./pages/AuthPage"));
 const PartnerLogin = lazy(() => import("./pages/PartnerLogin"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const DriverDashboard = lazy(() => import("./pages/DriverDashboard"));
-const SuperAdminDashboard = lazy(() => import("./pages/SuperAdminDashboard"));
+ const SuperAdminDashboard = lazy(() => import("./pages/SuperAdminDashboard").catch(() => {
+   window.location.reload();
+   return { default: () => null };
+ }));
 const PartnerOnboarding = lazy(() => import("./pages/PartnerOnboarding"));
 const CadastroEntregador = lazy(() => import("./pages/CadastroEntregador"));
 const CadastroLojista = lazy(() => import("./pages/CadastroLojista"));
