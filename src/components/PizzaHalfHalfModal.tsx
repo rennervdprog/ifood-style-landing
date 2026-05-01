@@ -1,5 +1,5 @@
 import { formatBRL } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Pizza, ShoppingCart, Check, Minus, Plus, ChevronLeft, Circle, X } from "lucide-react";
@@ -73,6 +73,18 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
     },
     enabled: open && !!storeId,
   });
+
+  // Auto-select "Tradicional" border by default when borders are loaded
+  useEffect(() => {
+    if (open && borders.length > 0 && !selectedBorderId) {
+      const tradicional = borders.find(b => 
+        b.name.toLowerCase().includes("tradicional") || b.price === 0
+      );
+      if (tradicional) {
+        setSelectedBorderId(tradicional.id);
+      }
+    }
+  }, [borders, open, selectedBorderId]);
 
   const hasBorders = borders.length > 0;
   const totalSteps = hasBorders ? 3 : 2;
