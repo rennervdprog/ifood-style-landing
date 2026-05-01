@@ -135,19 +135,64 @@ Deno.serve(async (req) => {
             : "Plano Crescimento";
         const description = `${planLabel} - ${store.name} - ${referenceCode}`;
 
+        // Resolve Asaas customer for this store
+        let customerId: string | null = store.asaas_account_id || null;
+
+        if (!customerId) {
+          // Look up store owner profile to create/find a customer
+          const { data: ownerProfile } = await supabase
+            .from("profiles")
+            .select("full_name, email, document")
+            .eq("user_id", store.owner_id)
+            .maybeSingle();
+
+          let cleanCpf = String(ownerProfile?.document || "").replace(/\D/g, "");
+          const isSandbox = !ASAAS_API_KEY.startsWith("$aact_");
+          if (isSandbox && cleanCpf.length < 11) cleanCpf = "52998224725";
+
+          if (cleanCpf.length >= 11) {
+            const searchRes = await fetch(`${asaasBaseUrl}/customers?cpfCnpj=${cleanCpf}`, {
+              headers: { "access_token": ASAAS_API_KEY },
+            });
+            if (searchRes.ok) {
+              const sd = await searchRes.json();
+              if (sd.data?.length > 0) customerId = sd.data[0].id;
+            }
+          }
+
+          if (!customerId) {
+            const customerEmail = ownerProfile?.email || `lojista-${(store.owner_id || "").substring(0, 8)}@itasuper.com`;
+            const cBody: Record<string, unknown> = {
+              name: ownerProfile?.full_name || store.name || "Lojista",
+              email: customerEmail,
+            };
+            if (cleanCpf.length >= 11) cBody.cpfCnpj = cleanCpf;
+
+            const createRes = await fetch(`${asaasBaseUrl}/customers`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "access_token": ASAAS_API_KEY },
+              body: JSON.stringify(cBody),
+            });
+            const cData = await createRes.json();
+            if (!createRes.ok) {
+              console.error(`Asaas customer create failed for ${store.name}:`, JSON.stringify(cData));
+              failed++;
+              results.push({ store: store.name, error: cData });
+              continue;
+            }
+            customerId = cData.id;
+          }
+        }
+
         // Create Asaas charge
         const chargeBody: any = {
+          customer: customerId,
           billingType: "PIX",
           value: Number(plan.monthly_fee),
           dueDate: dueDateStr,
           description: description.substring(0, 256),
           externalReference: referenceCode,
         };
-
-        // If store has Asaas sub-account, charge the sub-account customer
-        if (store.asaas_account_id) {
-          chargeBody.customer = store.asaas_account_id;
-        }
 
         const chargeResponse = await fetch(`${asaasBaseUrl}/payments`, {
           method: "POST",
