@@ -308,53 +308,55 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) { onClose(); resetState(); } }}>
       <DialogContent 
-        className="max-w-lg p-0 gap-0 max-h-[95vh] overflow-y-auto rounded-t-3xl border-none bg-background shadow-2xl animate-in slide-in-from-bottom-4 duration-300 md:rounded-3xl" 
+        className="max-w-lg p-0 gap-0 max-h-[90vh] overflow-hidden rounded-t-3xl border-none bg-background shadow-2xl animate-in slide-in-from-bottom-4 duration-300 md:rounded-3xl" 
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
-        {/* IMAGEM HERO: O primeiro elemento do modal */}
-        <div className="relative w-full aspect-video overflow-hidden">
-          {/* BOTÃO FECHAR (Z-index) */}
-          <DialogClose className="absolute right-4 top-4 z-[60] rounded-full bg-background/50 p-2 text-foreground backdrop-blur-sm transition-all hover:bg-background/80 active:scale-90 shadow-lg">
-            <X className="h-6 w-6" />
-            <span className="sr-only">Fechar</span>
-          </DialogClose>
+        <div className="flex flex-col h-[90vh] relative bg-background">
+          {/* IMAGEM HERO */}
+          <div className="relative w-full aspect-video overflow-hidden flex-shrink-0">
+            <DialogClose className="absolute right-4 top-4 z-[60] rounded-full bg-black/40 p-2 text-white backdrop-blur-sm transition-all hover:bg-black/60 active:scale-90 shadow-lg border border-white/10">
+              <X className="h-6 w-6" />
+              <span className="sr-only">Fechar</span>
+            </DialogClose>
 
-          {product.image_url ? (
-            <img 
-              loading="lazy" 
-              decoding="async" 
-              src={product.image_url} 
-              alt={product.name} 
-              className="w-full h-full object-cover rounded-t-3xl" 
-            />
-          ) : (
-            <div className="w-full h-full bg-muted flex items-center justify-center rounded-t-3xl">
-              <span className="text-7xl">{emoji}</span>
-            </div>
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-background/40 via-transparent to-transparent opacity-60" />
-        </div>
-
-        {/* CONTEÚDO DE INFORMAÇÕES (Padding) */}
-        <div className="p-6 space-y-6">
-          <DialogHeader className="text-left space-y-3">
-            <DialogTitle className="text-3xl font-extrabold tracking-tight text-foreground leading-tight">
-              {product.name}
-            </DialogTitle>
-            
-            {!hasSizes && (
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-bold text-primary">
-                  {formatBRL(product.price)}
-                </span>
+            {product.image_url ? (
+              <img 
+                loading="lazy" 
+                decoding="async" 
+                src={product.image_url} 
+                alt={product.name} 
+                className="w-full h-full object-cover" 
+              />
+            ) : (
+              <div className="w-full h-full bg-muted flex items-center justify-center">
+                <span className="text-7xl">{emoji}</span>
               </div>
             )}
+          </div>
 
-            {product.description && (
-              <p className="text-base text-muted-foreground font-medium leading-relaxed">
-                {product.description}
-              </p>
-            )}
+          {/* CONTEÚDO SCROLLÁVEL */}
+          <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 pb-32">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <h2 className="text-3xl font-extrabold tracking-tight text-foreground leading-tight">
+                  {product.name}
+                </h2>
+                
+                {!hasSizes && (
+                  <div className="flex items-baseline">
+                    <span className="text-2xl font-bold text-primary">
+                      {formatBRL(product.price)}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {product.description && (
+                <p className="text-base text-muted-foreground font-medium leading-relaxed">
+                  {product.description}
+                </p>
+              )}
+            </div>
 
             {/* ===== PHARMACY INFO CARD ===== */}
             {isPharmacy && (
@@ -501,15 +503,9 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
               </div>
             )}
 
-            {/* Price - hidden for pizza with sizes */}
-            {!hasSizes && (
-              <p className="text-lg font-black text-primary mt-2">{formatBRL(product.price)}</p>
-            )}
-          </DialogHeader>
-
           {/* ===== PIZZA SIZE SELECTOR ===== */}
           {hasSizes && (
-            <div className="bg-muted/50 rounded-xl p-4">
+            <div className="bg-muted/30 rounded-2xl p-4">
               <div className="flex items-center gap-2 mb-3">
                 <Pizza className="h-4 w-4 text-primary" />
                 <h4 className="font-bold text-sm text-foreground">Escolha o tamanho</h4>
@@ -703,19 +699,20 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
             />
           </div>
 
-          {/* Quantity + Add button */}
-          <div className="flex items-center gap-4 pt-2">
-            <div className="flex items-center gap-3 bg-muted rounded-xl px-3 py-2">
+          {/* RODAPÉ FIXO */}
+          <div className="absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-md border-t p-4 flex items-center gap-4 z-[50] pb-8 md:pb-4">
+            <div className="flex items-center gap-1 bg-muted rounded-2xl p-1 border border-muted-foreground/10">
               <button
                 onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                className="w-8 h-8 rounded-full bg-background flex items-center justify-center active:scale-90 transition-transform"
+                className="w-10 h-10 rounded-xl bg-background shadow-sm flex items-center justify-center active:scale-90 transition-transform disabled:opacity-50"
+                disabled={quantity <= 1}
               >
                 <Minus className="h-4 w-4" />
               </button>
-              <span className="font-black text-lg w-6 text-center">{quantity}</span>
+              <span className="font-bold text-lg w-10 text-center">{quantity}</span>
               <button
                 onClick={() => setQuantity(q => q + 1)}
-                className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center active:scale-90 transition-transform"
+                className="w-10 h-10 rounded-xl bg-primary text-primary-foreground shadow-sm flex items-center justify-center active:scale-90 transition-transform"
               >
                 <Plus className="h-4 w-4" />
               </button>
@@ -734,23 +731,15 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
                 resetState();
               }}
               disabled={isOutOfStock}
-              className={`flex-1 py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95 ${
-                isOutOfStock
-                  ? "bg-destructive text-destructive-foreground opacity-90 cursor-not-allowed"
-                  : allRequiredMet
-                  ? "bg-primary text-primary-foreground shadow-lg"
-                  : "bg-muted text-muted-foreground"
+              className={`flex-1 h-12 rounded-2xl font-bold text-base flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg ${
+                allRequiredMet ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
               }`}
             >
-              <ShoppingCart className="h-4 w-4" />
-              {isOutOfStock
-                ? "Esgotado"
-                : !allRequiredMet
-                ? "Complete as opções"
-                : `Adicionar • ${formatBRL(lineTotal)}`
-              }
+              <ShoppingCart className="h-5 w-5" />
+              {isOutOfStock ? "Esgotado" : `Adicionar • ${formatBRL(lineTotal)}`}
             </button>
           </div>
+        </div>
         </div>
       </DialogContent>
     </Dialog>
