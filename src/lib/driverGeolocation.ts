@@ -4,6 +4,13 @@
  * Works on both native (Capacitor) and web (browser Geolocation API).
  */
 import { supabase } from "@/integrations/supabase/client";
+import { isCapacitorNative } from "@/lib/capacitorNative";
+import {
+  startBackgroundTracking,
+  stopBackgroundTracking,
+  setBackgroundTrackingOrderId,
+  isBackgroundTracking,
+} from "@/lib/backgroundGeolocation";
 
 let watchId: string | null = null;
 let intervalId: number | null = null;
@@ -136,10 +143,23 @@ export async function startDriverTracking(orderId?: string): Promise<boolean> {
   if (watchId) {
     // Already tracking, just update order ID
     if (orderId) currentOrderId = orderId;
+    if (isCapacitorNative()) setBackgroundTrackingOrderId(orderId || null);
     return true;
   }
 
   currentOrderId = orderId || null;
+
+  // No app nativo, usa o Foreground Service para sobreviver à tela apagada.
+  if (isCapacitorNative()) {
+    const ok = await startBackgroundTracking(orderId);
+    if (ok) {
+      // Marca watchId como sentinela para indicar que o tracking está ativo
+      watchId = "background-service";
+      return true;
+    }
+    // Se falhar, cai no fluxo padrão (foreground apenas)
+  }
+
   return requestAndWatch();
 }
 
@@ -148,6 +168,9 @@ export async function startDriverTracking(orderId?: string): Promise<boolean> {
  */
 export function updateTrackingOrderId(orderId: string | null) {
   currentOrderId = orderId;
+  if (isCapacitorNative() && isBackgroundTracking()) {
+    setBackgroundTrackingOrderId(orderId);
+  }
   // Force an immediate location update with the new order ID
   if (lastPosition && orderId) {
     sendLocation(lastPosition, true);
@@ -158,6 +181,16 @@ export function updateTrackingOrderId(orderId: string | null) {
  * Stop tracking driver location. Call when no more active deliveries.
  */
 export async function stopDriverTracking() {
+  if (isCapacitorNative() && isBackgroundTracking()) {
+    await stopBackgroundTracking();
+    watchId = null;
+    currentOrderId = null;
+    lastPosition = null;
+    lastSentAt = 0;
+    console.log("[GeoTrack] 🛑 Background tracking stopped");
+    return;
+  }
+
   if (watchId) {
     try {
       const { Geolocation } = await import("@capacitor/geolocation");
