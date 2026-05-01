@@ -106,21 +106,22 @@ const TUTORIAIS: TutorialSection[] = [
   {
     id: "menu",
     icon: UtensilsCrossed,
-    title: "Cardápio",
-    shortDesc: "Onde você cadastra seus produtos (lanches, pizzas, bebidas...)",
+    title: "Cardápio e Produtos",
+    shortDesc: "Cadastre lanches, pizzas, bebidas e organize suas vendas",
     color: "text-emerald-500",
     bgColor: "bg-emerald-500/10",
     category: "vendas",
     estimatedMinutes: 5,
     steps: [
       {
-        title: "Criar uma seção",
-        content: "Primeiro crie SEÇÕES (categorias) tipo 'Lanches', 'Pizzas', 'Bebidas', 'Sobremesas'. Toque em NOVA SEÇÃO, escreva o nome e salve.",
+        title: "Organize por Categorias",
+        content: "Crie categorias como 'Lanches', 'Bebidas' ou 'Pizzas'. Isso ajuda o cliente a encontrar o que deseja muito mais rápido.",
+        tip: "Não crie categorias demais; agrupe itens semelhantes para facilitar a leitura.",
       },
       {
-        title: "Adicionar produto",
-        content: "Dentro de cada seção, toque em ADICIONAR PRODUTO. Preencha: nome (ex: X-Burguer), descrição (o que tem), preço e foto. Quanto melhor a foto, mais o cliente compra.",
-        tip: "Use fotos com boa iluminação. Tire de cima do prato. Evite fotos escuras.",
+        title: "Cadastrando um Item",
+        content: "Toque em ADICIONAR PRODUTO. Preencha o nome, descrição detalhada e o preço. Lembre-se: uma boa descrição evita dúvidas do cliente.",
+        tip: "Use fotos reais e bem iluminadas. O cliente compra primeiro com os olhos!",
       },
       {
         title: "Produto disponível ou esgotado",
@@ -139,16 +140,16 @@ const TUTORIAIS: TutorialSection[] = [
   {
     id: "addons",
     icon: Plus,
-    title: "Adicionais",
-    shortDesc: "Extras que o cliente pode escolher (queijo extra, bacon...)",
+    title: "Opcionais e Adicionais",
+    shortDesc: "Aumente seu lucro oferecendo extras como queijo, bacon ou molhos",
     color: "text-purple-500",
     bgColor: "bg-purple-500/10",
     category: "vendas",
     estimatedMinutes: 3,
     steps: [
       {
-        title: "O que é um grupo de adicionais?",
-        content: "É um conjunto de opções extras. Por exemplo: 'Adicionais do Lanche' pode ter: queijo extra (+R$3), bacon (+R$5), cebola caramelizada (+R$2).",
+        title: "Como funcionam os grupos?",
+        content: "Grupos organizam as escolhas. Exemplo: no grupo 'Turbine seu Lanche', você oferece Queijo Extra, Bacon ou Ovo. Isso aumenta o valor médio do seu pedido.",
       },
       {
         title: "Criar grupo",
@@ -212,16 +213,17 @@ const TUTORIAIS: TutorialSection[] = [
   {
     id: "finance",
     icon: Coins,
-    title: "Finanças",
-    shortDesc: "Quanto dinheiro você já fez e quanto vai receber",
+    title: "Financeiro e Repasses",
+    shortDesc: "Acompanhe suas vendas, saldos e pagamentos de forma clara",
     color: "text-emerald-500",
     bgColor: "bg-emerald-500/10",
     category: "financeiro",
     estimatedMinutes: 4,
     steps: [
       {
-        title: "Saldo a receber",
-        content: "Mostra quanto a plataforma vai te pagar. Esse valor é referente aos pedidos PIX dos últimos dias (ainda não repassados).",
+        title: "Seu Dinheiro (PIX)",
+        content: "Aqui você vê o saldo das vendas feitas via PIX no app. Esse valor é transferido automaticamente para sua conta conforme o cronograma.",
+        tip: "Confira sempre se sua chave PIX está correta nas configurações.",
       },
       {
         title: "Comissão a pagar",
@@ -289,16 +291,17 @@ const TUTORIAIS: TutorialSection[] = [
   {
     id: "loyalty",
     icon: Star,
-    title: "Fidelidade (Pontos)",
-    shortDesc: "Programa de pontos para clientes voltarem mais",
+    title: "Fidelidade e Retenção",
+    shortDesc: "Crie motivos para seus clientes comprarem de você toda semana",
     color: "text-yellow-500",
     bgColor: "bg-yellow-500/10",
     category: "vendas",
     estimatedMinutes: 3,
     steps: [
       {
-        title: "Para que serve?",
-        content: "Cada vez que o cliente pede, ele ganha pontos. Quando junta bastante, troca por desconto. Isso faz ele voltar sempre na sua loja.",
+        title: "Por que usar fidelidade?",
+        content: "Clientes que acumulam pontos têm 3x mais chances de comprar novamente. É a forma mais barata de manter sua loja cheia.",
+        tip: "Dê pontos suficientes para que o cliente sinta que o benefício é real.",
       },
       {
         title: "Configurar pontos",
@@ -397,12 +400,12 @@ const TUTORIAIS: TutorialSection[] = [
 
 // Início Rápido — passos para um lojista novo
 const QUICK_START = [
-  { id: "settings", label: "Cadastre os dados da loja", icon: Settings },
-  { id: "hours", label: "Defina seus horários", icon: Clock },
-  { id: "menu", label: "Monte seu cardápio", icon: UtensilsCrossed },
-  { id: "addons", label: "Crie adicionais (opcional)", icon: Plus },
-  { id: "drivers", label: "Cadastre motoboys (opcional)", icon: Bike },
-  { id: "orders", label: "Aceite seu primeiro pedido!", icon: Trophy },
+  { id: "settings", label: "1. Configure sua Loja", icon: Settings },
+  { id: "hours", label: "2. Defina Horários", icon: Clock },
+  { id: "menu", label: "3. Monte seu Cardápio", icon: UtensilsCrossed },
+  { id: "addons", label: "4. Crie Adicionais", icon: Plus },
+  { id: "drivers", label: "5. Ative Motoboys", icon: Bike },
+  { id: "orders", label: "6. Tudo Pronto para Vender!", icon: Trophy },
 ];
 
 // FAQ — perguntas mais comuns
@@ -497,18 +500,18 @@ const TutoriaisPanel = () => {
             <GraduationCap className="h-6 w-6 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
-            <h2 className="text-lg font-black text-foreground">Tutoriais Completos</h2>
-            <p className="text-xs text-muted-foreground">Aprenda cada função do painel passo a passo</p>
+            <h2 className="text-xl font-black text-foreground tracking-tight">Escola de Parceiros</h2>
+            <p className="text-sm text-muted-foreground leading-tight">Domine as ferramentas para vender mais</p>
           </div>
         </div>
 
         {/* Barra de progresso */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-muted-foreground font-semibold">
-              Seu progresso: {completed.size} de {TUTORIAIS.length} tutoriais
+            <span className="text-muted-foreground font-bold">
+              Concluído: {completed.size} de {TUTORIAIS.length} lições
             </span>
-            <span className="text-primary font-black">{progressPercent}%</span>
+            <span className="text-primary font-black text-base">{progressPercent}%</span>
           </div>
           <div className="h-2 bg-muted rounded-full overflow-hidden">
             <div
@@ -531,8 +534,8 @@ const TutoriaisPanel = () => {
             <Rocket className="h-4 w-4 text-amber-500" />
           </div>
           <div>
-            <h3 className="text-sm font-black text-foreground">Início Rápido</h3>
-            <p className="text-[11px] text-muted-foreground">Sequência ideal para começar agora</p>
+            <h3 className="text-base font-black text-foreground">Trilha do Sucesso</h3>
+            <p className="text-xs text-muted-foreground">Siga estes passos para configurar sua loja</p>
           </div>
         </div>
         <div className="space-y-1.5">
@@ -551,7 +554,7 @@ const TutoriaisPanel = () => {
                   {isDone ? <CheckCircle2 className="h-4 w-4" /> : idx + 1}
                 </div>
                 <Icon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                <span className={`flex-1 text-sm font-semibold ${isDone ? "text-muted-foreground line-through" : "text-foreground"}`}>
+                <span className={`flex-1 text-sm font-bold ${isDone ? "text-muted-foreground/60 line-through" : "text-foreground"}`}>
                   {q.label}
                 </span>
                 <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all flex-shrink-0" />
@@ -561,47 +564,49 @@ const TutoriaisPanel = () => {
         </div>
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar tutorial (ex: pedidos, pix, motoboy)..."
-          className="w-full pl-10 pr-10 py-3 bg-card border border-border rounded-xl text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-        />
-        {search && (
-          <button
-            onClick={() => setSearch("")}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-muted"
-          >
-            <X className="h-3.5 w-3.5 text-muted-foreground" />
-          </button>
-        )}
+      {/* Search and Filters container */}
+      <div className="bg-card border border-border rounded-2xl p-4 space-y-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="O que você deseja aprender?"
+            className="w-full pl-10 pr-10 py-3 bg-muted/30 border border-border rounded-xl text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-muted"
+            >
+              <X className="h-3.5 w-3.5 text-muted-foreground" />
+            </button>
+          )}
+        </div>
+
+        <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
+          {CATEGORIES.map((cat) => {
+            const Icon = cat.icon;
+            const isActive = activeCategory === cat.id;
+            return (
+              <button
+                key={cat.id}
+                onClick={() => setActiveCategory(cat.id)}
+                className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-black whitespace-nowrap transition-all flex-shrink-0 ${
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-md scale-105"
+                    : "bg-muted border border-transparent text-foreground hover:bg-muted/70"
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {cat.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Filtros por categoria */}
-      <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
-        {CATEGORIES.map((cat) => {
-          const Icon = cat.icon;
-          const isActive = activeCategory === cat.id;
-          return (
-            <button
-              key={cat.id}
-              onClick={() => setActiveCategory(cat.id)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex-shrink-0 ${
-                isActive
-                  ? "bg-primary text-primary-foreground shadow-md"
-                  : "bg-card border border-border text-foreground hover:bg-muted/40"
-              }`}
-            >
-              <Icon className="h-3.5 w-3.5" />
-              {cat.label}
-            </button>
-          );
-        })}
-      </div>
 
       {/* Sections list */}
       <div className="space-y-3">
@@ -638,18 +643,18 @@ const TutoriaisPanel = () => {
                     </div>
                   )}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-foreground text-sm truncate">{section.title}</h3>
+                <div className="flex-1 min-w-0 py-1">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <h3 className="font-black text-foreground text-base tracking-tight truncate">{section.title}</h3>
                   </div>
-                  <p className="text-[11px] text-muted-foreground line-clamp-1">{section.shortDesc}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                      <PlayCircle className="h-3 w-3" />
-                      {section.steps.length} passos
+                  <p className="text-xs text-muted-foreground leading-relaxed line-clamp-1">{section.shortDesc}</p>
+                  <div className="flex items-center gap-3 mt-1.5">
+                    <span className="text-[10px] font-bold text-muted-foreground flex items-center gap-1 bg-muted/50 px-1.5 py-0.5 rounded-md">
+                      <PlayCircle className="h-3 w-3 text-primary" />
+                      {section.steps.length} etapas
                     </span>
-                    <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
+                    <span className="text-[10px] font-bold text-muted-foreground flex items-center gap-1 bg-muted/50 px-1.5 py-0.5 rounded-md">
+                      <Clock className="h-3 w-3 text-primary" />
                       {section.estimatedMinutes} min
                     </span>
                   </div>
@@ -670,14 +675,18 @@ const TutoriaisPanel = () => {
                       <div key={stepKey} className="bg-card rounded-xl border border-border overflow-hidden">
                         <button
                           onClick={() => setOpenStep(stepOpen ? null : stepKey)}
-                          className="w-full flex items-center gap-3 p-3 text-left hover:bg-muted/20 transition-colors"
+                          className={`w-full flex items-center gap-3 p-4 text-left transition-all ${
+                            stepOpen ? "bg-primary/5" : "hover:bg-muted/20"
+                          }`}
                         >
-                          <div className={`w-7 h-7 rounded-full ${section.bgColor} ${section.color} flex items-center justify-center text-xs font-black flex-shrink-0`}>
+                          <div className={`w-8 h-8 rounded-xl ${section.bgColor} ${section.color} flex items-center justify-center text-xs font-black flex-shrink-0 shadow-sm`}>
                             {idx + 1}
                           </div>
-                          <span className="flex-1 text-sm font-bold text-foreground">{step.title}</span>
+                          <span className={`flex-1 text-sm font-black tracking-tight ${stepOpen ? "text-primary" : "text-foreground"}`}>
+                            {step.title}
+                          </span>
                           {stepOpen ? (
-                            <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                            <ChevronUp className="h-4 w-4 text-primary flex-shrink-0" />
                           ) : (
                             <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                           )}
