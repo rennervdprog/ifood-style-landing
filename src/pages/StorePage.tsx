@@ -866,8 +866,8 @@ const StorePage = () => {
         );
       })()}
 
-      {/* ===== CATEGORY NAV ===== */}
-      {visibleSections.length > 0 && !filteredProducts && (
+       {/* ===== CATEGORY NAV ===== */}
+       {visibleSections.length > 0 && !filteredProducts && !showHalfHalf && (
         <div
           ref={navRef}
           className={`sticky z-[60] bg-background border-b border-border mt-4 shadow-sm transition-all duration-300 ${
