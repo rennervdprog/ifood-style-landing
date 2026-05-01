@@ -211,10 +211,21 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
   // and let the user finalize the order from there (no border step at all).
   const isFinalStep = step === 3 || (step === 2 && !hasBorders && !bordersLoading);
 
-  if (!open) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 bg-background flex flex-col animate-in slide-in-from-right-full duration-300">
+   useEffect(() => {
+     if (open) {
+       document.body.style.overflow = "hidden";
+     } else {
+       document.body.style.overflow = "";
+     }
+     return () => {
+       document.body.style.overflow = "";
+     };
+   }, [open]);
+ 
+   if (!open) return null;
+ 
+   return (
+     <div className="fixed inset-0 z-[100] bg-background flex flex-col animate-in slide-in-from-right-full duration-300">
       {/* Top bar */}
       <div className="flex items-center gap-3 px-4 py-3 border-b bg-background sticky top-0 z-20">
         <button
@@ -419,8 +430,8 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
         )}
       </div>
 
-      {/* Fixed bottom bar - above BottomNav */}
-      <div className="fixed bottom-16 left-0 right-0 z-30 bg-background border-t px-4 py-3">
+       {/* Fixed bottom bar */}
+       <div className="fixed bottom-0 left-0 right-0 z-[110] bg-background border-t px-4 py-3 pb-8 md:pb-4 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
         {!isFinalStep ? (
           <div className="flex items-center gap-3">
             {step > 1 && (
