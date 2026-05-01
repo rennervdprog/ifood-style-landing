@@ -341,8 +341,8 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
           </div>
         )}
 
-        {/* Step 3: borders + observations */}
-        {step === 3 && (
+        {/* Step 3: borders + observations (only shown when store has borders) */}
+        {step === 3 && hasBorders && (
           <div className="space-y-4 pt-2">
             <div className="space-y-2">
               {borders.length === 0 ? (
