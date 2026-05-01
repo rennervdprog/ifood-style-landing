@@ -243,7 +243,7 @@ const CheckoutPage = () => {
           if (cancelled) return;
           setCalculatedDeliveryFee(result.fee);
           setFeeBreakdown(result.breakdown);
-          if (activeNeighborhood) setNeighborhood(activeNeighborhood, feeWithSplit);
+          if (activeNeighborhood) setNeighborhood(activeNeighborhood, result.fee);
           setCalculatingFee(false);
         }).catch(() => {
           if (cancelled) return;
