@@ -870,7 +870,9 @@ const StorePage = () => {
       {visibleSections.length > 0 && !filteredProducts && (
         <div
           ref={navRef}
-          className="sticky top-0 z-30 bg-background/95 backdrop-blur-md border-b border-border mt-4 shadow-sm"
+          className={`sticky z-30 bg-background/95 backdrop-blur-md border-b border-border mt-4 shadow-sm transition-all duration-300 ${
+            scrolled ? "top-[56px]" : "top-0"
+          }`}
         >
           <div className="flex overflow-x-auto gap-1.5 px-4 py-2.5 no-scrollbar">
             {visibleSections.map(s => (
