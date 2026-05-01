@@ -49,7 +49,7 @@ const StoreCard = memo(({ id, name, category, image_url, is_open, rating, status
        onClick={() => navigate(slug ? `/${slug}` : `/loja/${id}`)}
        className="w-full text-left rounded-[2rem] bg-card shadow-sm border border-border overflow-hidden transition-all active:scale-[0.96] hover:shadow-lg group"
      >
-       <div className="relative h-40 bg-muted overflow-hidden">
+        <div className="relative h-44 bg-muted overflow-hidden">
         {image_url ? (
           <img
             src={image_url}
@@ -67,45 +67,56 @@ const StoreCard = memo(({ id, name, category, image_url, is_open, rating, status
           </div>
         )}
 
-         {/* Status badge */}
-         <div
-           className={`absolute top-3 right-3 px-3 py-1.5 rounded-full text-[10px] font-black flex items-center gap-1 backdrop-blur-md border border-white/20 shadow-lg transition-transform duration-300 group-hover:scale-110 ${
-             is_open
-               ? category === "farmacias"
-                 ? "bg-teal-500/80 text-white"
-                 : "bg-primary/80 text-white"
-               : "bg-black/40 text-white/90"
-           }`}
-         >
-           {!is_open && <Clock className="h-3 w-3" />}
-           {is_open ? "ABERTO" : "FECHADO"}
-         </div>
+          {/* Overlay for status and rating */}
+          <div className="absolute inset-x-0 top-0 p-4 flex justify-between items-start z-10">
+            {is_open ? (
+              <div className={`px-3 py-1.5 rounded-full text-[10px] font-black backdrop-blur-md border border-white/20 shadow-lg ${
+                category === "farmacias" ? "bg-teal-500/80 text-white" : "bg-primary/80 text-white"
+              }`}>
+                ABERTO
+              </div>
+            ) : (
+              <div className="px-3 py-1.5 rounded-full text-[10px] font-black bg-black/60 text-white/90 backdrop-blur-md border border-white/10 flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                FECHADO
+              </div>
+            )}
 
-        {/* Bottom gradient overlay for text readability */}
-        {image_url && (
-          <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/30 to-transparent" />
-        )}
-      </div>
+            {rating && (
+              <div className="flex items-center gap-1 bg-white/90 dark:bg-black/60 px-2 py-1 rounded-full border border-white/20 shadow-md backdrop-blur-md">
+                <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                <span className="text-[10px] font-black text-foreground">{rating.toFixed(1)}</span>
+              </div>
+            )}
+          </div>
 
-       <div className="p-4">
-         <div className="flex justify-between items-start gap-2">
-           <h3 className={`font-black text-base leading-tight line-clamp-1 flex-1 transition-colors ${!is_open ? "text-muted-foreground" : "text-foreground group-hover:text-primary"}`}>
-             {name}
-           </h3>
-           {rating ? (
-             <div className="flex items-center gap-1 bg-amber-400/10 px-2 py-0.5 rounded-lg border border-amber-400/20">
-               <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-               <span className="text-xs font-black text-amber-600">{rating.toFixed(1)}</span>
-             </div>
-           ) : null}
-         </div>
-         <div className="flex items-center gap-2 mt-2">
-           <span className="bg-muted px-2 py-0.5 rounded-md text-[10px] font-bold text-muted-foreground capitalize tracking-tight group-hover:bg-primary/5 group-hover:text-primary transition-colors">
-             {category}
-           </span>
-           <span className="w-1 h-1 rounded-full bg-border" />
-           <span className="text-[10px] font-medium text-muted-foreground">30-45 min</span>
-         </div>
+          {/* Category Floating Badge */}
+          <div className="absolute bottom-3 left-3 z-10">
+            <span className="bg-black/40 backdrop-blur-md text-white px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border border-white/10">
+              {category}
+            </span>
+          </div>
+        </div>
+
+        <div className="p-5">
+          <div className="space-y-1">
+            <h3 className={`font-black text-lg leading-tight transition-colors ${!is_open ? "text-muted-foreground" : "text-foreground group-hover:text-primary"}`}>
+              {name}
+            </h3>
+            
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground">
+                <Clock className="h-3.5 w-3.5 text-primary/70" />
+                <span>30-45 min</span>
+              </div>
+              <span className="w-1 h-1 rounded-full bg-border" />
+              <div className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground">
+                <MapPin className="h-3.5 w-3.5 text-primary/70" />
+                <span>1.2 km</span>
+              </div>
+            </div>
+          </div>
+
         {!is_open && statusReason && (
           <p className="text-[10px] text-muted-foreground mt-1.5 flex items-center gap-1">
             <Clock className="h-2.5 w-2.5" />
