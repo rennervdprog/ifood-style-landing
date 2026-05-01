@@ -847,6 +847,13 @@ async function handleOrderPix(
   const idempotencyKey = `pix-${order_id}-${Date.now()}`;
   console.log(`[OrderPix] 🚀 Routing to provider…`);
 
+  // Security check: Verify amount matches order total in DB
+  const orderTotal = Number(order.total_price);
+  if (Math.abs(orderTotal - amount) > 0.01) {
+    console.error(`[Router Security] Amount mismatch: order=${orderTotal}, received=${amount}`);
+    return json({ error: "O valor do pagamento não coincide com o total do pedido." }, 400);
+  }
+
   return await routePixCreation({
     amount,
     description: desc,
@@ -857,6 +864,11 @@ async function handleOrderPix(
     externalReference: order_id,
     idempotencyKey,
     expiresAt,
+    // Pass order info for split calculation
+    orderId: order.id,
+    storeId: order.store_id,
+    subtotal: Number(order.subtotal || 0),
+    deliveryFee: Number(order.delivery_fee || 0),
   });
 }
 
