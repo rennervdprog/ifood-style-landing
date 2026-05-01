@@ -2,9 +2,9 @@ import { formatBRL } from "@/lib/utils";
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Minus, Plus, ShoppingCart, Pizza, AlertTriangle } from "lucide-react";
+ import { Minus, Plus, ShoppingCart, Pizza, AlertTriangle, X } from "lucide-react";
 import type { CartAddon } from "@/contexts/CartContext";
 
 interface Product {
@@ -307,21 +307,55 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) { onClose(); resetState(); } }}>
-      <DialogContent className="max-w-lg p-0 gap-0 max-h-[90vh] overflow-y-auto rounded-2xl" onOpenAutoFocus={(e) => e.preventDefault()}>
-        {/* Product image */}
-        {product.image_url ? (
-          <img loading="lazy" decoding="async" src={product.image_url} alt={product.name} className="w-full h-56 object-cover rounded-t-2xl" />
-        ) : (
-          <div className="w-full h-56 bg-muted flex items-center justify-center rounded-t-2xl">
-            <span className="text-6xl">{emoji}</span>
-          </div>
-        )}
+      <DialogContent 
+        className="max-w-lg p-0 gap-0 max-h-[90vh] overflow-y-auto rounded-3xl border-none bg-background shadow-2xl animate-in slide-in-from-bottom-4 duration-300" 
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
+        <div className="relative">
+          {/* Botão Fechar Customizado */}
+          <DialogClose className="absolute right-4 top-4 z-50 rounded-full bg-black/40 p-2 text-white backdrop-blur-md transition-all hover:bg-black/60 active:scale-90">
+            <X className="h-6 w-6" />
+            <span className="sr-only">Fechar</span>
+          </DialogClose>
 
-        <div className="p-5 space-y-4">
-          <DialogHeader className="text-left">
-            <DialogTitle className="text-xl font-black text-foreground">{product.name}</DialogTitle>
+          {/* Product image */}
+          <div className="relative w-full aspect-[16/9] overflow-hidden">
+            {product.image_url ? (
+              <img 
+                loading="lazy" 
+                decoding="async" 
+                src={product.image_url} 
+                alt={product.name} 
+                className="w-full h-full object-cover" 
+              />
+            ) : (
+              <div className="w-full h-full bg-muted flex items-center justify-center">
+                <span className="text-7xl">{emoji}</span>
+              </div>
+            )}
+            {/* Gradiente na base da imagem */}
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-60" />
+          </div>
+        </div>
+
+        <div className="px-5 pb-24 pt-4 space-y-6">
+          <DialogHeader className="text-left space-y-1">
+            <DialogTitle className="text-3xl font-bold tracking-tight text-foreground leading-tight">
+              {product.name}
+            </DialogTitle>
+            
+            {!hasSizes && (
+              <div className="flex items-baseline gap-2 mt-1">
+                <span className="text-2xl font-black text-primary">
+                  {formatBRL(product.price)}
+                </span>
+              </div>
+            )}
+
             {product.description && (
-              <p className="text-sm text-muted-foreground mt-1">{product.description}</p>
+              <p className="text-base text-muted-foreground font-medium leading-relaxed pt-1">
+                {product.description}
+              </p>
             )}
 
             {/* ===== PHARMACY INFO CARD ===== */}
