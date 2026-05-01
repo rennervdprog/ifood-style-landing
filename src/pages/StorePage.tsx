@@ -273,8 +273,8 @@ const StorePage = () => {
 
   const hasConfiguredHours = Array.isArray(storeHours) && storeHours.length > 0;
   const statusLabel = hasConfiguredHours
-    ? `● ${storeStatus.reason || (storeStatus.isOpen ? "Aberto" : "Fechado")}`
-    : "● Horário não informado";
+    ? `${storeStatus.reason || (storeStatus.isOpen ? "Aberto" : "Fechado")}`
+    : "Horário não informado";
 
   const reorderProductsList = products?.filter(p => reorderProducts?.includes(p.id)) || [];
   const popularProductsList = popularProducts
