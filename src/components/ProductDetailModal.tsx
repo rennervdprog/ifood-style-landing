@@ -618,8 +618,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
     <Dialog open={open} onOpenChange={(o) => { if (!o) { onClose(); resetState(); } }}>
       <DialogContent
         className="p-0 gap-0 border-none bg-background shadow-2xl overflow-hidden
-                   w-screen h-[100dvh] max-w-none rounded-none inset-0 translate-x-0 translate-y-0 left-0 top-0
-                   data-[state=open]:slide-in-from-bottom-4
+                   w-screen h-[100dvh] max-w-none rounded-none inset-0 translate-x-0 translate-y-0 fixed
                    md:w-full md:max-w-lg md:h-auto md:max-h-[90vh] md:rounded-3xl md:left-[50%] md:top-[50%] md:translate-x-[-50%] md:translate-y-[-50%]"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
