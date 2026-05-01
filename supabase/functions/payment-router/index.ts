@@ -186,7 +186,11 @@ function isValidCpf(cpf: string): boolean {
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-async function createAsaasPix(params: {
+async function createAsaasPix(supabase: any, params: {
+  orderId?: string;
+  storeId?: string;
+  subtotal?: number;
+  deliveryFee?: number;
   amount: number;
   description: string;
   payerCpf: string;
@@ -308,6 +312,33 @@ async function createAsaasPix(params: {
       console.log(`[Asaas] Customer created: ${customerId}`);
     }
 
+    // Step 2a: Compute split (same logic as create-pix-payment)
+    let splitArray: Array<{ walletId: string; fixedValue: number }> | undefined;
+    if (params.orderId && params.storeId) {
+      try {
+        const { data: splitInfo, error: splitErr } = await supabase.rpc(
+          "get_asaas_split_for_order",
+          {
+            _store_id: params.storeId,
+            _subtotal: params.subtotal || 0,
+            _delivery_fee: params.deliveryFee || 0,
+            _payment_method: "pix",
+          }
+        );
+        if (!splitErr && splitInfo && (splitInfo as any).has_split) {
+          const platformAmount = Number((splitInfo as any).platform_amount || 0);
+          const storeWalletId = (splitInfo as any).store_wallet_id as string | null;
+          const total = Number(params.amount);
+          const storeAmount = Math.max(0, Number((total - platformAmount).toFixed(2)));
+          if (storeWalletId && storeAmount > 0 && storeAmount < total) {
+            splitArray = [{ walletId: storeWalletId, fixedValue: storeAmount }];
+          }
+        }
+      } catch (e) {
+        console.warn("[Router] Split computation failed:", e);
+      }
+    }
+
     // Step 2: Create payment
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + 1);
@@ -321,6 +352,11 @@ async function createAsaasPix(params: {
       description: params.description.substring(0, 500),
       externalReference: params.externalReference,
     };
+
+    if (splitArray?.length) {
+      paymentBody.split = splitArray;
+      console.log(`[Router] Applied split to Asaas payment: ${JSON.stringify(splitArray)}`);
+    }
 
     console.log(`[Asaas] Creating PIX payment: R$${params.amount}, ref=${params.externalReference}`);
     const paymentRes = await fetch(`${baseUrl}/payments`, {

@@ -263,7 +263,13 @@ const CheckoutPage = () => {
      let cancelled = false;
      setCalculatingFee(true);
  
-     calculateDeliveryFee(customerCep, storeCep, config, clientCoords).then((result) => {
+      const deliveryConfigWithPlatform = {
+        ...config,
+        // Ensure we use the latest platform split from the store plan or admin settings
+        platform_split: storePlan.platformDeliverySplit ?? config.platform_split ?? 2.0
+      };
+
+      calculateDeliveryFee(customerCep, storeCep, deliveryConfigWithPlatform, clientCoords).then((result) => {
        if (cancelled) return;
        setCalculatedDeliveryFee(result.fee);
        setFeeBreakdown(result.breakdown);

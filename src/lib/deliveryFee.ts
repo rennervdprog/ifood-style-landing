@@ -17,8 +17,9 @@
     storeCep: string,
     config: StoreDeliveryConfig
   ): Promise<DeliveryFeeResult> {
-    const PLATFORM_FEE = 2.0; // Taxa fixa da plataforma cobrada do cliente
-
+    // Get platform split from admin config if available, fallback to 2.0
+    const PLATFORM_FEE = config.platform_split ?? 2.0; 
+    
     if (config.delivery_fee_type === 'fixed') {
       const totalFee = Number(config.own_delivery_fee || 0) + PLATFORM_FEE;
       return {
