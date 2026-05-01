@@ -106,21 +106,22 @@ const TUTORIAIS: TutorialSection[] = [
   {
     id: "menu",
     icon: UtensilsCrossed,
-    title: "Cardápio",
-    shortDesc: "Onde você cadastra seus produtos (lanches, pizzas, bebidas...)",
+    title: "Cardápio e Produtos",
+    shortDesc: "Cadastre lanches, pizzas, bebidas e organize suas vendas",
     color: "text-emerald-500",
     bgColor: "bg-emerald-500/10",
     category: "vendas",
     estimatedMinutes: 5,
     steps: [
       {
-        title: "Criar uma seção",
-        content: "Primeiro crie SEÇÕES (categorias) tipo 'Lanches', 'Pizzas', 'Bebidas', 'Sobremesas'. Toque em NOVA SEÇÃO, escreva o nome e salve.",
+        title: "Organize por Categorias",
+        content: "Crie categorias como 'Lanches', 'Bebidas' ou 'Pizzas'. Isso ajuda o cliente a encontrar o que deseja muito mais rápido.",
+        tip: "Não crie categorias demais; agrupe itens semelhantes para facilitar a leitura.",
       },
       {
-        title: "Adicionar produto",
-        content: "Dentro de cada seção, toque em ADICIONAR PRODUTO. Preencha: nome (ex: X-Burguer), descrição (o que tem), preço e foto. Quanto melhor a foto, mais o cliente compra.",
-        tip: "Use fotos com boa iluminação. Tire de cima do prato. Evite fotos escuras.",
+        title: "Cadastrando um Item",
+        content: "Toque em ADICIONAR PRODUTO. Preencha o nome, descrição detalhada e o preço. Lembre-se: uma boa descrição evita dúvidas do cliente.",
+        tip: "Use fotos reais e bem iluminadas. O cliente compra primeiro com os olhos!",
       },
       {
         title: "Produto disponível ou esgotado",
@@ -139,16 +140,16 @@ const TUTORIAIS: TutorialSection[] = [
   {
     id: "addons",
     icon: Plus,
-    title: "Adicionais",
-    shortDesc: "Extras que o cliente pode escolher (queijo extra, bacon...)",
+    title: "Opcionais e Adicionais",
+    shortDesc: "Aumente seu lucro oferecendo extras como queijo, bacon ou molhos",
     color: "text-purple-500",
     bgColor: "bg-purple-500/10",
     category: "vendas",
     estimatedMinutes: 3,
     steps: [
       {
-        title: "O que é um grupo de adicionais?",
-        content: "É um conjunto de opções extras. Por exemplo: 'Adicionais do Lanche' pode ter: queijo extra (+R$3), bacon (+R$5), cebola caramelizada (+R$2).",
+        title: "Como funcionam os grupos?",
+        content: "Grupos organizam as escolhas. Exemplo: no grupo 'Turbine seu Lanche', você oferece Queijo Extra, Bacon ou Ovo. Isso aumenta o valor médio do seu pedido.",
       },
       {
         title: "Criar grupo",
@@ -212,16 +213,17 @@ const TUTORIAIS: TutorialSection[] = [
   {
     id: "finance",
     icon: Coins,
-    title: "Finanças",
-    shortDesc: "Quanto dinheiro você já fez e quanto vai receber",
+    title: "Financeiro e Repasses",
+    shortDesc: "Acompanhe suas vendas, saldos e pagamentos de forma clara",
     color: "text-emerald-500",
     bgColor: "bg-emerald-500/10",
     category: "financeiro",
     estimatedMinutes: 4,
     steps: [
       {
-        title: "Saldo a receber",
-        content: "Mostra quanto a plataforma vai te pagar. Esse valor é referente aos pedidos PIX dos últimos dias (ainda não repassados).",
+        title: "Seu Dinheiro (PIX)",
+        content: "Aqui você vê o saldo das vendas feitas via PIX no app. Esse valor é transferido automaticamente para sua conta conforme o cronograma.",
+        tip: "Confira sempre se sua chave PIX está correta nas configurações.",
       },
       {
         title: "Comissão a pagar",
@@ -289,16 +291,17 @@ const TUTORIAIS: TutorialSection[] = [
   {
     id: "loyalty",
     icon: Star,
-    title: "Fidelidade (Pontos)",
-    shortDesc: "Programa de pontos para clientes voltarem mais",
+    title: "Fidelidade e Retenção",
+    shortDesc: "Crie motivos para seus clientes comprarem de você toda semana",
     color: "text-yellow-500",
     bgColor: "bg-yellow-500/10",
     category: "vendas",
     estimatedMinutes: 3,
     steps: [
       {
-        title: "Para que serve?",
-        content: "Cada vez que o cliente pede, ele ganha pontos. Quando junta bastante, troca por desconto. Isso faz ele voltar sempre na sua loja.",
+        title: "Por que usar fidelidade?",
+        content: "Clientes que acumulam pontos têm 3x mais chances de comprar novamente. É a forma mais barata de manter sua loja cheia.",
+        tip: "Dê pontos suficientes para que o cliente sinta que o benefício é real.",
       },
       {
         title: "Configurar pontos",
@@ -397,12 +400,12 @@ const TUTORIAIS: TutorialSection[] = [
 
 // Início Rápido — passos para um lojista novo
 const QUICK_START = [
-  { id: "settings", label: "Cadastre os dados da loja", icon: Settings },
-  { id: "hours", label: "Defina seus horários", icon: Clock },
-  { id: "menu", label: "Monte seu cardápio", icon: UtensilsCrossed },
-  { id: "addons", label: "Crie adicionais (opcional)", icon: Plus },
-  { id: "drivers", label: "Cadastre motoboys (opcional)", icon: Bike },
-  { id: "orders", label: "Aceite seu primeiro pedido!", icon: Trophy },
+  { id: "settings", label: "1. Configure sua Loja", icon: Settings },
+  { id: "hours", label: "2. Defina Horários", icon: Clock },
+  { id: "menu", label: "3. Monte seu Cardápio", icon: UtensilsCrossed },
+  { id: "addons", label: "4. Crie Adicionais", icon: Plus },
+  { id: "drivers", label: "5. Ative Motoboys", icon: Bike },
+  { id: "orders", label: "6. Tudo Pronto para Vender!", icon: Trophy },
 ];
 
 // FAQ — perguntas mais comuns
