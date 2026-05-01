@@ -45,7 +45,6 @@ const StoreCard = memo(({ id, name, category, image_url, is_open, rating, status
   const gradient = CATEGORY_GRADIENTS[category] || "from-primary/20 via-primary/10 to-primary/5";
 
   return (
-  return (
     <button
       onClick={() => navigate(slug ? `/${slug}` : `/loja/${id}`)}
       className="w-full text-left rounded-[2.5rem] bg-card shadow-sm border border-border overflow-hidden transition-all active:scale-[0.96] hover:shadow-xl group flex flex-col h-full"
@@ -126,8 +125,6 @@ const StoreCard = memo(({ id, name, category, image_url, is_open, rating, status
         )}
       </div>
     </button>
-  );
-});
   );
 });
 
