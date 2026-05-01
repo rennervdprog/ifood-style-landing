@@ -136,7 +136,20 @@ const StorePage = () => {
   }, [store]);
 
   const storeId = store?.id || id;
-  const storePlan = useStorePlan(storeId);
+   const storePlan = useStorePlan(storeId);
+
+   // Track scroll to show name in header
+   useEffect(() => {
+     const handleScroll = () => {
+       const isScrolled = window.scrollY > 150;
+       if (isScrolled !== scrolled) {
+         setScrolled(isScrolled);
+       }
+     };
+
+     window.addEventListener("scroll", handleScroll, { passive: true });
+     return () => window.removeEventListener("scroll", handleScroll);
+   }, [scrolled]);
 
   const { data: storeHours } = useQuery({
     queryKey: ["store-hours", storeId],
