@@ -532,7 +532,7 @@ const StorePage = () => {
                   </div>
                 )}
               </div>
-              <div className="flex-1 min-w-0 pt-1 flex flex-col">
+              <div className="flex-1 min-w-0 flex flex-col pt-1">
                 <h1 className="text-xl sm:text-2xl font-black text-foreground break-words leading-tight">{store?.name}</h1>
                 <div className="flex flex-wrap items-center gap-2 mt-1.5">
                   <span className="text-[10px] font-black text-muted-foreground uppercase tracking-wider bg-muted/80 px-2 py-0.5 rounded-md border border-border/50">
