@@ -59,7 +59,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
   const [observations, setObservations] = useState("");
   const [quantity, setQuantity] = useState(1);
 
-  const { data: borders = [] } = useQuery({
+  const { data: borders = [], isLoading: bordersLoading } = useQuery({
     queryKey: ["pizza-borders", storeId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -73,6 +73,9 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
     },
     enabled: open && !!storeId,
   });
+
+  const hasBorders = borders.length > 0;
+  const totalSteps = hasBorders ? 3 : 2;
 
   const reset = () => {
     setStep(1);
@@ -180,7 +183,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
   const canAdvance = () => {
     if (step === 1) return !!product1Id;
     if (step === 2) return !!product2Id;
-    if (step === 3) return !!selectedBorderId;
+    if (step === 3) return hasBorders ? !!selectedBorderId : true;
     return false;
   };
 
@@ -194,6 +197,10 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
     if (step === 2) { setProduct2Id(null); setStep(1); }
     else if (step === 3) { setSelectedBorderId(null); setStep(2); }
   };
+
+  // If the store has no borders configured, treat step 2 as the final step
+  // and let the user finalize the order from there (no border step at all).
+  const isFinalStep = step === 3 || (step === 2 && !hasBorders && !bordersLoading);
 
   if (!open) return null;
 
