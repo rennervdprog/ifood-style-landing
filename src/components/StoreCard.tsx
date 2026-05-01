@@ -39,92 +39,95 @@ const CATEGORY_GRADIENTS: Record<string, string> = {
   docerias: "from-fuchsia-500/20 via-pink-400/10 to-rose-300/5",
 };
 
-const StoreCard = memo(({ id, name, category, image_url, is_open, rating, statusReason, slug }: StoreCardProps) => {
+const StoreCard = memo(({ id, name, category, image_url, is_open, rating, statusReason, slug }: StoreCardProps & { is_open: boolean }) => {
   const navigate = useNavigate();
   const icon = CATEGORY_ICONS[category] || "🍽️";
   const gradient = CATEGORY_GRADIENTS[category] || "from-primary/20 via-primary/10 to-primary/5";
 
   return (
-     <button
-       onClick={() => navigate(slug ? `/${slug}` : `/loja/${id}`)}
-       className="w-full text-left rounded-[2rem] bg-card shadow-sm border border-border overflow-hidden transition-all active:scale-[0.96] hover:shadow-lg group"
-     >
-        <div className="relative h-44 bg-muted overflow-hidden">
+  return (
+    <button
+      onClick={() => navigate(slug ? `/${slug}` : `/loja/${id}`)}
+      className="w-full text-left rounded-[2.5rem] bg-card shadow-sm border border-border overflow-hidden transition-all active:scale-[0.96] hover:shadow-xl group flex flex-col h-full"
+    >
+      <div className="relative h-44 sm:h-48 bg-muted overflow-hidden shrink-0">
         {image_url ? (
           <img
             src={image_url}
             alt={name}
-            className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 ${!is_open ? "grayscale brightness-75" : ""}`}
+            className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 ${!is_open ? "grayscale brightness-75" : ""}`}
             loading="lazy"
             decoding="async"
-            width={200}
-            height={144}
           />
         ) : (
           <div className={`w-full h-full bg-gradient-to-br ${gradient} flex flex-col items-center justify-center gap-2 ${!is_open ? "grayscale" : ""}`}>
             <span className="text-5xl drop-shadow-sm">{icon}</span>
-            <span className="text-[10px] font-semibold text-muted-foreground/70 capitalize tracking-wide">{category}</span>
+            <span className="text-[10px] font-black text-muted-foreground/70 uppercase tracking-widest">{category}</span>
           </div>
         )}
 
-          {/* Overlay for status and rating */}
-          <div className="absolute inset-x-0 top-0 p-4 flex justify-between items-start z-10">
-            {is_open ? (
-              <div className={`px-3 py-1.5 rounded-full text-[10px] font-black backdrop-blur-md border border-white/20 shadow-lg ${
-                category === "farmacias" ? "bg-teal-500/80 text-white" : "bg-primary/80 text-white"
-              }`}>
-                ABERTO
-              </div>
-            ) : (
-              <div className="px-3 py-1.5 rounded-full text-[10px] font-black bg-black/60 text-white/90 backdrop-blur-md border border-white/10 flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                FECHADO
-              </div>
-            )}
+        {/* Badges Overlay */}
+        <div className="absolute inset-x-0 top-0 p-4 flex justify-between items-start z-10">
+          {is_open ? (
+            <div className={`px-3 py-1.5 rounded-full text-[10px] font-black backdrop-blur-md border border-white/20 shadow-lg ${
+              category === "farmacias" ? "bg-teal-500/80 text-white" : "bg-primary text-black"
+            }`}>
+              ABERTO
+            </div>
+          ) : (
+            <div className="px-3 py-1.5 rounded-full text-[10px] font-black bg-black/60 text-white/90 backdrop-blur-md border border-white/10 flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              FECHADO
+            </div>
+          )}
 
-            {rating && (
-              <div className="flex items-center gap-1 bg-white/90 dark:bg-black/60 px-2 py-1 rounded-full border border-white/20 shadow-md backdrop-blur-md">
-                <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                <span className="text-[10px] font-black text-foreground">{rating.toFixed(1)}</span>
-              </div>
-            )}
-          </div>
+          {rating && (
+            <div className="flex items-center gap-1 bg-white/95 dark:bg-black/60 px-2.5 py-1 rounded-full border border-white/20 shadow-md backdrop-blur-md">
+              <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+              <span className="text-[10px] font-black text-foreground">{rating.toFixed(1)}</span>
+            </div>
+          )}
+        </div>
 
-          {/* Category Floating Badge */}
-          <div className="absolute bottom-3 left-3 z-10">
-            <span className="bg-black/40 backdrop-blur-md text-white px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border border-white/10">
-              {category}
-            </span>
+        {/* Category Floating Badge */}
+        <div className="absolute bottom-4 left-4 z-10">
+          <span className="bg-black/60 backdrop-blur-md text-white px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border border-white/10 shadow-lg">
+            {category}
+          </span>
+        </div>
+      </div>
+
+      <div className="p-5 flex flex-col flex-1 gap-3">
+        <div className="space-y-1.5">
+          <h3 className={`font-black text-lg sm:text-xl leading-tight transition-colors line-clamp-1 ${!is_open ? "text-muted-foreground" : "text-foreground group-hover:text-primary"}`}>
+            {name}
+          </h3>
+          
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-1.5 text-[11px] font-black text-muted-foreground uppercase tracking-tight">
+              <Clock className="h-3.5 w-3.5 text-primary" />
+              <span>30-45 min</span>
+            </div>
+            <span className="w-1 h-1 rounded-full bg-border" />
+            <div className="flex items-center gap-1.5 text-[11px] font-black text-muted-foreground uppercase tracking-tight">
+              <MapPin className="h-3.5 w-3.5 text-primary" />
+              <span>1.2 km</span>
+            </div>
           </div>
         </div>
 
-        <div className="p-5">
-          <div className="space-y-1">
-            <h3 className={`font-black text-lg leading-tight transition-colors ${!is_open ? "text-muted-foreground" : "text-foreground group-hover:text-primary"}`}>
-              {name}
-            </h3>
-            
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground">
-                <Clock className="h-3.5 w-3.5 text-primary/70" />
-                <span>30-45 min</span>
-              </div>
-              <span className="w-1 h-1 rounded-full bg-border" />
-              <div className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground">
-                <MapPin className="h-3.5 w-3.5 text-primary/70" />
-                <span>1.2 km</span>
-              </div>
-            </div>
-          </div>
-
         {!is_open && statusReason && (
-          <p className="text-[10px] text-muted-foreground mt-1.5 flex items-center gap-1">
-            <Clock className="h-2.5 w-2.5" />
-            {statusReason}
-          </p>
+          <div className="mt-auto pt-2 border-t border-border/50">
+            <p className="text-[10px] font-bold text-muted-foreground flex items-center gap-1.5">
+              <Clock className="h-3 w-3 text-destructive" />
+              {statusReason}
+            </p>
+          </div>
         )}
       </div>
     </button>
+  );
+});
   );
 });
 
