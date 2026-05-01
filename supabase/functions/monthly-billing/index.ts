@@ -41,15 +41,37 @@ Deno.serve(async (req) => {
       ? "https://api.asaas.com/v3"
       : "https://sandbox.asaas.com/api/v3";
 
+    // Optional manual trigger by admin: { store_id, force }
+    let manualStoreId: string | null = null;
+    let force = false;
+    if (req.method === "POST") {
+      try {
+        const body = await req.json();
+        manualStoreId = body?.store_id ?? null;
+        force = !!body?.force;
+      } catch (_) {
+        // no body
+      }
+    }
+
     // Get all active plans with monthly_fee > 0 that are due for billing and not in trial
     const now = new Date();
-    const { data: duePlans, error: plansError } = await supabase
+    let query = supabase
       .from("store_plans")
       .select("*, stores!inner(id, name, owner_id, asaas_account_id, status)")
       .gt("monthly_fee", 0)
-      .eq("is_active", true)
-      .or(`trial_ends_at.is.null,trial_ends_at.lte.${now.toISOString()}`)
-      .or(`next_billing_date.is.null,next_billing_date.lte.${now.toISOString()}`);
+      .eq("is_active", true);
+
+    if (manualStoreId) {
+      query = query.eq("store_id", manualStoreId);
+    }
+    if (!force) {
+      query = query
+        .or(`trial_ends_at.is.null,trial_ends_at.lte.${now.toISOString()}`)
+        .or(`next_billing_date.is.null,next_billing_date.lte.${now.toISOString()}`);
+    }
+
+    const { data: duePlans, error: plansError } = await query;
 
     if (plansError) {
       console.error("Error fetching plans:", plansError);
