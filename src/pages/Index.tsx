@@ -150,7 +150,10 @@ const Index = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("stores")
-        .select("id, name, slug, image_url, category, categories, rating, is_open, force_closed, status, delivery_mode, own_delivery_fee")
+        .select(`
+          id, name, slug, image_url, category, categories, rating, is_open, force_closed, status, delivery_mode, own_delivery_fee,
+          opening_hours (*)
+        `)
         .order("rating", { ascending: false });
       if (error) throw error;
       return (data || []).filter((s: any) => !s.status || s.status === "ativo");
@@ -167,22 +170,10 @@ const Index = () => {
     enabled: search.length >= 2,
   });
 
-  const storeIds = useMemo(() => stores?.map(s => s.id) || [], [stores]);
-
-  const { data: allHours } = useQuery({
-    queryKey: ["all-opening-hours", storeIds],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("opening_hours").select("*").in("store_id", storeIds);
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: storeIds.length > 0,
-  });
-
   const sorted = useMemo(() => {
     if (!stores) return undefined;
     const withStatus = stores.map(store => {
-      const hours = (allHours as any[])?.filter((h: any) => h.store_id === store.id) || [];
+      const hours = (store as any).opening_hours || [];
       const status = getStoreOpenStatus(hours as OpeningHour[], (store as any).force_closed || false, store.is_open);
       return { ...store, computedOpen: status.isOpen, statusReason: status.reason };
     });
@@ -191,7 +182,7 @@ const Index = () => {
       if (!a.computedOpen && b.computedOpen) return 1;
       return 0;
     });
-  }, [stores, allHours]);
+  }, [stores]);
 
   const filtered = useMemo(() => {
     let result = sorted?.filter((s: any) => {
