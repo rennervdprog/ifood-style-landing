@@ -311,50 +311,52 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
         className="max-w-lg p-0 gap-0 max-h-[95vh] overflow-y-auto rounded-t-3xl border-none bg-background shadow-2xl animate-in slide-in-from-bottom-4 duration-300 md:rounded-3xl" 
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
-        {/* IMAGEM HERO: O primeiro elemento do modal */}
-        <div className="relative w-full aspect-video overflow-hidden">
-          {/* BOTÃO FECHAR (Z-index) */}
-          <DialogClose className="absolute right-4 top-4 z-[60] rounded-full bg-background/50 p-2 text-foreground backdrop-blur-sm transition-all hover:bg-background/80 active:scale-90 shadow-lg">
-            <X className="h-6 w-6" />
-            <span className="sr-only">Fechar</span>
-          </DialogClose>
+        <div className="flex flex-col h-full relative">
+          {/* IMAGEM HERO */}
+          <div className="relative w-full aspect-video overflow-hidden flex-shrink-0">
+            <DialogClose className="absolute right-4 top-4 z-[60] rounded-full bg-black/40 p-2 text-white backdrop-blur-sm transition-all hover:bg-black/60 active:scale-90 shadow-lg border border-white/10">
+              <X className="h-6 w-6" />
+              <span className="sr-only">Fechar</span>
+            </DialogClose>
 
-          {product.image_url ? (
-            <img 
-              loading="lazy" 
-              decoding="async" 
-              src={product.image_url} 
-              alt={product.name} 
-              className="w-full h-full object-cover rounded-t-3xl" 
-            />
-          ) : (
-            <div className="w-full h-full bg-muted flex items-center justify-center rounded-t-3xl">
-              <span className="text-7xl">{emoji}</span>
-            </div>
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-background/40 via-transparent to-transparent opacity-60" />
-        </div>
-
-        {/* CONTEÚDO DE INFORMAÇÕES (Padding) */}
-        <div className="p-6 space-y-6">
-          <DialogHeader className="text-left space-y-3">
-            <DialogTitle className="text-3xl font-extrabold tracking-tight text-foreground leading-tight">
-              {product.name}
-            </DialogTitle>
-            
-            {!hasSizes && (
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-bold text-primary">
-                  {formatBRL(product.price)}
-                </span>
+            {product.image_url ? (
+              <img 
+                loading="lazy" 
+                decoding="async" 
+                src={product.image_url} 
+                alt={product.name} 
+                className="w-full h-full object-cover" 
+              />
+            ) : (
+              <div className="w-full h-full bg-muted flex items-center justify-center">
+                <span className="text-7xl">{emoji}</span>
               </div>
             )}
+          </div>
 
-            {product.description && (
-              <p className="text-base text-muted-foreground font-medium leading-relaxed">
-                {product.description}
-              </p>
-            )}
+          {/* CONTEÚDO SCROLLÁVEL */}
+          <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 pb-32">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <h2 className="text-3xl font-extrabold tracking-tight text-foreground leading-tight">
+                  {product.name}
+                </h2>
+                
+                {!hasSizes && (
+                  <div className="flex items-baseline">
+                    <span className="text-2xl font-bold text-primary">
+                      {formatBRL(product.price)}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {product.description && (
+                <p className="text-base text-muted-foreground font-medium leading-relaxed">
+                  {product.description}
+                </p>
+              )}
+            </div>
 
             {/* ===== PHARMACY INFO CARD ===== */}
             {isPharmacy && (
