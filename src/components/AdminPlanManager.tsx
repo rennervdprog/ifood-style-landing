@@ -10,7 +10,8 @@ import {
   Store, Crown, Search, Loader2, Check, X,
   CreditCard, TrendingUp, Zap, Truck, Heart,
   Image, Clock, BarChart3, Ticket, ChevronDown, ChevronUp,
-  AlertCircle, CheckCircle2, XCircle, ArrowRight
+  AlertCircle, CheckCircle2, XCircle, ArrowRight,
+  Calendar, Pause, Play, Receipt, Send, History, Settings2
 } from "lucide-react";
 
 type PlanType = "fixed" | "hybrid" | "commission_only";
