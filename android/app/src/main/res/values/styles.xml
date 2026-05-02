@@ -3,7 +3,6 @@
 
     <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
-        <!-- Customize your theme here. -->
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
@@ -13,10 +12,14 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
+        <!-- 🔒 Edge-to-edge: permite que o app desenhe atrás das barras do sistema -->
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
     </style>
-
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="android:background">@drawable/splash</item>
+        <!-- 🔒 Edge-to-edge na splash screen também -->
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
     </style>
+
 </resources>
