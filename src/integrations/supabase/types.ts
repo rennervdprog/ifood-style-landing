@@ -1859,6 +1859,54 @@ export type Database = {
           },
         ]
       }
+      plan_templates: {
+        Row: {
+          commission_rate: number
+          created_at: string
+          description: string | null
+          features: Json
+          id: string
+          is_active: boolean
+          label: string
+          max_slots: number | null
+          monthly_fee: number
+          plan_key: string
+          plan_type: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          commission_rate?: number
+          created_at?: string
+          description?: string | null
+          features?: Json
+          id?: string
+          is_active?: boolean
+          label: string
+          max_slots?: number | null
+          monthly_fee?: number
+          plan_key: string
+          plan_type: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          commission_rate?: number
+          created_at?: string
+          description?: string | null
+          features?: Json
+          id?: string
+          is_active?: boolean
+          label?: string
+          max_slots?: number | null
+          monthly_fee?: number
+          plan_key?: string
+          plan_type?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       platform_partners: {
         Row: {
           auto_transfer: boolean
