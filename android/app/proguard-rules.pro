@@ -1,21 +1,51 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# ItaSuper — ProGuard Rules
+# Aplicado apenas no build release (minifyEnabled true)
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# ── Capacitor ──────────────────────────────────────────────────────
+-keep class com.getcapacitor.** { *; }
+-keep class com.getcapacitor.plugin.** { *; }
+-keepclassmembers class * extends com.getcapacitor.Plugin {
+    @com.getcapacitor.annotation.CapacitorPlugin <methods>;
+    @com.getcapacitor.PluginMethod <methods>;
+}
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# ── Firebase / FCM (Push Notifications) ──────────────────────────
+-keep class com.google.firebase.** { *; }
+-keep class com.google.android.gms.** { *; }
+-dontwarn com.google.firebase.**
+-dontwarn com.google.android.gms.**
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# ── WebView / JavaScript Interface ────────────────────────────────
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
+
+# ── Capacitor Plugins usados ──────────────────────────────────────
+# StatusBar
+-keep class com.getcapacitor.plugin.statusbar.** { *; }
+# SplashScreen
+-keep class com.getcapacitor.plugin.splashscreen.** { *; }
+# Geolocation
+-keep class com.getcapacitor.plugin.geolocation.** { *; }
+# PushNotifications
+-keep class com.getcapacitor.plugin.push.** { *; }
+# Haptics
+-keep class com.getcapacitor.plugin.haptics.** { *; }
+# Keyboard
+-keep class com.getcapacitor.plugin.keyboard.** { *; }
+# Network
+-keep class com.getcapacitor.plugin.network.** { *; }
+# Preferences (Storage)
+-keep class com.getcapacitor.plugin.storage.** { *; }
+
+# ── Background Geolocation ────────────────────────────────────────
+-keep class com.capacitorjs.plugins.backgroundgeolocation.** { *; }
+
+# ── Preservar info de stack trace para Sentry ────────────────────
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
+
+# ── Evitar warnings desnecessários ───────────────────────────────
+-dontwarn org.conscrypt.**
+-dontwarn org.bouncycastle.**
+-dontwarn org.openjsse.**
