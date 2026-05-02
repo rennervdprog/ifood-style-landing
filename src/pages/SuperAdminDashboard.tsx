@@ -195,7 +195,7 @@ const SuperAdminDashboard = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("drivers")
-        .select("user_id, name, status, is_active");
+        .select("user_id, name, is_active");
       if (error) throw error;
       return data;
     },
