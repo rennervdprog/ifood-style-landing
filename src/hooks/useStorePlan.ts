@@ -148,10 +148,14 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
     pixOperationalFee: isFixedPlan
       ? ((data?.plan as any)?.pix_operational_fee_override ?? 1.99)
       : 0,
+    // 🔒 R$2 plataforma se aplica a TODOS os planos (regra de negócio global)
+    // own delivery: somado em cima da taxa do lojista no CheckoutPage
+    // platform delivery: incluso no cálculo via deliveryFee.ts config.platform_split
     platformDeliverySplit: data?.deliveryMode === "own"
       ? ((data?.plan as any)?.platform_delivery_split_override ?? 2.00)
-      : 0,
-    driverDeliverySplit: isFixedPlan ? (data?.feeConfig?.driver_split ?? DEFAULT_DELIVERY_FEE_CONFIG.driver_split) : 0,
+      : (data?.feeConfig?.platform_split ?? 2.00),
+    // Driver split: todos os planos que usam plataforma de entrega têm split pro motoboy
+    driverDeliverySplit: data?.feeConfig?.driver_split ?? DEFAULT_DELIVERY_FEE_CONFIG.driver_split,
     isLoading,
   };
 }
