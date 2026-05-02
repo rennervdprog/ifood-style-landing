@@ -78,13 +78,18 @@ const SuperAdminDashboard = () => {
         break;
       case "yesterday":
         start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
-        now.setHours(0, 0, 0, 0);
-        break;
+        const endOfYesterday = new Date(
+          now.getFullYear(), now.getMonth(), now.getDate()
+        );
+        return {
+          start: start.toISOString(),
+          end: endOfYesterday.toISOString()
+        };
       case "week":
         start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
         break;
     }
-    return { start: start!.toISOString(), end: filter === "yesterday" ? new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString() : new Date().toISOString() };
+    return { start: start!.toISOString(), end: new Date().toISOString() };
   };
 
   const getFinanceDateRange = () => {
