@@ -23,7 +23,7 @@ import { toast } from "sonner";
 import {
   ArrowLeft, DollarSign, ShoppingBag, TrendingUp, Clock,
   Store, Copy, AlertTriangle, Users, Bike, Wallet, CheckCircle2, Banknote, XCircle, Bell, Trash2, QrCode, Loader2, ArrowUpRight, ArrowDownRight, Settings,
-   LayoutDashboard, Shield, Ticket, RefreshCw, Truck, Menu, X, MapPin, Eye, Scale, Search, FileText, Mail, Phone, User, Download, Calendar, CreditCard, Receipt, ChevronDown, ChevronUp, Percent, Crown, Handshake, FlaskConical, Link as LinkIcon, Megaphone
+   LayoutDashboard, Shield, Ticket, RefreshCw, Truck, Menu, X, MapPin, Eye, Scale, Search, FileText, Mail, Phone, User, Download, Calendar, CreditCard, Receipt, ChevronDown, ChevronUp, Percent, Crown, Handshake, FlaskConical, Link as LinkIcon, Megaphone, Monitor
 } from "lucide-react";
  import { Switch } from "@/components/ui/switch";
  import { Badge } from "@/components/ui/badge";
@@ -149,7 +149,7 @@ const SuperAdminDashboard = () => {
       const { start, end } = getFinanceDateRange();
       let query = supabase
         .from("orders")
-        .select("*, stores(name, id), order_items(quantity, unit_price)")
+        .select("*, stores(name, id), order_items(quantity, unit_price), order_source")
         .gte("created_at", start)
         .lte("created_at", end)
         .in("status", ["finalizado", "entregue"])
@@ -354,10 +354,13 @@ const SuperAdminDashboard = () => {
     const map = new Map<string, {
       name: string; storeId: string; physicalSales: number; appSales: number; totalSales: number;
       commissionDue: number; netTransfer: number; finalBalance: number; orderCount: number; deliveryFees: number;
+      // PDV separado
+      pdvSales: number; pdvOrders: number; pdvCommission: number;
     }>();
     stores.forEach(s => map.set(s.id, {
       name: s.name, storeId: s.id, physicalSales: 0, appSales: 0, totalSales: 0,
       commissionDue: 0, netTransfer: 0, finalBalance: 0, orderCount: 0, deliveryFees: 0,
+      pdvSales: 0, pdvOrders: 0, pdvCommission: 0,
     }));
     const filtered = selectedStore === "all" ? financeOrders : financeOrders.filter(o => o.store_id === selectedStore);
     filtered.forEach(o => {
@@ -365,13 +368,23 @@ const SuperAdminDashboard = () => {
       if (!entry) return;
       const subtotal = o.subtotal;
       const deliveryFee = o.delivery_fee;
-      const isPhysical = o.payment_method === "dinheiro" || o.payment_method === "cartao";
-      if (isPhysical) entry.physicalSales = addMoney(entry.physicalSales, subtotal);
-      else entry.appSales = addMoney(entry.appSales, subtotal);
+      const isPdv = (o as any).order_source === "pdv";
+
+      if (isPdv) {
+        // PDV: canal separado
+        entry.pdvSales = addMoney(entry.pdvSales, subtotal);
+        entry.pdvOrders += 1;
+        // Comissão PDV = commission_rate do pedido (taxa PDV, menor que delivery)
+        const pdvRate = Number((o as any).commission_rate || 0) / 100;
+        entry.pdvCommission = addMoney(entry.pdvCommission, multiplyMoney(subtotal, pdvRate));
+      } else {
+        // Delivery: lógica original
+        const isPhysical = o.payment_method === "dinheiro" || o.payment_method === "cartao";
+        if (isPhysical) entry.physicalSales = addMoney(entry.physicalSales, subtotal);
+        else entry.appSales = addMoney(entry.appSales, subtotal);
+      }
+
       entry.totalSales = addMoney(entry.totalSales, subtotal);
-      // TODO: deliveryFees acumula o total bruto de entrega por loja.
-      // Usado futuramente para calcular e exibir os R$ 2,00 fixos
-      // da plataforma por pedido.
       entry.deliveryFees = addMoney(entry.deliveryFees, deliveryFee);
       entry.orderCount += 1;
     });
@@ -493,7 +506,8 @@ const SuperAdminDashboard = () => {
         `📋 Plano: ${storePlan?.plan_type === "hybrid" ? "Assinatura + Taxa" : "Comissão"}\n\n` +
         `📦 Total de Pedidos: ${entry.orderCount}\n` +
         `💵 Vendas Físicas (Dinheiro/Cartão): ${formatBRL(entry.physicalSales)}\n` +
-        `📱 Vendas App (Pix): ${formatBRL(entry.appSales)}\n\n` +
+        `📱 Vendas App (Pix): ${formatBRL(entry.appSales)}\n` +
+        (entry.pdvSales > 0 ? `🖥️ Vendas PDV (Presencial): ${formatBRL(entry.pdvSales)}\n` : "") +
         `🏷️ Comissão ${storeRate}% sobre Físicas: ${formatBRL(entry.commissionDue)}\n` +
         `💸 Repasse Líquido (App - ${storeRate}%): ${formatBRL(entry.netTransfer)}\n\n` +
         `---\n${balanceText}\n---`;
@@ -1919,6 +1933,34 @@ const FinanceTab = ({
                             <p className="text-[10px] text-muted-foreground">{isFixedPlan ? "Somente dinheiro/cartão" : "PIX Online"}</p>
                           </div>
                         </div>
+
+                        {/* PDV breakdown — só exibe se tiver vendas PDV */}
+                        {entry.pdvSales > 0 && (
+                          <div className="bg-blue-500/5 border border-blue-500/15 rounded-xl p-3">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Monitor className="h-3.5 w-3.5 text-blue-500" />
+                              <p className="text-xs font-bold text-blue-600">PDV — Caixa Presencial</p>
+                              <span className="text-[9px] bg-blue-500/10 text-blue-500 font-bold px-1.5 py-0.5 rounded-md">
+                                {entry.pdvOrders} pedido{entry.pdvOrders !== 1 ? "s" : ""}
+                              </span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <p className="text-[10px] text-muted-foreground">Vendas</p>
+                                <p className="text-sm font-black text-foreground">{formatBRL(entry.pdvSales)}</p>
+                              </div>
+                              <div>
+                                <p className="text-[10px] text-muted-foreground">Comissão PDV</p>
+                                <p className="text-sm font-black text-amber-500">
+                                  {entry.pdvCommission > 0 ? formatBRL(entry.pdvCommission) : "—"}
+                                </p>
+                              </div>
+                            </div>
+                            <p className="text-[10px] text-muted-foreground mt-1.5">
+                              Recebimento direto na maquininha — comissão incluída na próxima fatura
+                            </p>
+                          </div>
+                        )}
 
                         {/* Commission status — only for plans with commission */}
                         {!isFixedPlan && (
