@@ -31,48 +31,65 @@
       };
     }
  
-    // 1. Get accurate coordinates
-    const customerCoords = config.customer_coords || await geocodeAddressPrecise({
-      postalcode: customerCep,
-      street: config.customer_street && config.customer_number 
-        ? `${config.customer_street}, ${config.customer_number}` 
-        : config.customer_street || undefined
-    });
-    
-    const storeCoords = storeCep 
-      ? await geocodeAddressPrecise({ postalcode: storeCep }) 
+    // 1. Coordenadas do cliente: prioriza GPS > geocoding por rua+CEP > só CEP
+    let customerCoords = config.customer_coords ?? null;
+    if (!customerCoords) {
+      // Tenta com rua + número primeiro (mais preciso)
+      if (config.customer_street) {
+        customerCoords = await geocodeAddressPrecise({
+          postalcode: customerCep,
+          street: config.customer_number
+            ? `${config.customer_street}, ${config.customer_number}`
+            : config.customer_street,
+        });
+      }
+      // Fallback: só pelo CEP
+      if (!customerCoords) {
+        customerCoords = await geocodeAddressPrecise({ postalcode: customerCep });
+      }
+    }
+
+    // 2. Coordenadas da loja: geocoding pelo CEP da loja
+    const storeCoords = storeCep
+      ? await geocodeAddressPrecise({ postalcode: storeCep })
       : ITATINGA_CENTER;
 
     if (!customerCoords || !storeCoords) {
-     return {
-       fee: config.delivery_fee_base,
-       isRural: false,
-       distanceKm: null,
-       breakdown: `Taxa base (CEP não localizado): ${formatBRL(config.delivery_fee_base)}`,
-     };
-   }
+      // Fallback seguro: cobra taxa base + plataforma sem distância
+      return {
+        fee: addMoney(Number(config.delivery_fee_base || 0), PLATFORM_FEE),
+        isRural: false,
+        distanceKm: null,
+        breakdown: `Taxa base (endereço não localizado): ${formatBRL(config.delivery_fee_base)} + Taxa operacional: ${formatBRL(PLATFORM_FEE)}`,
+      };
+    }
  
-    // 2. Calculate distance with high precision
+    // 3. Distância em linha reta (Haversine)
     const distanceKm = haversineDistance(storeCoords.lat, storeCoords.lng, customerCoords.lat, customerCoords.lng);
     
-    // Use round(x, 1) for UI display and ceil(x) for pricing
+    // Exibição: arredondado 1 casa decimal
+    // Cobrança: arredondado para CIMA inteiro (evita cobrar menos)
     const roundedDistance = Math.max(0, Math.round(distanceKm * 10) / 10);
-    const pricingDistance = Math.ceil(distanceKm);
+    // 🔒 pricingDistance começa em 1 km mínimo para evitar cobrança zero
+    const pricingDistance = Math.max(1, Math.ceil(distanceKm));
     
     let fee = Number(config.delivery_fee_base || 0);
   
     if (pricingDistance > config.delivery_base_km) {
-      const extraKm = pricingDistance - config.delivery_base_km;
-      fee += extraKm * Number(config.delivery_fee_per_km || 0);
+      const extraKm = pricingDistance - Number(config.delivery_base_km || 0);
+      fee = fee + extraKm * Number(config.delivery_fee_per_km || 0);
     }
 
+    const totalFee = addMoney(fee, PLATFORM_FEE);
+    const withinBase = pricingDistance <= Number(config.delivery_base_km || 0);
+
     return {
-      fee: addMoney(fee, PLATFORM_FEE),
-      isRural: pricingDistance > config.delivery_base_km,
+      fee: totalFee,
+      isRural: !withinBase,
       distanceKm: roundedDistance,
-      breakdown: pricingDistance <= config.delivery_base_km 
-        ? `Entrega: ${formatBRL(fee)} + Taxa operacional: ${formatBRL(PLATFORM_FEE)}`
-        : `Base ${formatBRL(config.delivery_fee_base)} + ${pricingDistance - config.delivery_base_km}km extras + Taxa operacional ${formatBRL(PLATFORM_FEE)}`,
+      breakdown: withinBase
+        ? `Entrega (${roundedDistance}km, dentro dos ${config.delivery_base_km}km base): ${formatBRL(fee)} + Taxa operacional: ${formatBRL(PLATFORM_FEE)}`
+        : `Base ${formatBRL(config.delivery_fee_base)} + ${pricingDistance - Number(config.delivery_base_km)}km extras × ${formatBRL(config.delivery_fee_per_km)} + Taxa operacional: ${formatBRL(PLATFORM_FEE)} = ${formatBRL(totalFee)}`,
     };
   }
  
