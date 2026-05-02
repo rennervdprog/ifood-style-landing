@@ -59,13 +59,16 @@ const PdvPage = () => {
 
   const storePlan = useStorePlan(store?.id);
 
-  // Redirecionar se PDV não está ativo para esta loja
+  // PDV ativo por padrão — lojista pode desativar pelo toggle no topo da página
+  // Não redireciona mais: lojista que não quer usar simplesmente não abre a tela
+  const [pdvActive, setPdvActive] = useState<boolean | null>(null);
+
+  // Inicializa com o valor do plano quando carregar
   useEffect(() => {
-    if (!storePlan.isLoading && !storePlan.pdvEnabled) {
-      toast.error("O módulo PDV não está ativo para sua loja.");
-      navigate("/admin");
+    if (!storePlan.isLoading && pdvActive === null) {
+      setPdvActive(storePlan.pdvEnabled !== false); // default true
     }
-  }, [storePlan.isLoading, storePlan.pdvEnabled, navigate]);
+  }, [storePlan.isLoading, storePlan.pdvEnabled, pdvActive]);
 
   // Buscar produtos da loja
   const { data: products = [], isLoading: productsLoading } = useQuery({
@@ -207,6 +210,24 @@ const PdvPage = () => {
           <h1 className="font-bold text-foreground text-sm leading-tight">PDV — Caixa</h1>
           <p className="text-[10px] text-muted-foreground">{store?.name}</p>
         </div>
+
+        {/* Toggle do lojista — ativa/desativa PDV */}
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] text-muted-foreground hidden sm:block">
+            {pdvActive ? "Ativo" : "Inativo"}
+          </span>
+          <button
+            onClick={() => setPdvActive(v => !v)}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+              pdvActive ? "bg-primary" : "bg-muted-foreground/30"
+            }`}
+          >
+            <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
+              pdvActive ? "translate-x-6" : "translate-x-1"
+            }`} />
+          </button>
+        </div>
+
         {/* Carrinho mobile */}
         <button
           onClick={() => setShowCart(true)}
@@ -221,6 +242,28 @@ const PdvPage = () => {
         </button>
       </header>
 
+      {/* Banner PDV inativo */}
+      {!pdvActive && (
+        <div className="flex-1 flex flex-col items-center justify-center gap-4 p-8 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center">
+            <Monitor className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <div>
+            <p className="font-bold text-foreground">PDV desativado</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Ative o toggle no topo para usar o caixa presencial
+            </p>
+          </div>
+          <button
+            onClick={() => setPdvActive(true)}
+            className="bg-primary text-primary-foreground font-bold px-6 py-3 rounded-2xl text-sm"
+          >
+            Ativar PDV
+          </button>
+        </div>
+      )}
+
+      {pdvActive && (
       <div className="flex flex-1 overflow-hidden">
         {/* LADO ESQUERDO — Catálogo */}
         <div className="flex-1 flex flex-col overflow-hidden">
@@ -322,6 +365,7 @@ const PdvPage = () => {
           />
         </div>
       </div>
+      )} {/* fim pdvActive */}
 
       {/* Carrinho mobile — bottom sheet */}
       {showCart && (
