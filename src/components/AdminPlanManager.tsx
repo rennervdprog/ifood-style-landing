@@ -189,6 +189,10 @@ export default function AdminPlanManager() {
           next_billing_date: monthlyFee > 0
             ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
             : null,
+          // PDV defaults por plano
+          pdv_enabled: false,
+          pdv_commission_rate: planType === "fixed" ? 0 : planType === "hybrid" ? 1.0 : 2.0,
+          pdv_commission_pending: 0,
         });
 
       if (error) throw error;
@@ -204,6 +208,44 @@ export default function AdminPlanManager() {
       queryClient.invalidateQueries({ queryKey: ["admin-all-stores"] });
     } catch (err: any) {
       toast.error(err.message || "Erro ao atualizar plano.");
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  // Toggle PDV ativo/inativo para uma loja
+  const handleTogglePdv = async (storeId: string, currentEnabled: boolean) => {
+    setSaving(storeId);
+    try {
+      const { error } = await supabase
+        .from("store_plans")
+        .update({ pdv_enabled: !currentEnabled } as any)
+        .eq("store_id", storeId)
+        .eq("is_active", true);
+      if (error) throw error;
+      toast.success(!currentEnabled ? "PDV ativado!" : "PDV desativado.");
+      queryClient.invalidateQueries({ queryKey: ["admin-store-plans"] });
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao alterar PDV.");
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  // Atualizar taxa PDV de uma loja
+  const handleSetPdvRate = async (storeId: string, rate: number) => {
+    setSaving(storeId);
+    try {
+      const { error } = await supabase
+        .from("store_plans")
+        .update({ pdv_commission_rate: rate } as any)
+        .eq("store_id", storeId)
+        .eq("is_active", true);
+      if (error) throw error;
+      toast.success("Taxa PDV atualizada!");
+      queryClient.invalidateQueries({ queryKey: ["admin-store-plans"] });
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao atualizar taxa PDV.");
     } finally {
       setSaving(null);
     }
@@ -484,6 +526,59 @@ export default function AdminPlanManager() {
                         queryClient.invalidateQueries({ queryKey: ["admin-all-stores"] });
                       }}
                     />
+                  )}
+
+                  {/* PDV Config */}
+                  {plan && (
+                    <div className="mt-3 pt-3 border-t border-border/30">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                            🖥️ Módulo PDV
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">Caixa presencial — sem taxa PIX Asaas</p>
+                        </div>
+                        <button
+                          onClick={() => handleTogglePdv(store.id, !!(plan as any).pdv_enabled)}
+                          disabled={saving === store.id}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                            (plan as any).pdv_enabled ? "bg-primary" : "bg-muted-foreground/30"
+                          }`}
+                        >
+                          <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                            (plan as any).pdv_enabled ? "translate-x-6" : "translate-x-1"
+                          }`} />
+                        </button>
+                      </div>
+
+                      {(plan as any).pdv_enabled && (
+                        <div className="mt-2 flex items-center gap-2">
+                          <p className="text-[10px] text-muted-foreground whitespace-nowrap">Comissão PDV:</p>
+                          <div className="flex items-center gap-1 bg-muted/40 rounded-lg px-2 py-1">
+                            <input
+                              type="number"
+                              min="0"
+                              max="10"
+                              step="0.5"
+                              defaultValue={(plan as any).pdv_commission_rate ?? 0}
+                              onBlur={(e) => {
+                                const val = parseFloat(e.target.value);
+                                if (!isNaN(val) && val !== (plan as any).pdv_commission_rate) {
+                                  handleSetPdvRate(store.id, val);
+                                }
+                              }}
+                              className="w-12 bg-transparent text-xs font-bold text-foreground text-center focus:outline-none"
+                            />
+                            <span className="text-[10px] text-muted-foreground">%</span>
+                          </div>
+                          {(plan as any).pdv_commission_pending > 0 && (
+                            <span className="text-[10px] text-amber-500 font-semibold">
+                              Pendente: R$ {Number((plan as any).pdv_commission_pending).toFixed(2)}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               )}
