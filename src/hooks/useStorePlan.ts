@@ -46,6 +46,10 @@ export interface StorePlanFeatures {
   platformDeliverySplit: number;
   /** Driver split from delivery fee */
   driverDeliverySplit: number;
+  /** PDV (Ponto de Venda) ativo para esta loja */
+  pdvEnabled: boolean;
+  /** Taxa de comissão PDV (menor que delivery) */
+  pdvCommissionRate: number;
   isLoading: boolean;
 }
 
@@ -92,7 +96,7 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
       const [planResult, storeResult, configResult] = await Promise.all([
         supabase
           .from("store_plans")
-          .select("plan_type, monthly_fee, commission_rate, trial_ends_at, next_billing_date, last_billed_at, started_at, pix_operational_fee_override, platform_delivery_split_override")
+          .select("plan_type, monthly_fee, commission_rate, trial_ends_at, next_billing_date, last_billed_at, started_at, pix_operational_fee_override, platform_delivery_split_override, pdv_enabled, pdv_commission_rate")
           .eq("store_id", storeId!)
           .eq("is_active", true)
           .maybeSingle(),
@@ -156,6 +160,9 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
       : (data?.feeConfig?.platform_split ?? 2.00),
     // Driver split: todos os planos que usam plataforma de entrega têm split pro motoboy
     driverDeliverySplit: data?.feeConfig?.driver_split ?? DEFAULT_DELIVERY_FEE_CONFIG.driver_split,
+    // PDV
+    pdvEnabled: (data?.plan as any)?.pdv_enabled ?? false,
+    pdvCommissionRate: (data?.plan as any)?.pdv_commission_rate ?? 0,
     isLoading,
   };
 }
