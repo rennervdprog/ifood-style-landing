@@ -5,7 +5,21 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const TEMP_PASSWORD = "LovableMigrated2026!";
+/**
+ * 🔒 Gera senha aleatória forte para cada usuário migrado.
+ * Cada conta recebe uma senha única que precisa ser resetada via "Esqueci minha senha".
+ * Isso evita que qualquer pessoa que veja o código consiga logar nas contas migradas.
+ */
+function generateSecurePassword(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%&*";
+  let password = "";
+  const randomValues = new Uint8Array(24);
+  crypto.getRandomValues(randomValues);
+  for (let i = 0; i < 24; i++) {
+    password += chars[randomValues[i] % chars.length];
+  }
+  return password;
+}
 
 const TABLES: { table: string; conflictKey: string | null }[] = [
   { table: "profiles", conflictKey: "user_id" },
@@ -109,14 +123,18 @@ Deno.serve(async (req) => {
       }
 
       try {
+        // 🔒 Cada usuário recebe senha única e aleatória
+        // Eles precisarão usar "Esqueci minha senha" para acessar pela primeira vez
+        const securePassword = generateSecurePassword();
         const { data: created, error } = await ext.auth.admin.createUser({
           email,
-          password: TEMP_PASSWORD,
+          password: securePassword,
           email_confirm: true,
           user_metadata: {
             ...(u.user_metadata || {}),
             migrated_from_cloud: true,
             original_user_id: u.id,
+            requires_password_reset: true,
           },
         });
         if (error) throw error;
