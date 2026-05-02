@@ -500,6 +500,14 @@ Deno.serve(async (req) => {
               .update({ status: "ativo" })
               .eq("id", txData.store_id)
               .eq("status", "bloqueado");
+
+            // Resolve any open monthly_fee_overdue alert
+            await supabase
+              .from("compliance_alerts")
+              .update({ is_resolved: true, resolved_at: new Date().toISOString() })
+              .eq("store_id", txData.store_id)
+              .eq("alert_type", "monthly_fee_overdue")
+              .eq("is_resolved", false);
           } else if (isPlatformFee && txData?.store_id) {
             // Platform fee paid — subtract paid amount from repasse_pendente (avoid losing accruals
             // that occurred between charge generation and payment confirmation)

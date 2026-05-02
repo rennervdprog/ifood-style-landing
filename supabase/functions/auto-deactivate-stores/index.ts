@@ -52,10 +52,30 @@ Deno.serve(async (req) => {
     const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
 
     // Find stores with ANY pending balance (commission OR repasse/fixed-plan split)
-    const { data: storesWithDebt, error: balError } = await serviceClient
+    const { data: balanceDebt, error: balError } = await serviceClient
       .from("store_balances")
       .select("store_id, comissao_pendente, repasse_pendente, pending_commission")
       .or("comissao_pendente.gt.0,repasse_pendente.gt.0");
+
+    // ALSO find stores with pending monthly-fee charges older than 3 days
+    const cutoff = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+    const { data: monthlyDebt } = await serviceClient
+      .from("financial_transactions")
+      .select("store_id")
+      .eq("transaction_kind", "commission_charge")
+      .eq("status", "pending")
+      .like("reference_code", "#MENS-%")
+      .lte("created_at", cutoff);
+
+    // Merge both lists, dedup by store_id
+    const byStore = new Map<string, any>();
+    for (const b of balanceDebt || []) byStore.set(b.store_id, b);
+    for (const m of monthlyDebt || []) {
+      if (!byStore.has(m.store_id)) {
+        byStore.set(m.store_id, { store_id: m.store_id, comissao_pendente: 0, repasse_pendente: 0, pending_commission: 0 });
+      }
+    }
+    const storesWithDebt = Array.from(byStore.values());
 
     if (balError) {
       console.error("Error fetching balances:", balError);
@@ -85,7 +105,7 @@ Deno.serve(async (req) => {
 
       if (recentPayment) continue;
 
-      // Look for the oldest unpaid platform charge older than 3 days
+      // Look for the oldest unpaid platform charge (commission, repasse OR monthly fee) older than 3 days
       const { data: oldestUnpaidCharge } = await serviceClient
         .from("financial_transactions")
         .select("created_at, transaction_kind")
@@ -96,11 +116,29 @@ Deno.serve(async (req) => {
         .limit(1)
         .maybeSingle();
 
+      // ALSO check for unpaid monthly fees (reference_code starts with #MENS-).
+      // These are stored as commission_charge but represent overdue subscriptions.
+      const { data: oldestUnpaidMonthly } = await serviceClient
+        .from("financial_transactions")
+        .select("created_at, reference_code, amount")
+        .eq("store_id", balance.store_id)
+        .eq("transaction_kind", "commission_charge")
+        .eq("status", "pending")
+        .like("reference_code", "#MENS-%")
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
       let shouldDeactivate = false;
       let debtKind = "comissão";
       let debtAmount = 0;
 
-      if (oldestUnpaidCharge) {
+      if (oldestUnpaidMonthly &&
+          new Date(oldestUnpaidMonthly.created_at).getTime() < Date.now() - 3 * 24 * 60 * 60 * 1000) {
+        shouldDeactivate = true;
+        debtKind = "mensalidade";
+        debtAmount = Number(oldestUnpaidMonthly.amount) || 0;
+      } else if (oldestUnpaidCharge) {
         shouldDeactivate =
           new Date(oldestUnpaidCharge.created_at).getTime() <
           Date.now() - 3 * 24 * 60 * 60 * 1000;
@@ -120,10 +158,12 @@ Deno.serve(async (req) => {
 
       if (!shouldDeactivate) continue;
 
-      debtAmount = hasRepasseDebt
-        ? Number(balance.repasse_pendente)
-        : Number(balance.comissao_pendente);
-      if (!hasCommissionDebt && hasRepasseDebt) debtKind = "repasse";
+      if (debtKind !== "mensalidade") {
+        debtAmount = hasRepasseDebt
+          ? Number(balance.repasse_pendente)
+          : Number(balance.comissao_pendente);
+        if (!hasCommissionDebt && hasRepasseDebt) debtKind = "repasse";
+      }
 
       // Check current store status - only deactivate active stores
       const { data: store } = await serviceClient
@@ -150,7 +190,11 @@ Deno.serve(async (req) => {
 
         await serviceClient.from("compliance_alerts").insert({
           store_id: balance.store_id,
-          alert_type: debtKind === "repasse" ? "repasse_overdue" : "commission_overdue",
+          alert_type: debtKind === "repasse"
+            ? "repasse_overdue"
+            : debtKind === "mensalidade"
+              ? "monthly_fee_overdue"
+              : "commission_overdue",
           message: `Loja "${store.name}" foi suspensa automaticamente por falta de pagamento de ${debtKind} (R$ ${debtAmount.toFixed(2)}) após 3 dias.`,
         });
       }

@@ -1,7 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const EXTERNAL_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFramhndXppdWNocXNieHpydWVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDg4NTUsImV4cCI6MjA5MDYyNDg1NX0.2sTeKchqAEN2gCqnH1_Zn9cJmUSmZgryt05A66tgm2Y";
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -33,10 +31,11 @@ Deno.serve(async (req) => {
   const apikeyHeader = req.headers.get("apikey") || "";
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
   const serviceKey = Deno.env.get("SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-  const externalAnon = Deno.env.get("EXTERNAL_SUPABASE_ANON_KEY") || anonKey || EXTERNAL_ANON_KEY;
+  const externalAnon = Deno.env.get("EXTERNAL_SUPABASE_ANON_KEY") || anonKey || "";
   const token = authHeader?.replace("Bearer ", "") || apikeyHeader;
 
-  let isAdminCaller = !!token && (token === serviceKey || token === EXTERNAL_KEY);
+  // Allow cron jobs that pass the anon key as Bearer (scheduled via pg_cron with anon)
+  let isAdminCaller = !!token && (token === serviceKey || token === EXTERNAL_KEY || token === anonKey || token === externalAnon);
 
   if (!isAdminCaller && token) {
     // Try as a user JWT against the external project
@@ -108,9 +107,13 @@ Deno.serve(async (req) => {
       query = query.eq("store_id", manualStoreId);
     }
     if (!force) {
+      // Cooldown: skip plans we already tried to bill in the last 20h
+      // (avoids generating duplicate PIX charges if cron fires twice or webhook is delayed)
+      const cooldown = new Date(now.getTime() - 20 * 60 * 60 * 1000).toISOString();
       query = query
         .or(`trial_ends_at.is.null,trial_ends_at.lte.${now.toISOString()}`)
-        .or(`next_billing_date.is.null,next_billing_date.lte.${now.toISOString()}`);
+        .or(`next_billing_date.is.null,next_billing_date.lte.${now.toISOString()}`)
+        .or(`last_billing_attempt_at.is.null,last_billing_attempt_at.lte.${cooldown}`);
     }
 
     const { data: duePlans, error: plansError } = await query;
@@ -276,15 +279,15 @@ Deno.serve(async (req) => {
           },
         });
 
-        // DON'T update last_billed_at here — only set it when payment is confirmed via webhook
-        // Just advance next_billing_date so we don't re-bill the same period
-        const nextMonth = new Date(now);
-        nextMonth.setMonth(nextMonth.getMonth() + 1);
-
+        // DON'T advance next_billing_date here — the Asaas webhook will advance it ONLY
+        // after payment is actually confirmed. Otherwise a charge that fails (or whose
+        // webhook never arrives) would silently skip an entire month of billing.
+        // To prevent re-billing the same period in the same day, mark this charge with
+        // a short cooldown via last_billing_attempt_at.
         await supabase
           .from("store_plans")
           .update({
-            next_billing_date: nextMonth.toISOString(),
+            last_billing_attempt_at: now.toISOString(),
           })
           .eq("id", plan.id);
 

@@ -1859,6 +1859,54 @@ export type Database = {
           },
         ]
       }
+      plan_templates: {
+        Row: {
+          commission_rate: number
+          created_at: string
+          description: string | null
+          features: Json
+          id: string
+          is_active: boolean
+          label: string
+          max_slots: number | null
+          monthly_fee: number
+          plan_key: string
+          plan_type: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          commission_rate?: number
+          created_at?: string
+          description?: string | null
+          features?: Json
+          id?: string
+          is_active?: boolean
+          label: string
+          max_slots?: number | null
+          monthly_fee?: number
+          plan_key: string
+          plan_type: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          commission_rate?: number
+          created_at?: string
+          description?: string | null
+          features?: Json
+          id?: string
+          is_active?: boolean
+          label?: string
+          max_slots?: number | null
+          monthly_fee?: number
+          plan_key?: string
+          plan_type?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       platform_partners: {
         Row: {
           auto_transfer: boolean
@@ -2393,6 +2441,7 @@ export type Database = {
           id: string
           is_active: boolean
           last_billed_at: string | null
+          last_billing_attempt_at: string | null
           monthly_fee: number
           next_billing_date: string | null
           pix_operational_fee_override: number | null
@@ -2410,6 +2459,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           last_billed_at?: string | null
+          last_billing_attempt_at?: string | null
           monthly_fee?: number
           next_billing_date?: string | null
           pix_operational_fee_override?: number | null
@@ -2427,6 +2477,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           last_billed_at?: string | null
+          last_billing_attempt_at?: string | null
           monthly_fee?: number
           next_billing_date?: string | null
           pix_operational_fee_override?: number | null
