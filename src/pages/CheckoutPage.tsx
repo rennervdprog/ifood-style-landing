@@ -159,7 +159,7 @@ const CheckoutPage = () => {
   // Fallback to admin_settings.platform_split (default R$2) if useStorePlan is still loading
   // or hasn't computed the split yet, so the customer always sees the correct total.
   const platformSplitFallback = config.platform_split ?? DEFAULT_DELIVERY_FEE_CONFIG.platform_split;
-  const effectivePlatformSplit = isOwnDelivery && storePlan.isFixedPlan
+  const effectivePlatformSplit = isOwnDelivery
     ? (storePlan.platformDeliverySplit > 0 ? storePlan.platformDeliverySplit : platformSplitFallback)
     : 0;
   const ownDeliveryFallbackFee = isKmOwnDelivery
@@ -394,6 +394,7 @@ const CheckoutPage = () => {
             store_id: storeId,
             subtotal: storeSubtotal,
             delivery_fee: effectiveDeliveryFee,
+            commission_rate: storePlan.commissionRate ?? 0,
             total_price: storeTotalPrice,
             app_fee: appFee,
             payment_method: paymentMethod,
