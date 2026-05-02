@@ -52,10 +52,30 @@ Deno.serve(async (req) => {
     const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
 
     // Find stores with ANY pending balance (commission OR repasse/fixed-plan split)
-    const { data: storesWithDebt, error: balError } = await serviceClient
+    const { data: balanceDebt, error: balError } = await serviceClient
       .from("store_balances")
       .select("store_id, comissao_pendente, repasse_pendente, pending_commission")
       .or("comissao_pendente.gt.0,repasse_pendente.gt.0");
+
+    // ALSO find stores with pending monthly-fee charges older than 3 days
+    const cutoff = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+    const { data: monthlyDebt } = await serviceClient
+      .from("financial_transactions")
+      .select("store_id")
+      .eq("transaction_kind", "commission_charge")
+      .eq("status", "pending")
+      .like("reference_code", "#MENS-%")
+      .lte("created_at", cutoff);
+
+    // Merge both lists, dedup by store_id
+    const byStore = new Map<string, any>();
+    for (const b of balanceDebt || []) byStore.set(b.store_id, b);
+    for (const m of monthlyDebt || []) {
+      if (!byStore.has(m.store_id)) {
+        byStore.set(m.store_id, { store_id: m.store_id, comissao_pendente: 0, repasse_pendente: 0, pending_commission: 0 });
+      }
+    }
+    const storesWithDebt = Array.from(byStore.values());
 
     if (balError) {
       console.error("Error fetching balances:", balError);
