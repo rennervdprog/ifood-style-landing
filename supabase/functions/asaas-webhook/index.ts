@@ -269,7 +269,7 @@ Deno.serve(async (req) => {
             const isOwnDelivery = store.delivery_mode === "own";
 
             // Read delivery fee config for PIX operational fee and platform split
-            let pixOpFee = 1;
+            let pixOpFee = 1.99;
             let platformSplit = 2;
             try {
               const { data: feeConfigRow } = await supabase
@@ -279,7 +279,7 @@ Deno.serve(async (req) => {
                 .maybeSingle();
               if (feeConfigRow?.value) {
                 const fc = feeConfigRow.value as any;
-                pixOpFee = fc.pix_operational_fee ?? 1;
+                pixOpFee = fc.pix_operational_fee ?? 1.99;
                 platformSplit = fc.platform_split ?? 2;
               }
             } catch (e) {
