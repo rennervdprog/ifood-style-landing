@@ -359,6 +359,9 @@ const SuperAdminDashboard = () => {
       if (isPhysical) entry.physicalSales = addMoney(entry.physicalSales, subtotal);
       else entry.appSales = addMoney(entry.appSales, subtotal);
       entry.totalSales = addMoney(entry.totalSales, subtotal);
+      // TODO: deliveryFees acumula o total bruto de entrega por loja.
+      // Usado futuramente para calcular e exibir os R$ 2,00 fixos
+      // da plataforma por pedido.
       entry.deliveryFees = addMoney(entry.deliveryFees, deliveryFee);
       entry.orderCount += 1;
     });
