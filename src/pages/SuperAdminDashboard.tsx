@@ -179,21 +179,28 @@ const SuperAdminDashboard = () => {
   const { data: stores } = useQuery({
     queryKey: ["admin-all-stores"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("stores").select("*");
+      // 🔒 SELECT específico — evita trazer asaas_wallet_id, asaas_account_id etc.
+      const { data, error } = await supabase
+        .from("stores")
+        .select("id, name, status, commission_rate, delivery_mode, address_city, address_cep, owner_id, is_test, settings, delivery_fee_type, own_delivery_fee");
       if (error) throw error;
       return data;
     },
     enabled: isAdmin,
+    staleTime: 2 * 60 * 1000, // 2 minutos
   });
 
   const { data: drivers } = useQuery({
     queryKey: ["admin-all-drivers"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("drivers").select("*");
+      const { data, error } = await supabase
+        .from("drivers")
+        .select("user_id, name, phone, status, is_active");
       if (error) throw error;
       return data;
     },
     enabled: isAdmin,
+    staleTime: 2 * 60 * 1000,
   });
 
   const { data: storeBalances } = useQuery({
@@ -209,13 +216,15 @@ const SuperAdminDashboard = () => {
   });
 
   const { data: parentStorePlans } = useQuery({
-    queryKey: ["admin-store-plans-parent"],
+    // 🔒 queryKey unificada — storePlans (linha ~1200) foi removida e usa esta mesma cache
+    queryKey: ["admin-store-plans"],
     queryFn: async () => {
       const { data, error } = await supabase.from("store_plans").select("*").eq("is_active", true);
       if (error) throw error;
       return (data || []) as any[];
     },
     enabled: isAdmin,
+    staleTime: 2 * 60 * 1000, // 2 minutos — planos mudam pouco
   });
 
   // Compliance alerts
@@ -1196,15 +1205,9 @@ const FinanceTab = ({
   const [savingGateway, setSavingGateway] = useState(false);
   const [expandedStore, setExpandedStore] = useState<string | null>(null);
 
-  // Fetch store plans for badges & logic
-  const { data: storePlans } = useQuery({
-    queryKey: ["admin-store-plans-finance"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("store_plans").select("*").eq("is_active", true);
-      if (error) throw error;
-      return (data || []) as any[];
-    },
-  });
+  // 🔒 storePlans removida — usa parentStorePlans (queryKey "admin-store-plans") definida acima
+  // Isso elimina a query duplicada para store_plans
+  const storePlans = parentStorePlans;
 
   const getStorePlan = (storeId: string) => storePlans?.find((p: any) => p.store_id === storeId);
 
@@ -1832,9 +1835,8 @@ const FinanceTab = ({
       ) : financeSubTab === "subaccounts" ? (
         <AdminSubaccountsTab />
       ) : financeSubTab === "stores" ? (
+        /* ═══ Store Cards ═══ */
         storeSettlement.length > 0 ? (
-          <div className="space-y-3">
-            {storeSettlement.map((entry) => {
               const balance = storeBalances.find((b: any) => b.store_id === entry.storeId);
               const dbComissao = Number(balance?.comissao_pendente || balance?.pending_commission || 0);
               const isExpanded = expandedStore === entry.storeId;
@@ -2072,7 +2074,7 @@ const FinanceTab = ({
           </div>
         )
       ) : (
-        /* ═══ Driver Cards ═══ */
+        /* ═══ Driver Cards ═══ (financeSubTab === "drivers") */
         driverSettlement.length > 0 ? (
           <div className="space-y-3">
             {driverSettlement.map((entry) => {
