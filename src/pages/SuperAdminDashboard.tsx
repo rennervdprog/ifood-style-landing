@@ -195,7 +195,7 @@ const SuperAdminDashboard = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("drivers")
-        .select("user_id, name, phone, status, is_active");
+        .select("user_id, name, status, is_active");
       if (error) throw error;
       return data;
     },
@@ -936,6 +936,7 @@ const SuperAdminDashboard = () => {
                 storeBalances={storeBalances || []}
                 queryClient={queryClient}
                 withdrawalRequests={withdrawalRequests || []}
+                parentStorePlans={parentStorePlans || []}
               />
             )}
             {activeTab === "dashboard" && (
@@ -1187,6 +1188,7 @@ const FinanceTab = ({
   generateStoreWhatsApp,
   storeBalances, queryClient,
   withdrawalRequests,
+  parentStorePlans,
 }: {
   storeSettlement: any[]; driverSettlement: any[];
   financeTotals: { totalVolume: number; grossProfit: number; totalDriverFees: number };
@@ -1195,6 +1197,7 @@ const FinanceTab = ({
   selectedStore: string; setSelectedStore: (s: string) => void;
   stores: any[]; loading: boolean; generateStoreWhatsApp: (entry: any) => void;
   storeBalances: any[]; queryClient: any; withdrawalRequests: any[];
+  parentStorePlans: any[];
 }) => {
   const [payingStore, setPayingStore] = useState<string | null>(null);
   const [chargingStore, setChargingStore] = useState<string | null>(null);
