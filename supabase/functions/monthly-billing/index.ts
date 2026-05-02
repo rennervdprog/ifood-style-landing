@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
   const apikeyHeader = req.headers.get("apikey") || "";
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
   const serviceKey = Deno.env.get("SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-  const externalAnon = Deno.env.get("EXTERNAL_SUPABASE_ANON_KEY") || anonKey || EXTERNAL_ANON_KEY;
+  const externalAnon = Deno.env.get("EXTERNAL_SUPABASE_ANON_KEY") || anonKey || "";
   const token = authHeader?.replace("Bearer ", "") || apikeyHeader;
 
   // Allow cron jobs that pass the anon key as Bearer (scheduled via pg_cron with anon)
@@ -275,15 +275,15 @@ Deno.serve(async (req) => {
           },
         });
 
-        // DON'T update last_billed_at here — only set it when payment is confirmed via webhook
-        // Just advance next_billing_date so we don't re-bill the same period
-        const nextMonth = new Date(now);
-        nextMonth.setMonth(nextMonth.getMonth() + 1);
-
+        // DON'T advance next_billing_date here — the Asaas webhook will advance it ONLY
+        // after payment is actually confirmed. Otherwise a charge that fails (or whose
+        // webhook never arrives) would silently skip an entire month of billing.
+        // To prevent re-billing the same period in the same day, mark this charge with
+        // a short cooldown via last_billing_attempt_at.
         await supabase
           .from("store_plans")
           .update({
-            next_billing_date: nextMonth.toISOString(),
+            last_billing_attempt_at: now.toISOString(),
           })
           .eq("id", plan.id);
 
