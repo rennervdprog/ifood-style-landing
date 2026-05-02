@@ -8,7 +8,10 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
-        android:usesCleartextTraffic="true">
+        android:usesCleartextTraffic="false">
+
+        <!-- 🔒 Network Security: Bloqueia tráfego HTTP em produção. Apenas HTTPS é permitido. -->
+        <!-- Se precisar permitir HTTP em desenvolvimento, criar arquivo network_security_config.xml -->
 
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
