@@ -78,13 +78,18 @@ const SuperAdminDashboard = () => {
         break;
       case "yesterday":
         start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
-        now.setHours(0, 0, 0, 0);
-        break;
+        const endOfYesterday = new Date(
+          now.getFullYear(), now.getMonth(), now.getDate()
+        );
+        return {
+          start: start.toISOString(),
+          end: endOfYesterday.toISOString()
+        };
       case "week":
         start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
         break;
     }
-    return { start: start!.toISOString(), end: filter === "yesterday" ? new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString() : new Date().toISOString() };
+    return { start: start!.toISOString(), end: new Date().toISOString() };
   };
 
   const getFinanceDateRange = () => {
@@ -312,15 +317,16 @@ const SuperAdminDashboard = () => {
   }, [isAdmin, queryClient]);
 
   const getStoreRate = (storeId: string) => {
-    // Use active plan's commission rate (fixed plans = 0%)
     const plan = parentStorePlans?.find((p: any) => p.store_id === storeId);
     if (plan) {
       if (plan.plan_type === "fixed") return 0;
-      return (plan.commission_rate ?? 5) / 100;
+      // Garante que a taxa nunca ultrapasse 10% por segurança
+      const rate = Number(plan.commission_rate ?? 5);
+      const saferate = Math.min(rate, 10);
+      return saferate / 100;
     }
-    // Fallback to legacy store commission_rate
     const store = stores?.find((s: any) => s.id === storeId);
-    return ((store as any)?.commission_rate ?? 5) / 100;
+    return (Math.min(Number((store as any)?.commission_rate ?? 5), 10)) / 100;
   };
 
   const metrics = useMemo(() => {
@@ -354,6 +360,9 @@ const SuperAdminDashboard = () => {
       if (isPhysical) entry.physicalSales = addMoney(entry.physicalSales, subtotal);
       else entry.appSales = addMoney(entry.appSales, subtotal);
       entry.totalSales = addMoney(entry.totalSales, subtotal);
+      // TODO: deliveryFees acumula o total bruto de entrega por loja.
+      // Usado futuramente para calcular e exibir os R$ 2,00 fixos
+      // da plataforma por pedido.
       entry.deliveryFees = addMoney(entry.deliveryFees, deliveryFee);
       entry.orderCount += 1;
     });
@@ -389,7 +398,14 @@ const SuperAdminDashboard = () => {
 
   const financeTotals = useMemo(() => {
     const totalVolume = sumMoney(storeSettlement.map((entry) => entry.totalSales));
-    const grossProfit = sumMoney(storeSettlement.map((entry) => entry.commissionDue + multiplyMoney(entry.appSales, getStoreRate(entry.storeId))));
+    const grossProfit = sumMoney(
+      storeSettlement.map((entry) =>
+        addMoney(
+          entry.commissionDue,
+          subtractMoney(entry.appSales, entry.netTransfer)
+        )
+      )
+    );
     const totalDriverFees = sumMoney(driverSettlement.map((entry) => entry.appFees));
     return { totalVolume, grossProfit, totalDriverFees };
   }, [storeSettlement, driverSettlement, stores, parentStorePlans]);
@@ -1364,9 +1380,19 @@ const FinanceTab = ({
   const handleMarkDriverPaidManually = async (driverEntry: any) => {
     setMarkingPaid(driverEntry.driverId);
     try {
+      const { data: currentBal } = await supabase
+        .from("driver_balances" as any)
+        .select("paid_amount")
+        .eq("driver_user_id", driverEntry.driverId)
+        .single();
+      const prevPaid = Number((currentBal as any)?.paid_amount || 0);
       const { error } = await supabase
         .from("driver_balances" as any)
-        .update({ pending_amount: 0, paid_amount: driverEntry.appFees, updated_at: new Date().toISOString() } as any)
+        .update({
+          pending_amount: 0,
+          paid_amount: prevPaid + Number(driverEntry.appFees),
+          updated_at: new Date().toISOString()
+        } as any)
         .eq("driver_user_id", driverEntry.driverId);
       if (error) throw error;
       await supabase.from("driver_earnings" as any).update({ status: "pago" } as any)
@@ -2164,9 +2190,19 @@ const SaquesTab = ({ withdrawalRequests, pendingWithdrawals, drivers, queryClien
       .update({ status: "pago", processed_at: new Date().toISOString() } as any)
       .eq("id", req.id);
     if (updateError) { toast.error("Erro ao confirmar."); return; }
+    const { data: currentBalance } = await supabase
+      .from("driver_balances" as any)
+      .select("paid_amount")
+      .eq("driver_user_id", req.driver_user_id)
+      .single();
+    const previousPaid = Number((currentBalance as any)?.paid_amount || 0);
     const { error: balanceError } = await supabase
       .from("driver_balances" as any)
-      .update({ pending_amount: 0, paid_amount: Number(req.amount), updated_at: new Date().toISOString() } as any)
+      .update({
+        pending_amount: 0,
+        paid_amount: previousPaid + Number(req.amount),
+        updated_at: new Date().toISOString()
+      } as any)
       .eq("driver_user_id", req.driver_user_id);
     if (balanceError) console.error("Balance update error:", balanceError);
     await supabase.from("driver_earnings" as any).update({ status: "pago" } as any)
@@ -3101,9 +3137,9 @@ const PagamentosSplitTab = ({ stores }: { stores: any[] }) => {
                       <div key={record.id || idx} className="p-4 space-y-2">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${globalStatusColors[record.status]?.bg} ${globalStatusColors[record.status]?.text} || "bg-muted text-muted-foreground"}`}>
-                               {globalStatusColors[record.status]?.label || record.status}
-                             </span>
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${globalStatusColors[record.status]?.bg ?? "bg-muted"} ${globalStatusColors[record.status]?.text ?? "text-muted-foreground"}`}>
+                                {globalStatusColors[record.status]?.label || record.status}
+                              </span>
                             <span className="text-xs font-bold text-foreground">
                               {kindLabels[record.transaction_kind] || record.transaction_kind}
                             </span>
