@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
 
       if (recentPayment) continue;
 
-      // Look for the oldest unpaid platform charge older than 3 days
+      // Look for the oldest unpaid platform charge (commission, repasse OR monthly fee) older than 3 days
       const { data: oldestUnpaidCharge } = await serviceClient
         .from("financial_transactions")
         .select("created_at, transaction_kind")
@@ -96,11 +96,29 @@ Deno.serve(async (req) => {
         .limit(1)
         .maybeSingle();
 
+      // ALSO check for unpaid monthly fees (reference_code starts with #MENS-).
+      // These are stored as commission_charge but represent overdue subscriptions.
+      const { data: oldestUnpaidMonthly } = await serviceClient
+        .from("financial_transactions")
+        .select("created_at, reference_code, amount")
+        .eq("store_id", balance.store_id)
+        .eq("transaction_kind", "commission_charge")
+        .eq("status", "pending")
+        .like("reference_code", "#MENS-%")
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
       let shouldDeactivate = false;
       let debtKind = "comissão";
       let debtAmount = 0;
 
-      if (oldestUnpaidCharge) {
+      if (oldestUnpaidMonthly &&
+          new Date(oldestUnpaidMonthly.created_at).getTime() < Date.now() - 3 * 24 * 60 * 60 * 1000) {
+        shouldDeactivate = true;
+        debtKind = "mensalidade";
+        debtAmount = Number(oldestUnpaidMonthly.amount) || 0;
+      } else if (oldestUnpaidCharge) {
         shouldDeactivate =
           new Date(oldestUnpaidCharge.created_at).getTime() <
           Date.now() - 3 * 24 * 60 * 60 * 1000;
@@ -120,10 +138,12 @@ Deno.serve(async (req) => {
 
       if (!shouldDeactivate) continue;
 
-      debtAmount = hasRepasseDebt
-        ? Number(balance.repasse_pendente)
-        : Number(balance.comissao_pendente);
-      if (!hasCommissionDebt && hasRepasseDebt) debtKind = "repasse";
+      if (debtKind !== "mensalidade") {
+        debtAmount = hasRepasseDebt
+          ? Number(balance.repasse_pendente)
+          : Number(balance.comissao_pendente);
+        if (!hasCommissionDebt && hasRepasseDebt) debtKind = "repasse";
+      }
 
       // Check current store status - only deactivate active stores
       const { data: store } = await serviceClient
@@ -150,7 +170,11 @@ Deno.serve(async (req) => {
 
         await serviceClient.from("compliance_alerts").insert({
           store_id: balance.store_id,
-          alert_type: debtKind === "repasse" ? "repasse_overdue" : "commission_overdue",
+          alert_type: debtKind === "repasse"
+            ? "repasse_overdue"
+            : debtKind === "mensalidade"
+              ? "monthly_fee_overdue"
+              : "commission_overdue",
           message: `Loja "${store.name}" foi suspensa automaticamente por falta de pagamento de ${debtKind} (R$ ${debtAmount.toFixed(2)}) após 3 dias.`,
         });
       }

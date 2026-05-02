@@ -107,9 +107,13 @@ Deno.serve(async (req) => {
       query = query.eq("store_id", manualStoreId);
     }
     if (!force) {
+      // Cooldown: skip plans we already tried to bill in the last 20h
+      // (avoids generating duplicate PIX charges if cron fires twice or webhook is delayed)
+      const cooldown = new Date(now.getTime() - 20 * 60 * 60 * 1000).toISOString();
       query = query
         .or(`trial_ends_at.is.null,trial_ends_at.lte.${now.toISOString()}`)
-        .or(`next_billing_date.is.null,next_billing_date.lte.${now.toISOString()}`);
+        .or(`next_billing_date.is.null,next_billing_date.lte.${now.toISOString()}`)
+        .or(`last_billing_attempt_at.is.null,last_billing_attempt_at.lte.${cooldown}`);
     }
 
     const { data: duePlans, error: plansError } = await query;
