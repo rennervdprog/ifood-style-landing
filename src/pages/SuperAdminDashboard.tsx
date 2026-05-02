@@ -1371,9 +1371,19 @@ const FinanceTab = ({
   const handleMarkDriverPaidManually = async (driverEntry: any) => {
     setMarkingPaid(driverEntry.driverId);
     try {
+      const { data: currentBal } = await supabase
+        .from("driver_balances" as any)
+        .select("paid_amount")
+        .eq("driver_user_id", driverEntry.driverId)
+        .single();
+      const prevPaid = Number((currentBal as any)?.paid_amount || 0);
       const { error } = await supabase
         .from("driver_balances" as any)
-        .update({ pending_amount: 0, paid_amount: driverEntry.appFees, updated_at: new Date().toISOString() } as any)
+        .update({
+          pending_amount: 0,
+          paid_amount: prevPaid + Number(driverEntry.appFees),
+          updated_at: new Date().toISOString()
+        } as any)
         .eq("driver_user_id", driverEntry.driverId);
       if (error) throw error;
       await supabase.from("driver_earnings" as any).update({ status: "pago" } as any)
