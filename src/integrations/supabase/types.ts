@@ -2441,6 +2441,7 @@ export type Database = {
           id: string
           is_active: boolean
           last_billed_at: string | null
+          last_billing_attempt_at: string | null
           monthly_fee: number
           next_billing_date: string | null
           pix_operational_fee_override: number | null
@@ -2458,6 +2459,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           last_billed_at?: string | null
+          last_billing_attempt_at?: string | null
           monthly_fee?: number
           next_billing_date?: string | null
           pix_operational_fee_override?: number | null
@@ -2475,6 +2477,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           last_billed_at?: string | null
+          last_billing_attempt_at?: string | null
           monthly_fee?: number
           next_billing_date?: string | null
           pix_operational_fee_override?: number | null
