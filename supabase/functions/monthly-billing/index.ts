@@ -151,7 +151,12 @@ Deno.serve(async (req) => {
           : plan.plan_type === "fixed"
             ? "Plano Essencial"
             : "Plano Crescimento";
-        const description = `${planLabel} - ${store.name} - ${referenceCode}`;
+
+        // Incluir comissão PDV acumulada no período
+        const pdvPending = Number((plan as any).pdv_commission_pending || 0);
+        const totalAmount = Number(plan.monthly_fee) + pdvPending;
+        const pdvLine = pdvPending > 0 ? ` + Comissão PDV R$${pdvPending.toFixed(2)}` : "";
+        const description = `${planLabel}${pdvLine} - ${store.name} - ${referenceCode}`;
 
         // Resolve Asaas customer for this store
         let customerId: string | null = store.asaas_account_id || null;
@@ -218,7 +223,7 @@ Deno.serve(async (req) => {
         const chargeBody: any = {
           customer: customerId,
           billingType: "PIX",
-          value: Number(plan.monthly_fee),
+          value: totalAmount,  // mensalidade + comissão PDV acumulada
           dueDate: dueDateStr,
           description: description.substring(0, 256),
           externalReference: referenceCode,
@@ -264,7 +269,7 @@ Deno.serve(async (req) => {
           store_id: store.id,
           transaction_kind: "commission_charge",
           reference_code: referenceCode,
-          amount: Number(plan.monthly_fee),
+          amount: totalAmount,  // mensalidade + comissão PDV
           status: "pending",
           provider: "asaas",
           mercado_pago_payment_id: chargeData.id || null,
@@ -288,6 +293,8 @@ Deno.serve(async (req) => {
           .from("store_plans")
           .update({
             last_billing_attempt_at: now.toISOString(),
+            // Zera comissão PDV após incluir na fatura
+            ...(pdvPending > 0 ? { pdv_commission_pending: 0 } : {}),
           })
           .eq("id", plan.id);
 
