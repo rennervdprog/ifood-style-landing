@@ -18,7 +18,7 @@ import {
   Menu, X, LayoutDashboard, CircleDot, TrendingUp, BarChart3,
   Users, Timer, Star, ShoppingBag, ArrowUpRight, ArrowDownRight,
    Filter, UserCheck, UserX, MapPinned, Repeat, Heart, AlertTriangle, LogOut, User, Shield, Navigation,
-  Calendar, Download, GraduationCap, ChevronRight
+  Calendar, Download, GraduationCap, ChevronRight, Monitor
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip,
@@ -1329,6 +1329,32 @@ const AdminDashboard = () => {
                 <PlatformSplitAlert storeId={store.id} storeName={store.name} splitPerOrder={storePlan.platformDeliverySplit} onGoToFinance={() => setDashboardTab("finance")} />
               )}
 
+              {/* ── Banner PDV ── */}
+              {storePlan.pdvEnabled !== false && (
+                <button
+                  onClick={() => navigate("/admin/pdv")}
+                  className="w-full text-left bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent border border-blue-500/20 rounded-2xl p-4 flex items-center gap-4 active:scale-[0.99] transition-transform hover:border-blue-500/40 group"
+                >
+                  <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0 group-hover:bg-blue-500/20 transition-colors">
+                    <Monitor className="h-6 w-6 text-blue-500" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-sm font-black text-foreground">PDV — Caixa Presencial</h3>
+                      <span className="text-[10px] font-bold bg-blue-500/10 text-blue-500 border border-blue-500/20 px-2 py-0.5 rounded-full">
+                        Disponível
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Venda no balcão, mesa ou comanda. Sem taxa PIX — maquininha própria.
+                    </p>
+                    <p className="text-[11px] text-blue-500 font-semibold mt-1.5 flex items-center gap-1">
+                      Abrir caixa <ChevronRight className="h-3.5 w-3.5" />
+                    </p>
+                  </div>
+                </button>
+              )}
+
                {/* ── KPI Cards ── */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
                 <GlanceCard
@@ -1345,12 +1371,6 @@ const AdminDashboard = () => {
                     color="text-emerald-500" trend={todayTotal > 0 ? "up" : null}
                     onClick={() => setDashboardTab("finance")}
                   />
-                   {/* <button 
-                     onClick={() => setDashboardTab("cash_register")}
-                     className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-600 hover:bg-emerald-500/20 transition-all text-xs font-bold"
-                   >
-                     <Banknote className="h-4 w-4" /> Gerenciar Caixa (PDV)
-                   </button> */}
                 </div>
                 <GlanceCard
                   icon={Timer} label="Tempo Médio" value={avgDeliveryTime ? `${avgDeliveryTime} min` : "—"}
