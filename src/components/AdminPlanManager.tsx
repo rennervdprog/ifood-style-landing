@@ -45,7 +45,7 @@ const planDefaults: Record<DisplayPlan, { monthly_fee: number; commission_rate: 
   supporter: { monthly_fee: SUPPORTER_FEE, commission_rate: 0 },
   fixed: { monthly_fee: 180, commission_rate: 0 },
   hybrid: { monthly_fee: 100, commission_rate: 2.5 },
-  commission_only: { monthly_fee: 0, commission_rate: 5 },
+  commission_only: { monthly_fee: 0, commission_rate: 6 },
 };
 
 const featuresByPlan: Record<DisplayPlan, string[]> = {

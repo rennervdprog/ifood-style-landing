@@ -314,7 +314,7 @@ Deno.serve(async (req) => {
               commissionAmount = 0;
             } else {
               // Commission-based plans
-              const rate = (storePlan?.commission_rate ?? store.commission_rate ?? 5) / 100;
+              const rate = (storePlan?.commission_rate ?? store.commission_rate ?? 6) / 100;
               commissionAmount = Math.round(subtotal * rate * 100) / 100;
               if (isOwnDelivery) {
                 storeShare = Math.round((subtotal * (1 - rate) + deliveryFee) * 100) / 100;
