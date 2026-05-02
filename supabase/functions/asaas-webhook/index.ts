@@ -587,8 +587,29 @@ Deno.serve(async (req) => {
     } else if (event === "PAYMENT_OVERDUE" || event === "PAYMENT_DELETED" || event === "PAYMENT_REFUNDED") {
       // Payment failed/cancelled
       if (isUuid) {
-        console.log(`Asaas payment ${paymentId} was ${event} for order ${externalReference}`);
+        // 🔒 BUG FIX: PIX vencido/deletado cancela o pedido automaticamente
+        // Antes apenas logava — pedido ficava preso em 'aguardando_pagamento' para sempre
+        const { data: order } = await supabase
+          .from("orders")
+          .select("id, status")
+          .eq("id", externalReference)
+          .single();
+
+        if (order && order.status === "aguardando_pagamento") {
+          await supabase
+            .from("orders")
+            .update({
+              status: "cancelado" as any,
+            })
+            .eq("id", externalReference)
+            .eq("status", "aguardando_pagamento" as any); // race-safe: só cancela se ainda aguardando
+
+          console.log(`[ASAAS-WH] Order ${externalReference} cancelled due to ${event}`);
+        } else {
+          console.log(`[ASAAS-WH] Order ${externalReference} ${event} — status=${order?.status || "not found"}, no action needed`);
+        }
       } else {
+        // Transação financeira (mensalidade, comissão) — marca como falha
         await supabase
           .from("financial_transactions")
           .update({
