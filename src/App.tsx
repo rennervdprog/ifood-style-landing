@@ -31,6 +31,7 @@ const PerfilPage = lazy(() => import("./pages/PerfilPage"));
 const AuthPage = lazy(() => import("./pages/AuthPage"));
 const PartnerLogin = lazy(() => import("./pages/PartnerLogin"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const PdvPage = lazy(() => import("./pages/PdvPage"));
 const DriverDashboard = lazy(() => import("./pages/DriverDashboard"));
  const SuperAdminDashboard = lazy(() => import("./pages/SuperAdminDashboard").catch(() => {
    window.location.reload();
@@ -255,6 +256,7 @@ const App = () => {
                 <Route path="/auth" element={<AuthPage />} />
                 <Route path="/portal-parceiro" element={<PartnerLogin />} />
                 <Route path="/admin" element={<RoleGuard allowedRoles={["lojista", "admin"]} redirectTo="/" requireApproval><AdminDashboard /></RoleGuard>} />
+                <Route path="/admin/pdv" element={<RoleGuard allowedRoles={["lojista", "admin"]} redirectTo="/" requireApproval><PdvPage /></RoleGuard>} />
                 <Route
                   path="/entregador"
                   element={
