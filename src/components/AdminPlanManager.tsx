@@ -694,7 +694,7 @@ function FullControlPanel({ plan, storeName, currentDisplay, onChange }: {
         trial_ends_at: trialEnds ? new Date(trialEnds).toISOString() : null,
         next_billing_date: nextBilling ? new Date(nextBilling).toISOString() : null,
         last_billed_at: lastBilled ? new Date(lastBilled).toISOString() : null,
-        started_at: startedAt ? new Date(startedAt).toISOString() : null,
+        started_at: startedAt ? new Date(startedAt).toISOString() : plan.started_at || new Date().toISOString(),
       };
       const { error } = await supabase
         .from("store_plans")
