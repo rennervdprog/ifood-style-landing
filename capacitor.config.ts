@@ -5,21 +5,14 @@ const config: CapacitorConfig = {
   appName: 'ItaSuper',
   webDir: 'dist',
   android: {
-    allowMixedContent: true,
+    // 🔒 Não permite recursos HTTP dentro de HTTPS
+    allowMixedContent: false,
     webContentsDebuggingEnabled: false,
   },
-   // ===============================================================
-   // 🚀 MODO NATIVO HÍBRIDO (OFFLINE-FIRST)
-   // ===============================================================
-   // O app agora carrega os arquivos locais da pasta 'dist'.
-   // Isso impede que ele abra o navegador externo e garante que
-   // funcione como um app nativo real.
-   // ===============================================================
   server: {
     androidScheme: 'https',
     url: 'https://www.itasuper.com.br',
     cleartext: false,
-    // Permitir todas as navegações dentro do WebView para evitar que abra o navegador externo
     allowNavigation: [
       'www.itasuper.com.br',
       '*.supabase.co',
@@ -29,17 +22,15 @@ const config: CapacitorConfig = {
   },
   plugins: {
     SplashScreen: {
-      // Cobre o WebView enquanto o HTML/JS ainda está sendo baixado.
-      // Sem isso, o usuário vê uma tela preta (cor de fundo da Activity).
-      launchShowDuration: 3000,
-      launchAutoHide: false, // ocultaremos manualmente quando o React montar
+      // Reduzido para 1000ms — o hide manual (hideSplash) está implementado
+      // então esse valor só é o fallback máximo, não o tempo real exibido.
+      launchShowDuration: 1000,
+      launchAutoHide: false,
       launchFadeOutDuration: 200,
-      backgroundColor: '#FF6B00', // cor da marca ItaSuper
+      backgroundColor: '#FF6B00',
       androidSplashResourceName: 'splash',
       androidScaleType: 'CENTER_CROP',
-      showSpinner: true,
-      androidSpinnerStyle: 'large',
-      spinnerColor: '#FFFFFF',
+      showSpinner: false,
       splashFullScreen: true,
       splashImmersive: true,
     },
