@@ -317,15 +317,16 @@ const SuperAdminDashboard = () => {
   }, [isAdmin, queryClient]);
 
   const getStoreRate = (storeId: string) => {
-    // Use active plan's commission rate (fixed plans = 0%)
     const plan = parentStorePlans?.find((p: any) => p.store_id === storeId);
     if (plan) {
       if (plan.plan_type === "fixed") return 0;
-      return (plan.commission_rate ?? 5) / 100;
+      // Garante que a taxa nunca ultrapasse 10% por segurança
+      const rate = Number(plan.commission_rate ?? 5);
+      const saferate = Math.min(rate, 10);
+      return saferate / 100;
     }
-    // Fallback to legacy store commission_rate
     const store = stores?.find((s: any) => s.id === storeId);
-    return ((store as any)?.commission_rate ?? 5) / 100;
+    return (Math.min(Number((store as any)?.commission_rate ?? 5), 10)) / 100;
   };
 
   const metrics = useMemo(() => {
