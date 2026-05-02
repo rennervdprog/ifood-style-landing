@@ -48,7 +48,7 @@ export default function TrialExpiredGuard({ storePlan, storeId, children }: Tria
    // Block if:
    // 1. Trial expired and never paid (original check)
    // 2. Has a pending monthly/subscription payment (recurring billing unpaid)
-   // 3. Billing date is in the past (overdue)
+   // 3. Billing date is in the past AND fatura já foi gerada
    const isTrialExpired =
      storePlan.trialEndsAt !== null &&
      !storePlan.isInTrial &&
@@ -57,13 +57,16 @@ export default function TrialExpiredGuard({ storePlan, storeId, children }: Tria
  
    const hasUnpaidBill = !!pendingPayment && storePlan.monthlyFee > 0;
    
-   // Check if billing is overdue (next billing date in the past)
-   // We only consider it overdue if the store is NOT in trial
-   const isOverdue = 
+   // 🔒 BUG FIX: isOverdue agora exige fatura pendente (hasUnpaidBill).
+   // Antes bloqueava apenas pela data — se o cron atrasasse ou falhasse,
+   // o lojista era bloqueado sem ter recebido nenhuma cobrança para pagar.
+   // Agora: só bloqueia por vencimento SE a fatura já foi gerada E não foi paga.
+   const isOverdue =
      !storePlan.isInTrial &&
-     storePlan.nextBillingDate !== null && 
+     storePlan.nextBillingDate !== null &&
      new Date(storePlan.nextBillingDate) < new Date() &&
-     storePlan.monthlyFee > 0;
+     storePlan.monthlyFee > 0 &&
+     hasUnpaidBill; // ← exige fatura existente
  
    const shouldBlock = isTrialExpired || hasUnpaidBill || isOverdue;
 

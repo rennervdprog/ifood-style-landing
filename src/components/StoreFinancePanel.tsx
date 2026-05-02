@@ -493,10 +493,10 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
     const text = `📊 Resumo Financeiro ItaSuper - ${storeName}\n` +
       `Período: ${format(dateRange.start, "dd/MM", { locale: ptBR })} a ${format(dateRange.end, "dd/MM/yyyy", { locale: ptBR })}\n\n` +
       `💰 Vendas Totais: ${formatBRL(totalSales)}\n` +
-      `📱 Comissão Total (${commissionPct}%): ${formatBRL(totalCommission)}\n\n` +
+      `📱 Comissão Total: ${formatBRL(totalCommission)}\n\n` +
       `--- Vendas via App (Split Automático ✅) ---\n` +
       `Vendas PIX App: ${formatBRL(appSales)}\n` +
-      `Comissão retida: ${formatBRL(multiplyMoney(appSales, commissionRate))}\n` +
+      `Comissão retida: ${formatBRL(appCommission)}\n` +
       `Lojista recebeu: ${formatBRL(creditFromApp)}\n\n` +
       `--- Vendas Físicas (Cobrança Manual) ---\n` +
       `Vendas Dinheiro/Cartão: ${formatBRL(physicalSales)}\n` +
@@ -511,11 +511,11 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
       `Período: ${format(dateRange.start, "dd/MM/yyyy")} a ${format(dateRange.end, "dd/MM/yyyy")}`,
       ``,
       `VENDAS TOTAIS: ${formatBRL(totalSales)}`,
-      `COMISSÃO TOTAL (${commissionPct}%): ${formatBRL(totalCommission)}`,
+      `COMISSÃO TOTAL: ${formatBRL(totalCommission)}`,
       ``,
       `--- VENDAS VIA APP (SPLIT AUTOMÁTICO) ---`,
       `VENDAS PIX APP: ${formatBRL(appSales)}`,
-      `COMISSÃO RETIDA: ${formatBRL(multiplyMoney(appSales, commissionRate))}`,
+      `COMISSÃO RETIDA: ${formatBRL(appCommission)}`,
       `LOJISTA RECEBEU: ${formatBRL(creditFromApp)}`,
       ``,
       `--- VENDAS FÍSICAS (COBRANÇA MANUAL) ---`,
@@ -524,7 +524,7 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
       ``,
       `--- PEDIDOS ---`,
       ...(orders || []).map(o =>
-        `#${o.id.substring(0, 6).toUpperCase()} | ${format(new Date(o.created_at), "dd/MM HH:mm")} | ${o.payment_method === "pix" ? "PIX App" : o.payment_method === "cartao" ? "Cartão" : "Dinheiro"} | ${formatBRL(Number(o.subtotal))} | Comissão: ${formatBRL((Number(o.subtotal) * commissionRate))}`
+        `#${o.id.substring(0, 6).toUpperCase()} | ${format(new Date(o.created_at), "dd/MM HH:mm")} | ${o.payment_method === "pix" ? "PIX App" : o.payment_method === "cartao" ? "Cartão" : "Dinheiro"} | ${formatBRL(Number(o.subtotal))} | Comissão: ${formatBRL(multiplyMoney(Number(o.subtotal), getOrderCommissionRate(o)))}`
       ),
     ];
     const blob = new Blob([lines.join("\n")], { type: "text/plain" });
@@ -717,7 +717,7 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
           </div>
           <p className="text-2xl font-black text-emerald-400">{formatBRL(creditFromApp)}</p>
           <p className="text-[10px] text-muted-foreground mt-1">
-            Você recebeu {formatBRL(creditFromApp)} de {formatBRL(appSales)} em vendas pelo app. A taxa da plataforma ({commissionPct}% = {formatBRL(multiplyMoney(appSales, commissionRate))}) já foi descontada automaticamente.
+            Você recebeu {formatBRL(creditFromApp)} de {formatBRL(appSales)} em vendas pelo app. A comissão da plataforma ({formatBRL(appCommission)}) já foi descontada automaticamente.
           </p>
           <div className="mt-2 rounded-xl bg-emerald-500/5 border border-emerald-500/10 p-2.5">
             <p className="text-[10px] text-emerald-400 font-semibold">✅ Valor já depositado na sua conta — nada a fazer</p>
@@ -905,7 +905,7 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
         <div className="grid grid-cols-2 gap-3 text-center">
           <div>
             <p className="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">App (automático)</p>
-            <p className="text-sm font-black text-emerald-400 mt-1">{formatBRL(multiplyMoney(appSales, commissionRate))}</p>
+            <p className="text-sm font-black text-emerald-400 mt-1">{formatBRL(appCommission)}</p>
             <p className="text-[10px] text-muted-foreground">comissão já retida</p>
           </div>
           <div>
@@ -1049,7 +1049,8 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
           <div className="divide-y divide-border/20">
             {completedOrders.map(order => {
               const sub = Number(order.subtotal);
-              const commission = multiplyMoney(sub, commissionRate);
+              // 🔒 Usa taxa histórica do pedido (corrigido)
+              const commission = multiplyMoney(sub, getOrderCommissionRate(order));
               const net = subtractMoney(sub, commission);
               const isPix = order.payment_method === "pix";
               return (
