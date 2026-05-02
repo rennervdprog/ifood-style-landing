@@ -389,7 +389,14 @@ const SuperAdminDashboard = () => {
 
   const financeTotals = useMemo(() => {
     const totalVolume = sumMoney(storeSettlement.map((entry) => entry.totalSales));
-    const grossProfit = sumMoney(storeSettlement.map((entry) => entry.commissionDue + multiplyMoney(entry.appSales, getStoreRate(entry.storeId))));
+    const grossProfit = sumMoney(
+      storeSettlement.map((entry) =>
+        addMoney(
+          entry.commissionDue,
+          subtractMoney(entry.appSales, entry.netTransfer)
+        )
+      )
+    );
     const totalDriverFees = sumMoney(driverSettlement.map((entry) => entry.appFees));
     return { totalVolume, grossProfit, totalDriverFees };
   }, [storeSettlement, driverSettlement, stores, parentStorePlans]);
