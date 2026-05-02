@@ -20,39 +20,41 @@ type DisplayPlan = PlanType | "supporter";
 const SUPPORTER_FEE = 130;
 const SUPPORTER_LIMIT = 10;
 
- const planLabels: Record<DisplayPlan, string> = {
-   supporter: "Apoiadores",
-   fixed: "Essencial",
-   hybrid: "Crescimento",
-   commission_only: "Comissão",
- };
-
-const planColors: Record<DisplayPlan, string> = {
-  supporter: "bg-pink-500/10 text-pink-700 dark:text-pink-400 border-pink-500/30",
-  fixed: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30",
-  hybrid: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/30",
-  commission_only: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30",
+// Fallback estático — usado apenas se a tabela plan_templates falhar/estiver vazia.
+// Mantido para garantir que o painel nunca quebre.
+const FALLBACK_LABELS: Record<DisplayPlan, string> = {
+  supporter: "Apoiadores",
+  fixed: "Essencial",
+  hybrid: "Crescimento",
+  commission_only: "Comissão",
 };
 
-const planDescriptions: Record<DisplayPlan, string> = {
+const FALLBACK_DESCRIPTIONS: Record<DisplayPlan, string> = {
   supporter: "R$ 130/mês vitalício • Apenas 10 vagas • Todas as funcionalidades",
   fixed: "Mensalidade fixa, sem comissão, funcionalidades básicas",
   hybrid: "Mensalidade + taxa por pedido, todas funcionalidades",
   commission_only: "Apenas comissão por pedido, todas funcionalidades",
 };
 
-const planDefaults: Record<DisplayPlan, { monthly_fee: number; commission_rate: number }> = {
+const FALLBACK_DEFAULTS: Record<DisplayPlan, { monthly_fee: number; commission_rate: number }> = {
   supporter: { monthly_fee: SUPPORTER_FEE, commission_rate: 0 },
   fixed: { monthly_fee: 180, commission_rate: 0 },
   hybrid: { monthly_fee: 100, commission_rate: 2.5 },
   commission_only: { monthly_fee: 0, commission_rate: 6 },
 };
 
-const featuresByPlan: Record<DisplayPlan, string[]> = {
+const FALLBACK_FEATURES: Record<DisplayPlan, string[]> = {
   supporter: ["Preço vitalício R$130", "Sem comissão", "Tudo incluso", "PIX, Fidelidade, Banners", "Apenas 10 vagas"],
   fixed: ["Cardápio digital", "Pedidos online", "Dinheiro/Cartão", "Até 3 cupons"],
   hybrid: ["Tudo do Fixo +", "PIX Online", "Entrega plataforma*", "Fidelidade", "Banners", "Relatórios completos", "Cupons ilimitados"],
   commission_only: ["Tudo do Híbrido", "Sem mensalidade"],
+};
+
+const planColors: Record<DisplayPlan, string> = {
+  supporter: "bg-pink-500/10 text-pink-700 dark:text-pink-400 border-pink-500/30",
+  fixed: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30",
+  hybrid: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/30",
+  commission_only: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30",
 };
 
 function resolveDisplayPlan(plan: { plan_type: string; monthly_fee: number } | null | undefined): DisplayPlan | null {
@@ -66,6 +68,65 @@ export default function AdminPlanManager() {
   const [search, setSearch] = useState("");
   const [expandedStore, setExpandedStore] = useState<string | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
+
+  // Buscar plan_templates do banco (com fallback para constantes locais se falhar)
+  const { data: planTemplates } = useQuery({
+    queryKey: ["plan-templates"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("plan_templates" as any)
+        .select("*")
+        .eq("is_active", true)
+        .order("sort_order");
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Helpers que leem do banco com fallback seguro
+  const getTemplate = (key: DisplayPlan) =>
+    (planTemplates || []).find((t: any) => t.plan_key === key);
+
+  const planLabels: Record<DisplayPlan, string> = {
+    supporter: getTemplate("supporter")?.label || FALLBACK_LABELS.supporter,
+    fixed: getTemplate("fixed")?.label || FALLBACK_LABELS.fixed,
+    hybrid: getTemplate("hybrid")?.label || FALLBACK_LABELS.hybrid,
+    commission_only: getTemplate("commission_only")?.label || FALLBACK_LABELS.commission_only,
+  };
+
+  const planDescriptions: Record<DisplayPlan, string> = {
+    supporter: getTemplate("supporter")?.description || FALLBACK_DESCRIPTIONS.supporter,
+    fixed: getTemplate("fixed")?.description || FALLBACK_DESCRIPTIONS.fixed,
+    hybrid: getTemplate("hybrid")?.description || FALLBACK_DESCRIPTIONS.hybrid,
+    commission_only: getTemplate("commission_only")?.description || FALLBACK_DESCRIPTIONS.commission_only,
+  };
+
+  const planDefaults: Record<DisplayPlan, { monthly_fee: number; commission_rate: number }> = {
+    supporter: {
+      monthly_fee: Number(getTemplate("supporter")?.monthly_fee ?? FALLBACK_DEFAULTS.supporter.monthly_fee),
+      commission_rate: Number(getTemplate("supporter")?.commission_rate ?? FALLBACK_DEFAULTS.supporter.commission_rate),
+    },
+    fixed: {
+      monthly_fee: Number(getTemplate("fixed")?.monthly_fee ?? FALLBACK_DEFAULTS.fixed.monthly_fee),
+      commission_rate: Number(getTemplate("fixed")?.commission_rate ?? FALLBACK_DEFAULTS.fixed.commission_rate),
+    },
+    hybrid: {
+      monthly_fee: Number(getTemplate("hybrid")?.monthly_fee ?? FALLBACK_DEFAULTS.hybrid.monthly_fee),
+      commission_rate: Number(getTemplate("hybrid")?.commission_rate ?? FALLBACK_DEFAULTS.hybrid.commission_rate),
+    },
+    commission_only: {
+      monthly_fee: Number(getTemplate("commission_only")?.monthly_fee ?? FALLBACK_DEFAULTS.commission_only.monthly_fee),
+      commission_rate: Number(getTemplate("commission_only")?.commission_rate ?? FALLBACK_DEFAULTS.commission_only.commission_rate),
+    },
+  };
+
+  const featuresByPlan: Record<DisplayPlan, string[]> = {
+    supporter: getTemplate("supporter")?.features || FALLBACK_FEATURES.supporter,
+    fixed: getTemplate("fixed")?.features || FALLBACK_FEATURES.fixed,
+    hybrid: getTemplate("hybrid")?.features || FALLBACK_FEATURES.hybrid,
+    commission_only: getTemplate("commission_only")?.features || FALLBACK_FEATURES.commission_only,
+  };
 
   const { data: stores } = useQuery({
     queryKey: ["admin-all-stores"],
@@ -1016,13 +1077,13 @@ function PlanChangeRequestCard({ request, storeName, onProcessed }: {
       <div className="flex items-center gap-3 bg-muted/30 rounded-xl p-3">
         <div className="flex-1 text-center">
           <p className="text-[10px] text-muted-foreground uppercase font-semibold">Plano Atual</p>
-          <p className="text-sm font-bold text-foreground">{planLabels[request.current_plan_type as PlanType]}</p>
+          <p className="text-sm font-bold text-foreground">{FALLBACK_LABELS[request.current_plan_type as PlanType]}</p>
           <p className="text-xs text-muted-foreground">R$ {Number(request.current_monthly_fee).toFixed(0)}/mês</p>
         </div>
         <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
         <div className="flex-1 text-center">
           <p className="text-[10px] text-muted-foreground uppercase font-semibold">Novo Plano</p>
-          <p className="text-sm font-bold text-primary">{planLabels[request.requested_plan_type as PlanType]}</p>
+          <p className="text-sm font-bold text-primary">{FALLBACK_LABELS[request.requested_plan_type as PlanType]}</p>
           <p className="text-xs text-muted-foreground">
             R$ {Number(request.requested_monthly_fee).toFixed(0)}/mês
             {request.requested_commission_rate > 0 && ` + ${request.requested_commission_rate}%`}
