@@ -45,18 +45,27 @@ export default function TrialExpiredGuard({ storePlan, storeId, children }: Tria
     staleTime: 1000 * 30,
   });
 
-  // Block if:
-  // 1. Trial expired and never paid (original check)
-  // 2. Has a pending monthly/subscription payment (recurring billing unpaid)
-  const isTrialExpired =
-    storePlan.trialEndsAt !== null &&
-    !storePlan.isInTrial &&
-    storePlan.monthlyFee > 0 &&
-    !storePlan.lastBilledAt;
-
-  const hasUnpaidBill = !!pendingPayment && storePlan.monthlyFee > 0;
-
-  const shouldBlock = isTrialExpired || hasUnpaidBill;
+   // Block if:
+   // 1. Trial expired and never paid (original check)
+   // 2. Has a pending monthly/subscription payment (recurring billing unpaid)
+   // 3. Billing date is in the past (overdue)
+   const isTrialExpired =
+     storePlan.trialEndsAt !== null &&
+     !storePlan.isInTrial &&
+     storePlan.monthlyFee > 0 &&
+     !storePlan.lastBilledAt;
+ 
+   const hasUnpaidBill = !!pendingPayment && storePlan.monthlyFee > 0;
+   
+   // Check if billing is overdue (next billing date in the past)
+   // We only consider it overdue if the store is NOT in trial
+   const isOverdue = 
+     !storePlan.isInTrial &&
+     storePlan.nextBillingDate !== null && 
+     new Date(storePlan.nextBillingDate) < new Date() &&
+     storePlan.monthlyFee > 0;
+ 
+   const shouldBlock = isTrialExpired || hasUnpaidBill || isOverdue;
 
   // Poll for payment confirmation
   useEffect(() => {
