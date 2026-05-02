@@ -8,10 +8,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
-        android:usesCleartextTraffic="false">
-
-        <!-- 🔒 Network Security: Bloqueia tráfego HTTP em produção. Apenas HTTPS é permitido. -->
-        <!-- Se precisar permitir HTTP em desenvolvimento, criar arquivo network_security_config.xml -->
+        android:usesCleartextTraffic="false"
+        android:networkSecurityConfig="@xml/network_security_config">
 
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
@@ -21,9 +19,27 @@
             android:launchMode="singleTask"
             android:exported="true">
 
+            <!-- Launcher principal -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- 🔗 Deep links: itasuper://path -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="itasuper" />
+            </intent-filter>
+
+            <!-- 🔗 App Links: https://itasuper.com.br/path (requer assetlinks.json no servidor) -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="itasuper.com.br" />
+                <data android:scheme="https" android:host="www.itasuper.com.br" />
             </intent-filter>
 
         </activity>
@@ -39,15 +55,23 @@
         </provider>
     </application>
 
-    <!-- Permissions -->
-
-    <!-- Permissions -->
+    <!-- Permissões de rede -->
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Localização -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+
+    <!-- Notificações (Android 13+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Foreground service para GPS em background (Android 9+) -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <!-- 🔒 Android 14+ exige especificar o tipo do ForegroundService -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+
+    <!-- Boot (para reagendar alarmes após reinicialização) -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 </manifest>
