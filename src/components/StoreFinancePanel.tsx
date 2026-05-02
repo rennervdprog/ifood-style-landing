@@ -234,9 +234,24 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
     enabled: !!storeId,
   });
 
-  // Use plan commission rate (accurate per-plan) with fallback to store default
+  // Use plan commission rate (accurate per-plan) with fallback to store default.
+  // Esse valor é usado APENAS como fallback. O cálculo real usa order.commission_rate
+  // (taxa salva no momento do pedido) para preservar histórico correto.
   const commissionRate = ((storeData as any)?.plan_commission_rate ?? (storeData as any)?.commission_rate ?? 5) / 100;
   const commissionPct = Math.round(commissionRate * 100);
+
+  /**
+   * 🔒 Helper: retorna a taxa de comissão correta para cada pedido individual.
+   * Prioriza o valor histórico salvo em orders.commission_rate.
+   * Se não houver (pedidos antigos antes da correção), usa a taxa atual do plano.
+   */
+  const getOrderCommissionRate = (order: any): number => {
+    const saved = order?.commission_rate;
+    if (saved !== null && saved !== undefined) {
+      return Number(saved) / 100;
+    }
+    return commissionRate;
+  };
 
   const { data: ownerProfile } = useQuery({
     queryKey: ["owner-profile", storeData?.owner_id],
@@ -259,14 +274,16 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
   const activeOrders = orders?.filter(o => !["entregue", "finalizado"].includes(o.status)) || [];
 
   const totalSales = sumMoney(completedOrders.map((order) => order.subtotal));
-  const totalCommission = multiplyMoney(totalSales, commissionRate);
+  // Usa taxa histórica de cada pedido para cálculo correto
+  const totalCommission = sumMoney(completedOrders.map((order) => multiplyMoney(order.subtotal, getOrderCommissionRate(order))));
   const storePart = subtractMoney(totalSales, totalCommission);
 
   const physicalSales = sumMoney(completedOrders.filter(o => o.payment_method !== "pix").map((order) => order.subtotal));
-  const commissionDue = multiplyMoney(physicalSales, commissionRate);
+  const commissionDue = sumMoney(completedOrders.filter(o => o.payment_method !== "pix").map((order) => multiplyMoney(order.subtotal, getOrderCommissionRate(order))));
 
   const appSales = sumMoney(completedOrders.filter(o => o.payment_method === "pix").map((order) => order.subtotal));
-  const creditFromApp = subtractMoney(appSales, multiplyMoney(appSales, commissionRate));
+  const appCommission = sumMoney(completedOrders.filter(o => o.payment_method === "pix").map((order) => multiplyMoney(order.subtotal, getOrderCommissionRate(order))));
+  const creditFromApp = subtractMoney(appSales, appCommission);
 
   const activePixSales = sumMoney(activeOrders.filter(o => o.payment_method === "pix").map((order) => order.subtotal));
   const finalBalance = subtractMoney(creditFromApp, commissionDue);
