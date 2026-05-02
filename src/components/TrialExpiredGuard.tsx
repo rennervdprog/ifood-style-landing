@@ -145,7 +145,7 @@ export default function TrialExpiredGuard({ storePlan, storeId, children }: Tria
   };
 
   const planLabel = storePlan.planType === "fixed" ? "Essencial" : "Crescimento";
-  const isRecurring = hasUnpaidBill && !isTrialExpired;
+  const isRecurring = (hasUnpaidBill || isOverdue) && !isTrialExpired;
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
