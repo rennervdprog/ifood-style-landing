@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Network Security Config — ItaSuper
+  Garante que apenas HTTPS seja usado em produção.
+  Em debug, permite localhost para testes locais.
+-->
+<network-security-config>
+
+    <!-- Produção: apenas HTTPS -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">itasuper.com.br</domain>
+        <domain includeSubdomains="true">supabase.co</domain>
+        <domain includeSubdomains="true">asaas.com</domain>
+        <domain includeSubdomains="true">mercadopago.com</domain>
+        <domain includeSubdomains="true">nominatim.openstreetmap.org</domain>
+        <domain includeSubdomains="true">viacep.com.br</domain>
+        <domain includeSubdomains="true">brasilapi.com.br</domain>
+    </domain-config>
+
+    <!-- Desenvolvimento: permite localhost/10.0.2.2 via HTTP -->
+    <debug-overrides>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </debug-overrides>
+
+</network-security-config>
