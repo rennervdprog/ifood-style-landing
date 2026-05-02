@@ -29,8 +29,34 @@ export const orderTabs: { status: OrderStatus | "delivery"; label: string; icon:
   { status: "finalizado", label: "Finalizados", icon: CheckCircle2 },
 ];
 
-export const paymentLabels: Record<string, string> = { pix: "PIX", cartao: "Cartão", dinheiro: "Dinheiro" };
-export const paymentIcons: Record<string, string> = { pix: "⚡", cartao: "💳", dinheiro: "💵" };
+// Métodos de pagamento exibidos em TODOS os contextos (delivery + PDV)
+export const paymentLabels: Record<string, string> = {
+  pix: "PIX Online",
+  cartao: "Cartão na Entrega",
+  dinheiro: "Dinheiro",
+  // PDV — nunca aparecem no checkout do cliente
+  maquininha_credito: "Crédito",
+  maquininha_debito: "Débito",
+  maquininha_pix: "PIX Maquininha",
+};
+export const paymentIcons: Record<string, string> = {
+  pix: "⚡",
+  cartao: "💳",
+  dinheiro: "💵",
+  // PDV
+  maquininha_credito: "💳",
+  maquininha_debito: "💳",
+  maquininha_pix: "📱",
+};
+
+// Métodos visíveis APENAS no PDV (nunca no checkout do cliente)
+export const pdvPaymentMethods = [
+  { id: "dinheiro",            label: "Dinheiro",        icon: "💵" },
+  { id: "maquininha_credito",  label: "Crédito",         icon: "💳" },
+  { id: "maquininha_debito",   label: "Débito",          icon: "💳" },
+  { id: "maquininha_pix",      label: "PIX Maquininha",  icon: "📱" },
+  // PIX Online (Asaas, R$1,99) NÃO aparece no PDV — sem taxa no presencial
+] as const;
 
 export const baseSidebarItems: { key: DashboardTab; label: string; icon: React.ElementType; pizzaOnly?: boolean }[] = [
   { key: "dashboard", label: "Visão Geral", icon: LayoutDashboard },
