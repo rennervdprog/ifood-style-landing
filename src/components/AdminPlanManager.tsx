@@ -536,17 +536,17 @@ export default function AdminPlanManager() {
                           <p className="text-xs font-bold text-foreground flex items-center gap-1.5">
                             🖥️ Módulo PDV
                           </p>
-                          <p className="text-[10px] text-muted-foreground">Caixa presencial — sem taxa PIX Asaas</p>
+                          <p className="text-[10px] text-muted-foreground">Lojista controla pelo painel dele</p>
                         </div>
                         <button
                           onClick={() => handleTogglePdv(store.id, !!(plan as any).pdv_enabled)}
                           disabled={saving === store.id}
                           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                            (plan as any).pdv_enabled ? "bg-primary" : "bg-muted-foreground/30"
+                            (plan as any).pdv_enabled !== false ? "bg-primary" : "bg-muted-foreground/30"
                           }`}
                         >
                           <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
-                            (plan as any).pdv_enabled ? "translate-x-6" : "translate-x-1"
+                            (plan as any).pdv_enabled !== false ? "translate-x-6" : "translate-x-1"
                           }`} />
                         </button>
                       </div>
