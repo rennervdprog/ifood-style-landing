@@ -2171,9 +2171,19 @@ const SaquesTab = ({ withdrawalRequests, pendingWithdrawals, drivers, queryClien
       .update({ status: "pago", processed_at: new Date().toISOString() } as any)
       .eq("id", req.id);
     if (updateError) { toast.error("Erro ao confirmar."); return; }
+    const { data: currentBalance } = await supabase
+      .from("driver_balances" as any)
+      .select("paid_amount")
+      .eq("driver_user_id", req.driver_user_id)
+      .single();
+    const previousPaid = Number((currentBalance as any)?.paid_amount || 0);
     const { error: balanceError } = await supabase
       .from("driver_balances" as any)
-      .update({ pending_amount: 0, paid_amount: Number(req.amount), updated_at: new Date().toISOString() } as any)
+      .update({
+        pending_amount: 0,
+        paid_amount: previousPaid + Number(req.amount),
+        updated_at: new Date().toISOString()
+      } as any)
       .eq("driver_user_id", req.driver_user_id);
     if (balanceError) console.error("Balance update error:", balanceError);
     await supabase.from("driver_earnings" as any).update({ status: "pago" } as any)
