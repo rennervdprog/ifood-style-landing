@@ -1077,13 +1077,13 @@ function PlanChangeRequestCard({ request, storeName, onProcessed }: {
       <div className="flex items-center gap-3 bg-muted/30 rounded-xl p-3">
         <div className="flex-1 text-center">
           <p className="text-[10px] text-muted-foreground uppercase font-semibold">Plano Atual</p>
-          <p className="text-sm font-bold text-foreground">{planLabels[request.current_plan_type as PlanType]}</p>
+          <p className="text-sm font-bold text-foreground">{FALLBACK_LABELS[request.current_plan_type as PlanType]}</p>
           <p className="text-xs text-muted-foreground">R$ {Number(request.current_monthly_fee).toFixed(0)}/mês</p>
         </div>
         <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
         <div className="flex-1 text-center">
           <p className="text-[10px] text-muted-foreground uppercase font-semibold">Novo Plano</p>
-          <p className="text-sm font-bold text-primary">{planLabels[request.requested_plan_type as PlanType]}</p>
+          <p className="text-sm font-bold text-primary">{FALLBACK_LABELS[request.requested_plan_type as PlanType]}</p>
           <p className="text-xs text-muted-foreground">
             R$ {Number(request.requested_monthly_fee).toFixed(0)}/mês
             {request.requested_commission_rate > 0 && ` + ${request.requested_commission_rate}%`}
