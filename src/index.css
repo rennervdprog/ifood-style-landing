@@ -260,3 +260,25 @@ div[style*="Edit with Lovable"],
 .native-app .overflow-x-auto::-webkit-scrollbar {
   display: none;
 }
+/* Cole no final do seu src/index.css se quiser */
+
+/* Botões com scale ao pressionar */
+.btn-native:active {
+  transform: scale(0.96);
+  opacity: 0.85;
+  transition: transform 100ms ease;
+}
+
+/* Indicador de swipe (arraste para fechar) */
+.swipe-handle {
+  width: 36px;
+  height: 4px;
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 2px;
+  margin: 0 auto 12px;
+}
+
+/* Transições de página estilo nativo */
+.page-slide-enter { transform: translateX(100%); opacity: 0; }
+.page-slide-enter-active { transform: translateX(0); opacity: 1; transition: transform 250ms ease-out; }
+.page-slide-exit-active { transform: translateX(-30%); opacity: 0; transition: transform 250ms ease-in; }
