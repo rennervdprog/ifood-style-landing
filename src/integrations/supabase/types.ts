@@ -1513,6 +1513,7 @@ export type Database = {
           client_lng: number | null
           collection_code: string | null
           collection_validated: boolean
+          commission_rate: number | null
           confirmed_at: string | null
           created_at: string
           delivery_confirmed_by_client: boolean
@@ -1547,6 +1548,7 @@ export type Database = {
           client_lng?: number | null
           collection_code?: string | null
           collection_validated?: boolean
+          commission_rate?: number | null
           confirmed_at?: string | null
           created_at?: string
           delivery_confirmed_by_client?: boolean
@@ -1581,6 +1583,7 @@ export type Database = {
           client_lng?: number | null
           collection_code?: string | null
           collection_validated?: boolean
+          commission_rate?: number | null
           confirmed_at?: string | null
           created_at?: string
           delivery_confirmed_by_client?: boolean
