@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   Copy, Download, ArrowUpRight, ArrowDownRight, Smartphone, Banknote,
   QrCode, Loader2, X, CheckCircle2, RotateCcw, AlertCircle, TimerReset,
-  ShieldAlert, TrendingUp, TrendingDown, Receipt, Calendar,
+  ShieldAlert, TrendingUp, TrendingDown, Receipt, Calendar, Monitor,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subWeeks, startOfDay, endOfDay } from "date-fns";
@@ -142,7 +142,7 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("id, total_price, subtotal, delivery_fee, app_fee, payment_method, status, created_at, confirmed_at")
+        .select("id, total_price, subtotal, delivery_fee, app_fee, payment_method, status, created_at, confirmed_at, order_source, commission_rate")
         .eq("store_id", storeId)
         .gte("created_at", dateRange.start.toISOString())
         .lte("created_at", dateRange.end.toISOString())
@@ -271,18 +271,28 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
   const hasDocument = !!ownerProfile?.document;
 
   const completedOrders = orders?.filter(o => ["entregue", "finalizado"].includes(o.status)) || [];
-  const activeOrders = orders?.filter(o => !["entregue", "finalizado"].includes(o.status)) || [];
+
+  // Separar por canal
+  const deliveryOrders = completedOrders.filter(o => (o as any).order_source !== "pdv");
+  const pdvOrders = completedOrders.filter(o => (o as any).order_source === "pdv");
+  const hasPdv = pdvOrders.length > 0;
 
   const totalSales = sumMoney(completedOrders.map((order) => order.subtotal));
+  const deliverySales = sumMoney(deliveryOrders.map((order) => order.subtotal));
+  const pdvSalesTotal = sumMoney(pdvOrders.map((order) => order.subtotal));
+  const pdvCommissionTotal = sumMoney(pdvOrders.map((order) => multiplyMoney(order.subtotal, getOrderCommissionRate(order))));
+  const activeOrders = orders?.filter(o => !["entregue", "finalizado"].includes(o.status)) || [];
+
   // Usa taxa histórica de cada pedido para cálculo correto
   const totalCommission = sumMoney(completedOrders.map((order) => multiplyMoney(order.subtotal, getOrderCommissionRate(order))));
   const storePart = subtractMoney(totalSales, totalCommission);
 
-  const physicalSales = sumMoney(completedOrders.filter(o => o.payment_method !== "pix").map((order) => order.subtotal));
-  const commissionDue = sumMoney(completedOrders.filter(o => o.payment_method !== "pix").map((order) => multiplyMoney(order.subtotal, getOrderCommissionRate(order))));
+  // Delivery: físico (dinheiro/cartão) vs app (PIX) — excluindo PDV
+  const physicalSales = sumMoney(deliveryOrders.filter(o => o.payment_method !== "pix").map((order) => order.subtotal));
+  const commissionDue = sumMoney(deliveryOrders.filter(o => o.payment_method !== "pix").map((order) => multiplyMoney(order.subtotal, getOrderCommissionRate(order))));
 
-  const appSales = sumMoney(completedOrders.filter(o => o.payment_method === "pix").map((order) => order.subtotal));
-  const appCommission = sumMoney(completedOrders.filter(o => o.payment_method === "pix").map((order) => multiplyMoney(order.subtotal, getOrderCommissionRate(order))));
+  const appSales = sumMoney(deliveryOrders.filter(o => o.payment_method === "pix").map((order) => order.subtotal));
+  const appCommission = sumMoney(deliveryOrders.filter(o => o.payment_method === "pix").map((order) => multiplyMoney(order.subtotal, getOrderCommissionRate(order))));
   const creditFromApp = subtractMoney(appSales, appCommission);
 
   const activePixSales = sumMoney(activeOrders.filter(o => o.payment_method === "pix").map((order) => order.subtotal));
@@ -724,6 +734,40 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
           </div>
         </div>
       </div>
+
+      {/* PDV — Caixa Presencial (só exibe se tiver vendas PDV) */}
+      {hasPdv && (
+        <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-5 border border-blue-500/20 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent" />
+          <div className="relative">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                <Monitor className="h-4 w-4 text-blue-400" />
+              </div>
+              <p className="text-sm font-bold text-foreground">PDV — Caixa Presencial</p>
+              <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-[10px]">{pdvOrders.length} pedido{pdvOrders.length !== 1 ? "s" : ""}</Badge>
+            </div>
+            <p className="text-2xl font-black text-blue-400">{formatBRL(pdvSalesTotal)}</p>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <div className="bg-blue-500/5 rounded-xl p-2.5">
+                <p className="text-[10px] text-muted-foreground">Recebido direto</p>
+                <p className="text-sm font-black text-foreground">
+                  {formatBRL(subtractMoney(pdvSalesTotal, pdvCommissionTotal))}
+                </p>
+              </div>
+              <div className="bg-amber-500/5 rounded-xl p-2.5">
+                <p className="text-[10px] text-muted-foreground">Comissão na fatura</p>
+                <p className="text-sm font-black text-amber-500">
+                  {pdvCommissionTotal > 0 ? formatBRL(pdvCommissionTotal) : "—"}
+                </p>
+              </div>
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-2">
+              💳 Maquininha própria — sem taxa PIX. Comissão cobrada na fatura mensal.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Comissões Pendentes - Vendas Físicas */}
       <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-5 border border-red-500/20 relative overflow-hidden">
