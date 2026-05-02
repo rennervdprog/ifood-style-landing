@@ -7,6 +7,7 @@ import DeliveryFeeConfigPanel from "@/components/DeliveryFeeConfig";
 import TestStoreCreator from "@/components/TestStoreCreator";
 import AdminPlanManager from "@/components/AdminPlanManager";
 import AdminFixedPlanReceivables from "@/components/AdminFixedPlanReceivables";
+import AdminPlanTemplatesEditor from "@/components/AdminPlanTemplatesEditor";
 import ModeratorManager from "@/components/ModeratorManager";
 import PartnerSplitPanel from "@/components/PartnerSplitPanel";
 import FixedPlanBillingHistory from "@/components/FixedPlanBillingHistory";
@@ -823,6 +824,7 @@ const SuperAdminDashboard = () => {
             {activeTab === "planos" && (
               <div className="space-y-6">
                 <AdminFixedPlanReceivables />
+                <AdminPlanTemplatesEditor />
                 <AdminPlanManager />
               </div>
             )}
