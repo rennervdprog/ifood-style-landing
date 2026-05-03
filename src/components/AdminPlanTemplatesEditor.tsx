@@ -18,6 +18,7 @@ interface PlanTemplate {
   description: string | null;
   monthly_fee: number;
   commission_rate: number;
+  pdv_commission_rate: number;
   features: string[] | null;
   max_slots: number | null;
   sort_order: number;
@@ -57,6 +58,7 @@ export default function AdminPlanTemplatesEditor() {
             description: t.description ?? "",
             monthly_fee: Number(t.monthly_fee),
             commission_rate: Number(t.commission_rate),
+            pdv_commission_rate: Number((t as any).pdv_commission_rate ?? 0),
             featuresText: Array.isArray(t.features) ? t.features.join("\n") : "",
             is_active: t.is_active,
           };
@@ -79,6 +81,7 @@ export default function AdminPlanTemplatesEditor() {
         description: t.description ?? "",
         monthly_fee: Number(t.monthly_fee),
         commission_rate: Number(t.commission_rate),
+        pdv_commission_rate: Number((t as any).pdv_commission_rate ?? 0),
         featuresText: Array.isArray(t.features) ? t.features.join("\n") : "",
         is_active: t.is_active,
       },
@@ -91,6 +94,7 @@ export default function AdminPlanTemplatesEditor() {
 
     const monthlyFee = Number(draft.monthly_fee);
     const commissionRate = Number(draft.commission_rate);
+    const pdvRate = Number((draft as any).pdv_commission_rate ?? 0);
 
     if (Number.isNaN(monthlyFee) || monthlyFee < 0) {
       toast.error("Mensalidade inválida");
@@ -98,6 +102,10 @@ export default function AdminPlanTemplatesEditor() {
     }
     if (Number.isNaN(commissionRate) || commissionRate < 0 || commissionRate > 100) {
       toast.error("Comissão deve estar entre 0 e 100");
+      return;
+    }
+    if (Number.isNaN(pdvRate) || pdvRate < 0 || pdvRate > 100) {
+      toast.error("Taxa PDV deve estar entre 0 e 100");
       return;
     }
     if (!String(draft.label || "").trim()) {
@@ -119,6 +127,7 @@ export default function AdminPlanTemplatesEditor() {
           description: draft.description || null,
           monthly_fee: monthlyFee,
           commission_rate: commissionRate,
+          pdv_commission_rate: pdvRate,
           features,
           is_active: !!draft.is_active,
           updated_at: new Date().toISOString(),
@@ -147,6 +156,7 @@ export default function AdminPlanTemplatesEditor() {
       (d.description ?? "") !== (t.description ?? "") ||
       Number(d.monthly_fee) !== Number(t.monthly_fee) ||
       Number(d.commission_rate) !== Number(t.commission_rate) ||
+      Number((d as any).pdv_commission_rate ?? 0) !== Number((t as any).pdv_commission_rate ?? 0) ||
       (d.featuresText ?? "") !== originalFeatures ||
       d.is_active !== t.is_active
     );
@@ -229,6 +239,31 @@ export default function AdminPlanTemplatesEditor() {
                       onChange={(e) => updateDraft(t.id, { commission_rate: Number(e.target.value) })}
                     />
                     <p className="text-[10px] text-muted-foreground mt-1">Atual: {Number(t.commission_rate)}%</p>
+                  </div>
+                </div>
+
+                {/* Linha PDV */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 border-t border-border/30">
+                  <div>
+                    <Label className="text-xs flex items-center gap-1.5">
+                      🖥️ Comissão PDV (%)
+                    </Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="100"
+                      value={(d as any).pdv_commission_rate ?? 0}
+                      onChange={(e) => updateDraft(t.id, { pdv_commission_rate: Number(e.target.value) } as any)}
+                    />
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      Atual: {Number((t as any).pdv_commission_rate ?? 0)}% — Cobrado na fatura mensal
+                    </p>
+                  </div>
+                  <div className="flex items-end">
+                    <p className="text-[10px] text-muted-foreground">
+                      💡 Vendas presenciais não usam Asaas. Use uma taxa menor que delivery (ex: 0% para Essencial, 1% para Crescimento, 2% para Comissão).
+                    </p>
                   </div>
                 </div>
               </div>
