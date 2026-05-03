@@ -7,14 +7,17 @@ import { useStorePlan } from "@/hooks/useStorePlan";
 import { toast } from "sonner";
 import { formatBRL, addMoney, sumMoney, subtractMoney } from "@/lib/utils";
 import {
-  ArrowLeft, Search, Plus, Minus, Trash2, ShoppingCart,
-  Banknote, CreditCard, Smartphone, Monitor, ChevronRight,
-  Loader2, CheckCircle2, X, Tag, AlertTriangle,
+  ArrowLeft, Search, Plus, Minus, Trash2,
+  Banknote, CreditCard, Smartphone, Monitor,
+  Loader2, CheckCircle2, X, Tag,
   ArrowDownCircle, ArrowUpCircle, Lock, Unlock,
-  Receipt, ChevronDown, RefreshCw, Percent,
+  Receipt, ChevronDown, ChevronRight, RotateCcw,
+  Hash, Layers,
 } from "lucide-react";
 
-// ─── Tipos ───────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// TIPOS
+// ─────────────────────────────────────────────────────────────────────────────
 
 interface Product {
   id: string;
@@ -36,7 +39,6 @@ interface CartItem {
   name: string;
   price: number;
   quantity: number;
-  sectionName?: string;
 }
 
 interface PdvSession {
@@ -47,64 +49,69 @@ interface PdvSession {
   status: string;
 }
 
-// ─── Constantes ──────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// CONSTANTES
+// ─────────────────────────────────────────────────────────────────────────────
 
-const PDV_PAYMENT_METHODS = [
-  { id: "dinheiro",           label: "Dinheiro",       icon: Banknote,   color: "text-emerald-500" },
-  { id: "maquininha_credito", label: "Crédito",        icon: CreditCard, color: "text-blue-500" },
-  { id: "maquininha_debito",  label: "Débito",         icon: CreditCard, color: "text-indigo-500" },
-  { id: "maquininha_pix",     label: "PIX Maquininha", icon: Smartphone, color: "text-primary" },
+const PDV_METHODS = [
+  { id: "dinheiro",           label: "Dinheiro",    icon: Banknote,   color: "emerald", needsChange: true  },
+  { id: "maquininha_credito", label: "Crédito",     icon: CreditCard, color: "blue",    needsChange: false },
+  { id: "maquininha_debito",  label: "Débito",      icon: CreditCard, color: "indigo",  needsChange: false },
+  { id: "maquininha_pix",     label: "PIX",         icon: Smartphone, color: "orange",  needsChange: false },
 ];
 
-// ─── Componente principal ────────────────────────────────────────────────────
+const COLOR_MAP: Record<string, string> = {
+  emerald: "bg-emerald-500/10 text-emerald-600 border-emerald-500/25 data-[sel=true]:bg-emerald-500 data-[sel=true]:text-white data-[sel=true]:border-emerald-500",
+  blue:    "bg-blue-500/10 text-blue-600 border-blue-500/25 data-[sel=true]:bg-blue-500 data-[sel=true]:text-white data-[sel=true]:border-blue-500",
+  indigo:  "bg-indigo-500/10 text-indigo-600 border-indigo-500/25 data-[sel=true]:bg-indigo-500 data-[sel=true]:text-white data-[sel=true]:border-indigo-500",
+  orange:  "bg-primary/10 text-primary border-primary/25 data-[sel=true]:bg-primary data-[sel=true]:text-white data-[sel=true]:border-primary",
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// COMPONENTE PRINCIPAL
+// ─────────────────────────────────────────────────────────────────────────────
 
 const PdvPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  // ── Estado da tela ──
   type Screen = "loading" | "abertura" | "venda" | "fechamento";
   const [screen, setScreen] = useState<Screen>("loading");
-
-  // ── Sessão ──
   const [currentSession, setCurrentSession] = useState<PdvSession | null>(null);
+
+  // Abertura
   const [openingAmount, setOpeningAmount] = useState("0");
 
-  // ── Carrinho ──
+  // Venda
   const [cart, setCart] = useState<CartItem[]>([]);
   const [paymentMethod, setPaymentMethod] = useState("");
-  const [tableIdentifier, setTableIdentifier] = useState("");
-  const [discountType, setDiscountType] = useState<"percent" | "value">("value");
+  const [tableId, setTableId] = useState("");
+  const [discountType, setDiscountType] = useState<"R$" | "%">("R$");
   const [discountInput, setDiscountInput] = useState("");
-  const [showDiscountPanel, setShowDiscountPanel] = useState(false);
-
-  // ── UI ──
+  const [showDiscount, setShowDiscount] = useState(false);
+  const [cashReceived, setCashReceived] = useState(""); // valor entregue pelo cliente
   const [search, setSearch] = useState("");
-  const [showCart, setShowCart] = useState(false);
+  const [activeSection, setActiveSection] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [orderDone, setOrderDone] = useState(false);
 
-  // ── Modais ──
-  const [movimentModal, setMovimentModal] = useState<"sangria" | "suprimento" | null>(null);
-  const [movimentValue, setMovimentValue] = useState("");
-  const [movimentDesc, setMovimentDesc] = useState("");
+  // Modais
+  const [movModal, setMovModal] = useState<"sangria" | "suprimento" | null>(null);
+  const [movValue, setMovValue] = useState("");
+  const [movDesc, setMovDesc] = useState("");
 
-  // ── Fechamento ──
+  // Fechamento
   const [closingAmount, setClosingAmount] = useState("");
   const [sessionSummary, setSessionSummary] = useState<any>(null);
 
-  // ─── Loja ───────────────────────────────────────────────────────────────────
-
+  // ── Loja ──
   const { data: store } = useQuery({
     queryKey: ["pdv-store", user?.id],
     queryFn: async () => {
       const { data } = await supabase
-        .from("stores")
-        .select("id, name, status")
-        .eq("owner_id", user!.id)
-        .eq("status", "ativo")
-        .maybeSingle();
+        .from("stores").select("id, name")
+        .eq("owner_id", user!.id).eq("status", "ativo").maybeSingle();
       return data;
     },
     enabled: !!user,
@@ -112,286 +119,48 @@ const PdvPage = () => {
 
   const storePlan = useStorePlan(store?.id);
 
-  // ─── Sessão aberta ──────────────────────────────────────────────────────────
-
-  const checkOpenSession = useCallback(async () => {
+  // ── Sessão ──
+  const checkSession = useCallback(async () => {
     if (!store?.id) return;
     const { data } = await supabase
       .from("pdv_sessions" as any)
-      .select("*")
-      .eq("store_id", store.id)
-      .eq("status", "open")
-      .order("opened_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (data) {
-      setCurrentSession(data as PdvSession);
-      setScreen("venda");
-    } else {
-      setScreen("abertura");
-    }
+      .select("*").eq("store_id", store.id).eq("status", "open")
+      .order("opened_at", { ascending: false }).limit(1).maybeSingle();
+    if (data) { setCurrentSession(data as PdvSession); setScreen("venda"); }
+    else setScreen("abertura");
   }, [store?.id]);
 
-  useEffect(() => {
-    if (store?.id) checkOpenSession();
-  }, [store?.id, checkOpenSession]);
+  useEffect(() => { if (store?.id) checkSession(); }, [store?.id, checkSession]);
 
-  // ─── Catálogo ───────────────────────────────────────────────────────────────
-
+  // ── Catálogo ──
   const { data: sections = [] } = useQuery({
     queryKey: ["pdv-sections", store?.id],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("menu_sections")
-        .select("id, name, sort_order")
-        .eq("store_id", store!.id)
-        .order("sort_order");
+      const { data } = await supabase.from("menu_sections")
+        .select("id, name, sort_order").eq("store_id", store!.id).order("sort_order");
       return (data || []) as MenuSection[];
     },
     enabled: !!store?.id,
   });
 
-  const { data: products = [], isLoading: productsLoading } = useQuery({
+  const { data: products = [], isLoading: prodLoading } = useQuery({
     queryKey: ["pdv-products", store?.id],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("products")
+      const { data } = await supabase.from("products")
         .select("id, name, price, image_url, section_id, is_available")
-        .eq("store_id", store!.id)
-        .eq("is_available", true)
-        .order("name");
+        .eq("store_id", store!.id).eq("is_available", true).order("name");
       return (data || []) as Product[];
     },
     enabled: !!store?.id,
     staleTime: 60_000,
   });
 
-  // ─── Carrinho ───────────────────────────────────────────────────────────────
-
-  const addToCart = (product: Product, sectionName?: string) => {
-    setCart(prev => {
-      const existing = prev.find(i => i.id === product.id);
-      if (existing) return prev.map(i => i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
-      return [...prev, { id: product.id, name: product.name, price: Number(product.price), quantity: 1, sectionName }];
-    });
-  };
-
-  const removeFromCart = (id: string) => {
-    setCart(prev => {
-      const item = prev.find(i => i.id === id);
-      if (!item) return prev;
-      if (item.quantity === 1) return prev.filter(i => i.id !== id);
-      return prev.map(i => i.id === id ? { ...i, quantity: i.quantity - 1 } : i);
-    });
-  };
-
-  const deleteFromCart = (id: string) => setCart(prev => prev.filter(i => i.id !== id));
-
-  const clearSale = () => {
-    setCart([]);
-    setPaymentMethod("");
-    setTableIdentifier("");
-    setDiscountInput("");
-    setShowDiscountPanel(false);
-    setOrderDone(false);
-  };
-
-  const getQty = (id: string) => cart.find(i => i.id === id)?.quantity ?? 0;
-
-  const subtotal = sumMoney(cart.map(i => i.price * i.quantity));
-  const totalItems = cart.reduce((acc, i) => acc + i.quantity, 0);
-
-  const discountAmount = useMemo(() => {
-    const val = parseFloat(discountInput.replace(",", ".")) || 0;
-    if (discountType === "percent") return Math.min(subtotal, subtotal * (val / 100));
-    return Math.min(subtotal, val);
-  }, [discountInput, discountType, subtotal]);
-
-  const finalTotal = subtractMoney(subtotal, discountAmount);
-
-  // ─── Catálogo filtrado e agrupado ────────────────────────────────────────────
-
-  const filtered = useMemo(() => {
-    if (!search.trim()) return products;
-    const q = search.toLowerCase();
-    return products.filter(p => p.name.toLowerCase().includes(q));
-  }, [products, search]);
-
-  const grouped = useMemo(() => {
-    const sectionMap = new Map(sections.map(s => [s.id, s.name]));
-    const result: Record<string, { product: Product; sectionName: string }[]> = {};
-    filtered.forEach(p => {
-      const sectionName = p.section_id ? (sectionMap.get(p.section_id) || "Outros") : "Sem categoria";
-      if (!result[sectionName]) result[sectionName] = [];
-      result[sectionName].push({ product: p, sectionName });
-    });
-    return result;
-  }, [filtered, sections]);
-
-  // ─── Ações do caixa ─────────────────────────────────────────────────────────
-
-  const handleAbrirCaixa = async () => {
-    if (!store?.id || !user?.id) return;
-    const amount = parseFloat(openingAmount.replace(",", ".")) || 0;
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from("pdv_sessions" as any)
-        .insert({
-          store_id: store.id,
-          opened_by: user.id,
-          opening_amount: amount,
-          status: "open",
-        })
-        .select()
-        .single();
-      if (error) throw error;
-      setCurrentSession(data as PdvSession);
-      setScreen("venda");
-      toast.success(`Caixa aberto com R$ ${amount.toFixed(2)} de troco inicial.`);
-    } catch (err: any) {
-      toast.error(err.message || "Erro ao abrir caixa.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleFinalizarVenda = async () => {
-    if (!store?.id || !currentSession) return;
-    if (cart.length === 0) { toast.error("Carrinho vazio."); return; }
-    if (!paymentMethod) { toast.error("Selecione o pagamento."); return; }
-
-    setLoading(true);
-    try {
-      const { data: order, error: orderError } = await supabase
-        .from("orders")
-        .insert({
-          store_id: store.id,
-          client_id: null,
-          order_source: "pdv",
-          pdv_session_id: currentSession.id,
-          table_identifier: tableIdentifier || null,
-          subtotal,
-          delivery_fee: 0,
-          pdv_discount: discountAmount,
-          commission_rate: storePlan.pdvCommissionRate ?? 0,
-          total_price: finalTotal,
-          app_fee: 0,
-          payment_method: paymentMethod,
-          neighborhood: "Balcão",
-          address_details: tableIdentifier ? `${tableIdentifier} — Presencial` : "Pedido presencial",
-          status: "finalizado", // PDV: já finalizado na hora
-        } as any)
-        .select("id")
-        .single();
-      if (orderError) throw orderError;
-
-      // Itens do pedido
-      await supabase.from("order_items").insert(
-        cart.map(item => ({
-          order_id: order.id,
-          product_id: item.id,
-          quantity: item.quantity,
-          unit_price: item.price,
-        }))
-      );
-
-      // Movimentação de caixa
-      await supabase.from("pdv_movements" as any).insert({
-        session_id: currentSession.id,
-        store_id: store.id,
-        type: "sale",
-        amount: finalTotal,
-        payment_method: paymentMethod,
-        description: tableIdentifier || "Venda balcão",
-        order_id: order.id,
-      });
-
-      queryClient.invalidateQueries({ queryKey: ["pdv-movements", currentSession.id] });
-      setOrderDone(true);
-      toast.success("✅ Venda registrada!");
-      setTimeout(() => { clearSale(); }, 1800);
-    } catch (err: any) {
-      toast.error(err.message || "Erro ao finalizar venda.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleMoviment = async (type: "sangria" | "suprimento") => {
-    if (!currentSession || !store?.id) return;
-    const amount = parseFloat(movimentValue.replace(",", ".")) || 0;
-    if (amount <= 0) { toast.error("Informe um valor válido."); return; }
-
-    setLoading(true);
-    try {
-      await supabase.from("pdv_movements" as any).insert({
-        session_id: currentSession.id,
-        store_id: store.id,
-        type,
-        amount,
-        description: movimentDesc || (type === "sangria" ? "Sangria de caixa" : "Suprimento de caixa"),
-      });
-      queryClient.invalidateQueries({ queryKey: ["pdv-movements", currentSession.id] });
-      toast.success(type === "sangria" ? `Sangria de ${formatBRL(amount)} registrada.` : `Suprimento de ${formatBRL(amount)} registrado.`);
-      setMovimentModal(null);
-      setMovimentValue("");
-      setMovimentDesc("");
-    } catch (err: any) {
-      toast.error(err.message || "Erro ao registrar movimentação.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleIniciarFechamento = async () => {
-    if (!currentSession) return;
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.rpc("get_pdv_session_summary" as any, {
-        _session_id: currentSession.id,
-      });
-      if (error) throw error;
-      setSessionSummary(data);
-      setScreen("fechamento");
-    } catch (err: any) {
-      toast.error("Erro ao carregar resumo do turno.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleFecharCaixa = async () => {
-    if (!currentSession) return;
-    const closing = parseFloat(closingAmount.replace(",", ".")) || 0;
-    setLoading(true);
-    try {
-      await supabase
-        .from("pdv_sessions" as any)
-        .update({ status: "closed", closed_at: new Date().toISOString(), closing_amount: closing })
-        .eq("id", currentSession.id);
-      toast.success("Caixa fechado com sucesso.");
-      setCurrentSession(null);
-      setSessionSummary(null);
-      setScreen("abertura");
-      clearSale();
-    } catch (err: any) {
-      toast.error(err.message || "Erro ao fechar caixa.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // ─── Movimentações do turno ─────────────────────────────────────────────────
-
+  // ── Movimentações ──
   const { data: movements = [] } = useQuery({
     queryKey: ["pdv-movements", currentSession?.id],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("pdv_movements" as any)
-        .select("*")
-        .eq("session_id", currentSession!.id)
+      const { data } = await supabase.from("pdv_movements" as any)
+        .select("*").eq("session_id", currentSession!.id)
         .order("created_at", { ascending: false });
       return (data || []) as any[];
     },
@@ -399,171 +168,331 @@ const PdvPage = () => {
     refetchInterval: 30_000,
   });
 
-  const movSales = movements.filter(m => m.type === "sale");
-  const movSangrias = movements.filter(m => m.type === "sangria");
-  const movSuprimentos = movements.filter(m => m.type === "suprimento");
-  const totalVendido = sumMoney(movSales.map(m => m.amount));
-  const totalSangrias = sumMoney(movSangrias.map(m => m.amount));
-  const totalSuprimentos = sumMoney(movSuprimentos.map(m => m.amount));
-  const saldoEsperado = addMoney(
-    (currentSession?.opening_amount ?? 0) + totalSuprimentos,
-    sumMoney(movSales.filter(m => m.payment_method === "dinheiro").map(m => m.amount)),
-    -totalSangrias
+  // ── Cálculos do carrinho ──
+  const subtotal = sumMoney(cart.map(i => i.price * i.quantity));
+  const totalItems = cart.reduce((a, i) => a + i.quantity, 0);
+
+  const discountAmount = useMemo(() => {
+    const v = parseFloat(discountInput.replace(",", ".")) || 0;
+    if (discountType === "%") return Math.min(subtotal, subtotal * (v / 100));
+    return Math.min(subtotal, v);
+  }, [discountInput, discountType, subtotal]);
+
+  const finalTotal = subtractMoney(subtotal, discountAmount);
+
+  const cashVal = parseFloat(cashReceived.replace(",", ".")) || 0;
+  const troco = cashReceived ? Math.max(0, cashVal - finalTotal) : 0;
+  const trocoNegativo = cashReceived && cashVal < finalTotal;
+
+  // ── Catálogo filtrado ──
+  const sectionMap = useMemo(() => new Map(sections.map(s => [s.id, s.name])), [sections]);
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    let list = q ? products.filter(p => p.name.toLowerCase().includes(q)) : products;
+    if (activeSection && !q) list = list.filter(p => p.section_id === activeSection);
+    return list;
+  }, [products, search, activeSection]);
+
+  const grouped = useMemo(() => {
+    const result: Record<string, Product[]> = {};
+    filtered.forEach(p => {
+      const s = p.section_id ? (sectionMap.get(p.section_id) || "Outros") : "Sem categoria";
+      if (!result[s]) result[s] = [];
+      result[s].push(p);
+    });
+    return result;
+  }, [filtered, sectionMap]);
+
+  const getQty = (id: string) => cart.find(i => i.id === id)?.quantity ?? 0;
+
+  // ── Ações carrinho ──
+  const addItem = (p: Product) => setCart(prev => {
+    const ex = prev.find(i => i.id === p.id);
+    if (ex) return prev.map(i => i.id === p.id ? { ...i, quantity: i.quantity + 1 } : i);
+    return [...prev, { id: p.id, name: p.name, price: Number(p.price), quantity: 1 }];
+  });
+
+  const decItem = (id: string) => setCart(prev => {
+    const it = prev.find(i => i.id === id);
+    if (!it) return prev;
+    if (it.quantity === 1) return prev.filter(i => i.id !== id);
+    return prev.map(i => i.id === id ? { ...i, quantity: i.quantity - 1 } : i);
+  });
+
+  const removeItem = (id: string) => setCart(prev => prev.filter(i => i.id !== id));
+
+  const clearSale = () => {
+    setCart([]); setPaymentMethod(""); setTableId("");
+    setDiscountInput(""); setShowDiscount(false);
+    setCashReceived(""); setOrderDone(false);
+  };
+
+  // ── Abrir caixa ──
+  const handleAbrirCaixa = async () => {
+    if (!store?.id || !user?.id) return;
+    const amount = parseFloat(openingAmount.replace(",", ".")) || 0;
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.from("pdv_sessions" as any)
+        .insert({ store_id: store.id, opened_by: user.id, opening_amount: amount, status: "open" })
+        .select().single();
+      if (error) throw error;
+      setCurrentSession(data as PdvSession);
+      setScreen("venda");
+      toast.success(`Caixa aberto! Troco inicial: ${formatBRL(amount)}`);
+    } catch (e: any) { toast.error(e.message || "Erro ao abrir caixa."); }
+    finally { setLoading(false); }
+  };
+
+  // ── Finalizar venda ──
+  const handleVenda = async () => {
+    if (!store?.id || !currentSession) return;
+    if (cart.length === 0) { toast.error("Carrinho vazio."); return; }
+    if (!paymentMethod) { toast.error("Selecione o pagamento."); return; }
+    if (paymentMethod === "dinheiro" && cashReceived && cashVal < finalTotal) {
+      toast.error("Valor recebido menor que o total."); return;
+    }
+    setLoading(true);
+    try {
+      const { data: order, error: oe } = await supabase.from("orders")
+        .insert({
+          store_id: store.id, client_id: null, order_source: "pdv",
+          pdv_session_id: currentSession.id,
+          table_identifier: tableId || null,
+          subtotal, delivery_fee: 0,
+          pdv_discount: discountAmount,
+          commission_rate: storePlan.pdvCommissionRate ?? 0,
+          total_price: finalTotal, app_fee: 0,
+          payment_method: paymentMethod,
+          neighborhood: "Balcão",
+          address_details: tableId ? `${tableId} — Presencial` : "Pedido presencial",
+          status: "finalizado",
+        } as any).select("id").single();
+      if (oe) throw oe;
+
+      await supabase.from("order_items").insert(
+        cart.map(item => ({ order_id: order.id, product_id: item.id, quantity: item.quantity, unit_price: item.price }))
+      );
+
+      await supabase.from("pdv_movements" as any).insert({
+        session_id: currentSession.id, store_id: store.id,
+        type: "sale", amount: finalTotal,
+        payment_method: paymentMethod,
+        description: tableId || "Venda balcão",
+        order_id: order.id,
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["pdv-movements", currentSession.id] });
+      setOrderDone(true);
+      toast.success("✅ Venda finalizada!");
+      setTimeout(clearSale, 2000);
+    } catch (e: any) { toast.error(e.message || "Erro ao finalizar."); }
+    finally { setLoading(false); }
+  };
+
+  // ── Movimentação ──
+  const handleMoviment = async (type: "sangria" | "suprimento") => {
+    if (!currentSession || !store?.id) return;
+    const amount = parseFloat(movValue.replace(",", ".")) || 0;
+    if (amount <= 0) { toast.error("Valor inválido."); return; }
+    setLoading(true);
+    try {
+      await supabase.from("pdv_movements" as any).insert({
+        session_id: currentSession.id, store_id: store.id,
+        type, amount, description: movDesc || (type === "sangria" ? "Sangria" : "Suprimento"),
+      });
+      queryClient.invalidateQueries({ queryKey: ["pdv-movements", currentSession.id] });
+      toast.success(type === "sangria" ? `Sangria de ${formatBRL(amount)}` : `Suprimento de ${formatBRL(amount)}`);
+      setMovModal(null); setMovValue(""); setMovDesc("");
+    } catch (e: any) { toast.error(e.message); }
+    finally { setLoading(false); }
+  };
+
+  // ── Iniciar fechamento ──
+  const handleIniciarFechamento = async () => {
+    if (!currentSession) return;
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.rpc("get_pdv_session_summary" as any, { _session_id: currentSession.id });
+      if (error) throw error;
+      setSessionSummary(data);
+      setScreen("fechamento");
+    } catch { toast.error("Erro ao carregar resumo."); }
+    finally { setLoading(false); }
+  };
+
+  // ── Fechar caixa ──
+  const handleFecharCaixa = async () => {
+    if (!currentSession) return;
+    setLoading(true);
+    try {
+      await supabase.from("pdv_sessions" as any)
+        .update({ status: "closed", closed_at: new Date().toISOString(), closing_amount: parseFloat(closingAmount.replace(",", ".")) || 0 })
+        .eq("id", currentSession.id);
+      toast.success("Caixa fechado.");
+      setCurrentSession(null); setSessionSummary(null); setScreen("abertura"); clearSale();
+    } catch (e: any) { toast.error(e.message); }
+    finally { setLoading(false); }
+  };
+
+  // ── Totais do turno ──
+  const turnoVendido = sumMoney(movements.filter(m => m.type === "sale").map(m => m.amount));
+  const turnoDinheiro = sumMoney(movements.filter(m => m.type === "sale" && m.payment_method === "dinheiro").map(m => m.amount));
+  const turnoSangrias = sumMoney(movements.filter(m => m.type === "sangria").map(m => m.amount));
+  const turnoSuprimentos = sumMoney(movements.filter(m => m.type === "suprimento").map(m => m.amount));
+  const saldoEsperado = addMoney((currentSession?.opening_amount ?? 0), turnoDinheiro, turnoSuprimentos, -turnoSangrias);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // LOADING
+  // ─────────────────────────────────────────────────────────────────────────
+
+  if (screen === "loading") return (
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
   );
 
-  if (screen === "loading") {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  // ─────────────────────────────────────────────────────────────────────────
+  // TELA 1 — ABERTURA
+  // ─────────────────────────────────────────────────────────────────────────
 
-  // ╔══════════════════════════════════════════════════════════╗
-  // ║  TELA 1 — ABERTURA DE CAIXA                             ║
-  // ╚══════════════════════════════════════════════════════════╝
+  if (screen === "abertura") return (
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Header */}
+      <header className="h-14 border-b border-border flex items-center px-4 gap-3 bg-card">
+        <button onClick={() => navigate("/admin")} className="p-1.5 rounded-xl hover:bg-muted transition-colors">
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+        <Monitor className="h-5 w-5 text-primary" />
+        <div className="flex-1">
+          <p className="text-sm font-bold">{store?.name}</p>
+          <p className="text-[10px] text-muted-foreground">PDV · Caixa fechado</p>
+        </div>
+      </header>
 
-  if (screen === "abertura") {
-    return (
-      <div className="min-h-screen bg-background flex flex-col">
-        <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-sm border-b border-border flex items-center h-14 px-4 gap-3">
-          <button onClick={() => navigate("/admin")} className="p-1 -ml-1">
-            <ArrowLeft className="h-5 w-5 text-foreground" />
-          </button>
-          <Monitor className="h-5 w-5 text-primary" />
-          <div className="flex-1">
-            <h1 className="font-bold text-foreground text-sm">PDV — Abrir Caixa</h1>
-            <p className="text-[10px] text-muted-foreground">{store?.name}</p>
+      <div className="flex-1 flex items-center justify-center p-6">
+        <div className="w-full max-w-xs space-y-6">
+          {/* Ícone */}
+          <div className="text-center space-y-3">
+            <div className="w-20 h-20 rounded-3xl bg-primary/10 border-2 border-primary/20 flex items-center justify-center mx-auto">
+              <Unlock className="h-9 w-9 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-black text-foreground">Abrir Caixa</h2>
+              <p className="text-sm text-muted-foreground mt-1">Informe o troco disponível para começar</p>
+            </div>
           </div>
-        </header>
 
-        <div className="flex-1 flex items-center justify-center p-6">
-          <div className="w-full max-w-sm space-y-6">
-            <div className="text-center space-y-2">
-              <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
-                <Unlock className="h-8 w-8 text-primary" />
+          {/* Input */}
+          <div className="bg-card rounded-2xl border border-border p-5 space-y-5">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                Dinheiro inicial (troco)
+              </label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">R$</span>
+                <input
+                  type="text" inputMode="decimal"
+                  value={openingAmount}
+                  onChange={e => setOpeningAmount(e.target.value.replace(/[^0-9.,]/g, ""))}
+                  placeholder="0,00"
+                  className="w-full pl-10 pr-4 py-4 bg-muted/40 rounded-xl text-2xl font-black text-center text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                />
               </div>
-              <h2 className="text-xl font-black text-foreground">Abrir Caixa</h2>
-              <p className="text-sm text-muted-foreground">
-                Informe o valor inicial em dinheiro disponível para troco
-              </p>
+              <p className="text-[11px] text-muted-foreground text-center">Deixe 0,00 se não tiver troco inicial</p>
             </div>
 
-            <div className="bg-card rounded-2xl border border-border p-5 space-y-4">
-              <div>
-                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                  Valor inicial em caixa (R$)
-                </label>
-                <div className="relative mt-2">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold text-sm">R$</span>
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    placeholder="0,00"
-                    value={openingAmount}
-                    onChange={e => setOpeningAmount(e.target.value.replace(/[^0-9.,]/g, ""))}
-                    className="w-full pl-10 pr-4 py-3.5 bg-muted/50 rounded-xl text-2xl font-black text-foreground text-center focus:outline-none focus:ring-2 focus:ring-primary/50"
-                  />
-                </div>
-                <p className="text-[10px] text-muted-foreground mt-1.5 text-center">
-                  Se não tiver troco inicial, deixe em R$ 0,00
-                </p>
-              </div>
-
-              <button
-                onClick={handleAbrirCaixa}
-                disabled={loading}
-                className="w-full bg-primary text-primary-foreground font-bold py-4 rounded-2xl text-base flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-lg shadow-primary/25"
-              >
-                {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Unlock className="h-5 w-5" />}
-                Abrir Caixa
-              </button>
-            </div>
+            <button
+              onClick={handleAbrirCaixa} disabled={loading}
+              className="w-full h-14 bg-primary text-primary-foreground font-black text-base rounded-2xl flex items-center justify-center gap-2.5 active:scale-[0.98] transition-all shadow-lg shadow-primary/30 disabled:opacity-60"
+            >
+              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Unlock className="h-5 w-5" />}
+              Abrir Caixa
+            </button>
           </div>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
 
-  // ╔══════════════════════════════════════════════════════════╗
-  // ║  TELA 3 — FECHAMENTO DE CAIXA                           ║
-  // ╚══════════════════════════════════════════════════════════╝
+  // ─────────────────────────────────────────────────────────────────────────
+  // TELA 3 — FECHAMENTO
+  // ─────────────────────────────────────────────────────────────────────────
 
   if (screen === "fechamento") {
-    const byPayment = sessionSummary?.by_payment || {};
+    const byPayment: Record<string, number> = sessionSummary?.by_payment || {};
+    const diffAmount = parseFloat(closingAmount.replace(",", ".")) - saldoEsperado;
+    const isOk = closingAmount && Math.abs(diffAmount) < 0.05;
+
     return (
       <div className="min-h-screen bg-background flex flex-col">
-        <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-sm border-b border-border flex items-center h-14 px-4 gap-3">
-          <button onClick={() => setScreen("venda")} className="p-1 -ml-1">
-            <ArrowLeft className="h-5 w-5 text-foreground" />
+        <header className="h-14 border-b border-border flex items-center px-4 gap-3 bg-card">
+          <button onClick={() => setScreen("venda")} className="p-1.5 rounded-xl hover:bg-muted">
+            <ArrowLeft className="h-5 w-5" />
           </button>
           <Lock className="h-5 w-5 text-destructive" />
           <div className="flex-1">
-            <h1 className="font-bold text-foreground text-sm">Fechar Caixa</h1>
+            <p className="text-sm font-bold">Fechamento de Caixa</p>
             <p className="text-[10px] text-muted-foreground">
-              Aberto às {new Date(currentSession!.opened_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+              Aberto às {currentSession && new Date(currentSession.opened_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
             </p>
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-32">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-28">
           {/* Resumo do turno */}
-          <div className="bg-card rounded-2xl border border-border p-4 space-y-3">
-            <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
+          <div className="bg-card rounded-2xl border border-border p-4 space-y-4">
+            <h3 className="text-sm font-black flex items-center gap-2">
               <Receipt className="h-4 w-4 text-primary" /> Resumo do Turno
-            </h2>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="bg-emerald-500/5 border border-emerald-500/15 rounded-xl p-3">
-                <p className="text-[10px] text-muted-foreground uppercase font-semibold">Total vendido</p>
-                <p className="text-lg font-black text-emerald-500 mt-0.5">
-                  {formatBRL(sessionSummary?.total_sales ?? 0)}
-                </p>
-                <p className="text-[10px] text-muted-foreground">{sessionSummary?.total_orders ?? 0} pedidos</p>
+            </h3>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-emerald-500/8 border border-emerald-500/15 rounded-xl p-3 space-y-0.5">
+                <p className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider">Total Vendido</p>
+                <p className="text-xl font-black text-emerald-500">{formatBRL(sessionSummary?.total_sales ?? 0)}</p>
+                <p className="text-[10px] text-muted-foreground">{sessionSummary?.total_orders ?? 0} vendas</p>
               </div>
-              <div className="bg-muted/30 rounded-xl p-3">
-                <p className="text-[10px] text-muted-foreground uppercase font-semibold">Abertura</p>
-                <p className="text-lg font-black text-foreground mt-0.5">
-                  {formatBRL(currentSession?.opening_amount ?? 0)}
-                </p>
+              <div className="bg-muted/40 rounded-xl p-3 space-y-0.5">
+                <p className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider">Abertura</p>
+                <p className="text-xl font-black text-foreground">{formatBRL(currentSession?.opening_amount ?? 0)}</p>
                 <p className="text-[10px] text-muted-foreground">troco inicial</p>
               </div>
-              {totalSangrias > 0 && (
-                <div className="bg-red-500/5 border border-red-500/15 rounded-xl p-3">
+              {turnoSangrias > 0 && (
+                <div className="bg-red-500/8 border border-red-500/15 rounded-xl p-3">
                   <p className="text-[10px] text-muted-foreground uppercase font-semibold">Sangrias</p>
-                  <p className="text-lg font-black text-red-500 mt-0.5">-{formatBRL(totalSangrias)}</p>
+                  <p className="text-lg font-black text-red-500">−{formatBRL(turnoSangrias)}</p>
                 </div>
               )}
-              {totalSuprimentos > 0 && (
-                <div className="bg-blue-500/5 border border-blue-500/15 rounded-xl p-3">
+              {turnoSuprimentos > 0 && (
+                <div className="bg-blue-500/8 border border-blue-500/15 rounded-xl p-3">
                   <p className="text-[10px] text-muted-foreground uppercase font-semibold">Suprimentos</p>
-                  <p className="text-lg font-black text-blue-500 mt-0.5">+{formatBRL(totalSuprimentos)}</p>
+                  <p className="text-lg font-black text-blue-500">+{formatBRL(turnoSuprimentos)}</p>
                 </div>
               )}
             </div>
 
-            {/* Por método de pagamento */}
+            {/* Por forma de pagamento */}
             {Object.keys(byPayment).length > 0 && (
-              <div className="space-y-1.5 pt-2 border-t border-border/30">
-                <p className="text-[10px] text-muted-foreground font-bold uppercase">Por forma de pagamento</p>
-                {Object.entries(byPayment).map(([method, amount]) => {
-                  const pm = PDV_PAYMENT_METHODS.find(p => p.id === method);
+              <div className="border-t border-border/40 pt-3 space-y-2">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Por pagamento</p>
+                {Object.entries(byPayment).map(([m, v]) => {
+                  const pm = PDV_METHODS.find(p => p.id === m);
                   return (
-                    <div key={method} className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">{pm?.label || method}</span>
-                      <span className="font-bold text-foreground">{formatBRL(Number(amount))}</span>
+                    <div key={m} className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">{pm?.label || m}</span>
+                      <span className="text-sm font-bold">{formatBRL(Number(v))}</span>
                     </div>
                   );
                 })}
               </div>
             )}
 
-            {/* Saldo esperado em dinheiro */}
-            <div className="bg-amber-500/5 border border-amber-500/15 rounded-xl p-3 flex justify-between items-center">
+            {/* Saldo esperado */}
+            <div className="bg-amber-500/8 border border-amber-500/20 rounded-xl p-3.5 flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold text-amber-600">Dinheiro esperado no caixa</p>
-                <p className="text-[10px] text-muted-foreground">
-                  Abertura + vendas dinheiro − sangrias + suprimentos
-                </p>
+                <p className="text-xs font-bold text-amber-700 dark:text-amber-400">Dinheiro esperado no caixa</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Abertura + vendas − sangrias + suprimentos</p>
               </div>
               <p className="text-xl font-black text-amber-500">{formatBRL(saldoEsperado)}</p>
             </div>
@@ -571,36 +500,26 @@ const PdvPage = () => {
 
           {/* Conferência */}
           <div className="bg-card rounded-2xl border border-border p-4 space-y-3">
-            <h2 className="text-sm font-bold text-foreground">Conferência de Caixa</h2>
+            <h3 className="text-sm font-black">Conferência</h3>
             <div>
-              <label className="text-xs font-bold text-muted-foreground">
-                Valor contado em dinheiro (R$)
-              </label>
+              <label className="text-xs font-bold text-muted-foreground">Dinheiro contado no caixa</label>
               <div className="relative mt-2">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold text-sm">R$</span>
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">R$</span>
                 <input
-                  type="text"
-                  inputMode="decimal"
-                  placeholder="0,00"
+                  type="text" inputMode="decimal" placeholder="0,00"
                   value={closingAmount}
                   onChange={e => setClosingAmount(e.target.value.replace(/[^0-9.,]/g, ""))}
-                  className="w-full pl-10 pr-4 py-3 bg-muted/50 rounded-xl text-lg font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="w-full pl-10 pr-4 py-3.5 bg-muted/40 rounded-xl text-xl font-bold focus:outline-none focus:ring-2 focus:ring-primary/40"
                 />
               </div>
             </div>
-
             {closingAmount && (
-              <div className={`rounded-xl p-3 flex justify-between items-center ${
-                Math.abs(parseFloat(closingAmount.replace(",", ".")) - saldoEsperado) < 0.05
-                  ? "bg-emerald-500/5 border border-emerald-500/15"
-                  : "bg-red-500/5 border border-red-500/15"
-              }`}>
-                <p className="text-xs font-bold">Diferença</p>
-                <p className={`text-base font-black ${
-                  Math.abs(parseFloat(closingAmount.replace(",", ".")) - saldoEsperado) < 0.05
-                    ? "text-emerald-500" : "text-red-500"
-                }`}>
-                  {formatBRL(parseFloat(closingAmount.replace(",", ".")) - saldoEsperado)}
+              <div className={`rounded-xl p-3 flex justify-between items-center border ${isOk ? "bg-emerald-500/8 border-emerald-500/20" : "bg-red-500/8 border-red-500/20"}`}>
+                <p className={`text-sm font-bold ${isOk ? "text-emerald-600" : "text-red-500"}`}>
+                  {isOk ? "✅ Caixa conferido" : diffAmount > 0 ? "⚠️ Sobra" : "⚠️ Falta"}
+                </p>
+                <p className={`text-lg font-black ${isOk ? "text-emerald-500" : "text-red-500"}`}>
+                  {isOk ? "—" : formatBRL(Math.abs(diffAmount))}
                 </p>
               </div>
             )}
@@ -609,9 +528,8 @@ const PdvPage = () => {
 
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-card/95 backdrop-blur-sm border-t border-border">
           <button
-            onClick={handleFecharCaixa}
-            disabled={loading}
-            className="w-full bg-destructive text-destructive-foreground font-bold py-4 rounded-2xl text-base flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
+            onClick={handleFecharCaixa} disabled={loading}
+            className="w-full h-14 bg-destructive text-destructive-foreground font-black text-base rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-60"
           >
             {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Lock className="h-5 w-5" />}
             Confirmar Fechamento
@@ -621,144 +539,180 @@ const PdvPage = () => {
     );
   }
 
-  // ╔══════════════════════════════════════════════════════════╗
-  // ║  TELA 2 — VENDA (caixa aberto)                         ║
-  // ╚══════════════════════════════════════════════════════════╝
+  // ─────────────────────────────────────────────────────────────────────────
+  // TELA 2 — VENDA (layout PDV profissional)
+  // ─────────────────────────────────────────────────────────────────────────
+
+  const selectedMethod = PDV_METHODS.find(m => m.id === paymentMethod);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="h-screen bg-background flex flex-col overflow-hidden">
 
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-sm border-b border-border">
-        <div className="flex items-center h-14 px-3 gap-2">
-          <button onClick={() => navigate("/admin")} className="p-1">
-            <ArrowLeft className="h-5 w-5 text-foreground" />
-          </button>
-          <Monitor className="h-4 w-4 text-primary shrink-0" />
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold text-foreground truncate">{store?.name}</p>
-            <p className="text-[10px] text-emerald-500 font-semibold">
-              ● Caixa aberto · {formatBRL(totalVendido)} vendidos
-            </p>
-          </div>
-
-          {/* Ações do caixa */}
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => setMovimentModal("suprimento")}
-              className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-500/10 text-blue-600 rounded-lg text-[11px] font-bold"
-            >
-              <ArrowUpCircle className="h-3.5 w-3.5" />
-              <span className="hidden sm:block">Suprimento</span>
-            </button>
-            <button
-              onClick={() => setMovimentModal("sangria")}
-              className="flex items-center gap-1 px-2.5 py-1.5 bg-red-500/10 text-red-600 rounded-lg text-[11px] font-bold"
-            >
-              <ArrowDownCircle className="h-3.5 w-3.5" />
-              <span className="hidden sm:block">Sangria</span>
-            </button>
-            <button
-              onClick={handleIniciarFechamento}
-              disabled={loading}
-              className="flex items-center gap-1 px-2.5 py-1.5 bg-destructive/10 text-destructive rounded-lg text-[11px] font-bold"
-            >
-              <Lock className="h-3.5 w-3.5" />
-              <span className="hidden sm:block">Fechar</span>
-            </button>
-            {/* Carrinho mobile */}
-            <button
-              onClick={() => setShowCart(true)}
-              className="relative p-2 bg-primary/10 rounded-xl ml-1"
-            >
-              <ShoppingCart className="h-5 w-5 text-primary" />
-              {totalItems > 0 && (
-                <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center">
-                  {totalItems}
-                </span>
-              )}
-            </button>
-          </div>
+      {/* ── TOPBAR ── */}
+      <header className="h-12 border-b border-border bg-card flex items-center px-3 gap-2 shrink-0">
+        <button onClick={() => navigate("/admin")} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
+          <ArrowLeft className="h-4 w-4" />
+        </button>
+        <div className="w-px h-5 bg-border" />
+        <Monitor className="h-4 w-4 text-primary shrink-0" />
+        <div className="flex-1 min-w-0">
+          <span className="text-xs font-bold text-foreground truncate">{store?.name}</span>
+          <span className="text-[10px] text-emerald-500 font-semibold ml-2">● {movements.filter(m => m.type === "sale").length} vendas · {formatBRL(turnoVendido)}</span>
         </div>
 
-        {/* Busca */}
-        <div className="px-3 pb-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Buscar produto..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2.5 bg-muted/50 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-            />
-            {search && (
-              <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
-                <X className="h-3.5 w-3.5 text-muted-foreground" />
-              </button>
-            )}
-          </div>
+        {/* Controles do turno */}
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setMovModal("suprimento")}
+            title="Suprimento"
+            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold text-blue-600 bg-blue-500/8 hover:bg-blue-500/15 transition-colors border border-blue-500/20"
+          >
+            <ArrowUpCircle className="h-3.5 w-3.5" />
+            <span className="hidden sm:block">Suprimento</span>
+          </button>
+          <button
+            onClick={() => setMovModal("sangria")}
+            title="Sangria"
+            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold text-red-600 bg-red-500/8 hover:bg-red-500/15 transition-colors border border-red-500/20"
+          >
+            <ArrowDownCircle className="h-3.5 w-3.5" />
+            <span className="hidden sm:block">Sangria</span>
+          </button>
+          <button
+            onClick={handleIniciarFechamento} disabled={loading}
+            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold text-muted-foreground bg-muted hover:bg-muted/80 transition-colors border border-border"
+          >
+            {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Lock className="h-3.5 w-3.5" />}
+            <span className="hidden sm:block">Fechar</span>
+          </button>
         </div>
       </header>
 
+      {/* ── CORPO PRINCIPAL ── */}
       <div className="flex flex-1 overflow-hidden">
 
-        {/* CATÁLOGO */}
-        <div className="flex-1 overflow-y-auto">
-          {productsLoading ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        {/* ════════════════════════════════
+            COLUNA ESQUERDA — CATÁLOGO
+            ════════════════════════════════ */}
+        <div className="flex flex-col flex-1 min-w-0 overflow-hidden border-r border-border">
+
+          {/* Busca */}
+          <div className="px-3 pt-2.5 pb-2 shrink-0">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <input
+                type="text" placeholder="Buscar produto..."
+                value={search} onChange={e => setSearch(e.target.value)}
+                className="w-full pl-8 pr-8 py-2 bg-muted/40 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 border border-border/50"
+              />
+              {search && (
+                <button onClick={() => setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2">
+                  <X className="h-3.5 w-3.5 text-muted-foreground" />
+                </button>
+              )}
             </div>
-          ) : Object.keys(grouped).length === 0 ? (
-            <div className="text-center py-16 text-muted-foreground text-sm">
-              <Search className="h-8 w-8 mx-auto mb-2 opacity-30" />
-              Nenhum produto encontrado
+          </div>
+
+          {/* Abas de seção */}
+          {sections.length > 0 && !search && (
+            <div className="flex gap-1.5 px-3 pb-2 overflow-x-auto no-scrollbar shrink-0">
+              <button
+                onClick={() => setActiveSection(null)}
+                className={`px-3 py-1 rounded-full text-[11px] font-bold whitespace-nowrap transition-colors border ${
+                  !activeSection ? "bg-primary text-primary-foreground border-primary" : "bg-muted/50 text-muted-foreground border-border hover:bg-muted"
+                }`}
+              >
+                Todos
+              </button>
+              {sections.map(s => (
+                <button
+                  key={s.id}
+                  onClick={() => setActiveSection(activeSection === s.id ? null : s.id)}
+                  className={`px-3 py-1 rounded-full text-[11px] font-bold whitespace-nowrap transition-colors border ${
+                    activeSection === s.id ? "bg-primary text-primary-foreground border-primary" : "bg-muted/50 text-muted-foreground border-border hover:bg-muted"
+                  }`}
+                >
+                  {s.name}
+                </button>
+              ))}
             </div>
-          ) : (
-            <div className="p-3 space-y-5">
-              {Object.entries(grouped).map(([sectionName, items]) => (
-                <div key={sectionName}>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 px-1 sticky top-0 bg-background py-1">
-                    {sectionName}
-                  </p>
-                  <div className="grid grid-cols-1 gap-1.5">
-                    {items.map(({ product }) => {
+          )}
+
+          {/* Lista de produtos */}
+          <div className="flex-1 overflow-y-auto px-2 pb-3 space-y-4">
+            {prodLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            ) : Object.keys(grouped).length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <Search className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                <p className="text-sm">Nenhum produto encontrado</p>
+              </div>
+            ) : (
+              Object.entries(grouped).map(([section, items]) => (
+                <div key={section}>
+                  {/* Cabeçalho da seção */}
+                  {Object.keys(grouped).length > 1 && (
+                    <div className="flex items-center gap-2 px-1 mb-1.5 mt-2">
+                      <Layers className="h-3 w-3 text-muted-foreground" />
+                      <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{section}</p>
+                      <div className="flex-1 h-px bg-border/50" />
+                    </div>
+                  )}
+
+                  {/* Grid de produtos */}
+                  <div className="grid grid-cols-1 gap-1">
+                    {items.map(product => {
                       const qty = getQty(product.id);
+                      const inCart = qty > 0;
                       return (
                         <div
                           key={product.id}
-                          className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
-                            qty > 0 ? "bg-primary/5 border-primary/20" : "bg-card border-border/40"
+                          className={`flex items-center gap-2.5 p-2.5 rounded-xl border transition-all cursor-pointer group ${
+                            inCart
+                              ? "bg-primary/5 border-primary/25 shadow-sm"
+                              : "bg-card border-border/60 hover:border-border hover:bg-muted/20"
                           }`}
+                          onClick={() => addItem(product)}
                         >
-                          {product.image_url && (
-                            <img
-                              src={product.image_url}
-                              alt={product.name}
-                              className="w-12 h-12 rounded-xl object-cover shrink-0"
-                            />
+                          {/* Imagem ou placeholder */}
+                          {product.image_url ? (
+                            <img src={product.image_url} alt={product.name}
+                              className="w-10 h-10 rounded-lg object-cover shrink-0 border border-border/30" />
+                          ) : (
+                            <div className="w-10 h-10 rounded-lg bg-muted/60 flex items-center justify-center shrink-0 border border-border/30">
+                              <span className="text-base">{product.name[0]}</span>
+                            </div>
                           )}
+
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-foreground leading-tight">{product.name}</p>
-                            <p className="text-sm font-black text-primary mt-0.5">{formatBRL(Number(product.price))}</p>
+                            <p className="text-sm font-semibold text-foreground leading-tight truncate">{product.name}</p>
+                            <p className={`text-sm font-black mt-0.5 ${inCart ? "text-primary" : "text-muted-foreground"}`}>
+                              {formatBRL(Number(product.price))}
+                            </p>
                           </div>
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            {qty > 0 && (
+
+                          {/* Controle de quantidade */}
+                          <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
+                            {inCart && (
                               <>
                                 <button
-                                  onClick={() => removeFromCart(product.id)}
-                                  className="w-8 h-8 rounded-xl bg-muted flex items-center justify-center active:scale-90 transition-transform"
+                                  onClick={() => decItem(product.id)}
+                                  className="w-7 h-7 rounded-lg bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors active:scale-90"
                                 >
-                                  <Minus className="h-4 w-4 text-foreground" />
+                                  <Minus className="h-3.5 w-3.5" />
                                 </button>
-                                <span className="w-7 text-center text-sm font-black text-foreground">{qty}</span>
+                                <span className="w-6 text-center text-sm font-black text-foreground">{qty}</span>
                               </>
                             )}
                             <button
-                              onClick={() => addToCart(product, sectionName)}
-                              className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center active:scale-90 transition-transform shadow-sm shadow-primary/30"
+                              onClick={() => addItem(product)}
+                              className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all active:scale-90 shadow-sm ${
+                                inCart ? "bg-primary shadow-primary/30" : "bg-primary/80 hover:bg-primary shadow-primary/20"
+                              }`}
                             >
-                              <Plus className="h-4 w-4 text-primary-foreground" />
+                              <Plus className="h-3.5 w-3.5 text-primary-foreground" />
                             </button>
                           </div>
                         </div>
@@ -766,117 +720,253 @@ const PdvPage = () => {
                     })}
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
+              ))
+            )}
+          </div>
         </div>
 
-        {/* CARRINHO DESKTOP */}
-        <aside className="hidden md:flex w-88 flex-col border-l border-border bg-card">
-          <CartSide
-            cart={cart}
-            subtotal={subtotal}
-            discountAmount={discountAmount}
-            finalTotal={finalTotal}
-            paymentMethod={paymentMethod}
-            setPaymentMethod={setPaymentMethod}
-            tableIdentifier={tableIdentifier}
-            setTableIdentifier={setTableIdentifier}
-            discountType={discountType}
-            setDiscountType={setDiscountType}
-            discountInput={discountInput}
-            setDiscountInput={setDiscountInput}
-            showDiscountPanel={showDiscountPanel}
-            setShowDiscountPanel={setShowDiscountPanel}
-            onDelete={deleteFromCart}
-            onClear={clearSale}
-            onFinalize={handleFinalizarVenda}
-            loading={loading}
-            orderDone={orderDone}
-          />
-        </aside>
-      </div>
+        {/* ════════════════════════════════
+            COLUNA DIREITA — CAIXA
+            ════════════════════════════════ */}
+        <div className="w-72 xl:w-80 flex flex-col bg-card shrink-0 overflow-hidden">
 
-      {/* CARRINHO MOBILE — bottom sheet */}
-      {showCart && (
-        <div className="fixed inset-0 z-50 md:hidden">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setShowCart(false)} />
-          <div className="absolute bottom-0 left-0 right-0 bg-card rounded-t-3xl max-h-[90vh] flex flex-col">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
-              <h2 className="font-bold text-foreground">Carrinho · {totalItems} itens</h2>
-              <button onClick={() => setShowCart(false)}>
-                <X className="h-5 w-5 text-muted-foreground" />
-              </button>
+          {/* Cabeçalho da caixa */}
+          <div className="px-3 pt-2.5 pb-2 border-b border-border shrink-0">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <input
+                  type="text" placeholder="Mesa / Comanda"
+                  value={tableId} onChange={e => setTableId(e.target.value)}
+                  className="text-xs bg-muted/40 rounded-lg px-2.5 py-1.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/30 border border-border/50 w-32"
+                />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] text-muted-foreground">{totalItems} itens</span>
+                {cart.length > 0 && (
+                  <button onClick={clearSale} title="Limpar" className="p-1 rounded-lg hover:bg-muted transition-colors">
+                    <RotateCcw className="h-3.5 w-3.5 text-muted-foreground" />
+                  </button>
+                )}
+              </div>
             </div>
-            <div className="flex-1 overflow-y-auto">
-              <CartSide
-                cart={cart}
-                subtotal={subtotal}
-                discountAmount={discountAmount}
-                finalTotal={finalTotal}
-                paymentMethod={paymentMethod}
-                setPaymentMethod={setPaymentMethod}
-                tableIdentifier={tableIdentifier}
-                setTableIdentifier={setTableIdentifier}
-                discountType={discountType}
-                setDiscountType={setDiscountType}
-                discountInput={discountInput}
-                setDiscountInput={setDiscountInput}
-                showDiscountPanel={showDiscountPanel}
-                setShowDiscountPanel={setShowDiscountPanel}
-                onDelete={deleteFromCart}
-                onClear={clearSale}
-                onFinalize={() => { handleFinalizarVenda(); setShowCart(false); }}
-                loading={loading}
-                orderDone={orderDone}
-              />
+          </div>
+
+          {/* Itens do carrinho */}
+          <div className="flex-1 overflow-y-auto p-2 space-y-1 min-h-0">
+            {cart.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full gap-2 py-8">
+                <div className="w-14 h-14 rounded-2xl bg-muted/40 flex items-center justify-center">
+                  <Receipt className="h-6 w-6 text-muted-foreground/40" />
+                </div>
+                <p className="text-xs text-muted-foreground">Selecione os produtos</p>
+              </div>
+            ) : (
+              cart.map(item => (
+                <div key={item.id} className="flex items-center gap-2 px-2.5 py-2 rounded-xl hover:bg-muted/30 group transition-colors">
+                  <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <span className="text-[10px] font-black text-primary">{item.quantity}</span>
+                  </div>
+                  <p className="flex-1 text-xs font-medium text-foreground truncate">{item.name}</p>
+                  <p className="text-xs font-black text-foreground shrink-0">{formatBRL(item.price * item.quantity)}</p>
+                  <button
+                    onClick={() => removeItem(item.id)}
+                    className="p-0.5 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Painel de pagamento — sempre visível */}
+          <div className="border-t border-border shrink-0">
+
+            {/* Desconto */}
+            <div className="px-3 pt-2.5">
+              <button
+                onClick={() => setShowDiscount(!showDiscount)}
+                className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors w-full"
+              >
+                <Tag className="h-3 w-3" />
+                {discountAmount > 0 ? (
+                  <span className="text-emerald-500 font-bold">Desconto: −{formatBRL(discountAmount)}</span>
+                ) : (
+                  <span>Desconto</span>
+                )}
+                <ChevronDown className={`h-3 w-3 ml-auto transition-transform ${showDiscount ? "rotate-180" : ""}`} />
+              </button>
+
+              {showDiscount && (
+                <div className="mt-2 flex items-center gap-1.5">
+                  {/* Toggle R$/ % */}
+                  <div className="flex rounded-lg overflow-hidden border border-border shrink-0">
+                    <button onClick={() => setDiscountType("R$")}
+                      className={`px-2 py-1.5 text-[11px] font-bold transition-colors ${discountType === "R$" ? "bg-primary text-white" : "bg-muted/50 text-muted-foreground"}`}>
+                      R$
+                    </button>
+                    <button onClick={() => setDiscountType("%")}
+                      className={`px-2 py-1.5 text-[11px] font-bold transition-colors ${discountType === "%" ? "bg-primary text-white" : "bg-muted/50 text-muted-foreground"}`}>
+                      %
+                    </button>
+                  </div>
+                  <input
+                    type="text" inputMode="decimal"
+                    placeholder={discountType === "%" ? "10" : "5,00"}
+                    value={discountInput}
+                    onChange={e => setDiscountInput(e.target.value.replace(/[^0-9.,]/g, ""))}
+                    className="flex-1 px-2.5 py-1.5 bg-muted/40 rounded-lg text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30 border border-border/50"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Totais */}
+            <div className="px-3 pt-2 pb-1 space-y-0.5">
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">Subtotal</span>
+                <span className="font-semibold">{formatBRL(subtotal)}</span>
+              </div>
+              {discountAmount > 0 && (
+                <div className="flex justify-between text-xs">
+                  <span className="text-emerald-500">Desconto</span>
+                  <span className="font-bold text-emerald-500">−{formatBRL(discountAmount)}</span>
+                </div>
+              )}
+              <div className="flex justify-between items-baseline pt-1 border-t border-border/40 mt-1">
+                <span className="text-sm font-black text-foreground">Total</span>
+                <span className="text-xl font-black text-primary">{formatBRL(finalTotal)}</span>
+              </div>
+            </div>
+
+            {/* Métodos de pagamento */}
+            <div className="px-3 pt-1 pb-2 grid grid-cols-2 gap-1.5">
+              {PDV_METHODS.map(pm => {
+                const Icon = pm.icon;
+                const sel = paymentMethod === pm.id;
+                return (
+                  <button
+                    key={pm.id}
+                    onClick={() => { setPaymentMethod(pm.id); setCashReceived(""); }}
+                    data-sel={sel}
+                    className={`flex items-center gap-1.5 px-2.5 py-2 rounded-xl border text-left transition-all active:scale-[0.97] ${COLOR_MAP[pm.color]}`}
+                  >
+                    <Icon className="h-3.5 w-3.5 shrink-0" />
+                    <span className="text-[11px] font-bold truncate">{pm.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Troco (só dinheiro) */}
+            {paymentMethod === "dinheiro" && (
+              <div className="mx-3 mb-2 bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3 space-y-2">
+                <div>
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                    Valor recebido
+                  </label>
+                  <div className="relative mt-1">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">R$</span>
+                    <input
+                      type="text" inputMode="decimal"
+                      placeholder={finalTotal.toFixed(2).replace(".", ",")}
+                      value={cashReceived}
+                      onChange={e => setCashReceived(e.target.value.replace(/[^0-9.,]/g, ""))}
+                      className={`w-full pl-8 pr-3 py-2.5 rounded-xl text-lg font-black text-center focus:outline-none focus:ring-2 transition-colors ${
+                        trocoNegativo
+                          ? "bg-red-500/10 text-red-500 ring-red-500/30 border border-red-500/30"
+                          : "bg-muted/50 text-foreground focus:ring-primary/30 border border-border/50"
+                      }`}
+                    />
+                  </div>
+                </div>
+
+                {cashReceived && (
+                  <div className={`flex justify-between items-center rounded-xl px-3 py-2 ${
+                    trocoNegativo ? "bg-red-500/10" : "bg-emerald-500/10"
+                  }`}>
+                    <span className={`text-xs font-bold ${trocoNegativo ? "text-red-500" : "text-emerald-600"}`}>
+                      {trocoNegativo ? "⚠️ Valor insuficiente" : "💵 Troco"}
+                    </span>
+                    {!trocoNegativo && (
+                      <span className="text-lg font-black text-emerald-500">{formatBRL(troco)}</span>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Botão finalizar */}
+            <div className="px-3 pb-3">
+              <button
+                onClick={handleVenda}
+                disabled={loading || !paymentMethod || orderDone || cart.length === 0 || trocoNegativo}
+                className="w-full h-12 bg-primary text-primary-foreground font-black text-sm rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-lg shadow-primary/25 disabled:opacity-50"
+              >
+                {loading ? (
+                  <><Loader2 className="h-4 w-4 animate-spin" /> Registrando...</>
+                ) : orderDone ? (
+                  <><CheckCircle2 className="h-4 w-4" /> Venda registrada!</>
+                ) : (
+                  <>Finalizar {formatBRL(finalTotal)} <ChevronRight className="h-4 w-4" /></>
+                )}
+              </button>
             </div>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* MODAL SANGRIA / SUPRIMENTO */}
-      {movimentModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
-          <div className="bg-card rounded-2xl border border-border w-full max-w-sm p-5 space-y-4">
+      {/* ── MODAL SANGRIA / SUPRIMENTO ── */}
+      {movModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-card rounded-2xl border border-border w-full max-w-xs p-5 space-y-4 shadow-2xl">
             <div className="flex items-center gap-3">
-              {movimentModal === "sangria"
-                ? <ArrowDownCircle className="h-6 w-6 text-red-500" />
-                : <ArrowUpCircle className="h-6 w-6 text-blue-500" />
+              {movModal === "sangria"
+                ? <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center"><ArrowDownCircle className="h-5 w-5 text-red-500" /></div>
+                : <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center"><ArrowUpCircle className="h-5 w-5 text-blue-500" /></div>
               }
-              <h3 className="font-bold text-foreground text-base capitalize">{movimentModal}</h3>
+              <div>
+                <h3 className="font-black text-base capitalize">{movModal}</h3>
+                <p className="text-[11px] text-muted-foreground">
+                  {movModal === "sangria" ? "Retirada de dinheiro do caixa" : "Entrada de dinheiro no caixa"}
+                </p>
+              </div>
             </div>
-            <div>
-              <label className="text-xs font-bold text-muted-foreground">Valor (R$)</label>
-              <input
-                type="text" inputMode="decimal"
-                placeholder="0,00"
-                value={movimentValue}
-                onChange={e => setMovimentValue(e.target.value.replace(/[^0-9.,]/g, ""))}
-                className="w-full mt-1.5 px-3 py-3 bg-muted/50 rounded-xl text-lg font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-              />
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-bold text-muted-foreground">Valor (R$)</label>
+                <div className="relative mt-1.5">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">R$</span>
+                  <input
+                    type="text" inputMode="decimal" placeholder="0,00"
+                    value={movValue} onChange={e => setMovValue(e.target.value.replace(/[^0-9.,]/g, ""))}
+                    className="w-full pl-9 pr-3 py-3 bg-muted/40 rounded-xl text-xl font-black text-center focus:outline-none focus:ring-2 focus:ring-primary/30 border border-border/50"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-muted-foreground">Descrição</label>
+                <input
+                  type="text"
+                  placeholder={movModal === "sangria" ? "Ex: Enviado ao cofre" : "Ex: Reforço de troco"}
+                  value={movDesc} onChange={e => setMovDesc(e.target.value)}
+                  className="w-full mt-1.5 px-3 py-2.5 bg-muted/40 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 border border-border/50"
+                />
+              </div>
             </div>
-            <div>
-              <label className="text-xs font-bold text-muted-foreground">Descrição (opcional)</label>
-              <input
-                type="text"
-                placeholder={movimentModal === "sangria" ? "Ex: Enviado ao cofre" : "Ex: Reforço de troco"}
-                value={movimentDesc}
-                onChange={e => setMovimentDesc(e.target.value)}
-                className="w-full mt-1.5 px-3 py-2.5 bg-muted/50 rounded-xl text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-              />
-            </div>
-            <div className="flex gap-2 pt-1">
+
+            <div className="flex gap-2">
               <button
-                onClick={() => { setMovimentModal(null); setMovimentValue(""); setMovimentDesc(""); }}
-                className="flex-1 py-3 rounded-xl bg-muted font-bold text-sm"
+                onClick={() => { setMovModal(null); setMovValue(""); setMovDesc(""); }}
+                className="flex-1 h-11 rounded-xl bg-muted font-bold text-sm"
               >Cancelar</button>
               <button
-                onClick={() => handleMoviment(movimentModal)}
+                onClick={() => handleMoviment(movModal)}
                 disabled={loading}
-                className={`flex-1 py-3 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-1.5 ${
-                  movimentModal === "sangria" ? "bg-red-500" : "bg-blue-500"
-                }`}
+                className={`flex-1 h-11 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-1.5 ${
+                  movModal === "sangria" ? "bg-red-500 hover:bg-red-600" : "bg-blue-500 hover:bg-blue-600"
+                } transition-colors`}
               >
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirmar"}
               </button>
@@ -884,178 +974,8 @@ const PdvPage = () => {
           </div>
         </div>
       )}
-
     </div>
   );
 };
-
-// ─── CartSide: carrinho lateral/bottom ──────────────────────────────────────
-
-interface CartSideProps {
-  cart: CartItem[];
-  subtotal: number;
-  discountAmount: number;
-  finalTotal: number;
-  paymentMethod: string;
-  setPaymentMethod: (v: string) => void;
-  tableIdentifier: string;
-  setTableIdentifier: (v: string) => void;
-  discountType: "percent" | "value";
-  setDiscountType: (v: "percent" | "value") => void;
-  discountInput: string;
-  setDiscountInput: (v: string) => void;
-  showDiscountPanel: boolean;
-  setShowDiscountPanel: (v: boolean) => void;
-  onDelete: (id: string) => void;
-  onClear: () => void;
-  onFinalize: () => void;
-  loading: boolean;
-  orderDone: boolean;
-}
-
-const CartSide = ({
-  cart, subtotal, discountAmount, finalTotal,
-  paymentMethod, setPaymentMethod,
-  tableIdentifier, setTableIdentifier,
-  discountType, setDiscountType,
-  discountInput, setDiscountInput,
-  showDiscountPanel, setShowDiscountPanel,
-  onDelete, onClear, onFinalize, loading, orderDone,
-}: CartSideProps) => (
-  <div className="flex flex-col h-full min-h-0">
-    {/* Itens */}
-    <div className="flex-1 overflow-y-auto p-3 space-y-1.5 min-h-0">
-      {cart.length === 0 ? (
-        <div className="text-center py-12">
-          <ShoppingCart className="h-10 w-10 text-muted-foreground/20 mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground">Carrinho vazio</p>
-        </div>
-      ) : cart.map(item => (
-        <div key={item.id} className="flex items-center gap-2 bg-muted/30 rounded-xl p-2.5">
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-foreground truncate">{item.name}</p>
-            <p className="text-[10px] text-muted-foreground">{item.quantity}x {formatBRL(item.price)}</p>
-          </div>
-          <p className="text-xs font-black text-foreground shrink-0">{formatBRL(item.price * item.quantity)}</p>
-          <button onClick={() => onDelete(item.id)} className="p-1 text-muted-foreground hover:text-destructive transition-colors">
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      ))}
-    </div>
-
-    {cart.length > 0 && (
-      <div className="p-3 border-t border-border space-y-3 shrink-0">
-        {/* Mesa */}
-        <input
-          type="text"
-          placeholder="Mesa / Comanda (opcional)"
-          value={tableIdentifier}
-          onChange={e => setTableIdentifier(e.target.value)}
-          className="w-full px-3 py-2 bg-muted/50 rounded-xl text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-        />
-
-        {/* Desconto */}
-        <div>
-          <button
-            onClick={() => setShowDiscountPanel(!showDiscountPanel)}
-            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors w-full"
-          >
-            <Tag className="h-3.5 w-3.5" />
-            <span>{discountAmount > 0 ? `Desconto: -${formatBRL(discountAmount)}` : "Adicionar desconto"}</span>
-            <ChevronDown className={`h-3 w-3 ml-auto transition-transform ${showDiscountPanel ? "rotate-180" : ""}`} />
-          </button>
-          {showDiscountPanel && (
-            <div className="mt-2 space-y-2">
-              <div className="flex rounded-xl overflow-hidden border border-border">
-                <button
-                  onClick={() => setDiscountType("value")}
-                  className={`flex-1 py-1.5 text-xs font-bold transition-colors ${discountType === "value" ? "bg-primary text-primary-foreground" : "bg-muted/30 text-muted-foreground"}`}
-                >R$</button>
-                <button
-                  onClick={() => setDiscountType("percent")}
-                  className={`flex-1 py-1.5 text-xs font-bold transition-colors ${discountType === "percent" ? "bg-primary text-primary-foreground" : "bg-muted/30 text-muted-foreground"}`}
-                >%</button>
-              </div>
-              <input
-                type="text" inputMode="decimal"
-                placeholder={discountType === "percent" ? "Ex: 10" : "Ex: 5,00"}
-                value={discountInput}
-                onChange={e => setDiscountInput(e.target.value.replace(/[^0-9.,]/g, ""))}
-                className="w-full px-3 py-2 bg-muted/50 rounded-xl text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Totais */}
-        <div className="space-y-1 py-2 border-t border-border/30">
-          <div className="flex justify-between text-xs">
-            <span className="text-muted-foreground">Subtotal</span>
-            <span className="font-semibold">{formatBRL(subtotal)}</span>
-          </div>
-          {discountAmount > 0 && (
-            <div className="flex justify-between text-xs">
-              <span className="text-emerald-500">Desconto</span>
-              <span className="font-bold text-emerald-500">-{formatBRL(discountAmount)}</span>
-            </div>
-          )}
-          <div className="flex justify-between">
-            <span className="text-sm font-bold text-foreground">Total</span>
-            <span className="text-lg font-black text-primary">{formatBRL(finalTotal)}</span>
-          </div>
-        </div>
-
-        {/* Pagamento */}
-        <div className="space-y-1.5">
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Pagamento</p>
-          <div className="grid grid-cols-2 gap-1.5">
-            {PDV_PAYMENT_METHODS.map(pm => {
-              const Icon = pm.icon;
-              const selected = paymentMethod === pm.id;
-              return (
-                <button
-                  key={pm.id}
-                  onClick={() => setPaymentMethod(pm.id)}
-                  className={`flex items-center gap-1.5 p-2.5 rounded-xl border-2 transition-all text-left ${
-                    selected ? "border-primary bg-primary/5" : "border-transparent bg-muted/50"
-                  }`}
-                >
-                  <Icon className={`h-3.5 w-3.5 shrink-0 ${selected ? "text-primary" : pm.color}`} />
-                  <span className={`text-[11px] font-semibold truncate ${selected ? "text-primary" : "text-foreground"}`}>
-                    {pm.label}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Finalizar */}
-        <div className="space-y-2">
-          <button
-            onClick={onFinalize}
-            disabled={loading || !paymentMethod || orderDone || cart.length === 0}
-            className="w-full bg-primary text-primary-foreground font-bold py-3.5 rounded-2xl text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-50 shadow-lg shadow-primary/25"
-          >
-            {loading ? (
-              <><Loader2 className="h-4 w-4 animate-spin" /> Registrando...</>
-            ) : orderDone ? (
-              <><CheckCircle2 className="h-4 w-4" /> Venda registrada!</>
-            ) : (
-              <>Finalizar Venda <ChevronRight className="h-4 w-4" /></>
-            )}
-          </button>
-          <button
-            onClick={onClear}
-            className="w-full text-xs text-muted-foreground py-1 hover:text-destructive transition-colors"
-          >
-            Cancelar venda
-          </button>
-        </div>
-      </div>
-    )}
-  </div>
-);
 
 export default PdvPage;
