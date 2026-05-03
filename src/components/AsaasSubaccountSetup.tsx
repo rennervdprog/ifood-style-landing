@@ -83,6 +83,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
   const [form, setForm] = useState({
     name: initialData?.name || "",
     email: initialData?.email || "",
+    emailConfirm: "",  // 🔒 campo de confirmação de e-mail
     cpfCnpj: onlyDigits(initialData?.cpfCnpj),
     birthDate: "",
     companyType: "MEI" as "MEI" | "INDIVIDUAL" | "LIMITED" | "ASSOCIATION",
@@ -162,6 +163,16 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
     if (!form.name || !form.email || cleanCpfCnpj.length < 11 || cleanPhone.length < 10 || !form.address ||
         !form.addressNumber || !form.province || cleanCep.length !== 8 || !form.pixAddressKey) {
       toast.error("Preencha todos os campos obrigatórios.");
+      return;
+    }
+
+    // 🔒 Validação: e-mail deve ser confirmado corretamente
+    if (!form.emailConfirm) {
+      toast.error("Confirme seu e-mail antes de continuar.");
+      return;
+    }
+    if (form.email.toLowerCase().trim() !== form.emailConfirm.toLowerCase().trim()) {
+      toast.error("Os e-mails não coincidem. Verifique e tente novamente.");
       return;
     }
     if (personType === "FISICA" && cleanCpfCnpj.length !== 11) {
@@ -445,8 +456,45 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
                   </div>
                   <div className="space-y-2">
                     <Label>E-mail comercial</Label>
-                    <Input type="email" value={form.email} onChange={(e) => update("email", e.target.value)} placeholder="vendas@loja.com" />
+                    <Input
+                      type="email"
+                      value={form.email}
+                      onChange={(e) => update("email", e.target.value)}
+                      placeholder="vendas@loja.com"
+                    />
                   </div>
+                </div>
+
+                {/* 🔒 Confirmação de e-mail */}
+                <div className="space-y-2">
+                  <Label>Confirmar e-mail</Label>
+                  <Input
+                    type="email"
+                    value={form.emailConfirm}
+                    onChange={(e) => update("emailConfirm", e.target.value)}
+                    placeholder="Digite o e-mail novamente"
+                    className={
+                      form.emailConfirm && form.email
+                        ? form.email.toLowerCase().trim() === form.emailConfirm.toLowerCase().trim()
+                          ? "border-emerald-500 focus-visible:ring-emerald-500/30"
+                          : "border-red-500 focus-visible:ring-red-500/30"
+                        : ""
+                    }
+                  />
+                  {form.emailConfirm && form.email && (
+                    form.email.toLowerCase().trim() === form.emailConfirm.toLowerCase().trim() ? (
+                      <p className="text-xs text-emerald-600 flex items-center gap-1.5 font-medium">
+                        <CheckCircle2 className="h-3.5 w-3.5" /> E-mails conferem
+                      </p>
+                    ) : (
+                      <p className="text-xs text-red-500 flex items-center gap-1.5 font-medium">
+                        <AlertCircle className="h-3.5 w-3.5" /> E-mails não coincidem
+                      </p>
+                    )
+                  )}
+                  <p className="text-[11px] text-muted-foreground">
+                    ⚠️ Este e-mail será vinculado à sua conta Asaas de recebimento. Use um e-mail real que você acessa.
+                  </p>
                 </div>
 
                 {isCpf ? (
@@ -488,6 +536,15 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
             <Button className="w-full h-12 text-base font-bold" onClick={() => {
               if (!form.name || !form.email || !form.cpfCnpj) {
                 toast.error("Preencha os campos básicos para continuar.");
+                return;
+              }
+              // 🔒 Validar e-mail antes de avançar
+              if (!form.emailConfirm) {
+                toast.error("Confirme seu e-mail antes de continuar.");
+                return;
+              }
+              if (form.email.toLowerCase().trim() !== form.emailConfirm.toLowerCase().trim()) {
+                toast.error("Os e-mails não coincidem. Verifique e tente novamente.");
                 return;
               }
               setStep(2);
