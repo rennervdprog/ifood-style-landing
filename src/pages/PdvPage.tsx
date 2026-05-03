@@ -15,9 +15,10 @@ import {
   ArrowDownCircle, ArrowUpCircle, Lock, Unlock,
   Receipt, ChevronDown, ChevronRight, RotateCcw,
   Layers, ShoppingCart, ChevronLeft, Calculator, Wallet,
-  History, Printer,
+  History, Printer, BarChart3,
 } from "lucide-react";
 import { PdvHistorico, PdvSessionsList } from "@/components/pdv/PdvHistorico";
+import { PdvRelatorios } from "@/components/pdv/PdvRelatorios";
 
 // Detecta se está em tela mobile (< 768px)
 const useIsMobile = () => {
@@ -113,7 +114,7 @@ const PdvPage = () => {
   const [mobileStep, setMobileStep] = useState<MobileStep>("catalog");
 
   // Abas da tela de venda
-  type Tab = "venda" | "historico" | "turnos";
+  type Tab = "venda" | "historico" | "turnos" | "relatorios";
   const [tab, setTab] = useState<Tab>("venda");
 
   // Abertura
@@ -662,6 +663,10 @@ const PdvPage = () => {
           className={`flex-1 sm:flex-initial px-4 py-2 text-xs font-bold flex items-center justify-center gap-1.5 border-b-2 transition-colors ${tab === "turnos" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
           <Receipt className="h-3.5 w-3.5" /> Turnos
         </button>
+        <button onClick={() => setTab("relatorios")}
+          className={`flex-1 sm:flex-initial px-4 py-2 text-xs font-bold flex items-center justify-center gap-1.5 border-b-2 transition-colors ${tab === "relatorios" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+          <BarChart3 className="h-3.5 w-3.5" /> Relatórios
+        </button>
       </div>
 
       {/* ── HISTÓRICO ── */}
@@ -677,6 +682,12 @@ const PdvPage = () => {
         <div className="flex-1 overflow-y-auto p-3">
           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Turnos anteriores</p>
           {store?.id && <PdvSessionsList storeId={store.id} />}
+        </div>
+      )}
+
+      {tab === "relatorios" && (
+        <div className="flex-1 overflow-y-auto">
+          {store?.id && <PdvRelatorios storeId={store.id} />}
         </div>
       )}
 
