@@ -728,6 +728,40 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
         )}
       </div>
 
+      {/* Preview da cobrança — mostra exatamente o que será cobrado */}
+      <div className="bg-background rounded-xl border border-border p-3 space-y-1.5">
+        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">📊 Preview da cobrança mensal</p>
+        <div className="space-y-1">
+          {fee > 0 && (
+            <div className="flex justify-between text-xs">
+              <span className="text-muted-foreground">Mensalidade</span>
+              <span className="font-bold text-foreground">R$ {fee.toFixed(2).replace(".", ",")}</span>
+            </div>
+          )}
+          {rate > 0 && (
+            <div className="flex justify-between text-xs">
+              <span className="text-muted-foreground">Comissão delivery</span>
+              <span className="font-bold text-foreground">{rate}% do subtotal</span>
+            </div>
+          )}
+          {finalPixOverride !== null && finalPixOverride !== undefined && (
+            <div className="flex justify-between text-xs">
+              <span className="text-muted-foreground">Taxa PIX (override)</span>
+              <span className="font-bold text-foreground">R$ {Number(finalPixOverride).toFixed(2).replace(".", ",")} por transação</span>
+            </div>
+          )}
+          {finalDeliveryOverride !== null && finalDeliveryOverride !== undefined && (
+            <div className="flex justify-between text-xs">
+              <span className="text-muted-foreground">Taxa entrega (override)</span>
+              <span className="font-bold text-foreground">R$ {Number(finalDeliveryOverride).toFixed(2).replace(".", ",")} por pedido</span>
+            </div>
+          )}
+          {fee === 0 && rate === 0 && (
+            <p className="text-xs text-amber-500 font-semibold">⚠️ Sem mensalidade e sem comissão — apenas cobranças PDV acumuladas na fatura</p>
+          )}
+        </div>
+      </div>
+
       {changed && (
         <button
           onClick={handleSave}

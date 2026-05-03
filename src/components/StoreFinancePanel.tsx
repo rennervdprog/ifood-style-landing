@@ -154,8 +154,21 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
     enabled: !!storeId,
   });
 
-  // Previous period orders for growth
-  const { data: prevOrders } = useQuery({
+  // Busca comissão PDV pendente direto do banco (calculada pelo trigger, fonte da verdade)
+  const { data: pdvPlanData } = useQuery({
+    queryKey: ["store-pdv-plan", storeId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("store_plans")
+        .select("pdv_commission_pending, pdv_commission_rate, pdv_enabled")
+        .eq("store_id", storeId)
+        .eq("is_active", true)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!storeId,
+    staleTime: 30_000,
+  });
     queryKey: ["store-finance-prev-orders", storeId, dateFilter],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -735,8 +748,8 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
         </div>
       </div>
 
-      {/* PDV — Caixa Presencial (só exibe se tiver vendas PDV) */}
-      {hasPdv && (
+      {/* PDV — Caixa Presencial (exibe se tiver vendas PDV no período OU comissão pendente) */}
+      {(hasPdv || Number(pdvPlanData?.pdv_commission_pending) > 0) && (
         <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-5 border border-blue-500/20 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent" />
           <div className="relative">
@@ -745,25 +758,48 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
                 <Monitor className="h-4 w-4 text-blue-400" />
               </div>
               <p className="text-sm font-bold text-foreground">PDV — Caixa Presencial</p>
-              <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-[10px]">{pdvOrders.length} pedido{pdvOrders.length !== 1 ? "s" : ""}</Badge>
+              {pdvOrders.length > 0 && (
+                <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-[10px]">
+                  {pdvOrders.length} pedido{pdvOrders.length !== 1 ? "s" : ""}
+                </Badge>
+              )}
             </div>
-            <p className="text-2xl font-black text-blue-400">{formatBRL(pdvSalesTotal)}</p>
+
+            {/* Vendas do período */}
+            {hasPdv && (
+              <p className="text-2xl font-black text-blue-400">{formatBRL(pdvSalesTotal)}</p>
+            )}
+
             <div className="mt-2 grid grid-cols-2 gap-2">
-              <div className="bg-blue-500/5 rounded-xl p-2.5">
-                <p className="text-[10px] text-muted-foreground">Recebido direto</p>
-                <p className="text-sm font-black text-foreground">
-                  {formatBRL(subtractMoney(pdvSalesTotal, pdvCommissionTotal))}
-                </p>
-              </div>
+              {hasPdv && (
+                <div className="bg-blue-500/5 rounded-xl p-2.5">
+                  <p className="text-[10px] text-muted-foreground">Recebido direto</p>
+                  <p className="text-sm font-black text-foreground">
+                    {formatBRL(pdvSalesTotal)}
+                  </p>
+                </div>
+              )}
+
+              {/* Comissão pendente — lida do banco (acumulada pelo trigger) */}
               <div className="bg-amber-500/5 rounded-xl p-2.5">
-                <p className="text-[10px] text-muted-foreground">Comissão na fatura</p>
+                <p className="text-[10px] text-muted-foreground">Comissão pendente na fatura</p>
                 <p className="text-sm font-black text-amber-500">
-                  {pdvCommissionTotal > 0 ? formatBRL(pdvCommissionTotal) : "—"}
+                  {Number(pdvPlanData?.pdv_commission_pending) > 0
+                    ? formatBRL(Number(pdvPlanData?.pdv_commission_pending))
+                    : Number(pdvPlanData?.pdv_commission_rate) === 0
+                      ? "Isento (0%)"
+                      : "—"
+                  }
                 </p>
               </div>
             </div>
+
+            {/* Informação da taxa PDV */}
             <p className="text-[10px] text-muted-foreground mt-2">
-              💳 Maquininha própria — sem taxa PIX. Comissão cobrada na fatura mensal.
+              {Number(pdvPlanData?.pdv_commission_rate) === 0
+                ? "✅ Seu plano isenta de comissão no PDV — apenas mensalidade."
+                : `💳 Maquininha própria — ${pdvPlanData?.pdv_commission_rate}% por venda, cobrado na fatura mensal.`
+              }
             </p>
           </div>
         </div>
