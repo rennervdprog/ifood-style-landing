@@ -952,20 +952,6 @@ const CatalogSection = ({
 // CARRINHO + PAGAMENTO — reutilizado no desktop e no mobile
 // ─────────────────────────────────────────────────────────────────────────────
 
-const PDV_METHODS = [
-  { id: "dinheiro",           label: "Dinheiro",    icon: Banknote,   color: "emerald" },
-  { id: "maquininha_credito", label: "Crédito",     icon: CreditCard, color: "blue"    },
-  { id: "maquininha_debito",  label: "Débito",      icon: CreditCard, color: "indigo"  },
-  { id: "maquininha_pix",     label: "PIX",         icon: Smartphone, color: "orange"  },
-];
-
-const COLOR_MAP: Record<string, string> = {
-  emerald: "bg-emerald-500/10 text-emerald-600 border-emerald-500/25 data-[sel=true]:bg-emerald-500 data-[sel=true]:text-white data-[sel=true]:border-emerald-500",
-  blue:    "bg-blue-500/10 text-blue-600 border-blue-500/25 data-[sel=true]:bg-blue-500 data-[sel=true]:text-white data-[sel=true]:border-blue-500",
-  indigo:  "bg-indigo-500/10 text-indigo-600 border-indigo-500/25 data-[sel=true]:bg-indigo-500 data-[sel=true]:text-white data-[sel=true]:border-indigo-500",
-  orange:  "bg-primary/10 text-primary border-primary/25 data-[sel=true]:bg-primary data-[sel=true]:text-white data-[sel=true]:border-primary",
-};
-
 const CartSection = ({
   cart, tableId, setTableId, totalItems, clearSale,
   subtotal, discountAmount, finalTotal,
