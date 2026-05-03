@@ -18,6 +18,8 @@ import {
   History, Printer, BarChart3,
 } from "lucide-react";
 import { PdvHistorico, PdvSessionsList } from "@/components/pdv/PdvHistorico";
+import ProductDetailModal from "@/components/ProductDetailModal";
+import type { CartAddon } from "@/contexts/CartContext";
 import { PdvRelatorios } from "@/components/pdv/PdvRelatorios";
 
 // Detecta se está em tela mobile (< 768px)
@@ -60,8 +62,12 @@ interface MenuSection {
 interface CartItem {
   id: string;
   name: string;
-  price: number;
+  price: number;         // preço unitário total (base + addons)
+  basePrice: number;     // preço base sem adicionais
   quantity: number;
+  addons?: CartAddon[];
+  observations?: string;
+  image_url?: string | null;
 }
 
 interface PdvSession {
@@ -132,6 +138,9 @@ const PdvPage = () => {
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [orderDone, setOrderDone] = useState(false);
+
+  // Modal de produto (adicionais, bordas, observações)
+  const [productModal, setProductModal] = useState<any | null>(null);
 
   // Modais
   const [movModal, setMovModal] = useState<"sangria" | "suprimento" | null>(null);
@@ -207,6 +216,7 @@ const PdvPage = () => {
 
   // ── Cálculos do carrinho ──
   const subtotal = sumMoney(cart.map(i => i.price * i.quantity));
+  // Nota: i.price já inclui o valor dos adicionais (totalUnitPrice do modal)
   const totalItems = cart.reduce((a, i) => a + i.quantity, 0);
 
   const discountAmount = useMemo(() => {
@@ -244,11 +254,46 @@ const PdvPage = () => {
   const getQty = (id: string) => cart.find(i => i.id === id)?.quantity ?? 0;
 
   // ── Ações carrinho ──
-  const addItem = (p: Product) => setCart(prev => {
-    const ex = prev.find(i => i.id === p.id);
-    if (ex) return prev.map(i => i.id === p.id ? { ...i, quantity: i.quantity + 1 } : i);
-    return [...prev, { id: p.id, name: p.name, price: Number(p.price), quantity: 1 }];
-  });
+  // Abre o modal de produto para configurar adicionais
+  // Se o produto não tem adicionais (verificado depois do modal), adiciona direto
+  const openProduct = (p: Product) => setProductModal(p);
+
+  // Adicionar ao carrinho após configurar no modal
+  const handleModalAdd = (
+    product: any,
+    addons: CartAddon[],
+    observations: string,
+    quantity: number,
+    totalUnitPrice: number
+  ) => {
+    // Gera uma chave única incluindo adicionais (permite mesmo produto com configurações diferentes)
+    const addonKey = addons.map(a => a.name).sort().join(",");
+    const cartKey = `${product.id}__${addonKey}__${observations}`;
+    setCart(prev => {
+      const existing = prev.find(i => i.id === product.id && (i.addons?.map(a=>a.name).sort().join(",") || "") === addonKey && (i.observations||"") === observations);
+      if (existing) {
+        return prev.map(i =>
+          i.id === product.id && (i.addons?.map(a=>a.name).sort().join(",") || "") === addonKey
+            ? { ...i, quantity: i.quantity + quantity }
+            : i
+        );
+      }
+      return [...prev, {
+        id: product.id,
+        name: product.name,
+        basePrice: Number(product.price),
+        price: totalUnitPrice,
+        quantity,
+        addons: addons.length > 0 ? addons : undefined,
+        observations: observations || undefined,
+        image_url: product.image_url,
+      }];
+    });
+    setProductModal(null);
+  };
+
+  // addItem simples (sem adicionais) — mantido para compatibilidade com +/- no carrinho
+  const addItem = (p: Product) => openProduct(p);
 
   const decItem = (id: string) => setCart(prev => {
     const it = prev.find(i => i.id === id);
@@ -310,7 +355,14 @@ const PdvPage = () => {
       if (oe) throw oe;
 
       await supabase.from("order_items").insert(
-        cart.map(item => ({ order_id: order.id, product_id: item.id, quantity: item.quantity, unit_price: item.price }))
+        cart.map(item => ({
+          order_id: order.id,
+          product_id: item.id,
+          quantity: item.quantity,
+          unit_price: item.price,
+          addons: item.addons && item.addons.length > 0 ? JSON.stringify(item.addons) : null,
+          observations: item.observations || null,
+        }))
       );
 
       await supabase.from("pdv_movements" as any).insert({
@@ -792,6 +844,15 @@ const PdvPage = () => {
         </>
       )}
 
+      {/* ── MODAL DE PRODUTO (adicionais, bordas, observações) ── */}
+      <ProductDetailModal
+        product={productModal}
+        storeName={store?.name || ""}
+        open={!!productModal}
+        onClose={() => setProductModal(null)}
+        onAdd={handleModalAdd}
+      />
+
       {/* ── MODAL SANGRIA / SUPRIMENTO ── */}
       {movModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
@@ -1000,15 +1061,27 @@ const CartSection = ({
           <p className="text-xs text-muted-foreground">Selecione os produtos</p>
         </div>
       ) : cart.map((item: any) => (
-        <div key={item.id} className="flex items-center gap-2 px-2.5 py-2 rounded-xl hover:bg-muted/30 group transition-colors">
-          <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-            <span className="text-[11px] font-black text-primary">{item.quantity}</span>
+        <div key={`${item.id}__${(item.addons||[]).map(a=>a.name).join(",")}`} className="px-2.5 py-2 rounded-xl hover:bg-muted/30 group transition-colors">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+              <span className="text-[11px] font-black text-primary">{item.quantity}</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-foreground truncate">{item.name}</p>
+              {item.addons && item.addons.length > 0 && (
+                <p className="text-[10px] text-muted-foreground truncate">
+                  {item.addons.map(a => a.name).join(", ")}
+                </p>
+              )}
+              {item.observations && (
+                <p className="text-[10px] text-amber-600 italic truncate">"{item.observations}"</p>
+              )}
+            </div>
+            <p className="text-xs font-black text-foreground shrink-0">{formatBRL(item.price * item.quantity)}</p>
+            <button onClick={() => removeItem(item.id)} className="p-0.5 text-muted-foreground hover:text-destructive transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100">
+              <X className="h-3.5 w-3.5" />
+            </button>
           </div>
-          <p className="flex-1 text-xs font-medium text-foreground truncate">{item.name}</p>
-          <p className="text-xs font-black text-foreground shrink-0">{formatBRL(item.price * item.quantity)}</p>
-          <button onClick={() => removeItem(item.id)} className="p-0.5 text-muted-foreground hover:text-destructive transition-colors">
-            <X className="h-3.5 w-3.5" />
-          </button>
         </div>
       ))}
     </div>
