@@ -66,15 +66,15 @@ const steps = [
  ];
  
  const features = [
-   { icon: Smartphone, title: "Cardápio Digital", desc: "Link profissional com fotos em alta definição, sem o cliente precisar baixar nada." },
-   { icon: CreditCard, title: "PIX Automático", desc: "Receba e confirme pagamentos instantaneamente sem conferir extratos." },
-   { icon: Truck, title: "Gestão de Motoboy", desc: "Chame seus entregadores com alerta sonoro e rastreie o pedido em tempo real." },
-   { icon: BarChart3, title: "Relatórios de Vendas", desc: "Saiba exatamente quanto vendeu, quais os produtos favoritos e seu lucro real." },
-    { icon: CreditCard, title: "Pagamento Online", desc: "Receba via PIX com confirmação automática e instantânea no seu painel." },
-    { icon: Bell, title: "Alertas Sonoros", desc: "Notificações em tempo real para você preparar e enviar pedidos sem atrasos." },
-   { icon: Package, title: "Impressão de Pedidos", desc: "Organize sua cozinha com a impressão automática de comandas e notas." },
-   { icon: ShieldCheck, title: "Segurança Total", desc: "Plataforma estável e segura para processar seus pagamentos e dados." },
- ];
+  { icon: Smartphone, title: "Cardápio Digital", desc: "Link profissional com fotos em alta definição. Seus clientes pedem pelo celular sem instalar nada." },
+  { icon: CreditCard, title: "PIX Automático", desc: "QR Code gerado na hora. Confirmação instantânea no seu painel — sem conferir extrato." },
+  { icon: Truck, title: "Gestão de Motoboys", desc: "Alerta sonoro para o entregador, rastreamento em tempo real e código PIN de confirmação." },
+  { icon: BarChart3, title: "Relatórios Completos", desc: "Vendas por dia, produtos mais pedidos, ticket médio e financeiro completo — delivery e PDV separados." },
+  { icon: Bell, title: "Notificações em Tempo Real", desc: "Push no celular para novos pedidos. Nunca mais perde um pedido por falta de alerta." },
+  { icon: Package, title: "Impressão de Comandas", desc: "Imprima pedidos automaticamente na cozinha. Organize a produção sem confusão." },
+  { icon: ShieldCheck, title: "Segurança Total", desc: "Dados criptografados, controle de acesso por perfil (lojista/motoboy/cliente) e pagamentos via Asaas." },
+  { icon: Store, title: "PDV — Caixa Presencial", desc: "Venda no balcão com caixa digital, controle de troco, sangria/suprimento e relatório de turno. Sem taxa PIX." },
+];
 
 const plans = [
   {
@@ -123,13 +123,13 @@ const plans = [
      description: "Para lojas em expansão que buscam reduzir custos de comissão e ter mais controle profissional.",
     features: [
       "Tudo do plano Comissão",
-        "Comissão reduzida para 2,5%",
-         "Suporte prioritário",
-       "Relatórios e Financeiro 100%",
-      "Banners ilimitados",
+      "Comissão reduzida para 2,5%",
+      "PDV — Caixa presencial (1% comissão)",
+      "Banners ilimitados na loja",
       "Agendamento de pedidos",
       "Destaque na vitrine",
-      "Cardápio com fotos HD",
+      "Programa de fidelidade",
+      "Suporte prioritário",
     ],
     extraFees: [],
   },
@@ -151,10 +151,10 @@ const plans = [
      description: "Edição histórica de lançamento. Mesmos benefícios do Essencial com valor reduzido vitalício para os primeiros.",
     features: [
       "Tudo do plano Essencial",
-       "Zero comissão fixa (0%)",
-        "Valor mensal fixo vitalício",
-      "Selo de Apoiador na loja",
-      "Suporte VIP prioritário",
+      "Zero comissão delivery (0%)",
+      "PDV — Caixa presencial (0% comissão)",
+      "Valor mensal fixo vitalício",
+      "Selo exclusivo de Apoiador",
       "Acesso antecipado a novidades",
       "Apenas 10 vagas disponíveis",
     ],
@@ -183,10 +183,11 @@ const plans = [
     features: [
       "Todas as ferramentas inclusas",
       "Zero comissão por venda (0%)",
-      "Emissão de Notas Fiscais inclusa",
-        "Integração com alerta para Motoboy",
-       "Suporte VIP em 15 minutos",
-       "ROI escalável e garantido",
+      "PDV — Caixa presencial (0% comissão)",
+      "Gestão completa de motoboys",
+      "Relatórios financeiros avançados",
+      "Suporte prioritário via WhatsApp",
+      "7 dias grátis para testar",
     ],
     extraFees: [
        { label: "Taxa PIX", value: "R$ 1,99/transação" },
@@ -196,36 +197,50 @@ const plans = [
   },
 ];
 
- const benefits = [
-   {
-     icon: "🍕",
-     segment: "Pizzarias & Hamburguerias",
-     headline: "Chega de erros nos pedidos",
-     text: "Bordas recheadas, adicionais e pizzas meio-a-meio organizadas automaticamente para a sua cozinha.",
-   },
-   {
-     icon: "🛒",
-     segment: "Mercados & Adegas",
-     headline: "Seu estoque no celular",
-     text: "Cadastre centenas de itens rapidamente. Preços e estoque atualizados em tempo real para seus clientes.",
-   },
-   {
-     icon: "🍰",
-     segment: "Docerias & Padarias",
-     headline: "Agendamento Inteligente",
-     text: "Permita que seus clientes agendem a retirada ou entrega. Organize sua produção sem estresse no WhatsApp.",
-   },
- ];
+const benefits = [
+  {
+    icon: "🍕",
+    segment: "Pizzarias & Hamburguerias",
+    headline: "Chega de erros nos pedidos",
+    text: "Bordas recheadas, adicionais e pizzas meio-a-meio organizadas automaticamente. Comanda impressa direto na cozinha.",
+  },
+  {
+    icon: "🛒",
+    segment: "Mercados & Adegas",
+    headline: "Cardápio com centenas de itens",
+    text: "Cadastre produtos rapidamente por categoria. Clientes pedem pelo link sem precisar ligar ou mandar mensagem.",
+  },
+  {
+    icon: "🍰",
+    segment: "Docerias & Padarias",
+    headline: "Agendamento inteligente",
+    text: "Clientes agendam a retirada ou entrega com antecedência. Organize sua produção do dia sem caos no WhatsApp.",
+  },
+  {
+    icon: "🍺",
+    segment: "Bares & Restaurantes",
+    headline: "Delivery + Balcão no mesmo sistema",
+    text: "Receba pedidos online e use o PDV para registrar vendas presenciais. Caixa único, relatório unificado.",
+  },
+  {
+    icon: "💈",
+    segment: "Lojas & Serviços",
+    headline: "Venda sem delivery",
+    text: "Use o cardápio digital como vitrine de produtos e o PDV para vendas no balcão. Sem precisar de motoboy.",
+  },
+];
 
 const faqs = [
-  { q: "Preciso baixar algum aplicativo?", a: "Não! Você gerencia tudo pelo navegador do celular ou computador. Seus clientes também pedem direto pelo link, sem instalar nada." },
-  { q: "Como funciona o PIX automático?", a: "Quando o cliente escolhe PIX, geramos um QR Code automaticamente. Assim que ele paga, a confirmação é instantânea — sem precisar conferir extrato." },
-  { q: "Posso trocar de plano depois?", a: "Sim! Você pode migrar entre planos a qualquer momento. Basta solicitar pelo painel da loja e o admin aprova a troca." },
-  { q: "O plano Essencial cobra alguma comissão?", a: "Não! Zero comissão. Você fica com 100% do pedido. Há apenas uma taxa PIX fixa de R$ 1,99 por transação e R$ 2,00 por entrega via plataforma (valor pago pelo cliente somado à sua taxa)." },
-  { q: "Como recebo os pedidos?", a: "Você recebe notificação sonora e push no celular em tempo real. O painel mostra todos os pedidos organizados para você gerenciar." },
-  { q: "Funciona na minha cidade?", a: "Sim! Atendemos lojistas em todo o Brasil — de capitais a cidades pequenas. Use como cardápio digital com entregador próprio em qualquer lugar do país." },
-   { q: "Quanto economizo comparado aos grandes apps de delivery?", a: "Muito. Os grandes marketplaces costumam cobrar comissões altas por pedido. Aqui você paga 6% (plano grátis) ou 0% (planos pagos), o que pode representar uma economia significativa no fim do mês." },
-  { q: "Tem contrato ou multa?", a: "Não. Cancele quando quiser, sem multa e sem fidelidade." },
+  { q: "Preciso baixar algum aplicativo?", a: "Não! Você gerencia tudo pelo navegador do celular ou computador. Seus clientes pedem pelo link da loja, sem instalar nada." },
+  { q: "Como funciona o PIX automático?", a: "Quando o cliente escolhe PIX, geramos um QR Code automaticamente. A confirmação é instantânea no seu painel — sem conferir extrato." },
+  { q: "O plano Essencial cobra comissão?", a: "Não! Zero comissão sobre as vendas. Há apenas R$ 1,99 por transação PIX (descontado do valor repassado) e R$ 2,00 por entrega somado à sua taxa — esse valor é pago pelo cliente, não sai do seu bolso." },
+  { q: "O que é o módulo PDV?", a: "É um caixa registradora digital integrado ao sistema. Você abre e fecha turnos, registra vendas no balcão com maquininha própria (sem taxa PIX), calcula troco automaticamente e acompanha relatórios separados de delivery e presencial. Incluso em todos os planos." },
+  { q: "Posso usar sem motoboy próprio?", a: "Sim! No modo cardápio digital, você recebe os pedidos e usa sua própria equipe de entrega. A plataforma funciona em todo o Brasil mesmo sem usar a logística da plataforma." },
+  { q: "Como recebo os pedidos?", a: "Notificação sonora e push no celular em tempo real. O painel organiza os pedidos por status: pendente, preparando, saiu para entrega e finalizado." },
+  { q: "Funciona na minha cidade?", a: "Sim! Atendemos lojistas em todo o Brasil — capitais, cidades do interior e municípios pequenos. A plataforma foi desenvolvida justamente para quem não tem acesso aos grandes marketplaces." },
+  { q: "Posso trocar de plano?", a: "Sim, a qualquer momento. Basta solicitar pelo painel e o administrador realiza a migração. Nenhuma penalidade e sem perder o histórico de pedidos." },
+  { q: "Quanto economizo em relação aos grandes apps?", a: "Os grandes marketplaces cobram entre 12% e 30% por pedido, além de cobranças por destaque e publicidade. No ItaSuper você paga 6% (plano Comissão) ou 0% (planos pagos), com taxas fixas e transparentes." },
+  { q: "Tem contrato ou fidelidade?", a: "Não. Cancele quando quiser, sem multa e sem fidelidade mínima." },
 ];
 
 /* ─── Navbar ─── */
@@ -355,7 +370,7 @@ const StoreDirectory = () => {
     window.open("https://wa.me/5514991624997?text=Olá! Tenho interesse em cadastrar minha loja na plataforma.", "_blank");
 
   useEffect(() => {
-    document.title = "ItaSuper — Cardápio digital e delivery próprio para lojas em todo o Brasil";
+    document.title = "ItaSuper — Cardápio digital, delivery próprio e PDV para lojas em todo o Brasil";
   }, []);
 
   // Registra visualização da landing (RPC ignora admin/moderador/contas internas)
@@ -441,12 +456,12 @@ const StoreDirectory = () => {
           </div>
 
            <h1 className="text-6xl lg:text-8xl font-black tracking-tight text-foreground leading-[0.9] mb-8 animate-in fade-in slide-in-from-bottom-6 duration-1000">
-             O delivery que <br className="hidden md:block" />
-             te dá <span className="text-primary relative inline-block">liberdade<span className="absolute -bottom-2 left-0 w-full h-3 bg-primary/20 -z-10 rounded-full" /></span>.
+             Delivery e balcão <br className="hidden md:block" />
+             com total <span className="text-primary relative inline-block">liberdade<span className="absolute -bottom-2 left-0 w-full h-3 bg-primary/20 -z-10 rounded-full" /></span>.
            </h1>
 
            <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto mb-12 leading-relaxed font-medium animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
-             Cardápio digital, gestão de motoboys e <span className="text-foreground font-bold">PIX automático</span>. Tudo o que você precisa para vender sem depender das taxas dos grandes apps.
+             Cardápio digital, <span className="text-foreground font-bold">PIX automático</span>, gestão de motoboys e <span className="text-foreground font-bold">caixa presencial (PDV)</span>. Delivery e balcão num só sistema — sem pagar comissão para os grandes apps.
           </p>
 
            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-in fade-in zoom-in-95 duration-1000 delay-300">
@@ -461,9 +476,15 @@ const StoreDirectory = () => {
           </div>
 
           {/* Honest launch badge instead of fake numbers */}
-           <div className="mt-10 inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-4 py-2 text-sm font-semibold text-primary">
-             <ShieldCheck className="h-4 w-4" />
-             Delivery próprio • Autonomia total para o seu negócio 🇧🇷
+           <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
+             <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-4 py-2 text-sm font-semibold text-primary">
+               <ShieldCheck className="h-4 w-4" />
+               Delivery próprio • Sem depender dos grandes apps
+             </div>
+             <div className="inline-flex items-center gap-2 rounded-full bg-blue-500/10 border border-blue-500/20 px-4 py-2 text-sm font-semibold text-blue-600">
+               <Store className="h-4 w-4" />
+               PDV integrado • Venda no balcão também
+             </div>
            </div>
 
           {/* Trust badges */}
@@ -697,7 +718,7 @@ const StoreDirectory = () => {
             Tudo que seu delivery precisa
           </h2>
           <p className="text-center text-muted-foreground mb-14 max-w-xl mx-auto">
-            Praticidade total para você e para seu cliente. Incluso em todos os planos.
+            Do pedido online ao caixa presencial. Tudo incluso em todos os planos.
           </p>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {features.map((f) => (
@@ -745,6 +766,83 @@ const StoreDirectory = () => {
        </section>
 
       {/* ══════ PLANS ══════ */}
+
+      {/* ══════ PDV — DESTAQUE ══════ */}
+      <section className="py-20 px-4 bg-gradient-to-br from-blue-500/5 via-background to-primary/5 border-y border-border">
+        <div className="mx-auto max-w-5xl">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full bg-blue-500/10 px-4 py-2 text-sm font-semibold text-blue-600 mb-6 border border-blue-500/20">
+                <Store className="h-4 w-4" />
+                Módulo PDV — Caixa Presencial
+              </div>
+              <h2 className="text-4xl md:text-5xl font-black text-foreground mb-6 leading-none">
+                Delivery e balcão <br />
+                <span className="text-primary">num só sistema.</span>
+              </h2>
+              <p className="text-xl text-muted-foreground mb-8 font-medium">
+                Registre vendas presenciais com caixa digital completo. Sem mensalidade extra, incluso em todos os planos.
+              </p>
+              <div className="space-y-3">
+                {[
+                  { icon: "🖥️", title: "Abertura e fechamento de turno", desc: "Controle quem abriu, quando fechou e o saldo do caixa." },
+                  { icon: "💵", title: "Cálculo de troco automático", desc: "Digite o valor recebido e o troco aparece na tela. Sem erro." },
+                  { icon: "📊", title: "Relatório separado por canal", desc: "Veja o que veio de delivery e o que veio do balcão, separados." },
+                  { icon: "💳", title: "Sem taxa PIX na maquininha", desc: "Use sua maquininha própria. A plataforma não cobra R$ 1,99 nesse canal." },
+                ].map((item) => (
+                  <div key={item.title} className="flex gap-3 items-start rounded-2xl border border-border bg-card p-4 hover:border-blue-500/20 transition-colors">
+                    <span className="text-2xl shrink-0">{item.icon}</span>
+                    <div>
+                      <p className="text-sm font-bold text-foreground">{item.title}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="bg-card border border-blue-500/20 rounded-3xl p-6 space-y-4 shadow-xl">
+              <div className="flex items-center justify-between border-b border-border pb-4">
+                <div>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">PDV · Turno aberto</p>
+                  <p className="text-sm font-black text-foreground mt-0.5">Minha Loja</p>
+                </div>
+                <div className="bg-emerald-500/10 text-emerald-600 text-xs font-black px-3 py-1.5 rounded-full border border-emerald-500/20">● Aberto</div>
+              </div>
+              <div className="space-y-2">
+                {[
+                  { name: "X-Burguer Duplo", qty: "2x", price: "R$ 44,00", method: "💳" },
+                  { name: "Frango Grelhado", qty: "1x", price: "R$ 28,50", method: "💵" },
+                  { name: "Combo Família", qty: "1x", price: "R$ 89,90", method: "📱" },
+                ].map((item) => (
+                  <div key={item.name} className="flex items-center gap-3 bg-muted/30 rounded-xl p-3">
+                    <span className="text-xs font-black text-primary bg-primary/10 w-7 h-7 rounded-lg flex items-center justify-center">{item.qty}</span>
+                    <p className="flex-1 text-xs font-semibold text-foreground truncate">{item.name}</p>
+                    <span className="text-sm">{item.method}</span>
+                    <p className="text-xs font-black text-foreground">{item.price}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="border-t border-border pt-3 flex justify-between">
+                <span className="text-sm font-bold">Total do turno</span>
+                <span className="text-xl font-black text-primary">R$ 162,40</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-muted/30 rounded-xl p-3 text-center">
+                  <p className="text-[10px] text-muted-foreground">Comissão PDV</p>
+                  <p className="text-base font-black text-foreground">R$ 0,00</p>
+                  <p className="text-[9px] text-emerald-600 font-bold">Plano Essencial</p>
+                </div>
+                <div className="bg-primary/5 border border-primary/10 rounded-xl p-3 text-center">
+                  <p className="text-[10px] text-muted-foreground">Seu lucro</p>
+                  <p className="text-base font-black text-primary">R$ 162,40</p>
+                  <p className="text-[9px] text-muted-foreground">100% pra você</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section id="planos" className="py-20 px-4">
         <div className="mx-auto max-w-6xl">
           <h2 className="text-3xl font-bold tracking-tight text-center text-foreground mb-4">
@@ -757,7 +855,7 @@ const StoreDirectory = () => {
           <div className="flex justify-center mb-14">
             <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-600 border border-emerald-200">
               <Sparkles className="h-3.5 w-3.5" />
-              🎁 Plano Comissão grátis para sempre! Planos pagos com 7 dias grátis.
+              🎁 Plano Comissão grátis para sempre! Planos pagos com 7 dias grátis. Módulo PDV incluso em todos.
             </div>
           </div>
 
@@ -971,11 +1069,12 @@ const StoreDirectory = () => {
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/20 pointer-events-none" />
         <div className="relative mx-auto max-w-2xl text-center">
           <h2 className="text-3xl font-bold tracking-tight text-foreground mb-4">
-            Seu cardápio digital pronto em 5 minutos
+            Delivery e balcão num só lugar
           </h2>
           <p className="text-muted-foreground mb-8 leading-relaxed text-base font-medium">
-            Cadastre sua loja agora e comece a receber pedidos pelo celular ainda hoje.
-            <span className="block mt-1 font-semibold text-primary">É grátis para começar!</span>
+            Cardápio digital, PIX automático, gestão de motoboys e caixa PDV presencial.
+            Tudo pronto em menos de 5 minutos.
+            <span className="block mt-1 font-semibold text-primary">Comece grátis — sem cartão de crédito.</span>
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button size="lg" onClick={handleCTA} className="text-base px-8 py-6 rounded-2xl shadow-lg shadow-primary/20">
