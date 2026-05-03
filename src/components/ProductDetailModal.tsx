@@ -59,7 +59,8 @@ const categoryEmoji: Record<string, string> = {
 };
 
 const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, onAdd }: Props) => {
-  const [selectedAddons, setSelectedAddons] = useState<Record<string, string[]>>({});
+  // itemId → quantidade (0 = não selecionado)
+  const [selectedAddons, setSelectedAddons] = useState<Record<string, Record<string, number>>>({});
   const [observations, setObservations] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
@@ -73,7 +74,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
   const [step, setStep] = useState<1 | 2>(1);
 
   const resetState = () => {
-    setSelectedAddons({});
+    setSelectedAddons({});  // Record<groupId, Record<itemId, qty>>
     setObservations("");
     setQuantity(1);
     setSelectedSize(null);
@@ -181,22 +182,52 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
 
   const totalSteps = calculateTotalSteps();
 
-  const toggleAddon = (groupId: string, itemId: string, maxSelect: number) => {
+  // Total de itens selecionados num grupo (soma das quantidades)
+  const groupTotal = (groupId: string) =>
+    Object.values(selectedAddons[groupId] || {}).reduce((s, q) => s + q, 0);
+
+  const getAddonQty = (groupId: string, itemId: string) =>
+    selectedAddons[groupId]?.[itemId] || 0;
+
+  const addAddon = (groupId: string, itemId: string, maxSelect: number) => {
     setSelectedAddons((prev) => {
-      const current = prev[groupId] || [];
-      if (current.includes(itemId)) return { ...prev, [groupId]: current.filter((id) => id !== itemId) };
-      if (current.length >= maxSelect) {
-        if (maxSelect === 1) return { ...prev, [groupId]: [itemId] };
+      const groupQtys = prev[groupId] || {};
+      const currentQty = groupQtys[itemId] || 0;
+      const total = Object.values(groupQtys).reduce((s, q) => s + q, 0);
+      // Atingiu o máximo do grupo
+      if (total >= maxSelect) {
+        // Máximo 1: substitui o atual pelo novo
+        if (maxSelect === 1) return { ...prev, [groupId]: { [itemId]: 1 } };
         return prev;
       }
-      return { ...prev, [groupId]: [...current, itemId] };
+      return { ...prev, [groupId]: { ...groupQtys, [itemId]: currentQty + 1 } };
     });
+  };
+
+  const removeAddon = (groupId: string, itemId: string) => {
+    setSelectedAddons((prev) => {
+      const groupQtys = { ...(prev[groupId] || {}) };
+      const currentQty = groupQtys[itemId] || 0;
+      if (currentQty <= 1) {
+        delete groupQtys[itemId];
+      } else {
+        groupQtys[itemId] = currentQty - 1;
+      }
+      return { ...prev, [groupId]: groupQtys };
+    });
+  };
+
+  // Manter toggleAddon para compatibilidade (max_select=1 usa toggle simples)
+  const toggleAddon = (groupId: string, itemId: string, maxSelect: number) => {
+    const qty = getAddonQty(groupId, itemId);
+    if (qty > 0) removeAddon(groupId, itemId);
+    else addAddon(groupId, itemId, maxSelect);
   };
 
   const allRequiredMet = useMemo(() => {
     const addonsMet = addonGroups.every((g) => {
       if (g.min_select === 0) return true;
-      return (selectedAddons[g.id]?.length || 0) >= g.min_select;
+      return groupTotal(g.id) >= g.min_select;
     });
     if (hasSizes && !selectedSize) return false;
     if (isLanche && meatOptions.length > 0 && !selectedMeatDoneness) return false;
@@ -209,15 +240,20 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
 
   const selectedAddonsList: CartAddon[] = useMemo(() => {
     return addonGroups.flatMap((group) => {
-      const groupSelected = selectedAddons[group.id] || [];
+      const groupQtys = selectedAddons[group.id] || {};
       return addonItems
-        .filter((ai) => ai.group_id === group.id && groupSelected.includes(ai.id))
-        .map((ai) => ({
-          name: ai.name,
-          price: ai.price,
-          required: group.min_select > 0,
-          groupName: group.name,
-        }));
+        .filter((ai) => ai.group_id === group.id && (groupQtys[ai.id] || 0) > 0)
+        .flatMap((ai) => {
+          const qty = groupQtys[ai.id] || 1;
+          // Repete o addon N vezes para manter compatibilidade com CartAddon[]
+          // ou usa qty como multiplicador no preço
+          return Array.from({ length: qty }, () => ({
+            name: ai.name,
+            price: ai.price,
+            required: group.min_select > 0,
+            groupName: group.name,
+          }));
+        });
     });
   }, [addonItems, addonGroups, selectedAddons]);
 
@@ -351,27 +387,78 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
         </div>
         <div className="space-y-2">
           {items.map((item) => {
-            const isChecked = selectedAddons[group.id]?.includes(item.id) || false;
+            const qty = getAddonQty(group.id, item.id);
+            const isChecked = qty > 0;
+            const allowMultiple = group.max_select > 1;
             return (
-              <button
+              <div
                 key={item.id}
-                type="button"
-                onClick={() => toggleAddon(group.id, item.id, group.max_select)}
                 className={cn(
-                  "flex min-h-[48px] w-full items-center gap-3 rounded-xl border px-3 py-3 text-left transition active:scale-[0.99]",
-                  isChecked ? "border-primary bg-primary/10" : "border-border bg-background hover:bg-muted/60",
+                  "flex min-h-[48px] w-full items-center gap-3 rounded-xl border px-3 py-2.5 transition",
+                  isChecked ? "border-primary bg-primary/10" : "border-border bg-background",
                 )}
               >
-                <span className={cn("flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2", isChecked ? "border-primary bg-primary" : "border-muted-foreground/40 bg-background")}>
-                  {isChecked && (
-                    <svg className="h-3 w-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
+                {/* Checkbox (para seleção única) ou ícone de checked (para múltiplos) */}
+                {!allowMultiple ? (
+                  <button
+                    type="button"
+                    onClick={() => toggleAddon(group.id, item.id, group.max_select)}
+                    className={cn("flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2", isChecked ? "border-primary bg-primary" : "border-muted-foreground/40 bg-background")}
+                  >
+                    {isChecked && (
+                      <svg className="h-3 w-3 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => removeAddon(group.id, item.id)}
+                      disabled={qty === 0}
+                      className={cn(
+                        "flex h-7 w-7 items-center justify-center rounded-lg border-2 transition active:scale-90",
+                        qty > 0 ? "border-primary bg-primary text-white" : "border-muted-foreground/20 text-muted-foreground/30"
+                      )}
+                    >
+                      <Minus className="h-3.5 w-3.5" />
+                    </button>
+                    <span className={cn("w-5 text-center text-sm font-black", qty > 0 ? "text-primary" : "text-muted-foreground/40")}>
+                      {qty}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => addAddon(group.id, item.id, group.max_select)}
+                      disabled={groupTotal(group.id) >= group.max_select}
+                      className={cn(
+                        "flex h-7 w-7 items-center justify-center rounded-lg border-2 transition active:scale-90",
+                        groupTotal(group.id) < group.max_select ? "border-primary bg-primary text-white" : "border-muted-foreground/20 text-muted-foreground/30"
+                      )}
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )}
+
+                {/* Nome — clicável para toggle no modo único */}
+                <button
+                  type="button"
+                  onClick={() => !allowMultiple && toggleAddon(group.id, item.id, group.max_select)}
+                  className={cn("min-w-0 flex-1 text-sm text-left text-foreground", isChecked && "font-bold", !allowMultiple && "cursor-pointer")}
+                >
+                  {item.name}
+                  {allowMultiple && qty > 0 && (
+                    <span className="ml-1.5 text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">{qty}x</span>
                   )}
-                </span>
-                <span className={cn("min-w-0 flex-1 text-sm text-foreground", isChecked && "font-bold")}>{item.name}</span>
-                {item.price > 0 && <span className={cn("shrink-0 text-sm font-bold", isChecked ? "text-primary" : "text-muted-foreground")}>+ {formatBRL(item.price)}</span>}
-              </button>
+                </button>
+
+                {item.price > 0 && (
+                  <span className={cn("shrink-0 text-sm font-bold", isChecked ? "text-primary" : "text-muted-foreground")}>
+                    + {formatBRL(item.price * (qty > 1 ? qty : 1))}
+                  </span>
+                )}
+              </div>
             );
           })}
         </div>
