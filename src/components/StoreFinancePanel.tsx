@@ -169,6 +169,9 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
     enabled: !!storeId,
     staleTime: 30_000,
   });
+
+  // Previous period orders for growth comparison
+  const { data: prevOrders } = useQuery({
     queryKey: ["store-finance-prev-orders", storeId, dateFilter],
     queryFn: async () => {
       const { data, error } = await supabase
