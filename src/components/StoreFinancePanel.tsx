@@ -785,14 +785,21 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
 
               {/* Comissão pendente — lida do banco (acumulada pelo trigger) */}
               <div className="bg-amber-500/5 rounded-xl p-2.5">
-                <p className="text-[10px] text-muted-foreground">Comissão pendente na fatura</p>
+                <p className="text-[10px] text-muted-foreground">Comissão PDV pendente</p>
                 <p className="text-sm font-black text-amber-500">
                   {Number(pdvPlanData?.pdv_commission_pending) > 0
                     ? formatBRL(Number(pdvPlanData?.pdv_commission_pending))
-                    : Number(pdvPlanData?.pdv_commission_rate) === 0
-                      ? "Isento (0%)"
-                      : "—"
+                    : "R$ 0,00"
                   }
+                </p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  Taxa PDV: <span className="font-bold text-foreground">
+                    {Number(pdvPlanData?.pdv_commission_rate) === 0
+                      ? "0% (isento)"
+                      : `${pdvPlanData?.pdv_commission_rate}%`
+                    }
+                  </span>
+                  {" · "}taxa delivery não se aplica ao PDV
                 </p>
               </div>
             </div>
@@ -800,8 +807,8 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
             {/* Informação da taxa PDV */}
             <p className="text-[10px] text-muted-foreground mt-2">
               {Number(pdvPlanData?.pdv_commission_rate) === 0
-                ? "✅ Seu plano isenta de comissão no PDV — apenas mensalidade."
-                : `💳 Maquininha própria — ${pdvPlanData?.pdv_commission_rate}% por venda, cobrado na fatura mensal.`
+                ? "✅ Seu plano não cobra comissão nas vendas presenciais. Apenas mensalidade mensal."
+                : `💳 PDV usa maquininha própria (sem PIX Asaas). Comissão de ${pdvPlanData?.pdv_commission_rate}% cobrada na fatura mensal — diferente da taxa de delivery.`
               }
             </p>
           </div>
