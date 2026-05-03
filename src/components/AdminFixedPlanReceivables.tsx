@@ -48,7 +48,7 @@ const AdminFixedPlanReceivables = () => {
             monthly,
             repasse,
             comissao,
-            total: monthly + repasse + comissao,
+            total: monthly + comissao, // repasse é passivo (a pagar), não receita
             next_billing_date: p.next_billing_date as string | null,
             last_billed_at: p.last_billed_at as string | null,
             trial_ends_at: p.trial_ends_at as string | null,
@@ -60,10 +60,14 @@ const AdminFixedPlanReceivables = () => {
     refetchInterval: 30_000,
   });
 
-  const totalMonthly = (data || []).reduce((s, r: any) => s + r.monthly, 0);
+  const totalMonthly = (data || []).reduce((s, r: any) => s + r.monthly, 0); // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const totalRepasse = (data || []).reduce((s, r: any) => s + r.repasse, 0);
   const totalComissao = (data || []).reduce((s, r: any) => s + r.comissao, 0);
-  const grandTotal = totalMonthly + totalRepasse + totalComissao;
+  // grandTotal = receita da plataforma (mensalidades + comissões)
+  // repasse_pendente = valor que a PLATAFORMA deve AO lojista (R$2 por entrega acumulado)
+  // NÃO deve ser somado à receita — é um passivo, não receita
+  const grandTotal = totalMonthly + totalComissao;
+  const totalPassivo = totalRepasse; // a pagar aos lojistas
 
   const formatDate = (d: string | null) => {
     if (!d) return "—";
@@ -152,9 +156,9 @@ const AdminFixedPlanReceivables = () => {
                 </div>
                 <div className="bg-background rounded px-2 py-1.5">
                   <div className="text-muted-foreground flex items-center gap-1">
-                    <Truck className="w-3 h-3" /> Taxas R$2
+                    <Truck className="w-3 h-3" /> A Repassar (R$2)
                   </div>
-                  <div className="font-semibold">{formatBRL(row.repasse)}</div>
+                  <div className="font-semibold text-amber-500">-{formatBRL(row.repasse)}</div>
                 </div>
                 <div className="bg-background rounded px-2 py-1.5">
                   <div className="text-muted-foreground flex items-center gap-1">
