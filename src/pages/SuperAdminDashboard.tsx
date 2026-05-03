@@ -339,14 +339,32 @@ const SuperAdminDashboard = () => {
   };
 
   const metrics = useMemo(() => {
-    if (!orders) return { totalSales: 0, commission: 0, activeOrders: 0, totalOrders: 0 };
-    // Exclude cancelled and waiting-payment orders from financial metrics
+    if (!orders) return { totalSales: 0, commission: 0, commissionDelivery: 0, commissionPdv: 0, activeOrders: 0, totalOrders: 0 };
     const billableOrders = orders.filter(o => !["cancelado", "aguardando_pagamento"].includes(o.status));
     const totalSales = sumMoney(billableOrders.map((order) => order.total_price));
-    const commission = sumMoney(billableOrders.map((order) => multiplyMoney(order.subtotal, getStoreRate(order.store_id))));
+
+    // Separar pedidos por canal
+    const deliveryOrders = billableOrders.filter(o => (o as any).order_source !== "pdv");
+    const pdvOrders = billableOrders.filter(o => (o as any).order_source === "pdv");
+
+    // Comissão DELIVERY: usa taxa histórica salva no pedido (commission_rate)
+    // fallback para getStoreRate para pedidos antigos sem o campo
+    const commissionDelivery = sumMoney(deliveryOrders.map((order) => {
+      const saved = Number((order as any).commission_rate ?? 0);
+      if (saved > 0) return multiplyMoney(order.subtotal, saved / 100);
+      return multiplyMoney(order.subtotal, getStoreRate(order.store_id));
+    }));
+
+    // Comissão PDV: usa commission_rate do pedido (que é pdv_commission_rate, menor)
+    const commissionPdv = sumMoney(pdvOrders.map((order) => {
+      const saved = Number((order as any).commission_rate ?? 0);
+      return multiplyMoney(order.subtotal, saved / 100);
+    }));
+
+    const commission = addMoney(commissionDelivery, commissionPdv);
     const activeStatuses = ["pendente", "preparando", "pronto_para_entrega", "em_transito", "saiu_entrega"];
     const activeOrders = orders.filter(o => activeStatuses.includes(o.status)).length;
-    return { totalSales, commission, activeOrders, totalOrders: billableOrders.length };
+    return { totalSales, commission, commissionDelivery, commissionPdv, activeOrders, totalOrders: billableOrders.length };
   }, [orders, stores, parentStorePlans]);
 
   const storeSettlement = useMemo(() => {
@@ -423,8 +441,9 @@ const SuperAdminDashboard = () => {
     const grossProfit = sumMoney(
       storeSettlement.map((entry) =>
         addMoney(
-          entry.commissionDue,
-          subtractMoney(entry.appSales, entry.netTransfer)
+          entry.commissionDue,                               // comissão delivery físico
+          subtractMoney(entry.appSales, entry.netTransfer),  // comissão delivery PIX
+          entry.pdvCommission                                // comissão PDV
         )
       )
     );
@@ -979,7 +998,7 @@ const SuperAdminDashboard = () => {
                   ) : (
                     <>
                       <MetricCard icon={ShoppingBag} label="Vendas" value={`${formatBRL(metrics.totalSales)}`} sublabel={`${metrics.totalOrders} pedidos`} />
-                      <MetricCard icon={TrendingUp} label="Comissão" value={`${formatBRL(metrics.commission)}`} sublabel="taxa por loja" highlight />
+                      <MetricCard icon={TrendingUp} label="Comissão Total" value={`${formatBRL(metrics.commission)}`} sublabel={`📦 Delivery: ${formatBRL(metrics.commissionDelivery)}`} sublabel2={`🖥️ PDV: ${formatBRL(metrics.commissionPdv)}`} highlight />
                       <MetricCard icon={Clock} label="Ativos" value={String(metrics.activeOrders)} sublabel="em andamento" />
                       <MetricCard icon={AlertTriangle} label="Atraso" value={String(delayedOrders.length)} sublabel="> 60 min" alert={delayedOrders.length > 0} />
                     </>
@@ -2195,8 +2214,8 @@ const FinanceTab = ({
 };
 
 // ─── Metric Card ───
-const MetricCard = ({ icon: Icon, label, value, sublabel, highlight, alert }: {
-  icon: React.ElementType; label: string; value: string; sublabel: string; highlight?: boolean; alert?: boolean;
+const MetricCard = ({ icon: Icon, label, value, sublabel, sublabel2, highlight, alert }: {
+  icon: React.ElementType; label: string; value: string; sublabel: string; sublabel2?: string; highlight?: boolean; alert?: boolean;
 }) => (
   <div className={`bg-card rounded-2xl p-4 border ${alert ? "border-destructive/50" : "border-border"}`}>
     <div className="flex items-center gap-2 mb-2">
@@ -2205,6 +2224,7 @@ const MetricCard = ({ icon: Icon, label, value, sublabel, highlight, alert }: {
     </div>
     <p className={`text-xl font-black ${highlight ? "text-primary" : alert ? "text-destructive" : "text-foreground"}`}>{value}</p>
     <p className="text-xs text-muted-foreground">{sublabel}</p>
+    {sublabel2 && <p className="text-[10px] text-muted-foreground/70 mt-0.5">{sublabel2}</p>}
   </div>
 );
 
