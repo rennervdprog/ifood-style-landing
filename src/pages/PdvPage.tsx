@@ -20,17 +20,7 @@ import {
 import { PdvHistorico, PdvSessionsList } from "@/components/pdv/PdvHistorico";
 
 // Detecta se está em tela mobile (< 768px)
-const useIsMobile = () => {
-  const [isMobile, setIsMobile] = useState(
-    typeof window !== "undefined" ? window.innerWidth < 768 : false
-  );
-  useEffect(() => {
-    const onResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
-  return isMobile;
-};
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TIPOS
@@ -92,8 +82,6 @@ const PdvPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const isMobile = useIsMobile();
-
   type Screen = "loading" | "abertura" | "venda" | "fechamento";
   const [screen, setScreen] = useState<Screen>("loading");
   const [currentSession, setCurrentSession] = useState<PdvSession | null>(null);
@@ -252,7 +240,7 @@ const PdvPage = () => {
     setCart([]); setPaymentMethod(""); setTableId("");
     setDiscountInput(""); setShowDiscount(false);
     setCashReceived(""); setOrderDone(false);
-    if (isMobile) setMobileStep("catalog");
+    setMobileStep("catalog");
   };
 
   // ── Abrir caixa ──
@@ -673,101 +661,90 @@ const PdvPage = () => {
       {/* ── VENDA ── */}
       {tab === "venda" && (
         <>
-          {/* DESKTOP — 2 colunas lado a lado */}
-          {!isMobile && (
-            <div className="flex flex-1 overflow-hidden">
-              {/* Catálogo */}
-              <div className="flex flex-col flex-1 min-w-0 overflow-hidden border-r border-border">
-                <CatalogSection
-                  search={search} setSearch={setSearch}
-                  sections={sections} activeSection={activeSection} setActiveSection={setActiveSection}
-                  grouped={grouped} prodLoading={prodLoading}
-                  getQty={getQty} addItem={addItem} decItem={decItem}
-                />
-              </div>
-              {/* Caixa */}
-              <aside className="w-72 lg:w-80 xl:w-96 flex flex-col bg-card shrink-0 overflow-hidden">
-                <CartSection
-                  cart={cart} tableId={tableId} setTableId={setTableId}
-                  totalItems={totalItems} clearSale={clearSale}
-                  subtotal={subtotal} discountAmount={discountAmount} finalTotal={finalTotal}
-                  showDiscount={showDiscount} setShowDiscount={setShowDiscount}
-                  discountType={discountType} setDiscountType={setDiscountType}
-                  discountInput={discountInput} setDiscountInput={setDiscountInput}
-                  paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod}
-                  setCashReceived={setCashReceived} cashReceived={cashReceived}
-                  troco={troco} trocoNegativo={trocoNegativo} finalTotal_={finalTotal}
-                  removeItem={removeItem} onFinalize={handleVenda}
-                  loading={loading} orderDone={orderDone}
-                />
-              </aside>
-            </div>
-          )}
-
-          {/* MOBILE — etapas */}
-          {isMobile && (
-            <div className="flex flex-1 flex-col overflow-hidden">
-              {/* Etapa: catálogo */}
-              {mobileStep === "catalog" && (
-                <>
-                  <div className="flex-1 overflow-hidden flex flex-col">
-                    <CatalogSection
-                      search={search} setSearch={setSearch}
-                      sections={sections} activeSection={activeSection} setActiveSection={setActiveSection}
-                      grouped={grouped} prodLoading={prodLoading}
-                      getQty={getQty} addItem={addItem} decItem={decItem}
-                    />
-                  </div>
-                  {/* Bottom bar — ir ao carrinho */}
-                  {cart.length > 0 && (
-                    <div className="border-t border-border bg-card px-3 py-2.5 shrink-0">
-                      <button
-                        onClick={() => setMobileStep("cart")}
-                        className="w-full h-12 bg-primary text-primary-foreground font-black text-sm rounded-2xl flex items-center justify-between px-4 active:scale-[0.98] transition-all shadow-lg shadow-primary/25"
-                      >
-                        <span className="flex items-center gap-2">
-                          <span className="bg-white/20 rounded-lg w-7 h-7 flex items-center justify-center text-xs font-black">{totalItems}</span>
-                          Ver carrinho
-                        </span>
-                        <span className="flex items-center gap-1">{formatBRL(subtotal)} <ChevronRight className="h-4 w-4" /></span>
-                      </button>
-                    </div>
-                  )}
-                </>
-              )}
-
-              {/* Etapa: carrinho + pagamento */}
-              {mobileStep === "cart" && (
-                <>
-                  <div className="flex-1 overflow-hidden flex flex-col">
-                    <CartSection
-                      cart={cart} tableId={tableId} setTableId={setTableId}
-                      totalItems={totalItems} clearSale={clearSale}
-                      subtotal={subtotal} discountAmount={discountAmount} finalTotal={finalTotal}
-                      showDiscount={showDiscount} setShowDiscount={setShowDiscount}
-                      discountType={discountType} setDiscountType={setDiscountType}
-                      discountInput={discountInput} setDiscountInput={setDiscountInput}
-                      paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod}
-                      setCashReceived={setCashReceived} cashReceived={cashReceived}
-                      troco={troco} trocoNegativo={trocoNegativo} finalTotal_={finalTotal}
-                      removeItem={removeItem} onFinalize={handleVenda}
-                      loading={loading} orderDone={orderDone}
-                    />
-                  </div>
-                  {/* Barra de voltar ao catálogo */}
-                  <div className="border-t border-border bg-card px-3 py-2 flex items-center gap-2 shrink-0">
+          {/* ─── MOBILE: etapas (visível só em telas < md) ─── */}
+          <div className="flex md:hidden flex-1 flex-col overflow-hidden">
+            {mobileStep === "catalog" && (
+              <>
+                <div className="flex-1 overflow-hidden flex flex-col">
+                  <CatalogSection
+                    search={search} setSearch={setSearch}
+                    sections={sections} activeSection={activeSection} setActiveSection={setActiveSection}
+                    grouped={grouped} prodLoading={prodLoading}
+                    getQty={getQty} addItem={addItem} decItem={decItem}
+                  />
+                </div>
+                {cart.length > 0 && (
+                  <div className="border-t border-border bg-card px-3 py-2.5 shrink-0">
                     <button
-                      onClick={() => setMobileStep("catalog")}
-                      className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold bg-muted/60 hover:bg-muted text-foreground transition-colors"
+                      onClick={() => setMobileStep("cart")}
+                      className="w-full h-12 bg-primary text-primary-foreground font-black text-sm rounded-2xl flex items-center justify-between px-4 active:scale-[0.98] transition-all shadow-lg shadow-primary/25"
                     >
-                      <ChevronLeft className="h-3.5 w-3.5" /> Adicionar mais
+                      <span className="flex items-center gap-2">
+                        <span className="bg-white/20 rounded-lg w-7 h-7 flex items-center justify-center text-xs font-black">{totalItems}</span>
+                        Ver carrinho
+                      </span>
+                      <span className="flex items-center gap-1">{formatBRL(subtotal)} <ChevronRight className="h-4 w-4" /></span>
                     </button>
-                    <p className="text-[10px] text-muted-foreground ml-auto">{totalItems} itens · {formatBRL(subtotal)}</p>
                   </div>
-                </>
-              )}
+                )}
+              </>
+            )}
+            {mobileStep === "cart" && (
+              <>
+                <div className="flex-1 overflow-hidden flex flex-col">
+                  <CartSection
+                    cart={cart} tableId={tableId} setTableId={setTableId}
+                    totalItems={totalItems} clearSale={clearSale}
+                    subtotal={subtotal} discountAmount={discountAmount} finalTotal={finalTotal}
+                    showDiscount={showDiscount} setShowDiscount={setShowDiscount}
+                    discountType={discountType} setDiscountType={setDiscountType}
+                    discountInput={discountInput} setDiscountInput={setDiscountInput}
+                    paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod}
+                    setCashReceived={setCashReceived} cashReceived={cashReceived}
+                    troco={troco} trocoNegativo={trocoNegativo} finalTotal_={finalTotal}
+                    removeItem={removeItem} onFinalize={handleVenda}
+                    loading={loading} orderDone={orderDone}
+                  />
+                </div>
+                <div className="border-t border-border bg-card px-3 py-2 flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => setMobileStep("catalog")}
+                    className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold bg-muted/60 hover:bg-muted text-foreground transition-colors"
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5" /> Adicionar mais
+                  </button>
+                  <p className="text-[10px] text-muted-foreground ml-auto">{totalItems} itens · {formatBRL(subtotal)}</p>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* ─── DESKTOP: 2 colunas (visível só em telas >= md) ─── */}
+          <div className="hidden md:flex flex-1 overflow-hidden">
+            <div className="flex flex-col flex-1 min-w-0 overflow-hidden border-r border-border">
+              <CatalogSection
+                search={search} setSearch={setSearch}
+                sections={sections} activeSection={activeSection} setActiveSection={setActiveSection}
+                grouped={grouped} prodLoading={prodLoading}
+                getQty={getQty} addItem={addItem} decItem={decItem}
+              />
             </div>
-          )}
+            <aside className="w-80 xl:w-96 flex flex-col bg-card shrink-0 overflow-hidden">
+              <CartSection
+                cart={cart} tableId={tableId} setTableId={setTableId}
+                totalItems={totalItems} clearSale={clearSale}
+                subtotal={subtotal} discountAmount={discountAmount} finalTotal={finalTotal}
+                showDiscount={showDiscount} setShowDiscount={setShowDiscount}
+                discountType={discountType} setDiscountType={setDiscountType}
+                discountInput={discountInput} setDiscountInput={setDiscountInput}
+                paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod}
+                setCashReceived={setCashReceived} cashReceived={cashReceived}
+                troco={troco} trocoNegativo={trocoNegativo} finalTotal_={finalTotal}
+                removeItem={removeItem} onFinalize={handleVenda}
+                loading={loading} orderDone={orderDone}
+              />
+            </aside>
+          </div>
         </>
       )}
 
