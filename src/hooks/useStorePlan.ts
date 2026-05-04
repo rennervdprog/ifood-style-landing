@@ -125,7 +125,8 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
   });
 
   const planType: StorePlanType = (data?.plan?.plan_type as StorePlanType) || "commission_only";
-  const isFixedPlan = planType === "fixed";
+  // "fixed" = Essencial | "supporter" = Apoiador — ambos pagam PIX R$1,99 e 0% comissão
+  const isFixedPlan = planType === "fixed" || planType === "supporter";
   const features = PLAN_FEATURES[planType];
 
   const trialEndsAt = (data?.plan as any)?.trial_ends_at ?? null;
