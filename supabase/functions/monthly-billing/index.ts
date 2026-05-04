@@ -145,12 +145,17 @@ Deno.serve(async (req) => {
         const dueDate = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000); // 3 days to pay
         const dueDateStr = dueDate.toISOString().split("T")[0];
 
-        const isSupporter = plan.plan_type === "fixed" && Number(plan.monthly_fee) === 130;
+        // "supporter" é o plan_type real do plano Apoiadores
+        // (legado: alguns registros antigos salvaram como "fixed" com monthly_fee=130)
+        const isSupporter = plan.plan_type === "supporter" ||
+          (plan.plan_type === "fixed" && Number(plan.monthly_fee) === 130);
         const planLabel = isSupporter
           ? "Plano Apoiadores"
           : plan.plan_type === "fixed"
             ? "Plano Essencial"
-            : "Plano Crescimento";
+            : plan.plan_type === "hybrid"
+              ? "Plano Crescimento"
+              : "Plano Comissão";
 
         // Incluir comissão PDV acumulada no período
         const pdvPending = Number((plan as any).pdv_commission_pending || 0);
