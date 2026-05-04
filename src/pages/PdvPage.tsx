@@ -122,6 +122,20 @@ const PdvPage = () => {
   // Abas da tela de venda
   type Tab = "venda" | "historico" | "turnos" | "relatorios";
   const [tab, setTab] = useState<Tab>("venda");
+  // Turno selecionado para drill-down no relatório (null = geral)
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+
+  // Abre relatório de um turno específico
+  const openSessionRelatorio = (sessionId: string) => {
+    setSelectedSessionId(sessionId);
+    setTab("relatorios");
+  };
+
+  // Ao voltar para aba turnos, limpar seleção
+  const goToTurnos = () => {
+    setTab("turnos");
+    setSelectedSessionId(null);
+  };
 
   // Abertura
   const [openingAmount, setOpeningAmount] = useState("0");
@@ -715,7 +729,7 @@ const PdvPage = () => {
           className={`flex-1 sm:flex-initial px-4 py-2 text-xs font-bold flex items-center justify-center gap-1.5 border-b-2 transition-colors ${tab === "turnos" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
           <Receipt className="h-3.5 w-3.5" /> Turnos
         </button>
-        <button onClick={() => setTab("relatorios")}
+        <button onClick={() => { setTab("relatorios"); setSelectedSessionId(null); }}
           className={`flex-1 sm:flex-initial px-4 py-2 text-xs font-bold flex items-center justify-center gap-1.5 border-b-2 transition-colors ${tab === "relatorios" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
           <BarChart3 className="h-3.5 w-3.5" /> Relatórios
         </button>
@@ -733,13 +747,37 @@ const PdvPage = () => {
       {tab === "turnos" && (
         <div className="flex-1 overflow-y-auto p-3">
           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Turnos anteriores</p>
-          {store?.id && <PdvSessionsList storeId={store.id} />}
+          {store?.id && (
+            <PdvSessionsList
+              storeId={store.id}
+              onViewRelatorio={openSessionRelatorio}
+            />
+          )}
         </div>
       )}
 
       {tab === "relatorios" && (
-        <div className="flex-1 overflow-y-auto">
-          {store?.id && <PdvRelatorios storeId={store.id} />}
+        <div className="flex-1 overflow-y-auto flex flex-col">
+          {/* Breadcrumb quando vindo de um turno específico */}
+          {selectedSessionId && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border-b border-primary/10 shrink-0">
+              <button
+                onClick={goToTurnos}
+                className="flex items-center gap-1.5 text-xs font-bold text-primary hover:text-primary/80 transition-colors"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" />
+                Voltar aos turnos
+              </button>
+              <span className="text-[10px] text-muted-foreground">·</span>
+              <span className="text-[10px] text-muted-foreground font-semibold">Relatório deste turno</span>
+            </div>
+          )}
+          {store?.id && (
+            <PdvRelatorios
+              storeId={store.id}
+              sessionId={selectedSessionId || undefined}
+            />
+          )}
         </div>
       )}
 
