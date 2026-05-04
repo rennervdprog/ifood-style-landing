@@ -84,25 +84,59 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
     enabled: !!storeId,
   });
 
+  // ── Movimentações PDV do período (fonte confiável para totais) ──
+  const { data: movements = [] } = useQuery({
+    queryKey: ["pdv-relatorio-movements", storeId, sessionId, dateRange.start, dateRange.end],
+    queryFn: async () => {
+      let q = (supabase.from("pdv_movements" as any) as any)
+        .select("*")
+        .eq("store_id", storeId)
+        .eq("type", "sale")
+        .gte("created_at", dateRange.start)
+        .lte("created_at", dateRange.end)
+        .order("created_at", { ascending: false });
+      if (sessionId) q = q.eq("session_id", sessionId);
+      const { data } = await q;
+      return (data || []) as any[];
+    },
+    enabled: !!storeId,
+  });
+
   // ── Cálculos principais ──
   const stats = useMemo(() => {
-    if (!orders.length) return null;
+    // Usa movements como fonte primária (mais confiável) e orders para detalhes de produto
+    const hasMov = movements.length > 0;
+    const hasOrders = orders.length > 0;
+    if (!hasMov && !hasOrders) return null;
 
-    const totalSales = orders.reduce((s, o) => s + Number(o.total_price || 0), 0);
+    // Totais financeiros — de movements (mais confiável, não depende de order_items RLS)
+    const totalSales = hasMov
+      ? movements.reduce((s: number, m: any) => s + Number(m.amount || 0), 0)
+      : orders.reduce((s, o) => s + Number(o.total_price || 0), 0);
+
+    const count = hasMov ? movements.length : orders.length;
+
     const totalSubtotal = orders.reduce((s, o) => s + Number(o.subtotal || 0), 0);
     const totalDiscount = orders.reduce((s, o) => s + Number(o.pdv_discount || 0), 0);
     const totalCommission = orders.reduce((s, o) =>
       s + (Number(o.subtotal || 0) * (Number(o.commission_rate || 0) / 100)), 0
     );
-    const avgTicket = totalSales / orders.length;
+    const avgTicket = count > 0 ? totalSales / count : 0;
     const discountRate = totalSubtotal > 0 ? (totalDiscount / totalSubtotal) * 100 : 0;
 
-    // Por método de pagamento
+    // Por método de pagamento — de movements (mais confiável)
     const byPayment: Record<string, number> = {};
-    orders.forEach(o => {
-      const m = o.payment_method || "outros";
-      byPayment[m] = (byPayment[m] || 0) + Number(o.total_price || 0);
-    });
+    if (hasMov) {
+      movements.forEach((m: any) => {
+        const k = m.payment_method || "outros";
+        byPayment[k] = (byPayment[k] || 0) + Number(m.amount || 0);
+      });
+    } else {
+      orders.forEach(o => {
+        const k = o.payment_method || "outros";
+        byPayment[k] = (byPayment[k] || 0) + Number(o.total_price || 0);
+      });
+    }
 
     // Produtos mais vendidos
     const productMap: Record<string, { name: string; qty: number; revenue: number }> = {};
@@ -126,9 +160,9 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
       return { ...p, abc: pct <= 0.8 ? "A" : pct <= 0.95 ? "B" : "C" };
     });
 
-    // Vendas por hora
+    // Vendas por hora — de movements
     const byHour: Record<number, number> = {};
-    orders.forEach(o => {
+    (hasMov ? movements : orders).forEach((o: any) => {
       const h = new Date(o.created_at).getHours();
       byHour[h] = (byHour[h] || 0) + 1;
     });
@@ -137,14 +171,14 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
     // Vendas por dia da semana
     const dayNames = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
     const byDay: Record<number, number> = {};
-    orders.forEach(o => {
+    (hasMov ? movements : orders).forEach((o: any) => {
       const d = new Date(o.created_at).getDay();
       byDay[d] = (byDay[d] || 0) + 1;
     });
 
     return {
       totalSales, totalSubtotal, totalDiscount, totalCommission,
-      avgTicket, discountRate, count: orders.length,
+      avgTicket, discountRate, count,
       byPayment, topProducts: productsWithABC,
       byHour, byDay, dayNames,
       peakHour: peakHour ? { hour: Number(peakHour[0]), count: Number(peakHour[1]) } : null,
