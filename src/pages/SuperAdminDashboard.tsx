@@ -1028,6 +1028,7 @@ const SuperAdminDashboard = () => {
                     {isLoading ? (
                       <div className="h-40 animate-pulse bg-muted rounded-xl" />
                     ) : hourlyData.length > 0 ? (
+                      <>
                       {/* Gráfico Delivery vs PDV */}
                       {adminChartData.dailyData.length > 1 && (
                         <div className="bg-card/60 rounded-2xl border border-border/30 p-4 mb-4">
@@ -1077,22 +1078,24 @@ const SuperAdminDashboard = () => {
                       {/* Gráfico original (por hora) mantido abaixo */}
                       <div className="bg-card/60 rounded-2xl border border-border/30 p-4 mt-4">
                         <p className="text-xs font-bold text-foreground mb-3">Pedidos por Hora (original)</p>
-                      <ResponsiveContainer width="100%" height={180}>
-                        <BarChart data={hourlyData}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                          <XAxis dataKey="hour" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
-                          <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} allowDecimals={false} />
-                          <Tooltip
-                            contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 12, fontSize: 12 }}
-                            labelStyle={{ color: "hsl(var(--muted-foreground))" }}
-                            formatter={(value: number, name: string) => [
-                              name === "count" ? `${value} pedidos` : `${formatBRL(value)}`,
-                              name === "count" ? "Pedidos" : "Receita"
-                            ]}
-                          />
-                          <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
+                        <ResponsiveContainer width="100%" height={180}>
+                          <BarChart data={hourlyData}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                            <XAxis dataKey="hour" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
+                            <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} allowDecimals={false} />
+                            <Tooltip
+                              contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 12, fontSize: 12 }}
+                              labelStyle={{ color: "hsl(var(--muted-foreground))" }}
+                              formatter={(value: number, name: string) => [
+                                name === "count" ? `${value} pedidos` : `${formatBRL(value)}`,
+                                name === "count" ? "Pedidos" : "Receita"
+                              ]}
+                            />
+                            <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                      </>
                     ) : (
                       <div className="flex flex-col items-center justify-center py-10 text-center">
                         <div className="w-12 h-12 bg-muted/50 rounded-2xl flex items-center justify-center mb-3">
