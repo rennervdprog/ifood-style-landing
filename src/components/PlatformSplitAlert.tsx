@@ -24,7 +24,7 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
     queryFn: async () => {
       const { data, error } = await supabase
         .from("store_balances")
-        .select("repasse_pendente")
+        .select("repasse_pendente, comissao_pendente")
         .eq("store_id", storeId)
         .maybeSingle();
       if (error) throw error;
@@ -48,7 +48,10 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
   });
 
   const minPayout = minPayoutSetting ?? 100;
-  const pendingFee = Number(storeBalance?.repasse_pendente || 0);
+  const repasse = Number(storeBalance?.repasse_pendente || 0);
+  const comissao = Number(storeBalance?.comissao_pendente || 0);
+  // Total pendente: repasse (R$2/entrega plano fixo) + comissão (% plano comissão)
+  const pendingFee = repasse + comissao;
   // Allow voluntary payment for any pending amount >= R$ 5 (backend minimum)
   const canPay = pendingFee >= 5;
 
@@ -113,11 +116,17 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
         </div>
 
         {/* Info */}
-        <div className="rounded-xl p-3 bg-blue-500/10 border border-blue-500/20 flex items-center gap-2">
-          <Banknote className="h-4 w-4 text-blue-400" />
+        <div className="rounded-xl p-3 bg-blue-500/10 border border-blue-500/20 flex items-start gap-2">
+          <Banknote className="h-4 w-4 text-blue-400 shrink-0 mt-0.5" />
           <div className="text-xs font-medium text-blue-400 space-y-1">
-            <p>Pedidos físicos (Dinheiro/Cartão) não descontam taxas automaticamente.</p>
-            <p>O valor acumulado inclui a taxa de entrega da plataforma ({formatBRL(splitPerOrder)}) e sua comissão por pedido.</p>
+            <p>Pedidos em dinheiro ou cartão não têm desconto automático.</p>
+            <p>O valor se acumula aqui para ser pago via PIX.</p>
+            {repasse > 0 && comissao > 0 && (
+              <div className="mt-1.5 space-y-0.5 text-[10px] text-blue-300">
+                <p>Taxa entrega ({formatBRL(splitPerOrder)}/pedido): <strong>{formatBRL(repasse)}</strong></p>
+                <p>Comissão sobre vendas: <strong>{formatBRL(comissao)}</strong></p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -173,7 +182,10 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
             </div>
             <p className="text-xs text-muted-foreground text-center">
               PIX disponível a partir de <strong className="text-foreground">{formatBRL(minPayout)}</strong>
-              {" "}— faltam <strong className="text-blue-500">{formatBRL((minPayout - pendingFee))}</strong>
+              {" "}— faltam <strong className="text-blue-500">{formatBRL(Math.max(0, minPayout - pendingFee))}</strong>
+            </p>
+            <p className="text-[10px] text-muted-foreground text-center">
+              O valor cresce a cada pedido pago em dinheiro ou cartão.
             </p>
           </div>
         )}
