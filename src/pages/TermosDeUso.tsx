@@ -61,8 +61,8 @@ const TermosDeUso = () => {
           <h2 className="text-base font-bold text-foreground">5. Planos e Assinatura</h2>
           <ul className="list-disc pl-4 space-y-2">
             <li><strong className="text-foreground">Essencial (R$ 180/mês):</strong> 0% comissão delivery. R$ 1,99 PIX + R$ 2,00/entrega. PDV incluso com 0% de comissão presencial.</li>
-            <li><strong className="text-foreground">Crescimento (R$ 100/mês + 2,5%):</strong> 2,5% sobre subtotal delivery. R$ 1,99 PIX + R$ 2,00/entrega. PDV incluso com 1% de comissão presencial (faturado mensalmente).</li>
-            <li><strong className="text-foreground">Comissão (sem mensalidade, 6%):</strong> 6% sobre subtotal delivery. R$ 1,99 PIX + R$ 2,00/entrega. PDV incluso com 2% de comissão presencial (faturado mensalmente).</li>
+            <li><strong className="text-foreground">Crescimento (R$ 100/mês + 2,5%):</strong> 2,5% sobre subtotal delivery — sem taxa PIX (a % já cobre os custos operacionais). R$ 2,00/entrega. PDV incluso com 1% de comissão presencial (faturado mensalmente).</li>
+            <li><strong className="text-foreground">Comissão (sem mensalidade, 6%):</strong> 6% sobre subtotal delivery — sem taxa PIX (a % já cobre os custos operacionais). R$ 2,00/entrega. PDV incluso com 2% de comissão presencial (faturado mensalmente).</li>
             <li><strong className="text-foreground">Apoiador (R$ 130/mês — vagas limitadas):</strong> Plano vitalício. 0% comissão delivery e PDV. Máximo 10 vagas.</li>
           </ul>
           <p>5.2. <strong className="text-foreground">Comissão PDV:</strong> Incide sobre o subtotal das vendas presenciais. Acumulada ao longo do mês e incluída na fatura mensal junto à mensalidade.</p>
@@ -100,7 +100,7 @@ const TermosDeUso = () => {
           <h2 className="text-base font-bold text-foreground">9. Taxas Detalhadas</h2>
           <p>9.1. Comissão delivery incide apenas sobre o <strong className="text-foreground">subtotal dos produtos</strong> (excluindo entrega, desconto e taxa PIX).</p>
           <p>9.2. Comissão PDV incide sobre o subtotal da venda presencial. Isentada para planos Essencial e Apoiador.</p>
-          <p>9.3. Taxa PIX (R$ 1,99): por transação PIX Online, descontada automaticamente do repasse ao lojista.</p>
+          <p>9.3. Taxa PIX (R$ 1,99): cobrada por transação PIX Online <strong className="text-foreground">apenas nos planos Essencial e Apoiador</strong>, descontada automaticamente do valor repassado ao lojista. Nos planos Crescimento e Comissão, a comissão percentual já cobre os custos operacionais do PIX — não há cobrança adicional de R$ 1,99.</p>
           <p>9.4. Taxa de entrega (R$ 2,00): somada à taxa base do lojista, paga pelo cliente no checkout.</p>
           <p>9.5. Todas as taxas são consultáveis no painel financeiro da loja.</p>
         </section>

@@ -233,7 +233,7 @@ const benefits = [
 const faqs = [
   { q: "Preciso baixar algum aplicativo?", a: "Não! Você gerencia tudo pelo navegador do celular ou computador. Seus clientes pedem pelo link da loja, sem instalar nada." },
   { q: "Como funciona o PIX automático?", a: "Quando o cliente escolhe PIX, geramos um QR Code automaticamente. A confirmação é instantânea no seu painel — sem conferir extrato." },
-  { q: "O plano Essencial cobra comissão?", a: "Não! Zero comissão sobre as vendas. Há apenas R$ 1,99 por transação PIX (descontado do valor repassado) e R$ 2,00 por entrega somado à sua taxa — esse valor é pago pelo cliente, não sai do seu bolso." },
+  { q: "O plano Essencial cobra comissão?", a: "Não! Zero comissão sobre as vendas. Há apenas R$ 1,99 por transação PIX online (descontado automaticamente do repasse) e R$ 2,00 por entrega, somado à sua taxa — pago pelo cliente no checkout. Nos planos Crescimento e Comissão não há cobrança de R$ 1,99 de PIX: a comissão percentual já cobre esses custos." },
   { q: "O que é o módulo PDV?", a: "É um caixa registradora digital integrado ao sistema. Você abre e fecha turnos, registra vendas no balcão com maquininha própria (sem taxa PIX), calcula troco automaticamente e acompanha relatórios separados de delivery e presencial. Incluso em todos os planos." },
   { q: "Posso usar sem motoboy próprio?", a: "Sim! No modo cardápio digital, você recebe os pedidos e usa sua própria equipe de entrega. A plataforma funciona em todo o Brasil mesmo sem usar a logística da plataforma." },
   { q: "Como recebo os pedidos?", a: "Notificação sonora e push no celular em tempo real. O painel organiza os pedidos por status: pendente, preparando, saiu para entrega e finalizado." },
@@ -850,7 +850,7 @@ const StoreDirectory = () => {
           </h2>
           <p className="text-center text-muted-foreground mb-4 max-w-2xl mx-auto text-base font-medium">
              Comissão a partir de <span className="font-bold text-primary">6%</span> — ou <span className="font-bold text-primary">zero</span> nos planos Apoiador e Essencial.
-            Todos incluem cardápio completo, PIX online e notificações.
+            Todos incluem cardápio completo, PIX online e notificações. Taxa PIX R$ 1,99/transação apenas nos planos Essencial e Apoiador.
           </p>
           <div className="flex justify-center mb-14">
             <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-600 border border-emerald-200">
