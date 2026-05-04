@@ -18,6 +18,7 @@ import { initAutoUpdate } from "@/lib/capacitorAutoUpdate";
 import { supabase } from "@/integrations/supabase/client";
 import CapacitorRouteGuard from "@/components/CapacitorRouteGuard";
 import StoreAppGuard from "@/components/StoreAppGuard";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 // Lazy-loaded pages — each becomes its own chunk
 const Index = lazy(() => import("./pages/Index"));
@@ -156,39 +157,38 @@ const App = () => {
     // 🌐 WEB / PWA: quando a aba volta a ficar visível ou o navegador reconecta,
     // o WebSocket do Supabase costuma estar morto silenciosamente. Forçamos
     // reconexão de canais e refetch de queries para alinhar a UI ao banco.
-    const handleVisibility = () => {
-      if (document.visibilityState !== "visible") return;
-      try {
-        const channels = supabase.getChannels();
-        if (channels.length > 0) {
+    // Debounce: evitar reconexões em cascata se visibilitychange disparar múltiplas vezes
+    let realtimeReconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    const reconnectRealtime = () => {
+      if (realtimeReconnectTimer) clearTimeout(realtimeReconnectTimer);
+      realtimeReconnectTimer = setTimeout(() => {
+        try {
+          const channels = supabase.getChannels();
+          if (channels.length === 0) return;
+          // Verificar se algum canal está fora do estado "joined" antes de reconectar
+          const hasDeadChannel = channels.some(c => (c as any).state !== "joined");
+          if (!hasDeadChannel) return; // Todos OK, não precisa reconectar
           supabase.realtime.disconnect();
           supabase.realtime.connect();
           setTimeout(() => {
             supabase.getChannels().forEach((c) => {
               try {
-                const state = (c as any).state;
-                if (state !== "joined") c.subscribe();
+                if ((c as any).state !== "joined") c.subscribe();
               } catch {}
             });
-          }, 250);
-        }
-        queryClient.invalidateQueries();
-      } catch {}
+          }, 500);
+        } catch {}
+      }, 1000); // 1s de debounce
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState !== "visible") return;
+      reconnectRealtime();
+      queryClient.invalidateQueries();
     };
     const handleOnline = () => {
-      try {
-        supabase.realtime.disconnect();
-        supabase.realtime.connect();
-        setTimeout(() => {
-          supabase.getChannels().forEach((c) => {
-            try {
-              const state = (c as any).state;
-              if (state !== "joined") c.subscribe();
-            } catch {}
-          });
-        }, 250);
-        queryClient.invalidateQueries();
-      } catch {}
+      reconnectRealtime();
+      queryClient.invalidateQueries();
     };
     document.addEventListener("visibilitychange", handleVisibility);
     window.addEventListener("online", handleOnline);
@@ -215,6 +215,7 @@ const App = () => {
     return () => {
       document.removeEventListener("visibilitychange", handleVisibility);
       window.removeEventListener("online", handleOnline);
+      if (realtimeReconnectTimer) clearTimeout(realtimeReconnectTimer);
     };
   }, []);
 
@@ -234,6 +235,7 @@ const App = () => {
             <PushNavigator />
             <CapacitorRouteGuard />
             <StoreAppGuard />
+            <ErrorBoundary>
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 {/* Public landing / Client home */}
@@ -289,6 +291,7 @@ const App = () => {
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
+            </ErrorBoundary>
           </BrowserRouter>
         </CartProvider>
         </StoreProvider>
