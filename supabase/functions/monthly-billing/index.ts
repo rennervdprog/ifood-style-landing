@@ -95,12 +95,18 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Get all active plans with monthly_fee > 0 that are due for billing and not in trial
+    // Get all active plans that are due for billing:
+    // - monthly_fee > 0 (planos com mensalidade)
+    // - OU pdv_commission_pending > 0 (comissão PDV acumulada em qualquer plano)
+    // - OU commission_only com comissao acumulada em store_balances
+    // Nota: commission_only tem monthly_fee=0 mas pode ter comissão pendente
     const now = new Date();
+
+    // Buscar planos com mensalidade OU comissão PDV pendente
     let query = supabase
       .from("store_plans")
       .select("*, stores!inner(id, name, owner_id, asaas_account_id, status)")
-      .gt("monthly_fee", 0)
+      .or("monthly_fee.gt.0,pdv_commission_pending.gt.0")
       .eq("is_active", true);
 
     if (manualStoreId) {
@@ -159,6 +165,8 @@ Deno.serve(async (req) => {
 
         // Incluir comissão PDV acumulada no período
         const pdvPending = Number((plan as any).pdv_commission_pending || 0);
+        // Para commission_only: cobrar também comissao_pendente de pagamentos físicos (dinheiro/cartão)
+        // Para todos os planos: somar mensalidade + pdvPending
         const totalAmount = Number(plan.monthly_fee) + pdvPending;
         const pdvLine = pdvPending > 0 ? ` + Comissão PDV R$${pdvPending.toFixed(2)}` : "";
         const description = `${planLabel}${pdvLine} - ${store.name} - ${referenceCode}`;
