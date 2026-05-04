@@ -138,7 +138,8 @@ const DriverDashboard = () => {
    const acceptedStoreLinks = useMemo(() => (storeDriverLinks || []).filter((l: any) => l.status === 'accepted'), [storeDriverLinks]);
    const pendingStoreLinks = useMemo(() => (storeDriverLinks || []).filter((l: any) => l.status === 'pending'), [storeDriverLinks]);
 
-  // Check if user has a platform drivers entry
+  // Motoboy plataforma descontinuado — todos são motoboy próprio/loja
+  // Mantendo query para compatibilidade mas ignorando o resultado
   const { data: platformDriverEntry, isFetched: hasResolvedPlatformDriverEntry } = useQuery({
     queryKey: ["platform-driver-entry", user?.id],
     queryFn: async () => {
@@ -156,8 +157,9 @@ const DriverDashboard = () => {
    const isStoreDriver = (acceptedStoreLinks?.length || 0) > 0;
   const hasPlatformDriverEntry = !!platformDriverEntry;
   // Store motoboy = has role motoboy, no platform drivers entry, and no store link yet
-   const isStoreMotoboyWaiting = (driverProfile as any)?.role === "motoboy" && !hasPlatformDriverEntry && !isStoreDriver && pendingStoreLinks.length === 0;
-  const isPlatformDriver = Boolean((driverProfile as any)?.role === "motoboy" && hasPlatformDriverEntry && !isStoreDriver);
+   // Qualquer motoboy sem vínculo com loja está aguardando convite (plataforma descontinuada)
+  const isStoreMotoboyWaiting = (driverProfile as any)?.role === "motoboy" && !isStoreDriver && pendingStoreLinks.length === 0;
+  const isPlatformDriver = false; // Motoboy plataforma descontinuado
    const linkedStoreIds = useMemo(() => acceptedStoreLinks.map((l: any) => l.store_id), [acceptedStoreLinks]);
 
   useEffect(() => {

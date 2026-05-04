@@ -30,6 +30,10 @@ import {
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
 } from "recharts";
+import {
+  DailySalesChart, PaymentBreakdownChart, HourlyChart, KpiCard,
+  useFinanceChartData, CHART_COLORS, ChannelCompareChart,
+} from "@/components/FinanceCharts";
  import { addMoney, multiplyMoney, subtractMoney, sumMoney, formatBRL } from "@/lib/utils";
  import { statusColors as globalStatusColors } from "@/lib/orderStatus";
 
@@ -366,6 +370,9 @@ const SuperAdminDashboard = () => {
     const activeOrders = orders.filter(o => activeStatuses.includes(o.status)).length;
     return { totalSales, commission, commissionDelivery, commissionPdv, activeOrders, totalOrders: billableOrders.length };
   }, [orders, stores, parentStorePlans]);
+
+  // Hook unificado de gráficos (mesma lógica do lojista)
+  const adminChartData = useFinanceChartData(orders || []);
 
   const storeSettlement = useMemo(() => {
     if (!financeOrders || !stores) return [];
@@ -1021,6 +1028,55 @@ const SuperAdminDashboard = () => {
                     {isLoading ? (
                       <div className="h-40 animate-pulse bg-muted rounded-xl" />
                     ) : hourlyData.length > 0 ? (
+                      {/* Gráfico Delivery vs PDV */}
+                      {adminChartData.dailyData.length > 1 && (
+                        <div className="bg-card/60 rounded-2xl border border-border/30 p-4 mb-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <p className="text-xs font-bold text-foreground">Evolução — Delivery vs PDV</p>
+                            <div className="text-[10px] text-muted-foreground flex gap-3">
+                              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary inline-block"/>Delivery</span>
+                              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500 inline-block"/>PDV</span>
+                            </div>
+                          </div>
+                          <div className="h-44">
+                            <DailySalesChart data={adminChartData.dailyData} showPdv={adminChartData.totalPdv > 0} />
+                          </div>
+                          <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-border/30 text-center">
+                            <div>
+                              <p className="text-[10px] text-muted-foreground">Delivery</p>
+                              <p className="text-sm font-black text-primary">{formatBRL(adminChartData.totalDelivery)}</p>
+                            </div>
+                            <div className="border-x border-border/30">
+                              <p className="text-[10px] text-muted-foreground">PDV</p>
+                              <p className="text-sm font-black text-blue-500">{formatBRL(adminChartData.totalPdv)}</p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] text-muted-foreground">Ticket Médio</p>
+                              <p className="text-sm font-black text-foreground">{formatBRL(adminChartData.ticketMedio)}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Pagamentos */}
+                      {adminChartData.paymentData.length > 0 && (
+                        <div className="bg-card/60 rounded-2xl border border-border/30 p-4 mb-4">
+                          <p className="text-xs font-bold text-foreground mb-3">Formas de Pagamento</p>
+                          <div className="h-32">
+                            <PaymentBreakdownChart data={adminChartData.paymentData} />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Horário de pico */}
+                      <div className="bg-card/60 rounded-2xl border border-border/30 p-4">
+                        <p className="text-xs font-bold text-foreground mb-3">Horário de Pico</p>
+                        <HourlyChart data={adminChartData.hourlyData} />
+                      </div>
+
+                      {/* Gráfico original (por hora) mantido abaixo */}
+                      <div className="bg-card/60 rounded-2xl border border-border/30 p-4 mt-4">
+                        <p className="text-xs font-bold text-foreground mb-3">Pedidos por Hora (original)</p>
                       <ResponsiveContainer width="100%" height={180}>
                         <BarChart data={hourlyData}>
                           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
