@@ -5,7 +5,7 @@ import { formatBRL } from "@/lib/utils";
 import {
   Receipt, Banknote, CreditCard, Smartphone, Loader2,
   Clock, ArrowDownCircle, ArrowUpCircle, ChevronRight,
-  ChevronDown, Package, Lock, Unlock,
+  ChevronDown, Package, Lock, Unlock, BarChart3,
 } from "lucide-react";
 
 const PAYMENT_LABELS: Record<string, { label: string; icon: any; color: string }> = {
@@ -270,7 +270,15 @@ const PdvSessionDetail = ({ session, storeId }: { session: any; storeId: string 
 
 // ─── Lista de turnos com drill-down ──────────────────────────────────────────
 
-export const PdvSessionsList = ({ storeId, limit = 30 }: { storeId: string; limit?: number }) => {
+export const PdvSessionsList = ({
+  storeId,
+  limit = 30,
+  onViewRelatorio,
+}: {
+  storeId: string;
+  limit?: number;
+  onViewRelatorio?: (sessionId: string) => void;
+}) => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const { data: sessions = [], isLoading } = useQuery({
@@ -303,7 +311,8 @@ export const PdvSessionsList = ({ storeId, limit = 30 }: { storeId: string; limi
 
         return (
           <div key={s.id} className={`rounded-2xl border transition-colors ${isExpanded ? "border-primary/30" : "border-border/50 bg-card"}`}>
-            <button className="w-full text-left p-3.5 flex items-center gap-3" onClick={() => setExpandedId(isExpanded ? null : s.id)}>
+            <div className="flex items-center">
+              <button className="flex-1 text-left p-3.5 flex items-center gap-3" onClick={() => setExpandedId(isExpanded ? null : s.id)}>
               <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isOpen ? "bg-emerald-500/10" : "bg-muted/40"}`}>
                 {isOpen ? <Unlock className="h-4 w-4 text-emerald-500" /> : <Lock className="h-4 w-4 text-muted-foreground" />}
               </div>
@@ -319,8 +328,19 @@ export const PdvSessionsList = ({ storeId, limit = 30 }: { storeId: string; limi
                   {closed && ` · Fechado: ${closed}`}
                 </p>
               </div>
-              {isExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" /> : <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />}
-            </button>
+                {isExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" /> : <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />}
+              </button>
+              {onViewRelatorio && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onViewRelatorio(s.id); }}
+                  className="p-3.5 text-primary hover:bg-primary/5 rounded-r-2xl transition-colors shrink-0 flex flex-col items-center gap-0.5"
+                  title="Ver relatório deste turno"
+                >
+                  <BarChart3 className="h-4 w-4" />
+                  <span className="text-[9px] font-bold">Relatório</span>
+                </button>
+              )}
+            </div>
             {isExpanded && (
               <div className="px-3.5 pb-4 border-t border-border/30">
                 <PdvSessionDetail session={s} storeId={storeId} />
