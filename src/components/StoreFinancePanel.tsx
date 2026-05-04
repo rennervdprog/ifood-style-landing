@@ -22,6 +22,10 @@ import {
   AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip,
   ResponsiveContainer, PieChart, Pie, Cell,
 } from "recharts";
+import {
+  DailySalesChart, PaymentBreakdownChart, HourlyChart,
+  KpiCard, CommissionSummary, useFinanceChartData, CHART_COLORS,
+} from "@/components/FinanceCharts";
 import PaymentStatement from "@/components/PaymentStatement";
 
  interface StoreFinancePanelProps {
@@ -152,6 +156,23 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
       return data || [];
     },
     enabled: !!storeId,
+  });
+
+  // Busca movimentações PDV para o hook de gráficos
+  const { data: pdvMovementsForChart = [] } = useQuery({
+    queryKey: ["pdv-movements-chart", storeId, dateFilter],
+    queryFn: async () => {
+      const { start, end } = getDateRange(dateFilter);
+      const { data } = await supabase.from("pdv_movements" as any)
+        .select("id, amount, created_at, type, payment_method")
+        .eq("store_id", storeId)
+        .eq("type", "sale")
+        .gte("created_at", start)
+        .lte("created_at", end);
+      return (data || []) as any[];
+    },
+    enabled: !!storeId,
+    staleTime: 60_000,
   });
 
   // Busca comissão PDV pendente direto do banco (calculada pelo trigger, fonte da verdade)
@@ -654,10 +675,99 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
         </div>
       </div>
 
-      {/* Area Chart: Daily Sales */}
+      {/* ── RESUMO DE COMISSÕES (delivery + PDV) — topo da aba financeiro ── */}
+      <CommissionSummary
+        deliveryCommission={chartUnified.deliveryCommission}
+        pdvCommission={chartUnified.pdvCommission}
+        pdvCommissionPending={Number(pdvPlanData?.pdv_commission_pending || 0)}
+        planType={storePlan?.plan_type || "commission_only"}
+        deliveryRate={Number(storePlan?.commission_rate || 0)}
+        pdvRate={Number(pdvPlanData?.pdv_commission_rate || 0)}
+      />
+
+      {/* ── GRÁFICO DIÁRIO: Delivery + PDV ── */}
+      {chartUnified.dailyData.length > 1 && (
+        <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-5 border border-border/30">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-bold text-foreground">Evolução Diária — Delivery vs PDV</p>
+            <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary inline-block" />Delivery</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />PDV</span>
+            </div>
+          </div>
+          <div className="h-48">
+            <DailySalesChart data={chartUnified.dailyData} showPdv={chartUnified.totalPdv > 0} />
+          </div>
+          <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-border/30">
+            <div className="text-center">
+              <p className="text-[10px] text-muted-foreground">Delivery</p>
+              <p className="text-sm font-black text-primary">{formatBRL(chartUnified.totalDelivery)}</p>
+              <p className="text-[9px] text-muted-foreground">{chartUnified.deliveryOrders.length} pedidos</p>
+            </div>
+            <div className="text-center border-x border-border/30">
+              <p className="text-[10px] text-muted-foreground">PDV</p>
+              <p className="text-sm font-black text-blue-500">{formatBRL(chartUnified.totalPdv)}</p>
+              <p className="text-[9px] text-muted-foreground">{chartUnified.pdvOrders.length} vendas</p>
+            </div>
+            <div className="text-center">
+              <p className="text-[10px] text-muted-foreground">Total</p>
+              <p className="text-sm font-black text-foreground">{formatBRL(chartUnified.totalRevenue)}</p>
+              <p className="text-[9px] text-muted-foreground">ticket {formatBRL(chartUnified.ticketMedio)}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── PAGAMENTOS + HORÁRIO DE PICO ── */}
+      <div className="grid grid-cols-1 gap-4">
+        {chartUnified.paymentData.length > 0 && (
+          <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-5 border border-border/30">
+            <p className="text-xs font-bold text-foreground mb-3">Formas de Pagamento</p>
+            <div className="h-36">
+              <PaymentBreakdownChart data={chartUnified.paymentData} />
+            </div>
+          </div>
+        )}
+        {chartUnified.hourlyData.length > 0 && (
+          <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-5 border border-border/30">
+            <p className="text-xs font-bold text-foreground mb-3">Horário de Pico</p>
+            <HourlyChart data={chartUnified.hourlyData} />
+          </div>
+        )}
+      </div>
+
+      {/* ── PRODUTOS PDV MAIS VENDIDOS ── */}
+      {chartUnified.topProducts.length > 0 && (
+        <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-5 border border-border/30">
+          <p className="text-xs font-bold text-foreground mb-3">🏆 Produtos Mais Vendidos (PDV)</p>
+          <div className="space-y-2">
+            {chartUnified.topProducts.map((p, i) => {
+              const maxRevenue = chartUnified.topProducts[0]?.revenue || 1;
+              return (
+                <div key={p.name} className="flex items-center gap-2">
+                  <span className="text-[10px] font-black text-muted-foreground w-4 shrink-0">{i+1}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-0.5">
+                      <p className="text-xs font-semibold text-foreground truncate">{p.name}</p>
+                      <p className="text-xs font-black text-foreground shrink-0 ml-2">{formatBRL(p.revenue)}</p>
+                    </div>
+                    <div className="h-1.5 bg-muted/40 rounded-full overflow-hidden">
+                      <div className="h-full bg-blue-500/70 rounded-full transition-all"
+                           style={{ width: `${(p.revenue/maxRevenue)*100}%` }} />
+                    </div>
+                    <p className="text-[9px] text-muted-foreground mt-0.5">{p.qty} unidades</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── GRÁFICO DE VOLUME (legado, mantido por compatibilidade) ── */}
       {chartData.length > 1 && (
         <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-5 border border-border/30">
-          <p className="text-xs font-bold text-foreground mb-4">Volume de Vendas</p>
+          <p className="text-xs font-bold text-foreground mb-4">Volume de Vendas (Delivery)</p>
           <div className="h-40">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData}>
