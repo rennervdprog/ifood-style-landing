@@ -265,7 +265,8 @@ Deno.serve(async (req) => {
             .single();
 
           if (store && ownerProfile?.pix_key) {
-            const isFixedPlan = storePlan?.plan_type === "fixed";
+            // "fixed" = Essencial | "supporter" = Apoiador — ambos pagam PIX R$1,99, 0% comissão
+            const isFixedPlan = storePlan?.plan_type === "fixed" || storePlan?.plan_type === "supporter";
             const isOwnDelivery = store.delivery_mode === "own";
 
             // Read delivery fee config for PIX operational fee and platform split
@@ -317,7 +318,9 @@ Deno.serve(async (req) => {
               const rate = (storePlan?.commission_rate ?? store.commission_rate ?? 6) / 100;
               commissionAmount = Math.round(subtotal * rate * 100) / 100;
               if (isOwnDelivery) {
-                storeShare = Math.round((subtotal * (1 - rate) + deliveryFee) * 100) / 100;
+                // R$2 plataforma é descontado do deliveryFee em todos os planos
+                const deliveryAfterPlatformSplit = Math.max(0, deliveryFee - platformSplit);
+                storeShare = Math.round((subtotal * (1 - rate) + deliveryAfterPlatformSplit) * 100) / 100;
               } else {
                 storeShare = Math.round(subtotal * (1 - rate) * 100) / 100;
               }
