@@ -11,7 +11,7 @@ import confetti from "canvas-confetti";
 import {
   Bike, MapPin, Navigation, KeyRound, CheckCircle2, Package,
   Store, ChevronRight, Route, Clock, User, Phone, ArrowRight,
-  Loader2, Zap, Wallet, Power, PowerOff, X
+  Loader2, Zap, Wallet, Power, PowerOff, X, AlertTriangle
 } from "lucide-react";
 
 const DECLINED_TTL_MS = 1000 * 60 * 60 * 6; // 6h
@@ -33,6 +33,7 @@ const saveDeclined = (uid: string, map: Record<string, number>) => {
 };
 import WhatsAppButton from "@/components/WhatsAppButton";
 import StoreDriverEarnings from "@/components/StoreDriverEarnings";
+import { AlertTriangle } from "lucide-react";
 
 
 /* ── Helpers ── */
@@ -700,8 +701,23 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   }, [myDeliveries?.[0]?.id]);
 
 
+  const hasPix = !!(driverProfile as any)?.pix_key;
+
   return (
     <div className="px-4 py-4 pb-32 space-y-5">
+      {/* Alerta PIX não cadastrado — necessário para saque automático */}
+      {!hasPix && (
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3 flex items-start gap-2.5">
+          <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-xs font-bold text-amber-600">Chave PIX não cadastrada</p>
+            <p className="text-[11px] text-amber-600/80 mt-0.5">
+              Cadastre sua chave PIX nas Configurações para receber pagamentos automáticos.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Online/Offline toggle */}
       <button
         onClick={toggleOnline}
