@@ -158,6 +158,25 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
     enabled: !!storeId,
   });
 
+  // Helper para calcular range de datas
+  const getDateRange = (filter: string) => {
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const fmt = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    if (filter === "hoje") return { start: fmt(now) + "T00:00:00", end: fmt(now) + "T23:59:59" };
+    if (filter === "semana") {
+      const d = new Date(now); d.setDate(d.getDate() - 6);
+      return { start: fmt(d) + "T00:00:00", end: fmt(now) + "T23:59:59" };
+    }
+    if (filter === "mes") {
+      const d = new Date(now.getFullYear(), now.getMonth(), 1);
+      return { start: fmt(d) + "T00:00:00", end: fmt(now) + "T23:59:59" };
+    }
+    // custom ou default
+    const d = new Date(now); d.setDate(d.getDate() - 29);
+    return { start: fmt(d) + "T00:00:00", end: fmt(now) + "T23:59:59" };
+  };
+
   // Busca movimentações PDV para o hook de gráficos
   const { data: pdvMovementsForChart = [] } = useQuery({
     queryKey: ["pdv-movements-chart", storeId, dateFilter],
@@ -308,10 +327,6 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
   const hasDocument = !!ownerProfile?.document;
 
   const completedOrders = orders?.filter(o => ["entregue", "finalizado"].includes(o.status)) || [];
-
-  // Hook de gráficos unificado — delivery + PDV
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const chartUnified = useFinanceChartData(completedOrders, pdvMovementsForChart);
 
   // Separar por canal
   const deliveryOrders = completedOrders.filter(o => (o as any).order_source !== "pdv");
@@ -684,8 +699,8 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
         deliveryCommission={chartUnified.deliveryCommission}
         pdvCommission={chartUnified.pdvCommission}
         pdvCommissionPending={Number(pdvPlanData?.pdv_commission_pending || 0)}
-        planType={storePlan?.plan_type || "commission_only"}
-        deliveryRate={Number(storePlan?.commission_rate || 0)}
+        planType={(storeData as any)?.plan_type || "commission_only"}
+        deliveryRate={Number((storeData as any)?.plan_commission_rate || (storeData as any)?.commission_rate || 0)}
         pdvRate={Number(pdvPlanData?.pdv_commission_rate || 0)}
       />
 
