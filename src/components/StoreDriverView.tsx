@@ -33,7 +33,6 @@ const saveDeclined = (uid: string, map: Record<string, number>) => {
 };
 import WhatsAppButton from "@/components/WhatsAppButton";
 import StoreDriverEarnings from "@/components/StoreDriverEarnings";
-import { AlertTriangle } from "lucide-react";
 
 
 /* ── Helpers ── */
@@ -249,6 +248,21 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       return (data as any) || [];
     },
     enabled: linkedStoreIds.length > 0,
+  });
+
+  // Fetch perfil do driver (para verificar pix_key etc)
+  const { data: driverProfile } = useQuery({
+    queryKey: ["store-driver-profile", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, pix_key, avatar_url")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      return data as any;
+    },
+    enabled: !!user?.id,
+    staleTime: 60_000,
   });
 
   // Fetch own driver status (online/offline)
