@@ -502,10 +502,11 @@ const AdminDashboard = () => {
       const fallbackGroups = requiredAddonGroupsByProduct.get(item.product_id) || [];
       if (fallbackGroups.length === 0) return;
 
-      const existingKeys = new Set(
+      // Dedup key uses only addonName (not groupName) so renamed groups don't cause duplicates
+      const existingAddonNames = new Set(
         highlights
           .filter((highlight) => highlight.itemId === item.id)
-          .map((highlight) => `${highlight.groupName}::${normalizeAddonName(highlight.addonName)}`)
+          .map((highlight) => normalizeAddonName(highlight.addonName))
       );
 
       fallbackGroups.forEach((group) => {
@@ -515,9 +516,8 @@ const AdminDashboard = () => {
           if (!addon?.name) return;
 
           const normalizedAddonName = normalizeAddonName(addon.name);
-          const highlightKey = `${group.name}::${normalizedAddonName}`;
 
-          if (!groupAddonNames.has(normalizedAddonName) || existingKeys.has(highlightKey)) return;
+          if (!groupAddonNames.has(normalizedAddonName) || existingAddonNames.has(normalizedAddonName)) return;
 
           highlights.push({
             itemId: item.id,
@@ -525,7 +525,7 @@ const AdminDashboard = () => {
             groupName: group.name,
             addonName: addon.name,
           });
-          existingKeys.add(highlightKey);
+          existingAddonNames.add(normalizedAddonName);
         });
       });
     });
