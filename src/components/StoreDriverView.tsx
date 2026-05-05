@@ -568,6 +568,8 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   };
 
   const acceptOrder = async (orderId: string) => {
+    if (acceptingOrderId) return; // prevent double-tap
+    setAcceptingOrderId(orderId);
     // Optimistic UI: remove from available list immediately
     const previousAvailable = queryClient.getQueryData<any[]>(["store-driver-available", linkedStoreIds]);
     const acceptedOrder = (availableOrders || []).find((o: any) => o.id === orderId);
@@ -604,6 +606,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
         notifyStoreOwner(acceptedOrder, "🛵 Entregador aceitou!", `${driverName} aceitou o pedido #${orderId.slice(0, 8).toUpperCase()}`);
       }
     }
+    setAcceptingOrderId(null);
   };
 
   const acceptAllFiltered = async () => {
@@ -623,6 +626,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   };
 
   const [departingId, setDepartingId] = useState<string | null>(null);
+  const [acceptingOrderId, setAcceptingOrderId] = useState<string | null>(null);
 
   const departForDelivery = async (orderId: string) => {
     setDepartingId(orderId);
@@ -1198,14 +1202,14 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                     )}
                     <button
                       onClick={() => acceptOrder(order.id)}
-                      disabled={hasActiveRoutes}
+                      disabled={hasActiveRoutes || !!acceptingOrderId}
                       className={`flex-1 font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-all ${
                         hasActiveRoutes
                           ? "bg-muted text-muted-foreground cursor-not-allowed"
-                          : "bg-primary text-primary-foreground active:scale-[0.98]"
+                          : "bg-primary text-primary-foreground active:scale-[0.98] disabled:opacity-70"
                       }`}
                     >
-                      {hasActiveRoutes ? "FINALIZE A ROTA ATUAL" : "ACEITAR"} <ArrowRight className="h-4 w-4" />
+                      {acceptingOrderId === order.id ? "Aceitando..." : hasActiveRoutes ? "FINALIZE A ROTA ATUAL" : <>ACEITAR <ArrowRight className="h-4 w-4" /></>}
                     </button>
                   </div>
                 );
