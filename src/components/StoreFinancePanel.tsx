@@ -309,6 +309,10 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
 
   const completedOrders = orders?.filter(o => ["entregue", "finalizado"].includes(o.status)) || [];
 
+  // Hook de gráficos unificado — delivery + PDV
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const chartUnified = useFinanceChartData(completedOrders, pdvMovementsForChart);
+
   // Separar por canal
   const deliveryOrders = completedOrders.filter(o => (o as any).order_source !== "pdv");
   const pdvOrders = completedOrders.filter(o => (o as any).order_source === "pdv");
