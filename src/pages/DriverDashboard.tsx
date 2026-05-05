@@ -191,6 +191,7 @@ const DriverDashboard = () => {
       return data;
     },
      enabled: !!user && isOnline,
+     staleTime: 10_000, // Realtime keeps this fresh — avoid refetch on every focus
   });
 
    const { data: myDelivery, refetch: refetchMyDelivery } = useQuery({
@@ -206,6 +207,7 @@ const DriverDashboard = () => {
       return data;
     },
      enabled: !!user,
+     staleTime: 10_000,
   });
 
   const { data: deliveryHistory, isLoading: loadingHistory } = useQuery({
@@ -548,6 +550,8 @@ const DriverDashboard = () => {
       toast.error("Você já tem uma entrega ativa. Finalize-a antes de aceitar outra.");
       return;
     }
+    if (acceptingOrderId) return; // prevent double-tap
+    setAcceptingOrderId(orderId);
     // Optimistic UI: remove order from available list immediately so it disappears instantly
     const previousAvailable = queryClient.getQueryData<any[]>(["driver-available-orders"]);
     const acceptedOrder = (availableOrders || []).find((o: any) => o.id === orderId);
@@ -576,6 +580,7 @@ const DriverDashboard = () => {
       queryClient.invalidateQueries({ queryKey: ["driver-available-orders"] });
       queryClient.invalidateQueries({ queryKey: ["driver-my-delivery", user!.id] });
     }
+    setAcceptingOrderId(null);
   };
 
   const validateCollection = async (orderId: string) => {
@@ -630,15 +635,15 @@ const DriverDashboard = () => {
         setPinInput("");
         setVerifying(false);
         
-        // Invalidate queries in parallel
-        await Promise.all([
+        // Invalidate queries in background — don't block the success UX
+        Promise.all([
           queryClient.invalidateQueries({ queryKey: ["driver-my-delivery", user!.id] }),
           queryClient.invalidateQueries({ queryKey: ["driver-pending-return", user!.id] }),
           queryClient.invalidateQueries({ queryKey: ["driver-available-orders"] }),
           queryClient.invalidateQueries({ queryKey: ["driver-history", user!.id] }),
           queryClient.invalidateQueries({ queryKey: ["driver-balance", user!.id] }),
           queryClient.invalidateQueries({ queryKey: ["driver-earnings", user!.id] })
-        ]);
+        ]).catch(() => {});
       }
     } catch (err) {
       console.error("Error finishing delivery:", err);
@@ -647,6 +652,7 @@ const DriverDashboard = () => {
     }
   };
 
+  const [acceptingOrderId, setAcceptingOrderId] = useState<string | null>(null);
   const [settlementCodeInput, setSettlementCodeInput] = useState("");
   const [confirmingReturn, setConfirmingReturn] = useState(false);
   const [acceptingInvite, setAcceptingInvite] = useState<string | null>(null);
@@ -1331,9 +1337,10 @@ const DriverDashboard = () => {
                               </div>
                               <button
                                 onClick={() => acceptOrder(order.id)}
-                                className="bg-primary text-primary-foreground font-bold px-7 py-3.5 rounded-2xl text-sm active:scale-[0.97] transition-all flex items-center gap-2 shadow-lg shadow-primary/20"
+                                disabled={!!acceptingOrderId}
+                                className="bg-primary text-primary-foreground font-bold px-7 py-3.5 rounded-2xl text-sm active:scale-[0.97] transition-all flex items-center gap-2 shadow-lg shadow-primary/20 disabled:opacity-70"
                               >
-                                ACEITAR <ArrowRight className="h-4 w-4" />
+                                {acceptingOrderId === order.id ? "Aceitando..." : <>ACEITAR <ArrowRight className="h-4 w-4" /></>}
                               </button>
                             </div>
                           </div>
