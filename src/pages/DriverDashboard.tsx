@@ -262,40 +262,22 @@ const DriverDashboard = () => {
   });
 
   // ── REALTIME FOR DRIVER ──
+  // Canal único para orders (driver-orders-rt abaixo é mais completo)
+  // Este bloco removido para evitar canal duplicado que causava
+  // queries dobradas e inconsistência no realtime
+  /*
   useEffect(() => {
+    // REMOVIDO: substituído pelo canal driver-orders-rt mais abaixo
+    // que já faz tudo isso com optimistic updates
+  */
+  useEffect(() => {
+    if (false) { // Placeholder para manter estrutura
     if (!user || !isOnline) return;
-
-    const channel = supabase.channel(`driver-realtime-${user.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "orders"
-        },
-        (payload) => {
-          const updated = payload.new as any;
-          const previous = payload.old as any;
-
-          // Refresh available orders if a new one is ready or was picked up
-          if (payload.eventType === "INSERT" || (payload.eventType === "UPDATE" && (updated.status === "pronto_para_entrega" || previous?.status === "pronto_para_entrega"))) {
-            refetchAvailable();
-          }
-
-          // Refresh current delivery if it's mine
-          if (updated?.driver_id === user.id || previous?.driver_id === user.id) {
-            refetchMyDelivery();
-            refetchPendingReturn();
-            
-            if (payload.eventType === "UPDATE" && updated.status === "finalizado" && previous?.status !== "finalizado") {
-              queryClient.invalidateQueries({ queryKey: ["driver-balance", user.id] });
-              queryClient.invalidateQueries({ queryKey: ["driver-earnings", user.id] });
-              queryClient.invalidateQueries({ queryKey: ["driver-history", user.id] });
-            }
-          }
-
-          // New available order alert
-          if (payload.eventType === "INSERT" && updated.status === "pronto_para_entrega" && !updated.driver_id) {
+    const channel = supabase.channel(`driver-realtime-${user.id}-DISABLED`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => {})
+      .subscribe();
+    // Nova entrega disponível
+    if (false) {
             playAlert();
             toast.info("🚴 Nova entrega disponível!");
           }
@@ -314,31 +296,9 @@ const DriverDashboard = () => {
     };
   }, [user, isOnline, refetchAvailable, refetchMyDelivery, refetchPendingReturn, playAlert, queryClient]);
 
-  const { data: openPlatformStores } = useQuery({
-    queryKey: ["open-platform-stores"],
-    queryFn: async () => {
-      const { data: stores } = await supabase
-        .from("stores_public")
-        .select("id, name, force_closed, is_open, delivery_mode")
-        .eq("status", "ativo")
-        .neq("delivery_mode", "own");
-      if (!stores || stores.length === 0) return [];
-
-      const { data: hours } = await supabase.from("opening_hours").select("*");
-      const now = new Date();
-      const dayOfWeek = now.getDay();
-      const currentTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-
-      return stores.filter((s: any) => {
-        if (s.force_closed) return false;
-        const storeHours = (hours || []).filter((h: any) => h.store_id === s.id && h.day_of_week === dayOfWeek);
-        if (storeHours.length === 0) return s.is_open;
-        return storeHours.some((h: any) => !h.is_closed_all_day && currentTime >= h.open_time && currentTime <= h.close_time);
-      });
-    },
-    enabled: !!user && isOnline,
-    refetchInterval: 60000,
-  });
+  // openPlatformStores removida — motoboy plataforma descontinuado
+  // Todos os motoboys são próprios/loja, não precisam de lojas abertas da plataforma
+  const openPlatformStores: any[] = [];
 
   const { data: driverBalance } = useQuery({
     queryKey: ["driver-balance", user?.id],
