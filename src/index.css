@@ -214,6 +214,15 @@ div[style*="Edit with Lovable"],
   min-height: 100vh;
 }
 
+/* Elimina delay de 300ms em TODOS os botões e links no app nativo */
+.native-app button,
+.native-app a,
+.native-app [role="button"] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+}
+
 /* Bloqueia pull-to-refresh do Chrome no Android */
 .native-app html,
 .native-app body {
