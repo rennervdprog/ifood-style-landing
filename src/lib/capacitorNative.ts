@@ -308,11 +308,21 @@ export async function hideSplash() {
 
 // ── Haptics ──
 
+// Cache the plugin reference so the first import is the only one
+let hapticsPlugin: any = null;
+async function getHaptics() {
+  if (!hapticsPlugin) {
+    const mod = await import("@capacitor/haptics");
+    hapticsPlugin = mod;
+  }
+  return hapticsPlugin;
+}
+
 export async function hapticFeedback(type: "light" | "medium" | "heavy" = "medium") {
   if (!isCapacitorNative()) return;
 
   try {
-    const { Haptics, ImpactStyle } = await import("@capacitor/haptics");
+    const { Haptics, ImpactStyle } = await getHaptics();
     const styleMap = { light: ImpactStyle.Light, medium: ImpactStyle.Medium, heavy: ImpactStyle.Heavy };
     await Haptics.impact({ style: styleMap[type] });
   } catch { /* noop */ }
@@ -322,7 +332,7 @@ export async function hapticNotification() {
   if (!isCapacitorNative()) return;
 
   try {
-    const { Haptics, NotificationType } = await import("@capacitor/haptics");
+    const { Haptics, NotificationType } = await getHaptics();
     await Haptics.notification({ type: NotificationType.Success });
   } catch { /* noop */ }
 }
