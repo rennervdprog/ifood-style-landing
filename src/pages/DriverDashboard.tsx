@@ -262,39 +262,8 @@ const DriverDashboard = () => {
   });
 
   // ── REALTIME FOR DRIVER ──
-  // Canal único para orders (driver-orders-rt abaixo é mais completo)
-  // Este bloco removido para evitar canal duplicado que causava
-  // queries dobradas e inconsistência no realtime
-  /*
-  useEffect(() => {
-    // REMOVIDO: substituído pelo canal driver-orders-rt mais abaixo
-    // que já faz tudo isso com optimistic updates
-  */
-  useEffect(() => {
-    if (false) { // Placeholder para manter estrutura
-    if (!user || !isOnline) return;
-    const channel = supabase.channel(`driver-realtime-${user.id}-DISABLED`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => {})
-      .subscribe();
-    // Nova entrega disponível
-    if (false) {
-            playAlert();
-            toast.info("🚴 Nova entrega disponível!");
-          }
-        }
-      )
-      .subscribe((status) => {
-        setRealtimeConnected(status === "SUBSCRIBED");
-        if (status === "SUBSCRIBED") {
-          refetchAvailable();
-          refetchMyDelivery();
-        }
-      });
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user, isOnline, refetchAvailable, refetchMyDelivery, refetchPendingReturn, playAlert, queryClient]);
+  // Canal driver-realtime removido — substituído pelo canal driver-orders-rt
+  // mais abaixo que já faz tudo com optimistic updates, evitando queries dobradas
 
   // openPlatformStores removida — motoboy plataforma descontinuado
   // Todos os motoboys são próprios/loja, não precisam de lojas abertas da plataforma
