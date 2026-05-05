@@ -260,7 +260,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
   const priceReplacingGroups = addonGroups.filter((g) => g.price_replaces_base);
   const hasPriceReplacingGroup = priceReplacingGroups.length > 0;
   const priceReplacingSelected = priceReplacingGroups.flatMap((g) =>
-    addonItems.filter((ai) => ai.group_id === g.id && (selectedAddons[g.id] || []).includes(ai.id)),
+    addonItems.filter((ai) => ai.group_id === g.id && !!selectedAddons[g.id]?.[ai.id]),
   );
   const replacementPrice = priceReplacingSelected.reduce((s, a) => s + Number(a.price || 0), 0);
 
@@ -367,7 +367,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
   const renderAddonGroup = (group: AddonGroup) => {
     const items = addonItems.filter((ai) => ai.group_id === group.id);
     const isRequired = group.min_select > 0;
-    const currentSelected = selectedAddons[group.id]?.length || 0;
+    const currentSelected = Object.values(selectedAddons[group.id] || {}).reduce((s, q) => s + q, 0);
 
     return (
       <section key={group.id} className="rounded-2xl border border-border bg-card p-4 shadow-sm">
