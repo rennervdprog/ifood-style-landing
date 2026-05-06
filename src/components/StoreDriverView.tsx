@@ -235,6 +235,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       return counts;
     },
     enabled: linkedStoreIds.length > 0,
+    staleTime: 1000 * 60 * 2,
   });
 
   // Fetch store names and coordinates
@@ -248,6 +249,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       return (data as any) || [];
     },
     enabled: linkedStoreIds.length > 0,
+    staleTime: 1000 * 60 * 10,
   });
 
   // Fetch perfil do driver (para verificar pix_key etc)
@@ -277,6 +279,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       return (data as any) || createFallbackDriverStatus();
     },
     enabled: !!user,
+    staleTime: 1000 * 15,
   });
   const isOnline = !!driverStatus?.is_online;
   const [togglingOnline, setTogglingOnline] = useState(false);
@@ -298,6 +301,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       return data || [];
     },
     enabled: linkedStoreIds.length > 0 && isOnline && !!user,
+    staleTime: 10_000,
     refetchInterval: 30000, // Fallback only; realtime handles instant updates
   });
 
@@ -315,6 +319,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       return data || [];
     },
     enabled: !!user,
+    staleTime: 10_000,
     refetchInterval: 30000, // Fallback only; realtime handles instant updates
   });
 
@@ -334,6 +339,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       return data || [];
     },
     enabled: clientIds.length > 0,
+    staleTime: 1000 * 60 * 5,
   });
 
   // Delivery count
@@ -348,6 +354,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       return count || 0;
     },
     enabled: !!user,
+    staleTime: 1000 * 60 * 2,
   });
 
   const getContact = useCallback((userId: string) => {
@@ -568,8 +575,6 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   };
 
   const acceptOrder = async (orderId: string) => {
-    if (acceptingOrderId) return; // prevent double-tap
-    setAcceptingOrderId(orderId);
     // Optimistic UI: remove from available list immediately
     const previousAvailable = queryClient.getQueryData<any[]>(["store-driver-available", linkedStoreIds]);
     const acceptedOrder = (availableOrders || []).find((o: any) => o.id === orderId);
@@ -606,7 +611,6 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
         notifyStoreOwner(acceptedOrder, "🛵 Entregador aceitou!", `${driverName} aceitou o pedido #${orderId.slice(0, 8).toUpperCase()}`);
       }
     }
-    setAcceptingOrderId(null);
   };
 
   const acceptAllFiltered = async () => {
@@ -626,7 +630,6 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   };
 
   const [departingId, setDepartingId] = useState<string | null>(null);
-  const [acceptingOrderId, setAcceptingOrderId] = useState<string | null>(null);
 
   const departForDelivery = async (orderId: string) => {
     setDepartingId(orderId);
@@ -1202,14 +1205,14 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                     )}
                     <button
                       onClick={() => acceptOrder(order.id)}
-                      disabled={hasActiveRoutes || !!acceptingOrderId}
+                      disabled={hasActiveRoutes}
                       className={`flex-1 font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-all ${
                         hasActiveRoutes
                           ? "bg-muted text-muted-foreground cursor-not-allowed"
-                          : "bg-primary text-primary-foreground active:scale-[0.98] disabled:opacity-70"
+                          : "bg-primary text-primary-foreground active:scale-[0.98]"
                       }`}
                     >
-                      {acceptingOrderId === order.id ? "Aceitando..." : hasActiveRoutes ? "FINALIZE A ROTA ATUAL" : <>ACEITAR <ArrowRight className="h-4 w-4" /></>}
+                      {hasActiveRoutes ? "FINALIZE A ROTA ATUAL" : "ACEITAR"} <ArrowRight className="h-4 w-4" />
                     </button>
                   </div>
                 );
