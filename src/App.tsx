@@ -58,13 +58,21 @@ const PageLoader = () => (
 
 const APP_VERSION = "1.2.62";
 
+// On Capacitor, capacitorLifecycle.ts already calls focusManager.setFocused(true)
+// on every app resume — which triggers refetchOnWindowFocus internally.
+// Keeping refetchOnWindowFocus:true causes a double-refetch on every resume.
+// Disable it here and rely solely on explicit invalidations + focusManager.
+const isNativeApp = typeof window !== "undefined" &&
+  (window as any).Capacitor?.isNativePlatform?.() === true;
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 30,           // 30 sec — more aggressive refresh
-      gcTime: 1000 * 60 * 5,          // 5 min cache
-      refetchOnWindowFocus: true,
+      staleTime: 1000 * 30,           // 30s — realtime keeps hot data fresh
+      gcTime: 1000 * 60 * 10,         // 10 min cache (was 5 — reduces cold re-fetches)
+      refetchOnWindowFocus: !isNativeApp, // Capacitor lifecycle handles this
       refetchOnReconnect: true,
+      refetchOnMount: true,
       retry: 1,
     },
   },
