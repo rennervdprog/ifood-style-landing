@@ -37,9 +37,8 @@ function reconnectRealtime() {
           channel.subscribe();
         } catch {}
       });
-      // Bump focus state — React Query will refetch any stale query that has
-      // a window-focus listener attached, ensuring UI catches up to truth.
-      focusManager.setFocused(false);
+      // Bump focus state — React Query will refetch any stale query.
+      // Single toggle is enough — no need for false→true trick.
       focusManager.setFocused(true);
     }, 300);
   } catch (e) {
@@ -88,9 +87,6 @@ async function setupAppStateListener() {
     App.addListener("appStateChange", ({ isActive }) => {
       console.log("[CapLifecycle]", isActive ? "▶️ Resumed" : "⏸️ Backgrounded");
 
-      // Tell React Query about focus state so it can refetch stale queries
-      focusManager.setFocused(isActive);
-
       if (isActive) {
         const sinceBackgrounded = lastBackgroundedAt ? Date.now() - lastBackgroundedAt : Infinity;
         onlineManager.setOnline(true);
@@ -98,8 +94,7 @@ async function setupAppStateListener() {
         reconnectRealtime();
         window.dispatchEvent(new CustomEvent("capacitor-app-resume"));
 
-        // Only run the late reconnect if the app was actually backgrounded a while
-        // (>10s). Quick taps away/back don't need a second reconnect — saves work.
+        // Only run the late reconnect if the app was backgrounded > 10s
         if (sinceBackgrounded > 10_000) {
           setTimeout(() => {
             onlineManager.setOnline(true);

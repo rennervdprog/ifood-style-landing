@@ -17,6 +17,8 @@ let intervalId: number | null = null;
 let currentOrderId: string | null = null;
 let lastPosition: { lat: number; lng: number; accuracy?: number; speed?: number; heading?: number } | null = null;
 let lastSentAt = 0;
+// Cache the userId so we don't call getSession() on every GPS tick (every 3-8s)
+let cachedDriverUserId: string | null = null;
 
 const UPDATE_INTERVAL_MS = 8_000; // 8 seconds heartbeat
 const MIN_DISTANCE_METERS = 5; // Send if moved > 5m (more precise)
@@ -37,10 +39,9 @@ async function sendLocation(position: { lat: number; lng: number; accuracy?: num
   const now = Date.now();
   if (!force && now - lastSentAt < MIN_SEND_INTERVAL_MS) return;
 
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.user?.id) return;
-
-  const driverUserId = session.user.id;
+  // Use cached userId — avoid async getSession() on every GPS tick
+  const driverUserId = cachedDriverUserId;
+  if (!driverUserId) return;
 
   const { error } = await supabase
     .from("driver_locations" as any)
@@ -147,6 +148,13 @@ export async function startDriverTracking(orderId?: string): Promise<boolean> {
     return true;
   }
 
+  // Resolve and cache the userId once — avoids getSession() on every GPS tick
+  if (!cachedDriverUserId) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user?.id) return false;
+    cachedDriverUserId = session.user.id;
+  }
+
   currentOrderId = orderId || null;
 
   // No app nativo, usa o Foreground Service para sobreviver à tela apagada.
@@ -207,6 +215,7 @@ export async function stopDriverTracking() {
   currentOrderId = null;
   lastPosition = null;
   lastSentAt = 0;
+  cachedDriverUserId = null;
   console.log("[GeoTrack] 🛑 Tracking stopped");
 }
 
