@@ -81,6 +81,7 @@ const CheckoutPage = () => {
       return data;
     },
     enabled: !!user,
+    staleTime: 1000 * 60 * 5,
   });
 
   const { data: deliveryFeeConfig } = useQuery({
@@ -93,6 +94,7 @@ const CheckoutPage = () => {
         .maybeSingle();
       return data?.value as unknown as DeliveryFeeConfig | null;
     },
+    staleTime: 1000 * 60 * 10, // config rarely changes
   });
 
   const storeId = items[0]?.store_id;
@@ -118,6 +120,7 @@ const CheckoutPage = () => {
       return data;
     },
     enabled: !!storeId,
+    staleTime: 1000 * 60 * 3,
   });
 
   const { data: storeHours } = useQuery({
