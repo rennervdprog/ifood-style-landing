@@ -16,5 +16,24 @@ export const supabase = createClient<Database>(
       persistSession: true,
       autoRefreshToken: true,
     },
+    realtime: {
+      // Heartbeat every 25s (default 30s) — keeps WebSocket alive through
+      // aggressive NAT timeouts common on mobile networks (3G/4G)
+      heartbeatIntervalMs: 25_000,
+      // Reconnect with exponential backoff — avoids hammering server on flaky connections
+      reconnectAfterMs: (tries) => Math.min(500 * 2 ** tries, 10_000),
+      // Timeout for each channel join attempt — fail fast, retry instead of hanging
+      timeout: 10_000,
+    },
+    global: {
+      // Abort Supabase REST queries after 12s — prevents silent hangs on slow mobile
+      fetch: (url, options) => {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 12_000);
+        return fetch(url, { ...options, signal: controller.signal }).finally(
+          () => clearTimeout(timer)
+        );
+      },
+    },
   }
 );
