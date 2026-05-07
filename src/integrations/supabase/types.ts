@@ -2452,6 +2452,7 @@ export type Database = {
           next_billing_date: string | null
           pdv_commission_pending: number | null
           pdv_commission_rate: number | null
+          pdv_enabled: boolean | null
           pix_operational_fee_override: number | null
           plan_type: Database["public"]["Enums"]["store_plan_type"]
           platform_delivery_split_override: number | null
@@ -2472,6 +2473,7 @@ export type Database = {
           next_billing_date?: string | null
           pdv_commission_pending?: number | null
           pdv_commission_rate?: number | null
+          pdv_enabled?: boolean | null
           pix_operational_fee_override?: number | null
           plan_type?: Database["public"]["Enums"]["store_plan_type"]
           platform_delivery_split_override?: number | null
@@ -2492,6 +2494,7 @@ export type Database = {
           next_billing_date?: string | null
           pdv_commission_pending?: number | null
           pdv_commission_rate?: number | null
+          pdv_enabled?: boolean | null
           pix_operational_fee_override?: number | null
           plan_type?: Database["public"]["Enums"]["store_plan_type"]
           platform_delivery_split_override?: number | null
