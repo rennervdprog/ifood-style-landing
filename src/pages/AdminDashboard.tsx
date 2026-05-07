@@ -711,21 +711,49 @@ const AdminDashboard = () => {
   }, [store?.name, getClientName]);
 
   /**
-   * Builds the WhatsApp acceptance message (with PIN if available).
+   * Mensagem de ACEITE do pedido — sem PIN.
+   * O PIN é enviado apenas quando o pedido for marcado como PRONTO.
    */
   const buildAcceptMessage = useCallback((order: any): string => {
+    const itemsList = order.order_items
+      ?.map((i: any) => `  • ${i.quantity}x ${getOrderItemDisplayName(i)}`)
+      .join("\n") || "";
+    return (
+      `✅ Olá ${getClientName(order.client_id)}! Seu pedido foi aceito pela *${store?.name || "ItaSuper"}* e já está em produção! 🍳\n\n` +
+      `*Pedido #${order.id.slice(0, 8).toUpperCase()}*\n` +
+      (itemsList ? `${itemsList}\n\n` : "") +
+      `💰 Total: *${formatBRL(Number(order.total_price))}*\n` +
+      `💳 Pagamento: ${order.payment_method === "pix" ? "PIX ✅" : order.payment_method === "cartao" ? "Cartão na entrega 💳" : "Dinheiro na entrega 💵"}\n\n` +
+      `Avisaremos quando estiver pronto! 😊`
+    );
+  }, [store?.name, getClientName]);
+
+  /**
+   * Mensagem de PRONTO — com PIN de segurança.
+   * Enviada quando o lojista marca o pedido como "pronto_para_entrega".
+   */
+  const buildReadyMessage = useCallback((order: any): string => {
     const pin = (order as any).delivery_pin;
     const pinBlock = pin
-      ? `\n\n📱 *CÓDIGO DE CONFIRMAÇÃO*\nMostre este código ao entregador na entrega:\n\n➡️ *${pin}* ⬅️\n\n⚠️ Não compartilhe antes da entrega.`
+      ? `\n\n🔑 *CÓDIGO DE ENTREGA: ${pin}*\nGuarde este código! Informe ao motoboy *somente* quando ele chegar com seu pedido.\n\n⚠️ Não compartilhe antes da entrega.`
       : "";
     return (
-      `Olá ${getClientName(order.client_id)}! 🍔 *${store?.name || "ItaSuper"}*\n` +
-      `Seu pedido *#${order.id.slice(0, 8).toUpperCase()}* foi aceito e já está em produção!` +
-      `\n\n💰 Total: *${formatBRL(Number(order.total_price))}*` +
-      `\n💳 Pagamento: ${order.payment_method === "pix" ? "PIX ✅" : order.payment_method === "cartao" ? "Cartão na entrega" : "Dinheiro na entrega"}` +
+      `📦 Olá ${getClientName(order.client_id)}! Seu pedido da *${store?.name || "ItaSuper"}* está *PRONTO*! 🎉\n\n` +
+      `Aguardando o motoboy retirar na loja...` +
       pinBlock
     );
   }, [store?.name, getClientName]);
+
+  /**
+   * Gera o href WhatsApp para o botão PRONTO (com PIN).
+   */
+  const buildReadyWhatsAppHref = useCallback((order: any): string => {
+    const clientPhone = getClientWhatsApp(order.client_id);
+    if (!clientPhone) return "#";
+    const msg = buildReadyMessage(order);
+    const phone = formatWhatsAppNumber(clientPhone);
+    return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+  }, [getClientWhatsApp, buildReadyMessage]);
 
   /**
    * Gera o href completo do WhatsApp para o botão "ACEITAR PEDIDO".
@@ -1533,14 +1561,19 @@ const AdminDashboard = () => {
                                 </button>
                               )}
                               {order.status === "preparando" && (
-                                <button onClick={() => {
-                                  setDashboardTab("orders");
-                                  setActiveTab("pronto_para_entrega");
-                                  updateOrderStatus(order.id, "pronto_para_entrega" as OrderStatus);
-                                }}
-                                  className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2.5 rounded-xl text-xs active:scale-[0.98] transition-transform">
+                                <a
+                                  href={buildReadyWhatsAppHref(order)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={() => {
+                                    setDashboardTab("orders");
+                                    setActiveTab("pronto_para_entrega");
+                                    updateOrderStatus(order.id, "pronto_para_entrega" as OrderStatus);
+                                  }}
+                                  className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2.5 rounded-xl text-xs active:scale-[0.98] transition-transform flex items-center justify-center no-underline"
+                                >
                                   🔔 MARCAR PRONTO
-                                </button>
+                                </a>
                               )}
                               {getClientWhatsApp(order.client_id) && (
                                 <WhatsAppButton number={getClientWhatsApp(order.client_id)} message={`Olá! Sobre seu pedido #${order.id.slice(0, 8).toUpperCase()}, estamos cuidando dele!`} />
@@ -2342,15 +2375,30 @@ const AdminDashboard = () => {
                               </div>
                             ) : action ? (
                               <div className="space-y-1">
-                                <button onClick={() => {
-                                  // Local tab change first for instant response
-                                  if (action.next === "preparando") setActiveTab("preparando");
-                                  else if (action.next === "pronto_para_entrega") setActiveTab("pronto_para_entrega");
-                                  updateOrderStatus(order.id, action.next);
-                                }}
-                                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 rounded-xl text-sm active:scale-[0.98] transition-transform h-12">
-                                  {action.emoji} {action.label}
-                                </button>
+                                {/* MARCAR COMO PRONTO: link <a> para abrir WhatsApp com PIN */}
+                                {action.next === "pronto_para_entrega" ? (
+                                  <a
+                                    href={buildReadyWhatsAppHref(order)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={() => {
+                                      setActiveTab("pronto_para_entrega");
+                                      updateOrderStatus(order.id, action.next);
+                                    }}
+                                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 rounded-xl text-sm active:scale-[0.98] transition-transform h-12 flex items-center justify-center no-underline"
+                                  >
+                                    {action.emoji} {action.label}
+                                  </a>
+                                ) : (
+                                  <button onClick={() => {
+                                    if (action.next === "preparando") setActiveTab("preparando");
+                                    else if (action.next === "pronto_para_entrega") setActiveTab("pronto_para_entrega");
+                                    updateOrderStatus(order.id, action.next);
+                                  }}
+                                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 rounded-xl text-sm active:scale-[0.98] transition-transform h-12">
+                                    {action.emoji} {action.label}
+                                  </button>
+                                )}
                                 {cancelConfirm === order.id ? (
                                   <div className="flex gap-1.5">
                                     <button onClick={() => handleCancelOrder(order)}
