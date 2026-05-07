@@ -222,10 +222,11 @@ const PedidosPage = () => {
     queryFn: async () => {
       let query = supabase
         .from("orders")
-        .select("*, stores(name, delivery_mode, slug, owner_id), order_items(*, products(name))")
+        .select("id, created_at, status, store_id, client_id, total_price, subtotal, delivery_fee, app_fee, payment_method, neighborhood, address_details, delivery_pin, collection_code, settlement_code, asaas_payment_id, visible_to_client, return_to_store_confirmed, delivery_confirmed_by_client, confirmed_at, driver_id, scheduled_for, change_for, needs_change, stores(name, delivery_mode, slug, owner_id), order_items(id, quantity, unit_price, observations, addons, products(name))")
         .eq("client_id", user!.id)
         .eq("visible_to_client", true)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(100);
       if (storeFilter) {
         query = query.eq("store_id", storeFilter);
       }
@@ -250,7 +251,7 @@ const PedidosPage = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*, order_items(*, products(name))")
+        .select("id, created_at, status, store_id, client_id, total_price, subtotal, delivery_fee, app_fee, payment_method, neighborhood, address_details, delivery_pin, collection_code, settlement_code, confirmed_at, driver_id, scheduled_for, change_for, needs_change, order_items(id, quantity, unit_price, observations, addons, products(name))")
         .eq("store_id", ownStore!.id)
         .order("created_at", { ascending: false })
         .limit(50);

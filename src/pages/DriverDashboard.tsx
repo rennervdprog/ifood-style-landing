@@ -184,7 +184,7 @@ const DriverDashboard = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*, stores(name), order_items(*, products(name))")
+        .select("id, created_at, status, store_id, neighborhood, address_details, total_price, delivery_fee, payment_method, driver_id, stores(name)")
         .eq("status", "pronto_para_entrega")
         .is("driver_id", null)
         .neq("neighborhood", "RETIRADA")
@@ -221,7 +221,8 @@ const DriverDashboard = () => {
         .select("id, delivery_fee, neighborhood, confirmed_at, created_at, payment_method, stores(name)")
         .eq("driver_id", user!.id)
         .eq("status", "finalizado" as any)
-        .order("confirmed_at", { ascending: false });
+        .order("confirmed_at", { ascending: false })
+        .limit(200);
       if (error) throw error;
       return data || [];
     },
