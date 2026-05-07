@@ -22,35 +22,40 @@ interface Props {
   storeName: string;
 }
 
-const planLabels: Record<StorePlanType, string> = {
-   fixed: "Essencial",
-   hybrid: "Crescimento",
-   commission_only: "Comissão",
-};
+ const planLabels: Record<StorePlanType, string> = {
+    fixed: "Essencial",
+    hybrid: "Crescimento",
+    commission_only: "Comissão",
+    supporter: "Apoiador",
+ };
 
-const planSubtitles: Record<StorePlanType, string> = {
-  fixed: "Mensalidade fixa, sem surpresas",
-  hybrid: "Mensalidade reduzida + taxa por venda",
-  commission_only: "Sem mensalidade, paga só quando vende",
-};
+ const planSubtitles: Record<StorePlanType, string> = {
+   fixed: "Mensalidade fixa, sem surpresas",
+   hybrid: "Mensalidade reduzida + taxa por venda",
+   commission_only: "Sem mensalidade, paga só quando vende",
+   supporter: "Plano exclusivo de lançamento",
+ };
 
-const planIcons: Record<StorePlanType, React.ElementType> = {
-  fixed: Shield,
-  hybrid: Rocket,
-  commission_only: Sparkles,
-};
+ const planIcons: Record<StorePlanType, React.ElementType> = {
+   fixed: Shield,
+   hybrid: Rocket,
+   commission_only: Sparkles,
+   supporter: Crown,
+ };
 
-const planAccent: Record<StorePlanType, string> = {
-  fixed: "text-amber-600 dark:text-amber-400",
-  hybrid: "text-blue-600 dark:text-blue-400",
-  commission_only: "text-emerald-600 dark:text-emerald-400",
-};
+ const planAccent: Record<StorePlanType, string> = {
+   fixed: "text-amber-600 dark:text-amber-400",
+   hybrid: "text-blue-600 dark:text-blue-400",
+   commission_only: "text-emerald-600 dark:text-emerald-400",
+   supporter: "text-amber-600",
+ };
 
-const planAccentBg: Record<StorePlanType, string> = {
-  fixed: "bg-amber-500/10",
-  hybrid: "bg-blue-500/10",
-  commission_only: "bg-emerald-500/10",
-};
+ const planAccentBg: Record<StorePlanType, string> = {
+   fixed: "bg-amber-500/10",
+   hybrid: "bg-blue-500/10",
+   commission_only: "bg-emerald-500/10",
+   supporter: "bg-amber-500/10",
+ };
 
 const planOptions: { type: StorePlanType; label: string; fee: number; rate: number; tagline: string; bullets: string[] }[] = [
   {
