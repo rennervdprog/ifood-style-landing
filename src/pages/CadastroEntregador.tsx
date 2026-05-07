@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, User, Phone, Bike, CheckCircle, MapPin, Camera, Upload, FileText, Shield, X, ChevronRight, Loader2 } from "lucide-react";
-import { maskWhatsApp } from "@/lib/whatsapp";
+ import { maskWhatsApp, formatWhatsAppNumber } from "@/lib/whatsapp";
  import { formatDocument, sanitizeDocument, validateDocument } from "@/lib/documentFormat";
 import { PasswordStrengthIndicator, usePasswordStrength } from "@/components/PasswordStrengthIndicator";
 
@@ -186,15 +186,15 @@ const CadastroEntregador = () => {
         password,
         options: {
           emailRedirectTo: window.location.origin,
-          data: {
-            full_name: fullName.trim(),
-            role: "motoboy",
-             document: sanitizeDocument(document),
-            vehicle: vehicle.trim(),
-            whatsapp: phone.trim(),
-            phone: phone.trim(),
-            city: city,
-          },
+             data: {
+               full_name: fullName.trim(),
+               role: "motoboy",
+               document: sanitizeDocument(document),
+               vehicle: vehicle.trim(),
+               whatsapp: formatWhatsAppNumber(phone),
+               phone: formatWhatsAppNumber(phone),
+               city: city,
+             },
         },
       });
       if (signUpError) throw signUpError;
@@ -208,13 +208,15 @@ const CadastroEntregador = () => {
         uploadDocument(selfieFile, userId, "selfie"),
       ]);
 
-      await supabase.from("profiles").update({
-        cnh_number: cnhNumber.trim(),
-        cnh_front_url: cnhFrontPath,
-        cnh_back_url: cnhBackPath,
-        selfie_url: selfiePath,
-        terms_accepted_at: new Date().toISOString(),
-      }).eq("user_id", userId);
+       await supabase.from("profiles").update({
+         cnh_number: cnhNumber.trim(),
+         cnh_front_url: cnhFrontPath,
+         cnh_back_url: cnhBackPath,
+         selfie_url: selfiePath,
+         terms_accepted_at: new Date().toISOString(),
+         phone: formatWhatsAppNumber(phone),
+         whatsapp_number: formatWhatsAppNumber(phone),
+       }).eq("user_id", userId);
 
       await supabase.from("terms_acceptance").insert({
         user_id: userId,
@@ -377,7 +379,18 @@ const CadastroEntregador = () => {
                    inputMode="numeric" 
                    maxLength={18} 
                  />
-                <FieldInput icon={Phone} placeholder="Telefone com DDD" value={phone} onChange={(v) => setPhone(maskWhatsApp(v))} error={errors.phone} inputMode="tel" />
+                 <FieldInput 
+                   icon={Phone} 
+                   placeholder="(14) 99999-9999" 
+                   value={phone} 
+                   onChange={(v) => {
+                     const digits = v.replace(/\D/g, "");
+                     setPhone(digits.slice(0, 11));
+                   }} 
+                   error={errors.phone} 
+                   inputMode="tel" 
+                   isPhone={true}
+                 />
                 <FieldInput icon={Bike} placeholder="Placa (ABC-1234 ou ABC1D23)" value={vehicle} onChange={(v) => {
                   let raw = v.replace(/[^A-Za-z0-9-]/g, "").toUpperCase();
                   if (raw.length === 4 && /^[A-Z]{3}\d$/.test(raw)) raw = raw.slice(0, 3) + "-" + raw.slice(3);
@@ -568,26 +581,26 @@ const CadastroEntregador = () => {
   );
 };
 
-const FieldInput = ({ icon: Icon, placeholder, value, onChange, error, type = "text", autoComplete, inputMode, maxLength }: {
-  icon: React.ElementType; placeholder: string; value: string; onChange: (v: string) => void; error?: string; type?: string; autoComplete?: string; inputMode?: string; maxLength?: number;
-}) => (
-  <div>
-    <div className="relative">
-      <Icon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-      <input
-        type={type}
-        inputMode={inputMode as any}
-        placeholder={placeholder}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full h-12 pl-10 pr-4 rounded-2xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-        autoComplete={autoComplete}
-        maxLength={maxLength}
-      />
-    </div>
-    {error && <p className="text-xs text-destructive mt-1 px-1">{error}</p>}
-  </div>
-);
+ const FieldInput = ({ icon: Icon, placeholder, value, onChange, error, type = "text", autoComplete, inputMode, maxLength, isPhone }: {
+   icon: React.ElementType; placeholder: string; value: string; onChange: (v: string) => void; error?: string; type?: string; autoComplete?: string; inputMode?: string; maxLength?: number; isPhone?: boolean;
+ }) => (
+   <div>
+     <div className="relative">
+       <Icon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+       <input
+         type={type}
+         inputMode={inputMode as any}
+         placeholder={placeholder}
+         value={isPhone ? maskWhatsApp(value) : value}
+         onChange={(e) => onChange(e.target.value)}
+         className="w-full h-12 pl-10 pr-4 rounded-2xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+         autoComplete={autoComplete}
+         maxLength={isPhone ? 16 : maxLength}
+       />
+     </div>
+     {error && <p className="text-xs text-destructive mt-1 px-1">{error}</p>}
+   </div>
+ );
 
 const DocumentUpload = ({ label, preview, onSelect, onClear }: {
   label: string; preview: string | null;

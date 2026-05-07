@@ -7,7 +7,7 @@ import { ArrowLeft, Mail, Lock, Eye, EyeOff, Store, FileText, CheckCircle, Check
 import { PasswordStrengthIndicator, usePasswordStrength } from "@/components/PasswordStrengthIndicator";
 import { Constants } from "@/integrations/supabase/types";
 import { formatCep, fetchCep } from "@/lib/cepLookup";
-import { maskWhatsApp } from "@/lib/whatsapp";
+ import { maskWhatsApp, formatWhatsAppNumber } from "@/lib/whatsapp";
  import { formatPixKeyDisplay, sanitizePixKeyForAsaas, validatePixKey, PIX_PLACEHOLDERS } from "@/lib/pixFormat";
  import { formatDocument, sanitizeDocument, validateDocument } from "@/lib/documentFormat";
 
@@ -210,24 +210,24 @@ const CadastroLojista = () => {
         password,
         options: {
           emailRedirectTo: window.location.origin,
-            data: {
-              full_name: storeName.trim(),
-              role: "lojista",
+             data: {
+               full_name: storeName.trim(),
+               role: "lojista",
                document: sanitizeDocument(document),
-              birth_date: birthDate,
-              whatsapp: whatsapp.trim(),
-              phone: whatsapp.trim(),
-              pix_type: pixType,
-              pix_key: cleanPixKey,
-              store_name: storeName.trim(),
-              store_category: storeCategory,
-              city: normalizedCity,
-              cep: cep.replace(/\D/g, ""),
-              street: street,
-              address_number: addressNumber.trim(),
-              neighborhood: neighborhood,
-              selected_plan: selectedPlan,
-            },
+               birth_date: birthDate,
+               whatsapp: formatWhatsAppNumber(whatsapp),
+               phone: formatWhatsAppNumber(whatsapp),
+               pix_type: pixType,
+               pix_key: cleanPixKey,
+               store_name: storeName.trim(),
+               store_category: storeCategory,
+               city: normalizedCity,
+               cep: cep.replace(/\D/g, ""),
+               street: street,
+               address_number: addressNumber.trim(),
+               neighborhood: neighborhood,
+               selected_plan: selectedPlan,
+             },
         },
       });
       if (signUpError) throw signUpError;
@@ -249,18 +249,18 @@ const CadastroLojista = () => {
 
         // 🔑 Cria perfil + loja + plano via RPC (não depende de trigger no auth.users)
         let createdStoreId: string | null = null;
-        const { data: storeIdRpc, error: rpcErr } = await (supabase as any).rpc(
-          "register_as_lojista",
-          {
-            _full_name: storeName.trim(),
+         const { data: storeIdRpc, error: rpcErr } = await (supabase as any).rpc(
+           "register_as_lojista",
+           {
+             _full_name: storeName.trim(),
              _document: sanitizeDocument(document),
-            _store_name: storeName.trim(),
-            _store_category: storeCategory,
-            _avatar_url: null,
-            _whatsapp: whatsapp.trim(),
-            _selected_plan: selectedPlan,
-          }
-        );
+             _store_name: storeName.trim(),
+             _store_category: storeCategory,
+             _avatar_url: null,
+             _whatsapp: formatWhatsAppNumber(whatsapp),
+             _selected_plan: selectedPlan,
+           }
+         );
         if (rpcErr) {
           console.error("register_as_lojista RPC falhou:", rpcErr);
           throw new Error(
@@ -278,19 +278,19 @@ const CadastroLojista = () => {
           privacy_version: "1.0",
           user_agent: navigator.userAgent,
         });
-        await supabase.from("profiles").update({
-          terms_accepted_at: new Date().toISOString(),
-          birth_date: birthDate,
-          pix_type: pixType as any,
-          pix_key: cleanPixKey,
-          cep: cep.replace(/\D/g, ""),
-          street: street,
-          address_number: addressNumber.trim(),
-          neighborhood: neighborhood,
-          city: normalizedCity,
-          phone: whatsapp.trim(),
-          whatsapp_number: whatsapp.trim(),
-        } as any).eq("user_id", signUpData.user.id);
+         await supabase.from("profiles").update({
+           terms_accepted_at: new Date().toISOString(),
+           birth_date: birthDate,
+           pix_type: pixType as any,
+           pix_key: cleanPixKey,
+           cep: cep.replace(/\D/g, ""),
+           street: street,
+           address_number: addressNumber.trim(),
+           neighborhood: neighborhood,
+           city: normalizedCity,
+           phone: formatWhatsAppNumber(whatsapp),
+           whatsapp_number: formatWhatsAppNumber(whatsapp),
+         } as any).eq("user_id", signUpData.user.id);
 
         // Busca a loja (criada via RPC ou via trigger, dependendo do ambiente)
         let storeRow: { id: string } | null = createdStoreId ? { id: createdStoreId } : null;
@@ -790,17 +790,21 @@ const CadastroLojista = () => {
                   {errors.birthDate && <p className="text-xs text-destructive mt-1 px-1">{errors.birthDate}</p>}
                 </div>
 
-                <div>
-                  <FieldInput 
-                    icon={Phone} 
-                    placeholder="WhatsApp (DDD + número)" 
-                    value={whatsapp} 
-                    onChange={(v) => setWhatsapp(maskWhatsApp(v))} 
-                    error={errors.whatsapp} 
-                    inputMode="tel" 
-                  />
-                  <p className="text-[10px] text-muted-foreground mt-1 px-1">Ex: (14) 99999-9999. Usado para contato e Asaas.</p>
-                </div>
+                 <div>
+                   <FieldInput 
+                     icon={Phone} 
+                     placeholder="(14) 99999-9999" 
+                     value={whatsapp} 
+                     onChange={(v) => {
+                       const digits = v.replace(/\D/g, "");
+                       setWhatsapp(digits.slice(0, 11));
+                     }} 
+                     error={errors.whatsapp} 
+                     inputMode="tel" 
+                     isPhone={true}
+                   />
+                   <p className="text-[10px] text-muted-foreground mt-1 px-1">Usado para contato e Asaas.</p>
+                 </div>
 
                 {/* PIX */}
                 <div className="space-y-2">
@@ -883,25 +887,25 @@ const CadastroLojista = () => {
   );
 };
 
-const FieldInput = ({ icon: Icon, placeholder, value, onChange, error, type = "text", autoComplete, inputMode, maxLength }: {
-  icon: React.ElementType; placeholder: string; value: string; onChange: (v: string) => void; error?: string; type?: string; autoComplete?: string; inputMode?: string; maxLength?: number;
-}) => (
-  <div>
-    <div className="relative">
-      <Icon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-      <input
-        type={type}
-        inputMode={inputMode as any}
-        placeholder={placeholder}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full h-12 pl-10 pr-4 rounded-2xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-        autoComplete={autoComplete}
-        maxLength={maxLength}
-      />
-    </div>
-    {error && <p className="text-xs text-destructive mt-1 px-1">{error}</p>}
-  </div>
-);
+ const FieldInput = ({ icon: Icon, placeholder, value, onChange, error, type = "text", autoComplete, inputMode, maxLength, isPhone }: {
+   icon: React.ElementType; placeholder: string; value: string; onChange: (v: string) => void; error?: string; type?: string; autoComplete?: string; inputMode?: string; maxLength?: number; isPhone?: boolean;
+ }) => (
+   <div>
+     <div className="relative">
+       <Icon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+       <input
+         type={type}
+         inputMode={inputMode as any}
+         placeholder={placeholder}
+         value={isPhone ? maskWhatsApp(value) : value}
+         onChange={(e) => onChange(e.target.value)}
+         className="w-full h-12 pl-10 pr-4 rounded-2xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+         autoComplete={autoComplete}
+         maxLength={isPhone ? 16 : maxLength}
+       />
+     </div>
+     {error && <p className="text-xs text-destructive mt-1 px-1">{error}</p>}
+   </div>
+ );
 
 export default CadastroLojista;
