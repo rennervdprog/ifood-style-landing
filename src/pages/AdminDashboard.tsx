@@ -704,7 +704,48 @@ const AdminDashboard = () => {
   // ── ACTIONS ──
   const handlePrint = useCallback((order: any) => {
     printThermalReceipt(order, store?.name || "Loja", getClientName(order.client_id));
-  }, [store?.name]);
+  }, [store?.name, getClientName]);
+
+  /**
+   * Builds the WhatsApp acceptance message (with PIN if available).
+   */
+  const buildAcceptMessage = useCallback((order: any): string => {
+    const pin = (order as any).delivery_pin;
+    const pinBlock = pin
+      ? `\n\n📱 *CÓDIGO DE CONFIRMAÇÃO*\nMostre este código ao entregador na entrega:\n\n➡️ *${pin}* ⬅️\n\n⚠️ Não compartilhe antes da entrega.`
+      : "";
+    return (
+      `Olá ${getClientName(order.client_id)}! 🍔 *${store?.name || "ItaSuper"}*\n` +
+      `Seu pedido *#${order.id.slice(0, 8).toUpperCase()}* foi aceito e já está em produção!` +
+      `\n\n💰 Total: *${formatBRL(Number(order.total_price))}*` +
+      `\n💳 Pagamento: ${order.payment_method === "pix" ? "PIX ✅" : order.payment_method === "cartao" ? "Cartão na entrega" : "Dinheiro na entrega"}` +
+      pinBlock
+    );
+  }, [store?.name, getClientName]);
+
+  /**
+   * Called when ACEITAR PEDIDO is clicked.
+   * - Opens WhatsApp IMMEDIATELY (same user gesture → browsers allow window.open)
+   * - Then triggers print (which may show a dialog or send silently to thermal)
+   * - If autoPrint is ON, assumes thermal printer is configured — print fires silently
+   */
+  const handleAcceptOrder = useCallback((order: any) => {
+    const clientPhone = getClientWhatsApp(order.client_id);
+
+    // 1. Open WhatsApp NOW — must happen synchronously inside the click handler
+    if (clientPhone) {
+      openWhatsApp(clientPhone, buildAcceptMessage(order));
+    }
+
+    // 2. Print — if autoPrint is on we assume a thermal printer is set as default
+    //    so window.print() will send silently without a dialog.
+    //    If autoPrint is off, we still print (user clicked accept = wants the receipt).
+    try {
+      printThermalReceipt(order, store?.name || "Loja", getClientName(order.client_id));
+    } catch (e) {
+      console.warn("print error", e);
+    }
+  }, [store?.name, getClientName, getClientWhatsApp, buildAcceptMessage]);
 
   const toggleAutoPrint = () => {
     const next = !autoPrint;
@@ -2235,24 +2276,7 @@ const AdminDashboard = () => {
                                 <button onClick={() => {
                                   setActiveTab("preparando");
                                   updateOrderStatus(order.id, "preparando");
-                                  // Always print on accept (independent of autoPrint toggle)
-                                  try { handlePrint(order); } catch (e) { console.warn("print error", e); }
-                                  // After print dialog opens, open WhatsApp with PIN (if client has WhatsApp)
-                                  const clientPhone = getClientWhatsApp(order.client_id);
-                                  if (clientPhone) {
-                                    const pin = (order as any).delivery_pin;
-                                    const pinBlock = pin
-                                      ? `\n\n📱 *CÓDIGO DE CONFIRMAÇÃO*\nMostre este código ao entregador na entrega:\n\n*${pin}*\n\n⚠️ Não compartilhe este código com ninguém antes da entrega.`
-                                      : "";
-                                    const msg =
-                                      `Olá ${getClientName(order.client_id)}! 🍔 *${store?.name || "ItaSuper"}*\n` +
-                                      `Seu pedido *#${order.id.slice(0, 8).toUpperCase()}* foi aceito e já está sendo preparado!` +
-                                      `\n\n💰 Total: *${formatBRL(Number(order.total_price))}*` +
-                                      `\n💳 Pagamento: ${order.payment_method === "pix" ? "PIX ✅" : order.payment_method === "cartao" ? "Cartão na entrega" : "Dinheiro na entrega"}` +
-                                      pinBlock;
-                                    // Delay slightly so print dialog doesn't block window.open
-                                    setTimeout(() => openWhatsApp(clientPhone, msg), 800);
-                                  }
+                                  handleAcceptOrder(order);
                                 }}
                                   className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 rounded-xl text-sm active:scale-[0.98] transition-transform h-12">
                                   {order.payment_method === "pix" ? "🍳 COMEÇAR PRODUÇÃO" : "✓ ACEITAR PEDIDO"}
