@@ -306,7 +306,7 @@ const PerfilPage = () => {
         user_id: user!.id, cep: cep.replace(/\D/g, "") || null, street: street.trim(),
         number: number.trim(), complement: complement.trim(), reference_point: referencePoint.trim(),
         neighborhood, phone: phone.trim(),
-        whatsapp_number: isValidWhatsApp(whatsappNumber) ? formatWhatsAppNumber(whatsappNumber) : null,
+         whatsapp_number: whatsappNumber.replace(/\D/g, "") ? formatWhatsAppNumber(whatsappNumber) : null,
       } as any, { onConflict: "user_id" });
       if (error) throw error;
       if (neighborhood && calculatedFee !== null) setNeighborhood(neighborhood, calculatedFee);

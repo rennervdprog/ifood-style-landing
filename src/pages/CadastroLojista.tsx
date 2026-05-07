@@ -790,17 +790,21 @@ const CadastroLojista = () => {
                   {errors.birthDate && <p className="text-xs text-destructive mt-1 px-1">{errors.birthDate}</p>}
                 </div>
 
-                <div>
-                  <FieldInput 
-                    icon={Phone} 
-                    placeholder="WhatsApp (DDD + número)" 
-                    value={whatsapp} 
-                    onChange={(v) => setWhatsapp(maskWhatsApp(v))} 
-                    error={errors.whatsapp} 
-                    inputMode="tel" 
-                  />
-                  <p className="text-[10px] text-muted-foreground mt-1 px-1">Ex: (14) 99999-9999. Usado para contato e Asaas.</p>
-                </div>
+                 <div>
+                   <FieldInput 
+                     icon={Phone} 
+                     placeholder="(14) 99999-9999" 
+                     value={whatsapp} 
+                     onChange={(v) => {
+                       const digits = v.replace(/\D/g, "");
+                       setWhatsapp(digits.slice(0, 11));
+                     }} 
+                     error={errors.whatsapp} 
+                     inputMode="tel" 
+                     isPhone={true}
+                   />
+                   <p className="text-[10px] text-muted-foreground mt-1 px-1">Usado para contato e Asaas.</p>
+                 </div>
 
                 {/* PIX */}
                 <div className="space-y-2">
@@ -883,25 +887,25 @@ const CadastroLojista = () => {
   );
 };
 
-const FieldInput = ({ icon: Icon, placeholder, value, onChange, error, type = "text", autoComplete, inputMode, maxLength }: {
-  icon: React.ElementType; placeholder: string; value: string; onChange: (v: string) => void; error?: string; type?: string; autoComplete?: string; inputMode?: string; maxLength?: number;
-}) => (
-  <div>
-    <div className="relative">
-      <Icon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-      <input
-        type={type}
-        inputMode={inputMode as any}
-        placeholder={placeholder}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full h-12 pl-10 pr-4 rounded-2xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-        autoComplete={autoComplete}
-        maxLength={maxLength}
-      />
-    </div>
-    {error && <p className="text-xs text-destructive mt-1 px-1">{error}</p>}
-  </div>
-);
+ const FieldInput = ({ icon: Icon, placeholder, value, onChange, error, type = "text", autoComplete, inputMode, maxLength, isPhone }: {
+   icon: React.ElementType; placeholder: string; value: string; onChange: (v: string) => void; error?: string; type?: string; autoComplete?: string; inputMode?: string; maxLength?: number; isPhone?: boolean;
+ }) => (
+   <div>
+     <div className="relative">
+       <Icon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+       <input
+         type={type}
+         inputMode={inputMode as any}
+         placeholder={placeholder}
+         value={isPhone ? maskWhatsApp(value) : value}
+         onChange={(e) => onChange(e.target.value)}
+         className="w-full h-12 pl-10 pr-4 rounded-2xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+         autoComplete={autoComplete}
+         maxLength={isPhone ? 16 : maxLength}
+       />
+     </div>
+     {error && <p className="text-xs text-destructive mt-1 px-1">{error}</p>}
+   </div>
+ );
 
 export default CadastroLojista;
