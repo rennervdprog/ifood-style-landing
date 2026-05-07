@@ -377,10 +377,18 @@ const CadastroEntregador = () => {
                    inputMode="numeric" 
                    maxLength={18} 
                  />
-                 <FieldInput icon={Phone} placeholder="(14) 99999-9999" value={phone} onChange={(v) => {
-                   const digits = v.replace(/\D/g, "");
-                   setPhone(digits.slice(0, 11));
-                 }} error={errors.phone} inputMode="tel" />
+                 <FieldInput 
+                   icon={Phone} 
+                   placeholder="(14) 99999-9999" 
+                   value={phone} 
+                   onChange={(v) => {
+                     const digits = v.replace(/\D/g, "");
+                     setPhone(digits.slice(0, 11));
+                   }} 
+                   error={errors.phone} 
+                   inputMode="tel" 
+                   isPhone={true}
+                 />
                 <FieldInput icon={Bike} placeholder="Placa (ABC-1234 ou ABC1D23)" value={vehicle} onChange={(v) => {
                   let raw = v.replace(/[^A-Za-z0-9-]/g, "").toUpperCase();
                   if (raw.length === 4 && /^[A-Z]{3}\d$/.test(raw)) raw = raw.slice(0, 3) + "-" + raw.slice(3);
