@@ -343,13 +343,18 @@ const CheckoutPage = () => {
       toast.error("Selecione a forma de pagamento.");
       return;
     }
-    if (paymentMethod === "dinheiro" && needsChange) {
-      const changeValue = addMoney(parseFloat(changeFor));
-      if (!changeValue || changeValue < finalTotal) {
-        toast.error("O valor do troco deve ser maior que o total do pedido.");
-        return;
-      }
-    }
+     if (paymentMethod === "dinheiro" && needsChange) {
+       const changeValue = addMoney(parseFloat(changeFor));
+       if (!changeValue || changeValue < finalTotal) {
+         toast.error("O valor do troco deve ser maior que o total do pedido.");
+         return;
+       }
+     }
+     if (!userProfile?.whatsapp_number?.replace(/\D/g, "")) {
+       toast.error("O WhatsApp é obrigatório para finalizar o pedido. Por favor, cadastre em seu perfil.");
+       navigate("/perfil");
+       return;
+     }
 
     setLoading(true);
     try {

@@ -298,9 +298,13 @@ const PerfilPage = () => {
 
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
 
-  const handleSaveAddress = async () => {
-    if (!street.trim() || !number.trim() || !neighborhood) { toast.error("Preencha rua, número e bairro."); return; }
-    setSavingAddress(true);
+   const handleSaveAddress = async () => {
+     if (!street.trim() || !number.trim() || !neighborhood) { toast.error("Preencha rua, número e bairro."); return; }
+     if (!whatsappNumber.replace(/\D/g, "")) {
+       toast.error("O WhatsApp é obrigatório para entregas.");
+       return;
+     }
+     setSavingAddress(true);
     try {
       const { error } = await supabase.from("profiles").upsert({
         user_id: user!.id, cep: cep.replace(/\D/g, "") || null, street: street.trim(),
