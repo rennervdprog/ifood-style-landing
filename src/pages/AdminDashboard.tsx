@@ -1572,11 +1572,15 @@ const AdminDashboard = () => {
                                 </button>
                               )}
                               {order.status === "preparando" && (
-                                <a
-                                  href={buildReadyWhatsAppHref(order)}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
+                                <button
                                   onClick={() => {
+                                    const phone = getClientWhatsApp(order.client_id);
+                                    if (!phone) {
+                                      alert(`Atenção: Cliente #${order.id.slice(0, 8)} sem telefone.`);
+                                    } else {
+                                      const msg = buildReadyMessage(order);
+                                      openWhatsApp(phone, msg);
+                                    }
                                     setDashboardTab("orders");
                                     setActiveTab("pronto_para_entrega");
                                     updateOrderStatus(order.id, "pronto_para_entrega" as OrderStatus);
@@ -1584,7 +1588,7 @@ const AdminDashboard = () => {
                                   className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2.5 rounded-xl text-xs active:scale-[0.98] transition-transform flex items-center justify-center no-underline"
                                 >
                                   🔔 MARCAR PRONTO
-                                </a>
+                                </button>
                               )}
                               {getClientWhatsApp(order.client_id) && (
                                 <WhatsAppButton number={getClientWhatsApp(order.client_id)} message={`Olá! Sobre seu pedido #${order.id.slice(0, 8).toUpperCase()}, estamos cuidando dele!`} />
