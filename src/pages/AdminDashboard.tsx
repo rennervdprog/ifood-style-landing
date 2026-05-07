@@ -751,7 +751,12 @@ const AdminDashboard = () => {
     const clientPhone = getClientWhatsApp(order.client_id);
     console.log("[buildReadyWhatsAppHref] order:", order.id.slice(0, 8), "client_id:", order.client_id, "clientPhone:", clientPhone, "clientProfiles loaded?:", !!clientProfiles, "profiles count:", clientProfiles?.length);
     if (!clientPhone) {
-      console.warn("[buildReadyWhatsAppHref] ❌ Telefone vazio — retornando '#'. Profile encontrado:", clientProfiles?.find((c: any) => c.user_id === order.client_id));
+      const errorMsg = `ERRO: Telefone do cliente não encontrado para o pedido #${order.id.slice(0, 8)}. Verifique se o cliente cadastrou o WhatsApp.`;
+      console.warn("[buildReadyWhatsAppHref] ❌", errorMsg, "Profile encontrado:", clientProfiles?.find((c: any) => c.user_id === order.client_id));
+      // Fallback para avisar o usuário se for clicado
+      if (typeof window !== "undefined" && !clientPhone) {
+         // Apenas log, o alert seria intrusivo no render. O href '#' já sinaliza erro.
+      }
       return "#";
     }
     const msg = buildReadyMessage(order);
