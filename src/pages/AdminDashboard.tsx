@@ -751,7 +751,12 @@ const AdminDashboard = () => {
     const clientPhone = getClientWhatsApp(order.client_id);
     console.log("[buildReadyWhatsAppHref] order:", order.id.slice(0, 8), "client_id:", order.client_id, "clientPhone:", clientPhone, "clientProfiles loaded?:", !!clientProfiles, "profiles count:", clientProfiles?.length);
     if (!clientPhone) {
-      console.warn("[buildReadyWhatsAppHref] ❌ Telefone vazio — retornando '#'. Profile encontrado:", clientProfiles?.find((c: any) => c.user_id === order.client_id));
+      const errorMsg = `ERRO: Telefone do cliente não encontrado para o pedido #${order.id.slice(0, 8)}. Verifique se o cliente cadastrou o WhatsApp.`;
+      console.warn("[buildReadyWhatsAppHref] ❌", errorMsg, "Profile encontrado:", clientProfiles?.find((c: any) => c.user_id === order.client_id));
+      // Fallback para avisar o usuário se for clicado
+      if (typeof window !== "undefined" && !clientPhone) {
+         // Apenas log, o alert seria intrusivo no render. O href '#' já sinaliza erro.
+      }
       return "#";
     }
     const msg = buildReadyMessage(order);
@@ -1567,11 +1572,15 @@ const AdminDashboard = () => {
                                 </button>
                               )}
                               {order.status === "preparando" && (
-                                <a
-                                  href={buildReadyWhatsAppHref(order)}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
+                                <button
                                   onClick={() => {
+                                    const phone = getClientWhatsApp(order.client_id);
+                                    if (!phone) {
+                                      alert(`Atenção: Cliente #${order.id.slice(0, 8)} sem telefone.`);
+                                    } else {
+                                      const msg = buildReadyMessage(order);
+                                      openWhatsApp(phone, msg);
+                                    }
                                     setDashboardTab("orders");
                                     setActiveTab("pronto_para_entrega");
                                     updateOrderStatus(order.id, "pronto_para_entrega" as OrderStatus);
@@ -1579,7 +1588,7 @@ const AdminDashboard = () => {
                                   className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2.5 rounded-xl text-xs active:scale-[0.98] transition-transform flex items-center justify-center no-underline"
                                 >
                                   🔔 MARCAR PRONTO
-                                </a>
+                                </button>
                               )}
                               {getClientWhatsApp(order.client_id) && (
                                 <WhatsAppButton number={getClientWhatsApp(order.client_id)} message={`Olá! Sobre seu pedido #${order.id.slice(0, 8).toUpperCase()}, estamos cuidando dele!`} />
@@ -2383,18 +2392,22 @@ const AdminDashboard = () => {
                               <div className="space-y-1">
                                 {/* MARCAR COMO PRONTO: link <a> para abrir WhatsApp com PIN */}
                                 {action.next === "pronto_para_entrega" ? (
-                                  <a
-                                    href={buildReadyWhatsAppHref(order)}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                                  <button
                                     onClick={() => {
+                                      const phone = getClientWhatsApp(order.client_id);
+                                      if (!phone) {
+                                        alert(`Atenção: Não foi possível abrir o WhatsApp pois o cliente #${order.id.slice(0, 8)} não possui telefone cadastrado.`);
+                                      } else {
+                                        const msg = buildReadyMessage(order);
+                                        openWhatsApp(phone, msg);
+                                      }
                                       setActiveTab("pronto_para_entrega");
                                       updateOrderStatus(order.id, action.next);
                                     }}
-                                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 rounded-xl text-sm active:scale-[0.98] transition-transform h-12 flex items-center justify-center no-underline"
+                                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 rounded-xl text-sm active:scale-[0.98] transition-transform h-12 flex items-center justify-center"
                                   >
                                     {action.emoji} {action.label}
-                                  </a>
+                                  </button>
                                 ) : (
                                   <button onClick={() => {
                                     if (action.next === "preparando") setActiveTab("preparando");
