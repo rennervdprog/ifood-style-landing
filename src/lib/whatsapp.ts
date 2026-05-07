@@ -18,11 +18,32 @@ export const formatWhatsAppNumber = (phone: string): string => {
 
 /**
  * Opens WhatsApp with a pre-filled message.
+ * Robust across browser, PWA and Capacitor (Android) WebView:
+ *  - Native (Capacitor): force `_system` so the OS opens the WhatsApp app.
+ *  - Web: try `_blank`; if blocked, fall back to `location.href`.
  */
 export const openWhatsApp = (number: string, message?: string): void => {
   const formatted = formatWhatsAppNumber(number);
   const encodedMessage = message ? `?text=${encodeURIComponent(message)}` : "";
-  window.open(`https://wa.me/${formatted}${encodedMessage}`, "_blank");
+  const url = `https://wa.me/${formatted}${encodedMessage}`;
+
+  try {
+    // Capacitor / native WebView: '_system' delegates to the OS browser/app intent
+    const w = window as any;
+    const isNative = !!(w.Capacitor?.isNativePlatform?.() || w.cordova || w.gonative);
+    if (isNative) {
+      window.open(url, "_system");
+      return;
+    }
+  } catch {
+    /* ignore and fall through to web behavior */
+  }
+
+  // Web: try a new tab; if popup blocker prevents it, navigate the current tab
+  const popup = window.open(url, "_blank", "noopener,noreferrer");
+  if (!popup) {
+    window.location.href = url;
+  }
 };
 
 /**
