@@ -8,7 +8,7 @@ import {
   Check, X, Zap, ArrowUpRight, CreditCard, Ticket, Image as ImageIcon,
   Calendar, Loader2, AlertCircle, CheckCircle2, XCircle,
   Sparkles, Shield, Rocket, Info, Gift, Smartphone, BarChart3,
-  Heart, Truck, Clock, ArrowRight, Wallet, AlertTriangle, ChevronRight,
+   Heart, Truck, Clock, ArrowRight, Wallet, AlertTriangle, ChevronRight, Crown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
