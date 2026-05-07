@@ -278,13 +278,14 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
     queryFn: async () => {
       const [storeResult, planResult] = await Promise.all([
         supabase.from("stores").select("owner_id, commission_rate").eq("id", storeId).single(),
-        supabase.from("store_plans").select("commission_rate, plan_type").eq("store_id", storeId).eq("is_active", true).maybeSingle(),
+        supabase.from("store_plans").select("commission_rate, plan_type, platform_delivery_split_override").eq("store_id", storeId).eq("is_active", true).maybeSingle(),
       ]);
       if (storeResult.error) throw storeResult.error;
       return {
         ...storeResult.data,
         plan_commission_rate: planResult.data?.commission_rate,
         plan_type: planResult.data?.plan_type,
+        platform_delivery_split: planResult.data?.platform_delivery_split_override ?? 2.00,
       };
     },
     enabled: !!storeId,
@@ -295,6 +296,8 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
   // (taxa salva no momento do pedido) para preservar histórico correto.
   const commissionRate = ((storeData as any)?.plan_commission_rate ?? (storeData as any)?.commission_rate ?? 5) / 100;
   const commissionPct = Math.round(commissionRate * 100);
+  // R$2/entrega cobrado em TODOS os planos (incluindo comissão)
+  const platformDeliverySplit: number = (storeData as any)?.platform_delivery_split ?? 2.00;
 
   /**
    * 🔒 Helper: retorna a taxa de comissão correta para cada pedido individual.
@@ -348,8 +351,16 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
   const storePart = subtractMoney(totalSales, totalCommission);
 
   // Delivery: físico (dinheiro/cartão) vs app (PIX) — excluindo PDV
-  const physicalSales = sumMoney(deliveryOrders.filter(o => o.payment_method !== "pix").map((order) => order.subtotal));
-  const commissionDue = sumMoney(deliveryOrders.filter(o => o.payment_method !== "pix").map((order) => multiplyMoney(order.subtotal, getOrderCommissionRate(order))));
+  const physicalOrders = deliveryOrders.filter(o => o.payment_method !== "pix");
+  const physicalSales = sumMoney(physicalOrders.map((order) => order.subtotal));
+
+  // Pedidos com entrega da plataforma (delivery_fee > 0) — R$2 por pedido, todos os métodos
+  const ordersWithPlatformDelivery = deliveryOrders.filter(o => Number((o as any).delivery_fee) > 0);
+  const platformDeliveryTotal = ordersWithPlatformDelivery.length * platformDeliverySplit;
+
+  // Comissão % apenas sobre vendas físicas + R$2/entrega sobre todos
+  const commissionOnPhysical = sumMoney(physicalOrders.map((order) => multiplyMoney(order.subtotal, getOrderCommissionRate(order))));
+  const commissionDue = commissionOnPhysical + platformDeliveryTotal;
 
   const appSales = sumMoney(deliveryOrders.filter(o => o.payment_method === "pix").map((order) => order.subtotal));
   const appCommission = sumMoney(deliveryOrders.filter(o => o.payment_method === "pix").map((order) => multiplyMoney(order.subtotal, getOrderCommissionRate(order))));
@@ -570,7 +581,9 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
       `Lojista recebeu: ${formatBRL(creditFromApp)}\n\n` +
       `--- Vendas Físicas (Cobrança Manual) ---\n` +
       `Vendas Dinheiro/Cartão: ${formatBRL(physicalSales)}\n` +
-      `Comissão a cobrar: ${formatBRL(commissionDue)}`;
+      `Comissão ${commissionPct}%: ${formatBRL(commissionOnPhysical)}\n` +
+      (ordersWithPlatformDelivery.length > 0 ? `Taxa entrega plataforma (${ordersWithPlatformDelivery.length}x R$${platformDeliverySplit.toFixed(2)}): ${formatBRL(platformDeliveryTotal)}\n` : ``) +
+      `Total a repassar: ${formatBRL(commissionDue)}`;
     navigator.clipboard.writeText(text);
     toast.success("Resumo copiado!");
   };
@@ -590,7 +603,9 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
       ``,
       `--- VENDAS FÍSICAS (COBRANÇA MANUAL) ---`,
       `VENDAS DINHEIRO/CARTÃO: ${formatBRL(physicalSales)}`,
-      `COMISSÃO A COBRAR: ${formatBRL(commissionDue)}`,
+      `COMISSÃO ${commissionPct}%: ${formatBRL(commissionOnPhysical)}`,
+      ...(ordersWithPlatformDelivery.length > 0 ? [`TAXA ENTREGA PLATAFORMA (${ordersWithPlatformDelivery.length}x R$${platformDeliverySplit.toFixed(2)}): ${formatBRL(platformDeliveryTotal)}`] : []),
+      `TOTAL A REPASSAR: ${formatBRL(commissionDue)}`,
       ``,
       `--- PEDIDOS ---`,
       ...(orders || []).map(o =>
@@ -958,10 +973,35 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
             </div>
             <p className="text-sm font-bold text-foreground">Taxa Pendente — Vendas Físicas</p>
           </div>
-          <p className="text-xs text-muted-foreground mb-1">Você recebeu o valor na hora (dinheiro/cartão). A taxa de {commissionPct}% da plataforma precisa ser repassada.</p>
+          <p className="text-xs text-muted-foreground mb-1">
+            Você recebeu o valor na hora (dinheiro/cartão). Repasse pendente:{" "}
+            <strong className="text-foreground">{commissionPct}% sobre vendas físicas</strong>
+            {ordersWithPlatformDelivery.length > 0 && (
+              <> + <strong className="text-foreground">R${platformDeliverySplit.toFixed(2)}/entrega ({ordersWithPlatformDelivery.length}x)</strong> da plataforma.</>
+            )}
+          </p>
           <p className="text-2xl font-black text-red-400">
             {formatBRL((dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue))}
           </p>
+
+          {/* Breakdown: % comissão + R$2/entrega */}
+          {ordersWithPlatformDelivery.length > 0 && dbComissaoPendente <= 0 && (
+            <div className="mt-2 rounded-xl bg-red-500/5 border border-red-500/10 p-3 space-y-1.5">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">Comissão {commissionPct}% s/ vendas físicas</span>
+                <span className="font-semibold text-foreground">{formatBRL(commissionOnPhysical)}</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">Taxa entrega plataforma ({ordersWithPlatformDelivery.length}× R${platformDeliverySplit.toFixed(2)})</span>
+                <span className="font-semibold text-foreground">{formatBRL(platformDeliveryTotal)}</span>
+              </div>
+              <div className="h-px bg-red-500/20" />
+              <div className="flex items-center justify-between text-xs font-bold">
+                <span className="text-red-400">Total a repassar</span>
+                <span className="text-red-400">{formatBRL(commissionDue)}</span>
+              </div>
+            </div>
+          )}
 
           {safetyModeMs > 0 && (
             <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 flex items-start gap-2">
