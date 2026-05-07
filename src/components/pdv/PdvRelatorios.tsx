@@ -66,7 +66,7 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ["pdv-relatorio-orders", storeId, sessionId, dateRange.start, dateRange.end],
     queryFn: async () => {
-      let q = supabase
+       let q = (supabase as any)
         .from("orders")
         .select("id, subtotal, total_price, pdv_discount, payment_method, created_at, commission_rate, pdv_session_id, order_items(quantity, unit_price, products(name))")
         .eq("store_id", storeId)
