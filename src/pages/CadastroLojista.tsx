@@ -7,7 +7,7 @@ import { ArrowLeft, Mail, Lock, Eye, EyeOff, Store, FileText, CheckCircle, Check
 import { PasswordStrengthIndicator, usePasswordStrength } from "@/components/PasswordStrengthIndicator";
 import { Constants } from "@/integrations/supabase/types";
 import { formatCep, fetchCep } from "@/lib/cepLookup";
-import { maskWhatsApp } from "@/lib/whatsapp";
+ import { maskWhatsApp, formatWhatsAppNumber } from "@/lib/whatsapp";
  import { formatPixKeyDisplay, sanitizePixKeyForAsaas, validatePixKey, PIX_PLACEHOLDERS } from "@/lib/pixFormat";
  import { formatDocument, sanitizeDocument, validateDocument } from "@/lib/documentFormat";
 

@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, User, Phone, Bike, CheckCircle, MapPin, Camera, Upload, FileText, Shield, X, ChevronRight, Loader2 } from "lucide-react";
-import { maskWhatsApp } from "@/lib/whatsapp";
+ import { maskWhatsApp, formatWhatsAppNumber } from "@/lib/whatsapp";
  import { formatDocument, sanitizeDocument, validateDocument } from "@/lib/documentFormat";
 import { PasswordStrengthIndicator, usePasswordStrength } from "@/components/PasswordStrengthIndicator";
 
