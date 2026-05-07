@@ -716,10 +716,8 @@ const AdminDashboard = () => {
   const updateOrderStatus = async (orderId: string, newStatus: OrderStatus) => {
     const order = orders?.find((o: any) => o.id === orderId);
     
-    // Auto-print synchronously (user gesture preserves printer prompt on web)
-    if (newStatus === "preparando" && autoPrint && order) {
-      try { handlePrint(order); } catch (e) { console.warn("print error", e); }
-    }
+    // Auto-print is now handled directly in the ACEITAR PEDIDO button click
+    // to ensure: 1) print happens first, 2) WhatsApp opens after with PIN.
 
     try {
       // Direct update and refetch to ensure source of truth and instant tab switch without ghosting
@@ -2237,6 +2235,24 @@ const AdminDashboard = () => {
                                 <button onClick={() => {
                                   setActiveTab("preparando");
                                   updateOrderStatus(order.id, "preparando");
+                                  // Always print on accept (independent of autoPrint toggle)
+                                  try { handlePrint(order); } catch (e) { console.warn("print error", e); }
+                                  // After print dialog opens, open WhatsApp with PIN (if client has WhatsApp)
+                                  const clientPhone = getClientWhatsApp(order.client_id);
+                                  if (clientPhone) {
+                                    const pin = (order as any).delivery_pin;
+                                    const pinBlock = pin
+                                      ? `\n\n📱 *CÓDIGO DE CONFIRMAÇÃO*\nMostre este código ao entregador na entrega:\n\n*${pin}*\n\n⚠️ Não compartilhe este código com ninguém antes da entrega.`
+                                      : "";
+                                    const msg =
+                                      `Olá ${getClientName(order.client_id)}! 🍔 *${store?.name || "ItaSuper"}*\n` +
+                                      `Seu pedido *#${order.id.slice(0, 8).toUpperCase()}* foi aceito e já está sendo preparado!` +
+                                      `\n\n💰 Total: *${formatBRL(Number(order.total_price))}*` +
+                                      `\n💳 Pagamento: ${order.payment_method === "pix" ? "PIX ✅" : order.payment_method === "cartao" ? "Cartão na entrega" : "Dinheiro na entrega"}` +
+                                      pinBlock;
+                                    // Delay slightly so print dialog doesn't block window.open
+                                    setTimeout(() => openWhatsApp(clientPhone, msg), 800);
+                                  }
                                 }}
                                   className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 rounded-xl text-sm active:scale-[0.98] transition-transform h-12">
                                   {order.payment_method === "pix" ? "🍳 COMEÇAR PRODUÇÃO" : "✓ ACEITAR PEDIDO"}
