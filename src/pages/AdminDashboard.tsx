@@ -749,11 +749,17 @@ const AdminDashboard = () => {
    */
   const buildReadyWhatsAppHref = useCallback((order: any): string => {
     const clientPhone = getClientWhatsApp(order.client_id);
-    if (!clientPhone) return "#";
+    console.log("[buildReadyWhatsAppHref] order:", order.id.slice(0, 8), "client_id:", order.client_id, "clientPhone:", clientPhone, "clientProfiles loaded?:", !!clientProfiles, "profiles count:", clientProfiles?.length);
+    if (!clientPhone) {
+      console.warn("[buildReadyWhatsAppHref] ❌ Telefone vazio — retornando '#'. Profile encontrado:", clientProfiles?.find((c: any) => c.user_id === order.client_id));
+      return "#";
+    }
     const msg = buildReadyMessage(order);
     const phone = formatWhatsAppNumber(clientPhone);
-    return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
-  }, [getClientWhatsApp, buildReadyMessage]);
+    const href = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+    console.log("[buildReadyWhatsAppHref] ✅ href gerado:", href);
+    return href;
+  }, [getClientWhatsApp, buildReadyMessage, clientProfiles]);
 
   /**
    * Gera o href completo do WhatsApp para o botão "ACEITAR PEDIDO".
