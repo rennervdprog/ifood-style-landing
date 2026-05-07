@@ -2,8 +2,12 @@ import { formatBRL } from "@/lib/utils";
 /**
  * Dual notification system: WhatsApp + Push + Z-API for order status changes.
  * Used by AdminDashboard (lojista) when updating order statuses.
+ *
+ * CORREÇÃO: Removida a chamada direta a openWhatsApp() desta função.
+ * O WhatsApp para "preparando" agora é aberto via link <a> no JSX do
+ * AdminDashboard, garantindo que o token de gesto do usuário seja preservado
+ * e o popup blocker do navegador não interfira.
  */
-import { openWhatsApp } from "@/lib/whatsapp";
 import { sendPushNotification } from "@/lib/firebase";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -79,11 +83,16 @@ const STATUS_MESSAGES: Record<string, {
   },
 };
 
-/** Statuses that should open WhatsApp (manual send by lojista) */
-const WHATSAPP_STATUSES = new Set(["preparando", "saiu_entrega"]);
-
 /** Statuses that trigger Z-API automatic messages */
 const ZAPI_STATUSES = new Set(["preparando", "pronto_para_entrega", "saiu_entrega", "em_transito", "entregue", "finalizado", "cancelado"]);
+
+/**
+ * Retorna a mensagem WhatsApp formatada para um determinado status.
+ * Usada pelo AdminDashboard para montar o href do link <a> antes de aceitar o pedido.
+ */
+export const buildWhatsAppMessage = (status: string, params: OrderNotifyParams): string => {
+  return STATUS_MESSAGES[status]?.whatsApp(params) ?? "";
+};
 
 /**
  * Send Z-API WhatsApp message via edge function
@@ -103,19 +112,19 @@ const sendZapiMessage = async (storeId: string, phone: string, message: string) 
 };
 
 /**
- * Send Push notification for ALL status changes.
- * Send Z-API message if configured.
- * Open WhatsApp ONLY for "preparando" and "saiu_entrega" (if Z-API not active).
+ * Envia Push e Z-API para mudanças de status.
+ * NÃO abre mais WhatsApp diretamente — isso é responsabilidade do componente
+ * via link <a target="_blank"> para evitar bloqueio de popup do navegador.
  */
 export const notifyOrderStatusChange = (
   newStatus: string,
   params: OrderNotifyParams,
-  options?: { skipWhatsApp?: boolean; delayWhatsApp?: number; zapiEnabled?: boolean }
+  options?: { skipWhatsApp?: boolean; zapiEnabled?: boolean }
 ) => {
   const config = STATUS_MESSAGES[newStatus];
   if (!config) return;
 
-  // Push notification (always)
+  // Push notification (sempre)
   sendPushNotification(
     [params.clientId],
     config.pushTitle,
@@ -123,22 +132,9 @@ export const notifyOrderStatusChange = (
     { link: "/pedidos", order_id: params.orderId }
   ).catch(console.error);
 
-  // Z-API automatic WhatsApp (if enabled and phone available)
+  // Z-API automatic WhatsApp (se habilitado e telefone disponível)
   if (options?.zapiEnabled && params.clientPhone && ZAPI_STATUSES.has(newStatus)) {
     const msg = config.whatsApp(params);
     sendZapiMessage(params.storeId, params.clientPhone, msg);
-  }
-
-  // Manual WhatsApp only if Z-API is NOT enabled
-  // NOTE: openWhatsApp must be called synchronously (no setTimeout)
-  // to avoid browser popup blockers on mobile devices
-  if (
-    !options?.zapiEnabled &&
-    params.clientPhone &&
-    !options?.skipWhatsApp &&
-    WHATSAPP_STATUSES.has(newStatus)
-  ) {
-    const msg = config.whatsApp(params);
-    openWhatsApp(params.clientPhone, msg);
   }
 };

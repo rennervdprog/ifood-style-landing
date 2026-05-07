@@ -44,11 +44,18 @@ function getOrCreatePrintContainer(): HTMLDivElement {
   return container;
 }
 
+/**
+ * CORREÇÃO: Removido o uso de onAfterPrint com setTimeout que matava o token
+ * de gesto do usuário e impedia o WhatsApp de abrir no navegador.
+ *
+ * A função agora apenas renderiza o HTML e dispara window.print().
+ * O WhatsApp deve ser aberto pelo chamador ANTES de chamar esta função,
+ * usando um link <a target="_blank"> no JSX (não window.open).
+ */
 export function printThermalReceipt(
   order: PrintOrder,
   storeName: string,
-  clientName: string,
-  onAfterPrint?: () => void
+  clientName: string
 ) {
   const date = new Date(order.created_at).toLocaleString("pt-BR");
   const orderId = order.id.slice(0, 8).toUpperCase();
@@ -131,26 +138,8 @@ ${changeHtml}
 <div class="tp-footer"><p>Obrigado pela preferência!</p><p>ItaSuper</p></div>
 `;
 
-  // Register afterprint listener BEFORE calling window.print so it fires when
-  // the dialog closes (or immediately on thermal printers that skip the dialog).
-  if (onAfterPrint) {
-    const handler = () => {
-      window.removeEventListener("afterprint", handler);
-      onAfterPrint();
-    };
-    window.addEventListener("afterprint", handler);
-    // Safety fallback: if afterprint never fires (some browsers/thermal drivers),
-    // run the callback after 4s anyway so WhatsApp always opens.
-    setTimeout(() => {
-      window.removeEventListener("afterprint", handler);
-      onAfterPrint();
-    }, 4000);
-  }
-
-  // Give DOM time to render, then print
-  setTimeout(() => {
-    window.print();
-  }, 300);
+  // Render ao DOM antes de imprimir (sem setTimeout — não mata token de gesto)
+  window.print();
 }
 
 // ─── Labels de pagamento PDV ───────────────────────────────────────────────
@@ -253,5 +242,5 @@ ${trocoHtml}
 <div class="tp-footer"><p>Obrigado pela preferência!</p><p>ItaSuper</p></div>
 `;
 
-  setTimeout(() => { window.print(); }, 300);
+  window.print();
 }
