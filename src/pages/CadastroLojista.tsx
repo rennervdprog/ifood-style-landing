@@ -7,7 +7,8 @@ import { ArrowLeft, Mail, Lock, Eye, EyeOff, Store, FileText, CheckCircle, Check
 import { PasswordStrengthIndicator, usePasswordStrength } from "@/components/PasswordStrengthIndicator";
 import { Constants } from "@/integrations/supabase/types";
 import { formatCep, fetchCep } from "@/lib/cepLookup";
-import { formatPixKeyDisplay, sanitizePixKeyForAsaas, validatePixKey, PIX_PLACEHOLDERS } from "@/lib/pixFormat";
+ import { formatPixKeyDisplay, sanitizePixKeyForAsaas, validatePixKey, PIX_PLACEHOLDERS } from "@/lib/pixFormat";
+ import { formatDocument, sanitizeDocument, validateDocument } from "@/lib/documentFormat";
 
 const storeCategories = Constants.public.Enums.store_category;
 
@@ -29,7 +30,7 @@ const schema = z.object({
   confirmEmail: z.string().trim().email("E-mail inválido").max(255),
   password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres").max(100),
   storeName: z.string().trim().min(3, "Nome da loja deve ter pelo menos 3 caracteres").max(100),
-  document: z.string().trim().min(11, "CPF/CNPJ inválido").max(18),
+   document: z.string().trim().refine(v => validateDocument(v), "CPF ou CNPJ inválido"),
   birthDate: z.string().min(10, "Data de nascimento obrigatória").max(10),
   whatsapp: z.string().trim().min(10, "WhatsApp inválido (ex: 14 99999-9999)").max(20),
   pixType: z.enum(["cpf", "cnpj", "email", "phone", "random"] as const, { errorMap: () => ({ message: "Selecione o tipo da chave PIX" }) }),
@@ -211,7 +212,7 @@ const CadastroLojista = () => {
             data: {
               full_name: storeName.trim(),
               role: "lojista",
-              document: document.trim(),
+               document: sanitizeDocument(document),
               birth_date: birthDate,
               whatsapp: whatsapp.trim(),
               phone: whatsapp.trim(),
@@ -251,7 +252,7 @@ const CadastroLojista = () => {
           "register_as_lojista",
           {
             _full_name: storeName.trim(),
-            _document: document.trim(),
+             _document: sanitizeDocument(document),
             _store_name: storeName.trim(),
             _store_category: storeCategory,
             _avatar_url: null,
@@ -763,7 +764,15 @@ const CadastroLojista = () => {
                   <p className="text-xs text-muted-foreground mt-1">Documento, contato e dados de pagamento</p>
                 </div>
 
-                <FieldInput icon={FileText} placeholder="CPF ou CNPJ" value={document} onChange={setDocument} error={errors.document} inputMode="numeric" />
+                 <FieldInput 
+                   icon={FileText} 
+                   placeholder="CPF ou CNPJ" 
+                   value={document} 
+                   onChange={(v) => setDocument(formatDocument(v))} 
+                   error={errors.document} 
+                   inputMode="numeric" 
+                   maxLength={18}
+                 />
 
                 <div>
                   <div className="relative">
