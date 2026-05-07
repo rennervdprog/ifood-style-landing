@@ -28,6 +28,7 @@ import { openWhatsApp } from "@/lib/whatsapp";
  import WhatsAppButton from "@/components/WhatsAppButton";
  import MenuBuilder from "@/components/MenuBuilder";
 import { notifyOrderStatusChange } from "@/lib/orderNotifications";
+import { getStoreOpenStatus } from "@/lib/storeStatus";
 // Tabs carregadas sob demanda — só baixa o JS quando o lojista abrir a aba
 const TutoriaisTab = lazy(() => import("./admin/tabs/TutoriaisTab"));
 const SubscriptionTab = lazy(() => import("./admin/tabs/SubscriptionTab"));
@@ -855,10 +856,27 @@ const AdminDashboard = () => {
     enabled: !!store,
   });
 
-  const allHoursClosed = useMemo(() => {
-    if (!storeHours || storeHours.length === 0) return true;
-    return storeHours.every((h: any) => h.is_closed_all_day);
+  const { allHoursClosed, isCurrentlyOpenByHours } = useMemo(() => {
+    if (!storeHours || storeHours.length === 0) {
+      return { allHoursClosed: true, isCurrentlyOpenByHours: false };
+    }
+    
+    const hours = storeHours.map((h: any) => ({
+      day_of_week: h.day_of_week,
+      open_time: h.open_time,
+      close_time: h.close_time,
+      is_closed_all_day: h.is_closed_all_day
+    }));
+
+    const status = getStoreOpenStatus(hours, false, true);
+    
+    return {
+      allHoursClosed: storeHours.every((h: any) => h.is_closed_all_day),
+      isCurrentlyOpenByHours: status.isOpen
+    };
   }, [storeHours]);
+
+  const isStoreReallyOpen = store?.is_open && isCurrentlyOpenByHours;
 
   const handleCancelOrder = async (order: any) => {
     try {
@@ -1154,11 +1172,16 @@ const AdminDashboard = () => {
               className={`p-2 rounded-xl border border-border ${autoPrint ? "text-primary bg-primary/5" : "text-muted-foreground"}`}>
               <Printer className="h-4 w-4 mx-auto" />
             </button>
-            <button onClick={toggleStoreOpen}
-              className={`col-span-2 py-2 rounded-xl text-xs font-bold border transition-colors ${store?.is_open ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/30" : "bg-destructive/10 text-destructive border-destructive/30"}`}
-              data-tour="loja-status">
-              {store?.is_open ? "✓ Aberto" : "✕ Pausado"}
-            </button>
+            <div className="col-span-2 space-y-1">
+              <button onClick={toggleStoreOpen}
+                className={`w-full py-2 rounded-xl text-xs font-bold border transition-colors ${store?.is_open ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/30" : "bg-destructive/10 text-destructive border-destructive/30"}`}
+                data-tour="loja-status">
+                {store?.is_open ? "✓ Online" : "✕ Offline"}
+              </button>
+              <div className={`text-[10px] font-black text-center uppercase tracking-tighter py-1 rounded-lg ${isStoreReallyOpen ? "text-emerald-500 bg-emerald-500/5" : "text-red-500 bg-red-500/5"}`}>
+                {isStoreReallyOpen ? "Loja Aberta" : "Loja Fechada"}
+              </div>
+            </div>
           </div>
         </div>
       </aside>
@@ -1174,15 +1197,20 @@ const AdminDashboard = () => {
             </button>
             <div className="min-w-0">
               <h2 className="font-bold text-foreground text-base truncate">{store?.name || "Painel"}</h2>
-              <button onClick={toggleStoreOpen}
-                className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold mt-0.5 transition-colors lg:hidden ${
-                  store?.is_open
-                    ? "bg-emerald-500/10 text-emerald-600"
-                    : "bg-red-500/10 text-red-500"
-                }`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${store?.is_open ? "bg-emerald-500" : "bg-red-500"}`} />
-                {store?.is_open ? "Aberta" : "Pausada"}
-              </button>
+              <div className="flex items-center gap-2 mt-0.5 lg:hidden">
+                <button onClick={toggleStoreOpen}
+                  className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold transition-colors ${
+                    store?.is_open
+                      ? "bg-emerald-500/10 text-emerald-600"
+                      : "bg-red-500/10 text-red-500"
+                  }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${store?.is_open ? "bg-emerald-500" : "bg-red-500"}`} />
+                  {store?.is_open ? "Online" : "Offline"}
+                </button>
+                <div className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${isStoreReallyOpen ? "text-emerald-500 bg-emerald-500/5" : "text-red-500 bg-red-500/5"}`}>
+                  {isStoreReallyOpen ? "Aberta" : "Fechada"}
+                </div>
+              </div>
               {/* Desktop subtitle */}
               <p className="text-xs text-muted-foreground hidden lg:block">
                 {dashboardTab === "dashboard" && "Resumo do dia em tempo real"}
@@ -1286,13 +1314,18 @@ const AdminDashboard = () => {
                       {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}
                     </p>
                   </div>
-                  <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold ${
-                    store.is_open 
-                      ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20" 
-                      : "bg-red-500/10 text-red-500 border border-red-500/20"
-                  }`}>
-                    <div className={`w-2 h-2 rounded-full ${store.is_open ? "bg-emerald-500 animate-pulse" : "bg-red-500"}`} />
-                    {store.is_open ? "Aberta" : "Fechada"}
+                  <div className="flex flex-col items-end gap-1">
+                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold ${
+                      store.is_open 
+                        ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20" 
+                        : "bg-red-500/10 text-red-500 border border-red-500/20"
+                    }`}>
+                      <div className={`w-2 h-2 rounded-full ${store.is_open ? "bg-emerald-500 animate-pulse" : "bg-red-500"}`} />
+                      {store.is_open ? "Online" : "Offline"}
+                    </div>
+                    <div className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-lg ${isStoreReallyOpen ? "text-emerald-500 bg-emerald-500/5" : "text-red-500 bg-red-500/5"}`}>
+                      {isStoreReallyOpen ? "Loja Aberta" : "Loja Fechada"}
+                    </div>
                   </div>
                 </div>
                 <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-[11px] font-bold ${
