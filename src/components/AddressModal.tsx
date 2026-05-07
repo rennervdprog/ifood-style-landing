@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { MapPin, Save, ArrowLeft, Search, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatCep, fetchCep } from "@/lib/cepLookup";
+import { maskWhatsApp } from "@/lib/whatsapp";
 
 interface AddressModalProps {
   onClose: () => void;
@@ -168,7 +169,12 @@ const AddressModal = ({ onClose, onSaved }: AddressModalProps) => {
 
           <input type="text" placeholder="Ponto de referência" value={referencePoint} onChange={(e) => setReferencePoint(e.target.value)}
             className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
-          <input type="tel" placeholder="Telefone / WhatsApp" value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel"
+          <input 
+            type="tel" 
+            placeholder="Telefone / WhatsApp (ex: 14 99999-9999)" 
+            value={phone} 
+            onChange={(e) => setPhone(maskWhatsApp(e.target.value))} 
+            inputMode="tel"
             className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             autoComplete="tel" />
           <button onClick={handleSave} disabled={saving}
