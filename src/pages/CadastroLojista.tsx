@@ -7,6 +7,7 @@ import { ArrowLeft, Mail, Lock, Eye, EyeOff, Store, FileText, CheckCircle, Check
 import { PasswordStrengthIndicator, usePasswordStrength } from "@/components/PasswordStrengthIndicator";
 import { Constants } from "@/integrations/supabase/types";
 import { formatCep, fetchCep } from "@/lib/cepLookup";
+import { maskWhatsApp } from "@/lib/whatsapp";
  import { formatPixKeyDisplay, sanitizePixKeyForAsaas, validatePixKey, PIX_PLACEHOLDERS } from "@/lib/pixFormat";
  import { formatDocument, sanitizeDocument, validateDocument } from "@/lib/documentFormat";
 
@@ -790,8 +791,15 @@ const CadastroLojista = () => {
                 </div>
 
                 <div>
-                  <FieldInput icon={Phone} placeholder="WhatsApp (DDD + número)" value={whatsapp} onChange={setWhatsapp} error={errors.whatsapp} inputMode="tel" />
-                  <p className="text-[10px] text-muted-foreground mt-1 px-1">Ex: 14 99999-9999. Usado para contato e Asaas.</p>
+                  <FieldInput 
+                    icon={Phone} 
+                    placeholder="WhatsApp (DDD + número)" 
+                    value={whatsapp} 
+                    onChange={(v) => setWhatsapp(maskWhatsApp(v))} 
+                    error={errors.whatsapp} 
+                    inputMode="tel" 
+                  />
+                  <p className="text-[10px] text-muted-foreground mt-1 px-1">Ex: (14) 99999-9999. Usado para contato e Asaas.</p>
                 </div>
 
                 {/* PIX */}

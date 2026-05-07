@@ -3,7 +3,8 @@ import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
- import { ArrowLeft, Mail, Lock, Eye, EyeOff, User, Phone, Bike, CheckCircle, MapPin, Camera, Upload, FileText, Shield, X, ChevronRight } from "lucide-react";
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, User, Phone, Bike, CheckCircle, MapPin, Camera, Upload, FileText, Shield, X, ChevronRight, Loader2 } from "lucide-react";
+import { maskWhatsApp } from "@/lib/whatsapp";
  import { formatDocument, sanitizeDocument, validateDocument } from "@/lib/documentFormat";
 import { PasswordStrengthIndicator, usePasswordStrength } from "@/components/PasswordStrengthIndicator";
 
@@ -376,7 +377,7 @@ const CadastroEntregador = () => {
                    inputMode="numeric" 
                    maxLength={18} 
                  />
-                <FieldInput icon={Phone} placeholder="Telefone com DDD" value={phone} onChange={setPhone} error={errors.phone} inputMode="tel" />
+                <FieldInput icon={Phone} placeholder="Telefone com DDD" value={phone} onChange={(v) => setPhone(maskWhatsApp(v))} error={errors.phone} inputMode="tel" />
                 <FieldInput icon={Bike} placeholder="Placa (ABC-1234 ou ABC1D23)" value={vehicle} onChange={(v) => {
                   let raw = v.replace(/[^A-Za-z0-9-]/g, "").toUpperCase();
                   if (raw.length === 4 && /^[A-Z]{3}\d$/.test(raw)) raw = raw.slice(0, 3) + "-" + raw.slice(3);

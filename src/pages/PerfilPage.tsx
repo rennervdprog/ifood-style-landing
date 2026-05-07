@@ -609,13 +609,21 @@ const PerfilPage = () => {
               )}
 
               <InputField label="Ponto de referência" placeholder="Próximo ao mercado, escola..." value={referencePoint} onChange={(e) => setReferencePoint(e.target.value)} />
-              <InputField label="Telefone" placeholder="(14) 99999-9999" value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" type="tel" autoComplete="tel" />
+              <InputField 
+                label="Telefone" 
+                placeholder="(14) 99999-9999" 
+                value={phone} 
+                onChange={(e) => setPhone(maskWhatsApp(e.target.value))} 
+                inputMode="tel" 
+                type="tel" 
+                autoComplete="tel" 
+              />
 
               <div>
                 <label className="text-xs font-semibold text-muted-foreground mb-1.5 flex items-center gap-1.5">
                   <MessageCircle className="h-3.5 w-3.5 text-green-500" /> WhatsApp (com DDD)
                 </label>
-                <input type="tel" placeholder="+55 14 99999-9999" value={whatsappNumber}
+                <input type="tel" placeholder="(14) 99999-9999" value={whatsappNumber}
                   onChange={(e) => setWhatsappNumber(maskWhatsApp(e.target.value))} inputMode="tel"
                   className="w-full px-4 py-3 rounded-xl border border-green-500/30 bg-background text-foreground placeholder:text-muted-foreground/60 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all" />
               </div>

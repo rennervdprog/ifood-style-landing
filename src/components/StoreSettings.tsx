@@ -543,13 +543,13 @@ const NotificationSection = () => {
           <Phone className="h-4 w-4 text-primary" />
           WhatsApp de Atendimento
         </label>
-        <input
-          type="tel"
-          inputMode="numeric"
-          value={maskWhatsApp(whatsapp)}
-          onChange={(e) => setWhatsapp(e.target.value.replace(/\D/g, "").slice(0, 11))}
-          placeholder="+55 14 99999-9999"
-          className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+        <input 
+          type="tel" 
+          inputMode="tel" 
+          value={whatsapp} 
+          onChange={(e) => setWhatsapp(maskWhatsApp(e.target.value))} 
+          placeholder="(14) 99999-9999" 
+          className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary" 
         />
         <p className="text-[10px] text-muted-foreground/70">Será exibido para clientes e entregadores.</p>
       </div>

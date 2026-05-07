@@ -60,24 +60,29 @@ export const isValidWhatsApp = (phone: string): boolean => {
 };
 
 /**
- * Formats phone display with mask: +55 15 99999-9999
- * Accepts input with or without country code.
+ * Formats phone display with standard Brazilian mask: (11) 99999-9999 or (11) 9999-9999
+ * Accepts input with or without country code 55.
  */
 export const maskWhatsApp = (value: string): string => {
+  if (!value) return "";
+  
   let digits = value.replace(/\D/g, "");
   
-  // If starts with 55 and has more than 11 digits, strip the country code for local formatting
-  if (digits.startsWith("55") && digits.length > 11) {
+  // If it starts with 55 and has 12 or 13 digits (Brazil country code + DDD + number)
+  // we remove the 55 for the display mask to keep it cleaner
+  if (digits.startsWith("55") && (digits.length === 12 || digits.length === 13)) {
     digits = digits.slice(2);
   }
   
-  // Limit to 11 local digits
+  // Limit to 11 digits (maximum for Brazilian mobile numbers with DDD)
   digits = digits.slice(0, 11);
   
-  if (digits.length === 0) return "";
-  if (digits.length <= 2) return `+55 ${digits}`;
-  if (digits.length <= 7) return `+55 ${digits.slice(0, 2)} ${digits.slice(2)}`;
-  return `+55 ${digits.slice(0, 2)} ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  const len = digits.length;
+  if (len === 0) return "";
+  if (len <= 2) return `(${digits}`;
+  if (len <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  if (len <= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 };
 
 /**

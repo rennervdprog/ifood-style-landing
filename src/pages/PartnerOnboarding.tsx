@@ -667,7 +667,7 @@ const PartnerOnboarding = () => {
                   {partnerType === "lojista" ? "WhatsApp do Estabelecimento" : "Seu WhatsApp para Contato"}
                 </label>
                 <p className="text-xs text-muted-foreground mb-2">Digite o número com DDD (ex: 15 99999-9999)</p>
-                <input type="tel" inputMode="tel" placeholder="+55 14 99999-9999" value={whatsapp}
+                <input type="tel" inputMode="tel" placeholder="(14) 99999-9999" value={whatsapp}
                   onChange={(e) => setWhatsapp(maskWhatsApp(e.target.value))}
                   className="w-full px-4 py-3 rounded-xl border border-green-500/30 bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-green-500 text-sm" />
                 {errors.whatsapp && <p className="text-xs text-destructive mt-1">{errors.whatsapp}</p>}
