@@ -72,14 +72,14 @@ const CadastroMotoboyLoja = () => {
         password,
         options: {
           emailRedirectTo: window.location.origin,
-          data: {
-            full_name: fullName.trim(),
-            role: "motoboy",
-            driver_type: "store",
-            vehicle: vehicle.trim(),
-            whatsapp: phone.trim(),
-            phone: phone.trim(),
-          },
+             data: {
+               full_name: fullName.trim(),
+               role: "motoboy",
+               driver_type: "store",
+               vehicle: vehicle.trim(),
+               whatsapp: formatWhatsAppNumber(phone),
+               phone: formatWhatsAppNumber(phone),
+             },
         },
       });
       if (signUpError) throw signUpError;

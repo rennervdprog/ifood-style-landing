@@ -210,24 +210,24 @@ const CadastroLojista = () => {
         password,
         options: {
           emailRedirectTo: window.location.origin,
-            data: {
-              full_name: storeName.trim(),
-              role: "lojista",
+             data: {
+               full_name: storeName.trim(),
+               role: "lojista",
                document: sanitizeDocument(document),
-              birth_date: birthDate,
-              whatsapp: whatsapp.trim(),
-              phone: whatsapp.trim(),
-              pix_type: pixType,
-              pix_key: cleanPixKey,
-              store_name: storeName.trim(),
-              store_category: storeCategory,
-              city: normalizedCity,
-              cep: cep.replace(/\D/g, ""),
-              street: street,
-              address_number: addressNumber.trim(),
-              neighborhood: neighborhood,
-              selected_plan: selectedPlan,
-            },
+               birth_date: birthDate,
+               whatsapp: formatWhatsAppNumber(whatsapp),
+               phone: formatWhatsAppNumber(whatsapp),
+               pix_type: pixType,
+               pix_key: cleanPixKey,
+               store_name: storeName.trim(),
+               store_category: storeCategory,
+               city: normalizedCity,
+               cep: cep.replace(/\D/g, ""),
+               street: street,
+               address_number: addressNumber.trim(),
+               neighborhood: neighborhood,
+               selected_plan: selectedPlan,
+             },
         },
       });
       if (signUpError) throw signUpError;
@@ -249,18 +249,18 @@ const CadastroLojista = () => {
 
         // 🔑 Cria perfil + loja + plano via RPC (não depende de trigger no auth.users)
         let createdStoreId: string | null = null;
-        const { data: storeIdRpc, error: rpcErr } = await (supabase as any).rpc(
-          "register_as_lojista",
-          {
-            _full_name: storeName.trim(),
+         const { data: storeIdRpc, error: rpcErr } = await (supabase as any).rpc(
+           "register_as_lojista",
+           {
+             _full_name: storeName.trim(),
              _document: sanitizeDocument(document),
-            _store_name: storeName.trim(),
-            _store_category: storeCategory,
-            _avatar_url: null,
-            _whatsapp: whatsapp.trim(),
-            _selected_plan: selectedPlan,
-          }
-        );
+             _store_name: storeName.trim(),
+             _store_category: storeCategory,
+             _avatar_url: null,
+             _whatsapp: formatWhatsAppNumber(whatsapp),
+             _selected_plan: selectedPlan,
+           }
+         );
         if (rpcErr) {
           console.error("register_as_lojista RPC falhou:", rpcErr);
           throw new Error(
@@ -278,19 +278,19 @@ const CadastroLojista = () => {
           privacy_version: "1.0",
           user_agent: navigator.userAgent,
         });
-        await supabase.from("profiles").update({
-          terms_accepted_at: new Date().toISOString(),
-          birth_date: birthDate,
-          pix_type: pixType as any,
-          pix_key: cleanPixKey,
-          cep: cep.replace(/\D/g, ""),
-          street: street,
-          address_number: addressNumber.trim(),
-          neighborhood: neighborhood,
-          city: normalizedCity,
-          phone: whatsapp.trim(),
-          whatsapp_number: whatsapp.trim(),
-        } as any).eq("user_id", signUpData.user.id);
+         await supabase.from("profiles").update({
+           terms_accepted_at: new Date().toISOString(),
+           birth_date: birthDate,
+           pix_type: pixType as any,
+           pix_key: cleanPixKey,
+           cep: cep.replace(/\D/g, ""),
+           street: street,
+           address_number: addressNumber.trim(),
+           neighborhood: neighborhood,
+           city: normalizedCity,
+           phone: formatWhatsAppNumber(whatsapp),
+           whatsapp_number: formatWhatsAppNumber(whatsapp),
+         } as any).eq("user_id", signUpData.user.id);
 
         // Busca a loja (criada via RPC ou via trigger, dependendo do ambiente)
         let storeRow: { id: string } | null = createdStoreId ? { id: createdStoreId } : null;

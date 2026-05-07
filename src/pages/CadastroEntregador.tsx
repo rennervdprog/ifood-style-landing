@@ -186,15 +186,15 @@ const CadastroEntregador = () => {
         password,
         options: {
           emailRedirectTo: window.location.origin,
-          data: {
-            full_name: fullName.trim(),
-            role: "motoboy",
-             document: sanitizeDocument(document),
-            vehicle: vehicle.trim(),
-            whatsapp: phone.trim(),
-            phone: phone.trim(),
-            city: city,
-          },
+             data: {
+               full_name: fullName.trim(),
+               role: "motoboy",
+               document: sanitizeDocument(document),
+               vehicle: vehicle.trim(),
+               whatsapp: formatWhatsAppNumber(phone),
+               phone: formatWhatsAppNumber(phone),
+               city: city,
+             },
         },
       });
       if (signUpError) throw signUpError;
@@ -208,13 +208,15 @@ const CadastroEntregador = () => {
         uploadDocument(selfieFile, userId, "selfie"),
       ]);
 
-      await supabase.from("profiles").update({
-        cnh_number: cnhNumber.trim(),
-        cnh_front_url: cnhFrontPath,
-        cnh_back_url: cnhBackPath,
-        selfie_url: selfiePath,
-        terms_accepted_at: new Date().toISOString(),
-      }).eq("user_id", userId);
+       await supabase.from("profiles").update({
+         cnh_number: cnhNumber.trim(),
+         cnh_front_url: cnhFrontPath,
+         cnh_back_url: cnhBackPath,
+         selfie_url: selfiePath,
+         terms_accepted_at: new Date().toISOString(),
+         phone: formatWhatsAppNumber(phone),
+         whatsapp_number: formatWhatsAppNumber(phone),
+       }).eq("user_id", userId);
 
       await supabase.from("terms_acceptance").insert({
         user_id: userId,
