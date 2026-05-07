@@ -679,7 +679,7 @@ const PedidosPage = () => {
       return;
     }
 
-    if (order.status === "aguardando_pagamento_pix_direct") {
+     if ((order.status as string) === "aguardando_pagamento_pix_direct") {
       // branch morto — mantido para segurança
       setCancellingOrderId(orderId);
       try {
