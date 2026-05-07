@@ -40,16 +40,16 @@ const STATUS_MESSAGES: Record<string, {
       `Pedido: #${p.orderId.slice(0, 8).toUpperCase()}` +
       `${p.deliveryPin ? `\n🔑 *PIN de Segurança: ${p.deliveryPin}*` : ""}`,
   },
-  pronto_para_entrega: {
-    pushTitle: "📦 Pedido pronto!",
-    pushBody: (p) => `Seu pedido #${p.orderId.slice(0, 8).toUpperCase()} está pronto e aguardando entregador.`,
-    whatsApp: (p) =>
-      `📦 Olá ${p.clientName}! Seu pedido da *${p.storeName}* está *PRONTO*! 🎉\n\n` +
-      `Aguardando o motoboy retirar na loja...` +
-      (p.deliveryPin
-        ? `\n\n🔑 *CÓDIGO DE ENTREGA: ${p.deliveryPin}*\nGuarde este código! Informe ao motoboy *somente* quando ele chegar com seu pedido.\n\n⚠️ Não compartilhe antes da entrega.`
-        : ""),
-  },
+   pronto_para_entrega: {
+     pushTitle: "📦 Pedido pronto!",
+     pushBody: (p) => `Seu pedido #${p.orderId.slice(0, 8).toUpperCase()} está pronto e já está em rota de entrega!`,
+     whatsApp: (p) =>
+       `📦 Olá ${p.clientName}! Seu pedido da *${p.storeName}* está *PRONTO*! 🎉\n\n` +
+       `E Já esta em Rota De Entrega!!!` +
+       (p.deliveryPin
+         ? `\n\n🔑 *CÓDIGO DE ENTREGA: ${p.deliveryPin}*\nGuarde este código! Informe ao motoboy *somente* quando ele chegar com seu pedido.\n\n⚠️ Não compartilhe antes da entrega.`
+         : ""),
+   },
   saiu_entrega: {
     pushTitle: "🛵 Saiu para entrega!",
     pushBody: (p) => `Seu pedido #${p.orderId.slice(0, 8).toUpperCase()} saiu para entrega!`,
