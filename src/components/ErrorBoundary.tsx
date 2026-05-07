@@ -25,18 +25,38 @@ class ErrorBoundary extends Component<Props, State> {
     return { hasError: true, error, isChunkError };
   }
 
+  private async hardReload() {
+    try {
+      if ("caches" in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
+    } catch {}
+    try {
+      const regs = await navigator.serviceWorker?.getRegistrations();
+      if (regs) await Promise.all(regs.map((r) => r.unregister()));
+    } catch {}
+    // Cache-buster na URL para garantir HTML/assets novos
+    const sep = window.location.search ? "&" : "?";
+    window.location.replace(window.location.pathname + window.location.search + sep + "_v=" + Date.now());
+  }
+
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("[ErrorBoundary]", error, errorInfo);
 
-    // Chunk error: forçar hard reload automático (uma vez por sessão)
+    // Chunk error: limpar caches e forçar hard reload automático (até 2x por sessão)
     if (
       error.message?.includes("Failed to fetch dynamically imported module") ||
+      error.message?.includes("Importing a module script failed") ||
+      error.message?.includes("Loading chunk") ||
       error.name === "ChunkLoadError"
     ) {
-      const reloadKey = "eb_chunk_reload";
-      if (!sessionStorage.getItem(reloadKey)) {
-        sessionStorage.setItem(reloadKey, "1");
-        window.location.reload();
+      const reloadKey = "eb_chunk_reload_count";
+      const count = parseInt(sessionStorage.getItem(reloadKey) || "0", 10);
+      if (count < 2) {
+        sessionStorage.setItem(reloadKey, String(count + 1));
+        // Pequeno delay para que o usuário veja o feedback antes do reload
+        setTimeout(() => this.hardReload(), 600);
       }
     }
   }
@@ -44,7 +64,7 @@ class ErrorBoundary extends Component<Props, State> {
   public render() {
     if (!this.state.hasError) return this.props.children;
 
-    // Chunk error: mostrar tela mínima enquanto recarrega
+    // Chunk error: mostrar tela com botão manual caso o auto-reload falhe
     if (this.state.isChunkError) {
       return (
         <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 p-6">
@@ -55,6 +75,17 @@ class ErrorBoundary extends Component<Props, State> {
             <p className="font-bold text-foreground">Atualizando o app...</p>
             <p className="text-sm text-muted-foreground">Nova versão disponível. Recarregando.</p>
           </div>
+          <button
+            onClick={() => {
+              sessionStorage.removeItem("eb_chunk_reload_count");
+              this.hardReload();
+            }}
+            className="mt-2 flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold text-sm active:scale-95 transition-transform"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Recarregar agora
+          </button>
+          <p className="text-[11px] text-muted-foreground/70 mt-1">Se a tela não mudar em alguns segundos, toque no botão.</p>
         </div>
       );
     }
