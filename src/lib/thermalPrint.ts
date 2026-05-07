@@ -47,7 +47,8 @@ function getOrCreatePrintContainer(): HTMLDivElement {
 export function printThermalReceipt(
   order: PrintOrder,
   storeName: string,
-  clientName: string
+  clientName: string,
+  onAfterPrint?: () => void
 ) {
   const date = new Date(order.created_at).toLocaleString("pt-BR");
   const orderId = order.id.slice(0, 8).toUpperCase();
@@ -130,10 +131,26 @@ ${changeHtml}
 <div class="tp-footer"><p>Obrigado pela preferência!</p><p>ItaSuper</p></div>
 `;
 
+  // Register afterprint listener BEFORE calling window.print so it fires when
+  // the dialog closes (or immediately on thermal printers that skip the dialog).
+  if (onAfterPrint) {
+    const handler = () => {
+      window.removeEventListener("afterprint", handler);
+      onAfterPrint();
+    };
+    window.addEventListener("afterprint", handler);
+    // Safety fallback: if afterprint never fires (some browsers/thermal drivers),
+    // run the callback after 4s anyway so WhatsApp always opens.
+    setTimeout(() => {
+      window.removeEventListener("afterprint", handler);
+      onAfterPrint();
+    }, 4000);
+  }
+
   // Give DOM time to render, then print
   setTimeout(() => {
     window.print();
-  }, 500);
+  }, 300);
 }
 
 // ─── Labels de pagamento PDV ───────────────────────────────────────────────
