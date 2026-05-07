@@ -608,7 +608,12 @@ const DriverDashboard = () => {
           const clientName = contactProfiles?.find((c: any) => c.user_id === myDelivery.client_id);
           const name = (clientName as any)?.full_name || "Cliente";
           const msg = `🏍️ *ItaSuper* informa: Seu lanche saiu para entrega! O motoboy já coletou o pedido e está a caminho de: ${myDelivery.address_details} 💨\n\n--------------------------\n💰 Total: ${formatBRL(Number(myDelivery.total_price))}\n💳 Pagamento: ${myDelivery.payment_method === "pix" ? "PIX" : myDelivery.payment_method === "cartao" ? "Cartão" : myDelivery.payment_method === "dinheiro" ? "Dinheiro" : myDelivery.payment_method}\nPedido: #${myDelivery.id.slice(0, 8).toUpperCase()}\n--------------------------`;
-          setTimeout(() => openWhatsApp(clientPhone, msg), 600);
+          // CORREÇÃO: Removido setTimeout que bloqueava popup em navegadores.
+          // openWhatsApp só funciona em contexto nativo (Capacitor).
+          // No navegador, o usuário pode clicar no botão WhatsApp da tela.
+          if (typeof (window as any).Capacitor !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.()) {
+            openWhatsApp(clientPhone, msg);
+          }
         }
       }
     }

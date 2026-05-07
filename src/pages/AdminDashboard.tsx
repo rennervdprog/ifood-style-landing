@@ -24,10 +24,10 @@ import {
   AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip,
   ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar,
 } from "recharts";
-import { openWhatsApp } from "@/lib/whatsapp";
- import WhatsAppButton from "@/components/WhatsAppButton";
- import MenuBuilder from "@/components/MenuBuilder";
-import { notifyOrderStatusChange } from "@/lib/orderNotifications";
+import { openWhatsApp, formatWhatsAppNumber } from "@/lib/whatsapp";
+import WhatsAppButton from "@/components/WhatsAppButton";
+import MenuBuilder from "@/components/MenuBuilder";
+import { notifyOrderStatusChange, buildWhatsAppMessage } from "@/lib/orderNotifications";
 import { getStoreOpenStatus } from "@/lib/storeStatus";
 // Tabs carregadas sob demanda — só baixa o JS quando o lojista abrir a aba
 const TutoriaisTab = lazy(() => import("./admin/tabs/TutoriaisTab"));
@@ -282,12 +282,12 @@ const AdminDashboard = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*, order_items(*, products(name))")
+        .select("id, status, total_price, subtotal, delivery_fee, payment_method, created_at, confirmed_at, client_id, store_id, driver_id, delivery_pin, address_details, neighborhood, needs_change, change_for, scheduled_for, order_source, commission_rate, order_items(id, quantity, unit_price, observations, addons, products(name))")
         .eq("store_id", store!.id)
         .neq("status", "aguardando_pagamento" as any)
         .neq("status", "cancelado" as any)
         .order("created_at", { ascending: false })
-        .limit(200);
+        .limit(100);
       if (error) throw error;
       return data;
     },
@@ -673,8 +673,11 @@ const AdminDashboard = () => {
             return old;
           });
         });
-        // Still refetch for relations (items, etc.)
-        refreshDashboardOrders().catch(console.error);
+        // Refetch apenas para INSERT (novos pedidos precisam de relações order_items)
+        // Para UPDATE, o patch do cache acima já é suficiente na maioria dos casos
+        if (payload.eventType === "INSERT") {
+          refreshDashboardOrders().catch(console.error);
+        }
         if (payload.eventType === "INSERT" && (payload.new as any).status === "pendente") {
           playAlert();
           notifyNewOrder();
@@ -725,28 +728,31 @@ const AdminDashboard = () => {
   }, [store?.name, getClientName]);
 
   /**
-   * Called when ACEITAR PEDIDO is clicked.
-   * - Opens WhatsApp IMMEDIATELY (same user gesture → browsers allow window.open)
-   * - Then triggers print (which may show a dialog or send silently to thermal)
-   * - If autoPrint is ON, assumes thermal printer is configured — print fires silently
+   * Gera o href completo do WhatsApp para o botão "ACEITAR PEDIDO".
+   * Usando link <a> em vez de window.open() — links <a target="_blank"> não são
+   * bloqueados por popup blockers do navegador, resolvendo o bug de abertura.
+   */
+  const buildAcceptWhatsAppHref = useCallback((order: any): string => {
+    const clientPhone = getClientWhatsApp(order.client_id);
+    if (!clientPhone) return "#";
+    const msg = buildAcceptMessage(order);
+    const phone = formatWhatsAppNumber(clientPhone);
+    return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+  }, [getClientWhatsApp, buildAcceptMessage]);
+
+  /**
+   * Chamado junto com o clique em ACEITAR PEDIDO.
+   * Responsabilidade: disparar o print e atualizar o status.
+   * O WhatsApp é aberto via link <a> no JSX (não via window.open).
    */
   const handleAcceptOrder = useCallback((order: any) => {
-    const clientPhone = getClientWhatsApp(order.client_id);
-
-    // 1. Open WhatsApp NOW — must happen synchronously inside the click handler
-    if (clientPhone) {
-      openWhatsApp(clientPhone, buildAcceptMessage(order));
-    }
-
-    // 2. Print — if autoPrint is on we assume a thermal printer is set as default
-    //    so window.print() will send silently without a dialog.
-    //    If autoPrint is off, we still print (user clicked accept = wants the receipt).
+    // Print da notinha
     try {
       printThermalReceipt(order, store?.name || "Loja", getClientName(order.client_id));
     } catch (e) {
       console.warn("print error", e);
     }
-  }, [store?.name, getClientName, getClientWhatsApp, buildAcceptMessage]);
+  }, [store?.name, getClientName]);
 
   const toggleAutoPrint = () => {
     const next = !autoPrint;
@@ -1594,15 +1600,19 @@ const AdminDashboard = () => {
                             </span>
                           </div>
                         )}
-                        <button onClick={() => {
-                          // 1. Abre o WhatsApp imediatamente (gesto do usuário → permite window.open)
-                          handleAcceptOrder(order);
-                          // 2. Muda status
-                          updateOrderStatus(order.id, "preparando");
-                        }}
-                          className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3.5 rounded-xl text-sm active:scale-[0.98] transition-all shadow-lg shadow-emerald-500/20 h-12">
+                        {/* CORREÇÃO: Link <a> em vez de button+window.open para evitar popup blocker */}
+                        <a
+                          href={buildAcceptWhatsAppHref(order)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => {
+                            handleAcceptOrder(order);
+                            updateOrderStatus(order.id, "preparando");
+                          }}
+                          className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3.5 rounded-xl text-sm active:scale-[0.98] transition-all shadow-lg shadow-emerald-500/20 h-12 flex items-center justify-center no-underline"
+                        >
                           {order.payment_method === "pix" ? "🍳 COMEÇAR PRODUÇÃO" : "✓ ACEITAR PEDIDO"}
-                        </button>
+                        </a>
                         <button onClick={() => handleCancelOrder(order)}
                           className="w-full text-center text-xs text-muted-foreground hover:text-red-500 py-1.5 mt-1 transition-colors">
                           Recusar pedido
@@ -2311,16 +2321,20 @@ const AdminDashboard = () => {
                                     <span className="text-[10px] bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded font-bold">💰 PIX — Pagamento Confirmado</span>
                                   </div>
                                 )}
-                                <button onClick={() => {
-                                  // 1. WhatsApp + Print (síncrono no gesto do usuário)
-                                  handleAcceptOrder(order);
-                                  // 2. Status
-                                  setActiveTab("preparando");
-                                  updateOrderStatus(order.id, "preparando");
-                                }}
-                                  className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 rounded-xl text-sm active:scale-[0.98] transition-transform h-12">
+                                {/* CORREÇÃO: Link <a> em vez de button+window.open para evitar popup blocker */}
+                                <a
+                                  href={buildAcceptWhatsAppHref(order)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={() => {
+                                    handleAcceptOrder(order);
+                                    setActiveTab("preparando");
+                                    updateOrderStatus(order.id, "preparando");
+                                  }}
+                                  className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 rounded-xl text-sm active:scale-[0.98] transition-transform h-12 flex items-center justify-center no-underline"
+                                >
                                   {order.payment_method === "pix" ? "🍳 COMEÇAR PRODUÇÃO" : "✓ ACEITAR PEDIDO"}
-                                </button>
+                                </a>
                                 <button onClick={() => handleCancelOrder(order)}
                                   className="w-full text-center text-xs text-destructive hover:text-destructive/80 py-1">
                                   Recusar pedido

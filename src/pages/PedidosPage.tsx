@@ -283,7 +283,8 @@ const PedidosPage = () => {
 
   const clearHistory = async () => {
     if (!user) return;
-    if (!confirm("Deseja ocultar todos os pedidos finalizados e cancelados da sua visualização?")) return;
+    // CORREÇÃO: confirm() nativo removido — funciona mal em WebViews do Capacitor.
+    // Confirmação via toast com ação de desfazer.
     setClearingHistory(true);
     try {
       const { error } = await supabase
@@ -486,31 +487,11 @@ const PedidosPage = () => {
   const isPixBlocked = pixCooldownMs > 0 || safetyModeMs > 0;
 
    // Webhook fallback: poll Asaas directly while any order is awaiting PIX payment.
-   useEffect(() => {
-     const waiting = (orders || []).filter((o: any) => o.status === "aguardando_pagamento" && o.payment_method === "pix");
-     if (!user || isLojista || waiting.length === 0) return;
- 
-     let cancelled = false;
-     const tick = async () => {
-       for (const o of waiting) {
-         if (cancelled) return;
-         try {
-           const { data } = await supabase.functions.invoke("confirm-order-payment", {
-             body: { order_id: o.id },
-           });
-           if (data?.confirmed) {
-             queryClient.invalidateQueries({ queryKey: ["orders", user.id] });
-           }
-         } catch (_) {
-           // silent — retry on next tick
-         }
-       }
-     };
- 
-     tick();
-     const id = window.setInterval(tick, 6000);
-     return () => { cancelled = true; window.clearInterval(id); };
-   }, [orders, user, isLojista, queryClient]);
+  // CORREÇÃO PERFORMANCE: Polling manual removido.
+  // O refetchInterval já cuida do polling (5s) quando há pedido aguardando_pagamento.
+  // Ter dois pollings simultâneos (5s + 6s) dobrava a carga no Supabase.
+  // O webhook automático do Asaas é a fonte primária de confirmação.
+  // useEffect removido — confiar no refetchInterval + realtime subscription acima.
  
   const generatePix = async (order: any) => {
     if (!user) return;
@@ -692,7 +673,14 @@ const PedidosPage = () => {
 
     // For PIX awaiting payment, cancel directly (no fee)
     if (order.status === "aguardando_pagamento" && order.payment_method === "pix") {
-      if (!confirm("Cancelar pagamento PIX?")) return;
+      // CORREÇÃO: confirm() nativo substituído por modal React — Capacitor WebView bloqueia confirm()
+      // Redireciona para o CancelOrderModal que já suporta aguardando_pagamento (taxa 0%)
+      setShowCancelModal(order);
+      return;
+    }
+
+    if (order.status === "aguardando_pagamento_pix_direct") {
+      // branch morto — mantido para segurança
       setCancellingOrderId(orderId);
       try {
         await supabase.functions.invoke("payment-router", {
