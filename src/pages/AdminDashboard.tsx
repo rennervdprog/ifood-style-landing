@@ -2274,9 +2274,32 @@ const AdminDashboard = () => {
                                   </div>
                                 )}
                                 <button onClick={() => {
+                                  // ── TUDO SÍNCRONO AQUI — dentro do evento de clique ──
+                                  // O browser só permite window.open sem popup-blocker
+                                  // quando está dentro do handler síncrono do clique.
+
+                                  // 1. Abre o WhatsApp imediatamente
+                                  const clientPhone = getClientWhatsApp(order.client_id);
+                                  if (clientPhone) {
+                                    const pin = (order as any).delivery_pin;
+                                    const pinBlock = pin
+                                      ? `\n\n📱 *CÓDIGO DE CONFIRMAÇÃO*\nMostre este código ao entregador:\n\n➡️ *${pin}* ⬅️`
+                                      : "";
+                                    const msg =
+                                      `Olá ${getClientName(order.client_id)}! 🍔 *${store?.name || "ItaSuper"}*\n` +
+                                      `Seu pedido *#${order.id.slice(0, 8).toUpperCase()}* foi aceito e já está em produção!\n\n` +
+                                      `💰 Total: *${formatBRL(Number(order.total_price))}*\n` +
+                                      `💳 Pagamento: ${order.payment_method === "pix" ? "PIX ✅" : order.payment_method === "cartao" ? "Cartão na entrega" : "Dinheiro na entrega"}` +
+                                      pinBlock;
+                                    window.open(`https://wa.me/${getClientWhatsApp(order.client_id).replace(/\D/g, "").replace(/^(?!55)/, "55")}?text=${encodeURIComponent(msg)}`, "_blank");
+                                  }
+
+                                  // 2. Imprime a notinha
+                                  try { handlePrint(order); } catch (e) { console.warn("print error", e); }
+
+                                  // 3. Muda status (async — não bloqueia os passos acima)
                                   setActiveTab("preparando");
                                   updateOrderStatus(order.id, "preparando");
-                                  handleAcceptOrder(order);
                                 }}
                                   className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 rounded-xl text-sm active:scale-[0.98] transition-transform h-12">
                                   {order.payment_method === "pix" ? "🍳 COMEÇAR PRODUÇÃO" : "✓ ACEITAR PEDIDO"}
