@@ -124,7 +124,7 @@ const PdvSessionDetail = ({ session, storeId }: { session: any; storeId: string 
   const { data: orders = [], isLoading: ordL } = useQuery({
     queryKey: ["pdv-session-orders", session.id],
     queryFn: async () => {
-      const { data } = await supabase.from("orders")
+       const { data } = await (supabase as any).from("orders")
         .select("id, total_price, subtotal, pdv_discount, payment_method, created_at, order_items(quantity, unit_price, products(name))")
         .eq("pdv_session_id" as any, session.id).eq("status", "finalizado")
         .order("created_at", { ascending: false });

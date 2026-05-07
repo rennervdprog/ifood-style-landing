@@ -186,7 +186,7 @@ const PdvPage = () => {
       .from("pdv_sessions" as any)
       .select("*").eq("store_id", store.id).eq("status", "open")
       .order("opened_at", { ascending: false }).limit(1).maybeSingle();
-    if (data) { setCurrentSession(data as PdvSession); setScreen("venda"); }
+     if (data) { setCurrentSession(data as any as PdvSession); setScreen("venda"); }
     else setScreen("abertura");
   }, [store?.id]);
 
@@ -335,7 +335,7 @@ const PdvPage = () => {
         .insert({ store_id: store.id, opened_by: user.id, opening_amount: amount, status: "open" })
         .select().single();
       if (error) throw error;
-      setCurrentSession(data as PdvSession);
+       setCurrentSession(data as any as PdvSession);
       setScreen("venda");
       toast.success(`Caixa aberto! Troco inicial: ${formatBRL(amount)}`);
     } catch (e: any) { toast.error(e.message || "Erro ao abrir caixa."); }

@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig } from "@/lib/deliveryFee";
 
-export type StorePlanType = "fixed" | "hybrid" | "commission_only";
+ export type StorePlanType = "fixed" | "hybrid" | "commission_only" | "supporter";
 
 export interface StorePlanFeatures {
   planType: StorePlanType;
@@ -65,7 +65,7 @@ const FIXED_PLAN_FEATURES = {
   maxCoupons: null as number | null,
 };
 
-const PLAN_FEATURES: Record<StorePlanType, typeof FIXED_PLAN_FEATURES> = {
+ const PLAN_FEATURES: Record<string, typeof FIXED_PLAN_FEATURES> = {
   commission_only: {
     allowPix: true,
     allowPlatformDelivery: true,

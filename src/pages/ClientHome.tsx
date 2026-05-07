@@ -8,7 +8,8 @@ import {
   Search, Store, Repeat, ShoppingBag, Clock, ChevronRight, Zap,
   Mail, Lock, Eye, EyeOff, KeyRound, FileText, CheckCircle2, Phone, User,
 } from "lucide-react";
-import { maskWhatsApp } from "@/lib/whatsapp";
+ import { maskWhatsApp } from "@/lib/whatsapp";
+ import { formatDocument, sanitizeDocument, validateDocument } from "@/lib/documentFormat";
 import { formatBRL } from "@/lib/utils";
 import { toast } from "sonner";
 import BottomNav from "@/components/BottomNav";
@@ -67,7 +68,7 @@ const ClientAuth = ({ onSuccess }: { onSuccess: () => void }) => {
 
     if (!email.trim() || !password.trim()) { toast.error("Preencha todos os campos."); return; }
     if (mode === "signup" && fullName.trim().length < 3) { toast.error("Informe seu nome completo."); return; }
-    if (mode === "signup" && cpf.replace(/\D/g, "").length !== 11) { toast.error("CPF deve ter 11 dígitos."); return; }
+     if (mode === "signup" && !validateDocument(cpf)) { toast.error("CPF ou CNPJ inválido."); return; }
     if (mode === "signup") {
       const whatsDigits = whatsapp.replace(/\D/g, "");
       if (whatsDigits.length < 10 || whatsDigits.length > 11) {
@@ -96,7 +97,7 @@ const ClientAuth = ({ onSuccess }: { onSuccess: () => void }) => {
             data: {
               full_name: fullName.trim(),
               role: "cliente",
-              document: cpf.replace(/\D/g, ""),
+               document: sanitizeDocument(cpf),
               whatsapp: `55${whatsapp.replace(/\D/g, "")}`,
             },
           },
@@ -112,7 +113,7 @@ const ClientAuth = ({ onSuccess }: { onSuccess: () => void }) => {
           await supabase.from("profiles").update({
             terms_accepted_at: new Date().toISOString(),
             full_name: fullName.trim(),
-            document: cpf.replace(/\D/g, ""),
+             document: sanitizeDocument(cpf),
             whatsapp_number: `55${whatsapp.replace(/\D/g, "")}`,
           }).eq("user_id", signUpData.user.id);
         }
@@ -223,19 +224,12 @@ const ClientAuth = ({ onSuccess }: { onSuccess: () => void }) => {
                 )}
                 {mode === "signup" && (
                   <div>
-                    <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">CPF</label>
+                     <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">CPF ou CNPJ</label>
                     <div className="relative">
                       <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                      <input type="text" inputMode="numeric" placeholder="000.000.000-00" value={cpf}
-                        onChange={(e) => {
-                          const digits = e.target.value.replace(/\D/g, "").slice(0, 11);
-                          let f = digits;
-                          if (digits.length > 3) f = digits.slice(0, 3) + "." + digits.slice(3);
-                          if (digits.length > 6) f = digits.slice(0, 3) + "." + digits.slice(3, 6) + "." + digits.slice(6);
-                          if (digits.length > 9) f = digits.slice(0, 3) + "." + digits.slice(3, 6) + "." + digits.slice(6, 9) + "-" + digits.slice(9);
-                          setCpf(f);
-                        }}
-                        maxLength={14} className={inputClass} />
+                       <input type="text" inputMode="numeric" placeholder="CPF ou CNPJ" value={cpf}
+                         onChange={(e) => setCpf(formatDocument(e.target.value))}
+                         maxLength={18} className={inputClass} />
                     </div>
                   </div>
                 )}

@@ -17,7 +17,8 @@ import { maskWhatsApp, formatWhatsAppNumber, isValidWhatsApp } from "@/lib/whats
 import { formatCep, fetchCep } from "@/lib/cepLookup";
 import { calculateDeliveryFee, DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig } from "@/lib/deliveryFee";
 import SignOutConfirm from "@/components/SignOutConfirm";
-import { formatPixKeyDisplay, sanitizePixKeyForAsaas, validatePixKey, PIX_PLACEHOLDERS } from "@/lib/pixFormat";
+ import { formatPixKeyDisplay, sanitizePixKeyForAsaas, validatePixKey, PIX_PLACEHOLDERS } from "@/lib/pixFormat";
+ import { formatDocument, sanitizeDocument, validateDocument } from "@/lib/documentFormat";
 
 /* ── Reusable UI atoms ─────────────────────────────────── */
 
@@ -332,22 +333,15 @@ const PerfilPage = () => {
     } catch (err: any) { toast.error(err.message || "Erro ao salvar."); } finally { setSavingPix(false); }
   };
 
-  const maskCpf = (value: string) => {
-    const digits = value.replace(/\D/g, "").slice(0, 11);
-    if (digits.length <= 3) return digits;
-    if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
-    if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
-    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
-  };
-
   const handleSavePersonal = async () => {
-    if (!fullName.trim()) { toast.error("Preencha seu nome."); return; }
+     if (!fullName.trim()) { toast.error("Preencha seu nome."); return; }
+     if (document && !validateDocument(document)) { toast.error("CPF ou CNPJ inválido."); return; }
     setSavingPersonal(true);
     try {
       const { error } = await supabase.from("profiles").upsert({
         user_id: user!.id,
         full_name: fullName.trim(),
-        document: document.replace(/\D/g, "") || null,
+         document: sanitizeDocument(document) || null,
       } as any, { onConflict: "user_id" });
       if (error) throw error;
       toast.success("Dados pessoais salvos!");
@@ -548,7 +542,7 @@ const PerfilPage = () => {
           {activeSection === "personal" && (
             <div className="px-4 pb-5 space-y-3 border-t border-border/50 pt-4 animate-in slide-in-from-top-2 duration-200">
               <InputField label="Nome completo" placeholder="Digite seu nome completo" value={fullName} onChange={(e) => setFullName(e.target.value)} />
-              <InputField label="CPF" placeholder="000.000.000-00" value={maskCpf(document)} onChange={(e) => setDocument(e.target.value.replace(/\D/g, ""))} inputMode="numeric" maxLength={14} />
+               <InputField label="CPF ou CNPJ" placeholder="CPF ou CNPJ" value={formatDocument(document)} onChange={(e) => setDocument(formatDocument(e.target.value))} inputMode="numeric" maxLength={18} />
               <div>
                 <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">E-mail</label>
                 <input value={user?.email || ""} disabled
