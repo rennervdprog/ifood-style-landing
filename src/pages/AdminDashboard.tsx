@@ -2391,24 +2391,20 @@ const AdminDashboard = () => {
                             ) : action ? (
                               <div className="space-y-1">
                                 {/* MARCAR COMO PRONTO: link <a> para abrir WhatsApp com PIN */}
-                                {action.next === "pronto_para_entrega" ? (
-                                  <button
-                                    onClick={() => {
-                                      const phone = getClientWhatsApp(order.client_id);
-                                      if (!phone) {
-                                        alert(`Atenção: Não foi possível abrir o WhatsApp pois o cliente #${order.id.slice(0, 8)} não possui telefone cadastrado.`);
-                                      } else {
-                                        const msg = buildReadyMessage(order);
-                                        openWhatsApp(phone, msg);
-                                      }
-                                      setActiveTab("pronto_para_entrega");
-                                      updateOrderStatus(order.id, action.next);
-                                    }}
-                                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 rounded-xl text-sm active:scale-[0.98] transition-transform h-12 flex items-center justify-center"
-                                  >
-                                    {action.emoji} {action.label}
-                                  </button>
-                                ) : (
+                                 {action.next === "pronto_para_entrega" ? (
+                                   <a
+                                     href={buildReadyWhatsAppHref(order)}
+                                     target="_blank"
+                                     rel="noopener noreferrer"
+                                     onClick={() => {
+                                       setActiveTab("pronto_para_entrega");
+                                       updateOrderStatus(order.id, action.next);
+                                     }}
+                                     className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 rounded-xl text-sm active:scale-[0.98] transition-transform h-12 flex items-center justify-center no-underline"
+                                   >
+                                     {action.emoji} {action.label}
+                                   </a>
+                                 ) : (
                                   <button onClick={() => {
                                     if (action.next === "preparando") setActiveTab("preparando");
                                     else if (action.next === "pronto_para_entrega") setActiveTab("pronto_para_entrega");
