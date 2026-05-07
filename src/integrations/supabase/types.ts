@@ -1523,6 +1523,7 @@ export type Database = {
           id: string
           needs_change: boolean
           neighborhood: string
+          order_source: string | null
           payment_method: string
           return_to_store_confirmed: boolean
           scheduled_for: string | null
@@ -1558,6 +1559,7 @@ export type Database = {
           id?: string
           needs_change?: boolean
           neighborhood: string
+          order_source?: string | null
           payment_method: string
           return_to_store_confirmed?: boolean
           scheduled_for?: string | null
@@ -1593,6 +1595,7 @@ export type Database = {
           id?: string
           needs_change?: boolean
           neighborhood?: string
+          order_source?: string | null
           payment_method?: string
           return_to_store_confirmed?: boolean
           scheduled_for?: string | null
@@ -2447,6 +2450,8 @@ export type Database = {
           last_billing_attempt_at: string | null
           monthly_fee: number
           next_billing_date: string | null
+          pdv_commission_pending: number | null
+          pdv_commission_rate: number | null
           pix_operational_fee_override: number | null
           plan_type: Database["public"]["Enums"]["store_plan_type"]
           platform_delivery_split_override: number | null
@@ -2465,6 +2470,8 @@ export type Database = {
           last_billing_attempt_at?: string | null
           monthly_fee?: number
           next_billing_date?: string | null
+          pdv_commission_pending?: number | null
+          pdv_commission_rate?: number | null
           pix_operational_fee_override?: number | null
           plan_type?: Database["public"]["Enums"]["store_plan_type"]
           platform_delivery_split_override?: number | null
@@ -2483,6 +2490,8 @@ export type Database = {
           last_billing_attempt_at?: string | null
           monthly_fee?: number
           next_billing_date?: string | null
+          pdv_commission_pending?: number | null
+          pdv_commission_rate?: number | null
           pix_operational_fee_override?: number | null
           plan_type?: Database["public"]["Enums"]["store_plan_type"]
           platform_delivery_split_override?: number | null
