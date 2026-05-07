@@ -12,7 +12,7 @@ const schema = z.object({
   emailConfirm: z.string().trim().email("E-mail inválido").max(255),
   password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres").max(100),
   fullName: z.string().trim().min(3, "Nome deve ter pelo menos 3 caracteres").max(100),
-  phone: z.string().trim().min(10, "Telefone inválido").max(20),
+   phone: z.string().trim().min(1, "WhatsApp é obrigatório").min(10, "WhatsApp inválido").max(20),
   vehicle: z.string().trim().min(2, "Informe o tipo de veículo").max(50),
 }).refine(data => data.email === data.emailConfirm, {
   message: "Os e-mails não coincidem",

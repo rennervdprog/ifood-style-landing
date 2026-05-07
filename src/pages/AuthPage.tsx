@@ -95,13 +95,17 @@ const AuthPage = () => {
        toast.error("CPF ou CNPJ inválido.");
        return;
      }
-    if (mode === "signup") {
-      const whatsDigits = whatsapp.replace(/\D/g, "");
-      if (whatsDigits.length < 10 || whatsDigits.length > 11) {
-        toast.error("Informe um WhatsApp válido com DDD.");
-        return;
-      }
-    }
+     if (mode === "signup") {
+       const whatsDigits = whatsapp.replace(/\D/g, "");
+       if (!whatsDigits) {
+         toast.error("O WhatsApp é obrigatório.");
+         return;
+       }
+       if (whatsDigits.length < 10 || whatsDigits.length > 11) {
+         toast.error("Informe um WhatsApp válido com DDD.");
+         return;
+       }
+     }
     if (mode === "signup" && !acceptedTerms) {
       toast.error("Você precisa aceitar os Termos de Uso e Política de Privacidade.");
       return;
