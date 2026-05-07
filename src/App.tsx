@@ -32,12 +32,17 @@ const PerfilPage = lazy(() => import("./pages/PerfilPage"));
 const AuthPage = lazy(() => import("./pages/AuthPage"));
 const PartnerLogin = lazy(() => import("./pages/PartnerLogin"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const AdminDashboardV2 = lazy(() => import("./pages/AdminDashboardV2"));
 const PdvPage = lazy(() => import("./pages/PdvPage"));
 const DriverDashboard = lazy(() => import("./pages/DriverDashboard"));
  const SuperAdminDashboard = lazy(() => import("./pages/SuperAdminDashboard").catch(() => {
    window.location.reload();
    return { default: () => null };
  }));
+const SuperAdminDashboardV2 = lazy(() => import("./pages/SuperAdminDashboardV2").catch(() => {
+  window.location.reload();
+  return { default: () => null };
+}));
 const PartnerOnboarding = lazy(() => import("./pages/PartnerOnboarding"));
 const CadastroEntregador = lazy(() => import("./pages/CadastroEntregador"));
 const CadastroLojista = lazy(() => import("./pages/CadastroLojista"));
@@ -266,6 +271,7 @@ const App = () => {
                 <Route path="/auth" element={<AuthPage />} />
                 <Route path="/portal-parceiro" element={<PartnerLogin />} />
                 <Route path="/admin" element={<RoleGuard allowedRoles={["lojista", "admin"]} redirectTo="/" requireApproval><AdminDashboard /></RoleGuard>} />
+<Route path="/admin2" element={<RoleGuard allowedRoles={["lojista", "admin"]} redirectTo="/" requireApproval><AdminDashboardV2 /></RoleGuard>} />
                 <Route path="/admin/pdv" element={<RoleGuard allowedRoles={["lojista", "admin"]} redirectTo="/" requireApproval><PdvPage /></RoleGuard>} />
                 <Route
                   path="/entregador"
@@ -283,6 +289,14 @@ const App = () => {
                     </RoleGuard>
                   }
                 />
+<Route
+  path="/super-admin2"
+  element={
+    <RoleGuard allowedRoles={["admin"]} redirectTo="/">
+      <SuperAdminDashboardV2 />
+    </RoleGuard>
+  }
+/>
                 <Route path="/parceiro" element={<PartnerOnboarding />} />
                 {/* Cadastro de motoboy de plataforma descontinuado — redireciona para motoboy de loja */}
                 <Route path="/cadastro-entregador" element={<Navigate to="/cadastro-motoboy-loja" replace />} />
