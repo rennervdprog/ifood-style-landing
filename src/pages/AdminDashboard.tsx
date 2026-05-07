@@ -1561,7 +1561,32 @@ const AdminDashboard = () => {
                             </span>
                           </div>
                         )}
-                        <button onClick={() => updateOrderStatus(order.id, "preparando")}
+                        <button onClick={() => {
+                          // 1. Abre o WhatsApp imediatamente (handler síncrono para evitar bloqueio de popup)
+                          const clientPhone = getClientWhatsApp(order.client_id);
+                          if (clientPhone) {
+                            const pin = (order as any).delivery_pin;
+                            const pinBlock = pin
+                              ? `\n\n📱 *CÓDIGO DE CONFIRMAÇÃO*\nMostre este código ao entregador:\n\n➡️ *${pin}* ⬅️`
+                              : "";
+                            const msg =
+                              `Olá ${getClientName(order.client_id)}! 🍔 *${store?.name || "ItaSuper"}*\n` +
+                              `Seu pedido *#${order.id.slice(0, 8).toUpperCase()}* foi aceito e já está em produção!\n\n` +
+                              `💰 Total: *${formatBRL(Number(order.total_price))}*\n` +
+                              `💳 Pagamento: ${order.payment_method === "pix" ? "PIX ✅" : order.payment_method === "cartao" ? "Cartão na entrega" : "Dinheiro na entrega"}` +
+                              pinBlock;
+                            
+                            // Formata o número (garante 55) e abre
+                            const formattedPhone = clientPhone.replace(/\D/g, "").replace(/^(?!55)/, "55");
+                            window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(msg)}`, "_blank");
+                          }
+
+                          // 2. Imprime a notinha
+                          try { handlePrint(order); } catch (e) { console.warn("print error", e); }
+
+                          // 3. Muda status
+                          updateOrderStatus(order.id, "preparando");
+                        }}
                           className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3.5 rounded-xl text-sm active:scale-[0.98] transition-all shadow-lg shadow-emerald-500/20 h-12">
                           {order.payment_method === "pix" ? "🍳 COMEÇAR PRODUÇÃO" : "✓ ACEITAR PEDIDO"}
                         </button>
@@ -2298,6 +2323,27 @@ const AdminDashboard = () => {
                                   try { handlePrint(order); } catch (e) { console.warn("print error", e); }
 
                                   // 3. Muda status (async — não bloqueia os passos acima)
+                                  setActiveTab("preparando");
+                                  // 1. WhatsApp
+                                  const clientPhone = getClientWhatsApp(order.client_id);
+                                  if (clientPhone) {
+                                    const pin = (order as any).delivery_pin;
+                                    const pinBlock = pin
+                                      ? `\n\n📱 *CÓDIGO DE CONFIRMAÇÃO*\nMostre este código ao entregador:\n\n➡️ *${pin}* ⬅️`
+                                      : "";
+                                    const msg =
+                                      `Olá ${getClientName(order.client_id)}! 🍔 *${store?.name || "ItaSuper"}*\n` +
+                                      `Seu pedido *#${order.id.slice(0, 8).toUpperCase()}* foi aceito e já está em produção!\n\n` +
+                                      `💰 Total: *${formatBRL(Number(order.total_price))}*\n` +
+                                      `💳 Pagamento: ${order.payment_method === "pix" ? "PIX ✅" : order.payment_method === "cartao" ? "Cartão na entrega" : "Dinheiro na entrega"}` +
+                                      pinBlock;
+                                    const formattedPhone = clientPhone.replace(/\D/g, "").replace(/^(?!55)/, "55");
+                                    window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(msg)}`, "_blank");
+                                  }
+                                  // 2. Print
+                                  try { handlePrint(order); } catch (e) { console.warn("print error", e); }
+                                  // 3. Tab & Status
+                                  setDashboardTab("orders");
                                   setActiveTab("preparando");
                                   updateOrderStatus(order.id, "preparando");
                                 }}
