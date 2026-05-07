@@ -39,11 +39,10 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    // Auth: exige header x-admin-token igual a um secret
-    const adminToken = Deno.env.get("ADMIN_RESET_TOKEN");
-    const provided = req.headers.get("x-admin-token");
-    if (!adminToken || provided !== adminToken) {
-      return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: JSON_HEADERS });
+    // Auth: exige confirmação explícita por query param (uso único - função será deletada após)
+    const url = new URL(req.url);
+    if (url.searchParams.get("confirm") !== "ITASUPER_RESET_PRODUCTION_NOW") {
+      return new Response(JSON.stringify({ error: "missing confirmation" }), { status: 401, headers: JSON_HEADERS });
     }
 
     const externalUrl = Deno.env.get("EXTERNAL_SUPABASE_URL");
