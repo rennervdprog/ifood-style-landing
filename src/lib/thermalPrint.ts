@@ -138,8 +138,11 @@ ${changeHtml}
 <div class="tp-footer"><p>Obrigado pela preferência!</p><p>ItaSuper</p></div>
 `;
 
-  // Render ao DOM antes de imprimir (sem setTimeout — não mata token de gesto)
-  window.print();
+  // requestAnimationFrame garante 1 frame de render do DOM antes de imprimir
+  // sem usar setTimeout (que mataria o token de gesto do usuário e bloquearia o WhatsApp)
+  requestAnimationFrame(() => {
+    window.print();
+  });
 }
 
 // ─── Labels de pagamento PDV ───────────────────────────────────────────────
@@ -242,5 +245,7 @@ ${trocoHtml}
 <div class="tp-footer"><p>Obrigado pela preferência!</p><p>ItaSuper</p></div>
 `;
 
-  window.print();
+  requestAnimationFrame(() => {
+    window.print();
+  });
 }
