@@ -732,17 +732,17 @@ const AdminDashboard = () => {
    * Mensagem de PRONTO — com PIN de segurança.
    * Enviada quando o lojista marca o pedido como "pronto_para_entrega".
    */
-  const buildReadyMessage = useCallback((order: any): string => {
-    const pin = (order as any).delivery_pin;
-    const pinBlock = pin
-      ? `\n\n🔑 *CÓDIGO DE ENTREGA: ${pin}*\nGuarde este código! Informe ao motoboy *somente* quando ele chegar com seu pedido.\n\n⚠️ Não compartilhe antes da entrega.`
-      : "";
-    return (
-      `📦 Olá ${getClientName(order.client_id)}! Seu pedido da *${store?.name || "ItaSuper"}* está *PRONTO*! 🎉\n\n` +
-      `Aguardando o motoboy retirar na loja...` +
-      pinBlock
-    );
-  }, [store?.name, getClientName]);
+   const buildReadyMessage = useCallback((order: any): string => {
+     const pin = (order as any).delivery_pin;
+     const pinBlock = pin
+       ? `\n\n🔑 *CÓDIGO DE ENTREGA: ${pin}*\nGuarde este código! Informe ao motoboy *somente* quando ele chegar com seu pedido.\n\n⚠️ Não compartilhe antes da entrega.`
+       : "";
+     return (
+       `📦 Olá ${getClientName(order.client_id)}! Seu pedido da *${store?.name || "ItaSuper"}* está *PRONTO*! 🎉\n\n` +
+       `E Já esta em Rota De Entrega!!!` +
+       pinBlock
+     );
+   }, [store?.name, getClientName]);
 
   /**
    * Gera o href WhatsApp para o botão PRONTO (com PIN).
