@@ -1,14 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { 
-  ShoppingBag, DollarSign, TrendingUp, Clock, 
-  ArrowUpRight, ArrowDownRight, Package, Users
+  ShoppingBag, TrendingUp, Clock, Package
 } from "lucide-react";
-import { 
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
-  AreaChart, Area
-} from "recharts";
 import { formatBRL } from "@/lib/utils";
-import { KpiCard, DailySalesChart, PaymentBreakdownChart, HourlyChart } from "@/components/FinanceCharts";
+import { KpiCard, DailySalesChart, HourlyChart } from "@/components/FinanceCharts";
 
 interface OverviewTabProps {
   metrics: any;
@@ -31,7 +26,6 @@ export default function OverviewTab({
 }: OverviewTabProps) {
   return (
     <div className="space-y-6">
-      {/* Header with Date Filter */}
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-black text-foreground">Visão Geral</h2>
         <div className="flex bg-muted/50 p-1 rounded-xl gap-1">
@@ -49,35 +43,31 @@ export default function OverviewTab({
         </div>
       </div>
 
-      {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard
-          title="Vendas Brutas"
+          label="Vendas Brutas"
           value={formatBRL(metrics.totalSales)}
-          icon={ShoppingBag}
-          trend={metrics.totalSales > 0 ? "up" : null}
+          trend={metrics.totalSales > 0 ? 100 : 0}
+          color="primary"
         />
         <KpiCard
-          title="Lucro Comissões"
+          label="Lucro Comissões"
           value={formatBRL(metrics.commission)}
-          icon={TrendingUp}
-          trend={metrics.commission > 0 ? "up" : null}
+          trend={metrics.commission > 0 ? 100 : 0}
+          color="emerald"
         />
         <KpiCard
-          title="Pedidos Ativos"
-          value={metrics.activeOrders}
-          icon={Clock}
-          color="text-amber-500"
+          label="Pedidos Ativos"
+          value={String(metrics.activeOrders)}
+          color="amber"
         />
         <KpiCard
-          title="Total Pedidos"
-          value={metrics.totalOrders}
-          icon={Package}
-          color="text-blue-500"
+          label="Total Pedidos"
+          value={String(metrics.totalOrders)}
+          color="blue"
         />
       </div>
 
-      {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-card rounded-3xl border border-border p-6">
           <h3 className="text-sm font-bold text-foreground mb-6 flex items-center gap-2">
@@ -97,24 +87,6 @@ export default function OverviewTab({
           </div>
         </div>
       </div>
-      
-      {/* Alert Panels */}
-      {(delayedOrders.length > 0 || complianceAlerts.length > 0) && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {delayedOrders.length > 0 && (
-            <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-4">
-              <h3 className="text-sm font-bold text-red-600 mb-3">Atrasos Ativos ({delayedOrders.length})</h3>
-              <p className="text-xs text-muted-foreground">Existem pedidos que precisam de atenção imediata.</p>
-            </div>
-          )}
-          {complianceAlerts.length > 0 && (
-            <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-4">
-              <h3 className="text-sm font-bold text-amber-600 mb-3">Alertas ({complianceAlerts.length})</h3>
-              <p className="text-xs text-muted-foreground">Lojas com pendências de documentação ou comportamento.</p>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }
