@@ -1050,14 +1050,30 @@ const AdminDashboard = () => {
     return Math.round(totalMinutes / delivered.length);
   }, [allOrders]);
 
-  const filteredOrders = (orders?.filter(o => {
-    if (activeTab === "delivery") return o.status === "saiu_entrega" || o.status === "em_transito";
-    return o.status === activeTab;
-  }) || []).filter(o => {
-    if (activeTab !== "entregue" || !settlementSearch.trim()) return true;
-    const search = settlementSearch.toLowerCase().trim();
-    return o.id.slice(0, 8).toLowerCase().includes(search) || (o.driver_id ? getDriverName(o.driver_id).toLowerCase().includes(search) : false) || getClientName(o.client_id).toLowerCase().includes(search);
-  });
+  // Memoizado: evita rodar 2 filter() a cada render quando nada mudou
+  const filteredOrders = useMemo(() => {
+    return (orders?.filter(o => {
+      if (activeTab === "delivery") return o.status === "saiu_entrega" || o.status === "em_transito";
+      return o.status === activeTab;
+    }) || []).filter(o => {
+      if (activeTab !== "entregue" || !settlementSearch.trim()) return true;
+      const search = settlementSearch.toLowerCase().trim();
+      return o.id.slice(0, 8).toLowerCase().includes(search) || (o.driver_id ? getDriverName(o.driver_id).toLowerCase().includes(search) : false) || getClientName(o.client_id).toLowerCase().includes(search);
+    });
+  }, [orders, activeTab, settlementSearch]);
+
+  // Contadores memoizados — antes eram recalculados 4x por render via IIFE inline
+  const orderCounters = useMemo(() => {
+    const list = orders || [];
+    let pendente = 0, preparando = 0, pronto = 0, delivery = 0;
+    for (const o of list) {
+      if (o.status === "pendente") pendente++;
+      else if (o.status === "preparando") preparando++;
+      else if (o.status === "pronto_para_entrega") pronto++;
+      else if (o.status === "saiu_entrega" || o.status === "em_transito") delivery++;
+    }
+    return { pendente, preparando, pronto, delivery, total: pendente + preparando + pronto + delivery };
+  }, [orders]);
 
   const isOwnDelivery = (store as any)?.delivery_mode === "own";
 
