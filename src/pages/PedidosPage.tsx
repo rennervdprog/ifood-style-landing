@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { getOrderItemDisplayName } from "@/lib/orderItemName";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { subscribeWithRejoin, cleanupChannel } from "@/lib/realtimeChannel";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
@@ -363,14 +364,15 @@ const PedidosPage = () => {
         if ((newStatus === "em_transito" || newStatus === "saiu_entrega") && oldStatus !== newStatus) notifyOrderOnTheWay();
         if ((newStatus === "finalizado" || newStatus === "entregue") && oldStatus !== newStatus) notifyOrderDelivered();
       }
-    ).subscribe((status) => {
+    );
+    subscribeWithRejoin(channel, (status) => {
       if (status === "SUBSCRIBED") {
         refreshPedidosData().catch(console.error);
       }
     });
 
     return () => {
-      supabase.removeChannel(channel);
+      cleanupChannel(channel);
     };
   }, [refreshPedidosData, storeFilter, user, queryClient]);
 
@@ -406,10 +408,15 @@ const PedidosPage = () => {
           });
         }
       }
-    ).subscribe();
+    );
+    subscribeWithRejoin(channel, (status) => {
+      if (status === "SUBSCRIBED") {
+        queryClient.invalidateQueries({ queryKey: ["store-orders-lojista", ownStore.id] });
+      }
+    });
 
     return () => {
-      supabase.removeChannel(channel);
+      cleanupChannel(channel);
     };
   }, [ownStore?.id, isLojista, queryClient, refreshPedidosData]);
 
