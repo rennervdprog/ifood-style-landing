@@ -2,7 +2,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatBRL } from "@/lib/utils";
-import { Scale, Search, Loader2, User, FileText, Mail, Phone, Shield, MapPin, Wallet, Calendar, CheckCircle2, AlertTriangle, Download, Eye, ChevronDown, ChevronUp } from "lucide-react";
+import { Scale, Search, Loader2, User, FileText, Mail, Phone, Shield, MapPin, Wallet, Calendar, CheckCircle2, AlertTriangle, Download, Eye, ChevronDown, ChevronUp, ShoppingBag } from "lucide-react";
 
 const JuridicoTab = () => {
   const [search, setSearch] = useState("");
