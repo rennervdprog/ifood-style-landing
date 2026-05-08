@@ -61,9 +61,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
   { key: "logs", label: "Logs", icon: FileText, group: "Sistema" },
 ];
 
- const FinanceTab = lazy(() => import("./superadmin/tabs/FinanceTab"));
-
- const SuperAdminDashboardV2 = () => {
+const SuperAdminDashboard = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
