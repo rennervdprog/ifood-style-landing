@@ -385,11 +385,11 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
             const updated = payload.new as any;
 
             if (payload.eventType === "INSERT") {
-              queryClient.invalidateQueries({ queryKey: ["store-driver-available", linkedStoreIds] });
+              queryClient.invalidateQueries({ queryKey: ["store-driver-available", linkedStoreIds, user?.id] });
               toast.info("🔔 Novo pedido disponível!");
             } else if (payload.eventType === "UPDATE") {
               // Instant update for available orders
-              queryClient.setQueryData(["store-driver-available", linkedStoreIds], (old: any[] | undefined) => {
+              queryClient.setQueryData(["store-driver-available", linkedStoreIds, user?.id], (old: any[] | undefined) => {
                 if (!old) return old;
                 // If order was assigned to this driver, move it out of available
                 if (updated.driver_id) {
@@ -452,7 +452,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       queryClient.invalidateQueries({ queryKey: ["store-driver-count", user.id] });
       if (linkedStoreIds.length > 0) {
         queryClient.invalidateQueries({ queryKey: ["store-driver-store-names", linkedStoreIds] });
-        queryClient.invalidateQueries({ queryKey: ["store-driver-available", linkedStoreIds] });
+        queryClient.invalidateQueries({ queryKey: ["store-driver-available", linkedStoreIds, user.id] });
       }
     };
 
@@ -565,9 +565,9 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     queryClient.setQueryData(["store-driver-online-status", user.id], { ...previousStatus, user_id: user.id, is_online: next });
     if (!next) {
       // Clear available orders cache so list disappears immediately
-      queryClient.setQueryData(["store-driver-available", linkedStoreIds], []);
+      queryClient.setQueryData(["store-driver-available", linkedStoreIds, user.id], []);
     } else {
-      queryClient.invalidateQueries({ queryKey: ["store-driver-available", linkedStoreIds] });
+      queryClient.invalidateQueries({ queryKey: ["store-driver-available", linkedStoreIds, user.id] });
     }
     toast.success(next ? "Você está ONLINE — recebendo entregas." : "Você está OFFLINE.");
   };
@@ -582,19 +582,21 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
 
   const acceptOrder = async (orderId: string) => {
     // Optimistic UI: remove from available list immediately
-    const previousAvailable = queryClient.getQueryData<any[]>(["store-driver-available", linkedStoreIds]);
+    const availableKey = ["store-driver-available", linkedStoreIds, user?.id];
+    const myKey = ["store-driver-my-deliveries", user?.id];
+    const previousAvailable = queryClient.getQueryData<any[]>(availableKey);
     const acceptedOrder = (availableOrders || []).find((o: any) => o.id === orderId);
     if (previousAvailable) {
       queryClient.setQueryData(
-        ["store-driver-available", linkedStoreIds],
+        availableKey,
         previousAvailable.filter((o: any) => o.id !== orderId),
       );
     }
     // Add to my deliveries cache
     if (acceptedOrder) {
-      const previousMy = queryClient.getQueryData<any[]>(["store-driver-my-deliveries"]) || [];
+      const previousMy = queryClient.getQueryData<any[]>(myKey) || [];
       queryClient.setQueryData(
-        ["store-driver-my-deliveries"],
+        myKey,
         [{ ...acceptedOrder, driver_id: user?.id }, ...previousMy],
       );
     }
@@ -602,14 +604,14 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     const { error } = await supabase.rpc("driver_accept_order", { _order_id: orderId } as any);
     if (error) {
       // Revert
-      if (previousAvailable) queryClient.setQueryData(["store-driver-available", linkedStoreIds], previousAvailable);
-      queryClient.invalidateQueries({ queryKey: ["store-driver-my-deliveries"] });
+      if (previousAvailable) queryClient.setQueryData(availableKey, previousAvailable);
+      queryClient.invalidateQueries({ queryKey: myKey });
       toast.error("Não foi possível aceitar o pedido.");
     } else {
       toast.success("Pedido aceito! Adicionado à sua rota.");
       // Sync with server in background
-      queryClient.invalidateQueries({ queryKey: ["store-driver-available"] });
-      queryClient.invalidateQueries({ queryKey: ["store-driver-my-deliveries"] });
+      queryClient.invalidateQueries({ queryKey: availableKey });
+      queryClient.invalidateQueries({ queryKey: myKey });
 
       // Notify store owner in background
       if (acceptedOrder) {
@@ -652,8 +654,8 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
         `${failures.length} pedido(s) não aceito(s):\n${failures.slice(0, 3).join("\n")}`
       );
     }
-    queryClient.invalidateQueries({ queryKey: ["store-driver-available"] });
-    queryClient.invalidateQueries({ queryKey: ["store-driver-my-deliveries"] });
+    queryClient.invalidateQueries({ queryKey: ["store-driver-available", linkedStoreIds, user?.id] });
+    queryClient.invalidateQueries({ queryKey: ["store-driver-my-deliveries", user?.id] });
   };
 
   const [departingId, setDepartingId] = useState<string | null>(null);
@@ -661,10 +663,11 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   const departForDelivery = async (orderId: string) => {
     setDepartingId(orderId);
     // Optimistic UI: update status in cache immediately
-    const previousMy = queryClient.getQueryData<any[]>(["store-driver-my-deliveries"]);
+    const myKey = ["store-driver-my-deliveries", user?.id];
+    const previousMy = queryClient.getQueryData<any[]>(myKey);
     if (previousMy) {
       queryClient.setQueryData(
-        ["store-driver-my-deliveries"],
+        myKey,
         previousMy.map((o: any) => (o.id === orderId ? { ...o, status: "saiu_entrega" } : o)),
       );
     }
@@ -675,7 +678,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       .update({ status: "saiu_entrega" as any })
       .eq("id", orderId);
     if (error) {
-      if (previousMy) queryClient.setQueryData(["store-driver-my-deliveries"], previousMy);
+      if (previousMy) queryClient.setQueryData(myKey, previousMy);
       toast.error("Erro ao atualizar status.");
     } else {
       // Notify client in background
@@ -694,7 +697,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       notifyClientFromDriver(order, "saiu_entrega");
     }
     toast.success(`🚀 ${readyOrders.length} pedido(s) saíram para entrega!`);
-    queryClient.invalidateQueries({ queryKey: ["store-driver-my-deliveries"] });
+    queryClient.invalidateQueries({ queryKey: ["store-driver-my-deliveries", user?.id] });
     setDepartingId(null);
   };
 
@@ -709,8 +712,8 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
       toast.success("🎉 Entrega confirmada!");
       setPinInputs((prev) => ({ ...prev, [orderId]: "" }));
-      queryClient.invalidateQueries({ queryKey: ["store-driver-my-deliveries"] });
-      queryClient.invalidateQueries({ queryKey: ["store-driver-count"] });
+      queryClient.invalidateQueries({ queryKey: ["store-driver-my-deliveries", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["store-driver-count", user?.id] });
 
       // Notify client that order was delivered
       const order = myDeliveries?.find((o: any) => o.id === orderId);
