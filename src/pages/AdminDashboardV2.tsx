@@ -2077,23 +2077,38 @@ const AdminDashboard = () => {
                     ))}
                   </div>
                 ) : filteredOrders.length > 0 ? (
-                  filteredOrders.map((order: any, index: number) => {
-                    const action = getMainAction(order.status, order);
-                    const isAddressExpanded = expandedAddresses.has(order.id);
-                    const sc = statusColors[order.status] || statusColors.pendente;
-                    
-                    const elapsedMs = Date.now() - new Date(order.created_at).getTime();
-                    const elapsedMin = Math.floor(elapsedMs / 60000);
-                    const isDelayed = elapsedMin > 20 && ["pendente", "preparando"].includes(order.status);
-
-                    return (
-                      <div key={order.id}
-                        style={{ animationDelay: `${index * 50}ms` }}
-                        className={`bg-card rounded-2xl overflow-hidden border transition-all duration-300 animate-in fade-in slide-in-from-bottom-4 duration-500 ${
-                          batchSelected.has(order.id) ? "border-blue-500 ring-2 ring-blue-500/30" :
-                          isDelayed ? "border-destructive/50 shadow-[0_0_12px_-4px] shadow-destructive/20" :
-                          order.status === "pendente" ? "border-amber-400/40 shadow-amber-400/5 animate-pulse-border" : "border-border"
-                        } hover:shadow-md`}>
+                  filteredOrders.map((order: any, index: number) => (
+                    <AdminOrderCard
+                      key={order.id}
+                      order={order}
+                      index={index}
+                      isAddressExpanded={expandedAddresses.has(order.id)}
+                      isBatchSelected={batchSelected.has(order.id)}
+                      isOwnDelivery={isOwnDelivery}
+                      hasLinkedDrivers={hasLinkedDrivers}
+                      driversLoading={driversLoading}
+                      cancelConfirm={cancelConfirm}
+                      storeName={store?.name}
+                      onlineDriversCount={onlineDrivers?.length || 0}
+                      linkedStoreDrivers={linkedStoreDrivers}
+                      highlights={getRequiredAddonHighlights(order)}
+                      clientName={getClientName(order.client_id)}
+                      clientWhatsApp={getClientWhatsApp(order.client_id)}
+                      driverName={getDriverName}
+                      mainAction={getMainAction(order.status, order)}
+                      acceptHref={buildAcceptWhatsAppHref(order)}
+                      readyHref={buildReadyWhatsAppHref(order)}
+                      toggleAddress={toggleAddress}
+                      toggleBatchOrder={toggleBatchOrder}
+                      setActiveTab={setActiveTab}
+                      setCancelConfirm={setCancelConfirm}
+                      updateOrderStatus={updateOrderStatus}
+                      handleAcceptOrder={handleAcceptOrder}
+                      handleCancelOrder={handleCancelOrder}
+                      handlePrint={handlePrint}
+                      invalidateOrders={() => queryClient.invalidateQueries({ queryKey: ["admin-orders"] })}
+                    />
+                  ))
                         {/* Status bar with wait timer */}
                         <div className={`px-3 py-1.5 ${sc.bg} flex items-center justify-between`}>
                           <div className="flex items-center gap-2">
