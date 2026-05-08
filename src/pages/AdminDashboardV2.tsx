@@ -431,15 +431,13 @@ const AdminDashboard = () => {
     enabled: !!store && (store as any)?.delivery_mode === "own",
   });
 
-  const getDriverName = (driverId: string) => {
-    // First try drivers table
+  const getDriverName = useCallback((driverId: string) => {
     const fromDrivers = driverProfiles?.find((dr: any) => dr.user_id === driverId);
     if (fromDrivers?.name) return fromDrivers.name;
-    // Then try linked store drivers (profiles)
     const fromLinked = linkedStoreDrivers?.find((p: any) => p.user_id === driverId);
     if (fromLinked?.full_name) return fromLinked.full_name;
     return "Entregador";
-  };
+  }, [driverProfiles, linkedStoreDrivers]);
 
   const isStoreDriver = (driverId: string) => linkedStoreDrivers?.some((p: any) => p.user_id === driverId) ?? false;
 
@@ -454,11 +452,11 @@ const AdminDashboard = () => {
     staleTime: 1000 * 60 * 3,
   });
 
-  const getClientWhatsApp = (clientId: string) => {
+  const getClientWhatsApp = useCallback((clientId: string) => {
     const p = clientProfiles?.find((c: any) => c.user_id === clientId);
     return (p as any)?.whatsapp_number || (p as any)?.phone || "";
-  };
-  const getClientName = (clientId: string) => clientProfiles?.find((c: any) => c.user_id === clientId)?.full_name || "Cliente";
+  }, [clientProfiles]);
+  const getClientName = useCallback((clientId: string) => clientProfiles?.find((c: any) => c.user_id === clientId)?.full_name || "Cliente", [clientProfiles]);
 
   const requiredAddonGroupsByProduct = useMemo(() => {
     const groupsById = new Map(storeAddonGroups.map((group) => [group.id, group]));
