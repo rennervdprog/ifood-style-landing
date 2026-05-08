@@ -1,4 +1,7 @@
 import { lazy, Suspense } from "react";
+
+type OrderStatus = any;
+type DashboardTab = any;
 import { CreditCard, AlertTriangle, ChevronRight, Clock, Bike, Monitor, ShoppingBag, DollarSign, Timer, Users, GraduationCap, ChevronUp, ChevronDown, User, MapPin, CheckCircle2, ArrowUpRight, UtensilsCrossed, Coins, Settings, Store } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 import WhatsAppButton from "@/components/WhatsAppButton";
