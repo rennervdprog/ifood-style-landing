@@ -755,92 +755,124 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   const hasPix = !!(driverProfile as any)?.pix_key;
 
   return (
-    <div className="px-4 py-4 pb-32 space-y-5">
+    <div className="px-4 py-4 pb-32 space-y-4">
       {/* Alerta PIX não cadastrado — necessário para saque automático */}
       {!hasPix && (
-        <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3 flex items-start gap-2.5">
-          <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
-          <div>
-            <p className="text-xs font-bold text-amber-600">Chave PIX não cadastrada</p>
-            <p className="text-[11px] text-amber-600/80 mt-0.5">
-              Cadastre sua chave PIX nas Configurações para receber pagamentos automáticos.
+        <div className="relative overflow-hidden bg-gradient-to-br from-amber-500/15 to-amber-500/5 border border-amber-500/30 rounded-2xl p-4 flex items-start gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center shrink-0">
+            <AlertTriangle className="h-5 w-5 text-amber-600" strokeWidth={2.4} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-black text-amber-700 dark:text-amber-400 leading-tight">Chave PIX pendente</p>
+            <p className="text-[11px] text-amber-700/80 dark:text-amber-400/80 mt-1 leading-snug">
+              Cadastre nas Configurações para receber pagamentos automáticos.
             </p>
           </div>
         </div>
       )}
 
-      {/* Online/Offline toggle */}
+      {/* Online/Offline — Hero card premium */}
       <button
         onClick={toggleOnline}
         disabled={togglingOnline}
-        className={`w-full flex items-center justify-between gap-3 px-4 py-3.5 rounded-2xl border-2 transition-all active:scale-[0.99] disabled:opacity-60 ${
+        className={`relative w-full overflow-hidden rounded-3xl p-5 transition-all active:scale-[0.99] disabled:opacity-60 shadow-xl ${
           isOnline
-            ? "bg-emerald-500/10 border-emerald-500/40"
-            : "bg-muted/40 border-border"
+            ? "bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-emerald-500/30"
+            : "bg-gradient-to-br from-muted to-muted/60 shadow-black/5"
         }`}
       >
-        <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-            isOnline ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"
+        {/* Glow decorativo */}
+        <div className={`absolute -top-12 -right-12 w-40 h-40 rounded-full blur-3xl ${
+          isOnline ? "bg-white/20" : "bg-foreground/5"
+        }`} />
+        <div className="relative flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${
+              isOnline ? "bg-white/20 backdrop-blur-sm" : "bg-background/60"
+            }`}>
+              {togglingOnline
+                ? <Loader2 className={`h-6 w-6 animate-spin ${isOnline ? "text-white" : "text-muted-foreground"}`} />
+                : isOnline
+                  ? <Power className="h-6 w-6 text-white" strokeWidth={2.6} />
+                  : <PowerOff className="h-6 w-6 text-muted-foreground" strokeWidth={2.6} />}
+            </div>
+            <div className="text-left min-w-0">
+              <div className="flex items-center gap-1.5 mb-0.5">
+                {isOnline && <span className="w-2 h-2 rounded-full bg-white animate-pulse" />}
+                <p className={`text-[10px] font-black uppercase tracking-widest ${
+                  isOnline ? "text-white/90" : "text-muted-foreground"
+                }`}>
+                  {isOnline ? "Ao Vivo" : "Pausado"}
+                </p>
+              </div>
+              <p className={`text-lg font-black leading-tight ${
+                isOnline ? "text-white" : "text-foreground"
+              }`}>
+                {isOnline ? "Você está Online" : "Você está Offline"}
+              </p>
+              <p className={`text-[11px] mt-0.5 leading-snug ${
+                isOnline ? "text-white/80" : "text-muted-foreground"
+              }`}>
+                {isOnline ? "Recebendo entregas em tempo real" : "Toque para começar a receber"}
+              </p>
+            </div>
+          </div>
+          <div className={`relative w-14 h-8 rounded-full transition-colors shrink-0 ${
+            isOnline ? "bg-white/30" : "bg-background/60"
           }`}>
-            {togglingOnline
-              ? <Loader2 className="h-5 w-5 animate-spin" />
-              : isOnline ? <Power className="h-5 w-5" /> : <PowerOff className="h-5 w-5" />}
+            <span className={`absolute top-[3px] w-[26px] h-[26px] rounded-full shadow-lg transition-transform ${
+              isOnline ? "left-[25px] bg-white" : "left-[3px] bg-foreground/40"
+            }`} />
           </div>
-          <div className="text-left">
-            <p className={`text-sm font-black ${isOnline ? "text-emerald-700 dark:text-emerald-400" : "text-foreground"}`}>
-              {isOnline ? "VOCÊ ESTÁ ONLINE" : "VOCÊ ESTÁ OFFLINE"}
-            </p>
-            <p className="text-[11px] text-muted-foreground">
-              {isOnline ? "Recebendo entregas disponíveis" : "Toque para receber entregas"}
-            </p>
-          </div>
-        </div>
-        <div className={`relative w-12 h-7 rounded-full transition-colors ${isOnline ? "bg-emerald-500" : "bg-muted"}`}>
-          <span className={`absolute top-[3px] w-[22px] h-[22px] rounded-full bg-white shadow-md transition-transform ${isOnline ? "left-[23px]" : "left-[3px]"}`} />
         </div>
       </button>
 
-      {/* Stats bar */}
-      <div className="grid grid-cols-3 gap-2">
-        <div className="bg-card border border-border rounded-2xl p-3 text-center">
-          <Package className="h-4 w-4 text-primary mx-auto mb-1" />
-          <p className="text-lg font-black text-foreground">{totalActive}</p>
-          <p className="text-[9px] text-muted-foreground font-semibold uppercase">Na Rota</p>
+      {/* Stats — cards grandes premium */}
+      <div className="grid grid-cols-3 gap-2.5">
+        <div className="relative overflow-hidden bg-card rounded-2xl p-3.5 shadow-md shadow-primary/5 border border-border/60">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center mb-2">
+            <Package className="h-4 w-4 text-primary" strokeWidth={2.5} />
+          </div>
+          <p className="text-2xl font-black text-foreground leading-none">{totalActive}</p>
+          <p className="text-[9px] text-muted-foreground font-black uppercase tracking-wider mt-1">Na Rota</p>
         </div>
-        <div className="bg-card border border-border rounded-2xl p-3 text-center">
-          <Clock className="h-4 w-4 text-amber-500 mx-auto mb-1" />
-          <p className="text-lg font-black text-foreground">{totalAvailable}</p>
-          <p className="text-[9px] text-muted-foreground font-semibold uppercase">Disponíveis</p>
+        <div className="relative overflow-hidden bg-card rounded-2xl p-3.5 shadow-md shadow-amber-500/5 border border-border/60">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500/15 to-amber-500/5 flex items-center justify-center mb-2">
+            <Clock className="h-4 w-4 text-amber-500" strokeWidth={2.5} />
+          </div>
+          <p className="text-2xl font-black text-foreground leading-none">{totalAvailable}</p>
+          <p className="text-[9px] text-muted-foreground font-black uppercase tracking-wider mt-1">Disponíveis</p>
         </div>
-        <div className="bg-card border border-border rounded-2xl p-3 text-center">
-          <CheckCircle2 className="h-4 w-4 text-emerald-500 mx-auto mb-1" />
-          <p className="text-lg font-black text-foreground">{deliveryCount || 0}</p>
-          <p className="text-[9px] text-muted-foreground font-semibold uppercase">Realizadas</p>
+        <div className="relative overflow-hidden bg-card rounded-2xl p-3.5 shadow-md shadow-emerald-500/5 border border-border/60">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500/15 to-emerald-500/5 flex items-center justify-center mb-2">
+            <CheckCircle2 className="h-4 w-4 text-emerald-500" strokeWidth={2.5} />
+          </div>
+          <p className="text-2xl font-black text-foreground leading-none">{deliveryCount || 0}</p>
+          <p className="text-[9px] text-muted-foreground font-black uppercase tracking-wider mt-1">Feitas</p>
         </div>
       </div>
 
-      {/* Tabs: Routes vs Earnings */}
-      <div className="flex gap-2 bg-muted/40 p-1 rounded-2xl">
+      {/* Tabs — pílulas premium */}
+      <div className="flex gap-1.5 bg-muted/50 p-1.5 rounded-2xl">
         <button
           onClick={() => setActiveTab("routes")}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+          className={`flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl text-xs font-black transition-all ${
             activeTab === "routes"
-              ? "bg-card text-foreground shadow-sm"
+              ? "bg-card text-foreground shadow-md shadow-primary/10"
               : "text-muted-foreground"
           }`}
         >
-          <Route className="h-3.5 w-3.5" /> Entregas
+          <Route className="h-4 w-4" strokeWidth={2.5} /> Entregas
         </button>
         <button
           onClick={() => setActiveTab("earnings")}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+          className={`flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl text-xs font-black transition-all ${
             activeTab === "earnings"
-              ? "bg-card text-foreground shadow-sm"
+              ? "bg-card text-foreground shadow-md shadow-primary/10"
               : "text-muted-foreground"
           }`}
         >
-          <Wallet className="h-3.5 w-3.5" /> Meus Ganhos
+          <Wallet className="h-4 w-4" strokeWidth={2.5} /> Ganhos
         </button>
       </div>
 
