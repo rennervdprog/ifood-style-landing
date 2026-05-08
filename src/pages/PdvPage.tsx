@@ -840,11 +840,21 @@ const PdvPage = () => {
         <Monitor className="h-4 w-4 text-primary shrink-0" />
         <div className="flex-1 min-w-0">
           <span className="text-xs font-bold text-foreground truncate">{store?.name}</span>
-          <span className="text-[10px] text-emerald-500 font-semibold ml-2">● {movements.filter(m => m.type === "sale").length} vendas · {formatBRL(turnoVendido)}</span>
+          <span className="text-[10px] text-emerald-500 font-semibold ml-2 hidden sm:inline">
+            ● {turnoVendasCount} vendas · {formatBRL(turnoVendido)}
+            {ticketMedio > 0 && <span className="text-muted-foreground ml-1.5">· tkt {formatBRL(ticketMedio)}</span>}
+          </span>
         </div>
 
         {/* Controles do turno */}
         <div className="flex items-center gap-1">
+          <button
+            onClick={() => setShowShortcuts(true)}
+            title="Atalhos de teclado"
+            className="hidden md:flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold text-muted-foreground bg-muted/50 hover:bg-muted transition-colors border border-border"
+          >
+            <Keyboard className="h-3.5 w-3.5" />
+          </button>
           <button
             onClick={() => setMovModal("suprimento")}
             title="Suprimento"
