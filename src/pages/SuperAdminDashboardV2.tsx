@@ -1990,6 +1990,36 @@ const FinanceTab = ({
 
 // ─── Metric Card ───
 
+const SaquesTab = ({
+  withdrawalRequests,
+  pendingWithdrawals,
+  drivers,
+  queryClient,
+}: {
+  withdrawalRequests: any[] | undefined;
+  pendingWithdrawals: any[];
+  drivers: any[] | undefined;
+  queryClient: any;
+}) => {
+  const [saquesSubTab, setSaquesSubTab] = useState<"pendentes" | "historico">("pendentes");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const pendingList = pendingWithdrawals;
+  const historyList = (withdrawalRequests || []).filter((w: any) => w.status !== "solicitado");
+
+  const handleDelete = async (req: any) => {
+    if (deletingId !== req.id) {
+      setDeletingId(req.id);
+      setTimeout(() => setDeletingId((cur) => (cur === req.id ? null : cur)), 4000);
+      return;
+    }
+    const { error } = await supabase.from("withdrawal_requests" as any).delete().eq("id", req.id);
+    if (error) { toast.error("Erro ao excluir."); return; }
+    toast.success("Solicitação excluída.");
+    setDeletingId(null);
+    queryClient.invalidateQueries({ queryKey: ["withdrawal-requests"] });
+  };
+
   const handleConfirmPayment = async (req: any, driverName: string) => {
     const { error: updateError } = await supabase
       .from("withdrawal_requests" as any)
