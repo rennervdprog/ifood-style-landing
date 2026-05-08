@@ -1271,7 +1271,7 @@ const SuperAdminDashboard = () => {
 };
 
 // ─── Finance Tab ───
-const FinanceTab = ({
+export const FinanceTab = ({
   storeSettlement, driverSettlement, financeTotals,
   financeFilter, setFinanceFilter,
   financeSubTab, setFinanceSubTab,
@@ -2273,7 +2273,7 @@ const FinanceTab = ({
 };
 
 // ─── Metric Card ───
-const MetricCard = ({ icon: Icon, label, value, sublabel, sublabel2, highlight, alert }: {
+export const MetricCard = ({ icon: Icon, label, value, sublabel, sublabel2, highlight, alert }: {
   icon: React.ElementType; label: string; value: string; sublabel: string; sublabel2?: string; highlight?: boolean; alert?: boolean;
 }) => (
   <div className={`bg-card rounded-2xl p-4 border ${alert ? "border-destructive/50" : "border-border"}`}>
