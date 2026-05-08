@@ -960,6 +960,7 @@ const PdvPage = () => {
                   sections={sections} activeSection={activeSection} setActiveSection={setActiveSection}
                   grouped={grouped} prodLoading={prodLoading}
                   getQty={getQty} addItem={addItem} decItem={decItem}
+                  searchInputRef={searchInputRef}
                 />
               </div>
               {/* Caixa */}
@@ -976,6 +977,8 @@ const PdvPage = () => {
                   troco={troco} trocoNegativo={trocoNegativo} finalTotal_={finalTotal}
                   removeItem={removeItem} onFinalize={handleVenda}
                   loading={loading} orderDone={orderDone}
+                  splitMode={splitMode} setSplitMode={setSplitMode}
+                  splitPayments={splitPayments} setSplitPayments={setSplitPayments}
                 />
               </aside>
             </div>
@@ -993,6 +996,7 @@ const PdvPage = () => {
                       sections={sections} activeSection={activeSection} setActiveSection={setActiveSection}
                       grouped={grouped} prodLoading={prodLoading}
                       getQty={getQty} addItem={addItem} decItem={decItem}
+                      searchInputRef={searchInputRef}
                     />
                   </div>
                   {/* Bottom bar — ir ao carrinho */}
