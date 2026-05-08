@@ -733,14 +733,35 @@ const PdvPage = () => {
               </div>
             )}
 
-            {/* Saldo esperado */}
-            <div className="bg-amber-500/8 border border-amber-500/20 rounded-xl p-3.5 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-bold text-amber-700 dark:text-amber-400">Dinheiro esperado no caixa</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">Abertura + vendas − sangrias + suprimentos</p>
+            {/* Saldo esperado — esconder se for fechamento cego e ainda não tiver contado */}
+            {!blindClose ? (
+              <div className="bg-amber-500/8 border border-amber-500/20 rounded-xl p-3.5 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-amber-700 dark:text-amber-400">Dinheiro esperado no caixa</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Abertura + vendas − sangrias + suprimentos</p>
+                </div>
+                <p className="text-xl font-black text-amber-500">{formatBRL(saldoEsperado)}</p>
               </div>
-              <p className="text-xl font-black text-amber-500">{formatBRL(saldoEsperado)}</p>
-            </div>
+            ) : (
+              <div className="bg-purple-500/8 border border-purple-500/30 rounded-xl p-3.5 flex items-center gap-3">
+                <EyeOff className="h-5 w-5 text-purple-500 shrink-0" />
+                <div className="flex-1">
+                  <p className="text-xs font-bold text-purple-700 dark:text-purple-300">Fechamento cego ativo</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    O valor esperado fica oculto até você confirmar o fechamento. Padrão antifraude.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setBlindClose(v => !v)}
+              className="w-full text-[11px] font-bold text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1.5"
+            >
+              {blindClose ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+              {blindClose ? "Mostrar valor esperado" : "Ativar fechamento cego (anti-fraude)"}
+            </button>
           </div>
 
           {/* Conferência */}
@@ -758,13 +779,30 @@ const PdvPage = () => {
                 />
               </div>
             </div>
-            {closingAmount && (
+
+            {/* Conferência por cédula (auto-soma) */}
+            <PdvDenominationCount
+              onChange={(total, counts) => {
+                setDenominationCounts(counts);
+                if (total > 0) setClosingAmount(total.toFixed(2).replace(".", ","));
+              }}
+            />
+
+            {/* Diferença — só revelada quando não é blind ou já confirmou */}
+            {closingAmount && !blindClose && (
               <div className={`rounded-xl p-3 flex justify-between items-center border ${isOk ? "bg-emerald-500/8 border-emerald-500/20" : "bg-red-500/8 border-red-500/20"}`}>
                 <p className={`text-sm font-bold ${isOk ? "text-emerald-600" : "text-red-500"}`}>
                   {isOk ? "✅ Caixa conferido" : diffAmount > 0 ? "⚠️ Sobra" : "⚠️ Falta"}
                 </p>
                 <p className={`text-lg font-black ${isOk ? "text-emerald-500" : "text-red-500"}`}>
                   {isOk ? "—" : formatBRL(Math.abs(diffAmount))}
+                </p>
+              </div>
+            )}
+            {closingAmount && blindClose && (
+              <div className="rounded-xl p-3 bg-purple-500/8 border border-purple-500/20">
+                <p className="text-xs text-purple-600 dark:text-purple-400 font-bold flex items-center gap-1.5">
+                  <EyeOff className="h-3.5 w-3.5" /> A diferença será calculada após confirmar
                 </p>
               </div>
             )}
