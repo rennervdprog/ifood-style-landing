@@ -21,12 +21,18 @@ const KV = {
 
 let initPromise: Promise<void> | null = null;
 
-async function setKV(key: string, value: string) {
+const RUNNER_LABEL = "app.itasuper.driver.background";
+
+async function dispatchState(details: Record<string, unknown>) {
   if (!isCapacitorNative()) return;
   try {
     const { BackgroundRunner } = await import("@capacitor/background-runner");
-    await BackgroundRunner.setKeyValue({ key, value });
-  } catch (e) {
+    await BackgroundRunner.dispatchEvent({
+      label: RUNNER_LABEL,
+      event: "setState",
+      details,
+    });
+  } catch {
     // Plugin pode não estar disponível em web/dev — no-op silencioso.
   }
 }
@@ -59,17 +65,19 @@ export async function initDriverBackgroundFetch(opts: {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
       const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 
-      await setKV(KV.SUPABASE_URL, supabaseUrl || "");
-      await setKV(KV.SUPABASE_KEY, supabaseKey || "");
-      await setKV(KV.USER_ID, opts.userId);
-      await setKV(KV.LINKED_STORE_IDS, opts.linkedStoreIds.join(","));
-      await setKV(KV.ONLINE, opts.isOnline ? "1" : "0");
+      await dispatchState({
+        SUPABASE_URL: supabaseUrl || "",
+        SUPABASE_KEY: supabaseKey || "",
+        USER_ID: opts.userId,
+        LINKED_STORE_IDS: opts.linkedStoreIds.join(","),
+        ONLINE: opts.isOnline ? "1" : "0",
+      });
 
       // Dispara um check imediato (não espera o intervalo de 15 min)
       try {
         const { BackgroundRunner } = await import("@capacitor/background-runner");
         await BackgroundRunner.dispatchEvent({
-          label: "app.itasuper.driver.background",
+          label: RUNNER_LABEL,
           event: "checkForOrders",
           details: {},
         });
@@ -84,18 +92,15 @@ export async function initDriverBackgroundFetch(opts: {
 
 /** Atualiza estado online/offline do motoboy no KV (sem reinicializar). */
 export async function setDriverBackgroundOnline(isOnline: boolean) {
-  await setKV(KV.ONLINE, isOnline ? "1" : "0");
+  await dispatchState({ ONLINE: isOnline ? "1" : "0" });
 }
 
 /** Atualiza lojas vinculadas (após aceitar/recusar convite). */
 export async function setDriverBackgroundStores(storeIds: string[]) {
-  await setKV(KV.LINKED_STORE_IDS, storeIds.join(","));
+  await dispatchState({ LINKED_STORE_IDS: storeIds.join(",") });
 }
 
 /** Limpa o estado quando o motoboy faz logout — para o runner não buscar nada. */
 export async function clearDriverBackgroundState() {
-  await setKV(KV.USER_ID, "");
-  await setKV(KV.LINKED_STORE_IDS, "");
-  await setKV(KV.ONLINE, "0");
-  await setKV(KV.LAST_SEEN_ORDER_IDS, "");
+  await dispatchState({ RESET: true });
 }
