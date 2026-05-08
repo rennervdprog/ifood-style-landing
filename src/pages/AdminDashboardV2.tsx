@@ -5,6 +5,7 @@ import SimulationBanner from "@/components/SimulationBanner";
 import SignOutConfirm from "@/components/SignOutConfirm";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { subscribeWithRejoin, cleanupChannel } from "@/lib/realtimeChannel";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -695,16 +696,15 @@ const AdminDashboard = () => {
         if (payload.eventType === "UPDATE" && (payload.new as any).status === "finalizado") {
           toast.success("✅ Pedido finalizado!", { duration: 5000 });
         }
-      })
-      .subscribe((status) => {
-        const connected = status === "SUBSCRIBED";
-        setIsOnline(connected);
-
-        if (connected) {
-          refreshDashboardOrders().catch(console.error);
-        }
       });
-    return () => { supabase.removeChannel(channel); };
+    subscribeWithRejoin(channel, (status) => {
+      const connected = status === "SUBSCRIBED";
+      setIsOnline(connected);
+      if (connected) {
+        refreshDashboardOrders().catch(console.error);
+      }
+    });
+    return () => { cleanupChannel(channel); };
   }, [store, queryClient, playAlert, refreshDashboardOrders]);
 
   // ── ACTIONS ──
