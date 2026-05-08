@@ -555,15 +555,15 @@ const AuthPage = () => {
         <div className="absolute -top-20 -right-20 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
         <div className="absolute -bottom-20 -left-20 w-48 h-48 bg-primary/5 rounded-full blur-3xl" />
 
-        <div className="relative z-10">
+        <div className="relative z-10 flex items-center gap-3">
           <img
-            src="/itasuper-logo-horizontal.webp"
-            alt="ItaSuper"
-            width={240}
-            height={64}
-            decoding="async"
-            className="h-14 md:h-16 w-auto object-contain"
+            src="/itasuper-mark.png"
+            alt=""
+            className="h-12 w-12 rounded-xl shadow-lg"
           />
+          <span className="text-3xl font-black tracking-tighter text-white">
+            Ita<span className="text-primary">Super</span>
+          </span>
         </div>
 
         <div className="relative z-10 space-y-4">
@@ -598,15 +598,15 @@ const AuthPage = () => {
       </div>
 
       <div className="flex-1 flex flex-col bg-gradient-to-b from-white to-slate-50 md:bg-white">
-        <div className="md:hidden flex items-center justify-center pt-10 pb-6">
+        <div className="md:hidden flex items-center justify-center gap-2.5 pt-10 pb-6">
           <img
-            src="/itasuper-logo-horizontal.webp"
-            alt="ItaSuper"
-            width={200}
-            height={54}
-            decoding="async"
-            className="h-12 w-auto object-contain"
+            src="/itasuper-mark.png"
+            alt=""
+            className="h-10 w-10 rounded-xl shadow-sm"
           />
+          <span className="text-2xl font-black tracking-tighter text-foreground">
+            Ita<span className="text-primary">Super</span>
+          </span>
         </div>
 
         <div className="flex-1 flex items-start md:items-center justify-center px-5 pb-8 md:px-10">
