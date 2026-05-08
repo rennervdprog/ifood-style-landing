@@ -907,7 +907,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                 <AdminPlanManager />
               </div>
             )}
-            {activeTab === "pagamentos" && <PagamentosSplitTab stores={stores || []} />}
+            {activeTab === "pagamentos" && <Suspense fallback={<TabFallback />}><PagamentosSplitTab stores={stores || []} /></Suspense>}
             {activeTab === "juridico" && <Suspense fallback={<TabFallback />}><JuridicoTab /></Suspense>}
             {activeTab === "moderadores" && <ModeratorManager />}
             {activeTab === "socios" && <PartnerSplitPanel />}
@@ -966,12 +966,14 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
               </div>
             )}
             {activeTab === "saques" && (
-              <SaquesTab
-                withdrawalRequests={withdrawalRequests}
-                pendingWithdrawals={pendingWithdrawals}
-                drivers={drivers}
-                queryClient={queryClient}
-              />
+              <Suspense fallback={<TabFallback />}>
+                <SaquesTab
+                  withdrawalRequests={withdrawalRequests}
+                  pendingWithdrawals={pendingWithdrawals}
+                  drivers={drivers}
+                  queryClient={queryClient}
+                />
+              </Suspense>
             )}
              {activeTab === "financeiro" && (
                <FinanceTabFull
