@@ -209,6 +209,39 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
             <Share2 className="h-4 w-4" />
           </button>
         </div>
+
+        {/* APK Parceiro download link */}
+        <div className="pt-2 border-t border-blue-500/10">
+          <p className="text-[11px] text-muted-foreground mb-2">
+            📲 <strong>Link do app:</strong> envie para o motoboy baixar o APK Parceiro (Android).
+          </p>
+          <div className="flex items-center gap-2">
+            <div className="flex-1 bg-muted/50 border border-border rounded-lg px-3 py-2">
+              <p className="text-[11px] text-muted-foreground truncate">https://itasuper.com.br/download</p>
+            </div>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText("https://itasuper.com.br/download");
+                toast.success("Link do app copiado!");
+              }}
+              className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary hover:bg-primary/20 transition-colors"
+              title="Copiar link do app"
+            >
+              <Copy className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => {
+                const text = "Baixe o app ItaSuper Parceiro para receber e entregar pedidos: https://itasuper.com.br/download";
+                const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+                window.open(url, "_blank");
+              }}
+              className="w-9 h-9 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 hover:bg-emerald-500/20 transition-colors"
+              title="Enviar link do app via WhatsApp"
+            >
+              <Share2 className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Search & Add */}
