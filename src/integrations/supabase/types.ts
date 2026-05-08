@@ -1525,6 +1525,9 @@ export type Database = {
           neighborhood: string
           order_source: string | null
           payment_method: string
+          payments: Json | null
+          pdv_discount: number | null
+          pdv_session_id: string | null
           return_to_store_confirmed: boolean
           scheduled_for: string | null
           settlement_code: string | null
@@ -1534,6 +1537,7 @@ export type Database = {
           store_payout_error: string | null
           store_payout_id: string | null
           subtotal: number
+          table_identifier: string | null
           total_price: number
           visible_to_client: boolean
         }
@@ -1561,6 +1565,9 @@ export type Database = {
           neighborhood: string
           order_source?: string | null
           payment_method: string
+          payments?: Json | null
+          pdv_discount?: number | null
+          pdv_session_id?: string | null
           return_to_store_confirmed?: boolean
           scheduled_for?: string | null
           settlement_code?: string | null
@@ -1570,6 +1577,7 @@ export type Database = {
           store_payout_error?: string | null
           store_payout_id?: string | null
           subtotal: number
+          table_identifier?: string | null
           total_price: number
           visible_to_client?: boolean
         }
@@ -1597,6 +1605,9 @@ export type Database = {
           neighborhood?: string
           order_source?: string | null
           payment_method?: string
+          payments?: Json | null
+          pdv_discount?: number | null
+          pdv_session_id?: string | null
           return_to_store_confirmed?: boolean
           scheduled_for?: string | null
           settlement_code?: string | null
@@ -1606,6 +1617,7 @@ export type Database = {
           store_payout_error?: string | null
           store_payout_id?: string | null
           subtotal?: number
+          table_identifier?: string | null
           total_price?: number
           visible_to_client?: boolean
         }
@@ -1743,6 +1755,101 @@ export type Database = {
           id?: string
           notes?: string | null
           payout_type?: string
+        }
+        Relationships: []
+      }
+      pdv_movements: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          order_id: string | null
+          payment_method: string | null
+          session_id: string
+          store_id: string
+          type: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          order_id?: string | null
+          payment_method?: string | null
+          session_id: string
+          store_id: string
+          type: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          order_id?: string | null
+          payment_method?: string | null
+          session_id?: string
+          store_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pdv_movements_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "pdv_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pdv_sessions: {
+        Row: {
+          closed_at: string | null
+          closed_by: string | null
+          closing_amount: number | null
+          closing_difference: number | null
+          closing_method: string | null
+          denomination_count: Json | null
+          id: string
+          notes: string | null
+          opened_at: string
+          opened_by: string
+          opening_amount: number
+          status: string
+          store_id: string
+        }
+        Insert: {
+          closed_at?: string | null
+          closed_by?: string | null
+          closing_amount?: number | null
+          closing_difference?: number | null
+          closing_method?: string | null
+          denomination_count?: Json | null
+          id?: string
+          notes?: string | null
+          opened_at?: string
+          opened_by: string
+          opening_amount?: number
+          status?: string
+          store_id: string
+        }
+        Update: {
+          closed_at?: string | null
+          closed_by?: string | null
+          closing_amount?: number | null
+          closing_difference?: number | null
+          closing_method?: string | null
+          denomination_count?: Json | null
+          id?: string
+          notes?: string | null
+          opened_at?: string
+          opened_by?: string
+          opening_amount?: number
+          status?: string
+          store_id?: string
         }
         Relationships: []
       }
@@ -3303,6 +3410,7 @@ export type Database = {
       get_order_client_name: { Args: { _order_id: string }; Returns: string }
       get_owned_store_ids: { Args: { _user_id: string }; Returns: string[] }
       get_page_view_stats: { Args: { _page?: string }; Returns: Json }
+      get_pdv_session_summary: { Args: { _session_id: string }; Returns: Json }
       get_store_commission_rate: {
         Args: { _store_id: string }
         Returns: number
