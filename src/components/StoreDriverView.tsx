@@ -614,17 +614,38 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   };
 
   const acceptAllFiltered = async () => {
-    if (!filteredAvailable.length) return;
+    // Snapshot da lista para evitar mutações durante o loop (realtime/refetch)
+    const snapshot = [...filteredAvailable];
+    if (!snapshot.length) return;
     let accepted = 0;
-    for (const order of filteredAvailable) {
-      const { error } = await supabase.rpc("driver_accept_order", { _order_id: order.id } as any);
-      if (!error) {
+    const failures: string[] = [];
+    // Aceita em paralelo — cada chamada é independente no servidor
+    const results = await Promise.allSettled(
+      snapshot.map((order) =>
+        supabase.rpc("driver_accept_order", { _order_id: order.id } as any)
+      )
+    );
+    results.forEach((res, idx) => {
+      const order = snapshot[idx];
+      const shortId = `#${order.id.slice(0, 8).toUpperCase()}`;
+      if (res.status === "fulfilled" && !(res.value as any)?.error) {
         accepted++;
         const driverName = user?.user_metadata?.full_name || "Entregador";
-        notifyStoreOwner(order, "🛵 Entregador aceitou!", `${driverName} aceitou o pedido #${order.id.slice(0, 8).toUpperCase()}`);
+        notifyStoreOwner(order, "🛵 Entregador aceitou!", `${driverName} aceitou o pedido ${shortId}`);
+      } else {
+        const msg =
+          res.status === "fulfilled"
+            ? (res.value as any)?.error?.message
+            : (res.reason as any)?.message;
+        failures.push(`${shortId}: ${msg || "erro desconhecido"}`);
       }
+    });
+    if (accepted > 0) toast.success(`${accepted} pedido(s) aceito(s)!`);
+    if (failures.length) {
+      toast.error(
+        `${failures.length} pedido(s) não aceito(s):\n${failures.slice(0, 3).join("\n")}`
+      );
     }
-    toast.success(`${accepted} pedido(s) aceito(s)!`);
     queryClient.invalidateQueries({ queryKey: ["store-driver-available"] });
     queryClient.invalidateQueries({ queryKey: ["store-driver-my-deliveries"] });
   };
