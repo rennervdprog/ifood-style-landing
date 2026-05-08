@@ -283,6 +283,14 @@ const App = () => {
                   }
                 />
                 <Route
+                  path="/entregador2"
+                  element={
+                    <RoleGuard allowedRoles={["motoboy", "admin"]} redirectTo="/" requireApproval>
+                      <DriverDashboardV2 />
+                    </RoleGuard>
+                  }
+                />
+                <Route
                   path="/super-admin"
                   element={
                     <RoleGuard allowedRoles={["admin"]} redirectTo="/">
