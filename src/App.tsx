@@ -271,19 +271,12 @@ const App = () => {
                 <Route path="/perfil" element={<PerfilPage />} />
                 <Route path="/auth" element={<AuthPage />} />
                 <Route path="/portal-parceiro" element={<PartnerLogin />} />
-                <Route path="/admin" element={<RoleGuard allowedRoles={["lojista", "admin"]} redirectTo="/" requireApproval><AdminDashboard /></RoleGuard>} />
-<Route path="/admin2" element={<RoleGuard allowedRoles={["lojista", "admin"]} redirectTo="/" requireApproval><AdminDashboardV2 /></RoleGuard>} />
+                <Route path="/admin" element={<RoleGuard allowedRoles={["lojista", "admin"]} redirectTo="/" requireApproval><AdminDashboardV2 /></RoleGuard>} />
+                <Route path="/admin1" element={<RoleGuard allowedRoles={["lojista", "admin"]} redirectTo="/" requireApproval><AdminDashboard /></RoleGuard>} />
+                <Route path="/admin2" element={<Navigate to="/admin" replace />} />
                 <Route path="/admin/pdv" element={<RoleGuard allowedRoles={["lojista", "admin"]} redirectTo="/" requireApproval><PdvPage /></RoleGuard>} />
                 <Route
                   path="/entregador"
-                  element={
-                    <RoleGuard allowedRoles={["motoboy", "admin"]} redirectTo="/" requireApproval>
-                      <DriverDashboard />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/entregador2"
                   element={
                     <RoleGuard allowedRoles={["motoboy", "admin"]} redirectTo="/" requireApproval>
                       <DriverDashboardV2 />
@@ -291,21 +284,31 @@ const App = () => {
                   }
                 />
                 <Route
+                  path="/entregador1"
+                  element={
+                    <RoleGuard allowedRoles={["motoboy", "admin"]} redirectTo="/" requireApproval>
+                      <DriverDashboard />
+                    </RoleGuard>
+                  }
+                />
+                <Route path="/entregador2" element={<Navigate to="/entregador" replace />} />
+                <Route
                   path="/super-admin"
                   element={
                     <RoleGuard allowedRoles={["admin"]} redirectTo="/">
-                      <SuperAdminDashboard />
+                      <SuperAdminDashboardV2 />
                     </RoleGuard>
                   }
                 />
 <Route
-  path="/super-admin2"
+  path="/super-admin1"
   element={
     <RoleGuard allowedRoles={["admin"]} redirectTo="/">
-      <SuperAdminDashboardV2 />
+      <SuperAdminDashboard />
     </RoleGuard>
   }
 />
+                <Route path="/super-admin2" element={<Navigate to="/super-admin" replace />} />
                 <Route path="/parceiro" element={<PartnerOnboarding />} />
                 {/* Cadastro de motoboy de plataforma descontinuado — redireciona para motoboy de loja */}
                 <Route path="/cadastro-entregador" element={<Navigate to="/cadastro-motoboy-loja" replace />} />
