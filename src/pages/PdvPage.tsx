@@ -528,6 +528,50 @@ const PdvPage = () => {
   const turnoSuprimentos = sumMoney(movements.filter(m => m.type === "suprimento").map(m => m.amount));
   const saldoEsperado = addMoney((currentSession?.opening_amount ?? 0), turnoDinheiro, turnoSuprimentos, -turnoSangrias);
 
+  // ── Ticket médio do turno ──
+  const turnoVendasCount = movements.filter(m => m.type === "sale").length;
+  const ticketMedio = turnoVendasCount > 0 ? turnoVendido / turnoVendasCount : 0;
+
+  // ── Atalhos de teclado (PDV profissional) ──
+  const cyclePayment = useCallback(() => {
+    const ids = PDV_METHODS.map(m => m.id);
+    if (!paymentMethod) { setPaymentMethod(ids[0]); return; }
+    const idx = ids.indexOf(paymentMethod);
+    setPaymentMethod(ids[(idx + 1) % ids.length]);
+  }, [paymentMethod]);
+
+  usePdvShortcuts({
+    enabled: screen === "venda" && tab === "venda",
+    onSearchFocus: () => searchInputRef.current?.focus(),
+    onToggleDiscount: () => setShowDiscount(v => !v),
+    onCyclePayment: cyclePayment,
+    onFinalize: () => {
+      if (cart.length > 0 && !loading && !orderDone) handleVenda();
+    },
+    onClearSale: () => {
+      if (cart.length > 0) {
+        if (window.confirm("Limpar venda atual?")) clearSale();
+      }
+    },
+  });
+
+  // ── Leitor de código de barras (USB HID) ──
+  // Busca produto por nome (substring) — fácil de evoluir pra coluna SKU/barcode no futuro
+  const handleBarcodeScan = useCallback((code: string) => {
+    const found = products.find(p =>
+      p.name.toLowerCase().includes(code.toLowerCase()) ||
+      p.id.startsWith(code)
+    );
+    if (found) {
+      addItem(found);
+      toast.success(`+ ${found.name}`, { duration: 1200 });
+    } else {
+      toast.warning(`Código não encontrado: ${code}`);
+    }
+  }, [products]);
+
+  usePdvBarcodeScanner(handleBarcodeScan, screen === "venda" && tab === "venda");
+
   // ─────────────────────────────────────────────────────────────────────────
   // LOADING
   // ─────────────────────────────────────────────────────────────────────────
