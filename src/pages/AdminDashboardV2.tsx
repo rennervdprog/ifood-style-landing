@@ -403,11 +403,20 @@ const AdminDashboard = () => {
 
   // Realtime drivers
   useEffect(() => {
-    const ch = supabase.channel(`drivers-online-rt-${store?.id || "global"}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "drivers" }, () => queryClient.invalidateQueries({ queryKey: ["online-drivers-count"] }))
-      .subscribe((status) => setRealtimeDriversConnected(status === "SUBSCRIBED"));
-    return () => { supabase.removeChannel(ch); };
-  }, [queryClient, store?.id]);
+    if (!store) return;
+    const city = (store as any)?.address_city || null;
+    const ch = supabase.channel(`drivers-online-rt-${store.id}`)
+      .on(
+        "postgres_changes",
+        // Filter by city when available — avoids receiving driver events from other cities
+        city
+          ? { event: "*", schema: "public", table: "drivers", filter: `city=eq.${city}` }
+          : { event: "*", schema: "public", table: "drivers" },
+        () => queryClient.invalidateQueries({ queryKey: ["online-drivers-count"] })
+      );
+    subscribeWithRejoin(ch, (status) => setRealtimeDriversConnected(status === "SUBSCRIBED"));
+    return () => { cleanupChannel(ch); };
+  }, [queryClient, store]);
 
   const driverIds = [...new Set(orders?.map(o => o.driver_id).filter(Boolean) || [])] as string[];
   const { data: driverProfiles } = useQuery({

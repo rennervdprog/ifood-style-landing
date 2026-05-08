@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { subscribeWithRejoin, cleanupChannel } from "@/lib/realtimeChannel";
 import { useAuth } from "@/contexts/AuthContext";
 import { MessageCircle, Send, X, ChefHat, Package, Truck, CheckCircle2, XCircle, Bell, CheckCheck } from "lucide-react";
 import { toast } from "sonner";
@@ -55,10 +56,15 @@ const OrderChat = ({ orderId, storeName, storeOwnerId, clientId, driverId, defau
   const isStoreOwner = user?.id === storeOwnerId;
   const isDriver = user?.id === driverId;
 
+  // Persistent badge channel — does NOT depend on `open`, so toggling the chat
+  // does not destroy/recreate the subscription.
+  const openRef = useRef(open);
+  useEffect(() => { openRef.current = open; }, [open]);
+
   useEffect(() => {
     if (!user) return;
     const channel = supabase
-      .channel(`order-chat-unread-${orderId}`)
+      .channel(`order-chat-${orderId}-${user.id}`)
       .on("postgres_changes", {
         event: "INSERT",
         schema: "public",
@@ -66,19 +72,20 @@ const OrderChat = ({ orderId, storeName, storeOwnerId, clientId, driverId, defau
         filter: `order_id=eq.${orderId}`,
       }, (payload: any) => {
         const msg = payload.new;
-        if (msg.sender_id !== user.id && !open) {
+        const isOpen = openRef.current;
+        if (msg.sender_id !== user.id && !isOpen) {
           setUnreadCount((c) => c + 1);
         }
-        if (open) {
+        if (isOpen) {
           setMessages((prev) => {
             if (prev.some((m: any) => m.id === msg.id)) return prev;
             return [...prev, msg];
           });
         }
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [orderId, user, open]);
+      });
+    subscribeWithRejoin(channel);
+    return () => { cleanupChannel(channel); };
+  }, [orderId, user]);
 
   useEffect(() => {
     if (!open || !user) return;
