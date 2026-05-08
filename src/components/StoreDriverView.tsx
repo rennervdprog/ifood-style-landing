@@ -1026,17 +1026,18 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       {hasActiveDeliveries && (
         <div className="space-y-3">
           <div className="flex items-center justify-between px-1">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Route className="h-3.5 w-3.5 text-primary" />
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center border border-primary/10">
+                <Route className="h-4 w-4 text-primary" strokeWidth={2.5} />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-foreground">
-                  Sua Rota ({filteredDeliveries.length} {filteredDeliveries.length === 1 ? "entrega" : "entregas"})
+                <p className="text-[10px] font-black text-primary uppercase tracking-widest leading-none">Sua Rota</p>
+                <h3 className="text-sm font-black text-foreground leading-tight mt-0.5">
+                  {filteredDeliveries.length} {filteredDeliveries.length === 1 ? "entrega ativa" : "entregas ativas"}
                 </h3>
                 {useOptimized && routeDistanceKm > 0 && (
-                  <p className="text-[10px] text-muted-foreground">
-                    📍 ~{routeDistanceKm.toFixed(1)} km · ⏱ ~{Math.ceil(routeDistanceKm * 3)} min
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    ~{routeDistanceKm.toFixed(1)} km · ~{Math.ceil(routeDistanceKm * 3)} min
                   </p>
                 )}
               </div>
@@ -1045,9 +1046,10 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
               <button
                 onClick={departAll}
                 disabled={departingId === "all"}
-                className="bg-amber-500 text-white px-3 py-1.5 rounded-xl text-[11px] font-bold flex items-center gap-1 active:scale-[0.98] transition-all disabled:opacity-50"
+                className="bg-gradient-to-br from-amber-500 to-amber-600 text-white px-3.5 py-2 rounded-xl text-[11px] font-black flex items-center gap-1.5 shadow-lg shadow-amber-500/30 active:scale-95 transition-all disabled:opacity-50"
               >
-                {departingId === "all" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Navigation className="h-3 w-3" />} Sair p/ Entrega
+                {departingId === "all" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Navigation className="h-3.5 w-3.5" strokeWidth={2.6} />}
+                Sair Todos
               </button>
             )}
           </div>
@@ -1061,40 +1063,70 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
             const inDelivery = order.status === "saiu_entrega" || order.status === "em_transito";
 
             return (
-              <div key={order.id} id={`stop-${order.id}`} className="bg-card border border-border rounded-2xl overflow-hidden">
+              <div
+                key={order.id}
+                id={`stop-${order.id}`}
+                className={`relative bg-card rounded-3xl overflow-hidden shadow-lg border ${
+                  inDelivery
+                    ? "border-emerald-500/30 shadow-emerald-500/10"
+                    : readyToDepart
+                      ? "border-amber-500/30 shadow-amber-500/10"
+                      : "border-border/60 shadow-primary/5"
+                }`}
+              >
+                {/* Faixa lateral de status */}
+                <div className={`h-1.5 w-full ${
+                  inDelivery
+                    ? "bg-gradient-to-r from-emerald-400 via-emerald-500 to-emerald-400"
+                    : readyToDepart
+                      ? "bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400"
+                      : "bg-gradient-to-r from-primary/40 via-primary/60 to-primary/40"
+                }`} />
                 <button
                   onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-left"
+                  className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:bg-muted/30 transition-colors"
                 >
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black ${
-                    inDelivery ? "bg-green-500 text-white" : readyToDepart ? "bg-amber-500/10 text-amber-500" : "bg-primary/10 text-primary"
-                  }`}>
-                    {index + 1}
+                  <div className="relative shrink-0">
+                    {inDelivery && (
+                      <div className="absolute inset-0 bg-emerald-500/40 rounded-2xl blur-md animate-pulse" />
+                    )}
+                    <div className={`relative w-11 h-11 rounded-2xl flex items-center justify-center text-sm font-black shadow-md ${
+                      inDelivery
+                        ? "bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-emerald-500/30"
+                        : readyToDepart
+                          ? "bg-gradient-to-br from-amber-400 to-amber-500 text-white shadow-amber-500/30"
+                          : "bg-gradient-to-br from-primary/15 to-primary/5 text-primary"
+                    }`}>
+                      {index + 1}
+                    </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-foreground truncate">
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      {inDelivery && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />}
+                      <p className={`text-[9px] font-black uppercase tracking-widest ${
+                        inDelivery ? "text-emerald-600" : readyToDepart ? "text-amber-600" : "text-muted-foreground"
+                      }`}>
+                        {inDelivery ? "Em Entrega" : readyToDepart ? "Pronto p/ Sair" : "Aguardando"}
+                      </p>
+                    </div>
+                    <p className="text-sm font-black text-foreground truncate leading-tight">
                       {order.neighborhood}
                     </p>
-                    <p className="text-[11px] text-muted-foreground truncate">
+                    <p className="text-[10px] text-muted-foreground truncate mt-0.5">
                       {!multiStore && <>{(order as any).stores?.name} • </>}
                       {contactName} • #{order.id.slice(0, 6).toUpperCase()}
                     </p>
                   </div>
-                  <div className={`px-2 py-1 rounded-lg text-[10px] font-bold ${
-                    readyToDepart ? "bg-amber-500/10 text-amber-500" : inDelivery ? "bg-green-500/10 text-green-500" : "bg-muted text-muted-foreground"
-                  }`}>
-                    {readyToDepart ? "PRONTO" : inDelivery ? "ENTREGAR" : order.status}
-                  </div>
-                  <ChevronRight className={`h-4 w-4 text-muted-foreground transition-transform ${isExpanded ? "rotate-90" : ""}`} />
+                  <ChevronRight className={`h-5 w-5 text-muted-foreground transition-transform shrink-0 ${isExpanded ? "rotate-90" : ""}`} />
                 </button>
 
                 {isExpanded && (
-                  <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
+                  <div className="px-4 pb-4 space-y-3 border-t border-border/60 pt-3 bg-muted/10">
                     {/* Store name badge for multi-store */}
                     {multiStore && (
-                      <div className="flex items-center gap-2 bg-primary/5 rounded-xl px-3 py-2">
-                        <Store className="h-3.5 w-3.5 text-primary" />
-                        <span className="text-xs font-bold text-primary">{(order as any).stores?.name}</span>
+                      <div className="flex items-center gap-2 bg-primary/10 rounded-xl px-3 py-2 border border-primary/15">
+                        <Store className="h-3.5 w-3.5 text-primary" strokeWidth={2.5} />
+                        <span className="text-xs font-black text-primary">{(order as any).stores?.name}</span>
                       </div>
                     )}
 
@@ -1147,30 +1179,43 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                     </div>
 
                     {readyToDepart && (
-                      <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-4 space-y-3">
-                        <div className="flex items-center gap-2">
-                          <Bike className="h-4 w-4 text-amber-500" />
-                          <span className="text-sm font-bold text-foreground">Sair para Entrega</span>
+                      <div className="relative overflow-hidden bg-gradient-to-br from-amber-500/10 to-amber-500/5 border border-amber-500/30 rounded-2xl p-4 space-y-3">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-9 h-9 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                            <Bike className="h-4.5 w-4.5 text-amber-600" strokeWidth={2.5} />
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest leading-none">Pronto</p>
+                            <p className="text-sm font-black text-foreground mt-0.5">Sair para Entrega</p>
+                          </div>
                         </div>
-                        <p className="text-xs text-muted-foreground">Clique quando estiver saindo da loja com este pedido.</p>
+                        <p className="text-xs text-muted-foreground leading-snug">Toque quando estiver saindo da loja com este pedido.</p>
                         <button
                           onClick={() => departForDelivery(order.id)}
                           disabled={departingId === order.id || departingId === "all"}
-                          className="w-full bg-amber-500 text-white font-bold py-3 rounded-xl text-sm disabled:opacity-50 flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
+                          className="w-full h-13 bg-gradient-to-br from-amber-500 to-amber-600 text-white font-black py-3.5 rounded-2xl text-sm shadow-lg shadow-amber-500/30 disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95 transition-all"
                         >
-                          {departingId === order.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Navigation className="h-4 w-4" />}
+                          {departingId === order.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Navigation className="h-4 w-4" strokeWidth={2.8} />}
                           Saindo para Entrega
                         </button>
                       </div>
                     )}
 
                     {inDelivery && (
-                      <div className="bg-green-500/5 border border-green-500/20 rounded-2xl p-4 space-y-3">
-                        <div className="flex items-center gap-2">
-                          <KeyRound className="h-4 w-4 text-green-500" />
-                          <span className="text-sm font-bold text-foreground">Confirmar Entrega</span>
+                      <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border border-emerald-500/30 rounded-2xl p-4 space-y-3.5">
+                        <div className="absolute -top-10 -right-10 w-32 h-32 bg-emerald-500/15 rounded-full blur-2xl" />
+                        <div className="relative flex items-center gap-2.5">
+                          <div className="w-9 h-9 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                            <KeyRound className="h-4.5 w-4.5 text-emerald-600" strokeWidth={2.5} />
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest leading-none">Última Etapa</p>
+                            <p className="text-sm font-black text-foreground mt-0.5">Confirmar Entrega</p>
+                          </div>
                         </div>
-                        <p className="text-xs text-muted-foreground">Peça o PIN de 4 dígitos ao cliente.</p>
+                        <p className="relative text-xs text-muted-foreground leading-snug">
+                          Peça ao cliente o <span className="font-black text-foreground">PIN de 4 dígitos</span> e digite abaixo.
+                        </p>
                         <input
                           type="text"
                           inputMode="numeric"
@@ -1178,14 +1223,14 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                           placeholder="• • • •"
                           value={pinInputs[order.id] || ""}
                           onChange={(e) => setPinInputs((prev) => ({ ...prev, [order.id]: e.target.value.replace(/\D/g, "").slice(0, 4) }))}
-                          className="w-full text-center text-2xl font-black tracking-[0.5em] bg-card border-2 border-green-500/20 rounded-xl py-3 text-foreground placeholder:text-muted-foreground/20 focus:outline-none focus:border-green-500"
+                          className="relative w-full text-center text-3xl font-black tracking-[0.5em] bg-card border-2 border-emerald-500/30 rounded-2xl py-4 text-foreground placeholder:text-muted-foreground/25 focus:outline-none focus:border-emerald-500 focus:shadow-lg focus:shadow-emerald-500/20 transition-all"
                         />
                         <button
                           onClick={() => finishDelivery(order.id)}
                           disabled={!pinInputs[order.id] || pinInputs[order.id].length !== 4 || verifyingId === order.id}
-                          className="w-full bg-green-500 text-white font-bold py-3 rounded-xl text-sm disabled:opacity-50 flex items-center justify-center gap-2"
+                          className="relative w-full h-13 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white font-black py-3.5 rounded-2xl text-sm shadow-lg shadow-emerald-500/30 disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-2 active:scale-95 transition-all"
                         >
-                          {verifyingId === order.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                          {verifyingId === order.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" strokeWidth={2.8} />}
                           Finalizar Entrega
                         </button>
                       </div>
