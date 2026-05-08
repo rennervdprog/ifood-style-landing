@@ -458,5 +458,29 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
   );
 };
 
-export const AdminOrderCard = memo(AdminOrderCardImpl);
+const areEqual = (prev: AdminOrderCardProps, next: AdminOrderCardProps) => {
+  const a = prev.order, b = next.order;
+  if (a.id !== b.id) return false;
+  if (a.status !== b.status) return false;
+  if (a.driver_id !== b.driver_id) return false;
+  if ((a as any).assigned_driver_id !== (b as any).assigned_driver_id) return false;
+  if ((a as any).delivery_pin !== (b as any).delivery_pin) return false;
+  if ((a as any).delivery_confirmed_by_client !== (b as any).delivery_confirmed_by_client) return false;
+  if ((a as any).collection_code !== (b as any).collection_code) return false;
+  if ((a as any).settlement_code !== (b as any).settlement_code) return false;
+  if ((a as any).return_to_store_confirmed !== (b as any).return_to_store_confirmed) return false;
+  if (a.total_price !== b.total_price) return false;
+  if (prev.isAddressExpanded !== next.isAddressExpanded) return false;
+  if (prev.isBatchSelected !== next.isBatchSelected) return false;
+  if (prev.cancelConfirm !== next.cancelConfirm && (prev.cancelConfirm === a.id || next.cancelConfirm === a.id)) return false;
+  if (prev.onlineDriversCount !== next.onlineDriversCount && a.status === "pronto_para_entrega" && !a.driver_id) return false;
+  if (prev.isOwnDelivery !== next.isOwnDelivery) return false;
+  if (prev.hasLinkedDrivers !== next.hasLinkedDrivers) return false;
+  if (prev.driversLoading !== next.driversLoading) return false;
+  if (prev.clientName !== next.clientName) return false;
+  if (prev.clientWhatsApp !== next.clientWhatsApp) return false;
+  return true;
+};
+
+export const AdminOrderCard = memo(AdminOrderCardImpl, areEqual);
 export default AdminOrderCard;
