@@ -1512,13 +1512,22 @@ const CartSection = ({
 
       {/* Finalizar */}
       <div className="px-3 pb-3">
-        <button onClick={onFinalize}
-          disabled={loading || !paymentMethod || orderDone || cart.length === 0 || trocoNegativo}
-          className="w-full h-12 bg-primary text-primary-foreground font-black text-sm rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-lg shadow-primary/25 disabled:opacity-50">
-          {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Registrando...</>
-            : orderDone ? <><CheckCircle2 className="h-4 w-4" /> Venda registrada!</>
-            : <>Finalizar {formatBRL(finalTotal)} <ChevronRight className="h-4 w-4" /></>}
-        </button>
+        {(() => {
+          const splitTotal = (splitPayments || []).reduce((s: number, p: any) => s + Number(p.amount || 0), 0);
+          const splitComplete = splitMode && Math.abs(splitTotal - finalTotal) < 0.01;
+          const canFinalize =
+            !loading && !orderDone && cart.length > 0 &&
+            (splitMode ? splitComplete : (!!paymentMethod && !trocoNegativo));
+          return (
+            <button onClick={onFinalize}
+              disabled={!canFinalize}
+              className="w-full h-12 bg-primary text-primary-foreground font-black text-sm rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-lg shadow-primary/25 disabled:opacity-50">
+              {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Registrando...</>
+                : orderDone ? <><CheckCircle2 className="h-4 w-4" /> Venda registrada!</>
+                : <>Finalizar {formatBRL(finalTotal)} <ChevronRight className="h-4 w-4" /></>}
+            </button>
+          );
+        })()}
       </div>
     </div>
   </div>
