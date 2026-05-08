@@ -1315,6 +1315,7 @@ const CartSection = ({
   paymentMethod, setPaymentMethod, setCashReceived, cashReceived,
   troco, trocoNegativo, finalTotal_,
   removeItem, onFinalize, loading, orderDone,
+  splitMode, setSplitMode, splitPayments, setSplitPayments,
 }: any) => (
   <div className="flex flex-col h-full min-h-0 overflow-hidden">
     {/* Cabeçalho */}
