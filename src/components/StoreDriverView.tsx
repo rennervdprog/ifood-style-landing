@@ -33,6 +33,12 @@ const saveDeclined = (uid: string, map: Record<string, number>) => {
 };
 import WhatsAppButton from "@/components/WhatsAppButton";
 import StoreDriverEarnings from "@/components/StoreDriverEarnings";
+import { haptic } from "@/lib/haptics";
+import {
+  initDriverBackgroundFetch,
+  setDriverBackgroundOnline,
+  setDriverBackgroundStores,
+} from "@/lib/driverBackgroundFetch";
 
 
 /* ── Helpers ── */
