@@ -335,6 +335,9 @@ const AuthPage = () => {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
+          {mode === "login" && (
+            <BiometricLoginButton onSuccess={() => navigate("/cliente", { replace: true })} />
+          )}
           {mode !== "reset" && (
             <div>
               <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">E-mail</label>
