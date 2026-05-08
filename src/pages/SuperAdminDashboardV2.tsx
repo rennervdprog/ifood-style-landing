@@ -889,7 +889,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
           <div className="p-4 lg:p-6 max-w-6xl mx-auto">
             {activeTab === "approvals" && <AdminApprovals />}
             {activeTab === "entrega" && <DeliveryFeeConfigPanel />}
-            {activeTab === "sync" && <SyncExternalTab />}
+            {activeTab === "sync" && <Suspense fallback={<TabFallback />}><SyncExternalTab /></Suspense>}
             {activeTab === "coupons" && <CouponManager isAdmin />}
             {activeTab === "stores" && (
               <div className="space-y-6">
@@ -897,7 +897,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                 <AdminStoreManager />
               </div>
             )}
-            {activeTab === "cidades" && <CidadesTab stores={stores} />}
+            {activeTab === "cidades" && <Suspense fallback={<TabFallback />}><CidadesTab stores={stores} /></Suspense>}
             {activeTab === "planos" && (
               <div className="space-y-6">
                 <AdminFixedPlanReceivables />
@@ -906,7 +906,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
               </div>
             )}
             {activeTab === "pagamentos" && <PagamentosSplitTab stores={stores || []} />}
-            {activeTab === "juridico" && <JuridicoTab />}
+            {activeTab === "juridico" && <Suspense fallback={<TabFallback />}><JuridicoTab /></Suspense>}
             {activeTab === "moderadores" && <ModeratorManager />}
             {activeTab === "socios" && <PartnerSplitPanel />}
             {activeTab === "test_finance" && <TestStoreFinancePanel />}
