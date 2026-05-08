@@ -272,11 +272,11 @@ const Navbar = ({ onNavigate, isLoggedIn }: { onNavigate: (path: string) => void
           <img
             src="/itasuper-logo-horizontal.webp"
             alt="ItaSuper"
-            width={180}
-            height={50}
+            width={240}
+            height={68}
             decoding="async"
             fetchPriority="high"
-            className="h-12 md:h-14 w-auto object-contain"
+            className="h-14 md:h-16 w-auto object-contain"
           />
         </button>
 
