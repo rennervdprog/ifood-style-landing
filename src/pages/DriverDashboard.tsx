@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { getOrderItemDisplayName } from "@/lib/orderItemName";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from "@/integrations/supabase/client";
+import { subscribeWithRejoin, cleanupChannel } from "@/lib/realtimeChannel";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -454,9 +455,9 @@ const DriverDashboard = () => {
         queryClient.invalidateQueries({ queryKey: ["driver-available-orders"] });
         queryClient.invalidateQueries({ queryKey: ["driver-my-delivery", user.id] });
         queryClient.invalidateQueries({ queryKey: ["driver-history", user.id] });
-      })
-      .subscribe((status) => { setRealtimeConnected(status === "SUBSCRIBED"); });
-    return () => { supabase.removeChannel(channel); };
+      });
+    subscribeWithRejoin(channel, (status) => { setRealtimeConnected(status === "SUBSCRIBED"); });
+    return () => { cleanupChannel(channel); };
   }, [user, isOnline, queryClient, playAlert]);
 
   useEffect(() => {
@@ -475,9 +476,9 @@ const DriverDashboard = () => {
       .on("postgres_changes", { event: "*", schema: "public", table: "driver_earnings" }, () => {
         queryClient.invalidateQueries({ queryKey: ["driver-earnings", user.id] });
         queryClient.invalidateQueries({ queryKey: ["driver-balance", user.id] });
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+      });
+    subscribeWithRejoin(channel);
+    return () => { cleanupChannel(channel); };
   }, [user, queryClient]);
 
   useEffect(() => {
