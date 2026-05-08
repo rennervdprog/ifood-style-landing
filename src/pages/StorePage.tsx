@@ -2,10 +2,10 @@ import { formatBRL } from "@/lib/utils";
 import { useParams, useNavigate } from "react-router-dom";
 import NotFound from "@/pages/NotFound";
 import PizzaHalfHalfModal from "@/components/PizzaHalfHalfModal";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart, type CartAddon } from "@/contexts/CartContext";
-import { Star, Clock, ChevronRight, ChevronDown, ChevronUp, MapPin, Search, X, Navigation, CreditCard, Banknote, Smartphone, QrCode, RotateCcw, TrendingUp, ArrowLeft } from "lucide-react";
+import { Star, Clock, ChevronRight, ChevronDown, ChevronUp, MapPin, Search, X, Navigation, CreditCard, Banknote, Smartphone, QrCode, RotateCcw, TrendingUp, ArrowLeft, Bike, Timer, Wallet } from "lucide-react";
 import LoyaltyBanner from "@/components/LoyaltyBanner";
 import { toast } from "sonner";
 import { useRef, useState, useEffect, memo, useCallback, useMemo } from "react";
@@ -68,7 +68,7 @@ const StorePage = () => {
   const { data: store, isLoading: storeLoading } = useQuery({
     queryKey: ["store", id || slug],
     queryFn: async () => {
-      let query = supabase.from("stores_public").select("id, name, slug, image_url, category, rating, is_open, force_closed, status, delivery_mode, own_delivery_fee, owner_id, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, settings").in("status", ["ativo", "bloqueado"]);
+      let query = supabase.from("stores_public").select("id, name, slug, image_url, category, rating, is_open, force_closed, status, delivery_mode, own_delivery_fee, delivery_fee, minimum_order_value, estimated_delivery_time, owner_id, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, settings").in("status", ["ativo", "bloqueado"]);
       if (id) query = query.eq("id", id);
       else if (slug) query = query.eq("slug", slug);
       const { data, error } = await query.maybeSingle();
@@ -123,16 +123,6 @@ const StorePage = () => {
     if (twTitle) twTitle.setAttribute("content", title);
     if (twDesc) twDesc.setAttribute("content", desc);
     if (twImage && img) twImage.setAttribute("content", img);
-
-    return () => {
-      document.title = "ItaSuper - O delivery oficial de Itatinga";
-      if (ogTitle) ogTitle.setAttribute("content", "ItaSuper - O delivery oficial de Itatinga");
-      if (ogDesc) ogDesc.setAttribute("content", "ItaSuper: Peça comida dos melhores restaurantes de Itatinga/SP.");
-      if (ogImage) ogImage.setAttribute("content", "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8e986ee9-d281-4fb2-a26b-042833db7491/id-preview-8c7bce6c--e8d28ade-d633-4d74-be21-61c8dbe24765.lovable.app-1775438464166.png");
-      if (twTitle) twTitle.setAttribute("content", "ItaSuper - O delivery oficial de Itatinga");
-      if (twDesc) twDesc.setAttribute("content", "ItaSuper: Peça comida dos melhores restaurantes de Itatinga/SP.");
-      if (twImage) twImage.setAttribute("content", "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8e986ee9-d281-4fb2-a26b-042833db7491/id-preview-8c7bce6c--e8d28ade-d633-4d74-be21-61c8dbe24765.lovable.app-1775438464166.png");
-    };
   }, [store]);
 
   const storeId = store?.id || id;
@@ -140,16 +130,20 @@ const StorePage = () => {
 
    // Track scroll to show name in header
    useEffect(() => {
+     let ticking = false;
      const handleScroll = () => {
-       const isScrolled = window.scrollY > 150;
-       if (isScrolled !== scrolled) {
-         setScrolled(isScrolled);
-       }
+       if (ticking) return;
+       ticking = true;
+       window.requestAnimationFrame(() => {
+         const isScrolled = window.scrollY > 150;
+         setScrolled((prev) => (prev !== isScrolled ? isScrolled : prev));
+         ticking = false;
+       });
      };
 
      window.addEventListener("scroll", handleScroll, { passive: true });
      return () => window.removeEventListener("scroll", handleScroll);
-   }, [scrolled]);
+   }, []);
 
   const { data: storeHours } = useQuery({
     queryKey: ["store-hours", storeId],
@@ -199,7 +193,6 @@ const StorePage = () => {
         .from("products")
         .select("*")
         .eq("store_id", storeId!)
-        .eq("is_available", true)
         .order("name");
       if (error) throw error;
       return (data || []) as Product[];
@@ -214,10 +207,11 @@ const StorePage = () => {
     queryFn: async () => {
       const { data: orderItems, error } = await supabase
         .from("order_items")
-        .select("product_id, quantity, orders!inner(store_id, client_id)")
+        .select("product_id, quantity, orders!inner(store_id, client_id, status)")
         .eq("orders.store_id", storeId!)
         .eq("orders.client_id", user!.id)
-        .limit(50);
+        .in("orders.status", ["entregue", "finalizado", "concluido"])
+        .limit(300);
       if (error) throw error;
       const countMap: Record<string, number> = {};
       (orderItems || []).forEach((item: any) => {
@@ -229,7 +223,8 @@ const StorePage = () => {
         .map(([pid]) => pid);
     },
     enabled: !!storeId && !!user?.id,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 10,
+    placeholderData: keepPreviousData,
   });
 
   // "Mais pedidos" - most popular products in this store (all users)
@@ -238,9 +233,10 @@ const StorePage = () => {
     queryFn: async () => {
       const { data: orderItems, error } = await supabase
         .from("order_items")
-        .select("product_id, quantity, orders!inner(store_id)")
+        .select("product_id, quantity, orders!inner(store_id, status)")
         .eq("orders.store_id", storeId!)
-        .limit(100);
+        .in("orders.status", ["entregue", "finalizado", "concluido"])
+        .limit(500);
       if (error) throw error;
       const countMap: Record<string, number> = {};
       (orderItems || []).forEach((item: any) => {
@@ -252,7 +248,8 @@ const StorePage = () => {
         .map(([pid, count]) => ({ productId: pid, count }));
     },
     enabled: !!storeId,
-    staleTime: 1000 * 60 * 10,
+    staleTime: 1000 * 60 * 15,
+    placeholderData: keepPreviousData,
   });
 
   const isSuspended = store?.status === "bloqueado";
@@ -276,13 +273,20 @@ const StorePage = () => {
     ? `${storeStatus.reason || (storeStatus.isOpen ? "Aberto" : "Fechado")}`
     : "Horário não informado";
 
-  const reorderProductsList = products?.filter(p => reorderProducts?.includes(p.id)) || [];
-  const popularProductsList = popularProducts
-    ?.map(pp => {
-      const product = products?.find(p => p.id === pp.productId);
-      return product ? { ...product, orderCount: pp.count } : null;
-    })
-    .filter(Boolean) as (Product & { orderCount: number })[] || [];
+  const reorderProductsList = useMemo(
+    () => products?.filter((p) => reorderProducts?.includes(p.id)) || [],
+    [products, reorderProducts]
+  );
+  const popularProductsList = useMemo(
+    () =>
+      (popularProducts
+        ?.map((pp) => {
+          const product = products?.find((p) => p.id === pp.productId);
+          return product ? { ...product, orderCount: pp.count } : null;
+        })
+        .filter(Boolean) as (Product & { orderCount: number })[]) || [],
+    [popularProducts, products]
+  );
 
   const sectionProductsMap = useMemo(() => {
     const map: Record<string, Product[]> = {};
@@ -394,15 +398,23 @@ const StorePage = () => {
     [sectionProductsMap]
   );
 
-  const unsectionedProducts = products?.filter(p => !p.section_id) || [];
+  const unsectionedProducts = useMemo(
+    () => products?.filter((p) => !p.section_id) || [],
+    [products]
+  );
 
   // Search filter
-  const filteredProducts = searchQuery.trim()
-    ? products?.filter(p =>
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredProducts = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return null;
+    return (
+      products?.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          p.description?.toLowerCase().includes(q)
       ) || []
-    : null;
+    );
+  }, [products, searchQuery]);
 
   const handleAddToCart = (
     product: Product,
@@ -413,6 +425,10 @@ const StorePage = () => {
   ) => {
     if (!storeStatus.isOpen) {
       toast.error(`Esta loja está fechada. ${storeStatus.reason}`);
+      return;
+    }
+    if ((product as any)?.metadata?.out_of_stock) {
+      toast.error("Produto esgotado");
       return;
     }
     addItem(
@@ -431,6 +447,27 @@ const StorePage = () => {
     );
     toast.success(`${quantity}x ${product.name} adicionado!`);
   };
+
+  const openProduct = useCallback((product: Product) => {
+    // Allow opening modal even when closed/out-of-stock (for browsing).
+    // The "Add to cart" button inside the modal already validates.
+    setSelectedProduct(product);
+  }, []);
+
+  const openMaps = useCallback(() => {
+    if (!store) return;
+    const addr = encodeURIComponent(
+      [store.address_street, store.address_number, store.address_neighborhood, store.address_city, store.address_state]
+        .filter(Boolean)
+        .join(", ")
+    );
+    const url = `https://www.google.com/maps/search/?api=1&query=${addr}`;
+    try {
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch {
+      window.location.href = url;
+    }
+  }, [store]);
 
   const totalProducts = products?.length || 0;
 
