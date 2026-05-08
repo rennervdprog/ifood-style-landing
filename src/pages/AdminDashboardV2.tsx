@@ -42,6 +42,7 @@ const HoursTab = lazy(() => import("./admin/tabs/HoursTab"));
 const FinanceTab = lazy(() => import("./admin/tabs/FinanceTab"));
 const DriversTab = lazy(() => import("./admin/tabs/DriversTab"));
 const SettingsTab = lazy(() => import("./admin/tabs/SettingsTab"));
+import AdminOrderCard from "./admin/components/AdminOrderCard";
 
 const TabFallback = () => (
   <div className="flex items-center justify-center py-12">
