@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback, useMemo, memo, lazy, Suspense } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo, lazy, Suspense } from "react";
 import { getOrderItemDisplayName } from "@/lib/orderItemName";
 import { formatBRL } from "@/lib/utils";
 import SimulationBanner from "@/components/SimulationBanner";
@@ -30,6 +30,10 @@ import MenuBuilder from "@/components/MenuBuilder";
 import { notifyOrderStatusChange, buildWhatsAppMessage } from "@/lib/orderNotifications";
 import { getStoreOpenStatus } from "@/lib/storeStatus";
 // Tabs carregadas sob demanda — só baixa o JS quando o lojista abrir a aba
+const DashboardTab = lazy(() => import("./admin/tabs/DashboardTab"));
+const OrdersTab = lazy(() => import("./admin/tabs/OrdersTab"));
+const ClientsTab = lazy(() => import("./admin/tabs/ClientsTab"));
+const ReportsTab = lazy(() => import("./admin/tabs/ReportsTab"));
 const TutoriaisTab = lazy(() => import("./admin/tabs/TutoriaisTab"));
 const SubscriptionTab = lazy(() => import("./admin/tabs/SubscriptionTab"));
 const LoyaltyTab = lazy(() => import("./admin/tabs/LoyaltyTab"));
