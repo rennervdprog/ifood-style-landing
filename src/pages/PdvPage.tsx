@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,12 +15,16 @@ import {
   ArrowDownCircle, ArrowUpCircle, Lock, Unlock,
   Receipt, ChevronDown, ChevronRight, RotateCcw,
   Layers, ShoppingCart, ChevronLeft, Calculator, Wallet,
-  History, Printer, BarChart3,
+  History, Printer, BarChart3, Split, EyeOff, Eye, Keyboard,
 } from "lucide-react";
 import { PdvHistorico, PdvSessionsList } from "@/components/pdv/PdvHistorico";
 import ProductDetailModal from "@/components/ProductDetailModal";
 import type { CartAddon } from "@/contexts/CartContext";
 import { PdvRelatorios } from "@/components/pdv/PdvRelatorios";
+import { usePdvShortcuts } from "@/components/pdv/usePdvShortcuts";
+import { usePdvBarcodeScanner } from "@/components/pdv/usePdvBarcodeScanner";
+import { PdvSplitPayment, type SplitPayment } from "@/components/pdv/PdvSplitPayment";
+import { PdvDenominationCount } from "@/components/pdv/PdvDenominationCount";
 
 // Detecta se está em tela mobile (< 768px)
 const useIsMobile = () => {
@@ -153,6 +157,16 @@ const PdvPage = () => {
   const [loading, setLoading] = useState(false);
   const [orderDone, setOrderDone] = useState(false);
 
+  // Multi-pagamento (split)
+  const [splitMode, setSplitMode] = useState(false);
+  const [splitPayments, setSplitPayments] = useState<SplitPayment[]>([]);
+
+  // Mostrar guia de atalhos
+  const [showShortcuts, setShowShortcuts] = useState(false);
+
+  // Ref do input de busca para foco com F2
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+
   // Modal de produto (adicionais, bordas, observações)
   const [productModal, setProductModal] = useState<any | null>(null);
 
@@ -160,10 +174,14 @@ const PdvPage = () => {
   const [movModal, setMovModal] = useState<"sangria" | "suprimento" | null>(null);
   const [movValue, setMovValue] = useState("");
   const [movDesc, setMovDesc] = useState("");
+  const [movReason, setMovReason] = useState("");
 
   // Fechamento
   const [closingAmount, setClosingAmount] = useState("");
   const [sessionSummary, setSessionSummary] = useState<any>(null);
+  // Fechamento cego (não vê esperado até confirmar)
+  const [blindClose, setBlindClose] = useState(false);
+  const [denominationCounts, setDenominationCounts] = useState<Record<string, number>>({});
 
   // ── Loja ──
   const { data: store } = useQuery({
@@ -322,6 +340,7 @@ const PdvPage = () => {
     setCart([]); setPaymentMethod(""); setTableId("");
     setDiscountInput(""); setShowDiscount(false);
     setCashReceived(""); setOrderDone(false);
+    setSplitMode(false); setSplitPayments([]);
     if (isMobile) setMobileStep("catalog");
   };
 
@@ -346,12 +365,28 @@ const PdvPage = () => {
   const handleVenda = async () => {
     if (!store?.id || !currentSession) return;
     if (cart.length === 0) { toast.error("Carrinho vazio."); return; }
-    if (!paymentMethod) { toast.error("Selecione o pagamento."); return; }
-    if (paymentMethod === "dinheiro" && cashReceived && cashVal < finalTotal) {
-      toast.error("Valor recebido menor que o total."); return;
+
+    // Modo split: validar que pagamentos somam o total
+    if (splitMode) {
+      const splitTotal = sumMoney(splitPayments.map((p) => p.amount));
+      if (Math.abs(splitTotal - finalTotal) > 0.01) {
+        toast.error("Pagamentos não fecham o total."); return;
+      }
+    } else {
+      if (!paymentMethod) { toast.error("Selecione o pagamento."); return; }
+      if (paymentMethod === "dinheiro" && cashReceived && cashVal < finalTotal) {
+        toast.error("Valor recebido menor que o total."); return;
+      }
     }
+
     setLoading(true);
     try {
+      // Forma de pagamento principal: a 1ª do split, ou a única selecionada
+      const primaryMethod = splitMode ? (splitPayments[0]?.method || "dinheiro") : paymentMethod;
+      const paymentsPayload = splitMode
+        ? splitPayments
+        : [{ method: paymentMethod, amount: finalTotal }];
+
       const { data: order, error: oe } = await supabase.from("orders")
         .insert({
           store_id: store.id, client_id: null, order_source: "pdv",
@@ -361,7 +396,8 @@ const PdvPage = () => {
           pdv_discount: discountAmount,
           commission_rate: storePlan.pdvCommissionRate ?? 0,
           total_price: finalTotal, app_fee: 0,
-          payment_method: paymentMethod,
+          payment_method: primaryMethod,
+          payments: paymentsPayload,
           neighborhood: "Balcão",
           address_details: tableId ? `${tableId} — Presencial` : "Pedido presencial",
           status: "finalizado",
@@ -379,13 +415,18 @@ const PdvPage = () => {
         }))
       );
 
-      await supabase.from("pdv_movements" as any).insert({
-        session_id: currentSession.id, store_id: store.id,
-        type: "sale", amount: finalTotal,
-        payment_method: paymentMethod,
-        description: tableId || "Venda balcão",
-        order_id: order.id,
-      });
+      // Insere uma movimentação por forma de pagamento (suporta split)
+      await supabase.from("pdv_movements" as any).insert(
+        paymentsPayload.map((p) => ({
+          session_id: currentSession.id,
+          store_id: store.id,
+          type: "sale",
+          amount: p.amount,
+          payment_method: p.method,
+          description: tableId || "Venda balcão",
+          order_id: order.id,
+        }))
+      );
 
       queryClient.invalidateQueries({ queryKey: ["pdv-movements", currentSession.id] });
       setOrderDone(true);
@@ -399,9 +440,9 @@ const PdvPage = () => {
           subtotal,
           pdv_discount: discountAmount,
           total_price: finalTotal,
-          payment_method: paymentMethod,
-          cash_received: paymentMethod === "dinheiro" && cashReceived ? parseBRL(cashReceived) : undefined,
-          troco: paymentMethod === "dinheiro" && cashReceived ? troco : undefined,
+          payment_method: primaryMethod,
+          cash_received: !splitMode && paymentMethod === "dinheiro" && cashReceived ? parseBRL(cashReceived) : undefined,
+          troco: !splitMode && paymentMethod === "dinheiro" && cashReceived ? troco : undefined,
           table_identifier: tableId || null,
           order_items: cart.map(item => ({
             quantity: item.quantity,
@@ -423,15 +464,20 @@ const PdvPage = () => {
     if (!currentSession || !store?.id) return;
     const amount = parseBRL(movValue);
     if (amount <= 0) { toast.error("Valor inválido."); return; }
+    if (type === "sangria" && !movReason) {
+      toast.error("Selecione o motivo da sangria."); return;
+    }
     setLoading(true);
     try {
+      const fullDesc = [movReason, movDesc].filter(Boolean).join(" — ") ||
+        (type === "sangria" ? "Sangria" : "Suprimento");
       await supabase.from("pdv_movements" as any).insert({
         session_id: currentSession.id, store_id: store.id,
-        type, amount, description: movDesc || (type === "sangria" ? "Sangria" : "Suprimento"),
+        type, amount, description: fullDesc,
       });
       queryClient.invalidateQueries({ queryKey: ["pdv-movements", currentSession.id] });
       toast.success(type === "sangria" ? `Sangria de ${formatBRL(amount)}` : `Suprimento de ${formatBRL(amount)}`);
-      setMovModal(null); setMovValue(""); setMovDesc("");
+      setMovModal(null); setMovValue(""); setMovDesc(""); setMovReason("");
     } catch (e: any) { toast.error(e.message); }
     finally { setLoading(false); }
   };
@@ -454,11 +500,23 @@ const PdvPage = () => {
     if (!currentSession) return;
     setLoading(true);
     try {
+      const counted = parseBRL(closingAmount);
+      // Calcula esperado aqui (não dá pra confiar em saldoEsperado se for blind close)
+      const expected = saldoEsperado;
+      const diff = counted - expected;
       await supabase.from("pdv_sessions" as any)
-        .update({ status: "closed", closed_at: new Date().toISOString(), closing_amount: parseBRL(closingAmount) })
+        .update({
+          status: "closed",
+          closed_at: new Date().toISOString(),
+          closing_amount: counted,
+          closing_difference: diff,
+          closing_method: blindClose ? "blind" : "open",
+          denomination_count: Object.keys(denominationCounts).length > 0 ? denominationCounts : null,
+        })
         .eq("id", currentSession.id);
       toast.success("Caixa fechado.");
       setCurrentSession(null); setSessionSummary(null); setScreen("abertura"); clearSale();
+      setBlindClose(false); setDenominationCounts({}); setClosingAmount("");
     } catch (e: any) { toast.error(e.message); }
     finally { setLoading(false); }
   };
@@ -469,6 +527,66 @@ const PdvPage = () => {
   const turnoSangrias = sumMoney(movements.filter(m => m.type === "sangria").map(m => m.amount));
   const turnoSuprimentos = sumMoney(movements.filter(m => m.type === "suprimento").map(m => m.amount));
   const saldoEsperado = addMoney((currentSession?.opening_amount ?? 0), turnoDinheiro, turnoSuprimentos, -turnoSangrias);
+
+  // ── Ticket médio do turno ──
+  const turnoVendasCount = movements.filter(m => m.type === "sale").length;
+  const ticketMedio = turnoVendasCount > 0 ? turnoVendido / turnoVendasCount : 0;
+
+  // ── Atalhos de teclado (PDV profissional) ──
+  const cyclePayment = useCallback(() => {
+    const ids = PDV_METHODS.map(m => m.id);
+    if (!paymentMethod) { setPaymentMethod(ids[0]); return; }
+    const idx = ids.indexOf(paymentMethod);
+    setPaymentMethod(ids[(idx + 1) % ids.length]);
+  }, [paymentMethod]);
+
+  usePdvShortcuts({
+    enabled: screen === "venda" && tab === "venda",
+    onSearchFocus: () => searchInputRef.current?.focus(),
+    onToggleDiscount: () => setShowDiscount(v => !v),
+    onCyclePayment: cyclePayment,
+    onFinalize: () => {
+      if (cart.length > 0 && !loading && !orderDone) handleVenda();
+    },
+    onClearSale: () => {
+      if (cart.length > 0) {
+        if (window.confirm("Limpar venda atual?")) clearSale();
+      }
+    },
+  });
+
+  // ── Leitor de código de barras (USB HID) ──
+  // Busca produto por nome (substring) — fácil de evoluir pra coluna SKU/barcode no futuro
+  const handleBarcodeScan = useCallback((code: string) => {
+    const found = products.find(p =>
+      p.name.toLowerCase().includes(code.toLowerCase()) ||
+      p.id.startsWith(code)
+    );
+    if (found) {
+      // Adiciona direto ao carrinho (sem abrir modal de adicionais)
+      setCart(prev => {
+        const existing = prev.find(i => i.id === found.id && !i.addons && !i.observations);
+        if (existing) {
+          return prev.map(i => i.id === found.id && !i.addons && !i.observations
+            ? { ...i, quantity: i.quantity + 1 }
+            : i);
+        }
+        return [...prev, {
+          id: found.id,
+          name: found.name,
+          basePrice: Number(found.price),
+          price: Number(found.price),
+          quantity: 1,
+          image_url: found.image_url,
+        }];
+      });
+      toast.success(`+ ${found.name}`, { duration: 1200 });
+    } else {
+      toast.warning(`Código não encontrado: ${code}`);
+    }
+  }, [products]);
+
+  usePdvBarcodeScanner(handleBarcodeScan, screen === "venda" && tab === "venda");
 
   // ─────────────────────────────────────────────────────────────────────────
   // LOADING
@@ -615,14 +733,35 @@ const PdvPage = () => {
               </div>
             )}
 
-            {/* Saldo esperado */}
-            <div className="bg-amber-500/8 border border-amber-500/20 rounded-xl p-3.5 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-bold text-amber-700 dark:text-amber-400">Dinheiro esperado no caixa</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">Abertura + vendas − sangrias + suprimentos</p>
+            {/* Saldo esperado — esconder se for fechamento cego e ainda não tiver contado */}
+            {!blindClose ? (
+              <div className="bg-amber-500/8 border border-amber-500/20 rounded-xl p-3.5 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-amber-700 dark:text-amber-400">Dinheiro esperado no caixa</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Abertura + vendas − sangrias + suprimentos</p>
+                </div>
+                <p className="text-xl font-black text-amber-500">{formatBRL(saldoEsperado)}</p>
               </div>
-              <p className="text-xl font-black text-amber-500">{formatBRL(saldoEsperado)}</p>
-            </div>
+            ) : (
+              <div className="bg-purple-500/8 border border-purple-500/30 rounded-xl p-3.5 flex items-center gap-3">
+                <EyeOff className="h-5 w-5 text-purple-500 shrink-0" />
+                <div className="flex-1">
+                  <p className="text-xs font-bold text-purple-700 dark:text-purple-300">Fechamento cego ativo</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    O valor esperado fica oculto até você confirmar o fechamento. Padrão antifraude.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setBlindClose(v => !v)}
+              className="w-full text-[11px] font-bold text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1.5"
+            >
+              {blindClose ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+              {blindClose ? "Mostrar valor esperado" : "Ativar fechamento cego (anti-fraude)"}
+            </button>
           </div>
 
           {/* Conferência */}
@@ -640,13 +779,30 @@ const PdvPage = () => {
                 />
               </div>
             </div>
-            {closingAmount && (
+
+            {/* Conferência por cédula (auto-soma) */}
+            <PdvDenominationCount
+              onChange={(total, counts) => {
+                setDenominationCounts(counts);
+                if (total > 0) setClosingAmount(total.toFixed(2).replace(".", ","));
+              }}
+            />
+
+            {/* Diferença — só revelada quando não é blind ou já confirmou */}
+            {closingAmount && !blindClose && (
               <div className={`rounded-xl p-3 flex justify-between items-center border ${isOk ? "bg-emerald-500/8 border-emerald-500/20" : "bg-red-500/8 border-red-500/20"}`}>
                 <p className={`text-sm font-bold ${isOk ? "text-emerald-600" : "text-red-500"}`}>
                   {isOk ? "✅ Caixa conferido" : diffAmount > 0 ? "⚠️ Sobra" : "⚠️ Falta"}
                 </p>
                 <p className={`text-lg font-black ${isOk ? "text-emerald-500" : "text-red-500"}`}>
                   {isOk ? "—" : formatBRL(Math.abs(diffAmount))}
+                </p>
+              </div>
+            )}
+            {closingAmount && blindClose && (
+              <div className="rounded-xl p-3 bg-purple-500/8 border border-purple-500/20">
+                <p className="text-xs text-purple-600 dark:text-purple-400 font-bold flex items-center gap-1.5">
+                  <EyeOff className="h-3.5 w-3.5" /> A diferença será calculada após confirmar
                 </p>
               </div>
             )}
@@ -684,11 +840,21 @@ const PdvPage = () => {
         <Monitor className="h-4 w-4 text-primary shrink-0" />
         <div className="flex-1 min-w-0">
           <span className="text-xs font-bold text-foreground truncate">{store?.name}</span>
-          <span className="text-[10px] text-emerald-500 font-semibold ml-2">● {movements.filter(m => m.type === "sale").length} vendas · {formatBRL(turnoVendido)}</span>
+          <span className="text-[10px] text-emerald-500 font-semibold ml-2 hidden sm:inline">
+            ● {turnoVendasCount} vendas · {formatBRL(turnoVendido)}
+            {ticketMedio > 0 && <span className="text-muted-foreground ml-1.5">· tkt {formatBRL(ticketMedio)}</span>}
+          </span>
         </div>
 
         {/* Controles do turno */}
         <div className="flex items-center gap-1">
+          <button
+            onClick={() => setShowShortcuts(true)}
+            title="Atalhos de teclado"
+            className="hidden md:flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold text-muted-foreground bg-muted/50 hover:bg-muted transition-colors border border-border"
+          >
+            <Keyboard className="h-3.5 w-3.5" />
+          </button>
           <button
             onClick={() => setMovModal("suprimento")}
             title="Suprimento"
@@ -794,6 +960,7 @@ const PdvPage = () => {
                   sections={sections} activeSection={activeSection} setActiveSection={setActiveSection}
                   grouped={grouped} prodLoading={prodLoading}
                   getQty={getQty} addItem={addItem} decItem={decItem}
+                  searchInputRef={searchInputRef}
                 />
               </div>
               {/* Caixa */}
@@ -810,6 +977,8 @@ const PdvPage = () => {
                   troco={troco} trocoNegativo={trocoNegativo} finalTotal_={finalTotal}
                   removeItem={removeItem} onFinalize={handleVenda}
                   loading={loading} orderDone={orderDone}
+                  splitMode={splitMode} setSplitMode={setSplitMode}
+                  splitPayments={splitPayments} setSplitPayments={setSplitPayments}
                 />
               </aside>
             </div>
@@ -827,6 +996,7 @@ const PdvPage = () => {
                       sections={sections} activeSection={activeSection} setActiveSection={setActiveSection}
                       grouped={grouped} prodLoading={prodLoading}
                       getQty={getQty} addItem={addItem} decItem={decItem}
+                      searchInputRef={searchInputRef}
                     />
                   </div>
                   {/* Bottom bar — ir ao carrinho */}
@@ -863,6 +1033,8 @@ const PdvPage = () => {
                       troco={troco} trocoNegativo={trocoNegativo} finalTotal_={finalTotal}
                       removeItem={removeItem} onFinalize={handleVenda}
                       loading={loading} orderDone={orderDone}
+                      splitMode={splitMode} setSplitMode={setSplitMode}
+                      splitPayments={splitPayments} setSplitPayments={setSplitPayments}
                     />
                   </div>
                   {/* Barra de voltar ao catálogo */}
@@ -920,8 +1092,34 @@ const PdvPage = () => {
                   />
                 </div>
               </div>
+
+              {/* Motivos preset (só sangria) */}
+              {movModal === "sangria" && (
+                <div>
+                  <label className="text-xs font-bold text-muted-foreground">Motivo *</label>
+                  <div className="grid grid-cols-2 gap-1.5 mt-1.5">
+                    {["Cofre", "Despesa", "Pagto fornecedor", "Outro"].map((r) => (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => setMovReason(r)}
+                        className={`px-2 py-1.5 rounded-lg text-[11px] font-bold transition-colors border ${
+                          movReason === r
+                            ? "bg-red-500 text-white border-red-500"
+                            : "bg-muted/50 text-muted-foreground border-border hover:bg-muted"
+                        }`}
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div>
-                <label className="text-xs font-bold text-muted-foreground">Descrição</label>
+                <label className="text-xs font-bold text-muted-foreground">
+                  Observação {movModal === "sangria" ? "(opcional)" : ""}
+                </label>
                 <input
                   type="text"
                   placeholder={movModal === "sangria" ? "Ex: Enviado ao cofre" : "Ex: Reforço de troco"}
@@ -933,7 +1131,7 @@ const PdvPage = () => {
 
             <div className="flex gap-2">
               <button
-                onClick={() => { setMovModal(null); setMovValue(""); setMovDesc(""); }}
+                onClick={() => { setMovModal(null); setMovValue(""); setMovDesc(""); setMovReason(""); }}
                 className="flex-1 h-11 rounded-xl bg-muted font-bold text-sm"
               >Cancelar</button>
               <button
@@ -949,6 +1147,52 @@ const PdvPage = () => {
           </div>
         </div>
       )}
+
+      {/* ── MODAL ATALHOS DE TECLADO ── */}
+      {showShortcuts && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          onClick={() => setShowShortcuts(false)}
+        >
+          <div
+            className="bg-card rounded-2xl border border-border w-full max-w-sm p-5 space-y-3 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Keyboard className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-black text-base">Atalhos de teclado</h3>
+                <p className="text-[11px] text-muted-foreground">Acelere o atendimento</p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              {[
+                ["F2", "Focar busca de produtos"],
+                ["F3", "Abrir/fechar desconto"],
+                ["F4", "Trocar forma de pagamento"],
+                ["F8", "Finalizar venda"],
+                ["ESC", "Limpar venda atual"],
+                ["Scanner", "Leitor USB adiciona ao carrinho"],
+              ].map(([k, desc]) => (
+                <div key={k} className="flex items-center justify-between bg-muted/30 px-3 py-2 rounded-lg">
+                  <span className="text-xs text-muted-foreground">{desc}</span>
+                  <kbd className="px-2 py-0.5 rounded-md bg-background border border-border text-[11px] font-black text-foreground">
+                    {k}
+                  </kbd>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => setShowShortcuts(false)}
+              className="w-full h-10 rounded-xl bg-primary text-primary-foreground font-bold text-sm"
+            >
+              Entendi
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -959,7 +1203,7 @@ const PdvPage = () => {
 
 const CatalogSection = ({
   search, setSearch, sections, activeSection, setActiveSection,
-  grouped, prodLoading, getQty, addItem, decItem,
+  grouped, prodLoading, getQty, addItem, decItem, searchInputRef,
 }: any) => (
   <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
     {/* Busca */}
@@ -967,6 +1211,7 @@ const CatalogSection = ({
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
         <input
+          ref={searchInputRef}
           type="text" placeholder="Buscar produto..."
           value={search} onChange={(e: any) => setSearch(e.target.value)}
           className="w-full pl-8 pr-8 py-2.5 bg-muted/40 rounded-xl text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 border border-border/50"
@@ -1070,6 +1315,7 @@ const CartSection = ({
   paymentMethod, setPaymentMethod, setCashReceived, cashReceived,
   troco, trocoNegativo, finalTotal_,
   removeItem, onFinalize, loading, orderDone,
+  splitMode, setSplitMode, splitPayments, setSplitPayments,
 }: any) => (
   <div className="flex flex-col h-full min-h-0 overflow-hidden">
     {/* Cabeçalho */}
@@ -1168,25 +1414,60 @@ const CartSection = ({
         </div>
       </div>
 
-      {/* Métodos */}
-      <div className="px-3 pt-1 pb-2 grid grid-cols-2 gap-1.5">
-        {PDV_METHODS.map(pm => {
-          const Icon = pm.icon;
-          const sel = paymentMethod === pm.id;
-          return (
-            <button key={pm.id}
-              onClick={() => { setPaymentMethod(pm.id); setCashReceived(""); }}
-              data-sel={sel}
-              className={`flex items-center gap-1.5 px-2.5 py-2.5 rounded-xl border text-left transition-all active:scale-[0.97] ${COLOR_MAP[pm.color]}`}>
-              <Icon className="h-3.5 w-3.5 shrink-0" />
-              <span className="text-[11px] font-bold truncate">{pm.label}</span>
-            </button>
-          );
-        })}
-      </div>
+      {/* Toggle Split */}
+      {finalTotal > 0 && (
+        <div className="px-3 pt-1 pb-1.5 flex items-center justify-between">
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+            Pagamento
+          </span>
+          <button
+            onClick={() => {
+              setSplitMode(!splitMode);
+              setSplitPayments([]);
+              setPaymentMethod("");
+              setCashReceived("");
+            }}
+            className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg border transition-colors ${
+              splitMode
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-muted/50 text-muted-foreground border-border hover:bg-muted"
+            }`}
+          >
+            <Split className="h-3 w-3" />
+            {splitMode ? "Pagamento único" : "Dividir pagamento"}
+          </button>
+        </div>
+      )}
+
+      {/* Métodos OU Split */}
+      {splitMode ? (
+        <div className="px-3 pb-2">
+          <PdvSplitPayment
+            total={finalTotal}
+            payments={splitPayments}
+            onChange={setSplitPayments}
+          />
+        </div>
+      ) : (
+        <div className="px-3 pt-1 pb-2 grid grid-cols-2 gap-1.5">
+          {PDV_METHODS.map(pm => {
+            const Icon = pm.icon;
+            const sel = paymentMethod === pm.id;
+            return (
+              <button key={pm.id}
+                onClick={() => { setPaymentMethod(pm.id); setCashReceived(""); }}
+                data-sel={sel}
+                className={`flex items-center gap-1.5 px-2.5 py-2.5 rounded-xl border text-left transition-all active:scale-[0.97] ${COLOR_MAP[pm.color]}`}>
+                <Icon className="h-3.5 w-3.5 shrink-0" />
+                <span className="text-[11px] font-bold truncate">{pm.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Troco */}
-      {paymentMethod === "dinheiro" && (
+      {!splitMode && paymentMethod === "dinheiro" && (
         <div className="mx-3 mb-2 bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3 space-y-2">
           <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
             <Calculator className="h-3 w-3" /> Valor recebido
@@ -1231,13 +1512,22 @@ const CartSection = ({
 
       {/* Finalizar */}
       <div className="px-3 pb-3">
-        <button onClick={onFinalize}
-          disabled={loading || !paymentMethod || orderDone || cart.length === 0 || trocoNegativo}
-          className="w-full h-12 bg-primary text-primary-foreground font-black text-sm rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-lg shadow-primary/25 disabled:opacity-50">
-          {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Registrando...</>
-            : orderDone ? <><CheckCircle2 className="h-4 w-4" /> Venda registrada!</>
-            : <>Finalizar {formatBRL(finalTotal)} <ChevronRight className="h-4 w-4" /></>}
-        </button>
+        {(() => {
+          const splitTotal = (splitPayments || []).reduce((s: number, p: any) => s + Number(p.amount || 0), 0);
+          const splitComplete = splitMode && Math.abs(splitTotal - finalTotal) < 0.01;
+          const canFinalize =
+            !loading && !orderDone && cart.length > 0 &&
+            (splitMode ? splitComplete : (!!paymentMethod && !trocoNegativo));
+          return (
+            <button onClick={onFinalize}
+              disabled={!canFinalize}
+              className="w-full h-12 bg-primary text-primary-foreground font-black text-sm rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-lg shadow-primary/25 disabled:opacity-50">
+              {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Registrando...</>
+                : orderDone ? <><CheckCircle2 className="h-4 w-4" /> Venda registrada!</>
+                : <>Finalizar {formatBRL(finalTotal)} <ChevronRight className="h-4 w-4" /></>}
+            </button>
+          );
+        })()}
       </div>
     </div>
   </div>
