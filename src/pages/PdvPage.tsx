@@ -1033,6 +1033,8 @@ const PdvPage = () => {
                       troco={troco} trocoNegativo={trocoNegativo} finalTotal_={finalTotal}
                       removeItem={removeItem} onFinalize={handleVenda}
                       loading={loading} orderDone={orderDone}
+                      splitMode={splitMode} setSplitMode={setSplitMode}
+                      splitPayments={splitPayments} setSplitPayments={setSplitPayments}
                     />
                   </div>
                   {/* Barra de voltar ao catálogo */}
