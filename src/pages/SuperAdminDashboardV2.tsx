@@ -62,7 +62,10 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
   { key: "logs", label: "Logs", icon: FileText, group: "Sistema" },
 ];
 
-const SuperAdminDashboardV2 = () => {
+ const OverviewTab = lazy(() => import("./superadmin/tabs/OverviewTab"));
+ const FinanceTabModular = lazy(() => import("./superadmin/tabs/FinanceTab"));
+
+ const SuperAdminDashboardV2 = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -960,52 +963,27 @@ const SuperAdminDashboardV2 = () => {
                 queryClient={queryClient}
               />
             )}
-            {activeTab === "financeiro" && (
-              <FinanceTab
-                storeSettlement={storeSettlement}
-                driverSettlement={driverSettlement}
-                financeTotals={financeTotals}
-                financeFilter={financeFilter}
-                setFinanceFilter={setFinanceFilter}
-                financeSubTab={financeSubTab}
-                setFinanceSubTab={setFinanceSubTab}
-                selectedStore={selectedStore}
-                setSelectedStore={setSelectedStore}
-                stores={stores || []}
-                loading={financeLoading}
-                generateStoreWhatsApp={generateStoreWhatsApp}
-                storeBalances={storeBalances || []}
-                queryClient={queryClient}
-                withdrawalRequests={withdrawalRequests || []}
-                parentStorePlans={parentStorePlans || []}
-              />
-            )}
-            {activeTab === "dashboard" && (
-              <>
-                {/* Date filter */}
-                <div className="flex gap-2 mb-4">
-                  {(["today", "yesterday", "week"] as DateFilter[]).map(f => (
-                    <button
-                      key={f}
-                      onClick={() => setDateFilter(f)}
-                      className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${
-                        dateFilter === f ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {filterLabels[f]}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Metric cards */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-                  {isLoading ? (
-                    Array.from({ length: 4 }).map((_, i) => (
-                      <div key={i} className="bg-card rounded-2xl p-3 animate-pulse h-20 border border-border" />
-                    ))
-                  ) : (
-                    <>
-                      <MetricCard icon={ShoppingBag} label="Vendas" value={`${formatBRL(metrics.totalSales)}`} sublabel={`${metrics.totalOrders} pedidos`} />
+             <Suspense fallback={<div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+               {activeTab === "financeiro" && (
+                 <FinanceTabModular
+                   isAdmin={!!isAdmin}
+                   testStoreIds={testStoreIds}
+                   stores={stores || []}
+                   parentStorePlans={parentStorePlans || []}
+                 />
+               )}
+               {activeTab === "dashboard" && (
+                 <OverviewTab
+                   metrics={metrics}
+                   adminChartData={adminChartData}
+                   dateFilter={dateFilter}
+                   setDateFilter={setDateFilter}
+                   filterLabels={filterLabels}
+                   delayedOrders={delayedOrders}
+                   complianceAlerts={complianceAlerts || []}
+                 />
+               )}
+             </Suspense>
                       <MetricCard icon={TrendingUp} label="Comissão Total" value={`${formatBRL(metrics.commission)}`} sublabel={`📦 Delivery: ${formatBRL(metrics.commissionDelivery)}`} sublabel2={`🖥️ PDV: ${formatBRL(metrics.commissionPdv)}`} highlight />
                       <MetricCard icon={Clock} label="Ativos" value={String(metrics.activeOrders)} sublabel="em andamento" />
                       <MetricCard icon={AlertTriangle} label="Atraso" value={String(delayedOrders.length)} sublabel="> 60 min" alert={delayedOrders.length > 0} />
