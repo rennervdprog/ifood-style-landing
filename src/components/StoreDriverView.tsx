@@ -393,6 +393,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
             if (payload.eventType === "INSERT") {
               queryClient.invalidateQueries({ queryKey: ["store-driver-available", linkedStoreIds, user?.id] });
               toast.info("🔔 Novo pedido disponível!");
+              haptic.newOrder();
             } else if (payload.eventType === "UPDATE") {
               // Instant update for available orders
               queryClient.setQueryData(["store-driver-available", linkedStoreIds, user?.id], (old: any[] | undefined) => {
