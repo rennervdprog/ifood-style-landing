@@ -519,6 +519,7 @@ const StorePage = () => {
             {!getStoreAppSlug() && (
               <button
                 onClick={() => navigate("/cliente")}
+               aria-label="Voltar"
                 className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
                   scrolled ? "bg-muted text-foreground" : "bg-card/90 backdrop-blur-md shadow-lg border border-border/50 text-foreground"
                 }`}
@@ -539,6 +540,7 @@ const StorePage = () => {
            <div className="flex items-center gap-2">
             <button
               onClick={() => setShowSearch(!showSearch)}
+              aria-label="Buscar produtos"
               className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
                 scrolled ? "bg-muted text-foreground" : "bg-card/90 backdrop-blur-md shadow-lg border border-border/50 text-foreground"
               }`}
@@ -820,11 +822,7 @@ const StorePage = () => {
             {reorderProductsList.map(product => (
               <button
                 key={`reorder-${product.id}`}
-                onClick={() => {
-                  if (!storeStatus.isOpen) { toast.error(`Loja fechada. ${storeStatus.reason}`); return; }
-                  if ((product as any).metadata?.out_of_stock) { toast.error("Produto esgotado"); return; }
-                  setSelectedProduct(product);
-                }}
+                onClick={() => openProduct(product)}
                 className={`flex-shrink-0 w-36 bg-card rounded-xl border border-border overflow-hidden text-left transition-all ${
                   !storeStatus.isOpen || (product as any).metadata?.out_of_stock ? "opacity-60" : "hover:shadow-lg hover:border-primary/20 active:scale-[0.97]"
                 }`}
@@ -867,11 +865,7 @@ const StorePage = () => {
             {popularProductsList.map(product => (
               <button
                 key={`popular-${product.id}`}
-                onClick={() => {
-                  if (!storeStatus.isOpen) { toast.error(`Loja fechada. ${storeStatus.reason}`); return; }
-                  if ((product as any).metadata?.out_of_stock) { toast.error("Produto esgotado"); return; }
-                  setSelectedProduct(product);
-                }}
+                onClick={() => openProduct(product)}
                 className={`flex-shrink-0 w-36 bg-card rounded-xl border border-border overflow-hidden text-left transition-all relative ${
                   !storeStatus.isOpen || (product as any).metadata?.out_of_stock ? "opacity-60" : "hover:shadow-lg hover:border-primary/20 active:scale-[0.97]"
                 }`}
@@ -911,11 +905,20 @@ const StorePage = () => {
         const storeSettings = (store?.settings || {}) as Record<string, any>;
         const halfEnabled = !!storeSettings.pizza_half_enabled;
         if (!halfEnabled) return null;
+        const hasPizzaProducts = (products || []).some(
+          (p) => !!(p as any)?.metadata?.is_pizza || !p.section_id || true
+        );
+        // Need at least one product to montar meio a meio
+        if (!products || products.length === 0) return null;
         return (
           <div className="px-4 mt-4">
             <button
               onClick={() => {
                 if (!storeStatus.isOpen) { toast.error(`Loja fechada. ${storeStatus.reason}`); return; }
+                if (!products || products.length < 2) {
+                  toast.error("Cadastre pelo menos 2 sabores de pizza para usar o meio a meio.");
+                  return;
+                }
                 setShowHalfHalf(true);
               }}
               className={`w-full bg-gradient-to-r from-primary/15 to-primary/5 border-2 border-primary/30 rounded-2xl p-4 flex items-center gap-4 text-left transition-all ${
