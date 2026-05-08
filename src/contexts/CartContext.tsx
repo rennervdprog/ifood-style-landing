@@ -97,6 +97,17 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const addItem = useCallback((item: Omit<CartItem, "quantity" | "cartKey">, qty = 1) => {
     const cartKey = generateCartKey(item);
     setItems(prev => {
+      // Bloqueio de carrinho misto: só permite produtos da mesma loja
+      const otherStore = prev.find(i => i.store_id !== item.store_id);
+      if (otherStore) {
+        const ok = typeof window !== "undefined"
+          ? window.confirm(
+              `Você já tem itens de "${otherStore.store_name}" no carrinho. Deseja limpar e iniciar um novo pedido em "${item.store_name}"?`
+            )
+          : false;
+        if (!ok) return prev;
+        return [{ ...item, cartKey, quantity: qty }];
+      }
       const existing = prev.find(i => i.cartKey === cartKey);
       if (existing) {
         return prev.map(i => i.cartKey === cartKey ? { ...i, quantity: i.quantity + qty } : i);
