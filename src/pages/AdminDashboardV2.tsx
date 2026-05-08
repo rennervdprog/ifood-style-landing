@@ -196,7 +196,7 @@ const AdminDashboard = () => {
 
   const prevPendingCountRef = useRef(0);
 
-  const toggleAddress = (orderId: string) => {
+  const toggleAddress = useCallback((orderId: string) => {
     setExpandedAddresses(prev => {
       const next = new Set(prev);
       if (next.has(orderId)) next.delete(orderId); else next.add(orderId);
