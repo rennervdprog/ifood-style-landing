@@ -268,16 +268,17 @@ const Navbar = ({ onNavigate, isLoggedIn }: { onNavigate: (path: string) => void
   return (
     <nav className={`sticky top-0 z-50 border-b border-border backdrop-blur-md transition-all duration-300 bg-background/95 ${scrolled ? "shadow-md" : ""}`}>
       <div className="max-w-6xl mx-auto flex items-center justify-between px-4 h-16">
-        <button onClick={() => scrollTo("#hero")} className="flex items-center gap-2" aria-label="Ir para o início">
+        <button onClick={() => scrollTo("#hero")} className="flex items-center gap-2.5 group" aria-label="Ir para o início">
           <img
-            src="/itasuper-logo-horizontal.webp"
-            alt="ItaSuper"
-            width={240}
-            height={68}
-            decoding="async"
-            fetchPriority="high"
-            className="h-14 md:h-16 w-auto object-contain"
+            src="/itasuper-mark.png"
+            alt=""
+            width={40}
+            height={40}
+            className="h-10 w-10 rounded-xl shadow-sm group-hover:scale-105 transition-transform"
           />
+          <span className="text-2xl font-black tracking-tighter text-foreground">
+            Ita<span className="text-primary">Super</span>
+          </span>
         </button>
 
         <div className="hidden md:flex items-center gap-6">
