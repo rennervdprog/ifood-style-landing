@@ -1092,8 +1092,34 @@ const PdvPage = () => {
                   />
                 </div>
               </div>
+
+              {/* Motivos preset (só sangria) */}
+              {movModal === "sangria" && (
+                <div>
+                  <label className="text-xs font-bold text-muted-foreground">Motivo *</label>
+                  <div className="grid grid-cols-2 gap-1.5 mt-1.5">
+                    {["Cofre", "Despesa", "Pagto fornecedor", "Outro"].map((r) => (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => setMovReason(r)}
+                        className={`px-2 py-1.5 rounded-lg text-[11px] font-bold transition-colors border ${
+                          movReason === r
+                            ? "bg-red-500 text-white border-red-500"
+                            : "bg-muted/50 text-muted-foreground border-border hover:bg-muted"
+                        }`}
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div>
-                <label className="text-xs font-bold text-muted-foreground">Descrição</label>
+                <label className="text-xs font-bold text-muted-foreground">
+                  Observação {movModal === "sangria" ? "(opcional)" : ""}
+                </label>
                 <input
                   type="text"
                   placeholder={movModal === "sangria" ? "Ex: Enviado ao cofre" : "Ex: Reforço de troco"}
@@ -1105,7 +1131,7 @@ const PdvPage = () => {
 
             <div className="flex gap-2">
               <button
-                onClick={() => { setMovModal(null); setMovValue(""); setMovDesc(""); }}
+                onClick={() => { setMovModal(null); setMovValue(""); setMovDesc(""); setMovReason(""); }}
                 className="flex-1 h-11 rounded-xl bg-muted font-bold text-sm"
               >Cancelar</button>
               <button
