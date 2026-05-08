@@ -1,14 +1,13 @@
 import { lazy, Suspense } from "react";
 import { CreditCard, AlertTriangle, ChevronRight, Clock, Bike, Monitor, ShoppingBag, DollarSign, Timer, Users, GraduationCap, ChevronUp, ChevronDown, User, MapPin, CheckCircle2, ArrowUpRight, UtensilsCrossed, Coins, Settings, Store } from "lucide-react";
-import { formatBRL } from "@/lib/format";
-import { WhatsAppButton } from "@/components/WhatsAppButton";
-import { CommissionAlert } from "@/components/CommissionAlert";
-import { PlatformSplitAlert } from "@/components/PlatformSplitAlert";
+import { formatBRL } from "@/lib/utils";
+import WhatsAppButton from "@/components/WhatsAppButton";
+import CommissionAlert from "@/components/CommissionAlert";
+import PlatformSplitAlert from "@/components/PlatformSplitAlert";
 import { GlanceCard } from "../components/GlanceCard";
-import type { OrderStatus } from "@/lib/orderStatus";
 
 // Lazy MenuBuilder — heavy
-const MenuBuilder = lazy(() => import("@/components/MenuBuilder").then(m => ({ default: m.default || (m as any).MenuBuilder })));
+const MenuBuilder = lazy(() => import("@/components/MenuBuilder"));
 
 interface Props {
   store: any;
