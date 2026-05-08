@@ -1906,49 +1906,41 @@ const AdminDashboard = () => {
           {dashboardTab === "orders" && store && (
             <>
               {/* Quick summary counters */}
-              {(() => {
-                const pendingCount = orders?.filter(o => o.status === "pendente").length || 0;
-                const preparingCount = orders?.filter(o => o.status === "preparando").length || 0;
-                const readyCount = orders?.filter(o => o.status === "pronto_para_entrega").length || 0;
-                const deliveryCount = orders?.filter(o => o.status === "saiu_entrega" || o.status === "em_transito").length || 0;
-                const totalActive = pendingCount + preparingCount + readyCount + deliveryCount;
-                
-                return totalActive > 0 ? (
+              {orderCounters.total > 0 && (
                   <div className="px-4 pt-3 pb-1">
                     <div className="grid grid-cols-4 gap-2">
                       <button onClick={() => { setActiveTab("pendente"); setBatchSelected(new Set()); }}
                         className={`relative flex flex-col items-center p-2.5 rounded-xl border transition-all ${
-                          pendingCount > 0 ? "bg-amber-50 dark:bg-amber-500/10 border-amber-300 dark:border-amber-500/30 shadow-sm" : "bg-card border-border"
+                          orderCounters.pendente > 0 ? "bg-amber-50 dark:bg-amber-500/10 border-amber-300 dark:border-amber-500/30 shadow-sm" : "bg-card border-border"
                         }`}>
-                        {pendingCount > 0 && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-400 rounded-full animate-ping" />}
-                        <span className={`text-xl font-black ${pendingCount > 0 ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>{pendingCount}</span>
+                        {orderCounters.pendente > 0 && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-400 rounded-full animate-ping" />}
+                        <span className={`text-xl font-black ${orderCounters.pendente > 0 ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>{orderCounters.pendente}</span>
                         <span className="text-[9px] font-bold text-muted-foreground mt-0.5">Novos</span>
                       </button>
                       <button onClick={() => { setActiveTab("preparando"); setBatchSelected(new Set()); }}
                         className={`flex flex-col items-center p-2.5 rounded-xl border transition-all ${
-                          preparingCount > 0 ? "bg-orange-50 dark:bg-orange-500/10 border-orange-300 dark:border-orange-500/30 shadow-sm" : "bg-card border-border"
+                          orderCounters.preparando > 0 ? "bg-orange-50 dark:bg-orange-500/10 border-orange-300 dark:border-orange-500/30 shadow-sm" : "bg-card border-border"
                         }`}>
-                        <span className={`text-xl font-black ${preparingCount > 0 ? "text-orange-600 dark:text-orange-400" : "text-muted-foreground"}`}>{preparingCount}</span>
+                        <span className={`text-xl font-black ${orderCounters.preparando > 0 ? "text-orange-600 dark:text-orange-400" : "text-muted-foreground"}`}>{orderCounters.preparando}</span>
                         <span className="text-[9px] font-bold text-muted-foreground mt-0.5">Preparo</span>
                       </button>
                       <button onClick={() => { setActiveTab("pronto_para_entrega"); setBatchSelected(new Set()); }}
                         className={`flex flex-col items-center p-2.5 rounded-xl border transition-all ${
-                          readyCount > 0 ? "bg-blue-50 dark:bg-blue-500/10 border-blue-300 dark:border-blue-500/30 shadow-sm" : "bg-card border-border"
+                          orderCounters.pronto > 0 ? "bg-blue-50 dark:bg-blue-500/10 border-blue-300 dark:border-blue-500/30 shadow-sm" : "bg-card border-border"
                         }`}>
-                        <span className={`text-xl font-black ${readyCount > 0 ? "text-blue-600 dark:text-blue-400" : "text-muted-foreground"}`}>{readyCount}</span>
+                        <span className={`text-xl font-black ${orderCounters.pronto > 0 ? "text-blue-600 dark:text-blue-400" : "text-muted-foreground"}`}>{orderCounters.pronto}</span>
                         <span className="text-[9px] font-bold text-muted-foreground mt-0.5">Prontos</span>
                       </button>
                       <button onClick={() => { setActiveTab("delivery"); setBatchSelected(new Set()); }}
                         className={`flex flex-col items-center p-2.5 rounded-xl border transition-all ${
-                          deliveryCount > 0 ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-300 dark:border-emerald-500/30 shadow-sm" : "bg-card border-border"
+                          orderCounters.delivery > 0 ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-300 dark:border-emerald-500/30 shadow-sm" : "bg-card border-border"
                         }`}>
-                        <span className={`text-xl font-black ${deliveryCount > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}`}>{deliveryCount}</span>
+                        <span className={`text-xl font-black ${orderCounters.delivery > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}`}>{orderCounters.delivery}</span>
                         <span className="text-[9px] font-bold text-muted-foreground mt-0.5">Entrega</span>
                       </button>
                     </div>
                   </div>
-                ) : null;
-              })()}
+              )}
 
               {/* Order status tabs */}
               <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border">
