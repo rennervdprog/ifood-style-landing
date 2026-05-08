@@ -304,6 +304,54 @@ const PedidosPage = () => {
     }
   };
 
+  // 🔧 Diagnóstico: revela pedidos "sumidos" (visibilidade ou client_id divergente)
+  const [diagnosticOpen, setDiagnosticOpen] = useState(false);
+  const [diagnosticData, setDiagnosticData] = useState<any>(null);
+  const [diagnosticLoading, setDiagnosticLoading] = useState(false);
+  const runDiagnostic = useCallback(async () => {
+    if (!user) { toast.error("Faça login primeiro."); return; }
+    setDiagnosticLoading(true);
+    setDiagnosticOpen(true);
+    try {
+      const { data: all, error } = await supabase
+        .from("orders")
+        .select("id, created_at, status, store_id, client_id, visible_to_client, total_price, payment_method, stores(name)")
+        .eq("client_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      const hidden = (all || []).filter((o: any) => o.visible_to_client === false);
+      setDiagnosticData({
+        userId: user.id,
+        email: user.email,
+        total: all?.length || 0,
+        hidden: hidden.length,
+        list: all || [],
+      });
+    } catch (e: any) {
+      toast.error("Erro: " + (e?.message || "falha"));
+      setDiagnosticData({ error: e?.message });
+    } finally {
+      setDiagnosticLoading(false);
+    }
+  }, [user]);
+
+  const restoreOrderVisibility = async (orderId: string) => {
+    try {
+      const { error } = await supabase
+        .from("orders")
+        .update({ visible_to_client: true } as any)
+        .eq("id", orderId)
+        .eq("client_id", user!.id);
+      if (error) throw error;
+      toast.success("Pedido restaurado!");
+      queryClient.invalidateQueries({ queryKey: ["orders", user?.id] });
+      runDiagnostic();
+    } catch (e: any) {
+      toast.error("Erro: " + (e?.message || "falha"));
+    }
+  };
+
    const hasCompletedOrders = orders?.some((o: any) =>
      ["entregue", "finalizado", "cancelado"].includes(o.status)
    );
