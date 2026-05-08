@@ -464,15 +464,20 @@ const PdvPage = () => {
     if (!currentSession || !store?.id) return;
     const amount = parseBRL(movValue);
     if (amount <= 0) { toast.error("Valor inválido."); return; }
+    if (type === "sangria" && !movReason) {
+      toast.error("Selecione o motivo da sangria."); return;
+    }
     setLoading(true);
     try {
+      const fullDesc = [movReason, movDesc].filter(Boolean).join(" — ") ||
+        (type === "sangria" ? "Sangria" : "Suprimento");
       await supabase.from("pdv_movements" as any).insert({
         session_id: currentSession.id, store_id: store.id,
-        type, amount, description: movDesc || (type === "sangria" ? "Sangria" : "Suprimento"),
+        type, amount, description: fullDesc,
       });
       queryClient.invalidateQueries({ queryKey: ["pdv-movements", currentSession.id] });
       toast.success(type === "sangria" ? `Sangria de ${formatBRL(amount)}` : `Suprimento de ${formatBRL(amount)}`);
-      setMovModal(null); setMovValue(""); setMovDesc("");
+      setMovModal(null); setMovValue(""); setMovDesc(""); setMovReason("");
     } catch (e: any) { toast.error(e.message); }
     finally { setLoading(false); }
   };
@@ -495,11 +500,23 @@ const PdvPage = () => {
     if (!currentSession) return;
     setLoading(true);
     try {
+      const counted = parseBRL(closingAmount);
+      // Calcula esperado aqui (não dá pra confiar em saldoEsperado se for blind close)
+      const expected = saldoEsperado;
+      const diff = counted - expected;
       await supabase.from("pdv_sessions" as any)
-        .update({ status: "closed", closed_at: new Date().toISOString(), closing_amount: parseBRL(closingAmount) })
+        .update({
+          status: "closed",
+          closed_at: new Date().toISOString(),
+          closing_amount: counted,
+          closing_difference: diff,
+          closing_method: blindClose ? "blind" : "open",
+          denomination_count: Object.keys(denominationCounts).length > 0 ? denominationCounts : null,
+        })
         .eq("id", currentSession.id);
       toast.success("Caixa fechado.");
       setCurrentSession(null); setSessionSummary(null); setScreen("abertura"); clearSale();
+      setBlindClose(false); setDenominationCounts({}); setClosingAmount("");
     } catch (e: any) { toast.error(e.message); }
     finally { setLoading(false); }
   };
