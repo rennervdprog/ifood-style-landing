@@ -174,10 +174,14 @@ const PdvPage = () => {
   const [movModal, setMovModal] = useState<"sangria" | "suprimento" | null>(null);
   const [movValue, setMovValue] = useState("");
   const [movDesc, setMovDesc] = useState("");
+  const [movReason, setMovReason] = useState("");
 
   // Fechamento
   const [closingAmount, setClosingAmount] = useState("");
   const [sessionSummary, setSessionSummary] = useState<any>(null);
+  // Fechamento cego (não vê esperado até confirmar)
+  const [blindClose, setBlindClose] = useState(false);
+  const [denominationCounts, setDenominationCounts] = useState<Record<string, number>>({});
 
   // ── Loja ──
   const { data: store } = useQuery({
