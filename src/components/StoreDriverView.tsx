@@ -385,11 +385,11 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
             const updated = payload.new as any;
 
             if (payload.eventType === "INSERT") {
-              queryClient.invalidateQueries({ queryKey: ["store-driver-available", linkedStoreIds] });
+              queryClient.invalidateQueries({ queryKey: ["store-driver-available", linkedStoreIds, user?.id] });
               toast.info("🔔 Novo pedido disponível!");
             } else if (payload.eventType === "UPDATE") {
               // Instant update for available orders
-              queryClient.setQueryData(["store-driver-available", linkedStoreIds], (old: any[] | undefined) => {
+              queryClient.setQueryData(["store-driver-available", linkedStoreIds, user?.id], (old: any[] | undefined) => {
                 if (!old) return old;
                 // If order was assigned to this driver, move it out of available
                 if (updated.driver_id) {
