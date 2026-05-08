@@ -301,8 +301,10 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       return data || [];
     },
     enabled: linkedStoreIds.length > 0 && isOnline && !!user,
-    staleTime: 10_000,
-    refetchInterval: 30000, // Fallback only; realtime handles instant updates
+    staleTime: 15_000,
+    // Realtime é a fonte primária. Polling só como fallback raro p/ NAT/WS quebrado.
+    refetchInterval: 90_000,
+    refetchOnWindowFocus: false,
   });
 
   // Fetch my active deliveries
@@ -319,8 +321,9 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       return data || [];
     },
     enabled: !!user,
-    staleTime: 10_000,
-    refetchInterval: 30000, // Fallback only; realtime handles instant updates
+    staleTime: 15_000,
+    refetchInterval: 90_000,
+    refetchOnWindowFocus: false,
   });
 
   // Fetch contact profiles
@@ -361,22 +364,24 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     return contactProfiles?.find((c: any) => c.user_id === userId);
   }, [contactProfiles]);
 
-  // Realtime subscription for store orders (instant updates instead of polling)
+  // Realtime: 1 único canal com N listeners (um por store) — reduz websocket
+  // overhead vs criar N canais. Faz updates otimistas no cache do React Query
+  // e cai pra invalidate só quando precisa de joins (ex.: novo pedido para mim).
   useEffect(() => {
     if (!linkedStoreIds.length || !user) return;
 
-    const channels = linkedStoreIds.map((storeId) =>
-      supabase
-        .channel(`store-driver-rt-${storeId}-${user.id}`)
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "orders",
-            filter: `store_id=eq.${storeId}`,
-          },
-          (payload) => {
+    const channel = supabase.channel(`store-driver-rt-${user.id}`);
+
+    linkedStoreIds.forEach((storeId) => {
+      channel.on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "orders",
+          filter: `store_id=eq.${storeId}`,
+        },
+        (payload) => {
             const updated = payload.new as any;
 
             if (payload.eventType === "INSERT") {
@@ -427,13 +432,14 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                 queryClient.invalidateQueries({ queryKey: ["store-driver-count", user.id] });
               }
             }
-          }
-        )
-        .subscribe()
-    );
+        }
+      );
+    });
+
+    channel.subscribe();
 
     return () => {
-      channels.forEach((ch) => supabase.removeChannel(ch));
+      supabase.removeChannel(channel);
     };
   }, [linkedStoreIds, user, queryClient]);
 
