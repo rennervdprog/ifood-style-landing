@@ -630,6 +630,42 @@ const StorePage = () => {
               </div>
             )}
 
+            {/* Delivery info row: taxa, tempo, pedido mínimo */}
+            {((store as any)?.own_delivery_fee != null ||
+              (store as any)?.delivery_fee != null ||
+              (store as any)?.estimated_delivery_time ||
+              (store as any)?.minimum_order_value) && (
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                <div className="bg-muted/30 rounded-xl p-2.5 border border-border/30 flex flex-col items-center text-center">
+                  <Bike className="h-3.5 w-3.5 text-primary mb-1" />
+                  <span className="text-[9px] font-black text-muted-foreground uppercase tracking-tight">Taxa</span>
+                  <span className="text-[11px] font-black text-foreground mt-0.5">
+                    {(() => {
+                      const fee = (store as any)?.own_delivery_fee ?? (store as any)?.delivery_fee;
+                      if (fee == null) return "—";
+                      return Number(fee) === 0 ? "Grátis" : formatBRL(Number(fee));
+                    })()}
+                  </span>
+                </div>
+                <div className="bg-muted/30 rounded-xl p-2.5 border border-border/30 flex flex-col items-center text-center">
+                  <Timer className="h-3.5 w-3.5 text-primary mb-1" />
+                  <span className="text-[9px] font-black text-muted-foreground uppercase tracking-tight">Tempo</span>
+                  <span className="text-[11px] font-black text-foreground mt-0.5">
+                    {(store as any)?.estimated_delivery_time || "—"}
+                  </span>
+                </div>
+                <div className="bg-muted/30 rounded-xl p-2.5 border border-border/30 flex flex-col items-center text-center">
+                  <Wallet className="h-3.5 w-3.5 text-primary mb-1" />
+                  <span className="text-[9px] font-black text-muted-foreground uppercase tracking-tight">Pedido mín.</span>
+                  <span className="text-[11px] font-black text-foreground mt-0.5">
+                    {(store as any)?.minimum_order_value
+                      ? formatBRL(Number((store as any).minimum_order_value))
+                      : "—"}
+                  </span>
+                </div>
+              </div>
+            )}
+
             {/* Info Tabs / Expandables */}
             <div className="mt-4 space-y-2 pb-4">
               {/* Opening Hours */}
