@@ -202,7 +202,7 @@ const AdminDashboard = () => {
       if (next.has(orderId)) next.delete(orderId); else next.add(orderId);
       return next;
     });
-  };
+  }, []);
 
   // ── DATA QUERIES ──
   const { data: myProfile, isLoading: profileLoading } = useQuery({
