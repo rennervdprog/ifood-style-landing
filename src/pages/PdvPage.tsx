@@ -1203,7 +1203,7 @@ const PdvPage = () => {
 
 const CatalogSection = ({
   search, setSearch, sections, activeSection, setActiveSection,
-  grouped, prodLoading, getQty, addItem, decItem,
+  grouped, prodLoading, getQty, addItem, decItem, searchInputRef,
 }: any) => (
   <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
     {/* Busca */}
@@ -1211,6 +1211,7 @@ const CatalogSection = ({
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
         <input
+          ref={searchInputRef}
           type="text" placeholder="Buscar produto..."
           value={search} onChange={(e: any) => setSearch(e.target.value)}
           className="w-full pl-8 pr-8 py-2.5 bg-muted/40 rounded-xl text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 border border-border/50"
