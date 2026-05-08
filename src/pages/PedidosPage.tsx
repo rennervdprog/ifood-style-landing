@@ -121,7 +121,7 @@ const PedidosPage = () => {
     staleTime: 1000 * 60 * 5,
   });
 
-   const isLojista = userProfile?.role === "lojista" || userProfile?.role === "admin";
+   const isLojista = (userProfile?.role as string) === "lojista" || (userProfile?.role as string) === "admin";
 
   // Get lojista's store ID
   const { data: ownStore } = useQuery({
