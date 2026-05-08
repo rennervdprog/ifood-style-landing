@@ -501,8 +501,9 @@ const StorePage = () => {
                src={store.image_url}
                alt={store.name}
                className={`w-full h-full object-cover ${!storeStatus.isOpen ? "grayscale brightness-75" : ""}`}
-               loading="lazy"
+               loading="eager"
                decoding="async"
+               fetchPriority="high"
              />
         ) : (
           <div className={`w-full h-full bg-gradient-to-br from-primary/30 to-primary/5 ${!storeStatus.isOpen ? "grayscale" : ""}`} />
@@ -618,15 +619,8 @@ const StorePage = () => {
                     </div>
                   </div>
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const addr = encodeURIComponent(
-                        [store.address_street, store.address_number, store.address_neighborhood, store.address_city, store.address_state]
-                          .filter(Boolean)
-                          .join(", ")
-                      );
-                      window.open(`https://www.google.com/maps/search/?api=1&query=${addr}`, "_blank");
-                    }}
+                    onClick={(e) => { e.stopPropagation(); openMaps(); }}
+                    aria-label="Abrir endereço no Google Maps"
                     className="flex items-center gap-1.5 bg-primary text-primary-foreground px-3 py-1.5 rounded-lg text-[10px] font-black hover:bg-primary/90 transition-all shadow-sm flex-shrink-0"
                   >
                     <Navigation className="h-3 w-3" />
