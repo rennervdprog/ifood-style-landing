@@ -467,6 +467,22 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     return () => window.removeEventListener("capacitor-app-resume", refreshStoreDriverData);
   }, [user, linkedStoreIds, queryClient]);
 
+  // 📱 Background fetch nativo: registra/atualiza estado do motoboy no
+  // runner que roda mesmo com app fechado (Android JobScheduler 15min).
+  useEffect(() => {
+    if (!user || linkedStoreIds.length === 0) return;
+    initDriverBackgroundFetch({
+      userId: user.id,
+      linkedStoreIds,
+      isOnline,
+    });
+  }, [user?.id, isOnline]);
+
+  useEffect(() => {
+    if (!user) return;
+    setDriverBackgroundStores(linkedStoreIds);
+  }, [linkedStoreIds, user?.id]);
+
   // Auto-select first store if none selected
   const effectiveStoreId = activeStoreId || linkedStoreIds[0] || null;
 
