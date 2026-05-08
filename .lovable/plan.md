@@ -1,41 +1,92 @@
-# Plano — Correção dos 21 itens da StorePage
+# Refactor Completo do PDV — Estilo Square/Toast
 
-Vou aplicar tudo em ondas, do mais crítico ao cosmético, mantendo só mudanças de frontend (sem mexer em RLS/edge functions exceto onde obrigatório).
+## Análise dos melhores PDVs do mercado
 
-## Onda 1 — Bugs críticos (impacto direto no cliente)
+| Sistema | O que fazem bem |
+|---|---|
+| **Square** | Visual minimalista, grid grande de produtos com imagem, atalhos numéricos, multi-pagamento fluido |
+| **Toast** | Categorias coloridas, tela densa mas organizada, fechamento cego (blind close), múltiplos turnos por operador |
+| **iFood Shop / Goomer** | Touch-first, busca por código de barras, sugestões inteligentes |
+| **Linx/Bematech** | Atalhos de teclado (F2/F3/F8), sangria/suprimento com motivo, conferência rigorosa |
+| **Stone TON** | Multi-pagamento (cliente paga R$50 PIX + R$30 dinheiro), divisão de conta |
 
-1. **Esgotado nos cards** — remover `.eq("is_available", true)` da query e exibir badge "Esgotado" + botão desabilitado em `ProductCard` (cliente).
-2. **Rankings ignorando cancelados** — filtrar `orders.status in ('entregue','finalizado','concluido')` nas queries `popular-products` e `reorder`.
-3. **Limites de ranking** — subir `limit` e ordenar por contagem real no client (sem criar materialized view nessa rodada).
-4. **Race do `document.title`** — remover cleanup que reverte título; setar 1x e deixar.
-5. **Pizza meio-a-meio** — guard: só abrir modal half-half se houver pelo menos 1 produto pizza válido.
+## O que está bom hoje (manter)
+- Estrutura de turno (abertura → venda → fechamento)
+- Sangria / Suprimento
+- Histórico, Turnos anteriores e Relatórios
+- Modal de adicionais
+- Impressão térmica nativa
+- Modo mobile com etapa catálogo→carrinho
 
-## Onda 2 — Performance
+## O que vou melhorar
 
-6. **Memoização** — `useMemo` em `reorderProductsList`, `popularProductsList`, `unsectionedProducts`, `filteredProducts`. `useCallback` no `onClick` do ProductCard.
-8. **LCP do hero** — `loading="eager"` + `fetchPriority="high"` na imagem do banner.
-9. **Scroll listener** — usar `requestAnimationFrame` com flag de ticking.
-10/11. Coberto por #6.
-7. **Reorder/popular** — aumentar `staleTime` e usar `placeholderData: keepPreviousData`.
-6 (bundle): adiar (requer edge function — fora do escopo desta rodada).
+### 1. UI/UX (visual Square/Toast — clean SaaS)
+- Layout reformulado: grid de produtos maior, mais respiração entre elementos, tipografia hierárquica
+- Cards de produto com hover/active claros, indicador visual de quantidade no carrinho
+- Sidebar do carrinho com scroll independente, totais em sticky
+- Cores semânticas consistentes (verde = receita, vermelho = saída/falta, azul = entrada, âmbar = atenção)
+- Estados vazios mais elegantes (ilustrações leves)
+- Header simplificado com KPI ao vivo (vendas do turno + ticket médio)
 
-## Onda 3 — UX
+### 2. Atalhos de teclado (desktop)
+- `F2` → focar busca de produtos
+- `F3` → abrir desconto
+- `F4` → ciclar formas de pagamento
+- `F8` → finalizar venda
+- `ESC` → limpar venda atual
+- `Enter` em produto único filtrado → adicionar ao carrinho
+- `+` / `-` em item selecionado → ajustar quantidade
 
-12. **Taxa de entrega** visível no header da loja.
-13. **Tempo estimado de entrega** ao lado da taxa.
-14. **Pedido mínimo** abaixo da taxa.
-15. **Botão MAPS** — usar `Browser.open()` do Capacitor com fallback web.
-16. **Categoria "Outros"** — só renderizar se houver produtos sem seção.
-17. **Indicador de scroll** nas categorias — fade lateral + sombra quando há overflow.
-18. **Loja fechada** — permitir abrir modal, bloquear apenas o botão "Adicionar".
-19. **Carrinho de outra loja** — validar `store_id` no `CartContext.addItem`; se diferente, perguntar e limpar.
-20. **Acessibilidade** — `aria-label` nos botões com só ícone.
-21. **Dialog warning** — adicionar `<DialogDescription>` (ou `aria-describedby`) no `ProductDetailModal` e `PizzaHalfHalfModal`.
+### 3. Funcionalidades de venda novas
+- **Multi-pagamento (split)**: cliente paga parte em dinheiro + parte em PIX/cartão. Lista visual com saldo restante.
+- **Desconto por item** (além do desconto geral) — long press / botão no item do carrinho
+- **Suporte a leitor de código de barras** (captura rajada de teclado terminando em Enter — ativo em qualquer foco da tela)
+- **Cliente identificado opcional** (campo nome/telefone — já salva no order)
+- **Mesa/Comanda**: chips de mesas em uso (1, 2, 3…) para reabrir/somar
 
-## Versão
-Bump para **1.4.4** (versionCode 97) em `appVersionCheck.ts`, `build.gradle` e `PerfilPage.tsx`.
+### 4. Caixa e fechamento (mais profissional)
+- **Fechamento cego (blind close)**: opção de o operador contar sem ver o esperado, sistema mostra diferença depois (anti-fraude — padrão Toast)
+- **Motivo obrigatório em sangria** (cofre, despesa, etc.) — já tem campo, vou tornar obrigatório com presets
+- **Conferência por cédula** (opcional): R$200/100/50/20/10/5/2/1 + moedas, soma automática
+- **Resumo do operador**: quem abriu, quem fechou, duração do turno, ticket médio
 
-## Fora desta rodada (avisarei ao final)
-- #6 bundle via edge function `store-page-bundle`
-- Materialized view para rankings reais
-- Novas features sugeridas (favoritar, compartilhar, avaliações públicas, etc.)
+### 5. Periféricos
+- **Listener de barcode scanner global** (já mencionado) — detecta entrada rápida (>10 chars/s) e busca produto por nome OU SKU/barcode
+- **Recibo melhorado** — versão atual já existe, vou adicionar opção "Não imprimir" (toggle por venda) para evitar desperdício
+
+## Estrutura de arquivos
+
+```text
+src/pages/PdvPage.tsx                    # orquestrador (reduzido a ~300 linhas)
+src/components/pdv/
+  ├── PdvHeader.tsx                      # topbar + KPIs ao vivo
+  ├── PdvAbertura.tsx                    # tela de abertura de caixa
+  ├── PdvFechamento.tsx                  # tela de fechamento (com blind close)
+  ├── PdvCatalog.tsx                     # grid de produtos + busca + categorias
+  ├── PdvCart.tsx                        # carrinho + descontos + totais
+  ├── PdvPayment.tsx                     # painel de pagamento com SPLIT
+  ├── PdvProductCard.tsx                 # card individual do produto
+  ├── PdvCartItem.tsx                    # item individual do carrinho
+  ├── PdvMovementModal.tsx               # sangria/suprimento c/ motivos
+  ├── PdvBarcodeScanner.tsx              # hook listener global
+  ├── PdvKeyboardShortcuts.tsx           # hook de atalhos
+  ├── PdvHistorico.tsx                   # (mantém)
+  └── PdvRelatorios.tsx                  # (mantém)
+```
+
+## Banco de dados
+- Adicionar coluna `payments` (jsonb) na tabela `orders` para suportar multi-pagamento — armazena `[{method, amount}]`
+- Adicionar coluna `cashier_user_id` em `pdv_sessions` (já existe `opened_by`, ok)
+- Adicionar coluna `denomination_count` (jsonb) em `pdv_sessions` para conferência por cédula
+
+## Fora do escopo desta entrega
+- Comanda compartilhada multi-dispositivo em tempo real (próxima fase)
+- Integração com gaveta de dinheiro física (depende de driver específico)
+- Balança integrada (depende de protocolo da balança do cliente)
+
+## Versionamento
+Bump para **1.5.0** (minor — mudança grande de funcionalidade), `versionCode` +1.
+
+---
+
+Confirma que posso prosseguir? Se quiser, posso ajustar o escopo (ex: deixar split de pagamento para depois e focar 100% em UI/atalhos primeiro).
