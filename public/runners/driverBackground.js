@@ -14,6 +14,31 @@
  *      notificação local "🔔 Novo pedido disponível!" — fora do app, igual push.
  *   4. Persiste a lista de IDs vistos para não notificar duas vezes.
  */
+/**
+ * Evento `setState` — chamado pelo app a cada mudança de online/offline,
+ * vínculo de loja ou login. Atualiza o KV usado pelo `checkForOrders`.
+ */
+addEventListener('setState', (resolve, _reject, args) => {
+  try {
+    if (args && typeof args === 'object') {
+      if (typeof args.SUPABASE_URL === 'string') CapacitorKV.set('SUPABASE_URL', args.SUPABASE_URL);
+      if (typeof args.SUPABASE_KEY === 'string') CapacitorKV.set('SUPABASE_KEY', args.SUPABASE_KEY);
+      if (typeof args.USER_ID === 'string') CapacitorKV.set('USER_ID', args.USER_ID);
+      if (typeof args.LINKED_STORE_IDS === 'string') CapacitorKV.set('LINKED_STORE_IDS', args.LINKED_STORE_IDS);
+      if (typeof args.ONLINE === 'string') CapacitorKV.set('ONLINE', args.ONLINE);
+      if (args.RESET === true) {
+        CapacitorKV.set('USER_ID', '');
+        CapacitorKV.set('LINKED_STORE_IDS', '');
+        CapacitorKV.set('ONLINE', '0');
+        CapacitorKV.set('LAST_SEEN_ORDER_IDS', '');
+      }
+    }
+    resolve();
+  } catch (e) {
+    resolve();
+  }
+});
+
 addEventListener('checkForOrders', async (resolve, reject, args) => {
   try {
     const supabaseUrl = CapacitorKV.get('SUPABASE_URL');
