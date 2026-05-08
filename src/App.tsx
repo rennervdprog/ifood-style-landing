@@ -14,6 +14,7 @@ import CapacitorPermissionsOnboarding from "@/components/CapacitorPermissionsOnb
 import DebugOverlay from "@/components/DebugOverlay";
 import { initCapacitorNative, isCapacitorNative, consumePendingPushNavigation } from "@/lib/capacitorNative";
 import { initCapacitorLifecycle } from "@/lib/capacitorLifecycle";
+import { initRealtimeWatchdog } from "@/lib/realtimeWatchdog";
 import { initAutoUpdate } from "@/lib/capacitorAutoUpdate";
 import { checkAppVersion } from "@/lib/appVersionCheck";
 import { supabase } from "@/integrations/supabase/client";
@@ -166,6 +167,7 @@ const App = () => {
     // is never blocked by native setup or auto-update checks.
     initCapacitorNative().catch(() => {});
     initCapacitorLifecycle().catch(() => {});
+    initRealtimeWatchdog();
     // Auto-update inicia imediatamente — agenda interno usa 1s antes do 1º check
     try { initAutoUpdate(); } catch {}
     // Aviso não-bloqueante de nova versão nativa disponível (Play Store).
