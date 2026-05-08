@@ -452,7 +452,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       queryClient.invalidateQueries({ queryKey: ["store-driver-count", user.id] });
       if (linkedStoreIds.length > 0) {
         queryClient.invalidateQueries({ queryKey: ["store-driver-store-names", linkedStoreIds] });
-        queryClient.invalidateQueries({ queryKey: ["store-driver-available", linkedStoreIds] });
+        queryClient.invalidateQueries({ queryKey: ["store-driver-available", linkedStoreIds, user.id] });
       }
     };
 
@@ -565,9 +565,9 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     queryClient.setQueryData(["store-driver-online-status", user.id], { ...previousStatus, user_id: user.id, is_online: next });
     if (!next) {
       // Clear available orders cache so list disappears immediately
-      queryClient.setQueryData(["store-driver-available", linkedStoreIds], []);
+      queryClient.setQueryData(["store-driver-available", linkedStoreIds, user.id], []);
     } else {
-      queryClient.invalidateQueries({ queryKey: ["store-driver-available", linkedStoreIds] });
+      queryClient.invalidateQueries({ queryKey: ["store-driver-available", linkedStoreIds, user.id] });
     }
     toast.success(next ? "Você está ONLINE — recebendo entregas." : "Você está OFFLINE.");
   };
