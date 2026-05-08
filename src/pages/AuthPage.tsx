@@ -559,10 +559,10 @@ const AuthPage = () => {
           <img
             src="/itasuper-logo-horizontal.webp"
             alt="ItaSuper"
-            width={240}
-            height={64}
+            width={320}
+            height={84}
             decoding="async"
-            className="h-16 md:h-20 w-auto object-contain"
+            className="h-20 md:h-24 w-auto object-contain"
           />
         </div>
 
@@ -602,10 +602,10 @@ const AuthPage = () => {
           <img
             src="/itasuper-logo-horizontal.webp"
             alt="ItaSuper"
-            width={200}
-            height={54}
+            width={280}
+            height={74}
             decoding="async"
-            className="h-14 w-auto object-contain"
+            className="h-18 w-auto object-contain"
           />
         </div>
 
