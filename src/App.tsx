@@ -33,7 +33,6 @@ const PedidosPage = lazy(() => import("./pages/PedidosPage"));
 const PerfilPage = lazy(() => import("./pages/PerfilPage"));
 const AuthPage = lazy(() => import("./pages/AuthPage"));
 const PartnerLogin = lazy(() => import("./pages/PartnerLogin"));
-const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AdminDashboardV2 = lazy(() => import("./pages/AdminDashboardV2"));
 const PdvPage = lazy(() => import("./pages/PdvPage"));
 const DriverDashboard = lazy(() => import("./pages/DriverDashboard"));
@@ -280,7 +279,6 @@ const App = () => {
                 <Route path="/auth" element={<AuthPage />} />
                 <Route path="/portal-parceiro" element={<PartnerLogin />} />
                 <Route path="/admin" element={<RoleGuard allowedRoles={["lojista", "admin"]} redirectTo="/" requireApproval><AdminDashboardV2 /></RoleGuard>} />
-                <Route path="/admin1" element={<RoleGuard allowedRoles={["lojista", "admin"]} redirectTo="/" requireApproval><AdminDashboard /></RoleGuard>} />
                 <Route path="/admin2" element={<Navigate to="/admin" replace />} />
                 <Route path="/admin/pdv" element={<RoleGuard allowedRoles={["lojista", "admin"]} redirectTo="/" requireApproval><PdvPage /></RoleGuard>} />
                 <Route
