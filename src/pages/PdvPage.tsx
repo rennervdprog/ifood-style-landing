@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,12 +15,16 @@ import {
   ArrowDownCircle, ArrowUpCircle, Lock, Unlock,
   Receipt, ChevronDown, ChevronRight, RotateCcw,
   Layers, ShoppingCart, ChevronLeft, Calculator, Wallet,
-  History, Printer, BarChart3,
+  History, Printer, BarChart3, Split, EyeOff, Eye, Keyboard,
 } from "lucide-react";
 import { PdvHistorico, PdvSessionsList } from "@/components/pdv/PdvHistorico";
 import ProductDetailModal from "@/components/ProductDetailModal";
 import type { CartAddon } from "@/contexts/CartContext";
 import { PdvRelatorios } from "@/components/pdv/PdvRelatorios";
+import { usePdvShortcuts } from "@/components/pdv/usePdvShortcuts";
+import { usePdvBarcodeScanner } from "@/components/pdv/usePdvBarcodeScanner";
+import { PdvSplitPayment, type SplitPayment } from "@/components/pdv/PdvSplitPayment";
+import { PdvDenominationCount } from "@/components/pdv/PdvDenominationCount";
 
 // Detecta se está em tela mobile (< 768px)
 const useIsMobile = () => {
