@@ -210,7 +210,7 @@ const StorePage = () => {
         .select("product_id, quantity, orders!inner(store_id, client_id, status)")
         .eq("orders.store_id", storeId!)
         .eq("orders.client_id", user!.id)
-        .in("orders.status", ["entregue", "finalizado", "concluido"])
+        .in("orders.status", ["entregue", "finalizado"])
         .limit(300);
       if (error) throw error;
       const countMap: Record<string, number> = {};
@@ -235,7 +235,7 @@ const StorePage = () => {
         .from("order_items")
         .select("product_id, quantity, orders!inner(store_id, status)")
         .eq("orders.store_id", storeId!)
-        .in("orders.status", ["entregue", "finalizado", "concluido"])
+        .in("orders.status", ["entregue", "finalizado"])
         .limit(500);
       if (error) throw error;
       const countMap: Record<string, number> = {};
