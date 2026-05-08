@@ -915,29 +915,33 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
         </div>
       )}
 
-      {/* Route optimization toggle */}
+      {/* Route optimization toggle — premium */}
       {(hasActiveDeliveries || hasAvailable) && (
         <button
           onClick={() => setUseOptimized(!useOptimized)}
-          className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl border transition-all ${
+          className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl border transition-all active:scale-[0.99] ${
             useOptimized
-              ? "bg-primary/5 border-primary/20"
-              : "bg-muted/50 border-border"
+              ? "bg-gradient-to-br from-primary/10 to-primary/5 border-primary/30 shadow-sm shadow-primary/10"
+              : "bg-card border-border/60"
           }`}
         >
-          <div className="flex items-center gap-2.5">
-            <Route className={`h-4 w-4 ${useOptimized ? "text-primary" : "text-muted-foreground"}`} />
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+              useOptimized ? "bg-primary/15" : "bg-muted"
+            }`}>
+              <Route className={`h-5 w-5 ${useOptimized ? "text-primary" : "text-muted-foreground"}`} strokeWidth={2.4} />
+            </div>
             <div className="text-left">
-              <p className="text-xs font-bold text-foreground">Rota Otimizada</p>
-              <p className="text-[10px] text-muted-foreground">
+              <p className="text-sm font-black text-foreground leading-tight">Rota Otimizada</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">
                 {useOptimized && routeDistanceKm > 0
-                  ? `~${routeDistanceKm.toFixed(1)} km · ${Math.ceil(routeDistanceKm * 3)} min estimado`
-                  : "Ordena entregas pela melhor rota"}
+                  ? `~${routeDistanceKm.toFixed(1)} km · ~${Math.ceil(routeDistanceKm * 3)} min`
+                  : "Ordena pela melhor rota"}
               </p>
             </div>
           </div>
-          <div className={`w-10 h-6 rounded-full transition-colors ${useOptimized ? "bg-primary" : "bg-muted"} relative`}>
-            <span className={`absolute top-[3px] w-[18px] h-[18px] rounded-full bg-white shadow transition-transform ${useOptimized ? "left-[19px]" : "left-[3px]"}`} />
+          <div className={`relative w-12 h-7 rounded-full transition-colors ${useOptimized ? "bg-primary" : "bg-muted"}`}>
+            <span className={`absolute top-[3px] w-[22px] h-[22px] rounded-full bg-white shadow-md transition-transform ${useOptimized ? "left-[23px]" : "left-[3px]"}`} />
           </div>
         </button>
       )}
@@ -1226,61 +1230,101 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
             </div>
           )}
 
-          {filteredAvailable.map((order: any, index: number) => (
-            <div key={order.id} className={`bg-card border border-border rounded-2xl p-4 space-y-3 ${hasActiveRoutes ? "opacity-60" : ""}`}>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center text-xs font-black text-amber-500">
-                  {index + 1}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-foreground">{(order as any).stores?.name || "Loja"}</p>
-                  <p className="text-[10px] text-muted-foreground">#{order.id.slice(0, 6).toUpperCase()}</p>
-                </div>
-              </div>
+          {filteredAvailable.map((order: any, index: number) => {
+            const itemsCount = (order.order_items || []).reduce((s: number, it: any) => s + (it.quantity || 1), 0);
+            const canDecline = (storeDriverCounts?.[order.store_id] || 0) >= 2 && !hasActiveRoutes;
+            return (
+              <div
+                key={order.id}
+                className={`relative bg-card rounded-3xl overflow-hidden shadow-lg shadow-amber-500/5 border border-border/60 ${hasActiveRoutes ? "opacity-60" : ""}`}
+              >
+                {/* Faixa pulsante âmbar */}
+                <div className="h-1.5 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400" />
+                <div className="p-4 space-y-3.5">
+                  {/* Header */}
+                  <div className="flex items-center gap-3">
+                    <div className="relative shrink-0">
+                      <div className="absolute inset-0 bg-amber-500/30 rounded-xl blur-md animate-pulse" />
+                      <div className="relative w-11 h-11 rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center text-sm font-black text-white shadow-lg shadow-amber-500/30">
+                        {index + 1}
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest leading-none mb-1">
+                        Novo Pedido
+                      </p>
+                      <p className="text-sm font-black text-foreground truncate leading-tight">
+                        {(order as any).stores?.name || "Loja"}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
+                        #{order.id.slice(0, 6).toUpperCase()}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-center px-2.5 py-1.5 rounded-xl bg-primary/10 shrink-0">
+                      <span className="text-base font-black text-primary leading-none">{itemsCount}</span>
+                      <span className="text-[8px] font-bold text-primary/70 uppercase tracking-wider mt-0.5">itens</span>
+                    </div>
+                  </div>
 
-              <div className="flex items-start gap-2.5 bg-muted/50 rounded-xl p-3">
-                <MapPin className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
-                <div className="min-w-0">
-                  <span className="text-sm font-semibold text-foreground">{order.neighborhood}</span>
-                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{order.address_details}</p>
-                </div>
-              </div>
+                  {/* Endereço destaque */}
+                  <div className="flex items-start gap-3 bg-gradient-to-br from-muted/60 to-muted/30 rounded-2xl p-3.5 border border-border/40">
+                    <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
+                      <MapPin className="h-4 w-4 text-destructive" strokeWidth={2.5} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-black text-foreground leading-tight">{order.neighborhood}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 leading-snug">{order.address_details}</p>
+                    </div>
+                  </div>
 
-              <div className="text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-0.5">
-                {order.order_items?.map((item: any) => (
-                  <span key={item.id}>{item.quantity}x {getOrderItemDisplayName(item)}</span>
-                ))}
-              </div>
+                  {/* Items chips */}
+                  {order.order_items?.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {order.order_items.slice(0, 4).map((item: any) => (
+                        <span key={item.id} className="text-[10px] font-bold bg-muted/60 text-foreground/80 px-2 py-1 rounded-lg">
+                          {item.quantity}× {getOrderItemDisplayName(item)}
+                        </span>
+                      ))}
+                      {order.order_items.length > 4 && (
+                        <span className="text-[10px] font-bold bg-muted/60 text-muted-foreground px-2 py-1 rounded-lg">
+                          +{order.order_items.length - 4}
+                        </span>
+                      )}
+                    </div>
+                  )}
 
-              {(() => {
-                const canDecline = (storeDriverCounts?.[order.store_id] || 0) >= 2 && !hasActiveRoutes;
-                return (
-                  <div className="flex gap-2">
+                  {/* Actions */}
+                  <div className="flex gap-2 pt-1">
                     {canDecline && (
                       <button
                         onClick={() => declineOrder(order.id)}
-                        className="flex-shrink-0 px-4 py-3 rounded-xl text-sm font-bold bg-destructive/10 text-destructive active:scale-[0.98] transition-all flex items-center gap-1.5"
+                        className="shrink-0 h-13 px-4 py-3.5 rounded-2xl text-sm font-black bg-background border border-border text-muted-foreground hover:text-destructive hover:bg-destructive/5 active:scale-95 transition-all flex items-center gap-1.5"
                         title="Recusar entrega"
                       >
-                        <X className="h-4 w-4" /> Recusar
+                        <X className="h-4 w-4" strokeWidth={2.6} />
                       </button>
                     )}
                     <button
                       onClick={() => acceptOrder(order.id)}
                       disabled={hasActiveRoutes}
-                      className={`flex-1 font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 transition-all ${
+                      className={`flex-1 h-13 font-black py-3.5 rounded-2xl text-sm flex items-center justify-center gap-2 transition-all ${
                         hasActiveRoutes
                           ? "bg-muted text-muted-foreground cursor-not-allowed"
-                          : "bg-primary text-primary-foreground active:scale-[0.98]"
+                          : "bg-gradient-to-br from-primary to-primary/85 text-primary-foreground shadow-lg shadow-primary/30 active:scale-95"
                       }`}
                     >
-                      {hasActiveRoutes ? "FINALIZE A ROTA ATUAL" : "ACEITAR"} <ArrowRight className="h-4 w-4" />
+                      {hasActiveRoutes ? "FINALIZE A ROTA" : (
+                        <>
+                          ACEITAR ENTREGA
+                          <ArrowRight className="h-4 w-4" strokeWidth={3} />
+                        </>
+                      )}
                     </button>
                   </div>
-                );
-              })()}
-            </div>
-          ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -1292,19 +1336,29 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
 
       {!loadingAvailable && !hasActiveDeliveries && !hasAvailable && (
         <div className="flex flex-col items-center justify-center py-16 text-center px-6">
-          <div className={`w-16 h-16 rounded-3xl flex items-center justify-center mb-4 ${
-            isOnline ? "bg-muted/80" : "bg-amber-500/10"
-          }`}>
-            {isOnline
-              ? <Bike className="h-8 w-8 text-muted-foreground/60" />
-              : <PowerOff className="h-8 w-8 text-amber-500" />}
+          <div className="relative mb-5">
+            <div className={`absolute inset-0 rounded-[2rem] blur-2xl ${
+              isOnline ? "bg-primary/15" : "bg-amber-500/20"
+            }`} />
+            <div className={`relative w-20 h-20 rounded-[1.75rem] flex items-center justify-center shadow-lg ${
+              isOnline
+                ? "bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/15"
+                : "bg-gradient-to-br from-amber-500 to-amber-600 shadow-amber-500/30"
+            }`}>
+              {isOnline
+                ? <Bike className="h-10 w-10 text-primary" strokeWidth={2.2} />
+                : <PowerOff className="h-10 w-10 text-white" strokeWidth={2.4} />}
+            </div>
           </div>
-          <h2 className="text-base font-bold text-foreground mb-1">
+          <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-2">
+            {!isOnline ? "Modo Pausado" : "Tudo em ordem"}
+          </p>
+          <h2 className="text-xl font-black text-foreground mb-2 tracking-tight">
             {!isOnline
               ? "Você está offline"
               : multiStore ? `Sem pedidos em ${getStoreName(effectiveStoreId!)}` : "Aguardando pedidos"}
           </h2>
-          <p className="text-sm text-muted-foreground max-w-[260px]">
+          <p className="text-sm text-muted-foreground max-w-[280px] leading-relaxed">
             {!isOnline
               ? "Fique online para receber as entregas disponíveis."
               : "Quando a loja tiver pedidos prontos, eles aparecerão aqui organizados por rota."}
