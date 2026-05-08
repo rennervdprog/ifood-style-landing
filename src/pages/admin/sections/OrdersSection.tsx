@@ -243,7 +243,7 @@ export default function OrdersSection(props: Props) {
           handleAcceptOrder={handleAcceptOrder}
           handleCancelOrder={handleCancelOrder}
           handlePrint={handlePrint}
-          invalidateOrders={() => queryClient.invalidateQueries({ queryKey: ["admin-orders"] })}
+          invalidateOrders={invalidateOrders}
         />
       ))
     ) : (
