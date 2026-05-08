@@ -643,9 +643,16 @@ const StorePage = () => {
                   <span className="text-[9px] font-black text-muted-foreground uppercase tracking-tight">Taxa</span>
                   <span className="text-[11px] font-black text-foreground mt-0.5">
                     {(() => {
-                      const fee = (store as any)?.own_delivery_fee ?? (store as any)?.delivery_fee;
-                      if (fee == null) return "—";
-                      return Number(fee) === 0 ? "Grátis" : formatBRL(Number(fee));
+                      const mode = (store as any)?.delivery_mode;
+                      // Para entrega própria: taxa do lojista + R$2 da plataforma
+                      // Para entrega da plataforma: delivery_fee já é o total (inclui splits)
+                      const baseFee = mode === "own"
+                        ? (store as any)?.own_delivery_fee
+                        : (store as any)?.delivery_fee;
+                      if (baseFee == null) return "—";
+                      const platformAdd = mode === "own" ? 2 : 0;
+                      const total = Number(baseFee) + platformAdd;
+                      return total === 0 ? "Grátis" : `A partir de ${formatBRL(total)}`;
                     })()}
                   </span>
                 </div>
