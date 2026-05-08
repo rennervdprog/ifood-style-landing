@@ -121,7 +121,7 @@ const PedidosPage = () => {
     staleTime: 1000 * 60 * 5,
   });
 
-  const isLojista = userProfile?.role === "lojista";
+   const isLojista = userProfile?.role === "lojista" || userProfile?.role === "admin";
 
   // Get lojista's store ID
   const { data: ownStore } = useQuery({
@@ -234,7 +234,7 @@ const PedidosPage = () => {
       if (error) throw error;
       return data;
     },
-    enabled: !!user && !isLojista,
+       enabled: !!user,
     // Mostra cache imediatamente; revalida em background — evita "tela laranja"
     // ao reentrar na página em apps Capacitor.
     staleTime: 1000 * 30,
