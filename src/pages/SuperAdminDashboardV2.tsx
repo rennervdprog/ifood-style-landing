@@ -41,6 +41,8 @@ import {
 const SyncExternalTab = lazy(() => import("./super-admin/tabs/SyncExternalTab"));
 const JuridicoTab = lazy(() => import("./super-admin/tabs/JuridicoTab"));
 const CidadesTab = lazy(() => import("./super-admin/tabs/CidadesTab"));
+const SaquesTab = lazy(() => import("./super-admin/tabs/SaquesTab"));
+const PagamentosSplitTab = lazy(() => import("./super-admin/tabs/PagamentosSplitTab"));
 const TabFallback = () => (
   <div className="flex items-center justify-center py-12">
     <Loader2 className="h-6 w-6 animate-spin text-primary" />
