@@ -11,13 +11,11 @@ const config: CapacitorConfig = {
   },
   server: {
     androidScheme: 'https',
-    url: 'https://www.itasuper.com.br',
     cleartext: false,
     allowNavigation: [
       'www.itasuper.com.br',
       '*.supabase.co',
       'qkjhguziuchqsbxzruea.supabase.co',
-      'lktzrqjvqoojlrhqnxuz.supabase.co',
     ]
   },
   plugins: {
