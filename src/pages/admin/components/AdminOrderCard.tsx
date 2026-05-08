@@ -479,6 +479,15 @@ const areEqual = (prev: AdminOrderCardProps, next: AdminOrderCardProps) => {
   if (prev.driversLoading !== next.driversLoading) return false;
   if (prev.clientName !== next.clientName) return false;
   if (prev.clientWhatsApp !== next.clientWhatsApp) return false;
+  // CRÍTICO: hrefs do WhatsApp dependem de phone, PIN e nome da loja
+  // que carregam de forma assíncrona. Sem essas comparações, o memo
+  // congela um href antigo (ex.: "#" ou mensagem da etapa anterior),
+  // causando o bug de "marcar pronto" disparar mensagem do "aceitar".
+  if (prev.acceptHref !== next.acceptHref) return false;
+  if (prev.readyHref !== next.readyHref) return false;
+  // mainAction muda quando status/role muda — segurança extra
+  if (prev.mainAction?.next !== next.mainAction?.next) return false;
+  if (prev.mainAction?.label !== next.mainAction?.label) return false;
   return true;
 };
 
