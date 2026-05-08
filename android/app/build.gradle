@@ -7,13 +7,29 @@ android {
         applicationId "app.lovable.e8d28aded6334d74be2161c8dbe24765"
         minSdkVersion 26
         targetSdkVersion rootProject.ext.targetSdkVersion
-    versionCode 103
-    versionName "1.4.10"
+    versionCode 104
+    versionName "1.4.11"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    // 🔐 Signing config — lê de variáveis de ambiente (CI) ou de keystore.properties (local).
+    // Se nada estiver configurado, o build release cai para debug-signed (compatível com dev).
+    signingConfigs {
+        release {
+            def ksPath = System.getenv("ANDROID_KEYSTORE_PATH")
+            def ksPass = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+            def kAlias = System.getenv("ANDROID_KEY_ALIAS")
+            def kPass  = System.getenv("ANDROID_KEY_PASSWORD")
+            if (ksPath && file(ksPath).exists()) {
+                storeFile file(ksPath)
+                storePassword ksPass
+                keyAlias kAlias
+                keyPassword kPass
+            }
         }
     }
     buildTypes {
@@ -22,6 +38,10 @@ android {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // Aplica signingConfig release apenas se keystore foi provida
+            if (System.getenv("ANDROID_KEYSTORE_PATH")) {
+                signingConfig signingConfigs.release
+            }
         }
         debug {
             minifyEnabled false
