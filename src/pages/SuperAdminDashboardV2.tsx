@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import AdminApprovals from "@/components/AdminApprovals";
@@ -61,7 +62,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
   { key: "logs", label: "Logs", icon: FileText, group: "Sistema" },
 ];
 
-const SuperAdminDashboard = () => {
+const SuperAdminDashboardV2 = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -3350,4 +3351,4 @@ const PagamentosSplitTab = ({ stores }: { stores: any[] }) => {
   );
 };
 
-export default SuperAdminDashboard;
+export default SuperAdminDashboardV2;
