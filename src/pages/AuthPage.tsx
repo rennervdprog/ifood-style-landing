@@ -556,12 +556,14 @@ const AuthPage = () => {
         <div className="absolute -bottom-20 -left-20 w-48 h-48 bg-primary/5 rounded-full blur-3xl" />
 
         <div className="relative z-10">
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-              <Zap className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <span className="text-white font-black text-xl">ItaSuper</span>
-          </div>
+          <img
+            src="/itasuper-logo-horizontal.webp"
+            alt="ItaSuper"
+            width={180}
+            height={48}
+            decoding="async"
+            className="h-12 w-auto object-contain"
+          />
         </div>
 
         <div className="relative z-10 space-y-4">
@@ -596,11 +598,15 @@ const AuthPage = () => {
       </div>
 
       <div className="flex-1 flex flex-col bg-gradient-to-b from-white to-slate-50 md:bg-white">
-        <div className="md:hidden flex items-center justify-center gap-2.5 pt-10 pb-6">
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-            <Zap className="h-5 w-5 text-primary-foreground" />
-          </div>
-          <span className="text-foreground font-black text-xl">ItaSuper</span>
+        <div className="md:hidden flex items-center justify-center pt-10 pb-6">
+          <img
+            src="/itasuper-logo-horizontal.webp"
+            alt="ItaSuper"
+            width={180}
+            height={48}
+            decoding="async"
+            className="h-12 w-auto object-contain"
+          />
         </div>
 
         <div className="flex-1 flex items-start md:items-center justify-center px-5 pb-8 md:px-10">
