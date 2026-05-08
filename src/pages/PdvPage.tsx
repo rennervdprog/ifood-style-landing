@@ -365,12 +365,28 @@ const PdvPage = () => {
   const handleVenda = async () => {
     if (!store?.id || !currentSession) return;
     if (cart.length === 0) { toast.error("Carrinho vazio."); return; }
-    if (!paymentMethod) { toast.error("Selecione o pagamento."); return; }
-    if (paymentMethod === "dinheiro" && cashReceived && cashVal < finalTotal) {
-      toast.error("Valor recebido menor que o total."); return;
+
+    // Modo split: validar que pagamentos somam o total
+    if (splitMode) {
+      const splitTotal = sumMoney(splitPayments.map((p) => p.amount));
+      if (Math.abs(splitTotal - finalTotal) > 0.01) {
+        toast.error("Pagamentos não fecham o total."); return;
+      }
+    } else {
+      if (!paymentMethod) { toast.error("Selecione o pagamento."); return; }
+      if (paymentMethod === "dinheiro" && cashReceived && cashVal < finalTotal) {
+        toast.error("Valor recebido menor que o total."); return;
+      }
     }
+
     setLoading(true);
     try {
+      // Forma de pagamento principal: a 1ª do split, ou a única selecionada
+      const primaryMethod = splitMode ? (splitPayments[0]?.method || "dinheiro") : paymentMethod;
+      const paymentsPayload = splitMode
+        ? splitPayments
+        : [{ method: paymentMethod, amount: finalTotal }];
+
       const { data: order, error: oe } = await supabase.from("orders")
         .insert({
           store_id: store.id, client_id: null, order_source: "pdv",
@@ -380,7 +396,8 @@ const PdvPage = () => {
           pdv_discount: discountAmount,
           commission_rate: storePlan.pdvCommissionRate ?? 0,
           total_price: finalTotal, app_fee: 0,
-          payment_method: paymentMethod,
+          payment_method: primaryMethod,
+          payments: paymentsPayload,
           neighborhood: "Balcão",
           address_details: tableId ? `${tableId} — Presencial` : "Pedido presencial",
           status: "finalizado",
@@ -398,13 +415,18 @@ const PdvPage = () => {
         }))
       );
 
-      await supabase.from("pdv_movements" as any).insert({
-        session_id: currentSession.id, store_id: store.id,
-        type: "sale", amount: finalTotal,
-        payment_method: paymentMethod,
-        description: tableId || "Venda balcão",
-        order_id: order.id,
-      });
+      // Insere uma movimentação por forma de pagamento (suporta split)
+      await supabase.from("pdv_movements" as any).insert(
+        paymentsPayload.map((p) => ({
+          session_id: currentSession.id,
+          store_id: store.id,
+          type: "sale",
+          amount: p.amount,
+          payment_method: p.method,
+          description: tableId || "Venda balcão",
+          order_id: order.id,
+        }))
+      );
 
       queryClient.invalidateQueries({ queryKey: ["pdv-movements", currentSession.id] });
       setOrderDone(true);
@@ -418,9 +440,9 @@ const PdvPage = () => {
           subtotal,
           pdv_discount: discountAmount,
           total_price: finalTotal,
-          payment_method: paymentMethod,
-          cash_received: paymentMethod === "dinheiro" && cashReceived ? parseBRL(cashReceived) : undefined,
-          troco: paymentMethod === "dinheiro" && cashReceived ? troco : undefined,
+          payment_method: primaryMethod,
+          cash_received: !splitMode && paymentMethod === "dinheiro" && cashReceived ? parseBRL(cashReceived) : undefined,
+          troco: !splitMode && paymentMethod === "dinheiro" && cashReceived ? troco : undefined,
           table_identifier: tableId || null,
           order_items: cart.map(item => ({
             quantity: item.quantity,
