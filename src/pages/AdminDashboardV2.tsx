@@ -1022,9 +1022,19 @@ const AdminDashboard = () => {
   };
 
   // ── COMPUTED VALUES ──
-  const pendingCount = orders?.filter(o => o.status === "pendente").length || 0;
-  const preparingCount = orders?.filter(o => o.status === "preparando").length || 0;
-  const readyCount = orders?.filter(o => o.status === "pronto_para_entrega").length || 0;
+  // Memoizados — antes rodavam 3 filter() a cada render
+  const pendingCount = useMemo(
+    () => orders?.filter(o => o.status === "pendente").length || 0,
+    [orders]
+  );
+  const preparingCount = useMemo(
+    () => orders?.filter(o => o.status === "preparando").length || 0,
+    [orders]
+  );
+  const readyCount = useMemo(
+    () => orders?.filter(o => o.status === "pronto_para_entrega").length || 0,
+    [orders]
+  );
   const delayedOrders = useMemo(() => {
     if (!orders) return [];
     const now = Date.now();
@@ -1033,9 +1043,16 @@ const AdminDashboard = () => {
       return elapsedMin > 20 && ["pendente", "preparando"].includes(o.status);
     });
   }, [orders]);
-  const todayOrders = orders?.filter(o => new Date(o.created_at).toDateString() === new Date().toDateString() && !["cancelado", "aguardando_pagamento"].includes(o.status)) || [];
-  const todayTotal = sumMoney(todayOrders.map((order) => order.total_price));
-  const todayCount = todayOrders.length;
+  // Memoizado — recalculava todos os Date() a cada render
+  const { todayOrders, todayTotal, todayCount } = useMemo(() => {
+    const today = new Date().toDateString();
+    const t = (orders?.filter(o => new Date(o.created_at).toDateString() === today && !["cancelado", "aguardando_pagamento"].includes(o.status))) || [];
+    return {
+      todayOrders: t,
+      todayTotal: sumMoney(t.map((order: any) => order.total_price)),
+      todayCount: t.length,
+    };
+  }, [orders]);
 
   const avgDeliveryTime = useMemo(() => {
     const delivered = (allOrders || []).filter((o: any) => {
