@@ -33,6 +33,12 @@ const saveDeclined = (uid: string, map: Record<string, number>) => {
 };
 import WhatsAppButton from "@/components/WhatsAppButton";
 import StoreDriverEarnings from "@/components/StoreDriverEarnings";
+import { haptic } from "@/lib/haptics";
+import {
+  initDriverBackgroundFetch,
+  setDriverBackgroundOnline,
+  setDriverBackgroundStores,
+} from "@/lib/driverBackgroundFetch";
 
 
 /* ── Helpers ── */
@@ -387,6 +393,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
             if (payload.eventType === "INSERT") {
               queryClient.invalidateQueries({ queryKey: ["store-driver-available", linkedStoreIds, user?.id] });
               toast.info("🔔 Novo pedido disponível!");
+              haptic.newOrder();
             } else if (payload.eventType === "UPDATE") {
               // Instant update for available orders
               queryClient.setQueryData(["store-driver-available", linkedStoreIds, user?.id], (old: any[] | undefined) => {
@@ -459,6 +466,22 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     window.addEventListener("capacitor-app-resume", refreshStoreDriverData);
     return () => window.removeEventListener("capacitor-app-resume", refreshStoreDriverData);
   }, [user, linkedStoreIds, queryClient]);
+
+  // 📱 Background fetch nativo: registra/atualiza estado do motoboy no
+  // runner que roda mesmo com app fechado (Android JobScheduler 15min).
+  useEffect(() => {
+    if (!user || linkedStoreIds.length === 0) return;
+    initDriverBackgroundFetch({
+      userId: user.id,
+      linkedStoreIds,
+      isOnline,
+    });
+  }, [user?.id, isOnline]);
+
+  useEffect(() => {
+    if (!user) return;
+    setDriverBackgroundStores(linkedStoreIds);
+  }, [linkedStoreIds, user?.id]);
 
   // Auto-select first store if none selected
   const effectiveStoreId = activeStoreId || linkedStoreIds[0] || null;

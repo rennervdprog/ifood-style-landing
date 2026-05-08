@@ -32,6 +32,21 @@ const config: CapacitorConfig = {
       splashFullScreen: true,
       splashImmersive: true,
     },
+    LocalNotifications: {
+      smallIcon: 'ic_stat_icon_config_sample',
+      iconColor: '#FF6B00',
+      sound: 'beep.wav',
+    },
+    BackgroundRunner: {
+      label: 'app.itasuper.driver.background',
+      src: 'runners/driverBackground.js',
+      event: 'checkForOrders',
+      repeat: true,
+      // Android: 15 min é o mínimo permitido pelo JobScheduler.
+      // iOS: BGTask só roda quando o sistema decide (~horas).
+      interval: 15,
+      autoStart: true,
+    },
   },
 };
 
