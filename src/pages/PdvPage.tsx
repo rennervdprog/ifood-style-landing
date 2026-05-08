@@ -1414,25 +1414,60 @@ const CartSection = ({
         </div>
       </div>
 
-      {/* Métodos */}
-      <div className="px-3 pt-1 pb-2 grid grid-cols-2 gap-1.5">
-        {PDV_METHODS.map(pm => {
-          const Icon = pm.icon;
-          const sel = paymentMethod === pm.id;
-          return (
-            <button key={pm.id}
-              onClick={() => { setPaymentMethod(pm.id); setCashReceived(""); }}
-              data-sel={sel}
-              className={`flex items-center gap-1.5 px-2.5 py-2.5 rounded-xl border text-left transition-all active:scale-[0.97] ${COLOR_MAP[pm.color]}`}>
-              <Icon className="h-3.5 w-3.5 shrink-0" />
-              <span className="text-[11px] font-bold truncate">{pm.label}</span>
-            </button>
-          );
-        })}
-      </div>
+      {/* Toggle Split */}
+      {finalTotal > 0 && (
+        <div className="px-3 pt-1 pb-1.5 flex items-center justify-between">
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+            Pagamento
+          </span>
+          <button
+            onClick={() => {
+              setSplitMode(!splitMode);
+              setSplitPayments([]);
+              setPaymentMethod("");
+              setCashReceived("");
+            }}
+            className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg border transition-colors ${
+              splitMode
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-muted/50 text-muted-foreground border-border hover:bg-muted"
+            }`}
+          >
+            <Split className="h-3 w-3" />
+            {splitMode ? "Pagamento único" : "Dividir pagamento"}
+          </button>
+        </div>
+      )}
+
+      {/* Métodos OU Split */}
+      {splitMode ? (
+        <div className="px-3 pb-2">
+          <PdvSplitPayment
+            total={finalTotal}
+            payments={splitPayments}
+            onChange={setSplitPayments}
+          />
+        </div>
+      ) : (
+        <div className="px-3 pt-1 pb-2 grid grid-cols-2 gap-1.5">
+          {PDV_METHODS.map(pm => {
+            const Icon = pm.icon;
+            const sel = paymentMethod === pm.id;
+            return (
+              <button key={pm.id}
+                onClick={() => { setPaymentMethod(pm.id); setCashReceived(""); }}
+                data-sel={sel}
+                className={`flex items-center gap-1.5 px-2.5 py-2.5 rounded-xl border text-left transition-all active:scale-[0.97] ${COLOR_MAP[pm.color]}`}>
+                <Icon className="h-3.5 w-3.5 shrink-0" />
+                <span className="text-[11px] font-bold truncate">{pm.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Troco */}
-      {paymentMethod === "dinheiro" && (
+      {!splitMode && paymentMethod === "dinheiro" && (
         <div className="mx-3 mb-2 bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3 space-y-2">
           <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
             <Calculator className="h-3 w-3" /> Valor recebido
