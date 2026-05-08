@@ -992,6 +992,14 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
 };
 
 // ─── Finance Tab ───
+const FinanceTab = ({
+  financeFilter, setFinanceFilter,
+  financeSubTab, setFinanceSubTab,
+  selectedStore, setSelectedStore,
+  stores, loading, generateStoreWhatsApp,
+  storeBalances, queryClient, withdrawalRequests,
+  parentStorePlans,
+}: {
   financeFilter: "week" | "month"; setFinanceFilter: (f: "week" | "month") => void;
   financeSubTab: "stores" | "drivers" | "subaccounts"; setFinanceSubTab: (t: "stores" | "drivers" | "subaccounts") => void;
   selectedStore: string; setSelectedStore: (s: string) => void;
