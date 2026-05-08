@@ -16,12 +16,32 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // 🔐 Signing config — lê de variáveis de ambiente (CI) ou de keystore.properties (local).
+    // Se nada estiver configurado, o build release cai para debug-signed (compatível com dev).
+    signingConfigs {
+        release {
+            def ksPath = System.getenv("ANDROID_KEYSTORE_PATH")
+            def ksPass = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+            def kAlias = System.getenv("ANDROID_KEY_ALIAS")
+            def kPass  = System.getenv("ANDROID_KEY_PASSWORD")
+            if (ksPath && file(ksPath).exists()) {
+                storeFile file(ksPath)
+                storePassword ksPass
+                keyAlias kAlias
+                keyPassword kPass
+            }
+        }
+    }
     buildTypes {
         release {
             // 🔒 Minificação ativa: reduz tamanho do APK e ofusca código JS
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // Aplica signingConfig release apenas se keystore foi provida
+            if (System.getenv("ANDROID_KEYSTORE_PATH")) {
+                signingConfig signingConfigs.release
+            }
         }
         debug {
             minifyEnabled false
