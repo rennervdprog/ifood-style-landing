@@ -905,9 +905,6 @@ const StorePage = () => {
         const storeSettings = (store?.settings || {}) as Record<string, any>;
         const halfEnabled = !!storeSettings.pizza_half_enabled;
         if (!halfEnabled) return null;
-        const hasPizzaProducts = (products || []).some(
-          (p) => !!(p as any)?.metadata?.is_pizza || !p.section_id || true
-        );
         // Need at least one product to montar meio a meio
         if (!products || products.length === 0) return null;
         return (
