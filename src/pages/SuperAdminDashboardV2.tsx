@@ -62,8 +62,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
   { key: "logs", label: "Logs", icon: FileText, group: "Sistema" },
 ];
 
- const OverviewTab = lazy(() => import("./superadmin/tabs/OverviewTab"));
- const FinanceTabModular = lazy(() => import("./superadmin/tabs/FinanceTab"));
+ import { FinanceTab as FinanceTabFull, MetricCard } from "./SuperAdminDashboard";
 
  const SuperAdminDashboardV2 = () => {
   const { user, loading: authLoading } = useAuth();
@@ -963,27 +962,72 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                 queryClient={queryClient}
               />
             )}
-             <Suspense fallback={<div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
-               {activeTab === "financeiro" && (
-                 <FinanceTabModular
-                   isAdmin={!!isAdmin}
-                   testStoreIds={testStoreIds}
-                   stores={stores || []}
-                   parentStorePlans={parentStorePlans || []}
-                 />
-               )}
-               {activeTab === "dashboard" && (
-                 <OverviewTab
-                   metrics={metrics}
-                   adminChartData={adminChartData}
-                   dateFilter={dateFilter}
-                   setDateFilter={setDateFilter}
-                   filterLabels={filterLabels}
-                   delayedOrders={delayedOrders}
-                   complianceAlerts={complianceAlerts || []}
-                 />
-               )}
-             </Suspense>
+             {activeTab === "financeiro" && (
+               <FinanceTabFull
+                 storeSettlement={storeSettlement}
+                 driverSettlement={driverSettlement}
+                 financeTotals={financeTotals}
+                 financeFilter={financeFilter}
+                 setFinanceFilter={setFinanceFilter}
+                 financeSubTab={financeSubTab}
+                 setFinanceSubTab={setFinanceSubTab}
+                 selectedStore={selectedStore}
+                 setSelectedStore={setSelectedStore}
+                 stores={stores || []}
+                 loading={financeLoading}
+                 generateStoreWhatsApp={generateStoreWhatsApp}
+                 storeBalances={storeBalances || []}
+                 queryClient={queryClient}
+                 withdrawalRequests={withdrawalRequests || []}
+                 parentStorePlans={parentStorePlans || []}
+               />
+             )}
+             {activeTab === "dashboard" && (
+               <div className="space-y-4">
+                 <div className="flex gap-2 mb-4">
+                   {(["today", "yesterday", "week"] as DateFilter[]).map(f => (
+                     <button key={f} onClick={() => setDateFilter(f)}
+                       className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${dateFilter === f ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"}`}>
+                       {filterLabels[f]}
+                     </button>
+                   ))}
+                 </div>
+                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+                   <MetricCard icon={ShoppingBag} label="Vendas" value={formatBRL(metrics.totalSales)} sublabel={`${metrics.totalOrders} pedidos`} />
+                   <MetricCard icon={TrendingUp} label="Comissão Total" value={formatBRL(metrics.commission)} sublabel={`📦 Delivery: ${formatBRL(metrics.commissionDelivery)}`} sublabel2={`🖥️ PDV: ${formatBRL(metrics.commissionPdv)}`} highlight />
+                   <MetricCard icon={Clock} label="Ativos" value={String(metrics.activeOrders)} sublabel="em andamento" />
+                   <MetricCard icon={AlertTriangle} label="Atraso" value={String(delayedOrders.length)} sublabel="> 60 min" alert={delayedOrders.length > 0} />
+                 </div>
+                 <div className="mb-6"><PageViewsCard /></div>
+                 {adminChartData.dailyData.length > 0 && (
+                   <div className="bg-card rounded-2xl border border-border p-4 mb-4">
+                     <div className="flex items-center justify-between mb-3">
+                       <p className="text-xs font-bold text-foreground">Evolução — Delivery vs PDV</p>
+                       <div className="text-[10px] text-muted-foreground flex gap-3">
+                         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary inline-block"/>Delivery</span>
+                         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500 inline-block"/>PDV</span>
+                       </div>
+                     </div>
+                     <div className="h-44"><DailySalesChart data={adminChartData.dailyData} showPdv={adminChartData.totalPdv > 0} /></div>
+                     <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-border/30 text-center">
+                       <div><p className="text-[10px] text-muted-foreground">Delivery</p><p className="text-sm font-black text-primary">{formatBRL(adminChartData.totalDelivery)}</p></div>
+                       <div className="border-x border-border/30"><p className="text-[10px] text-muted-foreground">PDV</p><p className="text-sm font-black text-blue-500">{formatBRL(adminChartData.totalPdv)}</p></div>
+                       <div><p className="text-[10px] text-muted-foreground">Ticket Médio</p><p className="text-sm font-black text-foreground">{formatBRL(adminChartData.ticketMedio)}</p></div>
+                     </div>
+                   </div>
+                 )}
+                 {adminChartData.paymentData.length > 0 && (
+                   <div className="bg-card rounded-2xl border border-border p-4 mb-4">
+                     <p className="text-xs font-bold text-foreground mb-3">Formas de Pagamento</p>
+                     <div className="h-32"><PaymentBreakdownChart data={adminChartData.paymentData} /></div>
+                   </div>
+                 )}
+                 <div className="bg-card rounded-2xl border border-border p-4">
+                   <p className="text-xs font-bold text-foreground mb-3">Horário de Pico</p>
+                   <HourlyChart data={adminChartData.hourlyData} />
+                 </div>
+               </div>
+             )}
           </div>
         </div>
       </main>
