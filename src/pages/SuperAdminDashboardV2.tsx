@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, lazy, Suspense } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import AdminApprovals from "@/components/AdminApprovals";
 import CouponManager from "@/components/CouponManager";
@@ -36,6 +36,16 @@ import {
 } from "@/components/FinanceCharts";
  import { addMoney, multiplyMoney, subtractMoney, sumMoney, formatBRL } from "@/lib/utils";
  import { statusColors as globalStatusColors } from "@/lib/orderStatus";
+
+// Lazy-loaded tabs (carregadas só ao abrir)
+const SyncExternalTab = lazy(() => import("./super-admin/tabs/SyncExternalTab"));
+const JuridicoTab = lazy(() => import("./super-admin/tabs/JuridicoTab"));
+const CidadesTab = lazy(() => import("./super-admin/tabs/CidadesTab"));
+const TabFallback = () => (
+  <div className="flex items-center justify-center py-12">
+    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+  </div>
+);
 
 type DateFilter = "today" | "yesterday" | "week";
  type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamentos" | "saques" | "sync" | "coupons" | "entrega" | "cidades" | "juridico" | "planos" | "moderadores" | "socios" | "test_finance" | "links" | "broadcast" | "logs";
