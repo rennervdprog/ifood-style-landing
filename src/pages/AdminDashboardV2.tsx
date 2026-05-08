@@ -1477,7 +1477,7 @@ const AdminDashboard = () => {
                 handleAcceptOrder={handleAcceptOrder}
                 handleCancelOrder={handleCancelOrder}
                 handlePrint={handlePrint}
-                invalidateOrders={invalidateOrders}
+                invalidateOrders={() => queryClient.invalidateQueries({ queryKey: ["admin-orders"] })}
               />
             </Suspense>
           )}
