@@ -35,6 +35,7 @@ const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AdminDashboardV2 = lazy(() => import("./pages/AdminDashboardV2"));
 const PdvPage = lazy(() => import("./pages/PdvPage"));
 const DriverDashboard = lazy(() => import("./pages/DriverDashboard"));
+const DriverDashboardV2 = lazy(() => import("./pages/DriverDashboardV2"));
  const SuperAdminDashboard = lazy(() => import("./pages/SuperAdminDashboard").catch(() => {
    window.location.reload();
    return { default: () => null };
@@ -278,6 +279,14 @@ const App = () => {
                   element={
                     <RoleGuard allowedRoles={["motoboy", "admin"]} redirectTo="/" requireApproval>
                       <DriverDashboard />
+                    </RoleGuard>
+                  }
+                />
+                <Route
+                  path="/entregador2"
+                  element={
+                    <RoleGuard allowedRoles={["motoboy", "admin"]} redirectTo="/" requireApproval>
+                      <DriverDashboardV2 />
                     </RoleGuard>
                   }
                 />
