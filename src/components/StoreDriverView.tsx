@@ -582,19 +582,21 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
 
   const acceptOrder = async (orderId: string) => {
     // Optimistic UI: remove from available list immediately
-    const previousAvailable = queryClient.getQueryData<any[]>(["store-driver-available", linkedStoreIds]);
+    const availableKey = ["store-driver-available", linkedStoreIds, user?.id];
+    const myKey = ["store-driver-my-deliveries", user?.id];
+    const previousAvailable = queryClient.getQueryData<any[]>(availableKey);
     const acceptedOrder = (availableOrders || []).find((o: any) => o.id === orderId);
     if (previousAvailable) {
       queryClient.setQueryData(
-        ["store-driver-available", linkedStoreIds],
+        availableKey,
         previousAvailable.filter((o: any) => o.id !== orderId),
       );
     }
     // Add to my deliveries cache
     if (acceptedOrder) {
-      const previousMy = queryClient.getQueryData<any[]>(["store-driver-my-deliveries"]) || [];
+      const previousMy = queryClient.getQueryData<any[]>(myKey) || [];
       queryClient.setQueryData(
-        ["store-driver-my-deliveries"],
+        myKey,
         [{ ...acceptedOrder, driver_id: user?.id }, ...previousMy],
       );
     }
@@ -602,14 +604,14 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     const { error } = await supabase.rpc("driver_accept_order", { _order_id: orderId } as any);
     if (error) {
       // Revert
-      if (previousAvailable) queryClient.setQueryData(["store-driver-available", linkedStoreIds], previousAvailable);
-      queryClient.invalidateQueries({ queryKey: ["store-driver-my-deliveries"] });
+      if (previousAvailable) queryClient.setQueryData(availableKey, previousAvailable);
+      queryClient.invalidateQueries({ queryKey: myKey });
       toast.error("Não foi possível aceitar o pedido.");
     } else {
       toast.success("Pedido aceito! Adicionado à sua rota.");
       // Sync with server in background
-      queryClient.invalidateQueries({ queryKey: ["store-driver-available"] });
-      queryClient.invalidateQueries({ queryKey: ["store-driver-my-deliveries"] });
+      queryClient.invalidateQueries({ queryKey: availableKey });
+      queryClient.invalidateQueries({ queryKey: myKey });
 
       // Notify store owner in background
       if (acceptedOrder) {
