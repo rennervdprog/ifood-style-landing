@@ -184,13 +184,53 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x android/gradlew
 
-      - name: Build Debug APK
-        run: cd android && ./gradlew --version && ./gradlew assembleDebug
+      - name: Build Release APK (unsigned)
+        run: cd android && ./gradlew --version && ./gradlew assembleRelease
+
+      - name: Upload Release APK to Supabase Storage
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        if: ${{ env.SUPABASE_SERVICE_ROLE_KEY != '' }}
+        run: |
+          APK_PATH="android/app/build/outputs/apk/release/app-release-unsigned.apk"
+          if [ ! -f "$APK_PATH" ]; then
+             APK_PATH="android/app/build/outputs/apk/release/app-release.apk"
+          fi
+          VERSION=$(grep -oP 'const APP_VERSION = "\K[^"]+' src/App.tsx || echo "1.0.0")
+          
+          echo "🚀 Uploading Cliente APK v$VERSION to Supabase..."
+          
+          # Upload APK
+          curl -X POST "${SUPABASE_URL}/storage/v1/object/app-releases/itasuper-cliente.apk" \
+            -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
+            -H "Content-Type: application/vnd.android.package-archive" \
+            -H "x-upsert: true" \
+            --data-binary @"$APK_PATH"
+            
+          # Create metadata
+          cat > version-cliente.json << EOF
+          {
+            "version": "$VERSION",
+            "url": "${SUPABASE_URL}/storage/v1/object/public/app-releases/itasuper-cliente.apk",
+            "updated_at": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+            "app_name": "itasuper-cliente"
+          }
+          EOF
+          
+          # Upload metadata
+          curl -X POST "${SUPABASE_URL}/storage/v1/object/app-releases/version-cliente.json" \
+            -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
+            -H "Content-Type: application/json" \
+            -H "x-upsert: true" \
+            --data-binary @version-cliente.json
+            
+          echo "✅ Upload complete!"
 
       - uses: actions/upload-artifact@v7
         with:
-          name: itasuper-cliente-debug
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: itasuper-cliente-release
+          path: android/app/build/outputs/apk/release/app-release*.apk
           retention-days: 30
 
   build-parceiro:
