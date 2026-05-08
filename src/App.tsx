@@ -170,8 +170,11 @@ const App = () => {
     initRealtimeWatchdog();
     // Auto-update inicia imediatamente — agenda interno usa 1s antes do 1º check
     try { initAutoUpdate(); } catch {}
-    // Aviso não-bloqueante de nova versão nativa disponível (Play Store).
-    setTimeout(() => { checkAppVersion().catch(() => {}); }, 4000);
+    // Aviso não-bloqueante de nova versão nativa disponível.
+    setTimeout(() => { 
+      const mode = (import.meta.env.VITE_CAPACITOR_APP_MODE || "cliente") as "cliente" | "parceiro";
+      checkAppVersion(mode).catch(() => {}); 
+    }, 4000);
 
     // 🌐 WEB / PWA: quando a aba volta a ficar visível ou o navegador reconecta,
     // o WebSocket do Supabase costuma estar morto silenciosamente. Forçamos
