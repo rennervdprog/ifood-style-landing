@@ -12,7 +12,7 @@
 import { isCapacitorNative } from "@/lib/capacitorNative";
 import { toast } from "sonner";
 
-const LATEST_NATIVE_VERSION = "1.4.9";
+const LATEST_NATIVE_VERSION = "1.4.10";
 const PLAY_STORE_URL =
   "https://play.google.com/store/apps/details?id=app.lovable.e8d28aded6334d74be2161c8dbe24765";
 const NOTIFIED_KEY = "itasuper_update_notified_for";
