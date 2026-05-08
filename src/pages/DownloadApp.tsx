@@ -67,7 +67,7 @@ interface AppVersionData {
       name: "ItaSuper",
       isAvailableOnPlayStore: false,
       playStoreUrl: "https://play.google.com/store/apps/details?id=app.itasuper.cliente",
-      apkUrl: versions.client?.url || "https://lktzrqjvqoojlrhqnxuz.supabase.co/storage/v1/object/public/app-releases/itasuper-cliente.apk",
+      apkUrl: versions.client?.url || "https://qkjhguziuchqsbxzruea.supabase.co/storage/v1/object/public/app-releases/itasuper-cliente.apk",
       version: versions.client?.version || "1.0.0",
       icon: "/icon-cliente.png",
       description: "Peça comida, mercado e muito mais com o melhor delivery da região."
@@ -76,7 +76,7 @@ interface AppVersionData {
       name: "ItaSuper Parceiro",
       isAvailableOnPlayStore: false,
       playStoreUrl: "https://play.google.com/store/apps/details?id=app.itasuper.parceiro",
-      apkUrl: versions.partner?.url || "https://lktzrqjvqoojlrhqnxuz.supabase.co/storage/v1/object/public/app-releases/itasuper-parceiro.apk",
+      apkUrl: versions.partner?.url || "https://qkjhguziuchqsbxzruea.supabase.co/storage/v1/object/public/app-releases/itasuper-parceiro.apk",
       version: versions.partner?.version || "1.0.0",
       icon: "/icon-parceiro.png",
       description: "Gerencie sua loja e suas entregas de forma profissional e eficiente."
