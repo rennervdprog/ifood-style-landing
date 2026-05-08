@@ -379,7 +379,7 @@ const ClientHomeContent = () => {
     staleTime: 1000 * 60,
   });
 
-  const hasOrders = (recentOrders && recentOrders.length > 0);
+   const hasOrders = (recentOrders && recentOrders.length > 0) || searchQuery.length > 0;
 
   // All available stores for the city — always loaded so every client sees options
    const { data: suggestedStores, isLoading: loadingStores } = useQuery({
