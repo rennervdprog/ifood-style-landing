@@ -1022,9 +1022,19 @@ const AdminDashboard = () => {
   };
 
   // ── COMPUTED VALUES ──
-  const pendingCount = orders?.filter(o => o.status === "pendente").length || 0;
-  const preparingCount = orders?.filter(o => o.status === "preparando").length || 0;
-  const readyCount = orders?.filter(o => o.status === "pronto_para_entrega").length || 0;
+  // Memoizados — antes rodavam 3 filter() a cada render
+  const pendingCount = useMemo(
+    () => orders?.filter(o => o.status === "pendente").length || 0,
+    [orders]
+  );
+  const preparingCount = useMemo(
+    () => orders?.filter(o => o.status === "preparando").length || 0,
+    [orders]
+  );
+  const readyCount = useMemo(
+    () => orders?.filter(o => o.status === "pronto_para_entrega").length || 0,
+    [orders]
+  );
   const delayedOrders = useMemo(() => {
     if (!orders) return [];
     const now = Date.now();
@@ -1033,9 +1043,16 @@ const AdminDashboard = () => {
       return elapsedMin > 20 && ["pendente", "preparando"].includes(o.status);
     });
   }, [orders]);
-  const todayOrders = orders?.filter(o => new Date(o.created_at).toDateString() === new Date().toDateString() && !["cancelado", "aguardando_pagamento"].includes(o.status)) || [];
-  const todayTotal = sumMoney(todayOrders.map((order) => order.total_price));
-  const todayCount = todayOrders.length;
+  // Memoizado — recalculava todos os Date() a cada render
+  const { todayOrders, todayTotal, todayCount } = useMemo(() => {
+    const today = new Date().toDateString();
+    const t = (orders?.filter(o => new Date(o.created_at).toDateString() === today && !["cancelado", "aguardando_pagamento"].includes(o.status))) || [];
+    return {
+      todayOrders: t,
+      todayTotal: sumMoney(t.map((order: any) => order.total_price)),
+      todayCount: t.length,
+    };
+  }, [orders]);
 
   const avgDeliveryTime = useMemo(() => {
     const delivered = (allOrders || []).filter((o: any) => {
@@ -1050,14 +1067,30 @@ const AdminDashboard = () => {
     return Math.round(totalMinutes / delivered.length);
   }, [allOrders]);
 
-  const filteredOrders = (orders?.filter(o => {
-    if (activeTab === "delivery") return o.status === "saiu_entrega" || o.status === "em_transito";
-    return o.status === activeTab;
-  }) || []).filter(o => {
-    if (activeTab !== "entregue" || !settlementSearch.trim()) return true;
-    const search = settlementSearch.toLowerCase().trim();
-    return o.id.slice(0, 8).toLowerCase().includes(search) || (o.driver_id ? getDriverName(o.driver_id).toLowerCase().includes(search) : false) || getClientName(o.client_id).toLowerCase().includes(search);
-  });
+  // Memoizado: evita rodar 2 filter() a cada render quando nada mudou
+  const filteredOrders = useMemo(() => {
+    return (orders?.filter(o => {
+      if (activeTab === "delivery") return o.status === "saiu_entrega" || o.status === "em_transito";
+      return o.status === activeTab;
+    }) || []).filter(o => {
+      if (activeTab !== "entregue" || !settlementSearch.trim()) return true;
+      const search = settlementSearch.toLowerCase().trim();
+      return o.id.slice(0, 8).toLowerCase().includes(search) || (o.driver_id ? getDriverName(o.driver_id).toLowerCase().includes(search) : false) || getClientName(o.client_id).toLowerCase().includes(search);
+    });
+  }, [orders, activeTab, settlementSearch]);
+
+  // Contadores memoizados — antes eram recalculados 4x por render via IIFE inline
+  const orderCounters = useMemo(() => {
+    const list = orders || [];
+    let pendente = 0, preparando = 0, pronto = 0, delivery = 0;
+    for (const o of list) {
+      if (o.status === "pendente") pendente++;
+      else if (o.status === "preparando") preparando++;
+      else if (o.status === "pronto_para_entrega") pronto++;
+      else if (o.status === "saiu_entrega" || o.status === "em_transito") delivery++;
+    }
+    return { pendente, preparando, pronto, delivery, total: pendente + preparando + pronto + delivery };
+  }, [orders]);
 
   const isOwnDelivery = (store as any)?.delivery_mode === "own";
 
@@ -1890,49 +1923,41 @@ const AdminDashboard = () => {
           {dashboardTab === "orders" && store && (
             <>
               {/* Quick summary counters */}
-              {(() => {
-                const pendingCount = orders?.filter(o => o.status === "pendente").length || 0;
-                const preparingCount = orders?.filter(o => o.status === "preparando").length || 0;
-                const readyCount = orders?.filter(o => o.status === "pronto_para_entrega").length || 0;
-                const deliveryCount = orders?.filter(o => o.status === "saiu_entrega" || o.status === "em_transito").length || 0;
-                const totalActive = pendingCount + preparingCount + readyCount + deliveryCount;
-                
-                return totalActive > 0 ? (
+              {orderCounters.total > 0 && (
                   <div className="px-4 pt-3 pb-1">
                     <div className="grid grid-cols-4 gap-2">
                       <button onClick={() => { setActiveTab("pendente"); setBatchSelected(new Set()); }}
                         className={`relative flex flex-col items-center p-2.5 rounded-xl border transition-all ${
-                          pendingCount > 0 ? "bg-amber-50 dark:bg-amber-500/10 border-amber-300 dark:border-amber-500/30 shadow-sm" : "bg-card border-border"
+                          orderCounters.pendente > 0 ? "bg-amber-50 dark:bg-amber-500/10 border-amber-300 dark:border-amber-500/30 shadow-sm" : "bg-card border-border"
                         }`}>
-                        {pendingCount > 0 && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-400 rounded-full animate-ping" />}
-                        <span className={`text-xl font-black ${pendingCount > 0 ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>{pendingCount}</span>
+                        {orderCounters.pendente > 0 && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-400 rounded-full animate-ping" />}
+                        <span className={`text-xl font-black ${orderCounters.pendente > 0 ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>{orderCounters.pendente}</span>
                         <span className="text-[9px] font-bold text-muted-foreground mt-0.5">Novos</span>
                       </button>
                       <button onClick={() => { setActiveTab("preparando"); setBatchSelected(new Set()); }}
                         className={`flex flex-col items-center p-2.5 rounded-xl border transition-all ${
-                          preparingCount > 0 ? "bg-orange-50 dark:bg-orange-500/10 border-orange-300 dark:border-orange-500/30 shadow-sm" : "bg-card border-border"
+                          orderCounters.preparando > 0 ? "bg-orange-50 dark:bg-orange-500/10 border-orange-300 dark:border-orange-500/30 shadow-sm" : "bg-card border-border"
                         }`}>
-                        <span className={`text-xl font-black ${preparingCount > 0 ? "text-orange-600 dark:text-orange-400" : "text-muted-foreground"}`}>{preparingCount}</span>
+                        <span className={`text-xl font-black ${orderCounters.preparando > 0 ? "text-orange-600 dark:text-orange-400" : "text-muted-foreground"}`}>{orderCounters.preparando}</span>
                         <span className="text-[9px] font-bold text-muted-foreground mt-0.5">Preparo</span>
                       </button>
                       <button onClick={() => { setActiveTab("pronto_para_entrega"); setBatchSelected(new Set()); }}
                         className={`flex flex-col items-center p-2.5 rounded-xl border transition-all ${
-                          readyCount > 0 ? "bg-blue-50 dark:bg-blue-500/10 border-blue-300 dark:border-blue-500/30 shadow-sm" : "bg-card border-border"
+                          orderCounters.pronto > 0 ? "bg-blue-50 dark:bg-blue-500/10 border-blue-300 dark:border-blue-500/30 shadow-sm" : "bg-card border-border"
                         }`}>
-                        <span className={`text-xl font-black ${readyCount > 0 ? "text-blue-600 dark:text-blue-400" : "text-muted-foreground"}`}>{readyCount}</span>
+                        <span className={`text-xl font-black ${orderCounters.pronto > 0 ? "text-blue-600 dark:text-blue-400" : "text-muted-foreground"}`}>{orderCounters.pronto}</span>
                         <span className="text-[9px] font-bold text-muted-foreground mt-0.5">Prontos</span>
                       </button>
                       <button onClick={() => { setActiveTab("delivery"); setBatchSelected(new Set()); }}
                         className={`flex flex-col items-center p-2.5 rounded-xl border transition-all ${
-                          deliveryCount > 0 ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-300 dark:border-emerald-500/30 shadow-sm" : "bg-card border-border"
+                          orderCounters.delivery > 0 ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-300 dark:border-emerald-500/30 shadow-sm" : "bg-card border-border"
                         }`}>
-                        <span className={`text-xl font-black ${deliveryCount > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}`}>{deliveryCount}</span>
+                        <span className={`text-xl font-black ${orderCounters.delivery > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}`}>{orderCounters.delivery}</span>
                         <span className="text-[9px] font-bold text-muted-foreground mt-0.5">Entrega</span>
                       </button>
                     </div>
                   </div>
-                ) : null;
-              })()}
+              )}
 
               {/* Order status tabs */}
               <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border">
