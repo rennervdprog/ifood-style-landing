@@ -15,6 +15,7 @@ import DebugOverlay from "@/components/DebugOverlay";
 import { initCapacitorNative, isCapacitorNative, consumePendingPushNavigation } from "@/lib/capacitorNative";
 import { initCapacitorLifecycle } from "@/lib/capacitorLifecycle";
 import { initAutoUpdate } from "@/lib/capacitorAutoUpdate";
+import { checkAppVersion } from "@/lib/appVersionCheck";
 import { supabase } from "@/integrations/supabase/client";
 import CapacitorRouteGuard from "@/components/CapacitorRouteGuard";
 import StoreAppGuard from "@/components/StoreAppGuard";
@@ -167,6 +168,8 @@ const App = () => {
     initCapacitorLifecycle().catch(() => {});
     // Auto-update inicia imediatamente — agenda interno usa 1s antes do 1º check
     try { initAutoUpdate(); } catch {}
+    // Aviso não-bloqueante de nova versão nativa disponível (Play Store).
+    setTimeout(() => { checkAppVersion().catch(() => {}); }, 4000);
 
     // 🌐 WEB / PWA: quando a aba volta a ficar visível ou o navegador reconecta,
     // o WebSocket do Supabase costuma estar morto silenciosamente. Forçamos

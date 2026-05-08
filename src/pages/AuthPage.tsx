@@ -7,6 +7,15 @@ import { Mail, Lock, Eye, EyeOff, KeyRound, FileText, ShoppingBag, CheckCircle2,
  import { formatDocument, sanitizeDocument, validateDocument } from "@/lib/documentFormat";
 import { isPartnerCapacitorApp, persistCapacitorAppMode } from "@/lib/capacitorAppMode";
 import { PARTNER_ROUTES } from "@/components/CapacitorRouteGuard";
+import BiometricLoginButton from "@/components/BiometricLoginButton";
+import {
+  isBiometricAvailable,
+  isBiometricEnabled,
+  enableBiometricLogin,
+  wasBiometricPromptDismissed,
+  markBiometricPromptDismissed,
+} from "@/lib/biometricAuth";
+import { isCapacitorNative } from "@/lib/capacitorNative";
 
 type AuthMode = "login" | "signup" | "forgot" | "reset";
 
@@ -124,6 +133,30 @@ const AuthPage = () => {
       if (mode === "login") {
         const { data: signInData, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
         if (error) throw error;
+
+        // Offer to enable biometric login (Capacitor only, once per device)
+        if (
+          isCapacitorNative() &&
+          !isBiometricEnabled() &&
+          !wasBiometricPromptDismissed()
+        ) {
+          try {
+            const available = await isBiometricAvailable();
+            if (available) {
+              const accept = window.confirm(
+                "Deseja ativar login por biometria?\n\nDa próxima vez, basta usar sua digital ou Face ID."
+              );
+              if (accept) {
+                const ok = await enableBiometricLogin(email.trim(), password);
+                if (ok) toast.success("Biometria ativada!");
+              } else {
+                markBiometricPromptDismissed();
+              }
+            }
+          } catch (e) {
+            console.warn("[Auth] biometric enable prompt failed:", e);
+          }
+        }
 
         // Detect accounts migrated from Lovable Cloud — force them to redefine their password
         const meta = (signInData?.user?.user_metadata || {}) as Record<string, any>;
@@ -302,6 +335,9 @@ const AuthPage = () => {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
+          {mode === "login" && (
+            <BiometricLoginButton onSuccess={() => navigate("/cliente", { replace: true })} />
+          )}
           {mode !== "reset" && (
             <div>
               <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">E-mail</label>

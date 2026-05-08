@@ -52,6 +52,7 @@
         "@tanstack/react-query": "^5.83.0",
         "@types/leaflet": "^1.9.21",
         "canvas-confetti": "^1.9.3",
+        "capacitor-native-biometric": "^4.2.2",
         "capacitor-native-settings": "^8.1.0",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
@@ -971,6 +972,8 @@
     "caniuse-lite": ["caniuse-lite@1.0.30001787", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/caniuse-lite/-/caniuse-lite-1.0.30001787.tgz", {}, "sha512-mNcrMN9KeI68u7muanUpEejSLghOKlVhRqS/Za2IeyGllJ9I9otGpR9g3nsw7n4W378TE/LyIteA0+/FOZm4Kg=="],
 
     "canvas-confetti": ["canvas-confetti@1.9.4", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/canvas-confetti/-/canvas-confetti-1.9.4.tgz", {}, "sha512-yxQbJkAVrFXWNbTUjPqjF7G+g6pDotOUHGbkZq2NELZUMDpiJ85rIEazVb8GTaAptNW2miJAXbs1BtioA251Pw=="],
+
+    "capacitor-native-biometric": ["capacitor-native-biometric@4.2.2", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/capacitor-native-biometric/-/capacitor-native-biometric-4.2.2.tgz", { "dependencies": { "@capacitor/core": "^3.4.3" } }, "sha512-stg0h48UxgkNuNcCAgCXLp2DUspRQs79bCBPntpCBhsDxk2bhDRUu+J/QpFtDQHG4M4DioSUcYaAsVw2N6N7wA=="],
 
     "capacitor-native-settings": ["capacitor-native-settings@8.1.0", "", { "peerDependencies": { "@capacitor/core": ">=8.0.2" } }, "sha512-bcIsKO0EBChdiG2l7RAt70cKxz0Vygfx7quN6tSoNlwziCct8f5EgT8xmwNit+7F712ojl54xNaEddu87EpkjQ=="],
 
@@ -1999,6 +2002,8 @@
     "anymatch/picomatch": ["picomatch@2.3.1", "", {}, "sha512-JU3teHTNjmE2VCGFzuY8EXzCDVwEqB2a8fsIvwaStHhAWJEeVd1o1QD80CU6+ZdEXXSLbSsuLwJjkCBWqRQUVA=="],
 
     "babel-plugin-polyfill-corejs2/semver": ["semver@6.3.1", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/semver/-/semver-6.3.1.tgz", { "bin": "bin/semver.js" }, "sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA=="],
+
+    "capacitor-native-biometric/@capacitor/core": ["@capacitor/core@3.9.0", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@capacitor/core/-/core-3.9.0.tgz", { "dependencies": { "tslib": "^2.1.0" } }, "sha512-j1lL0+/7stY8YhIq1Lm6xixvUqIn89vtyH5ZpJNNmcZ0kwz6K9eLkcG6fvq1UWMDgSVZg9JrRGSFhb4LLoYOsw=="],
 
     "chokidar/glob-parent": ["glob-parent@5.1.2", "", { "dependencies": { "is-glob": "^4.0.1" } }, "sha512-AOIgSQCepiJYwP3ARnGx+5VnTu2HBYdzbGP45eLw1vr3zB3vZLeyed1sC9hnbcOc9/SrMyM5RPQrkGz4aS9Zow=="],
 

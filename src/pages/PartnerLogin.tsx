@@ -8,6 +8,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Mail, Lock, Eye, EyeOff, Store, Shield, Bike } from "lucide-react";
 import { resolvePartnerDashboard } from "@/lib/partnerDashboard";
+import BiometricLoginButton from "@/components/BiometricLoginButton";
+import {
+  isBiometricAvailable,
+  isBiometricEnabled,
+  enableBiometricLogin,
+  wasBiometricPromptDismissed,
+  markBiometricPromptDismissed,
+} from "@/lib/biometricAuth";
 
 const PartnerLogin = () => {
   const { user, loading: authLoading } = useAuth();
@@ -81,6 +89,31 @@ const PartnerLogin = () => {
       });
       if (error) throw error;
       toast.success("Login realizado!");
+
+      // Offer biometric login (Capacitor only)
+      if (
+        isCapacitorNative() &&
+        !isBiometricEnabled() &&
+        !wasBiometricPromptDismissed()
+      ) {
+        try {
+          const available = await isBiometricAvailable();
+          if (available) {
+            const accept = window.confirm(
+              "Deseja ativar login por biometria?\n\nDa próxima vez, basta usar sua digital ou Face ID."
+            );
+            if (accept) {
+              const ok = await enableBiometricLogin(email.trim(), password);
+              if (ok) toast.success("Biometria ativada!");
+            } else {
+              markBiometricPromptDismissed();
+            }
+          }
+        } catch (e) {
+          console.warn("[PartnerLogin] biometric enable prompt failed:", e);
+        }
+      }
+
       if (data.user) await redirectByRole(data.user.id);
     } catch (err: any) {
       toast.error(err.message || "Erro ao autenticar.");
@@ -125,6 +158,7 @@ const PartnerLogin = () => {
           {mode === "login" ? (
             <>
               <form onSubmit={handleSubmit} className="space-y-4">
+                <BiometricLoginButton />
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <input
