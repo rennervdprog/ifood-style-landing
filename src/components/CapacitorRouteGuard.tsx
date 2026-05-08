@@ -84,6 +84,7 @@ const CapacitorRouteGuard = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const [appMode, setAppMode] = useState<CapacitorAppMode | null>(() => getCapacitorAppMode());
+  const [blocking, setBlocking] = useState(false);
 
   useEffect(() => {
     if (!isCapacitorNative()) return;
@@ -117,21 +118,27 @@ const CapacitorRouteGuard = () => {
        );
  
        if (!isAllowed) {
+         setBlocking(true);
          if (!authLoading && user) {
            (async () => {
              const dest = await resolvePartnerDashboard(user.id);
              navigate(dest, { replace: true });
+             setBlocking(false);
            })();
          } else if (!authLoading) {
            navigate("/portal-parceiro", { replace: true });
+           setBlocking(false);
          }
        } else if (path === "/portal-parceiro" && user && !authLoading) {
+         setBlocking(false);
          (async () => {
            const dest = await resolvePartnerDashboard(user.id);
            if (dest !== "/portal-parceiro") {
              navigate(dest, { replace: true });
            }
          })();
+       } else {
+         setBlocking(false);
        }
      } else if (currentMode === "client") {
        const isPartnerRoute = PARTNER_ROUTES.some(
@@ -154,6 +161,13 @@ const CapacitorRouteGuard = () => {
      }
   }, [location.pathname, navigate, user?.id, authLoading, appMode]);
 
+  if (blocking) {
+    return (
+      <div className="fixed inset-0 z-[9999] bg-background flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
   return null;
 };
 
