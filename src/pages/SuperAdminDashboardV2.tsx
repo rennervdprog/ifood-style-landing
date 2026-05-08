@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import AdminApprovals from "@/components/AdminApprovals";
@@ -61,7 +62,10 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
   { key: "logs", label: "Logs", icon: FileText, group: "Sistema" },
 ];
 
-const SuperAdminDashboard = () => {
+ const OverviewTab = lazy(() => import("./superadmin/tabs/OverviewTab"));
+ const FinanceTabModular = lazy(() => import("./superadmin/tabs/FinanceTab"));
+
+ const SuperAdminDashboardV2 = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -959,310 +963,27 @@ const SuperAdminDashboard = () => {
                 queryClient={queryClient}
               />
             )}
-            {activeTab === "financeiro" && (
-              <FinanceTab
-                storeSettlement={storeSettlement}
-                driverSettlement={driverSettlement}
-                financeTotals={financeTotals}
-                financeFilter={financeFilter}
-                setFinanceFilter={setFinanceFilter}
-                financeSubTab={financeSubTab}
-                setFinanceSubTab={setFinanceSubTab}
-                selectedStore={selectedStore}
-                setSelectedStore={setSelectedStore}
-                stores={stores || []}
-                loading={financeLoading}
-                generateStoreWhatsApp={generateStoreWhatsApp}
-                storeBalances={storeBalances || []}
-                queryClient={queryClient}
-                withdrawalRequests={withdrawalRequests || []}
-                parentStorePlans={parentStorePlans || []}
-              />
-            )}
-            {activeTab === "dashboard" && (
-              <>
-                {/* Date filter */}
-                <div className="flex gap-2 mb-4">
-                  {(["today", "yesterday", "week"] as DateFilter[]).map(f => (
-                    <button
-                      key={f}
-                      onClick={() => setDateFilter(f)}
-                      className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${
-                        dateFilter === f ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {filterLabels[f]}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Metric cards */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-                  {isLoading ? (
-                    Array.from({ length: 4 }).map((_, i) => (
-                      <div key={i} className="bg-card rounded-2xl p-3 animate-pulse h-20 border border-border" />
-                    ))
-                  ) : (
-                    <>
-                      <MetricCard icon={ShoppingBag} label="Vendas" value={`${formatBRL(metrics.totalSales)}`} sublabel={`${metrics.totalOrders} pedidos`} />
-                      <MetricCard icon={TrendingUp} label="Comissão Total" value={`${formatBRL(metrics.commission)}`} sublabel={`📦 Delivery: ${formatBRL(metrics.commissionDelivery)}`} sublabel2={`🖥️ PDV: ${formatBRL(metrics.commissionPdv)}`} highlight />
-                      <MetricCard icon={Clock} label="Ativos" value={String(metrics.activeOrders)} sublabel="em andamento" />
-                      <MetricCard icon={AlertTriangle} label="Atraso" value={String(delayedOrders.length)} sublabel="> 60 min" alert={delayedOrders.length > 0} />
-                    </>
-                  )}
-                </div>
-
-                {/* Visitas da página inicial */}
-                <div className="mb-6">
-                  <PageViewsCard />
-                </div>
-
-                {/* Two-column layout for desktop */}
-                <div className="grid lg:grid-cols-2 gap-4 mb-6">
-                  {/* Hourly chart */}
-                  <div className="bg-card rounded-2xl p-4 border border-border">
-                    <h2 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-                      <DollarSign className="h-4 w-4 text-primary" />
-                      Pedidos por hora
-                    </h2>
-                    {isLoading ? (
-                      <div className="h-40 animate-pulse bg-muted rounded-xl" />
-                    ) : hourlyData.length > 0 ? (
-                      <>
-                      {/* Gráfico Delivery vs PDV */}
-                      {adminChartData.dailyData.length > 1 && (
-                        <div className="bg-card/60 rounded-2xl border border-border/30 p-4 mb-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <p className="text-xs font-bold text-foreground">Evolução — Delivery vs PDV</p>
-                            <div className="text-[10px] text-muted-foreground flex gap-3">
-                              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary inline-block"/>Delivery</span>
-                              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500 inline-block"/>PDV</span>
-                            </div>
-                          </div>
-                          <div className="h-44">
-                            <DailySalesChart data={adminChartData.dailyData} showPdv={adminChartData.totalPdv > 0} />
-                          </div>
-                          <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-border/30 text-center">
-                            <div>
-                              <p className="text-[10px] text-muted-foreground">Delivery</p>
-                              <p className="text-sm font-black text-primary">{formatBRL(adminChartData.totalDelivery)}</p>
-                            </div>
-                            <div className="border-x border-border/30">
-                              <p className="text-[10px] text-muted-foreground">PDV</p>
-                              <p className="text-sm font-black text-blue-500">{formatBRL(adminChartData.totalPdv)}</p>
-                            </div>
-                            <div>
-                              <p className="text-[10px] text-muted-foreground">Ticket Médio</p>
-                              <p className="text-sm font-black text-foreground">{formatBRL(adminChartData.ticketMedio)}</p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Pagamentos */}
-                      {adminChartData.paymentData.length > 0 && (
-                        <div className="bg-card/60 rounded-2xl border border-border/30 p-4 mb-4">
-                          <p className="text-xs font-bold text-foreground mb-3">Formas de Pagamento</p>
-                          <div className="h-32">
-                            <PaymentBreakdownChart data={adminChartData.paymentData} />
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Horário de pico */}
-                      <div className="bg-card/60 rounded-2xl border border-border/30 p-4">
-                        <p className="text-xs font-bold text-foreground mb-3">Horário de Pico</p>
-                        <HourlyChart data={adminChartData.hourlyData} />
-                      </div>
-
-                      {/* Gráfico original (por hora) mantido abaixo */}
-                      <div className="bg-card/60 rounded-2xl border border-border/30 p-4 mt-4">
-                        <p className="text-xs font-bold text-foreground mb-3">Pedidos por Hora (original)</p>
-                        <ResponsiveContainer width="100%" height={180}>
-                          <BarChart data={hourlyData}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                            <XAxis dataKey="hour" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
-                            <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} allowDecimals={false} />
-                            <Tooltip
-                              contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 12, fontSize: 12 }}
-                              labelStyle={{ color: "hsl(var(--muted-foreground))" }}
-                              formatter={(value: number, name: string) => [
-                                name === "count" ? `${value} pedidos` : `${formatBRL(value)}`,
-                                name === "count" ? "Pedidos" : "Receita"
-                              ]}
-                            />
-                            <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                      </>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center py-10 text-center">
-                        <div className="w-12 h-12 bg-muted/50 rounded-2xl flex items-center justify-center mb-3">
-                          <ShoppingBag className="h-5 w-5 text-muted-foreground/40" />
-                        </div>
-                        <p className="text-sm text-muted-foreground font-medium">Sem pedidos no período</p>
-                        <p className="text-xs text-muted-foreground/60 mt-1">Selecione outro intervalo de datas</p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Conciliation table */}
-                  <div className="bg-card rounded-2xl p-4 border border-border">
-                    <h2 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-                      <Users className="h-4 w-4 text-primary" />
-                      Conciliação por Loja
-                    </h2>
-                    {isLoading ? (
-                      <div className="space-y-2">
-                        {Array.from({ length: 3 }).map((_, i) => (
-                          <div key={i} className="h-12 bg-muted rounded-xl animate-pulse" />
-                        ))}
-                      </div>
-                    ) : storeConciliation.length > 0 ? (
-                      <div className="space-y-2 max-h-[220px] overflow-y-auto">
-                        {storeConciliation.map((s, i) => {
-                          const plan = parentStorePlans?.find((p: any) => p.store_id === stores?.find((st: any) => st.name === s.name)?.id);
-                          const isFixed = plan?.plan_type === "fixed";
-                          return (
-                          <div key={i} className="flex items-center justify-between p-3 bg-muted/50 rounded-xl">
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-bold text-foreground truncate">{s.name}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {s.orders} pedidos
-                                {isFixed && <span className="ml-1 text-[10px] font-bold text-primary">• Plano Fixo</span>}
-                              </p>
-                            </div>
-                            <div className="text-right ml-3">
-                              <p className="text-sm font-bold text-foreground">{formatBRL(s.totalSold)}</p>
-                              <p className={`text-xs font-bold ${isFixed ? "text-muted-foreground" : "text-primary"}`}>
-                                {isFixed ? "Sem comissão" : `${formatBRL(s.commission)}`}
-                              </p>
-                            </div>
-                          </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center py-10 text-center">
-                        <div className="w-12 h-12 bg-muted/50 rounded-2xl flex items-center justify-center mb-3">
-                          <Users className="h-5 w-5 text-muted-foreground/40" />
-                        </div>
-                        <p className="text-sm text-muted-foreground font-medium">Sem vendas no período</p>
-                        <p className="text-xs text-muted-foreground/60 mt-1">As vendas por loja aparecerão aqui</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Delayed orders */}
-                {delayedOrders.length > 0 && (
-                  <div className="bg-destructive/5 border border-destructive/30 rounded-2xl p-4 mb-4">
-                    <h2 className="text-sm font-bold text-destructive mb-3 flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4" />
-                      Pedidos em Atraso ({delayedOrders.length})
-                    </h2>
-                    <div className="space-y-2">
-                      {delayedOrders.map((o: any) => {
-                        const mins = Math.floor((Date.now() - new Date(o.created_at).getTime()) / 60000);
-                        return (
-                          <div key={o.id} className="flex items-center justify-between p-3 bg-destructive/5 rounded-xl">
-                            <div>
-                              <p className="text-sm font-bold text-foreground">{o.stores?.name}</p>
-                              <p className="text-xs text-muted-foreground">#{o.id.slice(0, 8)} — {o.status}</p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-bold text-destructive animate-pulse">{mins} min</span>
-                              <button
-                                onClick={async () => {
-                                  if (!confirm("Cancelar este pedido?")) return;
-                                  const { error } = await supabase.rpc("admin_cancel_order", { _order_id: o.id });
-                                  if (error) { toast.error("Erro ao cancelar."); return; }
-                                  toast.success("Pedido cancelado!");
-                                  queryClient.invalidateQueries({ queryKey: ["admin-all-orders"] });
-                                }}
-                                className="bg-destructive/20 text-destructive px-2 py-1 rounded-lg text-xs font-bold hover:bg-destructive/40"
-                              >
-                                <XCircle className="h-3.5 w-3.5" />
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-                {/* Compliance Alerts */}
-                {complianceAlerts && complianceAlerts.length > 0 && (
-                  <div className="bg-amber-500/5 border border-amber-500/30 rounded-2xl p-4 mb-4">
-                    <h2 className="text-sm font-bold text-amber-600 dark:text-amber-400 mb-3 flex items-center gap-2">
-                      <Shield className="h-4 w-4" />
-                      Alertas de Compliance ({complianceAlerts.length})
-                    </h2>
-                    <div className="space-y-2">
-                      {complianceAlerts.map((alert: any) => (
-                        <div key={alert.id} className="flex items-center justify-between p-3 bg-amber-500/5 rounded-xl">
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-bold text-foreground">{(alert as any).stores?.name || "Loja"}</p>
-                            <p className="text-xs text-muted-foreground">{alert.message}</p>
-                            <p className="text-[10px] text-muted-foreground mt-0.5">
-                              {new Date(alert.created_at).toLocaleDateString("pt-BR")}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2 ml-3">
-                            <button
-                              onClick={async () => {
-                                const { error } = await supabase
-                                  .from("compliance_alerts" as any)
-                                  .update({ is_resolved: true, resolved_at: new Date().toISOString() } as any)
-                                  .eq("id", alert.id);
-                                if (error) { toast.error("Erro ao resolver."); return; }
-                                toast.success("Alerta resolvido!");
-                                queryClient.invalidateQueries({ queryKey: ["compliance-alerts"] });
-                              }}
-                              className="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-2 py-1 rounded-lg text-xs font-bold hover:bg-emerald-500/40"
-                            >
-                              <CheckCircle2 className="h-3.5 w-3.5" />
-                            </button>
-                            <button
-                              onClick={async () => {
-                                if (!confirm("Suspender esta loja por violação de regras?")) return;
-                                const storeId = alert.store_id;
-                                const { error } = await supabase.from("stores").update({ status: "bloqueado" as any }).eq("id", storeId);
-                                if (error) { toast.error("Erro ao suspender."); return; }
-                                await supabase
-                                  .from("compliance_alerts" as any)
-                                  .update({ is_resolved: true, resolved_at: new Date().toISOString() } as any)
-                                  .eq("id", alert.id);
-                                toast.success("Loja suspensa por violação!");
-                                queryClient.invalidateQueries({ queryKey: ["compliance-alerts"] });
-                                queryClient.invalidateQueries({ queryKey: ["admin-all-stores"] });
-                              }}
-                              className="bg-destructive/20 text-destructive px-2 py-1 rounded-lg text-xs font-bold hover:bg-destructive/40"
-                            >
-                              <XCircle className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Empty state when nothing to show */}
-                {!isLoading && metrics.totalOrders === 0 && delayedOrders.length === 0 && (!complianceAlerts || complianceAlerts.length === 0) && (
-                  <div className="flex flex-col items-center justify-center py-16 text-center">
-                    <div className="w-24 h-24 bg-muted/50 rounded-3xl flex items-center justify-center mb-5">
-                      <ShoppingBag className="h-12 w-12 text-muted-foreground/30" />
-                    </div>
-                    <h3 className="text-lg font-black text-foreground mb-2">Nenhum pedido no período 📭</h3>
-                    <p className="text-sm text-muted-foreground max-w-xs">
-                      Selecione outro período ou aguarde novos pedidos chegarem na plataforma.
-                    </p>
-                  </div>
-                )}
-              </>
-            )}
+             <Suspense fallback={<div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+               {activeTab === "financeiro" && (
+                 <FinanceTabModular
+                   isAdmin={!!isAdmin}
+                   testStoreIds={testStoreIds}
+                   stores={stores || []}
+                   parentStorePlans={parentStorePlans || []}
+                 />
+               )}
+               {activeTab === "dashboard" && (
+                 <OverviewTab
+                   metrics={metrics}
+                   adminChartData={adminChartData}
+                   dateFilter={dateFilter}
+                   setDateFilter={setDateFilter}
+                   filterLabels={filterLabels}
+                   delayedOrders={delayedOrders}
+                   complianceAlerts={complianceAlerts || []}
+                 />
+               )}
+             </Suspense>
           </div>
         </div>
       </main>
@@ -1271,19 +992,6 @@ const SuperAdminDashboard = () => {
 };
 
 // ─── Finance Tab ───
-const FinanceTab = ({
-  storeSettlement, driverSettlement, financeTotals,
-  financeFilter, setFinanceFilter,
-  financeSubTab, setFinanceSubTab,
-  selectedStore, setSelectedStore,
-  stores, loading,
-  generateStoreWhatsApp,
-  storeBalances, queryClient,
-  withdrawalRequests,
-  parentStorePlans,
-}: {
-  storeSettlement: any[]; driverSettlement: any[];
-  financeTotals: { totalVolume: number; grossProfit: number; totalDriverFees: number };
   financeFilter: "week" | "month"; setFinanceFilter: (f: "week" | "month") => void;
   financeSubTab: "stores" | "drivers" | "subaccounts"; setFinanceSubTab: (t: "stores" | "drivers" | "subaccounts") => void;
   selectedStore: string; setSelectedStore: (s: string) => void;
@@ -2273,44 +1981,6 @@ const FinanceTab = ({
 };
 
 // ─── Metric Card ───
-const MetricCard = ({ icon: Icon, label, value, sublabel, sublabel2, highlight, alert }: {
-  icon: React.ElementType; label: string; value: string; sublabel: string; sublabel2?: string; highlight?: boolean; alert?: boolean;
-}) => (
-  <div className={`bg-card rounded-2xl p-4 border ${alert ? "border-destructive/50" : "border-border"}`}>
-    <div className="flex items-center gap-2 mb-2">
-      <Icon className={`h-4 w-4 ${highlight ? "text-primary" : alert ? "text-destructive" : "text-muted-foreground"}`} />
-      <span className="text-xs text-muted-foreground">{label}</span>
-    </div>
-    <p className={`text-xl font-black ${highlight ? "text-primary" : alert ? "text-destructive" : "text-foreground"}`}>{value}</p>
-    <p className="text-xs text-muted-foreground">{sublabel}</p>
-    {sublabel2 && <p className="text-[10px] text-muted-foreground/70 mt-0.5">{sublabel2}</p>}
-  </div>
-);
-
-// ─── Saques Tab ───
-const SaquesTab = ({ withdrawalRequests, pendingWithdrawals, drivers, queryClient }: {
-  withdrawalRequests: any[] | undefined; pendingWithdrawals: any[]; drivers: any[] | undefined; queryClient: any;
-}) => {
-  const [saquesSubTab, setSaquesSubTab] = useState<"pendentes" | "historico">("pendentes");
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-
-  const pendingList = (withdrawalRequests || []).filter((w: any) => w.status === "solicitado")
-    .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-  const historyList = (withdrawalRequests || []).filter((w: any) => w.status !== "solicitado")
-    .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-  const handleDelete = async (req: any) => {
-    if (deletingId === req.id) {
-      const { error } = await supabase.from("withdrawal_requests" as any).delete().eq("id", req.id);
-      if (error) toast.error("Erro ao excluir.");
-      else toast.success(`🗑️ Solicitação excluída.`);
-      setDeletingId(null);
-      queryClient.invalidateQueries({ queryKey: ["withdrawal-requests"] });
-    } else {
-      setDeletingId(req.id);
-      setTimeout(() => setDeletingId(null), 4000);
-    }
-  };
 
   const handleConfirmPayment = async (req: any, driverName: string) => {
     const { error: updateError } = await supabase
@@ -3350,4 +3020,4 @@ const PagamentosSplitTab = ({ stores }: { stores: any[] }) => {
   );
 };
 
-export default SuperAdminDashboard;
+export default SuperAdminDashboardV2;
