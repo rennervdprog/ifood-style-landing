@@ -170,16 +170,22 @@ const PedidosPage = () => {
 
   const storeFilter = searchParams.get("store");
 
+  useEffect(() => {
+    if (!storeFilter) return;
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("store");
+    setSearchParams(nextParams, { replace: true });
+  }, [searchParams, setSearchParams, storeFilter]);
+
   const refreshPedidosData = useCallback(async () => {
     if (!user) return;
 
     await Promise.allSettled([
       queryClient.refetchQueries({ queryKey: ["orders", user.id], type: "active" }),
-      queryClient.refetchQueries({ queryKey: ["orders", user.id, storeFilter], type: "active" }),
       queryClient.refetchQueries({ queryKey: ["own-store-pedidos", user.id], type: "active" }),
       queryClient.refetchQueries({ queryKey: ["store-orders-lojista", ownStore?.id], type: "active" }),
     ]);
-  }, [ownStore?.id, queryClient, storeFilter, user]);
+  }, [ownStore?.id, queryClient, user]);
 
   // Refetch orders when Capacitor app resumes from background
   useEffect(() => {
@@ -219,7 +225,7 @@ const PedidosPage = () => {
 
   // Client orders (for clients and lojistas viewing as client)
   const { data: orders, isLoading } = useQuery({
-    queryKey: ["orders", user?.id, storeFilter],
+    queryKey: ["orders", user?.id],
     queryFn: async () => {
       let query = supabase
         .from("orders")
@@ -228,9 +234,6 @@ const PedidosPage = () => {
         .eq("visible_to_client", true)
         .order("created_at", { ascending: false })
         .limit(100);
-      if (storeFilter) {
-        query = query.eq("store_id", storeFilter);
-      }
       const { data, error } = await query;
       if (error) throw error;
       return data;
