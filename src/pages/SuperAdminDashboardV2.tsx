@@ -992,19 +992,6 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
 };
 
 // ─── Finance Tab ───
-const FinanceTab = ({
-  storeSettlement, driverSettlement, financeTotals,
-  financeFilter, setFinanceFilter,
-  financeSubTab, setFinanceSubTab,
-  selectedStore, setSelectedStore,
-  stores, loading,
-  generateStoreWhatsApp,
-  storeBalances, queryClient,
-  withdrawalRequests,
-  parentStorePlans,
-}: {
-  storeSettlement: any[]; driverSettlement: any[];
-  financeTotals: { totalVolume: number; grossProfit: number; totalDriverFees: number };
   financeFilter: "week" | "month"; setFinanceFilter: (f: "week" | "month") => void;
   financeSubTab: "stores" | "drivers" | "subaccounts"; setFinanceSubTab: (t: "stores" | "drivers" | "subaccounts") => void;
   selectedStore: string; setSelectedStore: (s: string) => void;
@@ -1994,44 +1981,6 @@ const FinanceTab = ({
 };
 
 // ─── Metric Card ───
-const MetricCard = ({ icon: Icon, label, value, sublabel, sublabel2, highlight, alert }: {
-  icon: React.ElementType; label: string; value: string; sublabel: string; sublabel2?: string; highlight?: boolean; alert?: boolean;
-}) => (
-  <div className={`bg-card rounded-2xl p-4 border ${alert ? "border-destructive/50" : "border-border"}`}>
-    <div className="flex items-center gap-2 mb-2">
-      <Icon className={`h-4 w-4 ${highlight ? "text-primary" : alert ? "text-destructive" : "text-muted-foreground"}`} />
-      <span className="text-xs text-muted-foreground">{label}</span>
-    </div>
-    <p className={`text-xl font-black ${highlight ? "text-primary" : alert ? "text-destructive" : "text-foreground"}`}>{value}</p>
-    <p className="text-xs text-muted-foreground">{sublabel}</p>
-    {sublabel2 && <p className="text-[10px] text-muted-foreground/70 mt-0.5">{sublabel2}</p>}
-  </div>
-);
-
-// ─── Saques Tab ───
-const SaquesTab = ({ withdrawalRequests, pendingWithdrawals, drivers, queryClient }: {
-  withdrawalRequests: any[] | undefined; pendingWithdrawals: any[]; drivers: any[] | undefined; queryClient: any;
-}) => {
-  const [saquesSubTab, setSaquesSubTab] = useState<"pendentes" | "historico">("pendentes");
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-
-  const pendingList = (withdrawalRequests || []).filter((w: any) => w.status === "solicitado")
-    .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-  const historyList = (withdrawalRequests || []).filter((w: any) => w.status !== "solicitado")
-    .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-  const handleDelete = async (req: any) => {
-    if (deletingId === req.id) {
-      const { error } = await supabase.from("withdrawal_requests" as any).delete().eq("id", req.id);
-      if (error) toast.error("Erro ao excluir.");
-      else toast.success(`🗑️ Solicitação excluída.`);
-      setDeletingId(null);
-      queryClient.invalidateQueries({ queryKey: ["withdrawal-requests"] });
-    } else {
-      setDeletingId(req.id);
-      setTimeout(() => setDeletingId(null), 4000);
-    }
-  };
 
   const handleConfirmPayment = async (req: any, driverName: string) => {
     const { error: updateError } = await supabase
