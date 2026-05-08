@@ -157,6 +157,16 @@ const PdvPage = () => {
   const [loading, setLoading] = useState(false);
   const [orderDone, setOrderDone] = useState(false);
 
+  // Multi-pagamento (split)
+  const [splitMode, setSplitMode] = useState(false);
+  const [splitPayments, setSplitPayments] = useState<SplitPayment[]>([]);
+
+  // Mostrar guia de atalhos
+  const [showShortcuts, setShowShortcuts] = useState(false);
+
+  // Ref do input de busca para foco com F2
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+
   // Modal de produto (adicionais, bordas, observações)
   const [productModal, setProductModal] = useState<any | null>(null);
 
