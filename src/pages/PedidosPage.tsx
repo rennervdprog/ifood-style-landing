@@ -916,8 +916,66 @@ const PedidosPage = () => {
               Limpar histórico
             </button>
           )}
+          <button
+            onClick={runDiagnostic}
+            className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 px-3 py-1.5 rounded-full hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors"
+            title="Diagnosticar pedidos sumidos"
+          >
+            <ShieldAlert className="h-3.5 w-3.5" />
+            Diag
+          </button>
         </div>
       </header>
+
+      {diagnosticOpen && (
+        <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4" onClick={() => setDiagnosticOpen(false)}>
+          <div className="bg-card rounded-2xl max-w-lg w-full max-h-[85vh] overflow-y-auto p-5 space-y-3" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-black text-foreground">🔍 Diagnóstico de Pedidos</h3>
+              <button onClick={() => setDiagnosticOpen(false)}><X className="h-5 w-5" /></button>
+            </div>
+            {diagnosticLoading ? (
+              <div className="py-8 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></div>
+            ) : diagnosticData?.error ? (
+              <div className="text-destructive text-sm">{diagnosticData.error}</div>
+            ) : diagnosticData ? (
+              <>
+                <div className="bg-muted/50 rounded-xl p-3 text-xs space-y-1 font-mono">
+                  <div><b>Email:</b> {diagnosticData.email}</div>
+                  <div><b>User ID:</b> {diagnosticData.userId}</div>
+                  <div><b>Total pedidos (últimos 20):</b> {diagnosticData.total}</div>
+                  <div><b>Ocultos (visible=false):</b> {diagnosticData.hidden}</div>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Se o pedido que você procura <b>não aparece nesta lista</b>, ele foi criado com <b>outra conta</b> (login diferente no checkout). Se aparecer com 🔒 oculto, clique em "Restaurar".
+                </div>
+                <div className="space-y-2">
+                  {diagnosticData.list.map((o: any) => (
+                    <div key={o.id} className={`border rounded-lg p-2.5 text-xs ${o.visible_to_client ? "border-emerald-300 bg-emerald-50 dark:bg-emerald-900/10" : "border-amber-300 bg-amber-50 dark:bg-amber-900/10"}`}>
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="font-bold">#{o.id.slice(0, 8).toUpperCase()} {o.visible_to_client ? "✅" : "🔒 oculto"}</div>
+                          <div className="text-muted-foreground">{o.stores?.name || "—"} · {o.status} · {formatBRL(o.total_price)}</div>
+                          <div className="text-muted-foreground">{new Date(o.created_at).toLocaleString("pt-BR")}</div>
+                        </div>
+                        {!o.visible_to_client && (
+                          <button onClick={() => restoreOrderVisibility(o.id)} className="text-[10px] font-bold bg-primary text-primary-foreground px-2 py-1 rounded shrink-0">Restaurar</button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  {diagnosticData.list.length === 0 && (
+                    <div className="text-center py-6 text-sm text-muted-foreground">
+                      Nenhum pedido encontrado para esta conta.<br/>
+                      Provavelmente você fez o pedido logado em outra conta.
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : null}
+          </div>
+        </div>
+      )}
 
       <div className="px-4 py-4 space-y-4">
         {/* Wallet Banner */}
