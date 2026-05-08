@@ -19,6 +19,8 @@ import { calculateDeliveryFee, DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConf
 import SignOutConfirm from "@/components/SignOutConfirm";
  import { formatPixKeyDisplay, sanitizePixKeyForAsaas, validatePixKey, PIX_PLACEHOLDERS } from "@/lib/pixFormat";
  import { formatDocument, sanitizeDocument, validateDocument } from "@/lib/documentFormat";
+ import { checkAppVersion } from "@/lib/appVersionCheck";
+ import { forceCheckForUpdate } from "@/lib/capacitorAutoUpdate";
 
 /* ── Reusable UI atoms ─────────────────────────────────── */
 
