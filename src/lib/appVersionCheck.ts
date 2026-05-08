@@ -12,10 +12,10 @@
 import { isCapacitorNative } from "@/lib/capacitorNative";
 import { toast } from "sonner";
 
-const LATEST_NATIVE_VERSION = "1.4.10";
-const PLAY_STORE_URL =
-  "https://play.google.com/store/apps/details?id=app.lovable.e8d28aded6334d74be2161c8dbe24765";
+import { supabase } from "@/integrations/supabase/client";
+
 const NOTIFIED_KEY = "itasuper_update_notified_for";
+const DOWNLOAD_URL = "https://itasuper.com.br/download";
 
 function parseVersion(v: string): number[] {
   return v.split(".").map((n) => parseInt(n, 10) || 0);
@@ -34,31 +34,42 @@ function isOlder(installed: string, latest: string): boolean {
   return false;
 }
 
-export async function checkAppVersion() {
+export async function checkAppVersion(appType: "cliente" | "parceiro" = "cliente") {
   if (!isCapacitorNative()) return;
   try {
+    // Get latest version from Supabase
+    const { data } = await supabase.storage
+      .from('app-releases')
+      .download(`version-${appType}.json`);
+    
+    if (!data) return;
+    
+    const text = await data.text();
+    const { version: latestVersion } = JSON.parse(text);
+
     const { App } = await import("@capacitor/app");
     const info = await App.getInfo();
     const installed = info.version || "0.0.0";
-    if (!isOlder(installed, LATEST_NATIVE_VERSION)) return;
+    
+    if (!isOlder(installed, latestVersion)) return;
 
     // Show only once per recommended version
     let alreadyNotified = false;
     try {
-      alreadyNotified = localStorage.getItem(NOTIFIED_KEY) === LATEST_NATIVE_VERSION;
+      alreadyNotified = localStorage.getItem(NOTIFIED_KEY) === latestVersion;
     } catch {}
     if (alreadyNotified) return;
 
-    try { localStorage.setItem(NOTIFIED_KEY, LATEST_NATIVE_VERSION); } catch {}
+    try { localStorage.setItem(NOTIFIED_KEY, latestVersion); } catch {}
 
-    toast(`Nova versão disponível (${LATEST_NATIVE_VERSION})`, {
+    toast(`Nova versão disponível (${latestVersion})`, {
       description: `Você está na versão ${installed}. Atualize para receber as últimas melhorias.`,
       duration: 10000,
       action: {
         label: "Atualizar",
         onClick: () => {
           try {
-            window.open(PLAY_STORE_URL, "_blank");
+            window.open(DOWNLOAD_URL, "_blank");
           } catch {}
         },
       },

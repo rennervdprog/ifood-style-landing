@@ -19,6 +19,8 @@ import { calculateDeliveryFee, DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConf
 import SignOutConfirm from "@/components/SignOutConfirm";
  import { formatPixKeyDisplay, sanitizePixKeyForAsaas, validatePixKey, PIX_PLACEHOLDERS } from "@/lib/pixFormat";
  import { formatDocument, sanitizeDocument, validateDocument } from "@/lib/documentFormat";
+ import { checkAppVersion } from "@/lib/appVersionCheck";
+ import { forceCheckForUpdate } from "@/lib/capacitorAutoUpdate";
 
 /* ── Reusable UI atoms ─────────────────────────────────── */
 
@@ -824,7 +826,29 @@ const PerfilPage = () => {
           <a href="/politica-de-privacidade" className="hover:underline">Política de Privacidade</a>
         </div>
 
-        <p className="text-center text-[10px] text-muted-foreground/50 pb-4">ItaSuper v{appVersion}</p>
+        <div className="flex flex-col items-center gap-1 pb-4">
+          <p className="text-center text-[10px] text-muted-foreground/50">ItaSuper v{appVersion}</p>
+          {isCapacitorNative() && (
+            <button 
+              onClick={async () => {
+                toast.promise(
+                  Promise.all([
+                    forceCheckForUpdate(),
+                    checkAppVersion((import.meta.env.VITE_CAPACITOR_APP_MODE || "cliente") as "cliente" | "parceiro")
+                  ]),
+                  {
+                    loading: 'Verificando atualizações...',
+                    success: 'Verificação concluída',
+                    error: 'Erro ao verificar atualizações'
+                  }
+                );
+              }}
+              className="text-[10px] font-bold text-primary hover:underline"
+            >
+              Verificar atualizações
+            </button>
+          )}
+        </div>
       </div>
       <BottomNav />
     </div>

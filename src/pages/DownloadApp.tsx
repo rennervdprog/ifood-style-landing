@@ -18,27 +18,66 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+
+interface AppVersionData {
+  version: string;
+  url: string;
+  updated_at: string;
+  app_name: string;
+}
  
  const DownloadApp = () => {
   // Configurações Globais
   const [appType, setAppType] = useState<"client" | "partner">("client");
+  const [versions, setVersions] = useState<Record<string, AppVersionData | null>>({
+    client: null,
+    partner: null
+  });
+
+  useEffect(() => {
+    const fetchVersions = async () => {
+      const fetchType = async (type: "client" | "partner") => {
+        try {
+          const { data } = await supabase.storage
+            .from('app-releases')
+            .download(`version-${type === 'client' ? 'cliente' : 'parceiro'}.json`);
+          
+          if (data) {
+            const text = await data.text();
+            const json = JSON.parse(text);
+            setVersions(prev => ({ ...prev, [type]: json }));
+          }
+        } catch (error) {
+          console.warn(`Failed to fetch version for ${type}:`, error);
+        }
+      };
+
+      fetchType("client");
+      fetchType("partner");
+    };
+
+    fetchVersions();
+  }, []);
   
   const config = {
     client: {
       name: "ItaSuper",
       isAvailableOnPlayStore: false,
-      playStoreUrl: "https://play.google.com/store/apps/details?id=com.itasuper.app",
-      apkUrl: "https://itasuper.com.br/downloads/itasuper-cliente.apk",
+      playStoreUrl: "https://play.google.com/store/apps/details?id=app.itasuper.cliente",
+      apkUrl: versions.client?.url || "https://lktzrqjvqoojlrhqnxuz.supabase.co/storage/v1/object/public/app-releases/itasuper-cliente.apk",
+      version: versions.client?.version || "1.0.0",
       icon: "/icon-cliente.png",
       description: "Peça comida, mercado e muito mais com o melhor delivery da região."
     },
     partner: {
       name: "ItaSuper Parceiro",
       isAvailableOnPlayStore: false,
-      playStoreUrl: "https://play.google.com/store/apps/details?id=com.itasuper.partner",
-      apkUrl: "https://itasuper.com.br/downloads/itasuper-parceiro.apk",
+      playStoreUrl: "https://play.google.com/store/apps/details?id=app.itasuper.parceiro",
+      apkUrl: versions.partner?.url || "https://lktzrqjvqoojlrhqnxuz.supabase.co/storage/v1/object/public/app-releases/itasuper-parceiro.apk",
+      version: versions.partner?.version || "1.0.0",
       icon: "/icon-parceiro.png",
       description: "Gerencie sua loja e suas entregas de forma profissional e eficiente."
     }
@@ -152,9 +191,11 @@ import { Link } from "react-router-dom";
                       <ShieldCheck className="h-4 w-4" />
                       Arquivo Seguro
                     </div>
-                    <div className="text-[10px] text-muted-foreground">
-                      V. 1.0.4 • Beta
-                    </div>
+                    {currentConfig.version && (
+                      <div className="text-[10px] text-muted-foreground">
+                        V. {currentConfig.version} • Beta
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
