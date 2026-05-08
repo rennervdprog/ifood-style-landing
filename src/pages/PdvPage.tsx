@@ -340,6 +340,7 @@ const PdvPage = () => {
     setCart([]); setPaymentMethod(""); setTableId("");
     setDiscountInput(""); setShowDiscount(false);
     setCashReceived(""); setOrderDone(false);
+    setSplitMode(false); setSplitPayments([]);
     if (isMobile) setMobileStep("catalog");
   };
 
