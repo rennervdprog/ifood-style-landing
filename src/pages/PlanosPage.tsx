@@ -347,9 +347,12 @@ const faqs = [
                         <span className="font-bold text-foreground">{plan.pixFee === 0 ? "Grátis" : `R$ ${plan.pixFee.toFixed(2).replace(".", ",")}`}</span>
                       </div>
                       <div className="flex items-center justify-between text-xs">
-                        <span className="text-muted-foreground">Entrega plataforma (cliente paga)</span>
-                        <span className="font-bold text-foreground">R$ 2,00</span>
+                        <span className="text-muted-foreground">Entrega da plataforma</span>
+                        <span className="font-bold text-foreground">+ R$ 2,00</span>
                       </div>
+                      <p className="text-[10px] text-muted-foreground italic leading-snug pt-1">
+                        Os R$ 2,00 são somados à sua taxa de entrega e pagos pelo cliente.
+                      </p>
                     </div>
 
                     <p className="text-xs text-muted-foreground mb-3 leading-relaxed italic">
