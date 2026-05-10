@@ -31,6 +31,8 @@ import {
  import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
+import { PLANS, PLANS_ORDER, DELIVERY_FEE_NOTE, PIX_FEE_NOTE, type PlanInfo } from "@/lib/plansInfo";
+import PlansComparisonTable from "@/components/PlansComparisonTable";
 
 /* ─── animated counter hook ─── */
 function useCountUp(end: number, duration = 2000, start = false) {
@@ -63,120 +65,8 @@ function useInView(threshold = 0.3) {
   return { ref, visible };
 }
 
-/* ─── plan data ─── */
-const plans = [
-  {
-    id: "commission_only",
-    name: "Comissão",
-    tagline: "Comece sem investir nada",
-    price: "0",
-    period: "/mês",
-    icon: Rocket,
-    highlight: false,
-    badge: null,
-    commission: "6% + R$ 2",
-    commissionLabel: "por entrega (pago pelo cliente) + R$ 1,99 taxa pix (lojista)",
-    color: "from-emerald-500 to-emerald-600",
-    lightBg: "bg-emerald-50",
-    textColor: "text-emerald-600",
-    borderColor: "border-emerald-200",
-    description: "Ideal para testar sem risco. Pague 6% apenas sobre as vendas realizadas.",
-    features: [
-      { text: "Cardápio digital ilimitado", included: true },
-      { text: "WhatsApp de atualização", included: true },
-      { text: "Gestão de pedidos básica", included: true },
-      { text: "PIX automático", included: true },
-      { text: "Taxa entrega plataforma: R$ 2,00 (pago pelo cliente)", included: true },
-      { text: "Relatórios avançados", included: false },
-      { text: "Emissão de Notas", included: false },
-    ],
-    extraFees: [],
-  },
-  {
-    id: "hybrid",
-    name: "Crescimento",
-    tagline: "Taxas menores, mais ferramentas",
-    price: "100",
-    period: "/mês",
-    icon: TrendingUp,
-    highlight: false,
-    badge: null,
-    commission: "2,5% + R$ 2",
-    commissionLabel: "por entrega (pago pelo cliente) + R$ 1,99 taxa pix (lojista)",
-    color: "from-blue-500 to-blue-600",
-    lightBg: "bg-blue-50",
-    textColor: "text-blue-600",
-    borderColor: "border-blue-200",
-    description: "Reduza sua comissão pela metade com ferramentas de gestão profissional.",
-    features: [
-      { text: "Comissão reduzida (2,5%)", included: true },
-      { text: "Relatórios financeiros detalhados", included: true },
-      { text: "Destaque na vitrine", included: true },
-      { text: "Banners promocionais", included: true },
-      { text: "Taxa entrega plataforma: R$ 2,00", included: true },
-      { text: "Emissão de Notas", included: false },
-    ],
-    extraFees: [],
-  },
-  {
-    id: "fixed",
-    name: "Essencial",
-    tagline: "Lucro total e gestão completa",
-    price: "180",
-    period: "/mês",
-    icon: Crown,
-    highlight: true,
-    badge: "⭐ Mais escolhido",
-    commission: "R$ 1,99",
-    commissionLabel: "taxa pix",
-    color: "from-primary to-orange-600",
-    lightBg: "bg-accent",
-    textColor: "text-primary",
-    borderColor: "border-primary/30",
-    description: "Fique com 100% do valor dos seus produtos. Gestão total e integração logística.",
-    features: [
-      { text: "Zero comissão por venda", included: true },
-      { text: "Emissão de Nota Fiscal", included: true },
-      { text: "Relatórios 100% detalhados", included: true },
-      { text: "Motoboy Integrado (apita no app)", included: true },
-      { text: "Suporte VIP Prioritário", included: true },
-      { text: "Todas as ferramentas", included: true },
-    ],
-    extraFees: [
-      { label: "Taxa PIX", value: "R$ 1,99/transação" },
-      { label: "Taxa entrega plataforma", value: "R$ 2,00 (adicionais, pagos pelo cliente)" },
-    ],
-    extraNote: "A taxa de entrega é somada à definida por você. Ex: Lojista define R$ 3, no cliente aparece R$ 5 (R$ 3 seu + R$ 2 plataforma).",
-  },
-  {
-    id: "supporter",
-    name: "Apoiador",
-    tagline: "Edição Especial de Lançamento",
-    price: "130",
-    period: "/mês",
-    icon: Sparkles,
-    highlight: false,
-    badge: "🚀 10 vagas limitadas",
-    commission: "R$ 1,99",
-    commissionLabel: "taxa pix",
-    color: "from-violet-500 to-purple-600",
-    lightBg: "bg-violet-50",
-    textColor: "text-violet-600",
-    borderColor: "border-violet-200",
-    description: "Mesmas regras do Essencial com preço congelado para sempre (apenas 10 primeiras lojas).",
-    features: [
-      { text: "Mesmos benefícios do Essencial", included: true },
-      { text: "Preço fixo vitalício", included: true },
-      { text: "Selo de Apoiador na loja", included: true },
-      { text: "Suporte VIP", included: true },
-    ],
-    extraFees: [
-      { label: "Taxa PIX", value: "R$ 1,99/transação" },
-      { label: "Taxa entrega plataforma", value: "R$ 2,00 (adicionais, pagos pelo cliente)" },
-    ],
-    extraNote: "A taxa de entrega é somada à definida por você. Ex: Lojista define R$ 3, no cliente aparece R$ 5 (R$ 3 seu + R$ 2 plataforma).",
-  },
-];
+/* ─── plan data centralizado em src/lib/plansInfo.ts ─── */
+const plans: PlanInfo[] = PLANS_ORDER.map((id) => PLANS[id]);
 
 const painPoints = [
   { emoji: "📸", pain: "Manda foto do cardápio pelo WhatsApp", solution: "Link profissional com fotos e preços atualizados" },
@@ -218,20 +108,6 @@ const faqs = [
 ];
 
 /* ─── comparison table data ─── */
-const comparisonRows = [
-  { feature: "Cardápio digital", commission: true, hybrid: true, fixed: true },
-  { feature: "QR Code exclusivo", commission: true, hybrid: true, fixed: true },
-  { feature: "PIX automático", commission: true, hybrid: true, fixed: true },
-  { feature: "Notificações push", commission: true, hybrid: true, fixed: true },
-  { feature: "Cupons e promoções", commission: true, hybrid: true, fixed: true },
-  { feature: "Fidelidade", commission: true, hybrid: true, fixed: true },
-  { feature: "Relatórios avançados", commission: false, hybrid: true, fixed: true },
-  { feature: "Suporte prioritário", commission: false, hybrid: true, fixed: true },
-  { feature: "Destaque na vitrine", commission: false, hybrid: true, fixed: true },
-  { feature: "Banners ilimitados", commission: false, hybrid: true, fixed: true },
-  { feature: "Suporte VIP", commission: false, hybrid: false, fixed: true },
-  { feature: "Prioridade em novidades", commission: false, hybrid: false, fixed: true },
-];
 
  export default function PlanosPage() {
    const navigate = useNavigate();
