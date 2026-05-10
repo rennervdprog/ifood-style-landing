@@ -338,18 +338,18 @@ const faqs = [
 
                     {/* Trial badge — apenas planos pagos */}
                     {plan.monthlyFee > 0 && (
-                      <div className="mb-3 rounded-xl border-2 border-emerald-500/40 bg-emerald-500/10 px-3 py-2.5">
+                      <div className="mb-3 rounded-xl border-2 border-emerald-500/40 bg-emerald-500/10 px-3 py-2.5 space-y-1.5">
                         <div className="flex items-center gap-2">
                           <span className="text-lg">🎁</span>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-extrabold text-emerald-700 dark:text-emerald-400 leading-tight">
-                              7 DIAS GRÁTIS para testar
-                            </p>
-                            <p className="text-[10px] text-emerald-700/80 dark:text-emerald-400/80 leading-tight mt-0.5">
-                              Sem cobrança agora · Cancele quando quiser
-                            </p>
-                          </div>
+                          <p className="text-xs font-extrabold text-emerald-700 dark:text-emerald-400 leading-tight">
+                            7 DIAS GRÁTIS para testar
+                          </p>
                         </div>
+                        <ul className="text-[10px] text-emerald-700/90 dark:text-emerald-400/90 leading-snug space-y-0.5 pl-1">
+                          <li>• <strong>Dia 1 ao 7:</strong> uso liberado, sem cobrança</li>
+                          <li>• <strong>Dia 8:</strong> 1ª cobrança de R$ {plan.monthlyFee} (se não cancelar)</li>
+                          <li>• Cancele a qualquer momento antes do dia 8</li>
+                        </ul>
                       </div>
                     )}
 
