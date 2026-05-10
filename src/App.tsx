@@ -10,6 +10,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import RoleGuard from "@/components/RoleGuard";
 import InstallPrompt from "@/components/InstallPrompt";
 import NotificationPrompt from "@/components/NotificationPrompt";
+import DownloadAppPrompt from "@/components/DownloadAppPrompt";
 import CapacitorPermissionsOnboarding from "@/components/CapacitorPermissionsOnboarding";
 import DebugOverlay from "@/components/DebugOverlay";
 import { initCapacitorNative, isCapacitorNative, consumePendingPushNavigation } from "@/lib/capacitorNative";
@@ -256,6 +257,7 @@ const App = () => {
             <PushNavigator />
             <CapacitorRouteGuard />
             <StoreAppGuard />
+            <DownloadAppPrompt />
             <ErrorBoundary>
             <Suspense fallback={<PageLoader />}>
               <Routes>
