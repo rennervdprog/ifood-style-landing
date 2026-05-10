@@ -401,6 +401,145 @@ const TUTORIAIS: TutorialSection[] = [
       },
     ],
   },
+  {
+    id: "pdv",
+    icon: ShoppingCart,
+    title: "PDV — Vendas no Balcão",
+    shortDesc: "Caixa profissional: abertura, vendas, sangria e fechamento cego",
+    color: "text-violet-500",
+    bgColor: "bg-violet-500/10",
+    category: "vendas",
+    estimatedMinutes: 6,
+    steps: [
+      {
+        title: "Abrir o caixa",
+        content: "Antes de vender, abra o caixa informando o valor inicial (troco que está na gaveta). Sem caixa aberto, você não consegue finalizar vendas no PDV.",
+        tip: "Conte o dinheiro da gaveta antes de digitar o valor inicial. Isso evita diferença no fechamento.",
+      },
+      {
+        title: "Atalhos de teclado (mais rápido)",
+        content: "F2 abre a busca de produtos. F3 aplica desconto. F4 alterna a forma de pagamento. F8 finaliza a venda. ESC limpa o carrinho. Use o teclado para vender em segundos.",
+      },
+      {
+        title: "Leitor de código de barras",
+        content: "Conecte um leitor USB no celular/tablet (via OTG) ou computador. O sistema detecta automaticamente — basta bipar o produto cadastrado e ele entra no carrinho.",
+      },
+      {
+        title: "Pagamento dividido (split)",
+        content: "Cliente quer pagar parte no PIX e parte no dinheiro? Toque em DIVIDIR PAGAMENTO, escolha as formas e os valores. O sistema valida que a soma bate com o total.",
+      },
+      {
+        title: "Sangria e suprimento",
+        content: "SANGRIA = retirar dinheiro do caixa (levar pro cofre, pagar fornecedor). SUPRIMENTO = colocar dinheiro (reforço de troco). Sempre selecione o motivo para o relatório ficar claro.",
+        tip: "Faça sangria sempre que acumular muito dinheiro na gaveta — segurança em primeiro lugar.",
+      },
+      {
+        title: "Fechamento cego (anti-fraude)",
+        content: "Ao fechar o caixa, ative o FECHAMENTO CEGO: o operador conta o dinheiro físico SEM ver o valor que o sistema espera. Só depois você (gestor) compara e descobre se houve diferença.",
+        tip: "Use a calculadora de cédulas (notas de R$2 a R$200 + moedas) para contar mais rápido e sem errar.",
+      },
+      {
+        title: "Ver histórico e relatórios",
+        content: "Na aba HISTÓRICO veja todas as vendas do PDV. Na aba RELATÓRIOS veja ticket médio, total por forma de pagamento e produtos mais vendidos do dia.",
+      },
+    ],
+  },
+  {
+    id: "coupons",
+    icon: Tag,
+    title: "Cupons e Promoções",
+    shortDesc: "Crie códigos de desconto para campanhas e clientes especiais",
+    color: "text-pink-500",
+    bgColor: "bg-pink-500/10",
+    category: "vendas",
+    estimatedMinutes: 3,
+    steps: [
+      {
+        title: "Criar cupom",
+        content: "Toque em NOVO CUPOM. Escolha um código fácil (ex: BEMVINDO10), o tipo (% ou R$ fixo) e o valor do desconto. Defina pedido mínimo se quiser.",
+        tip: "Códigos curtos e em CAIXA ALTA são mais fáceis do cliente digitar.",
+      },
+      {
+        title: "Validade e limite de uso",
+        content: "Defina até quando o cupom funciona e quantas vezes pode ser usado no total (ex: 100 usos). Pode também limitar a 1 uso por cliente.",
+      },
+      {
+        title: "Divulgar",
+        content: "Compartilhe o código nas redes sociais, WhatsApp ou flyers. Ao finalizar o pedido, o cliente digita o código no checkout e o desconto aparece automático.",
+      },
+      {
+        title: "Acompanhar resultados",
+        content: "No painel você vê quantas vezes cada cupom foi usado e quanto faturou. Pause ou desative cupons que não estão dando retorno.",
+      },
+    ],
+  },
+  {
+    id: "clients",
+    icon: Users,
+    title: "Clientes (CRM)",
+    shortDesc: "Conheça quem compra de você e reative inativos",
+    color: "text-teal-500",
+    bgColor: "bg-teal-500/10",
+    category: "vendas",
+    estimatedMinutes: 3,
+    steps: [
+      {
+        title: "Lista de clientes",
+        content: "Aqui aparecem TODOS os clientes que já pediram na sua loja, com nome, telefone, total gasto e quantidade de pedidos.",
+      },
+      {
+        title: "Clientes fiéis",
+        content: "O sistema destaca os TOP clientes — os que mais pedem. Mande um WhatsApp agradecendo ou ofereça um cupom exclusivo pra eles.",
+        tip: "Custa 5x mais conquistar cliente novo do que manter um antigo. Cuide dos fiéis!",
+      },
+      {
+        title: "Clientes inativos",
+        content: "Veja quem não pede há mais de 30 dias. Mande mensagem com cupom de retorno (ex: VOLTA15) — é a forma mais barata de reativar venda.",
+      },
+      {
+        title: "Falar pelo WhatsApp",
+        content: "Cada cliente tem um botão WhatsApp ao lado. Toque para abrir uma conversa direta com ele, já com o nome dele preenchido.",
+      },
+    ],
+  },
+  {
+    id: "notifications",
+    icon: Bell,
+    title: "Notificações e Som de Pedido",
+    shortDesc: "Garanta que você recebe o aviso na hora que chegar pedido novo",
+    color: "text-rose-500",
+    bgColor: "bg-rose-500/10",
+    category: "essencial",
+    estimatedMinutes: 3,
+    steps: [
+      {
+        title: "Por que isso é crítico?",
+        content: "Pedido perdido = dinheiro perdido + cliente irritado. Se você não receber a notificação, pode demorar pra aceitar e o cliente cancela.",
+      },
+      {
+        title: "Permitir notificações no celular",
+        content: "Na primeira vez que abre o app, ele pede permissão de notificações. Se você negou, vá em CONFIGURAÇÕES DO CELULAR → APPS → ItaSuper → Notificações e ATIVE tudo.",
+        tip: "No iPhone, ative também 'Sons' e 'Banners persistentes' para o aviso ficar na tela até você ver.",
+      },
+      {
+        title: "Não silenciar o app",
+        content: "Verifique se o ItaSuper NÃO está em modo silencioso. Aumente o volume de mídia/notificação do celular ao máximo durante o expediente.",
+      },
+      {
+        title: "Modo Não Perturbe",
+        content: "Se você usa o modo Não Perturbe à noite, adicione o ItaSuper como exceção (apps permitidos) — assim você ainda recebe pedidos noturnos.",
+      },
+      {
+        title: "Manter o app aberto",
+        content: "Para máxima confiabilidade, deixe o app aberto em segundo plano e o celular conectado na tomada. Evita que o sistema do celular 'mate' o app por economia de bateria.",
+        tip: "Em alguns Android (Xiaomi, Huawei), trave o app em 'Apps recentes' (cadeado) para não ser fechado automaticamente.",
+      },
+      {
+        title: "Testar",
+        content: "Faça um pedido de teste no app cliente (com outro número) e veja se o som toca e a notificação aparece. Se não funcionar, refaça os passos acima.",
+      },
+    ],
+  },
 ];
 
 // Início Rápido — passos para um lojista novo
