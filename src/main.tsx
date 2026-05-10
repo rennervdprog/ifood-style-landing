@@ -7,7 +7,11 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 
+// Apply native-app class globally for GoNative/Median/Capacitor apps
+import { Capacitor } from "@capacitor/core";
+
 // PWA: aggressively reset stale service workers in preview/iframe contexts
+// AND inside Capacitor native (PWA features are redundant — the OS handles install/push).
 const isInIframe = (() => {
   try {
     return window.self !== window.top;
@@ -20,11 +24,16 @@ const isPreviewHost =
   window.location.hostname.includes("id-preview--") ||
   window.location.hostname.includes("lovableproject.com");
 
-if (isPreviewHost || isInIframe) {
+const isCapacitor = Capacitor.isNativePlatform();
+
+if (isPreviewHost || isInIframe || isCapacitor) {
   navigator.serviceWorker?.getRegistrations().then(async (registrations) => {
     if (registrations.length === 0) return;
 
     await Promise.all(registrations.map((registration) => registration.unregister()));
+
+    // Inside Capacitor we don't reload — the WebView would loop. The next launch is clean.
+    if (isCapacitor) return;
 
     const reloadKey = "preview-sw-reset";
     if (!sessionStorage.getItem(reloadKey)) {
@@ -35,11 +44,14 @@ if (isPreviewHost || isInIframe) {
 
     sessionStorage.removeItem(reloadKey);
   });
+
+  // Also wipe any caches the SW left behind (Capacitor only — preview reload above already triggers fetch).
+  if (isCapacitor && "caches" in window) {
+    caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k)))).catch(() => {});
+  }
 }
 
-// Apply native-app class globally for GoNative/Median/Capacitor apps
-import { Capacitor } from "@capacitor/core";
-if (window.gonative || window.median || Capacitor.isNativePlatform()) {
+if (window.gonative || window.median || isCapacitor) {
   document.documentElement.classList.add("native-app");
   document.body.classList.add("native-app");
 }
