@@ -848,6 +848,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                 {activeTab === "test_finance" && "Lojas de teste — finanças fictícias isoladas"}
                 {activeTab === "links" && "Gerenciar botões da página pública /links"}
                 {activeTab === "broadcast" && "Enviar push notifications em massa"}
+                {activeTab === "coach" && "Assistente de IA para captar e fechar lojistas"}
                 {activeTab === "planos" && "Gerenciar planos e assinaturas das lojas"}
               </p>
             </div>
