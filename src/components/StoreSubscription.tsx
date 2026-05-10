@@ -16,6 +16,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
 import { Progress } from "@/components/ui/progress";
 import FixedPlanBillingHistory from "@/components/FixedPlanBillingHistory";
+import { PLANS, DELIVERY_FEE_NOTE, PIX_FEE_NOTE } from "@/lib/plansInfo";
+import PlansComparisonTable from "@/components/PlansComparisonTable";
 
 interface Props {
   storeId: string;
@@ -57,32 +59,20 @@ interface Props {
    supporter: "bg-amber-500/10",
  };
 
-const planOptions: { type: StorePlanType; label: string; fee: number; rate: number; tagline: string; bullets: string[] }[] = [
-  {
-    type: "fixed",
-    label: "Essencial",
-    fee: 180,
-    rate: 0,
-    tagline: "Para lojas com volume estável",
-    bullets: ["Sem comissão por pedido", "PIX integrado (R$1/PIX)", "Taxa de R$2 por entrega (paga pelo cliente)", "Motoboy próprio", "Cupons ilimitados"],
-  },
-  {
-    type: "hybrid",
-    label: "Crescimento",
-    fee: 100,
-    rate: 2.5,
-    tagline: "Equilíbrio entre fixo e variável",
-    bullets: ["Mensalidade reduzida", "2,5% por pedido", "Relatórios completos", "Cupons ilimitados"],
-  },
-  {
-    type: "commission_only",
-    label: "Comissão",
-    fee: 0,
-    rate: 6,
-    tagline: "Para começar sem investimento",
-    bullets: ["Zero mensalidade", "6% por pedido", "Todos recursos", "Suporte completo"],
-  },
-];
+/** Opções de plano para troca — vem direto de plansInfo (fonte única). */
+const planOptions: { type: StorePlanType; label: string; fee: number; rate: number; tagline: string; bullets: string[] }[] = (
+  ["fixed", "hybrid", "commission_only"] as StorePlanType[]
+).map((id) => {
+  const p = PLANS[id];
+  return {
+    type: id,
+    label: p.name,
+    fee: p.monthlyFee,
+    rate: p.commissionRate,
+    tagline: p.tagline,
+    bullets: p.features,
+  };
+});
 
 const features = [
   { key: "allowPix", label: "Pagamento PIX online", icon: CreditCard },
