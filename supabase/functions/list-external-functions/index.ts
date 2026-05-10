@@ -32,6 +32,14 @@ Deno.serve(async (req) => {
     );
     const functions = await fnRes.json();
 
+    // Lista também os secrets do projeto externo (apenas nomes, não valores)
+    const secRes = await fetch(
+      `https://api.supabase.com/v1/projects/${PROJECT_REF}/secrets`,
+      { headers: { Authorization: `Bearer ${TOKEN}` } },
+    );
+    const secrets = await secRes.json();
+    const secretNames = Array.isArray(secrets) ? secrets.map((s: any) => s.name).sort() : secrets;
+
     return json({
       project_ref: PROJECT_REF,
       status: fnRes.status,
@@ -46,6 +54,8 @@ Deno.serve(async (req) => {
             updated_at: f.updated_at ? new Date(f.updated_at).toISOString() : null,
           }))
         : functions,
+      secrets_count: Array.isArray(secrets) ? secrets.length : 0,
+      secrets: secretNames,
     });
   } catch (e) {
     return json({ error: String(e) }, 500);
