@@ -409,7 +409,7 @@ const CadastroLojista = () => {
                   <p className="text-xs text-muted-foreground mt-1">Sem contrato. Troque quando quiser. Sem multa.</p>
                   <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30">
                     <Zap className="h-3.5 w-3.5 text-emerald-500" />
-                    <span className="text-xs font-bold text-emerald-600">7 dias grátis nos planos pagos!</span>
+                    <span className="text-xs font-bold text-emerald-600">Teste 7 dias grátis · só paga depois</span>
                   </div>
                 </div>
 
@@ -455,6 +455,21 @@ const CadastroLojista = () => {
                           {p.monthlyFee > 0 && <span className="text-xs text-muted-foreground">/mês</span>}
                         </div>
                       </div>
+
+                      {/* Trial badge — só planos pagos */}
+                      {p.monthlyFee > 0 && (
+                        <div className="mb-3 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1.5 flex items-center gap-2">
+                          <span className="text-base leading-none">🎁</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[11px] font-extrabold text-emerald-700 dark:text-emerald-400 leading-tight">
+                              7 DIAS GRÁTIS para testar
+                            </p>
+                            <p className="text-[9px] text-emerald-700/80 dark:text-emerald-400/80 leading-tight">
+                              Sem cobrança agora · cancele quando quiser
+                            </p>
+                          </div>
+                        </div>
+                      )}
 
                       {/* Quick costs */}
                       <div className="grid grid-cols-3 gap-2 mb-3">
