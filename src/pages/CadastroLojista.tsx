@@ -406,161 +406,97 @@ const CadastroLojista = () => {
               <div className="space-y-4">
                 <div className="text-center mb-2">
                   <h2 className="text-lg font-black text-foreground">Escolha seu plano</h2>
-                  <p className="text-xs text-muted-foreground mt-1">Sem contrato. Troque quando quiser.</p>
+                  <p className="text-xs text-muted-foreground mt-1">Sem contrato. Troque quando quiser. Sem multa.</p>
                   <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30">
                     <Zap className="h-3.5 w-3.5 text-emerald-500" />
                     <span className="text-xs font-bold text-emerald-600">7 dias grátis nos planos pagos!</span>
                   </div>
                 </div>
 
-                {/* Plano Apoiadores - Lançamento (10 vagas) */}
-                {supporterAvailable && (
-                  <button
-                    type="button"
-                    onClick={() => setSelectedPlan("supporter")}
-                    className={`w-full text-left rounded-2xl border-2 p-4 transition-all relative ${
-                      selectedPlan === "supporter" ? "border-primary bg-primary/5" : "border-amber-500/40 bg-amber-500/5 hover:border-amber-500/70"
-                    }`}
-                  >
-                    <span className="absolute -top-2.5 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500 text-white">
-                      🚀 Lançamento • {supporterRemaining} vagas
-                    </span>
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center">
-                        <Crown className="h-5 w-5 text-amber-600" />
+                {/* Cards de plano — ordem: Comissão, Crescimento, Essencial, Apoiador */}
+                {(["commission_only", "hybrid", "fixed", "supporter"] as const).map((id) => {
+                  if (id === "supporter" && !supporterAvailable) return null;
+                  const p = PLANS[id];
+                  const Icon = p.icon;
+                  const selected = selectedPlan === id;
+                  const isSupporter = id === "supporter";
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => setSelectedPlan(id)}
+                      className={`w-full text-left rounded-2xl border-2 p-4 transition-all relative ${
+                        selected
+                          ? "border-primary bg-primary/5"
+                          : isSupporter
+                            ? "border-amber-500/40 bg-amber-500/5 hover:border-amber-500/70"
+                            : "border-border bg-card hover:border-primary/40"
+                      }`}
+                    >
+                      {p.badge && (
+                        <span className={`absolute -top-2.5 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          isSupporter ? "bg-amber-500 text-white" : "bg-primary text-primary-foreground"
+                        }`}>
+                          {isSupporter ? `🚀 ${supporterRemaining} vagas` : p.badge}
+                        </span>
+                      )}
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className={`w-10 h-10 rounded-xl ${p.accentBg} flex items-center justify-center`}>
+                          <Icon className={`h-5 w-5 ${p.accent}`} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-bold text-sm text-foreground">Plano {p.name}</h3>
+                          <p className="text-[11px] text-muted-foreground truncate">{p.tagline}</p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className="text-lg font-black text-foreground">
+                            {p.monthlyFee === 0 ? "Grátis" : `R$${p.monthlyFee}`}
+                          </span>
+                          {p.monthlyFee > 0 && <span className="text-xs text-muted-foreground">/mês</span>}
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <h3 className="font-bold text-sm text-foreground">Plano Apoiadores</h3>
-                        <p className="text-xs text-muted-foreground">Mesmas regras do Essencial</p>
+
+                      {/* Quick costs */}
+                      <div className="grid grid-cols-3 gap-2 mb-3">
+                        <div className="rounded-lg bg-muted/40 p-2 text-center">
+                          <p className="text-[9px] uppercase tracking-wider text-muted-foreground">Comissão</p>
+                          <p className="text-xs font-bold text-foreground">
+                            {p.commissionRate === 0 ? "0%" : `${p.commissionRate}%`}
+                          </p>
+                        </div>
+                        <div className="rounded-lg bg-muted/40 p-2 text-center">
+                          <p className="text-[9px] uppercase tracking-wider text-muted-foreground">PIX</p>
+                          <p className="text-xs font-bold text-foreground">
+                            {p.pixFee === 0 ? "Grátis" : `R$${p.pixFee.toFixed(2).replace(".", ",")}`}
+                          </p>
+                        </div>
+                        <div className="rounded-lg bg-muted/40 p-2 text-center">
+                          <p className="text-[9px] uppercase tracking-wider text-muted-foreground">Entrega</p>
+                          <p className="text-xs font-bold text-foreground">R$2 cli.</p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <span className="text-lg font-black text-foreground">R$130</span>
-                        <span className="text-xs text-muted-foreground">/mês</span>
-                      </div>
-                    </div>
-                    <p className="text-[10px] font-bold text-emerald-500 mb-1">🎁 7 dias grátis • Preço congelado para sempre</p>
-                    <div className="flex flex-wrap gap-1.5 mt-2">
-                      {(isPlatformCity
-                        ? ["Zero comissão", "Motoboy plataforma", "Fidelidade", "PIX integrado"]
-                        : ["Zero comissão", "PIX integrado", "Painel completo", "Todas as ferramentas"]
-                      ).map(tag => (
-                        <span key={tag} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400">{tag}</span>
-                      ))}
-                    </div>
-                    <p className="text-[10px] text-muted-foreground mt-1.5">
-                      💡 Mesma taxa operacional do Essencial: R$1,99 por pedido via PIX • R$2 na entrega (pago pelo cliente somado à sua taxa)
-                    </p>
-                  </button>
-                )}
 
-                {/* Plano Essencial */}
-                <button
-                  type="button"
-                  onClick={() => setSelectedPlan("fixed")}
-                  className={`w-full text-left rounded-2xl border-2 p-4 transition-all ${
-                    selectedPlan === "fixed" ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/40"
-                  }`}
-                >
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-10 h-10 rounded-xl bg-muted/50 flex items-center justify-center">
-                      <Package className="h-5 w-5 text-foreground" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-bold text-sm text-foreground">Plano Essencial</h3>
-                      <p className="text-xs text-muted-foreground">
-                        {isPlatformCity ? "PIX + Motoboy inclusos" : "Ideal para alto volume"}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-lg font-black text-foreground">R$180</span>
-                      <span className="text-xs text-muted-foreground">/mês</span>
-                    </div>
-                  </div>
-                  <p className="text-[10px] font-bold text-emerald-500 mb-1">🎁 7 dias grátis para testar</p>
-                  <div className="flex flex-wrap gap-1.5 mt-2">
-                    {(isPlatformCity
-                      ? ["Zero comissão", "Motoboy plataforma", "Fidelidade", "PIX integrado"]
-                      : ["Zero comissão", "PIX integrado", "Painel completo", "Todas as ferramentas"]
-                    ).map(tag => (
-                      <span key={tag} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{tag}</span>
-                    ))}
-                  </div>
-                  <p className="text-[10px] text-muted-foreground mt-1.5">
-                    💡 Pequena taxa operacional: R$1,99 por pedido via PIX • R$2 na entrega (pago pelo cliente somado à sua taxa)
-                  </p>
-                </button>
-
-                {/* Plano Crescimento */}
-                <button
-                  type="button"
-                  onClick={() => setSelectedPlan("hybrid")}
-                  className={`w-full text-left rounded-2xl border-2 p-4 transition-all relative ${
-                    selectedPlan === "hybrid" ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/40"
-                  }`}
-                >
-                  <span className="absolute -top-2.5 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary text-primary-foreground">⭐ Popular</span>
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                      <TrendingUp className="h-5 w-5 text-primary" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-bold text-sm text-foreground">Plano Crescimento</h3>
-                      <p className="text-xs text-muted-foreground">Ideal para começar</p>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-lg font-black text-foreground">R$100</span>
-                      <span className="text-xs text-muted-foreground">/mês</span>
-                    </div>
-                  </div>
-                  <p className="text-[10px] font-bold text-emerald-500 mb-1">🎁 7 dias grátis para testar</p>
-                  <p className="text-[10px] font-semibold text-primary mb-2">+ 2,5% por pedido • R$ 2 na entrega (pago pelo cliente somado à sua taxa)</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {["PIX integrado", "CRM completo", "Relatórios"].map(tag => (
-                      <span key={tag} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">{tag}</span>
-                    ))}
-                  </div>
-                </button>
-
-                {/* Plano Comissão */}
-                <button
-                  type="button"
-                  onClick={() => setSelectedPlan("commission_only")}
-                  className={`w-full text-left rounded-2xl border-2 p-4 transition-all ${
-                    selectedPlan === "commission_only" ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/40"
-                  }`}
-                >
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-10 h-10 rounded-xl bg-muted/50 flex items-center justify-center">
-                      <CreditCard className="h-5 w-5 text-foreground" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-bold text-sm text-foreground">Plano Comissão</h3>
-                      <p className="text-xs text-muted-foreground">Zero mensalidade, pague só quando vender</p>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-lg font-black text-foreground">R$0</span>
-                      <span className="text-xs text-muted-foreground">/mês</span>
-                    </div>
-                  </div>
-                  <p className="text-[10px] font-bold text-emerald-500 mb-1">✅ Comece agora — sem mensalidade!</p>
-                   <p className="text-[10px] font-semibold text-primary mb-2">+ 6% por pedido • R$ 2 na entrega (pago pelo cliente somado à sua taxa)</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {["Sem mensalidade", "Todos os recursos", "PIX integrado"].map(tag => (
-                      <span key={tag} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{tag}</span>
-                    ))}
-                  </div>
-                </button>
+                      <ul className="space-y-1">
+                        {p.features.slice(0, 3).map(f => (
+                          <li key={f} className="flex items-start gap-1.5 text-[11px] text-foreground">
+                            <Check className="h-3 w-3 text-primary mt-0.5 shrink-0" />
+                            <span>{f}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </button>
+                  );
+                })}
 
                 {selectedPlan && (
-                  <div className="rounded-xl bg-muted/50 p-3 text-xs text-muted-foreground">
-                    {selectedPlan === "supporter" ? (
-                      <p><strong className="text-foreground">Apoiadores (Lançamento):</strong> R$130/mês com as <strong className="text-foreground">mesmas regras do Essencial</strong> (zero comissão, todas as ferramentas, R$1,99 por pedido PIX, R$2 na entrega paga pelo cliente somado à taxa do lojista). Preço de lançamento limitado às primeiras 10 lojas — congelado para sempre enquanto a assinatura estiver ativa.</p>
-                    ) : selectedPlan === "fixed" ? (
-                      <p><strong className="text-foreground">Essencial:</strong> R$180/mês sem comissão por pedido. Inclui uma pequena taxa operacional de <strong className="text-foreground">R$1,99 por pedido pago via PIX</strong> (pedidos em dinheiro/cartão não pagam) e <strong className="text-foreground">R$2 na taxa de entrega (pago pelo cliente somado à sua taxa)</strong>. Valores acumulam no painel para repasse semanal. Todas as ferramentas inclusas.</p>
-                    ) : selectedPlan === "hybrid" ? (
-                      <p><strong className="text-foreground">Crescimento:</strong> Mensalidade de R$100 + 2,5% por pedido. Inclui taxa de <strong className="text-foreground">R$2 na entrega (pago pelo cliente somado à sua taxa)</strong>. PIX integrado com split automático e painel financeiro completo com CRM.</p>
-                    ) : (
-                       <p><strong className="text-foreground">Comissão:</strong> R$0/mês + 6% por pedido. Inclui taxa de <strong className="text-foreground">R$2 na entrega (pago pelo cliente somado à sua taxa)</strong>. Sem custo fixo, ideal para quem está começando. Todas as ferramentas inclusas.</p>
+                  <div className="rounded-xl bg-primary/5 border border-primary/15 p-3 space-y-1.5">
+                    <p className="text-xs font-bold text-foreground">Como funciona o {PLANS[selectedPlan].name}</p>
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      <strong>Exemplo:</strong> {PLANS[selectedPlan].example(50)}.
+                    </p>
+                    <p className="text-[10px] text-muted-foreground leading-relaxed">💡 {DELIVERY_FEE_NOTE}</p>
+                    {PLANS[selectedPlan].pixFee > 0 && (
+                      <p className="text-[10px] text-muted-foreground leading-relaxed">💡 {PIX_FEE_NOTE}</p>
                     )}
                   </div>
                 )}
