@@ -325,12 +325,6 @@ export const clienteTourSteps: TourStep[] = [
     description: "Veja o status dos seus pedidos em tempo real e acompanhe a entrega.",
     position: "top",
   },
-  {
-    target: "[data-tour='nav-pedidos']",
-    title: "Acompanhe Pedidos 📦",
-    description: "Veja o status dos seus pedidos em tempo real e acompanhe a entrega.",
-    position: "top",
-  },
 ];
 
 export const lojistaTourSteps: TourStep[] = [

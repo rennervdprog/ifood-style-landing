@@ -4,8 +4,13 @@ import {
   LayoutDashboard, ListOrdered, UtensilsCrossed, Plus, CircleDot,
   Clock, Coins, BarChart3, CreditCard, Star, Bike, AlertTriangle, Settings,
   CheckCircle2, Rocket, HelpCircle, MessageCircle, Sparkles, BookOpen,
-  PlayCircle, ArrowRight, Zap, Trophy,
+  PlayCircle, ArrowRight, Zap, Trophy, ShoppingCart, Tag, Users, Bell,
 } from "lucide-react";
+import { openWhatsApp } from "@/lib/whatsapp";
+import { useAuth } from "@/contexts/AuthContext";
+
+const SUPPORT_WHATSAPP = "14991624997";
+const SUPPORT_MESSAGE = "Olá! Preciso de ajuda com o painel do lojista do ItaSuper.";
 
 interface TutorialStep {
   title: string;
@@ -396,16 +401,156 @@ const TUTORIAIS: TutorialSection[] = [
       },
     ],
   },
+  {
+    id: "pdv",
+    icon: ShoppingCart,
+    title: "PDV — Vendas no Balcão",
+    shortDesc: "Caixa profissional: abertura, vendas, sangria e fechamento cego",
+    color: "text-violet-500",
+    bgColor: "bg-violet-500/10",
+    category: "vendas",
+    estimatedMinutes: 6,
+    steps: [
+      {
+        title: "Abrir o caixa",
+        content: "Antes de vender, abra o caixa informando o valor inicial (troco que está na gaveta). Sem caixa aberto, você não consegue finalizar vendas no PDV.",
+        tip: "Conte o dinheiro da gaveta antes de digitar o valor inicial. Isso evita diferença no fechamento.",
+      },
+      {
+        title: "Atalhos de teclado (mais rápido)",
+        content: "F2 abre a busca de produtos. F3 aplica desconto. F4 alterna a forma de pagamento. F8 finaliza a venda. ESC limpa o carrinho. Use o teclado para vender em segundos.",
+      },
+      {
+        title: "Leitor de código de barras",
+        content: "Conecte um leitor USB no celular/tablet (via OTG) ou computador. O sistema detecta automaticamente — basta bipar o produto cadastrado e ele entra no carrinho.",
+      },
+      {
+        title: "Pagamento dividido (split)",
+        content: "Cliente quer pagar parte no PIX e parte no dinheiro? Toque em DIVIDIR PAGAMENTO, escolha as formas e os valores. O sistema valida que a soma bate com o total.",
+      },
+      {
+        title: "Sangria e suprimento",
+        content: "SANGRIA = retirar dinheiro do caixa (levar pro cofre, pagar fornecedor). SUPRIMENTO = colocar dinheiro (reforço de troco). Sempre selecione o motivo para o relatório ficar claro.",
+        tip: "Faça sangria sempre que acumular muito dinheiro na gaveta — segurança em primeiro lugar.",
+      },
+      {
+        title: "Fechamento cego (anti-fraude)",
+        content: "Ao fechar o caixa, ative o FECHAMENTO CEGO: o operador conta o dinheiro físico SEM ver o valor que o sistema espera. Só depois você (gestor) compara e descobre se houve diferença.",
+        tip: "Use a calculadora de cédulas (notas de R$2 a R$200 + moedas) para contar mais rápido e sem errar.",
+      },
+      {
+        title: "Ver histórico e relatórios",
+        content: "Na aba HISTÓRICO veja todas as vendas do PDV. Na aba RELATÓRIOS veja ticket médio, total por forma de pagamento e produtos mais vendidos do dia.",
+      },
+    ],
+  },
+  {
+    id: "coupons",
+    icon: Tag,
+    title: "Cupons e Promoções",
+    shortDesc: "Crie códigos de desconto para campanhas e clientes especiais",
+    color: "text-pink-500",
+    bgColor: "bg-pink-500/10",
+    category: "vendas",
+    estimatedMinutes: 3,
+    steps: [
+      {
+        title: "Criar cupom",
+        content: "Toque em NOVO CUPOM. Escolha um código fácil (ex: BEMVINDO10), o tipo (% ou R$ fixo) e o valor do desconto. Defina pedido mínimo se quiser.",
+        tip: "Códigos curtos e em CAIXA ALTA são mais fáceis do cliente digitar.",
+      },
+      {
+        title: "Validade e limite de uso",
+        content: "Defina até quando o cupom funciona e quantas vezes pode ser usado no total (ex: 100 usos). Pode também limitar a 1 uso por cliente.",
+      },
+      {
+        title: "Divulgar",
+        content: "Compartilhe o código nas redes sociais, WhatsApp ou flyers. Ao finalizar o pedido, o cliente digita o código no checkout e o desconto aparece automático.",
+      },
+      {
+        title: "Acompanhar resultados",
+        content: "No painel você vê quantas vezes cada cupom foi usado e quanto faturou. Pause ou desative cupons que não estão dando retorno.",
+      },
+    ],
+  },
+  {
+    id: "clients",
+    icon: Users,
+    title: "Clientes (CRM)",
+    shortDesc: "Conheça quem compra de você e reative inativos",
+    color: "text-teal-500",
+    bgColor: "bg-teal-500/10",
+    category: "vendas",
+    estimatedMinutes: 3,
+    steps: [
+      {
+        title: "Lista de clientes",
+        content: "Aqui aparecem TODOS os clientes que já pediram na sua loja, com nome, telefone, total gasto e quantidade de pedidos.",
+      },
+      {
+        title: "Clientes fiéis",
+        content: "O sistema destaca os TOP clientes — os que mais pedem. Mande um WhatsApp agradecendo ou ofereça um cupom exclusivo pra eles.",
+        tip: "Custa 5x mais conquistar cliente novo do que manter um antigo. Cuide dos fiéis!",
+      },
+      {
+        title: "Clientes inativos",
+        content: "Veja quem não pede há mais de 30 dias. Mande mensagem com cupom de retorno (ex: VOLTA15) — é a forma mais barata de reativar venda.",
+      },
+      {
+        title: "Falar pelo WhatsApp",
+        content: "Cada cliente tem um botão WhatsApp ao lado. Toque para abrir uma conversa direta com ele, já com o nome dele preenchido.",
+      },
+    ],
+  },
+  {
+    id: "notifications",
+    icon: Bell,
+    title: "Notificações e Som de Pedido",
+    shortDesc: "Garanta que você recebe o aviso na hora que chegar pedido novo",
+    color: "text-rose-500",
+    bgColor: "bg-rose-500/10",
+    category: "essencial",
+    estimatedMinutes: 3,
+    steps: [
+      {
+        title: "Por que isso é crítico?",
+        content: "Pedido perdido = dinheiro perdido + cliente irritado. Se você não receber a notificação, pode demorar pra aceitar e o cliente cancela.",
+      },
+      {
+        title: "Permitir notificações no celular",
+        content: "Na primeira vez que abre o app, ele pede permissão de notificações. Se você negou, vá em CONFIGURAÇÕES DO CELULAR → APPS → ItaSuper → Notificações e ATIVE tudo.",
+        tip: "No iPhone, ative também 'Sons' e 'Banners persistentes' para o aviso ficar na tela até você ver.",
+      },
+      {
+        title: "Não silenciar o app",
+        content: "Verifique se o ItaSuper NÃO está em modo silencioso. Aumente o volume de mídia/notificação do celular ao máximo durante o expediente.",
+      },
+      {
+        title: "Modo Não Perturbe",
+        content: "Se você usa o modo Não Perturbe à noite, adicione o ItaSuper como exceção (apps permitidos) — assim você ainda recebe pedidos noturnos.",
+      },
+      {
+        title: "Manter o app aberto",
+        content: "Para máxima confiabilidade, deixe o app aberto em segundo plano e o celular conectado na tomada. Evita que o sistema do celular 'mate' o app por economia de bateria.",
+        tip: "Em alguns Android (Xiaomi, Huawei), trave o app em 'Apps recentes' (cadeado) para não ser fechado automaticamente.",
+      },
+      {
+        title: "Testar",
+        content: "Faça um pedido de teste no app cliente (com outro número) e veja se o som toca e a notificação aparece. Se não funcionar, refaça os passos acima.",
+      },
+    ],
+  },
 ];
 
 // Início Rápido — passos para um lojista novo
 const QUICK_START = [
   { id: "settings", label: "1. Configure sua Loja", icon: Settings },
-  { id: "hours", label: "2. Defina Horários", icon: Clock },
-  { id: "menu", label: "3. Monte seu Cardápio", icon: UtensilsCrossed },
-  { id: "addons", label: "4. Crie Adicionais", icon: Plus },
-  { id: "drivers", label: "5. Ative Motoboys", icon: Bike },
-  { id: "orders", label: "6. Tudo Pronto para Vender!", icon: Trophy },
+  { id: "notifications", label: "2. Ative Notificações", icon: Bell },
+  { id: "hours", label: "3. Defina Horários", icon: Clock },
+  { id: "menu", label: "4. Monte seu Cardápio", icon: UtensilsCrossed },
+  { id: "addons", label: "5. Crie Adicionais", icon: Plus },
+  { id: "drivers", label: "6. Ative Motoboys", icon: Bike },
+  { id: "orders", label: "7. Tudo Pronto para Vender!", icon: Trophy },
 ];
 
 // FAQ — perguntas mais comuns
@@ -430,11 +575,37 @@ const FAQ = [
     q: "Esqueci de aceitar um pedido. O que acontece?",
     a: "Se demorar muito, o cliente pode cancelar. O sistema também avisa você com som e notificação. Sempre fique de olho no painel.",
   },
+  {
+    q: "Não estou recebendo o som de pedido novo. O que fazer?",
+    a: "1) Verifique se permitiu notificações no celular. 2) Aumente o volume. 3) Saia do modo Não Perturbe ou adicione o ItaSuper como exceção. 4) Em Xiaomi/Huawei, trave o app em 'Apps recentes' para não ser fechado por economia de bateria.",
+  },
+  {
+    q: "Como abrir e fechar o caixa do PDV?",
+    a: "Vá na aba PDV → ABRIR CAIXA, digite o valor inicial (troco). Para fechar, toque em FECHAR CAIXA, conte o dinheiro físico. Recomendamos ativar o Fechamento Cego para evitar fraude.",
+  },
+  {
+    q: "A diferença no fechamento do caixa deu negativa. E agora?",
+    a: "Diferença pode ser troco errado, sangria não registrada ou retirada sem motivo. Use o relatório do PDV para conferir cada movimento. Sempre registre sangrias com motivo.",
+  },
+  {
+    q: "Como mudar de plano (Fixo, Comissão, Híbrido)?",
+    a: "Vá em Assinatura → Mudar Plano. A administração analisa em 1-2 dias. Você continua usando o plano atual até a aprovação.",
+  },
+  {
+    q: "Como funciona a troca / reembolso para o cliente?",
+    a: "Cliente abre o pedido em Reembolso e descreve o motivo (com foto, se quiser). Você recebe na aba Reembolsos e decide aprovar ou negar. Aprovado, o valor volta automaticamente para o cliente.",
+  },
+  {
+    q: "Como criar um cupom de desconto?",
+    a: "Vá na aba Cupons → Novo Cupom. Defina o código (ex: BEMVINDO10), o valor (% ou R$), validade e limite de uso. Compartilhe nas redes para o cliente usar no checkout.",
+  },
 ];
 
-const STORAGE_KEY = "tutorials_completed";
+const STORAGE_KEY_BASE = "tutorials_completed";
 
 const TutoriaisPanel = () => {
+  const { user } = useAuth();
+  const storageKey = user?.id ? `${STORAGE_KEY_BASE}:${user.id}` : STORAGE_KEY_BASE;
   const [search, setSearch] = useState("");
   const [openSection, setOpenSection] = useState<string | null>(null);
   const [openStep, setOpenStep] = useState<string | null>(null);
@@ -445,10 +616,11 @@ const TutoriaisPanel = () => {
   // Load completed tutorials from localStorage
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem(storageKey);
       if (saved) setCompleted(new Set(JSON.parse(saved)));
+      else setCompleted(new Set());
     } catch {}
-  }, []);
+  }, [storageKey]);
 
   const toggleCompleted = (id: string) => {
     setCompleted((prev) => {
@@ -456,7 +628,7 @@ const TutoriaisPanel = () => {
       if (next.has(id)) next.delete(id);
       else next.add(id);
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(next)));
+        localStorage.setItem(storageKey, JSON.stringify(Array.from(next)));
       } catch {}
       return next;
     });
@@ -647,7 +819,7 @@ const TutoriaisPanel = () => {
                   <div className="flex items-center gap-2 mb-0.5">
                     <h3 className="font-black text-foreground text-base tracking-tight truncate">{section.title}</h3>
                   </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed line-clamp-1">{section.shortDesc}</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{section.shortDesc}</p>
                   <div className="flex items-center gap-3 mt-1.5">
                     <span className="text-[10px] font-bold text-muted-foreground flex items-center gap-1 bg-muted/50 px-1.5 py-0.5 rounded-md">
                       <PlayCircle className="h-3 w-3 text-primary" />
@@ -788,15 +960,13 @@ const TutoriaisPanel = () => {
             Nosso suporte está pronto para te ajudar.
           </p>
         </div>
-        <a
-          href="https://wa.me/5511999999999?text=Olá!%20Preciso%20de%20ajuda%20com%20o%20painel%20do%20lojista."
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center justify-center gap-2 bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-sm font-black hover:bg-emerald-600 transition-colors w-full"
+        <button
+          onClick={() => openWhatsApp(SUPPORT_WHATSAPP, SUPPORT_MESSAGE)}
+          className="inline-flex items-center justify-center gap-2 bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-sm font-black hover:bg-emerald-600 active:scale-95 transition-all w-full"
         >
           <MessageCircle className="h-4 w-4" />
           Falar com Suporte
-        </a>
+        </button>
       </div>
     </div>
   );
