@@ -336,6 +336,23 @@ const faqs = [
                       <span className="text-muted-foreground text-sm">/mês</span>
                     </div>
 
+                    {/* Trial badge — apenas planos pagos */}
+                    {plan.monthlyFee > 0 && (
+                      <div className="mb-3 rounded-xl border-2 border-emerald-500/40 bg-emerald-500/10 px-3 py-2.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">🎁</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-extrabold text-emerald-700 dark:text-emerald-400 leading-tight">
+                              7 DIAS GRÁTIS para testar
+                            </p>
+                            <p className="text-[10px] text-emerald-700/80 dark:text-emerald-400/80 leading-tight mt-0.5">
+                              Sem cobrança agora · Cancele quando quiser
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Quick costs panel — clean and consistent */}
                     <div className="rounded-xl border border-border bg-muted/30 p-3 mb-4 space-y-1.5">
                       <div className="flex items-center justify-between text-xs">
