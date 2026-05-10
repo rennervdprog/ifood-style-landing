@@ -10,6 +10,8 @@ import { formatCep, fetchCep } from "@/lib/cepLookup";
  import { maskWhatsApp, formatWhatsAppNumber } from "@/lib/whatsapp";
  import { formatPixKeyDisplay, sanitizePixKeyForAsaas, validatePixKey, PIX_PLACEHOLDERS } from "@/lib/pixFormat";
  import { formatDocument, sanitizeDocument, validateDocument } from "@/lib/documentFormat";
+import { PLANS, PLANS_ORDER, DELIVERY_FEE_NOTE, PIX_FEE_NOTE } from "@/lib/plansInfo";
+import { Check } from "lucide-react";
 
 const storeCategories = Constants.public.Enums.store_category;
 
