@@ -458,16 +458,18 @@ const CadastroLojista = () => {
 
                       {/* Trial badge — só planos pagos */}
                       {p.monthlyFee > 0 && (
-                        <div className="mb-3 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1.5 flex items-center gap-2">
-                          <span className="text-base leading-none">🎁</span>
-                          <div className="flex-1 min-w-0">
+                        <div className="mb-3 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-2 space-y-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-base leading-none">🎁</span>
                             <p className="text-[11px] font-extrabold text-emerald-700 dark:text-emerald-400 leading-tight">
                               7 DIAS GRÁTIS para testar
                             </p>
-                            <p className="text-[9px] text-emerald-700/80 dark:text-emerald-400/80 leading-tight">
-                              Sem cobrança agora · cancele quando quiser
-                            </p>
                           </div>
+                          <ul className="text-[9.5px] text-emerald-700/90 dark:text-emerald-400/90 leading-snug space-y-0.5 pl-0.5">
+                            <li>• <strong>Dia 1–7:</strong> liberado, sem cobrar nada</li>
+                            <li>• <strong>Dia 8:</strong> 1ª cobrança de R${p.monthlyFee} (se não cancelar)</li>
+                            <li>• Cancele a qualquer hora antes do dia 8</li>
+                          </ul>
                         </div>
                       )}
 
