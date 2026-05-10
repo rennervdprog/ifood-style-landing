@@ -57,34 +57,29 @@ async function deployOne(
   const list = await listRes.json();
   const exists = Array.isArray(list) && list.some((f: any) => f.slug === slug);
 
-  // 2) montar multipart com metadata + arquivo index.ts
-  const metadata = {
-    name: slug,
-    verify_jwt: verifyJwt,
-    entrypoint_path: "index.ts",
-  };
-
-  const form = new FormData();
-  form.append(
-    "metadata",
-    new Blob([JSON.stringify(metadata)], { type: "application/json" }),
-  );
-  form.append(
-    "file",
-    new Blob([code], { type: "application/typescript" }),
-    "index.ts",
-  );
-
+  // 2) JSON body (legacy v1 simple format) — funciona p/ deploy single-file
   const url = exists
     ? `https://api.supabase.com/v1/projects/${PROJECT_REF}/functions/${slug}`
-    : `https://api.supabase.com/v1/projects/${PROJECT_REF}/functions?slug=${slug}&name=${slug}&verify_jwt=${verifyJwt}&entrypoint_path=index.ts`;
+    : `https://api.supabase.com/v1/projects/${PROJECT_REF}/functions`;
 
   const method = exists ? "PATCH" : "POST";
 
+  const payload: Record<string, unknown> = {
+    body: code,
+    verify_jwt: verifyJwt,
+  };
+  if (!exists) {
+    payload.slug = slug;
+    payload.name = slug;
+  }
+
   const res = await fetch(url, {
     method,
-    headers: { Authorization: `Bearer ${TOKEN}` },
-    body: form,
+    headers: {
+      Authorization: `Bearer ${TOKEN}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
   });
 
   const body = await res.text();
