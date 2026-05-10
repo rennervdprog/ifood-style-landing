@@ -322,51 +322,53 @@ const faqs = [
 
                   <CardContent className="flex flex-col flex-1 p-6 pt-8">
                     {/* Header */}
-                    <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${plan.color} flex items-center justify-center mb-4`}>
-                      <Icon className="h-6 w-6 text-primary-foreground" />
+                    <div className={`w-12 h-12 rounded-2xl ${plan.accentBg} flex items-center justify-center mb-4`}>
+                      <Icon className={`h-6 w-6 ${plan.accent}`} />
                     </div>
                     <h3 className="text-xl font-bold text-foreground">{plan.name}</h3>
                     <p className="text-xs text-muted-foreground mt-1 mb-4">{plan.tagline}</p>
 
                     {/* Price */}
-                    <div className="mb-2">
+                    <div className="mb-3">
                       <span className="text-4xl font-extrabold text-foreground">
-                        R$ {plan.price}
+                        R$ {plan.monthlyFee}
                       </span>
-                      <span className="text-muted-foreground text-sm">{plan.period}</span>
+                      <span className="text-muted-foreground text-sm">/mês</span>
                     </div>
 
-                    {/* Commission badge */}
-                    <div className={`inline-flex items-center rounded-xl ${plan.lightBg} px-3 py-2 text-sm font-bold ${plan.textColor} mb-2 w-fit`}>
-                      <BadgePercent className="h-4 w-4 mr-1.5" />
-                      {plan.commission} {plan.commissionLabel}
-                    </div>
-
-                    {/* Extra fees */}
-                    {plan.extraFees.length > 0 && (
-                      <div className="space-y-1 mb-4">
-                        {plan.extraFees.map((fee) => (
-                          <p key={fee.label} className="text-xs text-muted-foreground flex items-center gap-1">
-                            <span className="w-1 h-1 rounded-full bg-muted-foreground" />
-                            {fee.label}: <span className="font-semibold">{fee.value}</span>
-                          </p>
-                        ))}
-                        {(plan as any).extraNote && (
-                          <p className="text-[10px] italic text-muted-foreground/80 mt-1 leading-tight">
-                            {(plan as any).extraNote}
-                          </p>
-                        )}
+                    {/* Quick costs panel — clean and consistent */}
+                    <div className="rounded-xl border border-border bg-muted/30 p-3 mb-4 space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Comissão por pedido</span>
+                        <span className="font-bold text-foreground">{plan.commissionRate === 0 ? "Grátis" : `${plan.commissionRate}%`}</span>
                       </div>
-                    )}
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Taxa por PIX</span>
+                        <span className="font-bold text-foreground">{plan.pixFee === 0 ? "Grátis" : `R$ ${plan.pixFee.toFixed(2).replace(".", ",")}`}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Entrega plataforma (cliente paga)</span>
+                        <span className="font-bold text-foreground">R$ 2,00</span>
+                      </div>
+                    </div>
 
-                    <p className="text-sm text-muted-foreground mb-6 leading-relaxed">{plan.description}</p>
+                    <p className="text-xs text-muted-foreground mb-3 leading-relaxed italic">
+                      {plan.forWho}.
+                    </p>
+
+                    {/* Exemplo prático */}
+                    <div className="rounded-lg bg-primary/5 border border-primary/15 p-2.5 mb-4">
+                      <p className="text-[11px] text-foreground leading-relaxed">
+                        <strong>Exemplo:</strong> {plan.example(50)}.
+                      </p>
+                    </div>
 
                     {/* Features */}
                     <ul className="space-y-2.5 flex-1 mb-6">
                       {plan.features.map((f) => (
-                        <li key={f.text} className="flex items-start gap-2 text-sm text-foreground">
+                        <li key={f} className="flex items-start gap-2 text-sm text-foreground">
                           <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                          {f.text}
+                          {f}
                         </li>
                       ))}
                     </ul>
@@ -385,7 +387,7 @@ const faqs = [
                          <Loader2 className="h-4 w-4 animate-spin" />
                        ) : (
                          <>
-                           {isSoldOut ? "Esgotado" : (plan.price === "0" ? "Começar grátis" : "Escolher plano")}
+                           {isSoldOut ? "Esgotado" : (plan.monthlyFee === 0 ? "Começar grátis" : "Escolher plano")}
                            {!isSoldOut && <ArrowRight className="ml-2 h-4 w-4" />}
                          </>
                        )}
@@ -401,49 +403,13 @@ const faqs = [
       {/* ══════ COMPARISON TABLE ══════ */}
       <section className="py-16 px-4 bg-muted/20">
         <div className="mx-auto max-w-4xl">
-          <h2 className="text-2xl font-bold text-center text-foreground mb-10">
-            Compare os planos
+          <h2 className="text-2xl font-bold text-center text-foreground mb-3">
+            Compare lado a lado
           </h2>
-          <div className="overflow-x-auto rounded-2xl border border-border bg-card">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left p-4 font-semibold text-muted-foreground">Recurso</th>
-                  <th className="p-4 text-center font-bold text-foreground">Comissão</th>
-                  <th className="p-4 text-center font-bold text-foreground">Crescimento</th>
-                  <th className="p-4 text-center font-bold text-primary">Essencial</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-b border-border bg-muted/30">
-                  <td className="p-4 font-semibold text-foreground">Mensalidade</td>
-                  <td className="p-4 text-center font-bold text-foreground">R$ 0</td>
-                  <td className="p-4 text-center font-bold text-foreground">R$ 100</td>
-                  <td className="p-4 text-center font-bold text-primary">R$ 180</td>
-                </tr>
-                <tr className="border-b border-border">
-                  <td className="p-4 font-semibold text-foreground">Comissão</td>
-                  <td className="p-4 text-center text-foreground">6%</td>
-                  <td className="p-4 text-center text-foreground">2,5%</td>
-                  <td className="p-4 text-center font-bold text-primary">0%</td>
-                </tr>
-                {comparisonRows.map((row) => (
-                  <tr key={row.feature} className="border-b border-border last:border-0">
-                    <td className="p-4 text-foreground">{row.feature}</td>
-                    <td className="p-4 text-center">
-                      {row.commission ? <Check className="h-4 w-4 text-primary mx-auto" /> : <X className="h-4 w-4 text-muted-foreground/40 mx-auto" />}
-                    </td>
-                    <td className="p-4 text-center">
-                      {row.hybrid ? <Check className="h-4 w-4 text-primary mx-auto" /> : <X className="h-4 w-4 text-muted-foreground/40 mx-auto" />}
-                    </td>
-                    <td className="p-4 text-center">
-                      {row.fixed ? <Check className="h-4 w-4 text-primary mx-auto" /> : <X className="h-4 w-4 text-muted-foreground/40 mx-auto" />}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <p className="text-center text-muted-foreground text-sm mb-10 max-w-xl mx-auto">
+            Veja exatamente o que cada plano cobra e o que está incluso. Sem letras pequenas.
+          </p>
+          <PlansComparisonTable />
         </div>
       </section>
 
