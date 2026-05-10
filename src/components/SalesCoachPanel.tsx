@@ -142,7 +142,9 @@ const SalesCoachPanel = () => {
             const c = parsed.choices?.[0]?.delta?.content;
             if (c) upsertAssistant(c);
           } catch {
-            buffer = line + "\n" + buffer;
+            // Linha SSE incompleta — devolve só ela ao buffer (sem \n extra)
+            // pra concatenar com o próximo chunk de bytes.
+            buffer = line + buffer;
             break;
           }
         }
