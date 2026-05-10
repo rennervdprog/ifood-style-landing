@@ -36,12 +36,12 @@ const ROWS: Row[] = [
     },
   },
   {
-    label: "Taxa de entrega plataforma (cliente)",
+    label: "Taxa da plataforma na entrega (somada à sua taxa, paga pelo cliente)",
     values: {
-      commission_only: "R$ 2,00",
-      hybrid: "R$ 2,00",
-      fixed: "R$ 2,00",
-      supporter: "R$ 2,00",
+      commission_only: "+ R$ 2,00",
+      hybrid: "+ R$ 2,00",
+      fixed: "+ R$ 2,00",
+      supporter: "+ R$ 2,00",
     },
   },
   {
