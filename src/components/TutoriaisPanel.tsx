@@ -4,8 +4,13 @@ import {
   LayoutDashboard, ListOrdered, UtensilsCrossed, Plus, CircleDot,
   Clock, Coins, BarChart3, CreditCard, Star, Bike, AlertTriangle, Settings,
   CheckCircle2, Rocket, HelpCircle, MessageCircle, Sparkles, BookOpen,
-  PlayCircle, ArrowRight, Zap, Trophy,
+  PlayCircle, ArrowRight, Zap, Trophy, ShoppingCart, Tag, Users, Bell,
 } from "lucide-react";
+import { openWhatsApp } from "@/lib/whatsapp";
+import { useAuth } from "@/contexts/AuthContext";
+
+const SUPPORT_WHATSAPP = "14991624997";
+const SUPPORT_MESSAGE = "Olá! Preciso de ajuda com o painel do lojista do ItaSuper.";
 
 interface TutorialStep {
   title: string;
