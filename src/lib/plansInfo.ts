@@ -33,8 +33,8 @@ export function netPerOrder(plan: PlanInfo, orderValue: number, viaPix = true): 
   return Math.max(0, orderValue - commission - pix);
 }
 
-const exampleText = (plan: PlanInfo) => (orderValue: number) => {
-  const net = netPerOrder(plan, orderValue, true);
+const exampleText = (plan: Omit<PlanInfo, "example">) => (orderValue: number) => {
+  const net = netPerOrder(plan as PlanInfo, orderValue, true);
   return `Em um pedido de R$ ${orderValue} via PIX, você fica com R$ ${net.toFixed(2).replace(".", ",")}`;
 };
 
@@ -60,7 +60,7 @@ const commission_only: PlanInfo = {
     "Notificação de pedidos no celular",
     "Todas as ferramentas básicas",
   ],
-  example: (() => (orderValue: number) => "") as PlanInfo["example"],
+  example: (_: number) => "",
 };
 commission_only.example = exampleText(commission_only);
 
@@ -84,7 +84,7 @@ const hybrid: PlanInfo = {
     "Relatórios financeiros completos",
     "Destaque na vitrine + banners",
   ],
-  example: (() => (orderValue: number) => "") as PlanInfo["example"],
+  example: (_: number) => "",
 };
 hybrid.example = exampleText(hybrid);
 
@@ -108,7 +108,7 @@ const fixed: PlanInfo = {
     "Relatórios 100% detalhados",
     "Motoboy integrado + Suporte VIP",
   ],
-  example: (() => (orderValue: number) => "") as PlanInfo["example"],
+  example: (_: number) => "",
 };
 fixed.example = exampleText(fixed);
 
@@ -132,7 +132,7 @@ const supporter: PlanInfo = {
     "Selo de Apoiador na sua loja",
     "Suporte VIP prioritário",
   ],
-  example: (() => (orderValue: number) => "") as PlanInfo["example"],
+  example: (_: number) => "",
 };
 supporter.example = exampleText(supporter);
 
