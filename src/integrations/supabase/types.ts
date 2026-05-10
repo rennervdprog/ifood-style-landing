@@ -2560,6 +2560,7 @@ export type Database = {
           pdv_commission_pending: number | null
           pdv_commission_rate: number | null
           pdv_enabled: boolean | null
+          pdv_fixed_fee_per_sale: number
           pix_operational_fee_override: number | null
           plan_type: Database["public"]["Enums"]["store_plan_type"]
           platform_delivery_split_override: number | null
@@ -2581,6 +2582,7 @@ export type Database = {
           pdv_commission_pending?: number | null
           pdv_commission_rate?: number | null
           pdv_enabled?: boolean | null
+          pdv_fixed_fee_per_sale?: number
           pix_operational_fee_override?: number | null
           plan_type?: Database["public"]["Enums"]["store_plan_type"]
           platform_delivery_split_override?: number | null
@@ -2602,6 +2604,7 @@ export type Database = {
           pdv_commission_pending?: number | null
           pdv_commission_rate?: number | null
           pdv_enabled?: boolean | null
+          pdv_fixed_fee_per_sale?: number
           pix_operational_fee_override?: number | null
           plan_type?: Database["public"]["Enums"]["store_plan_type"]
           platform_delivery_split_override?: number | null
