@@ -31,6 +31,8 @@ import {
  import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
+import { PLANS, PLANS_ORDER, DELIVERY_FEE_NOTE, PIX_FEE_NOTE, type PlanInfo } from "@/lib/plansInfo";
+import PlansComparisonTable from "@/components/PlansComparisonTable";
 
 /* ─── animated counter hook ─── */
 function useCountUp(end: number, duration = 2000, start = false) {
@@ -63,120 +65,8 @@ function useInView(threshold = 0.3) {
   return { ref, visible };
 }
 
-/* ─── plan data ─── */
-const plans = [
-  {
-    id: "commission_only",
-    name: "Comissão",
-    tagline: "Comece sem investir nada",
-    price: "0",
-    period: "/mês",
-    icon: Rocket,
-    highlight: false,
-    badge: null,
-    commission: "6% + R$ 2",
-    commissionLabel: "por entrega (pago pelo cliente) + R$ 1,99 taxa pix (lojista)",
-    color: "from-emerald-500 to-emerald-600",
-    lightBg: "bg-emerald-50",
-    textColor: "text-emerald-600",
-    borderColor: "border-emerald-200",
-    description: "Ideal para testar sem risco. Pague 6% apenas sobre as vendas realizadas.",
-    features: [
-      { text: "Cardápio digital ilimitado", included: true },
-      { text: "WhatsApp de atualização", included: true },
-      { text: "Gestão de pedidos básica", included: true },
-      { text: "PIX automático", included: true },
-      { text: "Taxa entrega plataforma: R$ 2,00 (pago pelo cliente)", included: true },
-      { text: "Relatórios avançados", included: false },
-      { text: "Emissão de Notas", included: false },
-    ],
-    extraFees: [],
-  },
-  {
-    id: "hybrid",
-    name: "Crescimento",
-    tagline: "Taxas menores, mais ferramentas",
-    price: "100",
-    period: "/mês",
-    icon: TrendingUp,
-    highlight: false,
-    badge: null,
-    commission: "2,5% + R$ 2",
-    commissionLabel: "por entrega (pago pelo cliente) + R$ 1,99 taxa pix (lojista)",
-    color: "from-blue-500 to-blue-600",
-    lightBg: "bg-blue-50",
-    textColor: "text-blue-600",
-    borderColor: "border-blue-200",
-    description: "Reduza sua comissão pela metade com ferramentas de gestão profissional.",
-    features: [
-      { text: "Comissão reduzida (2,5%)", included: true },
-      { text: "Relatórios financeiros detalhados", included: true },
-      { text: "Destaque na vitrine", included: true },
-      { text: "Banners promocionais", included: true },
-      { text: "Taxa entrega plataforma: R$ 2,00", included: true },
-      { text: "Emissão de Notas", included: false },
-    ],
-    extraFees: [],
-  },
-  {
-    id: "fixed",
-    name: "Essencial",
-    tagline: "Lucro total e gestão completa",
-    price: "180",
-    period: "/mês",
-    icon: Crown,
-    highlight: true,
-    badge: "⭐ Mais escolhido",
-    commission: "R$ 1,99",
-    commissionLabel: "taxa pix",
-    color: "from-primary to-orange-600",
-    lightBg: "bg-accent",
-    textColor: "text-primary",
-    borderColor: "border-primary/30",
-    description: "Fique com 100% do valor dos seus produtos. Gestão total e integração logística.",
-    features: [
-      { text: "Zero comissão por venda", included: true },
-      { text: "Emissão de Nota Fiscal", included: true },
-      { text: "Relatórios 100% detalhados", included: true },
-      { text: "Motoboy Integrado (apita no app)", included: true },
-      { text: "Suporte VIP Prioritário", included: true },
-      { text: "Todas as ferramentas", included: true },
-    ],
-    extraFees: [
-      { label: "Taxa PIX", value: "R$ 1,99/transação" },
-      { label: "Taxa entrega plataforma", value: "R$ 2,00 (adicionais, pagos pelo cliente)" },
-    ],
-    extraNote: "A taxa de entrega é somada à definida por você. Ex: Lojista define R$ 3, no cliente aparece R$ 5 (R$ 3 seu + R$ 2 plataforma).",
-  },
-  {
-    id: "supporter",
-    name: "Apoiador",
-    tagline: "Edição Especial de Lançamento",
-    price: "130",
-    period: "/mês",
-    icon: Sparkles,
-    highlight: false,
-    badge: "🚀 10 vagas limitadas",
-    commission: "R$ 1,99",
-    commissionLabel: "taxa pix",
-    color: "from-violet-500 to-purple-600",
-    lightBg: "bg-violet-50",
-    textColor: "text-violet-600",
-    borderColor: "border-violet-200",
-    description: "Mesmas regras do Essencial com preço congelado para sempre (apenas 10 primeiras lojas).",
-    features: [
-      { text: "Mesmos benefícios do Essencial", included: true },
-      { text: "Preço fixo vitalício", included: true },
-      { text: "Selo de Apoiador na loja", included: true },
-      { text: "Suporte VIP", included: true },
-    ],
-    extraFees: [
-      { label: "Taxa PIX", value: "R$ 1,99/transação" },
-      { label: "Taxa entrega plataforma", value: "R$ 2,00 (adicionais, pagos pelo cliente)" },
-    ],
-    extraNote: "A taxa de entrega é somada à definida por você. Ex: Lojista define R$ 3, no cliente aparece R$ 5 (R$ 3 seu + R$ 2 plataforma).",
-  },
-];
+/* ─── plan data centralizado em src/lib/plansInfo.ts ─── */
+const plans: PlanInfo[] = PLANS_ORDER.map((id) => PLANS[id]);
 
 const painPoints = [
   { emoji: "📸", pain: "Manda foto do cardápio pelo WhatsApp", solution: "Link profissional com fotos e preços atualizados" },
@@ -218,20 +108,6 @@ const faqs = [
 ];
 
 /* ─── comparison table data ─── */
-const comparisonRows = [
-  { feature: "Cardápio digital", commission: true, hybrid: true, fixed: true },
-  { feature: "QR Code exclusivo", commission: true, hybrid: true, fixed: true },
-  { feature: "PIX automático", commission: true, hybrid: true, fixed: true },
-  { feature: "Notificações push", commission: true, hybrid: true, fixed: true },
-  { feature: "Cupons e promoções", commission: true, hybrid: true, fixed: true },
-  { feature: "Fidelidade", commission: true, hybrid: true, fixed: true },
-  { feature: "Relatórios avançados", commission: false, hybrid: true, fixed: true },
-  { feature: "Suporte prioritário", commission: false, hybrid: true, fixed: true },
-  { feature: "Destaque na vitrine", commission: false, hybrid: true, fixed: true },
-  { feature: "Banners ilimitados", commission: false, hybrid: true, fixed: true },
-  { feature: "Suporte VIP", commission: false, hybrid: false, fixed: true },
-  { feature: "Prioridade em novidades", commission: false, hybrid: false, fixed: true },
-];
 
  export default function PlanosPage() {
    const navigate = useNavigate();
@@ -446,51 +322,53 @@ const comparisonRows = [
 
                   <CardContent className="flex flex-col flex-1 p-6 pt-8">
                     {/* Header */}
-                    <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${plan.color} flex items-center justify-center mb-4`}>
-                      <Icon className="h-6 w-6 text-primary-foreground" />
+                    <div className={`w-12 h-12 rounded-2xl ${plan.accentBg} flex items-center justify-center mb-4`}>
+                      <Icon className={`h-6 w-6 ${plan.accent}`} />
                     </div>
                     <h3 className="text-xl font-bold text-foreground">{plan.name}</h3>
                     <p className="text-xs text-muted-foreground mt-1 mb-4">{plan.tagline}</p>
 
                     {/* Price */}
-                    <div className="mb-2">
+                    <div className="mb-3">
                       <span className="text-4xl font-extrabold text-foreground">
-                        R$ {plan.price}
+                        R$ {plan.monthlyFee}
                       </span>
-                      <span className="text-muted-foreground text-sm">{plan.period}</span>
+                      <span className="text-muted-foreground text-sm">/mês</span>
                     </div>
 
-                    {/* Commission badge */}
-                    <div className={`inline-flex items-center rounded-xl ${plan.lightBg} px-3 py-2 text-sm font-bold ${plan.textColor} mb-2 w-fit`}>
-                      <BadgePercent className="h-4 w-4 mr-1.5" />
-                      {plan.commission} {plan.commissionLabel}
-                    </div>
-
-                    {/* Extra fees */}
-                    {plan.extraFees.length > 0 && (
-                      <div className="space-y-1 mb-4">
-                        {plan.extraFees.map((fee) => (
-                          <p key={fee.label} className="text-xs text-muted-foreground flex items-center gap-1">
-                            <span className="w-1 h-1 rounded-full bg-muted-foreground" />
-                            {fee.label}: <span className="font-semibold">{fee.value}</span>
-                          </p>
-                        ))}
-                        {(plan as any).extraNote && (
-                          <p className="text-[10px] italic text-muted-foreground/80 mt-1 leading-tight">
-                            {(plan as any).extraNote}
-                          </p>
-                        )}
+                    {/* Quick costs panel — clean and consistent */}
+                    <div className="rounded-xl border border-border bg-muted/30 p-3 mb-4 space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Comissão por pedido</span>
+                        <span className="font-bold text-foreground">{plan.commissionRate === 0 ? "Grátis" : `${plan.commissionRate}%`}</span>
                       </div>
-                    )}
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Taxa por PIX</span>
+                        <span className="font-bold text-foreground">{plan.pixFee === 0 ? "Grátis" : `R$ ${plan.pixFee.toFixed(2).replace(".", ",")}`}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Entrega plataforma (cliente paga)</span>
+                        <span className="font-bold text-foreground">R$ 2,00</span>
+                      </div>
+                    </div>
 
-                    <p className="text-sm text-muted-foreground mb-6 leading-relaxed">{plan.description}</p>
+                    <p className="text-xs text-muted-foreground mb-3 leading-relaxed italic">
+                      {plan.forWho}.
+                    </p>
+
+                    {/* Exemplo prático */}
+                    <div className="rounded-lg bg-primary/5 border border-primary/15 p-2.5 mb-4">
+                      <p className="text-[11px] text-foreground leading-relaxed">
+                        <strong>Exemplo:</strong> {plan.example(50)}.
+                      </p>
+                    </div>
 
                     {/* Features */}
                     <ul className="space-y-2.5 flex-1 mb-6">
                       {plan.features.map((f) => (
-                        <li key={f.text} className="flex items-start gap-2 text-sm text-foreground">
+                        <li key={f} className="flex items-start gap-2 text-sm text-foreground">
                           <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                          {f.text}
+                          {f}
                         </li>
                       ))}
                     </ul>
@@ -509,7 +387,7 @@ const comparisonRows = [
                          <Loader2 className="h-4 w-4 animate-spin" />
                        ) : (
                          <>
-                           {isSoldOut ? "Esgotado" : (plan.price === "0" ? "Começar grátis" : "Escolher plano")}
+                           {isSoldOut ? "Esgotado" : (plan.monthlyFee === 0 ? "Começar grátis" : "Escolher plano")}
                            {!isSoldOut && <ArrowRight className="ml-2 h-4 w-4" />}
                          </>
                        )}
@@ -525,49 +403,13 @@ const comparisonRows = [
       {/* ══════ COMPARISON TABLE ══════ */}
       <section className="py-16 px-4 bg-muted/20">
         <div className="mx-auto max-w-4xl">
-          <h2 className="text-2xl font-bold text-center text-foreground mb-10">
-            Compare os planos
+          <h2 className="text-2xl font-bold text-center text-foreground mb-3">
+            Compare lado a lado
           </h2>
-          <div className="overflow-x-auto rounded-2xl border border-border bg-card">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left p-4 font-semibold text-muted-foreground">Recurso</th>
-                  <th className="p-4 text-center font-bold text-foreground">Comissão</th>
-                  <th className="p-4 text-center font-bold text-foreground">Crescimento</th>
-                  <th className="p-4 text-center font-bold text-primary">Essencial</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-b border-border bg-muted/30">
-                  <td className="p-4 font-semibold text-foreground">Mensalidade</td>
-                  <td className="p-4 text-center font-bold text-foreground">R$ 0</td>
-                  <td className="p-4 text-center font-bold text-foreground">R$ 100</td>
-                  <td className="p-4 text-center font-bold text-primary">R$ 180</td>
-                </tr>
-                <tr className="border-b border-border">
-                  <td className="p-4 font-semibold text-foreground">Comissão</td>
-                  <td className="p-4 text-center text-foreground">6%</td>
-                  <td className="p-4 text-center text-foreground">2,5%</td>
-                  <td className="p-4 text-center font-bold text-primary">0%</td>
-                </tr>
-                {comparisonRows.map((row) => (
-                  <tr key={row.feature} className="border-b border-border last:border-0">
-                    <td className="p-4 text-foreground">{row.feature}</td>
-                    <td className="p-4 text-center">
-                      {row.commission ? <Check className="h-4 w-4 text-primary mx-auto" /> : <X className="h-4 w-4 text-muted-foreground/40 mx-auto" />}
-                    </td>
-                    <td className="p-4 text-center">
-                      {row.hybrid ? <Check className="h-4 w-4 text-primary mx-auto" /> : <X className="h-4 w-4 text-muted-foreground/40 mx-auto" />}
-                    </td>
-                    <td className="p-4 text-center">
-                      {row.fixed ? <Check className="h-4 w-4 text-primary mx-auto" /> : <X className="h-4 w-4 text-muted-foreground/40 mx-auto" />}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <p className="text-center text-muted-foreground text-sm mb-10 max-w-xl mx-auto">
+            Veja exatamente o que cada plano cobra e o que está incluso. Sem letras pequenas.
+          </p>
+          <PlansComparisonTable />
         </div>
       </section>
 
