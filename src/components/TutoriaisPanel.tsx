@@ -819,7 +819,7 @@ const TutoriaisPanel = () => {
                   <div className="flex items-center gap-2 mb-0.5">
                     <h3 className="font-black text-foreground text-base tracking-tight truncate">{section.title}</h3>
                   </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed line-clamp-1">{section.shortDesc}</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{section.shortDesc}</p>
                   <div className="flex items-center gap-3 mt-1.5">
                     <span className="text-[10px] font-bold text-muted-foreground flex items-center gap-1 bg-muted/50 px-1.5 py-0.5 rounded-md">
                       <PlayCircle className="h-3 w-3 text-primary" />
