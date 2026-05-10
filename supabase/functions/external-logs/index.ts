@@ -40,12 +40,12 @@ Deno.serve(async (req) => {
   if (!fnRes.ok) return json({ step: "get_function", error: fnData }, 500);
 
   const sql = `
-    select id, function_logs.timestamp, event_message, level, event_type, m.function_id
-    from function_logs
+    select id, function_edge_logs.timestamp, event_message, m.function_id, m.execution_time_ms
+    from function_edge_logs
     cross join unnest(metadata) as m
     where m.function_id = '${fnData.id}'
     order by timestamp desc
-    limit 50
+    limit 30
   `;
 
   const url = `https://api.supabase.com/v1/projects/${PROJECT_REF}/analytics/endpoints/logs.all?sql=${encodeURIComponent(sql)}`;
@@ -53,8 +53,18 @@ Deno.serve(async (req) => {
   const txt = await r.text();
   let parsed: unknown = txt; try { parsed = JSON.parse(txt); } catch {}
 
+  // Também busca o body atualmente deployado
+  const bodyRes = await fetch(
+    `https://api.supabase.com/v1/projects/${PROJECT_REF}/functions/${fn}/body`,
+    { headers: { Authorization: `Bearer ${TOKEN}` } },
+  );
+  const bodyTxt = await bodyRes.text();
+  const bodyPreview = bodyTxt.slice(0, 500);
+  const bodyLen = bodyTxt.length;
+
   return json({
     function: { id: fnData.id, slug: fnData.slug, version: fnData.version, status: fnData.status, verify_jwt: fnData.verify_jwt },
+    deployed_body: { length: bodyLen, preview: bodyPreview },
     logs_status: r.status,
     logs: parsed,
   });
