@@ -472,9 +472,14 @@ const CadastroLojista = () => {
                         </div>
                         <div className="rounded-lg bg-muted/40 p-2 text-center">
                           <p className="text-[9px] uppercase tracking-wider text-muted-foreground">Entrega</p>
-                          <p className="text-xs font-bold text-foreground">R$2 cli.</p>
+                          <p className="text-xs font-bold text-foreground">+R$2</p>
+                          <p className="text-[8px] text-muted-foreground leading-tight">cliente paga</p>
                         </div>
                       </div>
+
+                      <p className="text-[10px] text-muted-foreground italic mb-2 leading-snug">
+                        💡 Os <strong>R$2 da entrega</strong> são somados à taxa que você cobra. Quem paga é o cliente — não sai do seu caixa.
+                      </p>
 
                       <ul className="space-y-1">
                         {p.features.slice(0, 3).map(f => (
