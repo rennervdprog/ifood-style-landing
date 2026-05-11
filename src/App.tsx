@@ -18,7 +18,6 @@ import { initCapacitorLifecycle } from "@/lib/capacitorLifecycle";
 import { initRealtimeWatchdog } from "@/lib/realtimeWatchdog";
 import { initAutoUpdate } from "@/lib/capacitorAutoUpdate";
 import { checkAppVersion } from "@/lib/appVersionCheck";
-import { supabase } from "@/integrations/supabase/client";
 import CapacitorRouteGuard from "@/components/CapacitorRouteGuard";
 import StoreAppGuard from "@/components/StoreAppGuard";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -176,40 +175,11 @@ const App = () => {
       checkAppVersion(mode).catch(() => {}); 
     }, 4000);
 
-    // 🌐 WEB / PWA: quando a aba volta a ficar visível ou o navegador reconecta,
-    // o WebSocket do Supabase costuma estar morto silenciosamente. Forçamos
-    // reconexão de canais e refetch de queries para alinhar a UI ao banco.
-    // Debounce: evitar reconexões em cascata se visibilitychange disparar múltiplas vezes
-    let realtimeReconnectTimer: ReturnType<typeof setTimeout> | null = null;
-    const reconnectRealtime = () => {
-      if (realtimeReconnectTimer) clearTimeout(realtimeReconnectTimer);
-      realtimeReconnectTimer = setTimeout(() => {
-        try {
-          const channels = supabase.getChannels();
-          if (channels.length === 0) return;
-          // Verificar se algum canal está fora do estado "joined" antes de reconectar
-          const hasDeadChannel = channels.some(c => (c as any).state !== "joined");
-          if (!hasDeadChannel) return; // Todos OK, não precisa reconectar
-          supabase.realtime.disconnect();
-          supabase.realtime.connect();
-          setTimeout(() => {
-            supabase.getChannels().forEach((c) => {
-              try {
-                if ((c as any).state !== "joined") c.subscribe();
-              } catch {}
-            });
-          }, 500);
-        } catch {}
-      }, 1000); // 1s de debounce
-    };
-
     const handleVisibility = () => {
       if (document.visibilityState !== "visible") return;
-      reconnectRealtime();
       queryClient.invalidateQueries();
     };
     const handleOnline = () => {
-      reconnectRealtime();
       queryClient.invalidateQueries();
     };
     document.addEventListener("visibilitychange", handleVisibility);
@@ -237,7 +207,6 @@ const App = () => {
     return () => {
       document.removeEventListener("visibilitychange", handleVisibility);
       window.removeEventListener("online", handleOnline);
-      if (realtimeReconnectTimer) clearTimeout(realtimeReconnectTimer);
     };
   }, []);
 

@@ -20,6 +20,7 @@ import SignOutConfirm from "@/components/SignOutConfirm";
  import { formatPixKeyDisplay, sanitizePixKeyForAsaas, validatePixKey, PIX_PLACEHOLDERS } from "@/lib/pixFormat";
  import { formatDocument, sanitizeDocument, validateDocument } from "@/lib/documentFormat";
  import { checkAppVersion } from "@/lib/appVersionCheck";
+ import { APP_VERSION } from "@/lib/appVersion";
  import { forceCheckForUpdate } from "@/lib/capacitorAutoUpdate";
 
 /* ── Reusable UI atoms ─────────────────────────────────── */
@@ -167,7 +168,7 @@ const PerfilPage = () => {
   const [document, setDocument] = useState("");
   const [savingPersonal, setSavingPersonal] = useState(false);
    const [personalLoaded, setPersonalLoaded] = useState(false);
-  const [appVersion, setAppVersion] = useState("1.5.4");
+  const [appVersion, setAppVersion] = useState(APP_VERSION);
 
   /* ── Effects ── */
   useEffect(() => {

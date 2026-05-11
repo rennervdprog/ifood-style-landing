@@ -27,20 +27,10 @@ function reconnectRealtime() {
     supabase.realtime.disconnect();
     supabase.realtime.connect();
 
-    // After a hard disconnect, ALL channels need to rejoin — not just the closed ones.
-    // We give the socket a brief moment to come back up before re-subscribing.
-    setTimeout(() => {
-      supabase.getChannels().forEach((channel) => {
-        try {
-          const state = (channel as any).state;
-          if (state === "joined") return;
-          channel.subscribe();
-        } catch {}
-      });
-      // Bump focus state — React Query will refetch any stale query.
-      // Single toggle is enough — no need for false→true trick.
-      focusManager.setFocused(true);
-    }, 300);
+    // Do not call channel.subscribe() again here: Phoenix channels can only
+    // join once per instance. The Realtime client re-joins channels after the
+    // socket reconnects; React Query refetch below keeps stale screens fresh.
+    focusManager.setFocused(true);
   } catch (e) {
     console.warn("[CapLifecycle] Realtime reconnect error:", e);
   }

@@ -29,17 +29,10 @@ export function initRealtimeWatchdog() {
       const state = conn?.readyState;
       // 0=CONNECTING 1=OPEN 2=CLOSING 3=CLOSED
       if (state === 2 || state === 3) {
-        console.warn("[RealtimeWatchdog] Socket closed but channels active — reconnecting");
+        console.warn("[RealtimeWatchdog] Socket closed but channels active — reconnecting socket");
         try {
           supabase.realtime.disconnect();
           supabase.realtime.connect();
-          setTimeout(() => {
-            supabase.getChannels().forEach((c: any) => {
-              try {
-                if (c.state !== "joined") c.subscribe();
-              } catch {}
-            });
-          }, 400);
         } catch (e) {
           console.warn("[RealtimeWatchdog] reconnect error:", e);
         }
