@@ -793,7 +793,9 @@ const ClientHomeContent = () => {
               </div>
             ) : (
               <p className="text-sm text-muted-foreground text-center py-6">
-                Nenhuma loja disponível no momento.
+                {effectiveCity
+                  ? `Nenhuma loja disponível em ${effectiveCity} no momento.`
+                  : "Nenhuma loja disponível no momento."}
               </p>
             )}
           </div>
