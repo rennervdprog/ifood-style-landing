@@ -404,7 +404,7 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
   }
 
   return (
-    <div className="rounded-xl overflow-hidden border border-border bg-card">
+    <div className="rounded-xl overflow-hidden border border-border bg-card relative isolate z-0">
       {/* Header */}
       <div className="bg-gradient-to-r from-primary to-primary/70 px-3 py-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
