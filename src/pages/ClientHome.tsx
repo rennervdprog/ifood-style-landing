@@ -421,19 +421,11 @@ const ClientHomeContent = () => {
         body: {
           city: effectiveCity,
           limit: 50,
-          fallback_to_all: true,
+          fallback_to_all: false,
         },
       });
       if (error) throw error;
       let rows = Array.isArray(data?.stores) ? data.stores : [];
-
-      if (rows.length === 0) {
-        const { data: fallbackData, error: fallbackError } = await supabase.functions.invoke("public-store-catalog", {
-          body: { limit: 50, fallback_to_all: true },
-        });
-        if (fallbackError) throw fallbackError;
-        rows = Array.isArray(fallbackData?.stores) ? fallbackData.stores : [];
-      }
 
       // Fetch opening hours
       const storeIds = rows.map((s: any) => s.id);
