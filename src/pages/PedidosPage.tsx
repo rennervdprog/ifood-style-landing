@@ -481,6 +481,7 @@ const PedidosPage = () => {
   const [simulatingPayment, setSimulatingPayment] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState<any>(null);
   const [showRefundModal, setShowRefundModal] = useState<any>(null);
+  const [detailsOrder, setDetailsOrder] = useState<any>(null);
   const [pixModal, setPixModal] = useState<{
     orderId: string;
     qrCode: string | null;
