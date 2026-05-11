@@ -18,6 +18,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useStoreContext } from "@/contexts/StoreContext";
 import { useStorePlan } from "@/hooks/useStorePlan";
 import { getStoreAppSlug } from "@/components/StoreAppGuard";
+import { checkStoreAccess, MAX_DISTANCE_KM } from "@/lib/fraudCheck";
 
 interface Product {
   id: string;
@@ -64,11 +65,12 @@ const StorePage = () => {
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const pageRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLDivElement>(null);
+  const [fraudBlock, setFraudBlock] = useState<{ distanceKm: number; storeCity: string | null } | null>(null);
 
   const { data: store, isLoading: storeLoading } = useQuery({
     queryKey: ["store", id || slug],
     queryFn: async () => {
-      let query = supabase.from("stores_public").select("id, name, slug, image_url, category, rating, is_open, force_closed, status, delivery_mode, own_delivery_fee, delivery_fee, minimum_order_value, estimated_delivery_time, owner_id, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, settings").in("status", ["ativo", "bloqueado"]);
+      let query = supabase.from("stores_public").select("id, name, slug, image_url, category, rating, is_open, force_closed, status, delivery_mode, own_delivery_fee, delivery_fee, minimum_order_value, estimated_delivery_time, owner_id, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings").in("status", ["ativo", "bloqueado"]);
       if (id) query = query.eq("id", id);
       else if (slug) query = query.eq("slug", slug);
       const { data, error } = await query.maybeSingle();
@@ -267,6 +269,30 @@ const StorePage = () => {
     storeStatus.isOpen = false;
     storeStatus.reason = "Loja temporariamente fechada";
   }
+
+  // Antifraude: bloqueia acesso quando GPS está muito longe da loja
+  useEffect(() => {
+    if (!store) return;
+    const lat = (store as any).latitude;
+    const lng = (store as any).longitude;
+    if (typeof lat !== "number" || typeof lng !== "number") return;
+    let cancelled = false;
+    checkStoreAccess({
+      storeId: store.id,
+      storeName: store.name,
+      storeCity: (store as any).address_city ?? null,
+      storeLat: lat,
+      storeLng: lng,
+    }).then((res) => {
+      if (cancelled) return;
+      if (!res.allowed && typeof res.distanceKm === "number") {
+        setFraudBlock({ distanceKm: res.distanceKm, storeCity: (store as any).address_city ?? null });
+      } else {
+        setFraudBlock(null);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [store]);
 
   const hasConfiguredHours = Array.isArray(storeHours) && storeHours.length > 0;
   const statusLabel = hasConfiguredHours
@@ -487,6 +513,28 @@ const StorePage = () => {
           className="bg-primary text-primary-foreground rounded-2xl py-3 px-6 font-semibold hover:bg-primary/90 transition-colors"
         >
           Ver outras lojas
+        </button>
+      </div>
+    );
+  }
+
+  if (fraudBlock) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center text-center px-6">
+        <span className="text-5xl mb-4">📍</span>
+        <h1 className="text-xl font-bold text-foreground mb-2">Loja fora da sua área</h1>
+        <p className="text-sm text-muted-foreground mb-2">
+          Esta loja está a aproximadamente <span className="font-bold text-foreground">{fraudBlock.distanceKm.toFixed(1)} km</span> de você
+          {fraudBlock.storeCity ? <> em <span className="font-bold">{fraudBlock.storeCity}</span></> : null}.
+        </p>
+        <p className="text-xs text-muted-foreground mb-6">
+          Por segurança, só permitimos pedidos a até {MAX_DISTANCE_KM} km da loja.
+        </p>
+        <button
+          onClick={() => navigate("/")}
+          className="bg-primary text-primary-foreground rounded-2xl py-3 px-6 font-semibold hover:bg-primary/90 transition-colors"
+        >
+          Ver lojas próximas
         </button>
       </div>
     );
