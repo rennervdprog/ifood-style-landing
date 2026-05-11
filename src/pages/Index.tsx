@@ -54,6 +54,8 @@ import FirstOrderBanner from "@/components/FirstOrderBanner";
 import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 import ProductTour, { clienteTourSteps } from "@/components/ProductTour";
 import { useNavigate } from "react-router-dom";
+import { useUserLocation } from "@/hooks/useUserLocation";
+import { haversineDistanceMeters } from "@/lib/addressGeocoding";
 
 /* ─── hooks ─── */
 function useCountUp(end: number, duration = 2000, start = false) {
@@ -136,6 +138,7 @@ const Index = () => {
   const [category, setCategory] = useState("all");
   const [search, setSearch] = useState("");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const userLocation = useUserLocation();
 
   const statsRef = useInView(0.3);
   const storesCount = useCountUp(50, 2000, statsRef.visible);
@@ -151,7 +154,7 @@ const Index = () => {
       const { data, error } = await supabase
         .from("stores")
         .select(`
-          id, name, slug, image_url, category, categories, rating, is_open, force_closed, status, delivery_mode, own_delivery_fee,
+          id, name, slug, image_url, category, categories, rating, is_open, force_closed, status, delivery_mode, own_delivery_fee, latitude, longitude, address_city, address_state,
           opening_hours (*)
         `)
         .order("rating", { ascending: false });
@@ -175,14 +178,34 @@ const Index = () => {
     const withStatus = stores.map(store => {
       const hours = (store as any).opening_hours || [];
       const status = getStoreOpenStatus(hours as OpeningHour[], (store as any).force_closed || false, store.is_open);
-      return { ...store, computedOpen: status.isOpen, statusReason: status.reason };
+      const lat = (store as any).latitude;
+      const lng = (store as any).longitude;
+      const distanceKm =
+        userLocation.coords && typeof lat === "number" && typeof lng === "number"
+          ? haversineDistanceMeters(userLocation.coords, { lat, lng }) / 1000
+          : null;
+      return { ...store, computedOpen: status.isOpen, statusReason: status.reason, distanceKm };
     });
     return withStatus.sort((a, b) => {
       if (a.computedOpen && !b.computedOpen) return -1;
       if (!a.computedOpen && b.computedOpen) return 1;
+      // Mesma cidade do GPS primeiro
+      if (userLocation.city) {
+        const cityNorm = userLocation.city.toLowerCase();
+        const aCity = ((a as any).address_city || "").toLowerCase() === cityNorm;
+        const bCity = ((b as any).address_city || "").toLowerCase() === cityNorm;
+        if (aCity && !bCity) return -1;
+        if (!aCity && bCity) return 1;
+      }
+      // Depois por distância (se disponível)
+      const da = (a as any).distanceKm;
+      const db = (b as any).distanceKm;
+      if (typeof da === "number" && typeof db === "number") return da - db;
+      if (typeof da === "number") return -1;
+      if (typeof db === "number") return 1;
       return 0;
     });
-  }, [stores]);
+  }, [stores, userLocation.coords, userLocation.city]);
 
   const filtered = useMemo(() => {
     let result = sorted?.filter((s: any) => {
@@ -612,7 +635,7 @@ const Index = () => {
              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
                {filtered.map((store, idx) => (
                  <div key={store.id} className="transition-transform hover:scale-[1.03]" {...(idx === 0 ? { "data-tour": "store-card" } : {})}>
-                   <StoreCard {...store} is_open={store.computedOpen} statusReason={store.statusReason} />
+                    <StoreCard {...store} is_open={store.computedOpen} statusReason={store.statusReason} distanceKm={(store as any).distanceKm} />
                  </div>
                ))}
              </div>

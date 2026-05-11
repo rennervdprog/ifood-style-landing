@@ -15,15 +15,43 @@ import { toast } from "sonner";
 import BottomNav from "@/components/BottomNav";
 import ProductTour, { clienteTourSteps } from "@/components/ProductTour";
 import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
+import { useUserLocation } from "@/hooks/useUserLocation";
+import { haversineDistanceMeters } from "@/lib/addressGeocoding";
+import { MapPin, RefreshCw } from "lucide-react";
 
-const mapStoresWithHours = (stores: any[], allHours: any[] | null | undefined) => {
+const mapStoresWithHours = (
+  stores: any[],
+  allHours: any[] | null | undefined,
+  userCoords?: { lat: number; lng: number } | null,
+  userCity?: string | null,
+) => {
+  const cityNorm = userCity?.toLowerCase().trim() || null;
   return stores
     .map((store: any) => {
       const hours = (allHours || []).filter((h: any) => h.store_id === store.id) as OpeningHour[];
       const status = getStoreOpenStatus(hours, store.force_closed || false, store.is_open);
-      return { ...store, realIsOpen: status.isOpen, statusReason: status.reason };
+      const lat = store.latitude;
+      const lng = store.longitude;
+      const distanceKm =
+        userCoords && typeof lat === "number" && typeof lng === "number"
+          ? haversineDistanceMeters(userCoords, { lat, lng }) / 1000
+          : null;
+      return { ...store, realIsOpen: status.isOpen, statusReason: status.reason, distanceKm };
     })
-    .sort((a: any, b: any) => (a.realIsOpen === b.realIsOpen ? 0 : a.realIsOpen ? -1 : 1));
+    .sort((a: any, b: any) => {
+      if (a.realIsOpen !== b.realIsOpen) return a.realIsOpen ? -1 : 1;
+      if (cityNorm) {
+        const aCity = (a.address_city || "").toLowerCase() === cityNorm;
+        const bCity = (b.address_city || "").toLowerCase() === cityNorm;
+        if (aCity !== bCity) return aCity ? -1 : 1;
+      }
+      const da = a.distanceKm;
+      const db = b.distanceKm;
+      if (typeof da === "number" && typeof db === "number") return da - db;
+      if (typeof da === "number") return -1;
+      if (typeof db === "number") return 1;
+      return 0;
+    });
 };
 
 /* ─── Auth Section (shown when not logged in) ─── */
@@ -328,6 +356,7 @@ const ClientHomeContent = () => {
   const { addItem } = useCart();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
+  const userLocation = useUserLocation();
 
   const { data: profile } = useQuery({
     queryKey: ["client-profile", user?.id],
@@ -357,7 +386,7 @@ const ClientHomeContent = () => {
   });
 
   const { data: searchResults } = useQuery({
-    queryKey: ["client-store-search", searchQuery],
+    queryKey: ["client-store-search", searchQuery, userLocation.coords?.lat, userLocation.coords?.lng],
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke("public-store-catalog", {
         body: { query: searchQuery, limit: 50, fallback_to_all: true },
@@ -373,7 +402,7 @@ const ClientHomeContent = () => {
         .select("store_id, day_of_week, open_time, close_time, is_closed_all_day")
         .in("store_id", storeIds);
 
-      return mapStoresWithHours(stores, allHours);
+      return mapStoresWithHours(stores, allHours, userLocation.coords, userLocation.city);
     },
     enabled: searchQuery.length >= 2,
     staleTime: 1000 * 60,
@@ -381,13 +410,16 @@ const ClientHomeContent = () => {
 
    const hasOrders = (recentOrders && recentOrders.length > 0) || searchQuery.length > 0;
 
+  // Cidade preferencial: GPS atual > cidade do cadastro
+  const effectiveCity = userLocation.city?.trim() || profile?.city?.trim() || null;
+
   // All available stores for the city — always loaded so every client sees options
    const { data: suggestedStores, isLoading: loadingStores } = useQuery({
-    queryKey: ["available-stores", profile?.city || "all"],
+    queryKey: ["available-stores", effectiveCity || "all", userLocation.coords?.lat, userLocation.coords?.lng],
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke("public-store-catalog", {
         body: {
-          city: profile?.city?.trim() || null,
+          city: effectiveCity,
           limit: 50,
           fallback_to_all: true,
         },
@@ -411,7 +443,7 @@ const ClientHomeContent = () => {
         .select("store_id, day_of_week, open_time, close_time, is_closed_all_day")
         .in("store_id", storeIds);
 
-      return mapStoresWithHours(rows, allHours);
+      return mapStoresWithHours(rows, allHours, userLocation.coords, userLocation.city);
     },
     enabled: true,
     staleTime: 1000 * 60 * 5,
@@ -699,10 +731,27 @@ const ClientHomeContent = () => {
         {/* Always-visible: All available stores in the city */}
         {!searchQuery && (
           <div>
-            <h2 className="text-sm font-bold text-foreground mb-3 flex items-center gap-1.5">
-              <Store className="h-4 w-4 text-primary" />
-              Lojas disponíveis{profile?.city ? ` em ${profile.city}` : ""}
-            </h2>
+            <div className="flex items-center justify-between mb-3 gap-2">
+              <h2 className="text-sm font-bold text-foreground flex items-center gap-1.5 min-w-0">
+                <Store className="h-4 w-4 text-primary shrink-0" />
+                <span className="truncate">
+                  Lojas disponíveis{effectiveCity ? ` em ${effectiveCity}` : ""}
+                </span>
+              </h2>
+              <button
+                onClick={userLocation.refresh}
+                className="shrink-0 flex items-center gap-1 text-[11px] font-bold text-primary hover:opacity-80 active:scale-95 transition-all"
+                title="Atualizar localização"
+              >
+                <MapPin className="h-3 w-3" />
+                {userLocation.ready
+                  ? userLocation.coords
+                    ? "GPS"
+                    : "Sem GPS"
+                  : "..."}
+                <RefreshCw className="h-3 w-3" />
+              </button>
+            </div>
             {loadingStores ? (
               <div className="grid grid-cols-2 gap-3">
                 {Array.from({ length: 4 }).map((_, i) => (
@@ -729,6 +778,14 @@ const ClientHomeContent = () => {
                       <p className="text-[11px] text-muted-foreground capitalize truncate">
                         {store.category?.replace(/_/g, " ")}
                       </p>
+                      {typeof store.distanceKm === "number" && (
+                        <p className="text-[10px] font-bold text-primary mt-0.5 flex items-center gap-1">
+                          <MapPin className="h-2.5 w-2.5" />
+                          {store.distanceKm < 1
+                            ? `${Math.round(store.distanceKm * 1000)} m`
+                            : `${store.distanceKm.toFixed(1)} km`}
+                        </p>
+                      )}
                     </div>
                     <span
                       className={`self-start text-[10px] font-bold px-2 py-0.5 rounded-full ${
