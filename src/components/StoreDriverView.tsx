@@ -3,6 +3,7 @@ import { startDriverTracking, stopDriverTracking, updateTrackingOrderId } from "
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { subscribeWithRejoin, cleanupChannel } from "@/lib/realtimeChannel";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { getOrderItemDisplayName } from "@/lib/orderItemName";
@@ -443,10 +444,10 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       );
     });
 
-    channel.subscribe();
+    subscribeWithRejoin(channel);
 
     return () => {
-      supabase.removeChannel(channel);
+      cleanupChannel(channel);
     };
   }, [linkedStoreIds, user, queryClient]);
 
