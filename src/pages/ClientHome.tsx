@@ -356,6 +356,7 @@ const ClientHomeContent = () => {
   const { addItem } = useCart();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
+  const userLocation = useUserLocation();
 
   const { data: profile } = useQuery({
     queryKey: ["client-profile", user?.id],
@@ -385,7 +386,7 @@ const ClientHomeContent = () => {
   });
 
   const { data: searchResults } = useQuery({
-    queryKey: ["client-store-search", searchQuery],
+    queryKey: ["client-store-search", searchQuery, userLocation.coords?.lat, userLocation.coords?.lng],
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke("public-store-catalog", {
         body: { query: searchQuery, limit: 50, fallback_to_all: true },
@@ -401,7 +402,7 @@ const ClientHomeContent = () => {
         .select("store_id, day_of_week, open_time, close_time, is_closed_all_day")
         .in("store_id", storeIds);
 
-      return mapStoresWithHours(stores, allHours);
+      return mapStoresWithHours(stores, allHours, userLocation.coords, userLocation.city);
     },
     enabled: searchQuery.length >= 2,
     staleTime: 1000 * 60,
@@ -409,13 +410,16 @@ const ClientHomeContent = () => {
 
    const hasOrders = (recentOrders && recentOrders.length > 0) || searchQuery.length > 0;
 
+  // Cidade preferencial: GPS atual > cidade do cadastro
+  const effectiveCity = userLocation.city?.trim() || profile?.city?.trim() || null;
+
   // All available stores for the city — always loaded so every client sees options
    const { data: suggestedStores, isLoading: loadingStores } = useQuery({
-    queryKey: ["available-stores", profile?.city || "all"],
+    queryKey: ["available-stores", effectiveCity || "all", userLocation.coords?.lat, userLocation.coords?.lng],
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke("public-store-catalog", {
         body: {
-          city: profile?.city?.trim() || null,
+          city: effectiveCity,
           limit: 50,
           fallback_to_all: true,
         },
@@ -439,7 +443,7 @@ const ClientHomeContent = () => {
         .select("store_id, day_of_week, open_time, close_time, is_closed_all_day")
         .in("store_id", storeIds);
 
-      return mapStoresWithHours(rows, allHours);
+      return mapStoresWithHours(rows, allHours, userLocation.coords, userLocation.city);
     },
     enabled: true,
     staleTime: 1000 * 60 * 5,
