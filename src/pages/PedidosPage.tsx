@@ -1279,8 +1279,12 @@ const PedidosPage = () => {
 
                   return (
                     <div key={order.id} className={`bg-white dark:bg-card rounded-2xl border overflow-hidden ${isCancelled ? "border-red-200 opacity-60" : "border-border"}`}>
-                      {/* Compact header */}
-                      <div className="px-4 py-3 flex items-center justify-between">
+                      {/* Compact header — clickable to open details */}
+                      <button
+                        type="button"
+                        onClick={() => setDetailsOrder(order)}
+                        className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-muted/40 active:bg-muted/60 transition-colors"
+                      >
                         <div className="flex items-center gap-3">
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center ${config.bg}`}>
                             <StatusIcon className={`h-4 w-4 ${config.color}`} />
@@ -1297,14 +1301,19 @@ const PedidosPage = () => {
                         <span className="text-sm font-bold text-foreground">
                           {formatBRL(Number(order.total_price))}
                         </span>
-                      </div>
+                      </button>
 
-                      {/* Items summary */}
-                      <div className="px-4 pb-2">
+                      {/* Items summary — also clickable */}
+                      <button
+                        type="button"
+                        onClick={() => setDetailsOrder(order)}
+                        className="w-full px-4 pb-2 text-left"
+                      >
                         <p className="text-xs text-muted-foreground truncate">
                           {order.order_items?.map((item: any) => `${item.quantity}x ${getOrderItemDisplayName(item)}`).join(", ")}
                         </p>
-                      </div>
+                        <p className="text-[10px] text-primary font-bold mt-1">Toque para ver detalhes →</p>
+                      </button>
 
                       {/* Actions */}
                       <div className="px-4 pb-3 flex items-center gap-2">
