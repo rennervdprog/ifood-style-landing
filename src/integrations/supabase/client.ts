@@ -26,13 +26,31 @@ export const supabase = createClient<Database>(
       timeout: 10_000,
     },
     global: {
-      // Abort Supabase REST queries after 12s — prevents silent hangs on slow mobile
+      // Abort Supabase REST queries after 25s — evita travas silenciosas em rede ruim
+      // sem cancelar prematuramente fluxos legítimos (geocoding, upload, etc).
+      // Importante: respeita o signal já vindo do caller (React Query, etc) encadeando-os,
+      // assim não perdemos o cancelamento natural quando a query é desmontada.
       fetch: (url, options) => {
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 12_000);
-        return fetch(url, { ...options, signal: controller.signal }).finally(
-          () => clearTimeout(timer)
+        const timeoutCtrl = new AbortController();
+        const timer = setTimeout(
+          () => timeoutCtrl.abort(new DOMException("Supabase fetch timeout (25s)", "TimeoutError")),
+          25_000
         );
+
+        const callerSignal = (options as any)?.signal as AbortSignal | undefined;
+        let signal: AbortSignal = timeoutCtrl.signal;
+
+        if (callerSignal) {
+          // Encadeia: aborta se qualquer um abortar
+          if (callerSignal.aborted) {
+            timeoutCtrl.abort(callerSignal.reason);
+          } else {
+            const onCallerAbort = () => timeoutCtrl.abort(callerSignal.reason);
+            callerSignal.addEventListener("abort", onCallerAbort, { once: true });
+          }
+        }
+
+        return fetch(url, { ...options, signal }).finally(() => clearTimeout(timer));
       },
     },
   }
