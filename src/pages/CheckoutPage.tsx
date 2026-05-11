@@ -20,6 +20,7 @@ import LoyaltyRedemption from "@/components/LoyaltyRedemption";
 import DeliveryTimeEstimate from "@/components/DeliveryTimeEstimate";
 import { resolveAddressContext, type Coordinates } from "@/lib/addressGeocoding";
 import { getBestClientCoordinates, getDeviceGPS } from "@/lib/deviceLocation";
+import { checkStoreAccess, MAX_DISTANCE_KM } from "@/lib/fraudCheck";
 
 const allPaymentMethods = [
   { id: "pix", label: "PIX Online", desc: "Pagamento instantâneo", icon: QrCode },
@@ -355,6 +356,25 @@ const CheckoutPage = () => {
        navigate("/perfil");
        return;
      }
+
+    // ===== ANTIFRAUDE: bloqueia se cliente está muito longe da loja =====
+    if (!isPickup && storeData && (storeData as any).latitude && (storeData as any).longitude) {
+      const fraud = await checkStoreAccess({
+        storeId: storeId!,
+        storeName: (storeData as any).name ?? null,
+        storeCity: (storeData as any).address_city ?? null,
+        storeLat: (storeData as any).latitude,
+        storeLng: (storeData as any).longitude,
+        deliveryCity: useSavedAddr ? savedAddressData?.city : (userProfile as any)?.city,
+      });
+      if (!fraud.allowed) {
+        toast.error("Pedido bloqueado por segurança", {
+          description: `Você está a ${fraud.distanceKm?.toFixed(1)} km desta loja. Limite de ${MAX_DISTANCE_KM} km para entrega.`,
+          duration: 8000,
+        });
+        return;
+      }
+    }
 
     setLoading(true);
     try {
