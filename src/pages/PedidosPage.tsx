@@ -1303,17 +1303,27 @@ const PedidosPage = () => {
                         </span>
                       </button>
 
-                      {/* Items summary — also clickable */}
-                      <button
-                        type="button"
-                        onClick={() => setDetailsOrder(order)}
-                        className="w-full px-4 pb-2 text-left"
-                      >
-                        <p className="text-xs text-muted-foreground truncate">
-                          {order.order_items?.map((item: any) => `${item.quantity}x ${getOrderItemDisplayName(item)}`).join(", ")}
-                        </p>
-                        <p className="text-[10px] text-primary font-bold mt-1">Toque para ver detalhes →</p>
-                      </button>
+                       {/* Items summary — also clickable */}
+                       <button
+                         type="button"
+                         onClick={() => setDetailsOrder(order)}
+                         className="w-full px-4 pb-2 text-left"
+                       >
+                         <p className="text-xs text-muted-foreground truncate">
+                           {order.order_items?.map((item: any) => `${item.quantity}x ${getOrderItemDisplayName(item)}`).join(", ")}
+                         </p>
+                       </button>
+
+                       {/* Show details CTA */}
+                       <div className="px-4 pb-2">
+                         <button
+                           type="button"
+                           onClick={() => setDetailsOrder(order)}
+                           className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-primary-foreground bg-primary px-3 py-2 rounded-full hover:opacity-90 active:scale-[0.98] transition"
+                         >
+                           Mostrar detalhes do pedido →
+                         </button>
+                       </div>
 
                       {/* Actions */}
                       <div className="px-4 pb-3 flex items-center gap-2">
@@ -1508,7 +1518,7 @@ const PedidosPage = () => {
         });
         return (
           <div
-            className="fixed inset-0 z-[120] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4"
+            className="fixed inset-0 z-[9999] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4"
             onClick={() => setDetailsOrder(null)}
           >
             <div
