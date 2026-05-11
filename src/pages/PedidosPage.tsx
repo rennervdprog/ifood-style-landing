@@ -481,6 +481,7 @@ const PedidosPage = () => {
   const [simulatingPayment, setSimulatingPayment] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState<any>(null);
   const [showRefundModal, setShowRefundModal] = useState<any>(null);
+  const [detailsOrder, setDetailsOrder] = useState<any>(null);
   const [pixModal, setPixModal] = useState<{
     orderId: string;
     qrCode: string | null;
@@ -1278,8 +1279,12 @@ const PedidosPage = () => {
 
                   return (
                     <div key={order.id} className={`bg-white dark:bg-card rounded-2xl border overflow-hidden ${isCancelled ? "border-red-200 opacity-60" : "border-border"}`}>
-                      {/* Compact header */}
-                      <div className="px-4 py-3 flex items-center justify-between">
+                      {/* Compact header — clickable to open details */}
+                      <button
+                        type="button"
+                        onClick={() => setDetailsOrder(order)}
+                        className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-muted/40 active:bg-muted/60 transition-colors"
+                      >
                         <div className="flex items-center gap-3">
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center ${config.bg}`}>
                             <StatusIcon className={`h-4 w-4 ${config.color}`} />
@@ -1296,14 +1301,19 @@ const PedidosPage = () => {
                         <span className="text-sm font-bold text-foreground">
                           {formatBRL(Number(order.total_price))}
                         </span>
-                      </div>
+                      </button>
 
-                      {/* Items summary */}
-                      <div className="px-4 pb-2">
+                      {/* Items summary — also clickable */}
+                      <button
+                        type="button"
+                        onClick={() => setDetailsOrder(order)}
+                        className="w-full px-4 pb-2 text-left"
+                      >
                         <p className="text-xs text-muted-foreground truncate">
                           {order.order_items?.map((item: any) => `${item.quantity}x ${getOrderItemDisplayName(item)}`).join(", ")}
                         </p>
-                      </div>
+                        <p className="text-[10px] text-primary font-bold mt-1">Toque para ver detalhes →</p>
+                      </button>
 
                       {/* Actions */}
                       <div className="px-4 pb-3 flex items-center gap-2">
@@ -1476,6 +1486,192 @@ const PedidosPage = () => {
           }}
         />
       )}
+
+      {/* Order Details Modal */}
+      {detailsOrder && (() => {
+        const o = detailsOrder;
+        const cfg = statusConfig[o.status] || statusConfig.pendente;
+        const StatusIcon = cfg.icon;
+        const created = new Date(o.created_at);
+        const confirmed = o.confirmed_at ? new Date(o.confirmed_at) : null;
+        const elapsedMin = confirmed
+          ? Math.max(1, Math.round((confirmed.getTime() - created.getTime()) / 60000))
+          : null;
+        const paymentLabels: Record<string, string> = {
+          pix: "PIX", cartao: "Cartão", dinheiro: "Dinheiro",
+          credit_card: "Cartão de Crédito", debit_card: "Cartão de Débito",
+          cartao_credito: "Cartão de Crédito", cartao_debito: "Cartão de Débito",
+        };
+        const fmtDateTime = (d: Date) => d.toLocaleString("pt-BR", {
+          day: "2-digit", month: "2-digit", year: "2-digit",
+          hour: "2-digit", minute: "2-digit",
+        });
+        return (
+          <div
+            className="fixed inset-0 z-[120] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4"
+            onClick={() => setDetailsOrder(null)}
+          >
+            <div
+              className="bg-card w-full sm:max-w-md max-h-[90vh] overflow-y-auto rounded-t-3xl sm:rounded-2xl border border-border shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="sticky top-0 bg-card border-b border-border px-4 py-3 flex items-center justify-between z-10">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center ${cfg.bg} shrink-0`}>
+                    <StatusIcon className={`h-5 w-5 ${cfg.color}`} />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-sm text-foreground truncate">{o.stores?.name || "Loja"}</h3>
+                    <p className="text-[10px] text-muted-foreground">#{String(o.id).slice(0, 8).toUpperCase()} · {cfg.label}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setDetailsOrder(null)}
+                  className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground"
+                  aria-label="Fechar"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="p-4 space-y-4">
+                {/* Tempos */}
+                <div className="bg-muted/40 rounded-xl p-3 space-y-1.5">
+                  <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Tempos</p>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Pedido feito</span>
+                    <span className="font-medium text-foreground">{fmtDateTime(created)}</span>
+                  </div>
+                  {confirmed && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Concluído</span>
+                      <span className="font-medium text-foreground">{fmtDateTime(confirmed)}</span>
+                    </div>
+                  )}
+                  {elapsedMin !== null && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Duração total</span>
+                      <span className="font-bold text-primary">{elapsedMin} min</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Itens */}
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-2">Itens do pedido</p>
+                  <div className="space-y-2">
+                    {o.order_items?.map((item: any) => {
+                      let raw = item.addons;
+                      if (typeof raw === "string") { try { raw = JSON.parse(raw); } catch { raw = []; } }
+                      const addons = Array.isArray(raw) ? raw : [];
+                      const extras = addons.filter((a: any) => !(typeof a?.name === "string" && a.name.startsWith("½ ")));
+                      return (
+                        <div key={item.id} className="bg-muted/30 rounded-xl p-3">
+                          <div className="flex justify-between items-baseline gap-2">
+                            <span className="text-sm font-medium text-foreground">
+                              <span className="text-primary font-black mr-1.5">{item.quantity}x</span>
+                              {getOrderItemDisplayName(item)}
+                            </span>
+                            <span className="text-xs font-bold text-foreground whitespace-nowrap">
+                              {formatBRL(Number(item.unit_price) * item.quantity)}
+                            </span>
+                          </div>
+                          {extras.length > 0 && (
+                            <ul className="mt-1.5 space-y-0.5">
+                              {extras.map((a: any, idx: number) => (
+                                <li key={idx} className="text-[11px] text-muted-foreground">
+                                  + {a.name}{a.price ? ` (${formatBRL(Number(a.price))})` : ""}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                          {item.observations && (
+                            <p className="mt-1.5 text-[11px] italic text-muted-foreground">
+                              Obs: {item.observations}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Pagamento e valores */}
+                <div className="bg-muted/40 rounded-xl p-3 space-y-1.5">
+                  <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Pagamento</p>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">Forma</span>
+                    <span className="font-bold text-foreground">{paymentLabels[o.payment_method] || o.payment_method || "—"}</span>
+                  </div>
+                  {o.needs_change && o.change_for && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Troco para</span>
+                      <span className="font-medium text-foreground">{formatBRL(Number(o.change_for))}</span>
+                    </div>
+                  )}
+                  {o.subtotal != null && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Subtotal</span>
+                      <span className="font-medium text-foreground">{formatBRL(Number(o.subtotal))}</span>
+                    </div>
+                  )}
+                  {Number(o.delivery_fee) > 0 && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Taxa de entrega</span>
+                      <span className="font-medium text-foreground">{formatBRL(Number(o.delivery_fee))}</span>
+                    </div>
+                  )}
+                  {Number(o.app_fee) > 0 && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Taxa de serviço</span>
+                      <span className="font-medium text-foreground">{formatBRL(Number(o.app_fee))}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-sm pt-1.5 border-t border-border">
+                    <span className="font-bold text-foreground">Total</span>
+                    <span className="font-black text-primary">{formatBRL(Number(o.total_price))}</span>
+                  </div>
+                </div>
+
+                {/* Endereço */}
+                {o.neighborhood && (
+                  <div className="bg-muted/40 rounded-xl p-3 space-y-1">
+                    <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
+                      {o.neighborhood === "RETIRADA" ? "Retirada na loja" : "Entrega"}
+                    </p>
+                    {o.neighborhood !== "RETIRADA" && (
+                      <>
+                        <p className="text-xs text-foreground font-medium">{o.neighborhood}</p>
+                        {o.address_details && (
+                          <p className="text-[11px] text-muted-foreground">{o.address_details}</p>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {/* Avaliação */}
+                {["entregue", "finalizado"].includes(o.status) && user && (
+                  existingRatings?.has(o.id) ? (
+                    <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 text-center">
+                      <p className="text-xs font-bold text-primary">⭐ Você já avaliou este pedido</p>
+                    </div>
+                  ) : (
+                    <OrderRating
+                      orderId={o.id}
+                      storeId={o.store_id}
+                      storeName={o.stores?.name || "Loja"}
+                      userId={user.id}
+                      onRated={() => refetchRatings()}
+                    />
+                  )
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       <BottomNav />
     </div>
