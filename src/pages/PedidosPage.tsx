@@ -482,6 +482,21 @@ const PedidosPage = () => {
   const [showCancelModal, setShowCancelModal] = useState<any>(null);
   const [showRefundModal, setShowRefundModal] = useState<any>(null);
   const [detailsOrder, setDetailsOrder] = useState<any>(null);
+
+  // Fechar modal de detalhes ao usar o botão voltar (Android/navegador)
+  useEffect(() => {
+    if (!detailsOrder) return;
+    window.history.pushState({ detailsModal: true }, "");
+    const onPop = () => setDetailsOrder(null);
+    window.addEventListener("popstate", onPop);
+    return () => {
+      window.removeEventListener("popstate", onPop);
+      if (window.history.state?.detailsModal) {
+        window.history.back();
+      }
+    };
+  }, [detailsOrder]);
+
   const [pixModal, setPixModal] = useState<{
     orderId: string;
     qrCode: string | null;
