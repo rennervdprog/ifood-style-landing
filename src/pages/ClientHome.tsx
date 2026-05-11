@@ -731,10 +731,27 @@ const ClientHomeContent = () => {
         {/* Always-visible: All available stores in the city */}
         {!searchQuery && (
           <div>
-            <h2 className="text-sm font-bold text-foreground mb-3 flex items-center gap-1.5">
-              <Store className="h-4 w-4 text-primary" />
-              Lojas disponíveis{profile?.city ? ` em ${profile.city}` : ""}
-            </h2>
+            <div className="flex items-center justify-between mb-3 gap-2">
+              <h2 className="text-sm font-bold text-foreground flex items-center gap-1.5 min-w-0">
+                <Store className="h-4 w-4 text-primary shrink-0" />
+                <span className="truncate">
+                  Lojas disponíveis{effectiveCity ? ` em ${effectiveCity}` : ""}
+                </span>
+              </h2>
+              <button
+                onClick={userLocation.refresh}
+                className="shrink-0 flex items-center gap-1 text-[11px] font-bold text-primary hover:opacity-80 active:scale-95 transition-all"
+                title="Atualizar localização"
+              >
+                <MapPin className="h-3 w-3" />
+                {userLocation.ready
+                  ? userLocation.coords
+                    ? "GPS"
+                    : "Sem GPS"
+                  : "..."}
+                <RefreshCw className="h-3 w-3" />
+              </button>
+            </div>
             {loadingStores ? (
               <div className="grid grid-cols-2 gap-3">
                 {Array.from({ length: 4 }).map((_, i) => (
@@ -761,6 +778,14 @@ const ClientHomeContent = () => {
                       <p className="text-[11px] text-muted-foreground capitalize truncate">
                         {store.category?.replace(/_/g, " ")}
                       </p>
+                      {typeof store.distanceKm === "number" && (
+                        <p className="text-[10px] font-bold text-primary mt-0.5 flex items-center gap-1">
+                          <MapPin className="h-2.5 w-2.5" />
+                          {store.distanceKm < 1
+                            ? `${Math.round(store.distanceKm * 1000)} m`
+                            : `${store.distanceKm.toFixed(1)} km`}
+                        </p>
+                      )}
                     </div>
                     <span
                       className={`self-start text-[10px] font-bold px-2 py-0.5 rounded-full ${
