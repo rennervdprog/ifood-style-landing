@@ -973,6 +973,60 @@ export type Database = {
           },
         ]
       }
+      fraud_attempts: {
+        Row: {
+          blocked: boolean
+          client_lat: number | null
+          client_lng: number | null
+          created_at: string
+          delivery_city: string | null
+          distance_km: number | null
+          id: string
+          reason: string
+          store_city: string | null
+          store_id: string | null
+          store_lat: number | null
+          store_lng: number | null
+          store_name: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          blocked?: boolean
+          client_lat?: number | null
+          client_lng?: number | null
+          created_at?: string
+          delivery_city?: string | null
+          distance_km?: number | null
+          id?: string
+          reason: string
+          store_city?: string | null
+          store_id?: string | null
+          store_lat?: number | null
+          store_lng?: number | null
+          store_name?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          blocked?: boolean
+          client_lat?: number | null
+          client_lng?: number | null
+          created_at?: string
+          delivery_city?: string | null
+          distance_km?: number | null
+          id?: string
+          reason?: string
+          store_city?: string | null
+          store_id?: string | null
+          store_lat?: number | null
+          store_lng?: number | null
+          store_name?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       loyalty_config: {
         Row: {
           created_at: string
