@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
     const includeBlocked = body.include_blocked === true;
     const limit = Math.min(Math.max(Number(body.limit) || 20, 1), 50);
 
-    const baseSelect = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, settings";
+    const baseSelect = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings";
 
     let query = admin
       .from("stores_public")
