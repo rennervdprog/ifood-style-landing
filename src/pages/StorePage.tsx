@@ -65,6 +65,7 @@ const StorePage = () => {
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const pageRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLDivElement>(null);
+  const [fraudBlock, setFraudBlock] = useState<{ distanceKm: number; storeCity: string | null } | null>(null);
 
   const { data: store, isLoading: storeLoading } = useQuery({
     queryKey: ["store", id || slug],
@@ -268,6 +269,30 @@ const StorePage = () => {
     storeStatus.isOpen = false;
     storeStatus.reason = "Loja temporariamente fechada";
   }
+
+  // Antifraude: bloqueia acesso quando GPS está muito longe da loja
+  useEffect(() => {
+    if (!store) return;
+    const lat = (store as any).latitude;
+    const lng = (store as any).longitude;
+    if (typeof lat !== "number" || typeof lng !== "number") return;
+    let cancelled = false;
+    checkStoreAccess({
+      storeId: store.id,
+      storeName: store.name,
+      storeCity: (store as any).address_city ?? null,
+      storeLat: lat,
+      storeLng: lng,
+    }).then((res) => {
+      if (cancelled) return;
+      if (!res.allowed && typeof res.distanceKm === "number") {
+        setFraudBlock({ distanceKm: res.distanceKm, storeCity: (store as any).address_city ?? null });
+      } else {
+        setFraudBlock(null);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [store]);
 
   const hasConfiguredHours = Array.isArray(storeHours) && storeHours.length > 0;
   const statusLabel = hasConfiguredHours
