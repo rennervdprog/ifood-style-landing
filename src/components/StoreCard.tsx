@@ -11,6 +11,7 @@ interface StoreCardProps {
   rating: number | null;
   statusReason?: string;
   slug?: string | null;
+  distanceKm?: number | null;
 }
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -39,10 +40,16 @@ const CATEGORY_GRADIENTS: Record<string, string> = {
   docerias: "from-fuchsia-500/20 via-pink-400/10 to-rose-300/5",
 };
 
-const StoreCard = memo(({ id, name, category, image_url, is_open, rating, statusReason, slug }: StoreCardProps) => {
+const StoreCard = memo(({ id, name, category, image_url, is_open, rating, statusReason, slug, distanceKm }: StoreCardProps) => {
   const navigate = useNavigate();
   const icon = CATEGORY_ICONS[category] || "🍽️";
   const gradient = CATEGORY_GRADIENTS[category] || "from-primary/20 via-primary/10 to-primary/5";
+  const distanceLabel =
+    typeof distanceKm === "number" && Number.isFinite(distanceKm)
+      ? distanceKm < 1
+        ? `${Math.round(distanceKm * 1000)} m`
+        : `${distanceKm.toFixed(1)} km`
+      : null;
 
   return (
     <button
@@ -108,11 +115,15 @@ const StoreCard = memo(({ id, name, category, image_url, is_open, rating, status
               <Clock className="h-3 w-3 text-primary" />
               <span>30-45 min</span>
             </div>
-            <span className="w-1 h-1 rounded-full bg-border/60" />
-            <div className="flex items-center gap-1.5 text-[10px] font-black text-muted-foreground uppercase tracking-widest">
-              <MapPin className="h-3 w-3 text-primary" />
-              <span>1.2 km</span>
-            </div>
+            {distanceLabel && (
+              <>
+                <span className="w-1 h-1 rounded-full bg-border/60" />
+                <div className="flex items-center gap-1.5 text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                  <MapPin className="h-3 w-3 text-primary" />
+                  <span>{distanceLabel}</span>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
