@@ -518,6 +518,28 @@ const StorePage = () => {
     );
   }
 
+  if (fraudBlock) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center text-center px-6">
+        <span className="text-5xl mb-4">📍</span>
+        <h1 className="text-xl font-bold text-foreground mb-2">Loja fora da sua área</h1>
+        <p className="text-sm text-muted-foreground mb-2">
+          Esta loja está a aproximadamente <span className="font-bold text-foreground">{fraudBlock.distanceKm.toFixed(1)} km</span> de você
+          {fraudBlock.storeCity ? <> em <span className="font-bold">{fraudBlock.storeCity}</span></> : null}.
+        </p>
+        <p className="text-xs text-muted-foreground mb-6">
+          Por segurança, só permitimos pedidos a até {MAX_DISTANCE_KM} km da loja.
+        </p>
+        <button
+          onClick={() => navigate("/")}
+          className="bg-primary text-primary-foreground rounded-2xl py-3 px-6 font-semibold hover:bg-primary/90 transition-colors"
+        >
+          Ver lojas próximas
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div ref={pageRef} className="min-h-screen bg-background pb-24">
       {/* ===== HERO ===== */}
