@@ -1678,6 +1678,16 @@ const PedidosPage = () => {
                   )
                 )}
               </div>
+
+              {/* Footer fixo com botão Fechar */}
+              <div className="bg-card border-t border-border px-4 py-3 shrink-0" style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}>
+                <button
+                  onClick={() => setDetailsOrder(null)}
+                  className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-full hover:opacity-90 transition-opacity"
+                >
+                  Fechar
+                </button>
+              </div>
             </div>
           </div>
         );
