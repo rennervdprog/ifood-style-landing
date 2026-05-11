@@ -3174,39 +3174,16 @@ export type Database = {
           address_reference: string | null
           address_state: string | null
           address_street: string | null
-          app_enabled: boolean | null
-          app_subscribed: boolean | null
-          asaas_account_id: string | null
-          asaas_activation_status: Json | null
-          asaas_auto_withdraw_enabled: boolean | null
-          asaas_documents_sent: boolean | null
-          asaas_last_withdraw_at: string | null
-          asaas_min_withdraw_amount: number | null
-          asaas_pix_key: string | null
-          asaas_pix_key_type: string | null
-          asaas_subaccount_api_key: string | null
-          asaas_wallet_id: string | null
           categories: Database["public"]["Enums"]["store_category"][] | null
           category: Database["public"]["Enums"]["store_category"] | null
-          commission_rate: number | null
           created_at: string | null
-          delivery_base_km: number | null
-          delivery_enabled: boolean | null
-          delivery_fee: number | null
-          delivery_fee_base: number | null
-          delivery_fee_per_km: number | null
-          delivery_fee_type: string | null
           delivery_mode: string | null
-          delivery_radius: number | null
-          estimated_delivery_time: string | null
           force_closed: boolean | null
           id: string | null
           image_url: string | null
           is_open: boolean | null
-          is_test: boolean | null
           latitude: number | null
           longitude: number | null
-          minimum_order_value: number | null
           name: string | null
           own_delivery_fee: number | null
           owner_id: string | null
@@ -3224,39 +3201,16 @@ export type Database = {
           address_reference?: string | null
           address_state?: string | null
           address_street?: string | null
-          app_enabled?: boolean | null
-          app_subscribed?: boolean | null
-          asaas_account_id?: string | null
-          asaas_activation_status?: Json | null
-          asaas_auto_withdraw_enabled?: boolean | null
-          asaas_documents_sent?: boolean | null
-          asaas_last_withdraw_at?: string | null
-          asaas_min_withdraw_amount?: number | null
-          asaas_pix_key?: string | null
-          asaas_pix_key_type?: string | null
-          asaas_subaccount_api_key?: string | null
-          asaas_wallet_id?: string | null
           categories?: Database["public"]["Enums"]["store_category"][] | null
           category?: Database["public"]["Enums"]["store_category"] | null
-          commission_rate?: number | null
           created_at?: string | null
-          delivery_base_km?: number | null
-          delivery_enabled?: boolean | null
-          delivery_fee?: number | null
-          delivery_fee_base?: number | null
-          delivery_fee_per_km?: number | null
-          delivery_fee_type?: string | null
           delivery_mode?: string | null
-          delivery_radius?: number | null
-          estimated_delivery_time?: string | null
           force_closed?: boolean | null
           id?: string | null
           image_url?: string | null
           is_open?: boolean | null
-          is_test?: boolean | null
           latitude?: number | null
           longitude?: number | null
-          minimum_order_value?: number | null
           name?: string | null
           own_delivery_fee?: number | null
           owner_id?: string | null
@@ -3274,39 +3228,16 @@ export type Database = {
           address_reference?: string | null
           address_state?: string | null
           address_street?: string | null
-          app_enabled?: boolean | null
-          app_subscribed?: boolean | null
-          asaas_account_id?: string | null
-          asaas_activation_status?: Json | null
-          asaas_auto_withdraw_enabled?: boolean | null
-          asaas_documents_sent?: boolean | null
-          asaas_last_withdraw_at?: string | null
-          asaas_min_withdraw_amount?: number | null
-          asaas_pix_key?: string | null
-          asaas_pix_key_type?: string | null
-          asaas_subaccount_api_key?: string | null
-          asaas_wallet_id?: string | null
           categories?: Database["public"]["Enums"]["store_category"][] | null
           category?: Database["public"]["Enums"]["store_category"] | null
-          commission_rate?: number | null
           created_at?: string | null
-          delivery_base_km?: number | null
-          delivery_enabled?: boolean | null
-          delivery_fee?: number | null
-          delivery_fee_base?: number | null
-          delivery_fee_per_km?: number | null
-          delivery_fee_type?: string | null
           delivery_mode?: string | null
-          delivery_radius?: number | null
-          estimated_delivery_time?: string | null
           force_closed?: boolean | null
           id?: string | null
           image_url?: string | null
           is_open?: boolean | null
-          is_test?: boolean | null
           latitude?: number | null
           longitude?: number | null
-          minimum_order_value?: number | null
           name?: string | null
           own_delivery_fee?: number | null
           owner_id?: string | null
