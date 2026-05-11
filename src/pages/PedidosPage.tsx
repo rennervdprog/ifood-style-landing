@@ -1522,11 +1522,11 @@ const PedidosPage = () => {
             onClick={() => setDetailsOrder(null)}
           >
             <div
-              className="bg-card w-full sm:max-w-md max-h-[90vh] overflow-y-auto rounded-t-3xl sm:rounded-2xl border border-border shadow-2xl"
+              className="bg-card w-full sm:max-w-md max-h-[90vh] flex flex-col rounded-t-3xl sm:rounded-2xl border border-border shadow-2xl overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="sticky top-0 bg-card border-b border-border px-4 py-3 flex items-center justify-between z-10">
+              <div className="bg-card border-b border-border px-4 py-3 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className={`w-9 h-9 rounded-full flex items-center justify-center ${cfg.bg} shrink-0`}>
                     <StatusIcon className={`h-5 w-5 ${cfg.color}`} />
@@ -1545,7 +1545,7 @@ const PedidosPage = () => {
                 </button>
               </div>
 
-              <div className="p-4 space-y-4">
+              <div className="p-4 space-y-4 overflow-y-auto flex-1 overscroll-contain">
                 {/* Tempos */}
                 <div className="bg-muted/40 rounded-xl p-3 space-y-1.5">
                   <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Tempos</p>
