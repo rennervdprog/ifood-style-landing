@@ -41,17 +41,25 @@ const DriverDashboardV2 = () => {
     staleTime: 1000 * 60 * 5,
   });
 
-  const { data: storeDriverLinks, isFetched: linksFetched } = useQuery({
+  const {
+    data: storeDriverLinks,
+    isSuccess: linksLoaded,
+    isError: linksError,
+    refetch: refetchLinks,
+  } = useQuery({
     queryKey: ["v2-store-driver-links", user?.id],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("store_drivers")
         .select("id, store_id, status, stores(name)")
         .eq("driver_user_id", user!.id);
+      if (error) throw error;
       return data || [];
     },
     enabled: !!user,
     staleTime: 1000 * 60 * 2,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 5000),
   });
 
   const acceptedLinks = useMemo(
@@ -116,8 +124,10 @@ const DriverDashboardV2 = () => {
     );
   }
 
-  // Loading → nunca mostra UI da plataforma
-  if (!linksFetched) {
+  // Loading / erro de rede → nunca mostra UI errada de "aguardando convite".
+  // Só avança quando a query realmente teve sucesso (evita falso negativo
+  // quando o fetch abortou por timeout/resume do app).
+  if (!linksLoaded) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -125,7 +135,17 @@ const DriverDashboardV2 = () => {
             <div className="absolute inset-0 bg-primary/30 rounded-full blur-xl" />
             <div className="relative animate-spin h-12 w-12 border-[3px] border-primary border-t-transparent rounded-full" />
           </div>
-          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Carregando</p>
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+            {linksError ? "Reconectando…" : "Carregando"}
+          </p>
+          {linksError && (
+            <button
+              onClick={() => refetchLinks()}
+              className="mt-2 text-xs font-bold text-primary underline underline-offset-4"
+            >
+              Tentar novamente
+            </button>
+          )}
         </div>
       </div>
     );
