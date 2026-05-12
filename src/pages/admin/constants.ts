@@ -3,7 +3,7 @@ import {
   LayoutDashboard, ListOrdered, Users, UtensilsCrossed,
   Plus, CircleDot, Coins, BarChart3, CreditCard, Star,
   Bike, AlertTriangle, GraduationCap, Settings,
-} from "lucide-react";
+, MessageCircle } from "lucide-react";
 import type { DashboardTab, OrderStatus } from "./types";
 
 export const ALERT_SOUND_URL = "https://actions.google.com/sounds/v1/alarms/beep_short.ogg";
@@ -66,6 +66,7 @@ export const baseSidebarItems: { key: DashboardTab; label: string; icon: React.E
   { key: "addons", label: "Adicionais", icon: Plus },
   { key: "bordas", label: "Bordas", icon: CircleDot, pizzaOnly: true },
   { key: "hours", label: "Horários", icon: Clock },
+  { key: "suporte", label: "Suporte", icon: MessageCircle },
   { key: "finance", label: "Financeiro", icon: Coins },
   { key: "reports", label: "Relatórios", icon: BarChart3 },
   { key: "subscription", label: "Assinatura", icon: CreditCard },

@@ -25,7 +25,8 @@ export type DashboardTab =
   | "drivers"
   | "refunds"
   | "tutoriais"
-  | "cash_register";
+  | "cash_register"
+  | "suporte";
 
 export type StoreAddonGroup = {
   id: string;
