@@ -53,6 +53,7 @@ const TermosDeUso = lazy(() => import("./pages/TermosDeUso"));
 const PoliticaPrivacidade = lazy(() => import("./pages/PoliticaPrivacidade"));
 const PlanosPage = lazy(() => import("./pages/PlanosPage"));
 const ModeradorDashboard = lazy(() => import("./pages/ModeradorDashboard"));
+const SupportAgentDashboard = lazy(() => import("./pages/SupportAgentDashboard"));
 const LinksPage = lazy(() => import("./pages/LinksPage"));
  const DownloadApp = lazy(() => import("./pages/DownloadApp"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -295,6 +296,7 @@ const App = () => {
                 <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
                 <Route path="/planos" element={<PlanosPage />} />
                 <Route path="/moderador" element={<ModeradorDashboard />} />
+                <Route path="/suporte" element={<RoleGuard allowedRoles={["suporte","admin"]} redirectTo="/auth"><SupportAgentDashboard /></RoleGuard>} />
                 <Route path="/links" element={<LinksPage />} />
                  <Route path="/download" element={<DownloadApp />} />
                 {/* Client store access via slug - must be last */}
