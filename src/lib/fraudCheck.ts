@@ -63,7 +63,23 @@ export async function checkStoreAccess(params: FraudCheckParams): Promise<FraudC
     return { allowed: true, distanceKm: null, reason: null, clientCoords: null };
   }
 
+  // 1. Tentar obter coordenadas: prioridade = deliveryCoords (endereço geocodificado) > GPS
   const clientCoords = deliveryCoords || (await getDeviceGPS());
+
+  // 2. Validação por cidade — funciona SEM GPS
+  // Se o endereço de entrega é em cidade diferente da loja → bloquear diretamente
+  if (deliveryCity && storeCity && normCity(deliveryCity) !== normCity(storeCity)) {
+    const result: FraudCheckResult = {
+      allowed: false,
+      distanceKm: null,
+      reason: `delivery_city_mismatch:${normCity(deliveryCity)}≠${normCity(storeCity)}`,
+      clientCoords,
+    };
+    await logAttempt(params, result);
+    return result;
+  }
+
+  // 3. Sem coordenadas e cidade OK → permitir (não há dados suficientes para bloquear)
   if (!clientCoords) {
     return { allowed: true, distanceKm: null, reason: null, clientCoords: null };
   }
@@ -73,18 +89,10 @@ export async function checkStoreAccess(params: FraudCheckParams): Promise<FraudC
   let reason: string | null = null;
   let allowed = true;
 
+  // 4. Validação por distância GPS
   if (distanceKm > MAX_DISTANCE_KM) {
     allowed = false;
     reason = `distance_exceeded:${distanceKm.toFixed(1)}km`;
-  }
-
-  // Validação extra: cidade do endereço de entrega vs cidade da loja
-  if (allowed && deliveryCity && storeCity && normCity(deliveryCity) !== normCity(storeCity)) {
-    // Só bloqueia se também estiver longe (>20km) — mesma cidade próxima é OK
-    if (distanceKm > 20) {
-      allowed = false;
-      reason = `delivery_city_mismatch:${normCity(deliveryCity)}≠${normCity(storeCity)}`;
-    }
   }
 
   const result: FraudCheckResult = { allowed, distanceKm, reason, clientCoords };
