@@ -9,6 +9,7 @@ import AdminPlanManager from "@/components/AdminPlanManager";
 import AdminFixedPlanReceivables from "@/components/AdminFixedPlanReceivables";
 import AdminPlanTemplatesEditor from "@/components/AdminPlanTemplatesEditor";
 import ModeratorManager from "@/components/ModeratorManager";
+import SupportAdminPanel from "@/components/SupportAdminPanel";
 import PartnerSplitPanel from "@/components/PartnerSplitPanel";
 import FixedPlanBillingHistory from "@/components/FixedPlanBillingHistory";
 import TestStoreFinancePanel from "@/components/TestStoreFinancePanel";
@@ -51,7 +52,7 @@ const TabFallback = () => (
 );
 
 type DateFilter = "today" | "yesterday" | "week";
- type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamentos" | "saques" | "sync" | "coupons" | "entrega" | "cidades" | "juridico" | "planos" | "moderadores" | "socios" | "test_finance" | "links" | "broadcast" | "logs" | "coach";
+ type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamentos" | "saques" | "sync" | "coupons" | "entrega" | "cidades" | "juridico" | "planos" | "moderadores" | "socios" | "suporte" | "test_finance" | "links" | "broadcast" | "logs" | "coach";
 
 const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; group: string }[] = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, group: "Principal" },
@@ -65,6 +66,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
   { key: "cidades", label: "Cidades", icon: MapPin, group: "Gerenciamento" },
   { key: "coupons", label: "Cupons", icon: Ticket, group: "Gerenciamento" },
   { key: "moderadores", label: "Moderadores", icon: Users, group: "Gerenciamento" },
+  { key: "suporte", label: "Suporte", icon: MessageCircle, group: "Gerenciamento" },
   { key: "socios", label: "Sócios", icon: Handshake, group: "Principal" },
   { key: "juridico", label: "Jurídico", icon: Scale, group: "Sistema" },
   { key: "test_finance", label: "Finanças Teste", icon: FlaskConical, group: "Sistema" },
@@ -861,6 +863,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                 {activeTab === "coupons" && "Gerenciar cupons de desconto"}
                 {activeTab === "juridico" && "Consulta jurídica e dados arquivados"}
                 {activeTab === "moderadores" && "Moderadores e sistema de afiliados"}
+                {activeTab === "suporte" && "Central de suporte — tickets e agentes"}
                 {activeTab === "socios" && "Divisão de lucros entre sócios"}
                 {activeTab === "sync" && "Sincronização com banco externo"}
                 {activeTab === "test_finance" && "Lojas de teste — finanças fictícias isoladas"}
@@ -931,6 +934,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
             {activeTab === "pagamentos" && <Suspense fallback={<TabFallback />}><PagamentosSplitTab stores={stores || []} /></Suspense>}
             {activeTab === "juridico" && <Suspense fallback={<TabFallback />}><JuridicoTab /></Suspense>}
             {activeTab === "moderadores" && <ModeratorManager />}
+            {activeTab === "suporte" && <SupportAdminPanel />}
             {activeTab === "socios" && <PartnerSplitPanel />}
             {activeTab === "test_finance" && <TestStoreFinancePanel />}
             {activeTab === "links" && <AppLinksManager />}

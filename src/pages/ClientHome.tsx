@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import SupportTicketModal from "@/components/SupportTicketModal";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/contexts/CartContext";
 import {
   Search, Store, Repeat, ShoppingBag, Clock, ChevronRight, Zap,
   Mail, Lock, Eye, EyeOff, KeyRound, FileText, CheckCircle2, Phone, User,
-} from "lucide-react";
+, MessageCircle } from "lucide-react";
  import { maskWhatsApp } from "@/lib/whatsapp";
  import { formatDocument, sanitizeDocument, validateDocument } from "@/lib/documentFormat";
 import { formatBRL } from "@/lib/utils";
@@ -355,6 +356,7 @@ const ClientHomeContent = () => {
   const navigate = useNavigate();
   const { addItem } = useCart();
   const [searchQuery, setSearchQuery] = useState("");
+  const [showSupport, setShowSupport] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
   const userLocation = useUserLocation();
 
@@ -506,6 +508,13 @@ const ClientHomeContent = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
+      {/* Modal de Suporte */}
+      <SupportTicketModal
+        open={showSupport}
+        onClose={() => setShowSupport(false)}
+        userRole="cliente"
+      />
+
       {/* Header */}
       <div className="bg-primary px-4 pt-10 pb-6 rounded-b-3xl">
         <div className="flex items-center justify-between mb-4">
@@ -515,6 +524,13 @@ const ClientHomeContent = () => {
             </div>
             <span className="text-primary-foreground font-extrabold text-lg">ItaSuper</span>
           </div>
+          <button
+            onClick={() => setShowSupport(true)}
+            className="w-9 h-9 rounded-xl bg-primary-foreground/20 flex items-center justify-center active:scale-95 transition-all"
+            title="Suporte"
+          >
+            <MessageCircle className="h-4 w-4 text-primary-foreground" />
+          </button>
         </div>
         <h1 className="text-primary-foreground text-xl font-bold">Olá, {firstName}! 👋</h1>
         <p className="text-primary-foreground/70 text-sm mt-0.5">O que vai pedir hoje?</p>

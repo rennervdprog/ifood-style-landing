@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Bike, Smartphone, Store, Check, X, Sparkles, MapPin, Clock, ShieldCheck, RefreshCw } from "lucide-react";
+import { Bike, Smartphone, Store, Check, X, Sparkles, MapPin, Clock, ShieldCheck, RefreshCw, MessageCircle } from "lucide-react";
+import SupportTicketModal from "@/components/SupportTicketModal";
 import { toast } from "sonner";
 import StoreDriverView from "@/components/StoreDriverView";
 import DriverPersistentAlert from "@/components/DriverPersistentAlert";
@@ -338,8 +339,17 @@ const DriverDashboardV2 = () => {
   // Motoboy de loja com vínculo aceito → render direto
   const driverFirstName = (driverProfile as any)?.full_name?.split(" ")[0] || "Entregador";
 
+  const [showSupport, setShowSupport] = useState(false);
+
   return (
     <>
+      {driverProfile && (
+        <SupportTicketModal
+          open={showSupport}
+          onClose={() => setShowSupport(false)}
+          userRole="motoboy"
+        />
+      )}
       <DriverPersistentAlert availableCount={0} hasActiveDelivery={false} isOnline onReview={() => {}} />
       <div className="min-h-screen bg-background text-foreground pb-[5.5rem] native-app">
         <header className="sticky top-0 z-50 bg-card/90 backdrop-blur-xl border-b border-border/60 pt-safe shadow-sm">
@@ -360,11 +370,20 @@ const DriverDashboardV2 = () => {
                 </h1>
               </div>
             </div>
-            <SignOutConfirm
-              redirectTo="/portal-parceiro"
-              triggerClassName="w-10 h-10 rounded-2xl bg-muted/60 flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all active:scale-95 shrink-0"
-              triggerTitle="Sair"
-            />
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowSupport(true)}
+                className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary active:scale-95 transition-all"
+                title="Suporte"
+              >
+                <MessageCircle className="h-4 w-4" />
+              </button>
+              <SignOutConfirm
+                redirectTo="/portal-parceiro"
+                triggerClassName="w-10 h-10 rounded-2xl bg-muted/60 flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all active:scale-95 shrink-0"
+                triggerTitle="Sair"
+              />
+            </div>
           </div>
         </header>
 

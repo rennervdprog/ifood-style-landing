@@ -28,6 +28,7 @@ import {
 import { openWhatsApp, formatWhatsAppNumber } from "@/lib/whatsapp";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import MenuBuilder from "@/components/MenuBuilder";
+import SupportTicketModal from "@/components/SupportTicketModal";
 import { notifyOrderStatusChange, buildWhatsAppMessage } from "@/lib/orderNotifications";
 import { getStoreOpenStatus } from "@/lib/storeStatus";
 // Tabs carregadas sob demanda — só baixa o JS quando o lojista abrir a aba
@@ -193,6 +194,7 @@ const AdminDashboard = () => {
   const [cancelConfirm, setCancelConfirm] = useState<string | null>(null);
   const [showDelayedPanel, setShowDelayedPanel] = useState(false);
   const [showMoreSheet, setShowMoreSheet] = useState(false);
+  const [showSupportModal, setShowSupportModal] = useState(false);
   const [selectedReportPeriod, setSelectedReportPeriod] = useState(30);
   const [batchSelected, setBatchSelected] = useState<Set<string>>(new Set());
   const [batchDispatching, setBatchDispatching] = useState(false);
@@ -1132,7 +1134,14 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleTabChange = (tab: DashboardTab) => { setDashboardTab(tab); setSidebarOpen(false); setShowMoreSheet(false); };
+  const handleTabChange = (tab: DashboardTab) => {
+    if (tab === "suporte") {
+      setShowSupportModal(true);
+      setShowMoreSheet(false);
+      return;
+    }
+    setDashboardTab(tab); setSidebarOpen(false); setShowMoreSheet(false);
+  };
 
   const isBottomNavMore = !bottomNavTabs.some(t => t.key === dashboardTab) && dashboardTab !== "dashboard";
 
@@ -1146,6 +1155,17 @@ const AdminDashboard = () => {
       {sidebarOpen && <div className="fixed inset-0 bg-black/60 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />}
 
       {/* More sheet overlay */}
+      {/* ── MODAL DE SUPORTE ── */}
+      {store && (
+        <SupportTicketModal
+          open={showSupportModal}
+          onClose={() => setShowSupportModal(false)}
+          userRole="lojista"
+          storeId={store.id}
+          storeName={store.name}
+        />
+      )}
+
       {showMoreSheet && <div className="fixed inset-0 bg-black/60 z-[60] lg:hidden" onClick={() => setShowMoreSheet(false)} />}
 
       {/* ── MORE BOTTOM SHEET (mobile) ── */}
