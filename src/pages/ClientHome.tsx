@@ -8,7 +8,8 @@ import { useCart } from "@/contexts/CartContext";
 import {
   Search, Store, Repeat, ShoppingBag, Clock, ChevronRight, Zap,
   Mail, Lock, Eye, EyeOff, KeyRound, FileText, CheckCircle2, Phone, User,
-, MessageCircle } from "lucide-react";
+  MessageCircle,
+} from "lucide-react";
  import { maskWhatsApp } from "@/lib/whatsapp";
  import { formatDocument, sanitizeDocument, validateDocument } from "@/lib/documentFormat";
 import { formatBRL } from "@/lib/utils";
@@ -508,7 +509,6 @@ const ClientHomeContent = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* Modal de Suporte */}
       <SupportTicketModal
         open={showSupport}
         onClose={() => setShowSupport(false)}
