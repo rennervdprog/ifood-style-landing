@@ -197,7 +197,16 @@ export const SupportTicketModal = ({ open, onClose, userRole, storeId, storeName
           )}
           <div className="flex-1">
             <p className="text-sm font-black text-foreground">
-              {view === "list" ? "Meus Chamados" : view === "new" ? "Abrir Chamado" : `#${String(selectedTicket?.ticket_number || "").padStart(4, "0")}`}
+              {view === "list" ? (
+                <span className="flex items-center gap-2">
+                  Meus Chamados
+                  {tickets.filter(t => t.status === "aguardando_cliente").length > 0 && (
+                    <span className="text-[10px] font-black bg-purple-500 text-white px-1.5 py-0.5 rounded-full animate-pulse">
+                      {tickets.filter(t => t.status === "aguardando_cliente").length}
+                    </span>
+                  )}
+                </span>
+              ) : view === "new" ? "Abrir Chamado" : `#${String(selectedTicket?.ticket_number || "").padStart(4, "0")}`}
             </p>
             {view === "detail" && selectedTicket && (
               <p className={`text-[11px] font-bold ${STATUS_CONFIG[selectedTicket.status]?.color}`}>
