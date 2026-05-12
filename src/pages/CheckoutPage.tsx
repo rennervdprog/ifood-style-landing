@@ -366,6 +366,9 @@ const CheckoutPage = () => {
         storeLat: (storeData as any).latitude,
         storeLng: (storeData as any).longitude,
         deliveryCity: useSavedAddr ? savedAddressData?.city : (userProfile as any)?.city,
+        // Passa coordenadas do endereço de entrega (geocodificadas pelo CEP)
+        // Isso garante que o bloqueio funciona mesmo sem GPS do dispositivo
+        deliveryCoords: clientCoords ?? undefined,
       });
       if (!fraud.allowed) {
         toast.error("Pedido bloqueado por segurança", {
