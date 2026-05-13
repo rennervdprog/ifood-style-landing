@@ -3,7 +3,7 @@ import { ArrowLeft } from "lucide-react";
 
 const PoliticaPrivacidade = () => {
   const navigate = useNavigate();
-  const dataAtualizacao = "03 de maio de 2025";
+  const dataAtualizacao = "13 de maio de 2026";
 
   return (
     <div className="min-h-screen bg-background">
@@ -30,6 +30,7 @@ const PoliticaPrivacidade = () => {
             <li>Endereços de entrega (rua, número, bairro, CEP, complemento)</li>
             <li>Histórico de pedidos e avaliações</li>
             <li>Dados de dispositivo (token push, modelo, sistema operacional)</li>
+            <li>Dados de suporte: tickets abertos, mensagens trocadas com agentes de suporte</li>
             <li>Geolocalização aproximada (apenas para cálculo de frete, com consentimento)</li>
           </ul>
           <p><strong className="text-foreground">1.2. Lojistas:</strong></p>
@@ -39,6 +40,8 @@ const PoliticaPrivacidade = () => {
             <li>Dados bancários para subconta de pagamento (Asaas): nome, CPF/CNPJ, chave PIX, documentos de identidade</li>
             <li>Logotipo, imagens de produtos e informações do cardápio</li>
             <li>Dados financeiros: taxas de comissão, mensalidade, histórico de cobranças</li>
+            <li>Dados de suporte: tickets abertos, conteúdo de mensagens trocadas com agentes, categoria e prioridade dos chamados</li>
+            <li><strong className="text-foreground">Inteligência Artificial (Sales Coach):</strong> Os dados de vendas e pedidos do lojista (volumes, horários, produtos, ticket médio) são processados por modelo de IA para gerar recomendações de desempenho. O lojista pode desativar este recurso nas configurações da conta.</li>
             <li><strong className="text-foreground">Dados PDV:</strong> sessões de caixa (abertura, fechamento, valores), movimentações (vendas, sangrias, suprimentos), comissões pendentes</li>
           </ul>
           <p><strong className="text-foreground">1.3. Entregadores:</strong></p>
@@ -83,6 +86,7 @@ const PoliticaPrivacidade = () => {
             <li><strong className="text-foreground">Após exclusão:</strong> Dados pessoais eliminados em até 30 dias, exceto os necessários para obrigações legais ou fiscais (até 5 anos, conforme legislação tributária).</li>
             <li><strong className="text-foreground">Histórico de pedidos:</strong> Mantido por até 5 anos para fins contábeis e fiscais.</li>
             <li><strong className="text-foreground">Dados PDV (sessões e movimentações):</strong> Mantidos por até 5 anos para fins de auditoria financeira e fiscal.</li>
+            <li><strong className="text-foreground">Dados de suporte (tickets e mensagens):</strong> Mantidos por até 2 anos após o encerramento do ticket, para fins de auditoria de atendimento e resolução de disputas.</li>
             <li><strong className="text-foreground">Documentos de identidade (entregadores):</strong> Mantidos enquanto o cadastro estiver ativo. Excluídos em até 30 dias após o encerramento da conta.</li>
           </ul>
         </section>

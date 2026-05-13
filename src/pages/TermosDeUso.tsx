@@ -3,7 +3,7 @@ import { ArrowLeft } from "lucide-react";
 
 const TermosDeUso = () => {
   const navigate = useNavigate();
-  const dataAtualizacao = "03 de maio de 2025";
+  const dataAtualizacao = "13 de maio de 2026";
 
   return (
     <div className="min-h-screen bg-background">
@@ -54,16 +54,24 @@ const TermosDeUso = () => {
         <section className="space-y-3">
           <h2 className="text-base font-bold text-foreground">4. Serviços da Plataforma</h2>
           <p>4.1. O ItaSuper é intermediador digital. Não fabrica, estoca, embala ou entrega produtos diretamente.</p>
-          <p>4.2. Serviços incluem: cardápio digital, pagamentos PIX/dinheiro/cartão, gestão de entregas, cupons, fidelidade, notificações, relatórios, <strong className="text-foreground">módulo PDV completo</strong> e cardápio digital.</p>
+          <p>4.2. Serviços incluem: cardápio digital, pagamentos PIX/dinheiro/cartão, gestão de entregas, cupons, fidelidade, notificações, relatórios, <strong className="text-foreground">módulo PDV completo</strong>, cardápio digital, sistema de suporte via tickets e ferramenta de recomendação assistida por Inteligência Artificial para lojistas (Sales Coach).</p>
         </section>
 
         <section className="space-y-3">
+          <h2 className="text-base font-bold text-foreground">4-A. Canal de Suporte ao Usuário</h2>
+          <div className="space-y-2 text-muted-foreground">
+            <p>4-A.1. O ItaSuper disponibiliza sistema de suporte via tickets digitais, acessível a Clientes, Lojistas e Entregadores pelo painel da Plataforma.</p>
+            <p>4-A.2. Cada ticket é registrado com identificação do usuário, data, hora, categoria e histórico completo de mensagens, com rastreabilidade do agente responsável.</p>
+            <p>4-A.3. Prazo de primeira resposta: até 2 dias úteis. Tickets urgentes (bloqueio de conta, falha financeira) têm atendimento prioritário.</p>
+            <p>4-A.4. O conteúdo das conversas constitui dado pessoal e está sujeito à Política de Privacidade e à LGPD.</p>
+          </div>
+
           <h2 className="text-base font-bold text-foreground">5. Planos e Assinatura</h2>
           <ul className="list-disc pl-4 space-y-2">
             <li><strong className="text-foreground">Essencial (R$ 180/mês):</strong> 0% comissão delivery. R$ 1,99 PIX + R$ 2,00/entrega. PDV incluso com 0% de comissão presencial.</li>
             <li><strong className="text-foreground">Crescimento (R$ 100/mês + 2,5%):</strong> 2,5% sobre subtotal delivery — sem taxa PIX (a % já cobre os custos operacionais). R$ 2,00/entrega. PDV incluso com 1% de comissão presencial (faturado mensalmente).</li>
             <li><strong className="text-foreground">Comissão (sem mensalidade, 6%):</strong> 6% sobre subtotal delivery — sem taxa PIX (a % já cobre os custos operacionais). R$ 2,00/entrega. PDV incluso com 2% de comissão presencial (faturado mensalmente).</li>
-            <li><strong className="text-foreground">Apoiador (R$ 130/mês — vagas limitadas):</strong> Plano vitalício. 0% comissão delivery e PDV. Máximo 10 vagas.</li>
+            <li><strong className="text-foreground">Apoiador (R$ 130/mês — vagas limitadas):</strong> Plano vitalício com mensalidade travada — nunca reajustada. 0% comissão percentual sobre delivery e PDV. Taxas fixas: R$ 1,99 por transação PIX online (descontado do repasse), R$ 2,00/entrega (pago pelo cliente no checkout) e R$ 1,00 por venda presencial no PDV. Máximo 10 vagas.</li>
           </ul>
           <p>5.2. <strong className="text-foreground">Comissão PDV:</strong> Incide sobre o subtotal das vendas presenciais. Acumulada ao longo do mês e incluída na fatura mensal junto à mensalidade.</p>
           <p>5.3. Planos Essencial e Crescimento incluem 7 dias de teste grátis. O plano Comissão pode ser utilizado imediatamente.</p>
@@ -99,7 +107,7 @@ const TermosDeUso = () => {
         <section className="space-y-3">
           <h2 className="text-base font-bold text-foreground">9. Taxas Detalhadas</h2>
           <p>9.1. Comissão delivery incide apenas sobre o <strong className="text-foreground">subtotal dos produtos</strong> (excluindo entrega, desconto e taxa PIX).</p>
-          <p>9.2. Comissão PDV incide sobre o subtotal da venda presencial. Isentada para planos Essencial e Apoiador.</p>
+          <p>9.2. Comissão PDV percentual incide sobre o subtotal da venda presencial (6% plano Comissão, 2% plano Crescimento). Para planos Essencial e Apoiador não há comissão percentual — aplica-se taxa fixa de <strong className="text-foreground">R$ 1,00 por venda PDV</strong>, incluída na fatura mensal.</p>
           <p>9.3. Taxa PIX (R$ 1,99): cobrada por transação PIX Online <strong className="text-foreground">apenas nos planos Essencial e Apoiador</strong>, descontada automaticamente do valor repassado ao lojista. Nos planos Crescimento e Comissão, a comissão percentual já cobre os custos operacionais do PIX — não há cobrança adicional de R$ 1,99.</p>
           <p>9.4. Taxa de entrega (R$ 2,00): somada à taxa base do lojista, paga pelo cliente no checkout.</p>
           <p>9.5. Todas as taxas são consultáveis no painel financeiro da loja.</p>
@@ -114,6 +122,13 @@ const TermosDeUso = () => {
         </section>
 
         <section className="space-y-3">
+          <h2 className="text-base font-bold text-foreground">10-A. Prevenção a Fraudes e Bloqueio Automático</h2>
+          <div className="space-y-2 text-muted-foreground">
+            <p>10-A.1. O ItaSuper utiliza sistemas automatizados de detecção de fraudes. Pedidos com endereço em cidade divergente da área de cobertura da loja ou a distância superior ao raio máximo podem ser bloqueados automaticamente.</p>
+            <p>10-A.2. Tentativas de fraude são registradas e podem resultar em suspensão, bloqueio permanente e comunicação às autoridades (Art. 171 do Código Penal).</p>
+            <p>10-A.3. O Usuário que considerar um bloqueio indevido pode solicitar revisão pelo sistema de suporte, apresentando comprovação de endereço válido.</p>
+          </div>
+
           <h2 className="text-base font-bold text-foreground">11. Condutas Proibidas</h2>
           <ul className="list-disc pl-4 space-y-1">
             <li>Usar a Plataforma para fins ilegais ou fraudulentos.</li>
