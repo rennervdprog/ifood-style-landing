@@ -260,10 +260,6 @@ const App = () => {
             <CapacitorRouteGuard />
             <StoreAppGuard />
             <DownloadAppPrompt />
-            {/* Modal de aceite de novos termos — bloqueia a UI até aceitar */}
-            {needsTermsUpdate && (
-              <TermsUpdateModal onAccepted={() => setNeedsTermsUpdate(false)} />
-            )}
             <ErrorBoundary>
             <Suspense fallback={<PageLoader />}>
               <Routes>
