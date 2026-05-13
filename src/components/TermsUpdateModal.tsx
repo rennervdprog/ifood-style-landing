@@ -8,13 +8,11 @@
  */
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import {
   FileText, Shield, CheckCircle2, ChevronDown, ChevronUp,
-  Loader2, AlertTriangle, Plus,
+  Loader2, AlertTriangle,
 } from "lucide-react";
-import { Link } from "react-router-dom";
 
 // ─── Versão atual do sistema ──────────────────────────────────────────────────
 export const CURRENT_TERMS_VERSION = "2.0";
@@ -87,7 +85,6 @@ interface Props {
 }
 
 export const TermsUpdateModal = ({ onAccepted }: Props) => {
-  const { user } = useAuth();
   const [expanded, setExpanded] = useState<number | null>(0);
   const [checkedTerms, setCheckedTerms] = useState(false);
   const [checkedPrivacy, setCheckedPrivacy] = useState(false);
@@ -235,9 +232,7 @@ export const TermsUpdateModal = ({ onAccepted }: Props) => {
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
               Li e aceito os{" "}
-              <Link to="/termos" target="_blank" className="font-bold text-primary underline underline-offset-2">
-                Termos de Uso
-              </Link>{" "}
+<a href="/termos" target="_blank" rel="noopener noreferrer" className="font-bold text-primary underline underline-offset-2">Termos de Uso</a>{" "}
               versão 2.0, incluindo as novas cláusulas sobre suporte, antifraude e IA.
             </p>
           </label>
@@ -255,9 +250,7 @@ export const TermsUpdateModal = ({ onAccepted }: Props) => {
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
               Li e aceito a{" "}
-              <Link to="/privacidade" target="_blank" className="font-bold text-emerald-600 underline underline-offset-2">
-                Política de Privacidade
-              </Link>{" "}
+              <a href="/privacidade" target="_blank" rel="noopener noreferrer" className="font-bold text-emerald-600 underline underline-offset-2">Política de Privacidade</a>{" "}
               versão 2.0, incluindo coleta de dados de suporte e uso pelo Sales Coach.
             </p>
           </label>
