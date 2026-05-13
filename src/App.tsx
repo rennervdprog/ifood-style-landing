@@ -247,7 +247,6 @@ const App = () => {
     <TooltipProvider>
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="id-delivery-theme">
       <AuthProvider>
-        <TermsChecker />
         <StoreProvider>
         <CartProvider>
           <Toaster />
@@ -259,6 +258,7 @@ const App = () => {
             <PushNavigator />
             <CapacitorRouteGuard />
             <StoreAppGuard />
+            <TermsChecker />
             <DownloadAppPrompt />
             <ErrorBoundary>
             <Suspense fallback={<PageLoader />}>
