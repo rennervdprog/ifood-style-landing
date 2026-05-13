@@ -1,5 +1,6 @@
-import { lazy, Suspense, useEffect, useCallback } from "react";
+import { lazy, Suspense, useEffect, useCallback, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { BrowserRouter, Route, Routes, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,6 +22,7 @@ import { checkAppVersion } from "@/lib/appVersionCheck";
 import CapacitorRouteGuard from "@/components/CapacitorRouteGuard";
 import StoreAppGuard from "@/components/StoreAppGuard";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { TermsUpdateModal, CURRENT_TERMS_VERSION } from "@/components/TermsUpdateModal";
 
 // Lazy-loaded pages — each becomes its own chunk
 const Index = lazy(() => import("./pages/Index"));
@@ -146,6 +148,26 @@ const PushNavigator = () => {
 };
 
 const App = () => {
+  const { user } = useAuth();
+  const [needsTermsUpdate, setNeedsTermsUpdate] = useState(false);
+  const [termsChecked, setTermsChecked] = useState(false);
+
+  // Verificar versão dos termos após login
+  useEffect(() => {
+    if (!user || termsChecked) return;
+    const check = async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("terms_version_accepted")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      const v = (data as any)?.terms_version_accepted || "1.0";
+      if (v < CURRENT_TERMS_VERSION) setNeedsTermsUpdate(true);
+      setTermsChecked(true);
+    };
+    check();
+  }, [user, termsChecked]);
+
   // Anti-cache logic: force reload and cache clear if version mismatch
   useEffect(() => {
     const storedVersion = localStorage.getItem("app_version");
@@ -228,6 +250,10 @@ const App = () => {
             <CapacitorRouteGuard />
             <StoreAppGuard />
             <DownloadAppPrompt />
+            {/* Modal de aceite de novos termos — bloqueia a UI até aceitar */}
+            {needsTermsUpdate && (
+              <TermsUpdateModal onAccepted={() => setNeedsTermsUpdate(false)} />
+            )}
             <ErrorBoundary>
             <Suspense fallback={<PageLoader />}>
               <Routes>
@@ -311,6 +337,10 @@ const App = () => {
       </AuthProvider>
       </ThemeProvider>
     </TooltipProvider>
+      {/* Modal de aceite de novos termos */}
+      {needsTermsUpdate && user && (
+        <TermsUpdateModal onAccepted={() => { setNeedsTermsUpdate(false); setTermsChecked(false); }} />
+      )}
   </QueryClientProvider>
   );
 };
