@@ -26,6 +26,7 @@ import {
   ArrowLeft, DollarSign, ShoppingBag, TrendingUp, Clock,
   Store, Copy, AlertTriangle, Users, Bike, Wallet, CheckCircle2, Banknote, XCircle, Bell, Trash2, QrCode, Loader2, ArrowUpRight, ArrowDownRight, Settings,
   LayoutDashboard, Shield, Ticket, RefreshCw, Truck, Menu, X, MapPin, Eye, Scale, Search, FileText, Mail, Phone, User, Download, Calendar, CreditCard, Receipt, ChevronDown, ChevronUp, Percent, Crown, Handshake, FlaskConical, Link as LinkIcon, Megaphone, Monitor, Sparkles
+  MessageCircle,
 } from "lucide-react";
  import { Switch } from "@/components/ui/switch";
  import { Badge } from "@/components/ui/badge";
@@ -134,8 +135,6 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
         .maybeSingle();
       return !!data;
     },
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
     enabled: !!user,
   });
 
@@ -147,8 +146,6 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
       if (error) throw error;
       return (data || []).map((s: any) => s.id as string);
     },
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
     enabled: isAdmin,
     staleTime: 60_000,
   });
@@ -187,8 +184,6 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
       if (error) throw error;
       return data;
     },
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
     enabled: isAdmin && activeTab === "financeiro",
   });
 
@@ -203,8 +198,6 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
       if (error) throw error;
       return data as any[];
     },
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
     enabled: isAdmin && activeTab === "logs",
   });
 
@@ -218,8 +211,6 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
       if (error) throw error;
       return data;
     },
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
     enabled: isAdmin,
     staleTime: 2 * 60 * 1000, // 2 minutos
   });
@@ -257,8 +248,6 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
       if (error) throw error;
       return (data || []) as any[];
     },
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
     enabled: isAdmin,
     staleTime: 2 * 60 * 1000, // 2 minutos — planos mudam pouco
   });
@@ -288,8 +277,6 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
       if (error) throw error;
       return (data || []) as any[];
     },
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
     enabled: isAdmin,
   });
 
@@ -307,8 +294,6 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
       if (error) throw error;
       return (data || []) as any[];
     },
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
     enabled: isAdmin,
     refetchInterval: 60000,
   });
@@ -863,7 +848,6 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                 {activeTab === "coupons" && "Gerenciar cupons de desconto"}
                 {activeTab === "juridico" && "Consulta jurídica e dados arquivados"}
                 {activeTab === "moderadores" && "Moderadores e sistema de afiliados"}
-                {activeTab === "suporte" && "Central de suporte — tickets e agentes"}
                 {activeTab === "socios" && "Divisão de lucros entre sócios"}
                 {activeTab === "sync" && "Sincronização com banco externo"}
                 {activeTab === "test_finance" && "Lojas de teste — finanças fictícias isoladas"}
