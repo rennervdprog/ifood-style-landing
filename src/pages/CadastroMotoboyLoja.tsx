@@ -89,8 +89,8 @@ const CadastroMotoboyLoja = () => {
 
       await supabase.from("terms_acceptance").insert({
         user_id: userId,
-        terms_version: "1.0",
-        privacy_version: "1.0",
+        terms_version: "2.0",
+        privacy_version: "2.0",
         user_agent: navigator.userAgent,
       });
 
