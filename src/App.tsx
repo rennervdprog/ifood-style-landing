@@ -5,7 +5,7 @@ import { BrowserRouter, Route, Routes, useNavigate, useLocation, Navigate } from
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { CartProvider } from "@/contexts/CartContext";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { StoreProvider } from "@/contexts/StoreContext";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import RoleGuard from "@/components/RoleGuard";
