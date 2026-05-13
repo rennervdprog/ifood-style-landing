@@ -65,7 +65,7 @@ const SupportAgentDashboard = () => {
   });
 
   useEffect(() => {
-    if (!agentLoading && agentProfile && agentProfile.role !== "suporte") {
+    if (!agentLoading && agentProfile && (agentProfile.role as string) !== "suporte") {
       toast.error("Acesso restrito a agentes de suporte.");
       navigate("/");
     }
