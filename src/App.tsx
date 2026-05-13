@@ -147,12 +147,12 @@ const PushNavigator = () => {
   return null;
 };
 
-const App = () => {
+/** Verifica e exibe modal de novos termos — precisa estar dentro do AuthProvider */
+const TermsChecker = () => {
   const { user } = useAuth();
   const [needsTermsUpdate, setNeedsTermsUpdate] = useState(false);
   const [termsChecked, setTermsChecked] = useState(false);
 
-  // Verificar versão dos termos após login
   useEffect(() => {
     if (!user || termsChecked) return;
     const check = async () => {
@@ -168,6 +168,15 @@ const App = () => {
     check();
   }, [user, termsChecked]);
 
+  if (!needsTermsUpdate || !user) return null;
+  return (
+    <TermsUpdateModal
+      onAccepted={() => { setNeedsTermsUpdate(false); setTermsChecked(false); }}
+    />
+  );
+};
+
+const App = () => {
   // Anti-cache logic: force reload and cache clear if version mismatch
   useEffect(() => {
     const storedVersion = localStorage.getItem("app_version");
@@ -238,6 +247,7 @@ const App = () => {
     <TooltipProvider>
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="id-delivery-theme">
       <AuthProvider>
+        <TermsChecker />
         <StoreProvider>
         <CartProvider>
           <Toaster />
@@ -337,10 +347,7 @@ const App = () => {
       </AuthProvider>
       </ThemeProvider>
     </TooltipProvider>
-      {/* Modal de aceite de novos termos */}
-      {needsTermsUpdate && user && (
-        <TermsUpdateModal onAccepted={() => { setNeedsTermsUpdate(false); setTermsChecked(false); }} />
-      )}
+      {/* TermsChecker abaixo, dentro do AuthProvider */}
   </QueryClientProvider>
   );
 };
