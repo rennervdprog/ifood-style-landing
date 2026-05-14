@@ -177,20 +177,34 @@ const TermsChecker = () => {
 };
 
 const App = () => {
-  // Anti-cache logic: force reload and cache clear if version mismatch
+  // Anti-cache: força atualização completa quando a versão do app muda.
+  // Limpa localStorage, caches do Service Worker e recarrega a página.
   useEffect(() => {
     const storedVersion = localStorage.getItem("app_version");
-    if (storedVersion && storedVersion !== APP_VERSION) {
-      console.log(`[Cache] Version mismatch: ${storedVersion} -> ${APP_VERSION}. Clearing cache...`);
-      // Clear specific caches but preserve some essential local state if needed
-      // For safety and to solve user's complaint, we clear all
+
+    if (storedVersion !== APP_VERSION) {
+      console.log(`[Cache] ${storedVersion ?? "primeira visita"} → ${APP_VERSION}. Limpando cache...`);
+
+      // 1. Limpar localStorage e queryClient
+      const keysToPreserve: string[] = []; // nada a preservar
       localStorage.clear();
       queryClient.clear();
       localStorage.setItem("app_version", APP_VERSION);
-      window.location.reload();
-    } else if (!storedVersion) {
-      localStorage.setItem("app_version", APP_VERSION);
+
+      // 2. Limpar todos os caches do Service Worker
+      if ("caches" in window) {
+        caches.keys()
+          .then(keys => Promise.all(keys.map(k => caches.delete(k))))
+          .catch(() => {})
+          .finally(() => {
+            // 3. Recarregar só se já havia uma versão salva (evita loop na 1ª visita)
+            if (storedVersion) window.location.reload();
+          });
+      } else if (storedVersion) {
+        window.location.reload();
+      }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
