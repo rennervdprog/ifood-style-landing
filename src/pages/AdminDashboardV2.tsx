@@ -254,7 +254,7 @@ const AdminDashboard = () => {
         if (error) throw error;
         return data;
       }
-      const { data, error } = await supabase.from("stores").select("*").eq("owner_id", user!.id).maybeSingle();
+      const { data, error } = await supabase.from("stores").select("*, profiles!stores_owner_id_fkey(pix_key)").eq("owner_id", user!.id).maybeSingle();
       if (error) {
         console.error("[AdminDashboard] store query error:", error);
         throw error;
@@ -921,7 +921,7 @@ const AdminDashboard = () => {
         .from("products")
         .select("id", { count: "exact", head: true })
         .eq("store_id", store!.id)
-        .eq("available", true);
+        .eq("is_available", true);
       return count || 0;
     },
     enabled: !!store,
@@ -1433,7 +1433,7 @@ const AdminDashboard = () => {
             <>
               {/* ── BANNER SETUP INCOMPLETO ── */}
               {(() => {
-                const missingPix  = !(myProfile as any)?.pix_key;
+                const missingPix  = !(store as any)?.profiles?.pix_key;
                 const missingMenu = menuProductCount === 0;
                 const missingHours = !storeHours || storeHours.length === 0 || (storeHours as any[]).every((h: any) => h.is_closed_all_day === true);
                 const missingLogo = !store.image_url;
