@@ -604,21 +604,29 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
 }) {
   const [fee, setFee] = useState(currentFee);
   const [rate, setRate] = useState(currentRate);
-  const [pixOverrideEnabled, setPixOverrideEnabled] = useState(currentPixOverride !== null && currentPixOverride !== undefined);
-  const [pixOverride, setPixOverride] = useState(currentPixOverride ?? 1);
-  const [deliveryOverrideEnabled, setDeliveryOverrideEnabled] = useState(currentDeliveryOverride !== null && currentDeliveryOverride !== undefined);
-  const [deliveryOverride, setDeliveryOverride] = useState(currentDeliveryOverride ?? 2);
-  const [pdvFixedFee, setPdvFixedFee] = useState(currentPdvFixedFee ?? 1);
+  const [pdvFixedFee, setPdvFixedFee] = useState(currentPdvFixedFee ?? 0);
+  const [pdvCommRate, setPdvCommRate] = useState(0);
+  const [pixOverrideEnabled, setPixOverrideEnabled] = useState(currentPixOverride != null);
+  const [pixOverride, setPixOverride] = useState(currentPixOverride ?? 1.99);
+  const [deliveryOverrideEnabled, setDeliveryOverrideEnabled] = useState(currentDeliveryOverride != null);
+  const [deliveryOverride, setDeliveryOverride] = useState(currentDeliveryOverride ?? 2.00);
   const [saving, setSaving] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
-  const finalPixOverride = pixOverrideEnabled ? pixOverride : null;
-  const finalDeliveryOverride = deliveryOverrideEnabled ? deliveryOverride : null;
-  const changed =
-    fee !== currentFee ||
-    rate !== currentRate ||
-    pdvFixedFee !== (currentPdvFixedFee ?? 1) ||
-    finalPixOverride !== (currentPixOverride ?? null) ||
-    finalDeliveryOverride !== (currentDeliveryOverride ?? null);
+  const finalPix = pixOverrideEnabled ? pixOverride : null;
+  const finalDelivery = deliveryOverrideEnabled ? deliveryOverride : null;
+
+  const hasCustom =
+    fee !== currentFee || rate !== currentRate ||
+    pdvFixedFee !== (currentPdvFixedFee ?? 0) ||
+    finalPix !== (currentPixOverride ?? null) ||
+    finalDelivery !== (currentDeliveryOverride ?? null);
+
+  // Detectar se tem valores VIP ativos
+  const isVip =
+    (currentFee !== (planType === 'fixed' ? 180 : planType === 'hybrid' ? 100 : 0)) ||
+    (currentPixOverride != null) || (currentDeliveryOverride != null) ||
+    (currentPdvFixedFee != null && currentPdvFixedFee !== 1);
 
   const handleSave = async () => {
     setSaving(true);
@@ -629,19 +637,14 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
           monthly_fee: fee,
           commission_rate: rate,
           pdv_fixed_fee_per_sale: pdvFixedFee,
-          pix_operational_fee_override: finalPixOverride,
-          platform_delivery_split_override: finalDeliveryOverride,
+          pix_operational_fee_override: finalPix,
+          platform_delivery_split_override: finalDelivery,
         } as any)
         .eq("store_id", storeId)
         .eq("is_active", true);
       if (error) throw error;
-
-      await supabase
-        .from("stores")
-        .update({ commission_rate: rate } as any)
-        .eq("id", storeId);
-
-      toast.success("Valores personalizados salvos!");
+      await supabase.from("stores").update({ commission_rate: rate } as any).eq("id", storeId);
+      toast.success("Configuração VIP salva!");
       onSave();
     } catch {
       toast.error("Erro ao salvar.");
@@ -650,154 +653,205 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
     }
   };
 
+  const handleReset = async () => {
+    const defaults = { fixed: { fee: 180, rate: 0 }, hybrid: { fee: 100, rate: 2.5 }, commission_only: { fee: 0, rate: 6 } };
+    const d = defaults[planType] || defaults.commission_only;
+    setSaving(true);
+    try {
+      await supabase.from("store_plans").update({
+        monthly_fee: d.fee, commission_rate: d.rate, pdv_fixed_fee_per_sale: planType === 'fixed' ? 1.00 : 0,
+        pix_operational_fee_override: null, platform_delivery_split_override: null,
+      } as any).eq("store_id", storeId).eq("is_active", true);
+      setFee(d.fee); setRate(d.rate);
+      setPdvFixedFee(planType === 'fixed' ? 1 : 0);
+      setPixOverrideEnabled(false); setDeliveryOverrideEnabled(false);
+      toast.success("Valores resetados para o padrão do plano.");
+      onSave();
+    } catch { toast.error("Erro ao resetar."); }
+    finally { setSaving(false); }
+  };
+
   return (
-    <div className="bg-muted/30 rounded-xl p-3 space-y-3">
-      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">⚙️ Valores Personalizados (VIP)</p>
+    <div className="rounded-2xl border border-border overflow-hidden">
+      {/* Header clicável */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center justify-between px-4 py-3 bg-muted/30 hover:bg-muted/50 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <Crown className="h-4 w-4 text-amber-500" />
+          <span className="text-xs font-black text-foreground">Configuração VIP</span>
+          {isVip && (
+            <span className="text-[10px] font-black bg-amber-500/15 text-amber-600 border border-amber-500/25 px-1.5 py-0.5 rounded-full">
+              Personalizado
+            </span>
+          )}
+        </div>
+        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${expanded ? "rotate-180" : ""}`} />
+      </button>
 
-      <div className="grid grid-cols-2 gap-2">
-        <div>
-          <label className="text-[10px] text-muted-foreground font-semibold">Mensalidade (R$)</label>
-          <input
-            type="number"
-            min="0"
-            step="10"
-            value={fee}
-            onChange={e => setFee(Number(e.target.value))}
-            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground mt-1"
-          />
-        </div>
-        <div>
-          <label className="text-[10px] text-muted-foreground font-semibold">Comissão delivery (%)</label>
-          <input
-            type="number"
-            min="0"
-            max="100"
-            step="0.5"
-            value={rate}
-            onChange={e => setRate(Number(e.target.value))}
-            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground mt-1"
-          />
-        </div>
-        <div className="col-span-2">
-          <label className="text-[10px] text-muted-foreground font-semibold">Taxa fixa por venda PDV (R$)</label>
-          <input
-            type="number"
-            min="0"
-            step="0.10"
-            value={pdvFixedFee}
-            onChange={e => setPdvFixedFee(Number(e.target.value))}
-            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground mt-1"
-          />
-          <p className="text-[10px] text-muted-foreground mt-1">R$ 1,00 padrão para planos fixos. Use 0 para isentar.</p>
-        </div>
-      </div>
+      {expanded && (
+        <div className="p-4 space-y-4">
 
-      {/* PIX Override */}
-      <div className="border-t border-border pt-3 space-y-2">
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={pixOverrideEnabled}
-            onChange={e => setPixOverrideEnabled(e.target.checked)}
-            className="rounded"
-          />
-          <span className="text-xs font-bold text-foreground">Customizar taxa PIX desta loja</span>
-        </label>
-        {pixOverrideEnabled && (
+          {/* Seção 1: Cobrança mensal */}
           <div>
-            <label className="text-[10px] text-muted-foreground font-semibold">Taxa PIX por transação (R$)</label>
-            <input
-              type="number"
-              min="0"
-              step="0.10"
-              value={pixOverride}
-              onChange={e => setPixOverride(Number(e.target.value))}
-              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground mt-1"
-            />
-            <p className="text-[10px] text-muted-foreground mt-1">Use 0 para isentar a loja da taxa PIX.</p>
+            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">💰 Cobrança mensal</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-[11px] text-muted-foreground font-semibold block mb-1">Mensalidade (R$)</label>
+                <div className="flex items-center gap-1 bg-muted/40 border border-border rounded-xl px-3 py-2">
+                  <span className="text-xs text-muted-foreground">R$</span>
+                  <input type="number" min="0" step="10" value={fee}
+                    onChange={e => setFee(Number(e.target.value))}
+                    className="flex-1 bg-transparent text-sm font-bold text-foreground focus:outline-none min-w-0" />
+                </div>
+                {fee === 0 && <p className="text-[10px] text-emerald-500 mt-1">✓ Isento</p>}
+              </div>
+              <div>
+                <label className="text-[11px] text-muted-foreground font-semibold block mb-1">Comissão delivery (%)</label>
+                <div className="flex items-center gap-1 bg-muted/40 border border-border rounded-xl px-3 py-2">
+                  <input type="number" min="0" max="30" step="0.5" value={rate}
+                    onChange={e => setRate(Number(e.target.value))}
+                    className="flex-1 bg-transparent text-sm font-bold text-foreground focus:outline-none min-w-0" />
+                  <span className="text-xs text-muted-foreground">%</span>
+                </div>
+                {rate === 0 && <p className="text-[10px] text-emerald-500 mt-1">✓ Isento</p>}
+              </div>
+            </div>
           </div>
-        )}
-      </div>
 
-      {/* Delivery Split Override */}
-      <div className="border-t border-border pt-3 space-y-2">
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={deliveryOverrideEnabled}
-            onChange={e => setDeliveryOverrideEnabled(e.target.checked)}
-            className="rounded"
-          />
-          <span className="text-xs font-bold text-foreground">Customizar split de entrega da plataforma</span>
-        </label>
-        {deliveryOverrideEnabled && (
+          {/* Seção 2: PDV */}
           <div>
-            <label className="text-[10px] text-muted-foreground font-semibold">Plataforma por corrida (R$)</label>
-            <input
-              type="number"
-              min="0"
-              step="0.50"
-              value={deliveryOverride}
-              onChange={e => setDeliveryOverride(Number(e.target.value))}
-              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground mt-1"
-            />
-            <p className="text-[10px] text-muted-foreground mt-1">Use 0 para remover a taxa de R$2 da plataforma por entrega.</p>
+            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">🖥️ PDV Presencial</p>
+            <div>
+              <label className="text-[11px] text-muted-foreground font-semibold block mb-1">Taxa fixa por venda PDV (R$)</label>
+              <div className="flex items-center gap-1 bg-muted/40 border border-border rounded-xl px-3 py-2">
+                <span className="text-xs text-muted-foreground">R$</span>
+                <input type="number" min="0" step="0.10" value={pdvFixedFee}
+                  onChange={e => setPdvFixedFee(Number(e.target.value))}
+                  className="flex-1 bg-transparent text-sm font-bold text-foreground focus:outline-none min-w-0" />
+                <span className="text-[10px] text-muted-foreground">por venda</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-1">Padrão: R$ 1,00. Use 0 para isentar.</p>
+            </div>
           </div>
-        )}
-      </div>
 
-      {/* Preview da cobrança — mostra exatamente o que será cobrado */}
-      <div className="bg-background rounded-xl border border-border p-3 space-y-1.5">
-        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">📊 Preview da cobrança mensal</p>
-        <div className="space-y-1">
-          {fee > 0 && (
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">Mensalidade</span>
-              <span className="font-bold text-foreground">R$ {fee.toFixed(2).replace(".", ",")}</span>
+          {/* Seção 3: Taxas por transação */}
+          <div>
+            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">⚡ Taxas por transação</p>
+            <div className="space-y-3">
+              {/* PIX */}
+              <div className="bg-muted/20 rounded-xl p-3 space-y-2">
+                <label className="flex items-center justify-between cursor-pointer">
+                  <div>
+                    <p className="text-xs font-bold text-foreground">Taxa PIX personalizada</p>
+                    <p className="text-[10px] text-muted-foreground">Padrão: R$ 1,99 por transação</p>
+                  </div>
+                  <button
+                    onClick={() => setPixOverrideEnabled(!pixOverrideEnabled)}
+                    className={`relative w-10 h-5 rounded-full transition-colors ${pixOverrideEnabled ? "bg-primary" : "bg-muted-foreground/30"}`}
+                  >
+                    <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${pixOverrideEnabled ? "left-5" : "left-0.5"}`} />
+                  </button>
+                </label>
+                {pixOverrideEnabled && (
+                  <div className="flex items-center gap-2 bg-muted/40 rounded-lg px-3 py-2">
+                    <span className="text-xs text-muted-foreground">R$</span>
+                    <input type="number" min="0" step="0.10" value={pixOverride}
+                      onChange={e => setPixOverride(Number(e.target.value))}
+                      className="flex-1 bg-transparent text-sm font-bold text-foreground focus:outline-none" />
+                    <span className="text-[10px] text-muted-foreground">por transação</span>
+                  </div>
+                )}
+                {pixOverrideEnabled && pixOverride === 0 && (
+                  <p className="text-[10px] text-emerald-500">✓ PIX isento para esta loja</p>
+                )}
+              </div>
+
+              {/* Taxa de entrega */}
+              <div className="bg-muted/20 rounded-xl p-3 space-y-2">
+                <label className="flex items-center justify-between cursor-pointer">
+                  <div>
+                    <p className="text-xs font-bold text-foreground">Taxa de entrega personalizada</p>
+                    <p className="text-[10px] text-muted-foreground">Padrão: R$ 2,00 por entrega (cliente paga)</p>
+                  </div>
+                  <button
+                    onClick={() => setDeliveryOverrideEnabled(!deliveryOverrideEnabled)}
+                    className={`relative w-10 h-5 rounded-full transition-colors ${deliveryOverrideEnabled ? "bg-primary" : "bg-muted-foreground/30"}`}
+                  >
+                    <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${deliveryOverrideEnabled ? "left-5" : "left-0.5"}`} />
+                  </button>
+                </label>
+                {deliveryOverrideEnabled && (
+                  <div className="flex items-center gap-2 bg-muted/40 rounded-lg px-3 py-2">
+                    <span className="text-xs text-muted-foreground">R$</span>
+                    <input type="number" min="0" step="0.50" value={deliveryOverride}
+                      onChange={e => setDeliveryOverride(Number(e.target.value))}
+                      className="flex-1 bg-transparent text-sm font-bold text-foreground focus:outline-none" />
+                    <span className="text-[10px] text-muted-foreground">por entrega</span>
+                  </div>
+                )}
+              </div>
             </div>
-          )}
-          {rate > 0 && (
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">Comissão delivery</span>
-              <span className="font-bold text-foreground">{rate}% do subtotal</span>
+          </div>
+
+          {/* Preview */}
+          <div className="bg-card border border-border/50 rounded-2xl p-3 space-y-2">
+            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">📊 Resumo desta configuração</p>
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">Mensalidade</span>
+                <span className={`font-bold ${fee === 0 ? "text-emerald-500" : "text-foreground"}`}>
+                  {fee === 0 ? "Isento" : `R$ ${fee.toFixed(2).replace(".", ",")}/mês`}
+                </span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">Comissão delivery</span>
+                <span className={`font-bold ${rate === 0 ? "text-emerald-500" : "text-foreground"}`}>
+                  {rate === 0 ? "Isento" : `${rate}%`}
+                </span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">Taxa fixa PDV</span>
+                <span className={`font-bold ${pdvFixedFee === 0 ? "text-emerald-500" : "text-foreground"}`}>
+                  {pdvFixedFee === 0 ? "Isento" : `R$ ${pdvFixedFee.toFixed(2).replace(".", ",")} /venda`}
+                </span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">Taxa PIX</span>
+                <span className="font-bold text-foreground">
+                  {finalPix === null ? "R$ 1,99 (padrão)" : finalPix === 0 ? <span className="text-emerald-500">Isento</span> : `R$ ${Number(finalPix).toFixed(2).replace(".", ",")}`}
+                </span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">Taxa entrega</span>
+                <span className="font-bold text-foreground">
+                  {finalDelivery === null ? "R$ 2,00 (padrão, cliente paga)" : `R$ ${Number(finalDelivery).toFixed(2).replace(".", ",")} (cliente paga)`}
+                </span>
+              </div>
             </div>
-          )}
-          {finalPixOverride !== null && finalPixOverride !== undefined && (
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">Taxa PIX (override)</span>
-              <span className="font-bold text-foreground">R$ {Number(finalPixOverride).toFixed(2).replace(".", ",")} por transação</span>
-            </div>
-          )}
-          {finalDeliveryOverride !== null && finalDeliveryOverride !== undefined && (
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">Taxa entrega (override)</span>
-              <span className="font-bold text-foreground">R$ {Number(finalDeliveryOverride).toFixed(2).replace(".", ",")} por pedido</span>
-            </div>
-          )}
-          {pdvFixedFee > 0 && (
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">Taxa fixa PDV</span>
-              <span className="font-bold text-foreground">R$ {pdvFixedFee.toFixed(2).replace(".", ",")} por venda</span>
-            </div>
-          )}
-          {fee === 0 && rate === 0 && (
-            <p className="text-xs text-amber-500 font-semibold">⚠️ Sem mensalidade e sem comissão — apenas cobranças PDV acumuladas na fatura</p>
-          )}
+          </div>
+
+          {/* Botões */}
+          <div className="flex gap-2">
+            {isVip && (
+              <button onClick={handleReset} disabled={saving}
+                className="flex-1 py-2.5 rounded-xl border border-border text-xs font-bold text-muted-foreground hover:bg-muted/40 transition-colors disabled:opacity-50">
+                Resetar padrão
+              </button>
+            )}
+            <button onClick={handleSave} disabled={saving || !hasCustom}
+              className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-black disabled:opacity-40 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5">
+              {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Crown className="h-3.5 w-3.5" />}
+              {saving ? "Salvando..." : "Salvar Configuração VIP"}
+            </button>
+          </div>
         </div>
-      </div>
-
-      {changed && (
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="w-full py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold disabled:opacity-50"
-        >
-          {saving ? "Salvando..." : "Salvar Valores Personalizados"}
-        </button>
       )}
     </div>
   );
 }
+
 
 function FullControlPanel({ plan, storeName, currentDisplay, onChange }: {
   plan: any;
