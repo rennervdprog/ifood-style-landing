@@ -3,7 +3,7 @@ import {
   LayoutDashboard, ListOrdered, Users, UtensilsCrossed,
   Plus, CircleDot, Coins, BarChart3, CreditCard, Star,
   Bike, AlertTriangle, GraduationCap, Settings,
-  MessageCircle,
+  MessageCircle, ShoppingCart, Headphones,
 } from "lucide-react";
 import type { DashboardTab, OrderStatus } from "./types";
 
@@ -64,17 +64,19 @@ export const baseSidebarItems: { key: DashboardTab; label: string; icon: React.E
   { key: "orders", label: "Pedidos", icon: ListOrdered },
   { key: "clients", label: "Clientes", icon: Users },
   { key: "menu", label: "Cardápio", icon: UtensilsCrossed },
+  { key: "cash_register", label: "PDV / Caixa", icon: ShoppingCart },
   { key: "addons", label: "Adicionais", icon: Plus },
   { key: "bordas", label: "Bordas", icon: CircleDot, pizzaOnly: true },
   { key: "hours", label: "Horários", icon: Clock },
   { key: "finance", label: "Financeiro", icon: Coins },
   { key: "reports", label: "Relatórios", icon: BarChart3 },
-  { key: "subscription", label: "Assinatura", icon: CreditCard },
+  { key: "subscription", label: "Meu Plano", icon: CreditCard },
   { key: "loyalty", label: "Fidelidade", icon: Star },
   { key: "drivers", label: "Motoboys", icon: Bike },
   { key: "refunds", label: "Reembolsos", icon: AlertTriangle },
   { key: "tutoriais", label: "Tutoriais", icon: GraduationCap },
   { key: "settings", label: "Configurações", icon: Settings },
+  { key: "suporte", label: "Suporte", icon: Headphones },
 ];
 
 export const bottomNavTabs: { key: DashboardTab; label: string; icon: React.ElementType }[] = [
@@ -85,14 +87,16 @@ export const bottomNavTabs: { key: DashboardTab; label: string; icon: React.Elem
 ];
 
 export const moreSheetItems: { key: DashboardTab; label: string; icon: React.ElementType; pizzaOnly?: boolean }[] = [
+  { key: "cash_register", label: "PDV / Caixa", icon: ShoppingCart },
   { key: "addons", label: "Adicionais", icon: Plus },
   { key: "bordas", label: "Bordas", icon: CircleDot, pizzaOnly: true },
   { key: "hours", label: "Horários", icon: Clock },
   { key: "finance", label: "Financeiro", icon: Coins },
   { key: "reports", label: "Relatórios", icon: BarChart3 },
-  { key: "subscription", label: "Assinatura", icon: CreditCard },
+  { key: "subscription", label: "Meu Plano", icon: CreditCard },
   { key: "loyalty", label: "Fidelidade", icon: Star },
   { key: "drivers", label: "Motoboys", icon: Bike },
   { key: "tutoriais", label: "Tutoriais", icon: GraduationCap },
   { key: "settings", label: "Configurações", icon: Settings },
+  { key: "suporte", label: "Suporte", icon: Headphones },
 ];
