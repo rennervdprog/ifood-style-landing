@@ -521,6 +521,7 @@ export default function AdminPlanManager() {
                       currentRate={plan.commission_rate}
                       currentPixOverride={(plan as any).pix_operational_fee_override}
                       currentDeliveryOverride={(plan as any).platform_delivery_split_override}
+                      currentPdvFixedFee={(plan as any).pdv_fixed_fee_per_sale}
                       planType={(plan.plan_type as PlanType)}
                       onSave={() => {
                         queryClient.invalidateQueries({ queryKey: ["admin-store-plans"] });
@@ -591,12 +592,13 @@ export default function AdminPlanManager() {
   );
 }
 
-function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride, currentDeliveryOverride, planType, onSave }: {
+function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride, currentDeliveryOverride, currentPdvFixedFee, planType, onSave }: {
   storeId: string;
   currentFee: number;
   currentRate: number;
   currentPixOverride: number | null | undefined;
   currentDeliveryOverride: number | null | undefined;
+  currentPdvFixedFee: number | null | undefined;
   planType: PlanType;
   onSave: () => void;
 }) {
@@ -606,6 +608,7 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
   const [pixOverride, setPixOverride] = useState(currentPixOverride ?? 1);
   const [deliveryOverrideEnabled, setDeliveryOverrideEnabled] = useState(currentDeliveryOverride !== null && currentDeliveryOverride !== undefined);
   const [deliveryOverride, setDeliveryOverride] = useState(currentDeliveryOverride ?? 2);
+  const [pdvFixedFee, setPdvFixedFee] = useState(currentPdvFixedFee ?? 1);
   const [saving, setSaving] = useState(false);
 
   const finalPixOverride = pixOverrideEnabled ? pixOverride : null;
@@ -613,6 +616,7 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
   const changed =
     fee !== currentFee ||
     rate !== currentRate ||
+    pdvFixedFee !== (currentPdvFixedFee ?? 1) ||
     finalPixOverride !== (currentPixOverride ?? null) ||
     finalDeliveryOverride !== (currentDeliveryOverride ?? null);
 
@@ -624,6 +628,7 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
         .update({
           monthly_fee: fee,
           commission_rate: rate,
+          pdv_fixed_fee_per_sale: pdvFixedFee,
           pix_operational_fee_override: finalPixOverride,
           platform_delivery_split_override: finalDeliveryOverride,
         } as any)
@@ -662,7 +667,7 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
           />
         </div>
         <div>
-          <label className="text-[10px] text-muted-foreground font-semibold">Taxa comissão (%)</label>
+          <label className="text-[10px] text-muted-foreground font-semibold">Comissão delivery (%)</label>
           <input
             type="number"
             min="0"
@@ -672,6 +677,18 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
             onChange={e => setRate(Number(e.target.value))}
             className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground mt-1"
           />
+        </div>
+        <div className="col-span-2">
+          <label className="text-[10px] text-muted-foreground font-semibold">Taxa fixa por venda PDV (R$)</label>
+          <input
+            type="number"
+            min="0"
+            step="0.10"
+            value={pdvFixedFee}
+            onChange={e => setPdvFixedFee(Number(e.target.value))}
+            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground mt-1"
+          />
+          <p className="text-[10px] text-muted-foreground mt-1">R$ 1,00 padrão para planos fixos. Use 0 para isentar.</p>
         </div>
       </div>
 
@@ -755,6 +772,12 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
             <div className="flex justify-between text-xs">
               <span className="text-muted-foreground">Taxa entrega (override)</span>
               <span className="font-bold text-foreground">R$ {Number(finalDeliveryOverride).toFixed(2).replace(".", ",")} por pedido</span>
+            </div>
+          )}
+          {pdvFixedFee > 0 && (
+            <div className="flex justify-between text-xs">
+              <span className="text-muted-foreground">Taxa fixa PDV</span>
+              <span className="font-bold text-foreground">R$ {pdvFixedFee.toFixed(2).replace(".", ",")} por venda</span>
             </div>
           )}
           {fee === 0 && rate === 0 && (
