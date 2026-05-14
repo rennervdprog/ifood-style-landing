@@ -213,7 +213,7 @@ const AdminDashboard = () => {
   const { data: myProfile, isLoading: profileLoading } = useQuery({
     queryKey: ["my-profile-approval", user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("is_approved, role").eq("user_id", user!.id).maybeSingle();
+      const { data } = await supabase.from("profiles").select("is_approved, role, pix_key").eq("user_id", user!.id).maybeSingle();
       return data;
     },
     enabled: !!user,
@@ -914,6 +914,20 @@ const AdminDashboard = () => {
     enabled: !!store,
   });
 
+  const { data: menuProductCount = 0 } = useQuery({
+    queryKey: ["menu-product-count", store?.id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("products")
+        .select("id", { count: "exact", head: true })
+        .eq("store_id", store!.id)
+        .eq("available", true);
+      return count || 0;
+    },
+    enabled: !!store,
+    staleTime: 60_000,
+  });
+
   const { allHoursClosed, isCurrentlyOpenByHours } = useMemo(() => {
     if (!storeHours || storeHours.length === 0) {
       return { allHoursClosed: true, isCurrentlyOpenByHours: false };
@@ -1326,11 +1340,17 @@ const AdminDashboard = () => {
                 {dashboardTab === "orders" && `${orders?.length || 0} pedidos ativos`}
                 {dashboardTab === "clients" && `${clientAnalytics.length} clientes registrados`}
                 {dashboardTab === "menu" && "Gerencie seu cardápio"}
-                {dashboardTab === "addons" && "Grupos de adicionais"}
+                {dashboardTab === "addons" && "Grupos de adicionais do cardápio"}
                 {dashboardTab === "bordas" && "Opções de borda para pizzas"}
                 {dashboardTab === "hours" && "Horários de funcionamento"}
                 {dashboardTab === "finance" && "Resumo financeiro"}
                 {dashboardTab === "settings" && "Configurações da loja"}
+                {dashboardTab === "subscription" && "Seu plano e mensalidade"}
+                {dashboardTab === "loyalty" && "Programa de pontos para clientes"}
+                {dashboardTab === "drivers" && "Seus entregadores vinculados"}
+                {dashboardTab === "reports" && "Relatórios e estatísticas"}
+                {dashboardTab === "cash_register" && "Caixa presencial — PDV"}
+                {dashboardTab === "refunds" && "Reembolsos e disputas"}
               </p>
             </div>
           </div>
@@ -1410,8 +1430,58 @@ const AdminDashboard = () => {
             </div>
           )}
           {dashboardTab === "dashboard" && isApproved && store && (
-            <Suspense fallback={<TabFallback />}>
-              <DashboardOverviewSection
+            <>
+              {/* ── BANNER SETUP INCOMPLETO ── */}
+              {(() => {
+                const missingPix  = !(myProfile as any)?.pix_key;
+                const missingMenu = menuProductCount === 0;
+                const missingHours = !storeHours || storeHours.length === 0 || (storeHours as any[]).every((h: any) => h.is_closed_all_day === true);
+                const missingLogo = !store.image_url;
+                const items = [
+                  missingPix    && { key: "pix",    label: "Cadastrar chave PIX",     desc: "Sem PIX você não recebe repasses automáticos", tab: "settings", urgente: true },
+                  missingMenu   && { key: "menu",   label: "Adicionar produtos",       desc: "Seu cardápio está vazio — clientes não conseguem pedir", tab: "menu", urgente: true },
+                  missingHours  && { key: "hours",  label: "Configurar horários",      desc: "Sem horários a loja aparece sempre fechada", tab: "hours", urgente: false },
+                  missingLogo   && { key: "logo",   label: "Adicionar logo da loja",   desc: "Uma boa foto aumenta a conversão de clientes", tab: "settings", urgente: false },
+                ].filter(Boolean) as { key: string; label: string; desc: string; tab: string; urgente: boolean }[];
+                if (items.length === 0) return null;
+                const temUrgente = items.some(i => i.urgente);
+                return (
+                  <div className="px-4 pt-4 pb-0">
+                    <div className={`rounded-2xl border p-4 ${temUrgente ? "bg-amber-50 dark:bg-amber-500/8 border-amber-200 dark:border-amber-500/20" : "bg-blue-50 dark:bg-blue-500/8 border-blue-200 dark:border-blue-500/20"}`}>
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-base ${temUrgente ? "bg-amber-500/15" : "bg-blue-500/15"}`}>
+                          {temUrgente ? "⚠️" : "💡"}
+                        </div>
+                        <div>
+                          <p className={`text-xs font-black ${temUrgente ? "text-amber-700 dark:text-amber-400" : "text-blue-700 dark:text-blue-400"}`}>
+                            {temUrgente ? "Configure para começar a receber pedidos" : "Complete a configuração da sua loja"}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">{items.length} pendência{items.length > 1 ? "s" : ""}</p>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        {items.map(item => (
+                          <button key={item.key} onClick={() => setDashboardTab(item.tab as any)}
+                            className={`w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all active:scale-[0.98] ${
+                              item.urgente ? "bg-amber-100/70 dark:bg-amber-500/10 hover:bg-amber-100 dark:hover:bg-amber-500/15" : "bg-blue-100/70 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/15"
+                            }`}>
+                            <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 text-[11px] font-black text-white ${item.urgente ? "bg-amber-500" : "bg-blue-500"}`}>
+                              {item.urgente ? "!" : "→"}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-xs font-bold ${item.urgente ? "text-amber-800 dark:text-amber-300" : "text-blue-800 dark:text-blue-300"}`}>{item.label}</p>
+                              <p className="text-[10px] text-muted-foreground truncate">{item.desc}</p>
+                            </div>
+                            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+              <Suspense fallback={<TabFallback />}>
+                <DashboardOverviewSection
                 store={store}
                 storePlan={storePlan}
                 isApproved={isApproved}
@@ -1448,6 +1518,7 @@ const AdminDashboard = () => {
                 handleCancelOrder={handleCancelOrder}
               />
             </Suspense>
+            </>
           )}
 
           {/* ══════ CLIENTS TAB ══════ */}
