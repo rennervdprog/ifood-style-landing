@@ -254,7 +254,7 @@ const AdminDashboard = () => {
         if (error) throw error;
         return data;
       }
-      const { data, error } = await supabase.from("stores").select("*, profiles!stores_owner_id_fkey(pix_key)").eq("owner_id", user!.id).maybeSingle();
+      const { data, error } = await supabase.from("stores").select("*").eq("owner_id", user!.id).maybeSingle();
       if (error) {
         console.error("[AdminDashboard] store query error:", error);
         throw error;
@@ -264,6 +264,18 @@ const AdminDashboard = () => {
     },
     enabled: !!user,
     staleTime: 1000 * 60 * 3,
+  });
+
+  // Pix key do dono da loja (para o banner de setup)
+  const { data: ownerPixKey } = useQuery({
+    queryKey: ["owner-pix-key", store?.owner_id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles").select("pix_key").eq("user_id", store!.owner_id).maybeSingle();
+      return (data as any)?.pix_key ?? null;
+    },
+    enabled: !!store?.owner_id,
+    staleTime: 60_000,
   });
 
   const storePlan = useStorePlan(store?.id);
@@ -1433,7 +1445,7 @@ const AdminDashboard = () => {
             <>
               {/* ── BANNER SETUP INCOMPLETO ── */}
               {(() => {
-                const missingPix  = !(store as any)?.profiles?.pix_key;
+                const missingPix  = !ownerPixKey;
                 const missingMenu = menuProductCount === 0;
                 const missingHours = !storeHours || storeHours.length === 0 || (storeHours as any[]).every((h: any) => h.is_closed_all_day === true);
                 const missingLogo = !store.image_url;
