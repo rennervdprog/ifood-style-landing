@@ -1,45 +1,43 @@
-/**
- * SupportTicketModal
- * Modal de abertura de ticket e visualização/resposta de tickets existentes.
- * Usado por: lojistas (AdminDashboardV2), motoboys (DriverDashboardV2), clientes (ClientHome)
- */
 import { useState, useEffect, useRef } from "react";
-import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { formatBRL } from "@/lib/utils";
 import { subscribeWithRejoin, cleanupChannel } from "@/lib/realtimeChannel";
 import {
   X, Plus, Send, Loader2, MessageCircle, ChevronRight,
-  CheckCircle2, Clock, AlertTriangle, HelpCircle, Package,
-  CreditCard, Truck, Settings, ChevronLeft, Circle,
+  CheckCircle2, Package, CreditCard, Truck, Settings,
+  ChevronLeft, AlertTriangle, HelpCircle, ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
 
-// ─── Tipos ────────────────────────────────────────────────────────────────────
-
-const CATEGORY_OPTIONS = [
-  { value: "pedido",      label: "Problema com pedido",   icon: Package },
-  { value: "pagamento",   label: "Pagamento / cobrança",  icon: CreditCard },
-  { value: "entrega",     label: "Entrega",               icon: Truck },
-  { value: "conta",       label: "Minha conta",           icon: Settings },
-  { value: "tecnico",     label: "Problema técnico",      icon: AlertTriangle },
-  { value: "financeiro",  label: "Financeiro",            icon: CreditCard },
-  { value: "outro",       label: "Outro assunto",         icon: HelpCircle },
+const CATEGORIES = [
+  { value: "pedido",     label: "Pedido",      icon: Package,       color: "text-orange-500",  bg: "bg-orange-500/10 border-orange-500/20" },
+  { value: "pagamento",  label: "Pagamento",   icon: CreditCard,    color: "text-blue-500",    bg: "bg-blue-500/10 border-blue-500/20" },
+  { value: "entrega",    label: "Entrega",     icon: Truck,         color: "text-purple-500",  bg: "bg-purple-500/10 border-purple-500/20" },
+  { value: "conta",      label: "Minha conta", icon: Settings,      color: "text-slate-500",   bg: "bg-slate-500/10 border-slate-500/20" },
+  { value: "tecnico",    label: "Técnico",     icon: AlertTriangle, color: "text-red-500",     bg: "bg-red-500/10 border-red-500/20" },
+  { value: "financeiro", label: "Financeiro",  icon: CreditCard,    color: "text-emerald-500", bg: "bg-emerald-500/10 border-emerald-500/20" },
+  { value: "outro",      label: "Outro",       icon: HelpCircle,    color: "text-muted-foreground", bg: "bg-muted/40 border-border" },
 ] as const;
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; dot: string }> = {
-  aberto:             { label: "Aberto",             color: "text-blue-500",    dot: "bg-blue-500" },
-  em_atendimento:     { label: "Em atendimento",     color: "text-amber-500",   dot: "bg-amber-500 animate-pulse" },
-  aguardando_cliente: { label: "Aguardando você",    color: "text-purple-500",  dot: "bg-purple-500 animate-pulse" },
-  resolvido:          { label: "Resolvido",          color: "text-emerald-500", dot: "bg-emerald-500" },
-  fechado:            { label: "Fechado",            color: "text-muted-foreground", dot: "bg-muted-foreground" },
+const STATUS: Record<string, { label: string; color: string; bg: string; dot: string }> = {
+  aberto:             { label: "Aberto",           color: "text-blue-600",    bg: "bg-blue-50 dark:bg-blue-500/10",      dot: "bg-blue-500" },
+  em_atendimento:     { label: "Em atendimento",   color: "text-amber-600",   bg: "bg-amber-50 dark:bg-amber-500/10",    dot: "bg-amber-500 animate-pulse" },
+  aguardando_cliente: { label: "Aguardando você",  color: "text-purple-600",  bg: "bg-purple-50 dark:bg-purple-500/10",  dot: "bg-purple-500 animate-pulse" },
+  resolvido:          { label: "Resolvido",        color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-500/10",dot: "bg-emerald-500" },
+  fechado:            { label: "Fechado",          color: "text-muted-foreground", bg: "bg-muted/30",                    dot: "bg-muted-foreground" },
 };
 
-const formatDate = (iso: string) =>
+const fmtDate = (iso: string) =>
   new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 
-// ─── Componente principal ─────────────────────────────────────────────────────
+const fmtRelative = (iso: string) => {
+  const m = (Date.now() - new Date(iso).getTime()) / 60000;
+  if (m < 1) return "agora";
+  if (m < 60) return `${Math.floor(m)}min`;
+  if (m < 1440) return `${Math.floor(m / 60)}h`;
+  return `${Math.floor(m / 1440)}d`;
+};
 
 interface Props {
   open: boolean;
@@ -49,251 +47,253 @@ interface Props {
   storeName?: string;
 }
 
-export const SupportTicketModal = ({ open, onClose, userRole, storeId, storeName }: Props) => {
+export const SupportTicketModal = ({ open, onClose, userRole, storeId }: Props) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const endRef = useRef<HTMLDivElement>(null);
 
-  const [view, setView] = useState<"list" | "detail" | "new">("list");
-  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
-  const [newMessage, setNewMessage] = useState("");
+  const [view, setView] = useState<"list" | "new" | "chat">("list");
+  const [ticketId, setTicketId] = useState<string | null>(null);
+  const [msg, setMsg] = useState("");
   const [sending, setSending] = useState(false);
+  const [form, setForm] = useState({ category: "outro", subject: "", message: "" });
 
-  // Formulário de novo ticket
-  const [form, setForm] = useState({ category: "outro" as string, subject: "", message: "" });
-
-  // ── Tickets do usuário ──
-  const { data: tickets = [], isLoading: ticketsLoading } = useQuery({
-    queryKey: ["my-support-tickets", user?.id],
+  const { data: tickets = [], isLoading } = useQuery({
+    queryKey: ["my-tickets", user?.id],
     queryFn: async () => {
       const { data } = await supabase
         .from("support_tickets" as any)
-        .select("id, ticket_number, subject, status, priority, category, created_at, updated_at, first_message")
+        .select("id,ticket_number,subject,status,category,created_at,updated_at,first_message")
         .eq("user_id", user!.id)
         .order("updated_at", { ascending: false })
         .limit(30);
       return (data || []) as any[];
     },
     enabled: !!user && open,
-    refetchInterval: open ? 30_000 : false,
+    refetchInterval: open ? 30000 : false,
   });
 
-  // ── Mensagens do ticket selecionado ──
-  const { data: messages = [], refetch: refetchMessages } = useQuery({
-    queryKey: ["support-messages", selectedTicketId],
+  const { data: messages = [], refetch: refetchMsgs } = useQuery({
+    queryKey: ["ticket-msgs", ticketId],
     queryFn: async () => {
       const { data } = await supabase
         .from("support_messages" as any)
-        .select("id, content, is_agent, is_internal, created_at, sender_id")
-        .eq("ticket_id", selectedTicketId!)
+        .select("id,content,is_agent,created_at")
+        .eq("ticket_id", ticketId!)
         .order("created_at", { ascending: true });
       return (data || []) as any[];
     },
-    enabled: !!selectedTicketId && view === "detail",
+    enabled: !!ticketId && view === "chat",
   });
 
-  const selectedTicket = tickets.find(t => t.id === selectedTicketId);
+  const selected = tickets.find(t => t.id === ticketId);
+  const pendingReply = tickets.filter(t => t.status === "aguardando_cliente").length;
 
-  // Realtime para mensagens
   useEffect(() => {
-    if (!selectedTicketId || view !== "detail") return;
-    const ch = supabase.channel(`support-msg-${selectedTicketId}`)
+    if (!ticketId || view !== "chat") return;
+    const ch = supabase.channel(`tm-${ticketId}`)
       .on("postgres_changes" as any, {
         event: "INSERT", schema: "public", table: "support_messages",
-        filter: `ticket_id=eq.${selectedTicketId}`,
-      }, () => {
-        refetchMessages();
-        queryClient.invalidateQueries({ queryKey: ["my-support-tickets"] });
-      });
+        filter: `ticket_id=eq.${ticketId}`,
+      }, () => { refetchMsgs(); queryClient.invalidateQueries({ queryKey: ["my-tickets"] }); });
     subscribeWithRejoin(ch);
     return () => cleanupChannel(ch);
-  }, [selectedTicketId, view, refetchMessages, queryClient]);
+  }, [ticketId, view, refetchMsgs, queryClient]);
 
-  // Scroll para baixo quando chegam mensagens
   useEffect(() => {
-    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+    setTimeout(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), 80);
   }, [messages]);
 
-  // ── Criar ticket ──
+  useEffect(() => {
+    if (!open) { setView("list"); setTicketId(null); }
+  }, [open]);
+
+  const openTicket = (id: string) => { setTicketId(id); setView("chat"); };
+  const goList = () => { setView("list"); setTicketId(null); };
+
   const createTicket = async () => {
-    if (!form.subject.trim() || !form.message.trim()) {
-      toast.error("Preencha o assunto e a mensagem.");
-      return;
-    }
+    if (!form.subject.trim() || !form.message.trim()) { toast.error("Preencha assunto e mensagem."); return; }
     setSending(true);
     try {
-      const { data: ticket, error } = await supabase
+      const { data: t, error } = await supabase
         .from("support_tickets" as any)
-        .insert({
-          user_id: user!.id,
-          user_role: userRole,
-          store_id: storeId || null,
-          category: form.category,
-          subject: form.subject.trim(),
-          first_message: form.message.trim().slice(0, 200),
-          status: "aberto",
-          priority: "normal",
-        })
-        .select("id")
-        .single();
-
+        .insert({ user_id: user!.id, user_role: userRole, store_id: storeId || null,
+          category: form.category, subject: form.subject.trim(),
+          first_message: form.message.trim().slice(0, 200), status: "aberto", priority: "normal" })
+        .select("id").single();
       if (error) throw error;
-
       await supabase.from("support_messages" as any).insert({
-        ticket_id: (ticket as any).id,
-        sender_id: user!.id,
-        is_agent: false,
-        is_internal: false,
+        ticket_id: (t as any).id, sender_id: user!.id, is_agent: false, is_internal: false,
         content: form.message.trim(),
       });
-
-      queryClient.invalidateQueries({ queryKey: ["my-support-tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["my-tickets"] });
       setForm({ category: "outro", subject: "", message: "" });
-      setSelectedTicketId((ticket as any).id);
-      setView("detail");
-      toast.success("Ticket aberto! Nossa equipe responderá em breve.");
-    } catch (e: any) {
-      toast.error(e.message || "Erro ao abrir ticket");
-    } finally {
-      setSending(false);
-    }
+      setTicketId((t as any).id);
+      setView("chat");
+      toast.success("Chamado aberto! Responderemos em breve.");
+    } catch (e: any) { toast.error(e.message || "Erro ao abrir chamado"); }
+    finally { setSending(false); }
   };
 
-  // ── Enviar mensagem ──
-  const sendMessage = async () => {
-    if (!newMessage.trim() || !selectedTicketId) return;
+  const sendMsg = async () => {
+    if (!msg.trim() || !ticketId) return;
     setSending(true);
     try {
       await supabase.from("support_messages" as any).insert({
-        ticket_id: selectedTicketId,
-        sender_id: user!.id,
-        is_agent: false,
-        is_internal: false,
-        content: newMessage.trim(),
+        ticket_id: ticketId, sender_id: user!.id, is_agent: false, is_internal: false, content: msg.trim(),
       });
-      setNewMessage("");
-      refetchMessages();
-    } catch (e: any) {
-      toast.error("Erro ao enviar mensagem");
-    } finally {
-      setSending(false);
-    }
+      setMsg(""); refetchMsgs();
+    } catch { toast.error("Erro ao enviar"); }
+    finally { setSending(false); }
   };
 
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full sm:max-w-lg h-[90vh] sm:h-[80vh] bg-background rounded-t-3xl sm:rounded-3xl flex flex-col overflow-hidden shadow-2xl">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
-        {/* Header */}
-        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-border shrink-0">
-          {view !== "list" && (
-            <button onClick={() => { setView("list"); setSelectedTicketId(null); }}
-              className="w-8 h-8 rounded-xl bg-muted/50 flex items-center justify-center">
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-          )}
-          <div className="flex-1">
-            <p className="text-sm font-black text-foreground">
-              {view === "list" ? (
-                <span className="flex items-center gap-2">
-                  Meus Chamados
-                  {tickets.filter(t => t.status === "aguardando_cliente").length > 0 && (
-                    <span className="text-[10px] font-black bg-purple-500 text-white px-1.5 py-0.5 rounded-full animate-pulse">
-                      {tickets.filter(t => t.status === "aguardando_cliente").length}
-                    </span>
-                  )}
-                </span>
-              ) : view === "new" ? "Abrir Chamado" : `#${String(selectedTicket?.ticket_number || "").padStart(4, "0")}`}
-            </p>
-            {view === "detail" && selectedTicket && (
-              <p className={`text-[11px] font-bold ${STATUS_CONFIG[selectedTicket.status]?.color}`}>
-                {STATUS_CONFIG[selectedTicket.status]?.label}
-              </p>
+      <div className="relative w-full sm:max-w-md h-[92vh] sm:h-[85vh] bg-background rounded-t-[28px] sm:rounded-[24px] flex flex-col overflow-hidden shadow-2xl border border-border/50">
+
+        {/* ── HEADER ── */}
+        <div className="shrink-0 px-5 pt-5 pb-4">
+          {/* drag handle mobile */}
+          <div className="w-10 h-1 bg-muted-foreground/20 rounded-full mx-auto mb-4 sm:hidden" />
+          <div className="flex items-center gap-3">
+            {view !== "list" && (
+              <button onClick={view === "new" ? goList : goList}
+                className="w-9 h-9 rounded-2xl bg-muted/60 flex items-center justify-center active:scale-90 transition-transform shrink-0">
+                <ChevronLeft className="h-4 w-4 text-foreground" />
+              </button>
             )}
+            <div className="flex-1 min-w-0">
+              {view === "list" && (
+                <>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-black text-foreground">Suporte</h2>
+                    {pendingReply > 0 && (
+                      <span className="text-[11px] font-black bg-purple-500 text-white px-2 py-0.5 rounded-full">
+                        {pendingReply} nova{pendingReply > 1 ? "s" : ""}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Como podemos ajudar?</p>
+                </>
+              )}
+              {view === "new" && (
+                <>
+                  <h2 className="text-base font-black text-foreground">Novo chamado</h2>
+                  <p className="text-xs text-muted-foreground">Descreva o problema</p>
+                </>
+              )}
+              {view === "chat" && selected && (
+                <>
+                  <h2 className="text-sm font-black text-foreground truncate">{selected.subject}</h2>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${STATUS[selected.status]?.dot}`} />
+                    <span className={`text-[11px] font-bold ${STATUS[selected.status]?.color}`}>
+                      {STATUS[selected.status]?.label}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground">· #{String(selected.ticket_number).padStart(4, "0")}</span>
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {view === "list" && (
+                <button onClick={() => setView("new")}
+                  className="flex items-center gap-1.5 bg-primary text-primary-foreground text-xs font-bold px-3.5 py-2 rounded-2xl active:scale-95 transition-transform">
+                  <Plus className="h-3.5 w-3.5" /> Novo
+                </button>
+              )}
+              <button onClick={onClose}
+                className="w-9 h-9 rounded-2xl bg-muted/60 flex items-center justify-center active:scale-90 transition-transform">
+                <X className="h-4 w-4 text-foreground" />
+              </button>
+            </div>
           </div>
-          {view === "list" && (
-            <button onClick={() => setView("new")}
-              className="flex items-center gap-1.5 bg-primary text-primary-foreground text-xs font-bold px-3 py-1.5 rounded-xl active:scale-95 transition-transform">
-              <Plus className="h-3.5 w-3.5" /> Novo
-            </button>
-          )}
-          <button onClick={onClose} className="w-8 h-8 rounded-xl bg-muted/50 flex items-center justify-center">
-            <X className="h-4 w-4" />
-          </button>
         </div>
 
-        {/* ── LISTA DE TICKETS ── */}
+        {/* ── LISTA ── */}
         {view === "list" && (
-          <div className="flex-1 overflow-y-auto p-4 space-y-2">
-            {ticketsLoading && (
-              <div className="flex items-center justify-center py-10">
+          <div className="flex-1 overflow-y-auto px-4 pb-4">
+            {isLoading && (
+              <div className="flex items-center justify-center py-16">
                 <Loader2 className="h-5 w-5 animate-spin text-primary" />
               </div>
             )}
-            {!ticketsLoading && tickets.length === 0 && (
-              <div className="text-center py-12 space-y-3">
-                <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
-                  <MessageCircle className="h-8 w-8 text-primary" />
+
+            {!isLoading && tickets.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-16 gap-4">
+                <div className="w-20 h-20 rounded-3xl bg-primary/8 flex items-center justify-center">
+                  <MessageCircle className="h-9 w-9 text-primary" strokeWidth={1.5} />
                 </div>
-                <p className="font-bold text-foreground">Nenhum chamado aberto</p>
-                <p className="text-sm text-muted-foreground">Precisa de ajuda? Abra um chamado e nossa equipe responde.</p>
+                <div className="text-center">
+                  <p className="font-bold text-foreground text-base">Nenhum chamado</p>
+                  <p className="text-sm text-muted-foreground mt-1">Precisa de ajuda? Estamos aqui.</p>
+                </div>
                 <button onClick={() => setView("new")}
-                  className="bg-primary text-primary-foreground text-sm font-bold px-6 py-2.5 rounded-xl mt-2 active:scale-95 transition-transform">
-                  Abrir primeiro chamado
+                  className="bg-primary text-primary-foreground font-bold px-8 py-3 rounded-2xl text-sm active:scale-95 transition-transform">
+                  Abrir chamado
                 </button>
               </div>
             )}
-            {tickets.map(t => {
-              const st = STATUS_CONFIG[t.status] || STATUS_CONFIG.aberto;
-              const cat = CATEGORY_OPTIONS.find(c => c.value === t.category);
-              return (
-                <button key={t.id}
-                  onClick={() => { setSelectedTicketId(t.id); setView("detail"); }}
-                  className="w-full text-left bg-card border border-border/50 rounded-2xl p-3.5 hover:border-primary/30 transition-colors">
-                  <div className="flex items-start gap-3">
-                    <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
-                      <span className={`w-2 h-2 rounded-full shrink-0 ${st.dot}`} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-xs font-bold text-foreground truncate">{t.subject}</p>
-                        <span className="text-[10px] text-muted-foreground shrink-0">#{String(t.ticket_number).padStart(4,"0")}</span>
+
+            {tickets.length > 0 && (
+              <div className="space-y-2">
+                {tickets.map(t => {
+                  const st = STATUS[t.status] || STATUS.aberto;
+                  const cat = CATEGORIES.find(c => c.value === t.category);
+                  const isPending = t.status === "aguardando_cliente";
+                  return (
+                    <button key={t.id} onClick={() => openTicket(t.id)}
+                      className={`w-full text-left rounded-2xl border transition-all active:scale-[0.98] ${
+                        isPending
+                          ? "bg-purple-50 dark:bg-purple-500/5 border-purple-200 dark:border-purple-500/20"
+                          : "bg-card border-border/60 hover:border-primary/30 hover:bg-muted/20"
+                      }`}>
+                      <div className="p-4 flex items-start gap-3">
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${cat?.bg}`}>
+                          {cat && <cat.icon className={`h-4 w-4 ${cat.color}`} />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-sm font-bold text-foreground leading-snug truncate">{t.subject}</p>
+                            <span className="text-[11px] text-muted-foreground shrink-0">{fmtRelative(t.updated_at)}</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-0.5 truncate leading-relaxed">{t.first_message}</p>
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${st.bg} ${st.color}`}>
+                              {st.label}
+                            </span>
+                          </div>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground/50 shrink-0 mt-1" />
                       </div>
-                      <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{t.first_message}</p>
-                      <div className="flex items-center gap-2 mt-1.5">
-                        <span className={`text-[10px] font-bold ${st.color}`}>{st.label}</span>
-                        <span className="text-[10px] text-muted-foreground">·</span>
-                        <span className="text-[10px] text-muted-foreground">{cat?.label || t.category}</span>
-                        <span className="text-[10px] text-muted-foreground ml-auto">{formatDate(t.updated_at)}</span>
-                      </div>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-1" />
-                  </div>
-                </button>
-              );
-            })}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
         {/* ── NOVO TICKET ── */}
         {view === "new" && (
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-5">
             {/* Categoria */}
             <div>
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Categoria</p>
+              <p className="text-xs font-bold text-muted-foreground mb-3">Qual o assunto?</p>
               <div className="grid grid-cols-2 gap-2">
-                {CATEGORY_OPTIONS.map(c => {
-                  const Icon = c.icon;
+                {CATEGORIES.map(c => {
                   const sel = form.category === c.value;
                   return (
-                    <button key={c.value}
-                      onClick={() => setForm(f => ({ ...f, category: c.value }))}
-                      className={`flex items-center gap-2 p-3 rounded-xl border text-left transition-colors ${sel ? "border-primary bg-primary/8" : "border-border/50 bg-card"}`}>
-                      <Icon className={`h-4 w-4 shrink-0 ${sel ? "text-primary" : "text-muted-foreground"}`} />
-                      <span className={`text-xs font-semibold ${sel ? "text-primary" : "text-foreground"}`}>{c.label}</span>
+                    <button key={c.value} onClick={() => setForm(f => ({ ...f, category: c.value }))}
+                      className={`flex items-center gap-2.5 p-3.5 rounded-2xl border text-left transition-all active:scale-[0.97] ${
+                        sel ? `${c.bg} border-current` : "bg-card border-border/60 hover:bg-muted/30"
+                      }`}>
+                      <c.icon className={`h-4 w-4 shrink-0 ${sel ? c.color : "text-muted-foreground"}`} />
+                      <span className={`text-xs font-semibold ${sel ? c.color : "text-foreground"}`}>{c.label}</span>
                     </button>
                   );
                 })}
@@ -302,87 +302,87 @@ export const SupportTicketModal = ({ open, onClose, userRole, storeId, storeName
 
             {/* Assunto */}
             <div>
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Assunto</p>
-              <input
-                value={form.subject}
-                onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}
-                placeholder="Descreva o problema em poucas palavras"
+              <p className="text-xs font-bold text-muted-foreground mb-2">Assunto</p>
+              <input value={form.subject} onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}
+                placeholder="Resuma o problema em uma frase"
                 maxLength={100}
-                className="w-full bg-muted/40 border border-border/50 rounded-xl px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
+                className="w-full bg-muted/40 border border-border/60 rounded-2xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary/40 transition-all" />
             </div>
 
             {/* Mensagem */}
             <div>
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Mensagem</p>
-              <textarea
-                value={form.message}
-                onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
-                placeholder="Descreva com detalhes o que aconteceu..."
+              <p className="text-xs font-bold text-muted-foreground mb-2">Descreva o problema</p>
+              <textarea value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
+                placeholder="Quanto mais detalhes, mais rápido resolvemos..."
                 rows={5}
-                className="w-full bg-muted/40 border border-border/50 rounded-xl px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
-              />
+                className="w-full bg-muted/40 border border-border/60 rounded-2xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary/40 transition-all resize-none" />
             </div>
 
-            <button
-              onClick={createTicket}
-              disabled={sending || !form.subject.trim() || !form.message.trim()}
-              className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-xl text-sm active:scale-[0.98] transition-transform disabled:opacity-50 flex items-center justify-center gap-2">
-              {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              {sending ? "Abrindo..." : "Abrir Chamado"}
+            <button onClick={createTicket} disabled={sending || !form.subject.trim() || !form.message.trim()}
+              className="w-full bg-primary text-primary-foreground font-bold py-3.5 rounded-2xl text-sm active:scale-[0.98] transition-all disabled:opacity-40 flex items-center justify-center gap-2">
+              {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+              {sending ? "Enviando..." : "Abrir chamado"}
             </button>
           </div>
         )}
 
-        {/* ── DETALHE / CHAT ── */}
-        {view === "detail" && selectedTicket && (
+        {/* ── CHAT ── */}
+        {view === "chat" && selected && (
           <>
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+              {messages.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground text-xs">Aguardando resposta da equipe...</div>
+              )}
               {messages.map(m => {
                 const isMe = !m.is_agent;
                 return (
                   <div key={m.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
-                    <div className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 ${
-                      isMe ? "bg-primary text-primary-foreground rounded-br-md" : "bg-card border border-border/50 rounded-bl-md"
-                    }`}>
-                      {!isMe && (
-                        <p className="text-[10px] font-black text-primary mb-1">Suporte ItaSuper</p>
-                      )}
-                      <p className="text-sm leading-relaxed">{m.content}</p>
-                      <p className={`text-[10px] mt-1 ${isMe ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-                        {formatDate(m.created_at)}
-                      </p>
+                    {!isMe && (
+                      <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center shrink-0 mr-2 mt-auto mb-0.5">
+                        <MessageCircle className="h-3.5 w-3.5 text-primary-foreground" />
+                      </div>
+                    )}
+                    <div className={`max-w-[78%] ${isMe ? "items-end" : "items-start"} flex flex-col gap-1`}>
+                      {!isMe && <span className="text-[10px] font-bold text-primary pl-1">Suporte ItaSuper</span>}
+                      <div className={`rounded-2xl px-4 py-2.5 ${
+                        isMe
+                          ? "bg-primary text-primary-foreground rounded-br-sm"
+                          : "bg-muted/60 text-foreground rounded-bl-sm"
+                      }`}>
+                        <p className="text-sm leading-relaxed">{m.content}</p>
+                      </div>
+                      <span className={`text-[10px] text-muted-foreground px-1 ${isMe ? "text-right" : ""}`}>
+                        {fmtDate(m.created_at)}
+                      </span>
                     </div>
                   </div>
                 );
               })}
-              <div ref={messagesEndRef} />
+              <div ref={endRef} />
             </div>
 
-            {/* Input de resposta — só se não fechado/resolvido */}
-            {!["fechado", "resolvido"].includes(selectedTicket.status) ? (
-              <div className="p-3 border-t border-border shrink-0 flex items-end gap-2">
-                <textarea
-                  value={newMessage}
-                  onChange={e => setNewMessage(e.target.value)}
-                  onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-                  placeholder="Digite sua mensagem..."
-                  rows={2}
-                  className="flex-1 bg-muted/40 border border-border/50 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
-                />
-                <button
-                  onClick={sendMessage}
-                  disabled={!newMessage.trim() || sending}
-                  className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shrink-0 disabled:opacity-40 active:scale-95 transition-transform">
-                  {sending ? <Loader2 className="h-4 w-4 text-white animate-spin" /> : <Send className="h-4 w-4 text-white" />}
-                </button>
+            {["fechado", "resolvido"].includes(selected.status) ? (
+              <div className="px-4 py-4 border-t border-border/50 shrink-0">
+                <div className="flex items-center justify-center gap-2 bg-emerald-500/8 rounded-2xl py-3">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  <p className="text-xs font-semibold text-emerald-600">
+                    Chamado {selected.status} — obrigado pelo contato!
+                  </p>
+                </div>
               </div>
             ) : (
-              <div className="p-3 border-t border-border shrink-0 text-center">
-                <p className="text-xs text-muted-foreground flex items-center justify-center gap-1.5">
-                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                  Este chamado está {STATUS_CONFIG[selectedTicket.status]?.label.toLowerCase()}.
-                </p>
+              <div className="px-4 pt-3 pb-5 border-t border-border/50 shrink-0">
+                <div className="flex items-end gap-2 bg-muted/40 border border-border/60 rounded-2xl px-3 py-2">
+                  <textarea value={msg} onChange={e => setMsg(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMsg(); } }}
+                    placeholder="Digite sua mensagem..."
+                    rows={2}
+                    className="flex-1 bg-transparent text-sm resize-none focus:outline-none placeholder:text-muted-foreground/50" />
+                  <button onClick={sendMsg} disabled={!msg.trim() || sending}
+                    className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shrink-0 disabled:opacity-30 active:scale-90 transition-transform mb-0.5">
+                    {sending ? <Loader2 className="h-3.5 w-3.5 text-white animate-spin" /> : <Send className="h-3.5 w-3.5 text-white" />}
+                  </button>
+                </div>
               </div>
             )}
           </>
