@@ -235,43 +235,53 @@ const CadastroLojista = () => {
       if (signUpError) throw signUpError;
 
       if (signUpData?.user?.id) {
-        // Garante que existe sessão para chamadas autenticadas (RPC + updates)
-        // Auto-confirm está ATIVO no Supabase externo, então sign-in deve funcionar.
-        // Se falhar, abortamos: sem sessão, auth.uid() é NULL e a RPC quebra.
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: email.trim(),
-          password,
-        });
+        // Aguardar um breve momento para o Supabase propagar o novo usuário
+        await new Promise(r => setTimeout(r, 800));
+
+        // Iniciar sessão com retry (até 3 tentativas com intervalo crescente)
+        let signInError: any = null;
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          const { error } = await supabase.auth.signInWithPassword({
+            email: email.trim(),
+            password,
+          });
+          signInError = error;
+          if (!error) break;
+          if (attempt < 3) await new Promise(r => setTimeout(r, attempt * 1000));
+        }
         if (signInError) {
           console.error("Falha ao iniciar sessão pós-signup:", signInError);
-          throw new Error(
-            "Cadastro criado, mas não foi possível iniciar a sessão. Faça login manualmente."
-          );
+          // NÃO abortar — o trigger de fallback já criou o profile/loja
+          // Redirecionar para login manual
+          toast.warning("Cadastro criado! Faça login para continuar.");
+          navigate("/portal-parceiro", { replace: true });
+          return;
         }
 
-        // 🔑 Cria perfil + loja + plano via RPC (não depende de trigger no auth.users)
+        // Criar perfil + loja + plano via RPC
         let createdStoreId: string | null = null;
-         const { data: storeIdRpc, error: rpcErr } = await (supabase as any).rpc(
-           "register_as_lojista",
-           {
-             _full_name: storeName.trim(),
-             _document: sanitizeDocument(document),
-             _store_name: storeName.trim(),
-             _store_category: storeCategory,
-             _avatar_url: null,
-             _whatsapp: formatWhatsAppNumber(whatsapp),
-             _selected_plan: selectedPlan,
-           }
-         );
-        if (rpcErr) {
-          console.error("register_as_lojista RPC falhou:", rpcErr);
-          throw new Error(
-            rpcErr.message ||
-              "Não foi possível vincular sua loja ao cadastro. Tente novamente ou contate o suporte."
+        try {
+          const { data: storeIdRpc, error: rpcErr } = await (supabase as any).rpc(
+            "register_as_lojista",
+            {
+              _full_name: storeName.trim(),
+              _document: sanitizeDocument(document),
+              _store_name: storeName.trim(),
+              _store_category: storeCategory,
+              _avatar_url: null,
+              _whatsapp: formatWhatsAppNumber(whatsapp),
+              _selected_plan: selectedPlan,
+            }
           );
-        }
-        if (typeof storeIdRpc === "string") {
-          createdStoreId = storeIdRpc;
+          if (rpcErr) {
+            // Logar mas NÃO abortar — o trigger de fallback garante que a loja existe
+            console.warn("register_as_lojista RPC avisou:", rpcErr.message);
+          } else if (typeof storeIdRpc === "string") {
+            createdStoreId = storeIdRpc;
+          }
+        } catch (rpcEx) {
+          // Falha silenciosa — trigger de fallback criou a loja
+          console.warn("RPC exception (non-fatal):", rpcEx);
         }
 
         await supabase.from("terms_acceptance").insert({
