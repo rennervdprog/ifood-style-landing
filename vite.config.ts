@@ -33,12 +33,15 @@ export default defineConfig(({ mode }) => ({
         cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
-            // Hashed JS/CSS/font assets — safe to cache for a year (filenames change on deploy)
+            // Hashed JS/CSS/font assets — filenames change on deploy, safe to cache
+            // NetworkFirst garante que o browser sempre tenta buscar versão nova
+            // antes de servir do cache. Se offline, serve o cache.
             urlPattern: /\/assets\/.*\.(?:js|css|woff2?|ttf|otf)$/i,
-            handler: "CacheFirst",
+            handler: "NetworkFirst",
             options: {
               cacheName: "static-assets",
-              expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              networkTimeoutSeconds: 3,
+              expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 30 },
               cacheableResponse: { statuses: [0, 200] },
             },
           },
