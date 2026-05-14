@@ -343,7 +343,6 @@ const App = () => {
       </AuthProvider>
       </ThemeProvider>
     </TooltipProvider>
-      {/* TermsChecker abaixo, dentro do AuthProvider */}
   </QueryClientProvider>
   );
 };
