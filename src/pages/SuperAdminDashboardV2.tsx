@@ -10,6 +10,7 @@ import AdminFixedPlanReceivables from "@/components/AdminFixedPlanReceivables";
 import AdminPlanTemplatesEditor from "@/components/AdminPlanTemplatesEditor";
 import ModeratorManager from "@/components/ModeratorManager";
 import SupportAdminPanel from "@/components/SupportAdminPanel";
+import AppStorePageAdmin from "@/components/AppStorePageAdmin";
 import PartnerSplitPanel from "@/components/PartnerSplitPanel";
 import FixedPlanBillingHistory from "@/components/FixedPlanBillingHistory";
 import TestStoreFinancePanel from "@/components/TestStoreFinancePanel";
@@ -53,7 +54,7 @@ const TabFallback = () => (
 );
 
 type DateFilter = "today" | "yesterday" | "week";
- type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamentos" | "saques" | "sync" | "coupons" | "entrega" | "cidades" | "juridico" | "planos" | "moderadores" | "socios" | "suporte" | "test_finance" | "links" | "broadcast" | "logs" | "coach";
+ type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamentos" | "saques" | "sync" | "coupons" | "entrega" | "cidades" | "juridico" | "planos" | "moderadores" | "socios" | "suporte" | "app-page" | "test_finance" | "links" | "broadcast" | "logs" | "coach";
 
 const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; group: string }[] = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, group: "Principal" },
@@ -68,6 +69,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
   { key: "coupons", label: "Cupons", icon: Ticket, group: "Gerenciamento" },
   { key: "moderadores", label: "Moderadores", icon: Users, group: "Gerenciamento" },
   { key: "suporte", label: "Suporte", icon: MessageCircle, group: "Gerenciamento" },
+  { key: "app-page", label: "Página do App", icon: Smartphone, group: "Sistema" },
   { key: "socios", label: "Sócios", icon: Handshake, group: "Principal" },
   { key: "juridico", label: "Jurídico", icon: Scale, group: "Sistema" },
   { key: "test_finance", label: "Finanças Teste", icon: FlaskConical, group: "Sistema" },
@@ -919,6 +921,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
             {activeTab === "juridico" && <Suspense fallback={<TabFallback />}><JuridicoTab /></Suspense>}
             {activeTab === "moderadores" && <ModeratorManager />}
             {activeTab === "suporte" && <SupportAdminPanel />}
+            {activeTab === "app-page" && <AppStorePageAdmin />}
             {activeTab === "socios" && <PartnerSplitPanel />}
             {activeTab === "test_finance" && <TestStoreFinancePanel />}
             {activeTab === "links" && <AppLinksManager />}
