@@ -107,7 +107,8 @@ async function confirmAndSplit(supabase: any, orderId: string, paymentId: string
           .maybeSingle();
         if (feeConfigRow?.value) {
           const fc = feeConfigRow.value as any;
-          pixOpFee = fc.pix_operational_fee ?? 1.99;
+          // Chave correta no banco é "pix_fee" dentro do JSON delivery_fee_config
+          pixOpFee = fc.pix_fee ?? fc.pix_operational_fee ?? 1.99;
           platformSplit = fc.platform_split ?? 2;
         }
       } catch (_) {}
@@ -120,14 +121,27 @@ async function confirmAndSplit(supabase: any, orderId: string, paymentId: string
       let storeShare = 0;
       let commissionAmount = 0;
 
+      const isHybridPlan = storePlan?.plan_type === "hybrid";
       if (isFixedPlan) {
+        // Fixed/Supporter: storeShare = subtotal - PIX fee + delivery líquido
         if (isOwnDelivery) {
           const deliveryAfterSplit = Math.max(0, deliveryFee - platformSplit);
           storeShare = Math.round((subtotal - pixOpFee + deliveryAfterSplit) * 100) / 100;
         } else {
           storeShare = Math.round((subtotal - pixOpFee) * 100) / 100;
         }
+      } else if (isHybridPlan) {
+        // Hybrid: cobra comissão % sobre subtotal + R$2 de entrega
+        const rate = (storePlan?.commission_rate ?? store.commission_rate ?? 5) / 100;
+        commissionAmount = Math.round(subtotal * rate * 100) / 100;
+        if (isOwnDelivery) {
+          const deliveryAfterSplit = Math.max(0, deliveryFee - platformSplit);
+          storeShare = Math.round((subtotal * (1 - rate) + deliveryAfterSplit) * 100) / 100;
+        } else {
+          storeShare = Math.round(subtotal * (1 - rate) * 100) / 100;
+        }
       } else {
+        // Commission_only: cobra comissão % sobre subtotal
         const rate = (storePlan?.commission_rate ?? store.commission_rate ?? 5) / 100;
         commissionAmount = Math.round(subtotal * rate * 100) / 100;
         storeShare = isOwnDelivery
