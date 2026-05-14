@@ -204,16 +204,16 @@ export const TermsUpdateModal = ({ onAccepted }: Props) => {
 
           {/* Links para leitura completa */}
           <div className="flex gap-2">
-            <Link to="/termos" target="_blank"
+            <a href="/termos" target="_blank" rel="noopener noreferrer"
               className="flex-1 flex items-center justify-center gap-1.5 bg-muted/40 border border-border rounded-xl py-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors">
               <FileText className="h-3.5 w-3.5" />
               Ler Termos completos
-            </Link>
-            <Link to="/privacidade" target="_blank"
+            </a>
+            <a href="/privacidade" target="_blank" rel="noopener noreferrer"
               className="flex-1 flex items-center justify-center gap-1.5 bg-muted/40 border border-border rounded-xl py-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors">
               <Shield className="h-3.5 w-3.5" />
               Ler Política completa
-            </Link>
+            </a>
           </div>
         </div>
 
