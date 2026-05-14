@@ -5,6 +5,7 @@
  *
  * Para cada loja com saldo pendente de pagamentos físicos (dinheiro/cartão):
  *  - Planos fixo/apoiador: cobrar repasse_pendente (R$2 por entrega)
+ *  - Plano hybrid: cobrar repasse_pendente (R$2/entrega) + comissao_pendente (2,5% físico)
  *  - Planos commission_only: cobrar comissao_pendente (% sobre vendas)
  *
  * Fluxo:
@@ -192,6 +193,16 @@ Deno.serve(async (req) => {
         if (repasse >= MIN_CHARGE_AMOUNT) {
           chargeAmount = repasse;
           chargeDescription = `Taxa de entrega ItaSuper — ${store.name} (${repasse.toFixed(0)} entregas × R$2,00)`;
+        }
+      } else if (planType === "hybrid") {
+        // Hybrid: cobrar repasse_pendente (R$2/entrega) + comissao_pendente (2,5% físico)
+        const total = repasse + comissao;
+        if (total >= MIN_CHARGE_AMOUNT) {
+          chargeAmount = total;
+          const parts = [];
+          if (repasse > 0) parts.push(`R$${repasse.toFixed(2)} taxa entrega`);
+          if (comissao > 0) parts.push(`R$${comissao.toFixed(2)} comissão (2,5%)`);
+          chargeDescription = `ItaSuper — ${store.name}: ${parts.join(" + ")}`;
         }
       } else if (planType === "commission_only") {
         // Cobrar comissao_pendente (% sobre vendas físicas)
