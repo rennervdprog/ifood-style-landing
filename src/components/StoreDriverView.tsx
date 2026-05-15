@@ -795,108 +795,69 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
         </div>
       )}
 
-      {/* Online/Offline — Hero card premium */}
+      {/* ── Online / Offline — estilo app nativo ── */}
       <button
         onClick={toggleOnline}
         disabled={togglingOnline}
-        className={`relative w-full overflow-hidden rounded-3xl p-5 transition-all active:scale-[0.99] disabled:opacity-60 shadow-xl ${
+        className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl border transition-all active:scale-[0.98] disabled:opacity-60 ${
           isOnline
-            ? "bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-emerald-500/30"
-            : "bg-gradient-to-br from-muted to-muted/60 shadow-black/5"
+            ? "bg-emerald-500 border-emerald-500 shadow-md shadow-emerald-500/30"
+            : "bg-card border-border"
         }`}
       >
-        {/* Glow decorativo */}
-        <div className={`absolute -top-12 -right-12 w-40 h-40 rounded-full blur-3xl ${
-          isOnline ? "bg-white/20" : "bg-foreground/5"
-        }`} />
-        <div className="relative flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3.5 min-w-0">
-            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${
-              isOnline ? "bg-white/20 backdrop-blur-sm" : "bg-background/60"
-            }`}>
-              {togglingOnline
-                ? <Loader2 className={`h-6 w-6 animate-spin ${isOnline ? "text-white" : "text-muted-foreground"}`} />
-                : isOnline
-                  ? <Power className="h-6 w-6 text-white" strokeWidth={2.6} />
-                  : <PowerOff className="h-6 w-6 text-muted-foreground" strokeWidth={2.6} />}
-            </div>
-            <div className="text-left min-w-0">
-              <div className="flex items-center gap-1.5 mb-0.5">
-                {isOnline && <span className="w-2 h-2 rounded-full bg-white animate-pulse" />}
-                <p className={`text-[10px] font-black uppercase tracking-widest ${
-                  isOnline ? "text-white/90" : "text-muted-foreground"
-                }`}>
-                  {isOnline ? "Ao Vivo" : "Pausado"}
-                </p>
-              </div>
-              <p className={`text-lg font-black leading-tight ${
-                isOnline ? "text-white" : "text-foreground"
-              }`}>
-                {isOnline ? "Você está Online" : "Você está Offline"}
-              </p>
-              <p className={`text-[11px] mt-0.5 leading-snug ${
-                isOnline ? "text-white/80" : "text-muted-foreground"
-              }`}>
-                {isOnline ? "Recebendo entregas em tempo real" : "Toque para começar a receber"}
-              </p>
-            </div>
+        <div className="flex items-center gap-3">
+          {togglingOnline
+            ? <Loader2 className={`h-5 w-5 animate-spin ${isOnline ? "text-white" : "text-muted-foreground"}`} />
+            : <div className={`w-2.5 h-2.5 rounded-full ${isOnline ? "bg-white animate-pulse" : "bg-muted-foreground/40"}`} />
+          }
+          <div className="text-left">
+            <p className={`text-base font-black ${isOnline ? "text-white" : "text-foreground"}`}>
+              {isOnline ? "Online — Recebendo pedidos" : "Offline"}
+            </p>
+            <p className={`text-xs ${isOnline ? "text-white/75" : "text-muted-foreground"}`}>
+              {isOnline ? "Toque para pausar" : "Toque para começar"}
+            </p>
           </div>
-          <div className={`relative w-14 h-8 rounded-full transition-colors shrink-0 ${
-            isOnline ? "bg-white/30" : "bg-background/60"
-          }`}>
-            <span className={`absolute top-[3px] w-[26px] h-[26px] rounded-full shadow-lg transition-transform ${
-              isOnline ? "left-[25px] bg-white" : "left-[3px] bg-foreground/40"
-            }`} />
-          </div>
+        </div>
+        <div className={`relative w-12 h-7 rounded-full transition-colors ${isOnline ? "bg-white/30" : "bg-muted"}`}>
+          <span className={`absolute top-[3px] w-[22px] h-[22px] rounded-full bg-white shadow transition-transform duration-200 ${isOnline ? "translate-x-[22px]" : "translate-x-[3px]"}`} />
         </div>
       </button>
 
-      {/* Stats — cards grandes premium */}
-      <div className="grid grid-cols-3 gap-2.5">
-        <div className="relative overflow-hidden bg-card rounded-2xl p-3.5 shadow-md shadow-primary/5 border border-border/60">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center mb-2">
-            <Package className="h-4 w-4 text-primary" strokeWidth={2.5} />
+      {/* Stats — linha compacta estilo app nativo */}
+      <div className="flex items-center bg-muted/30 rounded-2xl border border-border/40 divide-x divide-border/40">
+        {([
+          { label: "Na rota", value: totalActive, color: "text-primary" },
+          { label: "Disponíveis", value: totalAvailable, color: "text-amber-500" },
+          { label: "Concluídas", value: deliveryCount || 0, color: "text-emerald-500" },
+        ] as const).map(s => (
+          <div key={s.label} className="flex-1 text-center py-3">
+            <p className={`text-xl font-black leading-none ${s.color}`}>{s.value}</p>
+            <p className="text-[10px] text-muted-foreground mt-1">{s.label}</p>
           </div>
-          <p className="text-2xl font-black text-foreground leading-none">{totalActive}</p>
-          <p className="text-[9px] text-muted-foreground font-black uppercase tracking-wider mt-1">Na Rota</p>
-        </div>
-        <div className="relative overflow-hidden bg-card rounded-2xl p-3.5 shadow-md shadow-amber-500/5 border border-border/60">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500/15 to-amber-500/5 flex items-center justify-center mb-2">
-            <Clock className="h-4 w-4 text-amber-500" strokeWidth={2.5} />
-          </div>
-          <p className="text-2xl font-black text-foreground leading-none">{totalAvailable}</p>
-          <p className="text-[9px] text-muted-foreground font-black uppercase tracking-wider mt-1">Disponíveis</p>
-        </div>
-        <div className="relative overflow-hidden bg-card rounded-2xl p-3.5 shadow-md shadow-emerald-500/5 border border-border/60">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500/15 to-emerald-500/5 flex items-center justify-center mb-2">
-            <CheckCircle2 className="h-4 w-4 text-emerald-500" strokeWidth={2.5} />
-          </div>
-          <p className="text-2xl font-black text-foreground leading-none">{deliveryCount || 0}</p>
-          <p className="text-[9px] text-muted-foreground font-black uppercase tracking-wider mt-1">Feitas</p>
-        </div>
+        ))}
       </div>
 
-      {/* Tabs — pílulas premium */}
-      <div className="flex gap-1.5 bg-muted/50 p-1.5 rounded-2xl">
+      {/* Tabs — segmented control estilo iOS */}
+      <div className="flex bg-muted/50 p-1 rounded-2xl">
         <button
           onClick={() => setActiveTab("routes")}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl text-xs font-black transition-all ${
-            activeTab === "routes"
-              ? "bg-card text-foreground shadow-md shadow-primary/10"
-              : "text-muted-foreground"
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all ${
+            activeTab === "routes" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
           }`}
         >
-          <Route className="h-4 w-4" strokeWidth={2.5} /> Entregas
+          <Route className="h-4 w-4" strokeWidth={2.5} />
+          Entregas
+          {totalActive > 0 && <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${activeTab === "routes" ? "bg-primary text-white" : "bg-muted text-muted-foreground"}`}>{totalActive}</span>}
         </button>
         <button
           onClick={() => setActiveTab("earnings")}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl text-xs font-black transition-all ${
-            activeTab === "earnings"
-              ? "bg-card text-foreground shadow-md shadow-primary/10"
-              : "text-muted-foreground"
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all ${
+            activeTab === "earnings" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
           }`}
         >
-          <Wallet className="h-4 w-4" strokeWidth={2.5} /> Ganhos
+          <Wallet className="h-4 w-4" strokeWidth={2.5} />
+          Ganhos
         </button>
       </div>
 
@@ -943,29 +904,23 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       {(hasActiveDeliveries || hasAvailable) && (
         <button
           onClick={() => setUseOptimized(!useOptimized)}
-          className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl border transition-all active:scale-[0.99] ${
-            useOptimized
-              ? "bg-gradient-to-br from-primary/10 to-primary/5 border-primary/30 shadow-sm shadow-primary/10"
-              : "bg-card border-border/60"
+          className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl border transition-all active:scale-[0.98] ${
+            useOptimized ? "bg-primary/5 border-primary/20" : "bg-card border-border/60"
           }`}
         >
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-              useOptimized ? "bg-primary/15" : "bg-muted"
-            }`}>
-              <Route className={`h-5 w-5 ${useOptimized ? "text-primary" : "text-muted-foreground"}`} strokeWidth={2.4} />
-            </div>
+            <Route className={`h-5 w-5 ${useOptimized ? "text-primary" : "text-muted-foreground"}`} strokeWidth={2} />
             <div className="text-left">
-              <p className="text-sm font-black text-foreground leading-tight">Rota Otimizada</p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">
+              <p className={`text-sm font-bold ${useOptimized ? "text-primary" : "text-foreground"}`}>Rota otimizada</p>
+              <p className="text-xs text-muted-foreground">
                 {useOptimized && routeDistanceKm > 0
                   ? `~${routeDistanceKm.toFixed(1)} km · ~${Math.ceil(routeDistanceKm * 3)} min`
-                  : "Ordena pela melhor rota"}
+                  : "Ordena pela melhor sequência"}
               </p>
             </div>
           </div>
           <div className={`relative w-12 h-7 rounded-full transition-colors ${useOptimized ? "bg-primary" : "bg-muted"}`}>
-            <span className={`absolute top-[3px] w-[22px] h-[22px] rounded-full bg-white shadow-md transition-transform ${useOptimized ? "left-[23px]" : "left-[3px]"}`} />
+            <span className={`absolute top-[3px] w-[22px] h-[22px] rounded-full bg-white shadow transition-transform duration-200 ${useOptimized ? "translate-x-[22px]" : "translate-x-[3px]"}`} />
           </div>
         </button>
       )}
@@ -1090,21 +1045,17 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
               <div
                 key={order.id}
                 id={`stop-${order.id}`}
-                className={`relative bg-card rounded-3xl overflow-hidden shadow-lg border ${
+                className={`relative bg-card rounded-2xl overflow-hidden border ${
                   inDelivery
-                    ? "border-emerald-500/30 shadow-emerald-500/10"
+                    ? "border-emerald-500/30"
                     : readyToDepart
-                      ? "border-amber-500/30 shadow-amber-500/10"
-                      : "border-border/60 shadow-primary/5"
+                      ? "border-amber-500/30"
+                      : "border-border/60"
                 }`}
               >
                 {/* Faixa lateral de status */}
-                <div className={`h-1.5 w-full ${
-                  inDelivery
-                    ? "bg-gradient-to-r from-emerald-400 via-emerald-500 to-emerald-400"
-                    : readyToDepart
-                      ? "bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400"
-                      : "bg-gradient-to-r from-primary/40 via-primary/60 to-primary/40"
+                <div className={`absolute left-0 top-0 bottom-0 w-1 ${
+                  inDelivery ? "bg-emerald-500" : readyToDepart ? "bg-amber-500" : "bg-primary/50"
                 }`} />
                 <button
                   onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
@@ -1217,10 +1168,10 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                         <button
                           onClick={() => departForDelivery(order.id)}
                           disabled={departingId === order.id || departingId === "all"}
-                          className="w-full h-13 bg-gradient-to-br from-amber-500 to-amber-600 text-white font-black py-3.5 rounded-2xl text-sm shadow-lg shadow-amber-500/30 disabled:opacity-50 flex items-center justify-center gap-2 active:scale-95 transition-all"
+                          className="w-full h-14 bg-amber-500 text-white font-black rounded-2xl text-base shadow-md shadow-amber-500/25 disabled:opacity-50 flex items-center justify-center gap-2.5 active:scale-[0.97] transition-transform"
                         >
-                          {departingId === order.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Navigation className="h-4 w-4" strokeWidth={2.8} />}
-                          Saindo para Entrega
+                          {departingId === order.id ? <Loader2 className="h-5 w-5 animate-spin" /> : <Navigation className="h-5 w-5" strokeWidth={2.5} />}
+                          Sair para entrega
                         </button>
                       </div>
                     )}
@@ -1252,10 +1203,10 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                         <button
                           onClick={() => finishDelivery(order.id)}
                           disabled={!pinInputs[order.id] || pinInputs[order.id].length !== 4 || verifyingId === order.id}
-                          className="relative w-full h-13 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white font-black py-3.5 rounded-2xl text-sm shadow-lg shadow-emerald-500/30 disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-2 active:scale-95 transition-all"
+                          className="w-full h-14 bg-emerald-500 text-white font-black rounded-2xl text-base shadow-md shadow-emerald-500/25 disabled:opacity-40 flex items-center justify-center gap-2.5 active:scale-[0.97] transition-transform"
                         >
-                          {verifyingId === order.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" strokeWidth={2.8} />}
-                          Finalizar Entrega
+                          {verifyingId === order.id ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" strokeWidth={2.5} />}
+                          Confirmar entrega
                         </button>
                       </div>
                     )}
@@ -1305,18 +1256,14 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
             return (
               <div
                 key={order.id}
-                className={`relative bg-card rounded-3xl overflow-hidden shadow-lg shadow-amber-500/5 border border-border/60 ${hasActiveRoutes ? "opacity-60" : ""}`}
+                className={`relative bg-card rounded-2xl overflow-hidden border border-border/60 ${hasActiveRoutes ? "opacity-60" : ""}`}
               >
-                {/* Faixa pulsante âmbar */}
-                <div className="h-1.5 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400" />
-                <div className="p-4 space-y-3.5">
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-amber-500 rounded-l-2xl" />
+                <div className="p-4 pl-5 space-y-3.5">
                   {/* Header */}
                   <div className="flex items-center gap-3">
-                    <div className="relative shrink-0">
-                      <div className="absolute inset-0 bg-amber-500/30 rounded-xl blur-md animate-pulse" />
-                      <div className="relative w-11 h-11 rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 flex items-center justify-center text-sm font-black text-white shadow-lg shadow-amber-500/30">
-                        {index + 1}
-                      </div>
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-sm font-black text-amber-600 shrink-0">
+                      {index + 1}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest leading-none mb-1">
@@ -1367,25 +1314,25 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                     {canDecline && (
                       <button
                         onClick={() => declineOrder(order.id)}
-                        className="shrink-0 h-13 px-4 py-3.5 rounded-2xl text-sm font-black bg-background border border-border text-muted-foreground hover:text-destructive hover:bg-destructive/5 active:scale-95 transition-all flex items-center gap-1.5"
-                        title="Recusar entrega"
+                        className="h-14 px-5 rounded-2xl border-2 border-border bg-background text-muted-foreground active:scale-[0.97] transition-transform flex items-center gap-1.5"
+                        title="Recusar"
                       >
-                        <X className="h-4 w-4" strokeWidth={2.6} />
+                        <X className="h-4 w-4" strokeWidth={2.5} />
                       </button>
                     )}
                     <button
                       onClick={() => acceptOrder(order.id)}
                       disabled={hasActiveRoutes}
-                      className={`flex-1 h-13 font-black py-3.5 rounded-2xl text-sm flex items-center justify-center gap-2 transition-all ${
+                      className={`flex-1 h-14 font-black rounded-2xl text-base flex items-center justify-center gap-2 transition-transform ${
                         hasActiveRoutes
                           ? "bg-muted text-muted-foreground cursor-not-allowed"
-                          : "bg-gradient-to-br from-primary to-primary/85 text-primary-foreground shadow-lg shadow-primary/30 active:scale-95"
+                          : "bg-primary text-primary-foreground shadow-md shadow-primary/25 active:scale-[0.97]"
                       }`}
                     >
-                      {hasActiveRoutes ? "FINALIZE A ROTA" : (
+                      {hasActiveRoutes ? "Finalize a rota atual" : (
                         <>
-                          ACEITAR ENTREGA
-                          <ArrowRight className="h-4 w-4" strokeWidth={3} />
+                          Aceitar entrega
+                          <ArrowRight className="h-5 w-5" strokeWidth={2.5} />
                         </>
                       )}
                     </button>
@@ -1404,34 +1351,31 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       )}
 
       {!loadingAvailable && !hasActiveDeliveries && !hasAvailable && (
-        <div className="flex flex-col items-center justify-center py-16 text-center px-6">
-          <div className="relative mb-5">
-            <div className={`absolute inset-0 rounded-[2rem] blur-2xl ${
-              isOnline ? "bg-primary/15" : "bg-amber-500/20"
-            }`} />
-            <div className={`relative w-20 h-20 rounded-[1.75rem] flex items-center justify-center shadow-lg ${
-              isOnline
-                ? "bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/15"
-                : "bg-gradient-to-br from-amber-500 to-amber-600 shadow-amber-500/30"
-            }`}>
-              {isOnline
-                ? <Bike className="h-10 w-10 text-primary" strokeWidth={2.2} />
-                : <PowerOff className="h-10 w-10 text-white" strokeWidth={2.4} />}
-            </div>
+        <div className="flex flex-col items-center justify-center py-20 text-center px-8 gap-4">
+          <div className={`w-20 h-20 rounded-[1.75rem] flex items-center justify-center ${
+            isOnline ? "bg-primary/8" : "bg-muted/60"
+          }`}>
+            <Bike className={`h-10 w-10 ${isOnline ? "text-primary" : "text-muted-foreground"}`} strokeWidth={1.8} />
           </div>
-          <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-2">
-            {!isOnline ? "Modo Pausado" : "Tudo em ordem"}
-          </p>
-          <h2 className="text-xl font-black text-foreground mb-2 tracking-tight">
-            {!isOnline
-              ? "Você está offline"
-              : multiStore ? `Sem pedidos em ${getStoreName(effectiveStoreId!)}` : "Aguardando pedidos"}
-          </h2>
-          <p className="text-sm text-muted-foreground max-w-[280px] leading-relaxed">
-            {!isOnline
-              ? "Fique online para receber as entregas disponíveis."
-              : "Quando a loja tiver pedidos prontos, eles aparecerão aqui organizados por rota."}
-          </p>
+          <div>
+            <p className="text-lg font-black text-foreground">
+              {isOnline ? "Aguardando pedidos" : "Você está offline"}
+            </p>
+            <p className="text-sm text-muted-foreground mt-1 max-w-[240px] mx-auto leading-relaxed">
+              {isOnline
+                ? "Quando a loja tiver pedidos prontos eles aparecerão aqui."
+                : "Ative o status online para começar a receber."}
+            </p>
+          </div>
+          {!isOnline && (
+            <button
+              onClick={toggleOnline}
+              disabled={togglingOnline}
+              className="h-12 px-8 bg-primary text-primary-foreground font-bold rounded-2xl text-sm active:scale-[0.97] transition-transform"
+            >
+              Ficar online
+            </button>
+          )}
         </div>
       )}
         </>
