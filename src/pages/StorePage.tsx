@@ -688,7 +688,7 @@ const StorePage = () => {
               <div className="mt-3 grid grid-cols-3 gap-2">
                 <div className="bg-muted/30 rounded-xl p-2.5 border border-border/30 flex flex-col items-center text-center">
                   <Bike className="h-3.5 w-3.5 text-primary mb-1" />
-                  <span className="text-[9px] font-black text-muted-foreground uppercase tracking-tight">Taxa</span>
+                  <span className="text-[11px] font-semibold text-muted-foreground uppercase">Taxa</span>
                   <span className="text-[11px] font-black text-foreground mt-0.5">
                     {(() => {
                       const mode = (store as any)?.delivery_mode;
@@ -706,14 +706,14 @@ const StorePage = () => {
                 </div>
                 <div className="bg-muted/30 rounded-xl p-2.5 border border-border/30 flex flex-col items-center text-center">
                   <Timer className="h-3.5 w-3.5 text-primary mb-1" />
-                  <span className="text-[9px] font-black text-muted-foreground uppercase tracking-tight">Tempo</span>
+                  <span className="text-[11px] font-semibold text-muted-foreground uppercase">Tempo</span>
                   <span className="text-[11px] font-black text-foreground mt-0.5">
                     {(store as any)?.estimated_delivery_time || "—"}
                   </span>
                 </div>
                 <div className="bg-muted/30 rounded-xl p-2.5 border border-border/30 flex flex-col items-center text-center">
                   <Wallet className="h-3.5 w-3.5 text-primary mb-1" />
-                  <span className="text-[9px] font-black text-muted-foreground uppercase tracking-tight">Pedido mín.</span>
+                  <span className="text-[11px] font-semibold text-muted-foreground uppercase">Pedido mín.</span>
                   <span className="text-[11px] font-black text-foreground mt-0.5">
                     {(store as any)?.minimum_order_value
                       ? formatBRL(Number((store as any).minimum_order_value))
@@ -802,12 +802,12 @@ const StorePage = () => {
           <div className="bg-muted/50 mt-2 px-5 py-4 flex items-center justify-around border-t border-border/50">
             <div className="flex flex-col items-center">
               <span className="text-lg font-black text-foreground leading-none">{totalProducts}</span>
-              <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mt-1">Produtos</span>
+              <span className="text-[11px] font-semibold text-muted-foreground mt-1">Produtos</span>
             </div>
             <div className="w-px h-6 bg-border/80" />
             <div className="flex flex-col items-center">
               <span className="text-lg font-black text-foreground leading-none">{sections?.length || 0}</span>
-              <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mt-1">Categorias</span>
+              <span className="text-[11px] font-semibold text-muted-foreground mt-1">Categorias</span>
             </div>
             {store?.rating && store.rating > 0 && (
               <>
@@ -817,7 +817,7 @@ const StorePage = () => {
                     {store.rating}
                     <Star className="h-3 w-3 fill-amber-500" />
                   </span>
-                  <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mt-1">Avaliação</span>
+                  <span className="text-[11px] font-semibold text-muted-foreground mt-1">Avaliação</span>
                 </div>
               </>
             )}
@@ -1217,37 +1217,37 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory }: Product
           <div className="flex flex-wrap gap-1 mb-1">
             {/* Pharmacy: prescription badge */}
             {isPharmacy && meta.requires_prescription && (
-              <span className="text-[9px] bg-destructive/10 text-destructive px-1.5 py-0.5 rounded-full font-bold">
+              <span className="text-[10px] bg-destructive/10 text-destructive px-1.5 py-0.5 rounded-full font-bold">
                 📋 Receita obrigatória
               </span>
             )}
             {/* Pharmacy: generic badge */}
             {isPharmacy && meta.is_generic && (
-              <span className="text-[9px] bg-blue-500/10 text-blue-600 px-1.5 py-0.5 rounded-full font-bold">
+              <span className="text-[10px] bg-blue-500/10 text-blue-600 px-1.5 py-0.5 rounded-full font-bold">
                 Genérico
               </span>
             )}
             {/* Lanches: combo badge */}
             {cat === "lanches" && meta.is_combo && (
-              <span className="text-[9px] bg-amber-500/10 text-amber-600 px-1.5 py-0.5 rounded-full font-bold">
+              <span className="text-[10px] bg-amber-500/10 text-amber-600 px-1.5 py-0.5 rounded-full font-bold">
                 🎁 Combo
               </span>
             )}
             {/* Japonesa: pieces */}
             {cat === "japonesa" && meta.pieces_count && (
-              <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-bold">
+              <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-bold">
                 {meta.pieces_count} peças
               </span>
             )}
             {/* Japonesa: shareable */}
             {(cat === "japonesa" || cat === "churrasco") && meta.shareable && (
-              <span className="text-[9px] bg-green-500/10 text-green-600 px-1.5 py-0.5 rounded-full font-bold">
+              <span className="text-[10px] bg-green-500/10 text-green-600 px-1.5 py-0.5 rounded-full font-bold">
                 👥 Compartilhar
               </span>
             )}
             {/* Beverage: cold badge */}
             {(isBeverage || cat === "adegas") && meta.serve_cold && (
-              <span className="text-[9px] bg-sky-500/10 text-sky-600 px-1.5 py-0.5 rounded-full font-bold">
+              <span className="text-[10px] bg-sky-500/10 text-sky-600 px-1.5 py-0.5 rounded-full font-bold">
                 ❄️ Gelado
               </span>
             )}

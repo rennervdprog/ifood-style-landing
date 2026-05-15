@@ -493,7 +493,7 @@ const CadastroLojista = () => {
                         <div className="rounded-lg bg-muted/40 p-2 text-center">
                           <p className="text-[9px] uppercase tracking-wider text-muted-foreground">Entrega</p>
                           <p className="text-xs font-bold text-foreground">+R$2</p>
-                          <p className="text-[8px] text-muted-foreground leading-tight">cliente paga</p>
+                          <p className="text-[10px] text-muted-foreground leading-tight">cliente paga</p>
                         </div>
                       </div>
 
