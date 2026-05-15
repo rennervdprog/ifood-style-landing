@@ -146,8 +146,26 @@ const CategoryProductFields = ({ category, metadata, onChange, storeId }: Catego
   );
 
   const categoryFieldsMap: Record<string, React.ReactNode> = {
-    pizzas: <></>,
-    esfihas: null,
+    pizzas: (
+      <FieldBox emoji="🍕" title="Detalhes da Pizza">
+        {renderListField("Tamanhos disponíveis", "sizes_available", "Ex: P, M, G, GG, Família...")}
+        {renderTextField("Qtd de fatias (tamanho padrão)", "slice_count", "Ex: 8, 12 fatias...")}
+        {renderTextField("Diâmetro (cm)", "diameter_cm", "Ex: 25cm, 35cm, 45cm...")}
+        {renderToggle("Borda recheada disponível?", "has_stuffed_crust")}
+        {renderToggle("Serve p/ compartilhar?", "shareable")}
+        {renderToggle("Produto é um combo?", "is_combo")}
+        {metadata.is_combo && renderListField("Itens do Combo", "combo_items", "Ex: Pizza + Refri 2L...")}
+      </FieldBox>
+    ),
+    esfihas: (
+      <FieldBox emoji="🫓" title="Detalhes da Esfiha">
+        {renderListField("Tipo de massa", "dough_types", "Ex: Aberta, Fechada...")}
+        {renderTextField("Quantidade (pacote)", "pack_quantity", "Ex: 10 unidades, 20 unidades...")}
+        {renderToggle("Serve p/ compartilhar?", "shareable")}
+        {renderToggle("Produto é um combo?", "is_combo")}
+        {metadata.is_combo && renderListField("Itens do Combo", "combo_items", "Ex: 10 esfihas + Refri...")}
+      </FieldBox>
+    ),
     lanches: (
       <FieldBox emoji="🍔" title="Detalhes do Lanche">
         {renderListField("Tipos de pão disponíveis", "bread_types", "Ex: Brioche, Tradicional, Australiano, Ciabatta...")}
@@ -204,21 +222,26 @@ const CategoryProductFields = ({ category, metadata, onChange, storeId }: Catego
     ),
     saudavel: (
       <FieldBox emoji="🥗" title="Detalhes do Produto">
-        {renderTextField("Calorias", "calories", "Ex: 350 kcal")}
-        {renderTextField("Proteína (g)", "protein_grams", "Ex: 35g")}
         {renderTextField("Peso / Tamanho", "size_weight", "Ex: 400g, 500ml...")}
+        {renderTextField("Calorias", "calories", "Ex: 350 kcal")}
+        {renderTextField("Proteínas (g)", "protein_grams", "Ex: 35g")}
+        {renderTextField("Carboidratos (g)", "carbs_grams", "Ex: 40g")}
         {renderToggle("Vegano?", "is_vegan")}
+        {renderToggle("Vegetariano?", "is_vegetarian")}
         {renderToggle("Sem glúten?", "is_gluten_free")}
         {renderToggle("Sem lactose?", "is_lactose_free")}
+        {renderToggle("Low carb?", "is_low_carb")}
       </FieldBox>
     ),
     restaurante: (
       <FieldBox emoji="🍽️" title="Detalhes do Prato">
         {renderTextField("Porção / Tamanho", "portion_size", "Ex: Individual, Família, 500g...")}
-        {renderToggle("Marmita?", "is_marmita")}
+        {renderTextField("Acompanhamentos inclusos", "sides", "Ex: Arroz, feijão, salada...")}
         {renderToggle("Serve p/ compartilhar?", "shareable")}
+        {renderToggle("Sem glúten?", "is_gluten_free")}
+        {renderToggle("Sem lactose?", "is_lactose_free")}
         {renderToggle("Produto é um combo/kit?", "is_combo")}
-        {metadata.is_combo && renderListField("Itens do Combo", "combo_items", "Ex: Arroz, Feijão, Bife...")}
+        {metadata.is_combo && renderListField("Itens do Combo", "combo_items", "Ex: Prato, Suco, Sobremesa...")}
       </FieldBox>
     ),
   };

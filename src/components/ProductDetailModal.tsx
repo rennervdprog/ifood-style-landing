@@ -537,6 +537,48 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
 
       {isDessert && meta.size_weight && <div><span className="rounded-full bg-muted px-2 py-1 text-xs font-bold text-foreground">📏 {meta.size_weight}</span></div>}
 
+      {cat === "restaurante" && !isBeverage && (
+        <div className="space-y-2">
+          {/* Porção e badges */}
+          <div className="flex flex-wrap gap-1.5">
+            {meta.portion_size && <span className="rounded-full bg-primary/10 text-primary px-2.5 py-1 text-xs font-bold">🍽️ {meta.portion_size}</span>}
+            {meta.shareable && <span className="rounded-full bg-green-500/10 text-green-600 px-2.5 py-1 text-xs font-bold">👥 Para compartilhar</span>}
+            {meta.is_gluten_free && <span className="rounded-full bg-amber-500/10 text-amber-600 px-2.5 py-1 text-xs font-bold">Sem glúten</span>}
+            {meta.is_lactose_free && <span className="rounded-full bg-blue-500/10 text-blue-600 px-2.5 py-1 text-xs font-bold">Sem lactose</span>}
+          </div>
+          {/* Acompanhamentos */}
+          {meta.sides && (
+            <div className="bg-muted/30 rounded-xl px-3 py-2">
+              <p className="text-xs font-bold text-muted-foreground mb-1">🥗 Acompanhamentos</p>
+              <p className="text-xs text-foreground">{meta.sides}</p>
+            </div>
+          )}
+          {/* Combo */}
+          {meta.is_combo && meta.combo_items?.length > 0 && (
+            <section className="rounded-2xl border border-border bg-card p-3">
+              <p className="mb-2 text-xs font-bold text-foreground">🎁 Itens do combo</p>
+              <div className="flex flex-wrap gap-1">
+                {meta.combo_items.map((item: string, i: number) => (
+                  <span key={i} className="rounded-full bg-muted px-2 py-1 text-[11px] font-medium text-muted-foreground">{item}</span>
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
+      )}
+
+      {cat === "pizzas" && !isBeverage && (meta.sizes_available?.length > 0 || meta.slice_count || meta.has_stuffed_crust || meta.shareable) && (
+        <div className="flex flex-wrap gap-1.5">
+          {meta.sizes_available?.length > 0 && meta.sizes_available.map((s: string, i: number) => (
+            <span key={i} className="rounded-full bg-primary/10 text-primary px-2.5 py-1 text-xs font-bold">{s}</span>
+          ))}
+          {meta.slice_count && <span className="rounded-full bg-muted px-2 py-1 text-xs font-medium text-foreground">🍕 {meta.slice_count} fatias</span>}
+          {meta.has_stuffed_crust && <span className="rounded-full bg-amber-500/10 text-amber-600 px-2.5 py-1 text-xs font-bold">Borda recheada</span>}
+          {meta.shareable && <span className="rounded-full bg-green-500/10 text-green-600 px-2.5 py-1 text-xs font-bold">👥 Para compartilhar</span>}
+          {meta.is_combo && <span className="rounded-full bg-amber-500/10 text-amber-600 px-2.5 py-1 text-xs font-bold">🎁 Combo</span>}
+        </div>
+      )}
+
       {isBeverage && (meta.drink_type || meta.drink_volume) && (
         <div className="flex flex-wrap gap-1.5">
           {meta.drink_type && <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-bold text-primary">🥤 {meta.drink_type}</span>}
@@ -546,13 +588,45 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
       )}
 
       {cat === "saudavel" && !isBeverage && (
-        <div className="flex flex-wrap gap-1.5">
-          {meta.is_vegan && <span className="rounded-full bg-accent px-2 py-1 text-xs font-bold text-accent-foreground">🌱 Vegano</span>}
-          {meta.is_gluten_free && <span className="rounded-full bg-muted px-2 py-1 text-xs font-bold text-foreground">🌾 Sem Glúten</span>}
-          {meta.is_lactose_free && <span className="rounded-full bg-muted px-2 py-1 text-xs font-bold text-foreground">🥛 Sem Lactose</span>}
-          {meta.is_organic && <span className="rounded-full bg-accent px-2 py-1 text-xs font-bold text-accent-foreground">🍃 Orgânico</span>}
-          {meta.calories && <span className="rounded-full bg-muted px-2 py-1 text-xs font-medium text-foreground">🔥 {meta.calories} kcal</span>}
-          {meta.protein_grams && <span className="rounded-full bg-muted px-2 py-1 text-xs font-medium text-foreground">💪 {meta.protein_grams}g proteína</span>}
+        <div className="space-y-2">
+          {/* Badges de dieta */}
+          <div className="flex flex-wrap gap-1.5">
+            {meta.is_vegan && <span className="rounded-full bg-green-500/15 text-green-700 dark:text-green-400 px-2.5 py-1 text-xs font-bold">🌱 Vegano</span>}
+            {meta.is_vegetarian && !meta.is_vegan && <span className="rounded-full bg-green-500/10 text-green-700 dark:text-green-400 px-2.5 py-1 text-xs font-bold">🥦 Vegetariano</span>}
+            {meta.is_gluten_free && <span className="rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 px-2.5 py-1 text-xs font-bold">🌾 Sem glúten</span>}
+            {meta.is_lactose_free && <span className="rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-400 px-2.5 py-1 text-xs font-bold">🥛 Sem lactose</span>}
+            {meta.is_low_carb && <span className="rounded-full bg-purple-500/10 text-purple-700 dark:text-purple-400 px-2.5 py-1 text-xs font-bold">Low carb</span>}
+            {meta.is_organic && <span className="rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2.5 py-1 text-xs font-bold">🍃 Orgânico</span>}
+          </div>
+          {/* Tabela nutricional */}
+          {(meta.calories || meta.protein_grams || meta.carbs_grams || meta.size_weight) && (
+            <div className="bg-muted/40 rounded-xl p-3 grid grid-cols-2 gap-2">
+              {meta.size_weight && (
+                <div className="text-center">
+                  <p className="text-sm font-black text-foreground">{meta.size_weight}</p>
+                  <p className="text-[10px] text-muted-foreground">Porção</p>
+                </div>
+              )}
+              {meta.calories && (
+                <div className="text-center">
+                  <p className="text-sm font-black text-orange-500">{meta.calories}</p>
+                  <p className="text-[10px] text-muted-foreground">Calorias</p>
+                </div>
+              )}
+              {meta.protein_grams && (
+                <div className="text-center">
+                  <p className="text-sm font-black text-foreground">{meta.protein_grams}g</p>
+                  <p className="text-[10px] text-muted-foreground">Proteína</p>
+                </div>
+              )}
+              {meta.carbs_grams && (
+                <div className="text-center">
+                  <p className="text-sm font-black text-foreground">{meta.carbs_grams}g</p>
+                  <p className="text-[10px] text-muted-foreground">Carboidratos</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
