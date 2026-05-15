@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Bike, Store, Check, X, MapPin, Clock, ShieldCheck, RefreshCw, MessageCircle, LogOut, Headphones, Smartphone } from "lucide-react";
+import { Bike, Store, Check, X, MapPin, Clock, ShieldCheck, RefreshCw, MessageCircle, LogOut, Headphones } from "lucide-react";
 import SupportTicketModal from "@/components/SupportTicketModal";
 import { toast } from "sonner";
 import StoreDriverView from "@/components/StoreDriverView";
@@ -27,6 +27,7 @@ const DriverDashboardV2 = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [acceptingInvite, setAcceptingInvite] = useState<string | null>(null);
+  const [showSupport, setShowSupport] = useState(false);
 
   const { data: driverProfile } = useQuery({
     queryKey: ["v2-driver-profile", user?.id],
@@ -313,8 +314,6 @@ const DriverDashboardV2 = () => {
 
   // Motoboy de loja com vínculo aceito → render direto
   const driverFirstName = (driverProfile as any)?.full_name?.split(" ")[0] || "Entregador";
-
-  const [showSupport, setShowSupport] = useState(false);
 
   return (
     <>
