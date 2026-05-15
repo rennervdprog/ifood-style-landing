@@ -68,14 +68,14 @@ const StoreCard = memo(({ id, name, category, image_url, is_open, rating, status
         ) : (
           <div className={`w-full h-full bg-gradient-to-br ${gradient} flex flex-col items-center justify-center gap-2 ${!is_open ? "grayscale" : ""}`}>
             <span className="text-5xl drop-shadow-sm">{icon}</span>
-            <span className="text-[10px] font-black text-muted-foreground/70 uppercase tracking-widest">{category}</span>
+            <span className="text-[11px] font-bold text-foreground/60 uppercase tracking-wide">{category}</span>
           </div>
         )}
 
         {/* Badges Overlay */}
         <div className="absolute inset-x-0 top-0 p-4 flex justify-start items-start z-10">
           {is_open ? (
-            <div className={`px-3 py-1.5 rounded-full text-[10px] font-black backdrop-blur-md border border-white/20 shadow-lg ${
+            <div className={`px-3 py-1.5 rounded-full text-xs font-bold backdrop-blur-md border border-white/20 shadow-lg ${
               category === "farmacias" ? "bg-teal-500/80 text-white" : "bg-primary text-black"
             }`}>
               ABERTO
@@ -90,7 +90,7 @@ const StoreCard = memo(({ id, name, category, image_url, is_open, rating, status
 
         {/* Category Floating Badge */}
         <div className="absolute bottom-4 left-4 z-10">
-          <span className="bg-black/60 backdrop-blur-md text-white px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border border-white/10 shadow-lg">
+          <span className="bg-black/60 backdrop-blur-md text-white px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wide border border-white/10 shadow-lg">
             {category}
           </span>
         </div>
@@ -111,14 +111,14 @@ const StoreCard = memo(({ id, name, category, image_url, is_open, rating, status
           </div>
           
           <div className="flex items-center gap-3 flex-wrap pt-1 border-t border-border/40">
-            <div className="flex items-center gap-1.5 text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground uppercase">
               <Clock className="h-3 w-3 text-primary" />
               <span>30-45 min</span>
             </div>
             {distanceLabel && (
               <>
                 <span className="w-1 h-1 rounded-full bg-border/60" />
-                <div className="flex items-center gap-1.5 text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground uppercase">
                   <MapPin className="h-3 w-3 text-primary" />
                   <span>{distanceLabel}</span>
                 </div>

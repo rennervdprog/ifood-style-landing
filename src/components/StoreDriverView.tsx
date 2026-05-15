@@ -1279,7 +1279,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                     </div>
                     <div className="flex flex-col items-center px-2.5 py-1.5 rounded-xl bg-primary/10 shrink-0">
                       <span className="text-base font-black text-primary leading-none">{itemsCount}</span>
-                      <span className="text-[8px] font-bold text-primary/70 uppercase tracking-wider mt-0.5">itens</span>
+                      <span className="text-[10px] font-semibold text-primary/80 mt-0.5">itens</span>
                     </div>
                   </div>
 
