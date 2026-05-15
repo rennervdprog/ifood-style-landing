@@ -79,15 +79,15 @@ const ClientsTab = ({ clients, clientFilter, setClientFilter, clientSearch, setC
                 <div className="grid grid-cols-3 gap-2">
                   <div className="bg-card p-2 rounded-lg text-center">
                     <p className="text-xs font-bold">{formatCurrency(client.totalSpent)}</p>
-                    <p className="text-[8px] text-muted-foreground uppercase">Gasto</p>
+                    <p className="text-[10px] text-muted-foreground uppercase">Gasto</p>
                   </div>
                   <div className="bg-card p-2 rounded-lg text-center">
                     <p className="text-xs font-bold">{client.totalOrders}</p>
-                    <p className="text-[8px] text-muted-foreground uppercase">Pedidos</p>
+                    <p className="text-[10px] text-muted-foreground uppercase">Pedidos</p>
                   </div>
                   <div className="bg-card p-2 rounded-lg text-center">
                     <p className="text-xs font-bold">{client.daysSinceLastOrder}d</p>
-                    <p className="text-[8px] text-muted-foreground uppercase">Último</p>
+                    <p className="text-[10px] text-muted-foreground uppercase">Último</p>
                   </div>
                 </div>
                 {client.phone && (
