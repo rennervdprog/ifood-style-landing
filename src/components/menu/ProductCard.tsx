@@ -237,10 +237,10 @@ const ProductCardImpl = (props: ProductCardProps) => {
           <div className="flex items-center gap-1.5 flex-wrap">
             <h4 className="text-sm font-bold text-foreground truncate">{product.name}</h4>
             {!product.is_available && (
-              <span className="text-[9px] font-black uppercase bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 px-1.5 py-0.5 rounded">Pausado</span>
+              <span className="text-[10px] font-bold uppercase bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 px-1.5 py-0.5 rounded">Pausado</span>
             )}
             {isOOS && product.is_available && (
-              <span className="text-[9px] font-black uppercase bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded">Esgotado</span>
+              <span className="text-[10px] font-bold uppercase bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded">Esgotado</span>
             )}
           </div>
           {product.description && <p className="text-xs text-muted-foreground line-clamp-1">{product.description}</p>}
