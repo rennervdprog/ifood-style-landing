@@ -616,12 +616,12 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
         previousAvailable.filter((o: any) => o.id !== orderId),
       );
     }
-    // Add to my deliveries cache
+    // Add to my deliveries cache com status saiu_entrega (RPC já muda no banco)
     if (acceptedOrder) {
       const previousMy = queryClient.getQueryData<any[]>(myKey) || [];
       queryClient.setQueryData(
         myKey,
-        [{ ...acceptedOrder, driver_id: user?.id }, ...previousMy],
+        [{ ...acceptedOrder, driver_id: user?.id, status: "saiu_entrega" }, ...previousMy],
       );
     }
 
@@ -632,7 +632,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       queryClient.invalidateQueries({ queryKey: myKey });
       toast.error("Não foi possível aceitar o pedido.");
     } else {
-      toast.success("Pedido aceito! Adicionado à sua rota.");
+      toast.success("🛵 Saindo para entrega!");
       // Sync with server in background
       queryClient.invalidateQueries({ queryKey: availableKey });
       queryClient.invalidateQueries({ queryKey: myKey });
@@ -640,7 +640,8 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       // Notify store owner in background
       if (acceptedOrder) {
         const driverName = user?.user_metadata?.full_name || "Entregador";
-        notifyStoreOwner(acceptedOrder, "🛵 Entregador aceitou!", `${driverName} aceitou o pedido #${orderId.slice(0, 8).toUpperCase()}`);
+        notifyStoreOwner(acceptedOrder, "🛵 Saiu para entrega!", `${driverName} aceitou e saiu para entregar o pedido #${orderId.slice(0, 8).toUpperCase()}`);
+        notifyClientFromDriver(acceptedOrder, "saiu_entrega");
       }
     }
   };
