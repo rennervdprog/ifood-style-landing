@@ -428,6 +428,7 @@ const CheckoutPage = () => {
             delivery_fee: effectiveDeliveryFee,
             commission_rate: storePlan.commissionRate ?? 0,
             total_price: storeTotalPrice,
+            wallet_discount: walletDiscount,
             app_fee: appFee,
             payment_method: paymentMethod,
             neighborhood: finalNeighborhood,
@@ -458,6 +459,19 @@ const CheckoutPage = () => {
           .insert(orderItems);
 
         if (itemsError) throw itemsError;
+
+        // FIX: Debitar wallet se cliente usou crédito
+        if (walletDiscount > 0 && user) {
+          const { error: walletErr } = await supabase.rpc("apply_wallet_discount" as any, {
+            _order_id: order.id,
+            _user_id: user.id,
+            _discount_amount: walletDiscount,
+          });
+          if (walletErr) {
+            // Não bloquear o pedido — logar e seguir
+            console.error("[checkout] wallet debit error:", walletErr.message);
+          }
+        }
 
         if (couponId && user) {
           // Fire-and-forget: don't block UI on coupon registration
