@@ -17,7 +17,7 @@ const REASON_LABELS: Record<string, string> = {
 
 const STATUS_LABELS: Record<string, { label: string; color: string; bg: string }> = {
   pending: { label: "Pendente", color: "text-amber-600", bg: "bg-amber-50" },
-  approved: { label: "Aprovado", color: "text-blue-600", bg: "bg-blue-50" },
+  approved: { label: "Em análise", color: "text-blue-600", bg: "bg-blue-50" },
   processed: { label: "Processado", color: "text-emerald-600", bg: "bg-emerald-50" },
   rejected: { label: "Rejeitado", color: "text-red-600", bg: "bg-red-50" },
 };
@@ -38,7 +38,15 @@ const AdminRefundPanel = ({ storeId }: Props) => {
     queryFn: async () => {
       let query = supabase
         .from("refund_requests")
-        .select("*")
+        .select(`
+          *,
+          orders!refund_requests_order_id_fkey(
+            payment_method, created_at, total_price
+          ),
+          profiles!refund_requests_requester_id_fkey(
+            full_name, email
+          )
+        `)
         .order("created_at", { ascending: false });
 
       if (storeId) {
@@ -69,8 +77,11 @@ const AdminRefundPanel = ({ storeId }: Props) => {
       });
 
       if (error) throw error;
-      toast.success(approve ? "Reembolso aprovado e creditado!" : "Solicitação rejeitada.");
+      toast.success(approve
+        ? "✅ Reembolso aprovado! Crédito adicionado à carteira do cliente."
+        : "❌ Solicitação rejeitada.");
       queryClient.invalidateQueries({ queryKey: ["refund-requests"] });
+      // TODO: enviar push notification ao cliente via edge function
     } catch (err: any) {
       toast.error(err.message || "Erro ao processar.");
     } finally {
@@ -129,10 +140,22 @@ const AdminRefundPanel = ({ storeId }: Props) => {
               {/* Info */}
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-muted-foreground">Pedido #{req.order_id.slice(0, 8).toUpperCase()}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Pedido #{req.order_id.slice(0, 8).toUpperCase()}
+                    {(req as any).orders?.payment_method && (
+                      <span className="ml-1.5 bg-muted px-1.5 py-0.5 rounded text-[10px] font-bold">
+                        {(req as any).orders.payment_method.toUpperCase()}
+                      </span>
+                    )}
+                  </p>
                   <p className="text-sm font-bold text-foreground">
                     {REASON_LABELS[req.reason] || req.reason}
                   </p>
+                  {(req as any).profiles?.full_name && (
+                    <p className="text-xs text-muted-foreground">
+                      Cliente: {(req as any).profiles.full_name}
+                    </p>
+                  )}
                 </div>
                 <span className="text-sm font-black text-primary">
                   {formatBRL(Number(req.requested_amount))}

@@ -20,6 +20,8 @@ interface Props {
     store_id: string;
     subtotal: number;
     total_price: number;
+    payment_method?: string;
+    created_at?: string;
     stores?: { name?: string };
   };
   onClose: () => void;
@@ -37,6 +39,13 @@ const RefundRequestModal = ({ order, onClose, onSubmitted }: Props) => {
   const maxRefund = Number(order.subtotal) || 0;
   const requestedAmount = refundType === "full" ? maxRefund : Math.min(Number(partialAmount) || 0, maxRefund);
 
+  // Verificar elegibilidade
+  const cashOrder = ["dinheiro", "cartao_maquina"].includes(order.payment_method || "");
+  const daysSinceOrder = order.created_at
+    ? (Date.now() - new Date(order.created_at).getTime()) / (1000 * 60 * 60 * 24)
+    : 0;
+  const expiredDeadline = daysSinceOrder > 7;
+
   const handleSubmit = async () => {
     if (!user || !reason) {
       toast.error("Selecione o motivo do reembolso.");
@@ -44,6 +53,14 @@ const RefundRequestModal = ({ order, onClose, onSubmitted }: Props) => {
     }
     if (requestedAmount <= 0) {
       toast.error("Valor de reembolso inválido.");
+      return;
+    }
+    if (cashOrder) {
+      toast.error("Pedidos pagos em dinheiro ou maquininha não são elegíveis para reembolso na plataforma.");
+      return;
+    }
+    if (expiredDeadline) {
+      toast.error("O prazo para solicitar reembolso é de 7 dias após a entrega.");
       return;
     }
 
@@ -167,17 +184,34 @@ const RefundRequestModal = ({ order, onClose, onSubmitted }: Props) => {
             )}
           </div>
 
-          {/* Info about wallet credit */}
-          <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-xl p-3">
-            <p className="text-xs text-blue-700 dark:text-blue-300">
-              💰 O reembolso aprovado será creditado como <strong>saldo na plataforma</strong>, que pode ser usado em futuros pedidos.
-            </p>
-          </div>
+          {/* Avisos de inelegibilidade */}
+          {cashOrder && (
+            <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl p-3">
+              <p className="text-xs text-red-700 dark:text-red-300">
+                ⚠️ Pedidos pagos em dinheiro ou maquininha não são elegíveis para reembolso na plataforma.
+              </p>
+            </div>
+          )}
+          {expiredDeadline && !cashOrder && (
+            <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl p-3">
+              <p className="text-xs text-red-700 dark:text-red-300">
+                ⚠️ O prazo para solicitar reembolso (7 dias) já expirou.
+              </p>
+            </div>
+          )}
+          {/* Info sobre crédito */}
+          {!cashOrder && !expiredDeadline && (
+            <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-xl p-3">
+              <p className="text-xs text-blue-700 dark:text-blue-300">
+                💰 O reembolso aprovado será creditado como <strong>saldo na plataforma</strong>, disponível para usar em futuros pedidos. Prazo de análise: até 48h.
+              </p>
+            </div>
+          )}
 
           {/* Submit */}
           <button
             onClick={handleSubmit}
-            disabled={loading || !reason || requestedAmount <= 0}
+            disabled={loading || !reason || requestedAmount <= 0 || cashOrder || expiredDeadline}
             className="w-full bg-primary text-primary-foreground font-bold py-3.5 rounded-2xl text-sm flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.98] transition-all"
           >
             {loading ? (
