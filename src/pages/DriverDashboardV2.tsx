@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Bike, Store, Check, X, MapPin, Clock, ShieldCheck, RefreshCw, MessageCircle, LogOut, Headphones } from "lucide-react";
+import { Bike, Store, Check, X, MapPin, Clock, ShieldCheck, RefreshCw, MessageCircle, LogOut, Headphones, Smartphone } from "lucide-react";
 import SupportTicketModal from "@/components/SupportTicketModal";
 import { toast } from "sonner";
 import StoreDriverView from "@/components/StoreDriverView";
