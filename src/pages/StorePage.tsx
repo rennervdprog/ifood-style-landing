@@ -1251,6 +1251,79 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory }: Product
                 ❄️ Gelado
               </span>
             )}
+            {/* Restaurante: porção, compartilhar, combo */}
+            {cat === "restaurante" && meta.portion_size && (
+              <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-bold">
+                🍽️ {meta.portion_size}
+              </span>
+            )}
+            {cat === "restaurante" && meta.shareable && (
+              <span className="text-[10px] bg-green-500/10 text-green-600 px-1.5 py-0.5 rounded-full font-bold">
+                👥 Compartilhar
+              </span>
+            )}
+            {cat === "restaurante" && meta.is_combo && (
+              <span className="text-[10px] bg-amber-500/10 text-amber-600 px-1.5 py-0.5 rounded-full font-bold">
+                🎁 Combo
+              </span>
+            )}
+            {cat === "restaurante" && meta.is_gluten_free && (
+              <span className="text-[10px] bg-emerald-500/10 text-emerald-600 px-1.5 py-0.5 rounded-full font-bold">
+                Sem glúten
+              </span>
+            )}
+            {cat === "restaurante" && meta.is_lactose_free && (
+              <span className="text-[10px] bg-teal-500/10 text-teal-600 px-1.5 py-0.5 rounded-full font-bold">
+                Sem lactose
+              </span>
+            )}
+            {/* Saudável: badges nutricionais */}
+            {cat === "saudavel" && meta.is_vegan && (
+              <span className="text-[10px] bg-green-500/10 text-green-600 px-1.5 py-0.5 rounded-full font-bold">
+                🌱 Vegano
+              </span>
+            )}
+            {cat === "saudavel" && meta.is_vegetarian && !meta.is_vegan && (
+              <span className="text-[10px] bg-green-500/10 text-green-600 px-1.5 py-0.5 rounded-full font-bold">
+                🥦 Vegetariano
+              </span>
+            )}
+            {cat === "saudavel" && meta.is_gluten_free && (
+              <span className="text-[10px] bg-amber-500/10 text-amber-600 px-1.5 py-0.5 rounded-full font-bold">
+                Sem glúten
+              </span>
+            )}
+            {cat === "saudavel" && meta.is_lactose_free && (
+              <span className="text-[10px] bg-blue-500/10 text-blue-600 px-1.5 py-0.5 rounded-full font-bold">
+                Sem lactose
+              </span>
+            )}
+            {cat === "saudavel" && meta.is_low_carb && (
+              <span className="text-[10px] bg-purple-500/10 text-purple-600 px-1.5 py-0.5 rounded-full font-bold">
+                Low carb
+              </span>
+            )}
+            {cat === "saudavel" && meta.calories && (
+              <span className="text-[10px] bg-orange-500/10 text-orange-600 px-1.5 py-0.5 rounded-full font-bold">
+                🔥 {meta.calories}
+              </span>
+            )}
+            {/* Pizza: tamanho e combo */}
+            {cat === "pizzas" && meta.shareable && (
+              <span className="text-[10px] bg-green-500/10 text-green-600 px-1.5 py-0.5 rounded-full font-bold">
+                👥 Compartilhar
+              </span>
+            )}
+            {cat === "pizzas" && meta.has_stuffed_crust && (
+              <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-bold">
+                Borda recheada
+              </span>
+            )}
+            {cat === "pizzas" && meta.is_combo && (
+              <span className="text-[10px] bg-amber-500/10 text-amber-600 px-1.5 py-0.5 rounded-full font-bold">
+                🎁 Combo
+              </span>
+            )}
           </div>
 
           {/* Product name */}
