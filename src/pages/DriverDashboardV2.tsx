@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Bike, Smartphone, Store, Check, X, Sparkles, MapPin, Clock, ShieldCheck, RefreshCw, MessageCircle } from "lucide-react";
+import { Bike, Store, Check, X, MapPin, Clock, ShieldCheck, RefreshCw, MessageCircle, LogOut, Headphones } from "lucide-react";
 import SupportTicketModal from "@/components/SupportTicketModal";
 import { toast } from "sonner";
 import StoreDriverView from "@/components/StoreDriverView";
@@ -156,30 +156,29 @@ const DriverDashboardV2 = () => {
   if (!isStoreDriver) {
     const driverName = (driverProfile as any)?.full_name?.split(" ")[0] || "Entregador";
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-background pt-safe pb-safe">
+      <div className="min-h-screen bg-background pt-safe pb-safe">
         {pendingLinks.length > 0 ? (
-          <div className="px-5 pt-8 pb-10 max-w-md mx-auto">
-            {/* Hero */}
-            <div className="text-center mb-8">
-              <div className="relative mx-auto w-24 h-24 mb-5">
-                <div className="absolute inset-0 bg-primary/30 rounded-[2rem] blur-2xl animate-pulse" />
-                <div className="relative w-24 h-24 bg-gradient-to-br from-primary to-primary/70 rounded-[2rem] flex items-center justify-center shadow-2xl shadow-primary/40">
-                  <Bike className="h-12 w-12 text-primary-foreground" strokeWidth={2.5} />
+          <div className="px-4 pt-5 pb-10 max-w-md mx-auto">
+            {/* Header simples */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Bike className="h-4.5 w-4.5 text-primary" strokeWidth={2.5} />
                 </div>
-                <div className="absolute -top-1 -right-1 w-7 h-7 bg-card border-2 border-primary rounded-full flex items-center justify-center shadow-lg">
-                  <span className="text-[11px] font-black text-primary">{pendingLinks.length}</span>
-                </div>
+                <p className="text-sm font-black text-foreground">{driverName}</p>
               </div>
-              <p className="text-xs font-black text-primary uppercase tracking-widest mb-2">
-                Olá, {driverName}
-              </p>
-              <h1 className="text-3xl font-black text-foreground tracking-tight mb-2">
-                Você foi convidado!
+              <SignOutConfirm
+                redirectTo="/portal-parceiro"
+                triggerClassName="w-9 h-9 rounded-xl bg-muted/60 flex items-center justify-center"
+                triggerTitle={<LogOut className="h-4 w-4 text-muted-foreground" />}
+              />
+            </div>
+            <div className="mb-5">
+              <h1 className="text-2xl font-black text-foreground mb-1">
+                {pendingLinks.length === 1 ? "Convite recebido" : `${pendingLinks.length} convites`}
               </h1>
-              <p className="text-sm text-muted-foreground leading-relaxed px-4">
-                {pendingLinks.length === 1
-                  ? "Uma loja quer contar com você como motoboy próprio."
-                  : `${pendingLinks.length} lojas querem contar com você como motoboy próprio.`}
+              <p className="text-sm text-muted-foreground">
+                {pendingLinks.length === 1 ? "Uma loja quer te contratar." : "Lojas querem te contratar."}
               </p>
             </div>
 
@@ -191,53 +190,37 @@ const DriverDashboardV2 = () => {
                 return (
                   <div
                     key={link.id}
-                    className="relative bg-card rounded-3xl overflow-hidden shadow-xl shadow-primary/5 border border-border/60"
+                    className="bg-card rounded-2xl border border-border/60 overflow-hidden"
                   >
-                    {/* Faixa superior gradiente */}
-                    <div className="h-1.5 bg-gradient-to-r from-primary via-primary/70 to-primary" />
-                    <div className="p-5 space-y-5">
-                      <div className="flex items-center gap-4">
-                        <div className="relative shrink-0">
-                          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center border border-primary/10">
-                            <Store className="h-7 w-7 text-primary" strokeWidth={2.2} />
-                          </div>
+                    <div className="p-4 space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-2xl bg-primary/8 flex items-center justify-center shrink-0">
+                          <Store className="h-6 w-6 text-primary" strokeWidth={2} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-0.5">
-                            Convite • Pendente
-                          </p>
-                          <p className="font-black text-foreground text-lg leading-tight truncate">
-                            {storeName}
-                          </p>
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Convite de loja</p>
+                          <p className="font-black text-foreground text-base leading-tight truncate">{storeName}</p>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-3 gap-2 py-2">
-                        <div className="flex flex-col items-center gap-1 py-2 px-1 rounded-xl bg-muted/40">
-                          <ShieldCheck className="h-4 w-4 text-primary" />
-                          <span className="text-[9px] font-bold text-muted-foreground text-center leading-tight">
-                            Vínculo<br/>Direto
-                          </span>
-                        </div>
-                        <div className="flex flex-col items-center gap-1 py-2 px-1 rounded-xl bg-muted/40">
-                          <MapPin className="h-4 w-4 text-primary" />
-                          <span className="text-[9px] font-bold text-muted-foreground text-center leading-tight">
-                            Entregas<br/>Locais
-                          </span>
-                        </div>
-                        <div className="flex flex-col items-center gap-1 py-2 px-1 rounded-xl bg-muted/40">
-                          <Clock className="h-4 w-4 text-primary" />
-                          <span className="text-[9px] font-bold text-muted-foreground text-center leading-tight">
-                            Horário<br/>Flexível
-                          </span>
-                        </div>
+                      <div className="flex gap-2">
+                        {[
+                          { icon: ShieldCheck, label: "Vínculo direto" },
+                          { icon: MapPin, label: "Entregas locais" },
+                          { icon: Clock, label: "Horário flexível" },
+                        ].map(({icon: Icon, label}) => (
+                          <div key={label} className="flex-1 flex flex-col items-center gap-1 bg-muted/40 rounded-xl py-2.5">
+                            <Icon className="h-4 w-4 text-primary" />
+                            <span className="text-[10px] font-semibold text-muted-foreground text-center leading-tight">{label}</span>
+                          </div>
+                        ))}
                       </div>
 
-                      <div className="grid grid-cols-5 gap-2.5">
+                      <div className="flex gap-2.5 pt-1">
                         <button
                           disabled={isLoading}
                           onClick={() => handleInvitation(link.id, "rejected")}
-                          className="col-span-2 h-12 rounded-2xl border border-border bg-background text-muted-foreground text-sm font-bold flex items-center justify-center gap-1.5 hover:bg-muted/60 hover:text-destructive transition-all active:scale-95 disabled:opacity-50"
+                          className="h-14 px-5 rounded-2xl border-2 border-border bg-background text-muted-foreground text-sm font-bold flex items-center justify-center gap-1.5 active:scale-[0.97] transition-transform disabled:opacity-50"
                         >
                           <X className="h-4 w-4" strokeWidth={2.5} />
                           Recusar
@@ -245,14 +228,14 @@ const DriverDashboardV2 = () => {
                         <button
                           disabled={isLoading}
                           onClick={() => handleInvitation(link.id, "accepted")}
-                          className="col-span-3 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary/85 text-primary-foreground text-sm font-black shadow-lg shadow-primary/30 flex items-center justify-center gap-1.5 active:scale-95 transition-all disabled:opacity-60"
+                          className="flex-1 h-14 rounded-2xl bg-primary text-primary-foreground text-base font-black flex items-center justify-center gap-2 active:scale-[0.97] transition-transform disabled:opacity-60 shadow-lg shadow-primary/20"
                         >
                           {isLoading ? (
-                            <div className="animate-spin h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full" />
+                            <div className="animate-spin h-5 w-5 border-2 border-primary-foreground border-t-transparent rounded-full" />
                           ) : (
                             <>
-                              <Check className="h-4 w-4" strokeWidth={3} />
-                              Aceitar Convite
+                              <Check className="h-5 w-5" strokeWidth={2.8} />
+                              Aceitar
                             </>
                           )}
                         </button>
@@ -270,66 +253,58 @@ const DriverDashboardV2 = () => {
             />
           </div>
         ) : (
-          <div className="px-5 pt-12 pb-10 max-w-md mx-auto flex flex-col items-center text-center">
-            <div className="relative mx-auto w-28 h-28 mb-6">
-              <div className="absolute inset-0 bg-primary/20 rounded-[2.25rem] blur-2xl" />
-              <div className="relative w-28 h-28 bg-gradient-to-br from-primary to-primary/70 rounded-[2.25rem] flex items-center justify-center shadow-2xl shadow-primary/30">
-                <Bike className="h-14 w-14 text-primary-foreground" strokeWidth={2.4} />
-              </div>
-              <div className="absolute -top-2 -right-2 w-9 h-9 bg-card border-2 border-amber-500 rounded-full flex items-center justify-center shadow-lg">
-                <Sparkles className="h-4 w-4 text-amber-500" />
-              </div>
-            </div>
-
-            <p className="text-xs font-black text-primary uppercase tracking-widest mb-2">
-              Bem-vindo, {driverName}
-            </p>
-            <h1 className="text-2xl font-black text-foreground tracking-tight mb-3">
-              Conta criada com sucesso!
-            </h1>
-            <p className="text-sm text-muted-foreground leading-relaxed mb-8 px-2">
-              Agora é só pedir ao <span className="font-bold text-foreground">dono da loja</span> para
-              adicionar você como motoboy próprio no painel dele.
-            </p>
-
-            {/* Steps card */}
-            <div className="w-full bg-card rounded-3xl p-5 shadow-lg shadow-primary/5 border border-border/60 mb-8 text-left space-y-4">
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
-                Próximos passos
-              </p>
-              {[
-                { n: "1", t: "Envie seu e-mail", d: "Compartilhe com o dono da loja o e-mail que você usou aqui." },
-                { n: "2", t: "Aguarde o convite", d: "Ele vai te adicionar pelo painel da loja." },
-                { n: "3", t: "Aceite e comece", d: "O convite aparecerá nesta tela em segundos." },
-              ].map((s) => (
-                <div key={s.n} className="flex items-start gap-3">
-                  <div className="shrink-0 w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <span className="text-sm font-black text-primary">{s.n}</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-foreground leading-tight">{s.t}</p>
-                    <p className="text-xs text-muted-foreground leading-snug mt-0.5">{s.d}</p>
-                  </div>
+          <div className="flex flex-col min-h-screen bg-background">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 pt-safe pt-4 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <Bike className="h-5 w-5 text-primary" strokeWidth={2.5} />
                 </div>
-              ))}
+                <div>
+                  <p className="text-xs text-muted-foreground">Bem-vindo</p>
+                  <p className="text-sm font-black text-foreground">{driverName}</p>
+                </div>
+              </div>
+              <SignOutConfirm
+                redirectTo="/portal-parceiro"
+                triggerClassName="w-10 h-10 rounded-2xl bg-muted/60 flex items-center justify-center"
+                triggerTitle={<LogOut className="h-4 w-4 text-muted-foreground" />}
+              />
             </div>
 
-            <button
-              onClick={() => {
-                queryClient.invalidateQueries({ queryKey: ["v2-store-driver-links", user?.id] });
-                toast.success("Verificando convites...");
-              }}
-              className="w-full max-w-xs h-14 bg-gradient-to-br from-primary to-primary/85 text-primary-foreground font-black rounded-2xl text-sm shadow-xl shadow-primary/30 active:scale-95 transition-all flex items-center justify-center gap-2"
-            >
-              <RefreshCw className="h-4 w-4" strokeWidth={2.6} />
-              Verificar Convites
-            </button>
+            {/* Conteúdo */}
+            <div className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-6 pb-16">
+              <div className="w-24 h-24 rounded-[2rem] bg-primary/8 flex items-center justify-center">
+                <Bike className="h-12 w-12 text-primary" strokeWidth={1.8} />
+              </div>
+              <div>
+                <h1 className="text-xl font-black text-foreground mb-2">Aguardando vínculo</h1>
+                <p className="text-sm text-muted-foreground leading-relaxed max-w-xs mx-auto">
+                  Peça ao <span className="font-semibold text-foreground">dono da loja</span> para adicionar seu e-mail como motoboy no painel dele.
+                </p>
+              </div>
 
-            <SignOutConfirm
-              redirectTo="/portal-parceiro"
-              triggerClassName="block mx-auto text-xs text-muted-foreground hover:text-destructive transition-colors mt-6 font-medium"
-              triggerTitle="Sair da conta"
-            />
+              <div className="w-full max-w-sm space-y-2.5">
+                {[
+                  { n: "1", t: "Envie seu e-mail cadastrado para o lojista" },
+                  { n: "2", t: "Ele te adiciona pelo painel da loja" },
+                  { n: "3", t: "O convite aparece nesta tela" },
+                ].map(s => (
+                  <div key={s.n} className="flex items-center gap-3 bg-muted/40 rounded-2xl px-4 py-3 text-left">
+                    <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-black flex items-center justify-center shrink-0">{s.n}</span>
+                    <p className="text-sm text-foreground">{s.t}</p>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                onClick={() => { queryClient.invalidateQueries({ queryKey: ["v2-store-driver-links", user?.id] }); toast.success("Verificando..."); }}
+                className="w-full max-w-sm h-14 bg-primary text-primary-foreground font-black rounded-2xl text-sm active:scale-[0.97] transition-transform flex items-center justify-center gap-2"
+              >
+                <RefreshCw className="h-4 w-4" strokeWidth={2.5} />
+                Verificar convites
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -352,36 +327,30 @@ const DriverDashboardV2 = () => {
       )}
       <DriverPersistentAlert availableCount={0} hasActiveDelivery={false} isOnline onReview={() => {}} />
       <div className="min-h-screen bg-background text-foreground pb-[5.5rem] native-app">
-        <header className="sticky top-0 z-50 bg-card/90 backdrop-blur-xl border-b border-border/60 pt-safe shadow-sm">
-          <div className="px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="relative shrink-0">
-                <div className="absolute inset-0 bg-primary/25 rounded-2xl blur-md" />
-                <div className="relative w-11 h-11 rounded-2xl bg-gradient-to-br from-primary to-primary/75 flex items-center justify-center shadow-lg shadow-primary/30">
-                  <Bike className="h-5 w-5 text-primary-foreground" strokeWidth={2.6} />
-                </div>
+        <header className="sticky top-0 z-50 bg-background border-b border-border/50 pt-safe">
+          <div className="px-4 h-14 flex items-center justify-between">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <Bike className="h-4 w-4 text-primary" strokeWidth={2.5} />
               </div>
               <div className="min-w-0">
-                <p className="text-[10px] font-black text-primary uppercase tracking-widest leading-none mb-0.5">
-                  Motoboy da Loja
+                <p className="text-sm font-black text-foreground leading-none truncate">
+                  {driverFirstName}
                 </p>
-                <h1 className="font-black text-base text-foreground leading-tight truncate">
-                  Olá, {driverFirstName}
-                </h1>
+                <p className="text-[11px] text-muted-foreground">Entregador</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <button
                 onClick={() => setShowSupport(true)}
-                className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary active:scale-95 transition-all"
-                title="Suporte"
+                className="w-9 h-9 rounded-xl bg-muted/60 flex items-center justify-center active:scale-[0.93] transition-transform"
               >
-                <MessageCircle className="h-4 w-4" />
+                <Headphones className="h-4 w-4 text-muted-foreground" />
               </button>
               <SignOutConfirm
                 redirectTo="/portal-parceiro"
-                triggerClassName="w-10 h-10 rounded-2xl bg-muted/60 flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all active:scale-95 shrink-0"
-                triggerTitle="Sair"
+                triggerClassName="w-9 h-9 rounded-xl bg-muted/60 flex items-center justify-center active:scale-[0.93] transition-transform"
+                triggerTitle={<LogOut className="h-4 w-4 text-muted-foreground" />}
               />
             </div>
           </div>
