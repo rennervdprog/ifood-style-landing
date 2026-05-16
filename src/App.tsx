@@ -185,23 +185,22 @@ const App = () => {
     if (storedVersion !== APP_VERSION) {
       console.log(`[Cache] ${storedVersion ?? "primeira visita"} → ${APP_VERSION}. Limpando cache...`);
 
-      // 1. Limpar localStorage e queryClient
-      const keysToPreserve: string[] = []; // nada a preservar
-      localStorage.clear();
-      queryClient.clear();
+      // Salvar nova versão ANTES de qualquer operação para evitar loop
       localStorage.setItem("app_version", APP_VERSION);
+      // Marcar que o reload de versão já foi feito (evita conflito com SW controllerchange)
+      localStorage.setItem("sw-update-reload-ts", String(Date.now()));
+      queryClient.clear();
 
-      // 2. Limpar todos os caches do Service Worker
-      if ("caches" in window) {
-        caches.keys()
-          .then(keys => Promise.all(keys.map(k => caches.delete(k))))
-          .catch(() => {})
-          .finally(() => {
-            // 3. Recarregar só se já havia uma versão salva (evita loop na 1ª visita)
-            if (storedVersion) window.location.reload();
-          });
-      } else if (storedVersion) {
-        window.location.reload();
+      // Limpar caches do SW e recarregar só se havia versão anterior
+      if (storedVersion) {
+        if ("caches" in window) {
+          caches.keys()
+            .then(keys => Promise.all(keys.map(k => caches.delete(k))))
+            .catch(() => {})
+            .finally(() => window.location.reload());
+        } else {
+          window.location.reload();
+        }
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps

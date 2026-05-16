@@ -60,30 +60,23 @@ if (window.gonative || window.median || isCapacitor) {
 // Quando um novo SW toma controle, limpar caches e recarregar
 if ("serviceWorker" in navigator && !isPreviewHost && !isInIframe && !isCapacitor) {
   navigator.serviceWorker.addEventListener("controllerchange", () => {
-    // Novo SW ativou — limpar caches para garantir assets frescos
-    if ("caches" in window) {
-      caches.keys()
-        .then(keys => Promise.all(keys.map(k => caches.delete(k))))
-        .catch(() => {})
-        .finally(() => {
-          // Reload uma única vez por sessão para evitar loop
-          const reloadKey = "sw-update-reload";
-          if (!sessionStorage.getItem(reloadKey)) {
-            sessionStorage.setItem(reloadKey, "1");
-            window.location.reload();
-          }
-        });
-    } else {
-      const reloadKey = "sw-update-reload";
-      if (!sessionStorage.getItem(reloadKey)) {
-        sessionStorage.setItem(reloadKey, "1");
+    // Usar localStorage com timestamp — persiste entre reloads, evita loop
+    const reloadKey = "sw-update-reload-ts";
+    const lastReload = Number(localStorage.getItem(reloadKey) || 0);
+    const now = Date.now();
+    // Só recarrega se não houve reload nos últimos 5 minutos
+    if (now - lastReload > 5 * 60 * 1000) {
+      localStorage.setItem(reloadKey, String(now));
+      if ("caches" in window) {
+        caches.keys()
+          .then(keys => Promise.all(keys.map(k => caches.delete(k))))
+          .catch(() => {})
+          .finally(() => window.location.reload());
+      } else {
         window.location.reload();
       }
     }
   });
-
-  // Limpar chave de sessão após 30s (permite futuras atualizações)
-  setTimeout(() => sessionStorage.removeItem("sw-update-reload"), 30_000);
 }
 
 createRoot(document.getElementById("root")!).render(<App />);
