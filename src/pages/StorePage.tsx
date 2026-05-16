@@ -256,6 +256,26 @@ const StorePage = () => {
 
   const isSuspended = store?.status === "bloqueado";
 
+  // Verificar se tem driver online (apenas para lojas com motoboy próprio)
+  const isOwnDeliveryStore = (store as any)?.delivery_mode === "own";
+  const { data: onlineDriversCount = 0 } = useQuery({
+    queryKey: ["store-online-drivers", store?.id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("store_drivers")
+        .select("id", { count: "exact", head: true })
+        .eq("store_id", store!.id)
+        .eq("status", "accepted");
+      return count || 0;
+    },
+    enabled: !!store?.id && isOwnDeliveryStore,
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+  });
+
+  // Loja own sem nenhum driver vinculado = sem entrega disponível
+  const hasNoDrivers = isOwnDeliveryStore && onlineDriversCount === 0;
+
   const storeStatus = store
     ? getStoreOpenStatus(
         (storeHours as any as OpeningHour[]) || [],
@@ -451,6 +471,10 @@ const StorePage = () => {
   ) => {
     if (!storeStatus.isOpen) {
       toast.error(`Esta loja está fechada. ${storeStatus.reason}`);
+      return;
+    }
+    if (hasNoDrivers) {
+      toast.error("Esta loja não tem entregador disponível no momento.");
       return;
     }
     if ((product as any)?.metadata?.out_of_stock) {
@@ -837,6 +861,21 @@ const StorePage = () => {
       )}
 
       {/* Closed banner (only when not suspended) */}
+      {/* Banner: sem entregador vinculado */}
+      {isOwnDeliveryStore && hasNoDrivers && storeStatus.isOpen && (
+        <div className="mx-4 mt-3 bg-amber-50 dark:bg-amber-500/8 border border-amber-200 dark:border-amber-500/20 rounded-2xl px-4 py-3 flex items-start gap-3">
+          <span className="text-lg shrink-0">🛵</span>
+          <div>
+            <p className="text-sm font-bold text-amber-800 dark:text-amber-400">
+              Sem entregador disponível
+            </p>
+            <p className="text-xs text-amber-700/80 dark:text-amber-400/70 mt-0.5">
+              Esta loja ainda não tem motoboy cadastrado. Entre em contato com a loja para confirmar a entrega.
+            </p>
+          </div>
+        </div>
+      )}
+
       {!storeStatus.isOpen && !isSuspended && (
         <div className="mx-4 mt-3 bg-destructive/5 border border-destructive/20 rounded-xl p-3 flex items-center gap-3">
           <Clock className="h-5 w-5 text-destructive flex-shrink-0" />
@@ -879,7 +918,7 @@ const StorePage = () => {
                 key={`reorder-${product.id}`}
                 onClick={() => openProduct(product)}
                 className={`flex-shrink-0 w-36 bg-card rounded-xl border border-border overflow-hidden text-left transition-all ${
-                  !storeStatus.isOpen || (product as any).metadata?.out_of_stock ? "opacity-60" : "hover:shadow-lg hover:border-primary/20 active:scale-[0.97]"
+                  !storeStatus.isOpen || hasNoDrivers || (product as any).metadata?.out_of_stock ? "opacity-60" : "hover:shadow-lg hover:border-primary/20 active:scale-[0.97]"
                 }`}
               >
                 <div className="relative">
@@ -922,7 +961,7 @@ const StorePage = () => {
                 key={`popular-${product.id}`}
                 onClick={() => openProduct(product)}
                 className={`flex-shrink-0 w-36 bg-card rounded-xl border border-border overflow-hidden text-left transition-all relative ${
-                  !storeStatus.isOpen || (product as any).metadata?.out_of_stock ? "opacity-60" : "hover:shadow-lg hover:border-primary/20 active:scale-[0.97]"
+                  !storeStatus.isOpen || hasNoDrivers || (product as any).metadata?.out_of_stock ? "opacity-60" : "hover:shadow-lg hover:border-primary/20 active:scale-[0.97]"
                 }`}
               >
                 <span className="absolute top-1.5 right-1.5 bg-primary/90 text-primary-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-full z-10">

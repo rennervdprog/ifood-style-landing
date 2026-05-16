@@ -1445,15 +1445,17 @@ const AdminDashboard = () => {
             <>
               {/* ── BANNER SETUP INCOMPLETO ── */}
               {(() => {
-                const missingPix  = !ownerPixKey;
-                const missingMenu = menuProductCount === 0;
-                const missingHours = !storeHours || storeHours.length === 0 || (storeHours as any[]).every((h: any) => h.is_closed_all_day === true);
-                const missingLogo = !store.image_url;
+                const missingPix    = !ownerPixKey;
+                const missingMenu   = menuProductCount === 0;
+                const missingHours  = !storeHours || storeHours.length === 0 || (storeHours as any[]).every((h: any) => h.is_closed_all_day === true);
+                const missingLogo   = !store.image_url;
+                const missingDriver = isOwnDelivery && !hasLinkedDrivers && !driversLoading;
                 const items = [
-                  missingPix    && { key: "pix",    label: "Cadastrar chave PIX",     desc: "Sem PIX você não recebe repasses automáticos", tab: "settings", urgente: true },
-                  missingMenu   && { key: "menu",   label: "Adicionar produtos",       desc: "Seu cardápio está vazio — clientes não conseguem pedir", tab: "menu", urgente: true },
-                  missingHours  && { key: "hours",  label: "Configurar horários",      desc: "Sem horários a loja aparece sempre fechada", tab: "hours", urgente: false },
-                  missingLogo   && { key: "logo",   label: "Adicionar logo da loja",   desc: "Uma boa foto aumenta a conversão de clientes", tab: "settings", urgente: false },
+                  missingPix    && { key: "pix",    label: "Cadastrar chave PIX",        desc: "Sem PIX você não recebe repasses automáticos", tab: "settings", urgente: true },
+                  missingDriver && { key: "driver", label: "Vincular entregador",         desc: "Sem motoboy cadastrado clientes não conseguem pedir", tab: "drivers", urgente: true },
+                  missingMenu   && { key: "menu",   label: "Adicionar produtos",          desc: "Seu cardápio está vazio — clientes não conseguem pedir", tab: "menu", urgente: true },
+                  missingHours  && { key: "hours",  label: "Configurar horários",         desc: "Sem horários a loja aparece sempre fechada", tab: "hours", urgente: false },
+                  missingLogo   && { key: "logo",   label: "Adicionar logo da loja",      desc: "Uma boa foto aumenta a conversão de clientes", tab: "settings", urgente: false },
                 ].filter(Boolean) as { key: string; label: string; desc: string; tab: string; urgente: boolean }[];
                 if (items.length === 0) return null;
                 const temUrgente = items.some(i => i.urgente);
