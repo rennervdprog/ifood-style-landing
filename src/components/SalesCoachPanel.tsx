@@ -29,6 +29,8 @@ const SISTEMAS = [
   { value: "anota_ai",     label: "Anota AI",         desc: "Automação WhatsApp, sem motoboy" },
   { value: "whatsapp",     label: "Só WhatsApp",      desc: "Manual, sem sistema" },
   { value: "nenhum",       label: "Nenhum",           desc: "Não faz delivery ainda" },
+  { value: "menudino",     label: "MenuDino",         desc: "Grátis→WhatsApp manual / Premium R$45+/mês" },
+  { value: "menudino",     label: "MenuDino",         desc: "Versão grátis: pedido vai pro WhatsApp" },
   { value: "outro",        label: "Outro",            desc: "" },
 ];
 
