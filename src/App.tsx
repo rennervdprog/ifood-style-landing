@@ -67,7 +67,7 @@ const PageLoader = () => (
   </div>
 );
 
-const APP_VERSION = "1.2.62";
+const APP_VERSION = "1.6.19";
 
 // On Capacitor, capacitorLifecycle.ts already calls focusManager.setFocused(true)
 // on every app resume — which triggers refetchOnWindowFocus internally.
