@@ -80,6 +80,8 @@ const CadastroLojista = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingCep, setLoadingCep] = useState(false);
+  const [accountType, setAccountType] = useState<"single" | "matriz">("single");
+  const [networkName, setNetworkName] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [selectedPlan, setSelectedPlan] = useState<"supporter" | "fixed" | "hybrid" | "commission_only" | "">("");
@@ -277,6 +279,22 @@ const CadastroLojista = () => {
           console.warn("RPC exception (não-fatal, trigger garante loja):", rpcEx);
         }
 
+        // Se for cadastro como matriz, registrar a rede após criar a loja
+        if (accountType === "matriz" && networkName.trim()) {
+          try {
+            const { error: matrizErr } = await (supabase as any).rpc("register_as_matriz", {
+              _network_name: networkName.trim(),
+              _plan_type: selectedPlan,
+              _monthly_fee: selectedPlan === "fixed" ? 180 : selectedPlan === "hybrid" ? 100 : 0,
+            });
+            if (matrizErr) {
+              console.warn("register_as_matriz aviso:", matrizErr.message);
+            }
+          } catch (e) {
+            console.warn("matriz exception (não-fatal):", e);
+          }
+        }
+
         await supabase.from("terms_acceptance").insert({
           user_id: signUpData.user.id,
           terms_version: "2.0",
@@ -339,7 +357,7 @@ const CadastroLojista = () => {
       }
 
        toast.success("Cadastro realizado com sucesso! Sua conta está em análise aguarde.");
-       navigate("/admin", { replace: true });
+       navigate(accountType === "matriz" ? "/matriz" : "/admin", { replace: true });
     } catch (err: any) {
       toast.error(err.message || "Erro ao cadastrar.");
     } finally {
@@ -596,7 +614,36 @@ const CadastroLojista = () => {
                   <p className="text-xs text-muted-foreground mt-1">Nome, categoria e localização</p>
                 </div>
 
-                <FieldInput icon={Store} placeholder="Nome da Loja" value={storeName} onChange={setStoreName} error={errors.storeName} />
+                {/* Tipo de conta — Loja única ou Matriz com unidades */}
+                <div className="space-y-2">
+                  <p className="text-xs font-bold text-foreground/80 px-1">Tipo de conta</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button type="button" onClick={() => setAccountType("single")}
+                      className={`p-3 rounded-2xl border-2 text-left transition-all ${
+                        accountType === "single" ? "border-primary bg-primary/5" : "border-border bg-card"
+                      }`}>
+                      <p className={`text-xs font-black ${accountType === "single" ? "text-primary" : "text-foreground"}`}>🏪 Loja única</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">Uma única loja</p>
+                    </button>
+                    <button type="button" onClick={() => setAccountType("matriz")}
+                      className={`p-3 rounded-2xl border-2 text-left transition-all ${
+                        accountType === "matriz" ? "border-primary bg-primary/5" : "border-border bg-card"
+                      }`}>
+                      <p className={`text-xs font-black ${accountType === "matriz" ? "text-primary" : "text-foreground"}`}>🏢 Matriz</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">Várias unidades</p>
+                    </button>
+                  </div>
+                  {accountType === "matriz" && (
+                    <div className="bg-blue-500/8 border border-blue-500/20 rounded-xl p-2.5">
+                      <p className="text-[11px] text-blue-700 dark:text-blue-400 mb-2">
+                        💡 Você criará a conta matriz da rede. Depois poderá criar quantas unidades quiser, cada uma com email/senha do gerente.
+                      </p>
+                      <FieldInput icon={Store} placeholder="Nome da Rede (ex: Itasuper Pizzaria)" value={networkName} onChange={setNetworkName} />
+                    </div>
+                  )}
+                </div>
+
+                <FieldInput icon={Store} placeholder={accountType === "matriz" ? "Nome da Primeira Unidade" : "Nome da Loja"} value={storeName} onChange={setStoreName} error={errors.storeName} />
 
                 <div>
                   <div className="relative">

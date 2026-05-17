@@ -6,6 +6,7 @@ import SignOutConfirm from "@/components/SignOutConfirm";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { subscribeWithRejoin, cleanupChannel } from "@/lib/realtimeChannel";
+import { useUserRole } from "@/hooks/useUserRole";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -165,6 +166,14 @@ type ClientFilter = "all" | "loyal" | "inactive" | "location";
 
 const AdminDashboard = () => {
   const { user, signOut } = useAuth();
+  const { isMatriz, loading: roleLoading } = useUserRole();
+
+  // Redirecionar matriz para painel matriz (se acessar /admin diretamente)
+  useEffect(() => {
+    if (!roleLoading && isMatriz) {
+      navigate("/matriz", { replace: true });
+    }
+  }, [isMatriz, roleLoading]);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const simulateStoreId = searchParams.get("storeId");
@@ -254,7 +263,21 @@ const AdminDashboard = () => {
         if (error) throw error;
         return data;
       }
-      const { data, error } = await supabase.from("stores").select("*").eq("owner_id", user!.id).maybeSingle();
+      // Buscar profile para saber se é unidade (lojista_unidade tem unit_store_id)
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role, unit_store_id")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+
+      // Se for lojista_unidade, busca a loja pela unit_store_id
+      let query = supabase.from("stores").select("*");
+      if ((profile as any)?.role === "lojista_unidade" && (profile as any)?.unit_store_id) {
+        query = query.eq("id", (profile as any).unit_store_id);
+      } else {
+        query = query.eq("owner_id", user!.id);
+      }
+      const { data, error } = await query.maybeSingle();
       if (error) {
         console.error("[AdminDashboard] store query error:", error);
         throw error;
