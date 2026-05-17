@@ -63,6 +63,32 @@ const RoleGuard = ({ allowedRoles, redirectTo, children, requireApproval = false
         }
       }
 
+      // Fallback: detectar matriz pela rede
+      if (!resolvedRole && allowedRoles.includes("lojista_matriz")) {
+        const { data: network } = await supabase
+          .from("store_networks")
+          .select("id, is_approved")
+          .eq("owner_id", user.id)
+          .maybeSingle();
+        if (network) {
+          resolvedRole = "lojista_matriz";
+          resolvedApproved = Boolean((network as any).is_approved);
+        }
+      }
+
+      // Fallback: detectar unidade pela vinculação
+      if (!resolvedRole && allowedRoles.includes("lojista_unidade")) {
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("unit_store_id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if ((prof as any)?.unit_store_id) {
+          resolvedRole = "lojista_unidade";
+          resolvedApproved = true; // unidades já vêm aprovadas
+        }
+      }
+
       if (!resolvedRole && allowedRoles.includes("motoboy")) {
         const { data: driver } = await supabase
           .from("drivers")
