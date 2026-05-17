@@ -54,6 +54,7 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
   const comissao = Number(storeBalance?.comissao_pendente || 0);
   // Total pendente: repasse (R$2/entrega plano fixo) + comissão (% plano comissão)
   const pendingFee = repasse + comissao;
+  const total = pendingFee;
   // Allow voluntary payment for any pending amount >= R$ 5 (backend minimum)
   const canPay = pendingFee >= 5;
 
