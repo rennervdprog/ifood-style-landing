@@ -261,12 +261,12 @@ const StorePage = () => {
   const { data: onlineDriversCount = 0 } = useQuery({
     queryKey: ["store-online-drivers", store?.id],
     queryFn: async () => {
-      const { count } = await supabase
-        .from("store_drivers")
-        .select("id", { count: "exact", head: true })
-        .eq("store_id", store!.id)
-        .or("status.eq.accepted,status.is.null");
-      return count || 0;
+      const { data, error } = await supabase.rpc(
+        "store_active_drivers_count" as any,
+        { _store_id: store!.id } as any
+      );
+      if (error) return 0;
+      return (data as number) || 0;
     },
     enabled: !!store?.id && isOwnDeliveryStore,
     refetchInterval: 60_000,
