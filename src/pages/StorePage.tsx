@@ -265,7 +265,7 @@ const StorePage = () => {
         .from("store_drivers")
         .select("id", { count: "exact", head: true })
         .eq("store_id", store!.id)
-        .eq("status", "accepted");
+        .or("status.eq.accepted,status.is.null");
       return count || 0;
     },
     enabled: !!store?.id && isOwnDeliveryStore,
