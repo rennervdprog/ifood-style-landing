@@ -1238,7 +1238,9 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory }: Product
   })();
 
   // Subtitle/volume info
-  const volumeInfo = isBeverage && meta.drink_volume ? meta.drink_volume
+  // Adegas: não duplicar volume no nome — já aparece como badge
+  const volumeInfo = cat === "adegas" ? null
+    : isBeverage && meta.drink_volume ? meta.drink_volume
     : meta.volume ? meta.volume
     : null;
 
