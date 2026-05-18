@@ -350,3 +350,27 @@ export type Enums<
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
+
+export const Constants = {
+  public: {
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+      financial_transaction_status: ["pending", "approved", "paid", "failed", "cancelled"],
+      financial_transaction_type: ["commission_charge", "store_payout", "driver_payout"],
+      order_status: ["aguardando_pagamento", "pendente", "preparando", "pronto_para_entrega", "em_transito", "entregue", "saiu_entrega", "finalizado", "cancelado"],
+      partner_role: ["cliente", "lojista", "motoboy", "suporte", "lojista_matriz", "lojista_unidade"],
+      pix_type: ["cpf", "cnpj", "email", "phone", "random"],
+      refund_reason: ["wrong_product", "missing_items", "damaged", "late_delivery", "poor_quality", "other"],
+      refund_status: ["pending", "approved", "processed", "rejected"],
+      refund_type: ["full", "partial", "wallet_credit"],
+      store_category: ["lanches", "pizzas", "adegas", "japonesa", "saudavel", "sobremesas", "cafeteria", "churrasco", "farmacias", "docerias", "restaurante", "esfihas"],
+      store_driver_status: ["pending", "accepted", "rejected"],
+      store_plan_type: ["fixed", "hybrid", "commission_only", "supporter"],
+      store_status: ["analise", "ativo", "bloqueado"],
+      ticket_category: ["pagamento", "pedido", "conta", "entrega", "tecnico", "financeiro", "outro"],
+      ticket_priority: ["baixa", "normal", "alta", "urgente"],
+      ticket_status: ["aberto", "em_atendimento", "aguardando_cliente", "resolvido", "fechado"],
+      wallet_transaction_type: ["credit", "debit"],
+    },
+  },
+} as const
