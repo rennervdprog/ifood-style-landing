@@ -23,9 +23,10 @@ import { getBestClientCoordinates, getDeviceGPS } from "@/lib/deviceLocation";
 import { checkStoreAccess, MAX_DISTANCE_KM } from "@/lib/fraudCheck";
 
 const allPaymentMethods = [
-  { id: "pix", label: "PIX Online", desc: "Pagamento instantâneo", icon: QrCode },
-  { id: "cartao", label: "Cartão na Entrega", desc: "Débito ou crédito", icon: CreditCard },
-  { id: "dinheiro", label: "Dinheiro", desc: "Pague na entrega", icon: Banknote },
+  { id: "pix",         label: "PIX Online",         desc: "Pagamento instantâneo",   icon: QrCode },
+  { id: "pix_machine", label: "PIX na Maquininha",   desc: "PIX pelo app da entrega", icon: QrCode },
+  { id: "cartao",      label: "Cartão na Entrega",   desc: "Débito ou crédito",       icon: CreditCard },
+  { id: "dinheiro",    label: "Dinheiro",             desc: "Pague na entrega",        icon: Banknote },
 ];
 
 const CheckoutPage = () => {
@@ -101,13 +102,27 @@ const CheckoutPage = () => {
   const storeId = items[0]?.store_id;
   const storePlan = useStorePlan(storeId);
 
-  // Filter payment methods based on store plan
+  // Ler quais métodos a loja aceita via settings (com defaults seguros)
+  const storePaymentSettings = useMemo(() => {
+    const s = (storeData as any)?.settings || {};
+    return {
+      accept_pix_online:  s.accept_pix_online  !== false, // default true (se tiver plano)
+      accept_pix_machine: s.accept_pix_machine === true,  // default false (opt-in)
+      accept_card:        s.accept_card        !== false, // default true
+      accept_cash:        s.accept_cash        !== false, // default true
+    };
+  }, [storeData]);
+
+  // Filtrar métodos: plano sem PIX bloqueia pix online, settings da loja controla o resto
   const paymentMethods = useMemo(() => {
-    if (!storePlan.allowPix) {
-      return allPaymentMethods.filter(pm => pm.id !== "pix");
-    }
-    return allPaymentMethods;
-  }, [storePlan.allowPix]);
+    return allPaymentMethods.filter(pm => {
+      if (pm.id === "pix")         return storePlan.allowPix && storePaymentSettings.accept_pix_online;
+      if (pm.id === "pix_machine") return storePaymentSettings.accept_pix_machine;
+      if (pm.id === "cartao")      return storePaymentSettings.accept_card;
+      if (pm.id === "dinheiro")    return storePaymentSettings.accept_cash;
+      return true;
+    });
+  }, [storePlan.allowPix, storePaymentSettings]);
 
   const { data: storeData } = useQuery({
     queryKey: ["store-checkout", storeId],
@@ -419,6 +434,7 @@ const CheckoutPage = () => {
 
         const changeValue = paymentMethod === "dinheiro" && needsChange ? addMoney(parseFloat(changeFor)) : 0;
         const orderStatus = paymentMethod === "pix" ? "aguardando_pagamento" : "pendente";
+        // pix_machine = físico (igual cartão/dinheiro) — não aguarda confirmação Asaas
         const { data: order, error: orderError } = await supabase
           .from("orders")
           .insert({
@@ -490,6 +506,10 @@ const CheckoutPage = () => {
       if (paymentMethod === "pix") {
         toast.success("Pedido criado! Acesse 'Meus Pedidos' para pagar com PIX.", { duration: 5000 });
         navigate("/pedidos?new_order=1");
+      } else if (paymentMethod === "pix_machine") {
+        confetti({ particleCount: 120, spread: 80, origin: { y: 0.7 } });
+        toast.success("Pedido enviado! Pague via PIX na maquininha na entrega.");
+        navigate("/pedidos?new_order=1", { replace: true });
       } else {
         confetti({ particleCount: 120, spread: 80, origin: { y: 0.7 } });
         toast.success("Pedido enviado com sucesso! Acompanhe pelo chat.");
@@ -510,7 +530,7 @@ const CheckoutPage = () => {
           }
         } catch {}
 
-        if (paymentMethod !== "pix") {
+        if (paymentMethod !== "pix") { // pix_machine e cartão/dinheiro notificam o lojista
           for (const { storeId, orderId } of createdOrders) {
             try {
               const { data: storeData } = await supabase
