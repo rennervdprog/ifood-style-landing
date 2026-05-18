@@ -24,7 +24,7 @@ import { checkStoreAccess, MAX_DISTANCE_KM } from "@/lib/fraudCheck";
 
 const allPaymentMethods = [
   { id: "pix",         label: "PIX Online",         desc: "Pagamento instantâneo",   icon: QrCode },
-  { id: "pix_machine", label: "PIX na Maquininha",   desc: "PIX pelo app da entrega", icon: QrCode },
+  { id: "pix_machine", label: "PIX na Maquininha",   desc: "PIX pela maquininha do lojista", icon: QrCode },
   { id: "cartao",      label: "Cartão na Entrega",   desc: "Débito ou crédito",       icon: CreditCard },
   { id: "dinheiro",    label: "Dinheiro",             desc: "Pague na entrega",        icon: Banknote },
 ];
