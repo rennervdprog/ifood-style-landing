@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 
 // ─── Versão atual do sistema ──────────────────────────────────────────────────
-export const CURRENT_TERMS_VERSION = "2.0";
+export const CURRENT_TERMS_VERSION = "3.0";
 
 // ─── O que mudou da v1.0 → v2.0 ─────────────────────────────────────────────
 const CHANGES = [
@@ -143,8 +143,8 @@ export const TermsUpdateModal = ({ onAccepted }: Props) => {
             </span>
           </div>
           <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
-            Atualizamos nossos Termos de Uso e Política de Privacidade.
-            Veja abaixo o que mudou e aceite para continuar usando o ItaSuper.
+            Atualizamos nossos Termos de Uso e Política de Privacidade (versão 3.0 — maio/2025).
+            Principais mudanças: PIX Maquininha, cobrança de repasse toda segunda-feira a partir de R$30, e bloqueio por inadimplência acima de R$150.
           </p>
         </div>
 

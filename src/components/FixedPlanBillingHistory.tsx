@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Receipt, ChevronDown, ChevronUp, CheckCircle2, Clock, XCircle, Copy } from "lucide-react";
+import { Receipt, ChevronDown, ChevronUp, CheckCircle2, Clock, XCircle, Copy, Info } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -38,6 +38,15 @@ const FixedPlanBillingHistory = ({ storeId, storeName }: Props) => {
   });
 
   const total = (charges || []).length;
+
+  const totalPaid = (charges || [])
+    .filter((ch: any) => ['paid', 'settled'].includes(ch.status))
+    .reduce((s: number, ch: any) => s + Number(ch.amount || 0), 0);
+
+  const pendingCount = (charges || []).filter((ch: any) => ch.status === 'pending').length;
+  const pendingAmount = (charges || [])
+    .filter((ch: any) => ch.status === 'pending')
+    .reduce((s: number, ch: any) => s + Number(ch.amount || 0), 0);
   const paidCount = (charges || []).filter((c: any) => c.status === "paid" || c.status === "settled").length;
   const pendingCount = (charges || []).filter((c: any) => c.status === "pending").length;
 
@@ -79,7 +88,11 @@ const FixedPlanBillingHistory = ({ storeId, storeName }: Props) => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-bold truncate">{c.reference_code}</span>
+                      <span className="text-xs font-bold truncate">
+                        {c.metadata?.description
+                          ? String(c.metadata.description).split("—")[1]?.trim() || "Repasse físico"
+                          : "Dinheiro / Cartão / PIX Maquininha"}
+                      </span>
                       <span className="text-sm font-black">{formatBRL(Number(c.amount))}</span>
                     </div>
                     <div className="flex items-center justify-between gap-2 mt-0.5">
@@ -94,10 +107,17 @@ const FixedPlanBillingHistory = ({ storeId, storeName }: Props) => {
                           }}
                           className="text-[10px] text-primary hover:underline flex items-center gap-1"
                         >
-                          <Copy className="h-3 w-3" /> PIX
+                          <Copy className="h-3 w-3" /> Pagar PIX
                         </button>
                       )}
                     </div>
+                    {c.metadata?.repasse_pendente > 0 && (
+                      <div className="text-[10px] text-muted-foreground mt-0.5">
+                        Taxa entrega: {formatBRL(Number(c.metadata.repasse_pendente))}
+                        {c.metadata?.comissao_pendente > 0 &&
+                          ` · Comissão: ${formatBRL(Number(c.metadata.comissao_pendente))}`}
+                      </div>
+                    )}
                   </div>
                 </div>
               );

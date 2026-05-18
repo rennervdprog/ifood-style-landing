@@ -25,13 +25,14 @@ const statusMeta: Record<string, { label: string; icon: any; cls: string }> = {
 };
 
 const kindMeta: Record<string, { label: string; emoji: string; color: string }> = {
-  commission_charge: { label: "Comissão / Mensalidade", emoji: "📋", color: "text-primary" },
-  monthly_fee: { label: "Mensalidade", emoji: "📅", color: "text-primary" },
-  store_payout: { label: "Repasse de venda", emoji: "💸", color: "text-emerald-600" },
-  withdrawal: { label: "Saque", emoji: "🏦", color: "text-blue-600" },
-  refund: { label: "Reembolso", emoji: "↩️", color: "text-amber-600" },
-  platform_fee: { label: "Taxa da plataforma", emoji: "🏷️", color: "text-purple-600" },
-  delivery_fee: { label: "Taxa de entrega", emoji: "🛵", color: "text-orange-600" },
+  commission_charge:  { label: "Repasse físico (dinheiro/cartão/PIX maq.)", emoji: "💳", color: "text-amber-600" },
+  monthly_fee:        { label: "Mensalidade", emoji: "📅", color: "text-primary" },
+  store_payout:       { label: "Repasse de venda PIX Online", emoji: "💸", color: "text-emerald-600" },
+  withdrawal:         { label: "Saque", emoji: "🏦", color: "text-blue-600" },
+  refund:             { label: "Reembolso ao cliente", emoji: "↩️", color: "text-amber-600" },
+  platform_fee:       { label: "Taxa da plataforma", emoji: "🏷️", color: "text-purple-600" },
+  delivery_fee:       { label: "Taxa de entrega", emoji: "🛵", color: "text-orange-600" },
+  physical_fee:       { label: "Repasse físico (dinheiro/cartão/PIX maq.)", emoji: "💳", color: "text-amber-600" },
 };
 
 type FilterType = "all" | "paid" | "pending" | "failed";
@@ -49,12 +50,7 @@ type FilterType = "all" | "paid" | "pending" | "failed";
         .from("financial_transactions")
         .select(`
           id, reference_code, amount, status, transaction_kind, created_at, settled_at, 
-          pix_copy_paste, provider, metadata,
-          orders:metadata->>order_id (
-            id, total_price, subtotal, delivery_fee, payment_method, 
-            client_name:profiles!orders_client_id_fkey(full_name),
-            order_items(quantity, products(name), unit_price)
-          )
+          pix_copy_paste, pix_qr_code_base64, provider, metadata
         `)
         .eq("store_id", storeId)
         .order("created_at", { ascending: false })
@@ -70,6 +66,20 @@ type FilterType = "all" | "paid" | "pending" | "failed";
     const set = new Set<string>();
     (txs || []).forEach((t: any) => set.add(t.transaction_kind));
     return Array.from(set);
+  }, [txs]);
+
+  // Resumo de pagamentos confirmados (status paid/settled)
+  const paidSummary = useMemo(() => {
+    const paid = (txs || []).filter((t: any) => ['paid', 'settled'].includes(t.status));
+    const totalPaid = paid.reduce((s: number, t: any) => s + Number(t.amount || 0), 0);
+    const physicalRepasses = paid.filter((t: any) => ['commission_charge', 'physical_fee'].includes(t.transaction_kind));
+    const pixRepassess = paid.filter((t: any) => t.transaction_kind === 'store_payout');
+    return {
+      total: totalPaid,
+      count: paid.length,
+      physicalCount: physicalRepasses.length,
+      pixCount: pixRepassess.length,
+    };
   }, [txs]);
 
   const filtered = useMemo(() => {
