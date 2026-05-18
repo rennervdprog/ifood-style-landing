@@ -303,8 +303,8 @@ const CadastroLojista = () => {
 
         await supabase.from("terms_acceptance").insert({
           user_id: signUpData.user.id,
-          terms_version: "2.0",
-          privacy_version: "2.0",
+          terms_version: "3.0",
+          privacy_version: "3.0",
           user_agent: navigator.userAgent,
         });
          await supabase.from("profiles").update({
