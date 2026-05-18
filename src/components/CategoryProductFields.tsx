@@ -5,6 +5,7 @@ interface CategoryProductFieldsProps {
   category: string;
   metadata: Record<string, any>;
   onChange: (metadata: Record<string, any>) => void;
+  onNameChange?: (name: string) => void; // opcional — usado pelos templates de adega
   storeId?: string;
 }
 
@@ -47,7 +48,7 @@ const ManagedTextField = ({
   );
 };
 
-const CategoryProductFields = ({ category, metadata, onChange, storeId }: CategoryProductFieldsProps) => {
+const CategoryProductFields = ({ category, metadata, onChange, onNameChange, storeId }: CategoryProductFieldsProps) => {
   const set = (key: string, value: any) => onChange({ ...metadata, [key]: value });
 
   const addToList = (key: string, value: string) => {
@@ -220,25 +221,28 @@ const CategoryProductFields = ({ category, metadata, onChange, storeId }: Catego
           <label className="text-xs font-bold text-foreground/70">⚡ Preencher rapidamente</label>
           <div className="flex flex-wrap gap-1.5">
             {[
-              { label: "🍺 Heineken 600ml",  data: { drink_type: "Cerveja", packaging: "Garrafa",   volume: "600ml", alcohol_content: "5%",  brand: "Heineken",    serve_cold: true } },
-              { label: "🍺 Heineken Lata",    data: { drink_type: "Cerveja", packaging: "Lata",      volume: "350ml", alcohol_content: "5%",  brand: "Heineken",    serve_cold: true } },
-              { label: "🍺 Budweiser Lata",   data: { drink_type: "Cerveja", packaging: "Lata",      volume: "350ml", alcohol_content: "5%",  brand: "Budweiser",   serve_cold: true } },
-              { label: "🍺 Brahma Lata",      data: { drink_type: "Cerveja", packaging: "Lata",      volume: "350ml", alcohol_content: "4.8%",brand: "Brahma",      serve_cold: true } },
-              { label: "🍺 Corona Long Neck", data: { drink_type: "Cerveja", packaging: "Long Neck", volume: "330ml", alcohol_content: "4.5%",brand: "Corona",      serve_cold: true } },
-              { label: "🍺 Skol Lata",        data: { drink_type: "Cerveja", packaging: "Lata",      volume: "350ml", alcohol_content: "4.7%",brand: "Skol",        serve_cold: true } },
-              { label: "🍷 Vinho Tinto",      data: { drink_type: "Vinho",   packaging: "Garrafa",   volume: "750ml", alcohol_content: "13%", brand: "",            serve_cold: false } },
-              { label: "🥂 Vinho Branco",     data: { drink_type: "Vinho",   packaging: "Garrafa",   volume: "750ml", alcohol_content: "12%", brand: "",            serve_cold: true } },
-              { label: "🥃 Vodka",            data: { drink_type: "Destilado",packaging: "Garrafa",  volume: "750ml", alcohol_content: "40%", brand: "",            serve_cold: false } },
-              { label: "🥃 Whisky",           data: { drink_type: "Destilado",packaging: "Garrafa",  volume: "750ml", alcohol_content: "40%", brand: "",            serve_cold: false } },
-              { label: "⚡ Red Bull",          data: { drink_type: "Energético",packaging: "Lata",   volume: "250ml", alcohol_content: "",    brand: "Red Bull",    serve_cold: true } },
-              { label: "⚡ Monster",           data: { drink_type: "Energético",packaging: "Lata",   volume: "473ml", alcohol_content: "",    brand: "Monster",     serve_cold: true } },
-              { label: "🥤 Coca-Cola Lata",   data: { drink_type: "Refrigerante",packaging: "Lata",  volume: "350ml", alcohol_content: "",    brand: "Coca-Cola",   serve_cold: true } },
-              { label: "💧 Água Mineral",     data: { drink_type: "Água",    packaging: "Garrafa",   volume: "500ml", alcohol_content: "",    brand: "",            serve_cold: true } },
+              { label: "🍺 Heineken 600ml",  name: "Heineken 600ml",   data: { drink_type: "Cerveja",     packaging: "Garrafa",   volume: "600ml", alcohol_content: "5%",  brand: "Heineken",  serve_cold: true } },
+              { label: "🍺 Heineken Lata",    name: "Heineken Lata",    data: { drink_type: "Cerveja",     packaging: "Lata",      volume: "350ml", alcohol_content: "5%",  brand: "Heineken",  serve_cold: true } },
+              { label: "🍺 Budweiser Lata",   name: "Budweiser Lata",   data: { drink_type: "Cerveja",     packaging: "Lata",      volume: "350ml", alcohol_content: "5%",  brand: "Budweiser", serve_cold: true } },
+              { label: "🍺 Brahma Lata",      name: "Brahma Lata",      data: { drink_type: "Cerveja",     packaging: "Lata",      volume: "350ml", alcohol_content: "4.8%",brand: "Brahma",    serve_cold: true } },
+              { label: "🍺 Corona Long Neck", name: "Corona Long Neck", data: { drink_type: "Cerveja",     packaging: "Long Neck", volume: "330ml", alcohol_content: "4.5%",brand: "Corona",    serve_cold: true } },
+              { label: "🍺 Skol Lata",        name: "Skol Lata",        data: { drink_type: "Cerveja",     packaging: "Lata",      volume: "350ml", alcohol_content: "4.7%",brand: "Skol",      serve_cold: true } },
+              { label: "🍷 Vinho Tinto",      name: "Vinho Tinto",      data: { drink_type: "Vinho",       packaging: "Garrafa",   volume: "750ml", alcohol_content: "13%", brand: "",          serve_cold: false } },
+              { label: "🥂 Vinho Branco",     name: "Vinho Branco",     data: { drink_type: "Vinho",       packaging: "Garrafa",   volume: "750ml", alcohol_content: "12%", brand: "",          serve_cold: true } },
+              { label: "🥃 Vodka",            name: "Vodka",            data: { drink_type: "Destilado",   packaging: "Garrafa",   volume: "750ml", alcohol_content: "40%", brand: "",          serve_cold: false } },
+              { label: "🥃 Whisky",           name: "Whisky",           data: { drink_type: "Destilado",   packaging: "Garrafa",   volume: "750ml", alcohol_content: "40%", brand: "",          serve_cold: false } },
+              { label: "⚡ Red Bull",          name: "Red Bull 250ml",   data: { drink_type: "Energético",  packaging: "Lata",      volume: "250ml", alcohol_content: "",    brand: "Red Bull",  serve_cold: true } },
+              { label: "⚡ Monster",           name: "Monster 473ml",    data: { drink_type: "Energético",  packaging: "Lata",      volume: "473ml", alcohol_content: "",    brand: "Monster",   serve_cold: true } },
+              { label: "🥤 Coca-Cola Lata",   name: "Coca-Cola Lata",   data: { drink_type: "Refrigerante",packaging: "Lata",      volume: "350ml", alcohol_content: "",    brand: "Coca-Cola", serve_cold: true } },
+              { label: "💧 Água Mineral",     name: "Água Mineral",     data: { drink_type: "Água",        packaging: "Garrafa",   volume: "500ml", alcohol_content: "",    brand: "",          serve_cold: true } },
             ].map((t) => (
               <button
                 key={t.label}
                 type="button"
-                onClick={() => onChange({ ...metadata, ...t.data })}
+                onClick={() => {
+                  onChange({ ...metadata, ...t.data });
+                  if (onNameChange && t.name) onNameChange(t.name);
+                }}
                 className="text-[11px] font-semibold px-2.5 py-1.5 rounded-xl border border-border bg-muted/40 hover:bg-muted hover:border-primary/30 active:scale-95 transition-all whitespace-nowrap"
               >
                 {t.label}
