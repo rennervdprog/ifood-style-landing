@@ -6,7 +6,8 @@ import { Banknote, QrCode, Copy, Loader2, X, ChevronDown, ChevronUp, CircleCheck
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
-const LOCK_THRESHOLD = 150; // R$150 → trava o painel
+const LOCK_THRESHOLD = 150;  // R$150 → modal bloqueante
+const MIN_CHARGE = 30;       // R$30 → aparece o alerta (cobrança toda segunda-feira)
 
 interface PlatformSplitAlertProps {
   storeId: string;
@@ -55,8 +56,8 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
   // Total pendente: repasse (R$2/entrega plano fixo) + comissão (% plano comissão)
   const pendingFee = repasse + comissao;
   const total = pendingFee;
-  // Allow voluntary payment for any pending amount >= R$ 5 (backend minimum)
-  const canPay = pendingFee >= 5;
+  // Cobrança automática a partir de R$30 toda segunda-feira
+  const canPay = pendingFee >= 30;
 
   const isLocked = total >= LOCK_THRESHOLD; // ≥ R$150 trava o painel
 
@@ -194,8 +195,9 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
         <div className="rounded-xl p-3 bg-blue-500/10 border border-blue-500/20 flex items-start gap-2">
           <Banknote className="h-4 w-4 text-blue-400 shrink-0 mt-0.5" />
           <div className="text-xs font-medium text-blue-400 space-y-1">
-            <p>Pedidos em dinheiro ou cartão não têm desconto automático.</p>
-            <p>O valor se acumula aqui para ser pago via PIX.</p>
+            <p>Pedidos pagos em <strong>dinheiro, cartão ou PIX maquininha</strong> acumulam aqui.</p>
+            <p>O sistema gera uma cobrança via PIX toda <strong>segunda-feira</strong> quando o saldo atingir <strong>R$30</strong>.</p>
+            <p>Se não pagar em 30 dias a loja é suspensa. Saldo acima de R$150 trava o painel imediatamente.</p>
             {repasse > 0 && comissao > 0 && (
               <div className="mt-1.5 space-y-0.5 text-[10px] text-blue-300">
                 <p>Taxa entrega ({formatBRL(splitPerOrder)}/pedido): <strong>{formatBRL(repasse)}</strong></p>
