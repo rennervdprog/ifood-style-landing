@@ -53,7 +53,7 @@ class ErrorBoundary extends Component<Props, State> {
     ) {
       const reloadKey = "eb_chunk_reload_count";
       const count = parseInt(sessionStorage.getItem(reloadKey) || "0", 10);
-      if (count < 2) {
+      if (count < 1) {
         sessionStorage.setItem(reloadKey, String(count + 1));
         // Pequeno delay para que o usuário veja o feedback antes do reload
         setTimeout(() => this.hardReload(), 600);

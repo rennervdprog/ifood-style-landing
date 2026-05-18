@@ -67,7 +67,7 @@ const PageLoader = () => (
   </div>
 );
 
-const APP_VERSION = "1.6.20";
+const APP_VERSION = "1.6.21";
 
 // On Capacitor, capacitorLifecycle.ts already calls focusManager.setFocused(true)
 // on every app resume — which triggers refetchOnWindowFocus internally.
@@ -181,6 +181,11 @@ const App = () => {
   // Anti-cache: força atualização completa quando a versão do app muda.
   // Limpa localStorage, caches do Service Worker e recarrega a página.
   useEffect(() => {
+    // Em Capacitor o capacitorAutoUpdate.ts já cuida de detectar bundle novo
+    // (compara hash de /assets/*) e limpar caches. Rodar este efeito também
+    // causa reload duplo / conflito com o SW controllerchange.
+    if (isNativeApp) return;
+
     const storedVersion = localStorage.getItem("app_version");
 
     if (storedVersion !== APP_VERSION) {
@@ -194,13 +199,14 @@ const App = () => {
 
       // Limpar caches do SW e recarregar só se havia versão anterior
       if (storedVersion) {
-        if ("caches" in window) {
+        const reload = () => { (globalThis as any).location.reload(); };
+        if (typeof caches !== "undefined") {
           caches.keys()
             .then(keys => Promise.all(keys.map(k => caches.delete(k))))
             .catch(() => {})
-            .finally(() => window.location.reload());
+            .finally(reload);
         } else {
-          window.location.reload();
+          reload();
         }
       }
     }
