@@ -1185,7 +1185,7 @@ const NotificationSection = () => {
               <QrCode className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <div>
                 <p className="text-sm font-bold text-foreground">PIX na Maquininha</p>
-                <p className="text-[11px] text-muted-foreground">Cliente paga via PIX pelo leitor da sua maquininha na entrega. Sem integração com Asaas.</p>
+                <p className="text-[11px] text-muted-foreground">Cliente paga via PIX pela maquininha do lojista na entrega. Sem integração com Asaas.</p>
               </div>
             </div>
             <button
