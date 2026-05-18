@@ -12,7 +12,7 @@ import { formatBRL } from "@/lib/utils";
 import {
   Store, Plus, LogOut, Building2, TrendingUp, DollarSign,
   ShoppingBag, MapPin, ChevronRight, Loader2, Users, X,
-  Copy, Check, AlertCircle,
+  AlertCircle,
 } from "lucide-react";
 
 interface Network {
@@ -521,7 +521,7 @@ const CreateUnitModal = ({ onClose, onSubmit, submitting, networkId, sourceUnits
 const LinkUserModal = ({ unit, onClose }: { unit: Unit; onClose: () => void }) => {
   const [email, setEmail] = useState("");
   const [linking, setLinking] = useState(false);
-  const [copied, setCopied] = useState(false);
+
   const queryClient = useQueryClient();
 
   const handleLink = async () => {

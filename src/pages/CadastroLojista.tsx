@@ -193,6 +193,12 @@ const CadastroLojista = () => {
       return;
     }
     const cleanPixKey = sanitizePixKeyForAsaas(pixKey, pixType);
+    // Validar nome da rede se for cadastro de matriz
+    if (accountType === "matriz" && !networkName.trim()) {
+      toast.error("Digite o nome da sua rede (ex: Itasuper Pizzaria).");
+      return;
+    }
+
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
       result.error.errors.forEach((err) => {

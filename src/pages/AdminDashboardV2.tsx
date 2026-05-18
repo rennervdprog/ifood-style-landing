@@ -166,6 +166,7 @@ type ClientFilter = "all" | "loyal" | "inactive" | "location";
 
 const AdminDashboard = () => {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const { isMatriz, loading: roleLoading } = useUserRole();
 
   // Redirecionar matriz para painel matriz (se acessar /admin diretamente)
@@ -173,8 +174,7 @@ const AdminDashboard = () => {
     if (!roleLoading && isMatriz) {
       navigate("/matriz", { replace: true });
     }
-  }, [isMatriz, roleLoading]);
-  const navigate = useNavigate();
+  }, [isMatriz, roleLoading, navigate]);
   const [searchParams] = useSearchParams();
   const simulateStoreId = searchParams.get("storeId");
   const queryClient = useQueryClient();
