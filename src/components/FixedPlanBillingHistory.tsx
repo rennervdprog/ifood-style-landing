@@ -48,7 +48,6 @@ const FixedPlanBillingHistory = ({ storeId, storeName }: Props) => {
     .filter((ch: any) => ch.status === 'pending')
     .reduce((s: number, ch: any) => s + Number(ch.amount || 0), 0);
   const paidCount = (charges || []).filter((c: any) => c.status === "paid" || c.status === "settled").length;
-  const pendingCount = (charges || []).filter((c: any) => c.status === "pending").length;
 
   return (
     <div className="border border-border rounded-xl overflow-hidden bg-card">
