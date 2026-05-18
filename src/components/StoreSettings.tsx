@@ -1146,7 +1146,18 @@ const NotificationSection = () => {
             Métodos de Pagamento
           </h3>
           <p className="text-xs text-muted-foreground mt-1">
-            Escolha como seus clientes podem pagar. O que você ativar aparecerá no checkout.
+            Ative ou desative como seus clientes podem pagar. Apenas os métodos ativos aparecem no checkout.
+          </p>
+        </div>
+
+        {/* Box informativo sobre repasse */}
+        <div className="bg-blue-500/8 border border-blue-500/20 rounded-xl p-3 space-y-1.5">
+          <p className="text-[11px] font-bold text-blue-700 dark:text-blue-400">💡 Como funciona o repasse</p>
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            <strong className="text-foreground">PIX Online:</strong> a taxa da plataforma (R$1,99 + R$2,00/entrega) é descontada automaticamente pelo Asaas. Você recebe o restante direto na sua conta.
+          </p>
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            <strong className="text-foreground">Dinheiro, Cartão e PIX Maquininha:</strong> o cliente paga direto a você. A taxa de R$2,00 por entrega acumula no painel e é cobrada toda <strong className="text-foreground">segunda-feira</strong> quando atingir R$30.
           </p>
         </div>
 
