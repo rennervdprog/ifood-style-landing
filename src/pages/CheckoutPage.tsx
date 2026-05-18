@@ -102,27 +102,13 @@ const CheckoutPage = () => {
   const storeId = items[0]?.store_id;
   const storePlan = useStorePlan(storeId);
 
-  // Ler quais métodos a loja aceita via settings (com defaults seguros)
-  const storePaymentSettings = useMemo(() => {
-    const s = (storeData as any)?.settings || {};
-    return {
-      accept_pix_online:  s.accept_pix_online  !== false, // default true (se tiver plano)
-      accept_pix_machine: s.accept_pix_machine === true,  // default false (opt-in)
-      accept_card:        s.accept_card        !== false, // default true
-      accept_cash:        s.accept_cash        !== false, // default true
-    };
-  }, [storeData]);
-
-  // Filtrar métodos: plano sem PIX bloqueia pix online, settings da loja controla o resto
+  // Filtrar métodos — storePaymentSettings declarado abaixo após storeData
   const paymentMethods = useMemo(() => {
-    return allPaymentMethods.filter(pm => {
-      if (pm.id === "pix")         return storePlan.allowPix && storePaymentSettings.accept_pix_online;
-      if (pm.id === "pix_machine") return storePaymentSettings.accept_pix_machine;
-      if (pm.id === "cartao")      return storePaymentSettings.accept_card;
-      if (pm.id === "dinheiro")    return storePaymentSettings.accept_cash;
-      return true;
-    });
-  }, [storePlan.allowPix, storePaymentSettings]);
+    if (!storePlan.allowPix) {
+      return allPaymentMethods.filter(pm => pm.id !== "pix");
+    }
+    return allPaymentMethods;
+  }, [storePlan.allowPix]);
 
   const { data: storeData } = useQuery({
     queryKey: ["store-checkout", storeId],
@@ -138,6 +124,28 @@ const CheckoutPage = () => {
     enabled: !!storeId,
     staleTime: 1000 * 60 * 3,
   });
+
+  // Ler quais métodos a loja aceita via settings — DEVE ficar após storeData
+  const storePaymentSettings = useMemo(() => {
+    const s = (storeData as any)?.settings || {};
+    return {
+      accept_pix_online:  s.accept_pix_online  !== false,
+      accept_pix_machine: s.accept_pix_machine === true,
+      accept_card:        s.accept_card        !== false,
+      accept_cash:        s.accept_cash        !== false,
+    };
+  }, [storeData]);
+
+  // Re-declarar paymentMethods usando storePaymentSettings (agora declarado na ordem certa)
+  const filteredPaymentMethods = useMemo(() => {
+    return allPaymentMethods.filter(pm => {
+      if (pm.id === "pix")         return storePlan.allowPix && storePaymentSettings.accept_pix_online;
+      if (pm.id === "pix_machine") return storePaymentSettings.accept_pix_machine;
+      if (pm.id === "cartao")      return storePaymentSettings.accept_card;
+      if (pm.id === "dinheiro")    return storePaymentSettings.accept_cash;
+      return true;
+    });
+  }, [storePlan.allowPix, storePaymentSettings]);
 
   const { data: storeHours } = useQuery({
     queryKey: ["store-hours-checkout", storeId],
@@ -780,7 +788,7 @@ const CheckoutPage = () => {
           </div>
 
           <div className="p-4 space-y-2">
-            {paymentMethods.map((pm) => (
+            {filteredPaymentMethods.map((pm) => (
               <button
                 key={pm.id}
                 onClick={() => {
