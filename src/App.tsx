@@ -199,13 +199,14 @@ const App = () => {
 
       // Limpar caches do SW e recarregar só se havia versão anterior
       if (storedVersion) {
-        if ("caches" in window) {
+        const reload = () => { (globalThis as any).location.reload(); };
+        if (typeof caches !== "undefined") {
           caches.keys()
             .then(keys => Promise.all(keys.map(k => caches.delete(k))))
             .catch(() => {})
-            .finally(() => window.location.reload());
+            .finally(reload);
         } else {
-          window.location.reload();
+          reload();
         }
       }
     }
