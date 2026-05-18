@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Camera, Upload, Save, Store, Phone, Tag, MapPin, Link, Copy, Wallet, Search, Loader2, Bell, CheckCircle2, XCircle, Truck, Bike, MessageSquare, Eye, EyeOff, ExternalLink } from "lucide-react";
+import { Camera, Upload, Save, Store, Phone, Tag, MapPin, Link, Copy, Wallet, Search, Loader2, Bell, CreditCard, QrCode, Banknote, CheckCircle2, XCircle, Truck, Bike, MessageSquare, Eye, EyeOff, ExternalLink } from "lucide-react";
 import { requestPushPermissionAndRegister } from "@/lib/firebase";
 import { isGoNative, registerGoNativePlayer } from "@/lib/gonative";
 import { isCapacitorNative, registerCapacitorPush } from "@/lib/capacitorNative";
@@ -108,8 +108,24 @@ type PizzaPriceMode = "maior" | "media" | "soma";
   const [pizzaHalfEnabled, setPizzaHalfEnabled] = useState<boolean>(storeSettings?.pizza_half_enabled || false);
   const [pizzaPriceMode, setPizzaPriceMode] = useState<PizzaPriceMode>(storeSettings?.pizza_price_mode || "maior");
 
+  // Inicializar métodos de pagamento a partir de storeSettings
+  useState(() => {
+    if (storeSettings) {
+      setAcceptPixOnline(storeSettings.accept_pix_online !== false);
+      setAcceptPixMachine(storeSettings.accept_pix_machine === true);
+      setAcceptCard(storeSettings.accept_card !== false);
+      setAcceptCash(storeSettings.accept_cash !== false);
+    }
+  });
+
   // Z-API WhatsApp integration
   const [zapiEnabled, setZapiEnabled] = useState<boolean>(false);
+
+  // Métodos de pagamento aceitos
+  const [acceptPixOnline,  setAcceptPixOnline]  = useState<boolean>(true);
+  const [acceptPixMachine, setAcceptPixMachine] = useState<boolean>(false);
+  const [acceptCard,       setAcceptCard]       = useState<boolean>(true);
+  const [acceptCash,       setAcceptCash]       = useState<boolean>(true);
   const [zapiInstanceId, setZapiInstanceId] = useState<string>("");
   const [zapiToken, setZapiToken] = useState<string>("");
   const [zapiClientToken, setZapiClientToken] = useState<string>("");
@@ -235,6 +251,11 @@ type PizzaPriceMode = "maior" | "media" | "soma";
         delivery_base_km: parseFloat(deliveryBaseKm.toString().replace(",", ".")) || 0,
         delivery_fee_base: parseFloat(deliveryFeeBase.toString().replace(",", ".")) || 0,
         delivery_fee_per_km: parseFloat(deliveryFeePerKm.toString().replace(",", ".")) || 0,
+        // Métodos de pagamento aceitos
+        accept_pix_online:  acceptPixOnline,
+        accept_pix_machine: acceptPixMachine,
+        accept_card:        acceptCard,
+        accept_cash:        acceptCash,
       },
       delivery_mode: deliveryMode,
       own_delivery_fee: parseFloat(ownDeliveryFee.toString().replace(",", ".")) || 0,
@@ -1123,6 +1144,114 @@ const NotificationSection = () => {
             <p className="text-[10px] text-muted-foreground/60">
               💡 O cliente receberá mensagens automáticas quando o pedido for aceito, estiver pronto, sair para entrega e ser entregue.
             </p>
+          </div>
+        )}
+      </div>
+
+      {/* ─── Métodos de Pagamento ──────────────────────────────────── */}
+      <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
+        <div>
+          <h3 className="text-sm font-black text-foreground flex items-center gap-2">
+            <QrCode className="h-4 w-4 text-primary" />
+            Métodos de Pagamento
+          </h3>
+          <p className="text-xs text-muted-foreground mt-1">
+            Escolha como seus clientes podem pagar. O que você ativar aparecerá no checkout.
+          </p>
+        </div>
+
+        {/* PIX Online (Asaas) */}
+        <div className={`rounded-xl border p-3.5 space-y-2 ${acceptPixOnline ? "border-primary/30 bg-primary/5" : "border-border bg-muted/20"}`}>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <QrCode className="h-4 w-4 text-primary shrink-0" />
+              <div>
+                <p className="text-sm font-bold text-foreground">PIX Online</p>
+                <p className="text-[11px] text-muted-foreground">Pagamento instantâneo via Asaas. Requer subconta configurada.</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setAcceptPixOnline(!acceptPixOnline)}
+              className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${acceptPixOnline ? "bg-primary" : "bg-muted-foreground/30"}`}
+            >
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${acceptPixOnline ? "translate-x-5" : "translate-x-0"}`} />
+            </button>
+          </div>
+          {acceptPixOnline && !pixKey && (
+            <div className="flex items-start gap-2 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
+              <span className="text-amber-500 text-xs">⚠️</span>
+              <p className="text-[11px] text-amber-700 dark:text-amber-400">
+                Você ativou o PIX Online mas não tem chave PIX cadastrada. Vá em <strong>Meu Plano → Configurar conta</strong> para configurar.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* PIX Maquininha */}
+        <div className={`rounded-xl border p-3.5 ${acceptPixMachine ? "border-emerald-500/30 bg-emerald-500/5" : "border-border bg-muted/20"}`}>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <QrCode className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <div>
+                <p className="text-sm font-bold text-foreground">PIX na Maquininha</p>
+                <p className="text-[11px] text-muted-foreground">Cliente paga via PIX pelo leitor da sua maquininha na entrega. Sem integração com Asaas.</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setAcceptPixMachine(!acceptPixMachine)}
+              className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${acceptPixMachine ? "bg-emerald-500" : "bg-muted-foreground/30"}`}
+            >
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${acceptPixMachine ? "translate-x-5" : "translate-x-0"}`} />
+            </button>
+          </div>
+        </div>
+
+        {/* Cartão */}
+        <div className={`rounded-xl border p-3.5 ${acceptCard ? "border-blue-500/30 bg-blue-500/5" : "border-border bg-muted/20"}`}>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <CreditCard className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
+              <div>
+                <p className="text-sm font-bold text-foreground">Cartão na Entrega</p>
+                <p className="text-[11px] text-muted-foreground">Débito ou crédito pela maquininha na entrega.</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setAcceptCard(!acceptCard)}
+              className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${acceptCard ? "bg-blue-500" : "bg-muted-foreground/30"}`}
+            >
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${acceptCard ? "translate-x-5" : "translate-x-0"}`} />
+            </button>
+          </div>
+        </div>
+
+        {/* Dinheiro */}
+        <div className={`rounded-xl border p-3.5 ${acceptCash ? "border-amber-500/30 bg-amber-500/5" : "border-border bg-muted/20"}`}>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <Banknote className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+              <div>
+                <p className="text-sm font-bold text-foreground">Dinheiro</p>
+                <p className="text-[11px] text-muted-foreground">Pagamento em espécie na entrega.</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setAcceptCash(!acceptCash)}
+              className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${acceptCash ? "bg-amber-500" : "bg-muted-foreground/30"}`}
+            >
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${acceptCash ? "translate-x-5" : "translate-x-0"}`} />
+            </button>
+          </div>
+        </div>
+
+        {/* Aviso mínimo */}
+        {!acceptPixOnline && !acceptPixMachine && !acceptCard && !acceptCash && (
+          <div className="bg-destructive/10 border border-destructive/20 rounded-xl px-3 py-2.5">
+            <p className="text-xs font-bold text-destructive">⚠️ Nenhum método ativo — os clientes não conseguirão finalizar pedidos.</p>
           </div>
         )}
       </div>
