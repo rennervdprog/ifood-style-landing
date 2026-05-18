@@ -214,10 +214,113 @@ const CategoryProductFields = ({ category, metadata, onChange, storeId }: Catego
     ),
     adegas: (
       <FieldBox emoji="🍷" title="Detalhes do Produto">
-        {renderTextField("Volume", "volume", "Ex: 350ml, 750ml, 1L...")}
-        {renderTextField("Marca", "brand", "Ex: Heineken, Absolut...")}
-        {renderTextField("Teor alcoólico", "alcohol_content", "Ex: 4.5%, 13%, 40%...")}
-        {renderToggle("Servir gelado?", "serve_cold")}
+
+        {/* ── Templates rápidos ─────────────────────────────────────── */}
+        <div className="space-y-2">
+          <label className="text-xs font-bold text-foreground/70">⚡ Preencher rapidamente</label>
+          <div className="flex flex-wrap gap-1.5">
+            {[
+              { label: "🍺 Heineken 600ml",  data: { drink_type: "Cerveja", packaging: "Garrafa",   volume: "600ml", alcohol_content: "5%",  brand: "Heineken",    serve_cold: true } },
+              { label: "🍺 Heineken Lata",    data: { drink_type: "Cerveja", packaging: "Lata",      volume: "350ml", alcohol_content: "5%",  brand: "Heineken",    serve_cold: true } },
+              { label: "🍺 Budweiser Lata",   data: { drink_type: "Cerveja", packaging: "Lata",      volume: "350ml", alcohol_content: "5%",  brand: "Budweiser",   serve_cold: true } },
+              { label: "🍺 Brahma Lata",      data: { drink_type: "Cerveja", packaging: "Lata",      volume: "350ml", alcohol_content: "4.8%",brand: "Brahma",      serve_cold: true } },
+              { label: "🍺 Corona Long Neck", data: { drink_type: "Cerveja", packaging: "Long Neck", volume: "330ml", alcohol_content: "4.5%",brand: "Corona",      serve_cold: true } },
+              { label: "🍺 Skol Lata",        data: { drink_type: "Cerveja", packaging: "Lata",      volume: "350ml", alcohol_content: "4.7%",brand: "Skol",        serve_cold: true } },
+              { label: "🍷 Vinho Tinto",      data: { drink_type: "Vinho",   packaging: "Garrafa",   volume: "750ml", alcohol_content: "13%", brand: "",            serve_cold: false } },
+              { label: "🥂 Vinho Branco",     data: { drink_type: "Vinho",   packaging: "Garrafa",   volume: "750ml", alcohol_content: "12%", brand: "",            serve_cold: true } },
+              { label: "🥃 Vodka",            data: { drink_type: "Destilado",packaging: "Garrafa",  volume: "750ml", alcohol_content: "40%", brand: "",            serve_cold: false } },
+              { label: "🥃 Whisky",           data: { drink_type: "Destilado",packaging: "Garrafa",  volume: "750ml", alcohol_content: "40%", brand: "",            serve_cold: false } },
+              { label: "⚡ Red Bull",          data: { drink_type: "Energético",packaging: "Lata",   volume: "250ml", alcohol_content: "",    brand: "Red Bull",    serve_cold: true } },
+              { label: "⚡ Monster",           data: { drink_type: "Energético",packaging: "Lata",   volume: "473ml", alcohol_content: "",    brand: "Monster",     serve_cold: true } },
+              { label: "🥤 Coca-Cola Lata",   data: { drink_type: "Refrigerante",packaging: "Lata",  volume: "350ml", alcohol_content: "",    brand: "Coca-Cola",   serve_cold: true } },
+              { label: "💧 Água Mineral",     data: { drink_type: "Água",    packaging: "Garrafa",   volume: "500ml", alcohol_content: "",    brand: "",            serve_cold: true } },
+            ].map((t) => (
+              <button
+                key={t.label}
+                type="button"
+                onClick={() => onChange({ ...metadata, ...t.data })}
+                className="text-[11px] font-semibold px-2.5 py-1.5 rounded-xl border border-border bg-muted/40 hover:bg-muted hover:border-primary/30 active:scale-95 transition-all whitespace-nowrap"
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+          <p className="text-[10px] text-muted-foreground">Clique para preencher os campos automaticamente. Ajuste o preço após.</p>
+        </div>
+
+        <div className="border-t border-border/40 pt-3 space-y-3">
+          {/* Tipo de bebida */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-foreground/70">Tipo de Bebida</label>
+            <div className="flex flex-wrap gap-1.5">
+              {["Cerveja","Vinho","Destilado","Energético","Refrigerante","Água","Outro"].map(t => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => set("drink_type", t)}
+                  className={`text-xs px-3 py-1.5 rounded-xl border transition-all ${
+                    metadata.drink_type === t
+                      ? "bg-primary/10 border-primary/30 text-primary font-bold"
+                      : "bg-muted/40 border-border text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {t === "Cerveja" ? "🍺" : t === "Vinho" ? "🍷" : t === "Destilado" ? "🥃" :
+                   t === "Energético" ? "⚡" : t === "Refrigerante" ? "🥤" : t === "Água" ? "💧" : "🧃"} {t}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Embalagem */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-foreground/70">Embalagem</label>
+            <div className="flex flex-wrap gap-1.5">
+              {["Lata","Long Neck","Garrafa","Pack","Caixinha","Barril","Outro"].map(p => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => set("packaging", p)}
+                  className={`text-xs px-3 py-1.5 rounded-xl border transition-all ${
+                    metadata.packaging === p
+                      ? "bg-primary/10 border-primary/30 text-primary font-bold"
+                      : "bg-muted/40 border-border text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Pack — quantidade */}
+          {(metadata.packaging === "Pack") && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-foreground/70">Quantidade no Pack</label>
+              <div className="flex flex-wrap gap-1.5">
+                {["6","8","12","15","24","30"].map(q => (
+                  <button
+                    key={q}
+                    type="button"
+                    onClick={() => set("pack_qty", q)}
+                    className={`text-xs px-3 py-1.5 rounded-xl border transition-all ${
+                      metadata.pack_qty === q
+                        ? "bg-primary/10 border-primary/30 text-primary font-bold"
+                        : "bg-muted/40 border-border text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {q} un
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {renderTextField("Volume", "volume", "Ex: 350ml, 600ml, 1L...")}
+          {renderTextField("Marca", "brand", "Ex: Heineken, Absolut, Velho Barreiro...")}
+          {metadata.drink_type && !["Água","Refrigerante","Energético"].includes(metadata.drink_type) &&
+            renderTextField("Teor alcoólico", "alcohol_content", "Ex: 4.5%, 13%, 40%...")}
+          {renderToggle("Servir gelado?", "serve_cold")}
+        </div>
       </FieldBox>
     ),
     saudavel: (

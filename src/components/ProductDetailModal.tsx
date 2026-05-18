@@ -527,11 +527,39 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
       )}
 
       {cat === "adegas" && (
-        <div className="flex flex-wrap gap-1.5">
-          {meta.drink_type && <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-bold text-primary">{meta.drink_type}</span>}
-          {meta.volume && <span className="rounded-full bg-muted px-2 py-1 text-xs font-medium text-foreground">{meta.volume}</span>}
-          {meta.alcohol_content && <span className="rounded-full bg-muted px-2 py-1 text-xs font-medium text-foreground">🍷 {meta.alcohol_content}</span>}
-          {meta.serve_cold && <span className="rounded-full bg-accent px-2 py-1 text-xs font-bold text-accent-foreground">❄️ Gelado</span>}
+        <div className="space-y-2">
+          <div className="flex flex-wrap gap-1.5">
+            {meta.drink_type && (
+              <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">
+                {meta.drink_type === "Cerveja" ? "🍺" : meta.drink_type === "Vinho" ? "🍷" :
+                 meta.drink_type === "Destilado" ? "🥃" : meta.drink_type === "Energético" ? "⚡" :
+                 meta.drink_type === "Refrigerante" ? "🥤" : meta.drink_type === "Água" ? "💧" : "🧃"} {meta.drink_type}
+              </span>
+            )}
+            {meta.packaging && (
+              <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-bold text-foreground">
+                {meta.packaging}{meta.pack_qty ? ` c/ ${meta.pack_qty} un` : ""}
+              </span>
+            )}
+            {meta.volume && (
+              <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-foreground">
+                📦 {meta.volume}
+              </span>
+            )}
+            {meta.alcohol_content && (
+              <span className="rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 px-2.5 py-1 text-xs font-bold">
+                🍷 {meta.alcohol_content}
+              </span>
+            )}
+            {meta.serve_cold && (
+              <span className="rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 px-2.5 py-1 text-xs font-bold">
+                ❄️ Gelado
+              </span>
+            )}
+          </div>
+          {meta.brand && (
+            <p className="text-xs text-muted-foreground">Marca: <strong className="text-foreground">{meta.brand}</strong></p>
+          )}
         </div>
       )}
 
