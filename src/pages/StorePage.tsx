@@ -1284,6 +1284,29 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory }: Product
                 👥 Compartilhar
               </span>
             )}
+            {/* Adegas: tipo, embalagem, volume, gelado */}
+            {cat === "adegas" && meta.drink_type && (
+              <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-bold">
+                {meta.drink_type === "Cerveja" ? "🍺" : meta.drink_type === "Vinho" ? "🍷" :
+                 meta.drink_type === "Destilado" ? "🥃" : meta.drink_type === "Energético" ? "⚡" :
+                 meta.drink_type === "Refrigerante" ? "🥤" : meta.drink_type === "Água" ? "💧" : "🧃"} {meta.drink_type}
+              </span>
+            )}
+            {cat === "adegas" && meta.packaging && (
+              <span className="text-[10px] bg-muted text-foreground/70 px-1.5 py-0.5 rounded-full font-semibold">
+                {meta.packaging}{meta.pack_qty ? ` ${meta.pack_qty}un` : ""}
+              </span>
+            )}
+            {cat === "adegas" && meta.volume && (
+              <span className="text-[10px] bg-muted text-foreground/70 px-1.5 py-0.5 rounded-full font-semibold">
+                {meta.volume}
+              </span>
+            )}
+            {cat === "adegas" && meta.alcohol_content && (
+              <span className="text-[10px] bg-amber-500/10 text-amber-600 px-1.5 py-0.5 rounded-full font-bold">
+                {meta.alcohol_content}
+              </span>
+            )}
             {/* Beverage: cold badge */}
             {(isBeverage || cat === "adegas") && meta.serve_cold && (
               <span className="text-[10px] bg-sky-500/10 text-sky-600 px-1.5 py-0.5 rounded-full font-bold">
