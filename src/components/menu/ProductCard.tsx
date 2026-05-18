@@ -133,6 +133,10 @@ export const ProductFormInline = ({ initial, onSave, onCancel, storeCategory, st
           category={storeCategory}
           metadata={form.metadata || {}}
           onChange={(metadata: Record<string, any>) => setForm((p) => ({ ...p, metadata }))}
+          onNameChange={(name: string) => {
+            // Só preenche o nome se estiver vazio (não sobrescreve edição manual)
+            setForm((p) => ({ ...p, name: p.name.trim() ? p.name : name }));
+          }}
           storeId={storeId}
         />
       )}
