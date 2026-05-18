@@ -108,24 +108,14 @@ type PizzaPriceMode = "maior" | "media" | "soma";
   const [pizzaHalfEnabled, setPizzaHalfEnabled] = useState<boolean>(storeSettings?.pizza_half_enabled || false);
   const [pizzaPriceMode, setPizzaPriceMode] = useState<PizzaPriceMode>(storeSettings?.pizza_price_mode || "maior");
 
-  // Inicializar métodos de pagamento a partir de storeSettings
-  useState(() => {
-    if (storeSettings) {
-      setAcceptPixOnline(storeSettings.accept_pix_online !== false);
-      setAcceptPixMachine(storeSettings.accept_pix_machine === true);
-      setAcceptCard(storeSettings.accept_card !== false);
-      setAcceptCash(storeSettings.accept_cash !== false);
-    }
-  });
-
   // Z-API WhatsApp integration
   const [zapiEnabled, setZapiEnabled] = useState<boolean>(false);
 
-  // Métodos de pagamento aceitos
-  const [acceptPixOnline,  setAcceptPixOnline]  = useState<boolean>(true);
-  const [acceptPixMachine, setAcceptPixMachine] = useState<boolean>(false);
-  const [acceptCard,       setAcceptCard]       = useState<boolean>(true);
-  const [acceptCash,       setAcceptCash]       = useState<boolean>(true);
+  // Métodos de pagamento aceitos — inicializados direto do storeSettings
+  const [acceptPixOnline,  setAcceptPixOnline]  = useState<boolean>(storeSettings?.accept_pix_online  !== false);
+  const [acceptPixMachine, setAcceptPixMachine] = useState<boolean>(storeSettings?.accept_pix_machine === true);
+  const [acceptCard,       setAcceptCard]       = useState<boolean>(storeSettings?.accept_card        !== false);
+  const [acceptCash,       setAcceptCash]       = useState<boolean>(storeSettings?.accept_cash        !== false);
   const [zapiInstanceId, setZapiInstanceId] = useState<string>("");
   const [zapiToken, setZapiToken] = useState<string>("");
   const [zapiClientToken, setZapiClientToken] = useState<string>("");
