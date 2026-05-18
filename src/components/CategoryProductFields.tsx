@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Loader2, ImageIcon } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CategoryProductFieldsProps {
   category: string;
   metadata: Record<string, any>;
   onChange: (metadata: Record<string, any>) => void;
-  onNameChange?: (name: string) => void; // opcional — usado pelos templates de adega
+  onNameChange?: (name: string) => void;
+  onImageChange?: (url: string) => void; // preenche imagem automaticamente via template
   storeId?: string;
 }
 
@@ -48,8 +50,23 @@ const ManagedTextField = ({
   );
 };
 
-const CategoryProductFields = ({ category, metadata, onChange, onNameChange, storeId }: CategoryProductFieldsProps) => {
+const CategoryProductFields = ({ category, metadata, onChange, onNameChange, onImageChange, storeId }: CategoryProductFieldsProps) => {
   const set = (key: string, value: any) => onChange({ ...metadata, [key]: value });
+  const [loadingImage, setLoadingImage] = useState(false);
+
+  const fetchBeverageImage = async (templateKey: string, brand: string, drinkType: string, volume: string) => {
+    if (!onImageChange) return;
+    setLoadingImage(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("beverage-image-lookup", {
+        body: { template_key: templateKey, brand, drink_type: drinkType, volume },
+      });
+      if (!error && data?.image_url) {
+        onImageChange(data.image_url);
+      }
+    } catch { /* silencioso — imagem não é crítica */ }
+    finally { setLoadingImage(false); }
+  };
 
   const addToList = (key: string, value: string) => {
     if (!value.trim()) return;
@@ -242,6 +259,15 @@ const CategoryProductFields = ({ category, metadata, onChange, onNameChange, sto
                 onClick={() => {
                   onChange({ ...metadata, ...t.data });
                   if (onNameChange && t.name) onNameChange(t.name);
+                  // Buscar imagem automaticamente
+                  const tkey = ({
+                    "Heineken 600ml": "heineken_600", "Heineken Lata": "heineken_350",
+                    "Budweiser Lata": "budweiser_350", "Brahma Lata": "brahma_350",
+                    "Corona Long Neck": "corona_330", "Skol Lata": "skol_350",
+                    "Red Bull 250ml": "redbull_250", "Monster 473ml": "monster_473",
+                    "Coca-Cola Lata": "cocacola_350",
+                  } as Record<string, string>)[t.name || ""] || "";
+                  fetchBeverageImage(tkey, t.data.brand || "", t.data.drink_type || "", t.data.volume || "");
                 }}
                 className="text-[11px] font-semibold px-2.5 py-1.5 rounded-xl border border-border bg-muted/40 hover:bg-muted hover:border-primary/30 active:scale-95 transition-all whitespace-nowrap"
               >
@@ -249,7 +275,14 @@ const CategoryProductFields = ({ category, metadata, onChange, onNameChange, sto
               </button>
             ))}
           </div>
-          <p className="text-[10px] text-muted-foreground">Clique para preencher os campos automaticamente. Ajuste o preço após.</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="text-[10px] text-muted-foreground">Clique para preencher campos e buscar foto automaticamente.</p>
+            {loadingImage && (
+              <span className="flex items-center gap-1 text-[10px] text-primary font-semibold">
+                <Loader2 className="h-3 w-3 animate-spin" /> Buscando foto...
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="border-t border-border/40 pt-3 space-y-3">

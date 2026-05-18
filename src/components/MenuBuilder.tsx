@@ -579,7 +579,9 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
 
   return (
     <div className="space-y-4">
-      <DailyMenuManager storeId={storeId} products={products || []} onUpdate={invalidateProducts} />
+      {storeCategory !== "adegas" && (
+        <DailyMenuManager storeId={storeId} products={products || []} onUpdate={invalidateProducts} />
+      )}
 
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-2">
