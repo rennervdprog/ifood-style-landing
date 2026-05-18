@@ -3,7 +3,7 @@ import { ArrowLeft } from "lucide-react";
 
 const TermosDeUso = () => {
   const navigate = useNavigate();
-  const dataAtualizacao = "13 de maio de 2026";
+  const dataAtualizacao = "18 de maio de 2025";
 
   return (
     <div className="min-h-screen bg-background">
@@ -54,7 +54,7 @@ const TermosDeUso = () => {
         <section className="space-y-3">
           <h2 className="text-base font-bold text-foreground">4. Serviços da Plataforma</h2>
           <p>4.1. O ItaSuper é intermediador digital. Não fabrica, estoca, embala ou entrega produtos diretamente.</p>
-          <p>4.2. Serviços incluem: cardápio digital, pagamentos PIX/dinheiro/cartão, gestão de entregas, cupons, fidelidade, notificações, relatórios, <strong className="text-foreground">módulo PDV completo</strong>, cardápio digital, sistema de suporte via tickets e ferramenta de recomendação assistida por Inteligência Artificial para lojistas (Sales Coach).</p>
+          <p>4.2. Serviços incluem: cardápio digital, pagamentos PIX Online/PIX Maquininha/cartão/dinheiro, gestão de entregas com motoboy próprio, cupons, fidelidade, notificações, relatórios, extrato financeiro, <strong className="text-foreground">módulo PDV completo</strong>, sistema de suporte via tickets e Sales Coach (ferramenta de recomendação assistida por IA para lojistas).</p>
         </section>
 
         <section className="space-y-3">
@@ -68,10 +68,10 @@ const TermosDeUso = () => {
 
           <h2 className="text-base font-bold text-foreground">5. Planos e Assinatura</h2>
           <ul className="list-disc pl-4 space-y-2">
-            <li><strong className="text-foreground">Essencial (R$ 180/mês):</strong> 0% comissão delivery. R$ 1,99 PIX + R$ 2,00/entrega. PDV incluso com 0% de comissão presencial.</li>
-            <li><strong className="text-foreground">Crescimento (R$ 100/mês + 2,5%):</strong> 2,5% sobre subtotal delivery — sem taxa PIX (a % já cobre os custos operacionais). R$ 2,00/entrega. PDV incluso com 1% de comissão presencial (faturado mensalmente).</li>
-            <li><strong className="text-foreground">Comissão (sem mensalidade, 6%):</strong> 6% sobre subtotal delivery — sem taxa PIX (a % já cobre os custos operacionais). R$ 2,00/entrega. PDV incluso com 2% de comissão presencial (faturado mensalmente).</li>
-            <li><strong className="text-foreground">Apoiador (R$ 130/mês — vagas limitadas):</strong> Plano vitalício com mensalidade travada — nunca reajustada. 0% comissão percentual sobre delivery e PDV. Taxas fixas: R$ 1,99 por transação PIX online (descontado do repasse), R$ 2,00/entrega (pago pelo cliente no checkout) e R$ 1,00 por venda presencial no PDV. Máximo 10 vagas.</li>
+            <li><strong className="text-foreground">Essencial (R$ 180/mês):</strong> 0% comissão sobre pedidos delivery. Taxa PIX Online: R$ 1,99/transação (descontada do repasse). Taxa de entrega: R$ 2,00/pedido (paga pelo cliente). PDV: R$ 1,00/venda presencial.</li>
+            <li><strong className="text-foreground">Crescimento (R$ 100/mês + 2,5%):</strong> 2,5% sobre subtotal delivery (sem taxa PIX adicional). Taxa de entrega: R$ 2,00/pedido. PDV: 1% sobre subtotal presencial (faturado mensalmente).</li>
+            <li><strong className="text-foreground">Comissão (sem mensalidade, 6%):</strong> 6% sobre subtotal delivery (sem taxa PIX adicional). Taxa de entrega: R$ 2,00/pedido. PDV: 2% sobre subtotal presencial (faturado mensalmente).</li>
+            <li><strong className="text-foreground">Apoiador (R$ 130/mês — vagas limitadas):</strong> Plano vitalício com mensalidade travada. 0% comissão. Taxas: R$ 1,99 PIX Online, R$ 2,00/entrega, R$ 1,00/venda PDV. Máximo 10 vagas.</li>
           </ul>
           <p>5.2. <strong className="text-foreground">Comissão PDV:</strong> Incide sobre o subtotal das vendas presenciais. Acumulada ao longo do mês e incluída na fatura mensal junto à mensalidade.</p>
           <p>5.3. Planos Essencial e Crescimento incluem 7 dias de teste grátis. O plano Comissão pode ser utilizado imediatamente.</p>
@@ -98,10 +98,12 @@ const TermosDeUso = () => {
 
         <section className="space-y-3">
           <h2 className="text-base font-bold text-foreground">8. Pagamentos e Repasses</h2>
-          <p>8.1. PIX Online processado pelo Asaas com split automático entre plataforma e lojista.</p>
+          <p>8.1. <strong className="text-foreground">PIX Online:</strong> processado pelo Asaas com split automático entre plataforma e lojista. Disponível apenas para lojistas com conta Asaas configurada no painel.</p>
+          <p>8.2. <strong className="text-foreground">Métodos físicos (Dinheiro, Cartão na entrega e PIX Maquininha):</strong> o cliente paga diretamente ao lojista ou ao entregador. A taxa da plataforma (R$ 2,00 por entrega para planos Essencial/Apoiador, ou % sobre subtotal para planos Crescimento/Comissão) é acumulada e cobrada via PIX toda <strong className="text-foreground">segunda-feira</strong>, quando o saldo pendente atingir <strong className="text-foreground">R$ 30,00</strong>. Saldo acima de R$ 150,00 suspende temporariamente o acesso ao painel até regularização. Inadimplência superior a 30 dias implica suspensão da loja.</p>
           <p>8.2. Pagamentos físicos (dinheiro/cartão) recebidos diretamente pelo Lojista ou Entregador.</p>
-          <p>8.3. Vendas PDV: plataforma não intermedia valores presenciais — apenas cobra comissão PDV na fatura mensal.</p>
-          <p>8.4. Cancelamentos com PIX: reembolso automático via Asaas em até 7 dias úteis.</p>
+          <p>8.3. <strong className="text-foreground">PIX Maquininha:</strong> modalidade em que o cliente paga via PIX pelo leitor do lojista na entrega, sem integração com Asaas. Tratado como pagamento físico para fins de cobrança de repasse.</p>
+          <p>8.4. Vendas PDV: plataforma não intermedia valores presenciais — apenas cobra comissão PDV na fatura mensal.</p>
+          <p>8.5. Cancelamentos com PIX Online: reembolso automático via Asaas em até 7 dias úteis, creditado como saldo na carteira da plataforma. Pedidos pagos em dinheiro, cartão ou PIX Maquininha não são elegíveis para reembolso automático — a resolução é entre cliente e lojista.</p>
         </section>
 
         <section className="space-y-3">
@@ -109,7 +111,8 @@ const TermosDeUso = () => {
           <p>9.1. Comissão delivery incide apenas sobre o <strong className="text-foreground">subtotal dos produtos</strong> (excluindo entrega, desconto e taxa PIX).</p>
           <p>9.2. Comissão PDV percentual incide sobre o subtotal da venda presencial (6% plano Comissão, 2% plano Crescimento). Para planos Essencial e Apoiador não há comissão percentual — aplica-se taxa fixa de <strong className="text-foreground">R$ 1,00 por venda PDV</strong>, incluída na fatura mensal.</p>
           <p>9.3. Taxa PIX (R$ 1,99): cobrada por transação PIX Online <strong className="text-foreground">apenas nos planos Essencial e Apoiador</strong>, descontada automaticamente do valor repassado ao lojista. Nos planos Crescimento e Comissão, a comissão percentual já cobre os custos operacionais do PIX — não há cobrança adicional de R$ 1,99.</p>
-          <p>9.4. Taxa de entrega (R$ 2,00): somada à taxa base do lojista, paga pelo cliente no checkout.</p>
+          <p>9.4. Taxa de entrega (R$ 2,00): somada à taxa base definida pelo lojista, paga pelo cliente no checkout. Aplica-se a todos os planos e a todos os métodos de pagamento (PIX Online, PIX Maquininha, Cartão e Dinheiro).</p>
+          <p>9.5. O lojista pode configurar quais métodos de pagamento aceita através do painel de configurações da loja. A ativação do PIX Online requer conta Asaas configurada. PIX Maquininha, Cartão e Dinheiro estão disponíveis por padrão.</p>
           <p>9.5. Todas as taxas são consultáveis no painel financeiro da loja.</p>
         </section>
 
