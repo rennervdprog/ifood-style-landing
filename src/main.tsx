@@ -60,6 +60,12 @@ if (window.gonative || window.median || isCapacitor) {
 // Quando um novo SW toma controle, limpar caches e recarregar
 if ("serviceWorker" in navigator && !isPreviewHost && !isInIframe && !isCapacitor) {
   navigator.serviceWorker.addEventListener("controllerchange", () => {
+    // Ignorar trocas de controlador do firebase-messaging-sw.js — esse SW
+    // só serve push em background e atualiza sozinho, não deve disparar reload.
+    const ctrl = navigator.serviceWorker.controller;
+    if (ctrl && ctrl.scriptURL && ctrl.scriptURL.includes("firebase-messaging-sw")) {
+      return;
+    }
     // Usar localStorage com timestamp — persiste entre reloads, evita loop
     const reloadKey = "sw-update-reload-ts";
     const lastReload = Number(localStorage.getItem(reloadKey) || 0);
