@@ -75,17 +75,17 @@ const DownloadApp = () => {
   const [showFullDesc, setShowFullDesc] = useState(false);
 
   useEffect(() => {
-    supabase
-      .from("app_store_page" as any)
-      .select("*")
-      .eq("app_type", "parceiro")
-      .eq("is_published", true)
-      .maybeSingle()
-      .then(({ data: d }) => {
-        if (d) setData(d as any);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+    Promise.resolve(
+      supabase
+        .from("app_store_page" as any)
+        .select("*")
+        .eq("app_type", "parceiro")
+        .eq("is_published", true)
+        .maybeSingle()
+    ).then(({ data: d }) => {
+      if (d) setData(d as any);
+      setLoading(false);
+    }).catch(() => setLoading(false));
   }, []);
 
   const handleDownload = () => {
