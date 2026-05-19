@@ -35,6 +35,7 @@ const saveDeclined = (uid: string, map: Record<string, number>) => {
 
 import WhatsAppButton from "@/components/WhatsAppButton";
 import { PinBoxes } from "@/components/driver/PinBoxes";
+import { DriverOnlineToggle } from "@/components/driver/DriverOnlineToggle";
 import StoreDriverEarnings from "@/components/StoreDriverEarnings";
 import { haptic } from "@/lib/haptics";
 import {
