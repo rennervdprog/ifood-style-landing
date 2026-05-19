@@ -206,10 +206,10 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
       </div>
 
       {order.neighborhood !== "RETIRADA" && order.status === "pronto_para_entrega" && !order.driver_id && !isOwnDelivery && (
-        <div className="mx-3 mb-2 bg-amber-500/5 border border-amber-500/20 rounded-xl px-3 py-2">
+        <div className="mx-3 mb-2 bg-muted border border-border rounded-xl px-3 py-2">
           <div className="flex items-center gap-1.5 mb-1">
-            <Loader2 className="h-3.5 w-3.5 text-amber-500 animate-spin" />
-            <span className="text-xs text-amber-600 dark:text-amber-400 font-semibold">Aguardando entregador</span>
+            <Loader2 className="h-3.5 w-3.5 text-muted-foreground animate-spin" />
+            <span className="text-xs text-foreground font-semibold">Aguardando entregador</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className={`w-2 h-2 rounded-full ${onlineDriversCount > 0 ? "bg-primary animate-pulse" : "bg-destructive"}`} />
