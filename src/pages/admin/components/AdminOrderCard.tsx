@@ -81,9 +81,9 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
     <div
       style={{ animationDelay: `${index * 50}ms` }}
       className={`bg-card rounded-2xl overflow-hidden border transition-all duration-300 animate-in fade-in slide-in-from-bottom-4 duration-500 ${
-        isBatchSelected ? "border-blue-500 ring-2 ring-blue-500/30" :
+        isBatchSelected ? "border-primary ring-2 ring-primary/30" :
         isDelayed ? "border-destructive/50 shadow-[0_0_12px_-4px] shadow-destructive/20" :
-        order.status === "pendente" ? "border-amber-400/40 shadow-amber-400/5 animate-pulse-border" : "border-border"
+        order.status === "pendente" ? "border-primary/40 shadow-primary/5 animate-pulse-border" : "border-border"
       } hover:shadow-md`}
     >
       <div className={`px-3 py-1.5 ${sc.bg} flex items-center justify-between`}>
@@ -91,7 +91,7 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
           {isOwnDelivery && !hasLinkedDrivers && !driversLoading && order.status === "pronto_para_entrega" && (
             <button onClick={() => toggleBatchOrder(order.id)}
               className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${
-                isBatchSelected ? "bg-blue-500 border-blue-500 text-white" : "border-muted-foreground/40 hover:border-blue-400"
+                isBatchSelected ? "bg-primary border-primary text-primary-foreground" : "border-muted-foreground/40 hover:border-primary"
               }`}>
               {isBatchSelected && <CheckCircle2 className="h-3.5 w-3.5" />}
             </button>
@@ -107,7 +107,7 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
           {["pendente", "preparando", "pronto_para_entrega"].includes(order.status) && (
             <span className={`flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
               isDelayed ? "bg-destructive/10 text-destructive" :
-              elapsedMin > 10 ? "bg-amber-500/10 text-amber-600 dark:text-amber-400" :
+              elapsedMin > 10 ? "bg-muted text-foreground" :
               "bg-muted text-muted-foreground"
             }`}>
               <Timer className="h-2.5 w-2.5" />
@@ -131,16 +131,16 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
             <span>{paymentIcons[order.payment_method]}</span>
           </div>
           {order.driver_id && (
-            <div className="flex items-center gap-1 mt-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+            <div className="flex items-center gap-1 mt-1 text-[11px] font-semibold text-muted-foreground">
               <Bike className="h-3 w-3" />
               <span>Motoboy: {driverName(order.driver_id)}</span>
             </div>
           )}
         </div>
         <div className="text-right">
-          <p className="text-xl font-black text-emerald-500">{formatBRL(Number(order.total_price))}</p>
+          <p className="text-xl font-black text-foreground">{formatBRL(Number(order.total_price))}</p>
           {order.payment_method === "pix" && (
-            <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded">PIX PAGO</span>
+            <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">PIX PAGO</span>
           )}
         </div>
       </div>
@@ -175,17 +175,17 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
         })}
         {order.payment_method === "dinheiro" && (order as any).needs_change && Number((order as any).change_for) > 0 && (
           <div className="flex items-center gap-1 pt-1 border-t border-border">
-            <Banknote className="h-3 w-3 text-amber-500" />
-            <span className="text-[10px] text-amber-500 font-bold">Troco: {formatBRL(Number((order as any).change_for) - Number(order.total_price))}</span>
+            <Banknote className="h-3 w-3 text-muted-foreground" />
+            <span className="text-[10px] text-muted-foreground font-bold">Troco: {formatBRL(Number((order as any).change_for) - Number(order.total_price))}</span>
           </div>
         )}
       </div>
 
       <div className="mx-3 mb-2">
         {order.neighborhood === "RETIRADA" ? (
-          <div className="flex items-center gap-1.5 bg-violet-500/10 border border-violet-500/20 rounded-xl px-3 py-2">
-            <Store className="h-3.5 w-3.5 text-violet-500" />
-            <span className="text-xs font-bold text-violet-600 dark:text-violet-400">🏪 Retirada na loja</span>
+          <div className="flex items-center gap-1.5 bg-muted border border-border rounded-xl px-3 py-2">
+            <Store className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-xs font-bold text-foreground">Retirada na loja</span>
           </div>
         ) : (
           <>
@@ -212,7 +212,7 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
             <span className="text-xs text-amber-600 dark:text-amber-400 font-semibold">Aguardando entregador</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className={`w-2 h-2 rounded-full ${onlineDriversCount > 0 ? "bg-emerald-500 animate-pulse" : "bg-destructive"}`} />
+            <span className={`w-2 h-2 rounded-full ${onlineDriversCount > 0 ? "bg-primary animate-pulse" : "bg-destructive"}`} />
             <span className="text-[10px] text-muted-foreground">
               {onlineDriversCount > 0 ? `${onlineDriversCount} entregador(es) online` : "Nenhum entregador online"}
             </span>
@@ -220,10 +220,10 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
         </div>
       )}
       {order.neighborhood !== "RETIRADA" && order.status === "pronto_para_entrega" && isOwnDelivery && !order.driver_id && (
-        <div className="mx-3 mb-2 bg-blue-500/5 border border-blue-500/20 rounded-xl px-3 py-2 space-y-2">
+        <div className="mx-3 mb-2 bg-muted border border-border rounded-xl px-3 py-2 space-y-2">
           <div className="flex items-center gap-1.5">
-            <Loader2 className="h-3.5 w-3.5 text-blue-500 animate-spin" />
-            <span className="text-xs text-blue-600 dark:text-blue-400 font-semibold">
+            <Loader2 className="h-3.5 w-3.5 text-muted-foreground animate-spin" />
+            <span className="text-xs text-foreground font-semibold">
               {(order as any).assigned_driver_id
                 ? `🎯 Designado para ${driverName((order as any).assigned_driver_id)}`
                 : "🛵 Aberto — qualquer motoboy pode aceitar"}
@@ -260,28 +260,28 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
         </div>
       )}
       {order.neighborhood !== "RETIRADA" && order.status === "pronto_para_entrega" && isOwnDelivery && order.driver_id && (
-        <div className="mx-3 mb-2 flex items-center gap-1.5 bg-emerald-500/5 border border-emerald-500/20 rounded-xl px-3 py-2">
-          <Bike className="h-3.5 w-3.5 text-emerald-500" />
-          <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">🏍️ {driverName(order.driver_id)} aceitou o pedido</span>
+        <div className="mx-3 mb-2 flex items-center gap-1.5 bg-muted border border-border rounded-xl px-3 py-2">
+          <Bike className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-xs text-foreground font-semibold"> {driverName(order.driver_id)} aceitou o pedido</span>
         </div>
       )}
       {order.status === "saiu_entrega" && isOwnDelivery && (
-        <div className="mx-3 mb-2 flex items-center gap-1.5 bg-blue-500/5 border border-blue-500/20 rounded-xl px-3 py-2">
-          <Truck className="h-3.5 w-3.5 text-blue-500" />
-          <span className="text-xs text-blue-600 dark:text-blue-400 font-semibold">🛵 {order.driver_id ? driverName(order.driver_id) : "Motoboy"} está entregando</span>
+        <div className="mx-3 mb-2 flex items-center gap-1.5 bg-muted border border-border rounded-xl px-3 py-2">
+          <Truck className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-xs text-foreground font-semibold">🛵 {order.driver_id ? driverName(order.driver_id) : "Motoboy"} está entregando</span>
         </div>
       )}
       {order.driver_id && (order.status === "em_transito" || (order.status === "saiu_entrega" && !isOwnDelivery)) && (
-        <div className="mx-3 mb-2 flex items-center gap-1.5 bg-blue-500/5 border border-blue-500/20 rounded-xl px-3 py-2">
-          <Truck className="h-3.5 w-3.5 text-blue-500" />
-          <span className="text-xs text-blue-600 dark:text-blue-400 font-semibold">🛵 {driverName(order.driver_id)} entregando</span>
+        <div className="mx-3 mb-2 flex items-center gap-1.5 bg-muted border border-border rounded-xl px-3 py-2">
+          <Truck className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-xs text-foreground font-semibold">🛵 {driverName(order.driver_id)} entregando</span>
         </div>
       )}
 
       {isOwnDelivery && hasLinkedDrivers && (order as any).delivery_pin && ["preparando", "pronto_para_entrega", "saiu_entrega", "em_transito"].includes(order.status) && (
-        <div className="mx-3 mb-2 bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3 text-center">
-          <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold mb-1">🔐 PIN de Entrega (cliente confirma)</p>
-          <p className="text-3xl font-black text-emerald-600 dark:text-emerald-400 tracking-[0.3em]">{(order as any).delivery_pin}</p>
+        <div className="mx-3 mb-2 bg-muted border border-border rounded-xl p-3 text-center">
+          <p className="text-[10px] text-primary font-bold mb-1">PIN de Entrega (cliente confirma)</p>
+          <p className="text-3xl font-black text-primary tracking-[0.3em]">{(order as any).delivery_pin}</p>
           {order.driver_id && (
             <p className="text-[10px] text-muted-foreground mt-1">Motoboy: {driverName(order.driver_id)}</p>
           )}
@@ -289,9 +289,9 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
       )}
 
       {isOwnDelivery && (order as any).delivery_confirmed_by_client && ["entregue", "finalizado"].includes(order.status) && (
-        <div className="mx-3 mb-2 flex items-center gap-1.5 bg-emerald-500/5 border border-emerald-500/20 rounded-xl px-3 py-2">
-          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-          <span className="text-xs text-emerald-500 font-bold">Cliente confirmou entrega ✅</span>
+        <div className="mx-3 mb-2 flex items-center gap-1.5 bg-muted border border-border rounded-xl px-3 py-2">
+          <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
+          <span className="text-xs text-foreground font-bold">Cliente confirmou entrega</span>
           {order.driver_id && (
             <span className="ml-auto text-[10px] text-muted-foreground">{driverName(order.driver_id)}</span>
           )}
@@ -299,36 +299,36 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
       )}
 
       {(order.status === "pronto_para_entrega" || order.status === "saiu_entrega" || order.status === "em_transito") && (order as any).collection_code && !isOwnDelivery && (
-        <div className="mx-3 mb-2 bg-purple-500/5 border border-purple-500/20 rounded-xl p-3 text-center">
-          <p className="text-[10px] text-purple-500 font-bold mb-1">🔐 Código de Coleta</p>
-          <p className="text-2xl font-black text-purple-600 dark:text-purple-400 tracking-[0.3em]">{(order as any).collection_code}</p>
+        <div className="mx-3 mb-2 bg-muted border border-border rounded-xl p-3 text-center">
+          <p className="text-[10px] text-primary font-bold mb-1">Código de Coleta</p>
+          <p className="text-2xl font-black text-primary tracking-[0.3em]">{(order as any).collection_code}</p>
         </div>
       )}
 
       {["dinheiro", "cartao"].includes(order.payment_method) && (order as any).settlement_code && ["entregue", "finalizado"].includes(order.status) && !(order as any).return_to_store_confirmed && !isOwnDelivery && (
-        <div className="mx-3 mb-2 bg-amber-500/5 border border-amber-500/20 rounded-xl p-3">
+        <div className="mx-3 mb-2 bg-muted border border-border rounded-xl p-3">
           {order.driver_id && (
-            <div className="flex items-center gap-2 mb-2 pb-2 border-b border-amber-500/10">
-              <Bike className="h-4 w-4 text-amber-500" />
-              <span className="text-sm font-bold text-amber-600 dark:text-amber-400">🏍️ {driverName(order.driver_id)}</span>
-              <span className="ml-auto text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full font-bold">#{order.id.slice(0, 8).toUpperCase()}</span>
+            <div className="flex items-center gap-2 mb-2 pb-2 border-b border-border">
+              <Bike className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-bold text-foreground"> {driverName(order.driver_id)}</span>
+              <span className="ml-auto text-[10px] bg-background text-foreground border border-border px-2 py-0.5 rounded-full font-bold">#{order.id.slice(0, 8).toUpperCase()}</span>
             </div>
           )}
           <div className="flex items-center justify-between mb-1">
-            <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400">🔑 Código de Acerto</p>
+            <p className="text-[10px] font-bold text-primary">Código de Acerto</p>
             <button onClick={() => { navigator.clipboard.writeText((order as any).settlement_code); toast.success("Copiado!"); }}
-              className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400">
+              className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground">
               <Copy className="h-2.5 w-2.5" /> Copiar
             </button>
           </div>
-          <p className="text-3xl font-black text-amber-600 dark:text-amber-400 tracking-[0.3em] text-center">{(order as any).settlement_code}</p>
+          <p className="text-3xl font-black text-primary tracking-[0.3em] text-center">{(order as any).settlement_code}</p>
           <p className="text-[10px] text-muted-foreground text-center mt-1">Informe somente após receber {formatBRL(Number(order.total_price))}</p>
         </div>
       )}
       {["dinheiro", "cartao"].includes(order.payment_method) && (order as any).return_to_store_confirmed && ["entregue", "finalizado"].includes(order.status) && !isOwnDelivery && (
-        <div className="mx-3 mb-2 flex items-center gap-1.5 bg-emerald-500/5 border border-emerald-500/20 rounded-xl px-3 py-2">
-          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-          <span className="text-xs text-emerald-500 font-bold">Acerto realizado ✅</span>
+        <div className="mx-3 mb-2 flex items-center gap-1.5 bg-muted border border-border rounded-xl px-3 py-2">
+          <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
+          <span className="text-xs text-foreground font-bold">Acerto realizado</span>
         </div>
       )}
 
@@ -339,7 +339,7 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
               <button onClick={() => {
                 const msg = `Olá ${clientName}! *ItaSuper*: Pedido aceito e em produção! 🍔\nPedido: #${order.id.slice(0, 8).toUpperCase()}\nTotal: ${formatBRL(Number(order.total_price))}`;
                 openWhatsApp(clientWhatsApp, msg);
-              }} className="flex items-center gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold px-2 py-1 rounded-lg" title="Avisar cliente">
+              }} className="flex items-center gap-1 bg-primary/10 text-primary text-[10px] font-bold px-2 py-1 rounded-lg" title="Avisar cliente">
                 <MessageCircle className="h-3 w-3" /> <span className="hidden sm:inline">Avisar</span>
               </button>
             )}
@@ -347,7 +347,7 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
               <button onClick={() => {
                 const msg = `Olá ${clientName}! Motoboy *ItaSuper* saiu para entrega! 🚀\nEndereço: ${order.address_details}`;
                 openWhatsApp(clientWhatsApp, msg);
-              }} className="flex items-center gap-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold px-2 py-1 rounded-lg" title="Informar saída">
+              }} className="flex items-center gap-1 bg-primary/10 text-primary text-[10px] font-bold px-2 py-1 rounded-lg" title="Informar saída">
                 <MessageCircle className="h-3 w-3" /> <span className="hidden sm:inline">Saiu</span>
               </button>
             )}
@@ -369,7 +369,7 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
             <div className="space-y-1">
               {order.payment_method === "pix" && (
                 <div className="text-center">
-                  <span className="text-[10px] bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded font-bold">💰 PIX — Pagamento Confirmado</span>
+                  <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded font-bold">PIX — Pagamento Confirmado</span>
                 </div>
               )}
               <a
@@ -381,7 +381,7 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
                   setActiveTab("preparando");
                   updateOrderStatus(order.id, "preparando");
                 }}
-                className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 rounded-xl text-sm active:scale-[0.98] transition-transform h-12 flex items-center justify-center no-underline"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-black py-3 rounded-xl text-sm active:scale-[0.98] transition-transform h-12 flex items-center justify-center no-underline"
               >
                 {order.payment_method === "pix" ? "🍳 COMEÇAR PRODUÇÃO" : "✓ ACEITAR PEDIDO"}
               </a>
