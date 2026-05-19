@@ -589,7 +589,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
           <h2 className="text-lg font-bold text-foreground">Cardápio</h2>
           <p className="text-xs text-muted-foreground">
             <span className="text-primary font-bold">{activeCount} ativos</span>
-            {pausedCount > 0 && <span className="text-yellow-600 dark:text-yellow-400"> · {pausedCount} pausados</span>}
+            {pausedCount > 0 && <span className="text-muted-foreground"> · {pausedCount} pausados</span>}
             {outOfStockCount > 0 && <span className="text-destructive"> · {outOfStockCount} esgotado{outOfStockCount > 1 ? "s" : ""}</span>}
             {" · "}{sections?.length || 0} {(sections?.length || 0) === 1 ? "seção" : "seções"}
           </p>

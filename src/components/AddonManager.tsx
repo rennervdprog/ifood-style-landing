@@ -254,7 +254,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
             type="button"
             onClick={() => setGroupForm({ ...groupForm, price_replaces_base: !groupForm.price_replaces_base, min_select: !groupForm.price_replaces_base ? "1" : groupForm.min_select, max_select: !groupForm.price_replaces_base ? "1" : groupForm.max_select })}
             className={`w-full flex items-start justify-between gap-3 py-3 px-4 rounded-xl border-2 transition-all text-left ${
-              groupForm.price_replaces_base ? "bg-amber-500/10 border-amber-500" : "bg-muted/50 border-transparent"
+              groupForm.price_replaces_base ? "bg-primary/10 border-primary" : "bg-muted/50 border-transparent"
             }`}
           >
             <div className="flex-1">
@@ -265,7 +265,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                 Use para tamanhos (200ml, 300ml). O preço escolhido <b>substitui</b> o preço base do produto. Vira obrigatório e seleção única.
               </div>
             </div>
-            <div className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 mt-0.5 ${groupForm.price_replaces_base ? "bg-amber-500" : "bg-muted-foreground/30"}`}>
+            <div className={`w-11 h-6 rounded-full transition-colors relative flex-shrink-0 mt-0.5 ${groupForm.price_replaces_base ? "bg-primary" : "bg-muted-foreground/30"}`}>
               <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform shadow ${groupForm.price_replaces_base ? "translate-x-5" : "translate-x-0.5"}`} />
             </div>
           </button>
@@ -380,13 +380,13 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                         type="button"
                         onClick={() => setEditGroupForm({ ...editGroupForm, price_replaces_base: !editGroupForm.price_replaces_base, min_select: !editGroupForm.price_replaces_base ? "1" : editGroupForm.min_select, max_select: !editGroupForm.price_replaces_base ? "1" : editGroupForm.max_select })}
                         className={`w-full flex items-center justify-between py-2 px-3 rounded-lg border transition-all text-left ${
-                          editGroupForm.price_replaces_base ? "bg-amber-500/10 border-amber-500" : "bg-muted/50 border-transparent"
+                          editGroupForm.price_replaces_base ? "bg-primary/10 border-primary" : "bg-muted/50 border-transparent"
                         }`}
                       >
                         <span className="text-xs font-bold text-foreground">
                           💰 Define preço final
                         </span>
-                        <div className={`w-9 h-5 rounded-full transition-colors relative ${editGroupForm.price_replaces_base ? "bg-amber-500" : "bg-muted-foreground/30"}`}>
+                        <div className={`w-9 h-5 rounded-full transition-colors relative ${editGroupForm.price_replaces_base ? "bg-primary" : "bg-muted-foreground/30"}`}>
                           <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-transform shadow ${editGroupForm.price_replaces_base ? "translate-x-4" : "translate-x-0.5"}`} />
                         </div>
                       </button>
@@ -408,7 +408,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                           {(group.addon_items as any[])?.length || 0} itens
                         </span>
                         {group.price_replaces_base && (
-                          <span className="text-[10px] bg-amber-500/20 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full font-bold">
+                          <span className="text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded-full font-bold">
                             💰 Define preço
                           </span>
                         )}
