@@ -177,7 +177,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
       ) : (
         <>
 
-      <div className="bg-blue-500/5 border border-blue-500/10 rounded-2xl p-4 space-y-3">
+      <div className="bg-muted border border-border rounded-2xl p-4 space-y-3">
         <p className="text-xs text-muted-foreground">
           🏍️ Adicione motoboys que já se cadastraram na plataforma. 
           Eles poderão ver e entregar <strong>apenas os pedidos da sua loja</strong>, 
@@ -203,7 +203,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
               const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
               window.open(url, "_blank");
             }}
-            className="w-9 h-9 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 hover:bg-emerald-500/20 transition-colors"
+            className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary hover:bg-primary/20 transition-colors"
             title="Compartilhar via WhatsApp"
           >
             <Share2 className="h-4 w-4" />
@@ -211,7 +211,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
         </div>
 
         {/* APK Parceiro download link */}
-        <div className="pt-2 border-t border-blue-500/10">
+        <div className="pt-2 border-t border-border">
           <p className="text-[11px] text-muted-foreground mb-2">
             📲 <strong>Link do app:</strong> envie para o motoboy baixar o APK Parceiro (Android).
           </p>
@@ -235,7 +235,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
                 const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
                 window.open(url, "_blank");
               }}
-              className="w-9 h-9 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 hover:bg-emerald-500/20 transition-colors"
+              className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary hover:bg-primary/20 transition-colors"
               title="Enviar link do app via WhatsApp"
             >
               <Share2 className="h-4 w-4" />
@@ -275,11 +275,11 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
         {foundDrivers.map(driver => {
           const chosen = paymentModeChoice[driver.user_id] || "fim_do_dia";
           return (
-            <div key={driver.user_id} className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3 space-y-3">
+            <div key={driver.user_id} className="bg-card border border-border rounded-xl p-3 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                    <UserCheck className="h-4 w-4 text-emerald-500" />
+                  <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <UserCheck className="h-4 w-4 text-primary" />
                   </div>
                   <div>
                     <p className="text-sm font-bold text-foreground">{driver.full_name}</p>
@@ -322,7 +322,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
               <button
                 onClick={() => handleAdd(driver)}
                 disabled={adding}
-                className="w-full bg-emerald-500 text-white px-3 py-2.5 rounded-xl text-xs font-bold disabled:opacity-50 flex items-center justify-center gap-1"
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90 px-3 py-2.5 rounded-xl text-xs font-bold disabled:opacity-50 flex items-center justify-center gap-1"
               >
                 {adding ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
                 Adicionar à equipe
@@ -357,14 +357,14 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
         )}
 
         {storeDrivers?.map(sd => (
-           <div key={sd.id} className={`bg-card border rounded-xl p-3 space-y-3 ${sd.status === 'rejected' ? 'opacity-50' : ''} ${sd.status === 'pending' ? 'border-amber-500/30 bg-amber-500/5' : 'border-border'}`}>
+           <div key={sd.id} className={`bg-card border rounded-xl p-3 space-y-3 ${sd.status === 'rejected' ? 'opacity-50' : ''} ${sd.status === 'pending' ? 'border-border bg-muted' : 'border-border'}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="relative w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
                   <Bike className="h-4 w-4 text-primary" />
                   <span
                     className={`absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-card ${
-                      sd.is_online ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground/40"
+                      sd.is_online ? "bg-primary animate-pulse" : "bg-muted-foreground/40"
                     }`}
                     title={sd.is_online ? "Online" : "Offline"}
                   />
@@ -376,7 +376,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
                        <span
                          className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
                            sd.is_online
-                             ? "bg-emerald-500/15 text-emerald-600"
+                             ? "bg-primary/15 text-primary"
                              : "bg-muted text-muted-foreground"
                          }`}
                        >
@@ -384,10 +384,10 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
                        </span>
                      </p>
                      {sd.status === 'pending' && (
-                       <span className="text-[10px] font-black text-amber-600 uppercase">Aguardando Aceite</span>
+                       <span className="text-[10px] font-black text-muted-foreground uppercase">Aguardando Aceite</span>
                      )}
                      {sd.status === 'rejected' && (
-                       <span className="text-[10px] font-black text-red-600 uppercase">Recusou Convite</span>
+                       <span className="text-[10px] font-black text-destructive uppercase">Recusou Convite</span>
                      )}
                    </div>
                   <p className="text-[11px] text-muted-foreground">
@@ -397,7 +397,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
               </div>
               <button
                 onClick={() => handleRemove(sd.id, sd.profile?.full_name || "Motoboy")}
-                className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center text-red-500 hover:bg-red-500/20 transition-colors"
+                className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center text-destructive hover:bg-destructive/20 transition-colors"
               >
                 <Trash2 className="h-4 w-4" />
               </button>
