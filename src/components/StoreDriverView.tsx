@@ -1087,54 +1087,43 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
               <div
                 key={order.id}
                 id={`stop-${order.id}`}
-                className={`relative bg-card rounded-2xl overflow-hidden border ${
-                  inDelivery
-                    ? "border-success/40"
-                    : readyToDepart
-                      ? "border-warning/40"
-                      : "border-border/60"
-                }`}
+                className="relative bg-card rounded-2xl overflow-hidden border border-border/60 shadow-sm"
               >
-                {/* Faixa lateral de status */}
-                <div className={`absolute left-0 top-0 bottom-0 w-1 ${
-                  inDelivery ? "bg-success" : readyToDepart ? "bg-warning" : "bg-primary/50"
+                {/* Faixa lateral de status (3px) */}
+                <div className={`absolute left-0 top-0 bottom-0 w-[3px] ${
+                  inDelivery ? "bg-success" : readyToDepart ? "bg-warning" : "bg-primary/60"
                 }`} />
                 <button
                   onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
                   className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:bg-muted/30 transition-colors"
                 >
-                  <div className="relative shrink-0">
-                    {inDelivery && (
-                      <div className="absolute inset-0 bg-success/40 rounded-2xl blur-md animate-pulse" />
-                    )}
-                    <div className={`relative w-11 h-11 rounded-2xl flex items-center justify-center text-sm font-black shadow-md ${
-                      inDelivery
-                        ? "bg-success text-success-foreground shadow-success/30"
-                        : readyToDepart
-                          ? "bg-warning text-warning-foreground shadow-warning/30"
-                          : "bg-gradient-to-br from-primary/15 to-primary/5 text-primary"
-                    }`}>
-                      {index + 1}
-                    </div>
+                  <div className={`relative w-9 h-9 rounded-xl flex items-center justify-center text-sm font-black shrink-0 ${
+                    inDelivery
+                      ? "bg-success/10 text-success"
+                      : readyToDepart
+                        ? "bg-warning/10 text-warning"
+                        : "bg-primary/10 text-primary"
+                  }`}>
+                    {index + 1}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 mb-0.5">
+                    <div className="flex items-center gap-1.5 mb-1">
                       {inDelivery && <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />}
-                      <p className={`text-[9px] font-black uppercase tracking-widest ${
+                      <p className={`text-[9px] font-black uppercase tracking-widest leading-none ${
                         inDelivery ? "text-success" : readyToDepart ? "text-warning" : "text-muted-foreground"
                       }`}>
-                        {inDelivery ? "Em Entrega" : readyToDepart ? "Pronto p/ Sair" : "Aguardando"}
+                        {inDelivery ? "Em entrega" : readyToDepart ? "Pronto p/ sair" : "Aguardando"}
                       </p>
                     </div>
-                    <p className="text-sm font-black text-foreground truncate leading-tight">
+                    <p className="text-lg font-black text-foreground truncate leading-tight tracking-tight">
                       {order.neighborhood}
                     </p>
-                    <p className="text-[10px] text-muted-foreground truncate mt-0.5">
-                      {!multiStore && <>{(order as any).stores?.name} • </>}
-                      {contactName} • #{order.id.slice(0, 6).toUpperCase()}
+                    <p className="text-[11px] text-muted-foreground truncate mt-0.5">
+                      {!multiStore && <>{(order as any).stores?.name} · </>}
+                      {contactName} · #{order.id.slice(0, 6).toUpperCase()}
                     </p>
                   </div>
-                  <ChevronRight className={`h-5 w-5 text-muted-foreground transition-transform shrink-0 ${isExpanded ? "rotate-90" : ""}`} />
+                  <ChevronRight className={`h-5 w-5 text-muted-foreground/60 transition-transform shrink-0 ${isExpanded ? "rotate-90" : ""}`} />
                 </button>
 
                 {isExpanded && (
