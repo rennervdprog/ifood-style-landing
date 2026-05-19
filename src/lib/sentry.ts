@@ -41,7 +41,14 @@ export const logMessage = (message: string, level: Sentry.SeverityLevel = "info"
 // Envia LCP, INP, CLS, FCP, TTFB para o Sentry como medidas de performance
 // Permite monitorar p75 por rota no dashboard do Sentry
 export const initWebVitals = () => {
+  // Só roda no browser, nunca bloqueia o carregamento inicial
   if (typeof window === "undefined") return;
+  if (typeof document === "undefined") return;
+  // Esperar o documento estar pronto
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => initWebVitals(), { once: true });
+    return;
+  }
   // Importação dinâmica — não bloqueia o carregamento inicial
   import("web-vitals").then(({ onLCP, onINP, onCLS, onFCP, onTTFB }) => {
     const sendVital = (name: string, value: number, rating: string) => {
