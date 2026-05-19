@@ -18,11 +18,23 @@ const BackgroundGeolocation = registerPlugin<BackgroundGeolocationPlugin>(
 let watcherId: string | null = null;
 let currentOrderId: string | null = null;
 let lastSentAt = 0;
-const MIN_SEND_INTERVAL_MS = 3_000;
+
+// ── GPS adaptativo (modelo Uber) ─────────────────────────────────────────
+// Velocidade alta (>10 km/h): atualiza a cada 3s — precisão máxima em movimento
+// Velocidade baixa (2-10 km/h): atualiza a cada 8s — andando / tráfego lento
+// Velocidade muito baixa (<2 km/h): atualiza a cada 20s — parado / esperando
+function getAdaptiveInterval(speedMs: number | null | undefined): number {
+  if (speedMs == null || speedMs < 0) return 8_000; // desconhecido → moderado
+  const kmh = speedMs * 3.6;
+  if (kmh >= 10) return 3_000;   // moto em movimento
+  if (kmh >= 2)  return 8_000;   // andando / tráfego
+  return 20_000;                  // parado — economiza bateria
+}
 
 async function sendLocation(lat: number, lng: number, accuracy?: number, speed?: number, heading?: number) {
   const now = Date.now();
-  if (now - lastSentAt < MIN_SEND_INTERVAL_MS) return;
+  const interval = getAdaptiveInterval(speed ?? null);
+  if (now - lastSentAt < interval) return;
 
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.user?.id) return;
@@ -47,7 +59,7 @@ async function sendLocation(lat: number, lng: number, accuracy?: number, speed?:
     console.warn("[BgGeo] Falha ao enviar:", error.message);
   } else {
     lastSentAt = now;
-    console.log(`[BgGeo] 📍 ${lat.toFixed(5)}, ${lng.toFixed(5)} (acc: ${accuracy?.toFixed(0)}m)`);
+    // loc enviada — sem log em produção para reduzir I/O
   }
 }
 
@@ -72,7 +84,7 @@ export async function startBackgroundTracking(orderId?: string): Promise<boolean
         backgroundTitle: "Entrega em andamento",
         requestPermissions: true,
         stale: false,
-        distanceFilter: 5,
+        distanceFilter: 8, // 8m — menos callbacks quando parado
       },
       (location, error) => {
         if (error) {
