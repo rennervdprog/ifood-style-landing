@@ -160,7 +160,6 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
 
 
 
-  };
 
   return (
     <div className="rounded-2xl border-2 border-blue-500/30 p-5 relative overflow-hidden">
