@@ -1297,29 +1297,38 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
         <div className="space-y-3">
           <div className="flex items-center justify-between px-1">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-warning/10 flex items-center justify-center">
-                <Package className="h-3.5 w-3.5 text-warning" />
-              </div>
-              <h3 className="text-sm font-bold text-foreground">
-                Disponíveis ({filteredAvailable.length})
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-warning opacity-60 animate-ping" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-warning" />
+              </span>
+              <h3 className="text-[11px] font-black uppercase tracking-widest text-foreground">
+                Disponíveis
               </h3>
+              <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-warning/15 text-warning text-[10px] font-black">
+                {filteredAvailable.length}
+              </span>
             </div>
             {filteredAvailable.length > 1 && !hasActiveRoutes && (
               <button
                 onClick={acceptAllFiltered}
-                className="bg-primary text-primary-foreground px-3 py-1.5 rounded-xl text-[11px] font-bold flex items-center gap-1"
+                className="bg-primary text-primary-foreground px-3 py-1.5 rounded-xl text-[11px] font-black flex items-center gap-1 shadow-sm shadow-primary/20 active:scale-95 transition-transform"
               >
-                <Zap className="h-3 w-3" /> Aceitar Todos
+                <Zap className="h-3 w-3" strokeWidth={3} /> Aceitar todos
               </button>
             )}
           </div>
 
           {hasActiveRoutes && (
-            <div className="bg-warning/10 border border-warning/25 rounded-xl px-4 py-3 flex items-center gap-2.5">
-              <Clock className="h-4 w-4 text-warning flex-shrink-0" />
-              <p className="text-xs text-warning font-semibold">
-                Finalize suas entregas atuais antes de aceitar novos pedidos.
-              </p>
+            <div className="bg-warning/8 border border-warning/25 rounded-2xl px-4 py-3 flex items-start gap-2.5">
+              <div className="w-7 h-7 rounded-lg bg-warning/15 flex items-center justify-center shrink-0">
+                <Clock className="h-3.5 w-3.5 text-warning" strokeWidth={2.6} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] font-black text-warning uppercase tracking-wider leading-none">Em rota</p>
+                <p className="text-xs text-foreground/80 font-medium mt-1 leading-snug">
+                  Finalize as entregas atuais antes de aceitar novos pedidos.
+                </p>
+              </div>
             </div>
           )}
 
@@ -1414,34 +1423,54 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       )}
 
       {loadingAvailable && (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <div className="space-y-3">
+          {[0, 1].map((i) => (
+            <div key={i} className="relative bg-card rounded-2xl overflow-hidden border border-border/60 shadow-sm">
+              <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-muted" />
+              <div className="p-4 pl-[18px] space-y-3 animate-pulse">
+                <div className="flex items-center justify-between">
+                  <div className="h-3 w-24 rounded bg-muted" />
+                  <div className="h-3 w-14 rounded bg-muted" />
+                </div>
+                <div className="h-6 w-3/5 rounded bg-muted" />
+                <div className="flex gap-1.5">
+                  <div className="h-6 w-16 rounded-lg bg-muted" />
+                  <div className="h-6 w-20 rounded-lg bg-muted" />
+                </div>
+                <div className="h-14 w-full rounded-2xl bg-muted" />
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
       {!loadingAvailable && !hasActiveDeliveries && !hasAvailable && (
-        <div className="flex flex-col items-center justify-center py-20 text-center px-8 gap-4">
-          <div className={`w-20 h-20 rounded-[1.75rem] flex items-center justify-center ${
-            isOnline ? "bg-primary/8" : "bg-muted/60"
+        <div className="flex flex-col items-center justify-center py-16 text-center px-8 gap-5">
+          <div className={`relative w-24 h-24 rounded-[2rem] flex items-center justify-center ${
+            isOnline ? "bg-gradient-to-br from-primary/15 to-primary/5" : "bg-muted/60"
           }`}>
-            <Bike className={`h-10 w-10 ${isOnline ? "text-primary" : "text-muted-foreground"}`} strokeWidth={1.8} />
+            {isOnline && (
+              <span className="absolute inset-0 rounded-[2rem] border-2 border-primary/20 animate-pulse" />
+            )}
+            <Bike className={`h-11 w-11 ${isOnline ? "text-primary" : "text-muted-foreground"}`} strokeWidth={1.8} />
           </div>
-          <div>
-            <p className="text-lg font-black text-foreground">
+          <div className="space-y-1.5">
+            <p className="text-xl font-black text-foreground tracking-tight">
               {isOnline ? "Aguardando pedidos" : "Você está offline"}
             </p>
-            <p className="text-sm text-muted-foreground mt-1 max-w-[240px] mx-auto leading-relaxed">
+            <p className="text-sm text-muted-foreground max-w-[260px] mx-auto leading-relaxed">
               {isOnline
-                ? "Quando a loja tiver pedidos prontos eles aparecerão aqui."
-                : "Ative o status online para começar a receber."}
+                ? "Você receberá uma notificação assim que um pedido estiver pronto."
+                : "Ative o status online para começar a receber entregas."}
             </p>
           </div>
           {!isOnline && (
             <button
               onClick={toggleOnline}
               disabled={togglingOnline}
-              className="h-12 px-8 bg-primary text-primary-foreground font-bold rounded-2xl text-sm active:scale-[0.97] transition-transform"
+              className="h-12 px-8 bg-primary text-primary-foreground font-black rounded-2xl text-sm shadow-md shadow-primary/25 active:scale-[0.97] transition-transform flex items-center gap-2"
             >
+              <Power className="h-4 w-4" strokeWidth={2.6} />
               Ficar online
             </button>
           )}
