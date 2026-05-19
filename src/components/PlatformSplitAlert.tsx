@@ -59,6 +59,31 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
   // Cobrança automática a partir de R$30 toda segunda-feira
   const canPay = pendingFee >= 30;
 
+  const handlePayFee = async () => {
+    setGenerating(true);
+    try {
+    const { data, error } = await supabase.functions.invoke("store-platform-fee-pix", {
+        body: { store_id: storeId, amount: pendingFee },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setPixData({ qr_code: data.qr_code, qr_code_base64: data.qr_code_base64, amount: data.amount });
+      toast.success("PIX gerado! Escaneie o QR Code para pagar.");
+      queryClient.invalidateQueries({ queryKey: ["store-balance-split", storeId] });
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao gerar PIX.");
+    } finally {
+      setGenerating(false);
+    }
+    };
+  
+  const copyPixCode = () => {
+    if (pixData?.qr_code) {
+      navigator.clipboard.writeText(pixData.qr_code);
+      toast.success("Código PIX copiado!");
+    }
+    };
+
   const isLocked = total >= LOCK_THRESHOLD; // ≥ R$150 trava o painel
 
   if (dismissed || total <= 0) return null;
@@ -109,7 +134,7 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
                   </div>
                 )}
                 {pixData.qr_code && (
-                  <button onClick={copyPix} className="w-full flex items-center justify-center gap-2 border border-border bg-muted/40 rounded-xl py-2.5 text-sm font-bold active:scale-[0.98] transition-transform">
+                  <button onClick={copyPixCode} className="w-full flex items-center justify-center gap-2 border border-border bg-muted/40 rounded-xl py-2.5 text-sm font-bold active:scale-[0.98] transition-transform">
                     <Copy className="h-4 w-4" /> Copiar Código PIX
                   </button>
                 )}
@@ -165,7 +190,7 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
-            <Wallet className="h-6 w-6 text-blue-500" />
+            <Banknote className="h-6 w-6 text-blue-500" />
             <div>
               <h3 className="font-bold text-sm text-foreground">
                 Repasse Pendente — Taxa Plataforma
