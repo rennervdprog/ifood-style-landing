@@ -1,5 +1,13 @@
 import { initSentry } from "./lib/sentry";
 
+// Declarar extensões do Window para gonative/median (apps nativos WebView)
+declare global {
+  interface Window {
+    gonative?: { deviceInfo?: () => void; [key: string]: any };
+    median?: { [key: string]: any };
+  }
+}
+
 initSentry();
 
 console.log("[Main] App starting...", { platform: navigator.userAgent?.slice(0, 80) });
