@@ -1,119 +1,118 @@
-# Plano — Redesign UI/UX do Painel do Entregador
+## Plano de Teste — ItaSuper (padrão de empresas como Google, Stripe, Uber, iFood)
 
-**Escopo:** apenas UI/UX (`DriverDashboardV2.tsx`, `StoreDriverView.tsx`, `StoreDriverEarnings.tsx`, `DriverPersistentAlert.tsx`). Nenhuma alteração em queries, mutations, geolocalização, realtime, otimização de rota ou regras de negócio.
+Objetivo: validar que **fluxos críticos de receita e operação** funcionam de ponta a ponta, sem regressões, em todas as personas (cliente, loja, entregador, admin/matriz).
 
----
+### Princípios (test pyramid clássico)
 
-## 1. Pesquisa rápida — padrões consagrados em apps de entregador
+```text
+        ╱╲     E2E (poucos, fluxos de receita)
+       ╱──╲    Integração (RPCs Supabase + edge functions)
+      ╱────╲   Componente (UI crítica c/ Testing Library)
+     ╱──────╲  Unitário (lib/utils, formatters, regras puras)
+```
 
-Padrões usados por iFood Entregador, Uber Driver, Rappi, DoorDash Dasher:
-
-1. **"Um job, uma tela"** — quando em entrega, a tela inteira foca no pedido ativo. Nada compete com a ação principal.
-2. **CTA único e gigante, fixo no rodapé** (thumb zone) — "Aceitar", "Cheguei no cliente", "Entreguei". Altura ≥56px, ocupa largura quase total.
-3. **Toggle Online/Offline grande no topo** com cor viva quando online (verde/primary) e neutro quando offline.
-4. **Barra de status persistente** com: status (online/offline), ganhos do dia, nº de entregas. Sempre visível, glance-able.
-5. **Cards de pedido com hierarquia rígida** — endereço (maior, negrito) > distância/tempo > valor. Nada mais compete.
-6. **Sem cores arbitrárias** — só a cor primária da marca + um estado de alerta. Apps de entregador profissionais evitam arco-íris de cores.
-7. **Navegação externa em destaque** — botões Waze/Maps grandes, side-by-side, com ícones reconhecíveis.
-8. **PIN/código de entrega** em teclado numérico nativo ou input gigante centralizado com tracking amplo.
-9. **Contato cliente** — botão WhatsApp/ligar com ícone redondo grande, um toque.
-10. **Bottom-sheet** para detalhes secundários (itens do pedido, observações) — não polui a tela principal.
-11. **Estados vazios calmos** — "Sem pedidos no momento" com ilustração simples e dica útil, não em vermelho/alerta.
-12. **Safe areas obrigatórias** (`pt-safe`, `pb-safe`) para o notch e barra inferior.
-13. **Feedback tátil** em toda ação (haptic) + animação `active:scale-[0.97]`.
+70% unit · 20% integração · 10% E2E — mesma proporção usada no Google e Spotify.
 
 ---
 
-## 2. Diagnóstico do que está feio hoje
+### Fase 1 — Fundação (setup já existe, só ampliar)
 
-- **Cores arbitrárias por toda parte:** `bg-amber-500`, `bg-emerald-500`, `bg-blue-500`, `bg-purple-500` — quebra a identidade da marca, parece protótipo.
-- **Gradientes em excesso** — vários cards com `bg-gradient-to-br from-X to-Y`, criando ruído visual.
-- **Hierarquia tipográfica fraca** — muito texto do mesmo peso, falta diferenciar endereço vs metadados.
-- **Header denso** com nome + role + 2 botões + logo, todos pequenos demais para toque confortável.
-- **Cards de pedido com muita informação simultânea** — itens, valores, navegação, ação, tudo competindo.
-- **Botões de status (Cheguei/Confirmar PIN)** com cores diferentes do resto do app, parecendo de outro produto.
-- **Earnings** misturado no fluxo principal sem hierarquia clara.
-- **Tabs/segmentação** (`bg-muted/50 p-1 rounded-2xl`) genéricas, sem indicação clara do ativo.
-- **Persistent alert** flutuante competindo com header.
-- **Empty states** funcionam mas o convite pendente tem visual pesado para o que é (3 chips decorativos sem função).
+Já há `vitest` + `@testing-library/react` + `jsdom`. Adicionar:
+- `@testing-library/user-event` para interações realistas (focus/blur/typing)
+- `msw` (Mock Service Worker) para mockar Supabase REST/Edge sem rede
+- `playwright` para E2E mobile (Capacitor é WebView, Playwright cobre bem)
+- Coverage com `@vitest/coverage-v8` — meta 60% lib/, 50% components/
+
+### Fase 2 — Unitários (rápidos, isolados)
+
+Alvo: `src/lib/` e funções puras. Onde mais bug silencioso costuma morar.
+
+| Módulo | O que testar |
+|---|---|
+| `formatBRL`, `appVersion`, `orderItemName` | formatação, edge cases (0, negativo, null) |
+| `driverGeolocation` | start/stop/update, idempotência, no-op na web |
+| `haptics` | no-op fora do Capacitor, fallback silencioso |
+| `realtimeChannel` | rejoin, cleanup, sem leaks |
+| Regras de negócio (cálculo de troco, comissão, frete) | golden tests com tabela de entradas/saídas |
+
+### Fase 3 — Testes de componente (UI crítica)
+
+Foco em componentes onde erro = perda de dinheiro ou confusão do usuário:
+
+1. **StoreDriverView** — toggle online/offline, aceitar pedido, PIN 4 boxes (auto-advance, paste, backspace), confirmar entrega
+2. **Checkout / Carrinho** — soma de itens, cupom, troco, método de pagamento
+3. **PlatformSplitAlert** — fluxo PIX e cópia para área de transferência
+4. **MenuProduct** — adicionar ao carrinho, variações, observações
+5. **Auth (login/cadastro)** — validação, mensagens de erro, redirect
+
+Padrão: render → user-event → assert texto visível. Sem testar implementação interna.
+
+### Fase 4 — Integração (RPCs + Edge Functions)
+
+Cada RPC crítica recebe teste Deno (`supabase/functions/*/test.ts`):
+
+- `driver_accept_order` — só aceita se online, bloqueia duplo accept
+- `driver_finish_delivery` — valida PIN, marca status, dispara comissão
+- `confirm-order-payment` — idempotente, não duplica receita
+- `create-pix-payment` / `mercadopago-webhook` — assinatura, replay protection
+- `create-withdrawal-request` — saldo suficiente, anti-fraude, lock
+
+Usar `supabase--test_edge_functions` e `curl_edge_functions` no CI.
+
+### Fase 5 — E2E mobile (Playwright, viewport 384×672)
+
+5 jornadas críticas — as únicas que JAMAIS podem quebrar:
+
+```text
+1. Cliente faz pedido     login → menu → carrinho → pagamento PIX → confirmação
+2. Loja recebe e prepara  notificação → aceitar → pronto → marca saída
+3. Entregador entrega     online → aceitar → sair → PIN → confirmar
+4. Saque do entregador    earnings → solicitar saque → aprovação
+5. Onboarding loja nova   cadastro → plano → cardápio → ativar
+```
+
+Cada jornada roda em CI a cada push em `main` e bloqueia deploy se falhar.
+
+### Fase 6 — Segurança (não-funcional, mas obrigatório)
+
+- `supabase--linter` no CI — RLS em todas tabelas
+- `security--run_security_scan` semanal
+- Revisão manual das policies de `orders`, `withdrawals`, `drivers`, `stores`
+- Pentest leve: tentar `select *` em tabelas sensíveis com anon key
+- Validar que entregador A não vê pedidos da loja B
+
+### Fase 7 — Performance & resiliência
+
+- Lighthouse mobile (LCP < 2.5s, CLS < 0.1, TTI < 3.5s)
+- Teste de carga nas edge functions de pagamento (k6 ou artillery)
+- Realtime: 50 entregadores online simultâneos sem deadlock
+- Modo offline: cliente Capacitor não trava sem rede
+
+### Fase 8 — Smoke test manual antes de cada release
+
+Checklist rápido (5 min) feito no APK real:
+- [ ] Login funciona
+- [ ] Ficar online/offline (toggle alinhado)
+- [ ] Aceitar pedido fictício
+- [ ] PIN de 4 caixas auto-avança
+- [ ] Notificação push chega
+- [ ] Versão exibida no Perfil bate com build
 
 ---
 
-## 3. Plano de redesign — 5 lotes
+### Ordem de execução sugerida
 
-### Lote 1 — Sistema visual base do painel
-- Definir tokens semânticos consistentes: `--driver-online` (verde primário), `--driver-offline` (muted), `--driver-alert` (destructive). Tudo via index.css, sem novas cores cruas.
-- Remover **todos** os `bg-amber-*`, `bg-emerald-*`, `bg-blue-*`, `bg-purple-*`, `text-emerald-*` etc. do fluxo do entregador. Substituir por `primary`, `muted`, `destructive`, `foreground`.
-- Padronizar raios: `rounded-2xl` para cards, `rounded-xl` para chips/botões secundários, `rounded-full` para ícones circulares.
-- Padronizar sombras: apenas `shadow-sm` em cards e `shadow-lg shadow-primary/20` no CTA principal.
-- Remover gradientes decorativos (`from-X to-Y` puro estilo) — manter só em CTA hero.
+1. **Esta semana** — Fase 1 (setup) + Fase 2 (unitários `lib/`) → base rápida, alto ROI
+2. **Próxima** — Fase 3 (componentes do entregador, redesenhados recentemente)
+3. **Depois** — Fase 4 (RPCs de pagamento) + Fase 6 (segurança)
+4. **Antes do próximo lançamento grande** — Fase 5 (E2E) + Fase 8 (smoke)
 
-### Lote 2 — Header e Status Bar
-- Header mais alto (h-16) com:
-  - Esquerda: avatar/iniciais + nome em peso black + role em micro caps.
-  - Direita: ícones suporte + sair em containers 40×40.
-- Logo abaixo do header: **Status Bar fixa** com 3 colunas glance-able:
-  - **Status** (Online/Offline) com dot pulsante quando online.
-  - **Ganhos hoje** (R$ XX,XX).
-  - **Entregas hoje** (n).
-- Toggle online/offline vira o elemento mais proeminente — pill grande clicável de largura total acima das tabs.
+### O que NÃO testar (regra do Google)
 
-### Lote 3 — Cards de pedido (lista de disponíveis e aceitos)
-- Reescrita do card com hierarquia tipo iFood:
-  - **Linha 1:** ícone loja + nome da loja (sm, muted).
-  - **Linha 2:** **Bairro · rua** (xl, font-black, foreground).
-  - **Linha 3:** chips compactos — distância · valor da entrega · forma de pagamento.
-  - **Footer fixo do card:** CTA único primário ("Aceitar" / "Iniciar entrega") + ação secundária discreta (recusar como link, não como botão).
-- Estados visuais com **borda esquerda colorida** (3px) ao invés de fundo colorido inteiro:
-  - Novo = primary.
-  - Em entrega = primary + pulse sutil.
-  - Aguardando código = muted-foreground.
-- Itens do pedido escondidos atrás de "Ver itens" (bottom-sheet/accordion).
-
-### Lote 4 — Tela de entrega ativa (foco total)
-- Quando há pedido em andamento, esconder lista e mostrar **tela única** do pedido ativo:
-  - Topo: cliente (nome + telefone) + 2 botões grandes (Ligar / WhatsApp).
-  - Meio: endereço gigante + botões Waze/Maps lado a lado (`flex-1`, tokens primary/muted, sem azul/roxo crus).
-  - Bloco itens colapsado por padrão.
-  - Bloco pagamento se cash (troco).
-  - Rodapé sticky: CTA único de próxima ação ("Cheguei", "Entreguei", "Inserir código").
-- Input de **código PIN** com dígitos individuais (6 caixas) ao invés de texto único — padrão fintech, muito mais claro.
-
-### Lote 5 — Convite, Aguardando vínculo, Earnings, Persistent Alert
-- **Convite pendente:** simplificar. Remover os 3 chips decorativos sem função. Manter: loja, "Convite de loja", 2 botões grandes.
-- **Aguardando vínculo:** já bom — só ajustar para tokens semânticos e copy mais curta.
-- **Earnings:** card compacto colapsado por padrão na home; expansível para detalhes. Sem `text-emerald-*`.
-- **DriverPersistentAlert:** redesenhar como faixa fina no topo (não card flutuante), `bg-primary/10 text-primary` quando informativo, `bg-destructive/10` só se realmente crítico.
-- **Empty state "sem pedidos":** ilustração calma (ícone Bike grande em `text-muted-foreground/30`), copy "Tudo certo. Avisaremos quando chegar um pedido."
+- Detalhes de implementação (cor exata, classe Tailwind)
+- Bibliotecas terceiras (confiar no React, lucide, etc.)
+- Telas administrativas raramente usadas (custo > benefício)
 
 ---
 
-## 4. O que NÃO entra (proteção contra escopo)
-
-- Nenhuma mudança em: `useQuery`, mutations Supabase, realtime, `startDriverTracking`, `optimizeRoute`, `notifyOrderStatusChange`, lógica de status, regras de PIN, fluxo de aceitar/rejeitar, persistência de declined, lógica de earnings.
-- Nenhuma mudança em rotas, auth, guards.
-- Nenhuma alteração em `StoreDriverEarnings` além de estilos.
-
----
-
-## 5. Ordem de execução sugerida (1 lote por mensagem "Sim")
-
-1. Lote 1 — tokens + remoção de cores cruas.
-2. Lote 2 — header + status bar + toggle online.
-3. Lote 3 — cards de pedido.
-4. Lote 4 — tela de entrega ativa + PIN.
-5. Lote 5 — convite, earnings, persistent alert, empty states.
-
-Cada lote: incremento de versão patch (`1.6.28` → `1.6.32`) com `versionCode` correspondente, conforme rotina.
-
----
-
-## 6. Métricas de sucesso visual
-
-- Zero classes `bg-amber-*`, `bg-emerald-*`, `bg-blue-*`, `bg-purple-*`, `text-emerald-*`, `text-amber-*`, `text-blue-*` no fluxo do entregador.
-- CTA primário ≥56px em todas as telas de ação.
-- Todo texto crítico (endereço, valor, código) em `font-black` ≥ `text-lg`.
-- Toda área tocável ≥40×40.
-- `pt-safe`/`pb-safe` em todas as telas full-screen.
-
-Posso começar pelo **Lote 1** assim que você confirmar.
+Quando você aprovar, começo pela **Fase 1 + Fase 2** (setup ampliado + suíte de unitários em `src/lib/`) — fundação que destrava todo o resto.
