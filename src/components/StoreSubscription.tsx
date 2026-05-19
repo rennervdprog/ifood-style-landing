@@ -46,17 +46,17 @@ interface Props {
  };
 
  const planAccent: Record<StorePlanType, string> = {
-   fixed: "text-amber-600 dark:text-amber-400",
-   hybrid: "text-blue-600 dark:text-blue-400",
-   commission_only: "text-emerald-600 dark:text-emerald-400",
-   supporter: "text-amber-600",
+   fixed: "text-primary",
+   hybrid: "text-primary",
+   commission_only: "text-primary",
+   supporter: "text-primary",
  };
 
  const planAccentBg: Record<StorePlanType, string> = {
-   fixed: "bg-amber-500/10",
-   hybrid: "bg-blue-500/10",
-   commission_only: "bg-emerald-500/10",
-   supporter: "bg-amber-500/10",
+   fixed: "bg-primary/10",
+   hybrid: "bg-primary/10",
+   commission_only: "bg-primary/10",
+   supporter: "bg-primary/10",
  };
 
 /** Opções de plano para troca — vem direto de plansInfo (fonte única). */
@@ -84,9 +84,9 @@ const features = [
 ];
 
 const statusMeta: Record<string, { label: string; color: string; icon: React.ElementType; bg: string }> = {
-  pending: { label: "Aguardando", color: "text-amber-600 dark:text-amber-400", icon: AlertCircle, bg: "bg-amber-500/10 border-amber-500/30" },
-  approved: { label: "Aprovado", color: "text-emerald-600 dark:text-emerald-400", icon: CheckCircle2, bg: "bg-emerald-500/10 border-emerald-500/30" },
-  rejected: { label: "Recusado", color: "text-red-600 dark:text-red-400", icon: XCircle, bg: "bg-red-500/10 border-red-500/30" },
+  pending: { label: "Aguardando", color: "text-muted-foreground", icon: AlertCircle, bg: "bg-muted border-border" },
+  approved: { label: "Aprovado", color: "text-primary", icon: CheckCircle2, bg: "bg-primary/10 border-primary/30" },
+  rejected: { label: "Recusado", color: "text-destructive", icon: XCircle, bg: "bg-destructive/10 border-destructive/30" },
 };
 
 const formatDateBR = (d: string | null | undefined) =>
@@ -223,10 +223,10 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
         <CardContent className="p-5 space-y-4">
           {/* Trial progress */}
           {plan.isInTrial && (
-            <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3">
+            <div className="rounded-xl bg-primary/10 border border-primary/20 p-3">
               <div className="flex items-center gap-2 mb-2">
-                <Gift className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                <Gift className="h-4 w-4 text-primary" />
+                <p className="text-xs font-bold text-primary">
                   Período grátis · {plan.trialDaysLeft} {plan.trialDaysLeft === 1 ? "dia restante" : "dias restantes"}
                 </p>
               </div>
@@ -262,10 +262,10 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
 
           {/* Essencial: delivery fee disclosure (paid by client) */}
           {plan.isFixedPlan && (
-            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3">
+            <div className="rounded-xl border border-primary/30 bg-primary/5 p-3">
               <div className="flex items-start gap-3">
-                <div className="h-9 w-9 rounded-xl bg-emerald-500/15 flex items-center justify-center shrink-0">
-                  <Truck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                <div className="h-9 w-9 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
+                  <Truck className="h-4 w-4 text-primary" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-semibold text-foreground">Taxa de entrega: R$ 2,00 por pedido</p>
@@ -297,11 +297,11 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
 
       {/* ───────── PENDÊNCIAS: Unpaid PIX charge ───────── */}
       {pendingCharge && (
-        <Card className="border-2 border-amber-500/40 bg-amber-500/5 overflow-hidden">
+        <Card className="border-2 border-border bg-muted overflow-hidden">
           <CardContent className="p-4 space-y-3">
             <div className="flex items-start gap-3">
-              <div className="h-10 w-10 rounded-xl bg-amber-500/15 flex items-center justify-center shrink-0">
-                <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+              <div className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center shrink-0">
+                <AlertTriangle className="h-5 w-5 text-muted-foreground" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-foreground">Cobrança em aberto</p>
@@ -358,7 +358,7 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
                   <span className="font-semibold text-foreground">{planLabels[pendingRequest.requested_plan_type as StorePlanType]}</span>
                 </div>
                 {pendingRequest.status === "pending" && (
-                  <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1">Aguardando aprovação do administrador</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">Aguardando aprovação do administrador</p>
                 )}
                 {pendingRequest.admin_notes && pendingRequest.status !== "pending" && (
                   <p className={`text-[11px] mt-1 ${statusMeta[pendingRequest.status]?.color}`}>
@@ -366,7 +366,7 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
                   </p>
                 )}
                 {pendingRequest.prorata_credit > 0 && (
-                  <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 mt-1">
+                  <p className="text-[11px] font-semibold text-primary mt-1">
                     Crédito aplicado: {formatBRL(Number(pendingRequest.prorata_credit))}
                   </p>
                 )}
@@ -490,9 +490,9 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
           <CardContent className="p-4 space-y-3">
             {/* Prorata credit info */}
             {plan.monthlyFee > 0 && (prorataCredit ?? 0) > 0 && (
-              <div className="flex items-center gap-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 p-3">
-                <Gift className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                <p className="text-xs text-emerald-700 dark:text-emerald-400">
+              <div className="flex items-center gap-2 rounded-lg bg-primary/10 border border-primary/20 p-3">
+                <Gift className="h-4 w-4 text-primary shrink-0" />
+                <p className="text-xs text-primary">
                   Você tem <strong>{formatBRL(prorataCredit ?? 0)}</strong> de crédito não utilizado do plano atual.
                 </p>
               </div>
@@ -560,7 +560,7 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
                 {(prorataCredit ?? 0) > 0 && (
                   <div className="flex items-center justify-between text-xs pt-1.5 border-t border-border/50">
                     <span className="text-muted-foreground">Crédito a aplicar</span>
-                    <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                    <span className="font-bold text-primary">
                       {formatBRL(prorataCredit ?? 0)}
                     </span>
                   </div>

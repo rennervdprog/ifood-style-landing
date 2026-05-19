@@ -93,10 +93,10 @@ export default function FinanceCenter({ storeId, storeName, hasCommission, isPla
   return (
     <div className="space-y-6">
       {(isAsaasPending || isJustCreated) && (
-        <Alert className="border-amber-500/40 bg-amber-500/5 animate-in fade-in slide-in-from-top-4 duration-500">
-          <Clock className="h-5 w-5 text-amber-600 animate-pulse" />
-          <AlertTitle className="text-amber-700 font-bold">Sua conta ainda está em análise, aguarde</AlertTitle>
-          <AlertDescription className="text-xs text-amber-600">
+        <Alert className="border-destructive/40 bg-destructive/5 animate-in fade-in slide-in-from-top-4 duration-500">
+          <Clock className="h-5 w-5 text-destructive animate-pulse" />
+          <AlertTitle className="text-destructive font-bold">Sua conta ainda está em análise, aguarde</AlertTitle>
+          <AlertDescription className="text-xs text-destructive/80">
             Sua subconta Asaas está sendo processada. Você já pode receber pagamentos via PIX, mas a funcionalidade de saque será liberada assim que a análise for concluída.
           </AlertDescription>
         </Alert>
@@ -137,19 +137,19 @@ export default function FinanceCenter({ storeId, storeName, hasCommission, isPla
 
           <TabsContent value="summary" className="mt-6 space-y-6">
             {needsAsaasConfig && (
-              <Card className="border-amber-200 bg-amber-50/30">
+              <Card className="border-destructive/30 bg-destructive/5">
                 <CardContent className="pt-6 pb-6 text-center space-y-4">
-                  <div className="mx-auto w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
-                    <Wallet className="h-6 w-6 text-amber-600" />
+                  <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">
+                    <Wallet className="h-6 w-6 text-destructive" />
                   </div>
                   <div className="space-y-1">
-                    <h3 className="font-bold text-amber-900">Configuração Pendente</h3>
-                    <p className="text-sm text-amber-700 max-w-[280px] mx-auto">
+                    <h3 className="font-bold text-destructive">Configuração Pendente</h3>
+                    <p className="text-sm text-muted-foreground max-w-[280px] mx-auto">
                       Identificamos que sua conta ainda não possui o PIX integrado via Asaas. Configure agora para receber direto na sua conta.
                     </p>
                   </div>
                   <Button 
-                    className="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold h-11"
+                    className="w-full bg-destructive hover:bg-destructive/90 text-destructive-foreground font-bold h-11"
                     onClick={() => setActiveTab("balance")}
                   >
                     Configurar Conta Asaas

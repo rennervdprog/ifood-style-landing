@@ -46,7 +46,7 @@ const ReportsTab = ({ allOrders, store }: ReportsTabProps) => {
         <Calendar className="h-4 w-4 text-muted-foreground" />
         {periods.map(p => (
           <button key={p} onClick={() => setSelectedPeriod(p)}
-            className={`px-4 py-2 rounded-xl text-xs font-bold ${selectedPeriod === p ? "bg-primary text-white" : "bg-card border"}`}>
+            className={`px-4 py-2 rounded-xl text-xs font-bold ${selectedPeriod === p ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground"}`}>
             {p}d
           </button>
         ))}
@@ -55,11 +55,11 @@ const ReportsTab = ({ allOrders, store }: ReportsTabProps) => {
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-card p-4 rounded-2xl border border-border">
           <p className="text-[10px] uppercase font-bold text-muted-foreground">Receita Total</p>
-          <p className="text-2xl font-black text-emerald-500">{formatCurrency(reportData.totalRevenue)}</p>
+          <p className="text-2xl font-black text-foreground">{formatCurrency(reportData.totalRevenue)}</p>
         </div>
         <div className="bg-card p-4 rounded-2xl border border-border">
           <p className="text-[10px] uppercase font-bold text-muted-foreground">Pedidos Concluídos</p>
-          <p className="text-2xl font-black text-blue-500">{reportData.totalOrders}</p>
+          <p className="text-2xl font-black text-foreground">{reportData.totalOrders}</p>
         </div>
       </div>
 
@@ -70,12 +70,12 @@ const ReportsTab = ({ allOrders, store }: ReportsTabProps) => {
             <XAxis dataKey="day" tick={{ fontSize: 9 }} axisLine={false} tickLine={false} />
             <YAxis hide />
             <RechartsTooltip />
-            <Area type="monotone" dataKey="vendas" stroke="#10b981" fill="#10b98120" />
+            <Area type="monotone" dataKey="vendas" stroke="hsl(var(--primary))" fill="hsl(var(--primary) / 0.2)" />
           </AreaChart>
         </ResponsiveContainer>
       </div>
 
-      <button className="w-full bg-primary text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2"
+      <button className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2"
         onClick={() => toast.success("Exportação iniciada...")}>
         <Download className="h-4 w-4" /> Exportar Relatório CSV
       </button>
