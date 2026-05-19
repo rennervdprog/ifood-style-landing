@@ -16,10 +16,10 @@ const REASON_LABELS: Record<string, string> = {
 };
 
 const STATUS_LABELS: Record<string, { label: string; color: string; bg: string }> = {
-  pending: { label: "Pendente", color: "text-amber-600", bg: "bg-amber-50" },
-  approved: { label: "Em análise", color: "text-blue-600", bg: "bg-blue-50" },
-  processed: { label: "Processado", color: "text-emerald-600", bg: "bg-emerald-50" },
-  rejected: { label: "Rejeitado", color: "text-red-600", bg: "bg-red-50" },
+  pending: { label: "Pendente", color: "text-foreground", bg: "bg-muted" },
+  approved: { label: "Em análise", color: "text-foreground", bg: "bg-muted" },
+  processed: { label: "Processado", color: "text-primary", bg: "bg-primary/10" },
+  rejected: { label: "Rejeitado", color: "text-destructive", bg: "bg-destructive/10" },
 };
 
 interface Props {
@@ -123,11 +123,11 @@ const AdminRefundPanel = ({ storeId }: Props) => {
             <div className={`px-4 py-2.5 flex items-center justify-between ${status.bg} border-b border-border/30`}>
               <div className="flex items-center gap-2">
                 {isPending ? (
-                  <Clock className="h-4 w-4 text-amber-500" />
+                  <Clock className="h-4 w-4 text-muted-foreground" />
                 ) : req.status === "processed" ? (
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  <CheckCircle2 className="h-4 w-4 text-primary" />
                 ) : (
-                  <XCircle className="h-4 w-4 text-red-500" />
+                  <XCircle className="h-4 w-4 text-destructive" />
                 )}
                 <span className={`text-xs font-bold ${status.color}`}>{status.label}</span>
               </div>
@@ -169,16 +169,16 @@ const AdminRefundPanel = ({ storeId }: Props) => {
               )}
 
               {req.admin_notes && (
-                <div className="bg-blue-50 dark:bg-blue-950/30 rounded-xl p-3">
-                  <p className="text-xs text-blue-700 dark:text-blue-300">
+                <div className="bg-muted rounded-xl p-3">
+                  <p className="text-xs text-foreground">
                     <strong>Nota:</strong> {req.admin_notes}
                   </p>
                 </div>
               )}
 
               {req.approved_amount != null && req.status === "processed" && (
-                <div className="bg-emerald-50 dark:bg-emerald-950/30 rounded-xl p-3">
-                  <p className="text-xs text-emerald-700 dark:text-emerald-300">
+                <div className="bg-primary/10 rounded-xl p-3">
+                  <p className="text-xs text-foreground">
                     ✅ Creditado: <strong>{formatBRL(Number(req.approved_amount))}</strong> na carteira do cliente
                   </p>
                 </div>
@@ -208,7 +208,7 @@ const AdminRefundPanel = ({ storeId }: Props) => {
                     <button
                       onClick={() => handleProcess(req.id, true)}
                       disabled={processing === req.id}
-                      className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 disabled:opacity-50 transition-colors"
+                      className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 disabled:opacity-50 transition-colors"
                     >
                       {processing === req.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
                       Aprovar
@@ -216,7 +216,7 @@ const AdminRefundPanel = ({ storeId }: Props) => {
                     <button
                       onClick={() => handleProcess(req.id, false)}
                       disabled={processing === req.id}
-                      className="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 disabled:opacity-50 transition-colors"
+                      className="flex-1 bg-destructive hover:bg-destructive/90 text-destructive-foreground font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 disabled:opacity-50 transition-colors"
                     >
                       {processing === req.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <XCircle className="h-3.5 w-3.5" />}
                       Rejeitar
