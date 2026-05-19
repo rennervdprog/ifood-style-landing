@@ -9,6 +9,8 @@ declare global {
 }
 
 initSentry();
+// Web Vitals — reportar LCP/INP/CLS para Sentry após mount
+import("./lib/sentry").then(({ initWebVitals }) => initWebVitals()).catch(() => {});
 
 console.log("[Main] App starting...", { platform: navigator.userAgent?.slice(0, 80) });
 import { createRoot } from "react-dom/client";
