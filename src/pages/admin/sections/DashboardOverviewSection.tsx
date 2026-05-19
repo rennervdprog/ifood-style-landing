@@ -74,23 +74,21 @@ export default function DashboardOverviewSection(props: Props) {
         </p>
       </div>
       <div className="flex flex-col items-end gap-1">
-        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold ${
-          store.is_open 
-            ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20" 
-            : "bg-red-500/10 text-red-500 border border-red-500/20"
+        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border ${
+          store.is_open
+            ? "bg-primary/10 text-primary border-primary/20"
+            : "bg-muted text-muted-foreground border-border"
         }`}>
-          <div className={`w-2 h-2 rounded-full ${store.is_open ? "bg-emerald-500 animate-pulse" : "bg-red-500"}`} />
+          <div className={`w-2 h-2 rounded-full ${store.is_open ? "bg-primary animate-pulse" : "bg-muted-foreground"}`} />
           {store.is_open ? "Online" : "Offline"}
         </div>
-        <div className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-lg ${isStoreReallyOpen ? "text-emerald-500 bg-emerald-500/5" : "text-red-500 bg-red-500/5"}`}>
+        <div className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-lg ${isStoreReallyOpen ? "text-primary bg-primary/5" : "text-muted-foreground bg-muted"}`}>
           {isStoreReallyOpen ? "Loja Aberta" : "Loja Fechada"}
         </div>
       </div>
     </div>
     <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-[11px] font-bold ${
-      storePlan.planType === "fixed" ? "bg-amber-500/10 text-amber-600 border border-amber-500/20" :
-      storePlan.planType === "hybrid" ? "bg-blue-500/10 text-blue-600 border border-blue-500/20" :
-      "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
+      "bg-muted text-foreground border border-border"
     }`}>
       <CreditCard className="h-3 w-3" />
       {storePlan.planType === "fixed" && `Plano Fixo • R$ ${storePlan.monthlyFee.toFixed(0)}/mês`}
@@ -102,20 +100,20 @@ export default function DashboardOverviewSection(props: Props) {
   {!(store as any).asaas_wallet_id && (
     <button
       onClick={() => setDashboardTab("finance")}
-      className="w-full text-left bg-gradient-to-br from-red-500/15 via-red-500/5 to-transparent border-2 border-red-500/40 rounded-2xl p-4 flex items-start gap-3 active:scale-[0.99] transition-transform shadow-lg shadow-red-500/10"
+      className="w-full text-left bg-destructive/10 border-2 border-destructive/40 rounded-2xl p-4 flex items-start gap-3 active:scale-[0.99] transition-transform"
     >
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500 text-white flex-shrink-0">
+      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-destructive text-destructive-foreground flex-shrink-0">
         <AlertTriangle className="h-5 w-5" />
       </div>
       <div className="flex-1 min-w-0">
-        <h3 className="font-black text-red-600 dark:text-red-400 text-sm">
-          🚨 Configure sua conta de recebimento (prioridade)
+        <h3 className="font-black text-destructive text-sm">
+          Configure sua conta de recebimento (prioridade)
         </h3>
         <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
           Você ainda não criou sua subconta Asaas. <strong>Sem ela, você não recebe os pagamentos PIX</strong> dos pedidos.
           Leva 2 minutos e é gratuito.
         </p>
-        <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-white bg-red-500 px-3 py-1.5 rounded-lg">
+        <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-destructive-foreground bg-destructive px-3 py-1.5 rounded-lg">
           Configurar agora <ChevronRight className="h-3 w-3" />
         </span>
       </div>
@@ -123,13 +121,13 @@ export default function DashboardOverviewSection(props: Props) {
   )}
 
   {allHoursClosed && (
-    <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-start gap-3">
-      <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+    <div className="bg-muted border border-border rounded-2xl p-4 flex items-start gap-3">
+      <AlertTriangle className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
       <div className="flex-1">
-        <h3 className="font-bold text-amber-600 dark:text-amber-400 text-sm">⚠️ Configure seus horários</h3>
+        <h3 className="font-bold text-foreground text-sm">Configure seus horários</h3>
         <p className="text-xs text-muted-foreground mt-1">Sua loja está com todos os horários fechados.</p>
         <button onClick={() => setDashboardTab("hours")}
-          className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-amber-600 hover:text-amber-700 bg-amber-500/10 px-3 py-1.5 rounded-lg transition-colors">
+          className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-primary-foreground bg-primary hover:bg-primary/90 px-3 py-1.5 rounded-lg transition-colors">
           <Clock className="inline h-3 w-3 mr-1" /> Configurar Horários
         </button>
       </div>
@@ -137,16 +135,16 @@ export default function DashboardOverviewSection(props: Props) {
   )}
 
   {isOwnDelivery && !driversLoading && !hasLinkedDrivers && (
-    <div className="bg-red-500/10 border-2 border-red-500/30 rounded-2xl p-4 flex items-start gap-3 animate-pulse-subtle">
-      <AlertTriangle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
+    <div className="bg-destructive/10 border-2 border-destructive/30 rounded-2xl p-4 flex items-start gap-3 animate-pulse-subtle">
+      <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
       <div className="flex-1">
-        <h3 className="font-bold text-red-600 dark:text-red-400 text-sm">🛵 Cadastre um motoboy para receber pedidos</h3>
+        <h3 className="font-bold text-destructive text-sm">Cadastre um motoboy para receber pedidos</h3>
         <p className="text-xs text-muted-foreground mt-1">
           Sua loja está configurada como <strong>Entrega Própria</strong>, mas você ainda não vinculou nenhum motoboy.
           Sem um entregador cadastrado, <strong>você não conseguirá despachar pedidos</strong> e os clientes podem não conseguir finalizar a compra.
         </p>
         <button onClick={() => setDashboardTab("drivers")}
-          className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-white bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded-lg transition-colors">
+          className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-destructive-foreground bg-destructive hover:bg-destructive/90 px-3 py-1.5 rounded-lg transition-colors">
           <Bike className="inline h-3 w-3 mr-1" /> Cadastrar Motoboy Agora
         </button>
       </div>
@@ -164,22 +162,22 @@ export default function DashboardOverviewSection(props: Props) {
   {storePlan.pdvEnabled !== false && (
     <button
       onClick={() => navigate("/admin/pdv")}
-      className="w-full text-left bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent border border-blue-500/20 rounded-2xl p-4 flex items-center gap-4 active:scale-[0.99] transition-transform hover:border-blue-500/40 group"
+      className="w-full text-left bg-card border border-border rounded-2xl p-4 flex items-center gap-4 active:scale-[0.99] transition-transform hover:border-primary/40 group"
     >
-      <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0 group-hover:bg-blue-500/20 transition-colors">
-        <Monitor className="h-6 w-6 text-blue-500" />
+      <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
+        <Monitor className="h-6 w-6 text-primary" />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <h3 className="text-sm font-black text-foreground">PDV — Caixa Presencial</h3>
-          <span className="text-[10px] font-bold bg-blue-500/10 text-blue-500 border border-blue-500/20 px-2 py-0.5 rounded-full">
+          <span className="text-[10px] font-bold bg-muted text-muted-foreground border border-border px-2 py-0.5 rounded-full">
             Disponível
           </span>
         </div>
         <p className="text-xs text-muted-foreground mt-0.5">
           Venda no balcão, mesa ou comanda. Sem taxa PIX — maquininha própria.
         </p>
-        <p className="text-[11px] text-blue-500 font-semibold mt-1.5 flex items-center gap-1">
+        <p className="text-[11px] text-primary font-semibold mt-1.5 flex items-center gap-1">
           Abrir caixa <ChevronRight className="h-3.5 w-3.5" />
         </p>
       </div>
@@ -191,7 +189,7 @@ export default function DashboardOverviewSection(props: Props) {
     <GlanceCard
       icon={ShoppingBag} label="Pedidos Pendentes" value={pendingCount}
       subValue={preparingCount > 0 ? `+ ${preparingCount} em preparo` : "Sem pedidos novos"}
-      color={pendingCount > 0 ? "text-amber-500" : "text-muted-foreground"}
+      color={pendingCount > 0 ? "text-primary" : "text-muted-foreground"}
       highlight={pendingCount > 0}
       onClick={() => { setDashboardTab("orders"); setActiveTab("pendente"); }}
     />
@@ -199,17 +197,17 @@ export default function DashboardOverviewSection(props: Props) {
       <GlanceCard
         icon={DollarSign} label="Faturamento Hoje" value={formatBRL(todayTotal)}
         subValue={`${todayCount} pedido${todayCount !== 1 ? "s" : ""} hoje`}
-        color="text-emerald-500" trend={todayTotal > 0 ? "up" : null}
+        color="text-foreground" trend={todayTotal > 0 ? "up" : null}
         onClick={() => setDashboardTab("finance")}
       />
     </div>
     <GlanceCard
       icon={Timer} label="Tempo Médio" value={avgDeliveryTime ? `${avgDeliveryTime} min` : "—"}
-      subValue="Pedido até entrega" color="text-purple-500"
+      subValue="Pedido até entrega" color="text-muted-foreground"
     />
     <GlanceCard
       icon={Users} label="Total Clientes" value={clientAnalytics.length}
-      subValue="Clientes registrados" color="text-blue-500"
+      subValue="Clientes registrados" color="text-muted-foreground"
       onClick={() => setDashboardTab("clients")}
     />
   </div>
@@ -233,18 +231,18 @@ export default function DashboardOverviewSection(props: Props) {
   </button>
 
   {delayedOrders.length > 0 && (
-    <div className="bg-red-500/5 border-2 border-red-500/20 rounded-2xl overflow-hidden">
+    <div className="bg-destructive/5 border-2 border-destructive/20 rounded-2xl overflow-hidden">
       <button onClick={() => setShowDelayedPanel(!showDelayedPanel)} className="w-full flex items-center justify-between p-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-red-500/10 rounded-xl flex items-center justify-center">
-            <AlertTriangle className="h-5 w-5 text-red-500" />
+          <div className="w-10 h-10 bg-destructive/10 rounded-xl flex items-center justify-center">
+            <AlertTriangle className="h-5 w-5 text-destructive" />
           </div>
           <div className="text-left">
-            <span className="text-sm font-black text-red-600 dark:text-red-400">{delayedOrders.length} pedido{delayedOrders.length > 1 ? "s" : ""} em atraso</span>
+            <span className="text-sm font-black text-destructive">{delayedOrders.length} pedido{delayedOrders.length > 1 ? "s" : ""} em atraso</span>
             <p className="text-[10px] text-muted-foreground">Mais de 20 min sem atualização</p>
           </div>
         </div>
-        {showDelayedPanel ? <ChevronUp className="h-5 w-5 text-red-500" /> : <ChevronDown className="h-5 w-5 text-red-500" />}
+        {showDelayedPanel ? <ChevronUp className="h-5 w-5 text-destructive" /> : <ChevronDown className="h-5 w-5 text-destructive" />}
       </button>
       {showDelayedPanel && (
         <div className="px-4 pb-4 space-y-2">
@@ -252,13 +250,13 @@ export default function DashboardOverviewSection(props: Props) {
             const elapsedMin = Math.floor((Date.now() - new Date(order.created_at).getTime()) / 60000);
             const sc = statusColors[order.status] || statusColors.pendente;
             return (
-              <div key={order.id} className="bg-card border border-red-500/20 rounded-xl p-3 space-y-2">
+              <div key={order.id} className="bg-card border border-destructive/20 rounded-xl p-3 space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-black text-foreground">#{order.id.slice(0, 8).toUpperCase()}</span>
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${sc.bg} ${sc.text}`}>{sc.label}</span>
                   </div>
-                  <span className="text-xs font-bold text-red-500 bg-red-500/10 px-2 py-0.5 rounded-full">⏱️ {elapsedMin} min</span>
+                  <span className="text-xs font-bold text-destructive bg-destructive/10 px-2 py-0.5 rounded-full">⏱️ {elapsedMin} min</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <span>{getClientName(order.client_id)}</span><span>•</span>
@@ -281,7 +279,7 @@ export default function DashboardOverviewSection(props: Props) {
                       setActiveTab("preparando");
                       updateOrderStatus(order.id, "preparando");
                     }}
-                      className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2.5 rounded-xl text-xs active:scale-[0.98] transition-transform">
+                      className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-2.5 rounded-xl text-xs active:scale-[0.98] transition-transform">
                       {order.payment_method === "pix" ? "🍳 PRODUZIR" : "✓ ACEITAR"}
                     </button>
                   )}
@@ -299,7 +297,7 @@ export default function DashboardOverviewSection(props: Props) {
                         setActiveTab("pronto_para_entrega");
                         updateOrderStatus(order.id, "pronto_para_entrega" as OrderStatus);
                       }}
-                      className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2.5 rounded-xl text-xs active:scale-[0.98] transition-transform flex items-center justify-center no-underline"
+                      className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-2.5 rounded-xl text-xs active:scale-[0.98] transition-transform flex items-center justify-center no-underline"
                     >
                       🔔 MARCAR PRONTO
                     </button>
@@ -322,15 +320,15 @@ export default function DashboardOverviewSection(props: Props) {
     <div className="space-y-3">
       <div className="flex items-center gap-2">
         <div className="relative">
-          <div className="w-3 h-3 bg-amber-500 rounded-full animate-ping absolute" />
-          <div className="w-3 h-3 bg-amber-500 rounded-full relative" />
+          <div className="w-3 h-3 bg-primary rounded-full animate-ping absolute" />
+          <div className="w-3 h-3 bg-primary rounded-full relative" />
         </div>
         <h3 className="font-black text-foreground text-base">Novos Pedidos</h3>
-        <span className="bg-amber-500 text-white text-[11px] font-black px-2 py-0.5 rounded-full">{pendingCount}</span>
+        <span className="bg-primary text-primary-foreground text-[11px] font-black px-2 py-0.5 rounded-full">{pendingCount}</span>
       </div>
       <div className="space-y-3">
         {orders?.filter(o => o.status === "pendente").slice(0, 5).map((order: any) => (
-          <div key={order.id} className="bg-card border-2 border-amber-500/30 rounded-2xl p-4 hover:shadow-lg hover:shadow-amber-500/5 transition-all">
+          <div key={order.id} className="bg-card border-2 border-primary/30 rounded-2xl p-4 hover:shadow-lg hover:shadow-primary/5 transition-all">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <span className="text-base font-black text-foreground">#{order.id.slice(0, 8).toUpperCase()}</span>
@@ -338,7 +336,7 @@ export default function DashboardOverviewSection(props: Props) {
                   {new Date(order.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                 </span>
               </div>
-              <p className="text-xl font-black text-emerald-500">{formatBRL(Number(order.total_price))}</p>
+              <p className="text-xl font-black text-foreground">{formatBRL(Number(order.total_price))}</p>
             </div>
             <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3 flex-wrap">
               <div className="flex items-center gap-1"><User className="h-3 w-3" /><span className="font-medium">{getClientName(order.client_id)}</span></div>
@@ -357,7 +355,7 @@ export default function DashboardOverviewSection(props: Props) {
             </div>
             {order.payment_method === "pix" && (
               <div className="text-center mb-3">
-                <span className="text-[11px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-3 py-1 rounded-lg font-bold inline-flex items-center gap-1">
+                <span className="text-[11px] bg-muted text-muted-foreground px-3 py-1 rounded-lg font-bold inline-flex items-center gap-1">
                   <CheckCircle2 className="h-3 w-3" /> PIX Confirmado
                 </span>
               </div>
@@ -371,12 +369,12 @@ export default function DashboardOverviewSection(props: Props) {
                 handleAcceptOrder(order);
                 updateOrderStatus(order.id, "preparando");
               }}
-              className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3.5 rounded-xl text-sm active:scale-[0.98] transition-all shadow-lg shadow-emerald-500/20 h-12 flex items-center justify-center no-underline"
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-black py-3.5 rounded-xl text-sm active:scale-[0.98] transition-all h-12 flex items-center justify-center no-underline"
             >
               {order.payment_method === "pix" ? "🍳 COMEÇAR PRODUÇÃO" : "✓ ACEITAR PEDIDO"}
             </a>
             <button onClick={() => handleCancelOrder(order)}
-              className="w-full text-center text-xs text-muted-foreground hover:text-red-500 py-1.5 mt-1 transition-colors">
+              className="w-full text-center text-xs text-muted-foreground hover:text-destructive py-1.5 mt-1 transition-colors">
               Recusar pedido
             </button>
           </div>
@@ -417,10 +415,10 @@ export default function DashboardOverviewSection(props: Props) {
     <h3 className="font-black text-foreground text-base">Ações Rápidas</h3>
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
       {[
-        { label: "Cardápio", icon: UtensilsCrossed, tab: "menu" as DashboardTab, color: "text-orange-500", bg: "bg-orange-500/10" },
-        { label: "Finanças", icon: Coins, tab: "finance" as DashboardTab, color: "text-emerald-500", bg: "bg-emerald-500/10" },
-        { label: "Horários", icon: Clock, tab: "hours" as DashboardTab, color: "text-blue-500", bg: "bg-blue-500/10" },
-        { label: "Configurações", icon: Settings, tab: "settings" as DashboardTab, color: "text-purple-500", bg: "bg-purple-500/10" },
+        { label: "Cardápio", icon: UtensilsCrossed, tab: "menu" as DashboardTab, color: "text-primary", bg: "bg-primary/10" },
+        { label: "Finanças", icon: Coins, tab: "finance" as DashboardTab, color: "text-primary", bg: "bg-primary/10" },
+        { label: "Horários", icon: Clock, tab: "hours" as DashboardTab, color: "text-primary", bg: "bg-primary/10" },
+        { label: "Configurações", icon: Settings, tab: "settings" as DashboardTab, color: "text-primary", bg: "bg-primary/10" },
       ].map((action) => (
         <button key={action.label} onClick={() => setDashboardTab(action.tab)}
           className="flex items-center gap-3 bg-card border border-border rounded-2xl p-3.5 hover:shadow-md hover:border-border/80 active:scale-[0.97] transition-all text-left">
