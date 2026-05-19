@@ -28,7 +28,7 @@ import {
 } from "recharts";
 import { openWhatsApp, formatWhatsAppNumber } from "@/lib/whatsapp";
 import WhatsAppButton from "@/components/WhatsAppButton";
-import MenuBuilder from "@/components/MenuBuilder";
+const MenuBuilder = lazy(() => import("@/components/MenuBuilder"));
 import SupportTicketModal from "@/components/SupportTicketModal";
 import { notifyOrderStatusChange, buildWhatsAppMessage } from "@/lib/orderNotifications";
 import { getStoreOpenStatus } from "@/lib/storeStatus";

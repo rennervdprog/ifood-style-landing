@@ -58,6 +58,14 @@ const StorePage = () => {
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchQuery(value);
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => setDebouncedSearch(value), 300);
+  }, []);
   const [showSearch, setShowSearch] = useState(false);
   const [showHours, setShowHours] = useState(false);
    const [showHalfHalf, setShowHalfHalf] = useState(false);
@@ -451,7 +459,7 @@ const StorePage = () => {
 
   // Search filter
   const filteredProducts = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
+    const q = debouncedSearch.trim().toLowerCase();
     if (!q) return null;
     return (
       products?.filter(
@@ -460,7 +468,7 @@ const StorePage = () => {
           p.description?.toLowerCase().includes(q)
       ) || []
     );
-  }, [products, searchQuery]);
+  }, [products, debouncedSearch]);
 
   const handleAddToCart = (
     product: Product,
