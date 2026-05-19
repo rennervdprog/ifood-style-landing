@@ -402,18 +402,18 @@ const NotificationSection = () => {
       </label>
 
       {notifStatus === "granted" ? (
-        <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3">
-          <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0" />
+        <div className="flex items-center gap-2 bg-primary/10 border border-primary/30 rounded-xl p-3">
+          <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" />
           <div>
-            <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Notificações ativas</p>
+            <p className="text-xs font-bold text-primary">Notificações ativas</p>
           <p className="text-[10px] text-muted-foreground">Você receberá alertas de novos pedidos.</p>
           </div>
         </div>
       ) : notifStatus === "denied" ? (
-        <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-xl p-3">
-          <XCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
+        <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/30 rounded-xl p-3">
+          <XCircle className="h-4 w-4 text-destructive flex-shrink-0" />
           <div>
-            <p className="text-xs font-bold text-red-600 dark:text-red-400">Notificações bloqueadas</p>
+            <p className="text-xs font-bold text-destructive">Notificações bloqueadas</p>
             <p className="text-[10px] text-muted-foreground">Acesse as configurações do navegador ou do app para desbloquear.</p>
           </div>
         </div>
@@ -778,7 +778,7 @@ const NotificationSection = () => {
           className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
         />
         {pixKey && (
-          <div className="bg-primary/10 border border-green-500/20 rounded-xl p-3 flex items-center gap-2">
+          <div className="bg-primary/10 border border-primary/20 rounded-xl p-3 flex items-center gap-2">
             <Wallet className="h-4 w-4 text-primary flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="text-xs text-primary font-bold">Chave Pix cadastrada</p>
@@ -811,9 +811,9 @@ const NotificationSection = () => {
          </div>
         {deliveryMode === "own" && (
           <div className="space-y-3">
-            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-start gap-2">
-              <Truck className="h-4 w-4 text-amber-500 flex-shrink-0 mt-0.5" />
-              <p className="text-[10px] text-amber-600 dark:text-amber-400">
+            <div className="bg-muted border border-border rounded-xl p-3 flex items-start gap-2">
+              <Truck className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+              <p className="text-[10px] text-muted-foreground">
                 Com motoboy próprio, você terá um botão "Saiu para Entrega" direto no painel. Não será necessário aguardar aceite de entregador.
               </p>
             </div>
@@ -1117,17 +1117,17 @@ const NotificationSection = () => {
 
             {/* Status indicator */}
             {zapiInstanceId && zapiToken && zapiClientToken ? (
-              <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3">
-                <CheckCircle2 className="h-4 w-4 text-emerald-500 flex-shrink-0" />
+              <div className="flex items-center gap-2 bg-primary/10 border border-primary/30 rounded-xl p-3">
+                <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" />
                 <div>
-                  <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Credenciais configuradas</p>
+                  <p className="text-xs font-bold text-primary">Credenciais configuradas</p>
                   <p className="text-[10px] text-muted-foreground">Salve as configurações para ativar. Mensagens serão enviadas automaticamente.</p>
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 rounded-xl p-3">
-                <Bell className="h-4 w-4 text-amber-500 flex-shrink-0" />
-                <p className="text-xs text-amber-600 dark:text-amber-400">Preencha todas as credenciais para ativar.</p>
+              <div className="flex items-center gap-2 bg-muted border border-border rounded-xl p-3">
+                <Bell className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <p className="text-xs text-muted-foreground">Preencha todas as credenciais para ativar.</p>
               </div>
             )}
 
@@ -1151,8 +1151,8 @@ const NotificationSection = () => {
         </div>
 
         {/* Box informativo sobre repasse */}
-        <div className="bg-blue-500/8 border border-blue-500/20 rounded-xl p-3 space-y-1.5">
-          <p className="text-[11px] font-bold text-blue-700 dark:text-blue-400">💡 Como funciona o repasse</p>
+        <div className="bg-muted border border-border rounded-xl p-3 space-y-1.5">
+          <p className="text-[11px] font-bold text-foreground">Como funciona o repasse</p>
           <p className="text-[11px] text-muted-foreground leading-relaxed">
             <strong className="text-foreground">PIX Online:</strong> a taxa da plataforma (R$1,99 + R$2,00/entrega) é descontada automaticamente pelo Asaas. Você recebe o restante direto na sua conta.
           </p>
@@ -1180,9 +1180,9 @@ const NotificationSection = () => {
             </button>
           </div>
           {acceptPixOnline && !pixKey && (
-            <div className="flex items-start gap-2 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
-              <span className="text-amber-500 text-xs">⚠️</span>
-              <p className="text-[11px] text-amber-700 dark:text-amber-400">
+            <div className="flex items-start gap-2 bg-muted border border-border rounded-lg px-3 py-2">
+              <span className="text-muted-foreground text-xs">!</span>
+              <p className="text-[11px] text-muted-foreground">
                 Você ativou o PIX Online mas não tem chave PIX cadastrada. Vá em <strong>Meu Plano → Configurar conta</strong> para configurar.
               </p>
             </div>
@@ -1190,10 +1190,10 @@ const NotificationSection = () => {
         </div>
 
         {/* PIX Maquininha */}
-        <div className={`rounded-xl border p-3.5 ${acceptPixMachine ? "border-emerald-500/30 bg-emerald-500/5" : "border-border bg-muted/20"}`}>
+        <div className={`rounded-xl border p-3.5 ${acceptPixMachine ? "border-primary/30 bg-primary/5" : "border-border bg-muted/20"}`}>
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
-              <QrCode className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <QrCode className="h-4 w-4 text-primary shrink-0" />
               <div>
                 <p className="text-sm font-bold text-foreground">PIX na Maquininha</p>
                 <p className="text-[11px] text-muted-foreground">Cliente paga via PIX pela maquininha do lojista na entrega. Sem integração com Asaas.</p>
@@ -1202,7 +1202,7 @@ const NotificationSection = () => {
             <button
               type="button"
               onClick={() => setAcceptPixMachine(!acceptPixMachine)}
-              className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${acceptPixMachine ? "bg-emerald-500" : "bg-muted-foreground/30"}`}
+              className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${acceptPixMachine ? "bg-primary" : "bg-muted-foreground/30"}`}
             >
               <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${acceptPixMachine ? "translate-x-5" : "translate-x-0"}`} />
             </button>
@@ -1210,10 +1210,10 @@ const NotificationSection = () => {
         </div>
 
         {/* Cartão */}
-        <div className={`rounded-xl border p-3.5 ${acceptCard ? "border-blue-500/30 bg-blue-500/5" : "border-border bg-muted/20"}`}>
+        <div className={`rounded-xl border p-3.5 ${acceptCard ? "border-primary/30 bg-primary/5" : "border-border bg-muted/20"}`}>
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
-              <CreditCard className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
+              <CreditCard className="h-4 w-4 text-primary shrink-0" />
               <div>
                 <p className="text-sm font-bold text-foreground">Cartão na Entrega</p>
                 <p className="text-[11px] text-muted-foreground">Débito ou crédito pela maquininha na entrega.</p>
@@ -1222,7 +1222,7 @@ const NotificationSection = () => {
             <button
               type="button"
               onClick={() => setAcceptCard(!acceptCard)}
-              className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${acceptCard ? "bg-blue-500" : "bg-muted-foreground/30"}`}
+              className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${acceptCard ? "bg-primary" : "bg-muted-foreground/30"}`}
             >
               <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${acceptCard ? "translate-x-5" : "translate-x-0"}`} />
             </button>
@@ -1230,10 +1230,10 @@ const NotificationSection = () => {
         </div>
 
         {/* Dinheiro */}
-        <div className={`rounded-xl border p-3.5 ${acceptCash ? "border-amber-500/30 bg-amber-500/5" : "border-border bg-muted/20"}`}>
+        <div className={`rounded-xl border p-3.5 ${acceptCash ? "border-primary/30 bg-primary/5" : "border-border bg-muted/20"}`}>
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
-              <Banknote className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+              <Banknote className="h-4 w-4 text-primary shrink-0" />
               <div>
                 <p className="text-sm font-bold text-foreground">Dinheiro</p>
                 <p className="text-[11px] text-muted-foreground">Pagamento em espécie na entrega.</p>
@@ -1242,7 +1242,7 @@ const NotificationSection = () => {
             <button
               type="button"
               onClick={() => setAcceptCash(!acceptCash)}
-              className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${acceptCash ? "bg-amber-500" : "bg-muted-foreground/30"}`}
+              className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${acceptCash ? "bg-primary" : "bg-muted-foreground/30"}`}
             >
               <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${acceptCash ? "translate-x-5" : "translate-x-0"}`} />
             </button>
@@ -1264,8 +1264,8 @@ const NotificationSection = () => {
       <div className="bg-muted/50 border border-border rounded-2xl p-4 space-y-2">
         <p className="text-sm font-bold text-foreground/80">Status Atual</p>
         <div className="flex items-center gap-3">
-          <div className={`w-3 h-3 rounded-full ${storeIsOpen && !forceClosed ? "bg-primary animate-pulse" : "bg-red-400"}`} />
-          <span className={`text-sm font-bold ${storeIsOpen && !forceClosed ? "text-primary" : "text-red-400"}`}>
+          <div className={`w-3 h-3 rounded-full ${storeIsOpen && !forceClosed ? "bg-primary animate-pulse" : "bg-muted-foreground"}`} />
+          <span className={`text-sm font-bold ${storeIsOpen && !forceClosed ? "text-primary" : "text-muted-foreground"}`}>
             {storeIsOpen && !forceClosed ? "Loja Aberta" : "Loja Fechada"}
           </span>
         </div>
