@@ -103,8 +103,8 @@ const LoyaltyConfigPanel = ({ storeId }: LoyaltyConfigPanelProps) => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
-          <Star className="h-5 w-5 text-amber-500 fill-amber-500" />
+        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+          <Star className="h-5 w-5 text-primary fill-primary" />
         </div>
         <div>
           <h3 className="text-base font-bold text-foreground">Programa de Fidelidade</h3>

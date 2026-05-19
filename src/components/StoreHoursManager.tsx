@@ -68,7 +68,7 @@ const TimeSelect = ({
     value={value}
     onChange={(e) => onChange(e.target.value)}
     aria-label={label}
-    className="bg-card text-foreground px-2.5 py-2 rounded-xl text-xs font-semibold border border-border/50 focus:border-pink-500 focus:ring-1 focus:ring-pink-500/30 focus:outline-none appearance-none cursor-pointer min-h-[40px] w-[80px]"
+    className="bg-card text-foreground px-2.5 py-2 rounded-xl text-xs font-semibold border border-border/50 focus:border-primary focus:ring-1 focus:ring-primary/30 focus:outline-none appearance-none cursor-pointer min-h-[40px] w-[80px]"
   >
     {TIME_OPTIONS.map((t) => (
       <option key={t} value={t}>
@@ -285,13 +285,13 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
         <div className="flex items-center gap-3">
           <div
             className={`w-3 h-3 rounded-full animate-pulse ${
-              storeStatus.isOpen ? "bg-emerald-400 shadow-lg shadow-emerald-400/50" : "bg-red-400 shadow-lg shadow-red-400/50"
+              storeStatus.isOpen ? "bg-primary shadow-lg shadow-primary/40" : "bg-muted-foreground"
             }`}
           />
           <div>
             <span
               className={`text-lg font-black tracking-tight ${
-                storeStatus.isOpen ? "text-emerald-400" : "text-red-400"
+                storeStatus.isOpen ? "text-primary" : "text-muted-foreground"
               }`}
             >
               {storeStatus.isOpen ? "LOJA ABERTA" : "LOJA FECHADA"}
@@ -306,8 +306,8 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
           className={cn(
             "rounded-xl font-bold text-xs gap-1.5 min-h-[40px]",
             localForceClosed
-              ? "border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
-              : "border-red-500/30 text-red-400 hover:bg-red-500/10"
+              ? "border-primary/30 text-primary hover:bg-primary/10"
+              : "border-border text-muted-foreground hover:bg-muted"
           )}
         >
           <Power className="h-3.5 w-3.5" />
@@ -317,9 +317,9 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
 
       {/* Force closed warning */}
       {localForceClosed && (
-        <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-4 flex items-start gap-3">
-          <div className="w-8 h-8 rounded-xl bg-red-500/10 flex items-center justify-center shrink-0">
-            <Power className="h-4 w-4 text-red-400" />
+        <div className="bg-destructive/5 border border-destructive/20 rounded-2xl p-4 flex items-start gap-3">
+          <div className="w-8 h-8 rounded-xl bg-destructive/10 flex items-center justify-center shrink-0">
+            <Power className="h-4 w-4 text-destructive" />
           </div>
           <div>
             <p className="text-sm font-bold text-foreground">Fechamento de Emergência Ativo</p>
@@ -334,7 +334,7 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
       <div className="bg-card/60 backdrop-blur-sm rounded-2xl border border-border/30 overflow-hidden">
         <div className="p-4 border-b border-border/30 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-pink-400" />
+            <Clock className="h-4 w-4 text-muted-foreground" />
             <h3 className="text-sm font-bold text-foreground">Horários da Semana</h3>
           </div>
         </div>
@@ -361,7 +361,7 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
                   className={`relative w-11 h-6 rounded-full transition-all duration-200 shrink-0 ${
                     day.is_closed
                       ? "bg-muted-foreground/20"
-                      : "bg-gradient-to-r from-emerald-400 to-emerald-500 shadow-sm shadow-emerald-500/30"
+                      : "bg-primary shadow-sm shadow-primary/30"
                   }`}
                 >
                   <span
@@ -381,7 +381,7 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
                 {!day.is_closed && (
                   <button
                     onClick={() => applyToAll(day.day_of_week)}
-                    className="flex items-center gap-1 text-[10px] text-pink-400 hover:text-pink-300 transition-colors font-semibold shrink-0"
+                    className="flex items-center gap-1 text-[10px] text-primary hover:text-primary/80 transition-colors font-semibold shrink-0"
                     title="Aplicar a todos os dias"
                   >
                     <Copy className="h-3 w-3" />
@@ -409,7 +409,7 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
                       {day.shifts.length > 1 && (
                         <button
                           onClick={() => removeShift(day.day_of_week, si)}
-                          className="text-red-400/60 hover:text-red-400 transition-colors p-1"
+                          className="text-muted-foreground hover:text-destructive transition-colors p-1"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -419,7 +419,7 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
                   {/* Add shift button */}
                   <button
                     onClick={() => addShift(day.day_of_week)}
-                    className="flex items-center gap-1 text-[10px] text-blue-400 hover:text-blue-300 transition-colors font-semibold"
+                    className="flex items-center gap-1 text-[10px] text-primary hover:text-primary/80 transition-colors font-semibold"
                   >
                     <Plus className="h-3 w-3" />
                     Adicionar turno
@@ -449,10 +449,10 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
           className="w-full p-4 flex items-center justify-between hover:bg-card/40 transition-colors"
         >
           <div className="flex items-center gap-2">
-            <CalendarOff className="h-4 w-4 text-amber-400" />
+            <CalendarOff className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm font-bold text-foreground">Feriados & Exceções</span>
             {holidays.length > 0 && (
-              <Badge variant="secondary" className="text-[10px] bg-amber-500/10 text-amber-400 border-0">
+              <Badge variant="secondary" className="text-[10px] bg-muted text-muted-foreground border-0">
                 {holidays.length}
               </Badge>
             )}
@@ -506,14 +506,14 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
                   value={holidayLabel}
                   onChange={(e) => setHolidayLabel(e.target.value)}
                   placeholder="Ex: Natal"
-                  className="w-full bg-card text-foreground px-3 py-2 rounded-xl text-xs border border-border/50 focus:border-pink-500 focus:outline-none min-h-[40px]"
+                  className="w-full bg-card text-foreground px-3 py-2 rounded-xl text-xs border border-border/50 focus:border-primary focus:outline-none min-h-[40px]"
                 />
               </div>
               <Button
                 onClick={addHoliday}
                 disabled={!holidayDate}
                 size="sm"
-                className="rounded-xl min-h-[40px] bg-amber-500 hover:bg-amber-600 text-white"
+                className="rounded-xl min-h-[40px] bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 <Plus className="h-3.5 w-3.5" />
               </Button>
@@ -527,20 +527,20 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
                   .map((h) => (
                     <div
                       key={h.date}
-                      className="flex items-center justify-between bg-amber-500/5 rounded-xl p-2.5 border border-amber-500/10"
+                      className="flex items-center justify-between bg-muted rounded-xl p-2.5 border border-border"
                     >
                       <div className="flex items-center gap-2">
-                        <CalendarOff className="h-3.5 w-3.5 text-amber-400" />
+                        <CalendarOff className="h-3.5 w-3.5 text-muted-foreground" />
                         <span className="text-xs font-semibold text-foreground">
                           {format(new Date(h.date + "T12:00:00"), "dd/MM/yyyy (EEEE)", { locale: ptBR })}
                         </span>
                         {h.label && (
-                          <span className="text-[10px] text-amber-400">— {h.label}</span>
+                          <span className="text-[10px] text-muted-foreground">— {h.label}</span>
                         )}
                       </div>
                       <button
                         onClick={() => removeHoliday(h.date)}
-                        className="text-muted-foreground hover:text-red-400 transition-colors p-1"
+                        className="text-muted-foreground hover:text-destructive transition-colors p-1"
                       >
                         <Trash2 className="h-3 w-3" />
                       </button>
