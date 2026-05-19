@@ -158,29 +158,8 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
     );
   }
 
-  const handlePayFee = async () => {
-    setGenerating(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("store-platform-fee-pix", {
-        body: { store_id: storeId, amount: pendingFee },
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      setPixData({ qr_code: data.qr_code, qr_code_base64: data.qr_code_base64, amount: data.amount });
-      toast.success("PIX gerado! Escaneie o QR Code para pagar.");
-      queryClient.invalidateQueries({ queryKey: ["store-balance-split", storeId] });
-    } catch (err: any) {
-      toast.error(err.message || "Erro ao gerar PIX.");
-    } finally {
-      setGenerating(false);
-    }
-  };
 
-  const copyPixCode = () => {
-    if (pixData?.qr_code) {
-      navigator.clipboard.writeText(pixData.qr_code);
-      toast.success("Código PIX copiado!");
-    }
+
   };
 
   return (
