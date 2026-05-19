@@ -202,6 +202,8 @@ const AdminDashboard = () => {
   const [clientSearch, setClientSearch] = useState("");
   const [expandedClient, setExpandedClient] = useState<string | null>(null);
   const [cancelConfirm, setCancelConfirm] = useState<string | null>(null);
+  const [cancelReason, setCancelReason] = useState<string>("");
+  const [cancellingOrder, setCancellingOrder] = useState(false);
   const [showDelayedPanel, setShowDelayedPanel] = useState(false);
   const [showMoreSheet, setShowMoreSheet] = useState(false);
   const [showSupportModal, setShowSupportModal] = useState(false);
@@ -987,13 +989,21 @@ const AdminDashboard = () => {
   const isStoreReallyOpen = store?.is_open && isCurrentlyOpenByHours;
 
   const handleCancelOrder = async (order: any) => {
+    if (!cancelReason) { toast.error("Selecione o motivo do cancelamento."); return; }
+    setCancellingOrder(true);
     try {
-      const isPix = order.payment_method === "pix";
-      const { error } = await supabase.from("orders").update({ status: "cancelado" as any }).eq("id", order.id);
-      if (error) { toast.error("Erro ao cancelar pedido."); return; }
-      
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await supabase.functions.invoke("cancel-order-refund", {
+        body: { order_id: order.id, cancel_reason: cancelReason },
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      });
+
+      if (res.error) throw new Error(res.error.message);
+      if (res.data?.error) throw new Error(res.data.error);
+
       queryClient.invalidateQueries({ queryKey: ["store-orders", store?.id] });
       setCancelConfirm(null);
+      setCancelReason("");
 
       const clientPhone = getClientWhatsApp(order.client_id);
       const cancelSettings = (store?.settings || {}) as Record<string, any>;
@@ -1008,13 +1018,11 @@ const AdminDashboard = () => {
         paymentMethod: order.payment_method,
       }, { zapiEnabled: !!cancelSettings.zapi_enabled });
 
-      if (isPix) {
-        toast.success("Pedido cancelado! Reembolso PIX pendente.", { duration: 8000, description: `${formatBRL(Number(order.total_price))} — envie o PIX de volta ao cliente.` });
-      } else {
-        toast.success("Pedido cancelado e cliente notificado.");
-      }
+      toast.success(res.data?.message || "Pedido cancelado.", { duration: 8000 });
     } catch (e: any) {
       toast.error(`Erro ao cancelar: ${e?.message}`);
+    } finally {
+      setCancellingOrder(false);
     }
   };
 
@@ -1591,6 +1599,9 @@ const AdminDashboard = () => {
                 expandedAddresses={expandedAddresses}
                 cancelConfirm={cancelConfirm}
                 setCancelConfirm={setCancelConfirm}
+                cancelReason={cancelReason}
+                setCancelReason={setCancelReason}
+                cancellingOrder={cancellingOrder}
                 isOwnDelivery={isOwnDelivery}
                 hasLinkedDrivers={hasLinkedDrivers}
                 driversLoading={driversLoading}

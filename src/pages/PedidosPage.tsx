@@ -229,7 +229,7 @@ const PedidosPage = () => {
     queryFn: async () => {
       let query = supabase
         .from("orders")
-        .select("id, created_at, status, store_id, client_id, total_price, subtotal, delivery_fee, app_fee, payment_method, neighborhood, address_details, delivery_pin, collection_code, settlement_code, visible_to_client, return_to_store_confirmed, delivery_confirmed_by_client, confirmed_at, driver_id, scheduled_for, change_for, needs_change, stores(name, delivery_mode, slug, owner_id), order_items(id, quantity, unit_price, observations, addons, products(name))")
+        .select("id, created_at, status, cancel_reason, store_id, client_id, total_price, subtotal, delivery_fee, app_fee, payment_method, neighborhood, address_details, delivery_pin, collection_code, settlement_code, visible_to_client, return_to_store_confirmed, delivery_confirmed_by_client, confirmed_at, driver_id, scheduled_for, change_for, needs_change, stores(name, delivery_mode, slug, owner_id), order_items(id, quantity, unit_price, observations, addons, products(name))")
         .eq("client_id", user!.id)
         .eq("visible_to_client", true)
         .order("created_at", { ascending: false })
@@ -255,7 +255,7 @@ const PedidosPage = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("id, created_at, status, store_id, client_id, total_price, subtotal, delivery_fee, app_fee, payment_method, neighborhood, address_details, delivery_pin, collection_code, settlement_code, confirmed_at, driver_id, scheduled_for, change_for, needs_change, order_items(id, quantity, unit_price, observations, addons, products(name))")
+        .select("id, created_at, status, cancel_reason, store_id, client_id, total_price, subtotal, delivery_fee, app_fee, payment_method, neighborhood, address_details, delivery_pin, collection_code, settlement_code, confirmed_at, driver_id, scheduled_for, change_for, needs_change, order_items(id, quantity, unit_price, observations, addons, products(name))")
         .eq("store_id", ownStore!.id)
         .order("created_at", { ascending: false })
         .limit(50);
@@ -1294,6 +1294,20 @@ const PedidosPage = () => {
 
                   return (
                     <div key={order.id} className={`bg-white dark:bg-card rounded-2xl border overflow-hidden ${isCancelled ? "border-red-200 opacity-60" : "border-border"}`}>
+                      {isCancelled && order.cancel_reason && (
+                        <div className="px-4 py-2 bg-red-500/8 border-b border-red-200 dark:border-red-900/40 flex items-center gap-2">
+                          <XCircle className="h-3 w-3 text-red-500 shrink-0" />
+                          <p className="text-[11px] text-red-700 dark:text-red-400 font-medium">
+                            {{
+                              out_of_stock:   "Produto esgotado no estoque",
+                              client_request: "Cancelado a pedido do cliente",
+                              out_of_area:    "Fora da área de entrega",
+                              closed:         "Loja fechada / sem entregador",
+                              other:          "Cancelado pela loja",
+                            }[order.cancel_reason as string] || order.cancel_reason}
+                          </p>
+                        </div>
+                      )}
                       {/* Compact header — clickable to open details */}
                       <button
                         type="button"
