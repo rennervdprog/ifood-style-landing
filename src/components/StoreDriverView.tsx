@@ -900,15 +900,11 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
           </div>
         </div>
         <div
-          className={`relative w-[52px] h-8 rounded-full transition-colors shrink-0 ${
-            isOnline ? "bg-success-foreground/25" : "bg-muted"
+          className={`relative flex items-center shrink-0 w-[56px] h-8 rounded-full p-1 transition-colors duration-200 ${
+            isOnline ? "bg-success-foreground/25 justify-end" : "bg-muted justify-start"
           }`}
         >
-          <span
-            className={`absolute top-1 w-6 h-6 rounded-full bg-card shadow-md transition-transform duration-200 ${
-              isOnline ? "translate-x-[22px]" : "translate-x-1"
-            }`}
-          />
+          <span className="block w-6 h-6 rounded-full bg-card shadow-md transition-all duration-200" />
         </div>
       </button>
 
