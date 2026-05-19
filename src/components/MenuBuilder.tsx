@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useRef, useMemo, useCallback } from "react";
 import DailyMenuManager from "@/components/DailyMenuManager";
 import MenuImportCSV from "@/components/MenuImportCSV";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -35,6 +35,15 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
   const [showAddSection, setShowAddSection] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   const [showProductForm, setShowProductForm] = useState<string | null>(null);
+  const quickAddRef = useRef<HTMLDivElement>(null);
+
+  const handleOpenQuickAdd = () => {
+    setShowProductForm("__none__");
+    // Scroll para o formulário após render
+    setTimeout(() => {
+      quickAddRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 50);
+  };
   const [editingProduct, setEditingProduct] = useState<string | null>(null);
   const [editInitialForm, setEditInitialForm] = useState<ProductFormData | undefined>(undefined);
   const [showAddonFormFor, setShowAddonFormFor] = useState<string | null>(null);
@@ -602,7 +611,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
           {/* Linha 2 — ações primárias */}
           <div className="flex gap-2">
             <button
-              onClick={() => setShowProductForm("__none__")}
+              onClick={handleOpenQuickAdd}
               className="flex items-center gap-1.5 bg-muted border border-border text-foreground px-3 py-2 rounded-xl text-sm font-bold hover:bg-muted/80 transition-colors"
             >
               <Plus className="h-4 w-4" /> Criar Produto
@@ -950,24 +959,25 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
         </div>
       )}
 
-      {/* Quick add product */}
-      {filteredProducts === null && (
-        showProductForm === "__none__" ? (
+      {/* Quick add product — formulário avulso, sempre visível quando ativo */}
+      <div ref={quickAddRef}>
+        {showProductForm === "__none__" && (
           <ProductFormInline
             onSave={(formData) => addProduct(null, formData)}
             onCancel={() => setShowProductForm(null)}
             storeCategory={storeCategory}
             storeId={storeId}
           />
-        ) : (
+        )}
+        {filteredProducts === null && showProductForm !== "__none__" && (
           <button
-            onClick={() => setShowProductForm("__none__")}
+            onClick={handleOpenQuickAdd}
             className="w-full flex items-center justify-center gap-2 py-3 bg-muted/50 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-sm font-medium"
           >
             <Plus className="h-4 w-4" /> Produto Rápido (sem seção)
           </button>
-        )
-      )}
+        )}
+      </div>
 
       {/* Confirm dialog */}
       {confirmState && (
