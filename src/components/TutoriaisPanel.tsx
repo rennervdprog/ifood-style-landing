@@ -46,8 +46,8 @@ const TUTORIAIS: TutorialSection[] = [
     icon: LayoutDashboard,
     title: "Visão Geral (Início)",
     shortDesc: "A primeira tela que você vê quando entra no painel",
-    color: "text-blue-500",
-    bgColor: "bg-blue-500/10",
+    color: "text-primary",
+    bgColor: "bg-primary/10",
     category: "essencial",
     estimatedMinutes: 3,
     steps: [
@@ -80,8 +80,8 @@ const TUTORIAIS: TutorialSection[] = [
     icon: ListOrdered,
     title: "Pedidos",
     shortDesc: "Onde você gerencia tudo que o cliente pede",
-    color: "text-orange-500",
-    bgColor: "bg-orange-500/10",
+    color: "text-primary",
+    bgColor: "bg-primary/10",
     category: "essencial",
     estimatedMinutes: 4,
     steps: [
@@ -113,8 +113,8 @@ const TUTORIAIS: TutorialSection[] = [
     icon: UtensilsCrossed,
     title: "Cardápio e Produtos",
     shortDesc: "Cadastre lanches, pizzas, bebidas e organize suas vendas",
-    color: "text-emerald-500",
-    bgColor: "bg-emerald-500/10",
+    color: "text-primary",
+    bgColor: "bg-primary/10",
     category: "vendas",
     estimatedMinutes: 5,
     steps: [
@@ -147,8 +147,8 @@ const TUTORIAIS: TutorialSection[] = [
     icon: Plus,
     title: "Opcionais e Adicionais",
     shortDesc: "Aumente seu lucro oferecendo extras como queijo, bacon ou molhos",
-    color: "text-purple-500",
-    bgColor: "bg-purple-500/10",
+    color: "text-primary",
+    bgColor: "bg-primary/10",
     category: "vendas",
     estimatedMinutes: 3,
     steps: [
@@ -175,8 +175,8 @@ const TUTORIAIS: TutorialSection[] = [
     icon: CircleDot,
     title: "Bordas (Pizzaria)",
     shortDesc: "Tipos de borda para pizza (catupiry, cheddar, comum...)",
-    color: "text-red-500",
-    bgColor: "bg-red-500/10",
+    color: "text-primary",
+    bgColor: "bg-primary/10",
     category: "vendas",
     estimatedMinutes: 2,
     steps: [
@@ -195,8 +195,8 @@ const TUTORIAIS: TutorialSection[] = [
     icon: Clock,
     title: "Horários",
     shortDesc: "Quando sua loja está aberta para receber pedidos",
-    color: "text-cyan-500",
-    bgColor: "bg-cyan-500/10",
+    color: "text-primary",
+    bgColor: "bg-primary/10",
     category: "operacao",
     estimatedMinutes: 2,
     steps: [
@@ -220,8 +220,8 @@ const TUTORIAIS: TutorialSection[] = [
     icon: Coins,
     title: "Financeiro e Repasses",
     shortDesc: "Acompanhe suas vendas, saldos e pagamentos de forma clara",
-    color: "text-emerald-500",
-    bgColor: "bg-emerald-500/10",
+    color: "text-primary",
+    bgColor: "bg-primary/10",
     category: "financeiro",
     estimatedMinutes: 4,
     steps: [
@@ -250,8 +250,8 @@ const TUTORIAIS: TutorialSection[] = [
     icon: BarChart3,
     title: "Relatórios",
     shortDesc: "Gráficos para entender como está indo o negócio",
-    color: "text-indigo-500",
-    bgColor: "bg-indigo-500/10",
+    color: "text-primary",
+    bgColor: "bg-primary/10",
     category: "financeiro",
     estimatedMinutes: 3,
     steps: [
@@ -274,8 +274,8 @@ const TUTORIAIS: TutorialSection[] = [
     icon: CreditCard,
     title: "Assinatura (Plano)",
     shortDesc: "Qual plano você está e quando vence",
-    color: "text-amber-500",
-    bgColor: "bg-amber-500/10",
+    color: "text-primary",
+    bgColor: "bg-primary/10",
     category: "financeiro",
     estimatedMinutes: 2,
     steps: [
@@ -298,8 +298,8 @@ const TUTORIAIS: TutorialSection[] = [
     icon: Star,
     title: "Fidelidade e Retenção",
     shortDesc: "Crie motivos para seus clientes comprarem de você toda semana",
-    color: "text-yellow-500",
-    bgColor: "bg-yellow-500/10",
+    color: "text-primary",
+    bgColor: "bg-primary/10",
     category: "vendas",
     estimatedMinutes: 3,
     steps: [
@@ -323,8 +323,8 @@ const TUTORIAIS: TutorialSection[] = [
     icon: Bike,
     title: "Motoboys",
     shortDesc: "Cadastrar e gerenciar seus entregadores próprios",
-    color: "text-blue-500",
-    bgColor: "bg-blue-500/10",
+    color: "text-primary",
+    bgColor: "bg-primary/10",
     category: "operacao",
     estimatedMinutes: 4,
     steps: [
@@ -352,8 +352,8 @@ const TUTORIAIS: TutorialSection[] = [
     icon: AlertTriangle,
     title: "Reembolsos",
     shortDesc: "Pedidos de devolução de dinheiro do cliente",
-    color: "text-red-500",
-    bgColor: "bg-red-500/10",
+    color: "text-primary",
+    bgColor: "bg-primary/10",
     category: "operacao",
     estimatedMinutes: 2,
     steps: [
@@ -406,8 +406,8 @@ const TUTORIAIS: TutorialSection[] = [
     icon: ShoppingCart,
     title: "PDV — Vendas no Balcão",
     shortDesc: "Caixa profissional: abertura, vendas, sangria e fechamento cego",
-    color: "text-violet-500",
-    bgColor: "bg-violet-500/10",
+    color: "text-primary",
+    bgColor: "bg-primary/10",
     category: "vendas",
     estimatedMinutes: 6,
     steps: [
@@ -449,8 +449,8 @@ const TUTORIAIS: TutorialSection[] = [
     icon: Tag,
     title: "Cupons e Promoções",
     shortDesc: "Crie códigos de desconto para campanhas e clientes especiais",
-    color: "text-pink-500",
-    bgColor: "bg-pink-500/10",
+    color: "text-primary",
+    bgColor: "bg-primary/10",
     category: "vendas",
     estimatedMinutes: 3,
     steps: [
@@ -478,8 +478,8 @@ const TUTORIAIS: TutorialSection[] = [
     icon: Users,
     title: "Clientes (CRM)",
     shortDesc: "Conheça quem compra de você e reative inativos",
-    color: "text-teal-500",
-    bgColor: "bg-teal-500/10",
+    color: "text-primary",
+    bgColor: "bg-primary/10",
     category: "vendas",
     estimatedMinutes: 3,
     steps: [
@@ -507,8 +507,8 @@ const TUTORIAIS: TutorialSection[] = [
     icon: Bell,
     title: "Notificações e Som de Pedido",
     shortDesc: "Garanta que você recebe o aviso na hora que chegar pedido novo",
-    color: "text-rose-500",
-    bgColor: "bg-rose-500/10",
+    color: "text-primary",
+    bgColor: "bg-primary/10",
     category: "essencial",
     estimatedMinutes: 3,
     steps: [
@@ -692,7 +692,7 @@ const TutoriaisPanel = () => {
             />
           </div>
           {progressPercent === 100 && (
-            <p className="text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1 pt-1">
+            <p className="text-xs text-primary font-bold flex items-center gap-1 pt-1">
               <Trophy className="h-3.5 w-3.5" /> Parabéns! Você completou todos os tutoriais!
             </p>
           )}
@@ -702,8 +702,8 @@ const TutoriaisPanel = () => {
       {/* Início Rápido */}
       <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-amber-500/15 rounded-xl flex items-center justify-center">
-            <Rocket className="h-4 w-4 text-amber-500" />
+          <div className="w-8 h-8 bg-primary/15 rounded-xl flex items-center justify-center">
+            <Rocket className="h-4 w-4 text-primary" />
           </div>
           <div>
             <h3 className="text-base font-black text-foreground">Trilha do Sucesso</h3>
@@ -721,7 +721,7 @@ const TutoriaisPanel = () => {
                 className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-muted/40 transition-colors text-left group"
               >
                 <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0 ${
-                  isDone ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"
+                  isDone ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                 }`}>
                   {isDone ? <CheckCircle2 className="h-4 w-4" /> : idx + 1}
                 </div>
@@ -797,7 +797,7 @@ const TutoriaisPanel = () => {
               key={section.id}
               id={`tutorial-section-${section.id}`}
               className={`bg-card border rounded-2xl overflow-hidden transition-all ${
-                isDone ? "border-emerald-500/30" : "border-border"
+                isDone ? "border-primary/30" : "border-border"
               } ${isOpen ? "ring-2 ring-primary/20 shadow-lg" : ""}`}
             >
               <button
@@ -810,7 +810,7 @@ const TutoriaisPanel = () => {
                 <div className={`w-11 h-11 ${section.bgColor} rounded-xl flex items-center justify-center flex-shrink-0 relative`}>
                   <Icon className={`h-5 w-5 ${section.color}`} />
                   {isDone && (
-                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center border-2 border-card">
+                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center border-2 border-card">
                       <CheckCircle2 className="h-3 w-3 text-white" />
                     </div>
                   )}
@@ -869,9 +869,9 @@ const TutoriaisPanel = () => {
                               {step.content}
                             </p>
                             {step.tip && (
-                              <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-2.5 flex gap-2 mt-2">
+                              <div className="bg-muted border border-border rounded-lg p-2.5 flex gap-2 mt-2">
                                 <span className="text-base flex-shrink-0">💡</span>
-                                <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
+                                <p className="text-xs text-muted-foreground leading-relaxed">
                                   <strong>Dica:</strong> {step.tip}
                                 </p>
                               </div>
@@ -887,7 +887,7 @@ const TutoriaisPanel = () => {
                     onClick={() => toggleCompleted(section.id)}
                     className={`w-full mt-2 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all ${
                       isDone
-                        ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                        ? "bg-primary/15 text-primary border border-primary/30"
                         : "bg-primary text-primary-foreground hover:bg-primary/90"
                     }`}
                   >
@@ -911,8 +911,8 @@ const TutoriaisPanel = () => {
       {/* FAQ */}
       <div className="bg-card border border-border rounded-2xl overflow-hidden">
         <div className="p-4 border-b border-border bg-muted/20 flex items-center gap-2">
-          <div className="w-8 h-8 bg-indigo-500/15 rounded-xl flex items-center justify-center">
-            <HelpCircle className="h-4 w-4 text-indigo-500" />
+          <div className="w-8 h-8 bg-primary/15 rounded-xl flex items-center justify-center">
+            <HelpCircle className="h-4 w-4 text-primary" />
           </div>
           <div>
             <h3 className="text-sm font-black text-foreground">Perguntas Frequentes</h3>
@@ -928,7 +928,7 @@ const TutoriaisPanel = () => {
                   onClick={() => setOpenFaq(isOpen ? null : idx)}
                   className="w-full flex items-center gap-3 p-3.5 text-left hover:bg-muted/20 transition-colors"
                 >
-                  <span className="text-indigo-500 font-black text-xs flex-shrink-0">
+                  <span className="text-primary font-black text-xs flex-shrink-0">
                     Q{idx + 1}
                   </span>
                   <span className="flex-1 text-sm font-bold text-foreground">{item.q}</span>
@@ -962,7 +962,7 @@ const TutoriaisPanel = () => {
         </div>
         <button
           onClick={() => openWhatsApp(SUPPORT_WHATSAPP, SUPPORT_MESSAGE)}
-          className="inline-flex items-center justify-center gap-2 bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-sm font-black hover:bg-emerald-600 active:scale-95 transition-all w-full"
+          className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-xl text-sm font-black hover:bg-primary/90 active:scale-95 transition-all w-full"
         >
           <MessageCircle className="h-4 w-4" />
           Falar com Suporte
