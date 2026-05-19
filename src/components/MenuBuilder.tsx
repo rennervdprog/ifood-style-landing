@@ -597,6 +597,12 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
         <div className="flex gap-2">
           <MenuImportCSV storeId={storeId} />
           <button
+            onClick={() => setShowProductForm("__none__")}
+            className="flex items-center gap-1.5 bg-muted border border-border text-foreground px-4 py-2 rounded-xl text-sm font-bold hover:bg-muted/80 transition-colors"
+          >
+            <Plus className="h-4 w-4" /> Criar Produto
+          </button>
+          <button
             onClick={() => setShowAddSection(true)}
             className="flex items-center gap-1.5 bg-primary text-primary-foreground px-4 py-2 rounded-xl text-sm font-bold shadow-sm hover:bg-primary/90 transition-colors"
           >
