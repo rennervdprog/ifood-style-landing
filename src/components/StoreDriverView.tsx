@@ -1268,14 +1268,10 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                         <p className="relative text-xs text-muted-foreground leading-snug">
                           Peça ao cliente o <span className="font-black text-foreground">PIN de 4 dígitos</span> e digite abaixo.
                         </p>
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          maxLength={4}
-                          placeholder="• • • •"
+                        <PinBoxes
                           value={pinInputs[order.id] || ""}
-                          onChange={(e) => setPinInputs((prev) => ({ ...prev, [order.id]: e.target.value.replace(/\D/g, "").slice(0, 4) }))}
-                          className="relative w-full text-center text-3xl font-black tracking-[0.5em] bg-card border-2 border-success/40 rounded-2xl py-4 text-foreground placeholder:text-muted-foreground/25 focus:outline-none focus:border-success focus:shadow-lg focus:shadow-success/20 transition-all"
+                          onChange={(v) => setPinInputs((prev) => ({ ...prev, [order.id]: v }))}
+                          accent="success"
                         />
                         <button
                           onClick={() => finishDelivery(order.id)}
