@@ -326,30 +326,38 @@ const DriverDashboardV2 = () => {
       )}
       <DriverPersistentAlert availableCount={0} hasActiveDelivery={false} isOnline onReview={() => {}} />
       <div className="min-h-screen bg-background text-foreground pb-[5.5rem] native-app">
-        <header className="sticky top-0 z-50 bg-background border-b border-border/50 pt-safe">
-          <div className="px-4 h-14 flex items-center justify-between">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                <Bike className="h-4 w-4 text-primary" strokeWidth={2.5} />
+        <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border/60 pt-safe">
+          <div className="px-4 h-16 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="relative w-10 h-10 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shrink-0 shadow-md shadow-primary/25">
+                <span className="text-sm font-black text-primary-foreground tracking-tight">
+                  {(driverFirstName || "E").trim().charAt(0).toUpperCase()}
+                </span>
+                <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-card border-2 border-background flex items-center justify-center">
+                  <Bike className="h-2.5 w-2.5 text-primary" strokeWidth={3} />
+                </span>
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-black text-foreground leading-none truncate">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none">
+                  Entregador
+                </p>
+                <p className="text-base font-black text-foreground leading-tight truncate mt-0.5">
                   {driverFirstName}
                 </p>
-                <p className="text-[11px] text-muted-foreground">Entregador</p>
               </div>
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2 shrink-0">
               <button
                 onClick={() => setShowSupport(true)}
-                className="w-9 h-9 rounded-xl bg-muted/60 flex items-center justify-center active:scale-[0.93] transition-transform"
+                aria-label="Suporte"
+                className="w-10 h-10 rounded-2xl bg-muted hover:bg-muted/70 flex items-center justify-center active:scale-[0.93] transition-all"
               >
-                <Headphones className="h-4 w-4 text-muted-foreground" />
+                <Headphones className="h-[18px] w-[18px] text-foreground" strokeWidth={2.2} />
               </button>
               <SignOutConfirm
                 redirectTo="/portal-parceiro"
-                triggerClassName="w-9 h-9 rounded-xl bg-muted/60 flex items-center justify-center active:scale-[0.93] transition-transform"
-                triggerTitle={<LogOut className="h-4 w-4 text-muted-foreground" />}
+                triggerClassName="w-10 h-10 rounded-2xl bg-muted hover:bg-muted/70 flex items-center justify-center active:scale-[0.93] transition-all"
+                triggerTitle={<LogOut className="h-[18px] w-[18px] text-foreground" strokeWidth={2.2} />}
               />
             </div>
           </div>
