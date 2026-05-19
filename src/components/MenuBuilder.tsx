@@ -594,20 +594,26 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
             {" · "}{sections?.length || 0} {(sections?.length || 0) === 1 ? "seção" : "seções"}
           </p>
         </div>
-        <div className="flex gap-2">
-          <MenuImportCSV storeId={storeId} />
-          <button
-            onClick={() => setShowProductForm("__none__")}
-            className="flex items-center gap-1.5 bg-muted border border-border text-foreground px-4 py-2 rounded-xl text-sm font-bold hover:bg-muted/80 transition-colors"
-          >
-            <Plus className="h-4 w-4" /> Criar Produto
-          </button>
-          <button
-            onClick={() => setShowAddSection(true)}
-            className="flex items-center gap-1.5 bg-primary text-primary-foreground px-4 py-2 rounded-xl text-sm font-bold shadow-sm hover:bg-primary/90 transition-colors"
-          >
-            <Plus className="h-4 w-4" /> Nova Seção
-          </button>
+        <div className="flex flex-col gap-2 items-end">
+          {/* Linha 1 — ações secundárias */}
+          <div className="flex gap-2">
+            <MenuImportCSV storeId={storeId} />
+          </div>
+          {/* Linha 2 — ações primárias */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowProductForm("__none__")}
+              className="flex items-center gap-1.5 bg-muted border border-border text-foreground px-3 py-2 rounded-xl text-sm font-bold hover:bg-muted/80 transition-colors"
+            >
+              <Plus className="h-4 w-4" /> Criar Produto
+            </button>
+            <button
+              onClick={() => setShowAddSection(true)}
+              className="flex items-center gap-1.5 bg-primary text-primary-foreground px-3 py-2 rounded-xl text-sm font-bold shadow-sm hover:bg-primary/90 transition-colors"
+            >
+              <Plus className="h-4 w-4" /> Nova Seção
+            </button>
+          </div>
         </div>
       </div>
 
