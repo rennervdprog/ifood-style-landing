@@ -620,6 +620,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       toast.error("Você tem entregas ativas! Finalize antes de ficar offline.");
       return;
     }
+    haptic.light();
     setTogglingOnline(true);
     const previousStatus = (driverStatus as any) || createFallbackDriverStatus(isOnline);
     const { error } = await supabase
@@ -644,6 +645,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
 
   const declineOrder = (orderId: string) => {
     if (!user) return;
+    haptic.light();
     const next = { ...declinedMap, [orderId]: Date.now() };
     setDeclinedMap(next);
     saveDeclined(user.id, next);
@@ -651,6 +653,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   };
 
   const acceptOrder = async (orderId: string) => {
+    haptic.medium();
     // Optimistic UI: remove from available list immediately
     const availableKey = ["store-driver-available", linkedStoreIds, user?.id];
     const myKey = ["store-driver-my-deliveries", user?.id];
@@ -732,6 +735,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   const [departingId, setDepartingId] = useState<string | null>(null);
 
   const departForDelivery = async (orderId: string) => {
+    haptic.medium();
     setDepartingId(orderId);
     // Optimistic UI: update status in cache immediately
     const myKey = ["store-driver-my-deliveries", user?.id];
@@ -781,6 +785,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       toast.error(error.message || "PIN inválido.");
     } else {
       confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
+      haptic.heavy();
       toast.success("🎉 Entrega confirmada!");
       setPinInputs((prev) => ({ ...prev, [orderId]: "" }));
       queryClient.invalidateQueries({ queryKey: ["store-driver-my-deliveries", user?.id] });
