@@ -1294,31 +1294,24 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory }: Product
                 👥 Compartilhar
               </span>
             )}
-            {/* Adegas: tipo, embalagem, volume, gelado */}
-            {cat === "adegas" && meta.drink_type && (
-              <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-bold">
-                {meta.drink_type === "Cerveja" ? "🍺" : meta.drink_type === "Vinho" ? "🍷" :
-                 meta.drink_type === "Destilado" ? "🥃" : meta.drink_type === "Energético" ? "⚡" :
-                 meta.drink_type === "Refrigerante" ? "🥤" : meta.drink_type === "Água" ? "💧" : "🧃"} {meta.drink_type}
+            {/* Adegas: apenas temperatura */}
+            {cat === "adegas" && (meta.temp_option === "cold" || meta.serve_cold === true) && meta.temp_option !== "both" && meta.temp_option !== "ambient" && (
+              <span className="text-[10px] bg-sky-500/10 text-sky-600 px-1.5 py-0.5 rounded-full font-bold">
+                ❄️ Gelado
               </span>
             )}
-            {cat === "adegas" && meta.packaging && (
+            {cat === "adegas" && meta.temp_option === "both" && (
+              <span className="text-[10px] bg-sky-500/10 text-sky-600 px-1.5 py-0.5 rounded-full font-bold">
+                ❄️🔥 Gelado ou Quente
+              </span>
+            )}
+            {cat === "adegas" && meta.temp_option === "ambient" && (
               <span className="text-[10px] bg-muted text-foreground/70 px-1.5 py-0.5 rounded-full font-semibold">
-                {meta.packaging}{meta.pack_qty ? ` ${meta.pack_qty}un` : ""}
+                🌡️ Temp. ambiente
               </span>
             )}
-            {cat === "adegas" && meta.volume && (
-              <span className="text-[10px] bg-muted text-foreground/70 px-1.5 py-0.5 rounded-full font-semibold">
-                {meta.volume}
-              </span>
-            )}
-            {cat === "adegas" && meta.alcohol_content && (
-              <span className="text-[10px] bg-amber-500/10 text-amber-600 px-1.5 py-0.5 rounded-full font-bold">
-                {meta.alcohol_content}
-              </span>
-            )}
-            {/* Beverage: cold badge */}
-            {(isBeverage || cat === "adegas") && meta.serve_cold && (
+            {/* Outras categorias: badge gelado normal */}
+            {isBeverage && cat !== "adegas" && meta.serve_cold && (
               <span className="text-[10px] bg-sky-500/10 text-sky-600 px-1.5 py-0.5 rounded-full font-bold">
                 ❄️ Gelado
               </span>
@@ -1512,11 +1505,10 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory }: Product
           )}
 
           {/* Adegas: type + alcohol */}
-          {cat === "adegas" && (meta.drink_type || meta.alcohol_content) && (
+          {cat === "adegas" && meta.brand && (
             <p className="text-[10px] text-muted-foreground mt-1">
-              {meta.drink_type && <span className="font-medium">{meta.drink_type}</span>}
-              {meta.drink_type && meta.alcohol_content && " · "}
-              {meta.alcohol_content && <span>{meta.alcohol_content}</span>}
+              <span className="font-medium">{meta.brand}</span>
+              {meta.volume && <span> · {meta.volume}</span>}
             </p>
           )}
         </div>
