@@ -17,6 +17,9 @@ interface Props {
   setBatchSelected: (s: Set<string>) => void;
   expandedAddresses: Set<string>;
   cancelConfirm: any;
+  cancelReason: string;
+  setCancelReason: (r: string) => void;
+  cancellingOrder?: boolean;
   setCancelConfirm: (v: any) => void;
   isOwnDelivery: boolean;
   hasLinkedDrivers: boolean;
@@ -50,6 +53,7 @@ export default function OrdersSection(props: Props) {
   const {
     store, orders, isLoading, filteredOrders, orderCounters, orderTabs, activeTab, setActiveTab,
     batchSelected, setBatchSelected, expandedAddresses, cancelConfirm, setCancelConfirm,
+    cancelReason, setCancelReason, cancellingOrder,
     isOwnDelivery, hasLinkedDrivers, driversLoading, onlineDrivers, linkedStoreDrivers,
     pendingCount, settlementSearch, setSettlementSearch, batchDispatch, batchDispatching,
     selectAllReady, toggleBatchOrder, toggleAddress, storeName,
@@ -223,6 +227,9 @@ export default function OrdersSection(props: Props) {
           hasLinkedDrivers={hasLinkedDrivers}
           driversLoading={driversLoading}
           cancelConfirm={cancelConfirm}
+          cancelReason={cancelReason}
+          setCancelReason={setCancelReason}
+          cancellingOrder={cancellingOrder}
           storeName={store?.name}
           onlineDriversCount={onlineDrivers?.length || 0}
           linkedStoreDrivers={linkedStoreDrivers}
