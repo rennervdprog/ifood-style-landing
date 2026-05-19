@@ -161,20 +161,20 @@ export const CashRegister = ({ storeId }: CashRegisterProps) => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="p-6 border rounded-xl bg-card shadow-sm">
           <p className="text-sm text-muted-foreground">Saldo em Caixa</p>
-          <p className="text-2xl font-bold text-emerald-500">
+          <p className="text-2xl font-bold text-foreground">
             {formatBRL(Number(activeRegister.opening_balance) + (transactions?.reduce((acc, curr) => curr.type === 'in' ? acc + Number(curr.amount) : acc - Number(curr.amount), 0) || 0))}
           </p>
         </div>
         <div className="p-6 border rounded-xl bg-card shadow-sm">
           <p className="text-sm text-muted-foreground">Status</p>
           <div className="flex items-center gap-2 mt-1">
-            <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">Aberto</Badge>
+            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">Aberto</Badge>
             <span className="text-xs text-muted-foreground">Desde {format(new Date(activeRegister.opened_at), "HH:mm")}</span>
           </div>
         </div>
         <Button 
           variant="outline" 
-          className="h-full border-red-500/20 text-red-500 hover:bg-red-500/10"
+          className="h-full border-destructive/20 text-destructive hover:bg-destructive/10"
           onClick={() => closeMutation.mutate()}
           disabled={closeMutation.isPending}
         >
@@ -204,7 +204,7 @@ export const CashRegister = ({ storeId }: CashRegisterProps) => {
             <div className="grid grid-cols-2 gap-2">
               <Button 
                 variant="outline" 
-                className="border-emerald-500/20 text-emerald-500 hover:bg-emerald-500/10"
+                className="border-primary/20 text-primary hover:bg-primary/10"
                 onClick={() => transactionMutation.mutate({ amount: Number(transactionAmount), type: 'in', category: 'cash_in' })}
                 disabled={transactionMutation.isPending || !transactionAmount}
               >
@@ -213,7 +213,7 @@ export const CashRegister = ({ storeId }: CashRegisterProps) => {
               </Button>
               <Button 
                 variant="outline" 
-                className="border-red-500/20 text-red-500 hover:bg-red-500/10"
+                className="border-border text-foreground hover:bg-muted"
                 onClick={() => transactionMutation.mutate({ amount: Number(transactionAmount), type: 'out', category: 'cash_out' })}
                 disabled={transactionMutation.isPending || !transactionAmount}
               >
@@ -242,7 +242,7 @@ export const CashRegister = ({ storeId }: CashRegisterProps) => {
                     <TableCell>
                       <span className="text-xs text-muted-foreground block">{tx.description || tx.category}</span>
                     </TableCell>
-                    <TableCell className={`text-right font-medium ${tx.type === 'in' ? 'text-emerald-500' : 'text-red-500'}`}>
+                    <TableCell className={`text-right font-medium ${tx.type === 'in' ? 'text-primary' : 'text-muted-foreground'}`}>
                       {tx.type === 'in' ? '+' : '-'} {formatBRL(Number(tx.amount))}
                     </TableCell>
                   </TableRow>
