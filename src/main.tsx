@@ -9,10 +9,7 @@ declare global {
 }
 
 initSentry();
-// Web Vitals — reportar LCP/INP/CLS para Sentry após mount
-import("./lib/sentry").then(({ initWebVitals }) => initWebVitals()).catch(() => {});
 
-console.log("[Main] App starting...", { platform: navigator.userAgent?.slice(0, 80) });
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
@@ -96,6 +93,18 @@ if ("serviceWorker" in navigator && !isPreviewHost && !isInIframe && !isCapacito
 }
 
 createRoot(document.getElementById("root")!).render(<App />);
+
+// Web Vitals — chamado DEPOIS do React montar, nunca antes
+// Usa requestIdleCallback para não competir com o primeiro render
+if (typeof requestIdleCallback !== "undefined") {
+  requestIdleCallback(() => {
+    import("./lib/sentry").then(({ initWebVitals }) => initWebVitals()).catch(() => {});
+  });
+} else {
+  setTimeout(() => {
+    import("./lib/sentry").then(({ initWebVitals }) => initWebVitals()).catch(() => {});
+  }, 2000);
+}
 
 // Remove o shell estático assim que o React montar.
 // requestAnimationFrame garante que rodamos depois do primeiro paint do React,
