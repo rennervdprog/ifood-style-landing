@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback, useMemo, memo, lazy, Suspense } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo, memo, lazy, Suspense, useTransition } from "react";
 import { getOrderItemDisplayName } from "@/lib/orderItemName";
 import { formatBRL } from "@/lib/utils";
 import SimulationBanner from "@/components/SimulationBanner";
@@ -28,7 +28,7 @@ import {
 } from "recharts";
 import { openWhatsApp, formatWhatsAppNumber } from "@/lib/whatsapp";
 import WhatsAppButton from "@/components/WhatsAppButton";
-const MenuBuilder = lazy(() => import("@/components/MenuBuilder"));
+import MenuBuilder from "@/components/MenuBuilder";
 import SupportTicketModal from "@/components/SupportTicketModal";
 import { notifyOrderStatusChange, buildWhatsAppMessage } from "@/lib/orderNotifications";
 import { getStoreOpenStatus } from "@/lib/storeStatus";
@@ -185,6 +185,7 @@ const AdminDashboard = () => {
   const [realtimeDriversConnected, setRealtimeDriversConnected] = useState(false);
   const [activeTab, setActiveTab] = useState<OrderTabKey>("pendente");
   const [dashboardTab, setDashboardTab] = useState<DashboardTab>("dashboard");
+  const [isPendingTab, startTabTransition] = useTransition();
   const [autoPrint, setAutoPrint] = useState(() => {
     const stored = localStorage.getItem("autoPrint");
     // Default ON: only false if the user explicitly disabled it
@@ -286,7 +287,7 @@ const AdminDashboard = () => {
       return data;
     },
     enabled: !!user,
-    staleTime: 1000 * 60 * 3,
+    staleTime: 1000 * 60 * 5, // 5min — catálogo muda raramente
   });
 
   // Pix key do dono da loja (para o banner de setup)
@@ -1189,7 +1190,7 @@ const AdminDashboard = () => {
       setShowMoreSheet(false);
       return;
     }
-    setDashboardTab(tab); setSidebarOpen(false); setShowMoreSheet(false);
+    startTabTransition(() => setDashboardTab(tab)); setSidebarOpen(false); setShowMoreSheet(false);
   };
 
   const isBottomNavMore = !bottomNavTabs.some(t => t.key === dashboardTab) && dashboardTab !== "dashboard";
@@ -1228,6 +1229,7 @@ const AdminDashboard = () => {
               {moreSheetItems.filter(item => (!item.pizzaOnly || store?.category === "pizzas" || ((store as any)?.categories || []).includes("pizzas")) && (item.key !== "reports" || storePlan.allowFullReports) && (item.key !== "clients" || storePlan.allowFullReports)).map(item => {
                 const Icon = item.icon;
                 const isActive = dashboardTab === item.key;
+                const isLoading = isActive && isPendingTab;
                 return (
                   <button key={item.key} onClick={() => handleTabChange(item.key)}
                     className={`flex flex-col items-center gap-2 p-3 rounded-2xl transition-all ${isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent"}`}>
