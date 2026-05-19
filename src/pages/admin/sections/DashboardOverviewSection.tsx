@@ -100,20 +100,20 @@ export default function DashboardOverviewSection(props: Props) {
   {!(store as any).asaas_wallet_id && (
     <button
       onClick={() => setDashboardTab("finance")}
-      className="w-full text-left bg-gradient-to-br from-red-500/15 via-red-500/5 to-transparent border-2 border-red-500/40 rounded-2xl p-4 flex items-start gap-3 active:scale-[0.99] transition-transform shadow-lg shadow-red-500/10"
+      className="w-full text-left bg-destructive/10 border-2 border-destructive/40 rounded-2xl p-4 flex items-start gap-3 active:scale-[0.99] transition-transform"
     >
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500 text-white flex-shrink-0">
+      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-destructive text-destructive-foreground flex-shrink-0">
         <AlertTriangle className="h-5 w-5" />
       </div>
       <div className="flex-1 min-w-0">
-        <h3 className="font-black text-red-600 dark:text-red-400 text-sm">
-          🚨 Configure sua conta de recebimento (prioridade)
+        <h3 className="font-black text-destructive text-sm">
+          Configure sua conta de recebimento (prioridade)
         </h3>
         <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
           Você ainda não criou sua subconta Asaas. <strong>Sem ela, você não recebe os pagamentos PIX</strong> dos pedidos.
           Leva 2 minutos e é gratuito.
         </p>
-        <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-white bg-red-500 px-3 py-1.5 rounded-lg">
+        <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-destructive-foreground bg-destructive px-3 py-1.5 rounded-lg">
           Configurar agora <ChevronRight className="h-3 w-3" />
         </span>
       </div>
@@ -135,16 +135,16 @@ export default function DashboardOverviewSection(props: Props) {
   )}
 
   {isOwnDelivery && !driversLoading && !hasLinkedDrivers && (
-    <div className="bg-red-500/10 border-2 border-red-500/30 rounded-2xl p-4 flex items-start gap-3 animate-pulse-subtle">
-      <AlertTriangle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
+    <div className="bg-destructive/10 border-2 border-destructive/30 rounded-2xl p-4 flex items-start gap-3 animate-pulse-subtle">
+      <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
       <div className="flex-1">
-        <h3 className="font-bold text-red-600 dark:text-red-400 text-sm">🛵 Cadastre um motoboy para receber pedidos</h3>
+        <h3 className="font-bold text-destructive text-sm">Cadastre um motoboy para receber pedidos</h3>
         <p className="text-xs text-muted-foreground mt-1">
           Sua loja está configurada como <strong>Entrega Própria</strong>, mas você ainda não vinculou nenhum motoboy.
           Sem um entregador cadastrado, <strong>você não conseguirá despachar pedidos</strong> e os clientes podem não conseguir finalizar a compra.
         </p>
         <button onClick={() => setDashboardTab("drivers")}
-          className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-white bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded-lg transition-colors">
+          className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-destructive-foreground bg-destructive hover:bg-destructive/90 px-3 py-1.5 rounded-lg transition-colors">
           <Bike className="inline h-3 w-3 mr-1" /> Cadastrar Motoboy Agora
         </button>
       </div>
