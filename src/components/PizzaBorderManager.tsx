@@ -207,8 +207,8 @@ const PizzaBorderManager = ({ storeId }: PizzaBorderManagerProps) => {
                     onClick={() => toggleAvailable(border)}
                     className={`text-[10px] font-bold px-2 py-1 rounded-full ${
                       border.is_available
-                        ? "bg-emerald-500/10 text-emerald-600"
-                        : "bg-red-500/10 text-red-500"
+                        ? "bg-primary/10 text-primary"
+                        : "bg-muted text-muted-foreground"
                     }`}
                   >
                     {border.is_available ? "Ativo" : "Inativo"}
@@ -223,7 +223,7 @@ const PizzaBorderManager = ({ storeId }: PizzaBorderManagerProps) => {
                   >
                     <Edit2 className="h-3.5 w-3.5" />
                   </button>
-                  <button onClick={() => deleteBorder(border.id)} className="text-red-400 hover:text-red-300">
+                  <button onClick={() => deleteBorder(border.id)} className="text-muted-foreground hover:text-destructive">
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </>
