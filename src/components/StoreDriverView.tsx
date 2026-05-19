@@ -796,45 +796,86 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
         </div>
       )}
 
-      {/* ── Online / Offline — estilo app nativo ── */}
+      {/* ── Online / Offline — HERO toggle (elemento mais proeminente) ── */}
       <button
         onClick={toggleOnline}
         disabled={togglingOnline}
-        className={`w-full flex items-center justify-between px-5 py-4 rounded-2xl border transition-all active:scale-[0.98] disabled:opacity-60 ${
+        aria-pressed={isOnline}
+        className={`relative w-full overflow-hidden flex items-center justify-between px-5 py-5 rounded-3xl border-2 transition-all active:scale-[0.985] disabled:opacity-60 ${
           isOnline
-            ? "bg-success border-success shadow-md shadow-success/30"
+            ? "bg-success border-success shadow-xl shadow-success/30"
             : "bg-card border-border"
         }`}
       >
-        <div className="flex items-center gap-3">
-          {togglingOnline
-            ? <Loader2 className={`h-5 w-5 animate-spin ${isOnline ? "text-white" : "text-muted-foreground"}`} />
-            : <div className={`w-2.5 h-2.5 rounded-full ${isOnline ? "bg-white animate-pulse" : "bg-muted-foreground/40"}`} />
-          }
-          <div className="text-left">
-            <p className={`text-base font-black ${isOnline ? "text-white" : "text-foreground"}`}>
-              {isOnline ? "Online — Recebendo pedidos" : "Offline"}
+        {isOnline && (
+          <span className="pointer-events-none absolute -top-12 -right-12 w-40 h-40 bg-success-foreground/15 rounded-full blur-2xl" />
+        )}
+        <div className="relative flex items-center gap-3.5 min-w-0">
+          <div
+            className={`relative flex items-center justify-center w-11 h-11 rounded-2xl shrink-0 ${
+              isOnline ? "bg-success-foreground/20" : "bg-muted"
+            }`}
+          >
+            {togglingOnline ? (
+              <Loader2
+                className={`h-5 w-5 animate-spin ${
+                  isOnline ? "text-success-foreground" : "text-muted-foreground"
+                }`}
+              />
+            ) : isOnline ? (
+              <Power className="h-5 w-5 text-success-foreground" strokeWidth={2.6} />
+            ) : (
+              <PowerOff className="h-5 w-5 text-muted-foreground" strokeWidth={2.4} />
+            )}
+            {isOnline && !togglingOnline && (
+              <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-success-foreground border-2 border-success animate-pulse" />
+            )}
+          </div>
+          <div className="text-left min-w-0">
+            <p
+              className={`text-lg font-black leading-tight tracking-tight ${
+                isOnline ? "text-success-foreground" : "text-foreground"
+              }`}
+            >
+              {isOnline ? "Você está Online" : "Você está Offline"}
             </p>
-            <p className={`text-xs ${isOnline ? "text-white/75" : "text-muted-foreground"}`}>
-              {isOnline ? "Toque para pausar" : "Toque para começar"}
+            <p
+              className={`text-[11px] font-semibold leading-tight mt-0.5 ${
+                isOnline ? "text-success-foreground/80" : "text-muted-foreground"
+              }`}
+            >
+              {isOnline ? "Recebendo pedidos · toque para pausar" : "Toque para começar a receber"}
             </p>
           </div>
         </div>
-        <div className={`relative w-12 h-7 rounded-full transition-colors ${isOnline ? "bg-white/30" : "bg-muted"}`}>
-          <span className={`absolute top-[3px] w-[22px] h-[22px] rounded-full bg-white shadow transition-transform duration-200 ${isOnline ? "translate-x-[22px]" : "translate-x-[3px]"}`} />
+        <div
+          className={`relative w-[52px] h-8 rounded-full transition-colors shrink-0 ${
+            isOnline ? "bg-success-foreground/25" : "bg-muted"
+          }`}
+        >
+          <span
+            className={`absolute top-1 w-6 h-6 rounded-full bg-card shadow-md transition-transform duration-200 ${
+              isOnline ? "translate-x-[22px]" : "translate-x-1"
+            }`}
+          />
         </div>
       </button>
 
-      {/* Stats — linha compacta estilo app nativo */}
-      <div className="flex items-center bg-muted/30 rounded-2xl border border-border/40 divide-x divide-border/40">
+      {/* Status Bar — 3 colunas glance-able */}
+      <div className="grid grid-cols-3 bg-card rounded-2xl border border-border/60 shadow-sm overflow-hidden">
         {([
-          { label: "Na rota", value: totalActive, color: "text-primary" },
-          { label: "Disponíveis", value: totalAvailable, color: "text-warning" },
-          { label: "Concluídas", value: deliveryCount || 0, color: "text-success" },
-        ] as const).map(s => (
-          <div key={s.label} className="flex-1 text-center py-3">
-            <p className={`text-xl font-black leading-none ${s.color}`}>{s.value}</p>
-            <p className="text-[10px] text-muted-foreground mt-1">{s.label}</p>
+          { label: "Na rota", value: totalActive, accent: "text-primary" },
+          { label: "Disponíveis", value: totalAvailable, accent: "text-warning" },
+          { label: "Concluídas", value: deliveryCount || 0, accent: "text-success" },
+        ] as const).map((s, i) => (
+          <div
+            key={s.label}
+            className={`text-center py-3.5 ${i > 0 ? "border-l border-border/60" : ""}`}
+          >
+            <p className={`text-2xl font-black leading-none ${s.accent}`}>{s.value}</p>
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mt-1.5">
+              {s.label}
+            </p>
           </div>
         ))}
       </div>
