@@ -1087,54 +1087,43 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
               <div
                 key={order.id}
                 id={`stop-${order.id}`}
-                className={`relative bg-card rounded-2xl overflow-hidden border ${
-                  inDelivery
-                    ? "border-success/40"
-                    : readyToDepart
-                      ? "border-warning/40"
-                      : "border-border/60"
-                }`}
+                className="relative bg-card rounded-2xl overflow-hidden border border-border/60 shadow-sm"
               >
-                {/* Faixa lateral de status */}
-                <div className={`absolute left-0 top-0 bottom-0 w-1 ${
-                  inDelivery ? "bg-success" : readyToDepart ? "bg-warning" : "bg-primary/50"
+                {/* Faixa lateral de status (3px) */}
+                <div className={`absolute left-0 top-0 bottom-0 w-[3px] ${
+                  inDelivery ? "bg-success" : readyToDepart ? "bg-warning" : "bg-primary/60"
                 }`} />
                 <button
                   onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
                   className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:bg-muted/30 transition-colors"
                 >
-                  <div className="relative shrink-0">
-                    {inDelivery && (
-                      <div className="absolute inset-0 bg-success/40 rounded-2xl blur-md animate-pulse" />
-                    )}
-                    <div className={`relative w-11 h-11 rounded-2xl flex items-center justify-center text-sm font-black shadow-md ${
-                      inDelivery
-                        ? "bg-success text-success-foreground shadow-success/30"
-                        : readyToDepart
-                          ? "bg-warning text-warning-foreground shadow-warning/30"
-                          : "bg-gradient-to-br from-primary/15 to-primary/5 text-primary"
-                    }`}>
-                      {index + 1}
-                    </div>
+                  <div className={`relative w-9 h-9 rounded-xl flex items-center justify-center text-sm font-black shrink-0 ${
+                    inDelivery
+                      ? "bg-success/10 text-success"
+                      : readyToDepart
+                        ? "bg-warning/10 text-warning"
+                        : "bg-primary/10 text-primary"
+                  }`}>
+                    {index + 1}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 mb-0.5">
+                    <div className="flex items-center gap-1.5 mb-1">
                       {inDelivery && <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />}
-                      <p className={`text-[9px] font-black uppercase tracking-widest ${
+                      <p className={`text-[9px] font-black uppercase tracking-widest leading-none ${
                         inDelivery ? "text-success" : readyToDepart ? "text-warning" : "text-muted-foreground"
                       }`}>
-                        {inDelivery ? "Em Entrega" : readyToDepart ? "Pronto p/ Sair" : "Aguardando"}
+                        {inDelivery ? "Em entrega" : readyToDepart ? "Pronto p/ sair" : "Aguardando"}
                       </p>
                     </div>
-                    <p className="text-sm font-black text-foreground truncate leading-tight">
+                    <p className="text-lg font-black text-foreground truncate leading-tight tracking-tight">
                       {order.neighborhood}
                     </p>
-                    <p className="text-[10px] text-muted-foreground truncate mt-0.5">
-                      {!multiStore && <>{(order as any).stores?.name} • </>}
-                      {contactName} • #{order.id.slice(0, 6).toUpperCase()}
+                    <p className="text-[11px] text-muted-foreground truncate mt-0.5">
+                      {!multiStore && <>{(order as any).stores?.name} · </>}
+                      {contactName} · #{order.id.slice(0, 6).toUpperCase()}
                     </p>
                   </div>
-                  <ChevronRight className={`h-5 w-5 text-muted-foreground transition-transform shrink-0 ${isExpanded ? "rotate-90" : ""}`} />
+                  <ChevronRight className={`h-5 w-5 text-muted-foreground/60 transition-transform shrink-0 ${isExpanded ? "rotate-90" : ""}`} />
                 </button>
 
                 {isExpanded && (
@@ -1298,74 +1287,61 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
             return (
               <div
                 key={order.id}
-                className={`relative bg-card rounded-2xl overflow-hidden border border-border/60 ${hasActiveRoutes ? "opacity-60" : ""}`}
+                className={`relative bg-card rounded-2xl overflow-hidden border border-border/60 shadow-sm ${hasActiveRoutes ? "opacity-60" : ""}`}
               >
-                <div className="absolute left-0 top-0 bottom-0 w-1 bg-warning rounded-l-2xl" />
-                <div className="p-4 pl-5 space-y-3.5">
-                  {/* Header */}
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-warning/10 border border-warning/25 flex items-center justify-center text-sm font-black text-warning shrink-0">
-                      {index + 1}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-black text-warning uppercase tracking-widest leading-none mb-1">
-                        Novo Pedido
-                      </p>
-                      <p className="text-sm font-black text-foreground truncate leading-tight">
+                {/* Faixa lateral 3px */}
+                <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-warning" />
+                <div className="p-4 pl-[18px] space-y-3">
+                  {/* Linha 1: loja + ID */}
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Store className="h-3.5 w-3.5 text-muted-foreground shrink-0" strokeWidth={2.4} />
+                      <p className="text-xs font-bold text-muted-foreground truncate">
                         {(order as any).stores?.name || "Loja"}
                       </p>
-                      <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
-                        #{order.id.slice(0, 6).toUpperCase()}
+                    </div>
+                    <span className="text-[10px] font-mono text-muted-foreground/70 shrink-0">
+                      #{order.id.slice(0, 6).toUpperCase()}
+                    </span>
+                  </div>
+
+                  {/* Linha 2: endereço (hierarquia máxima) */}
+                  <div>
+                    <p className="text-xl font-black text-foreground leading-tight tracking-tight">
+                      {order.neighborhood}
+                    </p>
+                    {order.address_details && (
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-snug">
+                        {order.address_details}
                       </p>
-                    </div>
-                    <div className="flex flex-col items-center px-2.5 py-1.5 rounded-xl bg-primary/10 shrink-0">
-                      <span className="text-base font-black text-primary leading-none">{itemsCount}</span>
-                      <span className="text-[10px] font-semibold text-primary/80 mt-0.5">itens</span>
-                    </div>
-                  </div>
-
-                  {/* Endereço destaque */}
-                  <div className="flex items-start gap-3 bg-gradient-to-br from-muted/60 to-muted/30 rounded-2xl p-3.5 border border-border/40">
-                    <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
-                      <MapPin className="h-4 w-4 text-destructive" strokeWidth={2.5} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-black text-foreground leading-tight">{order.neighborhood}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 leading-snug">{order.address_details}</p>
-                    </div>
-                  </div>
-
-                  {/* Items chips */}
-                  {order.order_items?.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5">
-                      {order.order_items.slice(0, 4).map((item: any) => (
-                        <span key={item.id} className="text-[10px] font-bold bg-muted/60 text-foreground/80 px-2 py-1 rounded-lg">
-                          {item.quantity}× {getOrderItemDisplayName(item)}
-                        </span>
-                      ))}
-                      {order.order_items.length > 4 && (
-                        <span className="text-[10px] font-bold bg-muted/60 text-muted-foreground px-2 py-1 rounded-lg">
-                          +{order.order_items.length - 4}
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Actions */}
-                  <div className="flex gap-2 pt-1">
-                    {canDecline && (
-                      <button
-                        onClick={() => declineOrder(order.id)}
-                        className="h-14 px-5 rounded-2xl border-2 border-border bg-background text-muted-foreground active:scale-[0.97] transition-transform flex items-center gap-1.5"
-                        title="Recusar"
-                      >
-                        <X className="h-4 w-4" strokeWidth={2.5} />
-                      </button>
                     )}
+                  </div>
+
+                  {/* Linha 3: chips compactos (itens · pagamento · troco) */}
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-foreground bg-muted px-2 py-1 rounded-lg">
+                      <Package className="h-3 w-3" strokeWidth={2.6} />
+                      {itemsCount} {itemsCount === 1 ? "item" : "itens"}
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-foreground bg-muted px-2 py-1 rounded-lg">
+                      {order.payment_method === "pix" ? "📱 PIX"
+                        : order.payment_method === "dinheiro" ? "💵 Dinheiro"
+                        : order.payment_method === "cartao" ? "💳 Cartão"
+                        : order.payment_method}
+                    </span>
+                    {order.needs_change && order.change_for && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-warning bg-warning/10 px-2 py-1 rounded-lg">
+                        Troco {formatBRL(Number(order.change_for))}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Footer: CTA único + recusar discreto */}
+                  <div className="pt-1 space-y-2">
                     <button
                       onClick={() => acceptOrder(order.id)}
                       disabled={hasActiveRoutes}
-                      className={`flex-1 h-14 font-black rounded-2xl text-base flex items-center justify-center gap-2 transition-transform ${
+                      className={`w-full h-14 font-black rounded-2xl text-base flex items-center justify-center gap-2 transition-transform ${
                         hasActiveRoutes
                           ? "bg-muted text-muted-foreground cursor-not-allowed"
                           : "bg-primary text-primary-foreground shadow-md shadow-primary/25 active:scale-[0.97]"
@@ -1378,6 +1354,15 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                         </>
                       )}
                     </button>
+                    {canDecline && (
+                      <button
+                        onClick={() => declineOrder(order.id)}
+                        className="w-full h-9 text-xs font-bold text-muted-foreground hover:text-destructive active:text-destructive transition-colors flex items-center justify-center gap-1.5"
+                      >
+                        <X className="h-3.5 w-3.5" strokeWidth={2.5} />
+                        Recusar este pedido
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
