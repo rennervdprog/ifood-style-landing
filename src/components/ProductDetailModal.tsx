@@ -70,6 +70,8 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
   const [selectedDrinkSize, setSelectedDrinkSize] = useState<string | null>(null);
   const [selectedMilk, setSelectedMilk] = useState<string | null>(null);
   const [wantIced, setWantIced] = useState(false);
+  // Para adegas com temp_option === "both": cliente escolhe gelado ou quente
+  const [selectedTemp, setSelectedTemp] = useState<"cold" | "warm" | null>(null);
   const [showRequiredWarning, setShowRequiredWarning] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
 
@@ -527,39 +529,58 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
       )}
 
       {cat === "adegas" && (
-        <div className="space-y-2">
-          <div className="flex flex-wrap gap-1.5">
-            {meta.drink_type && (
-              <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">
-                {meta.drink_type === "Cerveja" ? "🍺" : meta.drink_type === "Vinho" ? "🍷" :
-                 meta.drink_type === "Destilado" ? "🥃" : meta.drink_type === "Energético" ? "⚡" :
-                 meta.drink_type === "Refrigerante" ? "🥤" : meta.drink_type === "Água" ? "💧" : "🧃"} {meta.drink_type}
-              </span>
-            )}
-            {meta.packaging && (
-              <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-bold text-foreground">
-                {meta.packaging}{meta.pack_qty ? ` c/ ${meta.pack_qty} un` : ""}
-              </span>
-            )}
-            {meta.volume && (
-              <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-foreground">
-                📦 {meta.volume}
-              </span>
-            )}
-            {meta.alcohol_content && (
-              <span className="rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 px-2.5 py-1 text-xs font-bold">
-                🍷 {meta.alcohol_content}
-              </span>
-            )}
-            {meta.serve_cold && (
-              <span className="rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 px-2.5 py-1 text-xs font-bold">
-                ❄️ Gelado
-              </span>
-            )}
-          </div>
-          {meta.brand && (
-            <p className="text-xs text-muted-foreground">Marca: <strong className="text-foreground">{meta.brand}</strong></p>
+        <div className="space-y-3">
+          {/* Info da bebida — marca e volume */}
+          {(meta.brand || meta.volume) && (
+            <p className="text-xs text-muted-foreground">
+              {meta.brand && <strong className="text-foreground">{meta.brand}</strong>}
+              {meta.brand && meta.volume && " · "}
+              {meta.volume && <span>{meta.volume}</span>}
+              {meta.alcohol_content && <span className="ml-1 text-amber-600">· {meta.alcohol_content}</span>}
+            </p>
           )}
+
+          {/* Temperatura — só mostra se for "both" (lojista vende dos dois) */}
+          {meta.temp_option === "both" && (
+            <div className="space-y-1.5">
+              <p className="text-xs font-bold text-foreground">Temperatura</p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedTemp("cold")}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border text-xs font-bold transition-all ${
+                    selectedTemp === "cold"
+                      ? "bg-sky-500/15 border-sky-500/40 text-sky-700 dark:text-sky-400"
+                      : "bg-muted/40 border-border text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  ❄️ Gelado
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedTemp("warm")}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border text-xs font-bold transition-all ${
+                    selectedTemp === "warm"
+                      ? "bg-orange-500/15 border-orange-500/40 text-orange-700 dark:text-orange-400"
+                      : "bg-muted/40 border-border text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  🔥 Quente
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Temperatura fixa — apenas informativo */}
+          {meta.temp_option === "cold" || (meta.serve_cold && meta.temp_option !== "both" && meta.temp_option !== "ambient") ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/10 text-sky-600 px-2.5 py-1 text-xs font-bold">
+              ❄️ Gelado
+            </span>
+          ) : meta.temp_option === "ambient" ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-muted text-muted-foreground px-2.5 py-1 text-xs font-semibold">
+              🌡️ Temperatura ambiente
+            </span>
+          ) : null}
         </div>
       )}
 
@@ -750,12 +771,24 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
       setStep(2);
       return;
     }
+    // Validar temperatura quando lojista oferece gelado e quente
+    if (storeCategory === "adegas" && (product as any).metadata?.temp_option === "both" && !selectedTemp) {
+      setShowRequiredWarning(true);
+      window.setTimeout(() => setShowRequiredWarning(false), 3000);
+      return;
+    }
+
     if (!allRequiredMet) {
       setShowRequiredWarning(true);
       window.setTimeout(() => setShowRequiredWarning(false), 3000);
       return;
     }
-    onAdd(product, buildCartAddons(), observations, quantity, unitPrice);
+    // Incluir temperatura nas observações para adegas com temp_option === "both"
+    const tempNote = (storeCategory === "adegas" && selectedTemp)
+      ? `[${selectedTemp === "cold" ? "❄️ Gelado" : "🔥 Quente"}]`
+      : "";
+    const fullObservations = [tempNote, observations.trim()].filter(Boolean).join(" ");
+    onAdd(product, buildCartAddons(), fullObservations, quantity, unitPrice);
     closeAndReset();
   };
 
