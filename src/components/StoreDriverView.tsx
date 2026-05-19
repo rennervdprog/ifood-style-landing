@@ -1,6 +1,6 @@
 import { formatBRL } from "@/lib/utils";
 import { startDriverTracking, stopDriverTracking, updateTrackingOrderId } from "@/lib/driverGeolocation";
-import { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { subscribeWithRejoin, cleanupChannel } from "@/lib/realtimeChannel";
