@@ -715,12 +715,12 @@ const StoreDirectory = () => {
           </p>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {features.map((f) => (
-              <div key={f.title} className="rounded-2xl border border-border bg-card p-5 hover:shadow-md hover:-translate-y-1 transition-all">
-                <div className="rounded-xl bg-primary/10 w-11 h-11 flex items-center justify-center mb-4">
-                  <f.icon className="h-5 w-5 text-primary" />
+              <div key={f.title} className="rounded-2xl border border-border bg-card p-6 hover:shadow-md hover:-translate-y-1 transition-all">
+                <div className="rounded-xl bg-primary/10 w-14 h-14 flex items-center justify-center mb-4">
+                  <f.icon className="h-7 w-7 text-primary" />
                 </div>
-                <h3 className="font-bold text-foreground mb-1">{f.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+                <h3 className="font-bold text-foreground mb-2 text-lg">{f.title}</h3>
+                <p className="text-base text-foreground/70 leading-relaxed">{f.desc}</p>
               </div>
             ))}
           </div>
@@ -1025,13 +1025,13 @@ const StoreDirectory = () => {
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
                   aria-expanded={openFaq === i}
                   aria-controls={`faq-panel-${i}`}
-                  className="w-full flex items-center justify-between p-5 text-left"
+                  className="w-full flex items-center justify-between p-6 text-left min-h-[60px]"
                 >
-                  <span className="font-semibold text-foreground text-sm pr-4">{faq.q}</span>
-                  <ChevronDown className={`h-5 w-5 text-muted-foreground shrink-0 transition-transform ${openFaq === i ? "rotate-180" : ""}`} />
+                  <span className="font-bold text-foreground text-lg pr-4">{faq.q}</span>
+                  <ChevronDown className={`h-6 w-6 text-foreground/70 shrink-0 transition-transform ${openFaq === i ? "rotate-180" : ""}`} />
                 </button>
                 {openFaq === i && (
-                  <div id={`faq-panel-${i}`} role="region" className="px-5 pb-5 text-sm text-muted-foreground leading-relaxed animate-fade-in">
+                  <div id={`faq-panel-${i}`} role="region" className="px-6 pb-6 text-base text-foreground/80 leading-relaxed animate-fade-in">
                     {faq.a}
                   </div>
                 )}
