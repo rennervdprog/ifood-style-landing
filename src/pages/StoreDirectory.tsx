@@ -201,46 +201,42 @@ const benefits = [
   {
     icon: "🍕",
     segment: "Pizzarias & Hamburguerias",
-    headline: "Chega de erros nos pedidos",
-    text: "Bordas recheadas, adicionais e pizzas meio-a-meio organizadas automaticamente. Comanda impressa direto na cozinha.",
+    headline: "Sem erro no pedido",
+    text: "Pizza meio-a-meio, borda recheada e adicionais organizados sozinhos. O papel sai impresso na cozinha.",
   },
   {
     icon: "🛒",
     segment: "Mercados & Adegas",
-    headline: "Cardápio com centenas de itens",
-    text: "Cadastre produtos rapidamente por categoria. Clientes pedem pelo link sem precisar ligar ou mandar mensagem.",
+    headline: "Muitos produtos, sem confusão",
+    text: "Cadastre seus produtos por categoria. O cliente faz o pedido sozinho, sem te ligar.",
   },
   {
     icon: "🍰",
     segment: "Docerias & Padarias",
-    headline: "Agendamento inteligente",
-    text: "Clientes agendam a retirada ou entrega com antecedência. Organize sua produção do dia sem caos no WhatsApp.",
+    headline: "Cliente agenda sozinho",
+    text: "O cliente escolhe o dia e a hora para retirar ou receber. Você se organiza com calma.",
   },
   {
     icon: "🍺",
     segment: "Bares & Restaurantes",
-    headline: "Delivery + Balcão no mesmo sistema",
-    text: "Receba pedidos online e use o PDV para registrar vendas presenciais. Caixa único, relatório unificado.",
+    headline: "Delivery e balcão juntos",
+    text: "Recebe pedido pelo aplicativo e também vende no balcão. Tudo no mesmo lugar.",
   },
   {
     icon: "💈",
     segment: "Lojas & Serviços",
-    headline: "Venda sem delivery",
-    text: "Use o cardápio digital como vitrine de produtos e o PDV para vendas no balcão. Sem precisar de motoboy.",
+    headline: "Vende sem precisar de entrega",
+    text: "Use como vitrine dos seus produtos e como caixa do balcão. Sem precisar de motoboy.",
   },
 ];
 
 const faqs = [
-  { q: "Preciso baixar algum aplicativo?", a: "Não! Você gerencia tudo pelo navegador do celular ou computador. Seus clientes pedem pelo link da loja, sem instalar nada." },
-  { q: "Como funciona o PIX automático?", a: "Quando o cliente escolhe PIX, geramos um QR Code automaticamente. A confirmação é instantânea no seu painel — sem conferir extrato." },
-  { q: "O plano Essencial cobra comissão?", a: "Não! Zero comissão sobre as vendas. Há apenas R$ 1,99 por transação PIX online (descontado automaticamente do repasse) e R$ 2,00 por entrega, somado à sua taxa — pago pelo cliente no checkout. Nos planos Crescimento e Comissão não há cobrança de R$ 1,99 de PIX: a comissão percentual já cobre esses custos." },
-  { q: "O que é o módulo PDV?", a: "É um caixa registradora digital integrado ao sistema. Você abre e fecha turnos, registra vendas no balcão com maquininha própria (sem taxa PIX), calcula troco automaticamente e acompanha relatórios separados de delivery e presencial. Incluso em todos os planos." },
-  { q: "Posso usar sem motoboy próprio?", a: "Sim! No modo cardápio digital, você recebe os pedidos e usa sua própria equipe de entrega. A plataforma funciona em todo o Brasil mesmo sem usar a logística da plataforma." },
-  { q: "Como recebo os pedidos?", a: "Notificação sonora e push no celular em tempo real. O painel organiza os pedidos por status: pendente, preparando, saiu para entrega e finalizado." },
-  { q: "Funciona na minha cidade?", a: "Sim! Atendemos lojistas em todo o Brasil — capitais, cidades do interior e municípios pequenos. A plataforma foi desenvolvida justamente para quem não tem acesso aos grandes marketplaces." },
-  { q: "Posso trocar de plano?", a: "Sim, a qualquer momento. Basta solicitar pelo painel e o administrador realiza a migração. Nenhuma penalidade e sem perder o histórico de pedidos." },
-  { q: "Quanto economizo em relação aos grandes apps?", a: "Os grandes marketplaces cobram entre 12% e 30% por pedido, além de cobranças por destaque e publicidade. No ItaSuper você paga 6% (plano Comissão) ou 0% (planos pagos), com taxas fixas e transparentes." },
-  { q: "Tem contrato ou fidelidade?", a: "Não. Cancele quando quiser, sem multa e sem fidelidade mínima." },
+  { q: "Preciso baixar algum programa?", a: "Não. Você usa tudo direto no celular ou no computador. O seu cliente também não precisa instalar nada." },
+  { q: "Como o cliente paga?", a: "Pelo PIX, direto no celular. Quando ele paga, o dinheiro aparece na hora pra você." },
+  { q: "Funciona na minha cidade?", a: "Sim. Funciona em qualquer cidade do Brasil, seja grande ou pequena." },
+  { q: "Quanto custa?", a: "Você pode começar de graça. Só paga uma pequena parte do que vender. Se preferir, pode escolher um plano com mensalidade fixa." },
+  { q: "Posso cancelar quando quiser?", a: "Pode sim. Sem multa, sem fidelidade, sem pegadinha." },
+  { q: "E se eu tiver dificuldade?", a: "Nossa equipe te ajuda no WhatsApp. É só chamar que a gente responde." },
 ];
 
 /* ─── Navbar ─── */
