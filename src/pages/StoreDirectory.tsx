@@ -783,13 +783,13 @@ const StoreDirectory = () => {
                   { icon: "📊", title: "Relatório separado por canal", desc: "Veja o que veio de delivery e o que veio do balcão, separados." },
                   { icon: "💳", title: "Sem taxa PIX na maquininha", desc: "Use sua maquininha própria. A plataforma não cobra R$ 1,99 nesse canal." },
                 ].map((item) => (
-                  <div key={item.title} className="flex gap-3 items-start rounded-2xl border border-border bg-card p-4 hover:border-blue-500/20 transition-colors">
-                    <span className="text-2xl shrink-0">{item.icon}</span>
-                    <div>
-                      <p className="text-sm font-bold text-foreground">{item.title}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
-                    </div>
-                  </div>
+                   <div key={item.title} className="flex gap-3 items-start rounded-2xl border border-border bg-card p-5 hover:border-blue-500/20 transition-colors">
+                     <span className="text-3xl shrink-0">{item.icon}</span>
+                     <div>
+                       <p className="text-base font-bold text-foreground">{item.title}</p>
+                       <p className="text-sm text-foreground/70 mt-1 leading-relaxed">{item.desc}</p>
+                     </div>
+                   </div>
                 ))}
               </div>
             </div>
