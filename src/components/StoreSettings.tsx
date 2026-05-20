@@ -1011,8 +1011,8 @@ const NotificationSection = () => {
         </div>
         <WhatsAppSetup
           storeId={storeId}
-          storeSlug={store?.slug || ""}
-          storeName={store?.name || ""}
+          storeSlug={slug || ""}
+          storeName={name || ""}
         />
       </div>
 
