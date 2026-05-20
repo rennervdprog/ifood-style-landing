@@ -20,67 +20,67 @@ import { Card, CardContent } from "@/components/ui/card";
 
 /* ─── static data ─── */
  const painPoints = [
-   { emoji: "📸", pain: "Manda foto do cardápio pelo WhatsApp", solution: "Cardápio digital profissional com fotos HD e preços sempre atualizados" },
-   { emoji: "📝", pain: "Anota pedido na mão e erra o endereço", solution: "Pedidos organizados automaticamente com endereço via GPS integrado" },
-   { emoji: "💸", pain: "Confere PIX no extrato manual um por um", solution: "Pagamento PIX confirmado instantaneamente pelo sistema" },
-   { emoji: "🔇", pain: "Perde pedidos por não ver as mensagens", solution: "Alertas sonoros e notificações push para você nunca perder uma venda" },
+   { emoji: "📸", pain: "Manda foto do cardápio no WhatsApp", solution: "Seu cardápio na internet, com fotos bonitas e preço certinho." },
+   { emoji: "📝", pain: "Anota pedido no papel e erra o endereço", solution: "O pedido chega pronto, com o endereço completo do cliente." },
+   { emoji: "💸", pain: "Confere PIX um por um no extrato", solution: "Quando o cliente paga no PIX, o dinheiro aparece na hora pra você." },
+   { emoji: "🔇", pain: "Perde pedidos por não ver mensagem", solution: "O celular toca alto a cada pedido novo. Você não perde nenhum." },
  ];
 
 const steps = [
-   { step: "01", title: "Cadastre sua loja", desc: "Crie sua conta em minutos e escolha o plano ideal para seu momento." },
-   { step: "02", title: "Monte seu cardápio", desc: "Adicione seus produtos, fotos e preços de forma simples e rápida." },
-   { step: "03", title: "Divulgue seu link", desc: "Compartilhe seu link exclusivo no WhatsApp, Instagram e use QR Codes." },
-   { step: "04", title: "Venda muito mais!", desc: "Receba pedidos organizados, pagamentos automáticos e gerencie entregas." },
+   { step: "01", title: "Crie sua conta", desc: "É rápido. Coloca o nome da loja, telefone e pronto." },
+   { step: "02", title: "Monte seu cardápio", desc: "Adicione seus produtos com foto e preço. Bem fácil." },
+   { step: "03", title: "Mande seu link", desc: "Envia o link da sua loja no WhatsApp e nas redes." },
+   { step: "04", title: "Receba os pedidos", desc: "Cada pedido chega no seu celular, organizado e pago." },
  ];
  
  /* ─── Motoboy Data ─── */
  const motoboyWorkflow = [
    { 
      icon: Bell, 
-     title: "Notificação Sonora", 
-     desc: "Assim que você marca o pedido como pronto, o app do motoboy apita instantaneamente avisando que há uma entrega disponível.",
+      title: "Apita no celular do motoboy", 
+      desc: "Quando o pedido está pronto, o celular do entregador toca avisando que tem entrega.",
      color: "bg-blue-500/10",
      iconColor: "text-blue-500"
    },
    { 
      icon: MapPin, 
-     title: "Rastreamento GPS", 
-     desc: "O cliente acompanha o motoboy em tempo real no mapa. Menos ansiedade para o cliente, menos mensagens no seu WhatsApp.",
+      title: "Cliente vê o motoboy no mapa", 
+      desc: "O cliente acompanha onde está o motoboy. Ninguém liga pra perguntar a hora da entrega.",
      color: "bg-green-500/10",
      iconColor: "text-green-500"
    },
    { 
      icon: Smartphone, 
-     title: "Confirmação por PIN", 
-     desc: "Segurança total: a entrega só é finalizada quando o motoboy digita o código PIN que está no celular do cliente.",
+      title: "Código de confirmação", 
+      desc: "O cliente passa um número para o motoboy na entrega. Assim ninguém entrega no lugar errado.",
      color: "bg-orange-500/10",
      iconColor: "text-orange-500"
    },
    { 
      icon: BarChart3, 
-     title: "Acerto Financeiro", 
-     desc: "Relatórios automáticos de quanto cada motoboy entregou e quanto ele deve prestar contas no final do turno.",
+      title: "Acerto fácil no fim do dia", 
+      desc: "Você vê quanto cada motoboy entregou e quanto ele tem que te repassar. Sem confusão.",
      color: "bg-purple-500/10",
      iconColor: "text-purple-500"
    },
  ];
  
  const features = [
-  { icon: Smartphone, title: "Cardápio Digital", desc: "Link profissional com fotos em alta definição. Seus clientes pedem pelo celular sem instalar nada." },
-  { icon: CreditCard, title: "PIX Automático", desc: "QR Code gerado na hora. Confirmação instantânea no seu painel — sem conferir extrato." },
-  { icon: Truck, title: "Gestão de Motoboys", desc: "Alerta sonoro para o entregador, rastreamento em tempo real e código PIN de confirmação." },
-  { icon: BarChart3, title: "Relatórios Completos", desc: "Vendas por dia, produtos mais pedidos, ticket médio e financeiro completo — delivery e PDV separados." },
-  { icon: Bell, title: "Notificações em Tempo Real", desc: "Push no celular para novos pedidos. Nunca mais perde um pedido por falta de alerta." },
-  { icon: Package, title: "Impressão de Comandas", desc: "Imprima pedidos automaticamente na cozinha. Organize a produção sem confusão." },
-  { icon: ShieldCheck, title: "Segurança Total", desc: "Dados criptografados, controle de acesso por perfil (lojista/motoboy/cliente) e pagamentos via Asaas." },
-  { icon: Store, title: "PDV — Caixa Presencial", desc: "Venda no balcão com caixa digital, controle de troco, sangria/suprimento e relatório de turno. Sem taxa PIX." },
+  { icon: Smartphone, title: "Cardápio no celular", desc: "Seus produtos com foto e preço, num link. O cliente vê tudo sem precisar instalar nada." },
+  { icon: CreditCard, title: "Pagamento no PIX", desc: "O cliente paga e o dinheiro cai na hora. Você não precisa mais conferir o extrato." },
+  { icon: Truck, title: "Controle de motoboys", desc: "O celular do entregador apita, o cliente vê no mapa e a entrega tem código de confirmação." },
+  { icon: BarChart3, title: "Relatório do dia", desc: "Veja quanto vendeu, o que mais saiu e o lucro do dia — tudo numa tela só." },
+  { icon: Bell, title: "Avisa cada pedido", desc: "O celular toca a cada pedido novo. Você nunca mais perde uma venda por não ouvir." },
+  { icon: Package, title: "Imprime na cozinha", desc: "O pedido sai impresso na cozinha automaticamente. Sua equipe não se perde mais." },
+  { icon: ShieldCheck, title: "Tudo seguro", desc: "Seus dados e o dinheiro dos seus clientes ficam protegidos. Só você acessa sua loja." },
+  { icon: Store, title: "Caixa do balcão", desc: "Quem vende no balcão também usa: caixa digital, troco automático e fechamento do dia." },
 ];
 
 const plans = [
   {
     id: "commission_only",
     name: "Comissão",
-    tagline: "Comece sem investir nada",
+    tagline: "Comece sem pagar nada",
     price: "0",
     period: "/mês",
     icon: Rocket,
@@ -92,7 +92,7 @@ const plans = [
     lightBg: "bg-emerald-50",
     textColor: "text-emerald-600",
     borderColor: "border-emerald-200",
-      description: "Ideal para quem está começando e quer testar sem risco. Pague apenas uma comissão de 6% sobre o que vender.",
+      description: "Bom para quem está começando. Você não paga mensalidade — só uma pequena parte do que vender.",
     features: [
       "Cardápio digital ilimitado",
         "Link exclusivo",
@@ -108,7 +108,7 @@ const plans = [
   {
     id: "hybrid",
     name: "Crescimento",
-    tagline: "Comissão menor, mais recursos",
+    tagline: "Paga menos comissão",
     price: "100",
     period: "/mês",
     icon: TrendingUp,
@@ -120,7 +120,7 @@ const plans = [
     lightBg: "bg-blue-50",
     textColor: "text-blue-600",
     borderColor: "border-blue-200",
-     description: "Para lojas em expansão que buscam reduzir custos de comissão e ter mais controle profissional.",
+     description: "Bom para quem já vende todo dia e quer pagar menos por cada pedido.",
     features: [
       "Tudo do plano Comissão",
       "Comissão reduzida para 2,5%",
@@ -136,7 +136,7 @@ const plans = [
   {
     id: "supporter",
     name: "Apoiadores",
-    tagline: "Edição de lançamento • Vagas limitadas",
+    tagline: "Preço de lançamento • Só 10 vagas",
     price: "130",
     period: "/mês",
     icon: Sparkles,
@@ -148,7 +148,7 @@ const plans = [
     lightBg: "bg-accent",
     textColor: "text-primary",
     borderColor: "border-primary/30",
-     description: "Edição histórica de lançamento. Mesmos benefícios do Essencial com valor reduzido vitalício para os primeiros.",
+     description: "Os mesmos benefícios do plano Essencial, mas com preço menor pra sempre. Só para os 10 primeiros.",
     features: [
       "Tudo do plano Essencial",
       "Zero comissão delivery (0%)",
@@ -167,7 +167,7 @@ const plans = [
   {
     id: "fixed",
     name: "Essencial",
-    tagline: "Lucro máximo em cada pedido",
+    tagline: "O mais usado pelos lojistas",
     price: "180",
     period: "/mês",
     icon: Crown,
@@ -179,7 +179,7 @@ const plans = [
     lightBg: "bg-accent",
     textColor: "text-primary",
     borderColor: "border-primary/30",
-     description: "Fique com 100% do valor dos seus produtos. Gestão total e integração logística inteligente.",
+     description: "Você fica com o dinheiro inteiro de cada venda. Sem comissão sobre os seus produtos.",
     features: [
       "Todas as ferramentas inclusas",
       "Zero comissão por venda (0%)",
