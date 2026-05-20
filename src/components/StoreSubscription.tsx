@@ -18,6 +18,8 @@ import { Progress } from "@/components/ui/progress";
 import FixedPlanBillingHistory from "@/components/FixedPlanBillingHistory";
 import { PLANS, DELIVERY_FEE_NOTE, PIX_FEE_NOTE } from "@/lib/plansInfo";
 import PlansComparisonTable from "@/components/PlansComparisonTable";
+import PlanFeeBreakdown from "@/components/fees/PlanFeeBreakdown";
+import DeliveryFeeExplainer from "@/components/fees/DeliveryFeeExplainer";
 
 interface Props {
   storeId: string;
