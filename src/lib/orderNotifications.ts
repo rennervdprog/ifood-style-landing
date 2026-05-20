@@ -86,9 +86,6 @@ const STATUS_MESSAGES: Record<string, {
   },
 };
 
-/** Statuses that trigger Z-API automatic messages */
-const ZAPI_STATUSES = new Set(["preparando", "pronto_para_entrega", "saiu_entrega", "em_transito", "entregue", "finalizado", "cancelado"]);
-
 /**
  * Retorna a mensagem WhatsApp formatada para um determinado status.
  * Usada pelo AdminDashboard para montar o href do link <a> antes de aceitar o pedido.
@@ -98,31 +95,27 @@ export const buildWhatsAppMessage = (status: string, params: OrderNotifyParams):
 };
 
 /**
- * Send Z-API WhatsApp message via edge function
+ * Envia mensagem WhatsApp via Evolution API (substitui o Z-API)
  */
-const sendZapiMessage = async (storeId: string, phone: string, message: string) => {
+const sendEvolutionMessage = async (storeId: string, phone: string, message: string) => {
   try {
-    const { data, error } = await supabase.functions.invoke("zapi-send-message", {
+    const { data, error } = await supabase.functions.invoke("evolution-send-message", {
       body: { store_id: storeId, phone, message },
     });
-    if (error) {
-      console.error("Z-API send error:", error);
-    }
+    if (error) console.error("[Evolution] send error:", error);
     return data;
   } catch (e) {
-    console.error("Z-API invoke error:", e);
+    console.error("[Evolution] invoke error:", e);
   }
 };
 
 /**
- * Envia Push e Z-API para mudanças de status.
- * NÃO abre mais WhatsApp diretamente — isso é responsabilidade do componente
- * via link <a target="_blank"> para evitar bloqueio de popup do navegador.
+ * Envia Push + Evolution API WhatsApp para mudanças de status de pedido.
  */
 export const notifyOrderStatusChange = (
   newStatus: string,
   params: OrderNotifyParams,
-  options?: { skipWhatsApp?: boolean; zapiEnabled?: boolean }
+  options?: { skipWhatsApp?: boolean; evolutionEnabled?: boolean; zapiEnabled?: boolean }
 ) => {
   const config = STATUS_MESSAGES[newStatus];
   if (!config) return;
@@ -135,9 +128,11 @@ export const notifyOrderStatusChange = (
     { link: "/pedidos", order_id: params.orderId }
   ).catch(console.error);
 
-  // Z-API automatic WhatsApp (se habilitado e telefone disponível)
-  if (options?.zapiEnabled && params.clientPhone && ZAPI_STATUSES.has(newStatus)) {
+  // Evolution API WhatsApp (se habilitado e telefone disponível)
+  // Aceita evolutionEnabled (novo) ou zapiEnabled (retrocompatibilidade)
+  const whatsappEnabled = options?.evolutionEnabled || options?.zapiEnabled;
+  if (whatsappEnabled && params.clientPhone) {
     const msg = config.whatsApp(params);
-    sendZapiMessage(params.storeId, params.clientPhone, msg);
+    sendEvolutionMessage(params.storeId, params.clientPhone, msg);
   }
 };
