@@ -10,6 +10,7 @@ import { isCapacitorNative } from "@/lib/capacitorNative";
 import { supabase } from "@/integrations/supabase/client";
 import { registerPlugin } from "@capacitor/core";
 import type { BackgroundGeolocationPlugin } from "@capacitor-community/background-geolocation";
+import { addGpsToQueue } from "@/lib/offlineDeliveryQueue";
 
 const BackgroundGeolocation = registerPlugin<BackgroundGeolocationPlugin>(
   "BackgroundGeolocation"
@@ -35,6 +36,12 @@ async function sendLocation(lat: number, lng: number, accuracy?: number, speed?:
   const now = Date.now();
   const interval = getAdaptiveInterval(speed ?? null);
   if (now - lastSentAt < interval) return;
+
+  // Se offline — salvar na fila GPS local
+  if (!navigator.onLine) {
+    addGpsToQueue({ lat, lng, accuracy, speed, heading });
+    return;
+  }
 
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.user?.id) return;
