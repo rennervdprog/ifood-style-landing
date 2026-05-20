@@ -202,6 +202,20 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
 
   return (
     <div className="space-y-4 max-w-2xl mx-auto pb-6">
+      {/* Explicador rápido de taxas — uma fonte de verdade */}
+      <Card className="border-0 shadow-sm bg-card">
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <Info className="h-4 w-4 text-primary" />
+            <p className="text-sm font-bold text-foreground">
+              Como cobramos no seu plano
+            </p>
+          </div>
+          <PlanFeeBreakdown planId={plan.planType} orderValue={50} viaPix />
+          <DeliveryFeeExplainer mode="store" />
+        </CardContent>
+      </Card>
+
       {/* ───────── HERO: Current plan ───────── */}
       <Card className="overflow-hidden border-0 shadow-md">
         <div className={`${planAccentBg[plan.planType]} p-5`}>
