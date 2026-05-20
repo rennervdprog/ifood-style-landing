@@ -20,67 +20,67 @@ import { Card, CardContent } from "@/components/ui/card";
 
 /* ─── static data ─── */
  const painPoints = [
-   { emoji: "📸", pain: "Manda foto do cardápio pelo WhatsApp", solution: "Cardápio digital profissional com fotos HD e preços sempre atualizados" },
-   { emoji: "📝", pain: "Anota pedido na mão e erra o endereço", solution: "Pedidos organizados automaticamente com endereço via GPS integrado" },
-   { emoji: "💸", pain: "Confere PIX no extrato manual um por um", solution: "Pagamento PIX confirmado instantaneamente pelo sistema" },
-   { emoji: "🔇", pain: "Perde pedidos por não ver as mensagens", solution: "Alertas sonoros e notificações push para você nunca perder uma venda" },
+   { emoji: "📸", pain: "Manda foto do cardápio no WhatsApp", solution: "Seu cardápio na internet, com fotos bonitas e preço certinho." },
+   { emoji: "📝", pain: "Anota pedido no papel e erra o endereço", solution: "O pedido chega pronto, com o endereço completo do cliente." },
+   { emoji: "💸", pain: "Confere PIX um por um no extrato", solution: "Quando o cliente paga no PIX, o dinheiro aparece na hora pra você." },
+   { emoji: "🔇", pain: "Perde pedidos por não ver mensagem", solution: "O celular toca alto a cada pedido novo. Você não perde nenhum." },
  ];
 
 const steps = [
-   { step: "01", title: "Cadastre sua loja", desc: "Crie sua conta em minutos e escolha o plano ideal para seu momento." },
-   { step: "02", title: "Monte seu cardápio", desc: "Adicione seus produtos, fotos e preços de forma simples e rápida." },
-   { step: "03", title: "Divulgue seu link", desc: "Compartilhe seu link exclusivo no WhatsApp, Instagram e use QR Codes." },
-   { step: "04", title: "Venda muito mais!", desc: "Receba pedidos organizados, pagamentos automáticos e gerencie entregas." },
+   { step: "01", title: "Crie sua conta", desc: "É rápido. Coloca o nome da loja, telefone e pronto." },
+   { step: "02", title: "Monte seu cardápio", desc: "Adicione seus produtos com foto e preço. Bem fácil." },
+   { step: "03", title: "Mande seu link", desc: "Envia o link da sua loja no WhatsApp e nas redes." },
+   { step: "04", title: "Receba os pedidos", desc: "Cada pedido chega no seu celular, organizado e pago." },
  ];
  
  /* ─── Motoboy Data ─── */
  const motoboyWorkflow = [
    { 
      icon: Bell, 
-     title: "Notificação Sonora", 
-     desc: "Assim que você marca o pedido como pronto, o app do motoboy apita instantaneamente avisando que há uma entrega disponível.",
+      title: "Apita no celular do motoboy", 
+      desc: "Quando o pedido está pronto, o celular do entregador toca avisando que tem entrega.",
      color: "bg-blue-500/10",
      iconColor: "text-blue-500"
    },
    { 
      icon: MapPin, 
-     title: "Rastreamento GPS", 
-     desc: "O cliente acompanha o motoboy em tempo real no mapa. Menos ansiedade para o cliente, menos mensagens no seu WhatsApp.",
+      title: "Cliente vê o motoboy no mapa", 
+      desc: "O cliente acompanha onde está o motoboy. Ninguém liga pra perguntar a hora da entrega.",
      color: "bg-green-500/10",
      iconColor: "text-green-500"
    },
    { 
      icon: Smartphone, 
-     title: "Confirmação por PIN", 
-     desc: "Segurança total: a entrega só é finalizada quando o motoboy digita o código PIN que está no celular do cliente.",
+      title: "Código de confirmação", 
+      desc: "O cliente passa um número para o motoboy na entrega. Assim ninguém entrega no lugar errado.",
      color: "bg-orange-500/10",
      iconColor: "text-orange-500"
    },
    { 
      icon: BarChart3, 
-     title: "Acerto Financeiro", 
-     desc: "Relatórios automáticos de quanto cada motoboy entregou e quanto ele deve prestar contas no final do turno.",
+      title: "Acerto fácil no fim do dia", 
+      desc: "Você vê quanto cada motoboy entregou e quanto ele tem que te repassar. Sem confusão.",
      color: "bg-purple-500/10",
      iconColor: "text-purple-500"
    },
  ];
  
  const features = [
-  { icon: Smartphone, title: "Cardápio Digital", desc: "Link profissional com fotos em alta definição. Seus clientes pedem pelo celular sem instalar nada." },
-  { icon: CreditCard, title: "PIX Automático", desc: "QR Code gerado na hora. Confirmação instantânea no seu painel — sem conferir extrato." },
-  { icon: Truck, title: "Gestão de Motoboys", desc: "Alerta sonoro para o entregador, rastreamento em tempo real e código PIN de confirmação." },
-  { icon: BarChart3, title: "Relatórios Completos", desc: "Vendas por dia, produtos mais pedidos, ticket médio e financeiro completo — delivery e PDV separados." },
-  { icon: Bell, title: "Notificações em Tempo Real", desc: "Push no celular para novos pedidos. Nunca mais perde um pedido por falta de alerta." },
-  { icon: Package, title: "Impressão de Comandas", desc: "Imprima pedidos automaticamente na cozinha. Organize a produção sem confusão." },
-  { icon: ShieldCheck, title: "Segurança Total", desc: "Dados criptografados, controle de acesso por perfil (lojista/motoboy/cliente) e pagamentos via Asaas." },
-  { icon: Store, title: "PDV — Caixa Presencial", desc: "Venda no balcão com caixa digital, controle de troco, sangria/suprimento e relatório de turno. Sem taxa PIX." },
+  { icon: Smartphone, title: "Cardápio no celular", desc: "Seus produtos com foto e preço, num link. O cliente vê tudo sem precisar instalar nada." },
+  { icon: CreditCard, title: "Pagamento no PIX", desc: "O cliente paga e o dinheiro cai na hora. Você não precisa mais conferir o extrato." },
+  { icon: Truck, title: "Controle de motoboys", desc: "O celular do entregador apita, o cliente vê no mapa e a entrega tem código de confirmação." },
+  { icon: BarChart3, title: "Relatório do dia", desc: "Veja quanto vendeu, o que mais saiu e o lucro do dia — tudo numa tela só." },
+  { icon: Bell, title: "Avisa cada pedido", desc: "O celular toca a cada pedido novo. Você nunca mais perde uma venda por não ouvir." },
+  { icon: Package, title: "Imprime na cozinha", desc: "O pedido sai impresso na cozinha automaticamente. Sua equipe não se perde mais." },
+  { icon: ShieldCheck, title: "Tudo seguro", desc: "Seus dados e o dinheiro dos seus clientes ficam protegidos. Só você acessa sua loja." },
+  { icon: Store, title: "Caixa do balcão", desc: "Quem vende no balcão também usa: caixa digital, troco automático e fechamento do dia." },
 ];
 
 const plans = [
   {
     id: "commission_only",
     name: "Comissão",
-    tagline: "Comece sem investir nada",
+    tagline: "Comece sem pagar nada",
     price: "0",
     period: "/mês",
     icon: Rocket,
@@ -92,7 +92,7 @@ const plans = [
     lightBg: "bg-emerald-50",
     textColor: "text-emerald-600",
     borderColor: "border-emerald-200",
-      description: "Ideal para quem está começando e quer testar sem risco. Pague apenas uma comissão de 6% sobre o que vender.",
+      description: "Bom para quem está começando. Você não paga mensalidade — só uma pequena parte do que vender.",
     features: [
       "Cardápio digital ilimitado",
         "Link exclusivo",
@@ -108,7 +108,7 @@ const plans = [
   {
     id: "hybrid",
     name: "Crescimento",
-    tagline: "Comissão menor, mais recursos",
+    tagline: "Paga menos comissão",
     price: "100",
     period: "/mês",
     icon: TrendingUp,
@@ -120,7 +120,7 @@ const plans = [
     lightBg: "bg-blue-50",
     textColor: "text-blue-600",
     borderColor: "border-blue-200",
-     description: "Para lojas em expansão que buscam reduzir custos de comissão e ter mais controle profissional.",
+     description: "Bom para quem já vende todo dia e quer pagar menos por cada pedido.",
     features: [
       "Tudo do plano Comissão",
       "Comissão reduzida para 2,5%",
@@ -136,7 +136,7 @@ const plans = [
   {
     id: "supporter",
     name: "Apoiadores",
-    tagline: "Edição de lançamento • Vagas limitadas",
+    tagline: "Preço de lançamento • Só 10 vagas",
     price: "130",
     period: "/mês",
     icon: Sparkles,
@@ -148,7 +148,7 @@ const plans = [
     lightBg: "bg-accent",
     textColor: "text-primary",
     borderColor: "border-primary/30",
-     description: "Edição histórica de lançamento. Mesmos benefícios do Essencial com valor reduzido vitalício para os primeiros.",
+     description: "Os mesmos benefícios do plano Essencial, mas com preço menor pra sempre. Só para os 10 primeiros.",
     features: [
       "Tudo do plano Essencial",
       "Zero comissão delivery (0%)",
@@ -167,7 +167,7 @@ const plans = [
   {
     id: "fixed",
     name: "Essencial",
-    tagline: "Lucro máximo em cada pedido",
+    tagline: "O mais usado pelos lojistas",
     price: "180",
     period: "/mês",
     icon: Crown,
@@ -179,7 +179,7 @@ const plans = [
     lightBg: "bg-accent",
     textColor: "text-primary",
     borderColor: "border-primary/30",
-     description: "Fique com 100% do valor dos seus produtos. Gestão total e integração logística inteligente.",
+     description: "Você fica com o dinheiro inteiro de cada venda. Sem comissão sobre os seus produtos.",
     features: [
       "Todas as ferramentas inclusas",
       "Zero comissão por venda (0%)",
@@ -201,46 +201,42 @@ const benefits = [
   {
     icon: "🍕",
     segment: "Pizzarias & Hamburguerias",
-    headline: "Chega de erros nos pedidos",
-    text: "Bordas recheadas, adicionais e pizzas meio-a-meio organizadas automaticamente. Comanda impressa direto na cozinha.",
+    headline: "Sem erro no pedido",
+    text: "Pizza meio-a-meio, borda recheada e adicionais organizados sozinhos. O papel sai impresso na cozinha.",
   },
   {
     icon: "🛒",
     segment: "Mercados & Adegas",
-    headline: "Cardápio com centenas de itens",
-    text: "Cadastre produtos rapidamente por categoria. Clientes pedem pelo link sem precisar ligar ou mandar mensagem.",
+    headline: "Muitos produtos, sem confusão",
+    text: "Cadastre seus produtos por categoria. O cliente faz o pedido sozinho, sem te ligar.",
   },
   {
     icon: "🍰",
     segment: "Docerias & Padarias",
-    headline: "Agendamento inteligente",
-    text: "Clientes agendam a retirada ou entrega com antecedência. Organize sua produção do dia sem caos no WhatsApp.",
+    headline: "Cliente agenda sozinho",
+    text: "O cliente escolhe o dia e a hora para retirar ou receber. Você se organiza com calma.",
   },
   {
     icon: "🍺",
     segment: "Bares & Restaurantes",
-    headline: "Delivery + Balcão no mesmo sistema",
-    text: "Receba pedidos online e use o PDV para registrar vendas presenciais. Caixa único, relatório unificado.",
+    headline: "Delivery e balcão juntos",
+    text: "Recebe pedido pelo aplicativo e também vende no balcão. Tudo no mesmo lugar.",
   },
   {
     icon: "💈",
     segment: "Lojas & Serviços",
-    headline: "Venda sem delivery",
-    text: "Use o cardápio digital como vitrine de produtos e o PDV para vendas no balcão. Sem precisar de motoboy.",
+    headline: "Vende sem precisar de entrega",
+    text: "Use como vitrine dos seus produtos e como caixa do balcão. Sem precisar de motoboy.",
   },
 ];
 
 const faqs = [
-  { q: "Preciso baixar algum aplicativo?", a: "Não! Você gerencia tudo pelo navegador do celular ou computador. Seus clientes pedem pelo link da loja, sem instalar nada." },
-  { q: "Como funciona o PIX automático?", a: "Quando o cliente escolhe PIX, geramos um QR Code automaticamente. A confirmação é instantânea no seu painel — sem conferir extrato." },
-  { q: "O plano Essencial cobra comissão?", a: "Não! Zero comissão sobre as vendas. Há apenas R$ 1,99 por transação PIX online (descontado automaticamente do repasse) e R$ 2,00 por entrega, somado à sua taxa — pago pelo cliente no checkout. Nos planos Crescimento e Comissão não há cobrança de R$ 1,99 de PIX: a comissão percentual já cobre esses custos." },
-  { q: "O que é o módulo PDV?", a: "É um caixa registradora digital integrado ao sistema. Você abre e fecha turnos, registra vendas no balcão com maquininha própria (sem taxa PIX), calcula troco automaticamente e acompanha relatórios separados de delivery e presencial. Incluso em todos os planos." },
-  { q: "Posso usar sem motoboy próprio?", a: "Sim! No modo cardápio digital, você recebe os pedidos e usa sua própria equipe de entrega. A plataforma funciona em todo o Brasil mesmo sem usar a logística da plataforma." },
-  { q: "Como recebo os pedidos?", a: "Notificação sonora e push no celular em tempo real. O painel organiza os pedidos por status: pendente, preparando, saiu para entrega e finalizado." },
-  { q: "Funciona na minha cidade?", a: "Sim! Atendemos lojistas em todo o Brasil — capitais, cidades do interior e municípios pequenos. A plataforma foi desenvolvida justamente para quem não tem acesso aos grandes marketplaces." },
-  { q: "Posso trocar de plano?", a: "Sim, a qualquer momento. Basta solicitar pelo painel e o administrador realiza a migração. Nenhuma penalidade e sem perder o histórico de pedidos." },
-  { q: "Quanto economizo em relação aos grandes apps?", a: "Os grandes marketplaces cobram entre 12% e 30% por pedido, além de cobranças por destaque e publicidade. No ItaSuper você paga 6% (plano Comissão) ou 0% (planos pagos), com taxas fixas e transparentes." },
-  { q: "Tem contrato ou fidelidade?", a: "Não. Cancele quando quiser, sem multa e sem fidelidade mínima." },
+  { q: "Preciso baixar algum programa?", a: "Não. Você usa tudo direto no celular ou no computador. O seu cliente também não precisa instalar nada." },
+  { q: "Como o cliente paga?", a: "Pelo PIX, direto no celular. Quando ele paga, o dinheiro aparece na hora pra você." },
+  { q: "Funciona na minha cidade?", a: "Sim. Funciona em qualquer cidade do Brasil, seja grande ou pequena." },
+  { q: "Quanto custa?", a: "Você pode começar de graça. Só paga uma pequena parte do que vender. Se preferir, pode escolher um plano com mensalidade fixa." },
+  { q: "Posso cancelar quando quiser?", a: "Pode sim. Sem multa, sem fidelidade, sem pegadinha." },
+  { q: "E se eu tiver dificuldade?", a: "Nossa equipe te ajuda no WhatsApp. É só chamar que a gente responde." },
 ];
 
 /* ─── Navbar ─── */
@@ -452,22 +448,22 @@ const StoreDirectory = () => {
             Plataforma disponível para todo o Brasil 🇧🇷
           </div>
 
-           <h1 className="text-6xl lg:text-8xl font-black tracking-tight text-foreground leading-[0.9] mb-8 animate-in fade-in slide-in-from-bottom-6 duration-1000">
-             Delivery e balcão <br className="hidden md:block" />
-             com total <span className="text-primary relative inline-block">liberdade<span className="absolute -bottom-2 left-0 w-full h-3 bg-primary/20 -z-10 rounded-full" /></span>.
+           <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight text-foreground leading-[0.95] mb-8 animate-in fade-in slide-in-from-bottom-6 duration-1000">
+             Receba pedidos pelo celular, <br className="hidden md:block" />
+             sem <span className="text-primary relative inline-block">complicação<span className="absolute -bottom-2 left-0 w-full h-3 bg-primary/20 -z-10 rounded-full" /></span>.
            </h1>
 
-           <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto mb-12 leading-relaxed font-medium animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
-             Cardápio digital, <span className="text-foreground font-bold">PIX automático</span>, gestão de motoboys e <span className="text-foreground font-bold">caixa presencial (PDV)</span>. Delivery e balcão num só sistema — sem pagar comissão para os grandes apps.
+           <p className="text-xl md:text-2xl text-foreground/80 max-w-2xl mx-auto mb-12 leading-relaxed font-medium animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
+             Feito para quem nunca usou aplicativo de delivery. Crie a sua loja, mande o link no WhatsApp e <span className="text-foreground font-bold">comece a vender hoje mesmo</span>.
           </p>
 
            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-in fade-in zoom-in-95 duration-1000 delay-300">
-             <Button size="lg" onClick={handleCTA} className="text-lg px-10 py-7 rounded-2xl shadow-2xl shadow-primary/20 hover:shadow-primary/40 transition-all hover:-translate-y-1 active:scale-95 font-black">
+             <Button size="lg" onClick={handleCTA} className="text-lg md:text-xl px-10 py-8 min-h-[64px] rounded-2xl shadow-2xl shadow-primary/20 hover:shadow-primary/40 transition-all hover:-translate-y-1 active:scale-95 font-black">
               <Store className="mr-2 h-5 w-5" />
               Criar minha loja grátis
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
-            <Button size="lg" variant="outline" onClick={handleWhatsApp} className="text-base px-8 py-6 rounded-2xl">
+            <Button size="lg" variant="outline" onClick={handleWhatsApp} className="text-lg px-8 py-7 min-h-[60px] rounded-2xl">
               <MessageCircle className="mr-2 h-5 w-5" /> Falar no WhatsApp
             </Button>
           </div>
@@ -514,12 +510,12 @@ const StoreDirectory = () => {
                <div className="space-y-4">
                  {painPoints.map((item) => (
                    <div key={item.pain} className="group flex gap-5 items-center rounded-3xl border border-border bg-card p-6 hover:border-primary/30 transition-all">
-                     <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center text-3xl shrink-0 group-hover:scale-110 transition-transform">
+                     <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center text-4xl shrink-0 group-hover:scale-110 transition-transform">
                        {item.emoji}
                      </div>
                      <div>
-                       <p className="text-sm text-muted-foreground line-through mb-1">{item.pain}</p>
-                       <p className="text-base font-bold text-primary">{item.solution}</p>
+                       <p className="text-base text-foreground/60 line-through mb-1">{item.pain}</p>
+                       <p className="text-lg font-bold text-foreground">{item.solution}</p>
                      </div>
                    </div>
                  ))}
@@ -719,12 +715,12 @@ const StoreDirectory = () => {
           </p>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {features.map((f) => (
-              <div key={f.title} className="rounded-2xl border border-border bg-card p-5 hover:shadow-md hover:-translate-y-1 transition-all">
-                <div className="rounded-xl bg-primary/10 w-11 h-11 flex items-center justify-center mb-4">
-                  <f.icon className="h-5 w-5 text-primary" />
+              <div key={f.title} className="rounded-2xl border border-border bg-card p-6 hover:shadow-md hover:-translate-y-1 transition-all">
+                <div className="rounded-xl bg-primary/10 w-14 h-14 flex items-center justify-center mb-4">
+                  <f.icon className="h-7 w-7 text-primary" />
                 </div>
-                <h3 className="font-bold text-foreground mb-1">{f.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+                <h3 className="font-bold text-foreground mb-2 text-lg">{f.title}</h3>
+                <p className="text-base text-foreground/70 leading-relaxed">{f.desc}</p>
               </div>
             ))}
           </div>
@@ -787,13 +783,13 @@ const StoreDirectory = () => {
                   { icon: "📊", title: "Relatório separado por canal", desc: "Veja o que veio de delivery e o que veio do balcão, separados." },
                   { icon: "💳", title: "Sem taxa PIX na maquininha", desc: "Use sua maquininha própria. A plataforma não cobra R$ 1,99 nesse canal." },
                 ].map((item) => (
-                  <div key={item.title} className="flex gap-3 items-start rounded-2xl border border-border bg-card p-4 hover:border-blue-500/20 transition-colors">
-                    <span className="text-2xl shrink-0">{item.icon}</span>
-                    <div>
-                      <p className="text-sm font-bold text-foreground">{item.title}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
-                    </div>
-                  </div>
+                   <div key={item.title} className="flex gap-3 items-start rounded-2xl border border-border bg-card p-5 hover:border-blue-500/20 transition-colors">
+                     <span className="text-3xl shrink-0">{item.icon}</span>
+                     <div>
+                       <p className="text-base font-bold text-foreground">{item.title}</p>
+                       <p className="text-sm text-foreground/70 mt-1 leading-relaxed">{item.desc}</p>
+                     </div>
+                   </div>
                 ))}
               </div>
             </div>
@@ -1029,13 +1025,13 @@ const StoreDirectory = () => {
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
                   aria-expanded={openFaq === i}
                   aria-controls={`faq-panel-${i}`}
-                  className="w-full flex items-center justify-between p-5 text-left"
+                  className="w-full flex items-center justify-between p-6 text-left min-h-[60px]"
                 >
-                  <span className="font-semibold text-foreground text-sm pr-4">{faq.q}</span>
-                  <ChevronDown className={`h-5 w-5 text-muted-foreground shrink-0 transition-transform ${openFaq === i ? "rotate-180" : ""}`} />
+                  <span className="font-bold text-foreground text-lg pr-4">{faq.q}</span>
+                  <ChevronDown className={`h-6 w-6 text-foreground/70 shrink-0 transition-transform ${openFaq === i ? "rotate-180" : ""}`} />
                 </button>
                 {openFaq === i && (
-                  <div id={`faq-panel-${i}`} role="region" className="px-5 pb-5 text-sm text-muted-foreground leading-relaxed animate-fade-in">
+                  <div id={`faq-panel-${i}`} role="region" className="px-6 pb-6 text-base text-foreground/80 leading-relaxed animate-fade-in">
                     {faq.a}
                   </div>
                 )}
