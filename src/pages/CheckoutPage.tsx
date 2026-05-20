@@ -13,7 +13,7 @@ import AddressModal from "@/components/AddressModal";
 import SavedAddressPicker from "@/components/SavedAddressPicker";
 import CouponInput from "@/components/CouponInput";
  import { calculateDeliveryFee, calculateStoreOwnDeliveryFee, DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig } from "@/lib/deliveryFee";
-import { WhyThisCharge } from "@/components/fees/WhyThisCharge";
+import WhyThisCharge from "@/components/fees/WhyThisCharge";
 import { formatCep, fetchCep } from "@/lib/cepLookup";
 import { addMoney, multiplyMoney, sumMoney, formatBRL } from "@/lib/utils";
 import { useStorePlan } from "@/hooks/useStorePlan";
