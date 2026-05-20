@@ -3,6 +3,12 @@ import { startDriverTracking, stopDriverTracking, updateTrackingOrderId } from "
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import {
+  addToQueue, syncQueue, removeFromQueue, getQueue,
+  addGpsToQueue, flushGpsQueue
+} from "@/lib/offlineDeliveryQueue";
+import NetworkStatusBanner from "@/components/NetworkStatusBanner";
 import { subscribeWithRejoin, cleanupChannel } from "@/lib/realtimeChannel";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -223,6 +229,9 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [pinInputs, setPinInputs] = useState<Record<string, string>>({});
+  const { connected } = useNetworkStatus();
+  const [offlineQueue, setOfflineQueue] = useState(getQueue());
+  const [syncingQueue, setSyncingQueue] = useState(false);
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
   const [useOptimized, setUseOptimized] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
@@ -736,6 +745,38 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   const finishDelivery = async (orderId: string) => {
     const pin = pinInputs[orderId];
     if (!pin || pin.length !== 4) { toast.error("Digite o PIN de 4 dígitos."); return; }
+
+    // Sem sinal — validar PIN localmente antes de salvar na fila
+    if (!connected) {
+      // O pedido já está carregado localmente — validar o PIN aqui mesmo
+      const localOrder = myDeliveries?.find((o: any) => o.id === orderId);
+      const localPin = (localOrder as any)?.delivery_pin;
+
+      if (localPin && pin !== localPin) {
+        // PIN incorreto — avisar imediatamente sem nem salvar na fila
+        toast.error("❌ PIN incorreto", {
+          description: "Verifique o código com o cliente. Você está sem sinal, mas o PIN pode ser validado localmente.",
+          duration: 6000,
+        });
+        return;
+      }
+
+      // PIN correto (ou pedido sem PIN) — salvar na fila
+      addToQueue({
+        order_id: orderId,
+        pin,
+        attempted_at: new Date().toISOString(),
+        order_number: orderId.slice(0, 8).toUpperCase(),
+      });
+      setOfflineQueue(getQueue());
+      setPinInputs(p => ({ ...p, [orderId]: "" }));
+      toast.success("✅ PIN correto — entrega confirmada!", {
+        description: "Sem sinal agora. A confirmação será enviada automaticamente quando o sinal voltar.",
+        duration: 7000,
+      });
+      return;
+    }
+
     setVerifyingId(orderId);
     const { error } = await supabase.rpc("driver_finish_delivery", { _order_id: orderId, _pin: pin } as any);
     if (error) {
@@ -789,6 +830,31 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
 
   return (
     <div className="px-4 py-4 pb-32 space-y-4">
+      <NetworkStatusBanner />
+
+      {/* Confirmações offline pendentes */}
+      {offlineQueue.length > 0 && (
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3.5 space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="text-base">📵</span>
+            <p className="text-xs font-black text-amber-700 dark:text-amber-400">
+              {offlineQueue.length} confirmação{offlineQueue.length > 1 ? "ões" : ""} salva{offlineQueue.length > 1 ? "s" : ""} — aguardando sinal
+            </p>
+          </div>
+          {offlineQueue.map(item => (
+            <div key={item.order_id} className="flex items-center justify-between text-[11px]">
+              <span className="text-muted-foreground">Pedido #{item.order_number || item.order_id.slice(0, 8).toUpperCase()}</span>
+              <span className={syncingQueue ? "text-emerald-600 animate-pulse font-semibold" : "text-muted-foreground"}>
+                {syncingQueue ? "Enviando..." : "Aguardando sinal"}
+              </span>
+            </div>
+          ))}
+          <p className="text-[10px] text-muted-foreground mt-1">
+            Pode fechar o app — será enviado quando a internet voltar. ✅
+          </p>
+        </div>
+      )}
+
       {/* Alerta PIX não cadastrado — necessário para saque automático */}
       {!hasPix && (
         <div className="relative overflow-hidden bg-warning/10 border border-warning/30 rounded-2xl p-4 flex items-start gap-3">
