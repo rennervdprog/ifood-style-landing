@@ -1,7 +1,6 @@
 import { compressImage } from "@/lib/compressImage";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import WhatsAppSetup from "@/components/WhatsAppSetup";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -998,22 +997,23 @@ const NotificationSection = () => {
       )}
 
 
-      {/* WhatsApp — Evolution API */}
-      <div className="bg-muted/50 border border-border rounded-2xl p-4 space-y-4">
-        <div>
-          <h3 className="text-sm font-black text-foreground flex items-center gap-2">
-            <MessageSquare className="h-4 w-4 text-primary" />
-            WhatsApp Automático
-          </h3>
-          <p className="text-xs text-muted-foreground mt-1">
-            Conecte seu WhatsApp para notificar clientes automaticamente sobre o status dos pedidos.
-          </p>
+      {/* WhatsApp — Em breve */}
+      <div className="bg-muted/50 border border-border rounded-2xl p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <MessageSquare className="h-4 w-4 text-primary" />
+          <h3 className="text-sm font-black text-foreground">WhatsApp Automático</h3>
+          <span className="ml-auto text-[10px] font-black bg-primary/10 text-primary px-2 py-0.5 rounded-full">Em breve</span>
         </div>
-        <WhatsAppSetup
-          storeId={storeId}
-          storeSlug={slug || ""}
-          storeName={name || ""}
-        />
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          Em breve você poderá conectar seu WhatsApp e enviar notificações automáticas para seus clientes — pedido aceito, saiu para entrega, entregue e muito mais. Tudo pelo painel, sem complicação.
+        </p>
+        <div className="flex flex-col gap-1.5">
+          {["✅ Notificar cliente quando aceitar o pedido","🛵 Notificar quando sair para entrega","📦 Notificar quando for entregue","💬 Responder automaticamente com o link do cardápio"].map(f => (
+            <div key={f} className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span>{f}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
 
