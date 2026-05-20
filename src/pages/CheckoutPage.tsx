@@ -1062,7 +1062,11 @@ const CheckoutPage = () => {
               {!isPickup && (
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground flex items-center gap-1">
-                  <Truck className="h-3 w-3" /> Taxa operacional
+                  <Truck className="h-3 w-3" /> Taxa de entrega
+                  <WhyThisCharge title="Como é calculada a taxa de entrega">
+                    <p>A taxa de entrega cobre o trabalho do entregador (distância e tempo) e inclui <strong>R$ 2,00 da plataforma ItaSuper</strong> por pedido entregue, usados para manter o app, suporte e rastreio em tempo real.</p>
+                    <p className="mt-2">Em pedidos para retirada na loja, não há taxa de entrega.</p>
+                  </WhyThisCharge>
                 </span>
                 <span className={`font-semibold ${couponType === "free_shipping" ? "text-green-600 line-through" : "text-foreground"}`}>
                   {calculatingFee ? "..." : `${formatBRL(activeDeliveryFee)}`}
