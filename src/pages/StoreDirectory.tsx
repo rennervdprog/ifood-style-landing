@@ -448,22 +448,22 @@ const StoreDirectory = () => {
             Plataforma disponível para todo o Brasil 🇧🇷
           </div>
 
-           <h1 className="text-6xl lg:text-8xl font-black tracking-tight text-foreground leading-[0.9] mb-8 animate-in fade-in slide-in-from-bottom-6 duration-1000">
-             Delivery e balcão <br className="hidden md:block" />
-             com total <span className="text-primary relative inline-block">liberdade<span className="absolute -bottom-2 left-0 w-full h-3 bg-primary/20 -z-10 rounded-full" /></span>.
+           <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight text-foreground leading-[0.95] mb-8 animate-in fade-in slide-in-from-bottom-6 duration-1000">
+             Receba pedidos pelo celular, <br className="hidden md:block" />
+             sem <span className="text-primary relative inline-block">complicação<span className="absolute -bottom-2 left-0 w-full h-3 bg-primary/20 -z-10 rounded-full" /></span>.
            </h1>
 
-           <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto mb-12 leading-relaxed font-medium animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
-             Cardápio digital, <span className="text-foreground font-bold">PIX automático</span>, gestão de motoboys e <span className="text-foreground font-bold">caixa presencial (PDV)</span>. Delivery e balcão num só sistema — sem pagar comissão para os grandes apps.
+           <p className="text-xl md:text-2xl text-foreground/80 max-w-2xl mx-auto mb-12 leading-relaxed font-medium animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
+             Feito para quem nunca usou aplicativo de delivery. Crie a sua loja, mande o link no WhatsApp e <span className="text-foreground font-bold">comece a vender hoje mesmo</span>.
           </p>
 
            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-in fade-in zoom-in-95 duration-1000 delay-300">
-             <Button size="lg" onClick={handleCTA} className="text-lg px-10 py-7 rounded-2xl shadow-2xl shadow-primary/20 hover:shadow-primary/40 transition-all hover:-translate-y-1 active:scale-95 font-black">
+             <Button size="lg" onClick={handleCTA} className="text-lg md:text-xl px-10 py-8 min-h-[64px] rounded-2xl shadow-2xl shadow-primary/20 hover:shadow-primary/40 transition-all hover:-translate-y-1 active:scale-95 font-black">
               <Store className="mr-2 h-5 w-5" />
               Criar minha loja grátis
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
-            <Button size="lg" variant="outline" onClick={handleWhatsApp} className="text-base px-8 py-6 rounded-2xl">
+            <Button size="lg" variant="outline" onClick={handleWhatsApp} className="text-lg px-8 py-7 min-h-[60px] rounded-2xl">
               <MessageCircle className="mr-2 h-5 w-5" /> Falar no WhatsApp
             </Button>
           </div>
@@ -510,12 +510,12 @@ const StoreDirectory = () => {
                <div className="space-y-4">
                  {painPoints.map((item) => (
                    <div key={item.pain} className="group flex gap-5 items-center rounded-3xl border border-border bg-card p-6 hover:border-primary/30 transition-all">
-                     <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center text-3xl shrink-0 group-hover:scale-110 transition-transform">
+                     <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center text-4xl shrink-0 group-hover:scale-110 transition-transform">
                        {item.emoji}
                      </div>
                      <div>
-                       <p className="text-sm text-muted-foreground line-through mb-1">{item.pain}</p>
-                       <p className="text-base font-bold text-primary">{item.solution}</p>
+                       <p className="text-base text-foreground/60 line-through mb-1">{item.pain}</p>
+                       <p className="text-lg font-bold text-foreground">{item.solution}</p>
                      </div>
                    </div>
                  ))}
