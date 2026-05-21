@@ -3,7 +3,7 @@ import { ArrowLeft } from "lucide-react";
 
 const TermosDeUso = () => {
   const navigate = useNavigate();
-  const dataAtualizacao = "18 de maio de 2025";
+  const dataAtualizacao = "20 de maio de 2025";
 
   return (
     <div className="min-h-screen bg-background">
@@ -68,12 +68,13 @@ const TermosDeUso = () => {
 
           <h2 className="text-base font-bold text-foreground">5. Planos e Assinatura</h2>
           <ul className="list-disc pl-4 space-y-2">
-            <li><strong className="text-foreground">Essencial (R$ 180/mês):</strong> 0% comissão sobre pedidos delivery. Taxa PIX Online: R$ 1,99/transação (descontada do repasse). Taxa de entrega: R$ 2,00/pedido (paga pelo cliente). PDV: R$ 1,00/venda presencial.</li>
-            <li><strong className="text-foreground">Crescimento (R$ 100/mês + 2,5%):</strong> 2,5% sobre subtotal delivery (sem taxa PIX adicional). Taxa de entrega: R$ 2,00/pedido. PDV: 1% sobre subtotal presencial (faturado mensalmente).</li>
+            <li><strong className="text-foreground">Essencial (R$ 90/mês):</strong> 0% comissão sobre pedidos delivery. Taxa PIX Online: R$ 1,99/transação (descontada do repasse). Taxa de entrega: R$ 2,00/pedido (paga pelo cliente). PDV: R$ 1,00/venda presencial. <strong className="text-foreground">Plano dinâmico:</strong> após 2 meses consecutivos com faturamento superior a R$ 5.000, a mensalidade é reajustada automaticamente para R$ 180/mês.</li>
+            <li><strong className="text-foreground">Crescimento (R$ 50/mês + 2,5%):</strong> 2,5% sobre subtotal delivery (sem taxa PIX adicional). Taxa de entrega: R$ 2,00/pedido. PDV: 1% sobre subtotal presencial (faturado mensalmente). <strong className="text-foreground">Plano dinâmico:</strong> após 2 meses consecutivos com faturamento superior a R$ 5.000, a mensalidade é reajustada automaticamente para R$ 100/mês.</li>
             <li><strong className="text-foreground">Comissão (sem mensalidade, 6%):</strong> 6% sobre subtotal delivery (sem taxa PIX adicional). Taxa de entrega: R$ 2,00/pedido. PDV: 2% sobre subtotal presencial (faturado mensalmente).</li>
-            <li><strong className="text-foreground">Apoiador (R$ 130/mês — vagas limitadas):</strong> Plano vitalício com mensalidade travada. 0% comissão. Taxas: R$ 1,99 PIX Online, R$ 2,00/entrega, R$ 1,00/venda PDV. Máximo 10 vagas.</li>
+            <li><strong className="text-foreground">Apoiador (R$ 75/mês — 10 vagas):</strong> Plano vitalício com mensalidade travada permanentemente. 0% comissão. Taxas: R$ 1,99 PIX Online, R$ 2,00/entrega (paga pelo cliente), R$ 1,00/venda PDV. Máximo 10 vagas — sem reajuste nunca.</li>
           </ul>
-          <p>5.2. <strong className="text-foreground">Comissão PDV:</strong> Incide sobre o subtotal das vendas presenciais. Acumulada ao longo do mês e incluída na fatura mensal junto à mensalidade.</p>
+          <p>5.2. <strong className="text-foreground">Plano Dinâmico (Essencial e Crescimento):</strong> O faturamento mensal é apurado automaticamente todo dia 1º do mês considerando os pedidos finalizados no mês anterior. O reajuste ocorre apenas após 2 meses consecutivos acima do limite — meses não consecutivos não contam. O lojista é notificado com antecedência. Lojas cadastradas antes de 20/05/2025 mantêm os valores anteriores e não estão sujeitas ao plano dinâmico.</p>
+          <p>5.3. <strong className="text-foreground">Comissão PDV:</strong> Incide sobre o subtotal das vendas presenciais. Acumulada ao longo do mês e incluída na fatura mensal junto à mensalidade.</p>
           <p>5.3. Planos Essencial e Crescimento incluem 7 dias de teste grátis. O plano Comissão pode ser utilizado imediatamente.</p>
           <p>5.4. Alterações de valor serão comunicadas com 30 dias de antecedência. Inadimplência superior a 30 dias pode resultar em desativação automática de delivery e PDV.</p>
         </section>

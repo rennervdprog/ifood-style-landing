@@ -291,7 +291,10 @@ const CadastroLojista = () => {
             const { error: matrizErr } = await (supabase as any).rpc("register_as_matriz", {
               _network_name: networkName.trim(),
               _plan_type: selectedPlan,
-              _monthly_fee: selectedPlan === "fixed" ? 180 : selectedPlan === "hybrid" ? 100 : 0,
+              _monthly_fee: selectedPlan === "fixed" ? 90 : selectedPlan === "hybrid" ? 50 : selectedPlan === "supporter" ? 75 : 0,
+        _revenue_threshold: (selectedPlan === "fixed" || selectedPlan === "hybrid") ? 5000 : null,
+        _upgrade_monthly_fee: selectedPlan === "fixed" ? 180 : selectedPlan === "hybrid" ? 100 : null,
+        _upgrade_trigger_months: (selectedPlan === "fixed" || selectedPlan === "hybrid") ? 2 : null,
             });
             if (matrizErr) {
               console.warn("register_as_matriz aviso:", matrizErr.message);
@@ -494,7 +497,7 @@ const CadastroLojista = () => {
                           </div>
                           <ul className="text-[9.5px] text-emerald-700/90 dark:text-emerald-400/90 leading-snug space-y-0.5 pl-0.5">
                             <li>• <strong>Dia 1–7:</strong> liberado, sem cobrar nada</li>
-                            <li>• <strong>Dia 8:</strong> 1ª cobrança de R${p.monthlyFee} (se não cancelar)</li>
+                            <li>• <strong>Dia 8:</strong> 1ª cobrança de R${p.monthlyFee}/mês (se não cancelar)</li>
                             <li>• Cancele a qualquer hora antes do dia 8</li>
                           </ul>
                         </div>
@@ -524,6 +527,11 @@ const CadastroLojista = () => {
                       <p className="text-[10px] text-muted-foreground italic mb-2 leading-snug">
                         💡 Os <strong>R$2 da entrega</strong> são somados à taxa que você cobra. Quem paga é o cliente — não sai do seu caixa.
                       </p>
+                      {(id === "fixed" || id === "hybrid") && (
+                        <p className="text-[10px] text-amber-700 dark:text-amber-400 italic mb-2 leading-snug bg-amber-500/8 rounded-lg px-2 py-1.5">
+                          📈 Plano dinâmico: se faturar mais de R$5.000/mês por 2 meses seguidos, a mensalidade sobe para R${id === "fixed" ? "180" : "100"}. Só acontece quando seu negócio já estiver crescendo!
+                        </p>
+                      )}
 
                       <ul className="space-y-1">
                         {p.features.slice(0, 3).map(f => (
