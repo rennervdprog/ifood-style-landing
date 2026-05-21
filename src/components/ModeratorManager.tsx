@@ -344,7 +344,7 @@ const ModeratorManager = () => {
 
                 {/* Per-plan config */}
                 <div className="space-y-3">
-                  <PlanCard icon="📋" title="Plano Essencial" subtitle="R$ 180/mês · Sem comissão por pedido">
+                  <PlanCard icon="📋" title="Plano Essencial" subtitle="R$ 90/mês* · Sem comissão por pedido">
                     <Input label="% Mensalidade" type="number" value={essencialPlanFee} onChange={e => setEssencialPlanFee(Number(e.target.value))} hint={`= ${formatBRL(180 * essencialPlanFee / 100)}`} />
                     <Input label="R$ / Entrega" type="number" step="0.5" value={essencialDelivery} onChange={e => setEssencialDelivery(Number(e.target.value))} />
                     <div className="flex items-center justify-center">

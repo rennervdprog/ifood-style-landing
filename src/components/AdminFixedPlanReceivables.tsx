@@ -9,7 +9,7 @@ import { formatBRL } from "@/lib/utils";
 /**
  * Painel exclusivo do admin: mostra quanto a plataforma tem a receber
  * de cada loja com plano FIXO.
- * - Mensalidade (R$ 180 ou R$ 130) - cobrada via PIX no dia X
+ * - Mensalidade (R$ 90/R$75 novos; R$ 180/R$130 legado) - cobrada via PIX no dia X
  * - Taxa de R$2/entrega acumulada (repasse_pendente)
  * - Comissão pendente residual (caso plano fixo + commission_rate>0)
  */

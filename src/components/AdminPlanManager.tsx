@@ -624,7 +624,7 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
 
   // Detectar se tem valores VIP ativos
   const isVip =
-    (currentFee !== (planType === 'fixed' ? 180 : planType === 'hybrid' ? 100 : 0)) ||
+    (currentFee !== (planType === 'fixed' ? 90 : planType === 'hybrid' ? 50 : 0)) ||
     (currentPixOverride != null) || (currentDeliveryOverride != null) ||
     (currentPdvFixedFee != null && currentPdvFixedFee !== 1);
 
@@ -654,7 +654,7 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
   };
 
   const handleReset = async () => {
-    const defaults = { fixed: { fee: 180, rate: 0 }, hybrid: { fee: 100, rate: 2.5 }, commission_only: { fee: 0, rate: 6 } };
+    const defaults = { fixed: { fee: 90, rate: 0 }, hybrid: { fee: 50, rate: 2.5 }, commission_only: { fee: 0, rate: 6 } };
     const d = defaults[planType] || defaults.commission_only;
     setSaving(true);
     try {
