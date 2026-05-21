@@ -67,9 +67,9 @@ commission_only.example = exampleText(commission_only);
 const hybrid: PlanInfo = {
   id: "hybrid",
   name: "Crescimento",
-  tagline: "Comissão menor pra quem já vende",
+  tagline: "Comece por R$50 — cresce junto com você",
   forWho: "Pra lojas com volume médio que querem pagar menos por venda",
-  monthlyFee: 100,
+  monthlyFee: 50,
   commissionRate: 2.5,
   pixFee: 0,
   deliveryFee: 2,
@@ -80,7 +80,7 @@ const hybrid: PlanInfo = {
   highlight: false,
   features: [
     "Comissão reduzida (2,5%)",
-    "PIX automático (sem taxa pra você)",
+    "R$50/mês → sobe para R$100 após 2 meses faturando > R$5.000",
     "Relatórios financeiros completos",
     "Destaque na vitrine + banners",
   ],
@@ -91,9 +91,9 @@ hybrid.example = exampleText(hybrid);
 const fixed: PlanInfo = {
   id: "fixed",
   name: "Essencial",
-  tagline: "Zero comissão, lucro total",
+  tagline: "Comece por R$90 — cresce junto com você",
   forWho: "Pra quem tem volume estável e quer ficar com 100% do pedido",
-  monthlyFee: 180,
+  monthlyFee: 90,
   commissionRate: 0,
   pixFee: 1.99,
   deliveryFee: 2,
@@ -104,7 +104,7 @@ const fixed: PlanInfo = {
   highlight: true,
   features: [
     "Sem comissão por pedido",
-    "Todas as ferramentas inclusas",
+    "R$90/mês → sobe para R$180 após 2 meses faturando > R$5.000",
     "Relatórios 100% detalhados",
     "Motoboy integrado + Suporte VIP",
   ],
@@ -115,9 +115,9 @@ fixed.example = exampleText(fixed);
 const supporter: PlanInfo = {
   id: "supporter",
   name: "Apoiador",
-  tagline: "Mesmas regras do Essencial, preço congelado",
+  tagline: "R$75 travado para sempre · Só 10 vagas",
   forWho: "Edição de lançamento — só 10 vagas, preço fixo pra sempre",
-  monthlyFee: 130,
+  monthlyFee: 75,
   commissionRate: 0,
   pixFee: 1.99,
   deliveryFee: 2,
