@@ -11,7 +11,7 @@ import {
   Loader2, AlertTriangle,
 } from "lucide-react";
 
-export const CURRENT_TERMS_VERSION = "3.0";
+export const CURRENT_TERMS_VERSION = "4.0";
 
 const CHANGES = [
   {
@@ -218,7 +218,7 @@ export const TermsUpdateModal = ({ onAccepted }: Props) => {
                 className="font-bold text-primary underline underline-offset-2">
                 Termos de Uso
               </a>{" "}
-              versão 3.0, incluindo PIX Maquininha e regras de repasse físico.
+              versão 4.0, incluindo novos preços de planos e plano dinâmico por faturamento.
             </p>
           </button>
 
@@ -238,7 +238,7 @@ export const TermsUpdateModal = ({ onAccepted }: Props) => {
                 className="font-bold text-emerald-600 underline underline-offset-2">
                 Política de Privacidade
               </a>{" "}
-              versão 3.0.
+              versão 4.0.
             </p>
           </button>
 
