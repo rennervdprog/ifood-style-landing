@@ -543,7 +543,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
     let msg: string;
     if (isFixed) {
       msg = `💰 *Resumo ItaSuper (${period})*\n\nOlá *${entry.name}*!\n\n` +
-        `📋 Plano: Fixo Mensal — ${formatBRL(Number(storePlan?.monthly_fee || 180))}/mês\n\n` +
+        `📋 Plano: Fixo Mensal — ${formatBRL(Number(storePlan?.monthly_fee || 90))}/mês\n\n` +
         `📦 Total de Pedidos: ${entry.orderCount}\n` +
         `💵 Vendas Totais: ${formatBRL(entry.totalSales)}\n\n` +
         `✅ Sem taxas por pedido. Toda receita é sua!\n` +
