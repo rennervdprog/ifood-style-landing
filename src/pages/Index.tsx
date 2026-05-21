@@ -116,7 +116,7 @@ const painPoints = [
 const plans = [
   { name: "Comissão", price: "R$0", sub: "/mês", desc: "6% por pedido", icon: Rocket, tags: ["Sem mensalidade", "Todas as ferramentas"], subtitle: "Todas as ferramentas incluídas. Taxa PIX R$ 1,99 (lojista) + entrega R$ 2.", popular: false },
   { name: "Crescimento", price: "R$100", sub: "/mês", desc: "2,5% por pedido", icon: TrendingUp, tags: ["Comissão reduzida", "Todas as ferramentas"], subtitle: "Mesmas ferramentas, taxa PIX R$ 1,99 (lojista) + entrega R$ 2.", popular: true },
-  { name: "Essencial", price: "R$180", sub: "/mês", desc: "0% comissão", icon: Crown, tags: ["Zero comissão", "Lucro máximo"], subtitle: "Fique com 100% do pedido. Taxa PIX R$ 1,99 (lojista) + entrega R$ 2.", popular: false },
+  { name: "Essencial", price: "R$90*", sub: "/mês", desc: "0% comissão", icon: Crown, tags: ["Zero comissão", "Lucro máximo"], subtitle: "Fique com 100% do pedido. Taxa PIX R$ 1,99 (lojista) + entrega R$ 2.", popular: false },
 ];
 
 const testimonials = [

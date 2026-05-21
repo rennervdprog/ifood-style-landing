@@ -519,7 +519,7 @@ const SuperAdminDashboard = () => {
     let msg: string;
     if (isFixed) {
       msg = `💰 *Resumo ItaSuper (${period})*\n\nOlá *${entry.name}*!\n\n` +
-        `📋 Plano: Fixo Mensal — ${formatBRL(Number(storePlan?.monthly_fee || 180))}/mês\n\n` +
+        `📋 Plano: Fixo Mensal — ${formatBRL(Number(storePlan?.monthly_fee || 90))}/mês\n\n` +
         `📦 Total de Pedidos: ${entry.orderCount}\n` +
         `💵 Vendas Totais: ${formatBRL(entry.totalSales)}\n\n` +
         `✅ Sem taxas por pedido. Toda receita é sua!\n` +
@@ -2079,7 +2079,7 @@ export const FinanceTab = ({
 
                         {/* Fixed plan: show subscription info + monthly payment status */}
                         {isFixedPlan && (() => {
-                          const monthlyFee = Number(plan?.monthly_fee || 180);
+                          const monthlyFee = Number(plan?.monthly_fee || 90);
                           const lastBilled = plan?.last_billed_at ? new Date(plan.last_billed_at) : null;
                           const nextBilling = plan?.next_billing_date ? new Date(plan.next_billing_date) : null;
                           const now = new Date();

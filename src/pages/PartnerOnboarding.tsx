@@ -369,7 +369,7 @@ const PartnerOnboarding = () => {
               {[
                 { name: "Comissão", price: "R$0", sub: "/mês", desc: "6% por pedido", icon: Rocket, tags: ["Sem mensalidade", "PIX integrado", "Ideal para testar"], popular: false },
                 { name: "Crescimento", price: "R$100", sub: "/mês", desc: "+ 2,5% por pedido", icon: TrendingUp, tags: ["PIX integrado", "CRM completo", "Menor comissão"], popular: true },
-                { name: "Essencial", price: "R$180", sub: "/mês", desc: "0% de comissão", icon: Crown, tags: ["Zero comissão", "Lucro máximo", "Alto volume"], popular: false },
+                { name: "Essencial", price: "R$90*", sub: "/mês", desc: "0% de comissão", icon: Crown, tags: ["Zero comissão", "Lucro máximo", "Alto volume"], popular: false },
               ].map((plan) => (
                 <Card key={plan.name} className={`rounded-2xl border-2 transition-all hover:shadow-lg relative ${plan.popular ? "border-primary shadow-md" : "border-border"}`}>
                   {plan.popular && (
@@ -592,7 +592,7 @@ const PartnerOnboarding = () => {
                   <h3 className="font-bold text-sm text-foreground">Plano Essencial</h3>
                   <p className="text-xs text-muted-foreground">Ideal para alto volume</p>
                 </div>
-                <div className="text-right"><span className="text-lg font-black text-foreground">R$180</span><span className="text-xs text-muted-foreground">/mês</span></div>
+                <div className="text-right"><span className="text-lg font-black text-foreground">R$90</span><span className="text-xs text-muted-foreground">/mês</span></div>
               </div>
               <div className="flex flex-wrap gap-1.5 mt-2">
                 {["0% taxa", "Dinheiro/Cartão", "Apenas motoboy próprio"].map(tag => (
