@@ -12,9 +12,9 @@ const ROWS: Row[] = [
     label: "Mensalidade",
     values: {
       commission_only: "R$ 0",
-      hybrid: "R$ 100",
-      fixed: "R$ 180",
-      supporter: "R$ 130",
+      hybrid: "R$ 50*",
+      fixed: "R$ 90*",
+      supporter: "R$ 75",
     },
   },
   {

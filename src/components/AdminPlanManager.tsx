@@ -18,7 +18,7 @@ import {
 type PlanType = "fixed" | "hybrid" | "commission_only";
 type DisplayPlan = PlanType | "supporter";
 
-const SUPPORTER_FEE = 130;
+const SUPPORTER_FEE = 75;
 const SUPPORTER_LIMIT = 10;
 
 // Fallback estático — usado apenas se a tabela plan_templates falhar/estiver vazia.
@@ -31,7 +31,7 @@ const FALLBACK_LABELS: Record<DisplayPlan, string> = {
 };
 
 const FALLBACK_DESCRIPTIONS: Record<DisplayPlan, string> = {
-  supporter: "R$ 130/mês vitalício • Apenas 10 vagas • Todas as funcionalidades",
+  supporter: "R$ 75/mês vitalício • Apenas 10 vagas • Todas as funcionalidades",
   fixed: "Mensalidade fixa, sem comissão, funcionalidades básicas",
   hybrid: "Mensalidade + taxa por pedido, todas funcionalidades",
   commission_only: "Apenas comissão por pedido, todas funcionalidades",
@@ -39,13 +39,13 @@ const FALLBACK_DESCRIPTIONS: Record<DisplayPlan, string> = {
 
 const FALLBACK_DEFAULTS: Record<DisplayPlan, { monthly_fee: number; commission_rate: number }> = {
   supporter: { monthly_fee: SUPPORTER_FEE, commission_rate: 0 },
-  fixed: { monthly_fee: 180, commission_rate: 0 },
-  hybrid: { monthly_fee: 100, commission_rate: 2.5 },
+  fixed: { monthly_fee: 90, commission_rate: 0 },
+  hybrid: { monthly_fee: 50, commission_rate: 2.5 },
   commission_only: { monthly_fee: 0, commission_rate: 6 },
 };
 
 const FALLBACK_FEATURES: Record<DisplayPlan, string[]> = {
-  supporter: ["Preço vitalício R$130", "Sem comissão", "Tudo incluso", "PIX, Fidelidade, Banners", "Apenas 10 vagas"],
+  supporter: ["Preço vitalício R$75", "Sem comissão", "Tudo incluso", "PIX, Fidelidade, Banners", "Apenas 10 vagas"],
   fixed: ["Cardápio digital", "Pedidos online", "Dinheiro/Cartão", "Até 3 cupons"],
   hybrid: ["Tudo do Fixo +", "PIX Online", "Entrega plataforma*", "Fidelidade", "Banners", "Relatórios completos", "Cupons ilimitados"],
   commission_only: ["Tudo do Híbrido", "Sem mensalidade"],
@@ -60,7 +60,7 @@ const planColors: Record<DisplayPlan, string> = {
 
 function resolveDisplayPlan(plan: { plan_type: string; monthly_fee: number } | null | undefined): DisplayPlan | null {
   if (!plan) return null;
-  if (plan.plan_type === "fixed" && Number(plan.monthly_fee) === SUPPORTER_FEE) return "supporter";
+  if (plan.plan_type === "fixed" && (Number(plan.monthly_fee) === SUPPORTER_FEE || Number(plan.monthly_fee) === 130)) return "supporter";
   return plan.plan_type as PlanType;
 }
 
