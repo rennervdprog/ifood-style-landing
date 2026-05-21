@@ -105,6 +105,29 @@ type PizzaPriceMode = "maior" | "media" | "soma";
    const [deliveryFeePerKm, setDeliveryFeePerKm] = useState(storeDeliveryFeePerKm?.toString() || "0");
   const storePlan = useStorePlan(storeId);
 
+  // Verificar se conta Asaas está 100% aprovada para liberar PIX Online
+  const { data: asaasStatusData } = useQuery({
+    queryKey: ["asaas-activation-status", storeId],
+    queryFn: async () => {
+      const { data: storeData } = await supabase
+        .from("stores")
+        .select("asaas_wallet_id, asaas_activation_status")
+        .eq("id", storeId)
+        .maybeSingle();
+      if (!storeData?.asaas_wallet_id) return null;
+      return storeData?.asaas_activation_status as any;
+    },
+    enabled: !!storeId,
+    staleTime: 30_000,
+  });
+
+  const isAsaasFullyApproved =
+    asaasStatusData?.commercialInfo === "APPROVED" &&
+    asaasStatusData?.bankAccount    === "APPROVED" &&
+    asaasStatusData?.document       === "APPROVED";
+
+  const hasAsaasAccount = !!asaasStatusData;
+
   const [pizzaHalfEnabled, setPizzaHalfEnabled] = useState<boolean>(storeSettings?.pizza_half_enabled || false);
   const [pizzaPriceMode, setPizzaPriceMode] = useState<PizzaPriceMode>(storeSettings?.pizza_price_mode || "maior");
 
@@ -232,7 +255,7 @@ type PizzaPriceMode = "maior" | "media" | "soma";
         delivery_fee_base: parseFloat(deliveryFeeBase.toString().replace(",", ".")) || 0,
         delivery_fee_per_km: parseFloat(deliveryFeePerKm.toString().replace(",", ".")) || 0,
         // Métodos de pagamento aceitos
-        accept_pix_online:  acceptPixOnline,
+        accept_pix_online:  acceptPixOnline && isAsaasFullyApproved,
         accept_pix_machine: acceptPixMachine,
         accept_card:        acceptCard,
         accept_cash:        acceptCash,
@@ -1041,20 +1064,57 @@ const NotificationSection = () => {
           </p>
         </div>
 
-        {/* PIX Online (Asaas) */}
-        <div className={`rounded-xl border p-3.5 space-y-2 ${acceptPixOnline ? "border-primary/30 bg-primary/5" : "border-border bg-muted/20"}`}>
+        {/* PIX Online (Asaas) — só ativo se conta Asaas 100% aprovada */}
+        <div className={`rounded-xl border p-3.5 space-y-2 ${
+          !hasAsaasAccount
+            ? "border-muted/50 bg-muted/10 opacity-70"
+            : !isAsaasFullyApproved
+              ? "border-amber-500/30 bg-amber-500/5"
+              : acceptPixOnline
+                ? "border-primary/30 bg-primary/5"
+                : "border-border bg-muted/20"
+        }`}>
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
               <QrCode className="h-4 w-4 text-primary shrink-0" />
               <div>
                 <p className="text-sm font-bold text-foreground">PIX Online</p>
+                {!hasAsaasAccount && (
+                  <p className="text-[10px] text-muted-foreground">Requer conta Asaas configurada</p>
+                )}
+                {hasAsaasAccount && !isAsaasFullyApproved && (
+                  <p className="text-[10px] text-amber-600 font-semibold">⏳ Conta em análise — aguarde aprovação</p>
+                )}
+                {hasAsaasAccount && isAsaasFullyApproved && (
+                  <p className="text-[10px] text-emerald-600 font-semibold">✅ Conta aprovada</p>
+                )}
                 <p className="text-[11px] text-muted-foreground">Pagamento instantâneo via Asaas. Requer subconta configurada.</p>
               </div>
             </div>
             <button
               type="button"
-              onClick={() => setAcceptPixOnline(!acceptPixOnline)}
-              className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${acceptPixOnline ? "bg-primary" : "bg-muted-foreground/30"}`}
+              onClick={() => {
+                if (!hasAsaasAccount) {
+                  toast.error("Configure sua conta Asaas antes de ativar o PIX Online.", {
+                    description: "Vá em Meu Plano → Configurar conta de recebimento.",
+                    duration: 6000,
+                  });
+                  return;
+                }
+                if (!isAsaasFullyApproved) {
+                  toast.error("Sua conta Asaas ainda está em análise.", {
+                    description: "Aguarde a aprovação de todos os documentos para ativar o PIX Online.",
+                    duration: 6000,
+                  });
+                  return;
+                }
+                setAcceptPixOnline(!acceptPixOnline);
+              }}
+              className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${
+                !hasAsaasAccount || !isAsaasFullyApproved
+                  ? "bg-muted-foreground/20 cursor-not-allowed"
+                  : acceptPixOnline ? "bg-primary" : "bg-muted-foreground/30"
+              }`}
             >
               <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${acceptPixOnline ? "translate-x-5" : "translate-x-0"}`} />
             </button>
