@@ -12,7 +12,6 @@
 
 import "https://deno.land/std@0.224.0/dotenv/load.ts";
 import { assert, assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const EXTERNAL_URL =
   Deno.env.get("EXTERNAL_SUPABASE_URL") ?? "https://qkjhguziuchqsbxzruea.supabase.co";
@@ -23,46 +22,56 @@ const EXTERNAL_KEY =
 
 const WEBHOOK_URL =
   "https://lktzrqjvqoojlrhqnxuz.supabase.co/functions/v1/asaas-webhook";
+const WEBHOOK_TOKEN = Deno.env.get("ASAAS_WEBHOOK_TOKEN") ?? "";
 
-function db() {
+// REST direto (evita leak de interval do realtime do supabase-js)
+async function rest<T = any>(path: string): Promise<T> {
   if (!EXTERNAL_KEY) throw new Error("EXTERNAL_SUPABASE_SERVICE_KEY ausente");
-  return createClient(EXTERNAL_URL, EXTERNAL_KEY);
+  const res = await fetch(`${EXTERNAL_URL}/rest/v1/${path}`, {
+    headers: {
+      apikey: EXTERNAL_KEY,
+      Authorization: `Bearer ${EXTERNAL_KEY}`,
+      "Content-Type": "application/json",
+    },
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`REST ${res.status}: ${text}`);
+  return text ? JSON.parse(text) : ([] as any);
 }
 
-Deno.test("repasse: existem transações de taxa da plataforma (store_payout)", async () => {
-  const supabase = db();
-  const { data, error } = await supabase
-    .from("financial_transactions")
-    .select("id, store_id, status, amount, reference_code, metadata, created_at")
-    .eq("transaction_kind", "store_payout")
-    .order("created_at", { ascending: false })
-    .limit(20);
+Deno.test("repasse: panorama de transações no DB externo", async () => {
+  // Quais transaction_kind existem?
+  const kinds = await rest<any[]>(
+    `financial_transactions?select=transaction_kind,status&limit=500`,
+  );
+  const counts: Record<string, number> = {};
+  for (const k of kinds) {
+    const key = `${k.transaction_kind}/${k.status}`;
+    counts[key] = (counts[key] || 0) + 1;
+  }
+  console.log("[repasse] kinds/status no DB externo:");
+  for (const [k, n] of Object.entries(counts)) console.log(`  ${k}: ${n}`);
 
-  assertEquals(error, null, `query falhou: ${error?.message}`);
-  console.log(`[repasse] últimas ${data?.length ?? 0} transações de store_payout`);
-  for (const t of data ?? []) {
+  // Filtra qualquer coisa que pareça pagamento de TAXA da plataforma
+  // (kind=store_payout OU reference_code começando com TAXA-)
+  const taxas = await rest<any[]>(
+    `financial_transactions?select=id,store_id,status,amount,reference_code,settled_at,created_at,metadata&or=(transaction_kind.eq.store_payout,reference_code.like.TAXA-*)&order=created_at.desc&limit=20`,
+  );
+  console.log(`[repasse] ${taxas.length} cobranças de taxa da plataforma encontradas:`);
+  for (const t of taxas) {
     console.log(
-      `  - ${t.created_at?.slice(0, 19)} | ${t.status.padEnd(8)} | R$ ${Number(t.amount).toFixed(2)} | ref=${t.reference_code}`,
+      `  - ${String(t.created_at).slice(0, 19)} | ${String(t.status).padEnd(8)} | R$ ${Number(t.amount).toFixed(2)} | ref=${t.reference_code}`,
     );
   }
-  assert(Array.isArray(data), "esperava array");
+  assert(true, "informativo");
 });
 
 Deno.test("repasse: para cada pagamento PAGO, repasse_pendente da loja foi zerado", async () => {
-  const supabase = db();
+  const paid = await rest<any[]>(
+    `financial_transactions?select=id,store_id,amount,settled_at,reference_code&or=(transaction_kind.eq.store_payout,reference_code.like.TAXA-*)&status=eq.paid&order=settled_at.desc&limit=10`,
+  );
 
-  // Pega últimos pagamentos de taxa CONFIRMADOS
-  const { data: paid, error } = await supabase
-    .from("financial_transactions")
-    .select("id, store_id, amount, settled_at, reference_code")
-    .eq("transaction_kind", "store_payout")
-    .eq("status", "paid")
-    .order("settled_at", { ascending: false })
-    .limit(10);
-
-  assertEquals(error, null);
-
-  if (!paid || paid.length === 0) {
+  if (!paid.length) {
     console.log("[repasse] nenhuma transação paga ainda — nada a validar");
     return;
   }
@@ -70,11 +79,10 @@ Deno.test("repasse: para cada pagamento PAGO, repasse_pendente da loja foi zerad
   let okCount = 0;
   let badCount = 0;
   for (const tx of paid) {
-    const { data: bal } = await supabase
-      .from("store_balances")
-      .select("repasse_pendente, updated_at")
-      .eq("store_id", tx.store_id)
-      .maybeSingle();
+    const bals = await rest<any[]>(
+      `store_balances?select=repasse_pendente,updated_at&store_id=eq.${tx.store_id}&limit=1`,
+    );
+    const bal = bals[0];
 
     if (!bal) {
       console.log(`  ⚠ loja ${tx.store_id} sem store_balances`);
@@ -82,8 +90,6 @@ Deno.test("repasse: para cada pagamento PAGO, repasse_pendente da loja foi zerad
     }
 
     const pend = Number(bal.repasse_pendente || 0);
-    // O saldo pode ter sido reacumulado por novos pedidos APÓS o pagamento.
-    // Só consideramos "falha" se o saldo > 0 E updated_at < settled_at.
     const balUpd = bal.updated_at ? new Date(bal.updated_at).getTime() : 0;
     const txSettled = tx.settled_at ? new Date(tx.settled_at).getTime() : 0;
     const reaccumulated = balUpd > txSettled;
@@ -105,10 +111,16 @@ Deno.test("repasse: para cada pagamento PAGO, repasse_pendente da loja foi zerad
   assertEquals(badCount, 0, "alguma loja não zerou o repasse após pagamento");
 });
 
+function webhookHeaders() {
+  const h: Record<string, string> = { "Content-Type": "application/json" };
+  if (WEBHOOK_TOKEN) h["asaas-access-token"] = WEBHOOK_TOKEN;
+  return h;
+}
+
 Deno.test("webhook: ignora paymentId desconhecido com 200 (idempotência)", async () => {
   const res = await fetch(WEBHOOK_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: webhookHeaders(),
     body: JSON.stringify({
       event: "PAYMENT_RECEIVED",
       payment: { id: "pay_inexistente_teste_repasse_xyz" },
@@ -123,7 +135,7 @@ Deno.test("webhook: ignora paymentId desconhecido com 200 (idempotência)", asyn
 Deno.test("webhook: rejeita JSON inválido com 400", async () => {
   const res = await fetch(WEBHOOK_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: webhookHeaders(),
     body: "isto-nao-eh-json",
   });
   const body = await res.json();
