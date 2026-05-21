@@ -801,29 +801,45 @@ const StorePage = () => {
                 )}
               </div>
 
-              {/* Payment Methods */}
-              <div className="bg-muted/30 rounded-xl p-3 border border-border/30">
-                <div className="flex items-center gap-2.5 mb-2.5">
-                  <CreditCard className="h-3.5 w-3.5 text-primary" />
-                  <span className="text-[11px] font-black text-foreground uppercase tracking-wider">Pagamento</span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {storePlan.allowPix && (
-                    <span className="flex items-center gap-1.5 bg-card px-2.5 py-1.5 rounded-lg text-[10px] font-bold text-muted-foreground border border-border/50 shadow-sm">
-                      <QrCode className="h-3 w-3 text-primary" />
-                      PIX
-                    </span>
-                  )}
-                  <span className="flex items-center gap-1.5 bg-card px-2.5 py-1.5 rounded-lg text-[10px] font-bold text-muted-foreground border border-border/50 shadow-sm">
-                    <Banknote className="h-3 w-3 text-primary" />
-                    DINHEIRO
-                  </span>
-                  <span className="flex items-center gap-1.5 bg-card px-2.5 py-1.5 rounded-lg text-[10px] font-bold text-muted-foreground border border-border/50 shadow-sm">
-                    <CreditCard className="h-3 w-3 text-primary" />
-                    CARTÃO
-                  </span>
-                </div>
-              </div>
+              {/* Payment Methods — dinâmico baseado nas configurações da loja */}
+              {(() => {
+                const s = (store?.settings || {}) as Record<string, any>;
+                const pixOnline   = s.accept_pix_online  !== false && s.accept_pix_online !== undefined ? s.accept_pix_online : false;
+                const pixMachine  = s.accept_pix_machine === true;
+                const card        = s.accept_card        !== false;
+                const cash        = s.accept_cash        !== false;
+                const hasPix      = pixOnline || pixMachine;
+                const methods = [
+                  { show: pixOnline,  icon: <QrCode className="h-3 w-3 text-emerald-500" />,  label: "PIX Online",     badge: "bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-400" },
+                  { show: pixMachine, icon: <QrCode className="h-3 w-3 text-primary" />,       label: "PIX",            badge: "" },
+                  { show: card,       icon: <CreditCard className="h-3 w-3 text-primary" />,   label: "Cartão",         badge: "" },
+                  { show: cash,       icon: <Banknote className="h-3 w-3 text-primary" />,     label: "Dinheiro",       badge: "" },
+                ];
+                const active = methods.filter(m => m.show);
+                return (
+                  <div className="bg-muted/30 rounded-xl p-3 border border-border/30">
+                    <div className="flex items-center gap-2.5 mb-2.5">
+                      <CreditCard className="h-3.5 w-3.5 text-primary" />
+                      <span className="text-[11px] font-black text-foreground uppercase tracking-wider">Pagamento</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {active.length === 0 ? (
+                        <span className="text-[10px] text-muted-foreground">Consulte a loja</span>
+                      ) : active.map(m => (
+                        <span
+                          key={m.label}
+                          className={`flex items-center gap-1.5 bg-card px-2.5 py-1.5 rounded-lg text-[10px] font-bold border shadow-sm ${
+                            m.badge || "text-muted-foreground border-border/50"
+                          }`}
+                        >
+                          {m.icon}
+                          {m.label}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
 
