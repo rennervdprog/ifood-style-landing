@@ -290,11 +290,12 @@ const CadastroLojista = () => {
           try {
             const { error: matrizErr } = await (supabase as any).rpc("register_as_matriz", {
               _network_name: networkName.trim(),
+              _user_id: signUpData.user.id, // passar explícito — auth.uid() pode ser null neste momento
               _plan_type: selectedPlan,
               _monthly_fee: selectedPlan === "fixed" ? 90 : selectedPlan === "hybrid" ? 50 : selectedPlan === "supporter" ? 75 : 0,
-        _revenue_threshold: (selectedPlan === "fixed" || selectedPlan === "hybrid") ? 5000 : null,
-        _upgrade_monthly_fee: selectedPlan === "fixed" ? 180 : selectedPlan === "hybrid" ? 100 : null,
-        _upgrade_trigger_months: (selectedPlan === "fixed" || selectedPlan === "hybrid") ? 2 : null,
+              _revenue_threshold: (selectedPlan === "fixed" || selectedPlan === "hybrid") ? 5000 : null,
+              _upgrade_monthly_fee: selectedPlan === "fixed" ? 180 : selectedPlan === "hybrid" ? 100 : null,
+              _upgrade_trigger_months: (selectedPlan === "fixed" || selectedPlan === "hybrid") ? 2 : null,
             });
             if (matrizErr) {
               console.warn("register_as_matriz aviso:", matrizErr.message);
