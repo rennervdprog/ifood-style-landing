@@ -1160,8 +1160,8 @@ const CheckoutPage = () => {
               </span>
             )}
           </button>
-        <AsaasBadgeBar className="mt-2" />
         )}
+        <AsaasBadgeBar className="mt-2" />
       </div>
 
       {showAddressModal && (
