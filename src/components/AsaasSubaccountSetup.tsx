@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { AsaasBadge, AsaasBadgeBar } from "@/components/AsaasBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -415,6 +416,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
         <CardDescription className="text-sm">
           Ative o recebimento direto e split automático via Asaas.
         </CardDescription>
+        <AsaasBadgeBar className="mt-3 mx-6" />
       </CardHeader>
       
       <CardContent className="pt-8 space-y-6">
