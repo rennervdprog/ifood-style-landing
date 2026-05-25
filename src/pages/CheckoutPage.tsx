@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { AsaasBadgeBar } from "@/components/AsaasBadge";
 import { toast } from "sonner";
 import { pushNotifyNewOrder } from "@/lib/notifications";
 import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Edit3, Loader2, Truck, CheckCircle2, ShoppingBag, Tag, ChevronRight, Clock, AlertTriangle, Star, Wallet, Calendar, Store } from "lucide-react";
@@ -1159,6 +1160,7 @@ const CheckoutPage = () => {
               </span>
             )}
           </button>
+        <AsaasBadgeBar className="mt-2" />
         )}
       </div>
 
