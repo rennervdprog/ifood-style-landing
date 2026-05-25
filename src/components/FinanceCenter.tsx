@@ -133,7 +133,6 @@ export default function FinanceCenter({ storeId, storeName, hasCommission, isPla
          {isPlatformAdmin && (
            <TabsContent value="admin-subaccounts" className="mt-6">
              <AdminAsaasSubaccounts />
-      <AsaasBadgeBar className="mt-4" />
            </TabsContent>
          )}
 
@@ -181,6 +180,7 @@ export default function FinanceCenter({ storeId, storeName, hasCommission, isPla
            </div>
          </TabsContent>
       </Tabs>
+    <AsaasBadgeBar className="mx-4 mb-4 mt-2" />
     </div>
   );
 }
