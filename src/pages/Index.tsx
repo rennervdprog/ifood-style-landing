@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { AsaasBadgeFooter } from "@/components/AsaasBadge";
 import {
   PackageOpen, ArrowRight, Smartphone, QrCode, Clock, Zap, Star,
   ShoppingBag, CreditCard, Bell, Utensils, Truck, Gift, ChevronDown,
@@ -697,7 +698,11 @@ const Index = () => {
                </ul>
              </div>
            </div>
-           <div className="pt-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-6">
+           {/* Selo Asaas — obrigatório Resolução Conjunta nº 16/17 Banco Central */}
+           <div className="py-8 border-t border-border flex justify-center">
+             <AsaasBadgeFooter />
+           </div>
+           <div className="pb-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-6 pt-6">
              <p className="font-bold text-muted-foreground text-sm">
                © {new Date().getFullYear()} ItaSuper - Todos os direitos reservados.
              </p>

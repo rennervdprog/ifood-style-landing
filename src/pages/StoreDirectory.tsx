@@ -1102,6 +1102,11 @@ const StoreDirectory = () => {
             </p>
           </div>
         </div>
+      <div className="py-6 border-t border-border bg-card">
+        <div className="max-w-7xl mx-auto px-4 flex justify-center">
+          <AsaasBadgeBar className="max-w-sm" />
+        </div>
+      </div>
       </footer>
     </div>
   );
