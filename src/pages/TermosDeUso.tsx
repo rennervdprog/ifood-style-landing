@@ -28,7 +28,7 @@ const TermosDeUso = () => {
             <li><strong className="text-foreground">Plataforma:</strong> Aplicativo web e nativo ItaSuper e todos os serviços relacionados.</li>
             <li><strong className="text-foreground">Usuário:</strong> Qualquer pessoa que utilize a Plataforma (Cliente, Lojista, Entregador, Administrador).</li>
             <li><strong className="text-foreground">PDV (Ponto de Venda):</strong> Módulo para vendas presenciais com caixa registradora digital, gestão de turno, desconto, troco e histórico.</li>
-            <li><strong className="text-foreground">Gateway de Pagamento:</strong> Empresa de processamento financeiro (atualmente Asaas Pagamentos S.A.).</li>
+            <li><strong className="text-foreground">Gateway de Pagamento:</strong> Empresa de processamento financeiro (<strong className="text-foreground">Asaas Gestão Financeira Instituição de Pagamento S.A.</strong>, autorizada pelo Banco Central do Brasil).</li>
           </ul>
         </section>
 
@@ -99,6 +99,16 @@ const TermosDeUso = () => {
 
         <section className="space-y-3">
           <h2 className="text-base font-bold text-foreground">8. Pagamentos e Repasses</h2>
+          {/* Cláusula obrigatória BaaS — Playbook Asaas / Resolução Conjunta nº 16/2025 */}
+          <p className="rounded-xl border border-border/50 bg-muted/30 p-3 text-[11px] leading-relaxed">
+            <strong className="text-foreground block mb-1">Prestação de Serviços Financeiros</strong>
+            Os serviços financeiros e de pagamentos disponibilizados por meio da presente plataforma, incluindo abertura e manutenção de conta de pagamento, processamento de transações, emissão de boletos, transferências, pagamentos e demais movimentações de valores, são prestados pelo{" "}
+            <strong className="text-foreground">ASAAS GESTÃO FINANCEIRA INSTITUIÇÃO DE PAGAMENTOS S.A.</strong>, instituição de pagamento autorizada a funcionar pelo Banco Central do Brasil.
+            {" "}A ItaSuper atua exclusivamente como integradora tecnológica e distribuidora da experiência do produto, não sendo instituição financeira ou de pagamento, nem realizando intermediação financeira em nome próprio.
+            {" "}O lojista declara ciência de que o relacionamento financeiro/de pagamentos e a responsabilidade regulatória pelos serviços acima descritos são do{" "}
+            <strong className="text-foreground">ASAAS GESTÃO FINANCEIRA S.A.</strong>, nos termos da regulamentação vigente.
+          </p>
+
           <p>8.1. <strong className="text-foreground">PIX Online:</strong> processado pelo Asaas com split automático entre plataforma e lojista. Disponível apenas para lojistas com conta Asaas configurada no painel.</p>
           <p>8.2. <strong className="text-foreground">Métodos físicos (Dinheiro, Cartão na entrega e PIX Maquininha):</strong> o cliente paga diretamente ao lojista ou ao entregador. A taxa da plataforma (R$ 2,00 por entrega para planos Essencial/Apoiador, ou % sobre subtotal para planos Crescimento/Comissão) é acumulada e cobrada via PIX toda <strong className="text-foreground">segunda-feira</strong>, quando o saldo pendente atingir <strong className="text-foreground">R$ 30,00</strong>. Saldo acima de R$ 150,00 suspende temporariamente o acesso ao painel até regularização. Inadimplência superior a 30 dias implica suspensão da loja.</p>
           <p>8.2. Pagamentos físicos (dinheiro/cartão) recebidos diretamente pelo Lojista ou Entregador.</p>

@@ -1162,6 +1162,11 @@ const CheckoutPage = () => {
           </button>
         )}
         <AsaasBadgeBar className="mt-2" />
+        <p className="text-[9px] text-muted-foreground text-center mt-1 px-4">
+          Dúvidas sobre o pagamento? Contate o Asaas:{" "}
+          <a href="mailto:contato@asaas.com.br" className="underline">contato@asaas.com.br</a>
+          {" "}| 0800 009 0037
+        </p>
       </div>
 
       {showAddressModal && (

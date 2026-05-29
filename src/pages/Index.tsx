@@ -699,8 +699,13 @@ const Index = () => {
              </div>
            </div>
            {/* Selo Asaas — obrigatório Resolução Conjunta nº 16/17 Banco Central */}
-           <div className="py-8 border-t border-border flex justify-center">
+           <div className="py-8 border-t border-border flex flex-col items-center gap-3">
              <AsaasBadgeFooter />
+             <p className="text-[10px] text-muted-foreground text-center">
+               Dúvidas sobre serviços financeiros? Contate o Asaas diretamente:{" "}
+               <a href="mailto:contato@asaas.com.br" className="underline hover:text-foreground">contato@asaas.com.br</a>
+               {" "}| 0800 009 0037
+             </p>
            </div>
            <div className="pb-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-6 pt-6">
              <p className="font-bold text-muted-foreground text-sm">
