@@ -219,6 +219,20 @@ const OrderReceipt = forwardRef<HTMLDivElement, OrderReceiptProps>(
           <p style={{ margin: "2px 0" }}>ItaSuper</p>
         </div>
 
+        {/* Menção obrigatória Asaas — Resolução Conjunta nº 16/2025 */}
+        <div style={{ borderTop: "1px dashed #000", margin: "6px 0" }} />
+        <div style={{ textAlign: "center", fontSize: "8px", color: "#666" }}>
+          <p style={{ margin: "2px 0" }}>
+            Serviços financeiros processados por
+          </p>
+          <p style={{ margin: "2px 0", fontWeight: "bold" }}>
+            Asaas Gestão Financeira Instituição de Pagamento S.A.
+          </p>
+          <p style={{ margin: "2px 0" }}>
+            Instituição autorizada pelo Banco Central do Brasil
+          </p>
+        </div>
+
         <div style={{ height: "16px" }} />
       </div>
     );
