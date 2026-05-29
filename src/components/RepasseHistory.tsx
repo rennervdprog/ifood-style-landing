@@ -5,6 +5,7 @@
  */
 
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/utils";
@@ -13,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   CheckCircle2, Clock, AlertCircle, Copy, ChevronDown, ChevronUp,
-  History, Banknote, Truck, TrendingDown
+  History, Banknote, Truck, TrendingDown, Zap, Loader2
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -177,6 +178,41 @@ export default function RepasseHistory({ storeId }: RepasseHistoryProps) {
     enabled: !!storeId,
   });
 
+  const [paying, setPaying] = useState(false);
+
+  const handleManualCharge = async () => {
+    setPaying(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/repasse-manual-charge`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session?.access_token}`,
+          },
+          body: JSON.stringify({ store_id: storeId }),
+        }
+      );
+      const data = await res.json();
+      if (data.ok) {
+        toast.success(`PIX gerado! R$${Number(data.amount).toFixed(2)} — vence em ${data.due_date}`);
+        // Copiar PIX automaticamente
+        if (data.pix_copy_paste) {
+          navigator.clipboard.writeText(data.pix_copy_paste);
+          toast.success("PIX copiado automaticamente!");
+        }
+      } else {
+        toast.error(data.error || "Erro ao gerar PIX");
+      }
+    } catch (err) {
+      toast.error("Erro de conexão");
+    } finally {
+      setPaying(false);
+    }
+  };
+
   const { data: balance } = useQuery({
     queryKey: ["store-balance-repasse", storeId],
     queryFn: async () => {
@@ -198,7 +234,7 @@ export default function RepasseHistory({ storeId }: RepasseHistoryProps) {
       {/* Saldo acumulando */}
       <Card className="border-amber-500/20 bg-amber-500/5">
         <CardContent className="pt-4 pb-4 px-4">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-1">
             <div className="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center shrink-0">
               <Banknote className="h-5 w-5 text-amber-600" />
             </div>
@@ -214,6 +250,22 @@ export default function RepasseHistory({ storeId }: RepasseHistoryProps) {
               </p>
             </div>
           </div>
+          {pendingAmount >= 5 && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="mt-3 w-full h-8 text-[11px] border-amber-500/30 text-amber-700 hover:bg-amber-500/10"
+              onClick={handleManualCharge}
+              disabled={paying}
+            >
+              {paying ? (
+                <Loader2 className="h-3 w-3 animate-spin mr-1.5" />
+              ) : (
+                <Zap className="h-3 w-3 mr-1.5" />
+              )}
+              {paying ? "Gerando PIX..." : `Pagar agora — ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(pendingAmount)}`}
+            </Button>
+          )}
         </CardContent>
       </Card>
 
