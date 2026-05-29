@@ -15,7 +15,8 @@ import {
   Clock, 
   CheckCircle2,
   Loader2,
-  Shield
+  Shield,
+  Truck
 } from "lucide-react";
 import AsaasSubaccountSetup from "./AsaasSubaccountSetup";
 import AsaasFinancialPanel from "./AsaasFinancialPanel";
@@ -23,6 +24,7 @@ import StoreFinancePanel from "./StoreFinancePanel";
  import StoreFinanceBasic from "./StoreFinanceBasic";
 import PaymentStatement from "./PaymentStatement";
 import AdminAsaasSubaccounts from "./AdminAsaasSubaccounts";
+import RepasseHistory from "./RepasseHistory";
 
 interface FinanceCenterProps {
   storeId: string;
@@ -104,7 +106,7 @@ export default function FinanceCenter({ storeId, storeName, hasCommission, isPla
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-         <TabsList className={`grid w-full bg-muted/50 p-1 rounded-xl h-12 ${needsAsaasConfig ? 'grid-cols-2' : isPlatformAdmin ? 'grid-cols-4' : 'grid-cols-3'}`}>
+         <TabsList className={`grid w-full bg-muted/50 p-1 rounded-xl h-12 ${needsAsaasConfig ? 'grid-cols-2' : isPlatformAdmin ? 'grid-cols-5' : 'grid-cols-4'}`}>
            <TabsTrigger value="summary" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all">
             <LayoutDashboard className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">Resumo</span>
@@ -121,6 +123,11 @@ export default function FinanceCenter({ storeId, storeName, hasCommission, isPla
             <Receipt className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">Extrato</span>
             <span className="sm:hidden text-[10px]">Extrato</span>
+          </TabsTrigger>
+          <TabsTrigger value="repasse" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all">
+            <Truck className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Repasses</span>
+            <span className="sm:hidden text-[10px]">Repasse</span>
           </TabsTrigger>
           {isPlatformAdmin && (
             <TabsTrigger value="admin-subaccounts" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all">
@@ -178,6 +185,10 @@ export default function FinanceCenter({ storeId, storeName, hasCommission, isPla
            <div className="space-y-6">
              <PaymentStatement storeId={storeId} storeName={storeName} initialOpen={true} />
            </div>
+         </TabsContent>
+
+         <TabsContent value="repasse" className="mt-6">
+           <RepasseHistory storeId={storeId} />
          </TabsContent>
       </Tabs>
     <AsaasBadgeBar className="mx-4 mb-4 mt-2" />
