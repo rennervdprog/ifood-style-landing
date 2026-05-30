@@ -569,7 +569,7 @@ const CheckoutPage = () => {
   const stepsDone = [isPickup || hasValidAddress, !!paymentMethod];
 
   return (
-    <div className="min-h-screen bg-background pb-36 overflow-y-auto">
+    <div className="min-h-screen bg-background pb-56 overflow-y-auto">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-sm border-b border-border flex items-center h-14 px-4 gap-3">
         <button onClick={() => navigate(-1)} className="p-1 -ml-1">
@@ -1108,7 +1108,17 @@ const CheckoutPage = () => {
         </section>
       </div>
 
-      {/* Fixed bottom CTA */}
+      {/* Asaas — obrigatório Playbook p.7 e p.17 */}
+      <div className="px-4 pb-2 space-y-1">
+        <AsaasBadgeBar />
+        <p className="text-[9px] text-muted-foreground text-center px-2">
+          Dúvidas sobre o pagamento? Contate o Asaas:{" "}
+          <a href="mailto:contato@asaas.com.br" className="underline">contato@asaas.com.br</a>
+          {" "}| 0800 009 0037
+        </p>
+      </div>
+
+      {/* Fixed bottom CTA — apenas botão + total */}
       <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border p-4 space-y-2">
         <div className="flex items-center justify-between px-1">
           <span className="text-sm text-muted-foreground">Total</span>
@@ -1161,12 +1171,6 @@ const CheckoutPage = () => {
             )}
           </button>
         )}
-        <AsaasBadgeBar className="mt-2" />
-        <p className="text-[9px] text-muted-foreground text-center mt-1 px-4">
-          Dúvidas sobre o pagamento? Contate o Asaas:{" "}
-          <a href="mailto:contato@asaas.com.br" className="underline">contato@asaas.com.br</a>
-          {" "}| 0800 009 0037
-        </p>
       </div>
 
       {showAddressModal && (
