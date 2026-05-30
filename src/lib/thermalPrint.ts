@@ -136,6 +136,12 @@ ${changeHtml}
 <div class="tp-info"><b>Endereço:</b> ${order.address_details}</div>
 <div class="tp-divider"></div>
 <div class="tp-footer"><p>Obrigado pela preferência!</p><p>ItaSuper</p></div>
+<div class="tp-divider"></div>
+<div style="text-align:center;font-size:9px;color:#666;line-height:1.4;padding:4px 0">
+  <div>Serv. financeiros processados por</div>
+  <div style="font-weight:bold">Asaas Gestão Financeira Inst. de Pagamento S.A.</div>
+  <div>Autorizada pelo Banco Central do Brasil</div>
+</div>
 `;
 
   // requestAnimationFrame garante 1 frame de render do DOM antes de imprimir
@@ -243,6 +249,12 @@ ${discountHtml}
 ${trocoHtml}
 <div class="tp-divider"></div>
 <div class="tp-footer"><p>Obrigado pela preferência!</p><p>ItaSuper</p></div>
+<div class="tp-divider"></div>
+<div style="text-align:center;font-size:9px;color:#666;line-height:1.4;padding:4px 0">
+  <div>Serv. financeiros processados por</div>
+  <div style="font-weight:bold">Asaas Gestão Financeira Inst. de Pagamento S.A.</div>
+  <div>Autorizada pelo Banco Central do Brasil</div>
+</div>
 `;
 
   requestAnimationFrame(() => {
