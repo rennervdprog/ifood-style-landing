@@ -356,20 +356,66 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
                  </span>
                </div>
 
-               {(!activationStatus || activationStatus.document !== "APPROVED") && (
-                 <div className="pt-2 space-y-2">
-                   <p className="text-[11px] font-semibold text-amber-800 bg-amber-100/50 p-2 rounded-lg text-center">
-                     ⚠️ Existem pendências de documentos. Utilize o painel abaixo para enviar os arquivos necessários.
-                   </p>
-                 </div>
-               )}
+               {/* Links específicos por item pendente */}
+               <div className="pt-2 space-y-2">
+                 {activationStatus?.commercialInfo !== "APPROVED" && (
+                   <div className="flex items-center justify-between bg-amber-50 dark:bg-amber-500/10 rounded-lg px-3 py-2">
+                     <p className="text-[11px] text-amber-800 dark:text-amber-400 font-medium">
+                       📋 Dados comerciais pendentes
+                     </p>
+                     <a
+                       href="https://www.asaas.com/commercialInfo/index"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       className="text-[11px] font-bold text-primary underline flex items-center gap-1"
+                     >
+                       Completar <ExternalLink className="h-2.5 w-2.5" />
+                     </a>
+                   </div>
+                 )}
+                 {activationStatus?.bankAccount !== "APPROVED" && (
+                   <div className="flex items-center justify-between bg-amber-50 dark:bg-amber-500/10 rounded-lg px-3 py-2">
+                     <p className="text-[11px] text-amber-800 dark:text-amber-400 font-medium">
+                       🏦 Dados bancários pendentes
+                     </p>
+                     <a
+                       href="https://www.asaas.com/bankAccount/index"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       className="text-[11px] font-bold text-primary underline flex items-center gap-1"
+                     >
+                       Completar <ExternalLink className="h-2.5 w-2.5" />
+                     </a>
+                   </div>
+                 )}
+                 {activationStatus?.document !== "APPROVED" && (
+                   <div className="flex items-center justify-between bg-amber-50 dark:bg-amber-500/10 rounded-lg px-3 py-2">
+                     <p className="text-[11px] text-amber-800 dark:text-amber-400 font-medium">
+                       📄 Documentos pendentes ou rejeitados
+                     </p>
+                     <a
+                       href="https://www.asaas.com/documents/index"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       className="text-[11px] font-bold text-primary underline flex items-center gap-1"
+                     >
+                       Enviar <ExternalLink className="h-2.5 w-2.5" />
+                     </a>
+                   </div>
+                 )}
+               </div>
 
-               <div className="pt-2">
-                 <Button variant="ghost" className="w-full text-[10px] h-7 text-muted-foreground hover:text-primary" asChild>
+               <div className="pt-1 space-y-1.5">
+                 <Button variant="outline" className="w-full text-[11px] h-8 border-primary/30 text-primary hover:bg-primary/5" asChild>
                    <a href="https://www.asaas.com/childAccounts/list" target="_blank" rel="noopener noreferrer">
-                     Ver no site do Asaas (opcional) <ExternalLink className="h-3 w-3 ml-1.5" />
+                     Abrir painel Asaas completo <ExternalLink className="h-3 w-3 ml-1.5" />
                    </a>
                  </Button>
+                 <p className="text-[9px] text-center text-muted-foreground">
+                   Suporte Asaas:{" "}
+                   <a href="mailto:contato@asaas.com.br" className="underline">contato@asaas.com.br</a>
+                   {" "}| 0800 009 0037
+                 </p>
                </div>
             </CardContent>
           </Card>
