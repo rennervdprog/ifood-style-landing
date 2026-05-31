@@ -732,31 +732,60 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
           </div>
         </div>
 
-        {(lastError || debugInfo) && (
-          <div className="mt-4 p-3 rounded bg-slate-50 border border-slate-200 text-[10px] font-mono overflow-hidden">
-            <div className="flex justify-between items-center mb-2">
-              <p className="font-bold text-red-700">Log de Erro (Debug):</p>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="h-7 px-2 text-[10px]"
+        {lastError && (
+          <div className="mt-4 rounded-xl border border-destructive/30 bg-destructive/5 p-4 space-y-3">
+            {/* Ícone + título */}
+            <div className="flex items-start gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center shrink-0 mt-0.5">
+                <AlertCircle className="h-4 w-4 text-destructive" />
+              </div>
+              <div className="flex-1 space-y-1">
+                <p className="text-sm font-bold text-destructive">Não foi possível criar a subconta</p>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">{lastError}</p>
+              </div>
+            </div>
+
+            {/* Causas comuns */}
+            <div className="rounded-lg bg-muted/40 p-3 space-y-1.5">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Causas comuns</p>
+              <p className="text-[11px] text-foreground/80">• CPF/CNPJ já cadastrado no Asaas com outro e-mail</p>
+              <p className="text-[11px] text-foreground/80">• E-mail já em uso por outra conta</p>
+              <p className="text-[11px] text-foreground/80">• Data de nascimento incorreta (formato DD/MM/AAAA)</p>
+              <p className="text-[11px] text-foreground/80">• CEP inválido ou não encontrado</p>
+            </div>
+
+            {/* Ações */}
+            <div className="flex flex-col gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full h-9 text-[12px] border-destructive/30 text-destructive hover:bg-destructive/5"
+                onClick={() => { setLastError(null); setDebugInfo(null); setStep(1); }}
+              >
+                <RefreshCw className="h-3.5 w-3.5 mr-2" />
+                Corrigir dados e tentar novamente
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full h-8 text-[11px] text-muted-foreground"
                 onClick={() => {
-                  const text = `${lastError}\n\n${JSON.stringify(debugInfo, null, 2)}`;
+                  const text = `Erro: ${lastError}\n\nDetalhes: ${JSON.stringify(debugInfo, null, 2)}`;
                   navigator.clipboard.writeText(text);
-                  toast.success("Copiado!");
+                  toast.success("Copiado para o suporte!");
                 }}
               >
-                <Copy className="h-3 w-3 mr-1" /> Copiar
+                <Copy className="h-3 w-3 mr-1.5" />
+                Copiar erro para enviar ao suporte
               </Button>
             </div>
-            <div className="max-h-40 overflow-auto">
-              <p className="text-red-600 mb-2">{lastError}</p>
-              {debugInfo && (
-                <pre className="text-slate-600 whitespace-pre-wrap">
-                  {JSON.stringify(debugInfo, null, 2)}
-                </pre>
-              )}
-            </div>
+
+            {/* Contato suporte */}
+            <p className="text-[9px] text-center text-muted-foreground">
+              Suporte Asaas:{" "}
+              <a href="mailto:contato@asaas.com.br" className="underline">contato@asaas.com.br</a>
+              {" "}| 0800 009 0037
+            </p>
           </div>
         )}
       </CardContent>
