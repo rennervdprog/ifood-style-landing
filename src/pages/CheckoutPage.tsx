@@ -471,6 +471,19 @@ const CheckoutPage = () => {
 
         createdOrders.push({ storeId, orderId: order.id });
 
+        // Resgatar pontos de fidelidade se foram aplicados
+        if (loyaltyPointsUsed > 0 && loyaltyDiscount > 0) {
+          const { error: loyaltyErr } = await supabase.rpc("redeem_loyalty_points", {
+            _order_id: order.id,
+            _store_id: storeId,
+            _points_to_use: loyaltyPointsUsed,
+          });
+          if (loyaltyErr) {
+            console.warn("[loyalty] Erro ao resgatar pontos:", loyaltyErr.message);
+            // Não bloqueia o pedido — pontos podem ser ajustados manualmente
+          }
+        }
+
         const orderItems = storeItems.map((item) => ({
           order_id: order.id,
           product_id: item.id,
