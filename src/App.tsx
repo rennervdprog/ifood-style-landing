@@ -79,12 +79,13 @@ const isNativeApp = typeof window !== "undefined" &&
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 30,           // 30s — realtime keeps hot data fresh
-      gcTime: 1000 * 60 * 10,         // 10 min cache (was 5 — reduces cold re-fetches)
+      staleTime: 1000 * 60,           // 60s global — dados considerados frescos por 1min
+      gcTime: 1000 * 60 * 15,         // 15min cache — reduz cold re-fetches
       refetchOnWindowFocus: !isNativeApp, // Capacitor lifecycle handles this
       refetchOnReconnect: true,
       refetchOnMount: true,
       retry: 1,
+      // Queries de dados em tempo real (pedidos) sobrescrevem com staleTime menor
     },
   },
 });
