@@ -226,6 +226,7 @@ const PedidosPage = () => {
   // Client orders (for clients and lojistas viewing as client)
   const { data: orders, isLoading } = useQuery({
     queryKey: ["orders", user?.id],
+      staleTime: 30_000,        // 30s — histórico de pedidos do cliente
     queryFn: async () => {
       let query = supabase
         .from("orders")
@@ -252,6 +253,7 @@ const PedidosPage = () => {
   // Store orders (for lojistas)
   const { data: storeOrders, isLoading: storeOrdersLoading } = useQuery({
     queryKey: ["store-orders-lojista", ownStore?.id],
+      staleTime: 15_000,        // 15s — pedidos do lojista
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")

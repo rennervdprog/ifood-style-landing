@@ -28,8 +28,8 @@ import {
 } from "recharts";
 import { openWhatsApp, formatWhatsAppNumber } from "@/lib/whatsapp";
 import WhatsAppButton from "@/components/WhatsAppButton";
-import MenuBuilder from "@/components/MenuBuilder";
-import SupportTicketModal from "@/components/SupportTicketModal";
+const MenuBuilder = lazy(() => import("@/components/MenuBuilder"));
+const SupportTicketModal = lazy(() => import("@/components/SupportTicketModal"));
 import { notifyOrderStatusChange, buildWhatsAppMessage } from "@/lib/orderNotifications";
 import { getStoreOpenStatus } from "@/lib/storeStatus";
 // Tabs carregadas sob demanda — só baixa o JS quando o lojista abrir a aba
@@ -324,6 +324,7 @@ const AdminDashboard = () => {
 
   const { data: orders, isLoading } = useQuery({
     queryKey: ["store-orders", store?.id],
+      staleTime: 10_000,         // 10s — pedidos ativos
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
@@ -344,6 +345,7 @@ const AdminDashboard = () => {
 
   const { data: allOrders } = useQuery({
     queryKey: ["store-all-orders", store?.id],
+      staleTime: 30_000,         // 30s — histórico de pedidos
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
@@ -418,6 +420,8 @@ const AdminDashboard = () => {
 
   const { data: storeAddonLinks = [] } = useQuery({
     queryKey: ["store-order-addon-links", store?.id, storeAddonGroups.length],
+      staleTime: 5 * 60_000,  // 5min — adicionais raramente mudam
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("product_addon_groups")
@@ -469,6 +473,7 @@ const AdminDashboard = () => {
   // Fetch store drivers list for own-delivery stores
   const { data: linkedStoreDrivers, isLoading: driversLoading } = useQuery({
     queryKey: ["store-drivers-list", store?.id],
+      staleTime: 60_000,         // 1min — lista de motoboys
     queryFn: async () => {
       const { data: sdLinks } = await supabase.from("store_drivers").select("driver_user_id").eq("store_id", store!.id);
       if (!sdLinks?.length) return [];
@@ -945,6 +950,8 @@ const AdminDashboard = () => {
 
   const { data: storeHours } = useQuery({
     queryKey: ["store-hours-check", store?.id],
+      staleTime: 5 * 60_000,    // 5min — horários raramente mudam
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const { data } = await supabase.from("opening_hours").select("*").eq("store_id", store!.id);
       return data || [];
@@ -954,6 +961,7 @@ const AdminDashboard = () => {
 
   const { data: menuProductCount = 0 } = useQuery({
     queryKey: ["menu-product-count", store?.id],
+      staleTime: 2 * 60_000,    // 2min — contagem de produtos
     queryFn: async () => {
       const { count } = await supabase
         .from("products")
