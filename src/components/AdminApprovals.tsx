@@ -530,6 +530,8 @@ const DriverDocuments = ({ profile }: { profile: any }) => {
                 <img
                   src={docUrls[key]}
                   alt={label}
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-28 object-cover rounded-lg border border-border cursor-pointer hover:opacity-80 transition-opacity"
                   onClick={() => window.open(docUrls[key], "_blank")}
                 />

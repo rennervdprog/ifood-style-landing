@@ -222,7 +222,7 @@ const DownloadApp = () => {
                       screenshotIdx === i ? "border-primary" : "border-border/40"
                     }`}
                     style={{ width: 160, height: 284 }}>
-                    <img src={s.url} alt={s.caption || `Screenshot ${i+1}`}
+                    <img src={s.url} alt={s.caption || `Screenshot ${i+1}`} loading="lazy" decoding="async"
                       className="w-full h-full object-cover" />
                   </div>
                 ))}

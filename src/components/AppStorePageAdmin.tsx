@@ -304,7 +304,7 @@ const AppStorePageAdmin = () => {
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
             {form.screenshots.map((s, i) => (
               <div key={i} className="shrink-0 relative">
-                <img src={s.url} alt={s.caption || `${i+1}`}
+                <img src={s.url} alt={s.caption || `${i+1}`} loading="lazy" decoding="async"
                   className="w-20 h-36 object-cover rounded-xl border border-border/60" />
                 <button onClick={() => removeScreenshot(i)}
                   className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">

@@ -161,7 +161,7 @@ const MatrizDashboard = () => {
         <div className="px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
             {network.logo_url ? (
-              <img src={network.logo_url} alt={network.name} className="w-10 h-10 rounded-xl object-cover" />
+              <img src={network.logo_url} alt={network.name} loading="lazy" decoding="async" className="w-10 h-10 rounded-xl object-cover" />
             ) : (
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
                 <Building2 className="h-5 w-5 text-primary" />
@@ -230,7 +230,7 @@ const MatrizDashboard = () => {
                   <div key={unit.id} className="bg-card border border-border rounded-2xl p-3.5">
                     <div className="flex items-center gap-3">
                       {unit.image_url ? (
-                        <img src={unit.image_url} alt={unit.name} className="w-12 h-12 rounded-xl object-cover" />
+                        <img src={unit.image_url} alt={unit.name} loading="lazy" decoding="async" className="w-12 h-12 rounded-xl object-cover" />
                       ) : (
                         <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
                           <Store className="h-5 w-5 text-primary" />
