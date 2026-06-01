@@ -147,7 +147,7 @@ const Index = () => {
 
   const handleCTA = () => navigate("/cadastro-lojista");
   const handleWhatsApp = () =>
-    window.open("https://wa.me/5514991624997?text=Olá! Tenho interesse em cadastrar minha loja na plataforma.", "_blank");
+    window.open("https://wa.me/5522992796291?text=Olá! Tenho interesse em cadastrar minha loja na plataforma.", "_blank");
 
   const { data: stores, isLoading } = useQuery({
     queryKey: ["stores"],
@@ -693,7 +693,7 @@ const Index = () => {
              <div>
                <h4 className="font-black text-foreground uppercase tracking-widest text-xs mb-6">Contato</h4>
                <ul className="space-y-4 font-bold text-muted-foreground">
-                 <li><a href="https://wa.me/5514991624997" target="_blank" className="hover:text-primary transition-colors">WhatsApp Suporte</a></li>
+                  <li><a href="https://wa.me/5522992796291" target="_blank" className="hover:text-primary transition-colors">WhatsApp Suporte</a></li>
                  <li><a href="mailto:contato@itasuper.com.br" className="hover:text-primary transition-colors">E-mail</a></li>
                </ul>
              </div>

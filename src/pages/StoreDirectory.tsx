@@ -361,7 +361,7 @@ const StoreDirectory = () => {
 
   const handleCTA = () => navigate("/cadastro-lojista");
   const handleWhatsApp = () =>
-    window.open("https://wa.me/5514991624997?text=Olá! Tenho interesse em cadastrar minha loja na plataforma.", "_blank");
+    window.open("https://wa.me/5522992796291?text=Olá! Tenho interesse em cadastrar minha loja na plataforma.", "_blank");
 
   useEffect(() => {
     document.title = "ItaSuper — Cardápio digital, delivery próprio e PDV para lojas em todo o Brasil";

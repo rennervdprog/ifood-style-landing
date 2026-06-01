@@ -138,7 +138,7 @@ const faqs = [
 
   const handleCTA = () => navigate("/cadastro-lojista");
   const handleWhatsApp = () =>
-    window.open("https://wa.me/5514991624997?text=Olá! Tenho interesse em cadastrar minha loja na plataforma.", "_blank");
+    window.open("https://wa.me/5522992796291?text=Olá! Tenho interesse em cadastrar minha loja na plataforma.", "_blank");
 
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
