@@ -343,14 +343,15 @@ const PerfilPage = () => {
 
   const handleSavePersonal = async () => {
      if (!fullName.trim()) { toast.error("Preencha seu nome."); return; }
-     if (document && !validateDocument(document)) { toast.error("CPF ou CNPJ inválido."); return; }
+     if (!document.trim()) { toast.error("CPF ou CNPJ é obrigatório para gerar suas cobranças."); return; }
+     if (!validateDocument(document)) { toast.error("CPF ou CNPJ inválido."); return; }
     setSavingPersonal(true);
     try {
-      const { error } = await supabase.from("profiles").upsert({
-        user_id: user!.id,
-        full_name: fullName.trim(),
-         document: sanitizeDocument(document) || null,
-      } as any, { onConflict: "user_id" });
+       const { error } = await supabase.from("profiles").upsert({
+         user_id: user!.id,
+         full_name: fullName.trim(),
+         document: sanitizeDocument(document),
+       } as any, { onConflict: "user_id" });
       if (error) throw error;
       toast.success("Dados pessoais salvos!");
       queryClient.invalidateQueries({ queryKey: ["my-profile", user?.id] });
