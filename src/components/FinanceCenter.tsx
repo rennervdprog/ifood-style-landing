@@ -22,7 +22,7 @@ import AsaasSubaccountSetup from "./AsaasSubaccountSetup";
 import AsaasFinancialPanel from "./AsaasFinancialPanel";
 import StoreFinancePanel from "./StoreFinancePanel";
  import StoreFinanceBasic from "./StoreFinanceBasic";
-import PaymentStatement from "./PaymentStatement";
+import FinancialStatement from "./FinancialStatement";
 import AdminAsaasSubaccounts from "./AdminAsaasSubaccounts";
 import RepasseHistory from "./RepasseHistory";
 
@@ -187,7 +187,7 @@ export default function FinanceCenter({ storeId, storeName, hasCommission, isPla
 
          <TabsContent value="history" className="mt-6">
            <div className="space-y-6">
-             <PaymentStatement storeId={storeId} storeName={storeName} initialOpen={true} />
+             <FinancialStatement storeId={storeId} storeName={storeName} />
            </div>
          </TabsContent>
 
