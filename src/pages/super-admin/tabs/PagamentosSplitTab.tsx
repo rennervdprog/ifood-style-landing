@@ -93,6 +93,8 @@ const PagamentosSplitTab = ({ stores }: { stores: any[] }) => {
     if (record.notes) receipt += `Obs: ${record.notes}\n`;
     if (record.settled_at) receipt += `Liquidado em: ${new Date(record.settled_at).toLocaleString("pt-BR")}\n`;
 
+    receipt += `\n---\nServiços financeiros processados pela ASAAS GESTÃO FINANCEIRA INSTITUIÇÃO DE PAGAMENTOS S.A., autorizada pelo Banco Central do Brasil.\nSuporte Asaas: 0800 009 0037 | contato@asaas.com.br\n`;
+
     navigator.clipboard.writeText(receipt);
     setCopiedId(record.id);
     toast.success("Comprovante copiado!");
