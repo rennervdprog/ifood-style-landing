@@ -5,10 +5,10 @@ import { CheckCircle2, XCircle, Info, AlertTriangle } from "lucide-react";
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 
 const iconMap = {
-  success: <CheckCircle2 className="h-5 w-5 text-emerald-500" />,
-  error: <XCircle className="h-5 w-5 text-red-500" />,
-  info: <Info className="h-5 w-5 text-sky-500" />,
-  warning: <AlertTriangle className="h-5 w-5 text-amber-500" />,
+  success: <CheckCircle2 className="h-5 w-5 text-primary" />,
+  error: <XCircle className="h-5 w-5 text-destructive" />,
+  info: <Info className="h-5 w-5 text-primary" />,
+  warning: <AlertTriangle className="h-5 w-5 text-warning" />,
 };
 
 const Toaster = ({ ...props }: ToasterProps) => {
