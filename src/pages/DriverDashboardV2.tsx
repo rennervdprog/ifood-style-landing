@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import StoreDriverView from "@/components/StoreDriverView";
 import DriverPersistentAlert from "@/components/DriverPersistentAlert";
 import SignOutConfirm from "@/components/SignOutConfirm";
+import { haptic } from "@/lib/haptics";
 
 /**
  * DriverDashboard V2 — exclusivo para Motoboy de Loja.
@@ -87,12 +88,16 @@ const DriverDashboardV2 = () => {
 
   const handleInvitation = async (linkId: string, status: "accepted" | "rejected") => {
     setAcceptingInvite(linkId);
+    if (status === "accepted") haptic.medium(); else haptic.light();
     const { error } =
       status === "accepted"
         ? await supabase.from("store_drivers").update({ status } as any).eq("id", linkId)
         : await supabase.from("store_drivers").delete().eq("id", linkId);
-    if (error) toast.error("Erro ao processar convite.");
-    else {
+    if (error) {
+      haptic.error();
+      toast.error("Erro ao processar convite.");
+    } else {
+      if (status === "accepted") haptic.success();
       toast.success(status === "accepted" ? "Convite aceito!" : "Convite recusado.");
       queryClient.invalidateQueries({ queryKey: ["v2-store-driver-links", user?.id] });
     }
@@ -221,7 +226,7 @@ const DriverDashboardV2 = () => {
                         <button
                           disabled={isLoading}
                           onClick={() => handleInvitation(link.id, "rejected")}
-                          className="h-14 px-5 rounded-2xl border-2 border-border bg-background text-muted-foreground text-sm font-bold flex items-center justify-center gap-1.5 active:scale-[0.97] transition-transform disabled:opacity-50"
+                          className="md3-ripple md3-state-layer h-14 px-5 rounded-full border border-border bg-background text-muted-foreground text-sm font-bold flex items-center justify-center gap-1.5 active:scale-[0.97] transition-transform disabled:opacity-50"
                         >
                           <X className="h-4 w-4" strokeWidth={2.5} />
                           Recusar
@@ -229,7 +234,7 @@ const DriverDashboardV2 = () => {
                         <button
                           disabled={isLoading}
                           onClick={() => handleInvitation(link.id, "accepted")}
-                          className="flex-1 h-14 rounded-2xl bg-primary text-primary-foreground text-base font-black flex items-center justify-center gap-2 active:scale-[0.97] transition-transform disabled:opacity-60 shadow-lg shadow-primary/20"
+                          className="md3-ripple md3-button-filled md3-elev-2 flex-1 h-14 bg-primary text-primary-foreground text-base font-black flex items-center justify-center gap-2 disabled:opacity-60"
                         >
                           {isLoading ? (
                             <div className="animate-spin h-5 w-5 border-2 border-primary-foreground border-t-transparent rounded-full" />
@@ -299,8 +304,8 @@ const DriverDashboardV2 = () => {
               </div>
 
               <button
-                onClick={() => { queryClient.invalidateQueries({ queryKey: ["v2-store-driver-links", user?.id] }); toast.success("Verificando..."); }}
-                className="w-full max-w-sm h-14 bg-primary text-primary-foreground font-black rounded-2xl text-sm active:scale-[0.97] transition-transform flex items-center justify-center gap-2"
+                onClick={() => { haptic.light(); queryClient.invalidateQueries({ queryKey: ["v2-store-driver-links", user?.id] }); toast.success("Verificando..."); }}
+                className="md3-ripple md3-button-filled md3-elev-2 w-full max-w-sm h-14 bg-primary text-primary-foreground font-black text-sm flex items-center justify-center gap-2"
               >
                 <RefreshCw className="h-4 w-4" strokeWidth={2.5} />
                 Verificar convites
@@ -326,10 +331,10 @@ const DriverDashboardV2 = () => {
       )}
       <DriverPersistentAlert availableCount={0} hasActiveDelivery={false} isOnline onReview={() => {}} />
       <div className="min-h-screen bg-background text-foreground pb-[5.5rem] native-app">
-        <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border/60 pt-safe">
+        <header className="sticky top-0 z-50 md3-appbar pt-safe">
           <div className="px-4 h-16 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0 flex-1">
-              <div className="relative w-10 h-10 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shrink-0 shadow-md shadow-primary/25">
+              <div className="relative w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shrink-0 md3-elev-2">
                 <span className="text-sm font-black text-primary-foreground tracking-tight">
                   {(driverFirstName || "E").trim().charAt(0).toUpperCase()}
                 </span>
@@ -348,15 +353,15 @@ const DriverDashboardV2 = () => {
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <button
-                onClick={() => setShowSupport(true)}
+                onClick={() => { haptic.light(); setShowSupport(true); }}
                 aria-label="Suporte"
-                className="w-10 h-10 rounded-2xl bg-muted hover:bg-muted/70 flex items-center justify-center active:scale-[0.93] transition-all"
+                className="md3-ripple md3-state-layer w-10 h-10 rounded-full bg-muted flex items-center justify-center active:scale-[0.93] transition-all"
               >
                 <Headphones className="h-[18px] w-[18px] text-foreground" strokeWidth={2.2} />
               </button>
               <SignOutConfirm
                 redirectTo="/portal-parceiro"
-                triggerClassName="w-10 h-10 rounded-2xl bg-muted hover:bg-muted/70 flex items-center justify-center active:scale-[0.93] transition-all"
+                triggerClassName="md3-ripple md3-state-layer w-10 h-10 rounded-full bg-muted flex items-center justify-center active:scale-[0.93] transition-all"
                 triggerTitle={<LogOut className="h-[18px] w-[18px] text-foreground" strokeWidth={2.2} />}
               />
             </div>
