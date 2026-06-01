@@ -550,8 +550,15 @@ const PerfilPage = () => {
 
           {activeSection === "personal" && (
             <div className="px-4 pb-5 space-y-3 border-t border-border/50 pt-4 animate-in slide-in-from-top-2 duration-200">
-              <InputField label="Nome completo" placeholder="Digite seu nome completo" value={fullName} onChange={(e) => setFullName(e.target.value)} />
-               <InputField label="CPF ou CNPJ" placeholder="CPF ou CNPJ" value={formatDocument(document)} onChange={(e) => setDocument(formatDocument(e.target.value))} inputMode="numeric" maxLength={18} />
+               <InputField label="Nome completo" placeholder="Digite seu nome completo" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+                <div>
+                  <InputField label="CPF ou CNPJ *" placeholder="CPF ou CNPJ (obrigatório)" value={formatDocument(document)} onChange={(e) => setDocument(formatDocument(e.target.value))} inputMode="numeric" maxLength={18} />
+                  {!document.trim() && (
+                    <p className="text-[11px] text-destructive mt-1 font-medium">
+                      ⚠️ Obrigatório — sem CPF/CNPJ não é possível gerar as cobranças mensais do seu plano.
+                    </p>
+                  )}
+                </div>
               <div>
                 <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">E-mail</label>
                 <input value={user?.email || ""} disabled
