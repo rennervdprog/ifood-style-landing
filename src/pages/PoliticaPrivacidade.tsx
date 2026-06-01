@@ -19,7 +19,7 @@ const PoliticaPrivacidade = () => {
 
         <section className="space-y-3">
           <p>O <strong className="text-foreground">ItaSuper</strong>, na qualidade de controlador dos dados pessoais (conforme Art. 5º, VI da LGPD), é responsável pelas decisões referentes ao tratamento dos dados coletados através da Plataforma, em conformidade com a Lei Geral de Proteção de Dados Pessoais (Lei nº 13.709/2018 — LGPD).</p>
-          <p>Contato do Controlador: WhatsApp (14) 99162-4997 · Itatinga/SP · Brasil.</p>
+          <p>Contato do Controlador: WhatsApp (22) 99279-6291 · Itatinga/SP · Brasil.</p>
         </section>
 
         <section className="space-y-3">
@@ -103,7 +103,7 @@ const PoliticaPrivacidade = () => {
             <li><strong className="text-foreground">Revogação do consentimento:</strong> A qualquer momento, sem prejuízo dos tratamentos já realizados.</li>
             <li><strong className="text-foreground">Oposição:</strong> Opor-se a tratamentos realizados com base em legítimo interesse.</li>
           </ul>
-          <p>Para exercer seus direitos: utilize as funcionalidades no perfil da Plataforma ou entre em contato pelo WhatsApp (14) 99162-4997. Responderemos em até <strong className="text-foreground">15 dias úteis</strong> (Art. 18, §5º da LGPD).</p>
+          <p>Para exercer seus direitos: utilize as funcionalidades no perfil da Plataforma ou entre em contato pelo WhatsApp (22) 99279-6291. Responderemos em até <strong className="text-foreground">15 dias úteis</strong> (Art. 18, §5º da LGPD).</p>
         </section>
 
         <section className="space-y-3">
@@ -154,7 +154,7 @@ const PoliticaPrivacidade = () => {
           <p className="text-xs text-muted-foreground text-center">
             ItaSuper — Controlador de Dados · Itatinga/SP · Brasil<br />
             Última atualização: {dataAtualizacao}<br />
-            Contato LGPD: WhatsApp (14) 99162-4997
+            Contato LGPD: WhatsApp (22) 99279-6291
           </p>
         </section>
 
