@@ -9,7 +9,7 @@ import {
 import { openWhatsApp } from "@/lib/whatsapp";
 import { useAuth } from "@/contexts/AuthContext";
 
-const SUPPORT_WHATSAPP = "14991624997";
+const SUPPORT_WHATSAPP = "22992796291";
 const SUPPORT_MESSAGE = "Olá! Preciso de ajuda com o painel do lojista do ItaSuper.";
 
 interface TutorialStep {

@@ -473,7 +473,7 @@ const PartnerOnboarding = () => {
               <Button
                 size="lg"
                 variant="outline"
-                onClick={() => window.open("https://wa.me/5514991624997?text=Olá! Tenho interesse em ser parceiro.", "_blank")}
+                onClick={() => window.open("https://wa.me/5522992796291?text=Olá! Tenho interesse em ser parceiro.", "_blank")}
                 className="text-base px-8 py-6 rounded-2xl"
               >
                 <MessageCircle className="mr-2 h-5 w-5" /> Falar conosco
