@@ -343,14 +343,15 @@ const PerfilPage = () => {
 
   const handleSavePersonal = async () => {
      if (!fullName.trim()) { toast.error("Preencha seu nome."); return; }
-     if (document && !validateDocument(document)) { toast.error("CPF ou CNPJ inválido."); return; }
+     if (!document.trim()) { toast.error("CPF ou CNPJ é obrigatório para gerar suas cobranças."); return; }
+     if (!validateDocument(document)) { toast.error("CPF ou CNPJ inválido."); return; }
     setSavingPersonal(true);
     try {
-      const { error } = await supabase.from("profiles").upsert({
-        user_id: user!.id,
-        full_name: fullName.trim(),
-         document: sanitizeDocument(document) || null,
-      } as any, { onConflict: "user_id" });
+       const { error } = await supabase.from("profiles").upsert({
+         user_id: user!.id,
+         full_name: fullName.trim(),
+         document: sanitizeDocument(document),
+       } as any, { onConflict: "user_id" });
       if (error) throw error;
       toast.success("Dados pessoais salvos!");
       queryClient.invalidateQueries({ queryKey: ["my-profile", user?.id] });
@@ -549,8 +550,15 @@ const PerfilPage = () => {
 
           {activeSection === "personal" && (
             <div className="px-4 pb-5 space-y-3 border-t border-border/50 pt-4 animate-in slide-in-from-top-2 duration-200">
-              <InputField label="Nome completo" placeholder="Digite seu nome completo" value={fullName} onChange={(e) => setFullName(e.target.value)} />
-               <InputField label="CPF ou CNPJ" placeholder="CPF ou CNPJ" value={formatDocument(document)} onChange={(e) => setDocument(formatDocument(e.target.value))} inputMode="numeric" maxLength={18} />
+               <InputField label="Nome completo" placeholder="Digite seu nome completo" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+                <div>
+                  <InputField label="CPF ou CNPJ *" placeholder="CPF ou CNPJ (obrigatório)" value={formatDocument(document)} onChange={(e) => setDocument(formatDocument(e.target.value))} inputMode="numeric" maxLength={18} />
+                  {!document.trim() && (
+                    <p className="text-[11px] text-destructive mt-1 font-medium">
+                      ⚠️ Obrigatório — sem CPF/CNPJ não é possível gerar as cobranças mensais do seu plano.
+                    </p>
+                  )}
+                </div>
               <div>
                 <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">E-mail</label>
                 <input value={user?.email || ""} disabled
