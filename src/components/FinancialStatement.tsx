@@ -38,7 +38,6 @@ const KIND_INFO: Record<string, { label: string; flow: FlowType }> = {
   store_payout:       { label: "Repasse de venda PIX online",            flow: "income"  },
   commission_charge:  { label: "Comissão de venda física",               flow: "expense" },
   physical_fee:       { label: "Repasse físico (dinheiro/cartão/PIX)",   flow: "expense" },
-  monthly_fee:        { label: "Mensalidade do plano",                   flow: "expense" },
   platform_fee:       { label: "Taxa da plataforma",                     flow: "expense" },
   delivery_fee:       { label: "Taxa de entrega",                        flow: "expense" },
   withdrawal:         { label: "Saque para conta bancária",              flow: "expense" },
@@ -97,6 +96,9 @@ export default function FinancialStatement({ storeId, storeName }: Props) {
 
   const filtered = useMemo(() => {
     const list = (txs || []).filter((t: any) => {
+      // Mensalidade do plano é exibida na aba Planos (histórico de cobranças),
+      // não polui o extrato financeiro operacional.
+      if (t.transaction_kind === "monthly_fee") return false;
       const created = new Date(t.created_at);
       if (range.from && created < range.from) return false;
       if (range.to && created > range.to) return false;
