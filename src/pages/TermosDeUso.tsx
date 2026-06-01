@@ -187,7 +187,7 @@ const TermosDeUso = () => {
         <section className="border-t border-border pt-4">
           <p className="text-xs text-muted-foreground text-center">
             ItaSuper — Plataforma de Intermediação Digital · Itatinga/SP · Brasil<br />
-            Última atualização: {dataAtualizacao} · Dúvidas: WhatsApp (14) 99162-4997
+            Última atualização: {dataAtualizacao} · Dúvidas: WhatsApp (22) 99279-6291
           </p>
         </section>
 

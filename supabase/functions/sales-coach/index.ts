@@ -20,7 +20,7 @@ const SYSTEM_PROMPT = `Você é o "Coach de Vendas do ItaSuper" — um assistent
   • Sistema de fidelidade (cashback/pontos) configurável pelo lojista.
   • Cupons promocionais ilimitados.
   • Saque rápido via PIX (Asaas).
-  • Suporte humano via WhatsApp (14 99162-4997).
+  • Suporte humano via WhatsApp (22) 99279-6291.
   • Cardápio digital, fotos dos produtos, complementos, pizza meio-a-meio, bordas.
   • Motoboy próprio da loja OU motoboys da plataforma.
   • Cadastro grátis e sem fidelidade.
