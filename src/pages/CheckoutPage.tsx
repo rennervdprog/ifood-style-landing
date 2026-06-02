@@ -722,11 +722,24 @@ const CheckoutPage = () => {
 
             {selectedSavedAddressId && savedAddressData && (
               <div className="bg-primary/5 rounded-xl p-3.5 space-y-1.5">
-                <p className="text-sm font-bold text-foreground">
-                  {savedAddressData.street}, {savedAddressData.number}
-                  {savedAddressData.complement ? ` - ${savedAddressData.complement}` : ""}
-                </p>
-                <p className="text-xs text-muted-foreground">{savedAddressData.neighborhood}</p>
+                {gpsAddress ? (
+                  <>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">📍 GPS</span>
+                      <span className="text-[10px] text-muted-foreground">Localização atual</span>
+                    </div>
+                    <p className="text-sm font-bold text-foreground">{gpsAddress.display}</p>
+                    <p className="text-[10px] text-muted-foreground italic">Cadastrado: {savedAddressData.street}, {savedAddressData.number} - {savedAddressData.neighborhood}</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm font-bold text-foreground">
+                      {savedAddressData.street}, {savedAddressData.number}
+                      {savedAddressData.complement ? ` - ${savedAddressData.complement}` : ""}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{savedAddressData.neighborhood}</p>
+                  </>
+                )}
                 {savedAddressData.reference_point && (
                   <p className="text-xs text-muted-foreground">📍 {savedAddressData.reference_point}</p>
                 )}
@@ -755,11 +768,24 @@ const CheckoutPage = () => {
 
             {!selectedSavedAddressId && hasAddress && (
               <div className="bg-primary/5 rounded-xl p-3.5 space-y-1.5">
-                <p className="text-sm font-bold text-foreground">
-                  {profileStreet}, {profileNumber}
-                  {profileComplement ? ` - ${profileComplement}` : ""}
-                </p>
-                <p className="text-xs text-muted-foreground">{profileNeighborhood}</p>
+                {gpsAddress ? (
+                  <>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">📍 GPS</span>
+                      <span className="text-[10px] text-muted-foreground">Localização atual</span>
+                    </div>
+                    <p className="text-sm font-bold text-foreground">{gpsAddress.display}</p>
+                    <p className="text-[10px] text-muted-foreground italic">Cadastrado: {profileStreet}, {profileNumber} - {profileNeighborhood}</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm font-bold text-foreground">
+                      {profileStreet}, {profileNumber}
+                      {profileComplement ? ` - ${profileComplement}` : ""}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{profileNeighborhood}</p>
+                  </>
+                )}
                 {profileReference && (
                   <p className="text-xs text-muted-foreground">📍 {profileReference}</p>
                 )}
@@ -780,6 +806,16 @@ const CheckoutPage = () => {
                     <Edit3 className="h-3 w-3" /> Alterar
                   </button>
                 </div>
+                {!gpsAddress && (
+                  <button
+                    onClick={handleRequestLocation}
+                    disabled={requestingLocation}
+                    className="w-full mt-2 text-xs font-bold text-primary border border-primary/30 rounded-lg py-2 flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  >
+                    {requestingLocation ? <Loader2 className="h-3 w-3 animate-spin" /> : <MapPin className="h-3 w-3" />}
+                    Usar minha localização atual (mais preciso)
+                  </button>
+                )}
               </div>
             )}
 
