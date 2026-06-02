@@ -914,9 +914,20 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
           <Wallet className="h-4 w-4" strokeWidth={2.5} />
           Ganhos
         </button>
+        <button
+          onClick={() => setActiveTab("history")}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all ${
+            activeTab === "history" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+          }`}
+        >
+          <Clock className="h-4 w-4" strokeWidth={2.5} />
+          Histórico
+        </button>
       </div>
 
-      {activeTab === "earnings" ? (
+      {activeTab === "history" ? (
+        <DriverRideHistory storeIds={linkedStoreIds} />
+      ) : activeTab === "earnings" ? (
         <StoreDriverEarnings storeIds={linkedStoreIds} />
       ) : (
         <>
