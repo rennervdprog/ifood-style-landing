@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   Smartphone, CheckCircle2, XCircle, Loader2, RefreshCw,
-  MessageCircle, QrCode, Info, ChevronDown, ChevronUp, Zap
+  MessageCircle, QrCode, Info, ChevronDown, ChevronUp, Zap, Edit3, RotateCcw
 } from "lucide-react";
 
 interface Props {
@@ -19,12 +19,49 @@ interface Props {
 
 const EVOLUTION_URL = "https://supabase.itasuper.com.br"; // URL padrão do VPS
 
+// Templates padrão por status (mesmas mensagens do orderNotifications.ts).
+// Placeholders disponíveis: {storeName} {clientName} {orderId} {total} {pin} {address} {items}
+const DEFAULT_TEMPLATES: Record<string, { label: string; emoji: string; template: string }> = {
+  preparando: {
+    label: "Pedido aceito / em preparo",
+    emoji: "✅",
+    template:
+      "✅ *{storeName}* informa: Seu pedido foi aceito! 🍔\n\n{items}\n\n💰 Total: {total}\nPedido: #{orderId}\n🔑 *PIN de Segurança: {pin}*",
+  },
+  pronto_para_entrega: {
+    label: "Pedido pronto para entrega",
+    emoji: "📦",
+    template:
+      "📦 Olá {clientName}! Seu pedido da *{storeName}* está *PRONTO*! 🎉\n\nJá está em rota de entrega!\n\n🔑 *CÓDIGO DE ENTREGA: {pin}*\nInforme ao motoboy somente na entrega.",
+  },
+  saiu_entrega: {
+    label: "Saiu para entrega",
+    emoji: "🛵",
+    template:
+      "🛵 *{storeName}* informa: Seu pedido #{orderId} saiu para entrega! 🚀\nEndereço: {address}\n\n🔑 *PIN: {pin}*",
+  },
+  entregue: {
+    label: "Pedido entregue",
+    emoji: "🍽️",
+    template:
+      "✅ *{storeName}* informa: Seu pedido #{orderId} foi entregue! Bom apetite! 🍽️",
+  },
+  cancelado: {
+    label: "Pedido cancelado",
+    emoji: "❌",
+    template:
+      "❌ *{storeName}* informa: Seu pedido #{orderId} foi cancelado.\n\nDesculpe o transtorno! 🙏",
+  },
+};
+
 export default function WhatsAppSetup({ storeId, storeSlug, storeName }: Props) {
   const [config, setConfig] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [qrLoading, setQrLoading] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [templates, setTemplates] = useState<Record<string, string>>({});
 
   // Toggles de notificação
   const [notifyAccepted, setNotifyAccepted] = useState(true);
@@ -56,6 +93,7 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName }: Props) 
       setNotifyCancelled(data.notify_order_cancelled ?? true);
       setAutoReply(data.auto_reply_enabled ?? true);
       setAutoReplyMsg(data.auto_reply_message ?? "Olá! 😊 Acesse nosso cardápio e faça seu pedido:");
+      setTemplates((data.message_templates as Record<string, string>) || {});
     }
     setLoading(false);
   };
@@ -74,6 +112,7 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName }: Props) 
       notify_order_cancelled: notifyCancelled,
       auto_reply_enabled: autoReply,
       auto_reply_message: autoReplyMsg,
+      message_templates: templates,
       updated_at: new Date().toISOString(),
     };
 
