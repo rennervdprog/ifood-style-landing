@@ -43,6 +43,7 @@ import WhatsAppButton from "@/components/WhatsAppButton";
 import { PinBoxes } from "@/components/driver/PinBoxes";
 import { DriverOnlineToggle } from "@/components/driver/DriverOnlineToggle";
 import StoreDriverEarnings from "@/components/StoreDriverEarnings";
+import DriverRideHistory from "@/components/DriverRideHistory";
 import { haptic } from "@/lib/haptics";
 import {
   initDriverBackgroundFetch,
