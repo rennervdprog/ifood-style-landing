@@ -128,7 +128,7 @@ const supporter: PlanInfo = {
   highlight: false,
   features: [
     "Mesmos benefícios do Essencial",
-    "Preço de R$130 congelado pra sempre",
+    "Preço de R$75 congelado pra sempre",
     "Selo de Apoiador na sua loja",
     "Suporte VIP prioritário",
   ],
