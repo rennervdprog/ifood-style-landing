@@ -3,7 +3,7 @@ import { ArrowLeft } from "lucide-react";
 
 const TermosDeUso = () => {
   const navigate = useNavigate();
-  const dataAtualizacao = "20 de maio de 2025";
+  const dataAtualizacao = "2 de junho de 2026";
 
   return (
     <div className="min-h-screen bg-background">
@@ -28,7 +28,7 @@ const TermosDeUso = () => {
             <li><strong className="text-foreground">Plataforma:</strong> Aplicativo web e nativo ItaSuper e todos os serviços relacionados.</li>
             <li><strong className="text-foreground">Usuário:</strong> Qualquer pessoa que utilize a Plataforma (Cliente, Lojista, Entregador, Administrador).</li>
             <li><strong className="text-foreground">PDV (Ponto de Venda):</strong> Módulo para vendas presenciais com caixa registradora digital, gestão de turno, desconto, troco e histórico.</li>
-            <li><strong className="text-foreground">Gateway de Pagamento:</strong> Empresa de processamento financeiro (<strong className="text-foreground">Asaas Gestão Financeira Instituição de Pagamento S.A.</strong>, autorizada pelo Banco Central do Brasil).</li>
+            <li><strong className="text-foreground">Gateway de Pagamento:</strong> Empresa de processamento financeiro (<strong className="text-foreground">Asaas Gestão Financeira Instituição de Pagamento S.A.</strong>, autorizada a funcionar pelo Banco Central do Brasil).</li>
           </ul>
         </section>
 
@@ -75,8 +75,8 @@ const TermosDeUso = () => {
           </ul>
           <p>5.2. <strong className="text-foreground">Plano Dinâmico (Essencial e Crescimento):</strong> O faturamento mensal é apurado automaticamente todo dia 1º do mês considerando os pedidos finalizados no mês anterior. O reajuste ocorre apenas após 2 meses consecutivos acima do limite — meses não consecutivos não contam. O lojista é notificado com antecedência. Lojas cadastradas antes de 20/05/2025 mantêm os valores anteriores e não estão sujeitas ao plano dinâmico.</p>
           <p>5.3. <strong className="text-foreground">Comissão PDV:</strong> Incide sobre o subtotal das vendas presenciais. Acumulada ao longo do mês e incluída na fatura mensal junto à mensalidade.</p>
-          <p>5.3. Planos Essencial e Crescimento incluem 7 dias de teste grátis. O plano Comissão pode ser utilizado imediatamente.</p>
-          <p>5.4. Alterações de valor serão comunicadas com 30 dias de antecedência. Inadimplência superior a 30 dias pode resultar em desativação automática de delivery e PDV.</p>
+          <p>5.4. Planos Essencial e Crescimento incluem 7 dias de teste grátis. O plano Comissão pode ser utilizado imediatamente.</p>
+          <p>5.5. Alterações de valor serão comunicadas com 30 dias de antecedência. Inadimplência superior a 30 dias pode resultar em desativação automática de delivery e PDV.</p>
         </section>
 
         <section className="space-y-3">
@@ -111,7 +111,6 @@ const TermosDeUso = () => {
 
           <p>8.1. <strong className="text-foreground">PIX Online:</strong> processado pelo Asaas com split automático entre plataforma e lojista. Disponível apenas para lojistas com conta Asaas configurada no painel.</p>
           <p>8.2. <strong className="text-foreground">Métodos físicos (Dinheiro, Cartão na entrega e PIX Maquininha):</strong> o cliente paga diretamente ao lojista ou ao entregador. A taxa da plataforma (R$ 2,00 por entrega para planos Essencial/Apoiador, ou % sobre subtotal para planos Crescimento/Comissão) é acumulada e cobrada via PIX toda <strong className="text-foreground">segunda-feira</strong>, quando o saldo pendente atingir <strong className="text-foreground">R$ 30,00</strong>. Saldo acima de R$ 150,00 suspende temporariamente o acesso ao painel até regularização. Inadimplência superior a 30 dias implica suspensão da loja.</p>
-          <p>8.2. Pagamentos físicos (dinheiro/cartão) recebidos diretamente pelo Lojista ou Entregador.</p>
           <p>8.3. <strong className="text-foreground">PIX Maquininha:</strong> modalidade em que o cliente paga via PIX pelo leitor do lojista na entrega, sem integração com Asaas. Tratado como pagamento físico para fins de cobrança de repasse.</p>
           <p>8.4. Vendas PDV: plataforma não intermedia valores presenciais — apenas cobra comissão PDV na fatura mensal.</p>
           <p>8.5. Cancelamentos com PIX Online: reembolso automático via Asaas em até 7 dias úteis, creditado como saldo na carteira da plataforma. Pedidos pagos em dinheiro, cartão ou PIX Maquininha não são elegíveis para reembolso automático — a resolução é entre cliente e lojista.</p>
@@ -124,7 +123,7 @@ const TermosDeUso = () => {
           <p>9.3. Taxa PIX (R$ 1,99): cobrada por transação PIX Online <strong className="text-foreground">apenas nos planos Essencial e Apoiador</strong>, descontada automaticamente do valor repassado ao lojista. Nos planos Crescimento e Comissão, a comissão percentual já cobre os custos operacionais do PIX — não há cobrança adicional de R$ 1,99.</p>
           <p>9.4. Taxa de entrega (R$ 2,00): somada à taxa base definida pelo lojista, paga pelo cliente no checkout. Aplica-se a todos os planos e a todos os métodos de pagamento (PIX Online, PIX Maquininha, Cartão e Dinheiro).</p>
           <p>9.5. O lojista pode configurar quais métodos de pagamento aceita através do painel de configurações da loja. A ativação do PIX Online requer conta Asaas configurada. PIX Maquininha, Cartão e Dinheiro estão disponíveis por padrão.</p>
-          <p>9.5. Todas as taxas são consultáveis no painel financeiro da loja.</p>
+          <p>9.6. Todas as taxas são consultáveis no painel financeiro da loja.</p>
         </section>
 
         <section className="space-y-3">
@@ -169,7 +168,7 @@ const TermosDeUso = () => {
         <section className="space-y-3">
           <h2 className="text-base font-bold text-foreground">14. Privacidade e LGPD</h2>
           <p>14.1. O tratamento de dados é regido pela Política de Privacidade disponível na Plataforma, em conformidade com a LGPD (Lei nº 13.709/2018).</p>
-          <p>14.2. Para exercer direitos LGPD, utilize o painel da Plataforma ou contate o suporte.</p>
+          <p>14.2. Para exercer direitos LGPD, utilize o painel da Plataforma ou contate o Encarregado pelo Tratamento de Dados (DPO) pelo WhatsApp (22) 99279-6291.</p>
         </section>
 
         <section className="space-y-3">
