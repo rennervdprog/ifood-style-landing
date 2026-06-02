@@ -11,7 +11,7 @@ import {
   Loader2, AlertTriangle,
 } from "lucide-react";
 
-export const CURRENT_TERMS_VERSION = "4.0";
+export const CURRENT_TERMS_VERSION = "4.1";
 
 const CHANGES = [
   {
@@ -129,7 +129,7 @@ export const TermsUpdateModal = ({ onAccepted }: Props) => {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-black text-foreground leading-tight">Termos atualizados</p>
-              <p className="text-[11px] text-muted-foreground">Versão 3.0 · Maio 2025</p>
+              <p className="text-[11px] text-muted-foreground">Versão 4.1 · Junho 2026</p>
             </div>
             <span className="text-[10px] font-black bg-amber-500/10 text-amber-600 border border-amber-500/20 px-2 py-1 rounded-full shrink-0">
               Obrigatório
@@ -218,7 +218,7 @@ export const TermsUpdateModal = ({ onAccepted }: Props) => {
                 className="font-bold text-primary underline underline-offset-2">
                 Termos de Uso
               </a>{" "}
-              versão 4.0, incluindo novos preços de planos e plano dinâmico por faturamento.
+              versão 4.1, incluindo razão social atualizada do Asaas, Encarregado de Dados (DPO) e correções de numeração.
             </p>
           </button>
 
@@ -238,7 +238,7 @@ export const TermsUpdateModal = ({ onAccepted }: Props) => {
                 className="font-bold text-emerald-600 underline underline-offset-2">
                 Política de Privacidade
               </a>{" "}
-              versão 4.0.
+              versão 4.1.
             </p>
           </button>
 

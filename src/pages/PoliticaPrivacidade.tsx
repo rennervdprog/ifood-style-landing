@@ -3,7 +3,7 @@ import { ArrowLeft } from "lucide-react";
 
 const PoliticaPrivacidade = () => {
   const navigate = useNavigate();
-  const dataAtualizacao = "13 de maio de 2026";
+  const dataAtualizacao = "2 de junho de 2026";
 
   return (
     <div className="min-h-screen bg-background">
@@ -20,6 +20,7 @@ const PoliticaPrivacidade = () => {
         <section className="space-y-3">
           <p>O <strong className="text-foreground">ItaSuper</strong>, na qualidade de controlador dos dados pessoais (conforme Art. 5º, VI da LGPD), é responsável pelas decisões referentes ao tratamento dos dados coletados através da Plataforma, em conformidade com a Lei Geral de Proteção de Dados Pessoais (Lei nº 13.709/2018 — LGPD).</p>
           <p>Contato do Controlador: WhatsApp (22) 99279-6291 · Itatinga/SP · Brasil.</p>
+          <p><strong className="text-foreground">Encarregado pelo Tratamento de Dados (DPO — Art. 41 LGPD):</strong> Equipe ItaSuper · WhatsApp (22) 99279-6291 · contato disponível pelo painel da Plataforma.</p>
         </section>
 
         <section className="space-y-3">
@@ -69,7 +70,7 @@ const PoliticaPrivacidade = () => {
           <h2 className="text-base font-bold text-foreground">3. Compartilhamento de Dados</h2>
           <p>Os dados são compartilhados apenas quando necessário:</p>
           <ul className="list-disc pl-4 space-y-2">
-            <li><strong className="text-foreground">Asaas Pagamentos S.A.:</strong> Dados financeiros necessários para criação e operação da subconta de pagamento do lojista (nome, CPF/CNPJ, endereço, documentos).</li>
+            <li><strong className="text-foreground">Asaas Gestão Financeira Instituição de Pagamento S.A.:</strong> Instituição de pagamento autorizada pelo Banco Central do Brasil. Recebe os dados financeiros necessários para criação e operação da subconta de pagamento do lojista (nome, CPF/CNPJ, endereço, documentos).</li>
             <li><strong className="text-foreground">Firebase (Google):</strong> Token de dispositivo para envio de notificações push (sem dados pessoais identificáveis).</li>
             <li><strong className="text-foreground">Supabase:</strong> Infraestrutura de banco de dados e autenticação — dados armazenados com criptografia.</li>
             <li><strong className="text-foreground">Vercel:</strong> Infraestrutura de hospedagem da aplicação.</li>
