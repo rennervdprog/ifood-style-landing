@@ -1069,6 +1069,45 @@ export type Database = {
         }
         Relationships: []
       }
+      geocode_cache: {
+        Row: {
+          cache_key: string
+          created_at: string
+          expires_at: string
+          id: string
+          kind: string
+          lat: number | null
+          lng: number | null
+          route_km: number | null
+          route_minutes: number | null
+          source: string | null
+        }
+        Insert: {
+          cache_key: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          kind: string
+          lat?: number | null
+          lng?: number | null
+          route_km?: number | null
+          route_minutes?: number | null
+          source?: string | null
+        }
+        Update: {
+          cache_key?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          kind?: string
+          lat?: number | null
+          lng?: number | null
+          route_km?: number | null
+          route_minutes?: number | null
+          source?: string | null
+        }
+        Relationships: []
+      }
       loyalty_config: {
         Row: {
           created_at: string

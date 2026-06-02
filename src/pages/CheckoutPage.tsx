@@ -266,7 +266,14 @@ const CheckoutPage = () => {
           own_delivery_fee: storeOwnFee,
           customer_street: selectedSavedAddressId && savedAddressData ? savedAddressData.street : profileStreet,
           customer_number: selectedSavedAddressId && savedAddressData ? savedAddressData.number : profileNumber,
-          customer_coords: clientCoords
+          customer_coords: clientCoords,
+          customer_neighborhood: selectedSavedAddressId && savedAddressData?.neighborhood ? savedAddressData.neighborhood : profileNeighborhood,
+          customer_city: selectedSavedAddressId && savedAddressData ? (savedAddressData as any).city : (userProfile as any)?.city,
+          customer_state: selectedSavedAddressId && savedAddressData ? (savedAddressData as any).state : (userProfile as any)?.state,
+          store_coords:
+            (storeData as any)?.latitude && (storeData as any)?.longitude
+              ? { lat: Number((storeData as any).latitude), lng: Number((storeData as any).longitude) }
+              : null,
         };
   
         calculateStoreOwnDeliveryFee(customerCep, storeCep, ownConfig).then((result) => {
