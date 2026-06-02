@@ -719,7 +719,7 @@ const CadastroLojista = () => {
                       {street && <p className="text-xs text-muted-foreground mt-1">{street}{addressNumber ? `, ${addressNumber}` : ""}{neighborhood ? ` - ${neighborhood}` : ""}</p>}
                       {!isPlatformCity && (
                         <p className="text-xs text-amber-600 mt-1">
-                          Motoboys da plataforma ainda não disponíveis. Sua loja funcionará como cardápio digital com motoboy próprio.
+                          Sua loja funcionará com motoboy próprio. Cadastre seus entregadores no painel para realizar as entregas.
                         </p>
                       )}
                     </div>
