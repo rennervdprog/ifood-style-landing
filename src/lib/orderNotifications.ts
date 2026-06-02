@@ -95,6 +95,38 @@ export const buildWhatsAppMessage = (status: string, params: OrderNotifyParams):
 };
 
 /**
+ * Substitui placeholders em templates customizados do lojista.
+ * Placeholders suportados: {storeName}, {clientName}, {orderId}, {total}, {pin}, {address}, {items}
+ */
+const applyTemplate = (tpl: string, p: OrderNotifyParams): string => {
+  return tpl
+    .replace(/\{storeName\}/g, p.storeName || "")
+    .replace(/\{clientName\}/g, p.clientName || "")
+    .replace(/\{orderId\}/g, p.orderId.slice(0, 8).toUpperCase())
+    .replace(/\{total\}/g, formatBRL(p.totalPrice))
+    .replace(/\{pin\}/g, p.deliveryPin || "")
+    .replace(/\{address\}/g, p.addressDetails || "")
+    .replace(/\{items\}/g, p.items || "");
+};
+
+/**
+ * Busca templates customizados do lojista (se houver) e devolve a mensagem final.
+ */
+const fetchCustomTemplate = async (storeId: string, status: string): Promise<string | null> => {
+  try {
+    const { data } = await (supabase as any)
+      .from("store_whatsapp_config")
+      .select("message_templates")
+      .eq("store_id", storeId)
+      .maybeSingle();
+    const tpl = data?.message_templates?.[status];
+    return typeof tpl === "string" && tpl.trim().length > 0 ? tpl : null;
+  } catch {
+    return null;
+  }
+};
+
+/**
  * Envia mensagem WhatsApp via Evolution API (substitui o Z-API)
  */
 const sendEvolutionMessage = async (storeId: string, phone: string, message: string) => {
@@ -132,7 +164,13 @@ export const notifyOrderStatusChange = (
   // Aceita evolutionEnabled (novo) ou zapiEnabled (retrocompatibilidade)
   const whatsappEnabled = options?.evolutionEnabled || options?.zapiEnabled;
   if (whatsappEnabled && params.clientPhone) {
-    const msg = config.whatsApp(params);
-    sendEvolutionMessage(params.storeId, params.clientPhone, msg);
+    // tenta usar template customizado do lojista; se não houver, usa o padrão
+    (async () => {
+      const customTpl = params.storeId
+        ? await fetchCustomTemplate(params.storeId, newStatus)
+        : null;
+      const msg = customTpl ? applyTemplate(customTpl, params) : config.whatsApp(params);
+      sendEvolutionMessage(params.storeId, params.clientPhone, msg);
+    })();
   }
 };
