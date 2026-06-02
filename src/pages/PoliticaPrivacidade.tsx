@@ -70,7 +70,7 @@ const PoliticaPrivacidade = () => {
           <h2 className="text-base font-bold text-foreground">3. Compartilhamento de Dados</h2>
           <p>Os dados são compartilhados apenas quando necessário:</p>
           <ul className="list-disc pl-4 space-y-2">
-            <li><strong className="text-foreground">Asaas Gestão Financeira Instituição de Pagamento S.A.:</strong> Instituição de pagamento autorizada pelo Banco Central do Brasil. Recebe os dados financeiros necessários para criação e operação da subconta de pagamento do lojista (nome, CPF/CNPJ, endereço, documentos).</li>
+            <li><strong className="text-foreground">Asaas Gestão Financeira Instituição de Pagamentos S.A.:</strong> Instituição de pagamento autorizada pelo Banco Central do Brasil. Recebe os dados financeiros necessários para criação e operação da subconta de pagamento do lojista (nome, CPF/CNPJ, endereço, documentos).</li>
             <li><strong className="text-foreground">Firebase (Google):</strong> Token de dispositivo para envio de notificações push (sem dados pessoais identificáveis).</li>
             <li><strong className="text-foreground">Supabase:</strong> Infraestrutura de banco de dados e autenticação — dados armazenados com criptografia.</li>
             <li><strong className="text-foreground">Vercel:</strong> Infraestrutura de hospedagem da aplicação.</li>

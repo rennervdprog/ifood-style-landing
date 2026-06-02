@@ -1,7 +1,7 @@
 /**
  * AsaasBadge — Selo oficial Asaas BaaS
  * Obrigatório conforme Resolução Conjunta nº 16/2025 do Banco Central
- * Playbook de BaaS — Asaas Gestão Financeira Instituição de Pagamento S.A.
+ * Playbook de BaaS — Asaas Gestão Financeira Instituição de Pagamentos S.A.
  *
  * URLs individuais fornecidas pelo Asaas:
  * ID: 227615cf-f248-411a-8faf-1077012c80a4
@@ -38,7 +38,7 @@ export default function AsaasBadge({
     <img
       src={SEAL_URLS[variant]}
       alt="Serviços financeiros Asaas"
-      title="Serviços financeiros processados pelo Asaas — Instituição de Pagamento autorizada pelo Banco Central do Brasil"
+      title="Serviços financeiros processados pelo Asaas — Instituição de Pagamentos autorizada pelo Banco Central do Brasil"
       width={160}
       height={48}
       className={`${SIZES[size]} w-auto object-contain`}
@@ -80,7 +80,7 @@ export function AsaasBadgeBar({ className = "" }: { className?: string }) {
         >
           Asaas
         </a>
-        {" "}— Instituição de Pagamento autorizada pelo Banco Central do Brasil.
+        {" "}— Instituição de Pagamentos autorizada pelo Banco Central do Brasil.
       </p>
     </div>
   );
@@ -102,7 +102,7 @@ export function AsaasBadgeFooter({ className = "" }: { className?: string }) {
           rel="noopener noreferrer"
           className="font-semibold text-foreground hover:underline"
         >
-          Asaas Gestão Financeira Instituição de Pagamento S.A.
+          Asaas Gestão Financeira Instituição de Pagamentos S.A.
         </a>
         {" "}— autorizada e supervisionada pelo Banco Central do Brasil.
       </p>

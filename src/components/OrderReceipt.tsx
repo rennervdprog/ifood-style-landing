@@ -226,7 +226,7 @@ const OrderReceipt = forwardRef<HTMLDivElement, OrderReceiptProps>(
             Serviços financeiros processados por
           </p>
           <p style={{ margin: "2px 0", fontWeight: "bold" }}>
-            Asaas Gestão Financeira Instituição de Pagamento S.A.
+            Asaas Gestão Financeira Instituição de Pagamentos S.A.
           </p>
           <p style={{ margin: "2px 0" }}>
             Instituição autorizada pelo Banco Central do Brasil
