@@ -237,7 +237,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   const [useOptimized, setUseOptimized] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [activeStoreId, setActiveStoreId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"routes" | "earnings">("routes");
+  const [activeTab, setActiveTab] = useState<"routes" | "earnings" | "history">("routes");
   const [declinedMap, setDeclinedMap] = useState<Record<string, number>>(() => user ? loadDeclined(user.id) : {});
 
   const multiStore = linkedStoreIds.length > 1;
