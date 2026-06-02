@@ -43,6 +43,7 @@ import WhatsAppButton from "@/components/WhatsAppButton";
 import { PinBoxes } from "@/components/driver/PinBoxes";
 import { DriverOnlineToggle } from "@/components/driver/DriverOnlineToggle";
 import StoreDriverEarnings from "@/components/StoreDriverEarnings";
+import DriverRideHistory from "@/components/DriverRideHistory";
 import { haptic } from "@/lib/haptics";
 import {
   initDriverBackgroundFetch,
@@ -236,7 +237,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   const [useOptimized, setUseOptimized] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [activeStoreId, setActiveStoreId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"routes" | "earnings">("routes");
+  const [activeTab, setActiveTab] = useState<"routes" | "earnings" | "history">("routes");
   const [declinedMap, setDeclinedMap] = useState<Record<string, number>>(() => user ? loadDeclined(user.id) : {});
 
   const multiStore = linkedStoreIds.length > 1;
@@ -913,9 +914,20 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
           <Wallet className="h-4 w-4" strokeWidth={2.5} />
           Ganhos
         </button>
+        <button
+          onClick={() => setActiveTab("history")}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all ${
+            activeTab === "history" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+          }`}
+        >
+          <Clock className="h-4 w-4" strokeWidth={2.5} />
+          Histórico
+        </button>
       </div>
 
-      {activeTab === "earnings" ? (
+      {activeTab === "history" ? (
+        <DriverRideHistory storeIds={linkedStoreIds} />
+      ) : activeTab === "earnings" ? (
         <StoreDriverEarnings storeIds={linkedStoreIds} />
       ) : (
         <>
