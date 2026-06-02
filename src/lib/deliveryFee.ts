@@ -7,6 +7,10 @@
    customer_street?: string | null;
    customer_number?: string | null;
     customer_coords?: { lat: number; lng: number } | null;
+   customer_neighborhood?: string | null;
+   customer_city?: string | null;
+   customer_state?: string | null;
+   store_coords?: { lat: number; lng: number } | null;
     platform_split?: number;
  }
  
@@ -33,6 +37,55 @@
  
     // 1. Coordenadas do cliente: prioriza GPS > geocoding por rua+CEP > só CEP
     let customerCoords = config.customer_coords ?? null;
+
+    // 🛣️ Tenta rota real (OSRM) via edge function — fonte única de verdade
+    try {
+      const { resolveDistance } = await import("./deliveryDistance");
+      const routeRes = await resolveDistance({
+        store: {
+          lat: config.store_coords?.lat ?? null,
+          lng: config.store_coords?.lng ?? null,
+          cep: storeCep,
+        },
+        customer: {
+          lat: customerCoords?.lat ?? null,
+          lng: customerCoords?.lng ?? null,
+          cep: customerCep,
+          street: config.customer_street ?? null,
+          number: config.customer_number ?? null,
+          neighborhood: config.customer_neighborhood ?? null,
+          city: config.customer_city ?? null,
+          state: config.customer_state ?? null,
+        },
+      });
+
+      if (routeRes?.ok && routeRes.distanceKm != null) {
+        const realKm = routeRes.distanceKm;
+        const pricingDistance = Math.max(1, Math.ceil(realKm));
+        let fee = Number(config.delivery_fee_base || 0);
+        if (pricingDistance > config.delivery_base_km) {
+          const extraKm = pricingDistance - Number(config.delivery_base_km || 0);
+          fee = fee + extraKm * Number(config.delivery_fee_per_km || 0);
+        }
+        const totalFee = addMoney(fee, PLATFORM_FEE);
+        const withinBase = pricingDistance <= Number(config.delivery_base_km || 0);
+        const accLabel =
+          routeRes.accuracy === "gps" ? "GPS"
+          : routeRes.accuracy === "address" ? "Endereço"
+          : "CEP";
+        const srcLabel = routeRes.routeSource?.startsWith("osrm") ? "rota real" : "linha reta";
+        return {
+          fee: totalFee,
+          isRural: !withinBase,
+          distanceKm: realKm,
+          breakdown: withinBase
+            ? `Entrega (${realKm.toFixed(1)}km · ${srcLabel} · precisão ${accLabel}): ${formatBRL(fee)} + Taxa operacional: ${formatBRL(PLATFORM_FEE)}`
+            : `Base ${formatBRL(config.delivery_fee_base)} + ${pricingDistance - Number(config.delivery_base_km)}km extras × ${formatBRL(config.delivery_fee_per_km)} + Taxa operacional: ${formatBRL(PLATFORM_FEE)} = ${formatBRL(totalFee)} (${srcLabel} · ${accLabel})`,
+        };
+      }
+    } catch { /* fallback abaixo */ }
+
+    // Fallback antigo (Haversine + Nominatim) — caso edge function falhe
     if (!customerCoords) {
       // Tenta com rua + número primeiro (mais preciso)
       if (config.customer_street) {
