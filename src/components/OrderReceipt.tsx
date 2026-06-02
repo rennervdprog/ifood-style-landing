@@ -231,6 +231,9 @@ const OrderReceipt = forwardRef<HTMLDivElement, OrderReceiptProps>(
           <p style={{ margin: "2px 0" }}>
             Instituição autorizada pelo Banco Central do Brasil
           </p>
+          <p style={{ margin: "2px 0" }}>
+            Suporte Asaas: 0800 009 0037 | contato@asaas.com.br
+          </p>
         </div>
 
         <div style={{ height: "16px" }} />
