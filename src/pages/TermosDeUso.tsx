@@ -28,7 +28,7 @@ const TermosDeUso = () => {
             <li><strong className="text-foreground">Plataforma:</strong> Aplicativo web e nativo ItaSuper e todos os serviços relacionados.</li>
             <li><strong className="text-foreground">Usuário:</strong> Qualquer pessoa que utilize a Plataforma (Cliente, Lojista, Entregador, Administrador).</li>
             <li><strong className="text-foreground">PDV (Ponto de Venda):</strong> Módulo para vendas presenciais com caixa registradora digital, gestão de turno, desconto, troco e histórico.</li>
-            <li><strong className="text-foreground">Gateway de Pagamento:</strong> Empresa de processamento financeiro (<strong className="text-foreground">Asaas Gestão Financeira Instituição de Pagamento S.A.</strong>, autorizada a funcionar pelo Banco Central do Brasil).</li>
+            <li><strong className="text-foreground">Gateway de Pagamento:</strong> Empresa de processamento financeiro (<strong className="text-foreground">Asaas Gestão Financeira Instituição de Pagamentos S.A.</strong>, autorizada a funcionar pelo Banco Central do Brasil).</li>
           </ul>
         </section>
 
