@@ -20,7 +20,7 @@ import { addMoney, multiplyMoney, sumMoney, formatBRL } from "@/lib/utils";
 import { useStorePlan } from "@/hooks/useStorePlan";
 import LoyaltyRedemption from "@/components/LoyaltyRedemption";
 import DeliveryTimeEstimate from "@/components/DeliveryTimeEstimate";
-import { resolveAddressContext, type Coordinates } from "@/lib/addressGeocoding";
+import { resolveAddressContext, reverseGeocode, type Coordinates, type ReverseGeocodeResult } from "@/lib/addressGeocoding";
 import { getBestClientCoordinates, getDeviceGPS } from "@/lib/deviceLocation";
 import { checkStoreAccess, MAX_DISTANCE_KM } from "@/lib/fraudCheck";
 
@@ -51,6 +51,8 @@ const CheckoutPage = () => {
    const [clientCoords, setClientCoords] = useState<Coordinates | null>(null);
    const [isLocationRequested, setIsLocationRequested] = useState(false);
    const [requestingLocation, setRequestingLocation] = useState(false);
+   const [gpsAddress, setGpsAddress] = useState<ReverseGeocodeResult | null>(null);
+   const [coordsSource, setCoordsSource] = useState<"gps" | "address" | null>(null);
   const [calculatingFee, setCalculatingFee] = useState(false);
   const [feeBreakdown, setFeeBreakdown] = useState<string | null>(null);
   const [loyaltyDiscount, setLoyaltyDiscount] = useState(0);
@@ -233,6 +235,11 @@ const CheckoutPage = () => {
        if (gps) {
          setClientCoords(gps);
          setIsLocationRequested(true);
+         setCoordsSource("gps");
+         // Reverse geocode para mostrar o endereço real do GPS
+         reverseGeocode(gps).then((res) => {
+           if (res) setGpsAddress(res);
+         });
          toast.success("Localização ativada com sucesso!");
        } else {
          toast.error("Não foi possível obter sua localização exata. Verifique se o GPS está ativado.");
