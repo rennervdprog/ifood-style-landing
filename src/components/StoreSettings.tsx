@@ -811,7 +811,7 @@ const NotificationSection = () => {
             <div className="bg-muted border border-border rounded-xl p-3 flex items-start gap-2">
               <Truck className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
               <p className="text-[10px] text-muted-foreground">
-                Com motoboy próprio, você terá um botão "Saiu para Entrega" direto no painel. Não será necessário aguardar aceite de entregador.
+                Cadastre seus motoboys próprios no painel "Motoboys". Quando um pedido ficar pronto, ele é enviado aos seus motoboys vinculados e o motoboy escolhido aceita a corrida para sair para entrega.
               </p>
             </div>
              <div className="flex flex-col gap-2">
