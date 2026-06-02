@@ -20,7 +20,7 @@ import { addMoney, multiplyMoney, sumMoney, formatBRL } from "@/lib/utils";
 import { useStorePlan } from "@/hooks/useStorePlan";
 import LoyaltyRedemption from "@/components/LoyaltyRedemption";
 import DeliveryTimeEstimate from "@/components/DeliveryTimeEstimate";
-import { resolveAddressContext, type Coordinates } from "@/lib/addressGeocoding";
+import { resolveAddressContext, reverseGeocode, type Coordinates, type ReverseGeocodeResult } from "@/lib/addressGeocoding";
 import { getBestClientCoordinates, getDeviceGPS } from "@/lib/deviceLocation";
 import { checkStoreAccess, MAX_DISTANCE_KM } from "@/lib/fraudCheck";
 
@@ -51,6 +51,8 @@ const CheckoutPage = () => {
    const [clientCoords, setClientCoords] = useState<Coordinates | null>(null);
    const [isLocationRequested, setIsLocationRequested] = useState(false);
    const [requestingLocation, setRequestingLocation] = useState(false);
+   const [gpsAddress, setGpsAddress] = useState<ReverseGeocodeResult | null>(null);
+   const [coordsSource, setCoordsSource] = useState<"gps" | "address" | null>(null);
   const [calculatingFee, setCalculatingFee] = useState(false);
   const [feeBreakdown, setFeeBreakdown] = useState<string | null>(null);
   const [loyaltyDiscount, setLoyaltyDiscount] = useState(0);
@@ -233,6 +235,11 @@ const CheckoutPage = () => {
        if (gps) {
          setClientCoords(gps);
          setIsLocationRequested(true);
+         setCoordsSource("gps");
+         // Reverse geocode para mostrar o endereço real do GPS
+         reverseGeocode(gps).then((res) => {
+           if (res) setGpsAddress(res);
+         });
          toast.success("Localização ativada com sucesso!");
        } else {
          toast.error("Não foi possível obter sua localização exata. Verifique se o GPS está ativado.");
@@ -715,11 +722,24 @@ const CheckoutPage = () => {
 
             {selectedSavedAddressId && savedAddressData && (
               <div className="bg-primary/5 rounded-xl p-3.5 space-y-1.5">
-                <p className="text-sm font-bold text-foreground">
-                  {savedAddressData.street}, {savedAddressData.number}
-                  {savedAddressData.complement ? ` - ${savedAddressData.complement}` : ""}
-                </p>
-                <p className="text-xs text-muted-foreground">{savedAddressData.neighborhood}</p>
+                {gpsAddress ? (
+                  <>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">📍 GPS</span>
+                      <span className="text-[10px] text-muted-foreground">Localização atual</span>
+                    </div>
+                    <p className="text-sm font-bold text-foreground">{gpsAddress.display}</p>
+                    <p className="text-[10px] text-muted-foreground italic">Cadastrado: {savedAddressData.street}, {savedAddressData.number} - {savedAddressData.neighborhood}</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm font-bold text-foreground">
+                      {savedAddressData.street}, {savedAddressData.number}
+                      {savedAddressData.complement ? ` - ${savedAddressData.complement}` : ""}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{savedAddressData.neighborhood}</p>
+                  </>
+                )}
                 {savedAddressData.reference_point && (
                   <p className="text-xs text-muted-foreground">📍 {savedAddressData.reference_point}</p>
                 )}
@@ -748,11 +768,24 @@ const CheckoutPage = () => {
 
             {!selectedSavedAddressId && hasAddress && (
               <div className="bg-primary/5 rounded-xl p-3.5 space-y-1.5">
-                <p className="text-sm font-bold text-foreground">
-                  {profileStreet}, {profileNumber}
-                  {profileComplement ? ` - ${profileComplement}` : ""}
-                </p>
-                <p className="text-xs text-muted-foreground">{profileNeighborhood}</p>
+                {gpsAddress ? (
+                  <>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">📍 GPS</span>
+                      <span className="text-[10px] text-muted-foreground">Localização atual</span>
+                    </div>
+                    <p className="text-sm font-bold text-foreground">{gpsAddress.display}</p>
+                    <p className="text-[10px] text-muted-foreground italic">Cadastrado: {profileStreet}, {profileNumber} - {profileNeighborhood}</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm font-bold text-foreground">
+                      {profileStreet}, {profileNumber}
+                      {profileComplement ? ` - ${profileComplement}` : ""}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{profileNeighborhood}</p>
+                  </>
+                )}
                 {profileReference && (
                   <p className="text-xs text-muted-foreground">📍 {profileReference}</p>
                 )}
@@ -773,6 +806,16 @@ const CheckoutPage = () => {
                     <Edit3 className="h-3 w-3" /> Alterar
                   </button>
                 </div>
+                {!gpsAddress && (
+                  <button
+                    onClick={handleRequestLocation}
+                    disabled={requestingLocation}
+                    className="w-full mt-2 text-xs font-bold text-primary border border-primary/30 rounded-lg py-2 flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  >
+                    {requestingLocation ? <Loader2 className="h-3 w-3 animate-spin" /> : <MapPin className="h-3 w-3" />}
+                    Usar minha localização atual (mais preciso)
+                  </button>
+                )}
               </div>
             )}
 

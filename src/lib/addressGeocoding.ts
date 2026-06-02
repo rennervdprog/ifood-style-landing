@@ -15,6 +15,7 @@ export interface Coordinates {
 }
 
 const NOMINATIM_BASE_URL = "https://nominatim.openstreetmap.org/search";
+const NOMINATIM_REVERSE_URL = "https://nominatim.openstreetmap.org/reverse";
 const DEFAULT_COUNTRY = "Brazil";
 const COUNTRY_CODE = "br";
 
@@ -161,4 +162,58 @@ export function haversineDistanceMeters(a: Coordinates, b: Coordinates): number 
 
 export function isValidCoordinate(lat?: number | null, lng?: number | null): lat is number {
   return typeof lat === "number" && typeof lng === "number" && Number.isFinite(lat) && Number.isFinite(lng);
+}
+
+export interface ReverseGeocodeResult {
+  street?: string;
+  number?: string;
+  neighborhood?: string;
+  city?: string;
+  state?: string;
+  postcode?: string;
+  display: string;
+}
+
+/**
+ * Reverse geocode GPS coordinates into a Brazilian street address using Nominatim (free).
+ * Used to show the customer's real current address when GPS is active.
+ */
+export async function reverseGeocode(coords: Coordinates): Promise<ReverseGeocodeResult | null> {
+  try {
+    const params = new URLSearchParams({
+      format: "jsonv2",
+      lat: String(coords.lat),
+      lon: String(coords.lng),
+      addressdetails: "1",
+      zoom: "18",
+    });
+    const response = await fetch(`${NOMINATIM_REVERSE_URL}?${params.toString()}`, {
+      headers: { "Accept-Language": "pt-BR,pt;q=0.9" },
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    const addr = data?.address || {};
+    const street = addr.road || addr.pedestrian || addr.residential || addr.street;
+    const number = addr.house_number;
+    const neighborhood = addr.suburb || addr.neighbourhood || addr.city_district;
+    const city = addr.city || addr.town || addr.village || addr.municipality;
+    const state = addr.state;
+    const postcode = (addr.postcode || "").toString();
+    const displayParts = [
+      street ? (number ? `${street}, ${number}` : street) : null,
+      neighborhood,
+      city,
+    ].filter(Boolean);
+    return {
+      street,
+      number,
+      neighborhood,
+      city,
+      state,
+      postcode,
+      display: displayParts.join(" - ") || data?.display_name || "",
+    };
+  } catch {
+    return null;
+  }
 }
