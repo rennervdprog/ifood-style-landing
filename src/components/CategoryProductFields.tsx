@@ -146,17 +146,7 @@ const CategoryProductFields = ({ category, metadata, onChange, onNameChange, sto
   );
 
   const categoryFieldsMap: Record<string, React.ReactNode> = {
-    pizzas: (
-      <FieldBox emoji="🍕" title="Detalhes da Pizza">
-        {renderListField("Tamanhos disponíveis", "sizes_available", "Ex: P, M, G, GG, Família...")}
-        {renderTextField("Qtd de fatias (tamanho padrão)", "slice_count", "Ex: 8, 12 fatias...")}
-        {renderTextField("Diâmetro (cm)", "diameter_cm", "Ex: 25cm, 35cm, 45cm...")}
-        {renderToggle("Borda recheada disponível?", "has_stuffed_crust")}
-        {renderToggle("Serve p/ compartilhar?", "shareable")}
-        {renderToggle("Produto é um combo?", "is_combo")}
-        {metadata.is_combo && renderListField("Itens do Combo", "combo_items", "Ex: Pizza + Refri 2L...")}
-      </FieldBox>
-    ),
+    pizzas: null,
     esfihas: (
       <FieldBox emoji="🫓" title="Detalhes da Esfiha">
         {renderListField("Tipo de massa", "dough_types", "Ex: Aberta, Fechada...")}
