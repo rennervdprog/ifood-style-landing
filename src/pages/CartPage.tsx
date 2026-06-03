@@ -18,7 +18,7 @@ const CartPage = () => {
     queryFn: async () => {
       const { data: store } = await supabase
         .from("stores_public")
-        .select("is_open, force_closed, minimum_order_value")
+        .select("is_open, force_closed, minimum_order_value" as any)
         .eq("id", storeId!)
         .maybeSingle();
       const { data: hours } = await supabase
