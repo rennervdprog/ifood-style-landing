@@ -98,7 +98,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
   const borderStep = flavorCount + 1; // step index when borders are shown
 
   const reset = () => {
-    setStep(0);
+    setStep(maxFlavors === 2 ? 1 : 0);
     setFlavorCount(2);
     setProductIds([null, null]);
     setSelectedBorderId(null);
@@ -356,7 +356,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
           <div className="space-y-3 pt-4">
             <p className="text-sm text-muted-foreground">Escolha quantos sabores diferentes você quer na sua pizza:</p>
             <div className="grid grid-cols-3 gap-3">
-              {([2, 3, 4] as FlavorCount[]).map(n => {
+              {([2, 3, 4] as FlavorCount[]).filter(n => n <= maxFlavors).map(n => {
                 const isSel = flavorCount === n;
                 return (
                   <button
