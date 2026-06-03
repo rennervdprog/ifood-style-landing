@@ -293,7 +293,7 @@ const Navbar = ({ onNavigate, isLoggedIn }: { onNavigate: (path: string) => void
               <button onClick={() => onNavigate("/portal-parceiro")} className="text-sm font-semibold text-muted-foreground hover:text-primary transition-colors">
                 Já sou parceiro
               </button>
-              <Button variant="outline" className="rounded-full font-bold text-sm px-5" onClick={() => onNavigate("/auth")}>
+              <Button variant="outline" className="rounded-full font-bold text-sm px-6" onClick={() => onNavigate("/auth")}>
                 Entrar
               </Button>
               <Button className="rounded-full font-bold text-sm px-6" onClick={() => onNavigate("/cadastro-lojista")}>
@@ -308,7 +308,7 @@ const Navbar = ({ onNavigate, isLoggedIn }: { onNavigate: (path: string) => void
             <Button
               size="sm"
               variant="outline"
-              className="rounded-full font-bold text-xs px-4 h-9"
+              className="rounded-full font-bold text-xs px-6 h-9"
               onClick={() => onNavigate("/auth")}
             >
               Entrar
@@ -328,7 +328,7 @@ const Navbar = ({ onNavigate, isLoggedIn }: { onNavigate: (path: string) => void
             </button>
           ))}
           {isLoggedIn ? (
-            <Button className="w-full rounded-full font-bold mt-2 gap-2" onClick={() => { setOpen(false); onNavigate("/pedidos"); }}>
+            <Button className="w-full min-h-[44px] rounded-full font-bold mt-2 gap-2" onClick={() => { setOpen(false); onNavigate("/pedidos"); }}>
               <ShoppingBag className="h-4 w-4" /> Meus Pedidos
             </Button>
           ) : (
@@ -336,7 +336,7 @@ const Navbar = ({ onNavigate, isLoggedIn }: { onNavigate: (path: string) => void
               <button onClick={() => { setOpen(false); onNavigate("/portal-parceiro"); }} className="block w-full text-left py-3 text-sm font-semibold text-muted-foreground hover:text-primary transition-colors">
                 Já sou parceiro
               </button>
-              <Button className="w-full rounded-full font-bold mt-2" onClick={() => { setOpen(false); onNavigate("/cadastro-lojista"); }}>
+              <Button className="w-full min-h-[44px] rounded-full font-bold mt-2" onClick={() => { setOpen(false); onNavigate("/cadastro-lojista"); }}>
                 Criar minha loja grátis
               </Button>
             </>
@@ -459,15 +459,15 @@ const StoreDirectory = () => {
           </p>
 
            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-in fade-in zoom-in-95 duration-1000 delay-300">
-             <Button size="lg" onClick={handleCTA} className="text-lg md:text-xl px-10 py-8 min-h-[64px] rounded-2xl shadow-2xl shadow-primary/20 hover:shadow-primary/40 transition-all hover:-translate-y-1 active:scale-95 font-black">
-              <Store className="mr-2 h-5 w-5" />
-              Criar minha loja grátis
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-            <Button size="lg" variant="outline" onClick={handleWhatsApp} className="text-lg px-8 py-7 min-h-[60px] rounded-2xl">
-              <MessageCircle className="mr-2 h-5 w-5" /> Falar no WhatsApp
-            </Button>
-          </div>
+             <Button size="lg" onClick={handleCTA} className="text-lg md:text-xl px-8 py-4 min-h-[56px] rounded-2xl shadow-2xl shadow-primary/20 hover:shadow-primary/40 transition-all hover:-translate-y-1 active:scale-95 font-black w-full sm:w-auto">
+               <Store className="mr-2 h-5 w-5" />
+               Criar minha loja grátis
+               <ArrowRight className="ml-2 h-5 w-5" />
+             </Button>
+             <Button size="lg" variant="outline" onClick={handleWhatsApp} className="text-lg px-8 py-4 min-h-[56px] rounded-2xl w-full sm:w-auto">
+               <MessageCircle className="mr-2 h-5 w-5" /> Falar no WhatsApp
+             </Button>
+           </div>
 
           {/* Honest launch badge instead of fake numbers */}
            <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
@@ -863,7 +863,7 @@ const StoreDirectory = () => {
               return (
                 <Card
                   key={plan.id}
-                  className={`relative flex flex-col rounded-[2.5rem] overflow-visible transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 border-2 ${
+                  className={`relative flex flex-col rounded-[2.5rem] overflow-visible transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 border-2 h-full ${
                     plan.highlight
                       ? "border-primary shadow-2xl shadow-primary/10 scale-105 z-10"
                       : "border-border shadow-lg"
