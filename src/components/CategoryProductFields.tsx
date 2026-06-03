@@ -53,7 +53,11 @@ interface PizzaSize { name: string; price: number }
 
 const BRLPriceRowInput = ({ value, onCommit }: { value: number; onCommit: (v: number) => void }) => {
   const [display, setDisplay] = useState(value > 0 ? formatBRLDisplay(value) : "");
-  useEffect(() => { setDisplay(value > 0 ? formatBRLDisplay(value) : ""); }, [value]);
+  const [focused, setFocused] = useState(false);
+  useEffect(() => {
+    if (focused) return; // não sobrescreve enquanto o usuário digita
+    setDisplay(value > 0 ? formatBRLDisplay(value) : "");
+  }, [value, focused]);
   return (
     <input
       type="text"
@@ -64,7 +68,9 @@ const BRLPriceRowInput = ({ value, onCommit }: { value: number; onCommit: (v: nu
         setDisplay(n > 0 ? formatBRLDisplay(n) : "");
         onCommit(n);
       }}
+      onFocus={() => setFocused(true)}
       onBlur={() => {
+        setFocused(false);
         const n = parseBRL(display);
         onCommit(n);
         setDisplay(n > 0 ? formatBRLDisplay(n) : "");
