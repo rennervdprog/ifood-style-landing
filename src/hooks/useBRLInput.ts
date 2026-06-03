@@ -36,6 +36,17 @@ export function formatBRLDisplay(value: number): string {
 }
 
 /**
+ * Converte digitação contínua em centavos para número.
+ * Ex: "1" → 0.01, "123" → 1.23, "123456" → 1234.56
+ */
+export function parseBRLCentsInput(raw: string): number {
+  const digits = raw.replace(/\D/g, "");
+  if (!digits) return 0;
+  const num = Number(digits) / 100;
+  return Number.isFinite(num) ? num : 0;
+}
+
+/**
  * Converte string digitada no padrão pt-BR para número
  * Aceita: "1.234,56" | "1234,56" | "1234.56" | "1234"
  */
@@ -70,10 +81,9 @@ export function useBRLInput(initialValue: number = 0): BRLInput {
   const [value, setValue] = useState<number>(initialValue);
 
   const onChange = useCallback((raw: string) => {
-    // Permite apenas dígitos, vírgula e ponto
-    const filtered = raw.replace(/[^\d.,]/g, "");
-    setDisplay(filtered);
-    setValue(parseBRL(filtered));
+    const nextValue = parseBRLCentsInput(raw);
+    setValue(nextValue);
+    setDisplay(nextValue > 0 ? formatBRLDisplay(nextValue) : "");
   }, []);
 
   const reset = useCallback((newValue: number = 0) => {
