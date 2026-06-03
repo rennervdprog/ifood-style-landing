@@ -1,9 +1,9 @@
 import { formatBRL } from "@/lib/utils";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Star, Gift, Minus, Plus } from "lucide-react";
+import { Star, Gift, Minus, Plus, LogIn } from "lucide-react";
 
 interface LoyaltyRedemptionProps {
   storeId: string;
@@ -11,9 +11,10 @@ interface LoyaltyRedemptionProps {
   onApply: (discount: number, pointsUsed: number) => void;
   onRemove: () => void;
   appliedPoints: number;
+  onAvailabilityChange?: (available: boolean) => void;
 }
 
-const LoyaltyRedemption = ({ storeId, subtotal, onApply, onRemove, appliedPoints }: LoyaltyRedemptionProps) => {
+const LoyaltyRedemption = ({ storeId, subtotal, onApply, onRemove, appliedPoints, onAvailabilityChange }: LoyaltyRedemptionProps) => {
   const { user } = useAuth();
   const [pointsToUse, setPointsToUse] = useState(0);
 
@@ -31,7 +32,7 @@ const LoyaltyRedemption = ({ storeId, subtotal, onApply, onRemove, appliedPoints
     enabled: !!storeId,
   });
 
-  const { data: myPoints } = useQuery({
+  const { data: myPoints, isLoading: pointsLoading } = useQuery({
     queryKey: ["my-loyalty-points", storeId, user?.id],
     queryFn: async () => {
       const { data } = await supabase
@@ -45,14 +46,52 @@ const LoyaltyRedemption = ({ storeId, subtotal, onApply, onRemove, appliedPoints
     enabled: !!user && !!storeId && !!config,
   });
 
-  if (!config || !user || !myPoints) return null;
+  useEffect(() => {
+    onAvailabilityChange?.(!!config);
+  }, [config, onAvailabilityChange]);
 
-  const availablePoints = myPoints.points || 0;
+  if (!config) return null;
+
   const minRedeem = config.min_points_redeem || 50;
   const discountPerPoint = config.discount_per_point || 0.10;
   const maxDiscountPercent = config.max_discount_percent || 20;
+  const pointsPerReal = config.points_per_real || 1;
 
-  if (availablePoints < minRedeem) return null;
+  // Estado: sem login
+  if (!user) {
+    return (
+      <div className="bg-amber-500/5 border border-amber-500/15 rounded-xl p-3 flex items-center gap-2">
+        <LogIn className="h-4 w-4 text-amber-500 shrink-0" />
+        <p className="text-xs text-foreground">
+          Faça login para acumular e usar pontos. Ganhe <b>{pointsPerReal} ponto{pointsPerReal > 1 ? "s" : ""}</b> a cada R$ 1,00.
+        </p>
+      </div>
+    );
+  }
+
+  const availablePoints = myPoints?.points || 0;
+
+  // Estado: ainda não tem pontos suficientes
+  if (availablePoints < minRedeem) {
+    const faltam = minRedeem - availablePoints;
+    const progress = Math.min(100, (availablePoints / minRedeem) * 100);
+    return (
+      <div className="bg-amber-500/5 border border-amber-500/15 rounded-xl p-3 space-y-2">
+        <div className="flex items-center gap-2">
+          <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
+          <p className="text-sm font-bold text-foreground">
+            Você tem {availablePoints} ponto{availablePoints === 1 ? "" : "s"} nesta loja
+          </p>
+        </div>
+        <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+          <div className="h-full bg-amber-500 rounded-full" style={{ width: `${progress}%` }} />
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          Faltam <b>{faltam}</b> pontos para resgatar. Este pedido vai te dar aproximadamente <b>{Math.floor(subtotal * pointsPerReal)} pontos</b>.
+        </p>
+      </div>
+    );
+  }
 
   const maxDiscountByPercent = subtotal * (maxDiscountPercent / 100);
   const maxDiscountByPoints = availablePoints * discountPerPoint;
