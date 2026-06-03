@@ -38,25 +38,19 @@ Deno.serve(async (req) => {
 
     const { data: store, error: storeErr } = await supabase
       .from("stores")
-      .select("id, owner_id")
+      .select("id, owner_id, asaas_account_id")
       .eq("id", store_id)
       .maybeSingle();
 
     if (storeErr || !store) return json({ error: "Loja não encontrada" }, 404);
     if (store.owner_id !== userId) return json({ error: "Sem permissão" }, 403);
-
-    const { data: creds } = await supabase
-      .from("store_credentials")
-      .select("store_id, asaas_account_id")
-      .eq("store_id", store_id)
-      .maybeSingle();
-    if (!creds?.asaas_account_id) return json({ error: "Subconta não configurada" }, 404);
+    if (!store.asaas_account_id) return json({ error: "Subconta não configurada" }, 404);
 
     const ASAAS_API_KEY = Deno.env.get("ASAAS_API_KEY");
     const isSandbox = !ASAAS_API_KEY?.startsWith("$aact_");
     const baseUrl = isSandbox ? "https://sandbox.asaas.com/api/v3" : "https://api.asaas.com/v3";
 
-    const res = await fetch(`${baseUrl}/accounts/${creds.asaas_account_id}/status`, {
+    const res = await fetch(`${baseUrl}/accounts/${store.asaas_account_id}/status`, {
       headers: { access_token: ASAAS_API_KEY! },
     });
     
@@ -68,9 +62,9 @@ Deno.serve(async (req) => {
     const status = await res.json();
 
     await adminClient
-      .from("store_credentials")
+      .from("stores")
       .update({ asaas_activation_status: status })
-      .eq("store_id", store_id);
+      .eq("id", store_id);
 
     return json({ success: true, status });
   } catch (err) {

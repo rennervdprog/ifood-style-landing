@@ -48,9 +48,9 @@ Deno.serve(async (req) => {
     );
 
     const { data: stores, error: storesErr } = await admin
-      .from("store_credentials")
+      .from("stores")
       .select(
-        "store_id, asaas_subaccount_api_key, asaas_pix_key, asaas_pix_key_type, asaas_min_withdraw_amount"
+        "id, name, asaas_subaccount_api_key, asaas_pix_key, asaas_pix_key_type, asaas_min_withdraw_amount"
       )
       .eq("asaas_auto_withdraw_enabled", true)
       .not("asaas_subaccount_api_key", "is", null)
@@ -76,13 +76,13 @@ Deno.serve(async (req) => {
         });
         const balData = await balRes.json();
         if (!balRes.ok) {
-          console.warn(`Balance error store=${store.store_id}`, balData);
-          results.push({ store_id: store.store_id, skipped: "balance_error" });
+          console.warn(`Balance error store=${store.id}`, balData);
+          results.push({ store_id: store.id, skipped: "balance_error" });
           continue;
         }
         const balance = Number(balData.balance ?? 0);
         if (balance < minAmount) {
-          results.push({ store_id: store.store_id, skipped: "below_min", balance });
+          results.push({ store_id: store.id, skipped: "below_min", balance });
           continue;
         }
 
@@ -104,25 +104,25 @@ Deno.serve(async (req) => {
         });
         const tData = await tRes.json();
         if (!tRes.ok) {
-          console.warn(`Transfer error store=${store.store_id}`, tData);
-          results.push({ store_id: store.store_id, error: tData });
+          console.warn(`Transfer error store=${store.id}`, tData);
+          results.push({ store_id: store.id, error: tData });
           continue;
         }
 
         await admin
-          .from("store_credentials")
+          .from("stores")
           .update({ asaas_last_withdraw_at: new Date().toISOString() })
-          .eq("store_id", store.store_id);
+          .eq("id", store.id);
 
         results.push({
-          store_id: store.store_id,
+          store_id: store.id,
           ok: true,
           value: balance,
           transferId: tData.id,
         });
       } catch (e) {
-        console.error(`Loop error store=${store.store_id}`, e);
-        results.push({ store_id: store.store_id, error: String(e) });
+        console.error(`Loop error store=${store.id}`, e);
+        results.push({ store_id: store.id, error: String(e) });
       }
     }
 
