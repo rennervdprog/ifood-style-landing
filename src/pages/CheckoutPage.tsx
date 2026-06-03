@@ -57,6 +57,7 @@ const CheckoutPage = () => {
   const [feeBreakdown, setFeeBreakdown] = useState<string | null>(null);
   const [loyaltyDiscount, setLoyaltyDiscount] = useState(0);
   const [loyaltyPointsUsed, setLoyaltyPointsUsed] = useState(0);
+  const [loyaltyAvailable, setLoyaltyAvailable] = useState(false);
   const [useWallet, setUseWallet] = useState(false);
   const [scheduledFor, setScheduledFor] = useState<string>("");
   const [showSchedule, setShowSchedule] = useState(false);
@@ -956,7 +957,7 @@ const CheckoutPage = () => {
         </section>
 
         {/* SECTION: Loyalty Points */}
-        <section className="bg-card rounded-2xl border border-border overflow-hidden">
+        <section className={`bg-card rounded-2xl border border-border overflow-hidden ${loyaltyAvailable ? "" : "hidden"}`}>
           <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50">
             <div className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center">
               <Star className="h-4 w-4 text-amber-500" />
@@ -976,6 +977,7 @@ const CheckoutPage = () => {
                 setLoyaltyPointsUsed(0);
               }}
               appliedPoints={loyaltyPointsUsed}
+              onAvailabilityChange={setLoyaltyAvailable}
             />
           </div>
         </section>
