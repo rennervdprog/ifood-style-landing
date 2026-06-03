@@ -973,7 +973,7 @@ const NotificationSection = () => {
       {category === "pizzas" && (
         <div className="bg-muted/30 border border-dashed border-border rounded-2xl p-4">
           <p className="text-xs text-muted-foreground">
-            🍕 As configurações de pizza (sabores, meio a meio e cálculo de preço) ficam na aba <strong>Bordas & Sabores</strong>.
+            🍕 As configurações de pizza (sabores, meio a meio e cálculo de preço) ficam na aba <strong>Pizzaria</strong>.
           </p>
         </div>
       )}
