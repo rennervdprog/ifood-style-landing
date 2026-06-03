@@ -105,6 +105,7 @@ type PizzaPriceMode = "maior" | "media" | "soma";
    const [deliveryBaseKm, setDeliveryBaseKm] = useState(storeDeliveryBaseKm?.toString() || "0");
    const [deliveryFeeBase, setDeliveryFeeBase] = useState(storeDeliveryFeeBase?.toString() || "0");
    const [deliveryFeePerKm, setDeliveryFeePerKm] = useState(storeDeliveryFeePerKm?.toString() || "0");
+  const [minimumOrderValue, setMinimumOrderValue] = useState(storeMinimumOrderValue?.toString() || "0");
   const storePlan = useStorePlan(storeId);
 
   // Verificar se conta Asaas está 100% aprovada para liberar PIX Online
