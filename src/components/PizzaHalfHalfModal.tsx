@@ -64,6 +64,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
   const [selectedBorderId, setSelectedBorderId] = useState<string | null>(null);
   const [observations, setObservations] = useState("");
   const [quantity, setQuantity] = useState(1);
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
 
   const { data: borders = [], isLoading: bordersLoading } = useQuery({
     queryKey: ["pizza-borders", storeId],
@@ -104,6 +105,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
     setSelectedBorderId(null);
     setObservations("");
     setQuantity(1);
+    setSelectedSize(null);
   };
 
   const handleClose = () => {
@@ -123,13 +125,44 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
     return true;
   });
 
+  // Collect size names that appear on any pizza product (union, preserving first-seen order)
+  const availableSizes: string[] = (() => {
+    const order: string[] = [];
+    const seen = new Set<string>();
+    for (const p of pizzaProducts) {
+      const sizes: Array<{ name: string; price: number }> = Array.isArray(p.metadata?.sizes) ? p.metadata!.sizes : [];
+      for (const s of sizes) {
+        if (s?.name && Number(s.price) > 0 && !seen.has(s.name)) {
+          seen.add(s.name);
+          order.push(s.name);
+        }
+      }
+    }
+    return order;
+  })();
+  const hasSizes = availableSizes.length > 0;
+
+  // Auto-select first size when sizes exist and none chosen yet
+  useEffect(() => {
+    if (open && hasSizes && !selectedSize) setSelectedSize(availableSizes[0]);
+  }, [open, hasSizes, selectedSize, availableSizes]);
+
+  const priceForFlavor = (p: Product): number => {
+    const sizes: Array<{ name: string; price: number }> = Array.isArray(p.metadata?.sizes) ? p.metadata!.sizes : [];
+    if (selectedSize) {
+      const match = sizes.find(s => s.name === selectedSize && Number(s.price) > 0);
+      if (match) return Number(match.price);
+    }
+    return Number(p.price) || 0;
+  };
+
   const selectedFlavors = productIds.map(id => (id ? pizzaProducts.find(p => p.id === id) : undefined));
   const allChosen = selectedFlavors.every(Boolean) && selectedFlavors.length === flavorCount;
   const selectedBorder = borders.find(b => b.id === selectedBorderId);
 
   const calcPizzaPrice = (): number => {
     if (!allChosen) return 0;
-    const prices = selectedFlavors.map(p => p!.price);
+    const prices = selectedFlavors.map(p => priceForFlavor(p!));
     if (priceMode === "media") return prices.reduce((a, b) => a + b, 0) / prices.length;
     return Math.max(...prices);
   };
@@ -146,6 +179,9 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
     const title = flavorCount === 2 ? "Pizza Meio a Meio" : `Pizza ${flavorCount} Sabores`;
     const name = `${title}: ${flavors.map(f => f.name).join(" / ")}`;
     const addons: CartAddon[] = flavors.map(f => ({ name: `${frac} ${f.name}`, price: 0 }));
+    if (selectedSize) {
+      addons.unshift({ name: `Tamanho: ${selectedSize}`, price: 0 });
+    }
     if (selectedBorder) {
       addons.push({ name: `Borda: ${selectedBorder.name}`, price: borderPrice });
     }
@@ -153,7 +189,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
       {
         id: flavors[0].id,
         store_id: storeId,
-        name,
+        name: selectedSize ? `${name} (${selectedSize})` : name,
         description: null,
         price: unitPrice,
         image_url: null,
@@ -163,6 +199,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
           flavor_count: flavorCount,
           flavor_ids: flavors.map(f => f.id),
           border: selectedBorder?.name || null,
+          size: selectedSize || null,
         },
       },
       addons,
@@ -384,6 +421,33 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
         {/* Flavor pick step */}
         {isFlavorStep && (
           <div className="space-y-3 pt-2">
+            {hasSizes && step === 1 && (
+              <div className="bg-card border-2 border-border rounded-2xl p-3 space-y-2 shadow-sm">
+                <p className="text-xs font-bold text-foreground/80">📏 Escolha o tamanho</p>
+                <div className="flex flex-wrap gap-2">
+                  {availableSizes.map(size => {
+                    const isSel = selectedSize === size;
+                    return (
+                      <button
+                        key={size}
+                        type="button"
+                        onClick={() => setSelectedSize(size)}
+                        className={`px-4 py-2 rounded-xl border-2 text-sm font-bold transition-all ${
+                          isSel
+                            ? "bg-primary/10 border-primary text-primary"
+                            : "bg-muted/40 border-transparent text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {size}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  O preço de cada sabor pode variar conforme o tamanho.
+                </p>
+              </div>
+            )}
             {groupedProducts.map((group, idx) => {
               const chosenIds = new Set(
                 productIds

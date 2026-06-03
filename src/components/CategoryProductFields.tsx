@@ -48,6 +48,113 @@ const ManagedTextField = ({
   );
 };
 
+interface PizzaSize { name: string; price: number }
+
+const PizzaSizesField = ({
+  metadata,
+  onChange,
+}: {
+  metadata: Record<string, any>;
+  onChange: (metadata: Record<string, any>) => void;
+}) => {
+  const sizes: PizzaSize[] = Array.isArray(metadata.sizes) ? metadata.sizes : [];
+  const [name, setName] = useState("");
+  const [price, setPrice] = useState("");
+
+  const update = (next: PizzaSize[]) => onChange({ ...metadata, sizes: next });
+
+  const add = () => {
+    const n = name.trim();
+    const p = parseFloat(price.replace(",", "."));
+    if (!n || !Number.isFinite(p) || p < 0) return;
+    if (sizes.some(s => s.name.toLowerCase() === n.toLowerCase())) return;
+    update([...sizes, { name: n, price: p }]);
+    setName(""); setPrice("");
+  };
+
+  const remove = (i: number) => update(sizes.filter((_, idx) => idx !== i));
+  const editPrice = (i: number, val: string) => {
+    const p = parseFloat(val.replace(",", "."));
+    if (!Number.isFinite(p) || p < 0) return;
+    const next = [...sizes];
+    next[i] = { ...next[i], price: p };
+    update(next);
+  };
+
+  const presets = ["P", "M", "G", "Família", "Broto"].filter(p => !sizes.some(s => s.name === p));
+
+  return (
+    <div className="space-y-2">
+      {sizes.length > 0 && (
+        <div className="space-y-1.5">
+          {sizes.map((s, i) => (
+            <div key={i} className="flex items-center gap-2 bg-muted/60 rounded-lg px-2.5 py-1.5">
+              <span className="text-xs font-bold text-foreground min-w-[56px]">{s.name}</span>
+              <span className="text-xs text-muted-foreground">R$</span>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                defaultValue={s.price.toFixed(2)}
+                onBlur={(e) => editPrice(i, e.target.value)}
+                className="flex-1 bg-background text-foreground px-2 py-1 rounded text-xs border border-border focus:border-primary focus:outline-none"
+              />
+              <button type="button" onClick={() => remove(i)} className="text-destructive hover:opacity-80">
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {presets.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {presets.map(p => (
+            <button
+              key={p}
+              type="button"
+              onClick={() => setName(p)}
+              className="text-[11px] font-semibold px-2 py-1 rounded-lg border border-border bg-muted/40 hover:bg-muted hover:border-primary/30"
+            >
+              + {p}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="flex gap-1.5">
+        <input
+          type="text"
+          placeholder="Tamanho (ex: P, M, G)"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="flex-1 bg-muted text-foreground px-2.5 py-1.5 rounded-lg text-xs border border-border focus:border-primary focus:outline-none"
+        />
+        <input
+          type="number"
+          step="0.01"
+          min="0"
+          placeholder="Preço"
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }}
+          className="w-24 bg-muted text-foreground px-2.5 py-1.5 rounded-lg text-xs border border-border focus:border-primary focus:outline-none"
+        />
+        <button
+          type="button"
+          onClick={add}
+          className="bg-primary/20 text-primary px-2.5 py-1.5 rounded-lg text-xs font-bold"
+        >
+          <Plus className="h-3.5 w-3.5" />
+        </button>
+      </div>
+      <p className="text-[10px] text-muted-foreground">
+        Se nenhum tamanho for cadastrado, o cliente verá apenas o preço base do produto.
+      </p>
+    </div>
+  );
+};
+
 const CategoryProductFields = ({ category, metadata, onChange, onNameChange, storeId }: CategoryProductFieldsProps) => {
   const set = (key: string, value: any) => onChange({ ...metadata, [key]: value });
 
@@ -146,7 +253,15 @@ const CategoryProductFields = ({ category, metadata, onChange, onNameChange, sto
   );
 
   const categoryFieldsMap: Record<string, React.ReactNode> = {
-    pizzas: null,
+    pizzas: (
+      <FieldBox emoji="🍕" title="Tamanhos da Pizza">
+        <p className="text-[11px] text-muted-foreground -mt-1">
+          Defina os tamanhos disponíveis (ex: P, M, G, Família) com o preço de cada um.
+          Aparecem para o cliente ao escolher 1 sabor e no modal meio-a-meio.
+        </p>
+        <PizzaSizesField metadata={metadata} onChange={onChange} />
+      </FieldBox>
+    ),
     esfihas: (
       <FieldBox emoji="🫓" title="Detalhes da Esfiha">
         {renderListField("Tipo de massa", "dough_types", "Ex: Aberta, Fechada...")}
