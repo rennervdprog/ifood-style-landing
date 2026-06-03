@@ -832,6 +832,8 @@ const PdvPage = () => {
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden">
 
+      {store?.id && <PdvDeliveryAlerts storeId={store.id} />}
+
       {/* ── TOPBAR ── */}
       <header className="h-12 border-b border-border bg-card flex items-center px-3 gap-2 shrink-0">
         <button onClick={() => navigate("/admin")} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
