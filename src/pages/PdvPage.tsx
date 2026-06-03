@@ -25,6 +25,7 @@ import { usePdvShortcuts } from "@/components/pdv/usePdvShortcuts";
 import { usePdvBarcodeScanner } from "@/components/pdv/usePdvBarcodeScanner";
 import { PdvSplitPayment, type SplitPayment } from "@/components/pdv/PdvSplitPayment";
 import { PdvDenominationCount } from "@/components/pdv/PdvDenominationCount";
+import PdvDeliveryAlerts from "@/components/pdv/PdvDeliveryAlerts";
 
 // Detecta se está em tela mobile (< 768px)
 const useIsMobile = () => {
@@ -830,6 +831,8 @@ const PdvPage = () => {
 
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden">
+
+      {store?.id && <PdvDeliveryAlerts storeId={store.id} />}
 
       {/* ── TOPBAR ── */}
       <header className="h-12 border-b border-border bg-card flex items-center px-3 gap-2 shrink-0">
