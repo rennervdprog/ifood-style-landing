@@ -543,6 +543,61 @@ const TUTORIAIS: TutorialSection[] = [
   },
 ];
 
+// Tutoriais adicionados ao final para não embaralhar a ordem existente
+TUTORIAIS.push(
+  {
+    id: "minimum-order",
+    icon: Wallet,
+    title: "Pedido Mínimo",
+    shortDesc: "Defina um valor mínimo para liberar o checkout do cliente",
+    color: "text-primary",
+    bgColor: "bg-primary/10",
+    category: "operacao",
+    estimatedMinutes: 2,
+    steps: [
+      {
+        title: "Para que serve?",
+        content: "O pedido mínimo evita pedidos muito pequenos que não compensam para você (ex: 1 refrigerante de R$5 sozinho). Garante margem e otimiza a entrega.",
+      },
+      {
+        title: "Como configurar",
+        content: "Vá em Configurações → seção Entrega → campo '💰 Pedido mínimo' e digite o valor (ex: R$ 20,00). Salve. Pronto.",
+        tip: "Deixe vazio ou 0 para desabilitar — o cliente poderá fechar com qualquer valor.",
+      },
+      {
+        title: "Como o cliente vê",
+        content: "Se o subtotal do carrinho for menor que o mínimo, aparece um alerta âmbar com barra de progresso mostrando quanto falta. O botão 'Finalizar Pedido' fica desabilitado até atingir o valor.",
+        tip: "Comece com um valor confortável (R$ 15-25). Se receber reclamações, ajuste pra baixo.",
+      },
+    ],
+  },
+  {
+    id: "delivery-distance",
+    icon: MapPin,
+    title: "Taxa de Entrega por Distância (GPS)",
+    shortDesc: "Como o sistema calcula a distância real até o cliente",
+    color: "text-primary",
+    bgColor: "bg-primary/10",
+    category: "operacao",
+    estimatedMinutes: 2,
+    steps: [
+      {
+        title: "Como funciona",
+        content: "O sistema usa o GPS do celular do cliente (quando ele permite) para calcular a distância exata da sua loja até o endereço de entrega — pela rota real de carro, não em linha reta.",
+      },
+      {
+        title: "Faixas de distância",
+        content: "Em Configurações → Entrega você cadastra faixas (ex: até 3km = R$5, até 6km = R$8, até 10km = R$12). O cliente vê a taxa correta automaticamente conforme o endereço dele.",
+        tip: "Cadastre uma faixa máxima para evitar entregas fora da sua área de cobertura.",
+      },
+      {
+        title: "Se o GPS divergir do CEP",
+        content: "Se o cliente está logado mas o GPS aponta longe do endereço cadastrado, o sistema avisa no checkout pra ele confirmar. Evita fraude e endereço errado.",
+      },
+    ],
+  },
+);
+
 // Início Rápido — passos para um lojista novo
 const QUICK_START = [
   { id: "settings", label: "1. Configure sua Loja", icon: Settings },
