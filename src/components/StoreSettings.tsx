@@ -62,6 +62,7 @@ type PizzaPriceMode = "maior" | "media" | "soma";
    storeDeliveryBaseKm?: number | null;
    storeDeliveryFeeBase?: number | null;
    storeDeliveryFeePerKm?: number | null;
+  storeMinimumOrderValue?: number | null;
    storeSettings?: Record<string, any> | null;
  }
  
@@ -71,6 +72,7 @@ type PizzaPriceMode = "maior" | "media" | "soma";
    storeAddressReference, storeAddressCity, storeAddressState, storeAddressCep, storeDeliveryMode,
    storeOwnDeliveryFee, storeDeliveryFeeType, storeDeliveryBaseKm, storeDeliveryFeeBase,
    storeDeliveryFeePerKm, storeSettings
+  , storeMinimumOrderValue
  }: StoreSettingsProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
