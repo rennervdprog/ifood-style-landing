@@ -199,6 +199,20 @@ const CartPage = () => {
           </div>
         </div>
         <div className="px-4 pb-4 pt-2">
+          {belowMinimum && !isClosed && (
+            <div className="mb-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-3 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-bold text-amber-700 dark:text-amber-400">Pedido mínimo: {formatBRL(storeMinimumOrderValue)}</span>
+                <span className="font-black text-amber-700 dark:text-amber-400">Faltam {formatBRL(minimumMissing)}</span>
+              </div>
+              <div className="h-1.5 w-full bg-amber-500/20 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-amber-500 transition-all"
+                  style={{ width: `${Math.min(100, (subtotal / storeMinimumOrderValue) * 100)}%` }}
+                />
+              </div>
+            </div>
+          )}
           {isClosed ? (
             <button
               disabled
@@ -208,6 +222,14 @@ const CartPage = () => {
               {storeStatus?.nextOpenDay && storeStatus?.nextOpenTime
                 ? `${storeStatus.nextOpenDay === "Hoje" ? "Abre" : `Abre ${storeStatus.nextOpenDay}`} às ${storeStatus.nextOpenTime}`
                 : "Loja fechada"}
+            </button>
+          ) : belowMinimum ? (
+            <button
+              disabled
+              className="w-full bg-muted text-muted-foreground font-bold py-4 rounded-2xl text-base flex items-center justify-center gap-2 cursor-not-allowed"
+            >
+              <AlertTriangle className="h-5 w-5" />
+              Faltam {formatBRL(minimumMissing)} para o mínimo
             </button>
           ) : (
             <button
