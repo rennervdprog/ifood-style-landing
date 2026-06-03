@@ -13,10 +13,33 @@ const LoyaltyConfigPanel = ({ storeId }: LoyaltyConfigPanelProps) => {
   const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
   const [enabled, setEnabled] = useState(true);
-  const [pointsPerReal, setPointsPerReal] = useState(1);
-  const [minRedeem, setMinRedeem] = useState(50);
-  const [discountPerPoint, setDiscountPerPoint] = useState(0.10);
-  const [maxDiscountPercent, setMaxDiscountPercent] = useState(20);
+  // Mantemos como string para permitir digitação livre (apagar, decimais com vírgula, etc.)
+  const [pointsPerReal, setPointsPerReal] = useState("1");
+  const [minRedeem, setMinRedeem] = useState("50");
+  const [discountPerPoint, setDiscountPerPoint] = useState("0,10");
+  const [maxDiscountPercent, setMaxDiscountPercent] = useState("20");
+
+  const parseNum = (s: string) => {
+    const n = parseFloat((s || "").replace(",", "."));
+    return isNaN(n) ? 0 : n;
+  };
+  const parseInteger = (s: string) => {
+    const n = parseInt((s || "").replace(/[^\d-]/g, ""), 10);
+    return isNaN(n) ? 0 : n;
+  };
+  // Permite apenas dígitos e um separador decimal (vírgula ou ponto)
+  const sanitizeDecimal = (s: string) => {
+    let v = s.replace(/[^\d.,]/g, "");
+    // Normaliza: mantém só o primeiro separador
+    const firstSep = v.search(/[.,]/);
+    if (firstSep !== -1) {
+      const head = v.slice(0, firstSep + 1);
+      const tail = v.slice(firstSep + 1).replace(/[.,]/g, "");
+      v = head + tail;
+    }
+    return v;
+  };
+  const sanitizeInt = (s: string) => s.replace(/[^\d]/g, "");
 
   const { data: config, isLoading } = useQuery({
     queryKey: ["loyalty-config-admin", storeId],
@@ -46,23 +69,33 @@ const LoyaltyConfigPanel = ({ storeId }: LoyaltyConfigPanelProps) => {
   useEffect(() => {
     if (config) {
       setEnabled(config.is_enabled);
-      setPointsPerReal(config.points_per_real);
-      setMinRedeem(config.min_points_redeem);
-      setDiscountPerPoint(config.discount_per_point);
-      setMaxDiscountPercent(config.max_discount_percent);
+      setPointsPerReal(String(config.points_per_real ?? 1).replace(".", ","));
+      setMinRedeem(String(config.min_points_redeem ?? 50));
+      setDiscountPerPoint(String(config.discount_per_point ?? 0.10).replace(".", ","));
+      setMaxDiscountPercent(String(config.max_discount_percent ?? 20));
     }
   }, [config]);
 
   const handleSave = async () => {
     setSaving(true);
     try {
+      const ppr = parseNum(pointsPerReal);
+      const minR = parseInteger(minRedeem);
+      const dpp = parseNum(discountPerPoint);
+      const maxP = parseInteger(maxDiscountPercent);
+
+      if (ppr <= 0) { toast.error("Pontos por R$ 1,00 deve ser maior que zero"); setSaving(false); return; }
+      if (minR < 1) { toast.error("Mínimo de pontos para resgate inválido"); setSaving(false); return; }
+      if (dpp <= 0) { toast.error("Valor do desconto por ponto inválido"); setSaving(false); return; }
+      if (maxP < 1 || maxP > 100) { toast.error("Desconto máximo deve estar entre 1 e 100%"); setSaving(false); return; }
+
       const payload = {
         store_id: storeId,
         is_enabled: enabled,
-        points_per_real: pointsPerReal,
-        min_points_redeem: minRedeem,
-        discount_per_point: discountPerPoint,
-        max_discount_percent: maxDiscountPercent,
+        points_per_real: ppr,
+        min_points_redeem: minR,
+        discount_per_point: dpp,
+        max_discount_percent: maxP,
         updated_at: new Date().toISOString(),
       };
 
@@ -90,6 +123,11 @@ const LoyaltyConfigPanel = ({ storeId }: LoyaltyConfigPanelProps) => {
 
   const totalClients = stats?.length || 0;
   const totalPointsIssued = stats?.reduce((sum: number, s: any) => sum + (s.points || 0), 0) || 0;
+
+  const previewMinRedeem = parseInteger(minRedeem);
+  const previewDiscountPerPoint = parseNum(discountPerPoint);
+  const previewPointsPerReal = parseNum(pointsPerReal);
+  const previewMaxPercent = parseInteger(maxDiscountPercent);
 
   if (isLoading) {
     return (
@@ -146,25 +184,25 @@ const LoyaltyConfigPanel = ({ storeId }: LoyaltyConfigPanelProps) => {
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-muted-foreground">Pontos por R$ 1,00 gasto</label>
             <input
-              type="number"
-              min={0.1}
-              step={0.1}
+              type="text"
+              inputMode="decimal"
               value={pointsPerReal}
-              onChange={(e) => setPointsPerReal(parseFloat(e.target.value) || 1)}
+              onChange={(e) => setPointsPerReal(sanitizeDecimal(e.target.value))}
+              placeholder="Ex: 1 ou 0,8"
               className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
-            <p className="text-[10px] text-muted-foreground">Ex: 1 ponto por real = pedido de R$ 50 gera 50 pontos</p>
+            <p className="text-[10px] text-muted-foreground">Aceita decimais (ex: 0,8 = 0,8 ponto por real). Pedido de R$ 50 geraria {Math.floor(50 * previewPointsPerReal)} pontos.</p>
           </div>
 
           {/* Min points to redeem */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-muted-foreground">Mínimo de pontos para resgate</label>
             <input
-              type="number"
-              min={10}
-              step={10}
+              type="text"
+              inputMode="numeric"
               value={minRedeem}
-              onChange={(e) => setMinRedeem(parseInt(e.target.value) || 50)}
+              onChange={(e) => setMinRedeem(sanitizeInt(e.target.value))}
+              placeholder="Ex: 50"
               className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
           </div>
@@ -173,15 +211,15 @@ const LoyaltyConfigPanel = ({ storeId }: LoyaltyConfigPanelProps) => {
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-muted-foreground">Valor do desconto por ponto (R$)</label>
             <input
-              type="number"
-              min={0.01}
-              step={0.01}
+              type="text"
+              inputMode="decimal"
               value={discountPerPoint}
-              onChange={(e) => setDiscountPerPoint(parseFloat(e.target.value) || 0.10)}
+              onChange={(e) => setDiscountPerPoint(sanitizeDecimal(e.target.value))}
+              placeholder="Ex: 0,10"
               className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
             <p className="text-[10px] text-muted-foreground">
-              Com {minRedeem} pontos, o cliente ganha até {formatBRL((minRedeem * discountPerPoint))} de desconto
+              Com {previewMinRedeem} pontos, o cliente ganha até {formatBRL(previewMinRedeem * previewDiscountPerPoint)} de desconto
             </p>
           </div>
 
@@ -189,16 +227,15 @@ const LoyaltyConfigPanel = ({ storeId }: LoyaltyConfigPanelProps) => {
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-muted-foreground">Desconto máximo do pedido (%)</label>
             <input
-              type="number"
-              min={5}
-              max={100}
-              step={5}
+              type="text"
+              inputMode="numeric"
               value={maxDiscountPercent}
-              onChange={(e) => setMaxDiscountPercent(parseInt(e.target.value) || 20)}
+              onChange={(e) => setMaxDiscountPercent(sanitizeInt(e.target.value))}
+              placeholder="Ex: 20"
               className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
             <p className="text-[10px] text-muted-foreground">
-              Limita o desconto a {maxDiscountPercent}% do subtotal do pedido
+              Limita o desconto a {previewMaxPercent}% do subtotal do pedido
             </p>
           </div>
         </div>
