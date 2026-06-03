@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Plus, X } from "lucide-react";
+import { useBRLInput, formatBRLDisplay, parseBRL } from "@/hooks/useBRLInput";
 
 interface CategoryProductFieldsProps {
   category: string;
@@ -50,6 +51,26 @@ const ManagedTextField = ({
 
 interface PizzaSize { name: string; price: number }
 
+const BRLPriceRowInput = ({ value, onCommit }: { value: number; onCommit: (v: number) => void }) => {
+  const [display, setDisplay] = useState(value > 0 ? formatBRLDisplay(value) : "");
+  useEffect(() => { setDisplay(value > 0 ? formatBRLDisplay(value) : ""); }, [value]);
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      value={display}
+      onChange={(e) => setDisplay(e.target.value.replace(/[^\d.,]/g, ""))}
+      onBlur={() => {
+        const n = parseBRL(display);
+        onCommit(n);
+        setDisplay(n > 0 ? formatBRLDisplay(n) : "");
+      }}
+      placeholder="0,00"
+      className="flex-1 bg-background text-foreground px-2 py-1 rounded text-xs border border-border focus:border-primary focus:outline-none"
+    />
+  );
+};
+
 const PizzaSizesField = ({
   metadata,
   onChange,
@@ -59,22 +80,21 @@ const PizzaSizesField = ({
 }) => {
   const sizes: PizzaSize[] = Array.isArray(metadata.sizes) ? metadata.sizes : [];
   const [name, setName] = useState("");
-  const [price, setPrice] = useState("");
+  const price = useBRLInput(0);
 
   const update = (next: PizzaSize[]) => onChange({ ...metadata, sizes: next });
 
   const add = () => {
     const n = name.trim();
-    const p = parseFloat(price.replace(",", "."));
+    const p = price.value;
     if (!n || !Number.isFinite(p) || p < 0) return;
     if (sizes.some(s => s.name.toLowerCase() === n.toLowerCase())) return;
     update([...sizes, { name: n, price: p }]);
-    setName(""); setPrice("");
+    setName(""); price.reset(0);
   };
 
   const remove = (i: number) => update(sizes.filter((_, idx) => idx !== i));
-  const editPrice = (i: number, val: string) => {
-    const p = parseFloat(val.replace(",", "."));
+  const editPrice = (i: number, p: number) => {
     if (!Number.isFinite(p) || p < 0) return;
     const next = [...sizes];
     next[i] = { ...next[i], price: p };
@@ -91,14 +111,7 @@ const PizzaSizesField = ({
             <div key={i} className="flex items-center gap-2 bg-muted/60 rounded-lg px-2.5 py-1.5">
               <span className="text-xs font-bold text-foreground min-w-[56px]">{s.name}</span>
               <span className="text-xs text-muted-foreground">R$</span>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                defaultValue={s.price.toFixed(2)}
-                onBlur={(e) => editPrice(i, e.target.value)}
-                className="flex-1 bg-background text-foreground px-2 py-1 rounded text-xs border border-border focus:border-primary focus:outline-none"
-              />
+              <BRLPriceRowInput value={s.price} onCommit={(v) => editPrice(i, v)} />
               <button type="button" onClick={() => remove(i)} className="text-destructive hover:opacity-80">
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -130,16 +143,18 @@ const PizzaSizesField = ({
           onChange={(e) => setName(e.target.value)}
           className="flex-1 bg-muted text-foreground px-2.5 py-1.5 rounded-lg text-xs border border-border focus:border-primary focus:outline-none"
         />
-        <input
-          type="number"
-          step="0.01"
-          min="0"
-          placeholder="Preço"
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }}
-          className="w-24 bg-muted text-foreground px-2.5 py-1.5 rounded-lg text-xs border border-border focus:border-primary focus:outline-none"
-        />
+        <div className="w-28 flex items-center gap-1 bg-muted text-foreground px-2 py-1.5 rounded-lg text-xs border border-border focus-within:border-primary">
+          <span className="text-muted-foreground">R$</span>
+          <input
+            type="text"
+            inputMode="decimal"
+            placeholder="0,00"
+            value={price.display}
+            onChange={(e) => price.onChange(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }}
+            className="flex-1 min-w-0 bg-transparent focus:outline-none"
+          />
+        </div>
         <button
           type="button"
           onClick={add}
