@@ -931,7 +931,7 @@ const StoreDirectory = () => {
                     <div className="mt-auto space-y-4">
                       <Button
                         onClick={handleCTA}
-                        className={`w-full py-7 rounded-2xl text-base font-black transition-all ${
+                        className={`w-full min-h-[52px] py-4 rounded-2xl text-base font-black transition-all ${
                           plan.highlight
                             ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-primary/40"
                             : "bg-foreground text-background hover:bg-foreground/90"
@@ -976,7 +976,7 @@ const StoreDirectory = () => {
                 Seja qual for o seu segmento, a ItaSuper se adapta perfeitamente à sua rotina.
               </p>
             </div>
-            <div className="grid sm:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 items-start justify-items-center">
               {benefits.map((b) => (
                 <Card key={b.segment} className="rounded-[2.5rem] border-none bg-card p-4 hover:shadow-2xl transition-all duration-300">
                   <CardContent className="pt-6">
@@ -1070,14 +1070,14 @@ const StoreDirectory = () => {
             Tudo pronto em menos de 5 minutos.
             <span className="block mt-1 font-semibold text-primary">Comece grátis — sem cartão de crédito.</span>
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button size="lg" onClick={handleCTA} className="text-base px-8 py-6 rounded-2xl shadow-lg shadow-primary/20">
-              Criar minha loja grátis <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-            <Button size="lg" variant="outline" onClick={handleWhatsApp} className="text-base px-8 py-6 rounded-2xl">
-              <MessageCircle className="mr-2 h-5 w-5" /> Falar no WhatsApp
-            </Button>
-          </div>
+           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+             <Button size="lg" onClick={handleCTA} className="text-base px-8 py-4 min-h-[56px] rounded-2xl shadow-lg shadow-primary/20 w-full sm:w-auto">
+               Criar minha loja grátis <ArrowRight className="ml-2 h-5 w-5" />
+             </Button>
+             <Button size="lg" variant="outline" onClick={handleWhatsApp} className="text-base px-8 py-4 min-h-[56px] rounded-2xl w-full sm:w-auto">
+               <MessageCircle className="mr-2 h-5 w-5" /> Falar no WhatsApp
+             </Button>
+           </div>
         </div>
       </section>
 
