@@ -251,6 +251,37 @@ const CheckoutPage = () => {
        setRequestingLocation(false);
      }
    };
+
+   // Auto-tentar GPS no mount se permissão já estiver concedida (sem prompt)
+   useEffect(() => {
+     let cancelled = false;
+     const tryAutoLocate = async () => {
+       try {
+         if (typeof navigator === "undefined" || !navigator.geolocation) return;
+         // Em web: só dispara se permissão já está "granted" (não pede prompt)
+         if (navigator.permissions?.query) {
+           try {
+             const status = await navigator.permissions.query({ name: "geolocation" as PermissionName });
+             if (status.state !== "granted") return;
+           } catch {
+             return;
+           }
+         }
+         const gps = await getDeviceGPS();
+         if (cancelled || !gps) return;
+         setClientCoords(gps);
+         setIsLocationRequested(true);
+         setCoordsSource("gps");
+         const res = await reverseGeocode(gps);
+         if (!cancelled && res) setGpsAddress(res);
+       } catch (e) {
+         console.warn("[Checkout] Auto-locate falhou:", e);
+       }
+     };
+     tryAutoLocate();
+     return () => { cancelled = true; };
+     // eslint-disable-next-line react-hooks/exhaustive-deps
+   }, []);
  
    useEffect(() => {
      const customerCep = selectedSavedAddressId && savedAddressData?.cep ? savedAddressData.cep : profileCep;
