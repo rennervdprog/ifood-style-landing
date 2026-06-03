@@ -113,7 +113,7 @@ const PizzaSizesField = ({
             <button
               key={p}
               type="button"
-              onClick={() => setName(p)}
+              onClick={() => update([...sizes, { name: p, price: 0 }])}
               className="text-[11px] font-semibold px-2 py-1 rounded-lg border border-border bg-muted/40 hover:bg-muted hover:border-primary/30"
             >
               + {p}
