@@ -148,6 +148,11 @@ const CouponManager = ({ storeId, isAdmin }: CouponManagerProps) => {
               className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm"
             />
           )}
+          {form.discount_type === "free_shipping" && (
+            <div className="text-[11px] bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 rounded-lg p-2 leading-relaxed">
+              ⚠️ <strong>Atenção:</strong> ao oferecer frete grátis, sua loja absorve a taxa fixa de <strong>R$ 2,00</strong> da plataforma por pedido (modelo iFood/Rappi). O cliente vê R$ 0,00 de entrega; o valor é debitado do seu repasse.
+            </div>
+          )}
           <input
             type="number"
             placeholder="Pedido mínimo (R$) - opcional"
