@@ -1251,13 +1251,17 @@ const CheckoutPage = () => {
         ) : (
           <button
             onClick={handleConfirm}
-            disabled={loading}
+            disabled={loading || belowMinimum}
             className="w-full bg-primary text-primary-foreground font-bold py-4 rounded-2xl active:scale-[0.98] transition-all disabled:opacity-50 shadow-lg shadow-primary/25 text-base"
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
                 <Loader2 className="w-5 h-5 animate-spin" />
                 Enviando pedido...
+              </span>
+            ) : belowMinimum ? (
+              <span className="flex items-center justify-center gap-2">
+                Faltam {formatBRL(minimumMissing)} para o mínimo
               </span>
             ) : (
               <span className="flex items-center justify-center gap-2">
