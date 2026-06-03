@@ -146,7 +146,15 @@ const CategoryProductFields = ({ category, metadata, onChange, onNameChange, sto
   );
 
   const categoryFieldsMap: Record<string, React.ReactNode> = {
-    pizzas: null,
+    pizzas: (
+      <FieldBox emoji="🍕" title="Tamanhos da Pizza">
+        <p className="text-[11px] text-muted-foreground -mt-1">
+          Defina os tamanhos disponíveis (ex: P, M, G, Família) com o preço de cada um.
+          Aparecem para o cliente ao escolher 1 sabor e no modal meio-a-meio.
+        </p>
+        <PizzaSizesField metadata={metadata} onChange={onChange} />
+      </FieldBox>
+    ),
     esfihas: (
       <FieldBox emoji="🫓" title="Detalhes da Esfiha">
         {renderListField("Tipo de massa", "dough_types", "Ex: Aberta, Fechada...")}
