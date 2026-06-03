@@ -35,6 +35,9 @@ const CartPage = () => {
     ? getStoreOpenStatus(storeInfo.hours, storeInfo.store?.force_closed ?? false, storeInfo.store?.is_open ?? true)
     : null;
   const isClosed = storeStatus ? !storeStatus.isOpen : false;
+  const storeMinimumOrderValue = Number(storeInfo?.store?.minimum_order_value || 0);
+  const belowMinimum = storeMinimumOrderValue > 0 && subtotal < storeMinimumOrderValue;
+  const minimumMissing = belowMinimum ? storeMinimumOrderValue - subtotal : 0;
 
   if (items.length === 0) {
     return (
