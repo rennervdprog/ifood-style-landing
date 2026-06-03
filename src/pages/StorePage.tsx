@@ -1213,6 +1213,7 @@ const StorePage = () => {
             products={products || []}
             sections={sections || []}
             priceMode={storeSettings.pizza_price_mode || "maior"}
+            maxFlavors={(storeSettings.pizza_config?.max_flavors as 2 | 3 | 4) || 4}
             onAdd={handleAddToCart}
           />
         );

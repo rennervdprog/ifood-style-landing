@@ -41,6 +41,7 @@ interface Props {
   products: Product[];
   sections?: MenuSection[];
   priceMode: "maior" | "media";
+  maxFlavors?: FlavorCount;
   onAdd: (product: {
     id: string;
     store_id: string;
@@ -55,9 +56,10 @@ interface Props {
 // Step 0 = choose flavor count. Steps 1..flavorCount = pick each flavor. Last step = borders/observations.
 type Step = number;
 
-const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, sections, priceMode, onAdd }: Props) => {
+const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, sections, priceMode, maxFlavors = 4, onAdd }: Props) => {
   const [flavorCount, setFlavorCount] = useState<FlavorCount>(2);
-  const [step, setStep] = useState<Step>(0);
+  // If lojista only allows meio a meio (max=2), skip the count picker entirely.
+  const [step, setStep] = useState<Step>(maxFlavors === 2 ? 1 : 0);
   const [productIds, setProductIds] = useState<(string | null)[]>([null, null]);
   const [selectedBorderId, setSelectedBorderId] = useState<string | null>(null);
   const [observations, setObservations] = useState("");
@@ -96,7 +98,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
   const borderStep = flavorCount + 1; // step index when borders are shown
 
   const reset = () => {
-    setStep(0);
+    setStep(maxFlavors === 2 ? 1 : 0);
     setFlavorCount(2);
     setProductIds([null, null]);
     setSelectedBorderId(null);
@@ -354,7 +356,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
           <div className="space-y-3 pt-4">
             <p className="text-sm text-muted-foreground">Escolha quantos sabores diferentes você quer na sua pizza:</p>
             <div className="grid grid-cols-3 gap-3">
-              {([2, 3, 4] as FlavorCount[]).map(n => {
+              {([2, 3, 4] as FlavorCount[]).filter(n => n <= maxFlavors).map(n => {
                 const isSel = flavorCount === n;
                 return (
                   <button
