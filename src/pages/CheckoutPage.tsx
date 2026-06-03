@@ -204,9 +204,19 @@ const CheckoutPage = () => {
   const activeDeliveryFee = isPickup
     ? 0
     : (calculatedDeliveryFee !== null ? calculatedDeliveryFee : (isOwnDelivery ? ownDeliveryFallbackFee : config.city_fee));
-  const effectiveDeliveryFee = isPickup ? 0 : (couponType === "free_shipping" ? 0 : activeDeliveryFee);
-  const walletDiscount = useWallet ? Math.min(walletBalance, Math.max(0, addMoney(subtotal, effectiveDeliveryFee, -couponDiscount, -loyaltyDiscount))) : 0;
-  const finalTotal = Math.max(0, addMoney(subtotal, effectiveDeliveryFee, -couponDiscount, -loyaltyDiscount, -walletDiscount));
+  // Cupom "frete grátis": cliente paga R$ 0 de entrega, mas a loja absorve a taxa
+  // de R$ 2,00 da plataforma (modelo iFood/Rappi). Registramos delivery_fee = R$ 2
+  // no pedido (rota normalmente para a plataforma via split) e neutralizamos no
+  // cálculo do total para o cliente somando R$ 2 ao desconto do cupom.
+  const freeShipPlatformAbsorb = (couponType === "free_shipping" && !isPickup)
+    ? (storePlan.platformDeliverySplit > 0 ? storePlan.platformDeliverySplit : platformSplitFallback)
+    : 0;
+  const effectiveDeliveryFee = isPickup
+    ? 0
+    : (couponType === "free_shipping" ? freeShipPlatformAbsorb : activeDeliveryFee);
+  const effectiveCouponDiscount = couponDiscount + freeShipPlatformAbsorb;
+  const walletDiscount = useWallet ? Math.min(walletBalance, Math.max(0, addMoney(subtotal, effectiveDeliveryFee, -effectiveCouponDiscount, -loyaltyDiscount))) : 0;
+  const finalTotal = Math.max(0, addMoney(subtotal, effectiveDeliveryFee, -effectiveCouponDiscount, -loyaltyDiscount, -walletDiscount));
 
    // Background geocoding from address (initial estimate)
    useEffect(() => {
@@ -493,7 +503,7 @@ const CheckoutPage = () => {
       for (const [storeId, storeItems] of Object.entries(storeGroups)) {
         const storeSubtotal = sumMoney(storeItems.map((item) => item.price * item.quantity));
         const appFee = 0; // Calculated by DB trigger using store's commission_rate
-        const storeTotalPrice = Math.max(0, addMoney(storeSubtotal, effectiveDeliveryFee, -couponDiscount, -loyaltyDiscount));
+        const storeTotalPrice = Math.max(0, addMoney(storeSubtotal, effectiveDeliveryFee, -effectiveCouponDiscount, -loyaltyDiscount));
 
         const changeValue = paymentMethod === "dinheiro" && needsChange ? addMoney(parseFloat(changeFor)) : 0;
         const orderStatus = paymentMethod === "pix" ? "aguardando_pagamento" : "pendente";
