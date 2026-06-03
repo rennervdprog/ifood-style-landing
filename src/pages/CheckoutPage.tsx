@@ -57,6 +57,7 @@ const CheckoutPage = () => {
   const [feeBreakdown, setFeeBreakdown] = useState<string | null>(null);
   const [loyaltyDiscount, setLoyaltyDiscount] = useState(0);
   const [loyaltyPointsUsed, setLoyaltyPointsUsed] = useState(0);
+  const [loyaltyAvailable, setLoyaltyAvailable] = useState(false);
   const [useWallet, setUseWallet] = useState(false);
   const [scheduledFor, setScheduledFor] = useState<string>("");
   const [showSchedule, setShowSchedule] = useState(false);
