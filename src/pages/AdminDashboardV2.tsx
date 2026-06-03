@@ -1872,23 +1872,9 @@ const AdminDashboard = () => {
                           <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-5 border border-border/30">
                             <p className="text-xs font-bold text-foreground mb-4">📈 Evolução de Vendas ({selectedPeriod} dias)</p>
                             <div className="h-48">
-                              <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={dailyChart}>
-                                  <defs>
-                                    <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                                      <stop offset="0%" stopColor="#10b981" stopOpacity={0.4} />
-                                      <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
-                                    </linearGradient>
-                                  </defs>
-                                  <XAxis dataKey="day" tick={{ fontSize: 9, fill: "#9ca3af" }} axisLine={false} tickLine={false} interval={Math.max(0, Math.floor(dailyChart.length / 8))} />
-                                  <YAxis hide />
-                                  <RechartsTooltip
-                                    contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "12px", fontSize: "12px", color: "hsl(var(--foreground))" }}
-                                    formatter={(value: number, name: string) => [name === "vendas" ? formatBRL(value) : `${value}`, name === "vendas" ? "Vendas" : "Pedidos"]}
-                                  />
-                                  <Area type="monotone" dataKey="vendas" stroke="#10b981" strokeWidth={2} fill="url(#revenueGrad)" />
-                                </AreaChart>
-                              </ResponsiveContainer>
+                              <Suspense fallback={null}>
+                                <DailyRevenueChart data={dailyChart} />
+                              </Suspense>
                             </div>
                           </div>
                         )}
@@ -1898,17 +1884,9 @@ const AdminDashboard = () => {
                           <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-5 border border-border/30">
                             <p className="text-xs font-bold text-foreground mb-4">🕐 Distribuição por Horário</p>
                             <div className="h-36">
-                              <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={hourlyChart}>
-                                  <XAxis dataKey="hour" tick={{ fontSize: 9, fill: "#9ca3af" }} axisLine={false} tickLine={false} interval={1} />
-                                  <YAxis hide />
-                                  <RechartsTooltip
-                                    contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "12px", fontSize: "12px", color: "hsl(var(--foreground))" }}
-                                    formatter={(value: number) => [`${value} pedidos`, ""]}
-                                  />
-                                  <Bar dataKey="pedidos" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                                </BarChart>
-                              </ResponsiveContainer>
+                              <Suspense fallback={null}>
+                                <HourlyBarChart data={hourlyChart} />
+                              </Suspense>
                             </div>
                           </div>
                         )}
@@ -1917,17 +1895,9 @@ const AdminDashboard = () => {
                         <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-5 border border-border/30">
                           <p className="text-xs font-bold text-foreground mb-4">📊 Desempenho por Dia da Semana</p>
                           <div className="h-36">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <BarChart data={weekdayChart}>
-                                <XAxis dataKey="dia" tick={{ fontSize: 10, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
-                                <YAxis hide />
-                                <RechartsTooltip
-                                  contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "12px", fontSize: "12px", color: "hsl(var(--foreground))" }}
-                                  formatter={(value: number, name: string) => [name === "vendas" ? formatBRL(value) : `${value}`, name === "vendas" ? "Vendas" : "Pedidos"]}
-                                />
-                                <Bar dataKey="vendas" fill="#a855f7" radius={[4, 4, 0, 0]} />
-                              </BarChart>
-                            </ResponsiveContainer>
+                            <Suspense fallback={null}>
+                              <WeekdayBarChart data={weekdayChart} />
+                            </Suspense>
                           </div>
                         </div>
 
@@ -1937,13 +1907,9 @@ const AdminDashboard = () => {
                             <p className="text-xs font-bold text-foreground mb-4">💳 Métodos de Pagamento</p>
                             <div className="flex items-center gap-4">
                               <div className="w-28 h-28 shrink-0">
-                                <ResponsiveContainer width="100%" height="100%">
-                                  <PieChart>
-                                    <Pie data={paymentPie} innerRadius={30} outerRadius={50} paddingAngle={4} dataKey="value" strokeWidth={0}>
-                                      {paymentPie.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-                                    </Pie>
-                                  </PieChart>
-                                </ResponsiveContainer>
+                                <Suspense fallback={null}>
+                                  <PaymentPieChart data={paymentPie} colors={PIE_COLORS} />
+                                </Suspense>
                               </div>
                               <div className="flex-1 space-y-3">
                                 {paymentPie.map((p, i) => (
