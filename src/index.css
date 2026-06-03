@@ -394,3 +394,12 @@ div[style*="Edit with Lovable"],
   transition: opacity 120ms ease;
 }
 .md3-state-layer:active::before { opacity: 0.12; }
+
+/* ─── Icon Refinement Test (Lucide) ───
+   Afina o traço e arredonda pontas dos ícones Lucide para um visual
+   mais premium/Apple. Reversível: basta remover este bloco. */
+svg.lucide {
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
