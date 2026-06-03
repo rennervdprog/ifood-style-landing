@@ -5,6 +5,7 @@ import {
   Clock, Coins, BarChart3, CreditCard, Star, Bike, AlertTriangle, Settings,
   CheckCircle2, Rocket, HelpCircle, MessageCircle, Sparkles, BookOpen,
   PlayCircle, ArrowRight, Zap, Trophy, ShoppingCart, Tag, Users, Bell,
+  Wallet, MapPin,
 } from "lucide-react";
 import { openWhatsApp } from "@/lib/whatsapp";
 import { useAuth } from "@/contexts/AuthContext";
