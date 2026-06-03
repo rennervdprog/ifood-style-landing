@@ -19,6 +19,7 @@ import { initCapacitorLifecycle } from "@/lib/capacitorLifecycle";
 import { initRealtimeWatchdog } from "@/lib/realtimeWatchdog";
 import { initAutoUpdate } from "@/lib/capacitorAutoUpdate";
 import { checkAppVersion } from "@/lib/appVersionCheck";
+import { getCapacitorAppMode } from "@/lib/capacitorAppMode";
 import CapacitorRouteGuard from "@/components/CapacitorRouteGuard";
 import StoreAppGuard from "@/components/StoreAppGuard";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -243,10 +244,21 @@ const App = () => {
     // pela primeira vez — o chunk já está em cache.
     if (isCapacitorNative()) {
       const prefetch = () => {
-        import("./pages/PedidosPage").catch(() => {});
-        import("./pages/StorePage").catch(() => {});
-        import("./pages/CartPage").catch(() => {});
-        import("./pages/PerfilPage").catch(() => {});
+        const mode = getCapacitorAppMode();
+        if (mode === "partner") {
+          // App parceiro: só prefetch das telas do lojista/entregador.
+          // Não baixar bundles de cliente (StorePage, CartPage, CheckoutPage)
+          // — economiza ~300KB no 4G/5G.
+          import("./pages/AdminDashboardV2").catch(() => {});
+          import("./pages/PdvPage").catch(() => {});
+          import("./pages/DriverDashboardV2").catch(() => {});
+        } else {
+          // App cliente (ou modo não detectado): prefetch das telas do cliente.
+          import("./pages/PedidosPage").catch(() => {});
+          import("./pages/StorePage").catch(() => {});
+          import("./pages/CartPage").catch(() => {});
+          import("./pages/PerfilPage").catch(() => {});
+        }
       };
       // requestIdleCallback se disponível, senão setTimeout
       const w = window as any;
