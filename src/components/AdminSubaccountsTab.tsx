@@ -24,35 +24,23 @@ export const AdminSubaccountsTab = () => {
     queryKey: ["admin-asaas-subaccounts"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("store_credentials")
+        .from("stores")
         .select(`
-          store_id,
-          asaas_account_id,
-          asaas_activation_status,
+          id, 
+          name, 
+          asaas_account_id, 
+          asaas_activation_status, 
           asaas_documents_sent,
-          stores:store_id (
-            id,
-            name,
-            owner_id,
-            profiles:owner_id (
-              full_name,
-              phone
-            )
+          owner_id,
+          profiles:owner_id (
+            full_name,
+            phone
           )
         `)
         .not("asaas_account_id", "is", null);
       
       if (error) throw error;
-
-      return (data || []).map((item: any) => ({
-        id: item.stores?.id ?? item.store_id,
-        name: item.stores?.name ?? "",
-        owner_id: item.stores?.owner_id,
-        profiles: item.stores?.profiles,
-        asaas_account_id: item.asaas_account_id,
-        asaas_activation_status: item.asaas_activation_status,
-        asaas_documents_sent: item.asaas_documents_sent,
-      }));
+      return data || [];
     },
   });
 

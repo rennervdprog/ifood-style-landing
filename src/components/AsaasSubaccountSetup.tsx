@@ -67,9 +67,9 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
     queryKey: ["store-asaas", storeId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("store_credentials")
-        .select("store_id, asaas_wallet_id")
-        .eq("store_id", storeId)
+        .from("stores")
+        .select("id, asaas_wallet_id")
+        .eq("id", storeId)
         .maybeSingle();
       if (error) throw error;
       return data;

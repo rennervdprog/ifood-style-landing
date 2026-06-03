@@ -59,22 +59,15 @@ Deno.serve(async (req) => {
     // Ownership check using user-scoped client (RLS enforces it too)
     const { data: store, error: storeErr } = await supabase
       .from("stores")
-      .select("id, owner_id")
+      .select(
+        "id, owner_id, asaas_subaccount_api_key, asaas_pix_key, asaas_pix_key_type, asaas_auto_withdraw_enabled, asaas_min_withdraw_amount, asaas_last_withdraw_at"
+      )
       .eq("id", body.store_id)
       .maybeSingle();
     if (storeErr || !store) return json({ error: "Loja não encontrada" }, 404);
     if (store.owner_id !== userId) return json({ error: "Sem permissão" }, 403);
 
-    const { data: creds, error: credsErr } = await supabase
-      .from("store_credentials")
-      .select(
-        "store_id, asaas_subaccount_api_key, asaas_pix_key, asaas_pix_key_type, asaas_auto_withdraw_enabled, asaas_min_withdraw_amount, asaas_last_withdraw_at"
-      )
-      .eq("store_id", body.store_id)
-      .maybeSingle();
-    if (credsErr || !creds) return json({ error: "Credenciais não encontradas" }, 404);
-
-    const subKey = creds.asaas_subaccount_api_key as string | null;
+    const subKey = store.asaas_subaccount_api_key as string | null;
     if (!subKey) {
       return json({ error: "Subconta Asaas ainda não configurada para esta loja." }, 400);
     }
@@ -110,11 +103,11 @@ Deno.serve(async (req) => {
          payments: Array.isArray(paymentsData?.data) ? paymentsData.data : [],
         transfers: Array.isArray(transfersData?.data) ? transfersData.data : [],
         config: {
-          pixAddressKey: creds.asaas_pix_key,
-          pixAddressKeyType: creds.asaas_pix_key_type,
-          autoWithdrawEnabled: creds.asaas_auto_withdraw_enabled,
-          minWithdrawAmount: Number(creds.asaas_min_withdraw_amount ?? 5),
-          lastWithdrawAt: creds.asaas_last_withdraw_at,
+          pixAddressKey: store.asaas_pix_key,
+          pixAddressKeyType: store.asaas_pix_key_type,
+          autoWithdrawEnabled: store.asaas_auto_withdraw_enabled,
+          minWithdrawAmount: Number(store.asaas_min_withdraw_amount ?? 5),
+          lastWithdrawAt: store.asaas_last_withdraw_at,
         },
       });
     }
@@ -149,12 +142,12 @@ Deno.serve(async (req) => {
       }
 
       const { error: updErr } = await admin
-        .from("store_credentials")
+        .from("stores")
         .update({
           asaas_pix_key: newKey,
           asaas_pix_key_type: newType,
         })
-        .eq("store_id", body.store_id);
+        .eq("id", body.store_id);
 
       if (updErr) {
         console.error("DB update error:", updErr);
@@ -166,8 +159,8 @@ Deno.serve(async (req) => {
 
     // ---------- ACTION: withdraw-now ----------
     if (body.action === "withdraw-now") {
-      const pixKey = creds.asaas_pix_key as string | null;
-      const pixType = (creds.asaas_pix_key_type as string | null) || "EVP";
+      const pixKey = store.asaas_pix_key as string | null;
+      const pixType = (store.asaas_pix_key_type as string | null) || "EVP";
       if (!pixKey) {
         return json({ error: "Cadastre uma chave PIX antes de sacar." }, 400);
       }
@@ -198,9 +191,9 @@ Deno.serve(async (req) => {
       }
 
       await admin
-        .from("store_credentials")
+        .from("stores")
         .update({ asaas_last_withdraw_at: new Date().toISOString() })
-        .eq("store_id", body.store_id);
+        .eq("id", body.store_id);
 
       return json({
         success: true,
@@ -212,12 +205,12 @@ Deno.serve(async (req) => {
 
     if (body.action === "update-withdraw-config") {
       const { error: updErr } = await admin
-        .from("store_credentials")
+        .from("stores")
         .update({
           asaas_auto_withdraw_enabled: body.autoWithdrawEnabled,
           asaas_min_withdraw_amount: body.minWithdrawAmount,
         })
-        .eq("store_id", body.store_id);
+        .eq("id", body.store_id);
 
       if (updErr) {
         console.error("DB update error:", updErr);
