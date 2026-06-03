@@ -1219,6 +1219,24 @@ const CheckoutPage = () => {
           <span className="text-2xl font-black text-primary">{formatBRL(finalTotal)}</span>
         </div>
 
+        {belowMinimum && (
+          <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-3 space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-amber-700 dark:text-amber-400">Pedido mínimo: {formatBRL(storeMinimumOrderValue)}</span>
+              <span className="font-black text-amber-700 dark:text-amber-400">Faltam {formatBRL(minimumMissing)}</span>
+            </div>
+            <div className="h-1.5 w-full bg-amber-500/20 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-amber-500 transition-all"
+                style={{ width: `${Math.min(100, (subtotal / storeMinimumOrderValue) * 100)}%` }}
+              />
+            </div>
+            <p className="text-[11px] text-amber-700/90 dark:text-amber-400/90 leading-snug">
+              Adicione mais itens ao carrinho para atingir o valor mínimo desta loja.
+            </p>
+          </div>
+        )}
+
         {/* Botão */}
         {isStoreClosed ? (
           <button
