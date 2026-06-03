@@ -397,6 +397,10 @@ const CheckoutPage = () => {
       toast.error(`Loja fechada. ${storeStatus?.reason || ""}`);
       return;
     }
+    if (belowMinimum) {
+      toast.error(`Pedido mínimo desta loja: ${formatBRL(storeMinimumOrderValue)}. Adicione mais ${formatBRL(minimumMissing)}.`);
+      return;
+    }
     const useSavedAddr = selectedSavedAddressId && savedAddressData;
     const finalHasAddress = isPickup || useSavedAddr || hasAddress;
     const finalNeighborhood = isPickup ? "RETIRADA" : (useSavedAddr ? savedAddressData.neighborhood : (profileNeighborhood || neighborhood));
