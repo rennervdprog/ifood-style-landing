@@ -26,6 +26,20 @@ import {
   AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip,
   ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar,
 } from "recharts";
+// (recharts acima é mantido para outros usos legados; charts do dashboard
+// agora vivem em chunk separado via @/components/admin/AdminCharts)
+const DailyRevenueChart = lazy(() =>
+  import("@/components/admin/AdminCharts").then(m => ({ default: m.DailyRevenueChart }))
+);
+const HourlyBarChart = lazy(() =>
+  import("@/components/admin/AdminCharts").then(m => ({ default: m.HourlyBarChart }))
+);
+const WeekdayBarChart = lazy(() =>
+  import("@/components/admin/AdminCharts").then(m => ({ default: m.WeekdayBarChart }))
+);
+const PaymentPieChart = lazy(() =>
+  import("@/components/admin/AdminCharts").then(m => ({ default: m.PaymentPieChart }))
+);
 import { openWhatsApp, formatWhatsAppNumber } from "@/lib/whatsapp";
 import WhatsAppButton from "@/components/WhatsAppButton";
 const MenuBuilder = lazy(() => import("@/components/MenuBuilder"));
