@@ -1666,6 +1666,7 @@ const AdminDashboard = () => {
                 {dashboardTab === "loyalty" && (
                   <LoyaltyTab storeId={store.id} allowLoyalty={storePlan.allowLoyalty} />
                 )}
+                {dashboardTab === "coupons" && <CouponsTab storeId={store.id} />}
                 {dashboardTab === "drivers" && store && <DriversTab storeId={store.id} />}
                 {dashboardTab === "refunds" && store && <RefundsTab storeId={store.id} />}
               </Suspense>
