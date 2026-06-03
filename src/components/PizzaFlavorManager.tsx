@@ -140,6 +140,16 @@ const PizzaFlavorManager = ({ storeId }: PizzaFlavorManagerProps) => {
 
   return (
     <div className="space-y-6">
+      {/* Explanation banner */}
+      <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 space-y-1.5">
+        <p className="text-xs font-bold text-primary uppercase tracking-wider">Como funciona?</p>
+        <p className="text-xs text-foreground/80 leading-relaxed">
+          1️⃣ Aqui você cadastra os <b>sabores</b> e define o <b>preço de cada tamanho</b>.<br/>
+          2️⃣ Na aba <b>Cardápio</b>, basta criar <b>um único produto "Pizza"</b> — os sabores cadastrados aqui aparecerão automaticamente para o cliente escolher.<br/>
+          3️⃣ Você <b>não precisa</b> criar um produto para cada sabor.
+        </p>
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
