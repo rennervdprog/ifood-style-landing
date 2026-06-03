@@ -22,12 +22,8 @@ import {
    Filter, UserCheck, UserX, MapPinned, Repeat, Heart, AlertTriangle, LogOut, User, Shield, Navigation,
   Calendar, Download, GraduationCap, ChevronRight, Monitor
 } from "lucide-react";
-import {
-  AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip,
-  ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar,
-} from "recharts";
-// (recharts acima é mantido para outros usos legados; charts do dashboard
-// agora vivem em chunk separado via @/components/admin/AdminCharts)
+// recharts agora vive em chunk separado (@/components/admin/AdminCharts) —
+// removido do bundle inicial do AdminDashboard (~150KB gzipped).
 const DailyRevenueChart = lazy(() =>
   import("@/components/admin/AdminCharts").then(m => ({ default: m.DailyRevenueChart }))
 );
