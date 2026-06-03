@@ -149,12 +149,12 @@ Deno.serve(async (req) => {
       }
 
       const { error: updErr } = await admin
-        .from("stores")
+        .from("store_credentials")
         .update({
           asaas_pix_key: newKey,
           asaas_pix_key_type: newType,
         })
-        .eq("id", body.store_id);
+        .eq("store_id", body.store_id);
 
       if (updErr) {
         console.error("DB update error:", updErr);
