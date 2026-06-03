@@ -65,7 +65,7 @@ export const baseSidebarItems: { key: DashboardTab; label: string; icon: React.E
   { key: "clients", label: "Clientes", icon: Users },
   { key: "menu", label: "Cardápio", icon: UtensilsCrossed },
   { key: "addons", label: "Adicionais", icon: Plus },
-  { key: "bordas", label: "Bordas", icon: CircleDot, pizzaOnly: true },
+  { key: "bordas", label: "Pizzaria", icon: CircleDot, pizzaOnly: true },
   { key: "hours", label: "Horários", icon: Clock },
   { key: "finance", label: "Financeiro", icon: Coins },
   { key: "reports", label: "Relatórios", icon: BarChart3 },
@@ -88,7 +88,7 @@ export const bottomNavTabs: { key: DashboardTab; label: string; icon: React.Elem
 export const moreSheetItems: { key: DashboardTab; label: string; icon: React.ElementType; pizzaOnly?: boolean }[] = [
   { key: "cash_register", label: "PDV / Caixa", icon: ShoppingCart },
   { key: "addons", label: "Adicionais", icon: Plus },
-  { key: "bordas", label: "Bordas", icon: CircleDot, pizzaOnly: true },
+  { key: "bordas", label: "Pizzaria", icon: CircleDot, pizzaOnly: true },
   { key: "hours", label: "Horários", icon: Clock },
   { key: "finance", label: "Financeiro", icon: Coins },
   { key: "reports", label: "Relatórios", icon: BarChart3 },
