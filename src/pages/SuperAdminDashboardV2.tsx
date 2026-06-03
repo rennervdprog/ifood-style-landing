@@ -31,13 +31,23 @@ import {
 } from "lucide-react";
  import { Switch } from "@/components/ui/switch";
  import { Badge } from "@/components/ui/badge";
+// Hook + KPI/cores leves (sem recharts) — eager
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
-} from "recharts";
-import {
-  DailySalesChart, PaymentBreakdownChart, HourlyChart, KpiCard,
-  useFinanceChartData, CHART_COLORS, ChannelCompareChart,
-} from "@/components/FinanceCharts";
+  KpiCard, useFinanceChartData, CHART_COLORS,
+} from "@/components/FinanceChartsCore";
+// Gráficos pesados (recharts) — carregados sob demanda
+const DailySalesChart = lazy(() =>
+  import("@/components/FinanceCharts").then(m => ({ default: m.DailySalesChart }))
+);
+const PaymentBreakdownChart = lazy(() =>
+  import("@/components/FinanceCharts").then(m => ({ default: m.PaymentBreakdownChart }))
+);
+const HourlyChart = lazy(() =>
+  import("@/components/FinanceCharts").then(m => ({ default: m.HourlyChart }))
+);
+const ChannelCompareChart = lazy(() =>
+  import("@/components/FinanceCharts").then(m => ({ default: m.ChannelCompareChart }))
+);
  import { addMoney, multiplyMoney, subtractMoney, sumMoney, formatBRL } from "@/lib/utils";
  import { statusColors as globalStatusColors } from "@/lib/orderStatus";
 
