@@ -178,6 +178,7 @@ const AdminDashboard = () => {
   }, [isMatriz, roleLoading, navigate]);
   const [searchParams] = useSearchParams();
   const simulateStoreId = searchParams.get("storeId");
+  const initialTabParam = searchParams.get("tab") as DashboardTab | null;
   const queryClient = useQueryClient();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const loopIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -185,7 +186,9 @@ const AdminDashboard = () => {
   const [isOnline, setIsOnline] = useState(true);
   const [realtimeDriversConnected, setRealtimeDriversConnected] = useState(false);
   const [activeTab, setActiveTab] = useState<OrderTabKey>("pendente");
-  const [dashboardTab, setDashboardTab] = useState<DashboardTab>("dashboard");
+  const [dashboardTab, setDashboardTab] = useState<DashboardTab>(
+    initialTabParam || "dashboard",
+  );
   const [isPendingTab, startTabTransition] = useTransition();
   const [autoPrint, setAutoPrint] = useState(() => {
     const stored = localStorage.getItem("autoPrint");
