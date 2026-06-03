@@ -72,12 +72,17 @@ Deno.serve(async (req) => {
     // Verify the user owns the store
     const { data: store, error: storeErr } = await supabase
       .from("stores")
-      .select("id, owner_id, asaas_wallet_id")
+      .select("id, owner_id")
       .eq("id", body.store_id)
       .maybeSingle();
     if (storeErr || !store) return json({ error: "Loja não encontrada" }, 404);
     if (store.owner_id !== userId) return json({ error: "Sem permissão" }, 403);
-    if (store.asaas_wallet_id) {
+    const { data: creds } = await supabase
+      .from("store_credentials")
+      .select("store_id, asaas_wallet_id")
+      .eq("store_id", body.store_id)
+      .maybeSingle();
+    if (creds?.asaas_wallet_id) {
       return json({ error: "Esta loja já possui subconta Asaas configurada." }, 400);
     }
 
@@ -152,18 +157,18 @@ Deno.serve(async (req) => {
       console.warn("PIX key registration soft-failed:", e);
     }
 
-    // Persist on store (use admin client to bypass RLS for asaas_subaccount_api_key column)
+    // Persist on store_credentials (use admin client to bypass RLS)
     const { error: updErr } = await adminClient
-      .from("stores")
-      .update({
+      .from("store_credentials")
+      .upsert({
+        store_id: body.store_id,
         asaas_wallet_id: walletId,
         asaas_subaccount_api_key: apiKey,
         asaas_account_id: accData.id || null,
         asaas_pix_key: body.pixAddressKey,
         asaas_pix_key_type: body.pixAddressKeyType,
         asaas_auto_withdraw_enabled: true,
-      })
-      .eq("id", body.store_id);
+      });
 
     if (updErr) {
       console.error("Failed to persist subaccount:", updErr);

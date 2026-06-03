@@ -22,14 +22,31 @@ const AdminAsaasSubaccounts = () => {
     queryFn: async () => {
       // Lojas que possuem subconta configurada
       const { data, error } = await supabase
-        .from("stores")
-        .select("id, name, asaas_account_id, asaas_activation_status, asaas_documents_sent, status")
+        .from("store_credentials")
+        .select(`
+          store_id,
+          asaas_account_id,
+          asaas_activation_status,
+          asaas_documents_sent,
+          stores:store_id (
+            id,
+            name,
+            status
+          )
+        `)
         .not("asaas_account_id", "is", null);
       
       if (error) throw error;
 
-      // Para cada loja, vamos buscar o status de ativação (se disponível no banco)
-      return data || [];
+      // Flatten the nested stores object for easier consumption
+      return (data || []).map((item: any) => ({
+        id: item.stores?.id ?? item.store_id,
+        name: item.stores?.name ?? "",
+        status: item.stores?.status ?? "",
+        asaas_account_id: item.asaas_account_id,
+        asaas_activation_status: item.asaas_activation_status,
+        asaas_documents_sent: item.asaas_documents_sent,
+      }));
     },
   });
 

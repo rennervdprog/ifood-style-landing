@@ -39,12 +39,17 @@ Deno.serve(async (req) => {
     const loadStore = async (storeId: string) => {
       const { data: store } = await supabase
         .from("stores")
-        .select("id, owner_id, asaas_subaccount_api_key")
+        .select("id, owner_id")
         .eq("id", storeId)
         .maybeSingle();
       if (!store) return { error: json({ error: "Loja não encontrada" }, 404) };
       if ((store as any).owner_id !== userId) return { error: json({ error: "Sem permissão" }, 403) };
-      const apiKey = (store as any).asaas_subaccount_api_key as string | null;
+      const { data: creds } = await supabase
+        .from("store_credentials")
+        .select("store_id, asaas_subaccount_api_key")
+        .eq("store_id", storeId)
+        .maybeSingle();
+      const apiKey = (creds as any)?.asaas_subaccount_api_key as string | null;
       if (!apiKey) return { error: json({ error: "Subconta sem API key. Recrie a subconta." }, 400) };
       return { store, apiKey };
     };
