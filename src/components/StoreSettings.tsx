@@ -948,6 +948,27 @@ const NotificationSection = () => {
         )}
       </div>
 
+       {/* Pedido mínimo */}
+       <div className="bg-muted/50 border border-border rounded-2xl p-4 space-y-3">
+         <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
+           💰 Pedido mínimo
+         </label>
+         <p className="text-[11px] text-muted-foreground -mt-1">
+           Valor mínimo do subtotal (sem taxa) para o cliente conseguir finalizar. Deixe <strong>0</strong> para desativar.
+         </p>
+         <div>
+           <label className="text-xs font-bold text-foreground/80 mb-1 block">Valor mínimo (R$)</label>
+           <input
+             type="text"
+             inputMode="decimal"
+             value={minimumOrderValue}
+             onChange={(e) => setMinimumOrderValue(e.target.value.replace(/[^0-9.,]/g, ""))}
+             placeholder="Ex: 20,00"
+             className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+           />
+         </div>
+       </div>
+
       {/* Pizza Half-and-Half Settings */}
       {category === "pizzas" && (
         <div className="bg-muted/50 border border-border rounded-2xl p-4 space-y-4">
