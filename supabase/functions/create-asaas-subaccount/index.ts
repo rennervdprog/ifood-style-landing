@@ -72,12 +72,17 @@ Deno.serve(async (req) => {
     // Verify the user owns the store
     const { data: store, error: storeErr } = await supabase
       .from("stores")
-      .select("id, owner_id, asaas_wallet_id")
+      .select("id, owner_id")
       .eq("id", body.store_id)
       .maybeSingle();
     if (storeErr || !store) return json({ error: "Loja não encontrada" }, 404);
     if (store.owner_id !== userId) return json({ error: "Sem permissão" }, 403);
-    if (store.asaas_wallet_id) {
+    const { data: creds } = await supabase
+      .from("store_credentials")
+      .select("store_id, asaas_wallet_id")
+      .eq("store_id", body.store_id)
+      .maybeSingle();
+    if (creds?.asaas_wallet_id) {
       return json({ error: "Esta loja já possui subconta Asaas configurada." }, 400);
     }
 
