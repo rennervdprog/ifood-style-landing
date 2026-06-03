@@ -15,7 +15,7 @@ const BordasTab = ({ storeId, category }: Props) => {
   if (category !== "pizzas") return null;
 
   const tabs: { key: PizzaConfigTab; label: string; icon: typeof Pizza }[] = [
-    { key: "sabores", label: "Sabores", icon: Pizza },
+    { key: "sabores", label: "Regras", icon: Pizza },
     { key: "bordas", label: "Bordas", icon: Circle },
   ];
 
