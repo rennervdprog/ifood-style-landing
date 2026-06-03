@@ -971,76 +971,10 @@ const NotificationSection = () => {
 
       {/* Pizza Half-and-Half Settings */}
       {category === "pizzas" && (
-        <div className="bg-muted/50 border border-border rounded-2xl p-4 space-y-4">
-          <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
-            🍕 Configurações de Pizza
-          </label>
-
-          {/* Toggle: allow half-and-half */}
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-bold text-foreground">Permitir meio a meio</p>
-              <p className="text-[10px] text-muted-foreground">Clientes poderão montar pizza com sabores diferentes</p>
-            </div>
-            <button
-              onClick={() => setPizzaHalfEnabled(!pizzaHalfEnabled)}
-              className={`w-12 h-6 rounded-full transition-colors relative ${pizzaHalfEnabled ? "bg-primary" : "bg-muted-foreground/30"}`}
-            >
-              <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${pizzaHalfEnabled ? "translate-x-6" : "translate-x-0.5"}`} />
-            </button>
-          </div>
-
-          {/* Price calculation mode */}
-          {pizzaHalfEnabled && (
-            <div className="space-y-3 pl-1">
-              <p className="text-xs font-bold text-foreground/70">Como calcular o valor da pizza meio a meio?</p>
-
-              {/* Option 1: Maior valor */}
-              <button
-                onClick={() => setPizzaPriceMode("maior")}
-                className={`w-full text-left p-3 rounded-xl border-2 transition-all ${
-                  pizzaPriceMode === "maior" ? "border-primary bg-primary/10" : "border-border bg-card"
-                }`}
-              >
-                <p className={`text-sm font-bold ${pizzaPriceMode === "maior" ? "text-primary" : "text-foreground"}`}>
-                  💰 Maior valor
-                </p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">
-                  Cobra o preço do sabor mais caro. Ex: Calabresa R$40 + Mussarela R$35 = <strong>R$40</strong>
-                </p>
-              </button>
-
-              {/* Option 2: Média */}
-              <button
-                onClick={() => setPizzaPriceMode("media")}
-                className={`w-full text-left p-3 rounded-xl border-2 transition-all ${
-                  pizzaPriceMode === "media" ? "border-primary bg-primary/10" : "border-border bg-card"
-                }`}
-              >
-                <p className={`text-sm font-bold ${pizzaPriceMode === "media" ? "text-primary" : "text-foreground"}`}>
-                  📊 Média dos valores
-                </p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">
-                  Cobra a média dos sabores. Ex: Calabresa R$40 + Mussarela R$35 = <strong>R$37,50</strong>
-                </p>
-              </button>
-
-              {/* Option 3: Soma dividida */}
-              <button
-                onClick={() => setPizzaPriceMode("soma")}
-                className={`w-full text-left p-3 rounded-xl border-2 transition-all ${
-                  pizzaPriceMode === "soma" ? "border-primary bg-primary/10" : "border-border bg-card"
-                }`}
-              >
-                <p className={`text-sm font-bold ${pizzaPriceMode === "soma" ? "text-primary" : "text-foreground"}`}>
-                  ➗ Soma dividida
-                </p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">
-                  Cobra metade de cada sabor. Ex: Calabresa R$40/2 + Mussarela R$35/2 = <strong>R$37,50</strong>
-                </p>
-              </button>
-            </div>
-          )}
+        <div className="bg-muted/30 border border-dashed border-border rounded-2xl p-4">
+          <p className="text-xs text-muted-foreground">
+            🍕 As configurações de pizza (sabores, meio a meio e cálculo de preço) ficam na aba <strong>Bordas & Sabores</strong>.
+          </p>
         </div>
       )}
 
