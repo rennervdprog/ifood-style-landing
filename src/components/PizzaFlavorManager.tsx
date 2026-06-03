@@ -17,6 +17,7 @@ interface PizzaFlavor {
 interface PizzaConfig {
   sizes: string[];
   flavors: PizzaFlavor[];
+  max_flavors?: 2 | 3 | 4;
 }
 
 const DEFAULT_SIZES = ["Brotinho", "Média", "Grande", "Família"];
@@ -52,6 +53,7 @@ const PizzaFlavorManager = ({ storeId }: PizzaFlavorManagerProps) => {
   const pizzaConfig: PizzaConfig = settings.pizza_config || { sizes: DEFAULT_SIZES, flavors: [] };
   const sizes = pizzaConfig.sizes?.length ? pizzaConfig.sizes : DEFAULT_SIZES;
   const flavors: PizzaFlavor[] = pizzaConfig.flavors || [];
+  const maxFlavors: 2 | 3 | 4 = (pizzaConfig.max_flavors as 2 | 3 | 4) || 4;
 
   // Initialize active sizes from config
   if (activeSizes.length === 0 && sizes.length > 0) {
@@ -76,6 +78,11 @@ const PizzaFlavorManager = ({ storeId }: PizzaFlavorManagerProps) => {
     }
     await saveConfig({ ...pizzaConfig, sizes: current });
     toast.success(idx >= 0 ? `${size} removido` : `${size} adicionado`);
+  };
+
+  const setMaxFlavors = async (n: 2 | 3 | 4) => {
+    await saveConfig({ ...pizzaConfig, max_flavors: n });
+    toast.success(n === 2 ? "Apenas meio a meio" : `Até ${n} sabores por pizza`);
   };
 
   // Flavor CRUD
@@ -158,6 +165,35 @@ const PizzaFlavorManager = ({ storeId }: PizzaFlavorManagerProps) => {
           })}
         </div>
         <p className="text-[10px] text-muted-foreground">Selecione os tamanhos que sua pizzaria oferece</p>
+      </div>
+
+      {/* Max flavors per pizza */}
+      <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
+        <h3 className="text-xs font-bold text-foreground/70 uppercase">Sabores por pizza</h3>
+        <div className="grid grid-cols-3 gap-2">
+          {([2, 3, 4] as const).map(n => {
+            const active = maxFlavors === n;
+            return (
+              <button
+                key={n}
+                onClick={() => setMaxFlavors(n)}
+                className={`flex flex-col items-center justify-center py-3 rounded-xl border-2 transition-all ${
+                  active
+                    ? "bg-primary/10 border-primary text-primary"
+                    : "bg-muted border-transparent text-muted-foreground"
+                }`}
+              >
+                <span className="text-xl font-black">{n}</span>
+                <span className="text-[10px] font-bold mt-0.5">
+                  {n === 2 ? "Só meio a meio" : `Até ${n} sabores`}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-[10px] text-muted-foreground">
+          Define o máximo de sabores que o cliente pode combinar em uma única pizza.
+        </p>
       </div>
 
       {/* Add Flavor Form */}
