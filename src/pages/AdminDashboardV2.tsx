@@ -45,6 +45,7 @@ const HoursTab = lazy(() => import("./admin/tabs/HoursTab"));
 const FinanceTab = lazy(() => import("./admin/tabs/FinanceTab"));
 const DriversTab = lazy(() => import("./admin/tabs/DriversTab"));
 const SettingsTab = lazy(() => import("./admin/tabs/SettingsTab"));
+const CouponsTab = lazy(() => import("./admin/tabs/CouponsTab"));
 const DashboardOverviewSection = lazy(() => import("./admin/sections/DashboardOverviewSection"));
 const OrdersSection = lazy(() => import("./admin/sections/OrdersSection"));
 import AdminOrderCard from "./admin/components/AdminOrderCard";
@@ -1665,6 +1666,7 @@ const AdminDashboard = () => {
                 {dashboardTab === "loyalty" && (
                   <LoyaltyTab storeId={store.id} allowLoyalty={storePlan.allowLoyalty} />
                 )}
+                {dashboardTab === "coupons" && <CouponsTab storeId={store.id} />}
                 {dashboardTab === "drivers" && store && <DriversTab storeId={store.id} />}
                 {dashboardTab === "refunds" && store && <RefundsTab storeId={store.id} />}
               </Suspense>

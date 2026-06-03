@@ -3,7 +3,7 @@ import {
   LayoutDashboard, ListOrdered, Users, UtensilsCrossed,
   Plus, CircleDot, Coins, BarChart3, CreditCard, Star,
   Bike, AlertTriangle, GraduationCap, Settings,
-  MessageCircle, ShoppingCart, Headphones,
+  MessageCircle, ShoppingCart, Headphones, Tag,
 } from "lucide-react";
 import type { DashboardTab, OrderStatus } from "./types";
 
@@ -71,6 +71,7 @@ export const baseSidebarItems: { key: DashboardTab; label: string; icon: React.E
   { key: "reports", label: "Relatórios", icon: BarChart3 },
   { key: "subscription", label: "Meu Plano", icon: CreditCard },
   { key: "loyalty", label: "Fidelidade", icon: Star },
+  { key: "coupons", label: "Cupons", icon: Tag },
   { key: "drivers", label: "Motoboys", icon: Bike },
   { key: "refunds", label: "Reembolsos", icon: AlertTriangle },
   { key: "tutoriais", label: "Tutoriais", icon: GraduationCap },
@@ -93,6 +94,7 @@ export const moreSheetItems: { key: DashboardTab; label: string; icon: React.Ele
   { key: "reports", label: "Relatórios", icon: BarChart3 },
   { key: "subscription", label: "Meu Plano", icon: CreditCard },
   { key: "loyalty", label: "Fidelidade", icon: Star },
+  { key: "coupons", label: "Cupons", icon: Tag },
   { key: "drivers", label: "Motoboys", icon: Bike },
   { key: "tutoriais", label: "Tutoriais", icon: GraduationCap },
   { key: "settings", label: "Configurações", icon: Settings },
