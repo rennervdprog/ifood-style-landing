@@ -187,6 +187,9 @@ const CheckoutPage = () => {
   const storeDeliveryBaseKm = Number((storeData as any)?.delivery_base_km ?? storeSettings.delivery_base_km ?? 0);
   const storeDeliveryFeeBase = Number((storeData as any)?.delivery_fee_base ?? storeSettings.delivery_fee_base ?? 0);
   const storeDeliveryFeePerKm = Number((storeData as any)?.delivery_fee_per_km ?? storeSettings.delivery_fee_per_km ?? 0);
+  const storeMinimumOrderValue = Number((storeData as any)?.minimum_order_value || 0);
+  const belowMinimum = storeMinimumOrderValue > 0 && subtotal < storeMinimumOrderValue;
+  const minimumMissing = belowMinimum ? storeMinimumOrderValue - subtotal : 0;
   const isKmOwnDelivery = isOwnDelivery && storeDeliveryFeeType === "km";
   // For own delivery stores on FIXED plan: always add platform split on top of store's own fee.
   // Fallback to admin_settings.platform_split (default R$2) if useStorePlan is still loading
