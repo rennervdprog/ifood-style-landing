@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Plus, X } from "lucide-react";
-import { useBRLInput, formatBRLDisplay, parseBRL } from "@/hooks/useBRLInput";
+import { useBRLInput, formatBRLDisplay, parseBRL, parseBRLCentsInput } from "@/hooks/useBRLInput";
 
 interface CategoryProductFieldsProps {
   category: string;
@@ -59,7 +59,11 @@ const BRLPriceRowInput = ({ value, onCommit }: { value: number; onCommit: (v: nu
       type="text"
       inputMode="decimal"
       value={display}
-      onChange={(e) => setDisplay(e.target.value.replace(/[^\d.,]/g, ""))}
+      onChange={(e) => {
+        const n = parseBRLCentsInput(e.target.value);
+        setDisplay(n > 0 ? formatBRLDisplay(n) : "");
+        onCommit(n);
+      }}
       onBlur={() => {
         const n = parseBRL(display);
         onCommit(n);
