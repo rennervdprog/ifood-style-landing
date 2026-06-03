@@ -151,6 +151,7 @@ const PizzaSizesField = ({
             placeholder="0,00"
             value={price.display}
             onChange={(e) => price.onChange(e.target.value)}
+            onBlur={() => { if (price.value > 0) price.reset(price.value); }}
             onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }}
             className="flex-1 min-w-0 bg-transparent focus:outline-none"
           />
