@@ -7,7 +7,7 @@ import { ALERT_SOUND_URL } from "@/pages/admin/constants";
 
 interface PendingOrder {
   id: string;
-  total: number;
+  total_price: number;
   created_at: string;
   order_source: string | null;
 }
@@ -42,14 +42,14 @@ export const PdvDeliveryAlerts = ({ storeId }: Props) => {
     (async () => {
       const { data } = await supabase
         .from("orders")
-        .select("id, total, created_at, order_source")
+        .select("id, total_price, created_at, order_source")
         .eq("store_id", storeId)
         .eq("status", "pendente")
         .neq("order_source", "pdv")
         .order("created_at", { ascending: false })
         .limit(20);
       if (!active) return;
-      const list = (data || []) as PendingOrder[];
+      const list = (data || []) as unknown as PendingOrder[];
       knownIds.current = new Set(list.map((o) => o.id));
       setPending(list);
     })();
@@ -83,7 +83,7 @@ export const PdvDeliveryAlerts = ({ storeId }: Props) => {
           knownIds.current.add(row.id);
           setPending((prev) => {
             const without = prev.filter((o) => o.id !== row.id);
-            return [{ id: row.id, total: row.total, created_at: row.created_at, order_source: row.order_source }, ...without];
+            return [{ id: row.id, total_price: row.total_price, created_at: row.created_at, order_source: row.order_source }, ...without];
           });
 
           if (isNew) {
