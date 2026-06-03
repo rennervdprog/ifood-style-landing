@@ -269,6 +269,7 @@ type PizzaPriceMode = "maior" | "media" | "soma";
       delivery_base_km: parseFloat(deliveryBaseKm.toString().replace(",", ".")) || 0,
       delivery_fee_base: parseFloat(deliveryFeeBase.toString().replace(",", ".")) || 0,
       delivery_fee_per_km: parseFloat(deliveryFeePerKm.toString().replace(",", ".")) || 0,
+      minimum_order_value: parseFloat(minimumOrderValue.toString().replace(",", ".")) || 0,
       address_street: addressStreet.trim() || null,
       address_number: addressNumber.trim() || null,
       address_complement: addressComplement.trim() || null,
