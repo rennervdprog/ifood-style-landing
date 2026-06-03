@@ -20,6 +20,8 @@ interface PizzaConfig {
   max_flavors?: 2 | 3 | 4;
 }
 
+type PizzaPriceMode = "maior" | "media" | "soma";
+
 const DEFAULT_SIZES = ["Brotinho", "Média", "Grande", "Família"];
 
 const formatBRL = (cents: number): string => {
@@ -54,6 +56,8 @@ const PizzaFlavorManager = ({ storeId }: PizzaFlavorManagerProps) => {
   const sizes = pizzaConfig.sizes?.length ? pizzaConfig.sizes : DEFAULT_SIZES;
   const flavors: PizzaFlavor[] = pizzaConfig.flavors || [];
   const maxFlavors: 2 | 3 | 4 = (pizzaConfig.max_flavors as 2 | 3 | 4) || 4;
+  const halfEnabled: boolean = settings.pizza_half_enabled !== false;
+  const priceMode: PizzaPriceMode = (settings.pizza_price_mode as PizzaPriceMode) || "maior";
 
   // Initialize active sizes from config
   if (activeSizes.length === 0 && sizes.length > 0) {
@@ -62,6 +66,13 @@ const PizzaFlavorManager = ({ storeId }: PizzaFlavorManagerProps) => {
 
   const saveConfig = async (newConfig: PizzaConfig) => {
     const newSettings = { ...settings, pizza_config: newConfig } as any;
+    const { error } = await supabase.from("stores").update({ settings: newSettings }).eq("id", storeId);
+    if (error) { toast.error("Erro ao salvar"); return; }
+    queryClient.invalidateQueries({ queryKey: ["store-for-pizza", storeId] });
+  };
+
+  const saveSettingField = async (patch: Record<string, any>) => {
+    const newSettings = { ...settings, ...patch } as any;
     const { error } = await supabase.from("stores").update({ settings: newSettings }).eq("id", storeId);
     if (error) { toast.error("Erro ao salvar"); return; }
     queryClient.invalidateQueries({ queryKey: ["store-for-pizza", storeId] });
@@ -194,6 +205,47 @@ const PizzaFlavorManager = ({ storeId }: PizzaFlavorManagerProps) => {
         <p className="text-[10px] text-muted-foreground">
           Define o máximo de sabores que o cliente pode combinar em uma única pizza.
         </p>
+      </div>
+
+      {/* Half-and-half enable + price mode */}
+      <div className="bg-card border border-border rounded-2xl p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-bold text-foreground">Permitir múltiplos sabores</p>
+            <p className="text-[10px] text-muted-foreground">Clientes poderão montar pizza com sabores diferentes</p>
+          </div>
+          <button
+            onClick={() => saveSettingField({ pizza_half_enabled: !halfEnabled })}
+            className={`w-12 h-6 rounded-full transition-colors relative ${halfEnabled ? "bg-primary" : "bg-muted-foreground/30"}`}
+          >
+            <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${halfEnabled ? "translate-x-6" : "translate-x-0.5"}`} />
+          </button>
+        </div>
+
+        {halfEnabled && (
+          <div className="space-y-2">
+            <p className="text-xs font-bold text-foreground/70">Como calcular o valor da pizza com vários sabores?</p>
+            {([
+              { id: "maior", title: "💰 Maior valor", desc: "Cobra o preço do sabor mais caro." },
+              { id: "media", title: "📊 Média dos valores", desc: "Cobra a média dos sabores." },
+              { id: "soma",  title: "➗ Soma dividida", desc: "Cobra a fração de cada sabor (igual à média)." },
+            ] as const).map(opt => {
+              const active = priceMode === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  onClick={() => saveSettingField({ pizza_price_mode: opt.id })}
+                  className={`w-full text-left p-3 rounded-xl border-2 transition-all ${
+                    active ? "border-primary bg-primary/10" : "border-border bg-card"
+                  }`}
+                >
+                  <p className={`text-sm font-bold ${active ? "text-primary" : "text-foreground"}`}>{opt.title}</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{opt.desc}</p>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Add Flavor Form */}
