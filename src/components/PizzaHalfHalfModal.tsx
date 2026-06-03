@@ -6,6 +6,9 @@ import { Pizza, ShoppingCart, Check, Minus, Plus, ChevronLeft, Circle, X } from 
 import { Textarea } from "@/components/ui/textarea";
 import type { CartAddon } from "@/contexts/CartContext";
 
+type FlavorCount = 2 | 3 | 4;
+const FRACTION_LABEL: Record<FlavorCount, string> = { 2: "½", 3: "⅓", 4: "¼" };
+
 interface Product {
   id: string;
   store_id: string;
@@ -49,12 +52,13 @@ interface Props {
   }, addons: CartAddon[], observations: string, quantity: number, unitPrice: number) => void;
 }
 
-type Step = 1 | 2 | 3;
+// Step 0 = choose flavor count. Steps 1..flavorCount = pick each flavor. Last step = borders/observations.
+type Step = number;
 
 const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, sections, priceMode, onAdd }: Props) => {
-  const [step, setStep] = useState<Step>(1);
-  const [product1Id, setProduct1Id] = useState<string | null>(null);
-  const [product2Id, setProduct2Id] = useState<string | null>(null);
+  const [flavorCount, setFlavorCount] = useState<FlavorCount>(2);
+  const [step, setStep] = useState<Step>(0);
+  const [productIds, setProductIds] = useState<(string | null)[]>([null, null]);
   const [selectedBorderId, setSelectedBorderId] = useState<string | null>(null);
   const [observations, setObservations] = useState("");
   const [quantity, setQuantity] = useState(1);
@@ -87,12 +91,14 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
   }, [borders, open, selectedBorderId]);
 
   const hasBorders = borders.length > 0;
-  const totalSteps = hasBorders ? 3 : 2;
+  // Visible step count in the progress bar: N flavor picks + (borders if any). Step 0 (count) hidden.
+  const totalSteps = flavorCount + (hasBorders ? 1 : 0);
+  const borderStep = flavorCount + 1; // step index when borders are shown
 
   const reset = () => {
-    setStep(1);
-    setProduct1Id(null);
-    setProduct2Id(null);
+    setStep(0);
+    setFlavorCount(2);
+    setProductIds([null, null]);
     setSelectedBorderId(null);
     setObservations("");
     setQuantity(1);
@@ -115,14 +121,15 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
     return true;
   });
 
-  const p1 = pizzaProducts.find(p => p.id === product1Id);
-  const p2 = pizzaProducts.find(p => p.id === product2Id);
+  const selectedFlavors = productIds.map(id => (id ? pizzaProducts.find(p => p.id === id) : undefined));
+  const allChosen = selectedFlavors.every(Boolean) && selectedFlavors.length === flavorCount;
   const selectedBorder = borders.find(b => b.id === selectedBorderId);
 
   const calcPizzaPrice = (): number => {
-    if (!p1 || !p2) return 0;
-    if (priceMode === "media") return (p1.price + p2.price) / 2;
-    return Math.max(p1.price, p2.price);
+    if (!allChosen) return 0;
+    const prices = selectedFlavors.map(p => p!.price);
+    if (priceMode === "media") return prices.reduce((a, b) => a + b, 0) / prices.length;
+    return Math.max(...prices);
   };
 
   const pizzaPrice = calcPizzaPrice();
@@ -131,24 +138,30 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
   const lineTotal = unitPrice * quantity;
 
   const handleAdd = () => {
-    if (!p1 || !p2) return;
-    const name = `Pizza Meio a Meio: ${p1.name} / ${p2.name}`;
-    const addons: CartAddon[] = [
-      { name: `½ ${p1.name}`, price: 0 },
-      { name: `½ ${p2.name}`, price: 0 },
-    ];
+    if (!allChosen) return;
+    const flavors = selectedFlavors as Product[];
+    const frac = FRACTION_LABEL[flavorCount];
+    const title = flavorCount === 2 ? "Pizza Meio a Meio" : `Pizza ${flavorCount} Sabores`;
+    const name = `${title}: ${flavors.map(f => f.name).join(" / ")}`;
+    const addons: CartAddon[] = flavors.map(f => ({ name: `${frac} ${f.name}`, price: 0 }));
     if (selectedBorder) {
       addons.push({ name: `Borda: ${selectedBorder.name}`, price: borderPrice });
     }
     onAdd(
       {
-        id: p1.id,
+        id: flavors[0].id,
         store_id: storeId,
         name,
         description: null,
         price: unitPrice,
         image_url: null,
-        metadata: { is_half_half: true, border: selectedBorder?.name || null, half2_id: p2.id },
+        metadata: {
+          is_half_half: flavorCount === 2,
+          is_multi_flavor: flavorCount > 2,
+          flavor_count: flavorCount,
+          flavor_ids: flavors.map(f => f.id),
+          border: selectedBorder?.name || null,
+        },
       },
       addons,
       observations,
@@ -183,33 +196,62 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
     return groups;
   })();
 
-  const stepLabels: Record<Step, string> = {
-    1: "Escolha o 1º sabor",
-    2: "Escolha o 2º sabor",
-    3: "Escolha a borda",
+  const ordinal = (n: number) => ["1º", "2º", "3º", "4º"][n - 1] || `${n}º`;
+  const stepLabel = (s: Step): string => {
+    if (s === 0) return "Quantos sabores?";
+    if (s === borderStep) return "Escolha a borda";
+    return `Escolha o ${ordinal(s)} sabor`;
   };
 
+  const isFlavorStep = step >= 1 && step <= flavorCount;
+  const currentFlavorIdx = isFlavorStep ? step - 1 : -1;
+
   const canAdvance = () => {
-    if (step === 1) return !!product1Id;
-    if (step === 2) return !!product2Id;
-    if (step === 3) return hasBorders ? !!selectedBorderId : true;
+    if (step === 0) return true;
+    if (isFlavorStep) return !!productIds[currentFlavorIdx];
+    if (step === borderStep) return hasBorders ? !!selectedBorderId : true;
     return false;
   };
 
   const handleNext = () => {
-    if (step === 1 && product1Id) setStep(2);
-    else if (step === 2 && product2Id) setStep(3);
+    if (step === 0) { setStep(1); return; }
+    if (isFlavorStep && productIds[currentFlavorIdx]) setStep(step + 1);
   };
 
   const handleBack = () => {
-    if (step === 1) { handleClose(); return; }
-    if (step === 2) { setProduct2Id(null); setStep(1); }
-    else if (step === 3) { setSelectedBorderId(null); setStep(2); }
+    if (step === 0) { handleClose(); return; }
+    if (step === 1) { setStep(0); return; }
+    if (isFlavorStep) {
+      // clear current selection before going back
+      setProductIds(prev => {
+        const next = [...prev];
+        next[currentFlavorIdx] = null;
+        return next;
+      });
+      setStep(step - 1);
+      return;
+    }
+    if (step === borderStep) { setSelectedBorderId(null); setStep(flavorCount); }
   };
 
-  // If the store has no borders configured, treat step 2 as the final step
-  // and let the user finalize the order from there (no border step at all).
-  const isFinalStep = step === 3 || (step === 2 && !hasBorders && !bordersLoading);
+  const setCurrentFlavor = (id: string) => {
+    setProductIds(prev => {
+      const next = [...prev];
+      next[currentFlavorIdx] = id;
+      return next;
+    });
+  };
+
+  const handleFlavorCountChange = (n: FlavorCount) => {
+    setFlavorCount(n);
+    setProductIds(Array(n).fill(null));
+    setSelectedBorderId(null);
+  };
+
+  // Final step: borders step OR last flavor step when there are no borders
+  const isFinalStep =
+    step === borderStep ||
+    (step === flavorCount && !hasBorders && !bordersLoading);
 
    useEffect(() => {
      if (open) {
@@ -248,35 +290,44 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
 
       {/* Progress bar + step label */}
       <div className="px-4 pt-4 pb-2 bg-background">
-        <div className="flex gap-2 mb-2">
-          {Array.from({ length: totalSteps }, (_, i) => i + 1).map(s => (
-            <div
-              key={s}
-              className={`flex-1 h-1.5 rounded-full transition-all ${
-                s <= step ? "bg-primary" : "bg-muted-foreground/20"
-              }`}
-            />
-          ))}
-        </div>
+        {step > 0 && (
+          <div className="flex gap-2 mb-2">
+            {Array.from({ length: totalSteps }, (_, i) => i + 1).map(s => (
+              <div
+                key={s}
+                className={`flex-1 h-1.5 rounded-full transition-all ${
+                  s <= step ? "bg-primary" : "bg-muted-foreground/20"
+                }`}
+              />
+            ))}
+          </div>
+        )}
         <div className="flex items-center gap-2">
           <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
-            {step === 3 ? <Circle className="h-5 w-5 text-primary" /> : <Pizza className="h-5 w-5 text-primary" />}
+            {step === borderStep ? <Circle className="h-5 w-5 text-primary" /> : <Pizza className="h-5 w-5 text-primary" />}
           </div>
           <div>
-            <p className="text-sm font-bold text-foreground">Etapa {step} de {totalSteps}</p>
-            <p className="text-xs text-muted-foreground font-medium">{stepLabels[step]}</p>
+            <p className="text-sm font-bold text-foreground">
+              {step === 0 ? "Comece por aqui" : `Etapa ${step} de ${totalSteps}`}
+            </p>
+            <p className="text-xs text-muted-foreground font-medium">{stepLabel(step)}</p>
           </div>
         </div>
 
         {/* Summary chip */}
-        {(p1 || p2 || selectedBorder) && (
+        {(selectedFlavors.some(Boolean) || selectedBorder) && step > 0 && (
           <div className="flex items-center gap-2 mt-3 bg-muted/60 rounded-xl px-3 py-2.5">
             <span className="text-lg">🍕</span>
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-1 text-xs">
-                {p1 && <span className="font-bold text-foreground">½ {p1.name}</span>}
-                {p1 && p2 && <span className="text-muted-foreground">+</span>}
-                {p2 && <span className="font-bold text-foreground">½ {p2.name}</span>}
+                {selectedFlavors.map((f, i) =>
+                  f ? (
+                    <span key={i} className="font-bold text-foreground">
+                      {i > 0 && <span className="text-muted-foreground mr-1">+</span>}
+                      {FRACTION_LABEL[flavorCount]} {f.name}
+                    </span>
+                  ) : null
+                )}
                 {selectedBorder && (
                   <>
                     <span className="text-muted-foreground">•</span>
@@ -284,7 +335,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
                   </>
                 )}
               </div>
-              {p1 && p2 && (
+              {allChosen && (
                 <span className="text-[10px] text-muted-foreground">
                   Pizza {formatBRL(pizzaPrice)}
                   {borderPrice > 0 && ` + Borda ${formatBRL(borderPrice)}`}
@@ -298,15 +349,49 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
 
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto px-4 pb-40">
-        {/* Step 1 & 2: product list */}
-        {(step === 1 || step === 2) && (
+        {/* Step 0: choose flavor count */}
+        {step === 0 && (
+          <div className="space-y-3 pt-4">
+            <p className="text-sm text-muted-foreground">Escolha quantos sabores diferentes você quer na sua pizza:</p>
+            <div className="grid grid-cols-3 gap-3">
+              {([2, 3, 4] as FlavorCount[]).map(n => {
+                const isSel = flavorCount === n;
+                return (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => handleFlavorCountChange(n)}
+                    className={`flex flex-col items-center justify-center py-6 rounded-2xl border-2 transition-all ${
+                      isSel
+                        ? "bg-primary/10 border-primary shadow-sm"
+                        : "bg-card border-transparent hover:bg-muted"
+                    }`}
+                  >
+                    <span className="text-3xl font-black text-foreground">{n}</span>
+                    <span className="text-xs font-bold text-muted-foreground mt-1">
+                      {n === 2 ? "Meio a meio" : `${n} sabores`}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground mt-0.5">{FRACTION_LABEL[n]} cada</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Flavor pick step */}
+        {isFlavorStep && (
           <div className="space-y-3 pt-2">
             {groupedProducts.map((group, idx) => {
-              const excludeId = step === 2 ? product1Id : undefined;
-              const items = excludeId ? group.items.filter(p => p.id !== excludeId) : group.items;
+              const chosenIds = new Set(
+                productIds
+                  .map((id, i) => (i !== currentFlavorIdx ? id : null))
+                  .filter(Boolean) as string[]
+              );
+              const items = group.items.filter(p => !chosenIds.has(p.id));
               if (items.length === 0) return null;
-              const selectedId = step === 1 ? product1Id : product2Id;
-              const onSelect = step === 1 ? setProduct1Id : setProduct2Id;
+              const selectedId = productIds[currentFlavorIdx];
+              const onSelect = setCurrentFlavor;
               return (
                 <div key={group.section?.id || `unsectioned-${idx}`}>
                   {group.section && (
@@ -359,8 +444,8 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
               <p className="text-sm text-muted-foreground text-center py-12">Nenhum sabor cadastrado ainda.</p>
             )}
 
-            {/* When the store has no borders, show observations on step 2 (final step) */}
-            {step === 2 && !hasBorders && !bordersLoading && product2Id && (
+            {/* When the store has no borders, show observations on the last flavor step (final step) */}
+            {step === flavorCount && !hasBorders && !bordersLoading && productIds[currentFlavorIdx] && (
               <div className="pt-4">
                 <label className="text-sm font-bold text-foreground mb-1.5 block">Observações</label>
                 <Textarea
@@ -377,8 +462,8 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
           </div>
         )}
 
-        {/* Step 3: borders + observations (only shown when store has borders) */}
-        {step === 3 && hasBorders && (
+        {/* Border step + observations (only shown when store has borders) */}
+        {step === borderStep && hasBorders && (
           <div className="space-y-4 pt-2">
             <div className="space-y-2">
               {borders.length === 0 ? (
@@ -434,7 +519,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
        <div className="fixed bottom-0 left-0 right-0 z-[110] bg-background border-t px-4 py-3 pb-8 md:pb-4 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
         {!isFinalStep ? (
           <div className="flex items-center gap-3">
-            {step > 1 && (
+            {step > 0 && (
               <button
                 onClick={handleBack}
                 className="py-4 px-5 rounded-xl font-bold text-base bg-muted text-foreground active:scale-[0.98] transition-all"
