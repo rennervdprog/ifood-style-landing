@@ -421,6 +421,33 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
         {/* Flavor pick step */}
         {isFlavorStep && (
           <div className="space-y-3 pt-2">
+            {hasSizes && step === 1 && (
+              <div className="bg-card border-2 border-border rounded-2xl p-3 space-y-2 shadow-sm">
+                <p className="text-xs font-bold text-foreground/80">📏 Escolha o tamanho</p>
+                <div className="flex flex-wrap gap-2">
+                  {availableSizes.map(size => {
+                    const isSel = selectedSize === size;
+                    return (
+                      <button
+                        key={size}
+                        type="button"
+                        onClick={() => setSelectedSize(size)}
+                        className={`px-4 py-2 rounded-xl border-2 text-sm font-bold transition-all ${
+                          isSel
+                            ? "bg-primary/10 border-primary text-primary"
+                            : "bg-muted/40 border-transparent text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {size}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  O preço de cada sabor pode variar conforme o tamanho.
+                </p>
+              </div>
+            )}
             {groupedProducts.map((group, idx) => {
               const chosenIds = new Set(
                 productIds
