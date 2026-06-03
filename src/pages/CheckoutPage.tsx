@@ -121,7 +121,7 @@ const CheckoutPage = () => {
       const { data } = await supabase
          .from("stores_public")
          // 🔒 Inclui campos de km para cálculo correto da taxa de entrega
-         .select("name, address_cep, address_city, latitude, longitude, delivery_mode, own_delivery_fee, settings, is_open, force_closed, delivery_fee_type, delivery_base_km, delivery_fee_base, delivery_fee_per_km")
+          .select("name, address_cep, address_city, latitude, longitude, delivery_mode, own_delivery_fee, settings, is_open, force_closed, delivery_fee_type, delivery_base_km, delivery_fee_base, delivery_fee_per_km, minimum_order_value")
          .eq("id", storeId!)
         .maybeSingle();
       return data;
@@ -187,6 +187,9 @@ const CheckoutPage = () => {
   const storeDeliveryBaseKm = Number((storeData as any)?.delivery_base_km ?? storeSettings.delivery_base_km ?? 0);
   const storeDeliveryFeeBase = Number((storeData as any)?.delivery_fee_base ?? storeSettings.delivery_fee_base ?? 0);
   const storeDeliveryFeePerKm = Number((storeData as any)?.delivery_fee_per_km ?? storeSettings.delivery_fee_per_km ?? 0);
+  const storeMinimumOrderValue = Number((storeData as any)?.minimum_order_value || 0);
+  const belowMinimum = storeMinimumOrderValue > 0 && subtotal < storeMinimumOrderValue;
+  const minimumMissing = belowMinimum ? storeMinimumOrderValue - subtotal : 0;
   const isKmOwnDelivery = isOwnDelivery && storeDeliveryFeeType === "km";
   // For own delivery stores on FIXED plan: always add platform split on top of store's own fee.
   // Fallback to admin_settings.platform_split (default R$2) if useStorePlan is still loading
@@ -392,6 +395,10 @@ const CheckoutPage = () => {
    const handleConfirm = async () => {
     if (isStoreClosed) {
       toast.error(`Loja fechada. ${storeStatus?.reason || ""}`);
+      return;
+    }
+    if (belowMinimum) {
+      toast.error(`Pedido mínimo desta loja: ${formatBRL(storeMinimumOrderValue)}. Adicione mais ${formatBRL(minimumMissing)}.`);
       return;
     }
     const useSavedAddr = selectedSavedAddressId && savedAddressData;
@@ -1212,6 +1219,24 @@ const CheckoutPage = () => {
           <span className="text-2xl font-black text-primary">{formatBRL(finalTotal)}</span>
         </div>
 
+        {belowMinimum && (
+          <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-3 space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-amber-700 dark:text-amber-400">Pedido mínimo: {formatBRL(storeMinimumOrderValue)}</span>
+              <span className="font-black text-amber-700 dark:text-amber-400">Faltam {formatBRL(minimumMissing)}</span>
+            </div>
+            <div className="h-1.5 w-full bg-amber-500/20 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-amber-500 transition-all"
+                style={{ width: `${Math.min(100, (subtotal / storeMinimumOrderValue) * 100)}%` }}
+              />
+            </div>
+            <p className="text-[11px] text-amber-700/90 dark:text-amber-400/90 leading-snug">
+              Adicione mais itens ao carrinho para atingir o valor mínimo desta loja.
+            </p>
+          </div>
+        )}
+
         {/* Botão */}
         {isStoreClosed ? (
           <button
@@ -1244,13 +1269,17 @@ const CheckoutPage = () => {
         ) : (
           <button
             onClick={handleConfirm}
-            disabled={loading}
+            disabled={loading || belowMinimum}
             className="w-full bg-primary text-primary-foreground font-bold py-4 rounded-2xl active:scale-[0.98] transition-all disabled:opacity-50 shadow-lg shadow-primary/25 text-base"
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
                 <Loader2 className="w-5 h-5 animate-spin" />
                 Enviando pedido...
+              </span>
+            ) : belowMinimum ? (
+              <span className="flex items-center justify-center gap-2">
+                Faltam {formatBRL(minimumMissing)} para o mínimo
               </span>
             ) : (
               <span className="flex items-center justify-center gap-2">

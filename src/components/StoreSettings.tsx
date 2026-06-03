@@ -62,6 +62,7 @@ type PizzaPriceMode = "maior" | "media" | "soma";
    storeDeliveryBaseKm?: number | null;
    storeDeliveryFeeBase?: number | null;
    storeDeliveryFeePerKm?: number | null;
+  storeMinimumOrderValue?: number | null;
    storeSettings?: Record<string, any> | null;
  }
  
@@ -71,6 +72,7 @@ type PizzaPriceMode = "maior" | "media" | "soma";
    storeAddressReference, storeAddressCity, storeAddressState, storeAddressCep, storeDeliveryMode,
    storeOwnDeliveryFee, storeDeliveryFeeType, storeDeliveryBaseKm, storeDeliveryFeeBase,
    storeDeliveryFeePerKm, storeSettings
+  , storeMinimumOrderValue
  }: StoreSettingsProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -103,6 +105,7 @@ type PizzaPriceMode = "maior" | "media" | "soma";
    const [deliveryBaseKm, setDeliveryBaseKm] = useState(storeDeliveryBaseKm?.toString() || "0");
    const [deliveryFeeBase, setDeliveryFeeBase] = useState(storeDeliveryFeeBase?.toString() || "0");
    const [deliveryFeePerKm, setDeliveryFeePerKm] = useState(storeDeliveryFeePerKm?.toString() || "0");
+  const [minimumOrderValue, setMinimumOrderValue] = useState(storeMinimumOrderValue?.toString() || "0");
   const storePlan = useStorePlan(storeId);
 
   // Verificar se conta Asaas está 100% aprovada para liberar PIX Online
@@ -266,6 +269,7 @@ type PizzaPriceMode = "maior" | "media" | "soma";
       delivery_base_km: parseFloat(deliveryBaseKm.toString().replace(",", ".")) || 0,
       delivery_fee_base: parseFloat(deliveryFeeBase.toString().replace(",", ".")) || 0,
       delivery_fee_per_km: parseFloat(deliveryFeePerKm.toString().replace(",", ".")) || 0,
+      minimum_order_value: parseFloat(minimumOrderValue.toString().replace(",", ".")) || 0,
       address_street: addressStreet.trim() || null,
       address_number: addressNumber.trim() || null,
       address_complement: addressComplement.trim() || null,
@@ -943,6 +947,27 @@ const NotificationSection = () => {
           </div>
         )}
       </div>
+
+       {/* Pedido mínimo */}
+       <div className="bg-muted/50 border border-border rounded-2xl p-4 space-y-3">
+         <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
+           💰 Pedido mínimo
+         </label>
+         <p className="text-[11px] text-muted-foreground -mt-1">
+           Valor mínimo do subtotal (sem taxa) para o cliente conseguir finalizar. Deixe <strong>0</strong> para desativar.
+         </p>
+         <div>
+           <label className="text-xs font-bold text-foreground/80 mb-1 block">Valor mínimo (R$)</label>
+           <input
+             type="text"
+             inputMode="decimal"
+             value={minimumOrderValue}
+             onChange={(e) => setMinimumOrderValue(e.target.value.replace(/[^0-9.,]/g, ""))}
+             placeholder="Ex: 20,00"
+             className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+           />
+         </div>
+       </div>
 
       {/* Pizza Half-and-Half Settings */}
       {category === "pizzas" && (
