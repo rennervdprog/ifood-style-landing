@@ -198,9 +198,9 @@ Deno.serve(async (req) => {
       }
 
       await admin
-        .from("stores")
+        .from("store_credentials")
         .update({ asaas_last_withdraw_at: new Date().toISOString() })
-        .eq("id", body.store_id);
+        .eq("store_id", body.store_id);
 
       return json({
         success: true,
@@ -210,15 +210,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ---------- ACTION: update-withdraw-config ----------
     if (body.action === "update-withdraw-config") {
       const { error: updErr } = await admin
-        .from("stores")
+        .from("store_credentials")
         .update({
           asaas_auto_withdraw_enabled: body.autoWithdrawEnabled,
           asaas_min_withdraw_amount: body.minWithdrawAmount,
         })
-        .eq("id", body.store_id);
+        .eq("store_id", body.store_id);
 
       if (updErr) {
         console.error("DB update error:", updErr);

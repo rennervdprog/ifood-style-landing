@@ -48,9 +48,9 @@ Deno.serve(async (req) => {
     );
 
     const { data: stores, error: storesErr } = await admin
-      .from("stores")
+      .from("store_credentials")
       .select(
-        "id, name, asaas_subaccount_api_key, asaas_pix_key, asaas_pix_key_type, asaas_min_withdraw_amount"
+        "store_id, asaas_subaccount_api_key, asaas_pix_key, asaas_pix_key_type, asaas_min_withdraw_amount"
       )
       .eq("asaas_auto_withdraw_enabled", true)
       .not("asaas_subaccount_api_key", "is", null)
