@@ -1,6 +1,6 @@
 import { memo, useRef, useState, useEffect } from "react";
 import { formatBRL } from "@/lib/utils";
-import { formatBRLDisplay, parseBRLTypingInput } from "@/hooks/useBRLInput";
+import { formatBRLDisplay, parseBRLCentsInput } from "@/hooks/useBRLInput";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { compressImage } from "@/lib/compressImage";
@@ -29,8 +29,8 @@ const formatPriceInput = (value: string) => {
   const num = Number(value);
   return Number.isFinite(num) && num > 0 ? `R$ ${formatBRLDisplay(num)}` : "";
 };
-const normalizePriceInput = (value: string, previousValue = "") => {
-  const nextValue = parseBRLTypingInput(value, formatPriceInput(previousValue));
+const normalizePriceInput = (value: string) => {
+  const nextValue = parseBRLCentsInput(value);
   return nextValue > 0 ? nextValue.toFixed(2) : "";
 };
 
@@ -95,7 +95,7 @@ export const ProductFormInline = ({ initial, onSave, onCancel, storeCategory, st
           type="text"
           placeholder="Preço *"
           value={formatPriceInput(form.price)}
-          onChange={(e) => setForm((p) => ({ ...p, price: normalizePriceInput(e.target.value, p.price) }))}
+          onChange={(e) => setForm((p) => ({ ...p, price: normalizePriceInput(e.target.value) }))}
           className="w-1/3 bg-background text-foreground px-3 py-2.5 rounded-lg text-sm border border-border focus:border-primary focus:outline-none"
           inputMode="numeric"
         />
