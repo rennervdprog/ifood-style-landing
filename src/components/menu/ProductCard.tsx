@@ -1,5 +1,6 @@
 import { memo, useRef, useState, useEffect } from "react";
 import { formatBRL } from "@/lib/utils";
+import { formatBRLDisplay, parseBRLTypingInput } from "@/hooks/useBRLInput";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { compressImage } from "@/lib/compressImage";
@@ -25,14 +26,12 @@ const uploadProductImage = async (file: File): Promise<string | null> => {
 
 // ---------- Price helpers ----------
 const formatPriceInput = (value: string) => {
-  const digits = value.replace(/\D/g, "");
-  if (!digits) return "";
-  return (Number(digits) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const num = Number(value);
+  return Number.isFinite(num) && num > 0 ? `R$ ${formatBRLDisplay(num)}` : "";
 };
-const normalizePriceInput = (value: string) => {
-  const digits = value.replace(/\D/g, "");
-  if (!digits) return "";
-  return (Number(digits) / 100).toFixed(2);
+const normalizePriceInput = (value: string, previousValue = "") => {
+  const nextValue = parseBRLTypingInput(value, formatPriceInput(previousValue));
+  return nextValue > 0 ? nextValue.toFixed(2) : "";
 };
 
 // ---------- Product Form (estado 100% local) ----------
@@ -96,7 +95,7 @@ export const ProductFormInline = ({ initial, onSave, onCancel, storeCategory, st
           type="text"
           placeholder="Preço *"
           value={formatPriceInput(form.price)}
-          onChange={(e) => setForm((p) => ({ ...p, price: normalizePriceInput(e.target.value) }))}
+          onChange={(e) => setForm((p) => ({ ...p, price: normalizePriceInput(e.target.value, p.price) }))}
           className="w-1/3 bg-background text-foreground px-3 py-2.5 rounded-lg text-sm border border-border focus:border-primary focus:outline-none"
           inputMode="numeric"
         />
