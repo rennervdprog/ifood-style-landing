@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Plus, X } from "lucide-react";
-import { useBRLInput, formatBRLDisplay, parseBRLTypingInput } from "@/hooks/useBRLInput";
+import { useBRLInput, formatBRLDisplay, parseBRLCentsInput } from "@/hooks/useBRLInput";
 
 interface CategoryProductFieldsProps {
   category: string;
@@ -63,7 +63,7 @@ const BRLPriceRowInput = ({ value, onCommit }: { value: number; onCommit: (v: nu
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
-    const n = parseBRLTypingInput(raw, display);
+    const n = parseBRLCentsInput(raw);
     const newDisplay = n > 0 ? formatBRLDisplay(n) : "";
     setDisplay(newDisplay);
     // Commit immediately to parent to avoid state desync, 
