@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Plus, X } from "lucide-react";
-import { useBRLInput, formatBRLDisplay, parseBRL, parseBRLCentsInput } from "@/hooks/useBRLInput";
+import { useBRLInput, formatBRLDisplay, parseBRLCentsInput } from "@/hooks/useBRLInput";
 
 interface CategoryProductFieldsProps {
   category: string;
@@ -54,6 +54,13 @@ interface PizzaSize { name: string; price: number }
 const BRLPriceRowInput = ({ value, onCommit }: { value: number; onCommit: (v: number) => void }) => {
   const [display, setDisplay] = useState(value > 0 ? formatBRLDisplay(value) : "");
   const [focused, setFocused] = useState(false);
+
+  const commitDisplay = (nextDisplay = display) => {
+    const n = parseBRLCentsInput(nextDisplay);
+    onCommit(n);
+    setDisplay(n > 0 ? formatBRLDisplay(n) : "");
+  };
+
   useEffect(() => {
     if (focused) return; // não sobrescreve enquanto o usuário digita
     setDisplay(value > 0 ? formatBRLDisplay(value) : "");
@@ -61,22 +68,27 @@ const BRLPriceRowInput = ({ value, onCommit }: { value: number; onCommit: (v: nu
   return (
     <input
       type="text"
-      inputMode="decimal"
+      inputMode="numeric"
+      pattern="[0-9]*"
       value={display}
       onChange={(e) => {
         const n = parseBRLCentsInput(e.target.value);
         setDisplay(n > 0 ? formatBRLDisplay(n) : "");
-        onCommit(n);
       }}
       onFocus={() => setFocused(true)}
       onBlur={() => {
         setFocused(false);
-        const n = parseBRL(display);
-        onCommit(n);
-        setDisplay(n > 0 ? formatBRLDisplay(n) : "");
+        commitDisplay();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          commitDisplay();
+          e.currentTarget.blur();
+        }
       }}
       placeholder="0,00"
-      className="flex-1 bg-background text-foreground px-2 py-1 rounded text-xs border border-border focus:border-primary focus:outline-none"
+      className="min-w-0 flex-1 bg-transparent text-right text-sm font-semibold text-foreground placeholder:text-muted-foreground focus:outline-none"
     />
   );
 };
