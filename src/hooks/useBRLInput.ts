@@ -74,6 +74,34 @@ export function parseBRL(raw: string): number {
   return isNaN(num) ? 0 : num;
 }
 
+export function getBRLDisplayWholeDigits(display: string): string {
+  return (display.split(",")[0] || "").replace(/\D/g, "");
+}
+
+/**
+ * Converte digitação monetária formatada em valor real, sem tratar números puros como centavos.
+ * Ex: "2500" → 2500, "2.500,00" → 2500, "R$ 2,005" → 25 ao digitar no fim.
+ */
+export function parseBRLTypingInput(raw: string): number {
+  if (!raw) return 0;
+
+  const clean = raw.replace(/[^\d.,]/g, "");
+  if (!clean) return 0;
+
+  if (clean.includes(",")) {
+    const [integerPart, ...fractionParts] = clean.split(",");
+    const fractionDigits = fractionParts.join("").replace(/\D/g, "");
+
+    if (fractionDigits.length > 2 && fractionDigits.startsWith("00")) {
+      const wholeDigits = `${integerPart.replace(/\D/g, "")}${fractionDigits.slice(2)}`;
+      const num = Number(wholeDigits || 0);
+      return Number.isFinite(num) ? num : 0;
+    }
+  }
+
+  return parseBRL(raw);
+}
+
 export function useBRLInput(initialValue: number = 0): BRLInput {
   const [display, setDisplay] = useState<string>(
     initialValue > 0 ? formatBRLDisplay(initialValue) : ""
@@ -81,7 +109,7 @@ export function useBRLInput(initialValue: number = 0): BRLInput {
   const [value, setValue] = useState<number>(initialValue);
 
   const onChange = useCallback((raw: string) => {
-    const nextValue = parseBRLCentsInput(raw);
+    const nextValue = parseBRLTypingInput(raw);
     setValue(nextValue);
     setDisplay(nextValue > 0 ? formatBRLDisplay(nextValue) : "");
   }, []);
