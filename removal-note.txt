@@ -1,0 +1,5 @@
+chore(security): remove .env and project_source.zip from HEAD
+
+Removes sensitive environment files and large archives from the repository HEAD. 
+
+IMPORTANT: this does not remove these files from the repository history. If secrets were present you MUST rotate them immediately (see SECURITY.md added in this branch).
