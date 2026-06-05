@@ -47,6 +47,41 @@ export function parseBRLCentsInput(raw: string): number {
 }
 
 /**
+ * Converte string digitada no padrão pt-BR para número
+ * Aceita: "1.234,56" | "1234,56" | "1234.56" | "1234"
+ */
+export function parseBRL(raw: string): number {
+  if (!raw) return 0;
+  let clean = raw.replace(/[^\d.,]/g, "");
+  if (clean.includes(".") && clean.includes(",")) {
+    clean = clean.replace(/\./g, "").replace(",", ".");
+  } else if (clean.includes(",")) {
+    clean = clean.replace(",", ".");
+  } else if (clean.includes(".")) {
+    const parts = clean.split(".");
+    if (parts[parts.length - 1].length === 3) {
+      clean = clean.replace(/\./g, "");
+    }
+  }
+  const num = parseFloat(clean);
+  return isNaN(num) ? 0 : num;
+}
+
+export function getBRLDisplayWholeDigits(display: string): string {
+  return (display.split(",")[0] || "").replace(/\D/g, "");
+}
+
+/**
+ * LEGACY: Mantido para compatibilidade.
+ */
+export function parseBRLTypingInput(raw: string, previousDisplay = ""): number {
+  if (!raw) return 0;
+  const digits = raw.replace(/\D/g, "");
+  if (!digits) return 0;
+  return Number(digits) / 100;
+}
+
+/**
  * Hook para gerenciar estado de input BRL de forma robusta
  */
 export function useBRLInput(initialValue: number = 0) {
