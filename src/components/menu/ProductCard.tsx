@@ -104,14 +104,17 @@ export const ProductFormInline = ({ initial, onSave, onCancel, storeCategory, st
         className="w-full bg-background text-foreground px-3 py-2.5 rounded-lg text-sm border border-border focus:border-primary focus:outline-none font-medium"
       />
       <div className="flex gap-2">
-        <input
-          type="text"
-          placeholder="Preço *"
-          value={priceDisplay ? `R$ ${priceDisplay}` : ""}
-          onChange={handlePriceChange}
-          className="w-1/3 bg-background text-foreground px-3 py-2.5 rounded-lg text-sm border border-border focus:border-primary focus:outline-none"
-          inputMode="numeric"
-        />
+        <div className="w-1/3 flex items-center gap-1.5 bg-background text-foreground px-3 py-2.5 rounded-lg text-sm border border-border focus-within:border-primary">
+          <span className="text-muted-foreground font-bold">R$</span>
+          <input
+            type="text"
+            placeholder="0,00"
+            value={priceDisplay}
+            onChange={handlePriceChange}
+            className="flex-1 min-w-0 bg-transparent focus:outline-none"
+            inputMode="numeric"
+          />
+        </div>
         <div className="flex-1">
           <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/webp" onChange={handleFileSelect} className="hidden" />
           {form.image_url ? (
