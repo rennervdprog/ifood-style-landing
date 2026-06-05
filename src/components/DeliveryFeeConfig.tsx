@@ -7,15 +7,49 @@ import { Truck, Save, MapPin, DollarSign, Users } from "lucide-react";
 import { DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig as FeeConfig } from "@/lib/deliveryFee";
 import { formatBRLDisplay, parseBRLCentsInput } from "@/hooks/useBRLInput";
 
+const BRLInput = ({ value, onChange, placeholder }: { value: string, onChange: (v: string) => void, placeholder?: string }) => {
+  const [display, setDisplay] = useState(value && parseFloat(value) > 0 ? formatBRLDisplay(parseFloat(value)) : "");
+  
+  useEffect(() => {
+    setDisplay(value && parseFloat(value) > 0 ? formatBRLDisplay(parseFloat(value)) : "");
+  }, [value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    if (!raw.replace(/\D/g, "")) {
+      setDisplay("");
+      onChange("0");
+      return;
+    }
+    const n = parseBRLCentsInput(raw);
+    setDisplay(formatBRLDisplay(n));
+    onChange(n.toFixed(2));
+  };
+
+  return (
+    <div className="flex-1 flex items-center gap-2 bg-background border border-border rounded-xl px-4 py-3 focus-within:ring-2 focus-within:ring-primary">
+      <span className="text-sm text-muted-foreground font-bold">R$</span>
+      <input
+        type="text"
+        inputMode="numeric"
+        value={display}
+        onChange={handleChange}
+        placeholder={placeholder || "0,00"}
+        className="flex-1 bg-transparent text-foreground text-sm focus:outline-none"
+      />
+    </div>
+  );
+};
+
 const DeliveryFeeConfigPanel = () => {
   const queryClient = useQueryClient();
   const [cityName, setCityName] = useState(DEFAULT_DELIVERY_FEE_CONFIG.city_name);
-  const [cityFee, setCityFee] = useState(DEFAULT_DELIVERY_FEE_CONFIG.city_fee.toString());
-  const [ruralBaseFee, setRuralBaseFee] = useState(DEFAULT_DELIVERY_FEE_CONFIG.rural_base_fee.toString());
-  const [ruralPerKm, setRuralPerKm] = useState(DEFAULT_DELIVERY_FEE_CONFIG.rural_per_km.toString());
-  const [driverSplit, setDriverSplit] = useState(DEFAULT_DELIVERY_FEE_CONFIG.driver_split.toString());
-  const [platformSplit, setPlatformSplit] = useState(DEFAULT_DELIVERY_FEE_CONFIG.platform_split.toString());
-  const [pixOperationalFee, setPixOperationalFee] = useState(DEFAULT_DELIVERY_FEE_CONFIG.pix_operational_fee.toString());
+  const [cityFee, setCityFee] = useState(DEFAULT_DELIVERY_FEE_CONFIG.city_fee.toFixed(2));
+  const [ruralBaseFee, setRuralBaseFee] = useState(DEFAULT_DELIVERY_FEE_CONFIG.rural_base_fee.toFixed(2));
+  const [ruralPerKm, setRuralPerKm] = useState(DEFAULT_DELIVERY_FEE_CONFIG.rural_per_km.toFixed(2));
+  const [driverSplit, setDriverSplit] = useState(DEFAULT_DELIVERY_FEE_CONFIG.driver_split.toFixed(2));
+  const [platformSplit, setPlatformSplit] = useState(DEFAULT_DELIVERY_FEE_CONFIG.platform_split.toFixed(2));
+  const [pixOperationalFee, setPixOperationalFee] = useState(DEFAULT_DELIVERY_FEE_CONFIG.pix_operational_fee.toFixed(2));
   const [saving, setSaving] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
