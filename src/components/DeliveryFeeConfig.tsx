@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Truck, Save, MapPin, DollarSign, Users } from "lucide-react";
 import { DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig as FeeConfig } from "@/lib/deliveryFee";
+import { formatBRLDisplay, parseBRLCentsInput } from "@/hooks/useBRLInput";
 
 const DeliveryFeeConfigPanel = () => {
   const queryClient = useQueryClient();
