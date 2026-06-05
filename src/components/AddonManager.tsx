@@ -495,12 +495,10 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                             className="flex-1 bg-muted text-foreground px-2 py-1 rounded text-sm border border-border focus:outline-none"
                             autoFocus
                           />
-                          <input
-                            type="number"
+                          <AddonPriceInput
                             value={editItemForm.price}
-                            onChange={(e) => setEditItemForm({ ...editItemForm, price: e.target.value })}
-                            className="w-20 bg-muted text-foreground px-2 py-1 rounded text-sm border border-border focus:outline-none"
-                            step="0.50"
+                            onChange={(v) => setEditItemForm({ ...editItemForm, price: v })}
+                            placeholder="0,00"
                           />
                           <button onClick={() => updateItem(item.id)} className="bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-bold">
                             <Save className="h-3 w-3" />
