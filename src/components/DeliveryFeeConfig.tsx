@@ -5,16 +5,51 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Truck, Save, MapPin, DollarSign, Users } from "lucide-react";
 import { DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig as FeeConfig } from "@/lib/deliveryFee";
+import { formatBRLDisplay, parseBRLCentsInput } from "@/hooks/useBRLInput";
+
+const BRLInput = ({ value, onChange, placeholder }: { value: string, onChange: (v: string) => void, placeholder?: string }) => {
+  const [display, setDisplay] = useState(value && parseFloat(value) > 0 ? formatBRLDisplay(parseFloat(value)) : "");
+  
+  useEffect(() => {
+    setDisplay(value && parseFloat(value) > 0 ? formatBRLDisplay(parseFloat(value)) : "");
+  }, [value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    if (!raw.replace(/\D/g, "")) {
+      setDisplay("");
+      onChange("0");
+      return;
+    }
+    const n = parseBRLCentsInput(raw);
+    setDisplay(formatBRLDisplay(n));
+    onChange(n.toFixed(2));
+  };
+
+  return (
+    <div className="flex-1 flex items-center gap-2 bg-background border border-border rounded-xl px-4 py-3 focus-within:ring-2 focus-within:ring-primary">
+      <span className="text-sm text-muted-foreground font-bold">R$</span>
+      <input
+        type="text"
+        inputMode="numeric"
+        value={display}
+        onChange={handleChange}
+        placeholder={placeholder || "0,00"}
+        className="flex-1 bg-transparent text-foreground text-sm focus:outline-none"
+      />
+    </div>
+  );
+};
 
 const DeliveryFeeConfigPanel = () => {
   const queryClient = useQueryClient();
   const [cityName, setCityName] = useState(DEFAULT_DELIVERY_FEE_CONFIG.city_name);
-  const [cityFee, setCityFee] = useState(DEFAULT_DELIVERY_FEE_CONFIG.city_fee.toString());
-  const [ruralBaseFee, setRuralBaseFee] = useState(DEFAULT_DELIVERY_FEE_CONFIG.rural_base_fee.toString());
-  const [ruralPerKm, setRuralPerKm] = useState(DEFAULT_DELIVERY_FEE_CONFIG.rural_per_km.toString());
-  const [driverSplit, setDriverSplit] = useState(DEFAULT_DELIVERY_FEE_CONFIG.driver_split.toString());
-  const [platformSplit, setPlatformSplit] = useState(DEFAULT_DELIVERY_FEE_CONFIG.platform_split.toString());
-  const [pixOperationalFee, setPixOperationalFee] = useState(DEFAULT_DELIVERY_FEE_CONFIG.pix_operational_fee.toString());
+  const [cityFee, setCityFee] = useState(DEFAULT_DELIVERY_FEE_CONFIG.city_fee.toFixed(2));
+  const [ruralBaseFee, setRuralBaseFee] = useState(DEFAULT_DELIVERY_FEE_CONFIG.rural_base_fee.toFixed(2));
+  const [ruralPerKm, setRuralPerKm] = useState(DEFAULT_DELIVERY_FEE_CONFIG.rural_per_km.toFixed(2));
+  const [driverSplit, setDriverSplit] = useState(DEFAULT_DELIVERY_FEE_CONFIG.driver_split.toFixed(2));
+  const [platformSplit, setPlatformSplit] = useState(DEFAULT_DELIVERY_FEE_CONFIG.platform_split.toFixed(2));
+  const [pixOperationalFee, setPixOperationalFee] = useState(DEFAULT_DELIVERY_FEE_CONFIG.pix_operational_fee.toFixed(2));
   const [saving, setSaving] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
@@ -33,12 +68,12 @@ const DeliveryFeeConfigPanel = () => {
   useEffect(() => {
     if (configData && !loaded) {
       setCityName(configData.city_name || DEFAULT_DELIVERY_FEE_CONFIG.city_name);
-      setCityFee((configData.city_fee ?? DEFAULT_DELIVERY_FEE_CONFIG.city_fee).toString());
-      setRuralBaseFee((configData.rural_base_fee ?? DEFAULT_DELIVERY_FEE_CONFIG.rural_base_fee).toString());
-      setRuralPerKm((configData.rural_per_km ?? DEFAULT_DELIVERY_FEE_CONFIG.rural_per_km).toString());
-      setDriverSplit((configData.driver_split ?? DEFAULT_DELIVERY_FEE_CONFIG.driver_split).toString());
-      setPlatformSplit((configData.platform_split ?? DEFAULT_DELIVERY_FEE_CONFIG.platform_split).toString());
-      setPixOperationalFee((configData.pix_operational_fee ?? DEFAULT_DELIVERY_FEE_CONFIG.pix_operational_fee).toString());
+      setCityFee((configData.city_fee ?? DEFAULT_DELIVERY_FEE_CONFIG.city_fee).toFixed(2));
+      setRuralBaseFee((configData.rural_base_fee ?? DEFAULT_DELIVERY_FEE_CONFIG.rural_base_fee).toFixed(2));
+      setRuralPerKm((configData.rural_per_km ?? DEFAULT_DELIVERY_FEE_CONFIG.rural_per_km).toFixed(2));
+      setDriverSplit((configData.driver_split ?? DEFAULT_DELIVERY_FEE_CONFIG.driver_split).toFixed(2));
+      setPlatformSplit((configData.platform_split ?? DEFAULT_DELIVERY_FEE_CONFIG.platform_split).toFixed(2));
+      setPixOperationalFee((configData.pix_operational_fee ?? DEFAULT_DELIVERY_FEE_CONFIG.pix_operational_fee).toFixed(2));
       setLoaded(true);
     }
   }, [configData, loaded]);
@@ -118,17 +153,7 @@ const DeliveryFeeConfigPanel = () => {
           <label className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
             <DollarSign className="h-3.5 w-3.5" /> Taxa Fixa (dentro da cidade)
           </label>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">R$</span>
-            <input
-              type="text"
-              inputMode="decimal"
-              value={cityFee}
-              onChange={(e) => setCityFee(e.target.value.replace(/[^0-9.,]/g, ""))}
-              placeholder="5.00"
-              className="flex-1 bg-background border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-          </div>
+          <BRLInput value={cityFee} onChange={setCityFee} placeholder="5,00" />
         </div>
 
         <div className="border-t border-border pt-4">
@@ -137,33 +162,15 @@ const DeliveryFeeConfigPanel = () => {
           {/* Rural Base Fee */}
           <div className="space-y-1 mb-3">
             <label className="text-xs font-bold text-muted-foreground">Taxa Base (fixa)</label>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">R$</span>
-              <input
-                type="text"
-                inputMode="decimal"
-                value={ruralBaseFee}
-                onChange={(e) => setRuralBaseFee(e.target.value.replace(/[^0-9.,]/g, ""))}
-                placeholder="5.00"
-                className="flex-1 bg-background border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
+            <BRLInput value={ruralBaseFee} onChange={setRuralBaseFee} placeholder="5,00" />
           </div>
 
           {/* Rural Per KM */}
           <div className="space-y-1">
             <label className="text-xs font-bold text-muted-foreground">Taxa por KM</label>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">R$</span>
-              <input
-                type="text"
-                inputMode="decimal"
-                value={ruralPerKm}
-                onChange={(e) => setRuralPerKm(e.target.value.replace(/[^0-9.,]/g, ""))}
-                placeholder="0.60"
-                className="flex-1 bg-background border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-              <span className="text-xs text-muted-foreground">/km</span>
+              <BRLInput value={ruralPerKm} onChange={setRuralPerKm} placeholder="0,60" />
+              <span className="text-xs text-muted-foreground font-bold whitespace-nowrap">/ km</span>
             </div>
           </div>
         </div>
@@ -178,50 +185,20 @@ const DeliveryFeeConfigPanel = () => {
           {/* Driver Split */}
           <div className="space-y-1 mb-3">
             <label className="text-xs font-bold text-muted-foreground">Motoboy da plataforma (por corrida)</label>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">R$</span>
-              <input
-                type="text"
-                inputMode="decimal"
-                value={driverSplit}
-                onChange={(e) => setDriverSplit(e.target.value.replace(/[^0-9.,]/g, ""))}
-                placeholder="4.00"
-                className="flex-1 bg-background border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
+            <BRLInput value={driverSplit} onChange={setDriverSplit} placeholder="4,00" />
           </div>
 
           {/* Platform Split */}
           <div className="space-y-1 mb-3">
             <label className="text-xs font-bold text-muted-foreground">Plataforma (por corrida)</label>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">R$</span>
-              <input
-                type="text"
-                inputMode="decimal"
-                value={platformSplit}
-                onChange={(e) => setPlatformSplit(e.target.value.replace(/[^0-9.,]/g, ""))}
-                placeholder="2.00"
-                className="flex-1 bg-background border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
+            <BRLInput value={platformSplit} onChange={setPlatformSplit} placeholder="2,00" />
           </div>
 
           {/* PIX Operational Fee */}
           <div className="space-y-1">
             <label className="text-xs font-bold text-muted-foreground">Taxa operacional PIX (por transação)</label>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">R$</span>
-              <input
-                type="text"
-                inputMode="decimal"
-                value={pixOperationalFee}
-                onChange={(e) => setPixOperationalFee(e.target.value.replace(/[^0-9.,]/g, ""))}
-                placeholder="1.00"
-                className="flex-1 bg-background border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
-            <p className="text-[10px] text-muted-foreground">Cobrado da loja em cada pagamento PIX (plano fixo).</p>
+            <BRLInput value={pixOperationalFee} onChange={setPixOperationalFee} placeholder="1,00" />
+            <p className="text-[10px] text-muted-foreground mt-1">Cobrado da loja em cada pagamento PIX (plano fixo).</p>
           </div>
         </div>
 

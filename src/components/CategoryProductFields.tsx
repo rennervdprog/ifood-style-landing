@@ -185,7 +185,7 @@ const PizzaSizesField = ({
           <span className="text-muted-foreground">R$</span>
           <input
             type="text"
-            inputMode="decimal"
+            inputMode="numeric"
             placeholder="0,00"
             value={price.display}
             onChange={(e) => price.onChange(e.target.value)}

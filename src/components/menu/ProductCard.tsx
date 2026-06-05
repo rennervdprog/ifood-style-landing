@@ -104,14 +104,17 @@ export const ProductFormInline = ({ initial, onSave, onCancel, storeCategory, st
         className="w-full bg-background text-foreground px-3 py-2.5 rounded-lg text-sm border border-border focus:border-primary focus:outline-none font-medium"
       />
       <div className="flex gap-2">
-        <input
-          type="text"
-          placeholder="Preço *"
-          value={priceDisplay ? `R$ ${priceDisplay}` : ""}
-          onChange={handlePriceChange}
-          className="w-1/3 bg-background text-foreground px-3 py-2.5 rounded-lg text-sm border border-border focus:border-primary focus:outline-none"
-          inputMode="numeric"
-        />
+        <div className="w-1/3 flex items-center gap-1.5 bg-background text-foreground px-3 py-2.5 rounded-lg text-sm border border-border focus-within:border-primary">
+          <span className="text-muted-foreground font-bold">R$</span>
+          <input
+            type="text"
+            placeholder="0,00"
+            value={priceDisplay}
+            onChange={handlePriceChange}
+            className="flex-1 min-w-0 bg-transparent focus:outline-none"
+            inputMode="numeric"
+          />
+        </div>
         <div className="flex-1">
           <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/webp" onChange={handleFileSelect} className="hidden" />
           {form.image_url ? (
@@ -356,9 +359,20 @@ const ProductCardImpl = (props: ProductCardProps) => {
                   <input type="text" placeholder="Nome" value={addonItemForm.name}
                     onChange={(e: any) => setAddonItemForm({ ...addonItemForm, name: e.target.value })}
                     className="flex-1 bg-muted text-foreground px-2 py-1 rounded text-xs border border-border focus:outline-none" autoFocus />
-                  <input type="number" placeholder="R$" value={addonItemForm.price}
-                    onChange={(e: any) => setAddonItemForm({ ...addonItemForm, price: e.target.value })}
-                    className="w-16 bg-muted text-foreground px-2 py-1 rounded text-xs border border-border focus:outline-none" step="0.50" />
+                  <div className="w-20 flex items-center gap-1 bg-muted text-foreground px-2 py-1 rounded text-xs border border-border focus-within:border-primary">
+                    <span className="text-muted-foreground font-bold">R$</span>
+                    <input
+                      type="text"
+                      placeholder="0,00"
+                      value={formatBRLDisplay(Number(addonItemForm.price))}
+                      onChange={(e) => {
+                        const n = parseBRLCentsInput(e.target.value);
+                        setAddonItemForm({ ...addonItemForm, price: n.toFixed(2) });
+                      }}
+                      className="flex-1 min-w-0 bg-transparent focus:outline-none"
+                      inputMode="numeric"
+                    />
+                  </div>
                   <button onClick={() => onAddAddonItem(group.id)} className="bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-bold">+</button>
                   <button onClick={() => setShowAddonItemForm(null)} className="text-muted-foreground px-1 text-xs">✕</button>
                 </div>

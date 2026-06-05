@@ -1,10 +1,10 @@
- import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { formatBRL } from "@/lib/utils";
- import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Trash2, Edit2, Save, Circle } from "lucide-react";
+import { formatBRLDisplay, parseBRLCentsInput } from "@/hooks/useBRLInput";
 
 interface PizzaBorderManagerProps {
   storeId: string;
@@ -135,14 +135,20 @@ const PizzaBorderManager = ({ storeId }: PizzaBorderManagerProps) => {
             className="w-full bg-muted text-foreground px-3 py-2 rounded-lg text-sm border border-border focus:border-primary focus:outline-none"
             autoFocus
           />
-          <input
-            type="text"
-            inputMode="decimal"
-            placeholder="Preço (ex: 5.00)"
-            value={newPrice}
-            onChange={(e) => setNewPrice(e.target.value)}
-            className="w-full bg-muted text-foreground px-3 py-2 rounded-lg text-sm border border-border focus:border-primary focus:outline-none"
-          />
+          <div className="w-full flex items-center gap-1.5 bg-muted text-foreground px-3 py-2 rounded-lg text-sm border border-border focus-within:border-primary">
+            <span className="text-muted-foreground font-bold">R$</span>
+            <input
+              type="text"
+              inputMode="numeric"
+              placeholder="0,00"
+              value={newPrice ? formatBRLDisplay(parseBRLCentsInput(newPrice)) : ""}
+              onChange={(e) => {
+                const n = parseBRLCentsInput(e.target.value);
+                setNewPrice(n > 0 ? n.toFixed(2) : "");
+              }}
+              className="flex-1 min-w-0 bg-transparent focus:outline-none"
+            />
+          </div>
           <div className="flex gap-2">
             <button onClick={addBorder} className="flex-1 bg-primary text-primary-foreground py-2 rounded-lg text-sm font-bold">
               <Save className="h-4 w-4 inline mr-1" /> Salvar
@@ -184,13 +190,19 @@ const PizzaBorderManager = ({ storeId }: PizzaBorderManagerProps) => {
                     className="flex-1 bg-muted text-foreground px-2 py-1 rounded text-sm border border-primary focus:outline-none"
                     autoFocus
                   />
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    value={editPrice}
-                    onChange={(e) => setEditPrice(e.target.value)}
-                    className="w-24 bg-muted text-foreground px-2 py-1 rounded text-sm border border-primary focus:outline-none"
-                  />
+                  <div className="w-24 flex items-center gap-1 bg-muted text-foreground px-2 py-1 rounded text-sm border border-primary focus-within:ring-1 focus-within:ring-primary">
+                    <span className="text-muted-foreground font-bold">R$</span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={editPrice ? formatBRLDisplay(parseBRLCentsInput(editPrice)) : ""}
+                      onChange={(e) => {
+                        const n = parseBRLCentsInput(e.target.value);
+                        setEditPrice(n > 0 ? n.toFixed(2) : "");
+                      }}
+                      className="flex-1 min-w-0 bg-transparent focus:outline-none"
+                    />
+                  </div>
                   <button onClick={() => saveEdit(border.id)} className="text-primary">
                     <Save className="h-4 w-4" />
                   </button>
