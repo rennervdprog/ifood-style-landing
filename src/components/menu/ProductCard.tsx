@@ -107,8 +107,8 @@ export const ProductFormInline = ({ initial, onSave, onCancel, storeCategory, st
         <input
           type="text"
           placeholder="Preço *"
-          value={formatPriceInput(form.price)}
-          onChange={(e) => setForm((p) => ({ ...p, price: normalizePriceInput(e.target.value) }))}
+          value={priceDisplay ? `R$ ${priceDisplay}` : ""}
+          onChange={handlePriceChange}
           className="w-1/3 bg-background text-foreground px-3 py-2.5 rounded-lg text-sm border border-border focus:border-primary focus:outline-none"
           inputMode="numeric"
         />
