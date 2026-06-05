@@ -190,13 +190,19 @@ const PizzaBorderManager = ({ storeId }: PizzaBorderManagerProps) => {
                     className="flex-1 bg-muted text-foreground px-2 py-1 rounded text-sm border border-primary focus:outline-none"
                     autoFocus
                   />
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    value={editPrice}
-                    onChange={(e) => setEditPrice(e.target.value)}
-                    className="w-24 bg-muted text-foreground px-2 py-1 rounded text-sm border border-primary focus:outline-none"
-                  />
+                  <div className="w-24 flex items-center gap-1 bg-muted text-foreground px-2 py-1 rounded text-sm border border-primary focus-within:ring-1 focus-within:ring-primary">
+                    <span className="text-muted-foreground font-bold">R$</span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={editPrice ? formatBRLDisplay(parseBRLCentsInput(editPrice)) : ""}
+                      onChange={(e) => {
+                        const n = parseBRLCentsInput(e.target.value);
+                        setEditPrice(n > 0 ? n.toFixed(2) : "");
+                      }}
+                      className="flex-1 min-w-0 bg-transparent focus:outline-none"
+                    />
+                  </div>
                   <button onClick={() => saveEdit(border.id)} className="text-primary">
                     <Save className="h-4 w-4" />
                   </button>
