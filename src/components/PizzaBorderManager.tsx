@@ -1,10 +1,10 @@
- import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { formatBRL } from "@/lib/utils";
- import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Trash2, Edit2, Save, Circle } from "lucide-react";
+import { formatBRLDisplay, parseBRLCentsInput } from "@/hooks/useBRLInput";
 
 interface PizzaBorderManagerProps {
   storeId: string;
