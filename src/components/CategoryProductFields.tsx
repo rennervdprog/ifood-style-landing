@@ -55,6 +55,7 @@ const BRLPriceRowInput = ({ value, onCommit }: { value: number; onCommit: (v: nu
   const [display, setDisplay] = useState(value > 0 ? formatBRLDisplay(value) : "");
   const [isEditing, setIsEditing] = useState(false);
 
+  // Sincroniza apenas quando não está editando para evitar pular o cursor
   useEffect(() => {
     if (!isEditing) {
       setDisplay(value > 0 ? formatBRLDisplay(value) : "");
@@ -63,11 +64,18 @@ const BRLPriceRowInput = ({ value, onCommit }: { value: number; onCommit: (v: nu
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
+    
+    // Se estiver vazio, reseta
+    if (!raw.replace(/\D/g, "")) {
+      setDisplay("");
+      onCommit(0);
+      return;
+    }
+
     const n = parseBRLCentsInput(raw);
-    const newDisplay = n > 0 ? formatBRLDisplay(n) : "";
-    setDisplay(newDisplay);
-    // Commit immediately to parent to avoid state desync, 
-    // but the local display keeps the cursor stable
+    setDisplay(formatBRLDisplay(n));
+    // Commit direto aqui pois é um campo de linha (row) que afeta o array de tamanhos no pai.
+    // Para evitar lag, podemos usar o valor numérico processado.
     onCommit(n);
   };
 
@@ -78,7 +86,14 @@ const BRLPriceRowInput = ({ value, onCommit }: { value: number; onCommit: (v: nu
       value={display}
       onChange={handleChange}
       onFocus={() => setIsEditing(true)}
-      onBlur={() => setIsEditing(false)}
+      onBlur={() => {
+        setIsEditing(false);
+        // Garante que o valor final esteja formatado corretamente ao sair
+        if (display) {
+          const n = parseBRLCentsInput(display);
+          setDisplay(n > 0 ? formatBRLDisplay(n) : "");
+        }
+      }}
       placeholder="0,00"
       className="min-w-0 flex-1 bg-transparent text-right text-sm font-semibold text-foreground placeholder:text-muted-foreground focus:outline-none"
     />
