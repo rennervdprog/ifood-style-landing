@@ -56,13 +56,29 @@ export const ProductFormInline = ({ initial, onSave, onCancel, storeCategory, st
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState<ProductFormData>(initial || EMPTY_FORM);
+  
+  // Estado local para o display do preço para evitar saltos e fechamento do teclado
+  const [priceDisplay, setPriceDisplay] = useState(
+    initial?.price ? formatBRLDisplay(Number(initial.price)) : ""
+  );
+
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    if (!raw.replace(/\D/g, "")) {
+      setPriceDisplay("");
+      setForm(p => ({ ...p, price: "" }));
+      return;
+    }
+    const n = parseBRLCentsInput(raw);
+    const newDisplay = formatBRLDisplay(n);
+    setPriceDisplay(newDisplay);
+    setForm(p => ({ ...p, price: n.toFixed(2) }));
+  };
 
   const handleRemoveImage = () => {
     const updatedForm = { ...form, image_url: "" };
     setForm(updatedForm);
-    if (initial) {
-      onSave(updatedForm);
-    }
+    if (initial) onSave(updatedForm);
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -73,10 +89,7 @@ export const ProductFormInline = ({ initial, onSave, onCancel, storeCategory, st
     if (url) {
       const updatedForm = { ...form, image_url: url };
       setForm(updatedForm);
-      // Se estiver editando um produto já existente, salva automaticamente
-      if (initial) {
-        onSave(updatedForm);
-      }
+      if (initial) onSave(updatedForm);
     }
     setUploading(false);
   };
@@ -94,8 +107,8 @@ export const ProductFormInline = ({ initial, onSave, onCancel, storeCategory, st
         <input
           type="text"
           placeholder="Preço *"
-          value={formatPriceInput(form.price)}
-          onChange={(e) => setForm((p) => ({ ...p, price: normalizePriceInput(e.target.value) }))}
+          value={priceDisplay ? `R$ ${priceDisplay}` : ""}
+          onChange={handlePriceChange}
           className="w-1/3 bg-background text-foreground px-3 py-2.5 rounded-lg text-sm border border-border focus:border-primary focus:outline-none"
           inputMode="numeric"
         />

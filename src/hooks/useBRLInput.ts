@@ -28,7 +28,7 @@ interface BRLInput {
  * Ex: 1234.56 → "1.234,56"
  */
 export function formatBRLDisplay(value: number): string {
-  if (isNaN(value) || value === 0) return "";
+  if (value === 0) return "";
   return value.toLocaleString("pt-BR", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
@@ -38,12 +38,12 @@ export function formatBRLDisplay(value: number): string {
 /**
  * Converte digitação contínua em centavos para número.
  * Ex: "1" → 0.01, "123" → 1.23, "123456" → 1234.56
+ * Este método é o mais robusto para inputs mascarados.
  */
 export function parseBRLCentsInput(raw: string): number {
   const digits = raw.replace(/\D/g, "");
   if (!digits) return 0;
-  const num = Number(digits) / 100;
-  return Number.isFinite(num) ? num : 0;
+  return Number(digits) / 100;
 }
 
 /**
@@ -52,22 +52,15 @@ export function parseBRLCentsInput(raw: string): number {
  */
 export function parseBRL(raw: string): number {
   if (!raw) return 0;
-  // Remove tudo exceto dígitos e separadores
   let clean = raw.replace(/[^\d.,]/g, "");
-  // Se tem ponto E vírgula: ponto = milhar, vírgula = decimal → "1.234,56"
   if (clean.includes(".") && clean.includes(",")) {
     clean = clean.replace(/\./g, "").replace(",", ".");
-  }
-  // Só vírgula: "1234,56" → decimal brasileiro
-  else if (clean.includes(",")) {
+  } else if (clean.includes(",")) {
     clean = clean.replace(",", ".");
-  }
-  // Só ponto: pode ser milhar ("1.234") ou decimal ("12.56")
-  // Se a parte depois do ponto tem 3 dígitos, é milhar
-  else if (clean.includes(".")) {
+  } else if (clean.includes(".")) {
     const parts = clean.split(".");
     if (parts[parts.length - 1].length === 3) {
-      clean = clean.replace(/\./g, ""); // remove milhar
+      clean = clean.replace(/\./g, "");
     }
   }
   const num = parseFloat(clean);
@@ -79,59 +72,38 @@ export function getBRLDisplayWholeDigits(display: string): string {
 }
 
 /**
- * Converte digitação monetária formatada em valor real, sem tratar números puros como centavos.
- * Ex: "2500" → 2500, "2.500,00" → 2500, "R$ 2,005" → 25 ao digitar no fim.
+ * LEGACY: Mantido para compatibilidade.
  */
 export function parseBRLTypingInput(raw: string, previousDisplay = ""): number {
   if (!raw) return 0;
-
-  const previousWholeDigits = getBRLDisplayWholeDigits(previousDisplay);
-  const nextWholeDigits = getBRLDisplayWholeDigits(raw);
-
-  if (previousDisplay && raw.length < previousDisplay.length) {
-    const digits = nextWholeDigits === previousWholeDigits
-      ? previousWholeDigits.slice(0, -1)
-      : nextWholeDigits;
-    const num = Number(digits || 0);
-    return Number.isFinite(num) ? num : 0;
-  }
-
-  if (previousDisplay && raw.startsWith(previousDisplay)) {
-    const appendedDigits = raw.slice(previousDisplay.length).replace(/\D/g, "");
-    if (appendedDigits) {
-      const num = Number(`${previousWholeDigits}${appendedDigits}`);
-      return Number.isFinite(num) ? num : 0;
-    }
-  }
-
-  const clean = raw.replace(/[^\d.,]/g, "");
-  if (!clean) return 0;
-
-  if (clean.includes(",")) {
-    const [integerPart, ...fractionParts] = clean.split(",");
-    const fractionDigits = fractionParts.join("").replace(/\D/g, "");
-
-    if (fractionDigits.length > 2 && fractionDigits.startsWith("00")) {
-      const wholeDigits = `${integerPart.replace(/\D/g, "")}${fractionDigits.slice(2)}`;
-      const num = Number(wholeDigits || 0);
-      return Number.isFinite(num) ? num : 0;
-    }
-  }
-
-  return parseBRL(raw);
+  const digits = raw.replace(/\D/g, "");
+  if (!digits) return 0;
+  return Number(digits) / 100;
 }
 
-export function useBRLInput(initialValue: number = 0): BRLInput {
+/**
+ * Hook para gerenciar estado de input BRL de forma robusta
+ */
+export function useBRLInput(initialValue: number = 0) {
   const [display, setDisplay] = useState<string>(
     initialValue > 0 ? formatBRLDisplay(initialValue) : ""
   );
   const [value, setValue] = useState<number>(initialValue);
 
   const onChange = useCallback((raw: string) => {
-    const nextValue = parseBRLTypingInput(raw, display);
+    // Se o usuário apagou tudo, reseta
+    if (!raw.replace(/\D/g, "")) {
+      setValue(0);
+      setDisplay("");
+      return;
+    }
+
+    // Usa lógica de centavos: cada dígito novo entra pela direita
+    // Isso evita problemas com cursor e vírgula fixa
+    const nextValue = parseBRLCentsInput(raw);
     setValue(nextValue);
-    setDisplay(nextValue > 0 ? formatBRLDisplay(nextValue) : "");
-  }, [display]);
+    setDisplay(formatBRLDisplay(nextValue));
+  }, []);
 
   const reset = useCallback((newValue: number = 0) => {
     setValue(newValue);

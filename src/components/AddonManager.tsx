@@ -1,9 +1,10 @@
 import { formatBRL } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Trash2, Edit2, Save, X, ChevronDown, ChevronUp, Package, FileText } from "lucide-react";
+import { formatBRLDisplay, parseBRLCentsInput } from "@/hooks/useBRLInput";
 
 interface AddonManagerProps {
   storeId: string;
@@ -114,6 +115,36 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
     invalidate();
   };
 
+  const AddonPriceInput = ({ value, onChange, placeholder }: { value: string, onChange: (v: string) => void, placeholder?: string }) => {
+    const [display, setDisplay] = useState(value && parseFloat(value) > 0 ? formatBRLDisplay(parseFloat(value)) : "");
+    
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const raw = e.target.value;
+      if (!raw.replace(/\D/g, "")) {
+        setDisplay("");
+        onChange("0");
+        return;
+      }
+      const n = parseBRLCentsInput(raw);
+      setDisplay(formatBRLDisplay(n));
+      onChange(n.toFixed(2));
+    };
+
+    return (
+      <div className="relative flex-1">
+        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground/60">R$</span>
+        <input
+          type="text"
+          inputMode="numeric"
+          value={display}
+          onChange={handleChange}
+          placeholder={placeholder || "0,00"}
+          className="w-full bg-secondary text-foreground pl-7 pr-2 py-2 rounded-lg text-xs border border-border focus:outline-none focus:border-primary"
+        />
+      </div>
+    );
+  };
+
   const addItem = async (groupId: string) => {
     if (!itemForm.name.trim()) return;
     const { error } = await supabase.from("addon_items").insert({
@@ -132,7 +163,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
     const { error } = await supabase.from("addon_items").update({
       name: editItemForm.name.trim(),
       price: parseFloat(editItemForm.price) || 0,
-    }).eq("id", id);
+    } as any).eq("id", id);
     if (error) { toast.error("Erro ao atualizar"); return; }
     toast.success("Adicional atualizado!");
     setEditingItem(null);
@@ -514,13 +545,10 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                         className="flex-1 bg-muted text-foreground px-3 py-2 rounded-lg text-sm border border-border focus:outline-none"
                         autoFocus
                       />
-                      <input
-                        type="number"
-                        placeholder="R$"
+                      <AddonPriceInput
                         value={itemForm.price}
-                        onChange={(e) => setItemForm({ ...itemForm, price: e.target.value })}
-                        className="w-20 bg-muted text-foreground px-3 py-2 rounded-lg text-sm border border-border focus:outline-none"
-                        step="0.50"
+                        onChange={(v) => setItemForm({ ...itemForm, price: v })}
+                        placeholder="0,00"
                       />
                       <button onClick={() => addItem(group.id)} className="bg-primary text-primary-foreground px-3 py-2 rounded-lg text-sm font-bold">
                         <Plus className="h-4 w-4" />
