@@ -51,6 +51,15 @@ const isAuthorizedForStore = async (admin: any, req: Request, storeId: string) =
   const { data: store } = await admin.from("stores").select("owner_id").eq("id", storeId).maybeSingle();
   if (store?.owner_id === userId) return true;
 
+  const { data: linkedDriver } = await admin
+    .from("store_drivers")
+    .select("store_id")
+    .eq("store_id", storeId)
+    .eq("driver_user_id", userId)
+    .limit(1)
+    .maybeSingle();
+  if (linkedDriver) return true;
+
   const { data: isAdmin } = await admin.rpc("is_platform_admin", { _user_id: userId });
   return !!isAdmin;
 };
