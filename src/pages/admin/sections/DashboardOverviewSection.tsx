@@ -186,23 +186,36 @@ export default function DashboardOverviewSection(props: Props) {
   {storePlan.pdvEnabled !== false && (
     <button
       onClick={() => navigate("/admin/pdv")}
-      className="w-full text-left bg-card border border-border rounded-2xl p-4 flex items-center gap-4 active:scale-[0.99] transition-transform hover:border-primary/40 group"
+      className={`w-full text-left rounded-2xl p-4 flex items-center gap-4 active:scale-[0.99] transition-transform group border ${
+        isPdvOpen ? "bg-primary/5 border-primary/40" : "bg-card border-border hover:border-primary/40"
+      }`}
     >
-      <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
+      <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center shrink-0 transition-colors ${
+        isPdvOpen ? "bg-primary/20 border-primary/30" : "bg-primary/10 border-primary/20 group-hover:bg-primary/20"
+      }`}>
         <Monitor className="h-6 w-6 text-primary" />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <h3 className="text-sm font-black text-foreground">PDV — Caixa Presencial</h3>
-          <span className="text-[10px] font-bold bg-muted text-muted-foreground border border-border px-2 py-0.5 rounded-full">
-            Disponível
-          </span>
+          {isPdvOpen ? (
+            <span className="text-[10px] font-bold bg-primary/15 text-primary border border-primary/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              Caixa aberto
+            </span>
+          ) : (
+            <span className="text-[10px] font-bold bg-muted text-muted-foreground border border-border px-2 py-0.5 rounded-full">
+              Disponível
+            </span>
+          )}
         </div>
         <p className="text-xs text-muted-foreground mt-0.5">
-          Venda no balcão, mesa ou comanda. Sem taxa PIX — maquininha própria.
+          {isPdvOpen
+            ? `Troco inicial ${formatBRL(Number(pdvSession?.opening_amount) || 0)} — toque para registrar vendas.`
+            : "Venda no balcão, mesa ou comanda. Sem taxa PIX — maquininha própria."}
         </p>
         <p className="text-[11px] text-primary font-semibold mt-1.5 flex items-center gap-1">
-          Abrir caixa <ChevronRight className="h-3.5 w-3.5" />
+          {isPdvOpen ? "Ir para o PDV" : "Abrir caixa"} <ChevronRight className="h-3.5 w-3.5" />
         </p>
       </div>
     </button>
