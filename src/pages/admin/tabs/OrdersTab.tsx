@@ -1,36 +1,28 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { 
-  Clock, ChefHat, Truck, CheckCircle2, Search, Filter, 
-  Printer, Bike, MessageCircle, AlertTriangle, Loader2
-} from "lucide-react";
-import { formatBRL } from "@/lib/utils";
+import { Printer, Loader2 } from "lucide-react";
 
 interface OrdersTabProps {
   storeId: string;
 }
 
 export default function OrdersTab({ storeId }: OrdersTabProps) {
-  const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<string>("pendente");
-
   const { data: orders, isLoading } = useQuery({
     queryKey: ["store-orders", storeId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*, order_items(*, products(name))")
+        .select("id, status, created_at, total")
         .eq("store_id", storeId)
         .neq("status", "aguardando_pagamento" as any)
         .neq("status", "cancelado" as any)
         .order("created_at", { ascending: false })
-        .limit(100);
+        .limit(50);
       if (error) throw error;
       return data;
     },
     enabled: !!storeId,
+    staleTime: 15_000,
   });
 
   return (
