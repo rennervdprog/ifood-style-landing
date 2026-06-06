@@ -47,7 +47,8 @@ Deno.serve(async (req) => {
     if (!store.asaas_account_id) return json({ error: "Subconta não configurada" }, 404);
 
     const ASAAS_API_KEY = Deno.env.get("ASAAS_API_KEY");
-    const isSandbox = !ASAAS_API_KEY?.startsWith("$aact_");
+    // Padrão oficial Asaas: produção começa com $aact_prod_, sandbox com $aact_ apenas.
+    const isSandbox = !ASAAS_API_KEY?.startsWith("$aact_prod_");
     const baseUrl = isSandbox ? "https://sandbox.asaas.com/api/v3" : "https://api.asaas.com/v3";
 
     const res = await fetch(`${baseUrl}/accounts/${store.asaas_account_id}/status`, {
@@ -59,7 +60,20 @@ Deno.serve(async (req) => {
       return json({ error: "Erro ao consultar Asaas", details: err }, 400);
     }
 
-    const status = await res.json();
+    const raw = await res.json();
+    // Normaliza para que o front possa ler tanto os nomes oficiais (atuais da API:
+    // commercialInfo, bankAccountInfo, documentation, general) quanto os aliases
+    // legados (bankAccount, document) usados em telas antigas.
+    const status = {
+      ...raw,
+      commercialInfo: raw?.commercialInfo ?? null,
+      bankAccountInfo: raw?.bankAccountInfo ?? raw?.bankAccount ?? null,
+      documentation: raw?.documentation ?? raw?.document ?? null,
+      general: raw?.general ?? null,
+      // aliases legados (mantêm UI antiga funcionando)
+      bankAccount: raw?.bankAccountInfo ?? raw?.bankAccount ?? null,
+      document: raw?.documentation ?? raw?.document ?? null,
+    };
 
     await adminClient
       .from("stores")
