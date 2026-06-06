@@ -14,7 +14,7 @@ const PopularProducts = memo(() => {
       const { data: orderItems, error } = await supabase
         .from("order_items")
         .select("product_id, quantity, products(id, name, price, image_url, store_id, is_available, stores:store_id(name, id, slug))")
-        .limit(100);
+        .limit(60);
       if (error) throw error;
 
       const productMap = new Map<string, { product: any; totalQty: number }>();

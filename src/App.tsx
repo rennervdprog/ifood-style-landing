@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useCallback, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { BrowserRouter, Route, Routes, useNavigate, useLocation, Navigate } from "react-router-dom";
@@ -50,7 +50,6 @@ const SuperAdminDashboardV2 = lazy(() => import("./pages/SuperAdminDashboardV2")
   return { default: () => null };
 }));
 const PartnerOnboarding = lazy(() => import("./pages/PartnerOnboarding"));
-const CadastroEntregador = lazy(() => import("./pages/CadastroEntregador"));
 const CadastroLojista = lazy(() => import("./pages/CadastroLojista"));
 const CadastroMotoboyLoja = lazy(() => import("./pages/CadastroMotoboyLoja"));
 const TermosDeUso = lazy(() => import("./pages/TermosDeUso"));
