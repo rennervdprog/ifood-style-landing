@@ -80,11 +80,12 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName }: Props) 
 
   const loadConfig = async () => {
     setLoading(true);
-    const { data } = await supabase
+    const { data: raw } = await (supabase as any)
       .from("store_whatsapp_config" as any)
       .select("*")
       .eq("store_id", storeId)
       .maybeSingle();
+    const data: any = raw;
 
     if (data) {
       setConfig(data);
