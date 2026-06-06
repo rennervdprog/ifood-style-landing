@@ -1664,6 +1664,7 @@ const AdminDashboard = () => {
                 buildAcceptWhatsAppHref={buildAcceptWhatsAppHref}
                 buildReadyMessage={buildReadyMessage}
                 openWhatsApp={openWhatsApp}
+                evolutionConnected={evolutionConnected}
                 updateOrderStatus={updateOrderStatus}
                 handleAcceptOrder={handleAcceptOrder}
                 handleCancelOrder={handleCancelOrder}
