@@ -116,18 +116,16 @@ Deno.serve(async (req) => {
           .gte("sent_at", sixHAgo).limit(1).maybeSingle();
         if (recent) return json({ ok: true, skipped: "cooldown" });
 
-        // Sempre envia o link do cardápio junto com a saudação — o cliente já
-        // iniciou a conversa, então não há risco extra de spam.
+        // Envia em DUAS mensagens para parecer humano: primeiro a saudação,
+        // depois (~10-15s) o link. Reduz o risco de classificação como spam.
         const { data: store } = await admin
           .from("stores").select("slug").eq("id", cfg.store_id).maybeSingle();
         const link = store?.slug ? `https://itasuper.com.br/${store.slug}` : "";
-        const baseMsg = (cfg.auto_reply_message || "Olá! 😊 Acesse nosso cardápio e faça seu pedido:").trim();
-        const text = link && !baseMsg.includes(link) ? `${baseMsg}\n${link}` : baseMsg;
+        const rawMsg = (cfg.auto_reply_message || "Olá! 😊 Acesse nosso cardápio e faça seu pedido:").trim();
+        // Remove o link de dentro da saudação para não enviar junto.
+        const greeting = link ? rawMsg.split(link).join("").replace(/\s+$/g, "").trim() : rawMsg;
 
-        // Humaniza a resposta: evita resposta instantânea com padrão de bot e
-        // mantém o webhook rápido para não gerar retry duplicado.
-        runInBackground((async () => {
-          await sleep(25_000 + Math.floor(Math.random() * 45_000));
+        const sendMsg = async (message: string) => {
           await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/evolution-send-message`, {
             method: "POST",
             headers: {
@@ -135,8 +133,18 @@ Deno.serve(async (req) => {
               apikey: Deno.env.get("SUPABASE_ANON_KEY") || "",
               Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""}`,
             },
-            body: JSON.stringify({ store_id: cfg.store_id, phone: number, message: text, kind: "auto_reply" }),
+            body: JSON.stringify({ store_id: cfg.store_id, phone: number, message, kind: "auto_reply" }),
           });
+        };
+
+        // Humaniza: aguarda antes da saudação, depois 10-15s antes do link.
+        runInBackground((async () => {
+          await sleep(25_000 + Math.floor(Math.random() * 45_000));
+          if (greeting) await sendMsg(greeting);
+          if (link) {
+            await sleep(10_000 + Math.floor(Math.random() * 5_000));
+            await sendMsg(link);
+          }
         })());
       }
     }
