@@ -25,7 +25,7 @@ class ErrorBoundary extends Component<Props, State> {
     return { hasError: true, error, isChunkError };
   }
 
-  private async hardReload() {
+  private async hardReload(goHome = false) {
     try {
       if ("caches" in window) {
         const keys = await caches.keys();
@@ -36,15 +36,18 @@ class ErrorBoundary extends Component<Props, State> {
       const regs = await navigator.serviceWorker?.getRegistrations();
       if (regs) await Promise.all(regs.map((r) => r.unregister()));
     } catch {}
-    // Cache-buster na URL para garantir HTML/assets novos
-    const sep = window.location.search ? "&" : "?";
-    window.location.replace(window.location.pathname + window.location.search + sep + "_v=" + Date.now());
+    // Cache-buster na URL para garantir HTML/assets novos.
+    // Se for retry após chunk error, vai para "/" para não tentar
+    // recarregar a mesma rota cujo chunk falhou (evita loop).
+    const target = goHome ? "/" : window.location.pathname + window.location.search;
+    const sep = target.includes("?") ? "&" : "?";
+    window.location.replace(target + sep + "_v=" + Date.now());
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("[ErrorBoundary]", error, errorInfo);
 
-    // Chunk error: limpar caches e forçar hard reload automático (até 2x por sessão)
+    // Chunk error: limpar caches e forçar hard reload automático (1x por sessão)
     if (
       error.message?.includes("Failed to fetch dynamically imported module") ||
       error.message?.includes("Importing a module script failed") ||
@@ -55,8 +58,9 @@ class ErrorBoundary extends Component<Props, State> {
       const count = parseInt(sessionStorage.getItem(reloadKey) || "0", 10);
       if (count < 1) {
         sessionStorage.setItem(reloadKey, String(count + 1));
-        // Pequeno delay para que o usuário veja o feedback antes do reload
-        setTimeout(() => this.hardReload(), 600);
+        // Pequeno delay para feedback. Vai para "/" para evitar pedir o mesmo
+        // chunk quebrado de novo (causa do loop percebido pelo usuário).
+        setTimeout(() => this.hardReload(true), 600);
       }
     }
   }
@@ -78,7 +82,7 @@ class ErrorBoundary extends Component<Props, State> {
           <button
             onClick={() => {
               sessionStorage.removeItem("eb_chunk_reload_count");
-              this.hardReload();
+              this.hardReload(true);
             }}
             className="mt-2 flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold text-sm active:scale-95 transition-transform"
           >
