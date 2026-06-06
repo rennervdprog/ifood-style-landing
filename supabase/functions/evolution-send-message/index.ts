@@ -88,8 +88,9 @@ Deno.serve(async (req) => {
     const msgHash = await hashMsg(message);
     const nowIso = new Date().toISOString();
 
-    // 1) Dedupe: mesma mensagem pro mesmo número em <1h
-    const dedupeSince = new Date(Date.now() - DEDUPE_WINDOW_SEC * 1000).toISOString();
+    // 1) Dedupe: auto-reply precisa permitir novo cardápio em teste/atendimento; manual/status seguem mais conservadores.
+    const dedupeWindowSec = kind === "auto_reply" ? 120 : DEDUPE_WINDOW_SEC;
+    const dedupeSince = new Date(Date.now() - dedupeWindowSec * 1000).toISOString();
     const { data: dup } = await admin
       .from("whatsapp_send_log")
       .select("id")
@@ -117,7 +118,7 @@ Deno.serve(async (req) => {
       await sleep(300_000 + Math.floor(Math.random() * 600_000));
     }
 
-    // 3) Throttle: gap mínimo entre envios da mesma loja + jitter
+    // 3) Throttle: auto-reply curto; envios manuais/status continuam com intervalo anti-spam maior.
     const { data: last } = await admin
       .from("whatsapp_send_log")
       .select("sent_at").eq("store_id", store_id)
@@ -125,15 +126,17 @@ Deno.serve(async (req) => {
       .order("sent_at", { ascending: false }).limit(1).maybeSingle();
     if (last?.sent_at) {
       const gap = Date.now() - new Date(last.sent_at).getTime();
-      const need = PER_STORE_MIN_GAP_MS + logNormalDelay();
+      const need = kind === "auto_reply"
+        ? 2_500 + Math.floor(Math.random() * 2_500)
+        : PER_STORE_MIN_GAP_MS + logNormalDelay();
       if (gap < need) await sleep(need - gap);
     } else {
       await sleep(2500 + Math.floor(Math.random() * 3500));
     }
 
     if (kind === "auto_reply") {
-      // P2.4 — presença "digitando" proporcional ao tamanho da mensagem
-      const typingMs = Math.min(15_000, Math.max(2500, message.length * 60));
+      // P2.4 — presença "digitando" curta para o teste não parecer travado.
+      const typingMs = Math.min(4_500, Math.max(1_200, message.length * 20));
       await sendPresence(baseUrl, cfg.evolution_instance_name, apiKey, number);
       await sleep(typingMs + Math.floor(Math.random() * 2000));
     }
