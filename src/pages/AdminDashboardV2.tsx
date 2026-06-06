@@ -1360,21 +1360,25 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* Navigation */}
+        {/* Navigation — agrupada por grupos com sub-tabs */}
         <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
-          {baseSidebarItems.filter(i => (!i.pizzaOnly || store?.category === "pizzas" || ((store as any)?.categories || []).includes("pizzas")) && (i.key !== "reports" || storePlan.allowFullReports) && (i.key !== "clients" || storePlan.allowFullReports)).map(item => {
-            const isActive = dashboardTab === item.key;
-            const Icon = item.icon;
+          {visibleGroups.map(group => {
+            const isActive = activeGroupKey === group.key;
+            const Icon = group.icon;
+            const tourKey = group.key === "pedidos" ? "loja-orders"
+              : group.key === "cardapio" ? "loja-menu"
+              : group.key === "clientes" ? "loja-clients"
+              : undefined;
             return (
-              <button key={item.key} onClick={() => handleTabChange(item.key)}
-                data-tour={item.key === "orders" ? "loja-orders" : item.key === "menu" ? "loja-menu" : item.key === "clients" ? "loja-clients" : undefined}
+              <button key={group.key} onClick={() => handleGroupChange(group.key)}
+                data-tour={tourKey}
                 className={`w-full flex items-center gap-3 py-2 px-3 rounded-xl text-sm font-medium transition-all ${isActive ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-accent hover:text-foreground"}`}>
                 <Icon className="h-4 w-4 flex-shrink-0" />
-                <span>{item.label}</span>
-                {item.key === "orders" && pendingCount > 0 && (
+                <span>{group.label}</span>
+                {group.key === "pedidos" && pendingCount > 0 && (
                   <span className="ml-auto bg-amber-400 text-amber-900 text-[10px] font-black px-1.5 py-0.5 rounded-full animate-pulse">{pendingCount}</span>
                 )}
-                {item.key === "clients" && (
+                {group.key === "clientes" && (
                   <span className="ml-auto text-[10px] text-muted-foreground">{clientAnalytics.length}</span>
                 )}
               </button>
