@@ -325,9 +325,9 @@ export default function DashboardOverviewSection(props: Props) {
                     <button
                       onClick={() => {
                         const phone = getClientWhatsApp(order.client_id);
-                        if (!phone) {
+                        if (!evolutionConnected && !phone) {
                           alert(`Atenção: Cliente #${order.id.slice(0, 8)} sem telefone.`);
-                        } else {
+                        } else if (!evolutionConnected) {
                           const msg = buildReadyMessage(order);
                           openWhatsApp(phone, msg);
                         }
