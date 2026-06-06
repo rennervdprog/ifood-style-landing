@@ -348,9 +348,12 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
 
   // Fetch contact profiles
   const clientIds = useMemo(() => {
-    if (!myDeliveries) return [];
-    return [...new Set(myDeliveries.map((o: any) => o.client_id).filter(Boolean))];
-  }, [myDeliveries]);
+    const ids = [
+      ...(myDeliveries || []).map((o: any) => o.client_id),
+      ...(availableOrders || []).map((o: any) => o.client_id),
+    ];
+    return [...new Set(ids.filter(Boolean))];
+  }, [myDeliveries, availableOrders]);
 
   const { data: contactProfiles } = useQuery({
     queryKey: ["store-driver-contacts", clientIds],
@@ -363,6 +366,19 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     },
     enabled: clientIds.length > 0,
     staleTime: 1000 * 60 * 5,
+  });
+
+  const { data: whatsappConfigs } = useQuery({
+    queryKey: ["store-driver-whatsapp-configs", linkedStoreIds],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("store_whatsapp_config")
+        .select("store_id, status")
+        .in("store_id", linkedStoreIds);
+      return data || [];
+    },
+    enabled: linkedStoreIds.length > 0,
+    staleTime: 30_000,
   });
 
   // Delivery count
@@ -552,6 +568,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     const clientPhone = (contact as any)?.whatsapp_number || (contact as any)?.phone || "";
     const clientName = (contact as any)?.full_name || "Cliente";
     const items = order.order_items?.map((i: any) => `${i.quantity}x ${getOrderItemDisplayName(i)}`).join("\n") || "";
+    const evolutionConnected = whatsappConfigs?.some((cfg: any) => cfg.store_id === order.store_id && cfg.status === "connected") || false;
 
     notifyOrderStatusChange(status, {
       orderId: order.id,
@@ -564,7 +581,8 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       addressDetails: order.address_details,
       items,
       paymentMethod: order.payment_method,
-    }, { skipWhatsApp: true }); // Driver side: skip manual WhatsApp, only push
+      deliveryPin: order.delivery_pin,
+    }, { evolutionEnabled: evolutionConnected });
   };
 
   /** Also notify the store owner */
