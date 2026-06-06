@@ -16,7 +16,20 @@ const BodySchema = z.object({
   store_id: z.string().uuid(),
   phone: z.string().min(10).max(20),
   message: z.string().min(1).max(4000),
+  kind: z.enum(["manual", "auto_reply", "order_status"]).optional(),
 });
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const hashMsg = async (s: string) => {
+  const buf = await crypto.subtle.digest("SHA-1", new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("").slice(0, 16);
+};
+
+// Anti-spam params
+const DEDUPE_WINDOW_SEC = 60;          // mesma msg p/ mesmo número
+const PER_STORE_MIN_GAP_MS = 3000;     // gap mínimo entre envios da loja
+const WARMUP_HOURS = 48;
+const WARMUP_MAX_MSGS = 80;            // teto nas primeiras 48h após conectar
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -24,7 +37,7 @@ Deno.serve(async (req) => {
   try {
     const parsed = BodySchema.safeParse(await req.json());
     if (!parsed.success) return json({ error: parsed.error.flatten().fieldErrors }, 400);
-    const { store_id, phone, message } = parsed.data;
+    const { store_id, phone, message, kind = "manual" } = parsed.data;
 
     const admin = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -33,7 +46,7 @@ Deno.serve(async (req) => {
 
     const { data: cfg } = await admin
       .from("store_whatsapp_config")
-      .select("evolution_instance_name, status")
+      .select("evolution_instance_name, status, connected_at")
       .eq("store_id", store_id)
       .maybeSingle();
 
@@ -47,6 +60,46 @@ Deno.serve(async (req) => {
     let number = phone.replace(/\D/g, "");
     if (number.length <= 11) number = "55" + number;
 
+    // === ANTI-SPAM ===
+    const msgHash = await hashMsg(message);
+    const nowIso = new Date().toISOString();
+
+    // 1) Dedupe: mesma mensagem pro mesmo número em <60s
+    const dedupeSince = new Date(Date.now() - DEDUPE_WINDOW_SEC * 1000).toISOString();
+    const { data: dup } = await admin
+      .from("whatsapp_send_log")
+      .select("id")
+      .eq("store_id", store_id).eq("phone", number).eq("message_hash", msgHash)
+      .gte("sent_at", dedupeSince).limit(1).maybeSingle();
+    if (dup) return json({ success: true, skipped: "duplicate" });
+
+    // 2) Warmup: limita volume nas primeiras 48h após conectar
+    if (cfg.connected_at) {
+      const ageH = (Date.now() - new Date(cfg.connected_at).getTime()) / 3_600_000;
+      if (ageH < WARMUP_HOURS) {
+        const { count } = await admin
+          .from("whatsapp_send_log")
+          .select("id", { count: "exact", head: true })
+          .eq("store_id", store_id).gte("sent_at", cfg.connected_at);
+        if ((count ?? 0) >= WARMUP_MAX_MSGS) {
+          return json({ error: "Aquecimento: limite diário de envios atingido. Tente novamente mais tarde." }, 429);
+        }
+      }
+    }
+
+    // 3) Throttle: gap mínimo entre envios da mesma loja + jitter
+    const { data: last } = await admin
+      .from("whatsapp_send_log")
+      .select("sent_at").eq("store_id", store_id)
+      .order("sent_at", { ascending: false }).limit(1).maybeSingle();
+    if (last?.sent_at) {
+      const gap = Date.now() - new Date(last.sent_at).getTime();
+      const need = PER_STORE_MIN_GAP_MS + Math.floor(Math.random() * 2000);
+      if (gap < need) await sleep(need - gap);
+    } else {
+      await sleep(500 + Math.floor(Math.random() * 1500));
+    }
+
     const r = await fetch(`${baseUrl.replace(/\/$/, "")}/message/sendText/${cfg.evolution_instance_name}`, {
       method: "POST",
       headers: { "Content-Type": "application/json", apikey: apiKey },
@@ -54,6 +107,12 @@ Deno.serve(async (req) => {
     });
     const data = await r.json().catch(() => ({}));
     if (!r.ok) return json({ error: "Falha Evolution", details: data }, 502);
+
+    // 4) Registra envio (best-effort)
+    await admin.from("whatsapp_send_log").insert({
+      store_id, phone: number, message_hash: msgHash, kind, sent_at: nowIso,
+    });
+
     return json({ success: true, data });
   } catch (e) {
     console.error("evolution-send-message error:", e);

@@ -43,12 +43,16 @@ Deno.serve(async (req) => {
       else if ((state === "close" || state === "disconnected") && statusReason === 401) newStatus = "disconnected";
       else if (cfg.status !== "connected") newStatus = "connecting";
       if (newStatus) {
-        await admin.from("store_whatsapp_config").update({
+        const patch: any = {
           status: newStatus,
           phone_number: phone ?? undefined,
           qr_code: newStatus === "connected" ? null : undefined,
           updated_at: new Date().toISOString(),
-        }).eq("store_id", cfg.store_id);
+        };
+        if (newStatus === "connected" && cfg.status !== "connected") {
+          patch.connected_at = new Date().toISOString();
+        }
+        await admin.from("store_whatsapp_config").update(patch).eq("store_id", cfg.store_id);
       }
     }
 
@@ -58,21 +62,32 @@ Deno.serve(async (req) => {
       const remoteJid: string = data?.key?.remoteJid || "";
       const number = remoteJid.split("@")[0];
       if (!fromMe && number && /^\d+$/.test(number) && !remoteJid.includes("@g.us")) {
-        const baseUrl = cfg.evolution_api_url || Deno.env.get("EVOLUTION_API_URL");
-        const apiKey = Deno.env.get("EVOLUTION_GLOBAL_API_KEY");
+        // Cooldown: 1 auto-reply por contato a cada 6h
+        const sixHAgo = new Date(Date.now() - 6 * 3600_000).toISOString();
+        const { data: recent } = await admin
+          .from("whatsapp_send_log")
+          .select("id")
+          .eq("store_id", cfg.store_id).eq("phone", number).eq("kind", "auto_reply")
+          .gte("sent_at", sixHAgo).limit(1).maybeSingle();
+        if (recent) return json({ ok: true, skipped: "cooldown" });
+
         // Append store link to the auto-reply
         const { data: store } = await admin
           .from("stores").select("slug").eq("id", cfg.store_id).maybeSingle();
         const link = store?.slug ? `https://itasuper.com.br/${store.slug}` : "";
         const baseMsg = (cfg.auto_reply_message || "Olá! 😊 Acesse nosso cardápio e faça seu pedido:").trim();
         const text = link && !baseMsg.includes(link) ? `${baseMsg}\n${link}` : baseMsg;
-        if (baseUrl && apiKey) {
-          await fetch(`${baseUrl.replace(/\/$/, "")}/message/sendText/${cfg.evolution_instance_name}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", apikey: apiKey },
-            body: JSON.stringify({ number, text }),
-          }).catch(() => {});
-        }
+
+        // Roteia pela função de envio para aplicar throttle/dedupe/warmup
+        await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/evolution-send-message`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: Deno.env.get("SUPABASE_ANON_KEY") || "",
+            Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""}`,
+          },
+          body: JSON.stringify({ store_id: cfg.store_id, phone: number, message: text, kind: "auto_reply" }),
+        }).catch(() => {});
       }
     }
 
