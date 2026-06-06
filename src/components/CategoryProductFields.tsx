@@ -64,19 +64,15 @@ const BRLPriceRowInput = ({ value, onCommit }: { value: number; onCommit: (v: nu
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
-    
-    // Se estiver vazio, reseta
+    // Atualiza apenas o display local enquanto digita — NÃO propaga ao pai
+    // (commit acontece no blur). Isso evita re-render em cascata do form
+    // pai a cada tecla, que fecha o teclado no mobile.
     if (!raw.replace(/\D/g, "")) {
       setDisplay("");
-      onCommit(0);
       return;
     }
-
     const n = parseBRLCentsInput(raw);
     setDisplay(formatBRLDisplay(n));
-    // Commit direto aqui pois é um campo de linha (row) que afeta o array de tamanhos no pai.
-    // Para evitar lag, podemos usar o valor numérico processado.
-    onCommit(n);
   };
 
   return (
@@ -88,11 +84,9 @@ const BRLPriceRowInput = ({ value, onCommit }: { value: number; onCommit: (v: nu
       onFocus={() => setIsEditing(true)}
       onBlur={() => {
         setIsEditing(false);
-        // Garante que o valor final esteja formatado corretamente ao sair
-        if (display) {
-          const n = parseBRLCentsInput(display);
-          setDisplay(n > 0 ? formatBRLDisplay(n) : "");
-        }
+        const n = display ? parseBRLCentsInput(display) : 0;
+        setDisplay(n > 0 ? formatBRLDisplay(n) : "");
+        if (n !== value) onCommit(n);
       }}
       placeholder="0,00"
       className="min-w-0 flex-1 bg-transparent text-right text-sm font-semibold text-foreground placeholder:text-muted-foreground focus:outline-none"
