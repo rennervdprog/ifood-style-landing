@@ -258,7 +258,14 @@ type PizzaPriceMode = "maior" | "media" | "soma";
         delivery_fee_base: parseFloat(deliveryFeeBase.toString().replace(",", ".")) || 0,
         delivery_fee_per_km: parseFloat(deliveryFeePerKm.toString().replace(",", ".")) || 0,
         // Métodos de pagamento aceitos
-        accept_pix_online:  acceptPixOnline && isAsaasFullyApproved,
+        // PIX Online: só permite ATIVAR se Asaas aprovado;
+        // se conta ainda não está aprovada, preserva o valor anterior do banco
+        // (não sobrescreve com false silenciosamente).
+        ...(isAsaasFullyApproved
+          ? { accept_pix_online: acceptPixOnline }
+          : (storeSettings && "accept_pix_online" in storeSettings
+              ? { accept_pix_online: (storeSettings as any).accept_pix_online }
+              : {})),
         accept_pix_machine: acceptPixMachine,
         accept_card:        acceptCard,
         accept_cash:        acceptCash,
@@ -290,12 +297,6 @@ type PizzaPriceMode = "maior" | "media" | "soma";
     if (storeError) {
       console.error("[DEBUG] Erro ao salvar dados da loja no Supabase:", storeError);
       toast.error(`Erro ao salvar: ${storeError.message || "Verifique os dados"}`);
-      setSaving(false);
-      return;
-    }
-
-    if (storeError) {
-      toast.error("Erro ao salvar dados da loja.");
       setSaving(false);
       return;
     }
@@ -623,23 +624,6 @@ const NotificationSection = () => {
             onChange={(e) => {
               const formatted = formatCep(e.target.value);
               setAddressCep(formatted);
-              const digits = e.target.value.replace(/\D/g, "");
-              if (digits.length === 8) {
-                setLoadingCep(true);
-                fetchCep(digits).then((result) => {
-                  if (result) {
-                    setAddressStreet(result.logradouro || "");
-                    setAddressNeighborhood(result.bairro || "");
-                    setAddressCity(result.localidade || "Itatinga");
-                    setAddressState(result.uf || "SP");
-                    if (result.complemento) setAddressComplement(result.complemento);
-                    toast.success("Endereço preenchido pelo CEP!");
-                  } else {
-                    toast.error("CEP não encontrado.");
-                  }
-                  setLoadingCep(false);
-                }).catch(() => setLoadingCep(false));
-              }
             }}
             inputMode="numeric"
             maxLength={9}
@@ -797,19 +781,8 @@ const NotificationSection = () => {
           Modo de Entrega
         </label>
         <p className="text-[10px] text-muted-foreground/70">
-          Configure seu entregador próprio para realizar as entregas.
+          Você gerencia seus próprios motoboys. Cadastre-os na aba <strong>Motoboys</strong>.
         </p>
-         <div className="grid grid-cols-1 gap-2">
-           <div
-             className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-primary bg-primary/10"
-           >
-             <Truck className="h-6 w-6 text-primary" />
-             <span className="text-xs font-bold text-primary">
-               Sistema Integrado Ativo
-             </span>
-             <span className="text-[10px] text-muted-foreground text-center">Gestão de entregas e motoboys unificada</span>
-           </div>
-         </div>
         {deliveryMode === "own" && (
           <div className="space-y-3">
             <div className="bg-muted border border-border rounded-xl p-3 flex items-start gap-2">
@@ -979,27 +952,6 @@ const NotificationSection = () => {
       )}
 
 
-      {/* WhatsApp — Em breve */}
-      <div className="bg-muted/50 border border-border rounded-2xl p-4 space-y-3">
-        <div className="flex items-center gap-2">
-          <MessageSquare className="h-4 w-4 text-primary" />
-          <h3 className="text-sm font-black text-foreground">WhatsApp Automático</h3>
-          <span className="ml-auto text-[10px] font-black bg-primary/10 text-primary px-2 py-0.5 rounded-full">Em breve</span>
-        </div>
-        <p className="text-xs text-muted-foreground leading-relaxed">
-          Em breve você poderá conectar seu WhatsApp e enviar notificações automáticas para seus clientes — pedido aceito, saiu para entrega, entregue e muito mais. Tudo pelo painel, sem complicação.
-        </p>
-        <div className="flex flex-col gap-1.5">
-          {["✅ Notificar cliente quando aceitar o pedido","🛵 Notificar quando sair para entrega","📦 Notificar quando for entregue","💬 Responder automaticamente com o link do cardápio"].map(f => (
-            <div key={f} className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span>{f}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-
-
       {/* ─── Métodos de Pagamento ──────────────────────────────────── */}
       <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
         <div>
@@ -1158,20 +1110,6 @@ const NotificationSection = () => {
 
       {/* Notifications Section */}
       <NotificationSection />
-
-      {/* Store Status Info */}
-      <div className="bg-muted/50 border border-border rounded-2xl p-4 space-y-2">
-        <p className="text-sm font-bold text-foreground/80">Status Atual</p>
-        <div className="flex items-center gap-3">
-          <div className={`w-3 h-3 rounded-full ${storeIsOpen && !forceClosed ? "bg-primary animate-pulse" : "bg-muted-foreground"}`} />
-          <span className={`text-sm font-bold ${storeIsOpen && !forceClosed ? "text-primary" : "text-muted-foreground"}`}>
-            {storeIsOpen && !forceClosed ? "Loja Aberta" : "Loja Fechada"}
-          </span>
-        </div>
-        <p className="text-[10px] text-muted-foreground/70">
-          Use o botão "Pausar/Reabrir" no topo do painel para abrir ou fechar a loja manualmente.
-        </p>
-      </div>
 
       {/* Save Button */}
       <button
