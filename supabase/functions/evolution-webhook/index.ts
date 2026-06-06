@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const { data: cfg } = await admin
       .from("store_whatsapp_config")
-      .select("store_id, auto_reply_enabled, auto_reply_message, evolution_api_url, evolution_instance_name")
+      .select("store_id, auto_reply_enabled, auto_reply_message, evolution_api_url, evolution_instance_name, status")
       .eq("evolution_instance_name", instance)
       .maybeSingle();
     if (!cfg) return json({ ok: true });
@@ -32,18 +32,24 @@ Deno.serve(async (req) => {
     // CONNECTION_UPDATE
     if (/connection/i.test(event)) {
       const state: string = data?.state || data?.status || "";
+      const statusReason: number = Number(data?.statusReason || data?.reason || 0);
       const phone: string | undefined = data?.wuid?.split("@")?.[0] || data?.number || data?.owner;
-      const status = state === "open" || state === "connected"
-        ? "connected"
-        : state === "close" || state === "disconnected"
-        ? "disconnected"
-        : "connecting";
-      await admin.from("store_whatsapp_config").update({
-        status,
-        phone_number: phone ?? undefined,
-        qr_code: status === "connected" ? null : undefined,
-        updated_at: new Date().toISOString(),
-      }).eq("store_id", cfg.store_id);
+      // Evolution/Baileys emits transient "close"/"connecting" events even
+      // right after a successful pairing (socket reconnect). Only flip the
+      // status to "disconnected" when the device was actually logged out
+      // (statusReason 401) — otherwise we'd kick a healthy connection.
+      let newStatus: string | null = null;
+      if (state === "open" || state === "connected") newStatus = "connected";
+      else if ((state === "close" || state === "disconnected") && statusReason === 401) newStatus = "disconnected";
+      else if (cfg.status !== "connected") newStatus = "connecting";
+      if (newStatus) {
+        await admin.from("store_whatsapp_config").update({
+          status: newStatus,
+          phone_number: phone ?? undefined,
+          qr_code: newStatus === "connected" ? null : undefined,
+          updated_at: new Date().toISOString(),
+        }).eq("store_id", cfg.store_id);
+      }
     }
 
     // MESSAGES_UPSERT (auto-reply)
@@ -54,11 +60,17 @@ Deno.serve(async (req) => {
       if (!fromMe && number && /^\d+$/.test(number) && !remoteJid.includes("@g.us")) {
         const baseUrl = cfg.evolution_api_url || Deno.env.get("EVOLUTION_API_URL");
         const apiKey = Deno.env.get("EVOLUTION_GLOBAL_API_KEY");
+        // Append store link to the auto-reply
+        const { data: store } = await admin
+          .from("stores").select("slug").eq("id", cfg.store_id).maybeSingle();
+        const link = store?.slug ? `https://itasuper.com.br/${store.slug}` : "";
+        const baseMsg = (cfg.auto_reply_message || "Olá! 😊 Acesse nosso cardápio e faça seu pedido:").trim();
+        const text = link && !baseMsg.includes(link) ? `${baseMsg}\n${link}` : baseMsg;
         if (baseUrl && apiKey) {
           await fetch(`${baseUrl.replace(/\/$/, "")}/message/sendText/${cfg.evolution_instance_name}`, {
             method: "POST",
             headers: { "Content-Type": "application/json", apikey: apiKey },
-            body: JSON.stringify({ number, text: cfg.auto_reply_message || "Olá! 😊" }),
+            body: JSON.stringify({ number, text }),
           }).catch(() => {});
         }
       }
