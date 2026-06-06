@@ -1298,15 +1298,14 @@ const AdminDashboard = () => {
               <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
             </div>
             <div className="px-4 pb-4 grid grid-cols-3 gap-3">
-              {moreSheetItems.filter(item => (!item.pizzaOnly || store?.category === "pizzas" || ((store as any)?.categories || []).includes("pizzas")) && (item.key !== "reports" || storePlan.allowFullReports) && (item.key !== "clients" || storePlan.allowFullReports)).map(item => {
-                const Icon = item.icon;
-                const isActive = dashboardTab === item.key;
-                const isLoading = isActive && isPendingTab;
+              {moreSheetGroups.map(group => {
+                const Icon = group.icon;
+                const isActive = activeGroupKey === group.key;
                 return (
-                  <button key={item.key} onClick={() => handleTabChange(item.key)}
+                  <button key={group.key} onClick={() => handleGroupChange(group.key)}
                     className={`flex flex-col items-center gap-2 p-3 rounded-2xl transition-all ${isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent"}`}>
                     <Icon className="h-5 w-5" />
-                    <span className="text-[11px] font-bold">{item.label}</span>
+                    <span className="text-[11px] font-bold">{group.label}</span>
                   </button>
                 );
               })}
