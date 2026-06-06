@@ -2019,22 +2019,22 @@ const AdminDashboard = () => {
         {/* ── FIXED MODERN BOTTOM NAVIGATION (mobile only) ── */}
         <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-t border-border/50 lg:hidden pb-safe">
           <div className="flex items-center justify-around h-16 px-2">
-            {bottomNavTabs.map(tab => {
-              const Icon = tab.icon;
-              const isActive = dashboardTab === tab.key && !showMoreSheet;
+            {bottomNavGroups.map(group => {
+              const Icon = group.icon;
+              const isActive = activeGroupKey === group.key && !showMoreSheet;
               return (
-                <button key={tab.key} onClick={() => handleTabChange(tab.key)}
+                <button key={group.key} onClick={() => handleGroupChange(group.key)}
                   className={`flex flex-col items-center justify-center flex-1 h-full transition-all duration-300 relative ${
                     isActive ? "text-primary translate-y-[-2px]" : "text-muted-foreground/60 hover:text-muted-foreground"
                   }`}>
                   {isActive && <div className="absolute top-0 w-8 h-1 bg-primary rounded-full animate-in fade-in zoom-in duration-300" />}
                   <div className="relative mt-1">
                     <Icon className={`h-6 w-6 transition-transform duration-300 ${isActive ? "scale-110" : "group-active:scale-90"}`} strokeWidth={isActive ? 2.5 : 2} />
-                    {tab.key === "orders" && pendingCount > 0 && (
+                    {group.key === "pedidos" && pendingCount > 0 && (
                       <span className="absolute -top-1.5 -right-2 bg-amber-500 text-white text-[10px] font-black min-w-[18px] h-[18px] rounded-full flex items-center justify-center ring-2 ring-background shadow-lg animate-pulse">{pendingCount}</span>
                     )}
                   </div>
-                  <span className={`text-[11px] mt-1 transition-all duration-300 ${isActive ? "font-black tracking-tight" : "font-bold"}`}>{tab.label}</span>
+                  <span className={`text-[11px] mt-1 transition-all duration-300 ${isActive ? "font-black tracking-tight" : "font-bold"}`}>{group.label}</span>
                 </button>
               );
             })}
