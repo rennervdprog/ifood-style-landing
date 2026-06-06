@@ -1,4 +1,6 @@
 import StoreSettings from "@/components/StoreSettings";
+import WhatsAppSetup from "@/components/WhatsAppSetup";
+import { MessageCircle } from "lucide-react";
 
 interface Props {
   store: any;
@@ -6,6 +8,17 @@ interface Props {
 
 const SettingsTab = ({ store }: Props) => (
   <div className="space-y-6">
+    <section className="rounded-2xl border border-border bg-card p-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <MessageCircle className="h-5 w-5 text-primary" />
+        <h2 className="text-base font-bold text-foreground">WhatsApp</h2>
+      </div>
+      <WhatsAppSetup
+        storeId={store.id}
+        storeSlug={store.slug || ""}
+        storeName={store.name}
+      />
+    </section>
     <StoreSettings 
       storeId={store.id} 
       storeName={store.name} 
