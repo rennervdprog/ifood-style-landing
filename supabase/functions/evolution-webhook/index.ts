@@ -116,16 +116,13 @@ Deno.serve(async (req) => {
           .gte("sent_at", sixHAgo).limit(1).maybeSingle();
         if (recent) return json({ ok: true, skipped: "cooldown" });
 
-        // Só envia link quando o cliente pede cardápio/pedido/link. Em mensagens
-        // genéricas (ex.: "oi"), faz opt-in primeiro para reduzir risco de spam.
+        // Sempre envia o link do cardápio junto com a saudação — o cliente já
+        // iniciou a conversa, então não há risco extra de spam.
         const { data: store } = await admin
           .from("stores").select("slug").eq("id", cfg.store_id).maybeSingle();
         const link = store?.slug ? `https://itasuper.com.br/${store.slug}` : "";
-        const clientAskedForMenu = asksForMenu(incomingText(data));
-        const baseMsg = clientAskedForMenu
-          ? (cfg.auto_reply_message || "Olá! 😊 Acesse nosso cardápio e faça seu pedido:").trim()
-          : "Olá! 😊 Recebemos sua mensagem. Para acessar o cardápio, responda *1* ou envie *cardápio*.";
-        const text = clientAskedForMenu && link && !baseMsg.includes(link) ? `${baseMsg}\n${link}` : baseMsg;
+        const baseMsg = (cfg.auto_reply_message || "Olá! 😊 Acesse nosso cardápio e faça seu pedido:").trim();
+        const text = link && !baseMsg.includes(link) ? `${baseMsg}\n${link}` : baseMsg;
 
         // Humaniza a resposta: evita resposta instantânea com padrão de bot e
         // mantém o webhook rápido para não gerar retry duplicado.
