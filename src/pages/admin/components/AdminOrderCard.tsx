@@ -68,7 +68,8 @@ export interface AdminOrderCardProps {
 const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
   const {
     order, index, isAddressExpanded, isBatchSelected, isOwnDelivery, hasLinkedDrivers,
-    driversLoading, cancelConfirm, storeName, onlineDriversCount, linkedStoreDrivers,
+    driversLoading, cancelConfirm, cancelReason, setCancelReason, cancellingOrder,
+    storeName, onlineDriversCount, linkedStoreDrivers,
     highlights, clientName, clientWhatsApp, driverName, mainAction, acceptHref, readyHref,
     toggleAddress, toggleBatchOrder, setActiveTab, setCancelConfirm, updateOrderStatus,
     handleAcceptOrder, handleCancelOrder, handlePrint, invalidateOrders,
@@ -379,7 +380,8 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
                 href={acceptHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={() => {
+                onClick={(e) => {
+                  if (acceptHref === "#") e.preventDefault();
                   handleAcceptOrder(order);
                   setActiveTab("preparando");
                   updateOrderStatus(order.id, "preparando");
@@ -400,7 +402,8 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
                   href={readyHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                  onClick={() => {
+                  onClick={(e) => {
+                    if (readyHref === "#") e.preventDefault();
                     setActiveTab("pronto_para_entrega");
                     updateOrderStatus(order.id, action.next);
                   }}

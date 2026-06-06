@@ -324,6 +324,23 @@ const AdminDashboard = () => {
 
   const storePlan = useStorePlan(store?.id);
 
+  // Detecta se Evolution API (WhatsApp automático) está conectado para a loja.
+  // Quando conectado, os botões de fluxo de pedido NÃO abrem o wa.me manual —
+  // a mensagem é enviada automaticamente pelo backend (evolution-send-message).
+  const { data: evolutionConnected = false } = useQuery({
+    queryKey: ["store-evo-connected", store?.id],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("store_whatsapp_config")
+        .select("status")
+        .eq("store_id", store!.id)
+        .maybeSingle();
+      return data?.status === "connected";
+    },
+    enabled: !!store?.id,
+    staleTime: 30_000,
+  });
+
   const refreshDashboardOrders = useCallback(async () => {
     if (!store?.id) return;
 
@@ -820,6 +837,8 @@ const AdminDashboard = () => {
    * Gera o href WhatsApp para o botão PRONTO (com PIN).
    */
   const buildReadyWhatsAppHref = useCallback((order: any): string => {
+    // Quando Evolution API está conectado, NÃO abrimos wa.me — o backend envia automaticamente.
+    if (evolutionConnected) return "#";
     const clientPhone = getClientWhatsApp(order.client_id);
     console.log("[buildReadyWhatsAppHref] order:", order.id.slice(0, 8), "client_id:", order.client_id, "clientPhone:", clientPhone, "clientProfiles loaded?:", !!clientProfiles, "profiles count:", clientProfiles?.length);
     if (!clientPhone) {
@@ -836,7 +855,7 @@ const AdminDashboard = () => {
     const href = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
     console.log("[buildReadyWhatsAppHref] ✅ href gerado:", href);
     return href;
-  }, [getClientWhatsApp, buildReadyMessage, clientProfiles]);
+  }, [getClientWhatsApp, buildReadyMessage, clientProfiles, evolutionConnected]);
 
   /**
    * Gera o href completo do WhatsApp para o botão "ACEITAR PEDIDO".
@@ -844,12 +863,13 @@ const AdminDashboard = () => {
    * bloqueados por popup blockers do navegador, resolvendo o bug de abertura.
    */
   const buildAcceptWhatsAppHref = useCallback((order: any): string => {
+    if (evolutionConnected) return "#";
     const clientPhone = getClientWhatsApp(order.client_id);
     if (!clientPhone) return "#";
     const msg = buildAcceptMessage(order);
     const phone = formatWhatsAppNumber(clientPhone);
     return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
-  }, [getClientWhatsApp, buildAcceptMessage]);
+  }, [getClientWhatsApp, buildAcceptMessage, evolutionConnected]);
 
   /**
    * Chamado junto com o clique em ACEITAR PEDIDO.
@@ -945,7 +965,10 @@ const AdminDashboard = () => {
             items,
             deliveryPin: order.delivery_pin,
             paymentMethod: order.payment_method,
-          }, { zapiEnabled: !!storeSettings.zapi_enabled });
+          }, {
+            evolutionEnabled: evolutionConnected,
+            zapiEnabled: !!storeSettings.zapi_enabled,
+          });
         } catch (e) { console.warn("notify error", e); }
       }
 
@@ -1039,7 +1062,10 @@ const AdminDashboard = () => {
         clientName: getClientName(order.client_id),
         totalPrice: Number(order.total_price),
         paymentMethod: order.payment_method,
-      }, { zapiEnabled: !!cancelSettings.zapi_enabled });
+      }, {
+        evolutionEnabled: evolutionConnected,
+        zapiEnabled: !!cancelSettings.zapi_enabled,
+      });
 
       toast.success(res.data?.message || "Pedido cancelado.", { duration: 8000 });
     } catch (e: any) {
@@ -1097,7 +1123,10 @@ const AdminDashboard = () => {
           items,
           deliveryPin: order.delivery_pin,
           paymentMethod: order.payment_method,
-        }, { zapiEnabled: !!storeSettings.zapi_enabled });
+        }, {
+          evolutionEnabled: evolutionConnected,
+          zapiEnabled: !!storeSettings.zapi_enabled,
+        });
       }
 
       setBatchSelected(new Set());
@@ -1635,6 +1664,7 @@ const AdminDashboard = () => {
                 buildAcceptWhatsAppHref={buildAcceptWhatsAppHref}
                 buildReadyMessage={buildReadyMessage}
                 openWhatsApp={openWhatsApp}
+                evolutionConnected={evolutionConnected}
                 updateOrderStatus={updateOrderStatus}
                 handleAcceptOrder={handleAcceptOrder}
                 handleCancelOrder={handleCancelOrder}

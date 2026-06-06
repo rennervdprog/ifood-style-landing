@@ -46,6 +46,7 @@ interface Props {
   buildAcceptWhatsAppHref: (o: any) => string;
   buildReadyMessage: (o: any) => string;
   openWhatsApp: (phone: string, msg: string) => void;
+  evolutionConnected?: boolean;
   updateOrderStatus: (id: string, status: any) => void;
   handleAcceptOrder: (o: any) => void;
   handleCancelOrder: (o: any) => void;
@@ -58,7 +59,7 @@ export default function DashboardOverviewSection(props: Props) {
     avgDeliveryTime, clientAnalytics, delayedOrders, showDelayedPanel, setShowDelayedPanel,
     orders, statusColors, paymentIcons, paymentLabels, setDashboardTab, setActiveTab, navigate,
     getClientName, getClientWhatsApp, getOrderItemDisplayName, buildAcceptWhatsAppHref,
-    buildReadyMessage, openWhatsApp, updateOrderStatus, handleAcceptOrder, handleCancelOrder,
+    buildReadyMessage, openWhatsApp, evolutionConnected, updateOrderStatus, handleAcceptOrder, handleCancelOrder,
   } = props;
 
   // Status do PDV (sincronizado com a tela /admin/pdv via tabela pdv_sessions)
@@ -324,9 +325,9 @@ export default function DashboardOverviewSection(props: Props) {
                     <button
                       onClick={() => {
                         const phone = getClientWhatsApp(order.client_id);
-                        if (!phone) {
+                        if (!evolutionConnected && !phone) {
                           alert(`Atenção: Cliente #${order.id.slice(0, 8)} sem telefone.`);
-                        } else {
+                        } else if (!evolutionConnected) {
                           const msg = buildReadyMessage(order);
                           openWhatsApp(phone, msg);
                         }
