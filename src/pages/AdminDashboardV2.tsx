@@ -837,6 +837,8 @@ const AdminDashboard = () => {
    * Gera o href WhatsApp para o botão PRONTO (com PIN).
    */
   const buildReadyWhatsAppHref = useCallback((order: any): string => {
+    // Quando Evolution API está conectado, NÃO abrimos wa.me — o backend envia automaticamente.
+    if (evolutionConnected) return "#";
     const clientPhone = getClientWhatsApp(order.client_id);
     console.log("[buildReadyWhatsAppHref] order:", order.id.slice(0, 8), "client_id:", order.client_id, "clientPhone:", clientPhone, "clientProfiles loaded?:", !!clientProfiles, "profiles count:", clientProfiles?.length);
     if (!clientPhone) {
@@ -853,7 +855,7 @@ const AdminDashboard = () => {
     const href = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
     console.log("[buildReadyWhatsAppHref] ✅ href gerado:", href);
     return href;
-  }, [getClientWhatsApp, buildReadyMessage, clientProfiles]);
+  }, [getClientWhatsApp, buildReadyMessage, clientProfiles, evolutionConnected]);
 
   /**
    * Gera o href completo do WhatsApp para o botão "ACEITAR PEDIDO".
@@ -861,12 +863,13 @@ const AdminDashboard = () => {
    * bloqueados por popup blockers do navegador, resolvendo o bug de abertura.
    */
   const buildAcceptWhatsAppHref = useCallback((order: any): string => {
+    if (evolutionConnected) return "#";
     const clientPhone = getClientWhatsApp(order.client_id);
     if (!clientPhone) return "#";
     const msg = buildAcceptMessage(order);
     const phone = formatWhatsAppNumber(clientPhone);
     return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
-  }, [getClientWhatsApp, buildAcceptMessage]);
+  }, [getClientWhatsApp, buildAcceptMessage, evolutionConnected]);
 
   /**
    * Chamado junto com o clique em ACEITAR PEDIDO.
