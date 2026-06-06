@@ -132,7 +132,7 @@ const fetchCustomTemplate = async (storeId: string, status: string): Promise<str
 const sendEvolutionMessage = async (storeId: string, phone: string, message: string) => {
   try {
     const { data, error } = await supabase.functions.invoke("evolution-send-message", {
-      body: { store_id: storeId, phone, message },
+      body: { store_id: storeId, phone, message, kind: "order_status" },
     });
     if (error) console.error("[Evolution] send error:", error);
     return data;
