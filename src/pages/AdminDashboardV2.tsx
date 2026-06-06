@@ -83,10 +83,15 @@ import {
   orderTabs,
   paymentLabels,
   paymentIcons,
-  baseSidebarItems,
-  bottomNavTabs,
-  moreSheetItems,
+  dashboardGroups,
+  bottomNavGroupKeys,
+  moreSheetGroupKeys,
+  filterSubTab,
+  getGroupForTab,
+  type DashboardGroup,
+  type DashboardGroupKey,
 } from "./admin/constants";
+import GroupTabsBar from "./admin/components/GroupTabsBar";
 import {
   parseOrderAddons,
   normalizeAddonName,
@@ -1223,7 +1228,44 @@ const AdminDashboard = () => {
     startTabTransition(() => setDashboardTab(tab)); setSidebarOpen(false); setShowMoreSheet(false);
   };
 
-  const isBottomNavMore = !bottomNavTabs.some(t => t.key === dashboardTab) && dashboardTab !== "dashboard";
+  // ─── Navegação agrupada ───
+  const isPizza = store?.category === "pizzas" || ((store as any)?.categories || []).includes("pizzas");
+  const allowFullReports = storePlan.allowFullReports;
+  const filterCtx = { isPizza, allowFullReports };
+
+  // Grupos visíveis (com pelo menos 1 sub-tab disponível)
+  const visibleGroups: DashboardGroup[] = useMemo(
+    () => dashboardGroups
+      .map(g => ({ ...g, subTabs: g.subTabs.filter(s => filterSubTab(s, filterCtx)) }))
+      .filter(g => g.subTabs.length > 0),
+    [isPizza, allowFullReports],
+  );
+  const visibleGroupMap = useMemo(
+    () => new Map(visibleGroups.map(g => [g.key, g])),
+    [visibleGroups],
+  );
+
+  const activeGroup = getGroupForTab(dashboardTab);
+  const activeGroupKey = activeGroup?.key;
+
+  const handleGroupChange = (groupKey: DashboardGroupKey) => {
+    const g = visibleGroupMap.get(groupKey);
+    if (!g || g.subTabs.length === 0) return;
+    // Se já estou no grupo, mantém a sub-tab atual; senão abre a primeira
+    const inGroup = g.subTabs.some(s => s.key === dashboardTab);
+    handleTabChange(inGroup ? dashboardTab : g.subTabs[0].key);
+  };
+
+  const bottomNavGroups = bottomNavGroupKeys
+    .map(k => visibleGroupMap.get(k))
+    .filter(Boolean) as DashboardGroup[];
+  const moreSheetGroups = moreSheetGroupKeys
+    .map(k => visibleGroupMap.get(k))
+    .filter(Boolean) as DashboardGroup[];
+
+  const isBottomNavMore = activeGroupKey
+    ? !bottomNavGroupKeys.includes(activeGroupKey)
+    : false;
 
   // ── RENDER ──
   return (
@@ -1256,15 +1298,14 @@ const AdminDashboard = () => {
               <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
             </div>
             <div className="px-4 pb-4 grid grid-cols-3 gap-3">
-              {moreSheetItems.filter(item => (!item.pizzaOnly || store?.category === "pizzas" || ((store as any)?.categories || []).includes("pizzas")) && (item.key !== "reports" || storePlan.allowFullReports) && (item.key !== "clients" || storePlan.allowFullReports)).map(item => {
-                const Icon = item.icon;
-                const isActive = dashboardTab === item.key;
-                const isLoading = isActive && isPendingTab;
+              {moreSheetGroups.map(group => {
+                const Icon = group.icon;
+                const isActive = activeGroupKey === group.key;
                 return (
-                  <button key={item.key} onClick={() => handleTabChange(item.key)}
+                  <button key={group.key} onClick={() => handleGroupChange(group.key)}
                     className={`flex flex-col items-center gap-2 p-3 rounded-2xl transition-all ${isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent"}`}>
                     <Icon className="h-5 w-5" />
-                    <span className="text-[11px] font-bold">{item.label}</span>
+                    <span className="text-[11px] font-bold">{group.label}</span>
                   </button>
                 );
               })}
@@ -1319,21 +1360,25 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* Navigation */}
+        {/* Navigation — agrupada por grupos com sub-tabs */}
         <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
-          {baseSidebarItems.filter(i => (!i.pizzaOnly || store?.category === "pizzas" || ((store as any)?.categories || []).includes("pizzas")) && (i.key !== "reports" || storePlan.allowFullReports) && (i.key !== "clients" || storePlan.allowFullReports)).map(item => {
-            const isActive = dashboardTab === item.key;
-            const Icon = item.icon;
+          {visibleGroups.map(group => {
+            const isActive = activeGroupKey === group.key;
+            const Icon = group.icon;
+            const tourKey = group.key === "pedidos" ? "loja-orders"
+              : group.key === "cardapio" ? "loja-menu"
+              : group.key === "clientes" ? "loja-clients"
+              : undefined;
             return (
-              <button key={item.key} onClick={() => handleTabChange(item.key)}
-                data-tour={item.key === "orders" ? "loja-orders" : item.key === "menu" ? "loja-menu" : item.key === "clients" ? "loja-clients" : undefined}
+              <button key={group.key} onClick={() => handleGroupChange(group.key)}
+                data-tour={tourKey}
                 className={`w-full flex items-center gap-3 py-2 px-3 rounded-xl text-sm font-medium transition-all ${isActive ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-accent hover:text-foreground"}`}>
                 <Icon className="h-4 w-4 flex-shrink-0" />
-                <span>{item.label}</span>
-                {item.key === "orders" && pendingCount > 0 && (
+                <span>{group.label}</span>
+                {group.key === "pedidos" && pendingCount > 0 && (
                   <span className="ml-auto bg-amber-400 text-amber-900 text-[10px] font-black px-1.5 py-0.5 rounded-full animate-pulse">{pendingCount}</span>
                 )}
-                {item.key === "clients" && (
+                {group.key === "clientes" && (
                   <span className="ml-auto text-[10px] text-muted-foreground">{clientAnalytics.length}</span>
                 )}
               </button>
@@ -1446,6 +1491,16 @@ const AdminDashboard = () => {
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto pb-20 lg:pb-0">
+          {/* Sub-tabs do grupo ativo (mesmo padrão visual da aba Pizzaria) */}
+          {store && activeGroup && (
+            <GroupTabsBar
+              group={activeGroup}
+              activeTab={dashboardTab}
+              onSelect={handleTabChange}
+              isPizza={isPizza}
+              allowFullReports={allowFullReports}
+            />
+          )}
           {!storeLoading && isApproved && !store && (
             <div className="p-4 lg:p-6 max-w-lg mx-auto flex flex-col items-center justify-center text-center min-h-[60vh]">
               <div className="w-20 h-20 bg-amber-500/10 rounded-3xl flex items-center justify-center mb-5">
@@ -1974,22 +2029,22 @@ const AdminDashboard = () => {
         {/* ── FIXED MODERN BOTTOM NAVIGATION (mobile only) ── */}
         <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-t border-border/50 lg:hidden pb-safe">
           <div className="flex items-center justify-around h-16 px-2">
-            {bottomNavTabs.map(tab => {
-              const Icon = tab.icon;
-              const isActive = dashboardTab === tab.key && !showMoreSheet;
+            {bottomNavGroups.map(group => {
+              const Icon = group.icon;
+              const isActive = activeGroupKey === group.key && !showMoreSheet;
               return (
-                <button key={tab.key} onClick={() => handleTabChange(tab.key)}
+                <button key={group.key} onClick={() => handleGroupChange(group.key)}
                   className={`flex flex-col items-center justify-center flex-1 h-full transition-all duration-300 relative ${
                     isActive ? "text-primary translate-y-[-2px]" : "text-muted-foreground/60 hover:text-muted-foreground"
                   }`}>
                   {isActive && <div className="absolute top-0 w-8 h-1 bg-primary rounded-full animate-in fade-in zoom-in duration-300" />}
                   <div className="relative mt-1">
                     <Icon className={`h-6 w-6 transition-transform duration-300 ${isActive ? "scale-110" : "group-active:scale-90"}`} strokeWidth={isActive ? 2.5 : 2} />
-                    {tab.key === "orders" && pendingCount > 0 && (
+                    {group.key === "pedidos" && pendingCount > 0 && (
                       <span className="absolute -top-1.5 -right-2 bg-amber-500 text-white text-[10px] font-black min-w-[18px] h-[18px] rounded-full flex items-center justify-center ring-2 ring-background shadow-lg animate-pulse">{pendingCount}</span>
                     )}
                   </div>
-                  <span className={`text-[11px] mt-1 transition-all duration-300 ${isActive ? "font-black tracking-tight" : "font-bold"}`}>{tab.label}</span>
+                  <span className={`text-[11px] mt-1 transition-all duration-300 ${isActive ? "font-black tracking-tight" : "font-bold"}`}>{group.label}</span>
                 </button>
               );
             })}

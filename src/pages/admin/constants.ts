@@ -100,3 +100,127 @@ export const moreSheetItems: { key: DashboardTab; label: string; icon: React.Ele
   { key: "settings", label: "Configurações", icon: Settings },
   { key: "suporte", label: "Suporte", icon: Headphones },
 ];
+
+// ─────────────────────────────────────────────────────────────
+// NOVA NAVEGAÇÃO AGRUPADA — 7 grupos com sub-tabs
+// Mesma ideia da aba Pizzaria (pills horizontais).
+// ─────────────────────────────────────────────────────────────
+export type DashboardGroupKey =
+  | "inicio"
+  | "pedidos"
+  | "cardapio"
+  | "clientes"
+  | "operacao"
+  | "financeiro"
+  | "configuracoes";
+
+export type DashboardSubTab = {
+  key: DashboardTab;
+  label: string;
+  icon: React.ElementType;
+  pizzaOnly?: boolean;
+  requiresFullReports?: boolean;
+};
+
+export type DashboardGroup = {
+  key: DashboardGroupKey;
+  label: string;
+  icon: React.ElementType;
+  subTabs: DashboardSubTab[];
+};
+
+export const dashboardGroups: DashboardGroup[] = [
+  {
+    key: "inicio",
+    label: "Início",
+    icon: LayoutDashboard,
+    subTabs: [{ key: "dashboard", label: "Visão Geral", icon: LayoutDashboard }],
+  },
+  {
+    key: "pedidos",
+    label: "Pedidos",
+    icon: ListOrdered,
+    subTabs: [
+      { key: "orders", label: "Pedidos", icon: ListOrdered },
+      { key: "cash_register", label: "PDV / Caixa", icon: ShoppingCart },
+      { key: "refunds", label: "Reembolsos", icon: AlertTriangle },
+    ],
+  },
+  {
+    key: "cardapio",
+    label: "Cardápio",
+    icon: UtensilsCrossed,
+    subTabs: [
+      { key: "menu", label: "Produtos", icon: UtensilsCrossed },
+      { key: "addons", label: "Adicionais", icon: Plus },
+      { key: "bordas", label: "Pizzaria", icon: CircleDot, pizzaOnly: true },
+    ],
+  },
+  {
+    key: "clientes",
+    label: "Clientes",
+    icon: Users,
+    subTabs: [
+      { key: "clients", label: "Clientes", icon: Users, requiresFullReports: true },
+      { key: "loyalty", label: "Fidelidade", icon: Star },
+      { key: "coupons", label: "Cupons", icon: Tag },
+    ],
+  },
+  {
+    key: "operacao",
+    label: "Operação",
+    icon: Clock,
+    subTabs: [
+      { key: "hours", label: "Horários", icon: Clock },
+      { key: "drivers", label: "Motoboys", icon: Bike },
+    ],
+  },
+  {
+    key: "financeiro",
+    label: "Financeiro",
+    icon: Coins,
+    subTabs: [
+      { key: "finance", label: "Resumo", icon: Coins },
+      { key: "reports", label: "Relatórios", icon: BarChart3, requiresFullReports: true },
+      { key: "subscription", label: "Meu Plano", icon: CreditCard },
+    ],
+  },
+  {
+    key: "configuracoes",
+    label: "Configurações",
+    icon: Settings,
+    subTabs: [
+      { key: "settings", label: "Geral", icon: Settings },
+      { key: "tutoriais", label: "Tutoriais", icon: GraduationCap },
+      { key: "suporte", label: "Suporte", icon: Headphones },
+    ],
+  },
+];
+
+// Quais grupos aparecem fixos no bottom nav (mobile)
+export const bottomNavGroupKeys: DashboardGroupKey[] = [
+  "inicio",
+  "pedidos",
+  "cardapio",
+  "clientes",
+];
+
+// Quais grupos aparecem no sheet "Mais" (mobile)
+export const moreSheetGroupKeys: DashboardGroupKey[] = [
+  "operacao",
+  "financeiro",
+  "configuracoes",
+];
+
+export function filterSubTab(
+  sub: DashboardSubTab,
+  ctx: { isPizza: boolean; allowFullReports: boolean },
+): boolean {
+  if (sub.pizzaOnly && !ctx.isPizza) return false;
+  if (sub.requiresFullReports && !ctx.allowFullReports) return false;
+  return true;
+}
+
+export function getGroupForTab(tab: DashboardTab): DashboardGroup | undefined {
+  return dashboardGroups.find((g) => g.subTabs.some((s) => s.key === tab));
+}
