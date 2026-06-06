@@ -60,7 +60,25 @@ Deno.serve(async (req) => {
     const data = await r.json().catch(() => ({}));
     if (!r.ok) return json({ error: "Falha ao gerar QR", details: data }, 502);
 
-    const qr = data?.base64 || data?.qrcode?.base64 || data?.code || data?.qrcode || null;
+    // IMPORTANT: only use the base64 IMAGE; `code` is the raw QR text (not an image)
+    // and rendering it as <img src="data:image/png;base64,<code>"> produces an invalid
+    // QR that WhatsApp reads but fails to pair.
+    let qr: string | null = data?.base64 || data?.qrcode?.base64 || null;
+    const rawCode: string | null = data?.code || data?.qrcode?.code || null;
+    if (!qr && rawCode) {
+      // Render the raw QR text into a PNG via an external QR service as fallback
+      try {
+        const qrRes = await fetch(
+          `https://api.qrserver.com/v1/create-qr-code/?size=512x512&data=${encodeURIComponent(rawCode)}`,
+        );
+        if (qrRes.ok) {
+          const buf = new Uint8Array(await qrRes.arrayBuffer());
+          let bin = "";
+          for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
+          qr = `data:image/png;base64,${btoa(bin)}`;
+        }
+      } catch (_) {}
+    }
 
     // 3) persiste
     const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
