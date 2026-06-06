@@ -44,6 +44,14 @@ const incomingText = (data: any) => {
   return String(msg.conversation || msg.extendedTextMessage?.text || msg.imageMessage?.caption || msg.videoMessage?.caption || "");
 };
 
+const incomingPhone = (data: any) => {
+  const key = data?.key || data?.messages?.[0]?.key || {};
+  const jid = String(key.remoteJid || "");
+  const altJid = String(key.remoteJidAlt || key.participant || "");
+  const best = altJid.includes("@s.whatsapp.net") ? altJid : jid;
+  return best.split("@")[0].replace(/\D/g, "");
+};
+
 const normalize = (text: string) =>
   text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
@@ -128,9 +136,10 @@ Deno.serve(async (req) => {
 
     // MESSAGES_UPSERT (auto-reply)
     if (/messages.?upsert/i.test(event) && cfg.auto_reply_enabled) {
-      const fromMe = data?.key?.fromMe;
-      const remoteJid: string = data?.key?.remoteJid || "";
-      const number = remoteJid.split("@")[0];
+      const key = data?.key || data?.messages?.[0]?.key || {};
+      const fromMe = key?.fromMe;
+      const remoteJid: string = key?.remoteJid || "";
+      const number = incomingPhone(data);
       if (!fromMe && number && /^\d+$/.test(number) && !remoteJid.includes("@g.us") && !remoteJid.includes("status@broadcast")) {
         if (!isRecentIncomingMessage(data)) return json({ ok: true, skipped: "old_message" });
         if (!hasHumanContent(data)) return json({ ok: true, skipped: "non_human_message" });
@@ -178,13 +187,14 @@ Deno.serve(async (req) => {
           });
         };
 
-        // Cooldown: evita saudação duplicada, mas NÃO bloqueia cardápio quando o cliente pedir.
-        const sixHAgo = new Date(Date.now() - 6 * 3600_000).toISOString();
+        // Cooldown curto: evita saudação duplicada quando o cliente manda várias
+        // mensagens seguidas, mas não deixa o bot "mudo" durante testes/atendimento.
+        const twoMinutesAgo = new Date(Date.now() - 2 * 60_000).toISOString();
         const { data: recent } = await admin
           .from("whatsapp_send_log")
           .select("id")
           .eq("store_id", cfg.store_id).eq("phone", number).eq("kind", "auto_reply")
-          .gte("sent_at", sixHAgo).limit(1).maybeSingle();
+          .gte("sent_at", twoMinutesAgo).limit(1).maybeSingle();
         if (recent) {
           if (sendLinkNow) {
             runInBackground((async () => {
