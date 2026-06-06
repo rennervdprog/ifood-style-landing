@@ -39,6 +39,16 @@ const hasHumanContent = (data: any) => {
   );
 };
 
+const incomingText = (data: any) => {
+  const msg = data?.message || data?.messages?.[0]?.message || {};
+  return String(msg.conversation || msg.extendedTextMessage?.text || msg.imageMessage?.caption || msg.videoMessage?.caption || "");
+};
+
+const asksForMenu = (text: string) => {
+  const normalized = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  return /(^|\s)(1|cardapio|catalogo|menu|pedido|pedir|comprar|link)(\s|$)/i.test(normalized);
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
@@ -106,12 +116,16 @@ Deno.serve(async (req) => {
           .gte("sent_at", sixHAgo).limit(1).maybeSingle();
         if (recent) return json({ ok: true, skipped: "cooldown" });
 
-        // Append store link to the auto-reply
+        // Só envia link quando o cliente pede cardápio/pedido/link. Em mensagens
+        // genéricas (ex.: "oi"), faz opt-in primeiro para reduzir risco de spam.
         const { data: store } = await admin
           .from("stores").select("slug").eq("id", cfg.store_id).maybeSingle();
         const link = store?.slug ? `https://itasuper.com.br/${store.slug}` : "";
-        const baseMsg = (cfg.auto_reply_message || "Olá! 😊 Acesse nosso cardápio e faça seu pedido:").trim();
-        const text = link && !baseMsg.includes(link) ? `${baseMsg}\n${link}` : baseMsg;
+        const clientAskedForMenu = asksForMenu(incomingText(data));
+        const baseMsg = clientAskedForMenu
+          ? (cfg.auto_reply_message || "Olá! 😊 Acesse nosso cardápio e faça seu pedido:").trim()
+          : "Olá! 😊 Recebemos sua mensagem. Para acessar o cardápio, responda *1* ou envie *cardápio*.";
+        const text = clientAskedForMenu && link && !baseMsg.includes(link) ? `${baseMsg}\n${link}` : baseMsg;
 
         // Humaniza a resposta: evita resposta instantânea com padrão de bot e
         // mantém o webhook rápido para não gerar retry duplicado.
