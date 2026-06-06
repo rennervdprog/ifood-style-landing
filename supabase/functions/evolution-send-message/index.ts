@@ -33,6 +33,37 @@ const sendPresence = async (baseUrl: string, instance: string, apiKey: string, n
   }).catch(() => undefined);
 };
 
+const isAuthorizedForStore = async (admin: any, req: Request, storeId: string) => {
+  const authHeader = req.headers.get("Authorization") || "";
+  const serviceRole = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+  if (serviceRole && authHeader === `Bearer ${serviceRole}`) return true;
+  if (!authHeader.startsWith("Bearer ")) return false;
+
+  const authClient = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_ANON_KEY")!,
+    { global: { headers: { Authorization: authHeader } } },
+  );
+  const { data: userData, error } = await authClient.auth.getUser(authHeader.replace("Bearer ", ""));
+  const userId = userData?.user?.id;
+  if (error || !userId) return false;
+
+  const { data: store } = await admin.from("stores").select("owner_id").eq("id", storeId).maybeSingle();
+  if (store?.owner_id === userId) return true;
+
+  const { data: linkedDriver } = await admin
+    .from("store_drivers")
+    .select("store_id")
+    .eq("store_id", storeId)
+    .eq("driver_user_id", userId)
+    .limit(1)
+    .maybeSingle();
+  if (linkedDriver) return true;
+
+  const { data: isAdmin } = await admin.rpc("is_platform_admin", { _user_id: userId });
+  return !!isAdmin;
+};
+
 // Anti-spam params
 const DEDUPE_WINDOW_SEC = 3600;        // mesma msg p/ mesmo número
 const PER_STORE_MIN_GAP_MS = 12_000;   // gap mínimo entre envios da loja
@@ -67,6 +98,8 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
+
+    if (!(await isAuthorizedForStore(admin, req, store_id))) return json({ error: "Forbidden" }, 403);
 
     const { data: cfg } = await admin
       .from("store_whatsapp_config")

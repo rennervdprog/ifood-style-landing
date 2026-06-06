@@ -132,7 +132,7 @@ const fetchCustomTemplate = async (storeId: string, status: string): Promise<str
 const sendEvolutionMessage = async (storeId: string, phone: string, message: string) => {
   try {
     const { data, error } = await supabase.functions.invoke("evolution-send-message", {
-      body: { store_id: storeId, phone, message },
+      body: { store_id: storeId, phone, message, kind: "order_status" },
     });
     if (error) console.error("[Evolution] send error:", error);
     return data;
@@ -162,7 +162,7 @@ export const notifyOrderStatusChange = (
 
   // Evolution API WhatsApp (se habilitado e telefone disponível)
   // Aceita evolutionEnabled (novo) ou zapiEnabled (retrocompatibilidade)
-  const whatsappEnabled = options?.evolutionEnabled || options?.zapiEnabled;
+  const whatsappEnabled = !options?.skipWhatsApp && (options?.evolutionEnabled || options?.zapiEnabled);
   if (whatsappEnabled && params.clientPhone) {
     // tenta usar template customizado do lojista; se não houver, usa o padrão
     (async () => {
