@@ -53,6 +53,21 @@ Deno.serve(async (req) => {
       }),
     }).catch(() => {});
 
+    // 1.1) aplica settings anti-ban recomendados (best-effort)
+    await fetch(`${baseUrl.replace(/\/$/, "")}/settings/set/${instance}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: apiKey },
+      body: JSON.stringify({
+        rejectCall: true,
+        msgCall: "Olá! No momento não consigo atender chamadas. Por favor envie uma mensagem 😊",
+        groupsIgnore: true,
+        alwaysOnline: false,
+        readMessages: false,
+        readStatus: false,
+        syncFullHistory: false,
+      }),
+    }).catch(() => {});
+
     // 2) conecta e pega QR
     const r = await fetch(`${baseUrl.replace(/\/$/, "")}/instance/connect/${instance}`, {
       headers: { apikey: apiKey },

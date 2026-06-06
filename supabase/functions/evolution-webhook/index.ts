@@ -44,9 +44,37 @@ const incomingText = (data: any) => {
   return String(msg.conversation || msg.extendedTextMessage?.text || msg.imageMessage?.caption || msg.videoMessage?.caption || "");
 };
 
-const asksForMenu = (text: string) => {
-  const normalized = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-  return /(^|\s)(1|cardapio|catalogo|menu|pedido|pedir|comprar|link)(\s|$)/i.test(normalized);
+const normalize = (text: string) =>
+  text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+
+const asksForMenu = (text: string) =>
+  /(^|\s)(1|sim|s|cardapio|catalogo|menu|pedido|pedir|comprar|link|quero|manda|envia|ok)(\s|$|!|\.|,|\?)/i.test(normalize(text));
+
+const isOptOut = (text: string) =>
+  /(^|\s)(parar|stop|cancelar|sair|remover|nao receber)(\s|$|!|\.|,)/i.test(normalize(text));
+
+// Pega hora atual no fuso de São Paulo (UTC-3)
+const spHour = () => {
+  const now = new Date();
+  return (now.getUTCHours() - 3 + 24) % 24;
+};
+
+const greetingPrefix = (h: number) =>
+  h >= 6 && h < 12 ? "Bom dia" : h >= 12 && h < 18 ? "Boa tarde" : "Boa noite";
+
+const pick = <T,>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)];
+
+// 5 variações de saudação (spintax) — SEM link, com pergunta p/ forçar resposta
+const buildGreeting = (storeName: string) => {
+  const prefix = greetingPrefix(spHour());
+  const templates = [
+    `${prefix}! 😊 Aqui é da ${storeName}. Posso te ajudar com seu pedido?`,
+    `${prefix}! Tudo bem? 👋 Seja bem-vindo(a) à ${storeName}. Gostaria de ver nosso cardápio?`,
+    `Olá! ${prefix} 🙂 Aqui é a ${storeName}. Me diz, posso te mandar o cardápio de hoje?`,
+    `${prefix}! 🍽️ ${storeName} na escuta. Quer dar uma olhada no nosso menu?`,
+    `Oi! ${prefix} 😄 Sou da ${storeName}. Posso te enviar o cardápio com os preços?`,
+  ];
+  return pick(templates);
 };
 
 Deno.serve(async (req) => {
@@ -107,6 +135,28 @@ Deno.serve(async (req) => {
         if (!isRecentIncomingMessage(data)) return json({ ok: true, skipped: "old_message" });
         if (!hasHumanContent(data)) return json({ ok: true, skipped: "non_human_message" });
 
+        const text = incomingText(data);
+
+        // P1.5 — opt-out: cliente digita PARAR -> registra blacklist e não responde
+        if (isOptOut(text)) {
+          await admin.from("whatsapp_send_log").insert({
+            store_id: cfg.store_id, phone: number, message_hash: "optout",
+            kind: "opt_out", sent_at: new Date().toISOString(),
+          }).catch(() => undefined);
+          return json({ ok: true, skipped: "opt_out_registered" });
+        }
+
+        // Verifica blacklist (opt-out anterior)
+        const { data: blocked } = await admin
+          .from("whatsapp_send_log")
+          .select("id").eq("store_id", cfg.store_id).eq("phone", number).eq("kind", "opt_out")
+          .limit(1).maybeSingle();
+        if (blocked) return json({ ok: true, skipped: "blacklisted" });
+
+        // P1.4 — janela de operação 08h-22h (fuso SP)
+        const h = spHour();
+        if (h < 8 || h >= 22) return json({ ok: true, skipped: "out_of_hours" });
+
         // Cooldown: 1 auto-reply por contato a cada 6h
         const sixHAgo = new Date(Date.now() - 6 * 3600_000).toISOString();
         const { data: recent } = await admin
@@ -116,14 +166,14 @@ Deno.serve(async (req) => {
           .gte("sent_at", sixHAgo).limit(1).maybeSingle();
         if (recent) return json({ ok: true, skipped: "cooldown" });
 
-        // Envia em DUAS mensagens para parecer humano: primeiro a saudação,
-        // depois (~10-15s) o link. Reduz o risco de classificação como spam.
+        // P0.3 + P0.5 — saudação SEM link, com pergunta. Link só na 2ª msg
+        // se o cliente pedir explicitamente (palavras-chave) numa próxima interação.
         const { data: store } = await admin
-          .from("stores").select("slug").eq("id", cfg.store_id).maybeSingle();
+          .from("stores").select("slug, name").eq("id", cfg.store_id).maybeSingle();
+        const storeName = store?.name || "nossa loja";
         const link = store?.slug ? `https://itasuper.com.br/${store.slug}` : "";
-        const rawMsg = (cfg.auto_reply_message || "Olá! 😊 Acesse nosso cardápio e faça seu pedido:").trim();
-        // Remove o link de dentro da saudação para não enviar junto.
-        const greeting = link ? rawMsg.split(link).join("").replace(/\s+$/g, "").trim() : rawMsg;
+        const greeting = `${buildGreeting(storeName)}\n\n_Responda PARAR para não receber._`;
+        const sendLinkNow = asksForMenu(text) && !!link;
 
         const sendMsg = async (message: string) => {
           await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/evolution-send-message`, {
@@ -137,13 +187,13 @@ Deno.serve(async (req) => {
           });
         };
 
-        // Humaniza: aguarda antes da saudação, depois 10-15s antes do link.
+        // Humaniza: aguarda antes da saudação; só envia link se cliente já pediu.
         runInBackground((async () => {
           await sleep(25_000 + Math.floor(Math.random() * 45_000));
-          if (greeting) await sendMsg(greeting);
-          if (link) {
-            await sleep(10_000 + Math.floor(Math.random() * 5_000));
-            await sendMsg(link);
+          await sendMsg(greeting);
+          if (sendLinkNow) {
+            await sleep(12_000 + Math.floor(Math.random() * 8_000));
+            await sendMsg(`Aqui está nosso cardápio:\n${link}`);
           }
         })());
       }
