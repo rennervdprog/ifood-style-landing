@@ -131,18 +131,18 @@ const PizzaSizesField = ({
       {sizes.length > 0 && (
         <div className="space-y-2">
           {sizes.map((s, i) => (
-            <div key={`${s.name}-${i}`} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 shadow-sm transition-all hover:border-primary/30">
-              <div className="flex h-8 w-12 items-center justify-center rounded-lg bg-primary/10 text-[10px] font-black uppercase tracking-wider text-primary">
+            <div key={`${s.name}-${i}`} className="flex items-center gap-2 sm:gap-3 rounded-xl border border-border bg-card p-2 sm:p-3 shadow-sm transition-all hover:border-primary/30">
+              <div className="flex h-8 w-10 sm:w-12 items-center justify-center rounded-lg bg-primary/10 text-[10px] font-black uppercase tracking-wider text-primary flex-shrink-0">
                 {s.name}
               </div>
-              <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-border bg-muted/50 px-3 py-2.5 focus-within:border-primary focus-within:bg-background transition-colors">
+              <div className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2 rounded-lg border border-border bg-muted/50 px-2 sm:px-3 py-2 sm:py-2.5 focus-within:border-primary focus-within:bg-background transition-colors">
                 <span className="text-xs font-bold text-muted-foreground/70">R$</span>
                 <BRLPriceRowInput value={s.price} onCommit={(v) => editPrice(i, v)} />
               </div>
               <button 
                 type="button" 
                 onClick={() => remove(i)} 
-                className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                className="flex h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
                 aria-label="Remover tamanho"
               >
                 <X className="h-4 w-4" />
@@ -167,15 +167,15 @@ const PizzaSizesField = ({
         </div>
       )}
 
-      <div className="flex gap-1.5">
+      <div className="flex flex-wrap gap-1.5">
         <input
           type="text"
           placeholder="Tamanho (ex: P, M, G)"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="flex-1 bg-muted text-foreground px-2.5 py-1.5 rounded-lg text-xs border border-border focus:border-primary focus:outline-none"
+          className="flex-1 min-w-[120px] bg-muted text-foreground px-2.5 py-1.5 rounded-lg text-xs border border-border focus:border-primary focus:outline-none"
         />
-        <div className="w-28 flex items-center gap-1 bg-muted text-foreground px-2 py-1.5 rounded-lg text-xs border border-border focus-within:border-primary">
+        <div className="w-24 sm:w-28 flex items-center gap-1 bg-muted text-foreground px-2 py-1.5 rounded-lg text-xs border border-border focus-within:border-primary">
           <span className="text-muted-foreground">R$</span>
           <input
             type="text"
@@ -191,7 +191,7 @@ const PizzaSizesField = ({
         <button
           type="button"
           onClick={add}
-          className="bg-primary/20 text-primary px-2.5 py-1.5 rounded-lg text-xs font-bold"
+          className="bg-primary/20 text-primary px-2.5 py-1.5 rounded-lg text-xs font-bold flex-shrink-0"
         >
           <Plus className="h-3.5 w-3.5" />
         </button>
