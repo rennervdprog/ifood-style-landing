@@ -162,7 +162,7 @@ export const notifyOrderStatusChange = (
 
   // Evolution API WhatsApp (se habilitado e telefone disponível)
   // Aceita evolutionEnabled (novo) ou zapiEnabled (retrocompatibilidade)
-  const whatsappEnabled = options?.evolutionEnabled || options?.zapiEnabled;
+  const whatsappEnabled = !options?.skipWhatsApp && (options?.evolutionEnabled || options?.zapiEnabled);
   if (whatsappEnabled && params.clientPhone) {
     // tenta usar template customizado do lojista; se não houver, usa o padrão
     (async () => {

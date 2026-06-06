@@ -403,7 +403,8 @@ export default function DashboardOverviewSection(props: Props) {
               href={buildAcceptWhatsAppHref(order)}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => {
+              onClick={(e) => {
+                if (buildAcceptWhatsAppHref(order) === "#") e.preventDefault();
                 handleAcceptOrder(order);
                 updateOrderStatus(order.id, "preparando");
               }}
