@@ -166,6 +166,14 @@ Deno.serve(async (req) => {
           .gte("sent_at", sixHAgo).limit(1).maybeSingle();
         if (recent) return json({ ok: true, skipped: "cooldown" });
 
+        // Pré-registra IMEDIATAMENTE para evitar saudação duplicada quando o
+        // cliente manda 2 mensagens em sequência (a 2ª chega antes da 1ª
+        // resposta terminar o sleep e ser logada).
+        await admin.from("whatsapp_send_log").insert({
+          store_id: cfg.store_id, phone: number, message_hash: "greet_pending",
+          kind: "auto_reply", sent_at: new Date().toISOString(),
+        }).catch(() => undefined);
+
         // P0.3 + P0.5 — saudação SEM link, com pergunta. Link só na 2ª msg
         // se o cliente pedir explicitamente (palavras-chave) numa próxima interação.
         const { data: store } = await admin
@@ -189,10 +197,11 @@ Deno.serve(async (req) => {
 
         // Humaniza: aguarda antes da saudação; só envia link se cliente já pediu.
         runInBackground((async () => {
-          await sleep(25_000 + Math.floor(Math.random() * 45_000));
+          // Delay curto e natural (3-8s) — suficiente p/ parecer humano sem irritar.
+          await sleep(3_000 + Math.floor(Math.random() * 5_000));
           await sendMsg(greeting);
           if (sendLinkNow) {
-            await sleep(12_000 + Math.floor(Math.random() * 8_000));
+            await sleep(4_000 + Math.floor(Math.random() * 3_000));
             await sendMsg(`Aqui está nosso cardápio:\n${link}`);
           }
         })());
