@@ -1,4 +1,6 @@
 import { lazy, Suspense } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 type OrderStatus = any;
 type DashboardTab = any;
@@ -58,6 +60,25 @@ export default function DashboardOverviewSection(props: Props) {
     getClientName, getClientWhatsApp, getOrderItemDisplayName, buildAcceptWhatsAppHref,
     buildReadyMessage, openWhatsApp, updateOrderStatus, handleAcceptOrder, handleCancelOrder,
   } = props;
+
+  // Status do PDV (sincronizado com a tela /admin/pdv via tabela pdv_sessions)
+  const { data: pdvSession } = useQuery({
+    queryKey: ["pdv-session-status", store?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("pdv_sessions" as any)
+        .select("id, opening_amount, opened_at")
+        .eq("store_id", store.id)
+        .eq("status", "open")
+        .order("opened_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data as any;
+    },
+    enabled: !!store?.id && storePlan.pdvEnabled !== false,
+    refetchInterval: 20_000,
+  });
+  const isPdvOpen = !!pdvSession?.id;
 
   return (
 <div className="p-4 lg:p-6 max-w-6xl mx-auto space-y-5 lg:space-y-6">
