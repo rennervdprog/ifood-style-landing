@@ -17,7 +17,9 @@ interface Props {
   storeName: string;
 }
 
-const EVOLUTION_URL = "https://supabase.itasuper.com.br"; // URL padrão do VPS
+// A URL real do Evolution fica no secret EVOLUTION_API_URL (server-side).
+// Aqui guardamos apenas um marcador, sobrescrito pelo backend quando o QR é gerado.
+const EVOLUTION_URL = "";
 
 // Templates padrão por status (mesmas mensagens do orderNotifications.ts).
 // Placeholders disponíveis: {storeName} {clientName} {orderId} {total} {pin} {address} {items}
@@ -102,9 +104,8 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName }: Props) 
     setSaving(true);
     const payload = {
       store_id: storeId,
-      evolution_api_url: EVOLUTION_URL,
-      evolution_instance_name: `store-${storeId.slice(0, 8)}`,
-      evolution_api_key: Deno?.env?.get?.("EVOLUTION_GLOBAL_API_KEY") || "",
+      evolution_api_url: config?.evolution_api_url ?? EVOLUTION_URL,
+      evolution_instance_name: config?.evolution_instance_name ?? `store-${storeId.slice(0, 8)}`,
       notify_order_accepted: notifyAccepted,
       notify_order_ready: notifyReady,
       notify_order_out_delivery: notifyOutDelivery,
