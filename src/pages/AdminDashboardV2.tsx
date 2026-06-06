@@ -1062,7 +1062,10 @@ const AdminDashboard = () => {
         clientName: getClientName(order.client_id),
         totalPrice: Number(order.total_price),
         paymentMethod: order.payment_method,
-      }, { zapiEnabled: !!cancelSettings.zapi_enabled });
+      }, {
+        evolutionEnabled: evolutionConnected,
+        zapiEnabled: !!cancelSettings.zapi_enabled,
+      });
 
       toast.success(res.data?.message || "Pedido cancelado.", { duration: 8000 });
     } catch (e: any) {
@@ -1120,7 +1123,10 @@ const AdminDashboard = () => {
           items,
           deliveryPin: order.delivery_pin,
           paymentMethod: order.payment_method,
-        }, { zapiEnabled: !!storeSettings.zapi_enabled });
+        }, {
+          evolutionEnabled: evolutionConnected,
+          zapiEnabled: !!storeSettings.zapi_enabled,
+        });
       }
 
       setBatchSelected(new Set());
