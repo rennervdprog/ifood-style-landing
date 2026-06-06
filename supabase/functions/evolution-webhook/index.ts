@@ -61,6 +61,9 @@ const asksForMenu = (text: string) =>
 const isOptOut = (text: string) =>
   /(^|\s)(parar|stop|cancelar|sair|remover|nao receber)(\s|$|!|\.|,)/i.test(normalize(text));
 
+const GREETING_COOLDOWN_MS = 6 * 60 * 60_000;
+const FAST_COOLDOWN_MS = 2 * 60_000;
+
 // Pega hora atual no fuso de São Paulo (UTC-3)
 const spHour = () => {
   const now = new Date();
@@ -187,23 +190,28 @@ Deno.serve(async (req) => {
           });
         };
 
-        // Cooldown curto: evita saudação duplicada quando o cliente manda várias
-        // mensagens seguidas, mas não deixa o bot "mudo" durante testes/atendimento.
-        const twoMinutesAgo = new Date(Date.now() - 2 * 60_000).toISOString();
-        const { data: recent } = await admin
+        // Não repetir saudação na mesma conversa. Se o cliente responder "sim"
+        // depois da saudação, manda só o cardápio/link.
+        const fastCooldownAgo = new Date(Date.now() - FAST_COOLDOWN_MS).toISOString();
+        const greetingCooldownAgo = new Date(Date.now() - GREETING_COOLDOWN_MS).toISOString();
+        const { data: recentReplies } = await admin
           .from("whatsapp_send_log")
-          .select("id")
+          .select("id, sent_at")
           .eq("store_id", cfg.store_id).eq("phone", number).eq("kind", "auto_reply")
-          .gte("sent_at", twoMinutesAgo).limit(1).maybeSingle();
-        if (recent) {
+          .gte("sent_at", greetingCooldownAgo)
+          .order("sent_at", { ascending: false })
+          .limit(1);
+        const lastAutoReply = recentReplies?.[0];
+        const hasFastRecentReply = !!lastAutoReply && new Date(lastAutoReply.sent_at).getTime() >= Date.now() - FAST_COOLDOWN_MS;
+        if (lastAutoReply) {
           if (sendLinkNow) {
             runInBackground((async () => {
-              await sleep(2_000 + Math.floor(Math.random() * 3_000));
+              await sleep(hasFastRecentReply ? 2_000 + Math.floor(Math.random() * 3_000) : 800);
               await sendMsg(menuMessage);
             })());
-            return json({ ok: true, queued: "menu_after_cooldown" });
+            return json({ ok: true, queued: "menu_only_after_greeting" });
           }
-          return json({ ok: true, skipped: "cooldown" });
+          return json({ ok: true, skipped: hasFastRecentReply ? "fast_cooldown" : "greeting_cooldown" });
         }
 
         // Pré-registra IMEDIATAMENTE para evitar saudação duplicada quando o
