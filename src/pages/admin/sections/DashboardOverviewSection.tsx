@@ -74,17 +74,20 @@ export default function DashboardOverviewSection(props: Props) {
         </p>
       </div>
       <div className="flex flex-col items-end gap-1">
-        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border ${
-          store.is_open
-            ? "bg-primary/10 text-primary border-primary/20"
-            : "bg-muted text-muted-foreground border-border"
-        }`}>
-          <div className={`w-2 h-2 rounded-full ${store.is_open ? "bg-primary animate-pulse" : "bg-muted-foreground"}`} />
-          {store.is_open ? "Online" : "Offline"}
-        </div>
-        <div className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-lg ${isStoreReallyOpen ? "text-primary bg-primary/5" : "text-muted-foreground bg-muted"}`}>
-          {isStoreReallyOpen ? "Loja Aberta" : "Loja Fechada"}
-        </div>
+        {(() => {
+          // Tri-state: Aberta (online + horário) / Fora do Horário (online + fora) / Pausada (offline)
+          const state = !store.is_open
+            ? { label: "Pausada", cls: "bg-muted text-muted-foreground border-border", dot: "bg-muted-foreground", pulse: false }
+            : isStoreReallyOpen
+              ? { label: "Aberta", cls: "bg-primary/10 text-primary border-primary/20", dot: "bg-primary", pulse: true }
+              : { label: "Fora do Horário", cls: "bg-amber-500/10 text-amber-600 border-amber-500/20", dot: "bg-amber-500", pulse: false };
+          return (
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border ${state.cls}`}>
+              <div className={`w-2 h-2 rounded-full ${state.dot} ${state.pulse ? "animate-pulse" : ""}`} />
+              {state.label}
+            </div>
+          );
+        })()}
       </div>
     </div>
     <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-[11px] font-bold ${

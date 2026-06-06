@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef, useCallback, useMemo, memo, lazy, Suspense, useTransition } from "react";
 import { getOrderItemDisplayName } from "@/lib/orderItemName";
-import { formatBRL } from "@/lib/utils";
 import SimulationBanner from "@/components/SimulationBanner";
 import SignOutConfirm from "@/components/SignOutConfirm";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -70,7 +69,7 @@ const TabFallback = () => (
 import { printThermalReceipt } from "@/lib/thermalPrint";
 import { requestNotificationPermission, notifyNewOrder, pushNotifyDeliveryAvailable } from "@/lib/notifications";
 import { sendPushNotification } from "@/lib/firebase";
-import { addMoney, averageMoney, formatCurrency, sumMoney } from "@/lib/utils";
+import { addMoney, averageMoney, formatBRL, formatCurrency, sumMoney } from "@/lib/utils";
 import ProductTour, { lojistaTourSteps } from "@/components/ProductTour";
 import { useStorePlan } from "@/hooks/useStorePlan";
 import TrialExpiredGuard from "@/components/TrialExpiredGuard";
@@ -343,7 +342,6 @@ const AdminDashboard = () => {
 
   const { data: orders, isLoading } = useQuery({
     queryKey: ["store-orders", store?.id],
-      staleTime: 10_000,         // 10s — pedidos ativos
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
@@ -357,14 +355,13 @@ const AdminDashboard = () => {
       return data;
     },
     enabled: !!store,
-    staleTime: 1000 * 30,
+    staleTime: 10_000, // 10s — pedidos ativos
     refetchOnReconnect: true,
     refetchOnWindowFocus: true,
   });
 
   const { data: allOrders } = useQuery({
     queryKey: ["store-all-orders", store?.id],
-      staleTime: 30_000,         // 30s — histórico de pedidos
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
@@ -376,7 +373,7 @@ const AdminDashboard = () => {
       return data;
     },
     enabled: !!store,
-    staleTime: 1000 * 60,
+    staleTime: 30_000, // 30s — histórico de pedidos
     refetchOnReconnect: true,
     refetchOnWindowFocus: true,
   });
@@ -798,7 +795,7 @@ const AdminDashboard = () => {
       `*Pedido #${order.id.slice(0, 8).toUpperCase()}*\n` +
       (itemsList ? `${itemsList}\n\n` : "") +
       `💰 Total: *${formatBRL(Number(order.total_price))}*\n` +
-      `💳 Pagamento: ${order.payment_method === "pix" ? "PIX ✅" : order.payment_method === "cartao" ? "Cartão na entrega 💳" : "Dinheiro na entrega 💵"}\n\n` +
+      `💳 Pagamento: ${paymentLabels[order.payment_method] || "—"} ${paymentIcons[order.payment_method] || ""}\n\n` +
       `Avisaremos quando estiver pronto! 😊`
     );
   }, [store?.name, getClientName]);
@@ -814,7 +811,7 @@ const AdminDashboard = () => {
        : "";
      return (
        `📦 Olá ${getClientName(order.client_id)}! Seu pedido da *${store?.name || "ItaSuper"}* está *PRONTO*! 🎉\n\n` +
-       `E Já esta em Rota De Entrega!!!` +
+       `Já está a caminho! 🛵` +
        pinBlock
      );
    }, [store?.name, getClientName]);
@@ -980,7 +977,6 @@ const AdminDashboard = () => {
 
   const { data: menuProductCount = 0 } = useQuery({
     queryKey: ["menu-product-count", store?.id],
-      staleTime: 2 * 60_000,    // 2min — contagem de produtos
     queryFn: async () => {
       const { count } = await supabase
         .from("products")
@@ -990,7 +986,7 @@ const AdminDashboard = () => {
       return count || 0;
     },
     enabled: !!store,
-    staleTime: 60_000,
+    staleTime: 2 * 60_000, // 2min — contagem de produtos
   });
 
   const { allHoursClosed, isCurrentlyOpenByHours } = useMemo(() => {
@@ -1231,13 +1227,15 @@ const AdminDashboard = () => {
   // ─── Navegação agrupada ───
   const isPizza = store?.category === "pizzas" || ((store as any)?.categories || []).includes("pizzas");
   const allowFullReports = storePlan.allowFullReports;
-  const filterCtx = { isPizza, allowFullReports };
 
   // Grupos visíveis (com pelo menos 1 sub-tab disponível)
   const visibleGroups: DashboardGroup[] = useMemo(
-    () => dashboardGroups
-      .map(g => ({ ...g, subTabs: g.subTabs.filter(s => filterSubTab(s, filterCtx)) }))
-      .filter(g => g.subTabs.length > 0),
+    () => {
+      const ctx = { isPizza, allowFullReports };
+      return dashboardGroups
+        .map(g => ({ ...g, subTabs: g.subTabs.filter(s => filterSubTab(s, ctx)) }))
+        .filter(g => g.subTabs.length > 0);
+    },
     [isPizza, allowFullReports],
   );
   const visibleGroupMap = useMemo(
@@ -1815,11 +1813,17 @@ const AdminDashboard = () => {
                     })).filter(h => h.pedidos > 0 || (parseInt(h.hour) >= 8 && parseInt(h.hour) <= 23));
                     const peakHour = Object.entries(hourlyMap).sort(([,a], [,b]) => b - a)[0];
 
-                    const paymentPie = [
-                      { name: "PIX", value: completedPeriod.filter((o: any) => o.payment_method === "pix").length, total: sumMoney(completedPeriod.filter((o: any) => o.payment_method === "pix").map((o: any) => o.total_price)) },
-                      { name: "Cartão", value: completedPeriod.filter((o: any) => o.payment_method === "cartao").length, total: sumMoney(completedPeriod.filter((o: any) => o.payment_method === "cartao").map((o: any) => o.total_price)) },
-                      { name: "Dinheiro", value: completedPeriod.filter((o: any) => o.payment_method !== "pix" && o.payment_method !== "cartao").length, total: sumMoney(completedPeriod.filter((o: any) => o.payment_method !== "pix" && o.payment_method !== "cartao").map((o: any) => o.total_price)) },
-                    ].filter(d => d.value > 0);
+                    const paymentBuckets: Record<string, { value: number; total: number }> = {};
+                    completedPeriod.forEach((o: any) => {
+                      const key = o.payment_method || "dinheiro";
+                      const label = paymentLabels[key] || "Outros";
+                      if (!paymentBuckets[label]) paymentBuckets[label] = { value: 0, total: 0 };
+                      paymentBuckets[label].value += 1;
+                      paymentBuckets[label].total = addMoney(paymentBuckets[label].total, Number(o.total_price));
+                    });
+                    const paymentPie = Object.entries(paymentBuckets)
+                      .map(([name, v]) => ({ name, value: v.value, total: v.total }))
+                      .filter(d => d.value > 0);
 
                     const topProducts = new Map<string, { qty: number; revenue: number }>();
                     completedPeriod.forEach((o: any) => {
