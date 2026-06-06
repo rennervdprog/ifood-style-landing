@@ -106,7 +106,9 @@ Deno.serve(async (req) => {
     const { count: sentToday } = await admin
       .from("whatsapp_send_log")
       .select("id", { count: "exact", head: true })
-      .eq("store_id", store_id).gte("sent_at", dayStart.toISOString());
+      .eq("store_id", store_id)
+      .neq("message_hash", "greet_pending")
+      .gte("sent_at", dayStart.toISOString());
     if ((sentToday ?? 0) >= dailyLimit) {
       return json({ error: `Limite diário de envios atingido (${dailyLimit}). Aguarde amanhã.` }, 429);
     }
@@ -119,6 +121,7 @@ Deno.serve(async (req) => {
     const { data: last } = await admin
       .from("whatsapp_send_log")
       .select("sent_at").eq("store_id", store_id)
+      .neq("message_hash", "greet_pending")
       .order("sent_at", { ascending: false }).limit(1).maybeSingle();
     if (last?.sent_at) {
       const gap = Date.now() - new Date(last.sent_at).getTime();
