@@ -59,48 +59,6 @@ export const pdvPaymentMethods = [
   // PIX Online (Asaas, R$1,99) NÃO aparece no PDV — sem taxa no presencial
 ] as const;
 
-export const baseSidebarItems: { key: DashboardTab; label: string; icon: React.ElementType; pizzaOnly?: boolean }[] = [
-  { key: "dashboard", label: "Visão Geral", icon: LayoutDashboard },
-  { key: "orders", label: "Pedidos", icon: ListOrdered },
-  { key: "clients", label: "Clientes", icon: Users },
-  { key: "menu", label: "Cardápio", icon: UtensilsCrossed },
-  { key: "addons", label: "Adicionais", icon: Plus },
-  { key: "bordas", label: "Pizzaria", icon: CircleDot, pizzaOnly: true },
-  { key: "hours", label: "Horários", icon: Clock },
-  { key: "finance", label: "Financeiro", icon: Coins },
-  { key: "reports", label: "Relatórios", icon: BarChart3 },
-  { key: "subscription", label: "Meu Plano", icon: CreditCard },
-  { key: "loyalty", label: "Fidelidade", icon: Star },
-  { key: "coupons", label: "Cupons", icon: Tag },
-  { key: "drivers", label: "Motoboys", icon: Bike },
-  { key: "refunds", label: "Reembolsos", icon: AlertTriangle },
-  { key: "tutoriais", label: "Tutoriais", icon: GraduationCap },
-  { key: "settings", label: "Configurações", icon: Settings },
-];
-
-export const bottomNavTabs: { key: DashboardTab; label: string; icon: React.ElementType }[] = [
-  { key: "dashboard", label: "Início", icon: LayoutDashboard },
-  { key: "orders", label: "Pedidos", icon: ListOrdered },
-  { key: "menu", label: "Cardápio", icon: UtensilsCrossed },
-  { key: "clients", label: "Clientes", icon: Users },
-];
-
-export const moreSheetItems: { key: DashboardTab; label: string; icon: React.ElementType; pizzaOnly?: boolean }[] = [
-  { key: "cash_register", label: "PDV / Caixa", icon: ShoppingCart },
-  { key: "addons", label: "Adicionais", icon: Plus },
-  { key: "bordas", label: "Pizzaria", icon: CircleDot, pizzaOnly: true },
-  { key: "hours", label: "Horários", icon: Clock },
-  { key: "finance", label: "Financeiro", icon: Coins },
-  { key: "reports", label: "Relatórios", icon: BarChart3 },
-  { key: "subscription", label: "Meu Plano", icon: CreditCard },
-  { key: "loyalty", label: "Fidelidade", icon: Star },
-  { key: "coupons", label: "Cupons", icon: Tag },
-  { key: "drivers", label: "Motoboys", icon: Bike },
-  { key: "tutoriais", label: "Tutoriais", icon: GraduationCap },
-  { key: "settings", label: "Configurações", icon: Settings },
-  { key: "suporte", label: "Suporte", icon: Headphones },
-];
-
 // ─────────────────────────────────────────────────────────────
 // NOVA NAVEGAÇÃO AGRUPADA — 7 grupos com sub-tabs
 // Mesma ideia da aba Pizzaria (pills horizontais).
