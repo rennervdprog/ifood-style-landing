@@ -23,3 +23,9 @@ verify_jwt = false
 
 [functions.asaas-financial-panel]
 verify_jwt = false
+
+[functions.evolution-webhook]
+verify_jwt = false
+
+[functions.evolution-send-message]
+verify_jwt = false
