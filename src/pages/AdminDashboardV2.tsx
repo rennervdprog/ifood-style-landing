@@ -1813,11 +1813,17 @@ const AdminDashboard = () => {
                     })).filter(h => h.pedidos > 0 || (parseInt(h.hour) >= 8 && parseInt(h.hour) <= 23));
                     const peakHour = Object.entries(hourlyMap).sort(([,a], [,b]) => b - a)[0];
 
-                    const paymentPie = [
-                      { name: "PIX", value: completedPeriod.filter((o: any) => o.payment_method === "pix").length, total: sumMoney(completedPeriod.filter((o: any) => o.payment_method === "pix").map((o: any) => o.total_price)) },
-                      { name: "Cartão", value: completedPeriod.filter((o: any) => o.payment_method === "cartao").length, total: sumMoney(completedPeriod.filter((o: any) => o.payment_method === "cartao").map((o: any) => o.total_price)) },
-                      { name: "Dinheiro", value: completedPeriod.filter((o: any) => o.payment_method !== "pix" && o.payment_method !== "cartao").length, total: sumMoney(completedPeriod.filter((o: any) => o.payment_method !== "pix" && o.payment_method !== "cartao").map((o: any) => o.total_price)) },
-                    ].filter(d => d.value > 0);
+                    const paymentBuckets: Record<string, { value: number; total: number }> = {};
+                    completedPeriod.forEach((o: any) => {
+                      const key = o.payment_method || "dinheiro";
+                      const label = paymentLabels[key] || "Outros";
+                      if (!paymentBuckets[label]) paymentBuckets[label] = { value: 0, total: 0 };
+                      paymentBuckets[label].value += 1;
+                      paymentBuckets[label].total = addMoney(paymentBuckets[label].total, Number(o.total_price));
+                    });
+                    const paymentPie = Object.entries(paymentBuckets)
+                      .map(([name, v]) => ({ name, value: v.value, total: v.total }))
+                      .filter(d => d.value > 0);
 
                     const topProducts = new Map<string, { qty: number; revenue: number }>();
                     completedPeriod.forEach((o: any) => {
