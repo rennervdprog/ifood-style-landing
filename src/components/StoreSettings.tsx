@@ -140,23 +140,7 @@ type PizzaPriceMode = "maior" | "media" | "soma";
   const [acceptCard,       setAcceptCard]       = useState<boolean>(storeSettings?.accept_card        !== false);
   const [acceptCash,       setAcceptCash]       = useState<boolean>(storeSettings?.accept_cash        !== false);
 
-  // Load Z-API secrets from store_secrets table
-  useEffect(() => {
-    if (!storeId) return;
-    supabase
-      .from("store_secrets")
-      .select("zapi_enabled, zapi_instance_id, zapi_token, zapi_client_token")
-      .eq("store_id", storeId)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data) {
-          setZapiEnabled(data.zapi_enabled || false);
-          setZapiInstanceId(data.zapi_instance_id || "");
-          setZapiToken(data.zapi_token || "");
-          setZapiClientToken(data.zapi_client_token || "");
-        }
-      });
-  }, [storeId]);
+  // Z-API foi substituído pela aba WhatsApp (Evolution API) — bloco removido.
 
   // Load whatsapp + pix from profile
   useEffect(() => {
