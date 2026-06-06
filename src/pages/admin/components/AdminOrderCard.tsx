@@ -68,7 +68,8 @@ export interface AdminOrderCardProps {
 const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
   const {
     order, index, isAddressExpanded, isBatchSelected, isOwnDelivery, hasLinkedDrivers,
-    driversLoading, cancelConfirm, storeName, onlineDriversCount, linkedStoreDrivers,
+    driversLoading, cancelConfirm, cancelReason, setCancelReason, cancellingOrder,
+    storeName, onlineDriversCount, linkedStoreDrivers,
     highlights, clientName, clientWhatsApp, driverName, mainAction, acceptHref, readyHref,
     toggleAddress, toggleBatchOrder, setActiveTab, setCancelConfirm, updateOrderStatus,
     handleAcceptOrder, handleCancelOrder, handlePrint, invalidateOrders,
