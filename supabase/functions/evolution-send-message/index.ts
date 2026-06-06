@@ -36,8 +36,24 @@ const sendPresence = async (baseUrl: string, instance: string, apiKey: string, n
 // Anti-spam params
 const DEDUPE_WINDOW_SEC = 3600;        // mesma msg p/ mesmo número
 const PER_STORE_MIN_GAP_MS = 12_000;   // gap mínimo entre envios da loja
-const WARMUP_HOURS = 48;
-const WARMUP_MAX_MSGS = 20;            // teto nas primeiras 48h após conectar
+// P1.3 — limites diários por fase do chip (dias após connected_at)
+const dailyLimitForAge = (days: number) => {
+  if (days < 7) return 20;     // semana 1
+  if (days < 14) return 50;    // semana 2
+  if (days < 30) return 100;   // semana 3-4
+  if (days < 60) return 150;   // mês 2
+  return 200;                  // mês 3+
+};
+
+// P1.2 — delay log-normal (mais natural que range fixo)
+const logNormalDelay = () => {
+  const u1 = Math.random() || 1e-9;
+  const u2 = Math.random();
+  const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+  // média ~ 40s, cauda longa até ~3min, mínimo 15s
+  const ms = Math.exp(3.6 + z * 0.6) * 1000;
+  return Math.min(180_000, Math.max(15_000, Math.floor(ms)));
+};
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -81,18 +97,22 @@ Deno.serve(async (req) => {
       .gte("sent_at", dedupeSince).limit(1).maybeSingle();
     if (dup) return json({ success: true, skipped: "duplicate" });
 
-    // 2) Warmup: limita volume nas primeiras 48h após conectar
-    if (cfg.connected_at) {
-      const ageH = (Date.now() - new Date(cfg.connected_at).getTime()) / 3_600_000;
-      if (ageH < WARMUP_HOURS) {
-        const { count } = await admin
-          .from("whatsapp_send_log")
-          .select("id", { count: "exact", head: true })
-          .eq("store_id", store_id).gte("sent_at", cfg.connected_at);
-        if ((count ?? 0) >= WARMUP_MAX_MSGS) {
-          return json({ error: "Aquecimento: limite diário de envios atingido. Tente novamente mais tarde." }, 429);
-        }
-      }
+    // 2) Limite diário por fase do chip (P1.3)
+    const ageDays = cfg.connected_at
+      ? (Date.now() - new Date(cfg.connected_at).getTime()) / 86_400_000
+      : 999;
+    const dailyLimit = dailyLimitForAge(ageDays);
+    const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0);
+    const { count: sentToday } = await admin
+      .from("whatsapp_send_log")
+      .select("id", { count: "exact", head: true })
+      .eq("store_id", store_id).gte("sent_at", dayStart.toISOString());
+    if ((sentToday ?? 0) >= dailyLimit) {
+      return json({ error: `Limite diário de envios atingido (${dailyLimit}). Aguarde amanhã.` }, 429);
+    }
+    // Coffee break: a cada 10 msgs no dia, pausa 5-15min (P1.2)
+    if ((sentToday ?? 0) > 0 && (sentToday ?? 0) % 10 === 0) {
+      await sleep(300_000 + Math.floor(Math.random() * 600_000));
     }
 
     // 3) Throttle: gap mínimo entre envios da mesma loja + jitter
@@ -102,15 +122,17 @@ Deno.serve(async (req) => {
       .order("sent_at", { ascending: false }).limit(1).maybeSingle();
     if (last?.sent_at) {
       const gap = Date.now() - new Date(last.sent_at).getTime();
-      const need = PER_STORE_MIN_GAP_MS + Math.floor(Math.random() * 8000);
+      const need = PER_STORE_MIN_GAP_MS + logNormalDelay();
       if (gap < need) await sleep(need - gap);
     } else {
       await sleep(2500 + Math.floor(Math.random() * 3500));
     }
 
     if (kind === "auto_reply") {
+      // P2.4 — presença "digitando" proporcional ao tamanho da mensagem
+      const typingMs = Math.min(15_000, Math.max(2500, message.length * 60));
       await sendPresence(baseUrl, cfg.evolution_instance_name, apiKey, number);
-      await sleep(2500 + Math.floor(Math.random() * 4500));
+      await sleep(typingMs + Math.floor(Math.random() * 2000));
     }
 
     const r = await fetch(`${baseUrl.replace(/\/$/, "")}/message/sendText/${cfg.evolution_instance_name}`, {
