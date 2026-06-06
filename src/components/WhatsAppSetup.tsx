@@ -330,19 +330,20 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName }: Props) 
           </button>
         </div>
         <p className="text-xs text-muted-foreground">
-          Quando um cliente mandar mensagem no seu WhatsApp, responde automaticamente com o link do cardápio.
+          Quando um cliente mandar mensagem no seu WhatsApp, responde automaticamente com uma saudação humanizada.
         </p>
         {autoReply && (
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-foreground/70">Mensagem de resposta</label>
-            <textarea
-              value={autoReplyMsg}
-              onChange={(e) => setAutoReplyMsg(e.target.value)}
-              rows={2}
-              className="w-full bg-muted/40 border border-border rounded-xl px-3 py-2 text-xs text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-primary"
-            />
-            <p className="text-[10px] text-muted-foreground">
-              O link da sua loja ({`itasuper.com.br/${storeSlug}`}) é adicionado automaticamente no final.
+          <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2.5 space-y-1">
+            <p className="text-[11px] font-bold text-amber-700 dark:text-amber-400">
+              🛡️ Modo anti-bloqueio ativo
+            </p>
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              Para evitar banimento do WhatsApp, o sistema agora usa <strong>5 saudações rotativas</strong> automáticas
+              (variando por horário: bom dia/tarde/noite) e <strong>só envia o link do cardápio</strong> ({`itasuper.com.br/${storeSlug}`})
+              quando o cliente confirma interesse (ex: "sim", "quero", "cardápio"). Isso reduz o risco de spam e mantém o número seguro.
+            </p>
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              Janela de resposta: <strong>08h às 22h</strong>. Clientes que respondem "PARAR" entram em lista de exclusão.
             </p>
           </div>
         )}
