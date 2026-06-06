@@ -1491,6 +1491,16 @@ const AdminDashboard = () => {
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto pb-20 lg:pb-0">
+          {/* Sub-tabs do grupo ativo (mesmo padrão visual da aba Pizzaria) */}
+          {store && activeGroup && (
+            <GroupTabsBar
+              group={activeGroup}
+              activeTab={dashboardTab}
+              onSelect={handleTabChange}
+              isPizza={isPizza}
+              allowFullReports={allowFullReports}
+            />
+          )}
           {!storeLoading && isApproved && !store && (
             <div className="p-4 lg:p-6 max-w-lg mx-auto flex flex-col items-center justify-center text-center min-h-[60vh]">
               <div className="w-20 h-20 bg-amber-500/10 rounded-3xl flex items-center justify-center mb-5">
