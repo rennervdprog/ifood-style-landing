@@ -84,7 +84,10 @@ Deno.serve(async (req) => {
     const ASAAS_API_KEY = Deno.env.get("ASAAS_API_KEY");
     if (!ASAAS_API_KEY) return json({ error: "Chave Asaas não configurada." }, 500);
 
-    const isSandbox = !ASAAS_API_KEY.startsWith("$aact_");
+    // Padrão oficial: produção começa com "$aact_prod_", sandbox apenas "$aact_".
+    // (todas as chaves Asaas começam com "$aact_", então testar só "$aact_" trataria
+    // chaves de produção como sandbox.)
+    const isSandbox = !ASAAS_API_KEY.startsWith("$aact_prod_");
     const baseUrl = isSandbox
       ? "https://sandbox.asaas.com/api/v3"
       : "https://api.asaas.com/v3";
