@@ -153,13 +153,16 @@ export const SupportTicketModal = ({ open, onClose, userRole, storeId }: Props) 
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative w-full sm:max-w-md h-[92vh] sm:h-[85vh] bg-background rounded-t-[28px] sm:rounded-[24px] flex flex-col overflow-hidden shadow-2xl border border-border/50">
+      <div
+        className="relative w-full sm:max-w-md h-[100dvh] sm:h-[85vh] sm:max-h-[720px] bg-background rounded-t-[28px] sm:rounded-[24px] flex flex-col overflow-hidden shadow-2xl border border-border/50"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
 
         {/* ── HEADER ── */}
-        <div className="shrink-0 px-5 pt-5 pb-4">
+        <div className="shrink-0 px-4 sm:px-5 pt-4 sm:pt-5 pb-3 sm:pb-4" style={{ paddingTop: "max(env(safe-area-inset-top), 1rem)" }}>
           {/* drag handle mobile */}
           <div className="w-10 h-1 bg-muted-foreground/20 rounded-full mx-auto mb-4 sm:hidden" />
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             {view !== "list" && (
               <button onClick={view === "new" ? goList : goList}
                 className="w-9 h-9 rounded-2xl bg-muted/60 flex items-center justify-center active:scale-90 transition-transform shrink-0">
@@ -169,41 +172,41 @@ export const SupportTicketModal = ({ open, onClose, userRole, storeId }: Props) 
             <div className="flex-1 min-w-0">
               {view === "list" && (
                 <>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-lg font-black text-foreground">Suporte</h2>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <h2 className="text-base sm:text-lg font-black text-foreground truncate">Suporte</h2>
                     {pendingReply > 0 && (
-                      <span className="text-[11px] font-black bg-purple-500 text-white px-2 py-0.5 rounded-full">
+                      <span className="text-[10px] sm:text-[11px] font-black bg-purple-500 text-white px-1.5 sm:px-2 py-0.5 rounded-full shrink-0">
                         {pendingReply} nova{pendingReply > 1 ? "s" : ""}
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground">Como podemos ajudar?</p>
+                  <p className="text-[11px] sm:text-xs text-muted-foreground truncate">Como podemos ajudar?</p>
                 </>
               )}
               {view === "new" && (
                 <>
-                  <h2 className="text-base font-black text-foreground">Novo chamado</h2>
-                  <p className="text-xs text-muted-foreground">Descreva o problema</p>
+                  <h2 className="text-base font-black text-foreground truncate">Novo chamado</h2>
+                  <p className="text-[11px] sm:text-xs text-muted-foreground truncate">Descreva o problema</p>
                 </>
               )}
               {view === "chat" && selected && (
                 <>
                   <h2 className="text-sm font-black text-foreground truncate">{selected.subject}</h2>
-                  <div className="flex items-center gap-1.5 mt-0.5">
+                  <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
                     <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${STATUS[selected.status]?.dot}`} />
-                    <span className={`text-[11px] font-bold ${STATUS[selected.status]?.color}`}>
+                    <span className={`text-[11px] font-bold truncate ${STATUS[selected.status]?.color}`}>
                       {STATUS[selected.status]?.label}
                     </span>
-                    <span className="text-[11px] text-muted-foreground">· #{String(selected.ticket_number).padStart(4, "0")}</span>
+                    <span className="text-[11px] text-muted-foreground shrink-0">· #{String(selected.ticket_number).padStart(4, "0")}</span>
                   </div>
                 </>
               )}
             </div>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               {view === "list" && (
                 <button onClick={() => setView("new")}
-                  className="flex items-center gap-1.5 bg-primary text-primary-foreground text-xs font-bold px-3.5 py-2 rounded-2xl active:scale-95 transition-transform">
-                  <Plus className="h-3.5 w-3.5" /> Novo
+                  className="flex items-center gap-1 sm:gap-1.5 bg-primary text-primary-foreground text-xs font-bold px-2.5 sm:px-3.5 py-2 rounded-2xl active:scale-95 transition-transform">
+                  <Plus className="h-3.5 w-3.5" /> <span className="hidden xs:inline">Novo</span><span className="xs:hidden sr-only">Novo</span><span aria-hidden className="xs:hidden">Novo</span>
                 </button>
               )}
               <button onClick={onClose}
@@ -252,12 +255,12 @@ export const SupportTicketModal = ({ open, onClose, userRole, storeId }: Props) 
                           ? "bg-purple-50 dark:bg-purple-500/5 border-purple-200 dark:border-purple-500/20"
                           : "bg-card border-border/60 hover:border-primary/30 hover:bg-muted/20"
                       }`}>
-                      <div className="p-4 flex items-start gap-3">
+                      <div className="p-3 sm:p-4 flex items-start gap-2.5 sm:gap-3 min-w-0">
                         <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${cat?.bg}`}>
                           {cat && <cat.icon className={`h-4 w-4 ${cat.color}`} />}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-start justify-between gap-2 min-w-0">
                             <p className="text-sm font-bold text-foreground leading-snug truncate">{t.subject}</p>
                             <span className="text-[11px] text-muted-foreground shrink-0">{fmtRelative(t.updated_at)}</span>
                           </div>
@@ -280,20 +283,20 @@ export const SupportTicketModal = ({ open, onClose, userRole, storeId }: Props) 
 
         {/* ── NOVO TICKET ── */}
         {view === "new" && (
-          <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-5">
+          <div className="flex-1 overflow-y-auto px-4 pb-6 space-y-5">
             {/* Categoria */}
             <div>
               <p className="text-xs font-bold text-muted-foreground mb-3">Qual o assunto?</p>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-2 gap-2">
                 {CATEGORIES.map(c => {
                   const sel = form.category === c.value;
                   return (
                     <button key={c.value} onClick={() => setForm(f => ({ ...f, category: c.value }))}
-                      className={`flex items-center gap-2.5 p-3.5 rounded-2xl border text-left transition-all active:scale-[0.97] ${
+                      className={`flex items-center gap-2 sm:gap-2.5 p-3 sm:p-3.5 rounded-2xl border text-left transition-all active:scale-[0.97] min-w-0 ${
                         sel ? `${c.bg} border-current` : "bg-card border-border/60 hover:bg-muted/30"
                       }`}>
                       <c.icon className={`h-4 w-4 shrink-0 ${sel ? c.color : "text-muted-foreground"}`} />
-                      <span className={`text-xs font-semibold ${sel ? c.color : "text-foreground"}`}>{c.label}</span>
+                      <span className={`text-xs font-semibold truncate ${sel ? c.color : "text-foreground"}`}>{c.label}</span>
                     </button>
                   );
                 })}
@@ -329,7 +332,7 @@ export const SupportTicketModal = ({ open, onClose, userRole, storeId }: Props) 
         {/* ── CHAT ── */}
         {view === "chat" && selected && (
           <>
-            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+            <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-3 space-y-3">
               {messages.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground text-xs">Aguardando resposta da equipe...</div>
               )}
@@ -342,14 +345,14 @@ export const SupportTicketModal = ({ open, onClose, userRole, storeId }: Props) 
                         <MessageCircle className="h-3.5 w-3.5 text-primary-foreground" />
                       </div>
                     )}
-                    <div className={`max-w-[78%] ${isMe ? "items-end" : "items-start"} flex flex-col gap-1`}>
+                    <div className={`max-w-[82%] sm:max-w-[78%] min-w-0 ${isMe ? "items-end" : "items-start"} flex flex-col gap-1`}>
                       {!isMe && <span className="text-[10px] font-bold text-primary pl-1">Suporte ItaSuper</span>}
                       <div className={`rounded-2xl px-4 py-2.5 ${
                         isMe
                           ? "bg-primary text-primary-foreground rounded-br-sm"
                           : "bg-muted/60 text-foreground rounded-bl-sm"
                       }`}>
-                        <p className="text-sm leading-relaxed">{m.content}</p>
+                        <p className="text-sm leading-relaxed break-words whitespace-pre-wrap">{m.content}</p>
                       </div>
                       <span className={`text-[10px] text-muted-foreground px-1 ${isMe ? "text-right" : ""}`}>
                         {fmtDate(m.created_at)}
@@ -365,19 +368,19 @@ export const SupportTicketModal = ({ open, onClose, userRole, storeId }: Props) 
               <div className="px-4 py-4 border-t border-border/50 shrink-0">
                 <div className="flex items-center justify-center gap-2 bg-emerald-500/8 rounded-2xl py-3">
                   <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  <p className="text-xs font-semibold text-emerald-600">
+                  <p className="text-xs font-semibold text-emerald-600 text-center">
                     Chamado {selected.status} — obrigado pelo contato!
                   </p>
                 </div>
               </div>
             ) : (
-              <div className="px-4 pt-3 pb-5 border-t border-border/50 shrink-0">
-                <div className="flex items-end gap-2 bg-muted/40 border border-border/60 rounded-2xl px-3 py-2">
+              <div className="px-3 sm:px-4 pt-3 pb-4 sm:pb-5 border-t border-border/50 shrink-0">
+                <div className="flex items-end gap-2 bg-muted/40 border border-border/60 rounded-2xl px-3 py-2 min-w-0">
                   <textarea value={msg} onChange={e => setMsg(e.target.value)}
                     onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMsg(); } }}
                     placeholder="Digite sua mensagem..."
-                    rows={2}
-                    className="flex-1 bg-transparent text-sm resize-none focus:outline-none placeholder:text-muted-foreground/50" />
+                    rows={1}
+                    className="flex-1 min-w-0 bg-transparent text-sm resize-none focus:outline-none placeholder:text-muted-foreground/50 max-h-32" />
                   <button onClick={sendMsg} disabled={!msg.trim() || sending}
                     className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shrink-0 disabled:opacity-30 active:scale-90 transition-transform mb-0.5">
                     {sending ? <Loader2 className="h-3.5 w-3.5 text-white animate-spin" /> : <Send className="h-3.5 w-3.5 text-white" />}
