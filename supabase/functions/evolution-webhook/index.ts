@@ -136,8 +136,9 @@ Deno.serve(async (req) => {
 
     // MESSAGES_UPSERT (auto-reply)
     if (/messages.?upsert/i.test(event) && cfg.auto_reply_enabled) {
-      const fromMe = data?.key?.fromMe;
-      const remoteJid: string = data?.key?.remoteJid || "";
+      const key = data?.key || data?.messages?.[0]?.key || {};
+      const fromMe = key?.fromMe;
+      const remoteJid: string = key?.remoteJid || "";
       const number = incomingPhone(data);
       if (!fromMe && number && /^\d+$/.test(number) && !remoteJid.includes("@g.us") && !remoteJid.includes("status@broadcast")) {
         if (!isRecentIncomingMessage(data)) return json({ ok: true, skipped: "old_message" });
