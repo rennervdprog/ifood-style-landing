@@ -1228,7 +1228,44 @@ const AdminDashboard = () => {
     startTabTransition(() => setDashboardTab(tab)); setSidebarOpen(false); setShowMoreSheet(false);
   };
 
-  const isBottomNavMore = !bottomNavTabs.some(t => t.key === dashboardTab) && dashboardTab !== "dashboard";
+  // ─── Navegação agrupada ───
+  const isPizza = store?.category === "pizzas" || ((store as any)?.categories || []).includes("pizzas");
+  const allowFullReports = storePlan.allowFullReports;
+  const filterCtx = { isPizza, allowFullReports };
+
+  // Grupos visíveis (com pelo menos 1 sub-tab disponível)
+  const visibleGroups: DashboardGroup[] = useMemo(
+    () => dashboardGroups
+      .map(g => ({ ...g, subTabs: g.subTabs.filter(s => filterSubTab(s, filterCtx)) }))
+      .filter(g => g.subTabs.length > 0),
+    [isPizza, allowFullReports],
+  );
+  const visibleGroupMap = useMemo(
+    () => new Map(visibleGroups.map(g => [g.key, g])),
+    [visibleGroups],
+  );
+
+  const activeGroup = getGroupForTab(dashboardTab);
+  const activeGroupKey = activeGroup?.key;
+
+  const handleGroupChange = (groupKey: DashboardGroupKey) => {
+    const g = visibleGroupMap.get(groupKey);
+    if (!g || g.subTabs.length === 0) return;
+    // Se já estou no grupo, mantém a sub-tab atual; senão abre a primeira
+    const inGroup = g.subTabs.some(s => s.key === dashboardTab);
+    handleTabChange(inGroup ? dashboardTab : g.subTabs[0].key);
+  };
+
+  const bottomNavGroups = bottomNavGroupKeys
+    .map(k => visibleGroupMap.get(k))
+    .filter(Boolean) as DashboardGroup[];
+  const moreSheetGroups = moreSheetGroupKeys
+    .map(k => visibleGroupMap.get(k))
+    .filter(Boolean) as DashboardGroup[];
+
+  const isBottomNavMore = activeGroupKey
+    ? !bottomNavGroupKeys.includes(activeGroupKey)
+    : false;
 
   // ── RENDER ──
   return (
