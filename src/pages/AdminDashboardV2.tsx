@@ -83,10 +83,15 @@ import {
   orderTabs,
   paymentLabels,
   paymentIcons,
-  baseSidebarItems,
-  bottomNavTabs,
-  moreSheetItems,
+  dashboardGroups,
+  bottomNavGroupKeys,
+  moreSheetGroupKeys,
+  filterSubTab,
+  getGroupForTab,
+  type DashboardGroup,
+  type DashboardGroupKey,
 } from "./admin/constants";
+import GroupTabsBar from "./admin/components/GroupTabsBar";
 import {
   parseOrderAddons,
   normalizeAddonName,
