@@ -965,7 +965,10 @@ const AdminDashboard = () => {
             items,
             deliveryPin: order.delivery_pin,
             paymentMethod: order.payment_method,
-          }, { zapiEnabled: !!storeSettings.zapi_enabled });
+          }, {
+            evolutionEnabled: evolutionConnected,
+            zapiEnabled: !!storeSettings.zapi_enabled,
+          });
         } catch (e) { console.warn("notify error", e); }
       }
 
