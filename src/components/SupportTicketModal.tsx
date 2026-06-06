@@ -206,7 +206,7 @@ export const SupportTicketModal = ({ open, onClose, userRole, storeId }: Props) 
               {view === "list" && (
                 <button onClick={() => setView("new")}
                   className="flex items-center gap-1 sm:gap-1.5 bg-primary text-primary-foreground text-xs font-bold px-2.5 sm:px-3.5 py-2 rounded-2xl active:scale-95 transition-transform">
-                  <Plus className="h-3.5 w-3.5" /> <span className="hidden xs:inline">Novo</span><span className="xs:hidden sr-only">Novo</span><span aria-hidden className="xs:hidden">Novo</span>
+                  <Plus className="h-3.5 w-3.5" /> Novo
                 </button>
               )}
               <button onClick={onClose}
