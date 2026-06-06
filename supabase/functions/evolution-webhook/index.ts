@@ -151,7 +151,7 @@ Deno.serve(async (req) => {
           await admin.from("whatsapp_send_log").insert({
             store_id: cfg.store_id, phone: number, message_hash: "optout",
             kind: "opt_out", sent_at: new Date().toISOString(),
-          }).catch(() => undefined);
+          });
           return json({ ok: true, skipped: "opt_out_registered" });
         }
 
@@ -212,7 +212,7 @@ Deno.serve(async (req) => {
         await admin.from("whatsapp_send_log").insert({
           store_id: cfg.store_id, phone: number, message_hash: "greet_pending",
           kind: "auto_reply", sent_at: new Date().toISOString(),
-        }).catch(() => undefined);
+        });
 
         // Humaniza: aguarda antes da saudação; só envia link se cliente já pediu.
         runInBackground((async () => {
