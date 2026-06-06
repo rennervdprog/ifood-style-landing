@@ -324,6 +324,23 @@ const AdminDashboard = () => {
 
   const storePlan = useStorePlan(store?.id);
 
+  // Detecta se Evolution API (WhatsApp automático) está conectado para a loja.
+  // Quando conectado, os botões de fluxo de pedido NÃO abrem o wa.me manual —
+  // a mensagem é enviada automaticamente pelo backend (evolution-send-message).
+  const { data: evolutionConnected = false } = useQuery({
+    queryKey: ["store-evo-connected", store?.id],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("store_whatsapp_config")
+        .select("status")
+        .eq("store_id", store!.id)
+        .maybeSingle();
+      return data?.status === "connected";
+    },
+    enabled: !!store?.id,
+    staleTime: 30_000,
+  });
+
   const refreshDashboardOrders = useCallback(async () => {
     if (!store?.id) return;
 
