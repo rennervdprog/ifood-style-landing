@@ -7,6 +7,38 @@ const corsHeaders = {
 const json = (b: unknown, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const runInBackground = (task: Promise<unknown>) => {
+  const runtime = globalThis as typeof globalThis & { EdgeRuntime?: { waitUntil?: (task: Promise<unknown>) => void } };
+  if (runtime.EdgeRuntime?.waitUntil) runtime.EdgeRuntime.waitUntil(task);
+  else task.catch((error) => console.error("background auto-reply error:", error));
+};
+
+const isRecentIncomingMessage = (data: any) => {
+  const rawTimestamp = data?.messageTimestamp || data?.timestamp || data?.date_time;
+  if (!rawTimestamp) return true;
+  const ts = typeof rawTimestamp === "number" ? rawTimestamp : Number(rawTimestamp);
+  if (!Number.isFinite(ts)) return true;
+  const tsMs = ts > 10_000_000_000 ? ts : ts * 1000;
+  return Date.now() - tsMs <= 5 * 60_000;
+};
+
+const hasHumanContent = (data: any) => {
+  const msg = data?.message || data?.messages?.[0]?.message;
+  if (!msg) return true;
+  if (msg.protocolMessage || msg.reactionMessage || msg.senderKeyDistributionMessage) return false;
+  return Boolean(
+    msg.conversation ||
+    msg.extendedTextMessage?.text ||
+    msg.imageMessage?.caption ||
+    msg.videoMessage?.caption ||
+    msg.audioMessage ||
+    msg.documentMessage ||
+    msg.stickerMessage
+  );
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
@@ -61,7 +93,10 @@ Deno.serve(async (req) => {
       const fromMe = data?.key?.fromMe;
       const remoteJid: string = data?.key?.remoteJid || "";
       const number = remoteJid.split("@")[0];
-      if (!fromMe && number && /^\d+$/.test(number) && !remoteJid.includes("@g.us")) {
+      if (!fromMe && number && /^\d+$/.test(number) && !remoteJid.includes("@g.us") && !remoteJid.includes("status@broadcast")) {
+        if (!isRecentIncomingMessage(data)) return json({ ok: true, skipped: "old_message" });
+        if (!hasHumanContent(data)) return json({ ok: true, skipped: "non_human_message" });
+
         // Cooldown: 1 auto-reply por contato a cada 6h
         const sixHAgo = new Date(Date.now() - 6 * 3600_000).toISOString();
         const { data: recent } = await admin
@@ -78,16 +113,20 @@ Deno.serve(async (req) => {
         const baseMsg = (cfg.auto_reply_message || "Olá! 😊 Acesse nosso cardápio e faça seu pedido:").trim();
         const text = link && !baseMsg.includes(link) ? `${baseMsg}\n${link}` : baseMsg;
 
-        // Roteia pela função de envio para aplicar throttle/dedupe/warmup
-        await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/evolution-send-message`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            apikey: Deno.env.get("SUPABASE_ANON_KEY") || "",
-            Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""}`,
-          },
-          body: JSON.stringify({ store_id: cfg.store_id, phone: number, message: text, kind: "auto_reply" }),
-        }).catch(() => {});
+        // Humaniza a resposta: evita resposta instantânea com padrão de bot e
+        // mantém o webhook rápido para não gerar retry duplicado.
+        runInBackground((async () => {
+          await sleep(25_000 + Math.floor(Math.random() * 45_000));
+          await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/evolution-send-message`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              apikey: Deno.env.get("SUPABASE_ANON_KEY") || "",
+              Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""}`,
+            },
+            body: JSON.stringify({ store_id: cfg.store_id, phone: number, message: text, kind: "auto_reply" }),
+          });
+        })());
       }
     }
 
