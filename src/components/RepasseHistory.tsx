@@ -172,7 +172,7 @@ export default function RepasseHistory({ storeId }: RepasseHistoryProps) {
         .order("period_end", { ascending: false })
         .limit(24); // últimos 6 meses (aprox.)
       if (error) throw error;
-      return (data || []) as RepasseRecord[];
+      return ((data || []) as unknown) as RepasseRecord[];
     },
     enabled: !!storeId,
   });

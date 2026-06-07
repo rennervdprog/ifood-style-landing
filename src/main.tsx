@@ -3,8 +3,23 @@ import { initSentry } from "./lib/sentry";
 // Declarar extensões do Window para gonative/median (apps nativos WebView)
 declare global {
   interface Window {
-    gonative?: { deviceInfo?: () => void; [key: string]: any };
-    median?: { [key: string]: any };
+    gonative?: {
+      onesignal?: {
+        onesignalInfo?: (callback?: (info: any) => void) => void | Promise<any>;
+        info?: (options: { callback: string }) => void;
+        externalUserId?: { set?: (options: { externalId: string }) => void };
+        setExternalUserId?: (id: string) => void;
+      };
+      deviceInfo?: () => void;
+    };
+    median?: {
+      onesignal?: {
+        onesignalInfo?: (callback?: (info: any) => void) => void | Promise<any>;
+        info?: (options: { callback: string }) => void;
+        externalUserId?: { set?: (options: { externalId: string }) => void };
+        setExternalUserId?: (id: string) => void;
+      };
+    };
   }
 }
 
@@ -84,9 +99,9 @@ if ("serviceWorker" in navigator && !isPreviewHost && !isInIframe && !isCapacito
         caches.keys()
           .then(keys => Promise.all(keys.map(k => caches.delete(k))))
           .catch(() => {})
-          .finally(() => window.location.reload());
+          .finally(() => globalThis.location.reload());
       } else {
-        window.location.reload();
+        globalThis.location.reload();
       }
     }
   });

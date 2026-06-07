@@ -65,7 +65,7 @@ const RoleGuard = ({ allowedRoles, redirectTo, children, requireApproval = false
 
       // Fallback: detectar matriz pela rede
       if (!resolvedRole && allowedRoles.includes("lojista_matriz")) {
-        const { data: network } = await supabase
+        const { data: network } = await (supabase as any)
           .from("store_networks")
           .select("id, is_approved")
           .eq("owner_id", user.id)

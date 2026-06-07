@@ -536,7 +536,7 @@ const CheckoutPage = () => {
 
         // Resgatar pontos de fidelidade se foram aplicados
         if (loyaltyPointsUsed > 0 && loyaltyDiscount > 0) {
-          const { error: loyaltyErr } = await supabase.rpc("redeem_loyalty_points", {
+          const { error: loyaltyErr } = await (supabase as any).rpc("redeem_loyalty_points", {
             _order_id: order.id,
             _store_id: storeId,
             _points_to_use: loyaltyPointsUsed,
