@@ -81,17 +81,26 @@ export default function DashboardOverviewSection(props: Props) {
   });
   const isPdvOpen = !!pdvSession?.id;
 
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
+  const greetingEmoji = hour < 12 ? "☀️" : hour < 18 ? "🌤️" : "🌙";
+
   return (
 <div className="p-4 lg:p-6 max-w-6xl mx-auto space-y-5 lg:space-y-6">
 
   {/* ── Welcome Header ── */}
-  <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/10 rounded-3xl p-5 lg:p-6">
-    <div className="flex items-center justify-between mb-3">
-      <div>
-        <h2 className="text-lg lg:text-xl font-black text-foreground">
-          Olá, {store.name}! 👋
+  <div className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/10 rounded-3xl p-5 lg:p-6">
+    <div className="pointer-events-none absolute -top-16 -right-16 w-48 h-48 bg-primary/20 rounded-full blur-3xl" />
+    <div className="pointer-events-none absolute -bottom-20 -left-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl" />
+    <div className="relative flex items-center justify-between mb-3 gap-3">
+      <div className="min-w-0">
+        <p className="text-[11px] font-bold text-primary/80 uppercase tracking-widest">
+          {greeting} {greetingEmoji}
+        </p>
+        <h2 className="text-xl lg:text-2xl font-black text-foreground tracking-tight truncate mt-0.5">
+          {store.name}
         </h2>
-        <p className="text-xs text-muted-foreground mt-1">
+        <p className="text-xs text-muted-foreground mt-1 capitalize">
           {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}
         </p>
       </div>
@@ -112,9 +121,7 @@ export default function DashboardOverviewSection(props: Props) {
         })()}
       </div>
     </div>
-    <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-[11px] font-bold ${
-      "bg-muted text-foreground border border-border"
-    }`}>
+    <div className="relative inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-[11px] font-bold bg-background/60 backdrop-blur-sm text-foreground border border-border/60 shadow-sm">
       <CreditCard className="h-3 w-3" />
       {storePlan.planType === "fixed" && `Plano Fixo • R$ ${storePlan.monthlyFee.toFixed(0)}/mês`}
       {storePlan.planType === "hybrid" && `Crescimento • ${storePlan.commissionRate}% + R$ ${storePlan.monthlyFee.toFixed(0)}/mês`}
@@ -356,13 +363,18 @@ export default function DashboardOverviewSection(props: Props) {
   {/* ── New Orders Queue ── */}
   {pendingCount > 0 && (
     <div className="space-y-3">
-      <div className="flex items-center gap-2">
-        <div className="relative">
-          <div className="w-3 h-3 bg-primary rounded-full animate-ping absolute" />
-          <div className="w-3 h-3 bg-primary rounded-full relative" />
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="relative">
+            <div className="w-3 h-3 bg-primary rounded-full animate-ping absolute" />
+            <div className="w-3 h-3 bg-primary rounded-full relative" />
+          </div>
+          <h3 className="font-black text-foreground text-base tracking-tight">Novos Pedidos</h3>
+          <span className="bg-primary text-primary-foreground text-[11px] font-black px-2.5 py-0.5 rounded-full shadow-sm shadow-primary/30">
+            {pendingCount}
+          </span>
         </div>
-        <h3 className="font-black text-foreground text-base">Novos Pedidos</h3>
-        <span className="bg-primary text-primary-foreground text-[11px] font-black px-2 py-0.5 rounded-full">{pendingCount}</span>
+        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">aguardando aceite</span>
       </div>
       <div className="space-y-3">
         {orders?.filter(o => o.status === "pendente").slice(0, 5).map((order: any) => (
@@ -451,20 +463,27 @@ export default function DashboardOverviewSection(props: Props) {
 
   {/* ── Quick Actions ── */}
   <div className="space-y-3">
-    <h3 className="font-black text-foreground text-base">Ações Rápidas</h3>
+    <h3 className="font-black text-foreground text-base tracking-tight">Ações Rápidas</h3>
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
       {[
-        { label: "Cardápio", icon: UtensilsCrossed, tab: "menu" as DashboardTab, color: "text-primary", bg: "bg-primary/10" },
-        { label: "Finanças", icon: Coins, tab: "finance" as DashboardTab, color: "text-primary", bg: "bg-primary/10" },
-        { label: "Horários", icon: Clock, tab: "hours" as DashboardTab, color: "text-primary", bg: "bg-primary/10" },
-        { label: "Configurações", icon: Settings, tab: "settings" as DashboardTab, color: "text-primary", bg: "bg-primary/10" },
+        { label: "Cardápio", hint: "Itens e fotos", icon: UtensilsCrossed, tab: "menu" as DashboardTab },
+        { label: "Finanças", hint: "Saques e taxas", icon: Coins, tab: "finance" as DashboardTab },
+        { label: "Horários", hint: "Aberto/fechado", icon: Clock, tab: "hours" as DashboardTab },
+        { label: "Configurações", hint: "Loja e entrega", icon: Settings, tab: "settings" as DashboardTab },
       ].map((action) => (
-        <button key={action.label} onClick={() => setDashboardTab(action.tab)}
-          className="flex items-center gap-3 bg-card border border-border rounded-2xl p-3.5 hover:shadow-md hover:border-border/80 active:scale-[0.97] transition-all text-left">
-          <div className={`w-10 h-10 ${action.bg} rounded-xl flex items-center justify-center flex-shrink-0`}>
-            <action.icon className={`h-5 w-5 ${action.color}`} />
+        <button
+          key={action.label}
+          onClick={() => setDashboardTab(action.tab)}
+          className="group relative overflow-hidden flex items-center gap-3 bg-card border border-border rounded-2xl p-3.5 hover:shadow-md hover:shadow-primary/5 hover:border-primary/30 active:scale-[0.97] transition-all text-left"
+        >
+          <div className="pointer-events-none absolute -top-8 -right-8 w-20 h-20 bg-primary/0 group-hover:bg-primary/10 rounded-full blur-2xl transition-colors" />
+          <div className="relative w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 group-hover:scale-110 transition-all">
+            <action.icon className="h-5 w-5 text-primary" />
           </div>
-          <span className="text-sm font-bold text-foreground">{action.label}</span>
+          <div className="relative min-w-0 flex-1">
+            <span className="block text-sm font-bold text-foreground leading-tight">{action.label}</span>
+            <span className="block text-[10px] text-muted-foreground/80 mt-0.5 truncate">{action.hint}</span>
+          </div>
         </button>
       ))}
     </div>
