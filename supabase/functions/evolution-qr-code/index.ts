@@ -13,6 +13,26 @@ const BodySchema = z.object({
   force_reconnect: z.boolean().optional(),
 });
 
+const setWebhook = async (baseUrl: string, instance: string, apiKey: string, webhookUrl: string) => {
+  const payload = {
+    webhook: {
+      enabled: true,
+      url: webhookUrl,
+      webhook_by_events: false,
+      webhook_base64: false,
+      events: ["CONNECTION_UPDATE", "MESSAGES_UPSERT"],
+    },
+  };
+  const r = await fetch(`${baseUrl.replace(/\/$/, "")}/webhook/set/${instance}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", apikey: apiKey },
+    body: JSON.stringify(payload),
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) console.error("[evolution-qr-code] webhook set failed", { instance, status: r.status, data });
+  return { ok: r.ok, status: r.status, data };
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -39,10 +59,11 @@ Deno.serve(async (req) => {
     const baseUrl = Deno.env.get("EVOLUTION_API_URL");
     const apiKey = Deno.env.get("EVOLUTION_GLOBAL_API_KEY");
     const webhookToken = Deno.env.get("EVOLUTION_WEBHOOK_TOKEN") || "";
+    const functionBaseUrl = Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!;
     if (!baseUrl || !apiKey) return json({ error: "Servidor Evolution não configurado" }, 500);
 
     const instance = `store-${store_id.slice(0, 8)}`;
-    const webhookUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/evolution-webhook?token=${webhookToken}`;
+    const webhookUrl = `${functionBaseUrl}/functions/v1/evolution-webhook?token=${webhookToken}`;
 
     if (force_reconnect) {
       await fetch(`${baseUrl.replace(/\/$/, "")}/instance/logout/${instance}`, {
@@ -60,9 +81,19 @@ Deno.serve(async (req) => {
         instanceName: instance,
         qrcode: true,
         integration: "WHATSAPP-BAILEYS",
-        webhook: { url: webhookUrl, byEvents: false, events: ["CONNECTION_UPDATE", "MESSAGES_UPSERT"] },
+        webhook: {
+          enabled: true,
+          url: webhookUrl,
+          webhook_by_events: false,
+          webhook_base64: false,
+          events: ["CONNECTION_UPDATE", "MESSAGES_UPSERT"],
+        },
       }),
     }).catch(() => {});
+
+    // 1.0) regrava explicitamente o webhook; em instâncias já existentes,
+    // o /instance/create não atualiza o webhook e as mensagens não chegam.
+    await setWebhook(baseUrl, instance, apiKey, webhookUrl);
 
     // 1.1) aplica settings anti-ban recomendados (best-effort)
     await fetch(`${baseUrl.replace(/\/$/, "")}/settings/set/${instance}`, {
@@ -107,7 +138,10 @@ Deno.serve(async (req) => {
     }
 
     // 3) persiste
-    const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const admin = createClient(
+      Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
     await admin.from("store_whatsapp_config").upsert({
       store_id,
       evolution_api_url: baseUrl,

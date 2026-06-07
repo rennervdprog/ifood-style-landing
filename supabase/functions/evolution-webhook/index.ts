@@ -94,6 +94,14 @@ Deno.serve(async (req) => {
     const instance: string = body?.instance || body?.instanceName || body?.sender || "";
     const data: any = body?.data || body;
 
+    console.log("[evolution-webhook] incoming", {
+      event,
+      instance,
+      hasData: Boolean(data),
+      remoteJid: data?.key?.remoteJid || data?.messages?.[0]?.key?.remoteJid || null,
+      fromMe: data?.key?.fromMe ?? data?.messages?.[0]?.key?.fromMe ?? null,
+    });
+
     if (!instance) return json({ ok: true });
 
     const admin = createClient(
@@ -105,7 +113,10 @@ Deno.serve(async (req) => {
       .select("store_id, auto_reply_enabled, auto_reply_message, evolution_api_url, evolution_instance_name, status")
       .eq("evolution_instance_name", instance)
       .maybeSingle();
-    if (!cfg) return json({ ok: true });
+    if (!cfg) {
+      console.warn("[evolution-webhook] instance without config", { instance, event });
+      return json({ ok: true });
+    }
 
     // CONNECTION_UPDATE
     if (/connection/i.test(event)) {
