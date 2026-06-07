@@ -114,6 +114,42 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
+      - name: Guard against stale MainActivity BuildConfig usage
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          for path in Path("android/app/src/main/java").rglob("MainActivity.java"):
+              text = path.read_text()
+              if "BuildConfig.VERSION_NAME" not in text:
+                  continue
+              text = text.replace("String currentVersion = BuildConfig.VERSION_NAME;", "String currentVersion = getNativeVersionName();")
+              text = re.sub(r"^import .*\.BuildConfig;\n", "", text, flags=re.MULTILINE)
+              for imp in ("import android.content.pm.PackageInfo;", "import android.content.pm.PackageManager;"):
+                  if imp not in text:
+                      text = re.sub(r"(package [^;]+;\n)", rf"\1\n{imp}\n", text, count=1)
+              if "private String getNativeVersionName()" not in text:
+                  method = '''
+              private String getNativeVersionName() {
+                  try {
+                      PackageInfo packageInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
+                      if (packageInfo.versionName != null) return packageInfo.versionName;
+                  } catch (PackageManager.NameNotFoundException ignored) {}
+
+                  return "1.9.32";
+              }
+          '''
+                  insert_at = text.rfind("\n}")
+                  text = text[:insert_at] + "\n" + method + text[insert_at:]
+              path.write_text(text)
+              print(f"Patched stale BuildConfig usage in {path}")
+          PY
+          if grep -R "BuildConfig.VERSION_NAME" android/app/src/main/java; then
+            echo "::error::Stale BuildConfig.VERSION_NAME reference remains in MainActivity"
+            exit 1
+          fi
+
       - name: Fix package name in build.gradle
         run: |
           # Ensure build.gradle uses the correct applicationId from capacitor.config.ts
@@ -298,6 +334,42 @@ jobs:
 
       - name: Sync Capacitor
         run: npx cap sync android
+
+      - name: Guard against stale MainActivity BuildConfig usage
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          for path in Path("android/app/src/main/java").rglob("MainActivity.java"):
+              text = path.read_text()
+              if "BuildConfig.VERSION_NAME" not in text:
+                  continue
+              text = text.replace("String currentVersion = BuildConfig.VERSION_NAME;", "String currentVersion = getNativeVersionName();")
+              text = re.sub(r"^import .*\.BuildConfig;\n", "", text, flags=re.MULTILINE)
+              for imp in ("import android.content.pm.PackageInfo;", "import android.content.pm.PackageManager;"):
+                  if imp not in text:
+                      text = re.sub(r"(package [^;]+;\n)", rf"\1\n{imp}\n", text, count=1)
+              if "private String getNativeVersionName()" not in text:
+                  method = '''
+              private String getNativeVersionName() {
+                  try {
+                      PackageInfo packageInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
+                      if (packageInfo.versionName != null) return packageInfo.versionName;
+                  } catch (PackageManager.NameNotFoundException ignored) {}
+
+                  return "1.9.32";
+              }
+          '''
+                  insert_at = text.rfind("\n}")
+                  text = text[:insert_at] + "\n" + method + text[insert_at:]
+              path.write_text(text)
+              print(f"Patched stale BuildConfig usage in {path}")
+          PY
+          if grep -R "BuildConfig.VERSION_NAME" android/app/src/main/java; then
+            echo "::error::Stale BuildConfig.VERSION_NAME reference remains in MainActivity"
+            exit 1
+          fi
 
       - name: Fix package name in build.gradle
         run: |
@@ -562,6 +634,42 @@ jobs:
 
       - name: Sync Capacitor
         run: npx cap sync android
+
+      - name: Guard against stale MainActivity BuildConfig usage
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          for path in Path("android/app/src/main/java").rglob("MainActivity.java"):
+              text = path.read_text()
+              if "BuildConfig.VERSION_NAME" not in text:
+                  continue
+              text = text.replace("String currentVersion = BuildConfig.VERSION_NAME;", "String currentVersion = getNativeVersionName();")
+              text = re.sub(r"^import .*\.BuildConfig;\n", "", text, flags=re.MULTILINE)
+              for imp in ("import android.content.pm.PackageInfo;", "import android.content.pm.PackageManager;"):
+                  if imp not in text:
+                      text = re.sub(r"(package [^;]+;\n)", rf"\1\n{imp}\n", text, count=1)
+              if "private String getNativeVersionName()" not in text:
+                  method = '''
+              private String getNativeVersionName() {
+                  try {
+                      PackageInfo packageInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
+                      if (packageInfo.versionName != null) return packageInfo.versionName;
+                  } catch (PackageManager.NameNotFoundException ignored) {}
+
+                  return "1.9.32";
+              }
+          '''
+                  insert_at = text.rfind("\n}")
+                  text = text[:insert_at] + "\n" + method + text[insert_at:]
+              path.write_text(text)
+              print(f"Patched stale BuildConfig usage in {path}")
+          PY
+          if grep -R "BuildConfig.VERSION_NAME" android/app/src/main/java; then
+            echo "::error::Stale BuildConfig.VERSION_NAME reference remains in MainActivity"
+            exit 1
+          fi
 
       - name: Fix package name in build.gradle (White Label)
         env:
