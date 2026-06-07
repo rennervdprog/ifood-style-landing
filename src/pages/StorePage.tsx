@@ -453,8 +453,8 @@ const StorePage = () => {
   }, []);
 
   const productsBySection = useCallback(
-    (sectionId: string | null) => sectionId ? sectionProductsMap[sectionId] || [] : [],
-    [sectionProductsMap]
+    (sectionId: string | null) => applyAdegaFilters(sectionId ? sectionProductsMap[sectionId] || [] : []),
+    [sectionProductsMap, applyAdegaFilters]
   );
 
   const isAdega = store?.category === "adegas";
