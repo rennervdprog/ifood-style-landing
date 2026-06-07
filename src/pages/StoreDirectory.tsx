@@ -7,12 +7,12 @@ import PartnerClientView from "@/components/PartnerClientView";
 import {
   Zap, Store, ShieldCheck, Smartphone, TrendingUp,
   ArrowRight, CheckCircle2, Star, MapPin, Clock, CreditCard,
-  BarChart3, MessageSquare, Tag, Package,
+  BarChart3, Package,
   Menu, X, DollarSign, Globe, Rocket,
-  Award, Sparkles, ChevronDown,
+  Sparkles, ChevronDown,
   ShoppingBag, Truck, Crown, BadgePercent,
-   Bell, QrCode, Utensils, Gift, MessageCircle, Shield, Check,
-    Navigation, UserCheck, SmartphoneNfc, Info,
+   Bell, MessageCircle, Shield, Check,
+    Navigation, UserCheck, Info,
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -25,6 +25,7 @@ import { Card, CardContent } from "@/components/ui/card";
    { emoji: "📝", pain: "Anota pedido no papel e erra o endereço", solution: "O pedido chega pronto, com o endereço completo do cliente." },
    { emoji: "💸", pain: "Confere PIX um por um no extrato", solution: "Quando o cliente paga no PIX, o dinheiro aparece na hora pra você." },
    { emoji: "🔇", pain: "Perde pedidos por não ver mensagem", solution: "O celular toca alto a cada pedido novo. Você não perde nenhum." },
+   { emoji: "💬", pain: "Esquece de avisar o cliente quando saiu pra entrega", solution: "O WhatsApp manda sozinho: pedido recebido, em preparo, saiu pra entrega e entregue." },
  ];
 
 const steps = [
@@ -73,6 +74,7 @@ const steps = [
   { icon: BarChart3, title: "Relatório do dia", desc: "Veja quanto vendeu, o que mais saiu e o lucro do dia — tudo numa tela só." },
   { icon: Bell, title: "Avisa cada pedido", desc: "O celular toca a cada pedido novo. Você nunca mais perde uma venda por não ouvir." },
   { icon: Package, title: "Imprime na cozinha", desc: "O pedido sai impresso na cozinha automaticamente. Sua equipe não se perde mais." },
+  { icon: MessageCircle, title: "WhatsApp Automático", desc: "A cada etapa do pedido o cliente recebe uma mensagem no WhatsApp. Sem você precisar digitar nada." },
   { icon: ShieldCheck, title: "Tudo seguro", desc: "Seus dados e o dinheiro dos seus clientes ficam protegidos. Só você acessa sua loja." },
   { icon: Store, title: "Caixa do balcão", desc: "Quem vende no balcão também usa: caixa digital, troco automático e fechamento do dia." },
 ];
