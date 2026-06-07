@@ -90,16 +90,26 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const parsed = BodySchema.safeParse(await req.json());
-    if (!parsed.success) return json({ error: parsed.error.flatten().fieldErrors }, 400);
+    console.log("[evolution-send-message] 📥 incoming request", { method: req.method });
+    const rawBody = await req.json().catch((e) => { console.error("[evolution-send-message] bad json", e); return null; });
+    console.log("[evolution-send-message] body keys:", rawBody && Object.keys(rawBody));
+    const parsed = BodySchema.safeParse(rawBody);
+    if (!parsed.success) {
+      console.error("[evolution-send-message] ❌ validation failed", parsed.error.flatten().fieldErrors);
+      return json({ error: parsed.error.flatten().fieldErrors }, 400);
+    }
     const { store_id, phone, message, kind = "manual" } = parsed.data;
+    console.log("[evolution-send-message] ▶ store_id=", store_id, "phone=", phone, "kind=", kind, "msgLen=", message.length);
 
     const admin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    if (!(await isAuthorizedForStore(admin, req, store_id))) return json({ error: "Forbidden" }, 403);
+    if (!(await isAuthorizedForStore(admin, req, store_id))) {
+      console.error("[evolution-send-message] ⛔ Forbidden — auth check failed for store", store_id);
+      return json({ error: "Forbidden" }, 403);
+    }
 
     const { data: cfg } = await admin
       .from("store_whatsapp_config")
@@ -107,8 +117,15 @@ Deno.serve(async (req) => {
       .eq("store_id", store_id)
       .maybeSingle();
 
-    if (!cfg?.evolution_instance_name) return json({ error: "Evolution não configurado" }, 400);
-    if (cfg.status !== "connected") return json({ error: "WhatsApp não conectado" }, 400);
+    console.log("[evolution-send-message] cfg:", cfg);
+    if (!cfg?.evolution_instance_name) {
+      console.error("[evolution-send-message] ❌ sem instance_name");
+      return json({ error: "Evolution não configurado" }, 400);
+    }
+    if (cfg.status !== "connected") {
+      console.error("[evolution-send-message] ❌ status !=connected:", cfg.status);
+      return json({ error: "WhatsApp não conectado", status: cfg.status }, 400);
+    }
 
     const baseUrl = Deno.env.get("EVOLUTION_API_URL");
     const apiKey = Deno.env.get("EVOLUTION_GLOBAL_API_KEY");
