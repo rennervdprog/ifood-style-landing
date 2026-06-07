@@ -16,6 +16,9 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    buildFeatures {
+        buildConfig true
+    }
     // 🔐 Signing config — lê de variáveis de ambiente (CI) ou de keystore.properties (local).
     // Se nada estiver configurado, o build release cai para debug-signed (compatível com dev).
     signingConfigs {
