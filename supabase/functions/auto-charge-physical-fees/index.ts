@@ -125,21 +125,21 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    // Autenticação: apenas admin ou cron interno (sem Authorization = cron)
-    const authHeader = req.headers.get("Authorization");
-    if (authHeader) {
-      const { data: { user } } = await supabase.auth.getUser(
-        authHeader.replace("Bearer ", "")
-      );
+    // SECURITY: requer autenticação. Aceita service-role / CRON_SECRET para cron
+    // ou um JWT de admin para chamada manual. Nunca aceitar requests anônimas.
+    const authHeader = req.headers.get("Authorization") || "";
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+    const cronSecret = Deno.env.get("CRON_SECRET") || "";
+    const isService =
+      !!token && (token === serviceKey || (cronSecret !== "" && token === cronSecret));
+
+    if (!isService) {
+      if (!token) return json({ error: "Unauthorized" }, 401);
+      const { data: { user } } = await supabase.auth.getUser(token);
       if (!user) return json({ error: "Unauthorized" }, 401);
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("user_id", user.id)
-        .single();
-
-      if (profile?.role !== "admin") return json({ error: "Apenas admins" }, 403);
+      const { data: isAdmin } = await supabase.rpc("is_platform_admin", { _user_id: user.id });
+      if (!isAdmin) return json({ error: "Apenas admins" }, 403);
     }
 
     const body = await req.json().catch(() => ({}));
