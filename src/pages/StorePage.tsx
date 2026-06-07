@@ -62,6 +62,10 @@ const StorePage = () => {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // ==== Adega: filtros e ordenação ====
+  const [adegaType, setAdegaType] = useState<string | null>(null);
+  const [adegaSort, setAdegaSort] = useState<"default" | "price-asc" | "price-desc">("default");
+
   const handleSearchChange = useCallback((value: string) => {
     setSearchQuery(value);
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
@@ -452,6 +456,34 @@ const StorePage = () => {
     (sectionId: string | null) => sectionId ? sectionProductsMap[sectionId] || [] : [],
     [sectionProductsMap]
   );
+
+  const isAdega = store?.category === "adegas";
+
+  // Aplica filtro/ordenação de adega em qualquer lista de produtos
+  const applyAdegaFilters = useCallback((list: Product[]): Product[] => {
+    if (!isAdega) return list;
+    let out = list;
+    if (adegaType) {
+      out = out.filter((p) => (p.metadata as any)?.drink_type === adegaType);
+    }
+    if (adegaSort === "price-asc") {
+      out = [...out].sort((a, b) => Number(a.price) - Number(b.price));
+    } else if (adegaSort === "price-desc") {
+      out = [...out].sort((a, b) => Number(b.price) - Number(a.price));
+    }
+    return out;
+  }, [isAdega, adegaType, adegaSort]);
+
+  // Tipos disponíveis no catálogo (apenas adega)
+  const availableDrinkTypes = useMemo(() => {
+    if (!isAdega || !products) return [] as string[];
+    const set = new Set<string>();
+    for (const p of products) {
+      const t = (p.metadata as any)?.drink_type;
+      if (t) set.add(t);
+    }
+    return Array.from(set);
+  }, [isAdega, products]);
 
   const unsectionedProducts = useMemo(
     () => products?.filter((p) => !p.section_id) || [],
