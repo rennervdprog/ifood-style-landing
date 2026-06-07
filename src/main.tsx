@@ -10,7 +10,6 @@ declare global {
         externalUserId?: { set?: (options: { externalId: string }) => void };
         setExternalUserId?: (id: string) => void;
       };
-      deviceInfo?: () => void;
     };
     median?: {
       onesignal?: {

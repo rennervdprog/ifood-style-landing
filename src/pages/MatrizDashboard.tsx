@@ -47,7 +47,7 @@ const MatrizDashboard = () => {
   const { data: network, isLoading: loadingNetwork } = useQuery({
     queryKey: ["matriz-network", user?.id],
     queryFn: async (): Promise<Network | null> => {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from("store_networks")
         .select("*")
         .eq("owner_id", user!.id)
@@ -61,7 +61,7 @@ const MatrizDashboard = () => {
   const { data: units = [] } = useQuery({
     queryKey: ["matriz-units", network?.id],
     queryFn: async (): Promise<Unit[]> => {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from("stores")
         .select("id, name, slug, category, status, address_city, image_url")
         .eq("network_id", network!.id)
@@ -113,7 +113,7 @@ const MatrizDashboard = () => {
       city: string;
       cep: string;
     }) => {
-      const { data: result, error } = await supabase.rpc("create_network_unit", {
+      const { data: result, error } = await (supabase as any).rpc("create_network_unit", {
         _name: data.name,
         _slug: data.slug,
         _category: data.category,
@@ -404,7 +404,7 @@ const CreateUnitModal = ({ onClose, onSubmit, submitting, networkId, sourceUnits
     }
     try {
       // Criar unidade
-      const { data: storeId, error } = await supabase.rpc("create_network_unit", {
+      const { data: storeId, error } = await (supabase as any).rpc("create_network_unit", {
         _name: name.trim(),
         _slug: slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, "-"),
         _category: category,
@@ -415,7 +415,7 @@ const CreateUnitModal = ({ onClose, onSubmit, submitting, networkId, sourceUnits
 
       // Clonar cardápio se selecionado
       if (shouldClone && cloneFromId && storeId) {
-        const { data: cloneResult, error: cloneErr } = await supabase.rpc("clone_menu_from_matriz", {
+        const { data: cloneResult, error: cloneErr } = await (supabase as any).rpc("clone_menu_from_matriz", {
           _source_store_id: cloneFromId,
           _target_store_id: storeId as any,
         });
@@ -531,7 +531,7 @@ const LinkUserModal = ({ unit, onClose }: { unit: Unit; onClose: () => void }) =
     }
     setLinking(true);
     try {
-      const { error } = await supabase.rpc("link_unit_user", {
+      const { error } = await (supabase as any).rpc("link_unit_user", {
         _user_email: email.trim(),
         _store_id: unit.id,
       });
