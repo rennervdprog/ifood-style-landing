@@ -5,9 +5,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { compressImage } from "@/lib/compressImage";
 import {
-  Trash2, Edit2, Package, PackageX, Pause, Play, ArrowRightLeft, Link2, X, Upload, Loader2,
+  Trash2, Edit2, Package, PackageX, Pause, Play, ArrowRightLeft, Link2, X, Upload, Loader2, MoreVertical, ChevronDown,
 } from "lucide-react";
 import CategoryProductFields from "@/components/CategoryProductFields";
+import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 
 // ---------- Upload helper ----------
 const uploadProductImage = async (file: File): Promise<string | null> => {
@@ -223,6 +226,8 @@ const ProductCardImpl = (props: ProductCardProps) => {
   } = props;
 
   const isOOS = !!product?.metadata?.out_of_stock;
+  const [showAddonActions, setShowAddonActions] = useState(false);
+  const hasAnyAddons = (linkedGroups?.length || 0) + (addonGroups?.length || 0) > 0;
 
   if (isEditing) {
     return (
@@ -267,23 +272,34 @@ const ProductCardImpl = (props: ProductCardProps) => {
           <div className="flex items-center justify-between mt-1">
             <span className="text-sm font-black text-primary">{formatBRL(Number(product.price))}</span>
             <div className="flex items-center gap-0.5 flex-shrink-0">
-              <button onClick={onStartMove} className="p-1.5 rounded-lg hover:bg-muted transition-colors" title="Mover para outra seção">
-                <ArrowRightLeft className={`h-3.5 w-3.5 ${isMoving ? "text-primary" : "text-muted-foreground"}`} />
+              <button onClick={onEdit} className="p-2 rounded-lg hover:bg-muted transition-colors" title="Editar">
+                <Edit2 className="h-4 w-4 text-foreground" />
               </button>
-              <button onClick={onToggleAvailable} className="p-1.5 rounded-lg hover:bg-muted transition-colors" title={product.is_available ? "Pausar" : "Reativar"}>
-                {product.is_available ? <Pause className="h-3.5 w-3.5 text-yellow-500" /> : <Play className="h-3.5 w-3.5 text-primary" />}
-              </button>
-              <button onClick={onToggleOutOfStock} className="p-1.5 rounded-lg hover:bg-muted transition-colors" title={isOOS ? "Repor estoque (disponível)" : "Marcar como esgotado"}>
-                {isOOS
-                  ? <Package className="h-3.5 w-3.5 text-primary" />
-                  : <PackageX className="h-3.5 w-3.5 text-destructive" />}
-              </button>
-              <button onClick={onEdit} className="p-1.5 rounded-lg hover:bg-muted transition-colors" title="Editar">
-                <Edit2 className="h-3.5 w-3.5 text-muted-foreground" />
-              </button>
-              <button onClick={onDelete} className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors" title="Excluir">
-                <Trash2 className="h-3.5 w-3.5 text-destructive/70" />
-              </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="p-2 rounded-lg hover:bg-muted transition-colors" title="Mais ações">
+                    <MoreVertical className="h-4 w-4 text-muted-foreground" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-52">
+                  <DropdownMenuItem onClick={onToggleAvailable}>
+                    {product.is_available
+                      ? <><Pause className="h-4 w-4 mr-2 text-yellow-500" /> Pausar produto</>
+                      : <><Play className="h-4 w-4 mr-2 text-primary" /> Reativar produto</>}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={onToggleOutOfStock}>
+                    {isOOS
+                      ? <><Package className="h-4 w-4 mr-2 text-primary" /> Repor estoque</>
+                      : <><PackageX className="h-4 w-4 mr-2 text-destructive" /> Marcar esgotado</>}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={onStartMove}>
+                    <ArrowRightLeft className="h-4 w-4 mr-2 text-muted-foreground" /> Mover de seção
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={onDelete} className="text-destructive focus:text-destructive">
+                    <Trash2 className="h-4 w-4 mr-2" /> Excluir produto
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
@@ -404,7 +420,16 @@ const ProductCardImpl = (props: ProductCardProps) => {
       ) : null}
 
       {/* Action row */}
-      <div className="mt-2 flex gap-3">
+      {!hasAnyAddons && !showAddonActions && !showLinkAddon && !showAddonForm && (
+        <button
+          onClick={() => setShowAddonActions(true)}
+          className="mt-2 text-xs text-primary hover:underline flex items-center gap-1"
+        >
+          <ChevronDown className="h-3 w-3" /> Adicionais deste produto
+        </button>
+      )}
+      {(hasAnyAddons || showAddonActions || showLinkAddon || showAddonForm) && (
+      <div className="mt-2 flex flex-wrap gap-3">
         <button onClick={() => setShowLinkAddon(true)} className="text-xs text-primary hover:underline flex items-center gap-1" title="Reutiliza um grupo de adicionais já criado em outro produto">
           <Link2 className="h-3 w-3" /> Usar adicional existente
         </button>
@@ -436,6 +461,7 @@ const ProductCardImpl = (props: ProductCardProps) => {
           <button onClick={() => setShowAddonForm(true)} className="text-xs text-muted-foreground hover:underline" title="Cria adicionais que só aparecem neste produto">+ Criar adicional só deste produto</button>
         )}
       </div>
+      )}
     </div>
   );
 };
