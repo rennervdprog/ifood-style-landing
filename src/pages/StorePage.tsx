@@ -1196,6 +1196,7 @@ const StorePage = () => {
         product={selectedProduct}
         storeName={store?.name || ""}
         storeCategory={store?.category}
+        singleSize={!!(store?.settings as any)?.pizza_single_size}
         open={!!selectedProduct}
         onClose={() => setSelectedProduct(null)}
         onAdd={handleAddToCart}
@@ -1214,6 +1215,7 @@ const StorePage = () => {
             sections={sections || []}
             priceMode={storeSettings.pizza_price_mode || "maior"}
             maxFlavors={(storeSettings.pizza_config?.max_flavors as 2 | 3 | 4) || 4}
+            singleSize={!!storeSettings.pizza_single_size}
             onAdd={handleAddToCart}
           />
         );
