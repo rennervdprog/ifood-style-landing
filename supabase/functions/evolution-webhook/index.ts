@@ -288,7 +288,7 @@ Deno.serve(async (req) => {
         if (lastAutoReply) {
           if (storeClosedInfo) return json({ ok: true, skipped: "closed_cooldown" });
           if (sendLinkNow) {
-            await sleep(hasFastRecentReply ? 2_000 + Math.floor(Math.random() * 3_000) : 800);
+            await sleep(hasFastRecentReply ? 1_200 + Math.floor(Math.random() * 1_500) : 400);
             await sendMsg(menuMessage);
             return json({ ok: true, sent: "menu_only_after_greeting" });
           }
@@ -305,7 +305,7 @@ Deno.serve(async (req) => {
 
         // Loja fechada → envia 1 aviso (sem cardápio) e encerra.
         if (storeClosedInfo) {
-          await sleep(3_000 + Math.floor(Math.random() * 4_000));
+          await sleep(1_000 + Math.floor(Math.random() * 1_500));
           await sendMsg(closedMessage);
           return json({ ok: true, sent: "closed_notice" });
         }
@@ -315,10 +315,10 @@ Deno.serve(async (req) => {
         // EdgeRuntime a task era morta antes do fetch, deixando só o
         // `greet_pending` no log e o cliente sem resposta. Aguardamos aqui
         // (3-8s cabe no timeout) e qualquer envio extra também aguarda confirmação.
-        await sleep(3_000 + Math.floor(Math.random() * 5_000));
+        await sleep(1_000 + Math.floor(Math.random() * 1_500));
         await sendMsg(greeting);
         if (sendLinkNow) {
-          await sleep(4_000 + Math.floor(Math.random() * 3_000));
+          await sleep(1_500 + Math.floor(Math.random() * 1_500));
           await sendMsg(menuMessage);
         }
       }
