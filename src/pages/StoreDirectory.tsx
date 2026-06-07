@@ -250,6 +250,55 @@ const faqs = [
   { q: "E se eu tiver dificuldade?", a: "Nossa equipe te ajuda no WhatsApp. É só chamar que a gente responde." },
 ];
 
+/* ─── Scroll Progress Bar (reading indicator no topo) ─── */
+const ScrollProgress = () => {
+  const [progress, setProgress] = useState(0);
+  useEffect(() => {
+    const onScroll = () => {
+      const h = document.documentElement;
+      const scrolled = h.scrollTop / Math.max(1, h.scrollHeight - h.clientHeight);
+      setProgress(Math.min(100, Math.max(0, scrolled * 100)));
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  return (
+    <div className="fixed top-0 left-0 right-0 h-[3px] z-[60] pointer-events-none">
+      <div
+        className="h-full bg-gradient-to-r from-primary via-orange-500 to-primary transition-[width] duration-150 ease-out"
+        style={{ width: `${progress}%` }}
+      />
+    </div>
+  );
+};
+
+/* ─── Sticky Mobile CTA (aparece após scroll > 600px) ─── */
+const StickyMobileCTA = ({ onClick }: { onClick: () => void }) => {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setShow(window.scrollY > 600);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  return (
+    <div
+      className={`md:hidden fixed bottom-0 left-0 right-0 z-40 px-4 pb-[max(env(safe-area-inset-bottom),12px)] pt-3 bg-gradient-to-t from-background via-background/95 to-background/0 transition-all duration-300 ${
+        show ? "translate-y-0 opacity-100" : "translate-y-full opacity-0 pointer-events-none"
+      }`}
+    >
+      <Button
+        onClick={onClick}
+        className="w-full min-h-[52px] rounded-2xl text-base font-black shadow-2xl shadow-primary/30 bg-primary"
+      >
+        <Store className="mr-2 h-5 w-5" />
+        Criar minha loja grátis
+        <ArrowRight className="ml-2 h-5 w-5" />
+      </Button>
+    </div>
+  );
+};
+
 /* ─── Navbar ─── */
 const Navbar = ({ onNavigate, isLoggedIn }: { onNavigate: (path: string) => void; isLoggedIn?: boolean }) => {
   const [open, setOpen] = useState(false);
@@ -273,7 +322,7 @@ const Navbar = ({ onNavigate, isLoggedIn }: { onNavigate: (path: string) => void
   };
 
   return (
-    <nav className={`sticky top-0 z-50 border-b border-border backdrop-blur-md transition-all duration-300 bg-background/95 ${scrolled ? "shadow-md" : ""}`}>
+    <nav className={`sticky top-0 z-50 backdrop-blur-xl transition-all duration-300 ${scrolled ? "bg-background/80 border-b border-border shadow-sm" : "bg-background/40 border-b border-transparent"}`}>
       <div className="max-w-6xl mx-auto flex items-center justify-between px-4 h-16">
         <button onClick={() => scrollTo("#hero")} className="flex items-center group" aria-label="Ir para o início">
           <img
