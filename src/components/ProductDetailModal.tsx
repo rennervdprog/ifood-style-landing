@@ -691,16 +691,18 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
 
       {optionalAddonGroups.map((group) => renderAddonGroup(group))}
 
-      <section>
-        <label className="mb-2 block text-sm font-bold text-foreground">Observações</label>
-        <Textarea
-          placeholder={isPharmacy ? "Informações adicionais..." : "Ex: Sem cebola, bem passado..."}
-          value={observations}
-          onChange={(e) => setObservations(e.target.value)}
-          className="min-h-24 resize-none rounded-2xl border-border bg-card text-base"
-          maxLength={200}
-        />
-      </section>
+      {cat !== "adegas" && (
+        <section>
+          <label className="mb-2 block text-sm font-bold text-foreground">Observações</label>
+          <Textarea
+            placeholder={isPharmacy ? "Informações adicionais..." : "Ex: Sem cebola, bem passado..."}
+            value={observations}
+            onChange={(e) => setObservations(e.target.value)}
+            className="min-h-24 resize-none rounded-2xl border-border bg-card text-base"
+            maxLength={200}
+          />
+        </section>
+      )}
     </div>
   );
 
