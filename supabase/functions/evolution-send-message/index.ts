@@ -172,8 +172,9 @@ Deno.serve(async (req) => {
       await sleep(300_000 + Math.floor(Math.random() * 600_000));
     }
 
-    // 3) Throttle: auto-reply deve sair quase imediata; envios manuais/status continuam com intervalo anti-spam maior.
-    if (kind !== "auto_reply") {
+    // 3) Throttle: auto-reply e order_status devem sair rapidamente (UX crítico).
+    //    Apenas envios manuais aplicam o intervalo anti-spam log-normal completo.
+    if (kind === "manual") {
       const { data: last } = await admin
         .from("whatsapp_send_log")
         .select("sent_at").eq("store_id", store_id)
@@ -186,6 +187,9 @@ Deno.serve(async (req) => {
       } else {
         await sleep(2500 + Math.floor(Math.random() * 3500));
       }
+    } else if (kind === "order_status") {
+      // pequeno gap só para evitar burst (máx ~3s)
+      await sleep(400 + Math.floor(Math.random() * 2600));
     }
 
     if (kind === "auto_reply") {
