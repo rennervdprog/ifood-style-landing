@@ -227,6 +227,7 @@ const PedidosPage = () => {
   const { data: orders, isLoading } = useQuery({
     queryKey: ["orders", user?.id],
     queryFn: async () => {
+      let query = supabase
         .from("orders")
         .select("id, created_at, status, store_id, client_id, total_price, subtotal, delivery_fee, app_fee, payment_method, neighborhood, address_details, delivery_pin, collection_code, settlement_code, visible_to_client, return_to_store_confirmed, delivery_confirmed_by_client, confirmed_at, driver_id, scheduled_for, change_for, needs_change, stores(name, delivery_mode, slug, owner_id), order_items(id, quantity, unit_price, observations, addons, products(name))")
         .eq("client_id", user!.id)
@@ -265,6 +266,7 @@ const PedidosPage = () => {
     staleTime: 1000 * 30,
     refetchOnMount: true,
     refetchOnReconnect: true,
+    refetchOnWindowFocus: true,
   });
 
   // Fetch existing ratings to know which orders are already rated
