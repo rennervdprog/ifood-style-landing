@@ -42,8 +42,8 @@ const isInIframe = (() => {
 })();
 
 const isPreviewHost =
-  window.location.hostname.includes("id-preview--") ||
-  window.location.hostname.includes("lovableproject.com");
+  (window as any).location.hostname.includes("id-preview--") ||
+  (window as any).location.hostname.includes("lovableproject.com");
 
 const isCapacitor = Capacitor.isNativePlatform();
 
@@ -98,9 +98,9 @@ if ("serviceWorker" in navigator && !isPreviewHost && !isInIframe && !isCapacito
         caches.keys()
           .then(keys => Promise.all(keys.map(k => caches.delete(k))))
           .catch(() => {})
-          .finally(() => globalThis.location.reload());
+          .finally(() => (window as any).location.reload());
       } else {
-        globalThis.location.reload();
+        (window as any).location.reload();
       }
     }
   });
