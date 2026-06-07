@@ -390,10 +390,10 @@ const CategoryProductFields = ({ category, metadata, onChange, onNameChange, sto
     adegas: (
       <FieldBox emoji="🍷" title="Detalhes do Produto">
 
-        {/* ── Templates rápidos ─────────────────────────────────────── */}
-        <div className="space-y-2">
-          <label className="text-xs font-bold text-foreground/70">⚡ Preencher rapidamente</label>
-          <div className="flex flex-wrap gap-1.5">
+        {/* ── Templates rápidos (carrossel horizontal) ──────────────── */}
+        <div className="space-y-1.5">
+          <label className="text-[11px] text-muted-foreground">Atalhos (toque p/ preencher):</label>
+          <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-thin">
             {[
               { label: "🍺 Heineken 600ml",  name: "Heineken 600ml",   data: { drink_type: "Cerveja",     packaging: "Garrafa",   volume: "600ml", alcohol_content: "5%",  brand: "Heineken",  serve_cold: true, temp_option: "cold" } },
               { label: "🍺 Heineken Lata",    name: "Heineken Lata",    data: { drink_type: "Cerveja",     packaging: "Lata",      volume: "350ml", alcohol_content: "5%",  brand: "Heineken",  serve_cold: true, temp_option: "cold" } },
@@ -417,133 +417,124 @@ const CategoryProductFields = ({ category, metadata, onChange, onNameChange, sto
                   onChange({ ...metadata, ...t.data });
                   if (onNameChange && t.name) onNameChange(t.name);
                 }}
-                className="text-[11px] font-semibold px-2.5 py-1.5 rounded-xl border border-border bg-muted/40 hover:bg-muted hover:border-primary/30 active:scale-95 transition-all whitespace-nowrap"
+                className="shrink-0 text-[11px] font-semibold px-2.5 py-1.5 rounded-full border border-border bg-muted/40 hover:bg-muted hover:border-primary/30 active:scale-95 transition-all whitespace-nowrap"
               >
                 {t.label}
               </button>
             ))}
           </div>
-          <p className="text-[10px] text-muted-foreground">Clique para preencher os campos automaticamente. Ajuste o preço após.</p>
         </div>
 
         <div className="border-t border-border/40 pt-3 space-y-3">
-          {/* Tipo de bebida */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-foreground/70">Tipo de Bebida</label>
-            <div className="flex flex-wrap gap-1.5">
-              {["Cerveja","Vinho","Destilado","Energético","Refrigerante","Água","Outro"].map(t => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => set("drink_type", t)}
-                  className={`text-xs px-3 py-1.5 rounded-xl border transition-all ${
-                    metadata.drink_type === t
-                      ? "bg-primary/10 border-primary/30 text-primary font-bold"
-                      : "bg-muted/40 border-border text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {t === "Cerveja" ? "🍺" : t === "Vinho" ? "🍷" : t === "Destilado" ? "🥃" :
-                   t === "Energético" ? "⚡" : t === "Refrigerante" ? "🥤" : t === "Água" ? "💧" : "🧃"} {t}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Embalagem */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-foreground/70">Embalagem</label>
-            <div className="flex flex-wrap gap-1.5">
-              {["Lata","Long Neck","Garrafa","Pack","Caixinha","Barril","Outro"].map(p => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => set("packaging", p)}
-                  className={`text-xs px-3 py-1.5 rounded-xl border transition-all ${
-                    metadata.packaging === p
-                      ? "bg-primary/10 border-primary/30 text-primary font-bold"
-                      : "bg-muted/40 border-border text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Pack/Fardo — quantidade. Disponível para qualquer embalagem (combo de latas, caixa de cerveja, etc.) */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-foreground/70">
-              Vem em pack/fardo? <span className="text-muted-foreground font-normal">(opcional)</span>
-            </label>
-            <div className="flex flex-wrap gap-1.5">
-              <button
-                type="button"
-                onClick={() => set("pack_qty", "")}
-                className={`text-xs px-3 py-1.5 rounded-xl border transition-all ${
-                  !metadata.pack_qty
-                    ? "bg-primary/10 border-primary/30 text-primary font-bold"
-                    : "bg-muted/40 border-border text-muted-foreground hover:text-foreground"
-                }`}
+          {/* Tipo + Embalagem em grid de 2 selects compactos */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-foreground/70">Tipo</label>
+              <select
+                value={metadata.drink_type || ""}
+                onChange={(e) => set("drink_type", e.target.value)}
+                className="w-full text-xs px-2.5 py-2 rounded-xl border border-border bg-muted/40 text-foreground"
               >
-                Unidade
-              </button>
-              {["6","8","12","15","24","30"].map(q => (
-                <button
-                  key={q}
-                  type="button"
-                  onClick={() => set("pack_qty", q)}
-                  className={`text-xs px-3 py-1.5 rounded-xl border transition-all ${
-                    metadata.pack_qty === q
-                      ? "bg-primary/10 border-primary/30 text-primary font-bold"
-                      : "bg-muted/40 border-border text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {q} un
-                </button>
-              ))}
+                <option value="">Selecionar…</option>
+                {["Cerveja","Vinho","Destilado","Energético","Refrigerante","Água","Outro"].map(t => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
             </div>
-            {metadata.pack_qty && (
-              <p className="text-[10px] text-muted-foreground">
-                Aparece "R$ X/un" no card para o cliente comparar preço.
-              </p>
-            )}
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-foreground/70">Embalagem</label>
+              <select
+                value={metadata.packaging || ""}
+                onChange={(e) => set("packaging", e.target.value)}
+                className="w-full text-xs px-2.5 py-2 rounded-xl border border-border bg-muted/40 text-foreground"
+              >
+                <option value="">Selecionar…</option>
+                {["Lata","Long Neck","Garrafa","Pack","Caixinha","Barril","Outro"].map(p => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
+          {/* Volume sempre visível (o mais usado) */}
           {renderTextField("Volume", "volume", "Ex: 350ml, 600ml, 1L...")}
-          {renderTextField("Marca", "brand", "Ex: Heineken, Absolut, Velho Barreiro...")}
-          {metadata.drink_type && !["Água","Refrigerante","Energético"].includes(metadata.drink_type) &&
-            renderTextField("Teor alcoólico", "alcohol_content", "Ex: 4.5%, 13%, 40%...")}
-          {/* Casco retornável (vasilhame) */}
-          {renderToggle("♻️ Casco retornável (cliente pode devolver vasilhame)", "returnable_bottle")}
-          {/* Temperatura de serviço */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-foreground/70">Temperatura de serviço</label>
-            <div className="flex flex-wrap gap-1.5">
-              {[
-                { value: "cold",    label: "❄️ Gelado",         desc: "Sempre gelado" },
-                { value: "ambient", label: "🌡️ Temp. ambiente", desc: "Natural/sem gelo" },
-                { value: "both",    label: "❄️🔥 Os dois",       desc: "Cliente escolhe" },
-              ].map(opt => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => onChange({ ...metadata,
-                    temp_option: opt.value,
-                    serve_cold: opt.value === "cold" || opt.value === "both",
-                  })}
-                  className={`flex-1 min-w-[90px] text-xs px-2.5 py-2 rounded-xl border transition-all text-center ${
-                    metadata.temp_option === opt.value ||
-                    (!metadata.temp_option && opt.value === "cold" && metadata.serve_cold)
-                      ? "bg-sky-500/10 border-sky-500/30 text-sky-700 dark:text-sky-400 font-bold"
-                      : "bg-muted/40 border-border text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <div>{opt.label}</div>
-                  <div className="text-[9px] opacity-60 mt-0.5">{opt.desc}</div>
-                </button>
-              ))}
+
+          {/* Mais opções recolhidas por padrão */}
+          <details className="group rounded-xl border border-border/60 bg-muted/20">
+            <summary className="cursor-pointer list-none px-3 py-2 text-xs font-semibold text-foreground/80 flex items-center justify-between">
+              <span>Mais opções (marca, pack, casco, temperatura…)</span>
+              <span className="text-muted-foreground group-open:rotate-180 transition-transform">▾</span>
+            </summary>
+            <div className="px-3 pb-3 pt-1 space-y-3 border-t border-border/40">
+              {/* Pack / fardo */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-foreground/70">
+                  Vem em pack/fardo? <span className="text-muted-foreground font-normal">(opcional)</span>
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => set("pack_qty", "")}
+                    className={`text-xs px-3 py-1.5 rounded-xl border transition-all ${
+                      !metadata.pack_qty
+                        ? "bg-primary/10 border-primary/30 text-primary font-bold"
+                        : "bg-muted/40 border-border text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Unidade
+                  </button>
+                  {["6","8","12","15","24","30"].map(q => (
+                    <button
+                      key={q}
+                      type="button"
+                      onClick={() => set("pack_qty", q)}
+                      className={`text-xs px-3 py-1.5 rounded-xl border transition-all ${
+                        metadata.pack_qty === q
+                          ? "bg-primary/10 border-primary/30 text-primary font-bold"
+                          : "bg-muted/40 border-border text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {q} un
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {renderTextField("Marca", "brand", "Ex: Heineken, Absolut...")}
+              {metadata.drink_type && !["Água","Refrigerante","Energético"].includes(metadata.drink_type) &&
+                renderTextField("Teor alcoólico", "alcohol_content", "Ex: 4.5%, 13%, 40%...")}
+              {renderToggle("♻️ Casco retornável", "returnable_bottle")}
+
+              {/* Temperatura de serviço */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-foreground/70">Temperatura</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { value: "cold",    label: "❄️ Gelado" },
+                    { value: "ambient", label: "🌡️ Ambiente" },
+                    { value: "both",    label: "❄️🔥 Os dois" },
+                  ].map(opt => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => onChange({ ...metadata,
+                        temp_option: opt.value,
+                        serve_cold: opt.value === "cold" || opt.value === "both",
+                      })}
+                      className={`flex-1 min-w-[80px] text-xs px-2.5 py-2 rounded-xl border transition-all text-center ${
+                        metadata.temp_option === opt.value ||
+                        (!metadata.temp_option && opt.value === "cold" && metadata.serve_cold)
+                          ? "bg-sky-500/10 border-sky-500/30 text-sky-700 dark:text-sky-400 font-bold"
+                          : "bg-muted/40 border-border text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
+          </details>
         </div>
       </FieldBox>
     ),
