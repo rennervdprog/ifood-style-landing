@@ -45,6 +45,8 @@ export interface AdminOrderCardProps {
   setCancelReason: (reason: string) => void;
   cancellingOrder?: boolean;
   storeName?: string;
+  storeId?: string;
+  evolutionConnected?: boolean;
   onlineDriversCount: number;
   linkedStoreDrivers: any[] | undefined;
   highlights: RequiredAddonHighlight[];
@@ -69,11 +71,28 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
   const {
     order, index, isAddressExpanded, isBatchSelected, isOwnDelivery, hasLinkedDrivers,
     driversLoading, cancelConfirm, cancelReason, setCancelReason, cancellingOrder,
-    storeName, onlineDriversCount, linkedStoreDrivers,
+    storeName, storeId, evolutionConnected, onlineDriversCount, linkedStoreDrivers,
     highlights, clientName, clientWhatsApp, driverName, mainAction, acceptHref, readyHref,
     toggleAddress, toggleBatchOrder, setActiveTab, setCancelConfirm, updateOrderStatus,
     handleAcceptOrder, handleCancelOrder, handlePrint, invalidateOrders,
   } = props;
+
+  const sendOrOpenWhatsApp = (phone: string, msg: string) => {
+    if (evolutionConnected && storeId) {
+      supabase.functions.invoke("evolution-send-message", {
+        body: { store_id: storeId, phone, message: msg, kind: "order_status" },
+      }).then(({ error }) => {
+        if (error) {
+          toast.error("Falha ao enviar via WhatsApp automático. Abrindo manual...");
+          openWhatsApp(phone, msg);
+        } else {
+          toast.success("Mensagem enviada via WhatsApp automático ✅");
+        }
+      }).catch(() => openWhatsApp(phone, msg));
+    } else {
+      openWhatsApp(phone, msg);
+    }
+  };
 
   const sc = statusColors[order.status] || statusColors.pendente;
   const elapsedMs = Date.now() - new Date(order.created_at).getTime();
@@ -342,7 +361,7 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
             {order.status === "pendente" && (
               <button onClick={() => {
                 const msg = `Olá ${clientName}! *ItaSuper*: Pedido aceito e em produção! 🍔\nPedido: #${order.id.slice(0, 8).toUpperCase()}\nTotal: ${formatBRL(Number(order.total_price))}`;
-                openWhatsApp(clientWhatsApp, msg);
+                sendOrOpenWhatsApp(clientWhatsApp, msg);
               }} className="flex items-center gap-1 bg-primary/10 text-primary text-[10px] font-bold px-2 py-1 rounded-lg" title="Avisar cliente">
                 <MessageCircle className="h-3 w-3" /> <span className="hidden sm:inline">Avisar</span>
               </button>
@@ -350,7 +369,7 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
             {(order.status === "em_transito" || order.status === "saiu_entrega") && (
               <button onClick={() => {
                 const msg = `Olá ${clientName}! Motoboy *ItaSuper* saiu para entrega! 🚀\nEndereço: ${order.address_details}`;
-                openWhatsApp(clientWhatsApp, msg);
+                sendOrOpenWhatsApp(clientWhatsApp, msg);
               }} className="flex items-center gap-1 bg-primary/10 text-primary text-[10px] font-bold px-2 py-1 rounded-lg" title="Informar saída">
                 <MessageCircle className="h-3 w-3" /> <span className="hidden sm:inline">Saiu</span>
               </button>

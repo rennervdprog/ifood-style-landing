@@ -42,6 +42,7 @@ interface Props {
   getMainAction: (status: any, o: any) => any;
   buildAcceptWhatsAppHref: (o: any) => string;
   buildReadyWhatsAppHref: (o: any) => string;
+  evolutionConnected?: boolean;
   updateOrderStatus: (id: string, status: any) => void;
   handleAcceptOrder: (o: any) => void;
   handleCancelOrder: (o: any) => void;
@@ -59,7 +60,7 @@ export default function OrdersSection(props: Props) {
     selectAllReady, toggleBatchOrder, toggleAddress, storeName,
     getClientName, getClientWhatsApp, getDriverName, getRequiredAddonHighlights, getMainAction,
     buildAcceptWhatsAppHref, buildReadyWhatsAppHref, updateOrderStatus, handleAcceptOrder,
-    handleCancelOrder, handlePrint, invalidateOrders,
+    handleCancelOrder, handlePrint, invalidateOrders, evolutionConnected,
   } = props;
 
   return (
@@ -231,6 +232,8 @@ export default function OrdersSection(props: Props) {
           setCancelReason={setCancelReason}
           cancellingOrder={cancellingOrder}
           storeName={store?.name}
+          storeId={store?.id}
+          evolutionConnected={evolutionConnected}
           onlineDriversCount={onlineDrivers?.length || 0}
           linkedStoreDrivers={linkedStoreDrivers}
           highlights={getRequiredAddonHighlights(order)}
