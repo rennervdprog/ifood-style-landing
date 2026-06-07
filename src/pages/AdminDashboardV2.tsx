@@ -341,6 +341,30 @@ const AdminDashboard = () => {
     staleTime: 30_000,
   });
 
+  // Keepalive Evolution: ao abrir o painel e a cada 5 min, pinga o estado
+  // e reconecta automaticamente se a sessão tiver caído (sem pedir QR novo
+  // se o auth do Baileys ainda existir). Resolve o caso de "dormir e
+  // precisar escanear o QR de novo de manhã".
+  useEffect(() => {
+    if (!store?.id) return;
+    let cancelled = false;
+    const ping = () => {
+      supabase.functions
+        .invoke("evolution-keepalive", { body: {}, headers: {} as any })
+        .catch(() => undefined);
+    };
+    // 1º ping imediato (tab visível) + intervalo
+    ping();
+    const id = setInterval(() => { if (!cancelled && !document.hidden) ping(); }, 5 * 60_000);
+    const onVis = () => { if (!document.hidden) ping(); };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [store?.id]);
+
   const refreshDashboardOrders = useCallback(async () => {
     if (!store?.id) return;
 
