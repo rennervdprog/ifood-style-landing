@@ -66,20 +66,16 @@ const TermosDeUso = () => {
             <p>4-A.4. O conteúdo das conversas constitui dado pessoal e está sujeito à Política de Privacidade e à LGPD.</p>
           </div>
 
-          <h2 className="text-base font-bold text-foreground">5. Planos e Assinatura</h2>
-        </section>
-
-        <section className="space-y-3">
           <h2 className="text-base font-bold text-foreground">4-B. WhatsApp Automático (Evolution API)</h2>
           <div className="space-y-2 text-muted-foreground">
             <p>4-B.1. O Lojista pode, opcionalmente, conectar um número de WhatsApp próprio à Plataforma via Evolution API, lendo o QR Code no painel da loja. A conexão é individual por loja e pode ser desconectada a qualquer momento.</p>
             <p>4-B.2. Uma vez conectado, o ItaSuper envia automaticamente, em nome da loja, mensagens transacionais ao cliente referentes ao ciclo do pedido (confirmação, em preparo, pronto, saiu para entrega, entregue, cancelado), bem como respostas automáticas configuradas pelo Lojista (ex.: saudação, cardápio).</p>
             <p>4-B.3. O Lojista é o <strong className="text-foreground">único responsável</strong> pelo número conectado, pelo conteúdo dos templates personalizados e pelo cumprimento dos Termos de Serviço do WhatsApp/Meta, incluindo regras anti-spam e obtenção de consentimento dos destinatários. O ItaSuper aplica limites diários progressivos, deduplicação e intervalo mínimo entre envios para reduzir risco de banimento, mas <strong className="text-foreground">não garante</strong> a continuidade do número junto ao WhatsApp.</p>
-            <p>4-B.4. O Cliente, ao fornecer seu WhatsApp no cadastro/checkout, autoriza o recebimento destas mensagens transacionais da loja em que realizou o pedido, com base na execução do contrato (Art. 7º, V da LGPD). O cliente pode solicitar a interrupção respondendo "PARAR" à loja ou via suporte.</p>
+            <p>4-B.4. O Cliente, ao fornecer seu WhatsApp no cadastro/checkout, autoriza o recebimento das mensagens transacionais da loja em que realizou o pedido, com base na execução do contrato (Art. 7º, V da LGPD). O cliente pode solicitar a interrupção respondendo "PARAR" à loja ou via suporte.</p>
             <p>4-B.5. O ItaSuper não se responsabiliza por suspensão, banimento ou indisponibilidade do número de WhatsApp do Lojista, nem por falhas, latência ou indisponibilidade da Evolution API e da infraestrutura do WhatsApp/Meta.</p>
           </div>
 
-          <h2 className="text-base font-bold text-foreground">5-pre. Planos (continuação)</h2>
+          <h2 className="text-base font-bold text-foreground">5. Planos e Assinatura</h2>
           <ul className="list-disc pl-4 space-y-2">
             <li><strong className="text-foreground">Essencial (R$ 90/mês):</strong> 0% comissão sobre pedidos delivery. Taxa PIX Online: R$ 1,99/transação (descontada do repasse). Taxa de entrega: R$ 2,00/pedido (paga pelo cliente). PDV: R$ 1,00/venda presencial. <strong className="text-foreground">Plano dinâmico:</strong> após 2 meses consecutivos com faturamento superior a R$ 5.000, a mensalidade é reajustada automaticamente para R$ 180/mês.</li>
             <li><strong className="text-foreground">Crescimento (R$ 50/mês + 2,5%):</strong> 2,5% sobre subtotal delivery (sem taxa PIX adicional). Taxa de entrega: R$ 2,00/pedido. PDV: 1% sobre subtotal presencial (faturado mensalmente). <strong className="text-foreground">Plano dinâmico:</strong> após 2 meses consecutivos com faturamento superior a R$ 5.000, a mensalidade é reajustada automaticamente para R$ 100/mês.</li>
