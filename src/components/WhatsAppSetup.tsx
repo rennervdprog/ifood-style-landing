@@ -193,7 +193,7 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName, expectedP
             {isConnected ? "WhatsApp conectado ✅" : isConnecting ? "Aguardando escaneamento..." : "WhatsApp não conectado"}
           </p>
           {isConnected && config?.phone_number && (
-            <p className="text-xs text-muted-foreground">+{config.phone_number}</p>
+            <p className="text-xs text-muted-foreground">Teste enviando mensagem para +{config.phone_number}</p>
           )}
           {phoneMismatch && (
             <p className="text-[11px] font-semibold text-destructive mt-1">
@@ -226,6 +226,18 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName, expectedP
             Conectar número correto
           </button>
         </div>
+      )}
+
+      {isConnected && !phoneMismatch && (
+        <button
+          type="button"
+          onClick={() => getQrCode(true)}
+          disabled={qrLoading}
+          className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-xs font-bold text-foreground disabled:opacity-60"
+        >
+          {qrLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <QrCode className="h-3.5 w-3.5" />}
+          Reconectar outro número
+        </button>
       )}
 
       {/* Guia passo a passo */}
