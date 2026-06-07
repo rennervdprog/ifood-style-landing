@@ -463,20 +463,27 @@ export default function DashboardOverviewSection(props: Props) {
 
   {/* ── Quick Actions ── */}
   <div className="space-y-3">
-    <h3 className="font-black text-foreground text-base">Ações Rápidas</h3>
+    <h3 className="font-black text-foreground text-base tracking-tight">Ações Rápidas</h3>
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
       {[
-        { label: "Cardápio", icon: UtensilsCrossed, tab: "menu" as DashboardTab, color: "text-primary", bg: "bg-primary/10" },
-        { label: "Finanças", icon: Coins, tab: "finance" as DashboardTab, color: "text-primary", bg: "bg-primary/10" },
-        { label: "Horários", icon: Clock, tab: "hours" as DashboardTab, color: "text-primary", bg: "bg-primary/10" },
-        { label: "Configurações", icon: Settings, tab: "settings" as DashboardTab, color: "text-primary", bg: "bg-primary/10" },
+        { label: "Cardápio", hint: "Itens e fotos", icon: UtensilsCrossed, tab: "menu" as DashboardTab },
+        { label: "Finanças", hint: "Saques e taxas", icon: Coins, tab: "finance" as DashboardTab },
+        { label: "Horários", hint: "Aberto/fechado", icon: Clock, tab: "hours" as DashboardTab },
+        { label: "Configurações", hint: "Loja e entrega", icon: Settings, tab: "settings" as DashboardTab },
       ].map((action) => (
-        <button key={action.label} onClick={() => setDashboardTab(action.tab)}
-          className="flex items-center gap-3 bg-card border border-border rounded-2xl p-3.5 hover:shadow-md hover:border-border/80 active:scale-[0.97] transition-all text-left">
-          <div className={`w-10 h-10 ${action.bg} rounded-xl flex items-center justify-center flex-shrink-0`}>
-            <action.icon className={`h-5 w-5 ${action.color}`} />
+        <button
+          key={action.label}
+          onClick={() => setDashboardTab(action.tab)}
+          className="group relative overflow-hidden flex items-center gap-3 bg-card border border-border rounded-2xl p-3.5 hover:shadow-md hover:shadow-primary/5 hover:border-primary/30 active:scale-[0.97] transition-all text-left"
+        >
+          <div className="pointer-events-none absolute -top-8 -right-8 w-20 h-20 bg-primary/0 group-hover:bg-primary/10 rounded-full blur-2xl transition-colors" />
+          <div className="relative w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 group-hover:scale-110 transition-all">
+            <action.icon className="h-5 w-5 text-primary" />
           </div>
-          <span className="text-sm font-bold text-foreground">{action.label}</span>
+          <div className="relative min-w-0 flex-1">
+            <span className="block text-sm font-bold text-foreground leading-tight">{action.label}</span>
+            <span className="block text-[10px] text-muted-foreground/80 mt-0.5 truncate">{action.hint}</span>
+          </div>
         </button>
       ))}
     </div>
