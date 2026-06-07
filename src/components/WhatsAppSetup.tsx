@@ -139,11 +139,11 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName, expectedP
     setSaving(false);
   };
 
-  const getQrCode = async () => {
+  const getQrCode = async (forceReconnect = false) => {
     setQrLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("evolution-qr-code", {
-        body: { store_id: storeId },
+        body: { store_id: storeId, force_reconnect: forceReconnect },
       });
       if (error) throw error;
       if (data?.qr_code) {
@@ -216,6 +216,15 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName, expectedP
             As respostas automáticas só funcionam para mensagens enviadas ao número realmente conectado aqui: +{connectedPhone}.
             Para usar +{expectedStorePhone}, desconecte e escaneie o QR Code com esse WhatsApp.
           </p>
+          <button
+            type="button"
+            onClick={() => getQrCode(true)}
+            disabled={qrLoading}
+            className="mt-3 inline-flex items-center gap-2 rounded-lg bg-destructive px-3 py-2 text-xs font-bold text-destructive-foreground disabled:opacity-60"
+          >
+            {qrLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <QrCode className="h-3.5 w-3.5" />}
+            Conectar número correto
+          </button>
         </div>
       )}
 
@@ -286,7 +295,7 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName, expectedP
       {!isConnected && (
         <div className="space-y-3">
           <button
-            onClick={getQrCode}
+            onClick={() => getQrCode(false)}
             disabled={qrLoading}
             className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground py-3 rounded-xl text-sm font-bold disabled:opacity-50"
           >
