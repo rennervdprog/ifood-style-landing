@@ -1230,6 +1230,7 @@ const StorePage = () => {
                     disabled={!storeStatus.isOpen}
                     storeCategory={store?.category}
                     onClick={() => openProduct(product)}
+                    onQuickAdd={isAdega ? quickAddAdega : undefined}
                   />
                 ))}
               </div>
@@ -1266,6 +1267,7 @@ const StorePage = () => {
                         disabled={!storeStatus.isOpen}
                         storeCategory={store?.category}
                         onClick={() => openProduct(product)}
+                        onQuickAdd={isAdega ? quickAddAdega : undefined}
                       />
                     ))}
                   </div>
@@ -1291,6 +1293,7 @@ const StorePage = () => {
                       disabled={!storeStatus.isOpen}
                       storeCategory={store?.category}
                       onClick={() => openProduct(product)}
+                      onQuickAdd={isAdega ? quickAddAdega : undefined}
                     />
                   ))}
                 </div>
