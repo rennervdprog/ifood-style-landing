@@ -76,11 +76,19 @@ export function printThermalReceipt(
 
     if (addons.length > 0) {
       const requiredAddons = addons.filter((a: any) => a.required && a.groupName);
-      const optionalAddons = addons.filter((a: any) => !(a.required && a.groupName));
+      const isBorder = (a: any) => typeof a?.name === "string" && /^borda\s*:/i.test(a.name);
+      const borderAddons = addons.filter((a: any) => !(a.required && a.groupName) && isBorder(a));
+      const optionalAddons = addons.filter((a: any) => !(a.required && a.groupName) && !isBorder(a));
 
       requiredAddons.forEach((a: any) => {
         const priceStr = Number(a.price) > 0 ? formatBRL(Number(a.price)) : "";
         itemsHtml += `<div class="tp-required-addon" style="display:flex;justify-content:space-between;font-weight:bold;font-size:13px;border:1px solid #000;padding:2px 4px;margin:3px 0;background:#eee"><span>★ ${a.groupName}: ${a.name.toUpperCase()}</span><span>${priceStr}</span></div>`;
+      });
+
+      borderAddons.forEach((a: any) => {
+        const priceStr = Number(a.price) > 0 ? formatBRL(Number(a.price)) : "";
+        const borderName = String(a.name).replace(/^borda\s*:\s*/i, "").toUpperCase();
+        itemsHtml += `<div class="tp-border-addon" style="display:flex;justify-content:space-between;font-weight:bold;font-size:13px;border:1px solid #000;padding:2px 4px;margin:3px 0;background:#eee"><span>◆ BORDA: ${borderName}</span><span>${priceStr}</span></div>`;
       });
 
       optionalAddons.forEach((a: any) => {
@@ -129,7 +137,7 @@ ${itemsHtml}
 <div class="tp-total-row"><span>Entrega:</span><span>${formatBRL(Number(order.delivery_fee))}</span></div>
 <div class="tp-total-big"><span>TOTAL:</span><span>${formatBRL(Number(order.total_price))}</span></div>
 <div class="tp-divider"></div>
-<div class="tp-info"><b>Pagamento:</b> ${paymentLabels[order.payment_method] || order.payment_method}</div>
+<div class="tp-info"><b>Pagamento:</b> ${paymentLabels[order.payment_method] || order.payment_method} ${order.payment_method === "pix" ? '<span style="font-weight:bold">(PAGO ONLINE)</span>' : '<span style="font-weight:bold">(RECEBER NA ENTREGA)</span>'}</div>
 ${changeHtml}
 <div class="tp-info"><b>Cliente:</b> ${clientName}</div>
 <div class="tp-info"><b>Bairro:</b> ${order.neighborhood}</div>
