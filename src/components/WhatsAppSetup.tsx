@@ -15,6 +15,7 @@ interface Props {
   storeId: string;
   storeSlug: string;
   storeName: string;
+  expectedPhone?: string | null;
 }
 
 // A URL real do Evolution fica no secret EVOLUTION_API_URL (server-side).
@@ -56,7 +57,14 @@ const DEFAULT_TEMPLATES: Record<string, { label: string; emoji: string; template
   },
 };
 
-export default function WhatsAppSetup({ storeId, storeSlug, storeName }: Props) {
+const onlyDigits = (value?: string | null) => String(value || "").replace(/\D/g, "");
+const samePhone = (a?: string | null, b?: string | null) => {
+  const left = onlyDigits(a).replace(/^55/, "");
+  const right = onlyDigits(b).replace(/^55/, "");
+  return !!left && !!right && left === right;
+};
+
+export default function WhatsAppSetup({ storeId, storeSlug, storeName, expectedPhone }: Props) {
   const [config, setConfig] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -154,6 +162,9 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName }: Props) 
 
   const isConnected = config?.status === "connected";
   const isConnecting = config?.status === "connecting";
+  const connectedPhone = onlyDigits(config?.phone_number);
+  const expectedStorePhone = onlyDigits(expectedPhone);
+  const phoneMismatch = isConnected && connectedPhone && expectedStorePhone && !samePhone(connectedPhone, expectedStorePhone);
 
   if (loading) {
     return (
@@ -184,6 +195,11 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName }: Props) 
           {isConnected && config?.phone_number && (
             <p className="text-xs text-muted-foreground">+{config.phone_number}</p>
           )}
+          {phoneMismatch && (
+            <p className="text-[11px] font-semibold text-destructive mt-1">
+              Atenção: este WhatsApp conectado não é o número cadastrado da loja (+{expectedStorePhone}).
+            </p>
+          )}
           {!isConnected && !isConnecting && (
             <p className="text-xs text-muted-foreground">Conecte seu WhatsApp para enviar notificações automáticas</p>
           )}
@@ -192,6 +208,16 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName }: Props) 
           <MessageCircle className="h-4 w-4 text-emerald-500 shrink-0" />
         )}
       </div>
+
+      {phoneMismatch && (
+        <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-3.5 py-3">
+          <p className="text-xs font-bold text-destructive">Número conectado diferente</p>
+          <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
+            As respostas automáticas só funcionam para mensagens enviadas ao número realmente conectado aqui: +{connectedPhone}.
+            Para usar +{expectedStorePhone}, desconecte e escaneie o QR Code com esse WhatsApp.
+          </p>
+        </div>
+      )}
 
       {/* Guia passo a passo */}
       <div className="rounded-xl border border-border overflow-hidden">
