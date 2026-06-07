@@ -706,7 +706,7 @@ const StorePage = () => {
 
       {/* ===== STORE INFO ===== */}
       <div className="relative -mt-12 mx-4 z-10">
-        <div className="bg-card rounded-2xl border border-border shadow-xl overflow-visible">
+        <div className={`rounded-2xl border shadow-xl overflow-visible ${isAdega ? "bg-zinc-900 border-zinc-800" : "bg-card border-border"}`}>
           <div className="p-5 pb-0 relative">
             <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start sm:gap-4">
               <div className="w-[100px] h-[100px] rounded-full bg-card border-[4px] border-card shadow-2xl flex-shrink-0 overflow-hidden -mt-[70px] relative z-[55] mx-auto sm:mx-0">
@@ -911,7 +911,7 @@ const StorePage = () => {
           {store && <div className="px-5"><LoyaltyBanner storeId={store.id} storeName={store.name} /></div>}
 
           {/* Stats bar */}
-          <div className="bg-muted/50 mt-2 px-5 py-4 flex items-center justify-around border-t border-border/50">
+          <div className={`mt-2 px-5 py-4 flex items-center justify-around border-t ${isAdega ? "bg-zinc-950/60 border-zinc-800" : "bg-muted/50 border-border/50"}`}>
             <div className="flex flex-col items-center">
               <span className="text-lg font-black text-foreground leading-none">{totalProducts}</span>
               <span className="text-[11px] font-semibold text-muted-foreground mt-1">Produtos</span>
