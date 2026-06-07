@@ -1018,6 +1018,17 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
           onConfirm={confirmState.onConfirm}
         />
       )}
+
+      {/* FAB — botão flutuante para adicionar produto rapidamente */}
+      {totalProducts > 0 && showProductForm === null && editingProduct === null && (
+        <button
+          onClick={handleOpenQuickAdd}
+          className="fixed bottom-20 right-4 z-30 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary/90 transition-all active:scale-95 flex items-center gap-2 px-5 py-3 font-bold text-sm"
+          title="Novo produto"
+        >
+          <Plus className="h-5 w-5" /> Novo Produto
+        </button>
+      )}
     </div>
   );
 };
