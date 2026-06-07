@@ -60,7 +60,7 @@ export default function OrdersSection(props: Props) {
     selectAllReady, toggleBatchOrder, toggleAddress, storeName,
     getClientName, getClientWhatsApp, getDriverName, getRequiredAddonHighlights, getMainAction,
     buildAcceptWhatsAppHref, buildReadyWhatsAppHref, updateOrderStatus, handleAcceptOrder,
-    handleCancelOrder, handlePrint, invalidateOrders,
+    handleCancelOrder, handlePrint, invalidateOrders, evolutionConnected,
   } = props;
 
   return (
@@ -232,6 +232,8 @@ export default function OrdersSection(props: Props) {
           setCancelReason={setCancelReason}
           cancellingOrder={cancellingOrder}
           storeName={store?.name}
+          storeId={store?.id}
+          evolutionConnected={evolutionConnected}
           onlineDriversCount={onlineDrivers?.length || 0}
           linkedStoreDrivers={linkedStoreDrivers}
           highlights={getRequiredAddonHighlights(order)}
