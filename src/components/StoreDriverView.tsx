@@ -1003,8 +1003,14 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
               </p>
             </div>
           </div>
-          <div className={`relative w-12 h-7 rounded-full transition-colors ${useOptimized ? "bg-primary" : "bg-muted"}`}>
-            <span className={`absolute top-[3px] w-[22px] h-[22px] rounded-full bg-white shadow transition-transform duration-200 ${useOptimized ? "translate-x-[22px]" : "translate-x-[3px]"}`} />
+          <div
+            role="switch"
+            aria-checked={useOptimized}
+            className={`relative shrink-0 w-11 h-6 rounded-full transition-colors duration-200 ${useOptimized ? "bg-primary" : "bg-muted-foreground/30"}`}
+          >
+            <span
+              className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-200 ease-out ${useOptimized ? "translate-x-5" : "translate-x-0"}`}
+            />
           </div>
         </button>
       )}
