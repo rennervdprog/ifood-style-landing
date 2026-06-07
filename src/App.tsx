@@ -103,6 +103,8 @@ const PushNavigator = () => {
       if (pending) {
         console.log("[PushNav] 🚀 Replaying pending push navigation:", pending);
         navigate(pending, { replace: true });
+        try { queryClient.invalidateQueries(); } catch {}
+        try { window.dispatchEvent(new CustomEvent("capacitor-app-resume")); } catch {}
         return true;
       }
       return false;
@@ -128,6 +130,13 @@ const PushNavigator = () => {
 
       // Clear pending since we're handling it now
       consumePendingPushNavigation();
+
+      // 🔄 Push tap can happen on cold start (no appStateChange fires) or while
+      // the app was suspended without a clean resume event. Force-invalidate
+      // every query and re-broadcast resume so dashboards (driver/lojista)
+      // refetch immediately — fixes "push chega mas pedido não aparece".
+      try { queryClient.invalidateQueries(); } catch {}
+      try { window.dispatchEvent(new CustomEvent("capacitor-app-resume")); } catch {}
 
       // Parse path and query
       const [pathname, search] = path.split("?");
