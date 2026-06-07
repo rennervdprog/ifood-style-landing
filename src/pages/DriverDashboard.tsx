@@ -1021,22 +1021,7 @@ const DriverDashboard = () => {
                 <StatCard icon={Store} label="Abertas" value={String(openPlatformStores?.length || 0)} accent="emerald" />
               </div>
 
-              {/* Pix key warning — oculto para motoboy de loja (acerto direto com lojista) */}
-              {!(driverProfile as any)?.pix_key && !isStoreDriver && (
-                <button
-                  onClick={() => setActiveTab("config")}
-                  className="w-full bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 flex items-center gap-3 active:scale-[0.99] transition-all"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center flex-shrink-0">
-                    <CreditCard className="h-5 w-5 text-amber-500" />
-                  </div>
-                  <div className="flex-1 min-w-0 text-left">
-                    <p className="text-sm font-bold text-foreground">Cadastre sua chave Pix</p>
-                    <p className="text-xs text-muted-foreground">Para receber pagamentos automáticos</p>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-amber-500" />
-                </button>
-              )}
+              {/* Pix key warning removido — cobrança a critério do usuário em Configurações */}
 
               {/* ─── Active Delivery Card ─── */}
               {myDelivery && (
