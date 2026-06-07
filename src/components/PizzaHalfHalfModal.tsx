@@ -42,6 +42,7 @@ interface Props {
   sections?: MenuSection[];
   priceMode: "maior" | "media";
   maxFlavors?: FlavorCount;
+  singleSize?: boolean;
   onAdd: (product: {
     id: string;
     store_id: string;
@@ -56,7 +57,7 @@ interface Props {
 // Step 0 = choose flavor count. Steps 1..flavorCount = pick each flavor. Last step = borders/observations.
 type Step = number;
 
-const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, sections, priceMode, maxFlavors = 4, onAdd }: Props) => {
+const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, sections, priceMode, maxFlavors = 4, singleSize = false, onAdd }: Props) => {
   const [flavorCount, setFlavorCount] = useState<FlavorCount>(2);
   // If lojista only allows meio a meio (max=2), skip the count picker entirely.
   const [step, setStep] = useState<Step>(maxFlavors === 2 ? 1 : 0);
@@ -140,7 +141,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
     }
     return order;
   })();
-  const hasSizes = availableSizes.length > 0;
+  const hasSizes = !singleSize && availableSizes.length > 0;
 
   // Auto-select first size when sizes exist and none chosen yet
   useEffect(() => {

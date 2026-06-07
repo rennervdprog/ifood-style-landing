@@ -31,6 +31,7 @@ const PizzaFlavorManager = ({ storeId }: PizzaFlavorManagerProps) => {
   const maxFlavors: 2 | 3 | 4 = (pizzaConfig.max_flavors as 2 | 3 | 4) || 4;
   const halfEnabled: boolean = settings.pizza_half_enabled !== false;
   const priceMode: PizzaPriceMode = (settings.pizza_price_mode as PizzaPriceMode) || "maior";
+  const singleSize: boolean = !!settings.pizza_single_size;
 
   const saveConfig = async (newConfig: PizzaConfig) => {
     const newSettings = { ...settings, pizza_config: newConfig } as any;
@@ -67,6 +68,24 @@ const PizzaFlavorManager = ({ storeId }: PizzaFlavorManagerProps) => {
       <div className="flex items-center gap-2">
         <Pizza className="h-5 w-5 text-primary" />
         <h2 className="text-sm font-bold text-foreground/80 uppercase tracking-wider">Regras de Combinação</h2>
+      </div>
+
+      {/* Single vs multi size */}
+      <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-foreground">Trabalha com um único tamanho?</p>
+            <p className="text-[10px] text-muted-foreground">
+              Ative se sua pizzaria vende pizza em um tamanho só. O editor de tamanhos some do cadastro de produtos e o cliente vê apenas o preço base — meio a meio e múltiplos sabores continuam funcionando normalmente.
+            </p>
+          </div>
+          <button
+            onClick={() => saveSettingField({ pizza_single_size: !singleSize })}
+            className={`w-12 h-6 rounded-full transition-colors relative flex-shrink-0 ${singleSize ? "bg-primary" : "bg-muted-foreground/30"}`}
+          >
+            <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${singleSize ? "translate-x-6" : "translate-x-0.5"}`} />
+          </button>
+        </div>
       </div>
 
       {/* Max flavors per pizza */}
