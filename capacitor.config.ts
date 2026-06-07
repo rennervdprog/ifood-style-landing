@@ -10,10 +10,16 @@ const config: CapacitorConfig = {
     webContentsDebuggingEnabled: false,
   },
   server: {
+    // 🌐 App carrega do site remoto (não dos assets empacotados).
+    // Isso permite que o auto-update funcione: ao publicar nova versão
+    // em itasuper.com.br, o WebView detecta novos hashes em /assets/* e
+    // recarrega automaticamente (capacitorAutoUpdate.ts).
+    url: 'https://www.itasuper.com.br',
     androidScheme: 'https',
     cleartext: false,
     allowNavigation: [
       'www.itasuper.com.br',
+      'itasuper.com.br',
       '*.supabase.co',
       'qkjhguziuchqsbxzruea.supabase.co',
     ]
