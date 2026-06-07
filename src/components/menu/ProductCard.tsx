@@ -405,8 +405,8 @@ const ProductCardImpl = (props: ProductCardProps) => {
 
       {/* Action row */}
       <div className="mt-2 flex gap-3">
-        <button onClick={() => setShowLinkAddon(true)} className="text-xs text-primary hover:underline flex items-center gap-1" title="Reusa um grupo já criado, compartilhado entre vários produtos">
-          <Link2 className="h-3 w-3" /> Vincular grupo
+        <button onClick={() => setShowLinkAddon(true)} className="text-xs text-primary hover:underline flex items-center gap-1" title="Reutiliza um grupo de adicionais já criado em outro produto">
+          <Link2 className="h-3 w-3" /> Usar adicional existente
         </button>
         {showAddonForm ? (
           <div className="flex-1 bg-muted/30 rounded-lg p-2 space-y-1">
@@ -433,7 +433,7 @@ const ProductCardImpl = (props: ProductCardProps) => {
             </div>
           </div>
         ) : (
-          <button onClick={() => setShowAddonForm(true)} className="text-xs text-muted-foreground hover:underline" title="Cria adicionais exclusivos só deste produto">+ Grupo exclusivo</button>
+          <button onClick={() => setShowAddonForm(true)} className="text-xs text-muted-foreground hover:underline" title="Cria adicionais que só aparecem neste produto">+ Criar adicional só deste produto</button>
         )}
       </div>
     </div>

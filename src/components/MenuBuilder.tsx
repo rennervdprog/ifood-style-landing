@@ -715,9 +715,36 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
 
       {/* Tip */}
       {filteredProducts === null && (!sections || sections.length === 0) && (
-        <div className="bg-accent/10 border border-accent/30 rounded-xl p-4 text-center">
-          <p className="text-sm text-accent-foreground font-medium">📋 Comece criando seções para organizar seu cardápio</p>
-          <p className="text-xs text-muted-foreground mt-1">Ex: Hambúrgueres, Bebidas, Combos, Acompanhamentos</p>
+        <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
+          <div className="text-center">
+            <div className="text-4xl mb-2">🍽️</div>
+            <h3 className="text-base font-bold text-foreground">Vamos montar seu cardápio</h3>
+            <p className="text-xs text-muted-foreground mt-1">Siga os 3 passos abaixo — leva menos de 2 minutos</p>
+          </div>
+          <div className="space-y-2.5">
+            <div className="flex items-start gap-3 p-3 bg-muted/40 rounded-xl">
+              <span className="flex-shrink-0 w-7 h-7 rounded-full bg-primary text-primary-foreground text-xs font-black flex items-center justify-center">1</span>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-foreground">Crie uma categoria</p>
+                <p className="text-[11px] text-muted-foreground">Ex: Hambúrgueres, Bebidas, Combos</p>
+              </div>
+              <button onClick={() => setShowAddSection(true)} className="text-xs bg-primary text-primary-foreground px-3 py-1.5 rounded-lg font-bold flex-shrink-0">Criar</button>
+            </div>
+            <div className="flex items-start gap-3 p-3 bg-muted/20 rounded-xl opacity-70">
+              <span className="flex-shrink-0 w-7 h-7 rounded-full bg-muted text-muted-foreground text-xs font-black flex items-center justify-center">2</span>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-foreground">Adicione produtos</p>
+                <p className="text-[11px] text-muted-foreground">Nome, preço, foto e descrição</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-3 bg-muted/20 rounded-xl opacity-70">
+              <span className="flex-shrink-0 w-7 h-7 rounded-full bg-muted text-muted-foreground text-xs font-black flex items-center justify-center">3</span>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-foreground">Adicionais (opcional)</p>
+                <p className="text-[11px] text-muted-foreground">Ex: molhos, tamanhos, bordas</p>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -990,6 +1017,17 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
           confirmText={confirmState.confirmText}
           onConfirm={confirmState.onConfirm}
         />
+      )}
+
+      {/* FAB — botão flutuante para adicionar produto rapidamente */}
+      {totalProducts > 0 && showProductForm === null && editingProduct === null && (
+        <button
+          onClick={handleOpenQuickAdd}
+          className="fixed bottom-20 right-4 z-30 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary/90 transition-all active:scale-95 flex items-center gap-2 px-5 py-3 font-bold text-sm"
+          title="Novo produto"
+        >
+          <Plus className="h-5 w-5" /> Novo Produto
+        </button>
       )}
     </div>
   );
