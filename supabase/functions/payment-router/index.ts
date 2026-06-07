@@ -137,7 +137,7 @@ function validateAsaasApiKey(key: string): { valid: boolean; sandbox: boolean; e
   const trimmed = key.trim();
   if (!trimmed) return { valid: false, sandbox: false, error: "ASAAS_API_KEY is empty" };
   
-  const isSandbox = !trimmed.startsWith("$aact_");
+  const isSandbox = !trimmed.startsWith("$aact_prod_");
   
   if (trimmed.length < 20) {
     return { valid: false, sandbox: isSandbox, error: `Key too short (${trimmed.length} chars). Copy the full key from Asaas dashboard.` };
@@ -469,7 +469,7 @@ async function createAsaasTransfer(params: {
     return { ok: false, data: { message: "ASAAS_API_KEY não configurado." }, status: 500 };
   }
 
-  const baseUrl = apiKey.startsWith("$aact_")
+  const baseUrl = apiKey.startsWith("$aact_prod_")
     ? "https://api.asaas.com/v3"
     : "https://sandbox.asaas.com/api/v3";
 
@@ -1415,7 +1415,7 @@ async function cancelAsaasPayment(paymentId: string): Promise<boolean> {
   const apiKey = Deno.env.get("ASAAS_API_KEY");
   if (!apiKey) return false;
 
-  const baseUrl = apiKey.startsWith("$aact_")
+  const baseUrl = apiKey.startsWith("$aact_prod_")
     ? "https://api.asaas.com/v3"
     : "https://sandbox.asaas.com/api/v3";
 
@@ -1649,7 +1649,7 @@ async function handleCancelPayment(
   if (!cancelledOnProvider) {
     const apiKey = Deno.env.get("ASAAS_API_KEY");
     if (apiKey) {
-      const baseUrl = apiKey.startsWith("$aact_")
+      const baseUrl = apiKey.startsWith("$aact_prod_")
         ? "https://api.asaas.com/v3"
         : "https://sandbox.asaas.com/api/v3";
       try {

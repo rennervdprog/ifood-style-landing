@@ -47,7 +47,7 @@ async function createAsaasCharge(params: {
   const apiKey = Deno.env.get("ASAAS_API_KEY");
   if (!apiKey) return { ok: false, error: "ASAAS_API_KEY não configurado" };
 
-  const baseUrl = apiKey.startsWith("$aact_")
+  const baseUrl = apiKey.startsWith("$aact_prod_")
     ? "https://api.asaas.com/v3"
     : "https://sandbox.asaas.com/api/v3";
 
