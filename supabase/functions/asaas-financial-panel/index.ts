@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
     }
 
     const ASAAS_API_KEY = Deno.env.get("ASAAS_API_KEY");
-    const isSandbox = !ASAAS_API_KEY?.startsWith("$aact_");
+    const isSandbox = !ASAAS_API_KEY?.startsWith("$aact_prod_");
     const baseUrl = isSandbox
       ? "https://sandbox.asaas.com/api/v3"
       : "https://api.asaas.com/v3";

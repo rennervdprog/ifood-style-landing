@@ -153,7 +153,7 @@ async function confirmAndSplit(supabase: any, orderId: string, paymentId: string
       if (storeShare > 0) {
         const apiKey = Deno.env.get("ASAAS_API_KEY");
         if (apiKey) {
-          const baseUrl = apiKey.startsWith("$aact_")
+          const baseUrl = apiKey.startsWith("$aact_prod_")
             ? "https://api.asaas.com/v3"
             : "https://sandbox.asaas.com/api/v3";
           const pixTypeMap: Record<string, string> = {
@@ -299,7 +299,7 @@ Deno.serve(async (req) => {
     const apiKey = Deno.env.get("ASAAS_API_KEY");
     if (!apiKey) return json({ confirmed: false, reason: "no_provider" });
 
-    const baseUrl = apiKey.startsWith("$aact_")
+    const baseUrl = apiKey.startsWith("$aact_prod_")
       ? "https://api.asaas.com/v3"
       : "https://sandbox.asaas.com/api/v3";
 

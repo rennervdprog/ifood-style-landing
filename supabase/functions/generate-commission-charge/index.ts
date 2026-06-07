@@ -126,7 +126,7 @@ Deno.serve(async (req) => {
       .eq("status", "pending")
       .lt("created_at", fiveMinAgo);
 
-    const isSandbox = !ASAAS_API_KEY.startsWith("$aact_");
+    const isSandbox = !ASAAS_API_KEY.startsWith("$aact_prod_");
     const baseUrl = isSandbox
       ? "https://sandbox.asaas.com/api/v3"
       : "https://api.asaas.com/v3";

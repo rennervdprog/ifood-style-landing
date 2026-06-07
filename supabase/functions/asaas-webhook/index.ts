@@ -30,7 +30,6 @@ const PAID_EVENTS = new Set([
   "PAYMENT_RECEIVED",
   "PAYMENT_CONFIRMED",
   "PAYMENT_RECEIVED_IN_CASH",
-  "PAYMENT_CREDIT_CARD_CAPTURE_REFUSED", // não é pago, mas tratamos abaixo
 ]);
 
 const FAILED_EVENTS = new Set([
@@ -48,7 +47,11 @@ Deno.serve(async (req) => {
   // ─── Auth via webhook token ───
   const expectedToken = Deno.env.get("ASAAS_WEBHOOK_TOKEN") || "";
   const receivedToken = req.headers.get("asaas-access-token") || "";
-  if (expectedToken && receivedToken !== expectedToken) {
+  if (!expectedToken) {
+    console.error("[asaas-webhook] ASAAS_WEBHOOK_TOKEN não configurado — rejeitando todas as chamadas");
+    return json({ error: "Webhook not configured" }, 500);
+  }
+  if (receivedToken !== expectedToken) {
     console.warn("[asaas-webhook] Invalid token");
     return json({ error: "Unauthorized" }, 401);
   }

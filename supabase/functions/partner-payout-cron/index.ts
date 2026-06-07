@@ -20,7 +20,7 @@ async function createAsaasTransfer(params: {
   const apiKey = Deno.env.get("ASAAS_API_KEY");
   if (!apiKey) return { ok: false, data: { message: "ASAAS_API_KEY não configurado." }, status: 500 };
 
-  const baseUrl = apiKey.startsWith("$aact_")
+  const baseUrl = apiKey.startsWith("$aact_prod_")
     ? "https://api.asaas.com/v3"
     : "https://sandbox.asaas.com/api/v3";
 

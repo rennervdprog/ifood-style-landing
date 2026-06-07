@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
       return json({ error: "Chave de pagamento não configurada." }, 500);
     }
 
-    const isSandbox = !ASAAS_API_KEY.startsWith("$aact_");
+    const isSandbox = !ASAAS_API_KEY.startsWith("$aact_prod_");
     const baseUrl = isSandbox
       ? "https://sandbox.asaas.com/api/v3"
       : "https://api.asaas.com/v3";
