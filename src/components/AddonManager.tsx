@@ -224,6 +224,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
 
   return (
     <div className="space-y-4">
+      <ConfirmDialog />
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-2.5 min-w-0">
           <div className="bg-primary/15 text-primary rounded-xl p-2 flex-shrink-0">
