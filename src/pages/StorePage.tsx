@@ -1423,6 +1423,18 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory, onQuickAd
                 🌡️ Temp. ambiente
               </span>
             )}
+            {/* Adegas: pack/fardo */}
+            {cat === "adegas" && packQty > 0 && (
+              <span className="text-[10px] bg-amber-500/10 text-amber-700 px-1.5 py-0.5 rounded-full font-bold">
+                📦 Pack {packQty}un
+              </span>
+            )}
+            {/* Adegas: casco retornável */}
+            {cat === "adegas" && meta.returnable_bottle && (
+              <span className="text-[10px] bg-emerald-500/10 text-emerald-700 px-1.5 py-0.5 rounded-full font-bold">
+                ♻️ Casco
+              </span>
+            )}
             {/* Outras categorias: badge gelado normal */}
             {isBeverage && cat !== "adegas" && meta.serve_cold && (
               <span className="text-[10px] bg-sky-500/10 text-sky-600 px-1.5 py-0.5 rounded-full font-bold">
