@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Plus, X } from "lucide-react";
 import { useBRLInput, formatBRLDisplay, parseBRLCentsInput } from "@/hooks/useBRLInput";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CategoryProductFieldsProps {
   category: string;
@@ -206,6 +208,17 @@ const PizzaSizesField = ({
 const CategoryProductFields = ({ category, metadata, onChange, onNameChange, storeId }: CategoryProductFieldsProps) => {
   const set = (key: string, value: any) => onChange({ ...metadata, [key]: value });
 
+  // Lê configuração de "tamanho único" da loja (afeta apenas pizzaria)
+  const { data: storeSettingsRow } = useQuery({
+    queryKey: ["store-settings-for-category", storeId],
+    enabled: !!storeId && category === "pizzas",
+    queryFn: async () => {
+      const { data } = await supabase.from("stores").select("settings").eq("id", storeId!).single();
+      return data;
+    },
+  });
+  const pizzaSingleSize: boolean = !!(storeSettingsRow?.settings as any)?.pizza_single_size;
+
   const addToList = (key: string, value: string) => {
     if (!value.trim()) return;
     set(key, [...(metadata[key] || []), value.trim()]);
@@ -303,11 +316,20 @@ const CategoryProductFields = ({ category, metadata, onChange, onNameChange, sto
   const categoryFieldsMap: Record<string, React.ReactNode> = {
     pizzas: (
       <FieldBox emoji="🍕" title="Tamanhos da Pizza">
-        <p className="text-[11px] text-muted-foreground -mt-1">
-          Defina os tamanhos disponíveis (ex: P, M, G, Família) com o preço de cada um.
-          Aparecem para o cliente ao escolher 1 sabor e no modal meio-a-meio.
-        </p>
-        <PizzaSizesField metadata={metadata} onChange={onChange} />
+        {pizzaSingleSize ? (
+          <p className="text-[11px] text-muted-foreground -mt-1">
+            Sua pizzaria está configurada para <b>um único tamanho</b>. O cliente verá apenas o preço base do produto.
+            Para vender pizza em vários tamanhos, desative essa opção em <b>Bordas/Sabores → Regras de Combinação</b>.
+          </p>
+        ) : (
+          <>
+            <p className="text-[11px] text-muted-foreground -mt-1">
+              Defina os tamanhos disponíveis (ex: P, M, G, Família) com o preço de cada um.
+              Aparecem para o cliente ao escolher 1 sabor e no modal meio-a-meio.
+            </p>
+            <PizzaSizesField metadata={metadata} onChange={onChange} />
+          </>
+        )}
       </FieldBox>
     ),
     esfihas: (
