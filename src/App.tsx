@@ -24,6 +24,7 @@ import CapacitorRouteGuard from "@/components/CapacitorRouteGuard";
 import StoreAppGuard from "@/components/StoreAppGuard";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { TermsUpdateModal, CURRENT_TERMS_VERSION } from "@/components/TermsUpdateModal";
+import { APP_VERSION } from "@/lib/appVersion";
 
 // Lazy-loaded pages — each becomes its own chunk
 const Index = lazy(() => import("./pages/Index"));
@@ -66,8 +67,6 @@ const PageLoader = () => (
     <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
   </div>
 );
-
-const APP_VERSION = "1.6.21";
 
 // On Capacitor, capacitorLifecycle.ts already calls focusManager.setFocused(true)
 // on every app resume — which triggers refetchOnWindowFocus internally.

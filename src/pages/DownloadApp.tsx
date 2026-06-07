@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { APP_VERSION } from "@/lib/appVersion";
 import { Link } from "react-router-dom";
 import {
   Download, ShieldCheck, Star, Bell, Wifi, MapPin,
@@ -38,7 +39,7 @@ const DEFAULT: AppData = {
   app_name: "ItaSuper Parceiro",
   tagline: "Gerencie sua loja e entregas com total controle",
   description: "O app oficial para lojistas e motoboys do ItaSuper.",
-  version: "1.2.62",
+  version: APP_VERSION,
   size_mb: "28 MB",
   rating: 5.0,
   downloads: "500+",

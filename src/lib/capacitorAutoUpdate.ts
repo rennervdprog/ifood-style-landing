@@ -1,10 +1,9 @@
 /**
  * Capacitor Auto-Update — versão "agressiva"
  *
- * O app Capacitor carrega de https://itasuper.com.br. Quando você publica uma
- * nova versão na Lovable, o servidor entrega novos arquivos com hashes diferentes
- * em /assets/*. Aqui detectamos isso comparando o HTML da raiz e, se houver
- * mudança, limpamos caches/SW e forçamos reload.
+ * O app Capacitor pode carregar o site remoto (config local) ou o bundle
+ * empacotado no APK (workflow Android). Quando o HTML aponta para novos
+ * assets hashados em /assets/*, limpamos caches/SW e forçamos reload.
  *
  * Estratégia:
  *  - Verifica logo no boot (1s) — pega update assim que abre o app.
@@ -36,8 +35,10 @@ async function fetchBuildHash(): Promise<string | null> {
     if (!res.ok) return null;
     const html = await res.text();
 
-    // Extrai os nomes hashados de assets do <script> e <link>
-    const hashes = html.match(/\/assets\/[^"']+\.[a-f0-9]{8,}\.[^"']+/g);
+    // Extrai assets Vite hashados do HTML publicado.
+    // Vite usa hashes base62/underscore (ex.: index-BTFikeqv.js), não apenas hex,
+    // então o regex antigo nunca detectava atualização no domínio publicado.
+    const hashes = html.match(/\/assets\/[^"'<>\s]+\.(?:js|css|mjs|tsx?)/g);
     if (!hashes || hashes.length === 0) return null;
 
     return hashes.sort().join("|");
