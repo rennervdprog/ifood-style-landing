@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Trash2, Edit2, Save, X, ChevronDown, ChevronUp, Package, FileText, Layers, Link2, Sparkles } from "lucide-react";
 import { formatBRLDisplay, parseBRLCentsInput } from "@/hooks/useBRLInput";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 
 interface AddonManagerProps {
   storeId: string;
@@ -12,6 +13,7 @@ interface AddonManagerProps {
 
 const AddonManager = ({ storeId }: AddonManagerProps) => {
   const queryClient = useQueryClient();
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [showGroupForm, setShowGroupForm] = useState(false);
   const [groupForm, setGroupForm] = useState({ name: "", min_select: "0", max_select: "1", price_replaces_base: false });
   const [editingGroup, setEditingGroup] = useState<string | null>(null);
@@ -222,6 +224,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
 
   return (
     <div className="space-y-4">
+      <ConfirmDialog />
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-2.5 min-w-0">
           <div className="bg-primary/15 text-primary rounded-xl p-2 flex-shrink-0">
@@ -487,8 +490,17 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                     >
                       <Edit2 className="h-3.5 w-3.5" />
                     </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); deleteGroup(group.id); }}
+                     <button
+                       onClick={async (e) => {
+                         e.stopPropagation();
+                         const ok = await confirm({
+                           title: "Excluir grupo de adicionais?",
+                           description: `Tem certeza que deseja excluir "${group.name}"? Todos os itens deste grupo serão removidos e desvinculados dos produtos. Esta ação não pode ser desfeita.`,
+                           confirmText: "Excluir",
+                           variant: "destructive",
+                         });
+                         if (ok) deleteGroup(group.id);
+                       }}
                       className="text-destructive/70 hover:text-destructive p-1.5"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -541,7 +553,18 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                             >
                               <Edit2 className="h-3 w-3" />
                             </button>
-                            <button onClick={() => deleteItem(item.id)} className="text-destructive/70 hover:text-destructive p-1">
+                            <button
+                              onClick={async () => {
+                                const ok = await confirm({
+                                  title: "Excluir adicional?",
+                                  description: `Tem certeza que deseja excluir "${item.name}"? Esta ação não pode ser desfeita.`,
+                                  confirmText: "Excluir",
+                                  variant: "destructive",
+                                });
+                                if (ok) deleteItem(item.id);
+                              }}
+                              className="text-destructive/70 hover:text-destructive p-1"
+                            >
                               <Trash2 className="h-3 w-3" />
                             </button>
                           </div>
