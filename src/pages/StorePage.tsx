@@ -1406,11 +1406,13 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory, onQuickAd
     <button
       onClick={isOutOfStock ? undefined : onClick}
       disabled={isOutOfStock}
-      className={`w-full flex gap-3 bg-card rounded-2xl p-3 border border-border text-left transition-all group ${
-        isBlocked ? "opacity-60" : "hover:shadow-lg hover:border-primary/20 active:scale-[0.98]"
+      className={`w-full text-left transition-all group rounded-2xl ${
+        isAdegaCard
+          ? `flex flex-col-reverse bg-zinc-900 border border-zinc-800 p-2.5 gap-2 ${isBlocked ? "opacity-60" : "hover:border-amber-500/40 active:scale-[0.98]"}`
+          : `flex gap-3 bg-card p-3 border border-border ${isBlocked ? "opacity-60" : "hover:shadow-lg hover:border-primary/20 active:scale-[0.98]"}`
       }`}
     >
-      <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+      <div className={`flex-1 min-w-0 flex flex-col justify-between py-0.5 ${isAdegaCard ? "px-0.5" : ""}`}>
         <div>
           {/* Badges row */}
           <div className="flex flex-wrap gap-1 mb-1">
