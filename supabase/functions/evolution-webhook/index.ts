@@ -9,12 +9,6 @@ const json = (b: unknown, s = 200) =>
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const runInBackground = (task: Promise<unknown>) => {
-  const runtime = globalThis as typeof globalThis & { EdgeRuntime?: { waitUntil?: (task: Promise<unknown>) => void } };
-  if (runtime.EdgeRuntime?.waitUntil) runtime.EdgeRuntime.waitUntil(task);
-  else task.catch((error) => console.error("background auto-reply error:", error));
-};
-
 const isRecentIncomingMessage = (data: any) => {
   const rawTimestamp = data?.messageTimestamp || data?.timestamp || data?.date_time;
   if (!rawTimestamp) return true;
@@ -102,7 +96,10 @@ Deno.serve(async (req) => {
 
     if (!instance) return json({ ok: true });
 
-    const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const admin = createClient(
+      Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
     const { data: cfg } = await admin
       .from("store_whatsapp_config")
       .select("store_id, auto_reply_enabled, auto_reply_message, evolution_api_url, evolution_instance_name, status")
@@ -244,15 +241,23 @@ Deno.serve(async (req) => {
         const menuMessage = `Aqui está nosso cardápio:\n${link}`;
 
         const sendMsg = async (message: string) => {
-          await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/evolution-send-message`, {
+          const functionBaseUrl = Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!;
+          const functionKey = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+          const response = await fetch(`${functionBaseUrl}/functions/v1/evolution-send-message`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              apikey: Deno.env.get("SUPABASE_ANON_KEY") || "",
-              Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""}`,
+              apikey: functionKey,
+              Authorization: `Bearer ${functionKey}`,
+              "x-internal-token": Deno.env.get("EVOLUTION_WEBHOOK_TOKEN") || "",
             },
             body: JSON.stringify({ store_id: cfg.store_id, phone: number, message, kind: "auto_reply" }),
           });
+          const result = await response.json().catch(() => ({}));
+          if (!response.ok || (result as any)?.error) {
+            console.error("auto-reply send failed", { store_id: cfg.store_id, phone: number, status: response.status, result });
+            throw new Error(`auto_reply_send_failed_${response.status}`);
+          }
         };
 
         // Não repetir saudação na mesma conversa. Se o cliente responder "sim"
@@ -263,6 +268,7 @@ Deno.serve(async (req) => {
           .from("whatsapp_send_log")
           .select("id, sent_at")
           .eq("store_id", cfg.store_id).eq("phone", number).eq("kind", "auto_reply")
+          .neq("message_hash", "greet_pending")
           .gte("sent_at", greetingCooldownAgo)
           .order("sent_at", { ascending: false })
           .limit(1);
@@ -271,11 +277,9 @@ Deno.serve(async (req) => {
         if (lastAutoReply) {
           if (storeClosedInfo) return json({ ok: true, skipped: "closed_cooldown" });
           if (sendLinkNow) {
-            runInBackground((async () => {
-              await sleep(hasFastRecentReply ? 2_000 + Math.floor(Math.random() * 3_000) : 800);
-              await sendMsg(menuMessage);
-            })());
-            return json({ ok: true, queued: "menu_only_after_greeting" });
+            await sleep(hasFastRecentReply ? 2_000 + Math.floor(Math.random() * 3_000) : 800);
+            await sendMsg(menuMessage);
+            return json({ ok: true, sent: "menu_only_after_greeting" });
           }
           return json({ ok: true, skipped: hasFastRecentReply ? "fast_cooldown" : "greeting_cooldown" });
         }
@@ -290,25 +294,21 @@ Deno.serve(async (req) => {
 
         // Loja fechada → envia 1 aviso (sem cardápio) e encerra.
         if (storeClosedInfo) {
-          runInBackground((async () => {
-            await sleep(3_000 + Math.floor(Math.random() * 4_000));
-            await sendMsg(closedMessage);
-          })());
-          return json({ ok: true, queued: "closed_notice" });
+          await sleep(3_000 + Math.floor(Math.random() * 4_000));
+          await sendMsg(closedMessage);
+          return json({ ok: true, sent: "closed_notice" });
         }
 
         // Humaniza: aguarda antes da saudação; só envia link se cliente já pediu.
         // P0.6 — NÃO mandar a saudação em background: em runs curtos do
         // EdgeRuntime a task era morta antes do fetch, deixando só o
         // `greet_pending` no log e o cliente sem resposta. Aguardamos aqui
-        // (3-8s cabe no timeout) e só o envio extra do cardápio fica em bg.
+        // (3-8s cabe no timeout) e qualquer envio extra também aguarda confirmação.
         await sleep(3_000 + Math.floor(Math.random() * 5_000));
         await sendMsg(greeting);
         if (sendLinkNow) {
-          runInBackground((async () => {
-            await sleep(4_000 + Math.floor(Math.random() * 3_000));
-            await sendMsg(menuMessage);
-          })());
+          await sleep(4_000 + Math.floor(Math.random() * 3_000));
+          await sendMsg(menuMessage);
         }
       }
     }

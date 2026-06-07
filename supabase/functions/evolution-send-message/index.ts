@@ -37,6 +37,10 @@ const isAuthorizedForStore = async (admin: any, req: Request, storeId: string) =
   const authHeader = req.headers.get("Authorization") || "";
   const serviceRole = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
   if (serviceRole && authHeader === `Bearer ${serviceRole}`) return true;
+  const externalServiceRole = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || "";
+  if (externalServiceRole && authHeader === `Bearer ${externalServiceRole}`) return true;
+  const internalToken = Deno.env.get("EVOLUTION_WEBHOOK_TOKEN") || "";
+  if (internalToken && req.headers.get("x-internal-token") === internalToken) return true;
   if (!authHeader.startsWith("Bearer ")) return false;
 
   const authClient = createClient(
@@ -102,8 +106,8 @@ Deno.serve(async (req) => {
     console.log("[evolution-send-message] ▶ store_id=", store_id, "phone=", phone, "kind=", kind, "msgLen=", message.length);
 
     const admin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
     if (!(await isAuthorizedForStore(admin, req, store_id))) {
@@ -152,7 +156,7 @@ Deno.serve(async (req) => {
     const ageDays = cfg.connected_at
       ? (Date.now() - new Date(cfg.connected_at).getTime()) / 86_400_000
       : 999;
-    const dailyLimit = dailyLimitForAge(ageDays);
+    const dailyLimit = kind === "auto_reply" ? Math.max(80, dailyLimitForAge(ageDays)) : dailyLimitForAge(ageDays);
     const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0);
     const { count: sentToday } = await admin
       .from("whatsapp_send_log")
@@ -164,7 +168,7 @@ Deno.serve(async (req) => {
       return json({ error: `Limite diário de envios atingido (${dailyLimit}). Aguarde amanhã.` }, 429);
     }
     // Coffee break: a cada 10 msgs no dia, pausa 5-15min (P1.2)
-    if ((sentToday ?? 0) > 0 && (sentToday ?? 0) % 10 === 0) {
+    if (kind !== "auto_reply" && (sentToday ?? 0) > 0 && (sentToday ?? 0) % 10 === 0) {
       await sleep(300_000 + Math.floor(Math.random() * 600_000));
     }
 
