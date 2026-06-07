@@ -281,7 +281,7 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName, expectedP
               {
                 step: "5",
                 title: "Pronto!",
-                desc: "Seus clientes vão receber notificações automáticas pelo WhatsApp.",
+                desc: "Cada mudança de status do pedido (aceito, pronto, saiu, entregue, cancelado) dispara uma mensagem automática pelo seu WhatsApp.",
                 icon: "✅",
               },
             ].map((item) => (
@@ -294,9 +294,12 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName, expectedP
               </div>
             ))}
 
-            <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2 mt-1">
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2 mt-1 space-y-1">
               <p className="text-[11px] text-amber-700 dark:text-amber-400">
                 ⚠️ Use um número de WhatsApp exclusivo para a loja. Não use seu número pessoal principal — o WhatsApp ficará conectado neste painel.
+              </p>
+              <p className="text-[10px] text-muted-foreground leading-relaxed">
+                Para proteger o chip de banimento, o sistema aplica intervalos automáticos entre envios, deduplicação (não repete a mesma mensagem para o mesmo número em 1h) e limite diário progressivo conforme a idade da conexão (semana 1: 20/dia · semana 2: 50/dia · 3ª–4ª semana: 100/dia · mês 2: 150/dia · mês 3+: 200/dia).
               </p>
             </div>
           </div>
@@ -323,8 +326,8 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName, expectedP
                 alt="QR Code WhatsApp"
                 className="w-48 h-48 object-contain"
               />
-              <p className="text-[10px] text-muted-foreground text-center">
-                O QR Code expira em 60 segundos. Se expirar, clique em "Recarregar".
+          <p className="text-[10px] text-muted-foreground text-center">
+                O QR Code expira em 60 segundos. Se expirar, clique em "Recarregar QR Code".
               </p>
               <button onClick={loadConfig} className="flex items-center gap-1 text-xs text-primary hover:underline">
                 <RefreshCw className="h-3 w-3" /> Verificar conexão
@@ -340,7 +343,9 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName, expectedP
           <Zap className="h-4 w-4 text-primary" />
           <p className="text-sm font-bold text-foreground">Notificações automáticas</p>
         </div>
-        <p className="text-xs text-muted-foreground">Quais mensagens enviar automaticamente para o cliente:</p>
+        <p className="text-xs text-muted-foreground">
+          Mensagens enviadas automaticamente ao cliente em cada etapa do pedido. Use os interruptores para desligar uma etapa específica:
+        </p>
 
         {[
           { label: "✅ Pedido aceito / em preparo", value: notifyAccepted, set: setNotifyAccepted },
@@ -377,7 +382,7 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName, expectedP
           </button>
         </div>
         <p className="text-xs text-muted-foreground">
-          Quando um cliente mandar mensagem no seu WhatsApp, responde automaticamente com uma saudação humanizada.
+          Quando um cliente mandar mensagem no seu WhatsApp, o sistema responde com uma saudação humanizada e, só após o cliente confirmar interesse, envia o link do cardápio.
         </p>
         {autoReply && (
           <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2.5 space-y-1">
@@ -385,12 +390,10 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName, expectedP
               🛡️ Modo anti-bloqueio ativo
             </p>
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Para evitar banimento do WhatsApp, o sistema agora usa <strong>5 saudações rotativas</strong> automáticas
-              (variando por horário: bom dia/tarde/noite) e <strong>só envia o link do cardápio</strong> ({`itasuper.com.br/${storeSlug}`})
-              quando o cliente confirma interesse (ex: "sim", "quero", "cardápio"). Isso reduz o risco de spam e mantém o número seguro.
+              Para evitar banimento do WhatsApp, o sistema usa <strong>5 saudações rotativas</strong> (variando por horário: bom dia / boa tarde / boa noite) e <strong>só envia o link do cardápio</strong> ({`itasuper.com.br/${storeSlug}`}) depois que o cliente confirma interesse (ex.: "sim", "quero", "cardápio", "menu").
             </p>
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Janela de resposta: segue o horário de funcionamento cadastrado da loja. Clientes que respondem "PARAR" entram em lista de exclusão.
+              Fora do horário de funcionamento cadastrado, a resposta avisa que a loja está fechada e informa o próximo horário de abertura. Cada cliente recebe no máximo uma saudação por janela de cooldown — respostas repetidas no mesmo dia não geram nova saudação. Clientes que respondem <strong>PARAR</strong> entram em lista de exclusão e não recebem mais mensagens automáticas.
             </p>
           </div>
         )}
