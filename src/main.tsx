@@ -3,8 +3,22 @@ import { initSentry } from "./lib/sentry";
 // Declarar extensões do Window para gonative/median (apps nativos WebView)
 declare global {
   interface Window {
-    gonative?: { deviceInfo?: () => void; [key: string]: any };
-    median?: { [key: string]: any };
+    gonative?: {
+      onesignal?: {
+        onesignalInfo?: (callback?: (info: any) => void) => void | Promise<any>;
+        info?: (options: { callback: string }) => void;
+        externalUserId?: { set?: (options: { externalId: string }) => void };
+        setExternalUserId?: (id: string) => void;
+      };
+    };
+    median?: {
+      onesignal?: {
+        onesignalInfo?: (callback?: (info: any) => void) => void | Promise<any>;
+        info?: (options: { callback: string }) => void;
+        externalUserId?: { set?: (options: { externalId: string }) => void };
+        setExternalUserId?: (id: string) => void;
+      };
+    };
   }
 }
 
@@ -28,8 +42,8 @@ const isInIframe = (() => {
 })();
 
 const isPreviewHost =
-  window.location.hostname.includes("id-preview--") ||
-  window.location.hostname.includes("lovableproject.com");
+  (window as any).location.hostname.includes("id-preview--") ||
+  (window as any).location.hostname.includes("lovableproject.com");
 
 const isCapacitor = Capacitor.isNativePlatform();
 
@@ -84,9 +98,9 @@ if ("serviceWorker" in navigator && !isPreviewHost && !isInIframe && !isCapacito
         caches.keys()
           .then(keys => Promise.all(keys.map(k => caches.delete(k))))
           .catch(() => {})
-          .finally(() => window.location.reload());
+          .finally(() => (window as any).location.reload());
       } else {
-        window.location.reload();
+        (window as any).location.reload();
       }
     }
   });

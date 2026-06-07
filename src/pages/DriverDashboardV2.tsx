@@ -173,11 +173,9 @@ const DriverDashboardV2 = () => {
                 </div>
                 <p className="text-sm font-black text-foreground">{driverName}</p>
               </div>
-              <SignOutConfirm
-                redirectTo="/portal-parceiro"
-                triggerClassName="w-9 h-9 rounded-xl bg-muted/60 flex items-center justify-center"
-                triggerTitle={<LogOut className="h-4 w-4 text-muted-foreground" />}
-              />
+              <SignOutConfirm redirectTo="/portal-parceiro" triggerClassName="w-9 h-9 rounded-xl bg-muted/60 flex items-center justify-center">
+                <LogOut className="h-4 w-4 text-muted-foreground" />
+              </SignOutConfirm>
             </div>
             <div className="mb-5">
               <h1 className="text-2xl font-black text-foreground mb-1">
@@ -271,11 +269,9 @@ const DriverDashboardV2 = () => {
                   <p className="text-sm font-black text-foreground">{driverName}</p>
                 </div>
               </div>
-              <SignOutConfirm
-                redirectTo="/portal-parceiro"
-                triggerClassName="w-10 h-10 rounded-2xl bg-muted/60 flex items-center justify-center"
-                triggerTitle={<LogOut className="h-4 w-4 text-muted-foreground" />}
-              />
+              <SignOutConfirm redirectTo="/portal-parceiro" triggerClassName="w-10 h-10 rounded-2xl bg-muted/60 flex items-center justify-center">
+                <LogOut className="h-4 w-4 text-muted-foreground" />
+              </SignOutConfirm>
             </div>
 
             {/* Conteúdo */}
@@ -362,8 +358,9 @@ const DriverDashboardV2 = () => {
               <SignOutConfirm
                 redirectTo="/portal-parceiro"
                 triggerClassName="md3-ripple md3-state-layer w-10 h-10 rounded-full bg-muted flex items-center justify-center active:scale-[0.93] transition-all"
-                triggerTitle={<LogOut className="h-[18px] w-[18px] text-foreground" strokeWidth={2.2} />}
-              />
+              >
+                <LogOut className="h-[18px] w-[18px] text-foreground" strokeWidth={2.2} />
+              </SignOutConfirm>
             </div>
           </div>
         </header>

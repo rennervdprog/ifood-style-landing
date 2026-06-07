@@ -226,18 +226,17 @@ const PedidosPage = () => {
   // Client orders (for clients and lojistas viewing as client)
   const { data: orders, isLoading } = useQuery({
     queryKey: ["orders", user?.id],
-      staleTime: 30_000,        // 30s — histórico de pedidos do cliente
     queryFn: async () => {
       let query = supabase
         .from("orders")
-        .select("id, created_at, status, cancel_reason, store_id, client_id, total_price, subtotal, delivery_fee, app_fee, payment_method, neighborhood, address_details, delivery_pin, collection_code, settlement_code, visible_to_client, return_to_store_confirmed, delivery_confirmed_by_client, confirmed_at, driver_id, scheduled_for, change_for, needs_change, stores(name, delivery_mode, slug, owner_id), order_items(id, quantity, unit_price, observations, addons, products(name))")
+        .select("id, created_at, status, store_id, client_id, total_price, subtotal, delivery_fee, app_fee, payment_method, neighborhood, address_details, delivery_pin, collection_code, settlement_code, visible_to_client, return_to_store_confirmed, delivery_confirmed_by_client, confirmed_at, driver_id, scheduled_for, change_for, needs_change, stores(name, delivery_mode, slug, owner_id), order_items(id, quantity, unit_price, observations, addons, products(name))")
         .eq("client_id", user!.id)
         .eq("visible_to_client", true)
         .order("created_at", { ascending: false })
         .limit(100);
       const { data, error } = await query;
       if (error) throw error;
-      return data;
+      return (data || []) as any[];
     },
        enabled: !!user,
     // Mostra cache imediatamente; revalida em background — evita "tela laranja"
@@ -253,16 +252,15 @@ const PedidosPage = () => {
   // Store orders (for lojistas)
   const { data: storeOrders, isLoading: storeOrdersLoading } = useQuery({
     queryKey: ["store-orders-lojista", ownStore?.id],
-      staleTime: 15_000,        // 15s — pedidos do lojista
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("id, created_at, status, cancel_reason, store_id, client_id, total_price, subtotal, delivery_fee, app_fee, payment_method, neighborhood, address_details, delivery_pin, collection_code, settlement_code, confirmed_at, driver_id, scheduled_for, change_for, needs_change, order_items(id, quantity, unit_price, observations, addons, products(name))")
+        .select("id, created_at, status, store_id, client_id, total_price, subtotal, delivery_fee, app_fee, payment_method, neighborhood, address_details, delivery_pin, collection_code, settlement_code, confirmed_at, driver_id, scheduled_for, change_for, needs_change, order_items(id, quantity, unit_price, observations, addons, products(name))")
         .eq("store_id", ownStore!.id)
         .order("created_at", { ascending: false })
         .limit(50);
       if (error) throw error;
-      return data;
+      return (data || []) as any[];
     },
     enabled: !!ownStore?.id && isLojista,
     staleTime: 1000 * 30,

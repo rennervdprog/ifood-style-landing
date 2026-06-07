@@ -23,7 +23,7 @@ interface SignOutConfirmProps {
   /** Optional className for the default trigger button. */
   triggerClassName?: string;
   /** Optional title attribute for the default trigger. */
-  triggerTitle?: string;
+  triggerTitle?: ReactNode;
   /** Controlled open state (for triggering from elsewhere). */
   open?: boolean;
   /** Called when the open state changes (controlled mode). */
@@ -81,7 +81,7 @@ const SignOutConfirm = ({
             {children ?? (
               <button
                 type="button"
-                title={triggerTitle}
+                title={typeof triggerTitle === "string" ? triggerTitle : "Sair da conta"}
                 className={
                   triggerClassName ??
                   "p-2 rounded-xl hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
