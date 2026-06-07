@@ -11,8 +11,6 @@ import CommissionAlert from "@/components/CommissionAlert";
 import PlatformSplitAlert from "@/components/PlatformSplitAlert";
 import { GlanceCard } from "../components/GlanceCard";
 
-// Lazy MenuBuilder — heavy
-const MenuBuilder = lazy(() => import("@/components/MenuBuilder"));
 
 interface Props {
   store: any;
