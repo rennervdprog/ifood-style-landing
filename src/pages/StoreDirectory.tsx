@@ -495,67 +495,187 @@ const StoreDirectory = () => {
 
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
+      <ScrollProgress />
       <Navbar onNavigate={navigate} isLoggedIn={!!user} />
 
       {/* ══════ HERO ══════ */}
-       <section id="hero" className="relative py-24 md:py-32 px-4 overflow-hidden border-b border-border">
-         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.08),transparent_50%),radial-gradient(circle_at_bottom_left,hsl(var(--accent)/0.3),transparent_50%)] pointer-events-none" />
-         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-primary/[0.03] rounded-full blur-[120px] pointer-events-none" />
+      <section id="hero" className="relative pt-16 pb-20 md:pt-24 md:pb-32 px-4 overflow-hidden">
+        {/* Camadas de fundo sutis (gradientes via tokens) */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.10),transparent_55%),radial-gradient(circle_at_bottom_left,hsl(var(--accent)/0.35),transparent_55%)] pointer-events-none" />
+        <div className="absolute top-1/3 -left-32 w-[480px] h-[480px] bg-primary/[0.06] rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-0 -right-32 w-[420px] h-[420px] bg-orange-500/[0.05] rounded-full blur-[100px] pointer-events-none" />
 
-        <div className="relative mx-auto max-w-5xl text-center">
-          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-semibold text-primary mb-8 animate-fade-in">
-            <Globe className="h-4 w-4" />
-            Plataforma disponível para todo o Brasil 🇧🇷
+        <div className="relative mx-auto max-w-6xl grid lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+          {/* Coluna esquerda — copy */}
+          <div className="lg:col-span-7 text-center lg:text-left">
+            <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/15 px-3.5 py-1.5 text-xs font-bold text-primary mb-6 animate-fade-in">
+              <Globe className="h-3.5 w-3.5" />
+              Disponível em todo o Brasil 🇧🇷
+            </div>
+
+            <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-[5.5rem] font-black tracking-tight text-foreground leading-[0.95] mb-6 animate-in fade-in slide-in-from-bottom-6 duration-1000">
+              Receba pedidos pelo celular,{" "}
+              <span className="text-primary relative inline-block">
+                sem complicação
+                <span className="absolute -bottom-2 left-0 w-full h-3 bg-primary/20 -z-10 rounded-full" />
+              </span>
+              .
+            </h1>
+
+            <p className="text-lg md:text-xl text-muted-foreground max-w-xl mx-auto lg:mx-0 mb-8 leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
+              Feito para quem nunca usou aplicativo de delivery. Crie sua loja, mande o link no WhatsApp e{" "}
+              <span className="text-foreground font-bold">comece a vender hoje mesmo.</span>
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center lg:items-start lg:justify-start justify-center gap-3 animate-in fade-in zoom-in-95 duration-1000 delay-300">
+              <Button
+                size="lg"
+                onClick={handleCTA}
+                className="text-base md:text-lg px-7 py-4 min-h-[56px] rounded-2xl shadow-2xl shadow-primary/25 hover:shadow-primary/40 transition-all hover:-translate-y-0.5 active:scale-[0.98] font-black w-full sm:w-auto"
+              >
+                <Store className="mr-2 h-5 w-5" />
+                Criar minha loja grátis
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={handleWhatsApp}
+                className="text-base px-7 py-4 min-h-[56px] rounded-2xl w-full sm:w-auto border-foreground/15 hover:border-primary/40 hover:bg-primary/5"
+              >
+                <MessageCircle className="mr-2 h-5 w-5" /> Falar no WhatsApp
+              </Button>
+            </div>
+
+            {/* Trust microcopy logo abaixo dos CTAs */}
+            <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 justify-center lg:justify-start text-xs text-muted-foreground">
+              {[
+                { icon: CheckCircle2, text: "Sem cartão de crédito" },
+                { icon: Clock, text: "Pronto em 10 min" },
+                { icon: ShieldCheck, text: "Cancele quando quiser" },
+              ].map((t, i) => (
+                <div key={i} className="flex items-center gap-1.5">
+                  <t.icon className="h-3.5 w-3.5 text-primary" />
+                  <span className="font-semibold">{t.text}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Faixa de prova social — diferenciais */}
+            <div className="mt-8 grid grid-cols-3 gap-3 max-w-xl mx-auto lg:mx-0">
+              {[
+                { v: "0%", l: "Comissão*", c: "text-primary" },
+                { v: "10min", l: "Pra começar", c: "text-foreground" },
+                { v: "Brasil", l: "Todo o país", c: "text-foreground" },
+              ].map((s) => (
+                <div key={s.l} className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur px-3 py-3 text-center">
+                  <p className={`text-xl md:text-2xl font-black tracking-tight ${s.c}`}>{s.v}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-0.5">{s.l}</p>
+                </div>
+              ))}
+            </div>
           </div>
 
-           <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight text-foreground leading-[0.95] mb-8 animate-in fade-in slide-in-from-bottom-6 duration-1000">
-             Receba pedidos pelo celular, <br className="hidden md:block" />
-             sem <span className="text-primary relative inline-block">complicação<span className="absolute -bottom-2 left-0 w-full h-3 bg-primary/20 -z-10 rounded-full" /></span>.
-           </h1>
+          {/* Coluna direita — mockup do app */}
+          <div className="lg:col-span-5 relative flex justify-center animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
+            <div className="relative">
+              {/* Glow atrás do device */}
+              <div className="absolute -inset-8 bg-gradient-to-br from-primary/30 via-orange-500/20 to-transparent rounded-full blur-3xl opacity-60" />
 
-           <p className="text-xl md:text-2xl text-foreground/80 max-w-2xl mx-auto mb-12 leading-relaxed font-medium animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
-             Feito para quem nunca usou aplicativo de delivery. Crie a sua loja, mande o link no WhatsApp e <span className="text-foreground font-bold">comece a vender hoje mesmo</span>.
-          </p>
-
-           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-in fade-in zoom-in-95 duration-1000 delay-300">
-             <Button size="lg" onClick={handleCTA} className="text-lg md:text-xl px-8 py-4 min-h-[56px] rounded-2xl shadow-2xl shadow-primary/20 hover:shadow-primary/40 transition-all hover:-translate-y-1 active:scale-95 font-black w-full sm:w-auto">
-               <Store className="mr-2 h-5 w-5" />
-               Criar minha loja grátis
-               <ArrowRight className="ml-2 h-5 w-5" />
-             </Button>
-             <Button size="lg" variant="outline" onClick={handleWhatsApp} className="text-lg px-8 py-4 min-h-[56px] rounded-2xl w-full sm:w-auto">
-               <MessageCircle className="mr-2 h-5 w-5" /> Falar no WhatsApp
-             </Button>
-           </div>
-
-          {/* Honest launch badge instead of fake numbers */}
-           <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
-             <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-4 py-2 text-sm font-semibold text-primary">
-               <ShieldCheck className="h-4 w-4" />
-               Delivery próprio • Sem depender dos grandes apps
-             </div>
-             <div className="inline-flex items-center gap-2 rounded-full bg-blue-500/10 border border-blue-500/20 px-4 py-2 text-sm font-semibold text-blue-600">
-               <Store className="h-4 w-4" />
-               PDV integrado • Venda no balcão também
-             </div>
-             <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-4 py-2 text-sm font-semibold text-emerald-600">
-               <MessageCircle className="h-4 w-4" />
-               Novo • WhatsApp Automático em cada etapa
-             </div>
-           </div>
-
-          {/* Trust badges */}
-          <div className="flex flex-wrap items-center gap-6 justify-center mt-8 text-sm text-muted-foreground">
-            {[
-              { icon: CheckCircle2, text: "Sem cartão de crédito" },
-              { icon: Clock, text: "Aprovação em 24h" },
-              { icon: ShieldCheck, text: "Cancele quando quiser" },
-            ].map((t, i) => (
-              <div key={i} className="flex items-center gap-1.5">
-                <t.icon className="h-4 w-4 text-primary" />
-                <span className="font-medium">{t.text}</span>
+              {/* Device frame */}
+              <div className="relative w-[280px] sm:w-[320px] aspect-[9/19] bg-foreground rounded-[3rem] p-3 shadow-2xl">
+                <div className="w-full h-full bg-background rounded-[2.3rem] overflow-hidden relative">
+                  {/* Notch */}
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-6 bg-foreground rounded-b-2xl z-10" />
+                  {/* Status bar */}
+                  <div className="pt-2 pb-1.5 px-5 flex justify-between text-[10px] font-bold text-foreground/70">
+                    <span>9:41</span>
+                    <span>•••</span>
+                  </div>
+                  {/* Header do app */}
+                  <div className="bg-primary mx-3 mt-1 rounded-2xl px-3 py-2.5 flex items-center gap-2 shadow-lg shadow-primary/20">
+                    <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
+                      <ShoppingBag className="text-white h-4 w-4" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-[9px] text-white/80 leading-none font-bold uppercase tracking-wide">ItaSuper</p>
+                      <p className="text-xs font-black text-white leading-tight mt-0.5">Novo pedido!</p>
+                    </div>
+                    <div className="relative">
+                      <Bell className="text-white h-4 w-4" />
+                      <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                    </div>
+                  </div>
+                  {/* Card pedido */}
+                  <div className="p-3 space-y-2.5 mt-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-black text-foreground">Pedido #1247</span>
+                      <span className="text-[8px] font-black text-emerald-600 bg-emerald-500/10 px-1.5 py-0.5 rounded-full">PIX PAGO</span>
+                    </div>
+                    <div className="bg-muted/60 rounded-2xl p-2.5 space-y-1.5">
+                      <div className="flex justify-between text-[10px]">
+                        <span className="text-foreground font-semibold">2x Pizza Calabresa</span>
+                        <span className="font-black text-foreground">R$ 90,00</span>
+                      </div>
+                      <div className="flex justify-between text-[10px]">
+                        <span className="text-foreground font-semibold">1x Coca 2L</span>
+                        <span className="font-black text-foreground">R$ 12,00</span>
+                      </div>
+                      <div className="border-t border-border pt-1.5 flex justify-between text-[11px]">
+                        <span className="font-black text-foreground">Total</span>
+                        <span className="font-black text-primary">R$ 102,00</span>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-1.5 text-[9px] text-muted-foreground">
+                      <MapPin className="h-3 w-3 text-primary shrink-0 mt-0.5" />
+                      <span className="leading-tight font-medium">R. das Flores, 123<br />Centro · 2,4 km</span>
+                    </div>
+                    <button className="w-full bg-primary text-white text-[11px] font-black py-2.5 rounded-xl shadow-md mt-1">
+                      Aceitar pedido
+                    </button>
+                  </div>
+                </div>
               </div>
-            ))}
+
+              {/* Floating chip "WhatsApp enviado" */}
+              <div className="hidden sm:flex absolute -left-12 top-24 items-center gap-2 bg-card border border-emerald-500/20 rounded-2xl px-3 py-2 shadow-xl animate-bounce-subtle">
+                <div className="w-7 h-7 rounded-full bg-emerald-500/15 flex items-center justify-center">
+                  <MessageCircle className="h-3.5 w-3.5 text-emerald-600" />
+                </div>
+                <div>
+                  <p className="text-[9px] font-black text-foreground leading-none">Cliente avisado</p>
+                  <p className="text-[8px] text-emerald-600 font-bold mt-0.5">via WhatsApp ✓✓</p>
+                </div>
+              </div>
+
+              {/* Floating chip "PIX caiu" */}
+              <div className="hidden sm:flex absolute -right-10 bottom-20 items-center gap-2 bg-card border border-primary/20 rounded-2xl px-3 py-2 shadow-xl animate-bounce-subtle" style={{ animationDelay: "0.6s" }}>
+                <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
+                  <DollarSign className="h-3.5 w-3.5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-[9px] font-black text-foreground leading-none">+ R$ 102,00</p>
+                  <p className="text-[8px] text-primary font-bold mt-0.5">PIX recebido</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══════ FAIXA DE PROVA SOCIAL — segmentos atendidos ══════ */}
+      <section className="border-y border-border bg-muted/20 py-6 overflow-hidden">
+        <div className="mx-auto max-w-6xl px-4">
+          <p className="text-center text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground mb-4">
+            Feito para o seu negócio
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm font-bold text-foreground/70">
+            <span className="flex items-center gap-1.5">🍕 Pizzarias</span>
+            <span className="flex items-center gap-1.5">🍔 Hamburguerias</span>
+            <span className="flex items-center gap-1.5">🛒 Mercados</span>
+            <span className="flex items-center gap-1.5">🍰 Docerias</span>
+            <span className="flex items-center gap-1.5">🍺 Bares</span>
+            <span className="flex items-center gap-1.5">💈 Serviços</span>
           </div>
         </div>
       </section>
