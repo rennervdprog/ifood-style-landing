@@ -1204,7 +1204,7 @@ const StorePage = () => {
       )}
 
       {/* ===== PRODUCTS ===== */}
-      <div className="px-4 pt-4 space-y-6">
+      <div className={`px-4 pt-4 space-y-6 ${isAdega ? "bg-zinc-950 text-zinc-100 pb-8 min-h-[60vh]" : ""}`}>
         {isLoading ? (
           <div className="space-y-3">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -1225,7 +1225,7 @@ const StorePage = () => {
               {filteredProducts.length} resultado{filteredProducts.length !== 1 ? "s" : ""} para "{searchQuery}"
             </p>
             {filteredProducts.length > 0 ? (
-              <div className="space-y-2.5">
+              <div className={isAdega ? "grid grid-cols-2 gap-2.5" : "space-y-2.5"}>
                 {filteredProducts.map(product => (
                   <ProductCard
                     key={product.id}
@@ -1257,12 +1257,12 @@ const StorePage = () => {
                   className="scroll-mt-16"
                 >
                   <div className="flex items-center gap-2 mb-3">
-                    <h2 className="text-base font-black text-foreground">{section.name}</h2>
-                    <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full font-bold">
+                    <h2 className={`text-base font-black ${isAdega ? "text-zinc-100" : "text-foreground"}`}>{section.name}</h2>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${isAdega ? "bg-zinc-800 text-zinc-400" : "bg-muted text-muted-foreground"}`}>
                       {sectionProducts.length}
                     </span>
                   </div>
-                  <div className="space-y-2.5">
+                  <div className={isAdega ? "grid grid-cols-2 gap-2.5" : "space-y-2.5"}>
                     {sectionProducts.map(product => (
                       <ProductCard
                         key={product.id}
@@ -1282,13 +1282,13 @@ const StorePage = () => {
               <div>
                 {sections && sections.length > 0 && (
                   <div className="flex items-center gap-2 mb-3">
-                    <h2 className="text-base font-black text-foreground">Outros</h2>
-                    <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full font-bold">
+                    <h2 className={`text-base font-black ${isAdega ? "text-zinc-100" : "text-foreground"}`}>Outros</h2>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${isAdega ? "bg-zinc-800 text-zinc-400" : "bg-muted text-muted-foreground"}`}>
                       {unsectionedProducts.length}
                     </span>
                   </div>
                 )}
-                <div className="space-y-2.5">
+                <div className={isAdega ? "grid grid-cols-2 gap-2.5" : "space-y-2.5"}>
                   {unsectionedProducts.map(product => (
                     <ProductCard
                       key={product.id}
