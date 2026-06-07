@@ -246,7 +246,7 @@ const AppStorePageAdmin = () => {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="text-xs font-bold text-muted-foreground block mb-1.5">Versão</label>
-            <input value={form.version} onChange={f("version")} placeholder="1.2.62"
+            <input value={form.version} onChange={f("version")} placeholder={APP_VERSION}
               className="w-full bg-muted/40 border border-border/60 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
           </div>
           <div>
