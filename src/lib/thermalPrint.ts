@@ -76,11 +76,19 @@ export function printThermalReceipt(
 
     if (addons.length > 0) {
       const requiredAddons = addons.filter((a: any) => a.required && a.groupName);
-      const optionalAddons = addons.filter((a: any) => !(a.required && a.groupName));
+      const isBorder = (a: any) => typeof a?.name === "string" && /^borda\s*:/i.test(a.name);
+      const borderAddons = addons.filter((a: any) => !(a.required && a.groupName) && isBorder(a));
+      const optionalAddons = addons.filter((a: any) => !(a.required && a.groupName) && !isBorder(a));
 
       requiredAddons.forEach((a: any) => {
         const priceStr = Number(a.price) > 0 ? formatBRL(Number(a.price)) : "";
         itemsHtml += `<div class="tp-required-addon" style="display:flex;justify-content:space-between;font-weight:bold;font-size:13px;border:1px solid #000;padding:2px 4px;margin:3px 0;background:#eee"><span>★ ${a.groupName}: ${a.name.toUpperCase()}</span><span>${priceStr}</span></div>`;
+      });
+
+      borderAddons.forEach((a: any) => {
+        const priceStr = Number(a.price) > 0 ? formatBRL(Number(a.price)) : "";
+        const borderName = String(a.name).replace(/^borda\s*:\s*/i, "").toUpperCase();
+        itemsHtml += `<div class="tp-border-addon" style="display:flex;justify-content:space-between;font-weight:bold;font-size:13px;border:1px solid #000;padding:2px 4px;margin:3px 0;background:#eee"><span>◆ BORDA: ${borderName}</span><span>${priceStr}</span></div>`;
       });
 
       optionalAddons.forEach((a: any) => {
@@ -129,7 +137,7 @@ ${itemsHtml}
 <div class="tp-total-row"><span>Entrega:</span><span>${formatBRL(Number(order.delivery_fee))}</span></div>
 <div class="tp-total-big"><span>TOTAL:</span><span>${formatBRL(Number(order.total_price))}</span></div>
 <div class="tp-divider"></div>
-<div class="tp-info"><b>Pagamento:</b> ${paymentLabels[order.payment_method] || order.payment_method}</div>
+<div class="tp-info"><b>Pagamento:</b> ${paymentLabels[order.payment_method] || order.payment_method} ${order.payment_method === "pix" ? '<span style="font-weight:bold">(PAGO ONLINE)</span>' : '<span style="font-weight:bold">(RECEBER NA ENTREGA)</span>'}</div>
 ${changeHtml}
 <div class="tp-info"><b>Cliente:</b> ${clientName}</div>
 <div class="tp-info"><b>Bairro:</b> ${order.neighborhood}</div>
@@ -180,6 +188,7 @@ interface PrintPdvOrder {
     unit_price: number;
     products?: { name: string } | null;
     observations?: string | null;
+    addons?: any;
   }[];
 }
 
@@ -194,16 +203,37 @@ export function printPdvReceipt(order: PrintPdvOrder, storeName: string) {
   // Itens
   let itemsHtml = "";
   order.order_items?.forEach(item => {
-    const name = item.products?.name || "Item";
-    const unitPrice = formatBRL(Number(item.unit_price));
-    const totalItem = formatBRL(Number(item.unit_price) * item.quantity);
+    const name = getOrderItemDisplayName(item as any);
+    let rawAddons = (item as any).addons;
+    if (typeof rawAddons === "string") {
+      try { rawAddons = JSON.parse(rawAddons); } catch { rawAddons = []; }
+    }
+    const addons = Array.isArray(rawAddons) ? rawAddons : [];
+    const addonsTotal = addons.reduce((s: number, a: any) => s + (Number(a?.price) || 0), 0);
+    const baseUnitPrice = Number(item.unit_price) - addonsTotal;
+    const unitPrice = formatBRL(baseUnitPrice);
+    const totalItem = formatBRL(baseUnitPrice * item.quantity);
     itemsHtml += `
       <div style="display:flex;justify-content:space-between;padding:3px 0;font-size:13px">
         <span><b>${item.quantity}x</b> ${name}</span>
         <span>${totalItem}</span>
       </div>`;
-    if (item.unit_price > 0) {
+    if (baseUnitPrice > 0) {
       itemsHtml += `<div style="font-size:11px;color:#555;padding-left:16px">Unitário: ${unitPrice}</div>`;
+    }
+    if (addons.length > 0) {
+      const isBorder = (a: any) => typeof a?.name === "string" && /^borda\s*:/i.test(a.name);
+      addons.forEach((a: any) => {
+        const priceStr = Number(a.price) > 0 ? formatBRL(Number(a.price)) : "";
+        if (a.required && a.groupName) {
+          itemsHtml += `<div style="display:flex;justify-content:space-between;font-weight:bold;font-size:12px;border:1px solid #000;padding:2px 4px;margin:3px 0;background:#eee"><span>★ ${a.groupName}: ${String(a.name).toUpperCase()}</span><span>${priceStr}</span></div>`;
+        } else if (isBorder(a)) {
+          const borderName = String(a.name).replace(/^borda\s*:\s*/i, "").toUpperCase();
+          itemsHtml += `<div style="display:flex;justify-content:space-between;font-weight:bold;font-size:12px;border:1px solid #000;padding:2px 4px;margin:3px 0;background:#eee"><span>◆ BORDA: ${borderName}</span><span>${priceStr}</span></div>`;
+        } else {
+          itemsHtml += `<div style="display:flex;justify-content:space-between;font-size:11px;padding-left:12px"><span>+ ${a.name}</span><span>${priceStr}</span></div>`;
+        }
+      });
     }
     if (item.observations) {
       itemsHtml += `<div style="font-size:11px;font-style:italic;padding-left:16px">Obs: ${item.observations}</div>`;
