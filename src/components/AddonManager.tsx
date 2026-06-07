@@ -229,7 +229,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
           </div>
           <div className="min-w-0">
             <h2 className="text-base font-bold text-foreground leading-tight">Adicionais</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">Crie grupos (ex: Molhos, Tamanhos) e vincule a produtos.</p>
+            <p className="text-xs text-foreground/70 mt-0.5">Crie grupos (ex: Molhos, Tamanhos) e vincule a produtos.</p>
           </div>
         </div>
         <button
@@ -438,31 +438,31 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                       <div className="flex items-center gap-2">
                         <h3 className="font-bold text-base text-foreground">{group.name}</h3>
                         {group.min_select > 0 ? (
-                          <span className="text-[10px] bg-amber-500/15 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full font-bold uppercase tracking-wide">
+                          <span className="text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-bold uppercase tracking-wide">
                             Obrigatório
                           </span>
                         ) : (
-                          <span className="text-[10px] bg-muted text-muted-foreground px-2 py-0.5 rounded-full font-bold uppercase tracking-wide">
+                          <span className="text-[10px] bg-muted-foreground/80 text-background px-2 py-0.5 rounded-full font-bold uppercase tracking-wide">
                             Opcional
                           </span>
                         )}
                       </div>
-                      <p className="text-[11px] text-muted-foreground mt-1">
+                      <p className="text-xs text-foreground/70 mt-1">
                         Cliente escolhe {group.min_select > 0 ? `de ${group.min_select} a ${group.max_select}` : `até ${group.max_select}`}
                       </p>
                       <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                        <span className="inline-flex items-center gap-1 text-[11px] bg-muted text-foreground/80 px-2 py-0.5 rounded-full font-semibold">
+                        <span className="inline-flex items-center gap-1 text-xs bg-muted text-foreground px-2 py-0.5 rounded-full font-semibold">
                           <Package className="h-3 w-3" />
                           {(group.addon_items as any[])?.length || 0} {((group.addon_items as any[])?.length || 0) === 1 ? "item" : "itens"}
                         </span>
                         {linkedProducts.length > 0 && (
-                          <span className="inline-flex items-center gap-1 text-[11px] bg-primary/15 text-primary px-2 py-0.5 rounded-full font-semibold">
+                          <span className="inline-flex items-center gap-1 text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full font-semibold">
                             <Link2 className="h-3 w-3" />
                             {linkedProducts.length} produto{linkedProducts.length > 1 ? "s" : ""}
                           </span>
                         )}
                         {group.price_replaces_base && (
-                          <span className="inline-flex items-center gap-1 text-[11px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full font-semibold">
+                          <span className="inline-flex items-center gap-1 text-xs bg-emerald-600 text-white px-2 py-0.5 rounded-full font-semibold">
                             💰 Define preço
                           </span>
                         )}
