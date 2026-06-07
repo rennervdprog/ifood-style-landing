@@ -27,13 +27,30 @@ const setWebhook = async (baseUrl: string, instance: string, apiKey: string, web
     body: JSON.stringify(payload),
   });
   const data = await r.json().catch(() => ({}));
-  return { ok: r.ok, status: r.status, data };
+  return {
+    ok: r.ok,
+    status: r.status,
+    data: {
+      enabled: Boolean(data?.enabled),
+      events: Array.isArray(data?.events) ? data.events : [],
+      webhookByEvents: Boolean(data?.webhookByEvents),
+      urlConfigured: Boolean(data?.url),
+    },
+  };
 };
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
+    const expected = Deno.env.get("EVOLUTION_WEBHOOK_TOKEN") || "";
+    const url = new URL(req.url);
+    const authorized = expected && (
+      req.headers.get("x-internal-token") === expected ||
+      url.searchParams.get("token") === expected
+    );
+    if (!authorized) return json({ error: "Forbidden" }, 403);
+
     const baseUrl = Deno.env.get("EVOLUTION_API_URL");
     const apiKey = Deno.env.get("EVOLUTION_GLOBAL_API_KEY");
     const webhookToken = Deno.env.get("EVOLUTION_WEBHOOK_TOKEN") || "";
