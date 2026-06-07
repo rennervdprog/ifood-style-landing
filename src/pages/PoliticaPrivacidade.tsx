@@ -3,7 +3,7 @@ import { ArrowLeft } from "lucide-react";
 
 const PoliticaPrivacidade = () => {
   const navigate = useNavigate();
-  const dataAtualizacao = "2 de junho de 2026";
+  const dataAtualizacao = "7 de junho de 2026";
 
   return (
     <div className="min-h-screen bg-background">
@@ -44,6 +44,7 @@ const PoliticaPrivacidade = () => {
             <li>Dados de suporte: tickets abertos, conteúdo de mensagens trocadas com agentes, categoria e prioridade dos chamados</li>
             <li><strong className="text-foreground">Inteligência Artificial (Sales Coach):</strong> Os dados de vendas e pedidos do lojista (volumes, horários, produtos, ticket médio) são processados por modelo de IA para gerar recomendações de desempenho. O lojista pode desativar este recurso nas configurações da conta.</li>
             <li><strong className="text-foreground">Dados PDV:</strong> sessões de caixa (abertura, fechamento, valores), movimentações (vendas, sangrias, suprimentos), comissões pendentes</li>
+            <li><strong className="text-foreground">WhatsApp Automático (Evolution API):</strong> nome da instância, status de conexão, templates de mensagem personalizados, log de envios (telefone destinatário, hash da mensagem, data/hora, tipo). Tokens e credenciais da instância são armazenados em tabela restrita, acessível apenas pelo lojista titular e pelo administrador.</li>
           </ul>
           <p><strong className="text-foreground">1.3. Entregadores:</strong></p>
           <ul className="list-disc pl-4 space-y-1">
@@ -63,6 +64,7 @@ const PoliticaPrivacidade = () => {
             <li><strong className="text-foreground">Consentimento (Art. 7º, I):</strong> Geolocalização para cálculo de frete, comunicações de marketing (opt-in).</li>
             <li><strong className="text-foreground">Obrigação legal (Art. 7º, II):</strong> Manutenção de registros de transações financeiras conforme legislação fiscal e regulatória.</li>
             <li><strong className="text-foreground">Dados PDV:</strong> Execução de contrato — as sessões e movimentações de caixa são necessárias para calcular a comissão presencial e gerar relatórios de turno ao lojista.</li>
+            <li><strong className="text-foreground">WhatsApp Automático:</strong> Execução de contrato (Art. 7º, V) — envio de mensagens transacionais ao cliente sobre o ciclo do pedido (aceito, em preparo, pronto, saiu para entrega, entregue, cancelado) e respostas automáticas configuradas pelo lojista. O número do cliente é obtido no cadastro/checkout e usado exclusivamente pela loja em que o pedido foi feito.</li>
           </ul>
         </section>
 
@@ -74,6 +76,7 @@ const PoliticaPrivacidade = () => {
             <li><strong className="text-foreground">Firebase (Google):</strong> Token de dispositivo para envio de notificações push (sem dados pessoais identificáveis).</li>
             <li><strong className="text-foreground">Supabase:</strong> Infraestrutura de banco de dados e autenticação — dados armazenados com criptografia.</li>
             <li><strong className="text-foreground">Vercel:</strong> Infraestrutura de hospedagem da aplicação.</li>
+            <li><strong className="text-foreground">Evolution API (WhatsApp):</strong> Servidor de integração com o WhatsApp utilizado para envio das mensagens automáticas. Recebe o número do destinatário e o conteúdo da mensagem, processados em servidor próprio da plataforma. O lojista é corresponsável pelo número conectado e pelo cumprimento dos Termos do WhatsApp/Meta.</li>
             <li><strong className="text-foreground">Entre usuários da plataforma:</strong> Lojistas veem nome e telefone do cliente para fins de entrega (apenas campos necessários via view de segurança). Clientes veem nome e avaliação da loja.</li>
             <li><strong className="text-foreground">Autoridades competentes:</strong> Quando exigido por lei ou ordem judicial.</li>
           </ul>
@@ -88,6 +91,7 @@ const PoliticaPrivacidade = () => {
             <li><strong className="text-foreground">Histórico de pedidos:</strong> Mantido por até 5 anos para fins contábeis e fiscais.</li>
             <li><strong className="text-foreground">Dados PDV (sessões e movimentações):</strong> Mantidos por até 5 anos para fins de auditoria financeira e fiscal.</li>
             <li><strong className="text-foreground">Dados de suporte (tickets e mensagens):</strong> Mantidos por até 2 anos após o encerramento do ticket, para fins de auditoria de atendimento e resolução de disputas.</li>
+            <li><strong className="text-foreground">Log de envios de WhatsApp:</strong> Mantido por até 12 meses para fins de antifraude, deduplicação e controle de limites diários por chip. Após esse prazo é eliminado automaticamente.</li>
             <li><strong className="text-foreground">Documentos de identidade (entregadores):</strong> Mantidos enquanto o cadastro estiver ativo. Excluídos em até 30 dias após o encerramento da conta.</li>
           </ul>
         </section>
@@ -115,7 +119,7 @@ const PoliticaPrivacidade = () => {
             <li>Documentos sensíveis de entregadores armazenados em bucket privado com acesso restrito ao administrador.</li>
             <li>Dados financeiros de lojas protegidos por views de segurança, limitando campos expostos.</li>
             <li>Senhas armazenadas com hash criptográfico — nunca em texto plano.</li>
-            <li>Credenciais de integração (tokens Z-API) em tabela dedicada com acesso restrito.</li>
+            <li>Credenciais de integração (Evolution API e demais) em tabela dedicada com acesso restrito ao lojista titular e ao administrador da plataforma.</li>
             <li>Controle de sessão única por conta.</li>
             <li>Dados PDV (sessões, movimentações) acessíveis apenas pelo próprio lojista e pelo administrador da plataforma.</li>
           </ul>

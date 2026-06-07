@@ -3,7 +3,7 @@ import { ArrowLeft } from "lucide-react";
 
 const TermosDeUso = () => {
   const navigate = useNavigate();
-  const dataAtualizacao = "2 de junho de 2026";
+  const dataAtualizacao = "7 de junho de 2026";
 
   return (
     <div className="min-h-screen bg-background">
@@ -54,7 +54,7 @@ const TermosDeUso = () => {
         <section className="space-y-3">
           <h2 className="text-base font-bold text-foreground">4. Serviços da Plataforma</h2>
           <p>4.1. O ItaSuper é intermediador digital. Não fabrica, estoca, embala ou entrega produtos diretamente.</p>
-          <p>4.2. Serviços incluem: cardápio digital, pagamentos PIX Online/PIX Maquininha/cartão/dinheiro, gestão de entregas com motoboy próprio, cupons, fidelidade, notificações, relatórios, extrato financeiro, <strong className="text-foreground">módulo PDV completo</strong>, sistema de suporte via tickets e Sales Coach (ferramenta de recomendação assistida por IA para lojistas).</p>
+          <p>4.2. Serviços incluem: cardápio digital, pagamentos PIX Online/PIX Maquininha/cartão/dinheiro, gestão de entregas com motoboy próprio, cupons, fidelidade, notificações, relatórios, extrato financeiro, <strong className="text-foreground">módulo PDV completo</strong>, sistema de suporte via tickets, Sales Coach (ferramenta de recomendação assistida por IA para lojistas) e <strong className="text-foreground">integração de WhatsApp automático (Evolution API)</strong> para envio de mensagens transacionais aos clientes da loja.</p>
         </section>
 
         <section className="space-y-3">
@@ -64,6 +64,15 @@ const TermosDeUso = () => {
             <p>4-A.2. Cada ticket é registrado com identificação do usuário, data, hora, categoria e histórico completo de mensagens, com rastreabilidade do agente responsável.</p>
             <p>4-A.3. Prazo de primeira resposta: até 2 dias úteis. Tickets urgentes (bloqueio de conta, falha financeira) têm atendimento prioritário.</p>
             <p>4-A.4. O conteúdo das conversas constitui dado pessoal e está sujeito à Política de Privacidade e à LGPD.</p>
+          </div>
+
+          <h2 className="text-base font-bold text-foreground">4-B. WhatsApp Automático (Evolution API)</h2>
+          <div className="space-y-2 text-muted-foreground">
+            <p>4-B.1. O Lojista pode, opcionalmente, conectar um número de WhatsApp próprio à Plataforma via Evolution API, lendo o QR Code no painel da loja. A conexão é individual por loja e pode ser desconectada a qualquer momento.</p>
+            <p>4-B.2. Uma vez conectado, o ItaSuper envia automaticamente, em nome da loja, mensagens transacionais ao cliente referentes ao ciclo do pedido (confirmação, em preparo, pronto, saiu para entrega, entregue, cancelado), bem como respostas automáticas configuradas pelo Lojista (ex.: saudação, cardápio).</p>
+            <p>4-B.3. O Lojista é o <strong className="text-foreground">único responsável</strong> pelo número conectado, pelo conteúdo dos templates personalizados e pelo cumprimento dos Termos de Serviço do WhatsApp/Meta, incluindo regras anti-spam e obtenção de consentimento dos destinatários. O ItaSuper aplica limites diários progressivos, deduplicação e intervalo mínimo entre envios para reduzir risco de banimento, mas <strong className="text-foreground">não garante</strong> a continuidade do número junto ao WhatsApp.</p>
+            <p>4-B.4. O Cliente, ao fornecer seu WhatsApp no cadastro/checkout, autoriza o recebimento das mensagens transacionais da loja em que realizou o pedido, com base na execução do contrato (Art. 7º, V da LGPD). O cliente pode solicitar a interrupção respondendo "PARAR" à loja ou via suporte.</p>
+            <p>4-B.5. O ItaSuper não se responsabiliza por suspensão, banimento ou indisponibilidade do número de WhatsApp do Lojista, nem por falhas, latência ou indisponibilidade da Evolution API e da infraestrutura do WhatsApp/Meta.</p>
           </div>
 
           <h2 className="text-base font-bold text-foreground">5. Planos e Assinatura</h2>
