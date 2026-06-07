@@ -637,7 +637,7 @@ const StorePage = () => {
   }
 
   return (
-    <div ref={pageRef} className={`min-h-screen bg-background pb-24 ${isAdega ? "dark" : ""}`}>
+    <div ref={pageRef} className={`min-h-screen bg-background pb-24 ${isAdega ? "adega-theme" : ""}`}>
       {/* ===== HERO ===== */}
       <div className="relative h-56 md:h-64">
         {store?.image_url ? (
@@ -657,7 +657,7 @@ const StorePage = () => {
          {/* Sticky Header Top Bar */}
          {!showHalfHalf && (
            <div className={`fixed top-0 left-0 right-0 flex items-center justify-between p-4 z-[70] transition-all duration-300 h-[64px] ${
-             scrolled ? "bg-background border-b border-border shadow-sm py-2" : "bg-transparent"
+             scrolled ? (isAdega ? "bg-zinc-950 border-b border-zinc-800 shadow-sm py-2" : "bg-background border-b border-border shadow-sm py-2") : "bg-transparent"
            }`}>
           <div className="flex items-center gap-3 min-w-0">
             {!getStoreAppSlug() && (
@@ -673,10 +673,10 @@ const StorePage = () => {
             )}
             {scrolled && (
               <div className="flex flex-col min-w-0 animate-in fade-in slide-in-from-left-2 duration-300">
-                <h2 className="text-sm font-black text-foreground truncate">{store?.name}</h2>
+                <h2 className={`text-sm font-black truncate ${isAdega ? "text-zinc-100" : "text-foreground"}`}>{store?.name}</h2>
                 <div className="flex items-center gap-1.5">
                   <div className={`w-1.5 h-1.5 rounded-full ${storeStatus.isOpen ? "bg-green-500" : "bg-destructive"}`} />
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase">{storeStatus.isOpen ? "Aberto" : "Fechado"}</span>
+                  <span className={`text-[10px] font-bold uppercase ${isAdega ? "text-zinc-400" : "text-muted-foreground"}`}>{storeStatus.isOpen ? "Aberto" : "Fechado"}</span>
                 </div>
               </div>
             )}
@@ -706,7 +706,7 @@ const StorePage = () => {
 
       {/* ===== STORE INFO ===== */}
       <div className="relative -mt-12 mx-4 z-10">
-        <div className="bg-card rounded-2xl border border-border shadow-xl overflow-visible">
+        <div className={`rounded-2xl border shadow-xl overflow-visible ${isAdega ? "bg-zinc-900 border-zinc-800" : "bg-card border-border"}`}>
           <div className="p-5 pb-0 relative">
             <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start sm:gap-4">
               <div className="w-[100px] h-[100px] rounded-full bg-card border-[4px] border-card shadow-2xl flex-shrink-0 overflow-hidden -mt-[70px] relative z-[55] mx-auto sm:mx-0">
@@ -911,7 +911,7 @@ const StorePage = () => {
           {store && <div className="px-5"><LoyaltyBanner storeId={store.id} storeName={store.name} /></div>}
 
           {/* Stats bar */}
-          <div className="bg-muted/50 mt-2 px-5 py-4 flex items-center justify-around border-t border-border/50">
+          <div className={`mt-2 px-5 py-4 flex items-center justify-around border-t ${isAdega ? "bg-zinc-950/60 border-zinc-800" : "bg-muted/50 border-border/50"}`}>
             <div className="flex flex-col items-center">
               <span className="text-lg font-black text-foreground leading-none">{totalProducts}</span>
               <span className="text-[11px] font-semibold text-muted-foreground mt-1">Produtos</span>
@@ -977,13 +977,13 @@ const StorePage = () => {
       {/* ===== SEARCH BAR ===== */}
       <div className="mx-4 mt-3">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className={`absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 ${isAdega ? "text-zinc-500" : "text-muted-foreground"}`} />
           <input
             type="text"
             placeholder="Buscar produtos..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-10 py-3 rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className={`w-full pl-10 pr-10 py-3 rounded-xl border text-sm focus:outline-none focus:ring-2 ${isAdega ? "bg-zinc-900 border-zinc-800 text-zinc-100 placeholder:text-zinc-500 focus:ring-amber-500/40" : "bg-card border-border text-foreground placeholder:text-muted-foreground focus:ring-primary/30"}`}
           />
           {searchQuery && (
             <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2">
