@@ -17,6 +17,7 @@ const SettingsTab = ({ store }: Props) => (
         storeId={store.id}
         storeSlug={store.slug || ""}
         storeName={store.name}
+        expectedPhone={store.whatsapp_number || store.whatsapp || store.phone || null}
       />
     </section>
     <StoreSettings 
