@@ -95,6 +95,27 @@
     --sidebar-border: 0 0% 90%;
     --sidebar-ring: 25 100% 50%;
   }
+
+  /* ===== Tema escopado para lojas de Adega (override dos tokens) ===== */
+  .adega-theme {
+    --background: 240 5% 6%;        /* zinc-950 */
+    --foreground: 0 0% 96%;         /* zinc-100 */
+    --card: 240 5% 11%;             /* zinc-900 */
+    --card-foreground: 0 0% 96%;
+    --popover: 240 5% 11%;
+    --popover-foreground: 0 0% 96%;
+    --primary: 38 92% 50%;          /* amber-500 */
+    --primary-foreground: 240 6% 10%;
+    --secondary: 240 4% 16%;
+    --secondary-foreground: 0 0% 96%;
+    --muted: 240 4% 16%;            /* zinc-800-ish */
+    --muted-foreground: 240 5% 65%; /* zinc-400 */
+    --accent: 38 92% 50%;
+    --accent-foreground: 240 6% 10%;
+    --border: 240 4% 18%;
+    --input: 240 4% 18%;
+    --ring: 38 92% 50%;
+  }
 }
 
 @layer base {
