@@ -13,6 +13,26 @@ const BodySchema = z.object({
   force_reconnect: z.boolean().optional(),
 });
 
+const setWebhook = async (baseUrl: string, instance: string, apiKey: string, webhookUrl: string) => {
+  const payload = {
+    webhook: {
+      enabled: true,
+      url: webhookUrl,
+      webhook_by_events: false,
+      webhook_base64: false,
+      events: ["CONNECTION_UPDATE", "MESSAGES_UPSERT"],
+    },
+  };
+  const r = await fetch(`${baseUrl.replace(/\/$/, "")}/webhook/set/${instance}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", apikey: apiKey },
+    body: JSON.stringify(payload),
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) console.error("[evolution-qr-code] webhook set failed", { instance, status: r.status, data });
+  return { ok: r.ok, status: r.status, data };
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -60,9 +80,19 @@ Deno.serve(async (req) => {
         instanceName: instance,
         qrcode: true,
         integration: "WHATSAPP-BAILEYS",
-        webhook: { url: webhookUrl, byEvents: false, events: ["CONNECTION_UPDATE", "MESSAGES_UPSERT"] },
+        webhook: {
+          enabled: true,
+          url: webhookUrl,
+          webhook_by_events: false,
+          webhook_base64: false,
+          events: ["CONNECTION_UPDATE", "MESSAGES_UPSERT"],
+        },
       }),
     }).catch(() => {});
+
+    // 1.0) regrava explicitamente o webhook; em instâncias já existentes,
+    // o /instance/create não atualiza o webhook e as mensagens não chegam.
+    await setWebhook(baseUrl, instance, apiKey, webhookUrl);
 
     // 1.1) aplica settings anti-ban recomendados (best-effort)
     await fetch(`${baseUrl.replace(/\/$/, "")}/settings/set/${instance}`, {
