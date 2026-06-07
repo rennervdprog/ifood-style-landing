@@ -486,22 +486,22 @@ const StorePage = () => {
   }, [isAdega, products]);
 
   const unsectionedProducts = useMemo(
-    () => products?.filter((p) => !p.section_id) || [],
-    [products]
+    () => applyAdegaFilters(products?.filter((p) => !p.section_id) || []),
+    [products, applyAdegaFilters]
   );
 
   // Search filter
   const filteredProducts = useMemo(() => {
     const q = debouncedSearch.trim().toLowerCase();
     if (!q) return null;
-    return (
+    const base =
       products?.filter(
         (p) =>
           p.name.toLowerCase().includes(q) ||
           p.description?.toLowerCase().includes(q)
-      ) || []
-    );
-  }, [products, debouncedSearch]);
+      ) || [];
+    return applyAdegaFilters(base);
+  }, [products, debouncedSearch, applyAdegaFilters]);
 
   const handleAddToCart = (
     product: Product,
