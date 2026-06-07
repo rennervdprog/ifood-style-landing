@@ -1151,33 +1151,36 @@ const StorePage = () => {
 
       {/* ===== ADEGA: filtros + ordenação ===== */}
       {isAdega && !filteredProducts && (availableDrinkTypes.length > 0) && (
-        <div className="px-4 pt-3 space-y-2">
-          <div className="flex overflow-x-auto gap-1.5 no-scrollbar">
+        <div className="px-3 pt-3 space-y-2 bg-zinc-950 text-zinc-100">
+          <div className="flex overflow-x-auto gap-2 no-scrollbar pb-1">
             <button
               onClick={() => setAdegaType(null)}
-              className={`px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all ${
-                !adegaType ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+              className={`flex flex-col items-center justify-center min-w-[64px] px-3 py-2 rounded-xl border whitespace-nowrap transition-all ${
+                !adegaType ? "bg-amber-500 text-zinc-950 border-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.45)]" : "bg-zinc-900 text-zinc-300 border-zinc-800"
               }`}
             >
-              Todos
+              <span className="text-lg leading-none">🍻</span>
+              <span className="text-[10px] font-extrabold uppercase tracking-wider mt-1">Todos</span>
             </button>
             {availableDrinkTypes.map((t) => {
               const emoji = t === "Cerveja" ? "🍺" : t === "Vinho" ? "🍷" : t === "Destilado" ? "🥃"
                 : t === "Energético" ? "⚡" : t === "Refrigerante" ? "🥤" : t === "Água" ? "💧" : "🧃";
+              const active = adegaType === t;
               return (
                 <button
                   key={t}
-                  onClick={() => setAdegaType(t === adegaType ? null : t)}
-                  className={`px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all ${
-                    adegaType === t ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                  onClick={() => setAdegaType(active ? null : t)}
+                  className={`flex flex-col items-center justify-center min-w-[64px] px-3 py-2 rounded-xl border whitespace-nowrap transition-all ${
+                    active ? "bg-amber-500 text-zinc-950 border-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.45)]" : "bg-zinc-900 text-zinc-300 border-zinc-800"
                   }`}
                 >
-                  {emoji} {t}
+                  <span className="text-lg leading-none">{emoji}</span>
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider mt-1">{t}</span>
                 </button>
               );
             })}
           </div>
-          <div className="flex items-center gap-1.5 text-[11px]">
+          <div className="flex items-center gap-1.5 text-[11px] pb-2">
             <span className="text-muted-foreground">Ordenar:</span>
             {[
               { v: "default", l: "Padrão" },
@@ -1189,8 +1192,8 @@ const StorePage = () => {
                 onClick={() => setAdegaSort(o.v as any)}
                 className={`px-2.5 py-1 rounded-full font-semibold transition-all ${
                   adegaSort === o.v
-                    ? "bg-foreground/10 text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-amber-500/15 text-amber-400"
+                    : "text-zinc-400 hover:text-zinc-200"
                 }`}
               >
                 {o.l}
