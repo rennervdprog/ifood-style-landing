@@ -45,6 +45,8 @@ export interface AdminOrderCardProps {
   setCancelReason: (reason: string) => void;
   cancellingOrder?: boolean;
   storeName?: string;
+  storeId?: string;
+  evolutionConnected?: boolean;
   onlineDriversCount: number;
   linkedStoreDrivers: any[] | undefined;
   highlights: RequiredAddonHighlight[];
