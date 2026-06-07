@@ -173,10 +173,9 @@ const DriverDashboardV2 = () => {
                 </div>
                 <p className="text-sm font-black text-foreground">{driverName}</p>
               </div>
-              <SignOutConfirm
-                redirectTo="/portal-parceiro"
-                triggerClassName="w-9 h-9 rounded-xl bg-muted/60 flex items-center justify-center"><LogOut className="h-4 w-4 text-muted-foreground" /></SignOutConfirm>
-              />
+              <SignOutConfirm redirectTo="/portal-parceiro" triggerClassName="w-9 h-9 rounded-xl bg-muted/60 flex items-center justify-center">
+                <LogOut className="h-4 w-4 text-muted-foreground" />
+              </SignOutConfirm>
             </div>
             <div className="mb-5">
               <h1 className="text-2xl font-black text-foreground mb-1">
@@ -270,7 +269,6 @@ const DriverDashboardV2 = () => {
                   <p className="text-sm font-black text-foreground">{driverName}</p>
                 </div>
               </div>
-              <SignOutConfirm
               <SignOutConfirm
                 redirectTo="/portal-parceiro"
               />
