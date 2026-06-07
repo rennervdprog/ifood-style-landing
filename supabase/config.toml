@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.evolution-send-message]
 verify_jwt = false
+
+[functions.evolution-keepalive]
+verify_jwt = false
