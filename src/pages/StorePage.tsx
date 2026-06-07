@@ -951,13 +951,13 @@ const StorePage = () => {
       {/* Closed banner (only when not suspended) */}
       {/* Banner: sem entregador vinculado */}
       {isOwnDeliveryStore && hasNoDrivers && storeStatus.isOpen && (
-        <div className="mx-4 mt-3 bg-amber-50 dark:bg-amber-500/8 border border-amber-200 dark:border-amber-500/20 rounded-2xl px-4 py-3 flex items-start gap-3">
+        <div className="mx-4 mt-3 bg-amber-500/10 border border-amber-500/30 rounded-2xl px-4 py-3 flex items-start gap-3">
           <span className="text-lg shrink-0">🛵</span>
           <div>
-            <p className="text-sm font-bold text-amber-800 dark:text-amber-400">
+            <p className="text-sm font-bold text-amber-300">
               Sem entregador disponível
             </p>
-            <p className="text-xs text-amber-700/80 dark:text-amber-400/70 mt-0.5">
+            <p className="text-xs text-amber-100/80 mt-0.5">
               Esta loja ainda não tem motoboy cadastrado. Entre em contato com a loja para confirmar a entrega.
             </p>
           </div>
