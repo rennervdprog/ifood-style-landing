@@ -165,9 +165,54 @@ Deno.serve(async (req) => {
           .limit(1).maybeSingle();
         if (blocked) return json({ ok: true, skipped: "blacklisted" });
 
-        // P1.4 — janela de operação 08h-22h (fuso SP)
-        const h = spHour();
-        if (h < 8 || h >= 22) return json({ ok: true, skipped: "out_of_hours" });
+        // P1.4 — janela de operação baseada nos horários do lojista (fuso SP).
+        // Se não houver horários cadastrados, cai no fallback 08h-22h.
+        {
+          const now = new Date();
+          const brParts = new Intl.DateTimeFormat("pt-BR", {
+            timeZone: "America/Sao_Paulo",
+            weekday: "short", hour: "2-digit", minute: "2-digit", hour12: false,
+          }).formatToParts(now);
+          const brHour = Number(brParts.find(p => p.type === "hour")?.value ?? 0);
+          const brMin = Number(brParts.find(p => p.type === "minute")?.value ?? 0);
+          const brDay = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" })).getDay();
+          const curMin = brHour * 60 + brMin;
+
+          const { data: hours } = await admin
+            .from("opening_hours")
+            .select("day_of_week, open_time, close_time, is_closed_all_day")
+            .eq("store_id", cfg.store_id);
+
+          if (hours && hours.length > 0) {
+            const isOpenAt = (day: number, minutes: number) => {
+              const h = hours.find((x: any) => x.day_of_week === day);
+              if (!h || h.is_closed_all_day) return false;
+              const [oH, oM] = String(h.open_time).split(":").map(Number);
+              const [cH, cM] = String(h.close_time).split(":").map(Number);
+              const o = oH * 60 + oM;
+              let c = cH * 60 + cM;
+              if (c <= o) {
+                // overnight: open today after o OR today before c (carry from previous day handled separately)
+                return minutes >= o;
+              }
+              return minutes >= o && minutes < c;
+            };
+            const isOpenOvernightFromPrev = () => {
+              const prev = (brDay + 6) % 7;
+              const h = hours.find((x: any) => x.day_of_week === prev);
+              if (!h || h.is_closed_all_day) return false;
+              const [oH, oM] = String(h.open_time).split(":").map(Number);
+              const [cH, cM] = String(h.close_time).split(":").map(Number);
+              const o = oH * 60 + oM;
+              const c = cH * 60 + cM;
+              return c <= o && curMin < c;
+            };
+            const open = isOpenAt(brDay, curMin) || isOpenOvernightFromPrev();
+            if (!open) return json({ ok: true, skipped: "store_closed" });
+          } else {
+            if (brHour < 8 || brHour >= 22) return json({ ok: true, skipped: "out_of_hours" });
+          }
+        }
 
         // P0.3 + P0.5 — saudação SEM link, com pergunta. Link só quando o cliente pedir.
         const { data: store } = await admin
