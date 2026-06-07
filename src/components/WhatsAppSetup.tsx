@@ -15,6 +15,7 @@ interface Props {
   storeId: string;
   storeSlug: string;
   storeName: string;
+  expectedPhone?: string | null;
 }
 
 // A URL real do Evolution fica no secret EVOLUTION_API_URL (server-side).
@@ -56,7 +57,14 @@ const DEFAULT_TEMPLATES: Record<string, { label: string; emoji: string; template
   },
 };
 
-export default function WhatsAppSetup({ storeId, storeSlug, storeName }: Props) {
+const onlyDigits = (value?: string | null) => String(value || "").replace(/\D/g, "");
+const samePhone = (a?: string | null, b?: string | null) => {
+  const left = onlyDigits(a).replace(/^55/, "");
+  const right = onlyDigits(b).replace(/^55/, "");
+  return !!left && !!right && left === right;
+};
+
+export default function WhatsAppSetup({ storeId, storeSlug, storeName, expectedPhone }: Props) {
   const [config, setConfig] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -131,11 +139,11 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName }: Props) 
     setSaving(false);
   };
 
-  const getQrCode = async () => {
+  const getQrCode = async (forceReconnect = false) => {
     setQrLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("evolution-qr-code", {
-        body: { store_id: storeId },
+        body: { store_id: storeId, force_reconnect: forceReconnect },
       });
       if (error) throw error;
       if (data?.qr_code) {
@@ -154,6 +162,9 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName }: Props) 
 
   const isConnected = config?.status === "connected";
   const isConnecting = config?.status === "connecting";
+  const connectedPhone = onlyDigits(config?.phone_number);
+  const expectedStorePhone = onlyDigits(expectedPhone);
+  const phoneMismatch = isConnected && connectedPhone && expectedStorePhone && !samePhone(connectedPhone, expectedStorePhone);
 
   if (loading) {
     return (
@@ -182,7 +193,12 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName }: Props) 
             {isConnected ? "WhatsApp conectado ✅" : isConnecting ? "Aguardando escaneamento..." : "WhatsApp não conectado"}
           </p>
           {isConnected && config?.phone_number && (
-            <p className="text-xs text-muted-foreground">+{config.phone_number}</p>
+            <p className="text-xs text-muted-foreground">Teste enviando mensagem para +{config.phone_number}</p>
+          )}
+          {phoneMismatch && (
+            <p className="text-[11px] font-semibold text-destructive mt-1">
+              Atenção: este WhatsApp conectado não é o número cadastrado da loja (+{expectedStorePhone}).
+            </p>
           )}
           {!isConnected && !isConnecting && (
             <p className="text-xs text-muted-foreground">Conecte seu WhatsApp para enviar notificações automáticas</p>
@@ -192,6 +208,37 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName }: Props) 
           <MessageCircle className="h-4 w-4 text-emerald-500 shrink-0" />
         )}
       </div>
+
+      {phoneMismatch && (
+        <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-3.5 py-3">
+          <p className="text-xs font-bold text-destructive">Número conectado diferente</p>
+          <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
+            As respostas automáticas só funcionam para mensagens enviadas ao número realmente conectado aqui: +{connectedPhone}.
+            Para usar +{expectedStorePhone}, desconecte e escaneie o QR Code com esse WhatsApp.
+          </p>
+          <button
+            type="button"
+            onClick={() => getQrCode(true)}
+            disabled={qrLoading}
+            className="mt-3 inline-flex items-center gap-2 rounded-lg bg-destructive px-3 py-2 text-xs font-bold text-destructive-foreground disabled:opacity-60"
+          >
+            {qrLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <QrCode className="h-3.5 w-3.5" />}
+            Conectar número correto
+          </button>
+        </div>
+      )}
+
+      {isConnected && !phoneMismatch && (
+        <button
+          type="button"
+          onClick={() => getQrCode(true)}
+          disabled={qrLoading}
+          className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-xs font-bold text-foreground disabled:opacity-60"
+        >
+          {qrLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <QrCode className="h-3.5 w-3.5" />}
+          Reconectar outro número
+        </button>
+      )}
 
       {/* Guia passo a passo */}
       <div className="rounded-xl border border-border overflow-hidden">
@@ -260,7 +307,7 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName }: Props) 
       {!isConnected && (
         <div className="space-y-3">
           <button
-            onClick={getQrCode}
+            onClick={() => getQrCode(false)}
             disabled={qrLoading}
             className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground py-3 rounded-xl text-sm font-bold disabled:opacity-50"
           >
@@ -343,7 +390,7 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName }: Props) 
               quando o cliente confirma interesse (ex: "sim", "quero", "cardápio"). Isso reduz o risco de spam e mantém o número seguro.
             </p>
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Janela de resposta: <strong>08h às 22h</strong>. Clientes que respondem "PARAR" entram em lista de exclusão.
+              Janela de resposta: segue o horário de funcionamento cadastrado da loja. Clientes que respondem "PARAR" entram em lista de exclusão.
             </p>
           </div>
         )}

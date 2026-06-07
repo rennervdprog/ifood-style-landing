@@ -8,7 +8,10 @@ const corsHeaders = {
 const json = (b: unknown, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-const BodySchema = z.object({ store_id: z.string().uuid() });
+const BodySchema = z.object({
+  store_id: z.string().uuid(),
+  force_reconnect: z.boolean().optional(),
+});
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -27,7 +30,7 @@ Deno.serve(async (req) => {
 
     const parsed = BodySchema.safeParse(await req.json());
     if (!parsed.success) return json({ error: parsed.error.flatten().fieldErrors }, 400);
-    const { store_id } = parsed.data;
+    const { store_id, force_reconnect = false } = parsed.data;
 
     const { data: store } = await supabase
       .from("stores").select("id, owner_id").eq("id", store_id).maybeSingle();
@@ -40,6 +43,14 @@ Deno.serve(async (req) => {
 
     const instance = `store-${store_id.slice(0, 8)}`;
     const webhookUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/evolution-webhook?token=${webhookToken}`;
+
+    if (force_reconnect) {
+      await fetch(`${baseUrl.replace(/\/$/, "")}/instance/logout/${instance}`, {
+        method: "DELETE",
+        headers: { apikey: apiKey },
+      }).catch(() => undefined);
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+    }
 
     // 1) cria instância (ignora erro se já existir)
     await fetch(`${baseUrl.replace(/\/$/, "")}/instance/create`, {
