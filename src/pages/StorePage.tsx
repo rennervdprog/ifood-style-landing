@@ -1640,18 +1640,36 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory, onQuickAd
 
         {/* Price + CTA */}
         <div className="flex items-center justify-between mt-2">
-          <span className="text-sm font-black text-primary">
-            {priceDisplay}
-          </span>
-          <span className={`text-[10px] font-bold px-2 py-1 rounded-full transition-colors ${
-            isOutOfStock
-              ? "bg-destructive text-destructive-foreground"
-              : disabled
-              ? "bg-muted text-muted-foreground"
-              : "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground"
-          }`}>
-            {ctaLabel}
-          </span>
+          <div className="flex flex-col">
+            <span className="text-sm font-black text-primary leading-tight">
+              {priceDisplay}
+            </span>
+            {isAdegaCard && unitPrice > 0 && (
+              <span className="text-[10px] text-muted-foreground font-semibold">
+                {formatBRL(unitPrice)}/un
+              </span>
+            )}
+          </div>
+          {isAdegaCard && !isBlocked && onQuickAdd ? (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onQuickAdd(product); }}
+              className="text-[11px] font-bold px-3 py-1.5 rounded-full bg-primary text-primary-foreground hover:opacity-90 active:scale-95 transition shadow-sm"
+              aria-label={`Adicionar ${product.name} ao carrinho`}
+            >
+              + Adicionar
+            </button>
+          ) : (
+            <span className={`text-[10px] font-bold px-2 py-1 rounded-full transition-colors ${
+              isOutOfStock
+                ? "bg-destructive text-destructive-foreground"
+                : disabled
+                ? "bg-muted text-muted-foreground"
+                : "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground"
+            }`}>
+              {ctaLabel}
+            </span>
+          )}
         </div>
       </div>
 
