@@ -5,6 +5,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { APP_VERSION } from "@/lib/appVersion";
 import { toast } from "sonner";
 import {
   Smartphone, Save, Loader2, Plus, Trash2, Eye,
@@ -45,7 +46,7 @@ const DEFAULT: AppData = {
   app_name: "ItaSuper Parceiro",
   tagline: "Gerencie sua loja e entregas com total controle",
   description: "",
-  version: "1.2.62",
+  version: APP_VERSION,
   size_mb: "28 MB",
   rating: 5.0,
   downloads: "500+",
