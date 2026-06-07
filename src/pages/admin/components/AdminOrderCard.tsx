@@ -361,7 +361,7 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
             {order.status === "pendente" && (
               <button onClick={() => {
                 const msg = `Olá ${clientName}! *ItaSuper*: Pedido aceito e em produção! 🍔\nPedido: #${order.id.slice(0, 8).toUpperCase()}\nTotal: ${formatBRL(Number(order.total_price))}`;
-                openWhatsApp(clientWhatsApp, msg);
+                sendOrOpenWhatsApp(clientWhatsApp, msg);
               }} className="flex items-center gap-1 bg-primary/10 text-primary text-[10px] font-bold px-2 py-1 rounded-lg" title="Avisar cliente">
                 <MessageCircle className="h-3 w-3" /> <span className="hidden sm:inline">Avisar</span>
               </button>
@@ -369,7 +369,7 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
             {(order.status === "em_transito" || order.status === "saiu_entrega") && (
               <button onClick={() => {
                 const msg = `Olá ${clientName}! Motoboy *ItaSuper* saiu para entrega! 🚀\nEndereço: ${order.address_details}`;
-                openWhatsApp(clientWhatsApp, msg);
+                sendOrOpenWhatsApp(clientWhatsApp, msg);
               }} className="flex items-center gap-1 bg-primary/10 text-primary text-[10px] font-bold px-2 py-1 rounded-lg" title="Informar saída">
                 <MessageCircle className="h-3 w-3" /> <span className="hidden sm:inline">Saiu</span>
               </button>
