@@ -10,9 +10,11 @@ const config: CapacitorConfig = {
     webContentsDebuggingEnabled: false,
   },
   server: {
-    // 📦 APK carrega o bundle empacotado em dist.
-    // Evita mostrar UI antiga do domínio remoto depois de instalar APK novo.
-    hostname: 'localhost',
+    // 🌐 APK carrega o site publicado para receber updates de UI sem
+    // precisar gerar novo APK. O bundle empacotado em dist serve apenas
+    // como fallback offline inicial.
+    url: 'https://itasuper.com.br',
+    hostname: 'itasuper.com.br',
     androidScheme: 'https',
     cleartext: false,
     allowNavigation: [
