@@ -103,6 +103,8 @@ const PushNavigator = () => {
       if (pending) {
         console.log("[PushNav] 🚀 Replaying pending push navigation:", pending);
         navigate(pending, { replace: true });
+        try { queryClient.invalidateQueries(); } catch {}
+        try { window.dispatchEvent(new CustomEvent("capacitor-app-resume")); } catch {}
         return true;
       }
       return false;
