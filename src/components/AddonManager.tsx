@@ -229,7 +229,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
           </div>
           <div className="min-w-0">
             <h2 className="text-base font-bold text-foreground leading-tight">Adicionais</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">Crie grupos (ex: Molhos, Tamanhos) e vincule a produtos.</p>
+            <p className="text-xs text-foreground/70 mt-0.5">Crie grupos (ex: Molhos, Tamanhos) e vincule a produtos.</p>
           </div>
         </div>
         <button
