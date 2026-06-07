@@ -197,7 +197,7 @@ jobs:
           if [ ! -f "$APK_PATH" ]; then
              APK_PATH="android/app/build/outputs/apk/release/app-release.apk"
           fi
-          VERSION=$(grep -oP 'const APP_VERSION = "\K[^"]+' src/App.tsx || echo "1.0.0")
+          VERSION=$(grep -oP 'APP_VERSION = "\K[^"]+' src/lib/appVersion.ts || echo "1.0.0")
           
           echo "🚀 Uploading Cliente APK v$VERSION to Supabase..."
           
@@ -393,7 +393,7 @@ jobs:
         if: ${{ env.SUPABASE_SERVICE_ROLE_KEY != '' }}
         run: |
           APK_PATH="android/app/build/outputs/apk/release/app-release.apk"
-          VERSION=$(grep -oP 'const APP_VERSION = "\K[^"]+' src/App.tsx || echo "1.0.0")
+          VERSION=$(grep -oP 'APP_VERSION = "\K[^"]+' src/lib/appVersion.ts || echo "1.0.0")
           
           echo "🚀 Uploading Parceiro APK v$VERSION to Supabase..."
           
