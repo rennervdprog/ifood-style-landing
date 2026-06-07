@@ -77,12 +77,19 @@ export function printThermalReceipt(
     if (addons.length > 0) {
       const requiredAddons = addons.filter((a: any) => a.required && a.groupName);
       const isBorder = (a: any) => typeof a?.name === "string" && /^borda\s*:/i.test(a.name);
+      const isSize = (a: any) => typeof a?.name === "string" && /^tamanho\s*:/i.test(a.name);
+      const sizeAddons = addons.filter((a: any) => !(a.required && a.groupName) && isSize(a));
       const borderAddons = addons.filter((a: any) => !(a.required && a.groupName) && isBorder(a));
-      const optionalAddons = addons.filter((a: any) => !(a.required && a.groupName) && !isBorder(a));
+      const optionalAddons = addons.filter((a: any) => !(a.required && a.groupName) && !isBorder(a) && !isSize(a));
 
       requiredAddons.forEach((a: any) => {
         const priceStr = Number(a.price) > 0 ? formatBRL(Number(a.price)) : "";
         itemsHtml += `<div class="tp-required-addon" style="display:flex;justify-content:space-between;font-weight:bold;font-size:13px;border:1px solid #000;padding:2px 4px;margin:3px 0;background:#eee"><span>★ ${a.groupName}: ${a.name.toUpperCase()}</span><span>${priceStr}</span></div>`;
+      });
+
+      sizeAddons.forEach((a: any) => {
+        const sizeName = String(a.name).replace(/^tamanho\s*:\s*/i, "").toUpperCase();
+        itemsHtml += `<div class="tp-size-addon" style="display:flex;justify-content:space-between;font-weight:bold;font-size:13px;border:1px solid #000;padding:2px 4px;margin:3px 0;background:#eee"><span>▣ TAMANHO: ${sizeName}</span><span></span></div>`;
       });
 
       borderAddons.forEach((a: any) => {
