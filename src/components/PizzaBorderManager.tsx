@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Trash2, Edit2, Save, Circle } from "lucide-react";
 import { formatBRLDisplay, parseBRLCentsInput } from "@/hooks/useBRLInput";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 
 interface PizzaBorderManagerProps {
   storeId: string;
@@ -21,6 +22,7 @@ interface Border {
 
 const PizzaBorderManager = ({ storeId }: PizzaBorderManagerProps) => {
   const queryClient = useQueryClient();
+  const { confirm, ConfirmDialog } = useConfirmDialog();
   const [showAdd, setShowAdd] = useState(false);
   const [newName, setNewName] = useState("");
   const [newPrice, setNewPrice] = useState("");
@@ -107,6 +109,7 @@ const PizzaBorderManager = ({ storeId }: PizzaBorderManagerProps) => {
 
   return (
     <div className="space-y-6">
+      <ConfirmDialog />
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Circle className="h-5 w-5 text-primary" />
@@ -235,7 +238,18 @@ const PizzaBorderManager = ({ storeId }: PizzaBorderManagerProps) => {
                   >
                     <Edit2 className="h-3.5 w-3.5" />
                   </button>
-                  <button onClick={() => deleteBorder(border.id)} className="text-muted-foreground hover:text-destructive">
+                  <button
+                    onClick={async () => {
+                      const ok = await confirm({
+                        title: "Excluir borda?",
+                        description: `Tem certeza que deseja excluir "${border.name}"? Esta ação não pode ser desfeita.`,
+                        confirmText: "Excluir",
+                        variant: "destructive",
+                      });
+                      if (ok) deleteBorder(border.id);
+                    }}
+                    className="text-muted-foreground hover:text-destructive"
+                  >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </>
