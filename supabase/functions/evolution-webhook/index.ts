@@ -298,15 +298,18 @@ Deno.serve(async (req) => {
         }
 
         // Humaniza: aguarda antes da saudação; só envia link se cliente já pediu.
-        runInBackground((async () => {
-          // Delay curto e natural (3-8s) — suficiente p/ parecer humano sem irritar.
-          await sleep(3_000 + Math.floor(Math.random() * 5_000));
-          await sendMsg(greeting);
-          if (sendLinkNow) {
+        // P0.6 — NÃO mandar a saudação em background: em runs curtos do
+        // EdgeRuntime a task era morta antes do fetch, deixando só o
+        // `greet_pending` no log e o cliente sem resposta. Aguardamos aqui
+        // (3-8s cabe no timeout) e só o envio extra do cardápio fica em bg.
+        await sleep(3_000 + Math.floor(Math.random() * 5_000));
+        await sendMsg(greeting);
+        if (sendLinkNow) {
+          runInBackground((async () => {
             await sleep(4_000 + Math.floor(Math.random() * 3_000));
             await sendMsg(menuMessage);
-          }
-        })());
+          })());
+        }
       }
     }
 
