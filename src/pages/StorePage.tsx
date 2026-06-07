@@ -1307,6 +1307,12 @@ const StorePage = () => {
 
       <CartFAB />
       <BottomNav />
+      <AgeGateModal
+        storeId={store?.id || ""}
+        storeName={store?.name || ""}
+        active={isAdega && !!store?.id}
+        onBlock={() => navigate("/")}
+      />
     </div>
   );
 };
