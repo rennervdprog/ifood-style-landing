@@ -55,7 +55,7 @@ const asksForMenu = (text: string) =>
 const isOptOut = (text: string) =>
   /(^|\s)(parar|stop|cancelar|sair|remover|nao receber)(\s|$|!|\.|,)/i.test(normalize(text));
 
-const GREETING_COOLDOWN_MS = 6 * 60 * 60_000;
+const GREETING_COOLDOWN_MS = 5 * 60_000; // TEMP: 5 min para validação (volta pra 6h depois)
 const FAST_COOLDOWN_MS = 2 * 60_000;
 
 // Pega hora atual no fuso de São Paulo (UTC-3)
