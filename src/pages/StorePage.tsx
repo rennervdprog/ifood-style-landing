@@ -13,6 +13,7 @@ import CartFAB from "@/components/CartFAB";
 import BottomNav from "@/components/BottomNav";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import ProductDetailModal from "@/components/ProductDetailModal";
+import AgeGateModal from "@/components/AgeGateModal";
 import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStoreContext } from "@/contexts/StoreContext";
@@ -60,6 +61,10 @@ const StorePage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ==== Adega: filtros e ordenação ====
+  const [adegaType, setAdegaType] = useState<string | null>(null);
+  const [adegaSort, setAdegaSort] = useState<"default" | "price-asc" | "price-desc">("default");
 
   const handleSearchChange = useCallback((value: string) => {
     setSearchQuery(value);
@@ -447,28 +452,56 @@ const StorePage = () => {
     });
   }, []);
 
+  const isAdega = store?.category === "adegas";
+
+  // Aplica filtro/ordenação de adega em qualquer lista de produtos
+  const applyAdegaFilters = useCallback((list: Product[]): Product[] => {
+    if (!isAdega) return list;
+    let out = list;
+    if (adegaType) {
+      out = out.filter((p) => (p.metadata as any)?.drink_type === adegaType);
+    }
+    if (adegaSort === "price-asc") {
+      out = [...out].sort((a, b) => Number(a.price) - Number(b.price));
+    } else if (adegaSort === "price-desc") {
+      out = [...out].sort((a, b) => Number(b.price) - Number(a.price));
+    }
+    return out;
+  }, [isAdega, adegaType, adegaSort]);
+
   const productsBySection = useCallback(
-    (sectionId: string | null) => sectionId ? sectionProductsMap[sectionId] || [] : [],
-    [sectionProductsMap]
+    (sectionId: string | null) => applyAdegaFilters(sectionId ? sectionProductsMap[sectionId] || [] : []),
+    [sectionProductsMap, applyAdegaFilters]
   );
 
+  // Tipos disponíveis no catálogo (apenas adega)
+  const availableDrinkTypes = useMemo(() => {
+    if (!isAdega || !products) return [] as string[];
+    const set = new Set<string>();
+    for (const p of products) {
+      const t = (p.metadata as any)?.drink_type;
+      if (t) set.add(t);
+    }
+    return Array.from(set);
+  }, [isAdega, products]);
+
   const unsectionedProducts = useMemo(
-    () => products?.filter((p) => !p.section_id) || [],
-    [products]
+    () => applyAdegaFilters(products?.filter((p) => !p.section_id) || []),
+    [products, applyAdegaFilters]
   );
 
   // Search filter
   const filteredProducts = useMemo(() => {
     const q = debouncedSearch.trim().toLowerCase();
     if (!q) return null;
-    return (
+    const base =
       products?.filter(
         (p) =>
           p.name.toLowerCase().includes(q) ||
           p.description?.toLowerCase().includes(q)
-      ) || []
-    );
-  }, [products, debouncedSearch]);
+      ) || [];
+    return applyAdegaFilters(base);
+  }, [products, debouncedSearch, applyAdegaFilters]);
 
   const handleAddToCart = (
     product: Product,
@@ -511,6 +544,37 @@ const StorePage = () => {
     // The "Add to cart" button inside the modal already validates.
     setSelectedProduct(product);
   }, []);
+
+  // Adega: adicionar 1un direto, sem abrir modal. Se houver addons obrigatórios o modal ainda é a melhor rota.
+  const quickAddAdega = useCallback((product: Product) => {
+    if (!storeStatus.isOpen) {
+      toast.error(`Esta loja está fechada. ${storeStatus.reason}`);
+      return;
+    }
+    if (hasNoDrivers) {
+      toast.error("Esta loja não tem entregador disponível no momento.");
+      return;
+    }
+    if ((product as any)?.metadata?.out_of_stock) {
+      toast.error("Produto esgotado");
+      return;
+    }
+    addItem(
+      {
+        id: product.id,
+        store_id: product.store_id,
+        store_name: store?.name || "",
+        name: product.name,
+        price: Number(product.price),
+        basePrice: Number(product.price),
+        image_url: product.image_url,
+        addons: [],
+        observations: "",
+      },
+      1
+    );
+    toast.success(`${product.name} adicionado!`);
+  }, [addItem, store, storeStatus, hasNoDrivers]);
 
   const openMaps = useCallback(() => {
     if (!store) return;
@@ -1085,6 +1149,57 @@ const StorePage = () => {
         </div>
       )}
 
+      {/* ===== ADEGA: filtros + ordenação ===== */}
+      {isAdega && !filteredProducts && (availableDrinkTypes.length > 0) && (
+        <div className="px-4 pt-3 space-y-2">
+          <div className="flex overflow-x-auto gap-1.5 no-scrollbar">
+            <button
+              onClick={() => setAdegaType(null)}
+              className={`px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all ${
+                !adegaType ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+              }`}
+            >
+              Todos
+            </button>
+            {availableDrinkTypes.map((t) => {
+              const emoji = t === "Cerveja" ? "🍺" : t === "Vinho" ? "🍷" : t === "Destilado" ? "🥃"
+                : t === "Energético" ? "⚡" : t === "Refrigerante" ? "🥤" : t === "Água" ? "💧" : "🧃";
+              return (
+                <button
+                  key={t}
+                  onClick={() => setAdegaType(t === adegaType ? null : t)}
+                  className={`px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all ${
+                    adegaType === t ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {emoji} {t}
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex items-center gap-1.5 text-[11px]">
+            <span className="text-muted-foreground">Ordenar:</span>
+            {[
+              { v: "default", l: "Padrão" },
+              { v: "price-asc", l: "Menor preço" },
+              { v: "price-desc", l: "Maior preço" },
+            ].map((o) => (
+              <button
+                key={o.v}
+                onClick={() => setAdegaSort(o.v as any)}
+                className={`px-2.5 py-1 rounded-full font-semibold transition-all ${
+                  adegaSort === o.v
+                    ? "bg-foreground/10 text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {o.l}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ===== PRODUCTS ===== */}
       <div className="px-4 pt-4 space-y-6">
         {isLoading ? (
@@ -1115,6 +1230,7 @@ const StorePage = () => {
                     disabled={!storeStatus.isOpen}
                     storeCategory={store?.category}
                     onClick={() => openProduct(product)}
+                    onQuickAdd={isAdega ? quickAddAdega : undefined}
                   />
                 ))}
               </div>
@@ -1151,6 +1267,7 @@ const StorePage = () => {
                         disabled={!storeStatus.isOpen}
                         storeCategory={store?.category}
                         onClick={() => openProduct(product)}
+                        onQuickAdd={isAdega ? quickAddAdega : undefined}
                       />
                     ))}
                   </div>
@@ -1176,6 +1293,7 @@ const StorePage = () => {
                       disabled={!storeStatus.isOpen}
                       storeCategory={store?.category}
                       onClick={() => openProduct(product)}
+                      onQuickAdd={isAdega ? quickAddAdega : undefined}
                     />
                   ))}
                 </div>
@@ -1223,6 +1341,12 @@ const StorePage = () => {
 
       <CartFAB />
       <BottomNav />
+      <AgeGateModal
+        storeId={store?.id || ""}
+        storeName={store?.name || ""}
+        active={isAdega && !!store?.id}
+        onBlock={() => navigate("/")}
+      />
     </div>
   );
 };
@@ -1233,6 +1357,7 @@ interface ProductCardProps {
   disabled: boolean;
   onClick: () => void;
   storeCategory?: string;
+  onQuickAdd?: (product: Product) => void;
 }
 
 const categoryEmoji: Record<string, string> = {
@@ -1241,13 +1366,16 @@ const categoryEmoji: Record<string, string> = {
   docerias: "🧁", saudavel: "🥗",
 };
 
-const ProductCard = memo(({ product, disabled, onClick, storeCategory }: ProductCardProps) => {
+const ProductCard = memo(({ product, disabled, onClick, storeCategory, onQuickAdd }: ProductCardProps) => {
   const meta = product.metadata || {};
   const cat = storeCategory || "";
   const isBeverage = !!meta.is_beverage;
   const emoji = categoryEmoji[cat] || "🍴";
   const isOutOfStock = !!meta.out_of_stock;
   const isBlocked = disabled || isOutOfStock;
+  const isAdegaCard = cat === "adegas";
+  const packQty = Number(meta.pack_qty) || 0;
+  const unitPrice = packQty > 0 ? Number(product.price) / packQty : 0;
 
   // ===== PIZZA =====
   // ===== FARMACIA =====
@@ -1327,6 +1455,18 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory }: Product
             {cat === "adegas" && meta.temp_option === "ambient" && (
               <span className="text-[10px] bg-muted text-foreground/70 px-1.5 py-0.5 rounded-full font-semibold">
                 🌡️ Temp. ambiente
+              </span>
+            )}
+            {/* Adegas: pack/fardo */}
+            {cat === "adegas" && packQty > 0 && (
+              <span className="text-[10px] bg-amber-500/10 text-amber-700 px-1.5 py-0.5 rounded-full font-bold">
+                📦 Pack {packQty}un
+              </span>
+            )}
+            {/* Adegas: casco retornável */}
+            {cat === "adegas" && meta.returnable_bottle && (
+              <span className="text-[10px] bg-emerald-500/10 text-emerald-700 px-1.5 py-0.5 rounded-full font-bold">
+                ♻️ Casco
               </span>
             )}
             {/* Outras categorias: badge gelado normal */}
@@ -1534,18 +1674,36 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory }: Product
 
         {/* Price + CTA */}
         <div className="flex items-center justify-between mt-2">
-          <span className="text-sm font-black text-primary">
-            {priceDisplay}
-          </span>
-          <span className={`text-[10px] font-bold px-2 py-1 rounded-full transition-colors ${
-            isOutOfStock
-              ? "bg-destructive text-destructive-foreground"
-              : disabled
-              ? "bg-muted text-muted-foreground"
-              : "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground"
-          }`}>
-            {ctaLabel}
-          </span>
+          <div className="flex flex-col">
+            <span className="text-sm font-black text-primary leading-tight">
+              {priceDisplay}
+            </span>
+            {isAdegaCard && unitPrice > 0 && (
+              <span className="text-[10px] text-muted-foreground font-semibold">
+                {formatBRL(unitPrice)}/un
+              </span>
+            )}
+          </div>
+          {isAdegaCard && !isBlocked && onQuickAdd ? (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onQuickAdd(product); }}
+              className="text-[11px] font-bold px-3 py-1.5 rounded-full bg-primary text-primary-foreground hover:opacity-90 active:scale-95 transition shadow-sm"
+              aria-label={`Adicionar ${product.name} ao carrinho`}
+            >
+              + Adicionar
+            </button>
+          ) : (
+            <span className={`text-[10px] font-bold px-2 py-1 rounded-full transition-colors ${
+              isOutOfStock
+                ? "bg-destructive text-destructive-foreground"
+                : disabled
+                ? "bg-muted text-muted-foreground"
+                : "bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground"
+            }`}>
+              {ctaLabel}
+            </span>
+          )}
         </div>
       </div>
 

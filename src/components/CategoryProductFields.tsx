@@ -470,33 +470,51 @@ const CategoryProductFields = ({ category, metadata, onChange, onNameChange, sto
             </div>
           </div>
 
-          {/* Pack — quantidade */}
-          {(metadata.packaging === "Pack") && (
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-foreground/70">Quantidade no Pack</label>
-              <div className="flex flex-wrap gap-1.5">
-                {["6","8","12","15","24","30"].map(q => (
-                  <button
-                    key={q}
-                    type="button"
-                    onClick={() => set("pack_qty", q)}
-                    className={`text-xs px-3 py-1.5 rounded-xl border transition-all ${
-                      metadata.pack_qty === q
-                        ? "bg-primary/10 border-primary/30 text-primary font-bold"
-                        : "bg-muted/40 border-border text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {q} un
-                  </button>
-                ))}
-              </div>
+          {/* Pack/Fardo — quantidade. Disponível para qualquer embalagem (combo de latas, caixa de cerveja, etc.) */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-foreground/70">
+              Vem em pack/fardo? <span className="text-muted-foreground font-normal">(opcional)</span>
+            </label>
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                onClick={() => set("pack_qty", "")}
+                className={`text-xs px-3 py-1.5 rounded-xl border transition-all ${
+                  !metadata.pack_qty
+                    ? "bg-primary/10 border-primary/30 text-primary font-bold"
+                    : "bg-muted/40 border-border text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Unidade
+              </button>
+              {["6","8","12","15","24","30"].map(q => (
+                <button
+                  key={q}
+                  type="button"
+                  onClick={() => set("pack_qty", q)}
+                  className={`text-xs px-3 py-1.5 rounded-xl border transition-all ${
+                    metadata.pack_qty === q
+                      ? "bg-primary/10 border-primary/30 text-primary font-bold"
+                      : "bg-muted/40 border-border text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {q} un
+                </button>
+              ))}
             </div>
-          )}
+            {metadata.pack_qty && (
+              <p className="text-[10px] text-muted-foreground">
+                Aparece "R$ X/un" no card para o cliente comparar preço.
+              </p>
+            )}
+          </div>
 
           {renderTextField("Volume", "volume", "Ex: 350ml, 600ml, 1L...")}
           {renderTextField("Marca", "brand", "Ex: Heineken, Absolut, Velho Barreiro...")}
           {metadata.drink_type && !["Água","Refrigerante","Energético"].includes(metadata.drink_type) &&
             renderTextField("Teor alcoólico", "alcohol_content", "Ex: 4.5%, 13%, 40%...")}
+          {/* Casco retornável (vasilhame) */}
+          {renderToggle("♻️ Casco retornável (cliente pode devolver vasilhame)", "returnable_bottle")}
           {/* Temperatura de serviço */}
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-foreground/70">Temperatura de serviço</label>
