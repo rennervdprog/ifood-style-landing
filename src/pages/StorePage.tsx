@@ -1118,6 +1118,57 @@ const StorePage = () => {
         </div>
       )}
 
+      {/* ===== ADEGA: filtros + ordenação ===== */}
+      {isAdega && !filteredProducts && (availableDrinkTypes.length > 0) && (
+        <div className="px-4 pt-3 space-y-2">
+          <div className="flex overflow-x-auto gap-1.5 no-scrollbar">
+            <button
+              onClick={() => setAdegaType(null)}
+              className={`px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all ${
+                !adegaType ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+              }`}
+            >
+              Todos
+            </button>
+            {availableDrinkTypes.map((t) => {
+              const emoji = t === "Cerveja" ? "🍺" : t === "Vinho" ? "🍷" : t === "Destilado" ? "🥃"
+                : t === "Energético" ? "⚡" : t === "Refrigerante" ? "🥤" : t === "Água" ? "💧" : "🧃";
+              return (
+                <button
+                  key={t}
+                  onClick={() => setAdegaType(t === adegaType ? null : t)}
+                  className={`px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all ${
+                    adegaType === t ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {emoji} {t}
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex items-center gap-1.5 text-[11px]">
+            <span className="text-muted-foreground">Ordenar:</span>
+            {[
+              { v: "default", l: "Padrão" },
+              { v: "price-asc", l: "Menor preço" },
+              { v: "price-desc", l: "Maior preço" },
+            ].map((o) => (
+              <button
+                key={o.v}
+                onClick={() => setAdegaSort(o.v as any)}
+                className={`px-2.5 py-1 rounded-full font-semibold transition-all ${
+                  adegaSort === o.v
+                    ? "bg-foreground/10 text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {o.l}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ===== PRODUCTS ===== */}
       <div className="px-4 pt-4 space-y-6">
         {isLoading ? (
