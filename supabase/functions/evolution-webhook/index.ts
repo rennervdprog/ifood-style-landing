@@ -288,6 +288,15 @@ Deno.serve(async (req) => {
           kind: "auto_reply", sent_at: new Date().toISOString(),
         });
 
+        // Loja fechada → envia 1 aviso (sem cardápio) e encerra.
+        if (storeClosedInfo) {
+          runInBackground((async () => {
+            await sleep(3_000 + Math.floor(Math.random() * 4_000));
+            await sendMsg(closedMessage);
+          })());
+          return json({ ok: true, queued: "closed_notice" });
+        }
+
         // Humaniza: aguarda antes da saudação; só envia link se cliente já pediu.
         runInBackground((async () => {
           // Delay curto e natural (3-8s) — suficiente p/ parecer humano sem irritar.
