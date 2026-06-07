@@ -7,12 +7,12 @@ import PartnerClientView from "@/components/PartnerClientView";
 import {
   Zap, Store, ShieldCheck, Smartphone, TrendingUp,
   ArrowRight, CheckCircle2, Star, MapPin, Clock, CreditCard,
-  BarChart3, MessageSquare, Tag, Package,
+  BarChart3, Package,
   Menu, X, DollarSign, Globe, Rocket,
-  Award, Sparkles, ChevronDown,
+  Sparkles, ChevronDown,
   ShoppingBag, Truck, Crown, BadgePercent,
-   Bell, QrCode, Utensils, Gift, MessageCircle, Shield, Check,
-    Navigation, UserCheck, SmartphoneNfc, Info,
+   Bell, MessageCircle, Shield, Check,
+    Navigation, UserCheck, Info,
   } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -25,6 +25,7 @@ import { Card, CardContent } from "@/components/ui/card";
    { emoji: "📝", pain: "Anota pedido no papel e erra o endereço", solution: "O pedido chega pronto, com o endereço completo do cliente." },
    { emoji: "💸", pain: "Confere PIX um por um no extrato", solution: "Quando o cliente paga no PIX, o dinheiro aparece na hora pra você." },
    { emoji: "🔇", pain: "Perde pedidos por não ver mensagem", solution: "O celular toca alto a cada pedido novo. Você não perde nenhum." },
+   { emoji: "💬", pain: "Esquece de avisar o cliente quando saiu pra entrega", solution: "O WhatsApp manda sozinho: pedido recebido, em preparo, saiu pra entrega e entregue." },
  ];
 
 const steps = [
@@ -73,6 +74,7 @@ const steps = [
   { icon: BarChart3, title: "Relatório do dia", desc: "Veja quanto vendeu, o que mais saiu e o lucro do dia — tudo numa tela só." },
   { icon: Bell, title: "Avisa cada pedido", desc: "O celular toca a cada pedido novo. Você nunca mais perde uma venda por não ouvir." },
   { icon: Package, title: "Imprime na cozinha", desc: "O pedido sai impresso na cozinha automaticamente. Sua equipe não se perde mais." },
+  { icon: MessageCircle, title: "WhatsApp Automático", desc: "A cada etapa do pedido o cliente recebe uma mensagem no WhatsApp. Sem você precisar digitar nada." },
   { icon: ShieldCheck, title: "Tudo seguro", desc: "Seus dados e o dinheiro dos seus clientes ficam protegidos. Só você acessa sua loja." },
   { icon: Store, title: "Caixa do balcão", desc: "Quem vende no balcão também usa: caixa digital, troco automático e fechamento do dia." },
 ];
@@ -487,6 +489,10 @@ const StoreDirectory = () => {
                <Store className="h-4 w-4" />
                PDV integrado • Venda no balcão também
              </div>
+             <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-4 py-2 text-sm font-semibold text-emerald-600">
+               <MessageCircle className="h-4 w-4" />
+               Novo • WhatsApp Automático em cada etapa
+             </div>
            </div>
 
           {/* Trust badges */}
@@ -768,6 +774,69 @@ const StoreDirectory = () => {
        </section>
 
       {/* ══════ PLANS ══════ */}
+
+      {/* ══════ WHATSAPP AUTOMÁTICO ══════ */}
+      <section className="py-20 px-4 bg-gradient-to-br from-emerald-500/5 via-background to-emerald-500/10 border-y border-border">
+        <div className="mx-auto max-w-5xl">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-600 mb-6 border border-emerald-500/20">
+                <MessageCircle className="h-4 w-4" />
+                Novo • WhatsApp Automático
+              </div>
+              <h2 className="text-4xl md:text-5xl font-black text-foreground mb-6 leading-none">
+                Seu cliente avisado <br />
+                <span className="text-emerald-600">no WhatsApp.</span> Sozinho.
+              </h2>
+              <p className="text-xl text-muted-foreground mb-8 font-medium">
+                A cada etapa do pedido, o cliente recebe uma mensagem no WhatsApp. Você não digita nada, não responde "tá pronto?" mais.
+              </p>
+              <div className="space-y-3">
+                {[
+                  { emoji: "✅", title: "Pedido recebido", desc: "Confirmação na hora, com resumo e valor." },
+                  { emoji: "🍳", title: "Em preparo", desc: "Cliente sabe que a cozinha já começou." },
+                  { emoji: "🛵", title: "Saiu pra entrega", desc: "Avisa quando o motoboy pegou o pedido." },
+                  { emoji: "📦", title: "Entregue", desc: "Encerra com agradecimento e pedido de avaliação." },
+                ].map((item) => (
+                  <div key={item.title} className="flex gap-3 items-start rounded-2xl border border-border bg-card p-5 hover:border-emerald-500/30 transition-colors">
+                    <span className="text-3xl shrink-0">{item.emoji}</span>
+                    <div>
+                      <p className="text-base font-bold text-foreground">{item.title}</p>
+                      <p className="text-sm text-foreground/70 mt-1 leading-relaxed">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="relative">
+              <div className="bg-card border border-emerald-500/20 rounded-3xl p-6 shadow-xl">
+                <div className="flex items-center gap-3 pb-4 border-b border-border mb-4">
+                  <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center">
+                    <MessageCircle className="h-5 w-5 text-emerald-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-foreground">Sua Loja</p>
+                    <p className="text-[10px] text-emerald-600 font-bold">● online no WhatsApp</p>
+                  </div>
+                </div>
+                <div className="space-y-2.5">
+                  {[
+                    { t: "✅ Pedido #1247 recebido! Total R$ 102,00 via PIX.", h: "14:02" },
+                    { t: "🍳 Seu pedido está sendo preparado.", h: "14:08" },
+                    { t: "🛵 Saiu pra entrega! Motoboy a caminho.", h: "14:24" },
+                    { t: "📦 Pedido entregue! Obrigado pela preferência 💚", h: "14:41" },
+                  ].map((m, i) => (
+                    <div key={i} className="bg-emerald-500/5 border border-emerald-500/10 rounded-2xl rounded-tl-sm p-3">
+                      <p className="text-xs text-foreground font-medium leading-relaxed">{m.t}</p>
+                      <p className="text-[9px] text-muted-foreground text-right mt-1">{m.h} ✓✓</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* ══════ PDV — DESTAQUE ══════ */}
       <section className="py-20 px-4 bg-gradient-to-br from-blue-500/5 via-background to-primary/5 border-y border-border">
@@ -1111,12 +1180,12 @@ const StoreDirectory = () => {
             </p>
           </div>
         </div>
+      </footer>
       <div className="py-6 border-t border-border bg-card">
         <div className="max-w-7xl mx-auto px-4 flex justify-center">
           <AsaasBadgeBar className="max-w-sm" />
         </div>
       </div>
-      </footer>
     </div>
   );
 };
