@@ -545,6 +545,37 @@ const StorePage = () => {
     setSelectedProduct(product);
   }, []);
 
+  // Adega: adicionar 1un direto, sem abrir modal. Se houver addons obrigatórios o modal ainda é a melhor rota.
+  const quickAddAdega = useCallback((product: Product) => {
+    if (!storeStatus.isOpen) {
+      toast.error(`Esta loja está fechada. ${storeStatus.reason}`);
+      return;
+    }
+    if (hasNoDrivers) {
+      toast.error("Esta loja não tem entregador disponível no momento.");
+      return;
+    }
+    if ((product as any)?.metadata?.out_of_stock) {
+      toast.error("Produto esgotado");
+      return;
+    }
+    addItem(
+      {
+        id: product.id,
+        store_id: product.store_id,
+        store_name: store?.name || "",
+        name: product.name,
+        price: Number(product.price),
+        basePrice: Number(product.price),
+        image_url: product.image_url,
+        addons: [],
+        observations: "",
+      },
+      1
+    );
+    toast.success(`${product.name} adicionado!`);
+  }, [addItem, store, storeStatus, hasNoDrivers]);
+
   const openMaps = useCallback(() => {
     if (!store) return;
     const addr = encodeURIComponent(
