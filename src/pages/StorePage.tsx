@@ -637,7 +637,7 @@ const StorePage = () => {
   }
 
   return (
-    <div ref={pageRef} className={`min-h-screen bg-background pb-24 ${isAdega ? "dark" : ""}`}>
+    <div ref={pageRef} className={`min-h-screen pb-24 ${isAdega ? "bg-zinc-950" : "bg-background"}`}>
       {/* ===== HERO ===== */}
       <div className="relative h-56 md:h-64">
         {store?.image_url ? (
@@ -657,7 +657,7 @@ const StorePage = () => {
          {/* Sticky Header Top Bar */}
          {!showHalfHalf && (
            <div className={`fixed top-0 left-0 right-0 flex items-center justify-between p-4 z-[70] transition-all duration-300 h-[64px] ${
-             scrolled ? "bg-background border-b border-border shadow-sm py-2" : "bg-transparent"
+             scrolled ? (isAdega ? "bg-zinc-950 border-b border-zinc-800 shadow-sm py-2" : "bg-background border-b border-border shadow-sm py-2") : "bg-transparent"
            }`}>
           <div className="flex items-center gap-3 min-w-0">
             {!getStoreAppSlug() && (
@@ -673,10 +673,10 @@ const StorePage = () => {
             )}
             {scrolled && (
               <div className="flex flex-col min-w-0 animate-in fade-in slide-in-from-left-2 duration-300">
-                <h2 className="text-sm font-black text-foreground truncate">{store?.name}</h2>
+                <h2 className={`text-sm font-black truncate ${isAdega ? "text-zinc-100" : "text-foreground"}`}>{store?.name}</h2>
                 <div className="flex items-center gap-1.5">
                   <div className={`w-1.5 h-1.5 rounded-full ${storeStatus.isOpen ? "bg-green-500" : "bg-destructive"}`} />
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase">{storeStatus.isOpen ? "Aberto" : "Fechado"}</span>
+                  <span className={`text-[10px] font-bold uppercase ${isAdega ? "text-zinc-400" : "text-muted-foreground"}`}>{storeStatus.isOpen ? "Aberto" : "Fechado"}</span>
                 </div>
               </div>
             )}
