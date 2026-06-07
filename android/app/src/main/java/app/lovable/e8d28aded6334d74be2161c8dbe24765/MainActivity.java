@@ -1,13 +1,13 @@
 package app.lovable.e8d28aded6334d74be2161c8dbe24765;
 
 import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.webkit.CookieManager;
 import android.webkit.WebView;
 
 import com.getcapacitor.BridgeActivity;
-
-import app.lovable.e8d28aded6334d74be2161c8dbe24765.BuildConfig;
 
 public class MainActivity extends BridgeActivity {
     private static final String PREFS_NAME = "itasuper_native_cache";
@@ -21,7 +21,7 @@ public class MainActivity extends BridgeActivity {
 
     private void clearWebViewCacheAfterNativeUpdate() {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        String currentVersion = BuildConfig.VERSION_NAME;
+        String currentVersion = getNativeVersionName();
         String clearedVersion = prefs.getString(VERSION_KEY, null);
 
         if (currentVersion.equals(clearedVersion)) return;
@@ -42,5 +42,14 @@ public class MainActivity extends BridgeActivity {
                 webView.postDelayed(webView::reload, 1400);
             }
         } catch (Exception ignored) {}
+    }
+
+    private String getNativeVersionName() {
+        try {
+            PackageInfo packageInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
+            if (packageInfo.versionName != null) return packageInfo.versionName;
+        } catch (PackageManager.NameNotFoundException ignored) {}
+
+        return "1.9.30";
     }
 }
