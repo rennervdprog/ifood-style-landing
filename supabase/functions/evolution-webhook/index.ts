@@ -167,6 +167,8 @@ Deno.serve(async (req) => {
 
         // P1.4 — janela de operação baseada nos horários do lojista (fuso SP).
         // Se não houver horários cadastrados, cai no fallback 08h-22h.
+        // Quando fechado, envia 1 aviso "estamos fechados" por cliente (cooldown 6h).
+        let storeClosedInfo: { nextOpenLabel: string } | null = null;
         {
           const now = new Date();
           const brParts = new Intl.DateTimeFormat("pt-BR", {
@@ -182,6 +184,21 @@ Deno.serve(async (req) => {
             .from("opening_hours")
             .select("day_of_week, open_time, close_time, is_closed_all_day")
             .eq("store_id", cfg.store_id);
+
+          const dayNames = ["domingo","segunda","terça","quarta","quinta","sexta","sábado"];
+          const findNextOpen = (list: any[]) => {
+            for (let off = 0; off <= 7; off++) {
+              const d = (brDay + off) % 7;
+              const h = list.find((x: any) => x.day_of_week === d);
+              if (!h || h.is_closed_all_day) continue;
+              const [oH, oM] = String(h.open_time).split(":").map(Number);
+              const o = oH * 60 + oM;
+              if (off === 0 && curMin >= o) continue;
+              const label = off === 0 ? "hoje" : off === 1 ? "amanhã" : dayNames[d];
+              return `${label} às ${String(h.open_time).slice(0,5)}`;
+            }
+            return "em breve";
+          };
 
           if (hours && hours.length > 0) {
             const isOpenAt = (day: number, minutes: number) => {
@@ -208,9 +225,9 @@ Deno.serve(async (req) => {
               return c <= o && curMin < c;
             };
             const open = isOpenAt(brDay, curMin) || isOpenOvernightFromPrev();
-            if (!open) return json({ ok: true, skipped: "store_closed" });
+            if (!open) storeClosedInfo = { nextOpenLabel: findNextOpen(hours) };
           } else {
-            if (brHour < 8 || brHour >= 22) return json({ ok: true, skipped: "out_of_hours" });
+            if (brHour < 8 || brHour >= 22) storeClosedInfo = { nextOpenLabel: "amanhã às 08:00" };
           }
         }
 
@@ -220,6 +237,9 @@ Deno.serve(async (req) => {
         const storeName = store?.name || "nossa loja";
         const link = store?.slug ? `https://itasuper.com.br/${store.slug}` : "";
         const greeting = `${buildGreeting(storeName)}\n\n_Responda PARAR para não receber._`;
+        const closedMessage = storeClosedInfo
+          ? `Olá! 😊 Aqui é da *${storeName}*. No momento estamos *fechados*. Voltamos a atender ${storeClosedInfo.nextOpenLabel}. Assim que abrirmos, te respondemos por aqui! 🙏\n\n_Responda PARAR para não receber._`
+          : "";
         const sendLinkNow = asksForMenu(text) && !!link;
         const menuMessage = `Aqui está nosso cardápio:\n${link}`;
 
@@ -249,6 +269,7 @@ Deno.serve(async (req) => {
         const lastAutoReply = recentReplies?.[0];
         const hasFastRecentReply = !!lastAutoReply && new Date(lastAutoReply.sent_at).getTime() >= Date.now() - FAST_COOLDOWN_MS;
         if (lastAutoReply) {
+          if (storeClosedInfo) return json({ ok: true, skipped: "closed_cooldown" });
           if (sendLinkNow) {
             runInBackground((async () => {
               await sleep(hasFastRecentReply ? 2_000 + Math.floor(Math.random() * 3_000) : 800);
@@ -266,6 +287,15 @@ Deno.serve(async (req) => {
           store_id: cfg.store_id, phone: number, message_hash: "greet_pending",
           kind: "auto_reply", sent_at: new Date().toISOString(),
         });
+
+        // Loja fechada → envia 1 aviso (sem cardápio) e encerra.
+        if (storeClosedInfo) {
+          runInBackground((async () => {
+            await sleep(3_000 + Math.floor(Math.random() * 4_000));
+            await sendMsg(closedMessage);
+          })());
+          return json({ ok: true, queued: "closed_notice" });
+        }
 
         // Humaniza: aguarda antes da saudação; só envia link se cliente já pediu.
         runInBackground((async () => {
