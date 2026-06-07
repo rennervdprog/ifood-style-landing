@@ -3,7 +3,6 @@ package app.lovable.e8d28aded6334d74be2161c8dbe24765;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.webkit.CookieManager;
-import android.webkit.WebStorage;
 import android.webkit.WebView;
 
 import com.getcapacitor.BridgeActivity;
@@ -28,16 +27,17 @@ public class MainActivity extends BridgeActivity {
         prefs.edit().putString(VERSION_KEY, currentVersion).apply();
 
         try {
-            WebStorage.getInstance().deleteAllData();
-            CookieManager.getInstance().flush();
-        } catch (Exception ignored) {}
-
-        try {
             if (bridge != null && bridge.getWebView() != null) {
                 WebView webView = bridge.getWebView();
                 webView.clearCache(true);
                 webView.clearHistory();
-                webView.post(webView::reload);
+                CookieManager.getInstance().flush();
+
+                webView.postDelayed(() -> webView.evaluateJavascript(
+                    "(async()=>{try{if('serviceWorker'in navigator){const r=await navigator.serviceWorker.getRegistrations();await Promise.all(r.map(x=>x.unregister()))}if('caches'in window){const k=await caches.keys();await Promise.all(k.map(x=>caches.delete(x)))}}catch(e){}})()",
+                    null
+                ), 800);
+                webView.postDelayed(webView::reload, 1400);
             }
         } catch (Exception ignored) {}
     }
