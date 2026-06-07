@@ -637,7 +637,7 @@ const StorePage = () => {
   }
 
   return (
-    <div ref={pageRef} className="min-h-screen bg-background pb-24">
+    <div ref={pageRef} className={`min-h-screen bg-background pb-24 ${isAdega ? "dark" : ""}`}>
       {/* ===== HERO ===== */}
       <div className="relative h-56 md:h-64">
         {store?.image_url ? (
@@ -1121,9 +1121,9 @@ const StorePage = () => {
        {visibleSections.length > 0 && !filteredProducts && !showHalfHalf && (
         <div
           ref={navRef}
-          className={`sticky z-[60] bg-background border-b border-border mt-4 shadow-sm transition-all duration-300 ${
+          className={`sticky z-[60] border-b mt-4 shadow-sm transition-all duration-300 ${
             scrolled ? "top-[63px]" : "top-0"
-          }`}
+          } ${isAdega ? "bg-zinc-950 border-zinc-800" : "bg-background border-border"}`}
         >
           <div className="flex overflow-x-auto gap-1.5 px-4 py-2.5 no-scrollbar">
             {visibleSections.map(s => (
@@ -1138,8 +1138,12 @@ const StorePage = () => {
                 }}
                 className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all ${
                   activeSection === s.id
-                    ? "bg-primary text-primary-foreground shadow-md scale-105"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    ? (isAdega
+                        ? "bg-amber-500 text-zinc-950 shadow-[0_0_12px_rgba(245,158,11,0.45)] scale-105"
+                        : "bg-primary text-primary-foreground shadow-md scale-105")
+                    : (isAdega
+                        ? "bg-zinc-900 text-zinc-300 border border-zinc-800"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80")
                 }`}
               >
                 {s.name}
