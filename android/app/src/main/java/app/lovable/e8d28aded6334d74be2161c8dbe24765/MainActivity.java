@@ -7,6 +7,8 @@ import android.webkit.WebView;
 
 import com.getcapacitor.BridgeActivity;
 
+import app.lovable.e8d28aded6334d74be2161c8dbe24765.BuildConfig;
+
 public class MainActivity extends BridgeActivity {
     private static final String PREFS_NAME = "itasuper_native_cache";
     private static final String VERSION_KEY = "cleared_for_version";
